@@ -9,6 +9,8 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 
 from app.view.main_window import MainWindow
 
+import Res_rc
+
 # create application
 app = QApplication(sys.argv)
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
