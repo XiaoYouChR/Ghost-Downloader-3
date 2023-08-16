@@ -1,24 +1,19 @@
 import os
+import re
 import threading
-from concurrent.futures import ThreadPoolExecutor
+import traceback
+import winreg
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from time import time, sleep
+
+import requests
+from PySide6.QtCore import QSize, Signal
+from PySide6.QtGui import QPixmap, QIcon
+from qfluentwidgets import CardWidget
+from qfluentwidgets import FluentIcon as FIF
 
 from .Ui_TaskCard import Ui_TaskCard
-from qfluentwidgets import CardWidget, RoundMenu, Action
-from qfluentwidgets import FluentIcon as FIF
-from ..common.download_engine import DownloadTask
-from ..common.signal_bus import signalBus
-
-
-from PySide6.QtGui import QDesktopServices, QPixmap, QIcon
-from PySide6.QtCore import QUrl, QSize, Signal
-
-import traceback
-from time import time, sleep
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import requests
-from pathlib import Path
-import winreg
-import re
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -306,7 +301,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     # print(f"Debug,l:{l},t:{self.total_process}")
                     speed = self.__get_readable_size(t - l)
                     # 打印信息
-                    print("\r", f"P:{round(t / self.fileSize, 2)}, {t}|{self.fileSize}", speed, end="", flush=True)
+                    print("\r", f"P:{round(t / self.fileSize, 2)}, {t}|{self.fileSize}", speed, end="")
                     # 发送信号更新界面
                     self.changeInfoSignal.emit(int(round(t / self.fileSize, 2) * 100), f"{self.__get_readable_size(t)}|{self.__get_readable_size(self.fileSize)}", f"{speed}/s")
                     f.close()
@@ -334,7 +329,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.divisional_ranges = self.calc_divisional_range()
                 # 创建空文件
                 with open(self.fileResolve, "wb") as f:
-                    pass
+                    f.close()
                 # # 创建记录文件
                 # with open(self.fileInfoResolve, "wb") as f:
                 #     pass
@@ -351,6 +346,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
                         futures.append(p.submit(self.download_worker, number, s_pos, e_pos))
                     # 增加检测线程
                     futures.append(p.submit(self.download_minitor))
+                    # 设置为守护进程
+                    for i in p._threads:
+                        i.daemon = True
                     # 等待所有任务执行完毕
                     as_completed(futures)
                     # 删除记录文件

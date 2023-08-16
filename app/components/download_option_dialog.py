@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
@@ -6,6 +8,7 @@ from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, 
     Theme, qconfig
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+
 from ..common.signal_bus import signalBus
 
 
@@ -72,13 +75,13 @@ class DownloadOptionDialog(MaskDialogBase):
             "选择下载目录",
             FIF.DOWNLOAD,
             "下载目录",
-            __file__,
+            str(Path.cwd()),
             self.SettingGroup
         )
 
         # Choose Threading Card
         self.blockNumCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", 16, RangeValidator(0, 64)),
+            RangeConfigItem("Material", "AcrylicBlurRadius", 8, RangeValidator(0, 10)),
             FIF.CHAT,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',

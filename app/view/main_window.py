@@ -1,12 +1,11 @@
 # coding: utf-8
-from typing import List
-from PySide6.QtCore import Qt, Signal, QEasingCurve, QUrl, QSize
+from PySide6.QtCore import QUrl, QSize
 from PySide6.QtGui import QIcon, QDesktopServices
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QFrame, QWidget
-
-from qfluentwidgets import NavigationAvatarWidget, NavigationItemPosition, MessageBox, FluentWindow, SplashScreen
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import NavigationItemPosition, MessageBox, FluentWindow, SplashScreen
 
+from .debug_interface import DebugInterface
 from .home_interface import HomeInterface
 from .task_interface import TaskInterface
 
@@ -20,6 +19,7 @@ class MainWindow(FluentWindow):
         # create sub interface
         self.homeInterface = HomeInterface(self)
         self.taskInterface = TaskInterface(self)
+        self.debugInterface = DebugInterface(self)
 
         # add items to navigation interface
         self.initNavigation()
@@ -29,7 +29,7 @@ class MainWindow(FluentWindow):
         # add navigation items
         self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
-        self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
+        self.addSubInterface(self.debugInterface, FIF.DEVELOPER_TOOLS, "调试信息")
         # add custom widget to bottom
         self.navigationInterface.addItem(
             routeKey='avatar',
