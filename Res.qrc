@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>play.svg</file>
+    <file>pause.svg</file>
+    <file>logo.png</file>
+  </qresource>
+</RCC>
