@@ -57,7 +57,7 @@ class MainWindow(FluentWindow):
     def showInfoMessageBox(self):
         w = MessageBox(
             '关于 Ghost-Downloader-3',
-            '当前版本 2.9.10-alpha\n屎山作者 晓游ChR\n版本亮点 下载功能前所未有的稳定（估计）\n目前存在的问题 界面细节&进度在任务restart后显示不准确',
+            '当前版本 2.9.10-alpha\n屎山作者 晓游ChR\n版本亮点 下载功能前所未有的稳定（估计）\n目前存在的问题 界面细节&进度在任务restart后显示不准确&下载到根目录会权限不够',
             self
         )
         w.yesButton.setText('了解作者')

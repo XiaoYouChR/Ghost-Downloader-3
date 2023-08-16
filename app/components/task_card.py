@@ -3,7 +3,7 @@ import re
 import threading
 import traceback
 import winreg
-from concurrent.futures import ThreadPoolExecutor, as_completed
+# from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from time import time, sleep
 
@@ -186,7 +186,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
     def __get_real_url(self, url: str):
         try:
-            response = requests.head(url=url, headers=Headers, allow_redirects=False, verify=False)
+            response = requests.head(url=url, headers=Headers, proxies=proxy, allow_redirects=False, verify=False)
             print(response)
 
             if response.status_code == 400:  # Bad Requests
@@ -207,7 +207,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
                     print(url)
 
-                response = requests.head(url=url, headers=Headers, allow_redirects=False, verify=False)  # 再访问一次
+                response = requests.head(url=url, headers=Headers, proxies=proxy, allow_redirects=False,
+                                         verify=False)  # 再访问一次
 
             return url
 
@@ -336,30 +337,35 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 # # 隐藏记录文件
                 #
                 # 创建线程池
-                with ThreadPoolExecutor() as p:
-                    futures = []
-                    for number, _ in enumerate(self.divisional_ranges, start=0):
-                        s_pos = _[0]
-                        e_pos = _[1]
-                        self.every_process.append(0)
-                        print(number, s_pos, e_pos)
-                        futures.append(p.submit(self.download_worker, number, s_pos, e_pos))
-                    # 增加检测线程
-                    futures.append(p.submit(self.download_minitor))
-                    # 设置为守护进程
-                    for i in p._threads:
-                        i.daemon = True
-                    # 等待所有任务执行完毕
-                    as_completed(futures)
-                    # 删除记录文件
-                    try:
-                        Path.unlink(self.fileInfoResolve)
-                    except:
-                        pass
+                # with ThreadPoolExecutor() as p:
+                futures = []
+                for number, _ in enumerate(self.divisional_ranges, start=0):
+                    s_pos = _[0]
+                    e_pos = _[1]
+                    self.every_process.append(0)
+                    print(number, s_pos, e_pos)
+                    # futures.append(p.submit(self.download_worker, number, s_pos, e_pos))
+                    T = threading.Thread(target=self.download_worker, args=(number, s_pos, e_pos), daemon=True)
+                    T.start()
+                    futures.append(T)
+                # 增加检测线程
+                T = threading.Thread(target=self.download_minitor, daemon=True)
+                T.start()
+                futures.append(T)
+                # futures.append(p.submit(self.download_minitor))
+                # 等待所有任务执行完毕
+                for i in futures:
+                    i.join()
+                # as_completed(futures)
+                # 删除记录文件
+                try:
+                    Path.unlink(self.fileInfoResolve)
+                except:
+                    pass
 
             else:  # 记录文件存在，断点续传
                 with open(self.fileInfoResolve, "r") as f:
-                    with ThreadPoolExecutor() as p:
+                    # with ThreadPoolExecutor() as p:
                         futures = []
                         for number, i in enumerate(f.readlines()):
                             i = i.split("|")
@@ -368,13 +374,18 @@ class TaskCard(CardWidget, Ui_TaskCard):
                             self.divisional_ranges.append([s_pos, e_pos])
                             self.every_process.append(0)
                             print("断点续传:", number, s_pos, e_pos)
-                            futures.append(p.submit(self.download_worker, number, s_pos, e_pos))
+                            # futures.append(p.submit(self.download_worker, number, s_pos, e_pos))
+                            T = threading.Thread(target=self.download_worker, args=(number, s_pos, e_pos), daemon=True)
+                            T.start()
                         # 关闭文件，以防万一
                         f.close()
                         # 增加检测线程
-                        futures.append(p.submit(self.download_minitor))
+                    T = threading.Thread(target=self.download_minitor, daemon=True)
+                    T.start()
+                    futures.append(T)
                         # 等待所有任务执行完毕
-                        as_completed(futures)
+                    for i in futures:
+                        i.join()
                         # 删除记录文件
                         try:
                             Path.unlink(self.fileInfoResolve)

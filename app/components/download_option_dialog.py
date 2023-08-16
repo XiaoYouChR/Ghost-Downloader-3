@@ -1,9 +1,9 @@
-from PySide6.QtCore import Signal, QCoreApplication
+from PySide6.QtCore import Signal, QDir, QFileInfo
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
 from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, RangeConfigItem, RangeValidator, \
     PushButton, PrimaryPushButton, ComboBoxSettingCard, OptionsValidator, OptionsConfigItem, TextEdit, \
-    Theme, qconfig
+    Theme, qconfig, MessageBox
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
@@ -73,13 +73,13 @@ class DownloadOptionDialog(MaskDialogBase):
             "选择下载目录",
             FIF.DOWNLOAD,
             "下载目录",
-            QCoreApplication.applicationDirPath(),
+            QDir.currentPath(),
             self.SettingGroup
         )
 
         # Choose Threading Card
         self.blockNumCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", 8, RangeValidator(0, 10)),
+            RangeConfigItem("Material", "AcrylicBlurRadius", 8, RangeValidator(1, 10)),
             FIF.CHAT,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',
@@ -117,8 +117,16 @@ class DownloadOptionDialog(MaskDialogBase):
         self.versionCard.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
 
     def startTask(self):
+        path = self.downloadFolderCard.contentLabel.text()
+        _ = QFileInfo(path)
+
+        if not _.isDir() and _.isWritable():
+            w = MessageBox("权限不足", "您没有足够的权限来访问该目录，请切换目录后重试", self)
+            w.exec()
+            return
+
         signalBus.addTaskSignal.emit(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
-                                     self.downloadFolderCard.contentLabel.text(), self.blockNumCard.configItem.value,
+                                     path, self.blockNumCard.configItem.value,
                                      self.dict["Name"], self.dict["Pixmap"])
         self.close()
 

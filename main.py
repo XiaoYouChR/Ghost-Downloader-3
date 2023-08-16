@@ -47,6 +47,4 @@ w = MainWindow()
 
 w.show()
 
-app.exec()
-
-sys.exit()
+sys.exit(app.exec())
