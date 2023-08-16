@@ -1,6 +1,4 @@
-from pathlib import Path
-
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QCoreApplication
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
 from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, RangeConfigItem, RangeValidator, \
@@ -75,7 +73,7 @@ class DownloadOptionDialog(MaskDialogBase):
             "选择下载目录",
             FIF.DOWNLOAD,
             "下载目录",
-            str(Path.cwd()),
+            QCoreApplication.applicationDirPath(),
             self.SettingGroup
         )
 

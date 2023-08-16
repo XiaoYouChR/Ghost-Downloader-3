@@ -5,7 +5,6 @@ from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import NavigationItemPosition, MessageBox, FluentWindow, SplashScreen
 
-from .debug_interface import DebugInterface
 from .home_interface import HomeInterface
 from .task_interface import TaskInterface
 
@@ -19,7 +18,7 @@ class MainWindow(FluentWindow):
         # create sub interface
         self.homeInterface = HomeInterface(self)
         self.taskInterface = TaskInterface(self)
-        self.debugInterface = DebugInterface(self)
+        # self.debugInterface = DebugInterface(self)
 
         # add items to navigation interface
         self.initNavigation()
@@ -29,7 +28,7 @@ class MainWindow(FluentWindow):
         # add navigation items
         self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
-        self.addSubInterface(self.debugInterface, FIF.DEVELOPER_TOOLS, "调试信息")
+        # self.addSubInterface(self.debugInterface, FIF.DEVELOPER_TOOLS, "调试信息")
         # add custom widget to bottom
         self.navigationInterface.addItem(
             routeKey='avatar',
@@ -58,7 +57,7 @@ class MainWindow(FluentWindow):
     def showInfoMessageBox(self):
         w = MessageBox(
             '关于 Ghost-Downloader-3',
-            '当前版本 2.9.9-alpha\n屎山作者 晓游ChR\n版本亮点 下载功能前所未有的稳定（估计）\n目前存在的问题 界面细节&进度在任务restart后显示不准确',
+            '当前版本 2.9.10-alpha\n屎山作者 晓游ChR\n版本亮点 下载功能前所未有的稳定（估计）\n目前存在的问题 界面细节&进度在任务restart后显示不准确',
             self
         )
         w.yesButton.setText('了解作者')

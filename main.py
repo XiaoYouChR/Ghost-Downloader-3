@@ -1,14 +1,11 @@
 # coding:utf-8
-import os
-import sys
 import ctypes
-import Res_rc
-
-from PySide6.QtGui import QColor
-from qfluentwidgets import setTheme, Theme, setThemeColor
+import sys
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication
+from qfluentwidgets import setTheme, Theme, setThemeColor
 
 from app.view.main_window import MainWindow
 
@@ -42,6 +39,12 @@ except Exception as e:
 
 # create main window
 w = MainWindow()
+
+# # Print For Test
+# print(QCoreApplication.applicationDirPath())
+# print(Path.cwd())
+# print(QDir.currentPath())
+
 w.show()
 
 app.exec()
