@@ -8,18 +8,12 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QSizePolicy, QVBoxLayout,
-    QWidget)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
+from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
 
-from qfluentwidgets import (BodyLabel, CardWidget, PixmapLabel, PrimarySplitPushButton,
-    SplitPushButton, TitleLabel)
+from qfluentwidgets import (BodyLabel, PixmapLabel, PrimarySplitPushButton,
+                            TitleLabel)
+
 
 class Ui_SystemInfoCard(object):
     def setupUi(self, SystemInfoCard):
@@ -65,7 +59,6 @@ class Ui_SystemInfoCard(object):
 
         self.BodyVBoxLayout.addWidget(self.BodyLabel)
 
-
         self.horizontalLayout.addLayout(self.BodyVBoxLayout)
 
         self.PrimarySplitPushButton = PrimarySplitPushButton(SystemInfoCard)
@@ -75,14 +68,15 @@ class Ui_SystemInfoCard(object):
 
         self.horizontalLayout.addWidget(self.PrimarySplitPushButton)
 
-
         self.retranslateUi(SystemInfoCard)
 
         QMetaObject.connectSlotsByName(SystemInfoCard)
+
     # setupUi
 
     def retranslateUi(self, SystemInfoCard):
         SystemInfoCard.setWindowTitle(QCoreApplication.translate("SystemInfoCard", u"Form", None))
-        self.PrimarySplitPushButton.setProperty("text_", QCoreApplication.translate("SystemInfoCard", u"       \u4e0b\u8f7d       ", None))
+        self.PrimarySplitPushButton.setProperty("text_", QCoreApplication.translate("SystemInfoCard",
+                                                                                    u"       \u4e0b\u8f7d       ",
+                                                                                    None))
     # retranslateUi
-

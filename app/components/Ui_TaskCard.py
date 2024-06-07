@@ -8,18 +8,16 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QSizePolicy, QSpacerItem,
-    QVBoxLayout, QWidget)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
+from PySide6.QtGui import (QIcon)
+from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QSpacerItem,
+                               QVBoxLayout)
 
-from qfluentwidgets import (BodyLabel, CardWidget, PixmapLabel, ProgressBar,
-                            PushButton, TitleLabel, ToolButton, PrimaryToolButton)
+from qfluentwidgets import (BodyLabel, PixmapLabel, ProgressBar,
+                            TitleLabel, ToolButton, PrimaryToolButton)
+
+from qfluentwidgets import FluentIcon as FIF
+
 
 class Ui_TaskCard(object):
     def setupUi(self, TaskCard):
@@ -32,8 +30,8 @@ class Ui_TaskCard(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.LogoPixmapLabel = PixmapLabel(TaskCard)
         self.LogoPixmapLabel.setObjectName(u"LogoPixmapLabel")
-        self.LogoPixmapLabel.setMinimumSize(QSize(101, 101))
-        self.LogoPixmapLabel.setMaximumSize(QSize(101, 101))
+        self.LogoPixmapLabel.setMinimumSize(QSize(91, 91))
+        self.LogoPixmapLabel.setMaximumSize(QSize(91, 91))
         self.LogoPixmapLabel.setScaledContents(True)
         self.LogoPixmapLabel.setAlignment(Qt.AlignCenter)
 
@@ -68,12 +66,12 @@ class Ui_TaskCard(object):
 
         self.horizontalLayout.addWidget(self.pauseButton)
 
-        # self.cancelButton = ToolButton(TaskCard)
-        # self.cancelButton.setObjectName(u"cancelButton")
-        # self.cancelButton.setMinimumSize(QSize(31, 31))
-        # self.cancelButton.setMaximumSize(QSize(31, 31))
+        self.cancelButton = ToolButton(TaskCard)
+        self.cancelButton.setObjectName(u"cancelButton")
+        self.cancelButton.setMinimumSize(QSize(31, 31))
+        self.cancelButton.setMaximumSize(QSize(31, 31))
 
-        # self.horizontalLayout.addWidget(self.cancelButton)
+        self.horizontalLayout.addWidget(self.cancelButton)
 
         self.folderButton = PrimaryToolButton(TaskCard)
         self.folderButton.setObjectName(u"folderButton")
@@ -89,7 +87,7 @@ class Ui_TaskCard(object):
         self.speedLable = BodyLabel(TaskCard)
         self.speedLable.setObjectName(u"speedLable")
         self.speedLable.setMinimumSize(QSize(0, 19))
-        self.speedLable.setMaximumSize(QSize(151, 19))
+        self.speedLable.setMaximumSize(QSize(601, 19))
 
         self.horizontalLayout_2.addWidget(self.speedLable)
 
@@ -111,7 +109,6 @@ class Ui_TaskCard(object):
 
         self.horizontalLayout_2.addWidget(self.processLabel)
 
-
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
         self.ProgressBar = ProgressBar(TaskCard)
@@ -119,20 +116,28 @@ class Ui_TaskCard(object):
 
         self.verticalLayout.addWidget(self.ProgressBar)
 
-
         self.horizontalLayout_3.addLayout(self.verticalLayout)
 
+        # 初始化 Icon 类
+        self.pauseIcon = QIcon()
+        self.pauseIcon.addFile(u":/icon/pause.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.playIcon = QIcon()
+        self.playIcon.addFile(u":/icon/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+
+        self.pauseButton.setIcon(self.pauseIcon)
+        self.cancelButton.setIcon(FIF.DELETE)
+        self.folderButton.setIcon(FIF.FOLDER)
 
         self.retranslateUi(TaskCard)
 
         QMetaObject.connectSlotsByName(TaskCard)
+
     # setupUi
 
     def retranslateUi(self, TaskCard):
         TaskCard.setWindowTitle(QCoreApplication.translate("TaskCard", u"Form", None))
         self.pauseButton.setText("")
-        # self.cancelButton.setText("")
+        self.cancelButton.setText("")
         self.folderButton.setText("")
         self.processLabel.setText("")
     # retranslateUi
-

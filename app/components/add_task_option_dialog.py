@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 from PySide6.QtCore import Signal, QDir
@@ -12,16 +13,28 @@ from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from ..common.signal_bus import signalBus
 
+urlRe = re.compile(r"^" +
+                   "((?:https?|ftp)://)" +
+                   "(?:\\S+(?::\\S*)?@)?" +
+                   "(?:" +
+                   "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
+                   "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
+                   "(\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
+                   "|" +
+                   "((?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)" +
+                   '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
+                   "(\\.([a-z\\u00a1-\\uffff]{2,}))" +
+                   ")" +
+                   "(?::\\d{2,5})?" +
+                   "(?:/\\S*)?" +
+                   "$", re.IGNORECASE)
 
-class DownloadOptionDialog(MaskDialogBase):
+
+class AddTaskOptionDialog(MaskDialogBase):
     startSignal = Signal()
 
-    def __init__(self, parent=None, list=None, dict=None):
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
-
-        self.dict = dict
-        self.list = list
-        self.versions = []
 
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
@@ -31,46 +44,25 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.widget.setLayout(self.VBoxLayout)
 
-        self.widget.setMinimumSize(510, 510)
-        self.widget.setMaximumSize(680, 520)
+        self.widget.setMinimumSize(510, 400)
+        self.widget.setMaximumSize(680, 410)
         if isDarkTheme():
             # C = ThemeColor.DARK_3.color()
             self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:rgb(39,39,39)}")
         else:
             self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:white}")
 
-        # 版本组
-        self.versionGroup = SettingCardGroup(
-            "选择版本", self.widget)
+        # 下载链接组
+        self.linkGroup = SettingCardGroup(
+            "新建任务", self.widget)
 
-        for i in self.list:
-            self.versions.append(i["Version"])
-
-        versionItem = OptionsConfigItem(
-            "Material", "Version", self.versions[0], OptionsValidator(self.versions))
-
-        self.versionCard = ComboBoxSettingCard(
-            versionItem,
-            FIF.VIEW,
-            "选择版本",
-            "选择你想下载的版本",
-            texts=self.versions,
-            parent=self.versionGroup
-        )
-
-        self.versionGroup.addSettingCard(self.versionCard)
-
-        self.logGroup = SettingCardGroup(
-            "更新日志", self.widget)
-
-        self.logTextEdit = TextEdit(self.versionGroup)
-        self.logTextEdit.setReadOnly(True)
-        self.logTextEdit.setMinimumHeight(100)
-        self.logTextEdit.setText(self.list[0]["Log"])
+        self.linkTextEdit = TextEdit(self.linkGroup)
+        self.linkTextEdit.setPlaceholderText("请在此键入下载链接")
+        self.linkTextEdit.setMinimumHeight(100)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
-        self.logTextEdit.setSizePolicy(sizePolicy)
+        self.linkTextEdit.setSizePolicy(sizePolicy)
 
-        self.logGroup.addSettingCard(self.logTextEdit)
+        self.linkGroup.addSettingCard(self.linkTextEdit)
 
         # 下载设置组
         self.settingGroup = SettingCardGroup(
@@ -98,6 +90,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.yesButton = PrimaryPushButton(self)
         self.yesButton.setObjectName("yesButton")
+        self.yesButton.setDisabled(True)
         self.yesButton.setText("开始下载")
         self.noButton = PushButton(self)
         self.noButton.setObjectName("noButton")
@@ -109,8 +102,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.settingGroup.addSettingCards([self.downloadFolderCard, self.blockNumCard])
 
-        self.VBoxLayout.addWidget(self.versionGroup)
-        self.VBoxLayout.addWidget(self.logGroup)
+        self.VBoxLayout.addWidget(self.linkGroup)
         self.VBoxLayout.addWidget(self.settingGroup)
         self.VBoxLayout.addLayout(self.buttonLayout)
 
@@ -123,7 +115,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.yesButton.clicked.connect(self.startTask)
 
-        self.versionCard.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
+        self.linkTextEdit.textChanged.connect(self.__onLinkTextChanged)
 
     def startTask(self):
         path = Path(self.downloadFolderCard.contentLabel.text())
@@ -138,7 +130,9 @@ class DownloadOptionDialog(MaskDialogBase):
             if not os.access(path, os.W_OK):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
 
-        signalBus.addTaskSignal.emit(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
+        url = self.linkTextEdit.toPlainText()
+
+        signalBus.addTaskSignal.emit(url,
                                      str(path), self.blockNumCard.configItem.value,
                                      "", None, False)
         self.close()
@@ -152,5 +146,13 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.downloadFolderCard.setContent(folder)
 
-    def _onCurrentIndexChanged(self, Index: int):
-        self.logTextEdit.setText(self.list[Index]["Log"])
+    def __onLinkTextChanged(self):
+        """ link text changed slot """
+        text: str = self.linkTextEdit.toPlainText()
+
+        _ = urlRe.search(text)
+
+        if _:
+            self.yesButton.setEnabled(True)
+        else:
+            self.yesButton.setDisabled(True)
