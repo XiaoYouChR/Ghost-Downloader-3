@@ -5,8 +5,9 @@ import darkdetect
 from PySide6.QtCore import QSize, QUrl, QThread, Signal, QTimer
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon as FIF, isDarkTheme, setTheme, Theme
-from qfluentwidgets import NavigationItemPosition, MessageBox, MSFluentWindow, SplashScreen, toggleTheme
+from loguru import logger
+from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
+from qfluentwidgets import NavigationItemPosition, MessageBox, MSFluentWindow, SplashScreen
 
 from .home_interface import HomeInterface
 from .task_interface import TaskInterface
@@ -41,16 +42,16 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.start()
 
         # createUnfinishedTask
-        historyFile = Path("./history")
-        # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x}]
+        historyFile = Path("./Ghost Downloader 记录文件")
+        # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
             with open(historyFile, 'r', encoding='utf-8') as f:
                 unfinishedTaskInfo = f.readlines()
-                print(unfinishedTaskInfo)
+                logger.debug(f"Unfinished Task is following:{unfinishedTaskInfo}")
                 for i in unfinishedTaskInfo:
                     if i:  # 避免空行
                         i = eval(i)
-                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], None, True)
+                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], None, True)
         else:
             historyFile.touch()
 
@@ -58,20 +59,20 @@ class MainWindow(MSFluentWindow):
 
     def toggleTheme(self, callback: str):
         if callback == 'Dark':
-            setTheme(Theme.DARK)
+            setTheme(Theme.DARK, save=False)
             QTimer.singleShot(100, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
             QTimer.singleShot(200, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
             QTimer.singleShot(300, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
 
         elif callback == 'Light':
-            setTheme(Theme.LIGHT)
+            setTheme(Theme.LIGHT, save=False)
 
     def initNavigation(self):
         # add navigation items
         self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
         self.navigationInterface.addItem(
-            routeKey='addTaskBtn',
+            routeKey='addTaskButton',
             text='新建任务',
             selectable=False,
             icon=FIF.ADD,
@@ -92,8 +93,8 @@ class MainWindow(MSFluentWindow):
 
     def initWindow(self):
         self.resize(960, 780)
-        self.setWindowIcon(QIcon(':/icon/logo.png'))
-        self.setWindowTitle('Ghost Downloader')
+        self.setWindowIcon(QIcon(':/image/logo.png'))
+        self.setWindowTitle('幽灵下载器')
 
         # create splash screen
         self.splashScreen = SplashScreen(self.windowIcon(), self)
@@ -108,8 +109,8 @@ class MainWindow(MSFluentWindow):
 
     def showInfoMessageBox(self):
         w = MessageBox(
-            '关于 Ghost Downloader',
-            '当前版本 3.0.1\n程序作者 晓游ChR',
+            'About',
+            'Version 3.1.0\n© 2024 XiaoYouChR',
             self
         )
         w.yesButton.setText('了解作者')
@@ -129,9 +130,14 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.terminate()
 
         for i in self.taskInterface.cards:
-            if i.paused:
-                pass
-            else:
-                i.pauseTask()
+            if i.status == 'working':
+                for j in i.task.workers:
+                    try:
+                        j.file.close()
+                    except Exception as e:
+                        logger.error(
+                            f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
+                    j.terminate()
+                i.task.terminate()
 
         event.accept()

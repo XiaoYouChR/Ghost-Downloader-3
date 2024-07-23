@@ -1,6 +1,7 @@
 import sys
 import time
 
+from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QFileDialog
 from qfluentwidgets import TextEdit, PushButton
 
@@ -59,7 +60,7 @@ class DebugInterface(QWidget):
 
             # 在QTextEdit中显示
             cursor = self.text_browser.textCursor()
-            # cursor.movePosition(cursor.End)
+            cursor.movePosition(QTextCursor.End)
             cursor.insertText(message)
             self.text_browser.setTextCursor(cursor)
             self.text_browser.ensureCursorVisible()
@@ -75,7 +76,7 @@ class DebugInterface(QWidget):
 
             # 在QTextEdit中显示
             cursor = self.text_browser.textCursor()
-            # cursor.movePosition(cursor.End)
+            cursor.movePosition(QTextCursor.End)
             cursor.insertText(message)
             self.text_browser.setTextCursor(cursor)
             self.text_browser.ensureCursorVisible()

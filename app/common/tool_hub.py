@@ -1,5 +1,7 @@
 import winreg
 
+from loguru import logger
+
 
 def getWindowsProxy():
     try:
@@ -24,7 +26,7 @@ def getWindowsProxy():
             }
 
     except Exception as e:
-        print("获取 Windows 系统代理失败：", e)
+        logger.error(f"Cannot get Windows proxy server：{e}")
         return {
             "http": None,
             "https": None,

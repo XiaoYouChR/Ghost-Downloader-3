@@ -2,12 +2,12 @@ import os
 import re
 from pathlib import Path
 
-from PySide6.QtCore import Signal, QDir
+from PySide6.QtCore import Signal, QDir, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
 from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, RangeConfigItem, RangeValidator, \
     PushButton, PrimaryPushButton, ComboBoxSettingCard, OptionsValidator, OptionsConfigItem, TextEdit, \
-    MessageBox, isDarkTheme
+    MessageBox, isDarkTheme, InfoBar, InfoBarPosition
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
@@ -57,12 +57,31 @@ class AddTaskOptionDialog(MaskDialogBase):
             "新建任务", self.widget)
 
         self.linkTextEdit = TextEdit(self.linkGroup)
-        self.linkTextEdit.setPlaceholderText("请在此键入下载链接")
+        self.linkTextEdit.setPlaceholderText("添加多个下载链接时, 请确保每行只有一个链接.")
         self.linkTextEdit.setMinimumHeight(100)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.linkTextEdit.setSizePolicy(sizePolicy)
 
+        # self.taskTableView = TableView(self.linkGroup)
+        # self.taskTableView.setObjectName("taskTableView")
+        # self.taskTableView.setMinimumHeight(200)
+        # self.taskTableView.setSizePolicy(sizePolicy)
+        #
+        # # 初始化
+        # self.taskTableView.setBorderVisible(True)
+        # self.taskTableView.setBorderRadius(8)
+        #
+        # self.taskTableView.setWordWrap(False)
+        # self.taskTableView.setRowCount(0)
+        # self.taskTableView.setColumnCount(3)
+        #
+        # self.taskTableView.verticalHeader().hide()
+        # self.taskTableView.setHorizontalHeaderLabels(['文件名', '类型', '大小'])
+        #
+        # self.taskList = []
+
         self.linkGroup.addSettingCard(self.linkTextEdit)
+        # self.linkGroup.addSettingCard(self.taskTableView)
 
         # 下载设置组
         self.settingGroup = SettingCardGroup(
@@ -130,11 +149,14 @@ class AddTaskOptionDialog(MaskDialogBase):
             if not os.access(path, os.W_OK):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
 
-        url = self.linkTextEdit.toPlainText()
+        text = self.linkTextEdit.toPlainText().split("\n")
+        for url in text:
+            _ = urlRe.search(url)
+            if _:
+                signalBus.addTaskSignal.emit(url,
+                                             str(path), self.blockNumCard.configItem.value,
+                                             "", "working", None, False)
 
-        signalBus.addTaskSignal.emit(url,
-                                     str(path), self.blockNumCard.configItem.value,
-                                     "", None, False)
         self.close()
 
     def __onDownloadFolderCardClicked(self):
@@ -146,13 +168,34 @@ class AddTaskOptionDialog(MaskDialogBase):
 
         self.downloadFolderCard.setContent(folder)
 
+
     def __onLinkTextChanged(self):
+        if hasattr(self, '_timer'):
+            self._timer.stop()
+
+        self._timer = QTimer()
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self.__processTextChange)
+        self._timer.start(300)  # 1秒后处理
+
+    def __processTextChange(self):
         """ link text changed slot """
-        text: str = self.linkTextEdit.toPlainText()
+        text: list = self.linkTextEdit.toPlainText().split("\n")
 
-        _ = urlRe.search(text)
+        for index, url in enumerate(text, start=1):
 
-        if _:
-            self.yesButton.setEnabled(True)
-        else:
-            self.yesButton.setDisabled(True)
+            _ = urlRe.search(url)
+
+            if _:
+                self.yesButton.setEnabled(True)
+            else:
+                InfoBar.warning(
+                    title='警告',
+                    content=f"第{index}个链接可能无效!",
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    # position='Custom',   # NOTE: use custom info bar manager
+                    duration=500,
+                    parent=self.parent()
+                )

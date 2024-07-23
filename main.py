@@ -1,8 +1,11 @@
 # coding:utf-8
 import ctypes
 import sys
+import time
+import warnings
 
 import darkdetect
+from loguru import logger
 
 # noinspection PyUnresolvedReferences
 import Res_rc
@@ -14,13 +17,17 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 
 from app.view.main_window import MainWindow
 
+# config loguru
+logger.add("Ghost Downloader 运行日志.log", rotation="512 KB")
+logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
+warnings.warn = logger.warning
 
 # create application
 app = QApplication(sys.argv)
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
 # Enable Theme
-setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT)
+setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
 
 # Get Theme Color
 try:
@@ -39,10 +46,10 @@ try:
     # 将颜色值转换为RGB元组
     b, g, r = color.value % 256, (color.value >> 8) % 256, (color.value >> 16) % 256
 
-    setThemeColor(QColor(r, g, b))
+    setThemeColor(QColor(r, g, b), save=False)
 
 except Exception as e:
-    print("获取主题色失败", e)
+    logger.error(f"Cannot get theme color: {e}")
 
 # create main window
 w = MainWindow()

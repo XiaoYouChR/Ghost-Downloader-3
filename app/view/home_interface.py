@@ -5,7 +5,8 @@ import requests
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QFrame
-from qfluentwidgets import SmoothScrollArea, ExpandLayout, TitleLabel
+from loguru import logger
+from qfluentwidgets import SmoothScrollArea, TitleLabel, ExpandLayout
 
 from ..common.tool_hub import getWindowsProxy
 from ..components.system_info_card import SystemInfoCard
@@ -71,7 +72,9 @@ class HomeInterface(SmoothScrollArea):
             _.List = i["List"]
 
             _.TitleLabel.setText(i["Name"])
-            print(f'正在创建CardWidget: {i["Name"]}')
+
+            logger.debug(f'Loading System Card: {i["Name"]}')
+
             # 将字符串转换为字节数据
             data = base64.b64decode(i["Icon"])
 

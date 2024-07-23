@@ -4,14 +4,17 @@ import re
 from pathlib import Path
 from time import sleep
 
-from PySide6.QtCore import QThread, Signal, QFileInfo
+from PySide6.QtCore import QThread, Signal, QFileInfo, Qt, QSize
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QFileIconProvider
+from loguru import logger
 from qfluentwidgets import CardWidget
 
 from .Ui_TaskCard import Ui_TaskCard
 from ..common.download_task import DownloadTask
 from ..common.tool_hub import getWindowsProxy, getReadableSize
+
+from qfluentwidgets import FluentIcon as FIF
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -37,8 +40,9 @@ proxy = getWindowsProxy()
 
 
 class TaskCard(CardWidget, Ui_TaskCard):
-
-    def __init__(self, url, path, maxBlockNum: int, pixmap: QPixmap = None, name: str = None, parent=None,
+    # removeTaskSignal = Signal(int, bool)
+    def __init__(self, url, path, maxBlockNum: int, pixmap: QPixmap = None, name: str = None, status: str = "working",
+                 parent=None,
                  autoCreated=False):
         super().__init__(parent=parent)
 
@@ -49,18 +53,41 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.url = url
         self.filePath = path
         self.maxBlockNum = maxBlockNum
+        self.status = status  # working paused finished canceled
+
+        # self.number = number
+
+        def _(progress: str):  # 用于赋值
+            self.lastProcess = int(progress)
 
         if name:
-            self.task = DownloadTask(url, maxBlockNum, path, name)
             self.fileName = name
-        else:
-            self.task = DownloadTask(url, maxBlockNum, path)
-            self.fileName = self.task.fileName
+
+        if not self.status == "finished":  # 不是已完成的任务才要进行的操作
+            if name:
+                self.task = DownloadTask(url, maxBlockNum, path, name)
+            else:
+                self.task = DownloadTask(url, maxBlockNum, path)
+                self.fileName = self.task.fileName
+
+            self.task.refreshLastProgress.connect(_)
+            self.task.processChange.connect(self.__changeInfo)
+            self.task.taskFinished.connect(self.taskFinished)
+
+        elif self.status == "finished":
+            self.taskFinished()
 
         if not pixmap:
-            pixmap = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+            # TODO 超分辨率触发条件
+            # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(91, 91, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+            #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
 
-        self.paused = False
+
+            if _:
+                pixmap = _
+            else:
+                pixmap = QPixmap(":/image/logo.png")
 
         self.lastProcess = 0
 
@@ -68,94 +95,123 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.TitleLabel.setText(self.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(91, 91)
-        self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
+        # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
 
         # 连接信号到槽
         self.pauseButton.clicked.connect(self.pauseTask)
-        self.cancelButton.clicked.connect(self.cancelTask)
-        self.folderButton.clicked.connect(lambda: os.startfile(self.task.filePath))
-        self.task.processChange.connect(self.__changeInfo)
-        self.task.taskFinished.connect(self.taskFinished)
+        self.delAction.triggered.connect(lambda: self.cancelTask(False))
+        self.completelyDelAction.triggered.connect(lambda: self.cancelTask(True))
+        self.folderButton.clicked.connect(lambda: os.startfile(path))
 
         # 写入未完成任务记录文件，以供下次打开时继续下载
         if not autoCreated:
-            with open("./history", "a", encoding="utf-8") as f:
+            with open("./Ghost Downloader 记录文件", "a", encoding="utf-8") as f:
                 _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                     "blockNum": self.maxBlockNum}
+                     "blockNum": self.maxBlockNum, "status": self.status}
                 f.write(str(_) + "\n")
 
-        # 开始下载
-        self.task.start()
+        if self.status == "working":
+            # 开始下载
+            self.task.start()
+        elif self.status == "paused":
+            self.pauseButton.setIcon(FIF.PLAY)
 
     def pauseTask(self):
-        if not self.paused:  # 暂停
+        if self.status == "working":  # 暂停
             self.pauseButton.setDisabled(True)
-            self.pauseButton.setIcon(self.playIcon)
+            self.pauseButton.setIcon(FIF.PLAY)
             for i in self.task.workers:
                 try:
                     i.file.close()
                 except Exception as e:
-                    print(f"似乎无法关闭线程{i.id}对文件的占用, 错误信息: {e}")
+                    logger.error(
+                        f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
                 i.terminate()
             self.task.terminate()
+
+            # 改变记录状态
+            with open("./Ghost Downloader 记录文件", "r", encoding="utf-8") as f:
+                _ = f.read()
+
+            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
+                          str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": "paused"}) + "\n")
+
+            with open("./Ghost Downloader 记录文件", "w", encoding="utf-8") as f:
+                f.write(_)
+
             self.speedLable.setText("任务已经暂停")
-            self.paused = True
+            self.status = "paused"
             self.pauseButton.setEnabled(True)
 
-        else:  # 继续
+        elif self.status == "paused":  # 继续
             self.pauseButton.setDisabled(True)
-            self.pauseButton.setIcon(self.pauseIcon)
+            self.pauseButton.setIcon(FIF.PAUSE)
             self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath, self.fileName)
             self.task.start()
             self.task.processChange.connect(self.__changeInfo)
+
+            # 改变记录状态
+            with open("./Ghost Downloader 记录文件", "r", encoding="utf-8") as f:
+                _ = f.read()
+
+            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
+                          str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": "working"}) + "\n")
+
+            with open("./Ghost Downloader 记录文件", "w", encoding="utf-8") as f:
+                f.write(_)
+
             self.speedLable.setText("任务正在开始")
-            self.paused = False
+            self.status = "working"
             self.pauseButton.setEnabled(True)
 
-    def cancelTask(self):
+    def cancelTask(self, completely: bool = False):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
 
-        for i in self.task.workers:
-            try:
-                i.file.close()
-            except Exception as e:
-                print(f"似乎无法关闭线程{i.id}对文件的占用, 错误信息: {e}")
-            i.terminate()
-        self.task.terminate()
+        if self.status == "working":
+            self.pauseTask()
 
-        # 删除文件
-        tryCount = 0
-        isDeleted = False
-        while not isDeleted and tryCount < 3:
-            try:
-                Path(f"{self.filePath}/{self.fileName}").unlink()
-                Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-                print("删除成功！")
+        if completely:
+            # 删除文件
+            tryCount = 0
+            isDeleted = False
+            while not isDeleted and tryCount < 3:
+                try:
+                    Path(f"{self.filePath}/{self.fileName}").unlink()
+                    Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+                    logger.info(f"self:{self.fileName}, delete file successfully!")
 
-                # 删除记录文件
-                with open("./history", "r", encoding="utf-8") as f:
-                    _ = f.read()
+                    isDeleted = True
+                    tryCount = 5
 
-                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum}) + "\n", "")
+                except FileNotFoundError:
+                    isDeleted = True
+                    tryCount = 5
+                except Exception as e:
+                    logger.error(f"Task:{self.fileName}, it seems that cannot delete file, error: {e}")
+                    tryCount += 1
 
-                with open("./history", "w", encoding="utf-8") as f:
-                    f.write(_)
+                sleep(0.1)
 
-                isDeleted = True
-                tryCount = 5
+        # 删除记录文件
+        with open("./Ghost Downloader 记录文件", "r", encoding="utf-8") as f:
+            _ = f.read()
 
-            except FileNotFoundError:
-                isDeleted = True
-                tryCount = 5
-            except Exception as e:
-                print(f"似乎无法删除文件, 错误信息: {e}")
-                tryCount += 1
+        _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                           "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
 
-            sleep(0.1)
+        with open("./Ghost Downloader 记录文件", "w", encoding="utf-8") as f:
+            f.write(_)
 
-        self.deleteLater()
+        self.status = "canceled"
+
+        self.parent().parent().parent().expandLayout.removeWidget(self)
+
+        self.hide()
 
     def __changeInfo(self, content: str):
 
@@ -172,35 +228,41 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def taskFinished(self):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
-        self.speedLable.setText("下载完成！正在校验MD5...")
+        self.speedLable.setText("任务已经完成")
 
-        # 尝试删除历史文件
-        tryCount = 0
-        isDeleted = False
+        if not self.status == "finished":  # 不是自动创建的已完成任务
+            # 改变记录状态
+            with open("./Ghost Downloader 记录文件", "r", encoding="utf-8") as f:
+                _ = f.read()
 
-        while not isDeleted and tryCount <= 3:
-            try:
-                # 删除记录文件
-                with open("./history", "r", encoding="utf-8") as f:
-                    _ = f.read()
+            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
+                          str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": "finished"}) + "\n")
 
-                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum}) + "\n", "")
+            with open("./Ghost Downloader 记录文件", "w", encoding="utf-8") as f:
+                f.write(_)
 
-                with open("./history", "w", encoding="utf-8") as f:
-                    f.write(_)
+            # 再获取一次图标
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+            if _:
+                pass
+            else:
+                _ = QPixmap(":/image/logo.png")
+            self.LogoPixmapLabel.setPixmap(_)
+            self.LogoPixmapLabel.setFixedSize(91, 91)
 
-                isDeleted = True
-                tryCount = 5
-            except FileNotFoundError:
-                isDeleted = True
-                tryCount = 5
-            except Exception as e:
-                print(f"似乎无法删除文件, 错误信息: {e}")
-                tryCount += 1
+        self.status = "finished"
 
-            sleep(0.1)
+        # 将暂停按钮改成校验按钮
+        self.pauseButton.setIcon(FIF.UPDATE)
+        self.pauseButton.clicked.connect(self.runClacTask)
+        self.pauseButton.setDisabled(False)
+        self.cancelButton.setDisabled(False)
 
+
+    def runClacTask(self):
+        self.speedLable.setText("正在校验MD5...")
         self.clacTask = ClacMD5Thread(f"{self.filePath}/{self.fileName}")
         self.clacTask.returnMD5.connect(lambda x: self.speedLable.setText(f"校验完成！文件的MD5值是：{x}"))
         self.clacTask.start()

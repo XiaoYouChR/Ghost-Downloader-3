@@ -65,7 +65,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.logTextEdit = TextEdit(self.versionGroup)
         self.logTextEdit.setReadOnly(True)
-        self.logTextEdit.setMinimumHeight(100)
+        self.logTextEdit.setMinimumHeight(140)
         self.logTextEdit.setText(self.list[0]["Log"])
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.logTextEdit.setSizePolicy(sizePolicy)
@@ -140,7 +140,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         signalBus.addTaskSignal.emit(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
                                      str(path), self.blockNumCard.configItem.value,
-                                     "", None, False)
+                                     "", "working", None, False)
         self.close()
 
     def __onDownloadFolderCardClicked(self):
