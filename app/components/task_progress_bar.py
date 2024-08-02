@@ -19,5 +19,8 @@ class TaskProgressBar(QWidget):
             self.HBoxLayout.addWidget(_)
             self.progressBarList.append(_)
 
-    def changeValue(self, index: int, value: int):
-        self.progressBarList[index].setValue(value)
+    def addProgressBar(self):
+        _ = ProgressBar(self)
+        self.HBoxLayout.addWidget(_)
+        self.progressBarList.append(_)
+        self.blockNum += 1

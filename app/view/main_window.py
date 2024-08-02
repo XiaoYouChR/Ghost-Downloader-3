@@ -136,10 +136,10 @@ class MainWindow(MSFluentWindow):
                     try:
                         j.file.close()
                     except AttributeError as e:
-                        logger.info(f"Task:{self.fileName}, users operate too quickly!, thread {i} error: {e}")
+                        logger.info(f"Task:{i.task.fileName}, users operate too quickly!, thread {i} error: {e}")
                     except Exception as e:
                         logger.warning(
-                            f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
+                            f"Task:{i.task.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
                     j.terminate()
                 i.task.terminate()
 

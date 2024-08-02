@@ -8,7 +8,7 @@ import requests
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
-from app.common.tool_hub import getWindowsProxy
+from app.common.tool_hub import getWindowsProxy, getReadableSize
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -29,7 +29,7 @@ urlRe = re.compile(r"^" +
                    "(?:/\\S*)?" +
                    "$", re.IGNORECASE)
 
-MAX_REASSIGN_SIZE = 30*1024*1024  # 30M
+MAX_REASSIGN_SIZE = 15*1024*1024  # 15M
 
 def getRealUrl(url: str):
     try:
@@ -73,7 +73,7 @@ class DownloadTask(QThread):
 
     refreshLastProgress = Signal(str)  # 用于读取历史记录后刷新进度
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
-    processChange = Signal(list)  # 目前进度 3.2版本引进了分段式进度条
+    workerInfoChange = Signal(list)  # 目前进度 3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
 
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
@@ -133,6 +133,41 @@ class DownloadTask(QThread):
         self.maxBlockNum = maxBlockNum
         self.workers: list[DownloadWorker] = []
 
+    def __reassignWorker(self):
+
+        # 找到剩余进度最多的线程
+        maxRemainder = 0
+        maxRemainderWorker: DownloadWorker = None
+
+        for i in self.workers:
+            if (i.endPos - i.process) > maxRemainder:  # TODO 其实逻辑有一点问题, 但是影响不大
+                maxRemainderWorkerProcess = i.process
+                maxRemainderWorkerEnd = i.endPos
+                maxRemainder = (maxRemainderWorkerEnd - maxRemainderWorkerProcess)
+                maxRemainderWorker = i
+
+        if maxRemainderWorker and maxRemainder > MAX_REASSIGN_SIZE:
+            # 平均分配工作量
+            baseShare = maxRemainder // 2
+            remainder = maxRemainder % 2
+
+
+            maxRemainderWorker.endPos = maxRemainderWorkerProcess + baseShare + remainder  # 直接修改好像也不会怎么样
+
+            # 安配新的工人
+            s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
+
+            _ = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.url, self.filePath,
+                               self.fileName)
+            _.workerFinished.connect(self.__reassignWorker)
+            _.start()
+            self.workers.insert(self.workers.index(maxRemainderWorker) + 1, _)
+
+            logger.info(f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{_}，新线程的StartPos：{s_pos}")
+
+        else:
+            logger.info(f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
+
     def clacDivisionalRange(self):
         step = self.fileSize // self.maxBlockNum  # 每块大小
         arr = list(range(0, self.fileSize, step))
@@ -157,7 +192,7 @@ class DownloadTask(QThread):
         if not self.ableToParallelDownload:
             self.maxBlockNum = 1
         # 读取历史记录
-        # 历史记录.ghd文件采用格式示例: [{"id": 0, "start": 0, "process": 0, "end": 100, }, {"id": 1, "start": 101, "process": 111, "end": 200}]
+        # 历史记录.ghd文件采用格式示例: ["start": 0, "process": 0, "end": 100, }, {"start": 101, "process": 111, "end": 200}]
         if Path(f"{self.filePath}/{self.fileName}.ghd").exists():
             try:
                 with open(f"{self.filePath}/{self.fileName}.ghd", "r", encoding="utf-8") as f:
@@ -165,7 +200,7 @@ class DownloadTask(QThread):
                     logger.debug(f"Task:{self.fileName}, history info is: {workersInfo}")
                     for i in workersInfo:
                         self.workers.append(
-                            DownloadWorker(i["id"], i["start"], i["process"], i["end"], self.url, self.filePath,
+                            DownloadWorker(i["start"], i["process"], i["end"], self.url, self.filePath,
                                            self.fileName))
 
                 self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
@@ -174,33 +209,35 @@ class DownloadTask(QThread):
                 for i in range(self.maxBlockNum):
                     stepList = self.clacDivisionalRange()
                     self.workers.append(
-                        DownloadWorker(i, stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
+                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
                                        self.fileName))
         else:
             for i in range(self.maxBlockNum):
                 stepList = self.clacDivisionalRange()
                 self.workers.append(
-                    DownloadWorker(i, stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
+                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
                                    self.fileName))
 
         for i in self.workers:
-            logger.debug(f"Task {self.fileName}, starting the thread {i.id}...")
+            logger.debug(f"Task {self.fileName}, starting the thread {i}...")
+            i.workerFinished.connect(self.__reassignWorker)
             i.start()
 
         # fileResolve = Path(f"{self.filePath}/{self.fileName}")
         # 实时统计进度并写入历史记录文件
-        while not sum(self.process) == self.fileSize:
+        while not self.process == self.fileSize:
             with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
-                f.write(str([{"id": i.id, "start": i.startPos, "process": i.process, "end": i.endPos} for i in
-                             self.workers]))
+                info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
+                f.write(str(info))
                 f.flush()
 
             # self.process = os.path.getsize(fileResolve)
             # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
             # self.processChange.emit(str(self.process))
 
-            self.process = [i.process - i.startPos + 1 for i in self.workers]
-            self.processChange.emit(self.process)
+            self.process = sum([i.process - i.startPos + 1 for i in self.workers])
+
+            self.workerInfoChange.emit(info)
 
             # print(self.process, self.fileSize)
 
@@ -223,9 +260,8 @@ class DownloadWorker(QThread):
 
     workerFinished = Signal()  # 内置的信号不好用
 
-    def __init__(self, id, start, process, end, url, filePath, fileName, parent=None):
+    def __init__(self, start, process, end, url, filePath, fileName, parent=None):
         super().__init__(parent)
-        self.id = id
         self.startPos = start
         self.process = process
         self.endPos = end
@@ -247,6 +283,8 @@ class DownloadWorker(QThread):
                     self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
                     self.file.seek(self.process)
                     for chunk in res.iter_content(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
+                        if self.endPos <= self.process:
+                            break
                         if chunk:
                             self.file.write(chunk)
                             self.process += 65536
@@ -262,7 +300,7 @@ class DownloadWorker(QThread):
                     finished = True
 
                 except Exception as e:
-                    logger.info(f"Task: {self.fileName}, Thread {self.id} is reconnecting to the server, Error: {e}")
+                    logger.info(f"Task: {self.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
 
                     try:
                         self.file.close()

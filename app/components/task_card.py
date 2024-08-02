@@ -55,6 +55,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.filePath = path
         self.maxBlockNum = maxBlockNum
         self.status = status  # working paused finished canceled
+        self.lastProcess = 0
 
         # self.number = number
         self.progressBar = TaskProgressBar(maxBlockNum, self)
@@ -76,7 +77,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.fileName = self.task.fileName
 
             self.task.refreshLastProgress.connect(_)
-            self.task.processChange.connect(self.__changeInfo)
+            self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
 
         elif self.status == "finished":
@@ -93,8 +94,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 pixmap = _
             else:
                 pixmap = QPixmap(":/image/logo.png")
-
-        self.lastProcess = 0
 
         # 显示信息
         self.TitleLabel.setText(self.fileName)
@@ -129,7 +128,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 try:
                     i.file.close()
                 except Exception as e:
-                    logger.error(
+                    logger.warning(
                         f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
                 i.terminate()
             self.task.terminate()
@@ -155,7 +154,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PAUSE)
             self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath, self.fileName)
             self.task.start()
-            self.task.processChange.connect(self.__changeInfo)
+            self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
 
             # 改变记录状态
@@ -220,19 +219,26 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.hide()
 
     def __changeInfo(self, content: list):
-
+        # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题
         # process = int(content)
+        _ = len(content) - self.progressBar.blockNum
+        if _:
+            for i in range(_):
+                self.progressBar.addProgressBar()
 
-        process = sum(content)
+        process = 0
+
+
+        for e, i in enumerate(content):
+            process += i["process"] - i["start"]
+            self.progressBar.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
+            self.progressBar.progressBarList[e].setValue( ( (i["process"] - i["start"]) / (i["end"] - i["start"]) ) * 100)
+
         duringLastSecondProcess = process - self.lastProcess
 
         self.speedLable.setText(f"{getReadableSize(duringLastSecondProcess)}/s")
         self.processLabel.setText(f"{getReadableSize(process)}/{getReadableSize(self.task.fileSize)}")
         # self.ProgressBar.setValue((process / self.task.fileSize) * 100)
-
-        for e, i in enumerate(content):
-            self.progressBar.changeValue(e, (i / (self.task.workers[e].endPos - self.task.workers[e].startPos) ) * 100)
-
 
         self.lastProcess = process
 
