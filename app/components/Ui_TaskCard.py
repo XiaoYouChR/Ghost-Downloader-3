@@ -118,11 +118,6 @@ class Ui_TaskCard(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
-        self.ProgressBar = ProgressBar(TaskCard)
-        self.ProgressBar.setObjectName(u"ProgressBar")
-
-        self.verticalLayout.addWidget(self.ProgressBar)
-
         self.horizontalLayout_3.addLayout(self.verticalLayout)
 
         # 初始化 Icon 类

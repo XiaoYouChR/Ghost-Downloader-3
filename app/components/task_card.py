@@ -11,6 +11,7 @@ from loguru import logger
 from qfluentwidgets import CardWidget
 
 from .Ui_TaskCard import Ui_TaskCard
+from .task_progress_bar import TaskProgressBar
 from ..common.download_task import DownloadTask
 from ..common.tool_hub import getWindowsProxy, getReadableSize
 
@@ -56,6 +57,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.status = status  # working paused finished canceled
 
         # self.number = number
+        self.progressBar = TaskProgressBar(maxBlockNum, self)
+        self.progressBar.setObjectName(u"progressBar")
+
+        self.verticalLayout.addWidget(self.progressBar)
 
         def _(progress: str):  # 用于赋值
             self.lastProcess = int(progress)
@@ -151,6 +156,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath, self.fileName)
             self.task.start()
             self.task.processChange.connect(self.__changeInfo)
+            self.task.taskFinished.connect(self.taskFinished)
 
             # 改变记录状态
             with open("./Ghost Downloader 记录文件", "r", encoding="utf-8") as f:
@@ -213,15 +219,20 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.hide()
 
-    def __changeInfo(self, content: str):
+    def __changeInfo(self, content: list):
 
-        process = int(content)
+        # process = int(content)
 
+        process = sum(content)
         duringLastSecondProcess = process - self.lastProcess
 
         self.speedLable.setText(f"{getReadableSize(duringLastSecondProcess)}/s")
         self.processLabel.setText(f"{getReadableSize(process)}/{getReadableSize(self.task.fileSize)}")
-        self.ProgressBar.setValue((process / self.task.fileSize) * 100)
+        # self.ProgressBar.setValue((process / self.task.fileSize) * 100)
+
+        for e, i in enumerate(content):
+            self.progressBar.changeValue(e, (i / (self.task.workers[e].endPos - self.task.workers[e].startPos) ) * 100)
+
 
         self.lastProcess = process
 

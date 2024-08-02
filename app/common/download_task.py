@@ -29,6 +29,7 @@ urlRe = re.compile(r"^" +
                    "(?:/\\S*)?" +
                    "$", re.IGNORECASE)
 
+MAX_REASSIGN_SIZE = 30*1024*1024  # 30M
 
 def getRealUrl(url: str):
     try:
@@ -68,8 +69,11 @@ def getRealUrl(url: str):
 
 
 class DownloadTask(QThread):
-    refreshLastProgress = Signal(str) # 用于读取历史记录后刷新进度
-    processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
+    """作用相当于包工头"""
+
+    refreshLastProgress = Signal(str)  # 用于读取历史记录后刷新进度
+    # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
+    processChange = Signal(list)  # 目前进度 3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
 
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
@@ -122,7 +126,7 @@ class DownloadTask(QThread):
         # 创建空文件
         Path(f"{filePath}/{fileName}").touch()
 
-        self.process = 0
+        self.process = []
         self.url = url
         self.fileName = fileName
         self.filePath = filePath
@@ -183,23 +187,24 @@ class DownloadTask(QThread):
             logger.debug(f"Task {self.fileName}, starting the thread {i.id}...")
             i.start()
 
-
-        fileResolve = Path(f"{self.filePath}/{self.fileName}")
+        # fileResolve = Path(f"{self.filePath}/{self.fileName}")
         # 实时统计进度并写入历史记录文件
-        while not self.process == self.fileSize:
+        while not sum(self.process) == self.fileSize:
             with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
-                f.write(str([{"id": i.id, "start": i.startProcess, "process": i.process, "end": i.end} for i in
+                f.write(str([{"id": i.id, "start": i.startPos, "process": i.process, "end": i.endPos} for i in
                              self.workers]))
                 f.flush()
 
             # self.process = os.path.getsize(fileResolve)
-            self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
-            self.processChange.emit(str(self.process))
+            # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
+            # self.processChange.emit(str(self.process))
+
+            self.process = [i.process - i.startPos + 1 for i in self.workers]
+            self.processChange.emit(self.process)
 
             # print(self.process, self.fileSize)
 
             sleep(1)
-
 
         # 删除历史记录文件
         try:
@@ -214,44 +219,57 @@ class DownloadTask(QThread):
 
 
 class DownloadWorker(QThread):
+    """只能出卖劳动力的最底层工作者"""
+
+    workerFinished = Signal()  # 内置的信号不好用
+
     def __init__(self, id, start, process, end, url, filePath, fileName, parent=None):
         super().__init__(parent)
         self.id = id
-        self.startProcess = start
+        self.startPos = start
         self.process = process
-        self.end = end
+        self.endPos = end
         self.url = url
         self.filePath = filePath
         self.fileName = fileName
 
     def run(self):
-        finished = False
-        while not finished:
-            try:
-                download_headers = {"Range": f"bytes={self.process}-{self.end}",
-                                    "User-Agent": Headers["User-Agent"]}
+        if self.process < self.endPos:  # 因为可能会创建空线程
+            finished = False
+            while not finished:
+                try:
+                    download_headers = {"Range": f"bytes={self.process}-{self.endPos}",
+                                        "User-Agent": Headers["User-Agent"]}
 
-                res = requests.get(self.url, headers=download_headers, proxies=getWindowsProxy(), stream=True,
-                                   timeout=60)
+                    res = requests.get(self.url, headers=download_headers, proxies=getWindowsProxy(), stream=True,
+                                       timeout=60)
 
-                self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
-                self.file.seek(self.process)
-                for chunk in res.iter_content(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
-                    if chunk:
-                        self.file.write(chunk)
-                        self.process += 65536
+                    self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
+                    self.file.seek(self.process)
+                    for chunk in res.iter_content(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
+                        if chunk:
+                            self.file.write(chunk)
+                            self.process += 65536
 
-                if self.process >= self.end:
-                    self.process = self.end
+                    if self.process >= self.endPos:
+                        self.process = self.endPos
 
-                self.file.close()
-                finished = True
+                    try:
+                        self.file.close()
+                    except:
+                        pass
 
-            except Exception as e:
-                self.file.close()
-                logger.info(f"Task: {self.fileName}, Thread {self.id} is reconnecting to the server, Error: {e}")
-                sleep(5)
+                    finished = True
 
+                except Exception as e:
+                    logger.info(f"Task: {self.fileName}, Thread {self.id} is reconnecting to the server, Error: {e}")
 
-        self.process = self.end
+                    try:
+                        self.file.close()
+                    except:
+                        pass
 
+                    sleep(5)
+
+            self.process = self.endPos
+            self.workerFinished.emit()
