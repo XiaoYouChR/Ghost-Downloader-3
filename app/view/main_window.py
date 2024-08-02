@@ -14,6 +14,7 @@ from .task_interface import TaskInterface
 from ..common.signal_bus import signalBus
 from ..components.add_task_option_dialog import AddTaskOptionDialog
 
+
 class ThemeChangedListener(QThread):
     themeChanged = Signal(str)
     def __init__(self, parent=None):
@@ -94,7 +95,7 @@ class MainWindow(MSFluentWindow):
     def initWindow(self):
         self.resize(960, 780)
         self.setWindowIcon(QIcon(':/image/logo.png'))
-        self.setWindowTitle('幽灵下载器')
+        self.setWindowTitle('Ghost Downloader')
 
         # create splash screen
         self.splashScreen = SplashScreen(self.windowIcon(), self)
@@ -110,7 +111,7 @@ class MainWindow(MSFluentWindow):
     def showInfoMessageBox(self):
         w = MessageBox(
             'About',
-            'Version 3.1.0\n© 2024 XiaoYouChR',
+            'Version 3.1.1\n© 2024 XiaoYouChR',
             self
         )
         w.yesButton.setText('了解作者')
@@ -134,8 +135,10 @@ class MainWindow(MSFluentWindow):
                 for j in i.task.workers:
                     try:
                         j.file.close()
+                    except AttributeError as e:
+                        logger.info(f"Task:{self.fileName}, users operate too quickly!, thread {i} error: {e}")
                     except Exception as e:
-                        logger.error(
+                        logger.warning(
                             f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
                     j.terminate()
                 i.task.terminate()

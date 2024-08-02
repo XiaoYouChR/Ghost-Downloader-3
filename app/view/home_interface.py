@@ -4,12 +4,13 @@ import json
 import requests
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QWidget, QFrame
+from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout
 from loguru import logger
-from qfluentwidgets import SmoothScrollArea, TitleLabel, ExpandLayout
+from qfluentwidgets import ScrollArea, TitleLabel, ExpandLayout
 
 from ..common.tool_hub import getWindowsProxy
 from ..components.system_info_card import SystemInfoCard
+
 
 class getInfoThread(QThread):
     gotInfo = Signal(list)
@@ -27,7 +28,7 @@ class getInfoThread(QThread):
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
             proxies=getWindowsProxy()).content)["OS"])
 
-class HomeInterface(SmoothScrollArea):
+class HomeInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -49,7 +50,7 @@ class HomeInterface(SmoothScrollArea):
         self.setFrameShape(QFrame.NoFrame)
         self.scrollWidget = QWidget()
         self.scrollWidget.setMinimumWidth(816)
-        self.expandLayout = ExpandLayout(self.scrollWidget)
+        self.expandLayout = QVBoxLayout(self.scrollWidget)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.loadingLabel = TitleLabel("正在加载", self.scrollWidget)
         self.loadingLabel.setObjectName("noTaskLabel")

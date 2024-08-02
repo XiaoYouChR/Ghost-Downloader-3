@@ -1,19 +1,15 @@
-from pathlib import Path
-from time import sleep
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy
-from loguru import logger
-from qfluentwidgets import SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, ExpandLayout, SplitPushButton, \
-    RoundMenu, Action, InfoBar, InfoBarPosition
 from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import ScrollArea, TitleLabel, PrimaryPushButton, PushButton, ExpandLayout, SplitPushButton, \
+    RoundMenu, Action, InfoBar, InfoBarPosition
 
 from ..common.signal_bus import signalBus
 from ..components.task_card import TaskCard
 
 
-class TaskInterface(SmoothScrollArea):
+class TaskInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -70,7 +66,7 @@ class TaskInterface(SmoothScrollArea):
 
         self.allPauseButton = PushButton(self.toolsBar)
         self.allPauseButton.setObjectName(u"allPauseButton")
-        self.allPauseButton.setIcon(FIF.PAUSE)
+        self.allPauseButton.setIcon(FIF.STOP_WATCH)
         self.horizontalLayout.addWidget(self.allPauseButton)
 
         self.allDeleteButton = SplitPushButton(self.toolsBar)

@@ -31,8 +31,8 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.widget.setLayout(self.VBoxLayout)
 
-        self.widget.setMinimumSize(510, 510)
-        self.widget.setMaximumSize(680, 520)
+        self.widget.setMinimumSize(510, 530)
+        self.widget.setMaximumSize(680, 540)
         if isDarkTheme():
             # C = ThemeColor.DARK_3.color()
             self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:rgb(39,39,39)}")
