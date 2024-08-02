@@ -111,7 +111,7 @@ class MainWindow(MSFluentWindow):
     def showInfoMessageBox(self):
         w = MessageBox(
             'About',
-            'Version 3.1.1\n© 2024 XiaoYouChR',
+            'Version 3.2.0\n© 2024 XiaoYouChR',
             self
         )
         w.yesButton.setText('了解作者')
