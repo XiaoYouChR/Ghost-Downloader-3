@@ -28,12 +28,12 @@
 <details>
   <summary>目录</summary>
   <ol>
-    <li><a href="#about-the-project">关于此项目</a></li>
-    <li><a href="#roadmap">计划</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#关于本项目">关于本项目</a></li>
+    <li><a href="#计划">计划</a></li>
+    <li><a href="#贡献">贡献</a></li>
+    <li><a href="#许可证">许可证</a></li>
+    <li><a href="#联系">联系</a></li>
+    <li><a href="#致谢">致谢</a></li>
   </ol>
 </details>
 
