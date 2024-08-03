@@ -1,4 +1,3 @@
-import os
 import re
 from pathlib import Path
 from time import time, sleep

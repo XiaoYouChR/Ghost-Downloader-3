@@ -4,18 +4,17 @@ import re
 from pathlib import Path
 from time import sleep
 
-from PySide6.QtCore import QThread, Signal, QFileInfo, Qt, QSize
+from PySide6.QtCore import QThread, Signal, QFileInfo
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 from qfluentwidgets import CardWidget
+from qfluentwidgets import FluentIcon as FIF
 
 from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
 from ..common.download_task import DownloadTask
 from ..common.tool_hub import getWindowsProxy, getReadableSize
-
-from qfluentwidgets import FluentIcon as FIF
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}

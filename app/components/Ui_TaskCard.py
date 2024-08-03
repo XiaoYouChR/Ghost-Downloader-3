@@ -9,12 +9,10 @@
 ################################################################################
 
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
-from PySide6.QtGui import (QIcon)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QSpacerItem,
                                QVBoxLayout)
 
-from qfluentwidgets import (BodyLabel, PixmapLabel, ProgressBar,
-                            TitleLabel, ToolButton, PrimaryToolButton, DropDownToolButton, RoundMenu, Action)
+from qfluentwidgets import (BodyLabel, PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton, DropDownToolButton, RoundMenu, Action)
 
 from qfluentwidgets import FluentIcon as FIF
 

@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout
 from loguru import logger
-from qfluentwidgets import ScrollArea, TitleLabel, ExpandLayout
+from qfluentwidgets import ScrollArea, TitleLabel
 
 from ..common.tool_hub import getWindowsProxy
 from ..components.system_info_card import SystemInfoCard

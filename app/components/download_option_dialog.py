@@ -87,7 +87,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         # Choose Threading Card
         self.blockNumCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", 24, RangeValidator(1, 128)),
+            RangeConfigItem("Material", "AcrylicBlurRadius", 24, RangeValidator(1, 256)),
             FIF.CHAT,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',

@@ -3,26 +3,24 @@ import ctypes
 import sys
 import time
 import warnings
-import win32gui
 
 import darkdetect
-from loguru import logger
-
-# noinspection PyUnresolvedReferences
-import Res_rc
-
+import win32gui
 from PySide6.QtCore import Qt, QSharedMemory
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication
+from loguru import logger
 from qfluentwidgets import setTheme, Theme, setThemeColor
 
+# noinspection PyUnresolvedReferences
+import Res_rc
 from app.view.main_window import MainWindow
 
 # create application
 shareMemory = QSharedMemory()
 shareMemory.setKey("Ghost Downloader")
 if shareMemory.attach():
-    win32gui.ShowWindow(win32gui.FindWindow("Qt642QWindowIcon", "Ghost Downloader"), 1)
+    win32gui.ShowWindow(win32gui.FindWindow(None, "Ghost Downloader"), 1)
     sys.exit(-1)
 shareMemory.create(1)
 
