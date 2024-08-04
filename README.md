@@ -121,5 +121,5 @@
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
 [license-shield]: https://img.shields.io/github/license/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
-[license-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/blob/master/LICENSE.txt
+[license-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/blob/master/LICENSE
 [product-screenshot]: images/screenshot.png
