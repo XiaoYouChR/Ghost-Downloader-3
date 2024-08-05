@@ -12,6 +12,10 @@ from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from ..common.signal_bus import signalBus
+from ..common.methods import (
+    getSystemPasteboardContent,
+    estimateThreadCount
+)
 
 urlRe = re.compile(r"^" +
                    "((?:https?|ftp)://)" +
@@ -58,6 +62,7 @@ class AddTaskOptionDialog(MaskDialogBase):
 
         self.linkTextEdit = TextEdit(self.linkGroup)
         self.linkTextEdit.setPlaceholderText("添加多个下载链接时, 请确保每行只有一个链接.")
+        self.linkTextEdit.setText(getSystemPasteboardContent())  # 获取系统的粘贴板内容
         self.linkTextEdit.setMinimumHeight(100)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.linkTextEdit.setSizePolicy(sizePolicy)
@@ -97,8 +102,9 @@ class AddTaskOptionDialog(MaskDialogBase):
         )
 
         # Choose Threading Card
+        ByLinkEstimateThreadCount = estimateThreadCount(self.linkTextEdit.toPlainText())
         self.blockNumCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", 24, RangeValidator(1, 256)),
+            RangeConfigItem("Material", "AcrylicBlurRadius", ByLinkEstimateThreadCount, RangeValidator(1, 256)),
             FIF.CHAT,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',
@@ -135,6 +141,8 @@ class AddTaskOptionDialog(MaskDialogBase):
         self.yesButton.clicked.connect(self.startTask)
 
         self.linkTextEdit.textChanged.connect(self.__onLinkTextChanged)
+        # 提前对链接进行检查一次
+        self.__processTextChange()
 
     def startTask(self):
         path = Path(self.downloadFolderCard.contentLabel.text())
