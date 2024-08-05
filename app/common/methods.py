@@ -1,12 +1,14 @@
 import time
-import requests
 from typing import Union
+
+import requests
 from loguru import logger
 from PySide6.QtGui import QGuiApplication
+
 from .download_task import urlRe
+from .tool_hub import getReadableSize
 
 
-url = "https://www.pymili-blog.icu/static/MyFlowingFireflyWife/setup/beta-v0.3/MyFlowingFireflyWife-beta-v0.3-win11-pyinstaller.zip"
 def getResponseTime(_url: str, _headers: Union[dict, None] = None) -> float:
     """
     通过`requests.head`请求，获取链接响应时间。``（保留一位小数）``
@@ -35,24 +37,19 @@ def getResponseTime(_url: str, _headers: Union[dict, None] = None) -> float:
 
 def estimateThreadCount(_url: str, _headers: Union[dict, None] = None) -> int:
     """
-    通过
+    通过`_url`获取适当线程数，``需发送requests.head请求``
+
+    Params:
+        _url: str                   | 链接
+        _headers: Union[dict, None] | 请求头
+    
+    Returns:
+        int
     """
     count = 24
     if urlRe.search(_url) is None:
         return count
 
-    def unit(_bytes: int) -> str:
-        """根据字节数返回适当的单位"""
-        if _bytes < 1024:
-            return "B"
-        elif _bytes < 1024**2:
-            return "KB"
-        elif _bytes < 1024**3:
-            return "MB"
-        elif _bytes < 1024**4:
-            return "GB"
-        else:
-            return "TB"
     try:
         responseTime = getResponseTime(_url, _headers)
         with requests.head(url=_url, headers=_headers) as response:
@@ -64,7 +61,7 @@ def estimateThreadCount(_url: str, _headers: Union[dict, None] = None) -> int:
         logger.warning(e)
         return count
             
-    contentLengthUnit = unit(int(contentLength))
+    contentLengthUnit = getReadableSize(int(contentLength), is_unit=True)
     # 延迟高，且文件大
     if responseTime > 1.0 and contentLengthUnit == "GB":
         count = 16

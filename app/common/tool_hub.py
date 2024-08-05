@@ -33,11 +33,25 @@ def getWindowsProxy():
         }
 
 
-def getReadableSize(size):
+def getReadableSize(size: float, is_unit: bool = False) -> str:
+    """
+    获取可读大小，`输出格式可选unit`。
+
+    Params:
+        size: float | 大小
+        is_unit: bool | 是否仅以单位输出 `default: False`
+    
+    Returns:
+        str
+    """
     units = ["B", "KB", "MB", "GB", "TB", "PB"]
     unit_index = 0
     K = 1024.0
     while size >= K:
         size = size / K
         unit_index += 1
-    return "%.2f %s" % (size, units[unit_index])
+    
+    if not is_unit:
+        return "%.2f %s" % (size, units[unit_index])
+    else:
+        return units[unit_index]
