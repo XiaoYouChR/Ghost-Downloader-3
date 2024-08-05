@@ -1,0 +1,28 @@
+name: Windows Python 3.11 Run
+
+on:
+  push:
+    branches: 
+      - main
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt  # 请替换为您的依赖文件路径
+
+    - name: Run Python script
+      run: echo "运行脚本"
