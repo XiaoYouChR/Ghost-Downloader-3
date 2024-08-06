@@ -11,11 +11,11 @@
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
 
-A multithread downloader. 
+一款多线程下载器
 
-[Report Issue](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=bug&template=bug-report---.md)
+[汇报问题](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=bug&template=bug-report---.md)
  | 
-[Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=enhancement&template=feature-request---.md)
+[请求功能](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=enhancement&template=feature-request---.md)
 
 </center>
 
@@ -32,9 +32,9 @@ A multithread downloader.
 
 <!-- SHOWCASE -->
 <details>
-<summary>Showcase</summary>
+<summary>展示</summary>
 
-> Downloading _SparkleOS_ mirror image. 
+> 下载 _SparkleOS_ 镜像. 
 [![Screenshot0](media/screenshot0.png)](https://space.bilibili.com/437313511)
 
 </details>
@@ -42,7 +42,7 @@ A multithread downloader.
 
 <!-- TABLE OF CONTENTS -->
 <details>
-<summary>Table of Contents</summary>
+<summary>目录</summary>
 
 [TOC]
 
@@ -50,82 +50,82 @@ A multithread downloader.
 
 
 <!-- INSTALL -->
-## Install
+## 安装
 
-### Package
+### 安装包
 
 #### Windows
-Please go to __Releases__ and download the _EXE_ package. 
+请前往 __Releases__ 下载 _EXE_ 安装包. 
 
 #### Linux / Unix / MacOS
-:construction: None. :construction:
+:construction: 暂无. :construction:
 
-### Manual
-:construction: None. :construction:
+### 手动
+:construction: 暂无. :construction:
 
 
 <!-- USAGE -->
-## Usage
+## 使用
 
-:construction: None. :construction:
+:construction: 暂无. :construction:
 
 
 <!-- ABOUT THE PROJECT -->
-## About the project
+## 关于本项目
 
-An interest driven __Downloader__, personally first `Python` project :tired_face:, originally made for helping a (_Btuber_? Like the _Bilibili_ version of _Youtuber_?) with resource gathering :dizzy_face:. 
+在兴趣驱动下完成的一个 __下载器__, 是本人的第一个`Python`项目:tired_face:, 本来的目的是帮B站上一位UP主做资源整合的:dizzy_face:. 
 
 <!-- TECHNICAL DETAILS-->
-## TechnicalDetails
+## 技术细节
 
-Multithreading built using `QThread`. 
-__GUI__ built using `PySide6`. 
-Support for __multithread downloading__, __continue broke download__, __download history__, __shasum check__, and more. 
-Features __smart download part__ like `IDM`, but no need to __bind files__. But the :shit: memory allocation of `Python` and `Qt` is a big flaw of this project :sob:. 
+多线程使用`QThread`. 
+使用`PySide6`编写 __GUI__. 
+支持 __多线程下载__, __断点续传__, __下载记录__, __校验文件__ 等功能。
+特点是能像`IDM`一样 __智能分块__ 但又 __不需要合并文件__ . 但是`Python`和`Qt`:shit:一样的内存占用成为项目很大的槽点:sob:. 
 
 
 <!-- ROADMAP -->
-## Roadmap
+## 计划
 
-- [ ] __Global configuration__
-- [ ] More detailed __download info__
-- [ ] __Memory__ enhancement
-    - [ ] Change UI lib
-    - [ ] Use _coroutine_ to replace multithread
+- [ ] __全局设置__
+- [ ] 更详细的 __下载信息__
+- [ ] __内存__ 占用优化
+    - [ ] 更换UI库
+    - [ ] 用 _协程_ 来代替部分多线程功能
 
-Go to [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to check all __Requested Features__ and __Known Issues__. 
+到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被 __请求的功能__ 以及 __已知的问题__. 
 
 
-<!-- CONTRIBUTION -->
-## Contibution
+<!-- CONTRIBUTING -->
+## 贡献
 
-Contributing makes open-source communities a great place to learn, get inspiration and innovate. Every contrib you make is __respected__. 
+贡献让开源社区成为了一个非常适合学习, 启发和创新的地方. 你所做出的任何贡献都是 __受人尊敬__ 的. 
 
-If you have good ideas, please Fork this repo and create a Pull Request. You can also simply create an Issue, and add the "_Enhancement_" tag. 
-Dont forget to give the repo a :star: Star :star:. Thanks again! 
+如果你有好的建议, 请Fork本仓库并且创建一个拉取请求Pull Request. 你也可以简单地创建一个议题Issue, 并且添加标签"_Enhancement_". 
+不要忘记给项目点一个 :star: Star :star: 再次感谢! 
 
-1. `Fork` this repo
-2. Create your own Feature branch
+1. `Fork`本项目
+2. 创建你的 Feature 分支
 `git checkout -b feature/AmazingFeature`
-3. Commit your changes
+3. 提交你的变更
 `git commit -m 'Add some AmazingFeature'`
-4. Push to this branch
+4. 推送到该分支
 `git push origin feature/AmazingFeature`
-5. Create a `Pull Request`
+5. 创建一个`Pull Request`
 
 
 <!-- CONTACT -->
-## Contact
+## 联系
 
 - Bilibili  [@晓游ChR](https://space.bilibili.com/437313511)
 - Mail      XiaoYouChR@outlook.com
 
 
 <!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
+## 致谢
 
-- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) A very convenient __UI Lib__
-- [D2wnloader](https://github.com/DamageControlStudio/D2wnloader) Referenced code of this repo
+- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 很方便的 __UI库__
+- [D2wnloader](https://github.com/DamageControlStudio/D2wnloader) 参考了此项目的代码
 - [Best-README-Template](https://github.com/othneildrew/Best-README-Template) Best __README__ Template! 
 
 
