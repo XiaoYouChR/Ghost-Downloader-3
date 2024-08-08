@@ -160,8 +160,8 @@ cython_debug/
 #.idea/
 
 # Ghost Downloader 记录文件 / log
-Ghost Downloader 记录文件
-Ghost Downloader 运行日志.log
+.json
+.log
 
 # config cache
 /config
