@@ -1,70 +1,18 @@
 import re
 from pathlib import Path
-from time import time, sleep
-from urllib.parse import urlparse
+from time import sleep
 
 import requests
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
-from app.common.tool_hub import getWindowsProxy, getReadableSize
+from app.common.methods import getWindowsProxy, getReadableSize
+from app.utils.url import UrlUtils
 
-Headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
-
-urlRe = re.compile(r"^" +
-                   "((?:https?|ftp)://)" +
-                   "(?:\\S+(?::\\S*)?@)?" +
-                   "(?:" +
-                   "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
-                   "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
-                   "(\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
-                   "|" +
-                   "((?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)" +
-                   '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
-                   "(\\.([a-z\\u00a1-\\uffff]{2,}))" +
-                   ")" +
-                   "(?::\\d{2,5})?" +
-                   "(?:/\\S*)?" +
-                   "$", re.IGNORECASE)
+Headers = UrlUtils.headers
+urlRe = UrlUtils.urlRe
 
 MAX_REASSIGN_SIZE = 15*1024*1024  # 15M
-
-def getRealUrl(url: str):
-    try:
-        response = requests.head(url=url, headers=Headers, allow_redirects=False, verify=False,
-                                 proxies=getWindowsProxy())
-
-        if response.status_code == 400:  # Bad Requests
-            # TODO 报错处理
-            logger.error("HTTP status code 400, it seems that the url is unavailable")
-            return
-
-        while response.status_code == 302:  # 当302的时候
-            rs = response.headers["location"]  # 获取重定向信息
-            logger.info(f'HTTP status code:302, Headers["Location"] is: {rs}')
-            # 看它返回的是不是完整的URL
-            t = urlRe.search(rs)
-            if t:  # 是的话直接跳转
-                url = rs
-            elif not t:  # 不是在前面加上URL
-                url = re.findall(r"((?:https?|ftp)://[\s\S]*?)/", url)
-                url = url[0] + rs
-
-                logger.info(f"HTTP status code:302, Redirect to {url}")
-
-            response = requests.head(url=url, headers=Headers, allow_redirects=False, verify=False,
-                                     proxies=getWindowsProxy())  # 再访问一次
-
-        return url
-
-    # TODO 报错处理
-    except requests.exceptions.ConnectionError as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
-    except ValueError as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
 
 
 class DownloadTask(QThread):
@@ -79,13 +27,14 @@ class DownloadTask(QThread):
         super().__init__(parent)
 
         # 获取真实URL
-        url = getRealUrl(url)
+        url = UrlUtils.getRealUrl(url, getWindowsProxy())
 
         head = requests.head(url, headers=Headers, proxies=getWindowsProxy()).headers
 
         # 获取文件大小, 判断是否可以分块下载
         if "content-length" not in head:
-            self.fileSize = 0
+            # 如果 文件大小无法获取 则默认1，否则会导致clacDivisionalRange，创建step错误
+            self.fileSize = 1
             self.ableToParallelDownload = False
         else:
             self.fileSize = int(head["content-length"])
@@ -93,26 +42,7 @@ class DownloadTask(QThread):
 
         # 获取文件名
         if not fileName:
-            try:
-                fileName = head["content-disposition"]
-                t = re.findall(r"filename=\"([\s\S]*)\"", fileName)
-                if t:
-                    fileName = t[0]
-                else:
-                    t = re.findall(r"filename=([\s\S]*);", fileName)
-                    fileName = t[0]
-                logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
-            except KeyError or IndexError as e:
-                # 处理没有文件名的情况
-                logger.info(f"获取文件名失败, KeyError or IndexError:{e}")
-                fileName = urlparse(url).path.split('/')[-1]
-                logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
-            except Exception as e:
-                # 什么都 Get 不到的情况
-                logger.info(f"获取文件名失败, Exception:{e}")
-                content_type = head["content-type"].split('/')[-1]
-                fileName = f"downloaded_file{int(time())}.{content_type}"
-                logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+            fileName = UrlUtils.byUrlGetFileName(url, getWindowsProxy())
 
         # 获取文件路径
         if not filePath and Path(filePath).is_dir() == False:

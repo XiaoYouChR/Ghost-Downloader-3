@@ -1,37 +1,96 @@
 import os
 import re
+from typing import Union
 from pathlib import Path
 
-from PySide6.QtCore import Signal, QDir, Qt, QTimer
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
+from loguru import logger
+from PySide6.QtCore import Signal, QDir, Qt, QTimer, QThread
+from PySide6.QtGui import QColor, QGuiApplication
+from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy, QDialog
 from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, RangeConfigItem, RangeValidator, \
     PushButton, PrimaryPushButton, TextEdit, \
     MessageBox, isDarkTheme, InfoBar, InfoBarPosition
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
+from ..common.config import cfg
 from ..common.signal_bus import signalBus
-from ..common.methods import (
-    getSystemPasteboardContent,
-    estimateThreadCount
-)
+from app.common.methods import getWindowsProxy
+from app.utils.url import UrlUtils
 
-urlRe = re.compile(r"^" +
-                   "((?:https?|ftp)://)" +
-                   "(?:\\S+(?::\\S*)?@)?" +
-                   "(?:" +
-                   "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
-                   "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
-                   "(\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
-                   "|" +
-                   "((?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)" +
-                   '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
-                   "(\\.([a-z\\u00a1-\\uffff]{2,}))" +
-                   ")" +
-                   "(?::\\d{2,5})?" +
-                   "(?:/\\S*)?" +
-                   "$", re.IGNORECASE)
+urlRe = UrlUtils.urlRe
+
+
+class GetUrlInformationThread(QThread):
+    information = Signal(dict)
+    def __init__(self, url: str, headers: Union[dict, None] = None):
+        super().__init__()
+        self.url = url
+        self.headers = headers
+
+    def run(self) -> None:
+        result = {}
+        # 以/filename.xxx 结尾的文件，没默认为真实链接
+        if not re.search(r'/(.+)\.\w+$', self.url):
+            # 获取真实URL
+            logger.debug(f"获取: {self.url} 的真实URL")
+            self.url = UrlUtils.getRealUrl(self.url, getWindowsProxy())
+        result["resposeTime"] = UrlUtils.responseTime(self.url)
+        self.information.emit(result)
+
+
+class SystemPasteboardContent(QDialog):
+    """获取剪贴板内容"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        # 获取剪贴板内容，并 检查是否为链接
+        _content = urlRe.search(self.getSystemPasteboardContent())
+        if _content:
+            self.content = _content.group()
+            self.inspectUrl()
+        else:
+            logger.warning("剪贴板内容链接不合法！")
+            InfoBar.warning(
+                title='警告',
+                content="剪贴板内容链接不合法！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=1200,
+                parent=self.parent()
+            )
+            self.content = ""
+
+    def inspectUrl(self) -> None:
+        """检查url状态"""
+        self.informationThread = GetUrlInformationThread(self.content)
+        self.informationThread.information.connect(lambda r: self.information(r))
+        self.informationThread.start()
+
+    def information(self, info: dict) -> None:
+        """the information thread callback function."""
+        responseTime = info.get("resposeTime")
+        content = ""
+        if responseTime:
+            logger.info(f"响应时间: {responseTime}ms")
+            content += f"响应时间: {responseTime}ms\n"
+        InfoBar.success(
+            title='成功获取链接信息',
+            content=content,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=3000,
+            parent=self.parent()
+        )
+
+    def getSystemPasteboardContent(self) -> str:
+        """
+        获取系统粘贴板内容
+        :return: str
+        """
+        clipboard = QGuiApplication.clipboard()  # 获取剪贴板对象
+        return clipboard.text()  # 获取剪贴板中的文本
 
 
 class AddTaskOptionDialog(MaskDialogBase):
@@ -62,7 +121,6 @@ class AddTaskOptionDialog(MaskDialogBase):
 
         self.linkTextEdit = TextEdit(self.linkGroup)
         self.linkTextEdit.setPlaceholderText("添加多个下载链接时, 请确保每行只有一个链接.")
-        self.linkTextEdit.setText(getSystemPasteboardContent())  # 获取系统的粘贴板内容
         self.linkTextEdit.setMinimumHeight(100)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         self.linkTextEdit.setSizePolicy(sizePolicy)
@@ -97,15 +155,14 @@ class AddTaskOptionDialog(MaskDialogBase):
             "选择下载目录",
             FIF.DOWNLOAD,
             "下载目录",
-            QDir.currentPath(),
+            cfg.downloadFolder.value,
             self.settingGroup
         )
 
         # Choose Threading Card
-        ByLinkEstimateThreadCount = estimateThreadCount(self.linkTextEdit.toPlainText())
         self.blockNumCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", ByLinkEstimateThreadCount, RangeValidator(1, 256)),
-            FIF.CHAT,
+            cfg.maxBlockNum,
+            FIF.CLOUD,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',
             self.settingGroup
@@ -132,6 +189,7 @@ class AddTaskOptionDialog(MaskDialogBase):
         self.VBoxLayout.addLayout(self.buttonLayout)
 
         self.__connectSignalToSlot()
+        self.__getSystemPasteboardContent()
 
     def __connectSignalToSlot(self):
         self.downloadFolderCard.clicked.connect(
@@ -141,8 +199,6 @@ class AddTaskOptionDialog(MaskDialogBase):
         self.yesButton.clicked.connect(self.startTask)
 
         self.linkTextEdit.textChanged.connect(self.__onLinkTextChanged)
-        # 提前对链接进行检查一次
-        self.__processTextChange()
 
     def startTask(self):
         path = Path(self.downloadFolderCard.contentLabel.text())
@@ -207,3 +263,9 @@ class AddTaskOptionDialog(MaskDialogBase):
                     duration=1000,
                     parent=self.parent()
                 )
+
+    def __getSystemPasteboardContent(self) -> str:
+        spc = SystemPasteboardContent(self.parent())
+        if spc.content:
+            self.linkTextEdit.setText(spc.content)
+            self.yesButton.setDisabled(False)

@@ -1,0 +1,20 @@
+{
+    "Update": {
+        "CheckUpdateAtStartUp": true
+    },
+    "Download": {
+        "DownloadFolder": "D:/ProgrammingFolder/projects/Python/Ghost-Downloader-3",
+        "MaxBlockNum": 256,
+        "MaxReassignSize": 15
+    },
+    "MainWindow": {
+        "DpiScale": "Auto"
+    },
+    "Browser": {
+        "EnableBrowserExtension": false
+    },
+    "QFluentWidgets": {
+        "ThemeColor": "#ff814823",
+        "ThemeMode": "Dark"
+    }
+}

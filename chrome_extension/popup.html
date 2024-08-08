@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Downloader Browser Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 200px;
+        }
+        #status {
+            margin-bottom: 10px;
+        }
+        #disable-button {
+            background-color: #ff4c4c;
+            color: white;
+            padding: 10px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+        }
+        #disable-button:hover {
+            background-color: #ff0000;
+        }
+        #enable-button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+            display: none;
+        }
+        #enable-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">状态: <span id="status-text">正在尝试连接...</span></div>
+    <button id="disable-button">禁用插件</button>
+    <button id="enable-button">启用插件</button>
+
+    <script src="popup.js"></script>
+</body>
+</html>

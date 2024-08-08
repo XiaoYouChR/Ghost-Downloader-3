@@ -1,6 +1,5 @@
 import hashlib
 import os
-import re
 from pathlib import Path
 from time import sleep
 
@@ -14,26 +13,11 @@ from qfluentwidgets import FluentIcon as FIF
 from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
 from ..common.download_task import DownloadTask
-from ..common.tool_hub import getWindowsProxy, getReadableSize
+from ..common.methods import getWindowsProxy, getReadableSize
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
 
-urlRe = re.compile(r"^" +
-                   "((?:https?|ftp)://)" +
-                   "(?:\\S+(?::\\S*)?@)?" +
-                   "(?:" +
-                   "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
-                   "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
-                   "(\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
-                   "|" +
-                   "((?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)" +
-                   '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
-                   "(\\.([a-z\\u00a1-\\uffff]{2,}))" +
-                   ")" +
-                   "(?::\\d{2,5})?" +
-                   "(?:/\\S*)?" +
-                   "$", re.IGNORECASE)
 
 # 获取系统代理
 proxy = getWindowsProxy()
@@ -231,7 +215,12 @@ class TaskCard(CardWidget, Ui_TaskCard):
         for e, i in enumerate(content):
             process += i["process"] - i["start"]
             self.progressBar.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
-            self.progressBar.progressBarList[e].setValue( ( (i["process"] - i["start"]) / (i["end"] - i["start"]) ) * 100)
+            try:
+                self.progressBar.progressBarList[e].setValue( ( (i["process"] - i["start"]) / (i["end"] - i["start"]) ) * 100)
+            except ZeroDivisionError as ZDE:
+                # 因为 下载速度为0 导致进度条无法显示，也有可能是文件的内容为空 所以直接跳过
+                logger.error(f"Task:{self.fileName}, it seems that cannot change progress bar, error: {ZDE}")
+                continue
 
         duringLastSecondProcess = process - self.lastProcess
 

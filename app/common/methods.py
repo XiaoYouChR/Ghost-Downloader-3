@@ -1,77 +1,88 @@
-import time
-from typing import Union
+import importlib
+import inspect
+import os
+import winreg
 
-import requests
 from loguru import logger
-from PySide6.QtGui import QGuiApplication
 
-from .download_task import urlRe
-from .tool_hub import getReadableSize
+from app.common.plugin_base import PluginBase
+
+plugins = []
+
+# def isWin11():
+#     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
+
+def loadPlugins(mainWindow, directory="./plugins"):
+
+    for filename in os.listdir(directory):
+        if filename.endswith(".py"):
+            module_name = filename[:-3]  # 去掉文件的 .py 后缀
+            file_path = os.path.join(directory, filename)
+
+            # 动态导入模块
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # 遍历模块中的所有成员
+            for name, obj in inspect.getmembers(module):
+                # 检查是否是类，并且继承自 PluginBase
+                if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
+                    try:
+                        # 实例化插件并调用 load 方法
+                        plugin_instance = obj(mainWindow)
+                        plugin_instance.load()
+                        logger.info(f"Loaded plugin: {plugin_instance.name}")
+                        plugins.append(plugin_instance)
+                    except Exception as e:
+                        logger.error(f"Error loading plugin {name}: {e}")
 
 
-def getResponseTime(_url: str, _headers: Union[dict, None] = None) -> float:
-    """
-    通过`requests.head`请求，获取链接响应时间。``（保留一位小数）``
-
-    Params:
-        _url: str                   | 请求地址    
-        _headers: Union[dict, None] | 请求头
-    
-    Returns:
-        float
-    """
-    if urlRe.search(_url) is None:
-        return 0.0
-    requestStart = time.time()
-    responseTime = None
-    with requests.head(url=_url, headers=_headers, timeout=3) as response:
-        requestStop = time.time()
-        if response.status_code == 200: 
-            responseTime = response.headers.get("Server-Response-Time")
-            # print(response.headers.get("content-length"))
-
-    if not responseTime:
-        responseTime = requestStop - requestStart
-    return round(responseTime, 1)
-
-
-def estimateThreadCount(_url: str, _headers: Union[dict, None] = None) -> int:
-    """
-    通过`_url`获取适当线程数，``需发送requests.head请求``
-
-    Params:
-        _url: str                   | 链接
-        _headers: Union[dict, None] | 请求头
-    
-    Returns:
-        int
-    """
-    count = 24
-    if urlRe.search(_url) is None:
-        return count
-
+def getWindowsProxy():
     try:
-        responseTime = getResponseTime(_url, _headers)
-        with requests.head(url=_url, headers=_headers) as response:
-            if response.status_code == 200:
-                contentLength = response.headers.get("content-length")
-                if not contentLength:
-                    return count
+        # 打开 Windows 注册表项
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                             r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
+
+        # 获取代理开关状态
+        proxy_enable, _ = winreg.QueryValueEx(key, 'ProxyEnable')
+
+        if proxy_enable:
+            # 获取代理地址和端口号
+            proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
+            return {
+                "http": proxy_server,
+                "https": proxy_server,
+            }
+        else:
+            return {
+                "http": None,
+                "https": None,
+            }
+
     except Exception as e:
-        logger.warning(e)
-        return count
-            
-    contentLengthUnit = getReadableSize(int(contentLength), is_unit=True)
-    # 延迟高，且文件大
-    if responseTime > 1.0 and contentLengthUnit == "GB":
-        count = 16
-    # 延迟低，但文件小
-    if responseTime <= 0.5 and contentLengthUnit in ["KB", "MB"]:
-        count = 8
-    return count
+        logger.error(f"Cannot get Windows proxy server：{e}")
+        return {
+            "http": None,
+            "https": None,
+        }
 
 
-def getSystemPasteboardContent() -> str:
-    """获取系统粘贴板内容"""
-    clipboard = QGuiApplication.clipboard()  # 获取剪贴板对象
-    return clipboard.text()  # 获取剪贴板中的文本
+def getReadableSize(size: float, is_unit: bool = False) -> str:
+    """
+    获取可读大小，`输出格式可选unit`。
+    :param size: 大小
+    :param is_unit: 是否输出单位
+    :return: str
+    """
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    unit_index = 0
+    K = 1024.0
+    while size >= K:
+        size = size / K
+        unit_index += 1
+    
+    if not is_unit:
+        return "%.2f %s" % (size, units[unit_index])
+    else:
+        return units[unit_index]

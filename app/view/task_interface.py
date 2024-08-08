@@ -96,7 +96,7 @@ class TaskInterface(ScrollArea):
         self.expandLayout.addWidget(self.noTaskLabel)
         self.scrollWidget.setMinimumWidth(816)
 
-    def addDownloadTask(self, url: str, path: str, block_num: int, name: str, status:str, pixmap: QPixmap,
+    def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working", pixmap: QPixmap = None,
                         autoCreated: bool = False):
         # # 任务唯一标识符
         # number = len(self.cards)
