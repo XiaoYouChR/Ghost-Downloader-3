@@ -9,7 +9,7 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar
 from PySide6.QtCore import Qt, Signal, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QFileDialog
+from PySide6.QtWidgets import QWidget, QFileDialog, QSizePolicy, QSpacerItem, QVBoxLayout
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
 
@@ -22,7 +22,7 @@ class SettingInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.scrollWidget = QWidget()
-        self.expandLayout = ExpandLayout(self.scrollWidget)
+        self.expandLayout = QVBoxLayout(self.scrollWidget)
 
         # music folders
         self.downloadGroup = SettingCardGroup(
@@ -36,12 +36,32 @@ class SettingInterface(ScrollArea):
             self.downloadGroup
         )
 
+        self.maxReassignSizeCard = RangeSettingCard(
+            cfg.maxReassignSize,
+            FIF.LIBRARY,
+            "最大重新分配大小",
+            '当一个线程剩余的工作量大于该值时，已完成的线程将帮助分担其下载任务，防止文件越下越慢',
+            self.downloadGroup
+        )
+
+
         self.downloadFolderCard = PushSettingCard(
             "选择文件夹",
             FIF.DOWNLOAD,
             "下载路径",
             cfg.get(cfg.downloadFolder),
             self.downloadGroup
+        )
+
+        # browser
+        self.browserGroup = SettingCardGroup(
+            "浏览器扩展", self.scrollWidget)
+        self.browserExtensionCard = SwitchSettingCard(
+            FIF.CONNECT,
+            "启用浏览器扩展",
+            "接收来自浏览器的下载信息",
+            cfg.enableBrowserExtension,
+            self.browserGroup
         )
 
         # personalization
@@ -103,7 +123,7 @@ class SettingInterface(ScrollArea):
             "打开作者的个人空间",
             FIF.PROJECTOR,
             "了解作者",
-            "发现更多 XiaoYouChR 的作品",
+            f"发现更多 {AUTHOR} 的作品",
             self.aboutGroup
         )
         self.feedbackCard = PrimaryPushSettingCard(
@@ -133,7 +153,6 @@ class SettingInterface(ScrollArea):
     def __initWidget(self):
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setViewportMargins(0, 30, 0, 5)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
         self.setObjectName('settingInterface')
@@ -149,8 +168,10 @@ class SettingInterface(ScrollArea):
 
         # add cards to group
         self.downloadGroup.addSettingCard(self.blockNumCard)
+        self.downloadGroup.addSettingCard(self.maxReassignSizeCard)
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
 
+        self.browserGroup.addSettingCard(self.browserExtensionCard)
         # self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
         self.personalGroup.addSettingCard(self.zoomCard)
@@ -165,8 +186,9 @@ class SettingInterface(ScrollArea):
 
         # add setting card group to layout
         self.expandLayout.setSpacing(20)
-        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.setContentsMargins(36, 30, 36, 30)
         self.expandLayout.addWidget(self.downloadGroup)
+        self.expandLayout.addWidget(self.browserGroup)
         self.expandLayout.addWidget(self.personalGroup)
         self.expandLayout.addWidget(self.updateSoftwareGroup)
         self.expandLayout.addWidget(self.aboutGroup)

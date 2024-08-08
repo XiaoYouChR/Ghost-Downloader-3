@@ -34,7 +34,6 @@ logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 warnings.warn = logger.warning
 
 # enable dpi scale
-print("DPI scale:", cfg.get(cfg.dpiScale))
 if cfg.get(cfg.dpiScale) == "Auto":
     pass
 else:

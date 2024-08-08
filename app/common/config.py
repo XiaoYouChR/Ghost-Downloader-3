@@ -14,10 +14,13 @@ from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, Boo
 class Config(QConfig):
     """ Config of application """
     # download
+    maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 15, RangeValidator(1, 100))
     downloadFolder = ConfigItem(
         "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
+    # browser
+    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
 
     # main window
     dpiScale = OptionsConfigItem(

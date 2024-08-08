@@ -4,6 +4,7 @@ from pathlib import Path
 import darkdetect
 from PySide6.QtCore import QSize, QUrl, QThread, Signal, QTimer
 from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtWebSockets import QWebSocket
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
@@ -12,6 +13,7 @@ from qfluentwidgets import NavigationItemPosition, MessageBox, MSFluentWindow, S
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import VERSION, YEAR, AUTHOR, AUTHOR_URL, cfg
+from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 
@@ -23,6 +25,7 @@ class ThemeChangedListener(QThread):
 
     def run(self):
         darkdetect.listener(self.themeChanged.emit)
+
 
 class MainWindow(MSFluentWindow):
 
@@ -56,6 +59,10 @@ class MainWindow(MSFluentWindow):
                         signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], None, True)
         else:
             historyFile.touch()
+
+        if cfg.enableBrowserExtension.value == True:
+            self.browserExtensionSocket = GhostDownloaderSocketServer(self)
+            self.browserExtensionSocket.receiveUrl.connect(lambda x: self.taskInterface.addDownloadTask(x, cfg.downloadFolder.value, cfg.maxBlockNum.value))
 
         self.splashScreen.finish()
 
