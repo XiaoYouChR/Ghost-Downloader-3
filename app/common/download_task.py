@@ -7,7 +7,7 @@ import requests
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
-from app.common.tool_hub import getWindowsProxy, getReadableSize
+from app.common.methods import getWindowsProxy, getReadableSize
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}

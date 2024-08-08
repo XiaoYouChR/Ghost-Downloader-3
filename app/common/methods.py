@@ -1,7 +1,35 @@
+import importlib
+import inspect
+import os
 import winreg
 
 from loguru import logger
 
+from app.common.plugin_base import PluginBase
+
+def loadPlugins(mainWindow, directory="./plugins"):
+    plugins = []
+
+    for filename in os.listdir(directory):
+        if filename.endswith(".py"):
+            module_name = filename[:-3]  # 去掉文件的 .py 后缀
+            file_path = os.path.join(directory, filename)
+
+            # 动态导入模块
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # 遍历模块中的所有成员
+            for name, obj in inspect.getmembers(module):
+                # 检查是否是类，并且继承自 PluginBase
+                if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
+                    # 实例化插件并调用 load 方法
+                    plugin_instance = obj(mainWindow)
+                    plugin_instance.load()
+                    plugins.append(plugin_instance)
+
+    return plugins
 
 def getWindowsProxy():
     try:

@@ -14,6 +14,7 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 import Res_rc
+from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow
 
 # create application
@@ -60,6 +61,9 @@ except Exception as e:
 
 # create main window
 w = MainWindow()
+
+# loading plugins
+loadPlugins(w)
 
 w.show()
 

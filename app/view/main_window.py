@@ -9,7 +9,6 @@ from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
 from qfluentwidgets import NavigationItemPosition, MessageBox, MSFluentWindow, SplashScreen
 
-from .home_interface import HomeInterface
 from .task_interface import TaskInterface
 from ..common.signal_bus import signalBus
 from ..components.add_task_option_dialog import AddTaskOptionDialog
@@ -30,7 +29,6 @@ class MainWindow(MSFluentWindow):
         self.initWindow()
 
         # create sub interface
-        self.homeInterface = HomeInterface(self)
         self.taskInterface = TaskInterface(self)
         # self.debugInterface = DebugInterface(self)
 
@@ -70,7 +68,6 @@ class MainWindow(MSFluentWindow):
 
     def initNavigation(self):
         # add navigation items
-        self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
         self.navigationInterface.addItem(
             routeKey='addTaskButton',

@@ -14,7 +14,7 @@ from qfluentwidgets import FluentIcon as FIF
 from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
 from ..common.download_task import DownloadTask
-from ..common.tool_hub import getWindowsProxy, getReadableSize
+from ..common.methods import getWindowsProxy, getReadableSize
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
