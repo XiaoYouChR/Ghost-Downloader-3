@@ -4,6 +4,7 @@ from time import sleep
 
 import requests
 from PySide6.QtCore import QThread, Signal
+
 from loguru import logger
 
 from app.common.methods import getWindowsProxy, getReadableSize
