@@ -11,6 +11,7 @@ from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, 
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
+from ..common.config import cfg
 from ..common.signal_bus import signalBus
 
 urlRe = re.compile(r"^" +
@@ -92,14 +93,14 @@ class AddTaskOptionDialog(MaskDialogBase):
             "选择下载目录",
             FIF.DOWNLOAD,
             "下载目录",
-            QDir.currentPath(),
+            cfg.downloadFolder.value,
             self.settingGroup
         )
 
         # Choose Threading Card
         self.blockNumCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", 24, RangeValidator(1, 256)),
-            FIF.CHAT,
+            cfg.maxBlockNum,
+            FIF.CLOUD,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',
             self.settingGroup

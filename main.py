@@ -1,5 +1,6 @@
 # coding:utf-8
 import ctypes
+import os
 import sys
 import time
 import warnings
@@ -14,10 +15,12 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 import Res_rc
+
+from app.common.config import cfg
 from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow
 
-# create application
+# create shareMemory
 shareMemory = QSharedMemory()
 shareMemory.setKey("Ghost Downloader")
 if shareMemory.attach():
@@ -29,6 +32,14 @@ shareMemory.create(1)
 logger.add("Ghost Downloader 运行日志.log", rotation="512 KB")
 logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 warnings.warn = logger.warning
+
+# enable dpi scale
+print("DPI scale:", cfg.get(cfg.dpiScale))
+if cfg.get(cfg.dpiScale) == "Auto":
+    pass
+else:
+    os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+    os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 # create application
 app = QApplication(sys.argv)

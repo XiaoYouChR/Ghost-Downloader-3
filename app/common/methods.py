@@ -7,8 +7,12 @@ from loguru import logger
 
 from app.common.plugin_base import PluginBase
 
+plugins = []
+
+# def isWin11():
+#     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
+
 def loadPlugins(mainWindow, directory="./plugins"):
-    plugins = []
 
     for filename in os.listdir(directory):
         if filename.endswith(".py"):
@@ -24,12 +28,15 @@ def loadPlugins(mainWindow, directory="./plugins"):
             for name, obj in inspect.getmembers(module):
                 # 检查是否是类，并且继承自 PluginBase
                 if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
-                    # 实例化插件并调用 load 方法
-                    plugin_instance = obj(mainWindow)
-                    plugin_instance.load()
-                    plugins.append(plugin_instance)
+                    try:
+                        # 实例化插件并调用 load 方法
+                        plugin_instance = obj(mainWindow)
+                        plugin_instance.load()
+                        logger.info(f"Loaded plugin: {plugin_instance.name}")
+                        plugins.append(plugin_instance)
+                    except Exception as e:
+                        logger.error(f"Error loading plugin {name}: {e}")
 
-    return plugins
 
 def getWindowsProxy():
     try:

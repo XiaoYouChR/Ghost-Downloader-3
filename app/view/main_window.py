@@ -9,9 +9,11 @@ from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
 from qfluentwidgets import NavigationItemPosition, MessageBox, MSFluentWindow, SplashScreen
 
+from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
+from ..common.config import VERSION, YEAR, AUTHOR, AUTHOR_URL, cfg
 from ..common.signal_bus import signalBus
-from ..components.add_task_option_dialog import AddTaskOptionDialog
+from ..components.add_task_dialog import AddTaskOptionDialog
 
 
 class ThemeChangedListener(QThread):
@@ -30,6 +32,7 @@ class MainWindow(MSFluentWindow):
 
         # create sub interface
         self.taskInterface = TaskInterface(self)
+        self.settingInterface = SettingInterface(self)
         # self.debugInterface = DebugInterface(self)
 
         # add items to navigation interface
@@ -80,14 +83,7 @@ class MainWindow(MSFluentWindow):
 
         # self.addSubInterface(self.debugInterface, FIF.DEVELOPER_TOOLS, "调试信息")
         # add custom widget to bottom
-        self.navigationInterface.addItem(
-            routeKey='avatar',
-            text='关于',
-            selectable=False,
-            icon=FIF.INFO,
-            onClick=self.showInfoMessageBox,
-            position=NavigationItemPosition.BOTTOM,
-        )
+        self.addSubInterface(self.settingInterface, FIF.SETTING, "设置", position=NavigationItemPosition.BOTTOM)
 
     def initWindow(self):
         self.resize(960, 780)
@@ -101,21 +97,9 @@ class MainWindow(MSFluentWindow):
 
         desktop = QApplication.screens()[0].availableGeometry()
         w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        self.move(w//2 - self.width()//2, h//2 - self.height()//2)
         self.show()
         QApplication.processEvents()
-
-    def showInfoMessageBox(self):
-        w = MessageBox(
-            'About',
-            'Version 3.2.0\n© 2024 XiaoYouChR',
-            self
-        )
-        w.yesButton.setText('了解作者')
-        w.cancelButton.setText('关闭窗口')
-
-        if w.exec():
-            QDesktopServices.openUrl(QUrl('https://space.bilibili.com/437313511'))
 
 
     def showAddTaskBox(self):
