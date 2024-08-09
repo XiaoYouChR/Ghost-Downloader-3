@@ -1,12 +1,9 @@
 # coding:utf-8
-import sys
-from enum import Enum
 
 from PySide6.QtCore import QDir
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderListValidator, Theme, FolderValidator, ConfigValidator, ColorConfigItem,
-                            EnumSerializer)
+                            FolderValidator)
 
 
 
@@ -20,7 +17,7 @@ class Config(QConfig):
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
     # browser
-    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
+    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator(), restart=True)
 
     # main window
     dpiScale = OptionsConfigItem(

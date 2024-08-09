@@ -1,4 +1,4 @@
 PySide6-Fluent-Widgets>=1.1.8
 PySide6>=6.4.2
 loguru>=0.7.2
-requests>=2.31.0
+httpx[http2]>=0.27.0

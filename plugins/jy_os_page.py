@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 
-import requests
+import httpx
 from PySide6.QtCore import Qt, QThread, Signal, QDir, QUrl
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
@@ -13,9 +13,9 @@ from qfluentwidgets import ScrollArea, TitleLabel, isDarkTheme, SettingCardGroup
     RangeValidator, PrimaryPushButton, PushButton, MessageBox, CardWidget, RoundMenu, Action
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
+from app.common.methods import getWindowsProxy
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
-from app.common.methods import getWindowsProxy
 from app.components.Ui_SystemInfoCard import Ui_SystemInfoCard
 
 
@@ -44,11 +44,11 @@ class getInfoThread(QThread):
         #     self.json = json.loads(f.read())["OS"]
         #     f.close()
 
-        self.gotInfo.emit(json.loads(requests.get(
+        self.gotInfo.emit(json.loads(httpx.get(
             url="https://seelevollerei-my.sharepoint.com/personal/jackyao_xn--7et36u_cn/_layouts/52/download.aspx?share=Ecm5kLYVJedKlw60gcDkxPEB1PlS5Y-P-ttDSit_V8KuLw",
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-            proxies=getWindowsProxy()).content)["OS"])
+            proxy=getWindowsProxy(), follow_redirects=True).text)["OS"])
 
 
 class HomeInterface(ScrollArea):

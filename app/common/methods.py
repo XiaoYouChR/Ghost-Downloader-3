@@ -50,22 +50,13 @@ def getWindowsProxy():
         if proxy_enable:
             # 获取代理地址和端口号
             proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
-            return {
-                "http": proxy_server,
-                "https": proxy_server,
-            }
+            return "http://" + proxy_server
         else:
-            return {
-                "http": None,
-                "https": None,
-            }
+            return None
 
     except Exception as e:
         logger.error(f"Cannot get Windows proxy server：{e}")
-        return {
-            "http": None,
-            "https": None,
-        }
+        return None
 
 
 def getReadableSize(size):

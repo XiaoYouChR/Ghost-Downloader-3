@@ -1,10 +1,11 @@
 import re
 from pathlib import Path
-from time import time, sleep
+from time import sleep
 from urllib.parse import urlparse
 
-import requests
+import httpx
 from PySide6.QtCore import QThread, Signal
+from httpx import Client
 from loguru import logger
 
 from app.common.config import cfg
@@ -29,10 +30,11 @@ urlRe = re.compile(r"^" +
                    "(?:/\\S*)?" +
                    "$", re.IGNORECASE)
 
+
 def getRealUrl(url: str):
     try:
-        response = requests.head(url=url, headers=Headers, allow_redirects=False, verify=False,
-                                 proxies=getWindowsProxy())
+        response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
+                              proxy=getWindowsProxy())
 
         if response.status_code == 400:  # Bad Requests
             # TODO 报错处理
@@ -52,13 +54,13 @@ def getRealUrl(url: str):
 
                 logger.info(f"HTTP status code:302, Redirect to {url}")
 
-            response = requests.head(url=url, headers=Headers, allow_redirects=False, verify=False,
-                                     proxies=getWindowsProxy())  # 再访问一次
+            response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
+                                  proxy=getWindowsProxy())  # 再访问一次
 
         return url
 
     # TODO 报错处理
-    except requests.exceptions.ConnectionError as err:
+    except httpx.ConnectError as err:
         logger.error(f"Cannot connect to the Internet! Error: {err}")
         return
     except ValueError as err:
@@ -80,11 +82,11 @@ class DownloadTask(QThread):
         # 获取真实URL
         url = getRealUrl(url)
 
-        head = requests.head(url, headers=Headers, proxies=getWindowsProxy()).headers
+        head = httpx.head(url, headers=Headers, proxy=getWindowsProxy()).headers
 
         # 获取文件大小, 判断是否可以分块下载
         if "content-length" not in head:
-            self.fileSize = 0
+            self.fileSize = 1
             self.ableToParallelDownload = False
         else:
             self.fileSize = int(head["content-length"])
@@ -106,12 +108,13 @@ class DownloadTask(QThread):
                 logger.info(f"获取文件名失败, KeyError or IndexError:{e}")
                 fileName = urlparse(url).path.split('/')[-1]
                 logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
-            except Exception as e:
-                # 什么都 Get 不到的情况
-                logger.info(f"获取文件名失败, Exception:{e}")
-                content_type = head["content-type"].split('/')[-1]
-                fileName = f"downloaded_file{int(time())}.{content_type}"
-                logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+
+            # except Exception as e:
+            #     # 什么都 Get 不到的情况
+            #     logger.info(f"获取文件名失败, Exception:{e}")
+            #     content_type = head["content-type"].split('/')[-1]
+            #     fileName = f"downloaded_file{int(time())}.{content_type}"
+            #     logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
 
         # 获取文件路径
         if not filePath and Path(filePath).is_dir() == False:
@@ -131,6 +134,9 @@ class DownloadTask(QThread):
         self.maxBlockNum = maxBlockNum
         self.workers: list[DownloadWorker] = []
 
+        self.client = httpx.Client(headers=Headers, verify=False,
+                                   proxy=getWindowsProxy(), http2=True)
+
     def __reassignWorker(self):
 
         # 找到剩余进度最多的线程
@@ -149,22 +155,23 @@ class DownloadTask(QThread):
             baseShare = maxRemainder // 2
             remainder = maxRemainder % 2
 
-
             maxRemainderWorker.endPos = maxRemainderWorkerProcess + baseShare + remainder  # 直接修改好像也不会怎么样
 
             # 安配新的工人
             s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
 
             _ = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.url, self.filePath,
-                               self.fileName)
+                               self.fileName, self.client)
             _.workerFinished.connect(self.__reassignWorker)
             _.start()
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, _)
 
-            logger.info(f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{_}，新线程的StartPos：{s_pos}")
+            logger.info(
+                f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{_}，新线程的StartPos：{s_pos}")
 
         else:
-            logger.info(f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
+            logger.info(
+                f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
 
     def clacDivisionalRange(self):
         step = self.fileSize // self.maxBlockNum  # 每块大小
@@ -199,7 +206,7 @@ class DownloadTask(QThread):
                     for i in workersInfo:
                         self.workers.append(
                             DownloadWorker(i["start"], i["process"], i["end"], self.url, self.filePath,
-                                           self.fileName))
+                                           self.fileName, self.client))
 
                 self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
             # TODO 错误处理
@@ -208,13 +215,13 @@ class DownloadTask(QThread):
                     stepList = self.clacDivisionalRange()
                     self.workers.append(
                         DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
-                                       self.fileName))
+                                       self.fileName, self.client))
         else:
             for i in range(self.maxBlockNum):
                 stepList = self.clacDivisionalRange()
                 self.workers.append(
                     DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
-                                   self.fileName))
+                                   self.fileName, self.client))
 
         for i in self.workers:
             logger.debug(f"Task {self.fileName}, starting the thread {i}...")
@@ -258,7 +265,7 @@ class DownloadWorker(QThread):
 
     workerFinished = Signal()  # 内置的信号不好用
 
-    def __init__(self, start, process, end, url, filePath, fileName, parent=None):
+    def __init__(self, start, process, end, url, filePath, fileName, client: Client, parent=None):
         super().__init__(parent)
         self.startPos = start
         self.process = process
@@ -266,6 +273,7 @@ class DownloadWorker(QThread):
         self.url = url
         self.filePath = filePath
         self.fileName = fileName
+        self.client = client
 
     def run(self):
         if self.process < self.endPos:  # 因为可能会创建空线程
@@ -275,17 +283,16 @@ class DownloadWorker(QThread):
                     download_headers = {"Range": f"bytes={self.process}-{self.endPos}",
                                         "User-Agent": Headers["User-Agent"]}
 
-                    res = requests.get(self.url, headers=download_headers, proxies=getWindowsProxy(), stream=True,
-                                       timeout=60)
-
                     self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
                     self.file.seek(self.process)
-                    for chunk in res.iter_content(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
-                        if self.endPos <= self.process:
-                            break
-                        if chunk:
-                            self.file.write(chunk)
-                            self.process += 65536
+
+                    with self.client.stream(url=self.url, headers=download_headers, timeout=30, method="GET") as res:
+                        for chunk in res.iter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
+                            if self.endPos <= self.process:
+                                break
+                            if chunk:
+                                self.file.write(chunk)
+                                self.process += 65536
 
                     if self.process >= self.endPos:
                         self.process = self.endPos

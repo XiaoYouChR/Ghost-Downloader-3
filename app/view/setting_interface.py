@@ -1,15 +1,12 @@
 # coding:utf-8
-from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, FolderListSettingCard,
-                            OptionsSettingCard, PushSettingCard,
-                            HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
-                            ComboBoxSettingCard, ExpandLayout, Theme, CustomColorSettingCard,
-                            setTheme, setThemeColor, RangeSettingCard, isDarkTheme, TitleLabel, LargeTitleLabel,
-                            RangeConfigItem)
+from PySide6.QtCore import Qt, Signal, QUrl, QResource
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import InfoBar
-from PySide6.QtCore import Qt, Signal, QUrl
-from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QFileDialog, QSizePolicy, QSpacerItem, QVBoxLayout
+from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingCard, PushSettingCard,
+                            HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
+                            setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
 
@@ -39,7 +36,7 @@ class SettingInterface(ScrollArea):
         self.maxReassignSizeCard = RangeSettingCard(
             cfg.maxReassignSize,
             FIF.LIBRARY,
-            "最大重新分配大小（单位MB）",
+            "最大重新分配大小 (MB)",
             '已完成的线程将帮助工作量最大的线程分担下载任务，防止文件越下越慢',
             self.downloadGroup
         )
@@ -59,8 +56,15 @@ class SettingInterface(ScrollArea):
         self.browserExtensionCard = SwitchSettingCard(
             FIF.CONNECT,
             "启用浏览器扩展",
-            "接收来自浏览器的下载信息",
+            "接收来自浏览器的下载信息，请安装浏览器扩展后使用",
             cfg.enableBrowserExtension,
+            self.browserGroup,
+        )
+        self.installExtensionCard = PushSettingCard(
+            "导出浏览器插件",
+            FIF.DICTIONARY,
+            "安装浏览器扩展",
+            "需要您导出 .crx 文件后手动安装至Chromium内核的浏览器",
             self.browserGroup
         )
 
@@ -172,6 +176,7 @@ class SettingInterface(ScrollArea):
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
 
         self.browserGroup.addSettingCard(self.browserExtensionCard)
+        self.browserGroup.addSettingCard(self.installExtensionCard)
         # self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
         self.personalGroup.addSettingCard(self.zoomCard)
@@ -212,6 +217,13 @@ class SettingInterface(ScrollArea):
         cfg.set(cfg.downloadFolder, folder)
         self.downloadFolderCard.setContent(folder)
 
+    def __onInstallExtensionCardClicked(self):
+        """ install extension card clicked slot """
+        fileResolve, type = QFileDialog.getSaveFileName(self, "选择导出路径", "./Extension.crx", "Chromium Extension(*.crx)")
+        if fileResolve:
+            with open(fileResolve, "wb") as f:
+                f.write(QResource(":/res/chrome_extension.crx").data())
+
     def __connectSignalToSlot(self):
         """ connect signal to slot """
         cfg.appRestartSig.connect(self.__showRestartTooltip)
@@ -221,6 +233,9 @@ class SettingInterface(ScrollArea):
         self.blockNumCard.valueChanged.connect(lambda: cfg.set(cfg.maxBlockNum, self.blockNumCard.configItem.value))
         self.downloadFolderCard.clicked.connect(
             self.__onDownloadFolderCardClicked)
+
+        # extension
+        self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
 
         # personalization
         # self.themeColorCard.colorChanged.connect(setThemeColor)
