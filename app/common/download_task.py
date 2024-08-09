@@ -7,6 +7,7 @@ import requests
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
+from app.common.config import cfg
 from app.common.methods import getWindowsProxy, getReadableSize
 
 Headers = {
@@ -27,8 +28,6 @@ urlRe = re.compile(r"^" +
                    "(?::\\d{2,5})?" +
                    "(?:/\\S*)?" +
                    "$", re.IGNORECASE)
-
-MAX_REASSIGN_SIZE = 15*1024*1024  # 15M
 
 def getRealUrl(url: str):
     try:
@@ -72,7 +71,7 @@ class DownloadTask(QThread):
 
     refreshLastProgress = Signal(str)  # 用于读取历史记录后刷新进度
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
-    workerInfoChange = Signal(list)  # 目前进度 3.2版本引进了分段式进度条
+    workerInfoChange = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
 
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
@@ -145,7 +144,7 @@ class DownloadTask(QThread):
                 maxRemainder = (maxRemainderWorkerEnd - maxRemainderWorkerProcess)
                 maxRemainderWorker = i
 
-        if maxRemainderWorker and maxRemainder > MAX_REASSIGN_SIZE:
+        if maxRemainderWorker and maxRemainder > cfg.maxReassignSize.value * 1048576:
             # 平均分配工作量
             baseShare = maxRemainder // 2
             remainder = maxRemainder % 2

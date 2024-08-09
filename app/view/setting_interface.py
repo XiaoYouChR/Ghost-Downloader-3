@@ -39,8 +39,8 @@ class SettingInterface(ScrollArea):
         self.maxReassignSizeCard = RangeSettingCard(
             cfg.maxReassignSize,
             FIF.LIBRARY,
-            "最大重新分配大小",
-            '当一个线程剩余的工作量大于该值时，已完成的线程将帮助分担其下载任务，防止文件越下越慢',
+            "最大重新分配大小（单位MB）",
+            '已完成的线程将帮助工作量最大的线程分担下载任务，防止文件越下越慢',
             self.downloadGroup
         )
 
