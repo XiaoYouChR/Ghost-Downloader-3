@@ -8,7 +8,7 @@ from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
 from app.common.methods import getWindowsProxy, getReadableSize
-from app.utils.url import UrlUtils
+from app.common.utils import UrlUtils
 
 Headers = UrlUtils.headers
 urlRe = UrlUtils.urlRe

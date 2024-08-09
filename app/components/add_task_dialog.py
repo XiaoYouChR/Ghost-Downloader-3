@@ -16,7 +16,7 @@ from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 from ..common.config import cfg
 from ..common.signal_bus import signalBus
 from app.common.methods import getWindowsProxy
-from app.utils.url import UrlUtils
+from app.common.utils import UrlUtils
 
 urlRe = UrlUtils.urlRe
 
@@ -30,7 +30,7 @@ class GetUrlInformationThread(QThread):
 
     def run(self) -> None:
         result = {}
-        # 以/filename.xxx 结尾的文件，没默认为真实链接
+        # 以/filename.xxx 结尾的文件，默认为真实链接
         if not re.search(r'/(.+)\.\w+$', self.url):
             # 获取真实URL
             logger.debug(f"获取: {self.url} 的真实URL")
@@ -50,15 +50,6 @@ class SystemPasteboardContent(QDialog):
             self.inspectUrl()
         else:
             logger.warning("剪贴板内容链接不合法！")
-            InfoBar.warning(
-                title='警告',
-                content="剪贴板内容链接不合法！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=1200,
-                parent=self.parent()
-            )
             self.content = ""
 
     def inspectUrl(self) -> None:
