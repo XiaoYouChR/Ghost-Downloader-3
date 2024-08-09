@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
-from time import sleep
-from urllib.parse import urlparse
+from time import sleep, time
+from urllib.parse import urlparse, parse_qs, unquote
 
 import httpx
 from PySide6.QtCore import QThread, Signal
@@ -103,18 +103,32 @@ class DownloadTask(QThread):
                     t = re.findall(r"filename=([\s\S]*);", fileName)
                     fileName = t[0]
                 logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
-            except KeyError or IndexError as e:
-                # 处理没有文件名的情况
-                logger.info(f"获取文件名失败, KeyError or IndexError:{e}")
-                fileName = urlparse(url).path.split('/')[-1]
-                logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
-
-            # except Exception as e:
-            #     # 什么都 Get 不到的情况
-            #     logger.info(f"获取文件名失败, Exception:{e}")
-            #     content_type = head["content-type"].split('/')[-1]
-            #     fileName = f"downloaded_file{int(time())}.{content_type}"
-            #     logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+            except (KeyError, IndexError) as e:
+                try:
+                    logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
+                    # 解析 URL
+                    # 解析查询字符串
+                    # 获取 response-content-disposition 参数
+                    # 解码并分割 disposition
+                    # 提取文件名
+                    fileName = unquote(parse_qs(urlparse(url).query).get('response-content-disposition', [''])[0]).split("filename=")[-1]
+                    # 去掉可能存在的引号
+                    if fileName.startswith('"') and fileName.endswith('"'):
+                        fileName = fileName[1:-1]
+                    elif fileName.startswith("'") and fileName.endswith("'"):
+                        fileName = fileName[1:-1]
+                    logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
+                except (KeyError, IndexError) as e:
+                    # 处理没有文件名的情况
+                    logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
+                    fileName = urlparse(url).path.split('/')[-1]
+                    logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+            except Exception as e:
+                # 什么都 Get 不到的情况
+                logger.info(f"获取文件名失败, Exception:{e}")
+                content_type = head["content-type"].split('/')[-1]
+                fileName = f"downloaded_file{int(time())}.{content_type}"
+                logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
 
         # 获取文件路径
         if not filePath and Path(filePath).is_dir() == False:
