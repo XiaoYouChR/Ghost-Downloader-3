@@ -127,6 +127,10 @@ class DownloadTask(QThread):
                     elif fileName.startswith("'") and fileName.endswith("'"):
                         fileName = fileName[1:-1]
                     logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
+
+                    if not fileName:
+                        raise KeyError
+
                 except (KeyError, IndexError) as e:
                     # 处理没有文件名的情况
                     logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
