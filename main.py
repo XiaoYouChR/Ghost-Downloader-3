@@ -23,8 +23,8 @@ from app.view.main_window import MainWindow
 shareMemory = QSharedMemory()
 shareMemory.setKey("Ghost Downloader")
 if shareMemory.attach():
-    hWnd = win32gui.FindWindow(None, "Ghost Downloader"), 1
-    win32gui.ShowWindow(hWnd)
+    hWnd = win32gui.FindWindow(None, "Ghost Downloader")
+    win32gui.ShowWindow(hWnd, 1)
     win32gui.SetForegroundWindow(hWnd)
     sys.exit(-1)
 shareMemory.create(1)
