@@ -15,7 +15,6 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 import Res_rc
-
 from app.common.config import cfg
 from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow
@@ -24,7 +23,9 @@ from app.view.main_window import MainWindow
 shareMemory = QSharedMemory()
 shareMemory.setKey("Ghost Downloader")
 if shareMemory.attach():
-    win32gui.ShowWindow(win32gui.FindWindow(None, "Ghost Downloader"), 1)
+    hWnd = win32gui.FindWindow(None, "Ghost Downloader"), 1
+    win32gui.ShowWindow(hWnd)
+    win32gui.SetForegroundWindow(hWnd)
     sys.exit(-1)
 shareMemory.create(1)
 

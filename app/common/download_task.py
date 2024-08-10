@@ -1,4 +1,6 @@
 import re
+import urllib
+from email.utils import decode_rfc2231
 from pathlib import Path
 from time import sleep, time
 from urllib.parse import urlparse, parse_qs, unquote
@@ -95,13 +97,20 @@ class DownloadTask(QThread):
         # 获取文件名
         if not fileName:
             try:
-                fileName = head["content-disposition"]
-                t = re.findall(r"filename=\"([\s\S]*)\"", fileName)
-                if t:
-                    fileName = t[0]
-                else:
-                    t = re.findall(r"filename=([\s\S]*);", fileName)
-                    fileName = t[0]
+                # 首先，尝试处理 Content-Disposition 中的 filename* (RFC 5987 格式)
+                headerValue = head["content-disposition"]
+                if 'filename*' in headerValue:
+                    match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
+                    if match:
+                        fileName = match.group(1)
+                        fileName = decode_rfc2231(fileName)
+                        fileName = urllib.parse.unquote(fileName[2])  # filename* 后的部分是编码信息
+
+                # 如果 filename* 没有成功获取，尝试处理普通的 filename
+                if not fileName and 'filename' in headerValue:
+                    match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
+                    if match:
+                        fileName = match.group(1)
                 logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
             except (KeyError, IndexError) as e:
                 try:
@@ -149,7 +158,7 @@ class DownloadTask(QThread):
         self.workers: list[DownloadWorker] = []
 
         self.client = httpx.Client(headers=Headers, verify=False,
-                                   proxy=getWindowsProxy(), http2=True)
+                                   proxy=getWindowsProxy())
 
     def __reassignWorker(self):
 
