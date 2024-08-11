@@ -1,7 +1,7 @@
 import importlib
 import inspect
 import os
-import winreg
+import sys
 
 from loguru import logger
 
@@ -41,24 +41,33 @@ def loadPlugins(mainWindow, directory="./plugins"):
 
 
 def getWindowsProxy():
-    try:
-        # 打开 Windows 注册表项
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                             r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
+    if sys.platform == "win32":
+        try:
+            import winreg
 
-        # 获取代理开关状态
-        proxy_enable, _ = winreg.QueryValueEx(key, 'ProxyEnable')
+            # 打开 Windows 注册表项
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                 r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
 
-        if proxy_enable:
-            # 获取代理地址和端口号
-            proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
-            return "http://" + proxy_server
-        else:
+            # 获取代理开关状态
+            proxy_enable, _ = winreg.QueryValueEx(key, 'ProxyEnable')
+
+            if proxy_enable:
+                # 获取代理地址和端口号
+                proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
+                return "http://" + proxy_server
+            else:
+                return None
+
+        except Exception as e:
+            logger.error(f"Cannot get Windows proxy server：{e}")
             return None
-
-    except Exception as e:
-        logger.error(f"Cannot get Windows proxy server：{e}")
-        return None
+    else:  # 读取 Linux 系统代理
+        try:
+            return os.environ.get("http_proxy")
+        except Exception as e:
+            logger.error(f"Cannot get Linux proxy server：{e}")
+            return None
 
 
 def getReadableSize(size):
