@@ -1,6 +1,7 @@
 import hashlib
 import os
 import re
+import sys
 from pathlib import Path
 from time import sleep
 
@@ -104,7 +105,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.clicked.connect(self.pauseTask)
         self.delAction.triggered.connect(lambda: self.cancelTask(False))
         self.completelyDelAction.triggered.connect(lambda: self.cancelTask(True))
-        self.folderButton.clicked.connect(lambda: os.startfile(path))
+        if sys.platform == "win32":
+            self.folderButton.clicked.connect(lambda: os.startfile(path))
+        else:  # Linux 下打开文件夹
+            self.folderButton.clicked.connect(lambda: os.system(f"xdg-open {path}"))
 
         # 写入未完成任务记录文件，以供下次打开时继续下载
         if not autoCreated:

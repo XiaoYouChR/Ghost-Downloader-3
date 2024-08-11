@@ -6,7 +6,6 @@ import time
 import warnings
 
 import darkdetect
-import win32gui
 from PySide6.QtCore import Qt, QSharedMemory
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication
@@ -23,9 +22,11 @@ from app.view.main_window import MainWindow
 shareMemory = QSharedMemory()
 shareMemory.setKey("Ghost Downloader")
 if shareMemory.attach():
-    hWnd = win32gui.FindWindow(None, "Ghost Downloader")
-    win32gui.ShowWindow(hWnd, 1)
-    win32gui.SetForegroundWindow(hWnd)
+    if sys.platform == "win32":
+        import win32gui
+        hWnd = win32gui.FindWindow(None, "Ghost Downloader")
+        win32gui.ShowWindow(hWnd, 1)
+        win32gui.SetForegroundWindow(hWnd)
     sys.exit(-1)
 shareMemory.create(1)
 
