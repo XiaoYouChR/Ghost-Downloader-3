@@ -2,20 +2,20 @@
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QUrl, QThread, Signal, QTimer
-from PySide6.QtGui import QIcon, QDesktopServices
-from PySide6.QtWebSockets import QWebSocket
+from PySide6.QtCore import QSize, QThread, Signal, QTimer
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
-from qfluentwidgets import NavigationItemPosition, MessageBox, MSFluentWindow, SplashScreen
+from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import VERSION, YEAR, AUTHOR, AUTHOR_URL, cfg
+from ..common.config import cfg
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
+from ..components.custom_tray import CustomSystemTrayIcon
 
 
 class ThemeChangedListener(QThread):
@@ -46,7 +46,7 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.themeChanged.connect(self.toggleTheme)
         self.themeChangedListener.start()
 
-        # createUnfinishedTask
+        # 创建未完成的任务
         historyFile = Path("./Ghost Downloader 记录文件")
         # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
@@ -60,14 +60,23 @@ class MainWindow(MSFluentWindow):
         else:
             historyFile.touch()
 
+        # 启动浏览器扩展服务器
         if cfg.enableBrowserExtension.value == True:
             self.browserExtensionSocket = GhostDownloaderSocketServer(self)
-            self.browserExtensionSocket.receiveUrl.connect(lambda x: self.taskInterface.addDownloadTask(x, cfg.downloadFolder.value, cfg.maxBlockNum.value))
+            self.browserExtensionSocket.receiveUrl.connect(self.addDownloadTaskFromWebSocket)
+
+        # 创建托盘
+        self.tray = CustomSystemTrayIcon(self)
+        self.tray.show()
 
         self.splashScreen.finish()
 
+    def addDownloadTaskFromWebSocket(self, url: str):
+        self.taskInterface.addDownloadTask(url, cfg.downloadFolder.value, cfg.maxBlockNum.value)
+        self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
+
     def toggleTheme(self, callback: str):
-        if callback == 'Dark':
+        if callback == 'Dark':  # PySide6 特性，需要重试
             setTheme(Theme.DARK, save=False)
             QTimer.singleShot(100, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
             QTimer.singleShot(200, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
@@ -114,21 +123,6 @@ class MainWindow(MSFluentWindow):
         w.exec()
 
     def closeEvent(self, event):
-        super().closeEvent(event)
-
-        self.themeChangedListener.terminate()
-
-        for i in self.taskInterface.cards:
-            if i.status == 'working':
-                for j in i.task.workers:
-                    try:
-                        j.file.close()
-                    except AttributeError as e:
-                        logger.info(f"Task:{i.task.fileName}, users operate too quickly!, thread {i} error: {e}")
-                    except Exception as e:
-                        logger.warning(
-                            f"Task:{i.task.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
-                    j.terminate()
-                i.task.terminate()
-
-        event.accept()
+        # 拦截关闭事件，隐藏窗口而不是退出
+        event.ignore()
+        self.hide()

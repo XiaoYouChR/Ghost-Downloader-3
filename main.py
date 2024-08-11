@@ -77,6 +77,10 @@ w = MainWindow()
 # loading plugins
 loadPlugins(w)
 
-w.show()
+try:  # 静默启动
+    if sys.argv[1] == "--silence":
+        w.hide()
+except:
+    w.show()
 
 sys.exit(app.exec())

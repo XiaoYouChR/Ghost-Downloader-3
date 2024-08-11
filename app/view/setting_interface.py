@@ -1,8 +1,10 @@
 # coding:utf-8
+import sys
+
 from PySide6.QtCore import Qt, Signal, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import FluentIcon as FIF, InfoBarPosition
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
@@ -64,7 +66,7 @@ class SettingInterface(ScrollArea):
             "导出浏览器插件",
             FIF.DICTIONARY,
             "安装浏览器扩展",
-            "需要您导出 .crx 文件后手动安装至Chromium内核的浏览器",
+            "需要您导出 .crx 文件后手动安装至 Chromium 内核的浏览器",
             self.browserGroup
         )
 
@@ -111,12 +113,19 @@ class SettingInterface(ScrollArea):
 
         # update software
         self.updateSoftwareGroup = SettingCardGroup(
-            "软件更新", self.scrollWidget)
+            "应用", self.scrollWidget)
         self.updateOnStartUpCard = SwitchSettingCard(
             FIF.UPDATE,
             "在应用程序启动时检查更新",
             "新版本将更稳定，并具有更多功能",
             configItem=cfg.checkUpdateAtStartUp,
+            parent=self.updateSoftwareGroup
+        )
+        self.autoRunCard = SwitchSettingCard(
+            FIF.VPN,
+            "开机启动",
+            "在系统启动时静默运行 Ghost Downloader",
+            configItem=cfg.autoRun,
             parent=self.updateSoftwareGroup
         )
 
@@ -184,6 +193,7 @@ class SettingInterface(ScrollArea):
 
 
         self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
+        self.updateSoftwareGroup.addSettingCard(self.autoRunCard)
 
         self.aboutGroup.addSettingCard(self.authorCard)
         self.aboutGroup.addSettingCard(self.feedbackCard)
@@ -224,6 +234,32 @@ class SettingInterface(ScrollArea):
             with open(fileResolve, "wb") as f:
                 f.write(QResource(":/res/chrome_extension.crx").data())
 
+    def __onAutoRunCardChecked(self, value: bool):
+        """ Set auto run """
+        if sys.platform == "win32":
+            import winreg
+            if value:
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                     r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
+                winreg.SetValueEx(key, 'GhostDownloader', 0, winreg.REG_SZ,
+                                  f'"{sys.argv[0]}" --silence')
+            else:
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                     r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
+                winreg.DeleteValue(key, 'GhostDownloader')
+        else:
+            InfoBar.warning(
+                title='注意',
+                content=f"该功能仅在 Windows 平台有效.",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                # position='Custom',   # NOTE: use custom info bar manager
+                duration=1000,
+                parent=self.parent()
+            )
+
+
     def __connectSignalToSlot(self):
         """ connect signal to slot """
         cfg.appRestartSig.connect(self.__showRestartTooltip)
@@ -237,8 +273,8 @@ class SettingInterface(ScrollArea):
         # extension
         self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
 
-        # personalization
-        # self.themeColorCard.colorChanged.connect(setThemeColor)
+        # software
+        self.autoRunCard.checkedChanged.connect(self.__onAutoRunCardChecked)
 
         # about
         self.aboutCard.clicked.connect(self.checkUpdateSig)

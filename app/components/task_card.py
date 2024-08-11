@@ -250,6 +250,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.cancelButton.setDisabled(True)
         self.speedLable.setText("任务已经完成")
 
+        try:    # 程序启动时不要发
+            self.window().tray.showMessage(self.window().windowTitle(), f"任务 {self.fileName} 已完成！", self.window().windowIcon())
+        except:
+            pass
+
         if not self.status == "finished":  # 不是自动创建的已完成任务
             # 改变记录状态
             with open("./Ghost Downloader 记录文件", "r", encoding="utf-8") as f:
