@@ -1,14 +1,23 @@
 # coding:utf-8
+import sys
+
+from PySide6.QtCore import Qt, QSharedMemory
+from PySide6.QtWidgets import QApplication
+
+# create application
+app = QApplication(sys.argv)
+app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
+
 import ctypes
 import os
-import sys
+
 import time
 import warnings
 
 import darkdetect
-from PySide6.QtCore import Qt, QSharedMemory
+
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QApplication
+
 from loguru import logger
 from qfluentwidgets import setTheme, Theme, setThemeColor
 
@@ -31,7 +40,8 @@ if shareMemory.attach():
 shareMemory.create(1)
 
 # config loguru
-logger.add("Ghost Downloader 运行日志.log", rotation="512 KB")
+# logger.add("Ghost Downloader 运行日志.log", rotation="512 KB")
+logger.add('{}/Ghost Downloader 运行日志.log'.format(QApplication.applicationDirPath()))
 logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 warnings.warn = logger.warning
 
@@ -41,10 +51,6 @@ if cfg.get(cfg.dpiScale) == "Auto":
 else:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
-
-# create application
-app = QApplication(sys.argv)
-app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
 # Enable Theme
 setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
@@ -105,8 +111,8 @@ except Exception as e:
 w = MainWindow()
 
 # loading plugins
-# pluginsPath=os.path.join(app.applicationDirPath(), "plugins")
-pluginsPath=("./plugins")
+pluginsPath=os.path.join(app.applicationDirPath(), "plugins")
+# pluginsPath=("./plugins")
 loadPlugins(w, pluginsPath)
 
 try:  # 静默启动
