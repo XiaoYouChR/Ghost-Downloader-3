@@ -50,64 +50,63 @@ app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
 
 # Get Theme Color
-# Windows Only
-if sys.platform == "win32":
-    try:
-        # 定义用于获取主题色的函数
+try:
+    # Windows Only
+    if sys.platform == "win32":
+            # 定义用于获取主题色的函数
 
-        ctypes.windll.dwmapi.DwmGetColorizationColor.restype = ctypes.c_ulong
-        ctypes.windll.dwmapi.DwmGetColorizationColor.argtypes = [ctypes.POINTER(ctypes.c_ulong),
-                                                                ctypes.POINTER(ctypes.c_bool)]
+            ctypes.windll.dwmapi.DwmGetColorizationColor.restype = ctypes.c_ulong
+            ctypes.windll.dwmapi.DwmGetColorizationColor.argtypes = [ctypes.POINTER(ctypes.c_ulong),
+                                                                    ctypes.POINTER(ctypes.c_bool)]
 
-        color = ctypes.c_ulong()
-        opaque = ctypes.c_bool()
+            color = ctypes.c_ulong()
+            opaque = ctypes.c_bool()
 
-        # 获取主题颜色值
-        ctypes.windll.dwmapi.DwmGetColorizationColor(ctypes.byref(color), ctypes.byref(opaque))
+            # 获取主题颜色值
+            ctypes.windll.dwmapi.DwmGetColorizationColor(ctypes.byref(color), ctypes.byref(opaque))
 
-        # 将颜色值转换为RGB元组
-        b, g, r = color.value % 256, (color.value >> 8) % 256, (color.value >> 16) % 256
+            # 将颜色值转换为RGB元组
+            b, g, r = color.value % 256, (color.value >> 8) % 256, (color.value >> 16) % 256
 
-        setThemeColor(QColor(r, g, b), save=False)
+            setThemeColor(QColor(r, g, b), save=False)
 
-    except Exception as e:
-        logger.error(f"Cannot get theme color: {e}")
-elif sys.platform == "darwin":  # macOS Only
-    # 咱就是说为什么苹果要把开发者文档做成英文，出个中文版不好吗？
-    # TM的让我找得好苦…… - By YHX
-    import objc # PyObjC
-    from Foundation import NSBundle
+    elif sys.platform == "darwin":  # macOS Only
+        # 咱就是说为什么苹果要把开发者文档做成英文，出个中文版不好吗？
+        # TM的让我找得好苦…… - By YHX (#17)
+        import objc # PyObjC
+        from Foundation import NSBundle
 
-    # 加载AppKit框架
-    AppKit = NSBundle.bundleWithIdentifier_('com.apple.AppKit')
+        # 加载AppKit框架
+        AppKit = NSBundle.bundleWithIdentifier_('com.apple.AppKit')
 
-    # 获取NSColor类
-    NSColor = AppKit.classNamed_('NSColor')
-    NSColorSpace = AppKit.classNamed_('NSColorSpace')
+        # 获取NSColor类
+        NSColor = AppKit.classNamed_('NSColor')
+        NSColorSpace = AppKit.classNamed_('NSColorSpace')
 
-    # 获取当前主题色
-    theme_color = NSColor.controlAccentColor() #md就是这个API让我找了好久……
-    # 欸，这时还不能用，因为现在这是NSColor Catalog color，还要转换！
-    color = theme_color.colorUsingColorSpace_(NSColorSpace.sRGBColorSpace())
-    # 获取颜色的 RGB 分量
-    red = color.redComponent()
-    green = color.greenComponent()
-    blue = color.blueComponent()
-    
-    # 将颜色分量转换为 0-255 范围
-    red = int(red * 255)
-    green = int(green * 255)
-    blue = int(blue * 255)
+        # 获取当前主题色
+        color = NSColor.controlAccentColor() #md就是这个API让我找了好久……
+        # 欸，这时还不能用，因为现在这是NSColor Catalog color，还要转换！
+        color = color.colorUsingColorSpace_(NSColorSpace.sRGBColorSpace())
+        # 获取颜色的 RGB 分量
+        red = color.redComponent()
+        green = color.greenComponent()
+        blue = color.blueComponent()
 
-    setThemeColor(QColor(red, green, blue), save=False)
-else:
-    logger.warning("Cannot get theme color on this platform: "+sys.platform)
+        # 将颜色分量转换为 0-255 范围
+        red = int(red * 255)
+        green = int(green * 255)
+        blue = int(blue * 255)
+
+        setThemeColor(QColor(red, green, blue), save=False)
+except Exception as e:
+    logger.error(f"Cannot get theme color: {e}")
     
 # create main window
 w = MainWindow()
 
 # loading plugins
-pluginsPath=os.path.join(os.path.dirname(__file__), "plugins")
+# pluginsPath=os.path.join(app.applicationDirPath(), "plugins")
+pluginsPath=("./plugins")
 loadPlugins(w, pluginsPath)
 
 try:  # 静默启动

@@ -1,6 +1,7 @@
 # coding:utf-8
 
 from PySide6.QtCore import QDir
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator)
@@ -37,4 +38,4 @@ FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 
 
 cfg = Config()
-qconfig.load('./Ghost Downloader 配置文件.json', cfg)
+qconfig.load('{}/Ghost Downloader 配置文件.json'.format(QApplication.applicationDirPath()), cfg)

@@ -3,6 +3,7 @@ import inspect
 import os
 import sys
 
+from PySide6.QtWidgets import QApplication
 from loguru import logger
 
 from app.common.plugin_base import PluginBase
@@ -12,7 +13,7 @@ plugins = []
 # def isWin11():
 #     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
 
-def loadPlugins(mainWindow, directory="./plugins"):
+def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
     try:
         for filename in os.listdir(directory):
             if filename.endswith(".py"):

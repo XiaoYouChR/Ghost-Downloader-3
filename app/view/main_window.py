@@ -47,7 +47,7 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.start()
 
         # 创建未完成的任务
-        historyFile = Path("./Ghost Downloader 记录文件")
+        historyFile = Path("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()))
         # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
             with open(historyFile, 'r', encoding='utf-8') as f:

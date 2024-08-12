@@ -3,7 +3,7 @@ import sys
 
 from PySide6.QtCore import Qt, Signal, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingCard, PushSettingCard,
@@ -242,7 +242,7 @@ class SettingInterface(ScrollArea):
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                      r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
                 winreg.SetValueEx(key, 'GhostDownloader', 0, winreg.REG_SZ,
-                                  f'"{sys.argv[0]}" --silence')
+                                  '"{}" --silence'.format(QApplication.applicationFilePath().replace("/", "\\")))
             else:
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                      r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)

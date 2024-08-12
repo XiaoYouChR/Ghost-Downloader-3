@@ -111,6 +111,13 @@ class DownloadTask(QThread):
                     match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
                     if match:
                         fileName = match.group(1)
+
+                # 移除文件名头尾可能存在的引号
+                if fileName:
+                    fileName = fileName.strip('"\'')
+                else:
+                    raise KeyError
+
                 logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
             except (KeyError, IndexError) as e:
                 try:
@@ -126,10 +133,11 @@ class DownloadTask(QThread):
                         fileName = fileName[1:-1]
                     elif fileName.startswith("'") and fileName.endswith("'"):
                         fileName = fileName[1:-1]
-                    logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
 
                     if not fileName:
                         raise KeyError
+
+                    logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
 
                 except (KeyError, IndexError) as e:
                     # 处理没有文件名的情况
