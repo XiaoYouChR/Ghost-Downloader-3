@@ -279,7 +279,7 @@ class DownloadTask(QThread):
 
             # print(self.process, self.fileSize)
 
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
         for i in self.workers:
             await i.task
 
