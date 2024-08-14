@@ -173,7 +173,7 @@ class DownloadTask(QThread):
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                    proxy=getWindowsProxy())
 
-    async def __reassignWorker(self):
+    async def reassignWorker(self):
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -347,4 +347,4 @@ class DownloadWorker:
                     sleep(5)
 
             self.process = self.endPos
-            await mission.__reassignWorker()
+            await mission.reassignWorker()
