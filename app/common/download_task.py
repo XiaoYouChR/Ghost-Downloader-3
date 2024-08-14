@@ -160,8 +160,9 @@ class DownloadTask(QThread):
             if not filePath.exists():
                 filePath.mkdir()
 
-        # 创建空文件
-        Path(f"{filePath}/{fileName}").touch()
+        # 创建异步文件管理器
+        self.file_manager = aiofiles.open(f"{filePath}/{fileName}",'wb')
+        self.file_lock = asyncio.Lock()#锁
 
         self.process = []
         self.url = url
@@ -173,7 +174,7 @@ class DownloadTask(QThread):
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                    proxy=getWindowsProxy())
 
-    async def reassignWorker(self):
+    def reassignWorker(self):
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -230,6 +231,7 @@ class DownloadTask(QThread):
         asyncio.run(self.main())
 
     async def main(self):
+        self.file = await self.file_manager
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
             self.maxBlockNum = 1
@@ -280,8 +282,10 @@ class DownloadTask(QThread):
             # print(self.process, self.fileSize)
 
             await asyncio.sleep(1)
+        #等待所有任务完成
         for i in self.workers:
             await i.task
+        await self.file.close()
 
         # 删除历史记录文件
         try:
@@ -315,36 +319,25 @@ class DownloadWorker:
                     download_headers = {"Range": f"bytes={self.process}-{self.endPos}",
                                         "User-Agent": Headers["User-Agent"]}
 
-                    self.file = open(f"{mission.filePath}/{mission.fileName}", "rb+")
-                    self.file.seek(self.process)
-
                     async with mission.client.stream(url=mission.url, headers=download_headers, timeout=30, method="GET") as res:
                         async for chunk in res.aiter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
                             if self.endPos <= self.process:
                                 break
                             if chunk:
-                                self.file.write(chunk)
+                                async with mission.file_lock:
+                                    await mission.file.seek(self.process)
+                                    await mission.file.write(chunk)
                                 self.process += 65536
 
                     if self.process >= self.endPos:
                         self.process = self.endPos
-
-                    try:
-                        self.file.close()
-                    except:
-                        pass
 
                     finished = True
 
                 except Exception as e:
                     logger.info(f"Task: {mission.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
 
-                    try:
-                        self.file.close()
-                    except:
-                        pass
-
-                    sleep(5)
+                    asyncio.sleep(5)
 
             self.process = self.endPos
-            await mission.reassignWorker()
+            mission.reassignWorker()

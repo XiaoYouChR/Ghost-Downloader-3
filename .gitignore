@@ -1,3 +1,4 @@
 *.pyc
 *.zip
 *.apk
+__pycache__
