@@ -337,7 +337,7 @@ class DownloadWorker:
                 except Exception as e:
                     logger.info(f"Task: {mission.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
 
-                    asyncio.sleep(5)
+                    await asyncio.sleep(5)
 
             self.process = self.endPos
             mission.reassignWorker()

@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import os
 import re
@@ -129,12 +130,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setDisabled(True)
             self.pauseButton.setIcon(FIF.PLAY)
             for i in self.task.workers:
-                try:
-                    i.file.close()
-                except Exception as e:
-                    logger.warning(
-                        f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
-                i.terminate()
+                i.task.cancel()
             self.task.terminate()
 
             # 改变记录状态

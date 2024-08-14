@@ -1,4 +1,5 @@
 *.pyc
 *.zip
 *.apk
+*.ghd
 __pycache__
