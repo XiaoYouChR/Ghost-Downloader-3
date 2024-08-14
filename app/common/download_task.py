@@ -207,7 +207,7 @@ class DownloadTask(QThread):
         else:
             logger.info(
                 f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
-
+    
     def clacDivisionalRange(self):
         step = self.fileSize // self.maxBlockNum  # 每块大小
         arr = list(range(0, self.fileSize, step))
@@ -228,64 +228,70 @@ class DownloadTask(QThread):
         return step_list
     
     def run(self):
-        asyncio.run(self.main())
+        try:
+            asyncio.run(self.main())
+        except asyncio.exceptions.CancelledError:
+            logger.info('任务被取消/暂停')
+        
 
     async def main(self):
-        self.file = await self.file_manager
+        self.task = asyncio.current_task()
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
             self.maxBlockNum = 1
         # 读取历史记录
         # 历史记录.ghd文件采用格式示例: ["start": 0, "process": 0, "end": 100, }, {"start": 101, "process": 111, "end": 200}]
-        if Path(f"{self.filePath}/{self.fileName}.ghd").exists():
-            try:
-                with open(f"{self.filePath}/{self.fileName}.ghd", "r", encoding="utf-8") as f:
-                    workersInfo = eval(f.read())
-                    logger.debug(f"Task:{self.fileName}, history info is: {workersInfo}")
-                    for i in workersInfo:
-                        self.workers.append(
-                            DownloadWorker(i["start"], i["process"], i["end"], self))
+        async with self.file_manager as self.file:
 
-                self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
-            # TODO 错误处理
-            except:
+            if Path(f"{self.filePath}/{self.fileName}.ghd").exists():
+                try:
+                    with open(f"{self.filePath}/{self.fileName}.ghd", "r", encoding="utf-8") as f:
+                        workersInfo = eval(f.read())
+                        logger.debug(f"Task:{self.fileName}, history info is: {workersInfo}")
+                        for i in workersInfo:
+                            self.workers.append(
+                                DownloadWorker(i["start"], i["process"], i["end"], self))
+
+                    self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
+                # TODO 错误处理
+                except:
+                    for i in range(self.maxBlockNum):
+                        stepList = self.clacDivisionalRange()
+                        self.workers.append(
+                            DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
+            else:
                 for i in range(self.maxBlockNum):
                     stepList = self.clacDivisionalRange()
                     self.workers.append(
                         DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
-        else:
-            for i in range(self.maxBlockNum):
-                stepList = self.clacDivisionalRange()
-                self.workers.append(
-                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
 
-        for i in self.workers:
-            logger.debug(f"Task {self.fileName}, starting the thread {i}...")
-            asyncio.create_task(i.run())
+            for i in self.workers:
+                logger.debug(f"Task {self.fileName}, starting the thread {i}...")
+                asyncio.create_task(i.run())
 
-        # fileResolve = Path(f"{self.filePath}/{self.fileName}")
-        # 实时统计进度并写入历史记录文件
-        while not self.process == self.fileSize:
-            with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
-                info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
-                f.write(str(info))
-                f.flush()
+            # fileResolve = Path(f"{self.filePath}/{self.fileName}")
+            # 实时统计进度并写入历史记录文件
+            while not self.process == self.fileSize:
+                with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
+                    info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
+                    f.write(str(info))
+                    f.flush()
 
-            # self.process = os.path.getsize(fileResolve)
-            # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
-            # self.processChange.emit(str(self.process))
+                # self.process = os.path.getsize(fileResolve)
+                # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
+                # self.processChange.emit(str(self.process))
 
-            self.process = sum([i.process - i.startPos + 1 for i in self.workers])
+                self.process = sum([i.process - i.startPos + 1 for i in self.workers])
 
-            self.workerInfoChange.emit(info)
+                self.workerInfoChange.emit(info)
 
-            # print(self.process, self.fileSize)
+                # print(self.process, self.fileSize)
 
-            await asyncio.sleep(1)
-        #等待所有任务完成
-        for i in self.workers:
-            await i.task
-        await self.file.close()
+                await asyncio.sleep(1)
+            #等待所有任务完成
+            for i in self.workers:
+                await i.task
+            
 
         # 删除历史记录文件
         try:
