@@ -179,7 +179,7 @@ class DownloadTask(QThread):
         maxRemainderWorker: DownloadWorker = None
 
         for i in self.workers:
-            if (i.endPos - i.process) > maxRemainder:  # TODO 其实逻辑有一点问题, 但是影响不大
+            if (i.endPos - i.process) > maxRemainder:  # TODO 其实逻辑有一点问题, 但是影响不大 
                 maxRemainderWorkerProcess = i.process
                 maxRemainderWorkerEnd = i.endPos
                 maxRemainder = (maxRemainderWorkerEnd - maxRemainderWorkerProcess)
@@ -195,8 +195,7 @@ class DownloadTask(QThread):
             # 安配新的工人
             s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
 
-            _ = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.url, self.filePath,
-                               self.fileName, self.client)
+            _ = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self)
             _.workerFinished.connect(self.__reassignWorker)
             _.start()
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, _)
@@ -240,8 +239,7 @@ class DownloadTask(QThread):
                     logger.debug(f"Task:{self.fileName}, history info is: {workersInfo}")
                     for i in workersInfo:
                         self.workers.append(
-                            DownloadWorker(i["start"], i["process"], i["end"], self.url, self.filePath,
-                                           self.fileName, self.client))
+                            DownloadWorker(i["start"], i["process"], i["end"], self))
 
                 self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
             # TODO 错误处理
@@ -249,14 +247,12 @@ class DownloadTask(QThread):
                 for i in range(self.maxBlockNum):
                     stepList = self.clacDivisionalRange()
                     self.workers.append(
-                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
-                                       self.fileName, self.client))
+                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
         else:
             for i in range(self.maxBlockNum):
                 stepList = self.clacDivisionalRange()
                 self.workers.append(
-                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
-                                   self.fileName, self.client))
+                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
 
         for i in self.workers:
             logger.debug(f"Task {self.fileName}, starting the thread {i}...")
@@ -300,17 +296,15 @@ class DownloadWorker(QThread):
 
     workerFinished = Signal()  # 内置的信号不好用
 
-    def __init__(self, start, process, end, url, filePath, fileName, client: Client, parent=None):
+    def __init__(self, start, process, end, task:DownloadTask, parent=None):
         super().__init__(parent)
         self.startPos = start
         self.process = process
         self.endPos = end
-        self.url = url
-        self.filePath = filePath
-        self.fileName = fileName
-        self.client = client
+        self.task = task
 
     def run(self):
+        task = self.task
         if self.process < self.endPos:  # 因为可能会创建空线程
             finished = False
             while not finished:
@@ -318,10 +312,10 @@ class DownloadWorker(QThread):
                     download_headers = {"Range": f"bytes={self.process}-{self.endPos}",
                                         "User-Agent": Headers["User-Agent"]}
 
-                    self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
+                    self.file = open(f"{task.filePath}/{task.fileName}", "rb+")
                     self.file.seek(self.process)
 
-                    with self.client.stream(url=self.url, headers=download_headers, timeout=30, method="GET") as res:
+                    with task.client.stream(url=task.url, headers=download_headers, timeout=30, method="GET") as res:
                         for chunk in res.iter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
                             if self.endPos <= self.process:
                                 break
@@ -340,7 +334,7 @@ class DownloadWorker(QThread):
                     finished = True
 
                 except Exception as e:
-                    logger.info(f"Task: {self.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
+                    logger.info(f"Task: {task.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
 
                     try:
                         self.file.close()
