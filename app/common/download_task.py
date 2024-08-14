@@ -5,7 +5,8 @@ from pathlib import Path
 from time import sleep, time
 from urllib.parse import urlparse, parse_qs, unquote
 
-import httpx
+import httpx,aiofiles
+import asyncio
 from PySide6.QtCore import QThread, Signal
 from httpx import Client
 from loguru import logger
@@ -169,10 +170,10 @@ class DownloadTask(QThread):
         self.maxBlockNum = maxBlockNum
         self.workers: list[DownloadWorker] = []
 
-        self.client = httpx.Client(headers=Headers, verify=False,
+        self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                    proxy=getWindowsProxy())
 
-    def __reassignWorker(self):
+    async def __reassignWorker(self):
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -196,8 +197,7 @@ class DownloadTask(QThread):
             s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
 
             _ = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self)
-            _.workerFinished.connect(self.__reassignWorker)
-            _.start()
+            asyncio.create_task(_.run())
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, _)
 
             logger.info(
@@ -225,8 +225,11 @@ class DownloadTask(QThread):
         step_list[-1][-1] = self.fileSize - 1  # 修正
 
         return step_list
-
+    
     def run(self):
+        asyncio.run(self.main())
+
+    async def main(self):
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
             self.maxBlockNum = 1
@@ -256,8 +259,7 @@ class DownloadTask(QThread):
 
         for i in self.workers:
             logger.debug(f"Task {self.fileName}, starting the thread {i}...")
-            i.workerFinished.connect(self.__reassignWorker)
-            i.start()
+            asyncio.create_task(i.run())
 
         # fileResolve = Path(f"{self.filePath}/{self.fileName}")
         # 实时统计进度并写入历史记录文件
@@ -277,7 +279,9 @@ class DownloadTask(QThread):
 
             # print(self.process, self.fileSize)
 
-            sleep(1)
+            asyncio.sleep(1)
+        for i in self.workers:
+            await i.task
 
         # 删除历史记录文件
         try:
@@ -291,20 +295,19 @@ class DownloadTask(QThread):
         self.taskFinished.emit()
 
 
-class DownloadWorker(QThread):
+class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
 
-    workerFinished = Signal()  # 内置的信号不好用
 
-    def __init__(self, start, process, end, task:DownloadTask, parent=None):
-        super().__init__(parent)
+    def __init__(self, start, process, end, mission:DownloadTask):
         self.startPos = start
         self.process = process
         self.endPos = end
-        self.task = task
+        self.mission = mission
 
-    def run(self):
-        task = self.task
+    async def run(self):
+        mission = self.mission
+        self.task = asyncio.current_task()
         if self.process < self.endPos:  # 因为可能会创建空线程
             finished = False
             while not finished:
@@ -312,11 +315,11 @@ class DownloadWorker(QThread):
                     download_headers = {"Range": f"bytes={self.process}-{self.endPos}",
                                         "User-Agent": Headers["User-Agent"]}
 
-                    self.file = open(f"{task.filePath}/{task.fileName}", "rb+")
+                    self.file = open(f"{mission.filePath}/{mission.fileName}", "rb+")
                     self.file.seek(self.process)
 
-                    with task.client.stream(url=task.url, headers=download_headers, timeout=30, method="GET") as res:
-                        for chunk in res.iter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
+                    async with mission.client.stream(url=mission.url, headers=download_headers, timeout=30, method="GET") as res:
+                        async for chunk in res.aiter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
                             if self.endPos <= self.process:
                                 break
                             if chunk:
@@ -334,7 +337,7 @@ class DownloadWorker(QThread):
                     finished = True
 
                 except Exception as e:
-                    logger.info(f"Task: {task.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
+                    logger.info(f"Task: {mission.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
 
                     try:
                         self.file.close()
@@ -344,4 +347,4 @@ class DownloadWorker(QThread):
                     sleep(5)
 
             self.process = self.endPos
-            self.workerFinished.emit()
+            await mission.__reassignWorker()
