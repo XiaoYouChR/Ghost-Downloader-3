@@ -7,7 +7,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 import httpx,aiofiles
 import asyncio
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 from httpx import Client
 from loguru import logger
 
@@ -70,6 +70,20 @@ def getRealUrl(url: str):
         logger.error(f"Cannot connect to the Internet! Error: {err}")
         return
 
+#未完成
+class DowloadThread(QThread):
+    create_task = Signal()
+    def __init__(self, parent = None) -> None:
+        super().__init__(parent)
+        self.task_list :list[DownloadTask]= []
+    def run(self):
+        asyncio.run(self.main())
+    async def main(self):
+        pass
+    def new_task(self, url, maxBlockNum: int = 8, filePath=None, fileName=None):
+        task = DownloadTask(url, maxBlockNum, filePath, fileName)
+        self.task_list.append(task)
+        return task
 
 class DownloadTask(QThread):
     """作用相当于包工头"""
@@ -272,24 +286,25 @@ class DownloadTask(QThread):
 
             # fileResolve = Path(f"{self.filePath}/{self.fileName}")
             # 实时统计进度并写入历史记录文件
-            while not self.process == self.fileSize:
-                with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
+            self.process = sum([i.process - i.startPos + 1 for i in self.workers])
+            async with aiofiles.open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
+                while not self.process == self.fileSize:
                     info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
-                    f.write(str(info))
-                    f.flush()
+                    await f.write(str(info))
+                    await f.flush()
 
-                # self.process = os.path.getsize(fileResolve)
-                # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
-                # self.processChange.emit(str(self.process))
+                    # self.process = os.path.getsize(fileResolve)
+                    # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
+                    # self.processChange.emit(str(self.process))
 
-                self.process = sum([i.process - i.startPos + 1 for i in self.workers])
 
-                self.workerInfoChange.emit(info)
+                    self.workerInfoChange.emit(info)
 
-                # print(self.process, self.fileSize)
+                    # print(self.process, self.fileSize)
 
-                await asyncio.sleep(1)
-            #等待所有任务完成
+                    await asyncio.sleep(1)
+                
+            #等待所有任务完成,不加会报错
             for i in self.workers:
                 await i.task
             
@@ -328,15 +343,32 @@ class DownloadWorker:
 
                     async with mission.client.stream(url=mission.url, headers=download_headers, timeout=30, method="GET") as res:
                         async for chunk in res.aiter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
-                            if self.endPos <= self.process:
+                            if self.endPos <= self.process :
+
+                                if not (i := mission.workers.index(self) + 1 ) == len(mission.workers):
+                                    if mission.workers[i].endPos < self.endPos:#在这种情况下校验会不断等待
+                                        break
+                                        
+                                    while mission.workers[i].process < self.endPos:
+                                        logger.info('等待后一协程下载以完成数据校验')
+                                        asyncio.sleep(1)
+                                        
+                                    async with mission.file_lock:
+                                        await mission.file.seek(self.endPos)
+                                        r = await mission.file.read(self.endPos - self.process)
+                                    if r != chunk[- ( self.endPos - self.process ):]:
+                                        logger.error('校验错误，请检查数据是否损坏')
                                 break
+
                             if chunk:
                                 async with mission.file_lock:
                                     await mission.file.seek(self.process)
                                     await mission.file.write(chunk)
                                 self.process += 65536
+                                mission.process += 65536
 
                     if self.process >= self.endPos:
+                        mission.process -= self.process - self.endPos # 防止大于mission
                         self.process = self.endPos
 
                     finished = True
