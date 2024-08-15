@@ -1,5 +1,5 @@
 # coding:utf-8
-import sys
+import sys, os
 
 from PySide6.QtCore import Qt, Signal, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
@@ -11,17 +11,20 @@ from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingC
                             setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
-
+appDir=sys.argv[0]
+currentpath=os.path.dirname(appDir)
+currentuser=os.getlogin()
 
 class SettingInterface(ScrollArea):
     """ Setting interface """
 
     checkUpdateSig = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, app=None):
         super().__init__(parent=parent)
         self.scrollWidget = QWidget()
         self.expandLayout = QVBoxLayout(self.scrollWidget)
+        self.parent=parent
 
         # music folders
         self.downloadGroup = SettingCardGroup(
@@ -242,15 +245,28 @@ class SettingInterface(ScrollArea):
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                      r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
                 winreg.SetValueEx(key, 'GhostDownloader', 0, winreg.REG_SZ,
-                                  '"{}" --silence'.format(QApplication.applicationFilePath().replace("/", "\\")))
+                                  '"{}" --silence'.format(appDir.replace("/", "\\")))
             else:
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                      r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
                 winreg.DeleteValue(key, 'GhostDownloader')
+        elif sys.platform == "darwin":
+            if value:
+                os.makedirs(os.path.join('/Users',currentuser,'Library/Application Support/GhostDownloader'), exist_ok=True)
+                with open(os.path.join('/Users',currentuser,'Library/LaunchAgents/app.ghost.downloader.plist'), 'w') as f:
+                    f.write(f'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n	<key>Label</key>\n  <string>Ghost Downloader 3</string>\n   <key>LimitLoadToSessionType</key>\n	<string>Aqua</string>\n	<key>RunAtLoad</key>\n	<true/>\n   <key>ProgramArguments</key>\n   <array>\n   <string>{cfg.path.value}</string>\n     <string>--silence</string>\n	</array>\n</dict>\n</plist>')
+            else:
+                # 直接删文件
+                try:
+                    os.remove(os.path.join('/Users',currentuser,'Library/LaunchAgents/app.ghost.downloader.plist'))
+                except FileNotFoundError:
+                    pass
+                except Exception:
+                    pass
         else:
             InfoBar.warning(
                 title='注意',
-                content=f"该功能仅在 Windows 平台有效.",
+                content=f"该功能仅在 Windows/macOS 平台有效.",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,

@@ -6,12 +6,15 @@ from loguru import logger
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator)
-
-
+import os,sys
+currentpath=os.path.dirname(sys.argv[0])
+appDir=sys.argv[0]
 
 
 class Config(QConfig):
     """ Config of application """
+    # main executable
+    path=ConfigItem("MainExecutable", "Path", appDir, restart=True)
     # download
     maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 15, RangeValidator(1, 100))
     downloadFolder = ConfigItem(
@@ -40,6 +43,6 @@ FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 
 cfg = Config()
 try:
-    qconfig.load('{}/Ghost Downloader 配置文件.json'.format(QApplication.applicationDirPath()), cfg)
+    qconfig.load('{}/Ghost Downloader 配置文件.json'.format(currentpath), cfg)
 except Exception as e:
     logger.error(e)

@@ -16,6 +16,9 @@ from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
+import os,sys
+
+currentpath=os.path.dirname(sys.argv[0])#.replace('/app/view','')
 
 
 class ThemeChangedListener(QThread):
@@ -47,7 +50,7 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.start()
 
         # 创建未完成的任务
-        historyFile = Path("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()))
+        historyFile = Path("{}/Ghost Downloader 记录文件".format(currentpath))
         # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
             with open(historyFile, 'r', encoding='utf-8') as f:

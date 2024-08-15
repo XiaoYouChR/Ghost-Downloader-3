@@ -11,7 +11,41 @@ from httpx import Client
 from loguru import logger
 
 from app.common.config import cfg
+try:
+    from ..view.main_window import MainWindow
+except:
+    pass
 from app.common.methods import getWindowsProxy, getReadableSize
+
+from qfluentwidgets import PasswordLineEdit, MessageBoxBase, SubtitleLabel, LineEdit, MessageBox
+
+class PasswordBox(MessageBoxBase):
+    """ Custom message box """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.titleLabel = SubtitleLabel('输入账密')
+        self.lineEdit = LineEdit()
+        self.lineEdit.setPlaceholderText('输入账户名/E-mail地址')
+        self.lineEdit.setClearButtonEnabled(True)
+        self.pswdLineEdit = PasswordLineEdit()
+
+        self.pswdLineEdit.setPlaceholderText('输入密码')
+        self.pswdLineEdit.setClearButtonEnabled(True)
+
+        # 将组件添加到布局中
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addWidget(self.lineEdit)
+        self.viewLayout.addWidget(self.pswdLineEdit)
+
+        # 设置对话框的最小宽度
+        self.widget.setMinimumWidth(350)
+
+
+def showMessage():
+    w = PasswordBox(MainWindow)
+    if w.exec():
+        return w.lineEdit.text(), w.pswdLineEdit.text()
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -42,6 +76,18 @@ def getRealUrl(url: str):
             # TODO 报错处理
             logger.error("HTTP status code 400, it seems that the url is unavailable")
             return
+
+        while response.status_code == 401: # Unauthorized
+            # 获取账密
+            account, password = showMessage()
+            if not password:
+                url.replace("https://", f"https://{account}@")
+            elif not account:
+                logger.error("No account found")
+                continue
+            else:
+                url.replace("https://", f"https://{account}:{password}@")
+            break
 
         while response.status_code == 302:  # 当302的时候
             rs = response.headers["location"]  # 获取重定向信息
@@ -180,9 +226,12 @@ class DownloadTask(QThread):
 
         for i in self.workers:
             if (i.endPos - i.process) > maxRemainder:  # TODO 其实逻辑有一点问题, 但是影响不大
+                # 记录下剩余任务量最大的工作者的进程和结束位置
                 maxRemainderWorkerProcess = i.process
                 maxRemainderWorkerEnd = i.endPos
+                # 更新剩余任务量
                 maxRemainder = (maxRemainderWorkerEnd - maxRemainderWorkerProcess)
+                # 记录下剩余任务量最大的worker
                 maxRemainderWorker = i
 
         if maxRemainderWorker and maxRemainder > cfg.maxReassignSize.value * 1048576:

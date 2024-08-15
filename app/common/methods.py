@@ -8,12 +8,14 @@ from loguru import logger
 
 from app.common.plugin_base import PluginBase
 
+currentpath=os.path.dirname(sys.argv[0]).replace("/Contents/MacOS","/Contents")
+
 plugins = []
 
 # def isWin11():
 #     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
 
-def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
+def loadPlugins(mainWindow, directory="{}/plugins".format(currentpath)):
     try:
         for filename in os.listdir(directory):
             if filename.endswith(".py"):
