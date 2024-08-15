@@ -209,6 +209,7 @@ class DownloadTask(QThread):
                 f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
     
     def clacDivisionalRange(self):
+        '''预先分块'''
         step = self.fileSize // self.maxBlockNum  # 每块大小
         arr = list(range(0, self.fileSize, step))
 
@@ -255,13 +256,13 @@ class DownloadTask(QThread):
                     self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
                 # TODO 错误处理
                 except:
+                    stepList = self.clacDivisionalRange()
                     for i in range(self.maxBlockNum):
-                        stepList = self.clacDivisionalRange()
                         self.workers.append(
                             DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
             else:
+                stepList = self.clacDivisionalRange()
                 for i in range(self.maxBlockNum):
-                    stepList = self.clacDivisionalRange()
                     self.workers.append(
                         DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
 
