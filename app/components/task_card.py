@@ -230,10 +230,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
 
         for e, i in enumerate(content):
-            process += i["process"] - i["start"]
+            #process += i["process"] - i["start"]
             self.progressBar.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
             self.progressBar.progressBarList[e].setValue( ( (i["process"] - i["start"]) / (i["end"] - i["start"]) ) * 100)
-
+        
+        process = self.task.process
         duringLastSecondProcess = process - self.lastProcess
 
         self.speedLable.setText(f"{getReadableSize(duringLastSecondProcess)}/s")

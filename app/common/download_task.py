@@ -281,7 +281,7 @@ class DownloadTask(QThread):
                         DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self))
 
             for i in self.workers:
-                logger.debug(f"Task {self.fileName}, starting the thread {i}...")
+                #logger.debug(f"Task {self.fileName}, starting the thread {i}...")
                 asyncio.create_task(i.run())
 
             # fileResolve = Path(f"{self.filePath}/{self.fileName}")
@@ -303,7 +303,7 @@ class DownloadTask(QThread):
                     # print(self.process, self.fileSize)
 
                     await asyncio.sleep(1)
-                
+                info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]#完成后额外刷新一次
             #等待所有任务完成,不加会报错
             for i in self.workers:
                 await i.task
@@ -317,7 +317,7 @@ class DownloadTask(QThread):
             logger.error(f"Failed to delete the history file, please delete it manually. Err: {e}")
 
         logger.info(f"Task {self.fileName} finished!")
-
+        self.workerInfoChange.emit(info)
         self.taskFinished.emit()
 
 
@@ -368,7 +368,7 @@ class DownloadWorker:
                                 mission.process += 65536
 
                     if self.process >= self.endPos:
-                        mission.process -= self.process - self.endPos # 防止大于mission
+                        mission.process -= self.process - self.endPos #1:防止大于mission  2:无法工作
                         self.process = self.endPos
 
                     finished = True
