@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from pathlib import Path
-
+import json
 import httpx
 from PySide6.QtCore import Qt, QThread, Signal, QDir, QUrl, QSize, QMetaObject, QCoreApplication
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices
@@ -19,19 +19,52 @@ from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
 
 
+#务必告知译者使用UTF-8编码
+class i18n:
+    def __init__(self, config_file, i18n_dir, default_language="zh_cn"):
+        self.config_file = config_file
+        self.i18n_dir = i18n_dir
+        self.default_language = default_language
+        self.load_config()
+        self.load_translations()
+
+    def load_config(self):
+        with open(self.config_file, encoding='utf-8') as file:
+            config = json.load(file)
+        self.lang = config.get('lang', self.default_language)
+
+    def load_translations(self):
+        try:
+            filename = os.path.join(self.i18n_dir, f"{self.lang}.json")
+            with open(filename, encoding='utf-8') as file:
+                self.translations = json.load(file)
+        except FileNotFoundError:
+            filename = os.path.join(self.i18n_dir, f"{self.default_language}.json")
+            with open(filename, encoding='utf-8') as file:
+                self.translations = json.load(file)
+
+    def get_translation(self, key):
+        return self.translations.get(key, f"MISSING: {key}")
+
+    def _(self, key, **kwargs):
+        text = self.get_translation(key)
+        return text.format(**kwargs)
+lang = i18n("config.json", "lib/i18n")
 class JyOSPagePlugin(PluginBase):
     def __init__(self, mainWindow):
-        self.name = "杰克姚定制系统下载页面"
+        #self.name = "杰克姚定制系统下载页面"
+        self.name = lang._("Label-Text;JyOSPagePluginName")
         self.version = "1.0.0"
         self.author = "XiaoYouChR"
         self.icon = ":/plugins/JyOSPagePlugin/Logo.png"
-        self.description = "官方演示插件: 杰克姚定制系统下载页面插件"
+        #self.description = "官方演示插件: 杰克姚定制系统下载页面插件"
+        self.description = lang._("Label-Text;JyOSPagePluginDescription")
         self.mainWindow = mainWindow
 
     def load(self):
         self.mainWindow.homeInterface = HomeInterface(self.mainWindow)
-        self.mainWindow.addSubInterface(self.mainWindow.homeInterface, FIF.CLOUD_DOWNLOAD, "系统下载")
-
+        #self.mainWindow.addSubInterface(self.mainWindow.homeInterface, FIF.CLOUD_DOWNLOAD, "系统下载")
+        self.mainWindow.addSubInterface(self.mainWindow.homeInterface, FIF.CLOUD_DOWNLOAD, lang._("Label-Text;JyOSPagePluginDownload"))
 
 class getInfoThread(QThread):
     gotInfo = Signal(list)
@@ -75,7 +108,8 @@ class HomeInterface(ScrollArea):
         self.scrollWidget.setMinimumWidth(816)
         self.expandLayout = QVBoxLayout(self.scrollWidget)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.loadingLabel = TitleLabel("正在加载", self.scrollWidget)
+        #self.loadingLabel = TitleLabel("正在加载", self.scrollWidget)
+        self.loadingLabel = TitleLabel(lang._("Label-Text;HomeInterfaceLoading"), self.scrollWidget)
         self.loadingLabel.setObjectName("noTaskLabel")
         self.loadingLabel.setAlignment(Qt.AlignCenter)
         self.expandLayout.addWidget(self.loadingLabel)
