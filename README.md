@@ -31,6 +31,7 @@
   <summary>目录</summary>
   <ol>
     <li><a href="#关于本项目">关于本项目</a></li>
+    <li><a href="#构建&运行">构建&运行</a></li>
     <li><a href="#计划">计划</a></li>
     <li><a href="#贡献">贡献</a></li>
     <li><a href="#许可证">许可证</a></li>
@@ -47,6 +48,41 @@
 [![Product Name Screen Shot][product-screenshot]](https://space.bilibili.com/437313511)
 
 在兴趣驱动下完成的一个下载器，是本人的第一个Python项目😫，本来的目的是帮B站上一位UP主做资源整合的😵。支持多线程下载、断点续传、下载记录、校验文件等功能。特点是能像IDM一样智能分块但又不需要合并文件。但是Python和Qt💩一样的内存占用成为项目很大的槽点😭
+
+
+
+<!-- BUILD, RUN -->
+## Windows端
+前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-Windows-amd64-PyInstaller.7z，下载解压后运行main.exe。
+## Mac端（未测试）
+前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-MacOS-amd64-PyInstaller.dmg（Intel芯片）/Ghost-Downloader-v3.x.x-MacOS-arm64-PyInstaller.dmg（Apple芯片），下载解压后运行main.app。
+（仔细看，Intel芯片的是AMD64，Apple芯片的是ARM64）
+## Linux端
+前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-Linux-amd64-PyInstaller.7z，下载解压后运行main。
+## 自行构建/运行
+请先Clone本仓库，然后配置好所需文件：
+```sh
+git clone https://github.com/XiaoYouChR/Ghost-Downloader-3
+pip install -r requirements.txt
+```
+直接运行：
+```sh
+python main.py
+```
+或：
+```sh
+python3 main.py
+```
+使用PyInstaller构建（Windows/Linux端使用命令）：
+（记得装PyInstaller！）
+```sh
+pyinstaller -w -i logo.ico main.py
+```
+Mac端命令：
+```sh
+build-mac.command
+```
+然后，在dist文件夹中找到`main.exe`（Windows端）或`Ghost-Downloader 3.app`（Mac端）或`main`（Linux端）并运行即可享用～
 
 
 
