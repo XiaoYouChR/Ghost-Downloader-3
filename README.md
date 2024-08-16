@@ -63,6 +63,7 @@
 请先Clone本仓库，然后配置好所需文件：
 ```sh
 git clone https://github.com/XiaoYouChR/Ghost-Downloader-3
+cd Ghost-Downloader-3
 pip install -r requirements.txt
 ```
 直接运行：
