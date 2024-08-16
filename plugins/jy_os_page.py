@@ -50,6 +50,9 @@ class i18n:
         text = self.get_translation(key)
         return text.format(**kwargs)
 lang = i18n("config.json", "lib/i18n")
+#词条格式 主类-子类;词条名称
+#主类 Label Print Button Image Dialog Debug
+#子类 Text ... 
 class JyOSPagePlugin(PluginBase):
     def __init__(self, mainWindow):
         #self.name = "杰克姚定制系统下载页面"
