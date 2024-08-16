@@ -55,7 +55,7 @@
 ## Windows端
 前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-Windows-amd64-PyInstaller.7z，下载解压后运行main.exe。
 ## Mac端（未测试）
-前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-MacOS-amd64-PyInstaller.dmg（Intel芯片）/Ghost-Downloader-v3.x.x-MacOS-arm64-PyInstaller.dmg（Apple芯片），下载解压后运行main.app。
+前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-MacOS-amd64-PyInstaller.dmg（Intel芯片）/Ghost-Downloader-v3.x.x-MacOS-arm64-PyInstaller.dmg（Apple芯片），下载解压后将`Ghost-Downloader 3.app`拖到`/Applications`文件夹中。
 （仔细看，Intel芯片的是AMD64，Apple芯片的是ARM64）
 ## Linux端
 前往[Releases](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest)下载最新版，大概叫Ghost-Downloader-v3.x.x-Linux-amd64-PyInstaller.7z，下载解压后运行main。
