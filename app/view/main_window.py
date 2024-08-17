@@ -1,4 +1,5 @@
 # coding: utf-8
+import ctypes
 from pathlib import Path
 
 import darkdetect
@@ -8,6 +9,7 @@ from PySide6.QtWidgets import QApplication
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
+from win32comext.shell.shellcon import WM_USER
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
@@ -47,7 +49,7 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.start()
 
         # 创建未完成的任务
-        historyFile = Path("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()))
+        historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
         # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
             with open(historyFile, 'r', encoding='utf-8') as f:
@@ -126,3 +128,14 @@ class MainWindow(MSFluentWindow):
         # 拦截关闭事件，隐藏窗口而不是退出
         event.ignore()
         self.hide()
+
+    def nativeEvent(self, eventType, message):
+        # 处理窗口重复打开事件
+        if eventType == "windows_generic_MSG":
+            msg = ctypes.wintypes.MSG.from_address(message.__int__())
+
+            if msg.message == WM_USER + 1:
+                self.show()
+                return True, 0
+
+        return super().nativeEvent(eventType, message)

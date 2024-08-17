@@ -1,9 +1,7 @@
 # coding:utf-8
 
 from PySide6.QtCore import QDir
-from PySide6.QtWidgets import QApplication
-from loguru import logger
-from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
+from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator)
 
@@ -29,6 +27,9 @@ class Config(QConfig):
     checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
     autoRun = ConfigItem("Software", "AutoRun", False, BoolValidator())
 
+    # 程序运行路径
+    appPath = "./"
+
 
 YEAR = 2024
 AUTHOR = "XiaoYouChR"
@@ -39,7 +40,3 @@ FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 
 
 cfg = Config()
-try:
-    qconfig.load('{}/Ghost Downloader 配置文件.json'.format(QApplication.applicationDirPath()), cfg)
-except Exception as e:
-    logger.error(e)

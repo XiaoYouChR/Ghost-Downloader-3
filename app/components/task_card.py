@@ -14,6 +14,7 @@ from qfluentwidgets import FluentIcon as FIF
 
 from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
+from ..common.config import cfg
 from ..common.download_task import DownloadTask
 from ..common.methods import getWindowsProxy, getReadableSize
 
@@ -113,7 +114,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         # 写入未完成任务记录文件，以供下次打开时继续下载
         if not autoCreated:
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "a", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "a", encoding="utf-8") as f:
                 _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
                      "blockNum": self.maxBlockNum, "status": self.status}
                 f.write(str(_) + "\n")
@@ -138,7 +139,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.task.terminate()
 
             # 改变记录状态
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "r", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
                 _ = f.read()
 
             _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
@@ -146,7 +147,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                           str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
                                "blockNum": self.maxBlockNum, "status": "paused"}) + "\n")
 
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "w", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
                 f.write(_)
 
             self.speedLable.setText("任务已经暂停")
@@ -162,7 +163,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.task.taskFinished.connect(self.taskFinished)
 
             # 改变记录状态
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "r", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
                 _ = f.read()
 
             _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
@@ -170,7 +171,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                           str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
                                "blockNum": self.maxBlockNum, "status": "working"}) + "\n")
 
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "w", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
                 f.write(_)
 
             self.speedLable.setText("任务正在开始")
@@ -207,13 +208,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 sleep(0.1)
 
         # 删除记录文件
-        with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "r", encoding="utf-8") as f:
+        with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
             _ = f.read()
 
         _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
                            "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
 
-        with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "w", encoding="utf-8") as f:
+        with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
             f.write(_)
 
         self.status = "canceled"
@@ -258,7 +259,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         if not self.status == "finished":  # 不是自动创建的已完成任务
             # 改变记录状态
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "r", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
                 _ = f.read()
 
             _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
@@ -266,7 +267,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                           str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
                                "blockNum": self.maxBlockNum, "status": "finished"}) + "\n")
 
-            with open("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()), "w", encoding="utf-8") as f:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
                 f.write(_)
 
             # 再获取一次图标
