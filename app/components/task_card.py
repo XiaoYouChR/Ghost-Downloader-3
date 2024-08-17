@@ -90,8 +90,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.LogoPixmapLabel.setPixmap(pixmap)
             self.LogoPixmapLabel.setFixedSize(91, 91)
 
-            self.fileButton.clicked.connect(lambda: os.system(f"{self.filePath}/{self.fileName}"))
-
             self.taskFinished()
 
         # 连接信号到槽
@@ -127,8 +125,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(91, 91)
         # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
-
-        self.fileButton.clicked.connect(lambda :os.system(f"{self.filePath}/{self.fileName}"))
 
         # 写入未完成任务记录文件，以供下次打开时继续下载
         if not self.autoCreated:
@@ -260,6 +256,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def taskFinished(self):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
+        self.clicked.connect(lambda: os.system(f"{self.filePath}/{self.fileName}"))
         self.speedLable.setText("任务已经完成")
 
         try:    # 程序启动时不要发
