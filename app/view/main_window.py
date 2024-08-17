@@ -18,6 +18,7 @@ from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
+from ..components.update_dialog import checkUpdate
 
 
 class ThemeChangedListener(QThread):
@@ -71,6 +72,11 @@ class MainWindow(MSFluentWindow):
         # 创建托盘
         self.tray = CustomSystemTrayIcon(self)
         self.tray.show()
+
+        # 检查更新
+        if cfg.checkUpdateAtStartUp.value == True:
+            checkUpdate(self)
+            print("启动！")
 
         self.splashScreen.finish()
 

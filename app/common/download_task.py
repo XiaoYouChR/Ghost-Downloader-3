@@ -168,15 +168,15 @@ class DownloadTask(QThread):
                 # 首先，尝试处理 Content-Disposition 中的 self.fileName* (RFC 5987 格式)
                 headerValue = head["content-disposition"]
                 if 'fileName*' in headerValue:
-                    match = re.search(r'fileName\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
+                    match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
                     if match:
                         self.fileName = match.group(1)
                         self.fileName = decode_rfc2231(self.fileName)
                         self.fileName = urllib.parse.unquote(self.fileName[2])  # self.fileName* 后的部分是编码信息
 
                 # 如果 self.fileName* 没有成功获取，尝试处理普通的 self.fileName
-                if not self.fileName and 'fileName' in headerValue:
-                    match = re.search(r'fileName\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
+                if not self.fileName and 'filename' in headerValue:
+                    match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
                     if match:
                         self.fileName = match.group(1)
 
@@ -195,7 +195,7 @@ class DownloadTask(QThread):
                     # 获取 response-content-disposition 参数
                     # 解码并分割 disposition
                     # 提取文件名
-                    self.fileName = unquote(parse_qs(urlparse(self.url).query).get('response-content-disposition', [''])[0]).split("fileName=")[-1]
+                    self.fileName = unquote(parse_qs(urlparse(self.url).query).get('response-content-disposition', [''])[0]).split("filename=")[-1]
                     # 去掉可能存在的引号
                     if self.fileName.startswith('"') and self.fileName.endswith('"'):
                         self.fileName = self.fileName[1:-1]
