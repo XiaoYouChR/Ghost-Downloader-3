@@ -250,7 +250,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         signalBus.addTaskSignal.emit(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
                                      str(path), self.blockNumCard.configItem.value,
-                                     "", "working", None, False)
+                                     "", "working", False)
         self.close()
 
     def __onDownloadFolderCardClicked(self):

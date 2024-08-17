@@ -62,6 +62,13 @@ else:  # 编译后
     cfg.appPath = app.applicationDirPath()
     qconfig.load('{}/Ghost Downloader 配置文件.json'.format(QApplication.applicationDirPath()), cfg)
 
+
+    def exceptionHandler(type, value, traceback):  # 自定义错误捕捉函数
+        logger.exception(f"意料之外的错误! {type}: {value}. Traceback: {traceback}")
+
+
+    sys.excepthook = exceptionHandler
+
 # 防止 Mica 背景失效
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
@@ -71,9 +78,6 @@ logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 
 warnings.warn = logger.warning
 
-# def exceptionHandler(type, value, traceback):  # 自定义错误捕捉函数
-#     logger.exception(f"意料之外的错误! {type}: {value}. Traceback: {traceback}")
-# sys.excepthook = exceptionHandler
 
 # enable dpi scale
 if cfg.get(cfg.dpiScale) == "Auto":

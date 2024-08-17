@@ -17,7 +17,7 @@ class Config(QConfig):
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
     # browser
-    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator(), restart=True)
+    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
 
     # main window
     dpiScale = OptionsConfigItem(

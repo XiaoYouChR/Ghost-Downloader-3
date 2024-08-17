@@ -96,7 +96,7 @@ class TaskInterface(ScrollArea):
         self.expandLayout.addWidget(self.noTaskLabel)
         self.scrollWidget.setMinimumWidth(816)
 
-    def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working", pixmap: QPixmap = None,
+    def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working",
                         autoCreated: bool = False):
         # # 任务唯一标识符
         # number = len(self.cards)
@@ -135,7 +135,7 @@ class TaskInterface(ScrollArea):
                 return
 
 
-        _ = TaskCard(url, path, block_num, pixmap, name, status, self.scrollWidget, autoCreated)
+        _ = TaskCard(url, path, block_num, name, status, self.scrollWidget, autoCreated)
 
         self.cards.append(_)
 

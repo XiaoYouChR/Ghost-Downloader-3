@@ -73,6 +73,7 @@ def getRealUrl(url: str):
 class DownloadTask(QThread):
     """作用相当于包工头"""
 
+    taskInited = Signal()  # 线程初始化成功
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
     workerInfoChange = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
@@ -228,6 +229,8 @@ class DownloadTask(QThread):
 
         # 创建空文件
         Path(f"{self.filePath}/{self.fileName}").touch()
+
+        self.taskInited.emit()
         
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:

@@ -43,7 +43,7 @@ proxy = getWindowsProxy()
 
 class TaskCard(CardWidget, Ui_TaskCard):
     # removeTaskSignal = Signal(int, bool)
-    def __init__(self, url, path, maxBlockNum: int, pixmap: QPixmap = None, name: str = None, status: str = "working",
+    def __init__(self, url, path, maxBlockNum: int, name: str = None, status: str = "working",
                  parent=None, autoCreated=False):
         super().__init__(parent=parent)
 
@@ -56,6 +56,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.maxBlockNum = maxBlockNum
         self.status = status  # working paused finished canceled
         self.lastProcess = 0
+        self.autoCreated = autoCreated
 
         # self.number = number
         self.progressBar = TaskProgressBar(maxBlockNum, self)
@@ -71,31 +72,27 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.task = DownloadTask(url, maxBlockNum, path, name)
             else:
                 self.task = DownloadTask(url, maxBlockNum, path)
-                self.fileName = self.task.fileName
 
+            self.task.taskInited.connect(self.__onTaskInited)
             self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
 
         elif self.status == "finished":
-            self.taskFinished()
-
-        if not pixmap:
             # TODO 超分辨率触发条件
-            # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(91, 91, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
-            #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
             _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
-
 
             if _:
                 pixmap = _
             else:
                 pixmap = QPixmap(":/image/logo.png")
 
-        # 显示信息
-        self.TitleLabel.setText(self.fileName)
-        self.LogoPixmapLabel.setPixmap(pixmap)
-        self.LogoPixmapLabel.setFixedSize(91, 91)
-        # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
+            self.TitleLabel.setText(self.fileName)
+            self.LogoPixmapLabel.setPixmap(pixmap)
+            self.LogoPixmapLabel.setFixedSize(91, 91)
+
+            self.fileButton.clicked.connect(lambda: os.system(f"{self.filePath}/{self.fileName}"))
+
+            self.taskFinished()
 
         # 连接信号到槽
         self.pauseButton.clicked.connect(self.pauseTask)
@@ -105,20 +102,40 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.folderButton.clicked.connect(lambda: os.startfile(path))
         else:  # Linux 下打开文件夹
             self.folderButton.clicked.connect(lambda: os.system(f"xdg-open {path}"))
-        self.fileButton.clicked.connect(lambda :os.system(f"{path}/{self.fileName}"))
-
-        # 写入未完成任务记录文件，以供下次打开时继续下载
-        if not autoCreated:
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "a", encoding="utf-8") as f:
-                _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                     "blockNum": self.maxBlockNum, "status": self.status}
-                f.write(str(_) + "\n")
 
         if self.status == "working":
             # 开始下载
             self.task.start()
         elif self.status == "paused":
             self.pauseButton.setIcon(FIF.PLAY)
+
+    def __onTaskInited(self):
+        self.fileName = self.task.fileName
+
+        # TODO 超分辨率触发条件
+        # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(91, 91, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+        #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
+        _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+
+        if _:
+            pixmap = _
+        else:
+            pixmap = QPixmap(":/image/logo.png")
+
+        # 显示信息
+        self.TitleLabel.setText(self.fileName)
+        self.LogoPixmapLabel.setPixmap(pixmap)
+        self.LogoPixmapLabel.setFixedSize(91, 91)
+        # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
+
+        self.fileButton.clicked.connect(lambda :os.system(f"{self.filePath}/{self.fileName}"))
+
+        # 写入未完成任务记录文件，以供下次打开时继续下载
+        if not self.autoCreated:
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "a", encoding="utf-8") as f:
+                _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                     "blockNum": self.maxBlockNum, "status": self.status}
+                f.write(str(_) + "\n")
 
     def pauseTask(self):
         if self.status == "working":  # 暂停

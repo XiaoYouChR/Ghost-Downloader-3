@@ -58,14 +58,15 @@ class MainWindow(MSFluentWindow):
                 for i in unfinishedTaskInfo:
                     if i:  # 避免空行
                         i = eval(i)
-                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], None, True)
+                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], True)
         else:
             historyFile.touch()
 
         # 启动浏览器扩展服务器
+        self.browserExtensionServer = None
+
         if cfg.enableBrowserExtension.value == True:
-            self.browserExtensionSocket = GhostDownloaderSocketServer(self)
-            self.browserExtensionSocket.receiveUrl.connect(self.addDownloadTaskFromWebSocket)
+            self.runBrowserExtensionServer()
 
         # 创建托盘
         self.tray = CustomSystemTrayIcon(self)
@@ -73,8 +74,20 @@ class MainWindow(MSFluentWindow):
 
         self.splashScreen.finish()
 
-    def addDownloadTaskFromWebSocket(self, url: str):
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, None, None, None)
+    def runBrowserExtensionServer(self):
+        if not self.browserExtensionServer:
+            self.browserExtensionServer = GhostDownloaderSocketServer(self)
+            self.browserExtensionServer.receiveUrl.connect(self.__addDownloadTaskFromWebSocket)
+
+    def stopBrowserExtensionServer(self):
+        self.browserExtensionServer.server.close()
+        self.browserExtensionServer.server.deleteLater()
+        self.browserExtensionServer.deleteLater()
+
+        self.browserExtensionServer = None
+
+    def __addDownloadTaskFromWebSocket(self, url: str):
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", None)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):

@@ -227,6 +227,12 @@ class SettingInterface(ScrollArea):
         cfg.set(cfg.downloadFolder, folder)
         self.downloadFolderCard.setContent(folder)
 
+    def __onBrowserExtensionCardChecked(self, value: bool):
+        if value: # enable
+            self.window().runBrowserExtensionServer()
+        if not value:
+            self.window().stopBrowserExtensionServer()
+
     def __onInstallExtensionCardClicked(self):
         """ install extension card clicked slot """
         fileResolve, type = QFileDialog.getSaveFileName(self, "选择导出路径", "./Extension.crx", "Chromium Extension(*.crx)")
@@ -271,6 +277,7 @@ class SettingInterface(ScrollArea):
             self.__onDownloadFolderCardClicked)
 
         # extension
+        self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)
         self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
 
         # software
