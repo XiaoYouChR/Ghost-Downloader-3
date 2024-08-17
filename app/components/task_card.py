@@ -44,8 +44,7 @@ proxy = getWindowsProxy()
 class TaskCard(CardWidget, Ui_TaskCard):
     # removeTaskSignal = Signal(int, bool)
     def __init__(self, url, path, maxBlockNum: int, pixmap: QPixmap = None, name: str = None, status: str = "working",
-                 parent=None,
-                 autoCreated=False):
+                 parent=None, autoCreated=False):
         super().__init__(parent=parent)
 
         self.setupUi(self)
@@ -64,9 +63,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.verticalLayout.addWidget(self.progressBar)
 
-        def _(progress: str):  # 用于赋值
-            self.lastProcess = int(progress)
-
         if name:
             self.fileName = name
 
@@ -77,7 +73,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.task = DownloadTask(url, maxBlockNum, path)
                 self.fileName = self.task.fileName
 
-            self.task.refreshLastProgress.connect(_)
             self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
 
@@ -228,15 +223,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # process = int(content)
         _ = len(content) - self.progressBar.blockNum
         if _:
-            for i in range(_):
-                self.progressBar.addProgressBar()
+            self.progressBar.addProgressBar(content, _)
 
         process = 0
 
 
         for e, i in enumerate(content):
             process += i["process"] - i["start"]
-            self.progressBar.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
             self.progressBar.progressBarList[e].setValue( ( (i["process"] - i["start"]) / (i["end"] - i["start"]) ) * 100)
 
         duringLastSecondProcess = process - self.lastProcess

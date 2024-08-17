@@ -74,7 +74,7 @@ class MainWindow(MSFluentWindow):
         self.splashScreen.finish()
 
     def addDownloadTaskFromWebSocket(self, url: str):
-        self.taskInterface.addDownloadTask(url, cfg.downloadFolder.value, cfg.maxBlockNum.value)
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, None, None, None)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):
