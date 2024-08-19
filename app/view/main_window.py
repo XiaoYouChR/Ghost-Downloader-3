@@ -76,7 +76,6 @@ class MainWindow(MSFluentWindow):
         # 检查更新
         if cfg.checkUpdateAtStartUp.value == True:
             checkUpdate(self)
-            print("启动！")
 
         self.splashScreen.finish()
 

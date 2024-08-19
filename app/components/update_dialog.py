@@ -8,7 +8,7 @@ from qfluentwidgets import isDarkTheme, SettingCardGroup, TextEdit, ListWidget, 
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.config import VERSION, cfg
-from app.common.methods import getWindowsProxy
+from app.common.methods import getProxy
 from app.common.signal_bus import signalBus
 
 
@@ -21,7 +21,7 @@ class GetUpdateThread(QThread):
         try:
             content = httpx.get(url="https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest", headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-                proxy=getWindowsProxy(), follow_redirects=True).json()
+                                proxy=getProxy(), follow_redirects=True).json()
 
             tagName = content["tag_name"][1:]
 
@@ -119,7 +119,7 @@ class UpdateDialog(MaskDialogBase):
 
 def __showResponse(parent, content: dict):
     if "INFO" in content:
-        InfoBar.info(title="当前已是最新版本", position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
+        InfoBar.info(title="当前已是最新版本", content="", position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
     elif "ERROR" in content:
         InfoBar.error(title="检查更新失败", content=content["ERROR"], position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
     else:

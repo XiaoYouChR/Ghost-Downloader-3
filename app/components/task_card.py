@@ -16,7 +16,7 @@ from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
-from ..common.methods import getWindowsProxy, getReadableSize
+from ..common.methods import getProxy, getReadableSize, retry
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -38,7 +38,7 @@ urlRe = re.compile(r"^" +
                    "$", re.IGNORECASE)
 
 # 获取系统代理
-proxy = getWindowsProxy()
+proxy = getProxy()
 
 
 class TaskCard(CardWidget, Ui_TaskCard):
@@ -140,30 +140,33 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if self.status == "working":  # 暂停
             self.pauseButton.setDisabled(True)
             self.pauseButton.setIcon(FIF.PLAY)
-            for i in self.task.workers:
-                try:
-                    i.file.close()
-                except Exception as e:
-                    logger.warning(
-                        f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
-                i.terminate()
-            self.task.terminate()
 
-            # 改变记录状态
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                _ = f.read()
+            try:
+                for i in self.task.workers:
+                    try:
+                        i.file.close()
+                    except Exception as e:
+                        logger.warning(
+                            f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
+                    i.terminate()
+                self.task.terminate()
 
-            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
-                          str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": "paused"}) + "\n")
+                # 改变记录状态
+                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
+                    _ = f.read()
 
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                f.write(_)
+                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                                   "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
+                              str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                                   "blockNum": self.maxBlockNum, "status": "paused"}) + "\n")
 
-            self.speedLable.setText("任务已经暂停")
-            self.status = "paused"
-            self.pauseButton.setEnabled(True)
+                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
+                    f.write(_)
+
+            finally:
+                self.speedLable.setText("任务已经暂停")
+                self.status = "paused"
+                self.pauseButton.setEnabled(True)
 
         elif self.status == "paused":  # 继续
             self.pauseButton.setDisabled(True)
@@ -173,22 +176,26 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
 
-            # 改变记录状态
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                _ = f.read()
+            try:
+                # 改变记录状态
+                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
+                    _ = f.read()
 
-            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
-                          str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": "working"}) + "\n")
+                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                                   "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
+                              str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                                   "blockNum": self.maxBlockNum, "status": "working"}) + "\n")
 
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                f.write(_)
+                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
+                    f.write(_)
 
-            self.speedLable.setText("任务正在开始")
-            self.status = "working"
-            self.pauseButton.setEnabled(True)
+            finally:
+                self.speedLable.setText("任务正在开始")
+                self.status = "working"
+                self.pauseButton.setEnabled(True)
 
+
+    @retry(3, 0.1)
     def cancelTask(self, completely: bool = False):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
@@ -199,23 +206,16 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             if completely:
                 # 删除文件
-                tryCount = 0
-                isDeleted = False
-                while not isDeleted and tryCount < 3:
-                    try:
-                        Path(f"{self.filePath}/{self.fileName}").unlink()
-                        Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-                        logger.info(f"self:{self.fileName}, delete file successfully!")
+                try:
+                    Path(f"{self.filePath}/{self.fileName}").unlink()
+                    Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+                    logger.info(f"self:{self.fileName}, delete file successfully!")
 
-                        isDeleted = True
-                        tryCount = 5
+                except FileNotFoundError:
+                    pass
 
-                    except FileNotFoundError:
-                        isDeleted = True
-                        tryCount = 5
-                    except Exception as e:
-                        logger.error(f"Task:{self.fileName}, it seems that cannot delete file, error: {e}")
-                        tryCount += 1
+                except Exception as e:
+                    raise e
 
             # 删除记录文件
             with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
@@ -230,11 +230,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
         except Exception as e:
             logger.warning(f"Task:{self.fileName}, 删除时遇到错误: {e}")
 
-        self.status = "canceled"
-
-        self.parent().parent().parent().expandLayout.removeWidget(self)
-
-        self.hide()
+        finally:
+            self.status = "canceled"
+            # Remove Widget
+            self.parent().parent().parent().expandLayout.removeWidget(self)
+            self.hide()
 
     def __changeInfo(self, content: list):
         # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题

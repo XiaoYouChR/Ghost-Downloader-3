@@ -7,11 +7,10 @@ from urllib.parse import urlparse, parse_qs, unquote
 
 import httpx
 from PySide6.QtCore import QThread, Signal
-from httpx import Client
 from loguru import logger
 
 from app.common.config import cfg
-from app.common.methods import getWindowsProxy, getReadableSize
+from app.common.methods import getProxy, getReadableSize, retry
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -36,7 +35,7 @@ urlRe = re.compile(r"^" +
 def getRealUrl(url: str):
     try:
         response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-                              proxy=getWindowsProxy())
+                              proxy=getProxy())
 
         if response.status_code == 400:  # Bad Requests
             # TODO 报错处理
@@ -57,7 +56,7 @@ def getRealUrl(url: str):
                 logger.info(f"HTTP status code:302, Redirect to {url}")
 
             response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-                                  proxy=getWindowsProxy())  # 再访问一次
+                                  proxy=getProxy())  # 再访问一次
 
         return url
 
@@ -79,6 +78,7 @@ class DownloadTask(QThread):
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
     workerInfoChange = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
+    gotWrong = Signal(str)  # 😭 我出问题了
 
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
@@ -91,7 +91,7 @@ class DownloadTask(QThread):
         self.workers: list[DownloadWorker] = []
 
         self.client = httpx.Client(headers=Headers, verify=False,
-                                   proxy=getWindowsProxy())
+                                   proxy=getProxy())
 
     def __reassignWorker(self):
 
@@ -148,13 +148,14 @@ class DownloadTask(QThread):
 
         return step_list
 
+    @retry(3, 0.1)
     def run(self):
         
         # 初始化信息
         # 获取真实URL
         self.url = getRealUrl(self.url)
 
-        head = httpx.head(self.url, headers=Headers, proxy=getWindowsProxy()).headers
+        head = httpx.head(self.url, headers=Headers, proxy=getProxy()).headers
 
         # 获取文件大小, 判断是否可以分块下载
         if "content-length" not in head:
@@ -305,7 +306,7 @@ class DownloadWorker(QThread):
 
     workerFinished = Signal()  # 内置的信号不好用
 
-    def __init__(self, start, process, end, url, filePath, fileName, client: Client, parent=None):
+    def __init__(self, start, process, end, url, filePath, fileName, client: httpx.Client, parent=None):
         super().__init__(parent)
         self.startPos = start
         self.process = process
