@@ -79,6 +79,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.task.taskInited.connect(self.__onTaskInited)
             self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
+            self.task.gotWrong.connect(self.__onTaskError)
 
         elif self.status == "finished":
             # TODO 超分辨率触发条件
@@ -110,10 +111,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
         elif self.status == "paused":
             self.pauseButton.setIcon(FIF.PLAY)
 
+    def __onTaskError(self, exception: str):
+        self.speedLable.setText(f"请重新启动任务! Error: {exception}")
+
     def __onTaskInited(self):
         self.fileName = self.task.fileName
 
-        # TODO 超分辨率触发条件
+        # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
         # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(91, 91, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
         #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
         _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
@@ -171,10 +175,19 @@ class TaskCard(CardWidget, Ui_TaskCard):
         elif self.status == "paused":  # 继续
             self.pauseButton.setDisabled(True)
             self.pauseButton.setIcon(FIF.PAUSE)
-            self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath, self.fileName)
-            self.task.start()
+
+            try:
+                self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath, self.fileName)
+            except: # TODO 没有 fileName 的情况
+                self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath)
+
+            self.task.taskInited.connect(self.__onTaskInited)
             self.task.workerInfoChange.connect(self.__changeInfo)
             self.task.taskFinished.connect(self.taskFinished)
+            self.task.gotWrong.connect(self.__onTaskError)
+
+            self.task.start()
+
 
             try:
                 # 改变记录状态

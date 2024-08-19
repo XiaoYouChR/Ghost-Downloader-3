@@ -148,7 +148,10 @@ class DownloadTask(QThread):
 
         return step_list
 
-    @retry(3, 0.1)
+    def __gotWrong(self, error: str):
+        self.gotWrong.emit(error)
+
+    @retry(3, 0.1, handleFunction=__gotWrong)
     def run(self):
         
         # 初始化信息

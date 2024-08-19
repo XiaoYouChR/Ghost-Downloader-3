@@ -2,6 +2,7 @@ import importlib
 import inspect
 import os
 import sys
+from dbm import error
 
 from PySide6.QtWidgets import QApplication
 from loguru import logger
@@ -111,7 +112,7 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
                     if i == retries:
                         logger.error(f'Error: {repr(e)}! "{func.__name__}()" 执行失败，已重试{retries}次.')
                         try:
-                            handleFunction()
+                            handleFunction(e)
                         finally:
                             break
                     else:
