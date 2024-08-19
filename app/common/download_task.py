@@ -68,7 +68,9 @@ def getRealUrl(url: str):
     except ValueError as err:
         logger.error(f"Cannot connect to the Internet! Error: {err}")
         return
-
+    except httpx.ConnectTimeout as err:
+        logger.error(f"Cannot connect to the Internet! Error: {err}")
+        return
 
 class DownloadTask(QThread):
     """作用相当于包工头"""

@@ -58,7 +58,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.lastProcess = 0
         self.autoCreated = autoCreated
 
-        # self.number = number
+        # Show Information
+        self.speedLable.setText("若任务初始化过久，请检查网络连接后重试.")
+        self.TitleLabel.setText("正在初始化任务...")
+
         self.progressBar = TaskProgressBar(maxBlockNum, self)
         self.progressBar.setObjectName(u"progressBar")
 
@@ -190,40 +193,42 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
 
-        if self.status == "working":
-            self.pauseTask()
+        try:
+            if self.status == "working":
+                self.pauseTask()
 
-        if completely:
-            # 删除文件
-            tryCount = 0
-            isDeleted = False
-            while not isDeleted and tryCount < 3:
-                try:
-                    Path(f"{self.filePath}/{self.fileName}").unlink()
-                    Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-                    logger.info(f"self:{self.fileName}, delete file successfully!")
+            if completely:
+                # 删除文件
+                tryCount = 0
+                isDeleted = False
+                while not isDeleted and tryCount < 3:
+                    try:
+                        Path(f"{self.filePath}/{self.fileName}").unlink()
+                        Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+                        logger.info(f"self:{self.fileName}, delete file successfully!")
 
-                    isDeleted = True
-                    tryCount = 5
+                        isDeleted = True
+                        tryCount = 5
 
-                except FileNotFoundError:
-                    isDeleted = True
-                    tryCount = 5
-                except Exception as e:
-                    logger.error(f"Task:{self.fileName}, it seems that cannot delete file, error: {e}")
-                    tryCount += 1
+                    except FileNotFoundError:
+                        isDeleted = True
+                        tryCount = 5
+                    except Exception as e:
+                        logger.error(f"Task:{self.fileName}, it seems that cannot delete file, error: {e}")
+                        tryCount += 1
 
-                sleep(0.1)
+            # 删除记录文件
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
+                _ = f.read()
 
-        # 删除记录文件
-        with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-            _ = f.read()
+            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
 
-        _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                           "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
+            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
+                f.write(_)
 
-        with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-            f.write(_)
+        except Exception as e:
+            logger.warning(f"Task:{self.fileName}, 删除时遇到错误: {e}")
 
         self.status = "canceled"
 

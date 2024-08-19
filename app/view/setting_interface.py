@@ -11,12 +11,11 @@ from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingC
                             setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
+from ..components.update_dialog import checkUpdate
 
 
 class SettingInterface(ScrollArea):
     """ Setting interface """
-
-    checkUpdateSig = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -265,6 +264,9 @@ class SettingInterface(ScrollArea):
                 parent=self.parent()
             )
 
+    def __onAboutCardClicked(self):
+        """ check update and show information """
+        checkUpdate(self)
 
     def __connectSignalToSlot(self):
         """ connect signal to slot """
@@ -284,6 +286,6 @@ class SettingInterface(ScrollArea):
         self.autoRunCard.checkedChanged.connect(self.__onAutoRunCardChecked)
 
         # about
-        self.aboutCard.clicked.connect(self.checkUpdateSig)
+        self.aboutCard.clicked.connect(self.__onAboutCardClicked)
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
