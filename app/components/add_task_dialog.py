@@ -59,7 +59,15 @@ class AddTaskOptionDialog(MaskDialogBase):
             "新建任务", self.widget)
 
         self.linkTextEdit = TextEdit(self.linkGroup)
-        self.linkTextEdit.setText(pyperclip.paste() if urlRe.match(pyperclip.paste()) else "")
+        #处理单行和多行，如果多行中其中有任意一项是URL就把不是URL的那些行全部去掉，只保留那些事URL的
+        isClipBoardData = False
+        if urlRe.match(pyperclip.paste()):
+            self.linkTextEdit.setText(pyperclip.paste())
+            isClipBoardData = True
+        elif any(urlRe.match(line) for line in pyperclip.paste().splitlines()):
+            # 过滤出URL
+            self.linkTextEdit.setText('\n'.join(filter(urlRe.match, pyperclip.paste().splitlines())))
+            isClipBoardData = True
         self.linkTextEdit.setPlaceholderText("添加多个下载链接时, 请确保每行只有一个链接.")
         self.linkTextEdit.setMinimumHeight(100)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
@@ -129,6 +137,8 @@ class AddTaskOptionDialog(MaskDialogBase):
         self.VBoxLayout.addLayout(self.buttonLayout)
 
         self.__connectSignalToSlot()
+        if isClipBoardData:
+            self.__processTextChange()
 
     def __connectSignalToSlot(self):
         self.downloadFolderCard.clicked.connect(
