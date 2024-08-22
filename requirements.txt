@@ -2,5 +2,5 @@ PySide6-Fluent-Widgets==1.5.0
 PySide6==6.4.2
 loguru==0.7.2
 httpx==0.27.0
-
+pyperclip==1.8.2
 pyobjc>=10.3.1; sys_platform == 'darwin'

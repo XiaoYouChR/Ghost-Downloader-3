@@ -10,6 +10,7 @@ from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, 
     MessageBox, isDarkTheme, InfoBar, InfoBarPosition
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+import pyperclip
 
 from ..common.config import cfg
 from ..common.signal_bus import signalBus
@@ -58,6 +59,7 @@ class AddTaskOptionDialog(MaskDialogBase):
             "新建任务", self.widget)
 
         self.linkTextEdit = TextEdit(self.linkGroup)
+        self.linkTextEdit.setText(pyperclip.paste() if urlRe.match(pyperclip.paste()) else "")
         self.linkTextEdit.setPlaceholderText("添加多个下载链接时, 请确保每行只有一个链接.")
         self.linkTextEdit.setMinimumHeight(100)
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
