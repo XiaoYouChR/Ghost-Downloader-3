@@ -2,12 +2,14 @@ import importlib
 import inspect
 import os
 import sys
-from dbm import error
 
 from PySide6.QtWidgets import QApplication
 from loguru import logger
+from functools import wraps
+from time import sleep
 
 from app.common.plugin_base import PluginBase
+
 
 plugins = []
 
@@ -80,10 +82,6 @@ def getReadableSize(size):
         size = size / K
         unit_index += 1
     return "%.2f %s" % (size, units[unit_index])
-
-
-from functools import wraps
-from time import sleep
 
 
 def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None):

@@ -62,6 +62,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.speedLable.setText("若任务初始化过久，请检查网络连接后重试.")
         self.TitleLabel.setText("正在初始化任务...")
 
+        self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
+        self.LogoPixmapLabel.setFixedSize(91, 91)
+
         self.progressBar = TaskProgressBar(maxBlockNum, self)
         self.progressBar.setObjectName(u"progressBar")
 
@@ -112,7 +115,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PLAY)
 
     def __onTaskError(self, exception: str):
-        self.speedLable.setText(f"请重新启动任务! Error: {exception}")
+        self.TitleLabel.setText(f"请重新启动任务!")
+        self.speedLable.setText(f"Error: {exception}")
 
     def __onTaskInited(self):
         self.fileName = self.task.fileName

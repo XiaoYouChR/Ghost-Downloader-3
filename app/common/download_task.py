@@ -33,7 +33,7 @@ urlRe = re.compile(r"^" +
 
 
 def getRealUrl(url: str):
-    try:
+    # try:
         response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
                               proxy=getProxy())
 
@@ -61,15 +61,15 @@ def getRealUrl(url: str):
         return url
 
     # TODO 报错处理
-    except httpx.ConnectError as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
-    except ValueError as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
-    except httpx.ConnectTimeout as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
+    # except httpx.ConnectError as err:
+    #     logger.error(f"Cannot connect to the Internet! Error: {err}")
+    #     return
+    # except ValueError as err:
+    #     logger.error(f"Cannot connect to the Internet! Error: {err}")
+    #     return
+    # except httpx.ConnectTimeout as err:
+    #     logger.error(f"Cannot connect to the Internet! Error: {err}")
+    #     return
 
 class DownloadTask(QThread):
     """作用相当于包工头"""
@@ -148,17 +148,19 @@ class DownloadTask(QThread):
 
         return step_list
 
-    def __gotWrong(self, error: str):
-        self.gotWrong.emit(error)
 
-    @retry(3, 0.1, handleFunction=__gotWrong)
+    @retry(3, 0.1)
     def run(self):
-        
-        # 初始化信息
-        # 获取真实URL
-        self.url = getRealUrl(self.url)
+        try:
+            # 初始化信息
+            # 获取真实URL
+            self.url = getRealUrl(self.url)
 
-        head = httpx.head(self.url, headers=Headers, proxy=getProxy()).headers
+            head = httpx.head(self.url, headers=Headers, proxy=getProxy()).headers
+
+        except Exception as e: # 重试也没用
+
+            self.gotWrong.emit(str(e))
 
         # 获取文件大小, 判断是否可以分块下载
         if "content-length" not in head:
