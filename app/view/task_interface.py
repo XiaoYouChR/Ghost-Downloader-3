@@ -48,6 +48,10 @@ class TaskInterface(ScrollArea):
         self.scrollWidget.setMinimumWidth(816)
         self.expandLayout = ExpandLayout(self.scrollWidget)
         self.expandLayout.setObjectName("expandLayout")
+
+        # Fixed ExpandLayout 向下偏移的问题 (等待上游修复)
+        self.expandLayout.setContentsMargins(11, 11, 11, 0)
+
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # 全部开始/暂停 全部删除等其它功能区 TODO 计划任务

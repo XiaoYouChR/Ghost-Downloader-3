@@ -35,7 +35,7 @@ class GetUpdateThread(QThread):
 
         except Exception as e:
             logger.error(f"获取更新失败：{e}")
-            self.gotResponse.emit({"ERROR" : f"获取更新失败：{e}"})
+            self.gotResponse.emit({"ERROR" : f"获取更新失败：{str(e)}"})
 
 
 class UpdateDialog(MaskDialogBase):

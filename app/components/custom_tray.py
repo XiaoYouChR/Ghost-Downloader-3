@@ -1,8 +1,17 @@
+from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
 from loguru import logger
 from qfluentwidgets import Action, MessageBox
-from qfluentwidgets.components.material import AcrylicSystemTrayMenu
+from qfluentwidgets.components.material import AcrylicMenu
 
+
+class FixedAcrylicSystemTrayMenu(AcrylicMenu):
+    """ 修复背景获取便宜的问题 """
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        self.adjustPosition()
+        self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
 
 class CustomSystemTrayIcon(QSystemTrayIcon):
 
@@ -11,7 +20,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         self.setIcon(parent.windowIcon())
         self.setToolTip('Ghost Downloader 🥰')
 
-        self.menu = AcrylicSystemTrayMenu(parent=parent)
+        self.menu = FixedAcrylicSystemTrayMenu(parent=parent)
 
         # self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
 
