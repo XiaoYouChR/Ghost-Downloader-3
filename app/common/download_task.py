@@ -94,7 +94,7 @@ class DownloadTask(QThread):
         self.file_lock = asyncio.Lock()#锁
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
-                                   proxy=getWindowsProxy())
+                                   proxy=getProxy())
 
     def reassignWorker(self):
 
