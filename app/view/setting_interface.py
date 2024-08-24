@@ -11,12 +11,11 @@ from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingC
                             setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
+from ..components.update_dialog import checkUpdate
 
 
 class SettingInterface(ScrollArea):
     """ Setting interface """
-
-    checkUpdateSig = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -227,6 +226,12 @@ class SettingInterface(ScrollArea):
         cfg.set(cfg.downloadFolder, folder)
         self.downloadFolderCard.setContent(folder)
 
+    def __onBrowserExtensionCardChecked(self, value: bool):
+        if value: # enable
+            self.window().runBrowserExtensionServer()
+        if not value:
+            self.window().stopBrowserExtensionServer()
+
     def __onInstallExtensionCardClicked(self):
         """ install extension card clicked slot """
         fileResolve, type = QFileDialog.getSaveFileName(self, "选择导出路径", "./Extension.crx", "Chromium Extension(*.crx)")
@@ -259,6 +264,10 @@ class SettingInterface(ScrollArea):
                 parent=self.parent()
             )
 
+    def __onAboutCardClicked(self):
+        """ check update and show information """
+        InfoBar.info("请稍候", "正在检查更新...", position=InfoBarPosition.TOP_RIGHT, duration=1000, parent=self)
+        checkUpdate(self)
 
     def __connectSignalToSlot(self):
         """ connect signal to slot """
@@ -271,12 +280,13 @@ class SettingInterface(ScrollArea):
             self.__onDownloadFolderCardClicked)
 
         # extension
+        self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)
         self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
 
         # software
         self.autoRunCard.checkedChanged.connect(self.__onAutoRunCardChecked)
 
         # about
-        self.aboutCard.clicked.connect(self.checkUpdateSig)
+        self.aboutCard.clicked.connect(self.__onAboutCardClicked)
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))

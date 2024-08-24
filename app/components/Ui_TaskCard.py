@@ -12,7 +12,8 @@ from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QSpacerItem,
                                QVBoxLayout)
 
-from qfluentwidgets import (BodyLabel, PixmapLabel, TitleLabel, ToolButton, RoundMenu, Action, PrimaryDropDownToolButton)
+from qfluentwidgets import (BodyLabel, PixmapLabel, TitleLabel, ToolButton, RoundMenu, Action,
+                            DropDownToolButton, PrimaryToolButton)
 
 from qfluentwidgets import FluentIcon as FIF
 
@@ -57,7 +58,7 @@ class Ui_TaskCard(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
-        self.pauseButton = ToolButton(TaskCard)
+        self.pauseButton = PrimaryToolButton(TaskCard)
         self.pauseButton.setObjectName(u"pauseButton")
         self.pauseButton.setMinimumSize(QSize(31, 31))
         self.pauseButton.setMaximumSize(QSize(31, 31))
@@ -71,12 +72,12 @@ class Ui_TaskCard(object):
 
         self.horizontalLayout.addWidget(self.folderButton)
 
-        self.fileButton = ToolButton(TaskCard)
-        self.fileButton.setObjectName(u"folderButton")
-        self.fileButton.setMinimumSize(QSize(31, 31))
-        self.fileButton.setMaximumSize(QSize(31, 31))
-
-        self.horizontalLayout.addWidget(self.fileButton)
+        # self.fileButton = ToolButton(TaskCard)
+        # self.fileButton.setObjectName(u"folderButton")
+        # self.fileButton.setMinimumSize(QSize(31, 31))
+        # self.fileButton.setMaximumSize(QSize(31, 31))
+        #
+        # self.horizontalLayout.addWidget(self.fileButton)
 
         self.Menu = RoundMenu(parent=self)
         self.delAction = Action(FIF.DELETE, "删除")
@@ -84,7 +85,7 @@ class Ui_TaskCard(object):
         self.Menu.addAction(self.delAction)
         self.Menu.addAction(self.completelyDelAction)
 
-        self.cancelButton = PrimaryDropDownToolButton(TaskCard)
+        self.cancelButton = DropDownToolButton(TaskCard)
         self.cancelButton.setObjectName(u"cancelButton")
         self.cancelButton.setMenu(self.Menu)
         self.cancelButton.setMinimumSize(QSize(61, 31))
@@ -130,7 +131,7 @@ class Ui_TaskCard(object):
         self.pauseButton.setIcon(FIF.PAUSE)
         self.cancelButton.setIcon(FIF.DELETE)
         self.folderButton.setIcon(FIF.FOLDER)
-        self.fileButton.setIcon(FIF.LIBRARY)
+        # self.fileButton.setIcon(FIF.LIBRARY)
 
         self.retranslateUi(TaskCard)
 
@@ -143,6 +144,6 @@ class Ui_TaskCard(object):
         self.pauseButton.setText("")
         self.cancelButton.setText("")
         self.folderButton.setText("")
-        self.fileButton.setText("")
+        # self.fileButton.setText("")
         self.processLabel.setText("")
     # retranslateUi

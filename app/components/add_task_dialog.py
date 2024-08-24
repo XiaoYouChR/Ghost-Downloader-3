@@ -156,7 +156,7 @@ class AddTaskOptionDialog(MaskDialogBase):
             if _:
                 signalBus.addTaskSignal.emit(url,
                                              str(path), self.blockNumCard.configItem.value,
-                                             "", "working", None, False)
+                                             "", "working", False)
 
         self.close()
 

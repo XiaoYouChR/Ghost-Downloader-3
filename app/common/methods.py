@@ -5,8 +5,11 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 from loguru import logger
+from functools import wraps
+from time import sleep
 
 from app.common.plugin_base import PluginBase
+
 
 plugins = []
 
@@ -41,7 +44,7 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
         logger.error(f"Error loading plugins: {e}")
 
 
-def getWindowsProxy():
+def getProxy():
     if sys.platform == "win32":
         try:
             import winreg
@@ -79,3 +82,44 @@ def getReadableSize(size):
         size = size / K
         unit_index += 1
     return "%.2f %s" % (size, units[unit_index])
+
+
+def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None):
+    """
+    是装饰器。函数执行失败时，重试
+
+    :param retries: 最大重试的次数
+    :param delay: 每次重试的间隔时间，单位 秒
+    :param handleFunction: 处理函数，用来处理异常
+    :return:
+    """
+
+    # 校验重试的参数，参数值不正确时使用默认参数
+    if retries < 1 or delay <= 0:
+        retries = 3
+        delay = 1
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for i in range(retries + 1):  # 第一次正常执行不算重试次数，所以 retries+1
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    # 检查重试次数
+                    if i == retries:
+                        logger.error(f'Error: {repr(e)}! "{func.__name__}()" 执行失败，已重试{retries}次.')
+                        try:
+                            handleFunction(e)
+                        finally:
+                            break
+                    else:
+                        logger.warning(
+                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i+1}/{retries}]次重试...'
+                        )
+                        sleep(delay)
+
+        return wrapper
+
+    return decorator
+

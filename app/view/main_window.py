@@ -1,4 +1,5 @@
 # coding: utf-8
+import ctypes
 from pathlib import Path
 
 import darkdetect
@@ -8,6 +9,7 @@ from PySide6.QtWidgets import QApplication
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
+from win32comext.shell.shellcon import WM_USER
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
@@ -16,6 +18,7 @@ from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
+from ..components.update_dialog import checkUpdate
 
 
 class ThemeChangedListener(QThread):
@@ -47,7 +50,7 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener.start()
 
         # 创建未完成的任务
-        historyFile = Path("{}/Ghost Downloader 记录文件".format(QApplication.applicationDirPath()))
+        historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
         # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
             with open(historyFile, 'r', encoding='utf-8') as f:
@@ -56,23 +59,40 @@ class MainWindow(MSFluentWindow):
                 for i in unfinishedTaskInfo:
                     if i:  # 避免空行
                         i = eval(i)
-                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], None, True)
+                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], True)
         else:
             historyFile.touch()
 
         # 启动浏览器扩展服务器
+        self.browserExtensionServer = None
+
         if cfg.enableBrowserExtension.value == True:
-            self.browserExtensionSocket = GhostDownloaderSocketServer(self)
-            self.browserExtensionSocket.receiveUrl.connect(self.addDownloadTaskFromWebSocket)
+            self.runBrowserExtensionServer()
 
         # 创建托盘
         self.tray = CustomSystemTrayIcon(self)
         self.tray.show()
 
+        # 检查更新
+        if cfg.checkUpdateAtStartUp.value == True:
+            checkUpdate(self)
+
         self.splashScreen.finish()
 
-    def addDownloadTaskFromWebSocket(self, url: str):
-        self.taskInterface.addDownloadTask(url, cfg.downloadFolder.value, cfg.maxBlockNum.value)
+    def runBrowserExtensionServer(self):
+        if not self.browserExtensionServer:
+            self.browserExtensionServer = GhostDownloaderSocketServer(self)
+            self.browserExtensionServer.receiveUrl.connect(self.__addDownloadTaskFromWebSocket)
+
+    def stopBrowserExtensionServer(self):
+        self.browserExtensionServer.server.close()
+        self.browserExtensionServer.server.deleteLater()
+        self.browserExtensionServer.deleteLater()
+
+        self.browserExtensionServer = None
+
+    def __addDownloadTaskFromWebSocket(self, url: str):
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", None)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):
@@ -126,3 +146,14 @@ class MainWindow(MSFluentWindow):
         # 拦截关闭事件，隐藏窗口而不是退出
         event.ignore()
         self.hide()
+
+    def nativeEvent(self, eventType, message):
+        # 处理窗口重复打开事件
+        if eventType == "windows_generic_MSG":
+            msg = ctypes.wintypes.MSG.from_address(message.__int__())
+
+            if msg.message == WM_USER + 1:
+                self.show()
+                return True, 0
+
+        return super().nativeEvent(eventType, message)

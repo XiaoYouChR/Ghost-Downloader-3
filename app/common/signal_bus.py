@@ -5,7 +5,7 @@ from PySide6.QtGui import QPixmap
 
 class SignalBus(QObject):
     """ Signal bus """
-    addTaskSignal = Signal(str, str, int, str, str, QPixmap, bool)  # url, filePath, maxBlockNum, name, icon
+    addTaskSignal = Signal(str, str, int, str, str, bool)  # url, filePath, maxBlockNum, name, status, autoStart
     Tasks = []
 
 

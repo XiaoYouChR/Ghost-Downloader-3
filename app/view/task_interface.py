@@ -48,6 +48,10 @@ class TaskInterface(ScrollArea):
         self.scrollWidget.setMinimumWidth(816)
         self.expandLayout = ExpandLayout(self.scrollWidget)
         self.expandLayout.setObjectName("expandLayout")
+
+        # Fixed ExpandLayout 向下偏移的问题 (等待上游修复)
+        self.expandLayout.setContentsMargins(11, 11, 11, 0)
+
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # 全部开始/暂停 全部删除等其它功能区 TODO 计划任务
@@ -96,7 +100,7 @@ class TaskInterface(ScrollArea):
         self.expandLayout.addWidget(self.noTaskLabel)
         self.scrollWidget.setMinimumWidth(816)
 
-    def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working", pixmap: QPixmap = None,
+    def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working",
                         autoCreated: bool = False):
         # # 任务唯一标识符
         # number = len(self.cards)
@@ -135,7 +139,7 @@ class TaskInterface(ScrollArea):
                 return
 
 
-        _ = TaskCard(url, path, block_num, pixmap, name, status, self.scrollWidget, autoCreated)
+        _ = TaskCard(url, path, block_num, name, status, self.scrollWidget, autoCreated)
 
         self.cards.append(_)
 

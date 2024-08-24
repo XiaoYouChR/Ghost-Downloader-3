@@ -1,9 +1,7 @@
 # coding:utf-8
 
 from PySide6.QtCore import QDir
-from PySide6.QtWidgets import QApplication
-from loguru import logger
-from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
+from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator)
 
@@ -19,7 +17,7 @@ class Config(QConfig):
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
     # browser
-    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator(), restart=True)
+    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
 
     # main window
     dpiScale = OptionsConfigItem(
@@ -29,17 +27,16 @@ class Config(QConfig):
     checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
     autoRun = ConfigItem("Software", "AutoRun", False, BoolValidator())
 
+    # 程序运行路径
+    appPath = "./"
+
 
 YEAR = 2024
 AUTHOR = "XiaoYouChR"
-VERSION = "3.3.3"
+VERSION = "3.3.4"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 
 
 cfg = Config()
-try:
-    qconfig.load('{}/Ghost Downloader 配置文件.json'.format(QApplication.applicationDirPath()), cfg)
-except Exception as e:
-    logger.error(e)

@@ -5,14 +5,13 @@ from pathlib import Path
 from time import sleep, time
 from urllib.parse import urlparse, parse_qs, unquote
 
-import httpx,aiofiles
-import asyncio
-from PySide6.QtCore import QObject, QThread, Signal
+import httpx,aiofiles,asyncio
+from PySide6.QtCore import QThread, Signal
 from httpx import Client
 from loguru import logger
 
 from app.common.config import cfg
-from app.common.methods import getWindowsProxy, getReadableSize
+from app.common.methods import getProxy, getReadableSize, retry
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -35,9 +34,9 @@ urlRe = re.compile(r"^" +
 
 
 def getRealUrl(url: str):
-    try:
+    # try:
         response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-                              proxy=getWindowsProxy())
+                              proxy=getProxy())
 
         if response.status_code == 400:  # Bad Requests
             # TODO 报错处理
@@ -58,125 +57,32 @@ def getRealUrl(url: str):
                 logger.info(f"HTTP status code:302, Redirect to {url}")
 
             response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-                                  proxy=getWindowsProxy())  # 再访问一次
+                                  proxy=getProxy())  # 再访问一次
 
         return url
 
     # TODO 报错处理
-    except httpx.ConnectError as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
-    except ValueError as err:
-        logger.error(f"Cannot connect to the Internet! Error: {err}")
-        return
-
-#未完成
-class DowloadThread(QThread):
-    create_task = Signal()
-    def __init__(self, parent = None) -> None:
-        super().__init__(parent)
-        self.task_list :list[DownloadTask]= []
-    def run(self):
-        asyncio.run(self.main())
-    async def main(self):
-        pass
-    def new_task(self, url, maxBlockNum: int = 8, filePath=None, fileName=None):
-        task = DownloadTask(url, maxBlockNum, filePath, fileName)
-        self.task_list.append(task)
-        return task
+    # except httpx.ConnectError as err:
+    #     logger.error(f"Cannot connect to the Internet! Error: {err}")
+    #     return
+    # except ValueError as err:
+    #     logger.error(f"Cannot connect to the Internet! Error: {err}")
+    #     return
+    # except httpx.ConnectTimeout as err:
+    #     logger.error(f"Cannot connect to the Internet! Error: {err}")
+    #     return
 
 class DownloadTask(QThread):
     """作用相当于包工头"""
 
-    refreshLastProgress = Signal(str)  # 用于读取历史记录后刷新进度
+    taskInited = Signal()  # 线程初始化成功
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
     workerInfoChange = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
+    gotWrong = Signal(str)  # 😭 我出问题了
 
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
-
-        # 获取真实URL
-        url = getRealUrl(url)
-
-        head = httpx.head(url, headers=Headers, proxy=getWindowsProxy()).headers
-
-        # 获取文件大小, 判断是否可以分块下载
-        if "content-length" not in head:
-            self.fileSize = 1
-            self.ableToParallelDownload = False
-        else:
-            self.fileSize = int(head["content-length"])
-            self.ableToParallelDownload = True
-
-        # 获取文件名
-        if not fileName:
-            try:
-                # 首先，尝试处理 Content-Disposition 中的 filename* (RFC 5987 格式)
-                headerValue = head["content-disposition"]
-                if 'filename*' in headerValue:
-                    match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
-                    if match:
-                        fileName = match.group(1)
-                        fileName = decode_rfc2231(fileName)
-                        fileName = urllib.parse.unquote(fileName[2])  # filename* 后的部分是编码信息
-
-                # 如果 filename* 没有成功获取，尝试处理普通的 filename
-                if not fileName and 'filename' in headerValue:
-                    match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
-                    if match:
-                        fileName = match.group(1)
-
-                # 移除文件名头尾可能存在的引号
-                if fileName:
-                    fileName = fileName.strip('"\'')
-                else:
-                    raise KeyError
-
-                logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
-            except (KeyError, IndexError) as e:
-                try:
-                    logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
-                    # 解析 URL
-                    # 解析查询字符串
-                    # 获取 response-content-disposition 参数
-                    # 解码并分割 disposition
-                    # 提取文件名
-                    fileName = unquote(parse_qs(urlparse(url).query).get('response-content-disposition', [''])[0]).split("filename=")[-1]
-                    # 去掉可能存在的引号
-                    if fileName.startswith('"') and fileName.endswith('"'):
-                        fileName = fileName[1:-1]
-                    elif fileName.startswith("'") and fileName.endswith("'"):
-                        fileName = fileName[1:-1]
-
-                    if not fileName:
-                        raise KeyError
-
-                    logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
-
-                except (KeyError, IndexError) as e:
-                    # 处理没有文件名的情况
-                    logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
-                    fileName = urlparse(url).path.split('/')[-1]
-                    logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
-            except Exception as e:
-                # 什么都 Get 不到的情况
-                logger.info(f"获取文件名失败, Exception:{e}")
-                content_type = head["content-type"].split('/')[-1]
-                fileName = f"downloaded_file{int(time())}.{content_type}"
-                logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
-
-        # 获取文件路径
-        if not filePath and Path(filePath).is_dir() == False:
-            filePath = Path.cwd()
-        else:
-            filePath = Path(filePath)
-            if not filePath.exists():
-                filePath.mkdir()
-
-        # 创建异步文件管理器
-        self.file_manager = aiofiles.open(f"{filePath}/{fileName}",'w+b')
-        self.file_lock = asyncio.Lock()#锁
 
         self.process = []
         self.url = url
@@ -184,6 +90,8 @@ class DownloadTask(QThread):
         self.filePath = filePath
         self.maxBlockNum = maxBlockNum
         self.workers: list[DownloadWorker] = []
+        self.file_manager = aiofiles.open(f"{filePath}/{fileName}",'w+b')
+        self.file_lock = asyncio.Lock()#锁
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                    proxy=getWindowsProxy())
@@ -241,7 +149,9 @@ class DownloadTask(QThread):
         step_list[-1][-1] = self.fileSize - 1  # 修正
 
         return step_list
-    
+
+
+    @retry(3, 0.1)
     def run(self):
         try:
             asyncio.run(self.main())
@@ -251,6 +161,95 @@ class DownloadTask(QThread):
 
     async def main(self):
         self.task = asyncio.current_task()
+        try:
+            # 初始化信息
+            # 获取真实URL
+            self.url = getRealUrl(self.url)
+
+            head = httpx.head(self.url, headers=Headers, proxy=getProxy()).headers
+
+        except Exception as e: # 重试也没用
+
+            self.gotWrong.emit(str(e))
+
+        # 获取文件大小, 判断是否可以分块下载
+        if "content-length" not in head:
+            self.fileSize = 1
+            self.ableToParallelDownload = False
+        else:
+            self.fileSize = int(head["content-length"])
+            self.ableToParallelDownload = True
+
+        # 获取文件名
+        if not self.fileName:
+            try:
+                # 首先，尝试处理 Content-Disposition 中的 self.fileName* (RFC 5987 格式)
+                headerValue = head["content-disposition"]
+                if 'fileName*' in headerValue:
+                    match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
+                    if match:
+                        self.fileName = match.group(1)
+                        self.fileName = decode_rfc2231(self.fileName)
+                        self.fileName = urllib.parse.unquote(self.fileName[2])  # self.fileName* 后的部分是编码信息
+
+                # 如果 self.fileName* 没有成功获取，尝试处理普通的 self.fileName
+                if not self.fileName and 'filename' in headerValue:
+                    match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
+                    if match:
+                        self.fileName = match.group(1)
+
+                # 移除文件名头尾可能存在的引号
+                if self.fileName:
+                    self.fileName = self.fileName.strip('"\'')
+                else:
+                    raise KeyError
+
+                logger.debug(f"方法1获取文件名成功, 文件名:{self.fileName}")
+            except (KeyError, IndexError) as e:
+                try:
+                    logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
+                    # 解析 URL
+                    # 解析查询字符串
+                    # 获取 response-content-disposition 参数
+                    # 解码并分割 disposition
+                    # 提取文件名
+                    self.fileName = unquote(parse_qs(urlparse(self.url).query).get('response-content-disposition', [''])[0]).split("filename=")[-1]
+                    # 去掉可能存在的引号
+                    if self.fileName.startswith('"') and self.fileName.endswith('"'):
+                        self.fileName = self.fileName[1:-1]
+                    elif self.fileName.startswith("'") and self.fileName.endswith("'"):
+                        self.fileName = self.fileName[1:-1]
+
+                    if not self.fileName:
+                        raise KeyError
+
+                    logger.debug(f"方法2获取文件名成功, 文件名:{self.fileName}")
+
+                except (KeyError, IndexError) as e:
+                    # 处理没有文件名的情况
+                    logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
+                    self.fileName = urlparse(self.url).path.split('/')[-1]
+                    logger.debug(f"方法3获取文件名成功, 文件名:{self.fileName}")
+            except Exception as e:
+                # 什么都 Get 不到的情况
+                logger.info(f"获取文件名失败, Exception:{e}")
+                content_type = head["content-type"].split('/')[-1]
+                self.fileName = f"downloaded_file{int(time())}.{content_type}"
+                logger.debug(f"方法4获取文件名成功, 文件名:{self.fileName}")
+
+        # 获取文件路径
+        if not self.filePath and Path(self.filePath).is_dir() == False:
+            self.filePath = Path.cwd()
+        else:
+            self.filePath = Path(self.filePath)
+            if not self.filePath.exists():
+                self.filePath.mkdir()
+
+        # 创建空文件
+        Path(f"{self.filePath}/{self.fileName}").touch()
+
+        self.taskInited.emit()
+        
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
             self.maxBlockNum = 1

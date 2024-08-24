@@ -14,7 +14,7 @@ from qfluentwidgets import ScrollArea, TitleLabel, isDarkTheme, SettingCardGroup
     PrimarySplitPushButton
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
-from app.common.methods import getWindowsProxy
+from app.common.methods import getProxy
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
 
@@ -48,7 +48,7 @@ class getInfoThread(QThread):
             url="https://seelevollerei-my.sharepoint.com/personal/jackyao_xn--7et36u_cn/_layouts/52/download.aspx?share=Ecm5kLYVJedKlw60gcDkxPEB1PlS5Y-P-ttDSit_V8KuLw",
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-            proxy=getWindowsProxy(), follow_redirects=True).text)["OS"])
+            proxy=getProxy(), follow_redirects=True).text)["OS"])
 
 
 class HomeInterface(ScrollArea):
@@ -250,7 +250,7 @@ class DownloadOptionDialog(MaskDialogBase):
 
         signalBus.addTaskSignal.emit(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
                                      str(path), self.blockNumCard.configItem.value,
-                                     "", "working", None, False)
+                                     "", "working", False)
         self.close()
 
     def __onDownloadFolderCardClicked(self):

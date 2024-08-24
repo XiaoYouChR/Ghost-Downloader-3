@@ -19,8 +19,14 @@ class TaskProgressBar(QWidget):
             self.HBoxLayout.addWidget(_)
             self.progressBarList.append(_)
 
-    def addProgressBar(self):
-        _ = ProgressBar(self)
-        self.HBoxLayout.addWidget(_)
-        self.progressBarList.append(_)
-        self.blockNum += 1
+    def addProgressBar(self, content: list, quantity: int):
+
+        for i in range(quantity):
+            _ = ProgressBar(self)
+            self.HBoxLayout.addWidget(_)
+            self.progressBarList.append(_)
+
+        self.blockNum += quantity
+
+        for e, i in enumerate(content):  # 更改 Stretch
+            self.progressBar.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
