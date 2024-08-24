@@ -1,0 +1,96 @@
+name: Build and Package Ghost Downloader
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        python -m pip install --upgrade pip
+        pip install PySide6==6.4.2
+        pip install PySide6-Fluent-Widgets
+        pip install loguru==0.7.2
+        pip install httpx==0.27.0
+        pip install pyinstaller
+
+    - name: Install dependencies on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install PySide6==6.4.2
+        pip install PySide6-Fluent-Widgets
+        pip install loguru==0.7.2
+        pip install httpx==0.27.0
+        pip install pyobjc==10.3.1
+        pip install pyinstaller
+
+    - name: Install dependencies on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install PySide6==6.4.2
+        pip install PySide6-Fluent-Widgets
+        pip install loguru==0.7.2
+        pip install httpx==0.27.0
+        pip install pyinstaller
+
+    - name: Create dist directory
+      run: mkdir dist
+
+    - name: Package with PyInstaller on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller main.py --noconfirm --noconsole --icon=./logo.ico --distpath=dist --workpath=build
+
+    - name: Package with PyInstaller on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        pyinstaller main.py --noconfirm --noconsole --distpath=dist --workpath=build
+
+    - name: Package with PyInstaller on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        pyinstaller main.py --noconfirm --noconsole --distpath=dist --workpath=build
+
+    - name: Add plugins folder to dist
+      run: cp -r ./plugins dist/
+
+    - name: Compress the package on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        7z a -t7z -mx=9 dist/Ghost-Downloader-Windows-amd64-PyInstaller.7z ./dist/*
+
+    - name: Compress the package on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        7z a -t7z -mx=9 dist/Ghost-Downloader-macOS-amd64-PyInstaller.7z ./dist/*
+
+    - name: Compress the package on Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        tar -cvzf dist/Ghost-Downloader-Linux-amd64-PyInstaller.tar.gz ./dist/*
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Ghost-Downloader-${{ matrix.os }}-amd64-PyInstaller
+        path: |
+          dist/Ghost-Downloader-Windows-amd64-PyInstaller.7z
+          dist/Ghost-Downloader-macOS-amd64-PyInstaller.7z
+          dist/Ghost-Downloader-Linux-amd64-PyInstaller.tar.gz
