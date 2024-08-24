@@ -175,7 +175,7 @@ class DownloadTask(QThread):
                 filePath.mkdir()
 
         # 创建异步文件管理器
-        self.file_manager = aiofiles.open(f"{filePath}/{fileName}",'wb')
+        self.file_manager = aiofiles.open(f"{filePath}/{fileName}",'w+b')
         self.file_lock = asyncio.Lock()#锁
 
         self.process = []
@@ -303,7 +303,7 @@ class DownloadTask(QThread):
                     # print(self.process, self.fileSize)
 
                     await asyncio.sleep(1)
-                info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]#完成后额外刷新一次
+            info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]#完成后额外刷新一次
             #等待所有任务完成,不加会报错
             for i in self.workers:
                 await i.task
@@ -338,40 +338,38 @@ class DownloadWorker:
             finished = False
             while not finished:
                 try:
-                    download_headers = {"Range": f"bytes={self.process}-{self.endPos}",
+                    if mission.ableToParallelDownload:
+                        download_headers = {"Range": f"bytes={self.process}-{mission.fileSize}",
                                         "User-Agent": Headers["User-Agent"]}
+                    else:
+                        download_headers = {"User-Agent": Headers["User-Agent"]}
 
                     async with mission.client.stream(url=mission.url, headers=download_headers, timeout=30, method="GET") as res:
                         async for chunk in res.aiter_raw(chunk_size=65536):  # iter_content 的单位是字节, 即每64K写一次文件
-                            if self.endPos <= self.process :
-
-                                if not (i := mission.workers.index(self) + 1 ) == len(mission.workers):
-                                    if mission.workers[i].endPos < self.endPos:#在这种情况下校验会不断等待
-                                        break
-                                        
-                                    while mission.workers[i].process < self.endPos:
-                                        logger.info('等待后一协程下载以完成数据校验')
-                                        asyncio.sleep(1)
-                                        
-                                    async with mission.file_lock:
-                                        await mission.file.seek(self.endPos)
-                                        r = await mission.file.read(self.endPos - self.process)
-                                    if r != chunk[- ( self.endPos - self.process ):]:
-                                        logger.error('校验错误，请检查数据是否损坏')
-                                break
-
-                            if chunk:
+                            if self.process + 65536 < self.endPos:
                                 async with mission.file_lock:
                                     await mission.file.seek(self.process)
                                     await mission.file.write(chunk)
                                 self.process += 65536
                                 mission.process += 65536
-
-                    if self.process >= self.endPos:
-                        mission.process -= self.process - self.endPos #1:防止大于mission  2:无法工作
-                        self.process = self.endPos
-
-                    finished = True
+                            else:
+                                chunk = chunk[: self.endPos - self.process]
+                                len_chunk = self.endPos - self.process
+                                async with mission.file_lock:
+                                    await mission.file.seek(self.process)
+                                    await mission.file.write(chunk)
+                                    if (i := mission.workers.index(self) + 1) != len(mission.workers) and mission.workers[i].process > self.process + len_chunk:
+                                        i = await mission.file.read(self.process + len_chunk - self.endPos)#
+                                        if i != chunk[self.endPos - self.process:]:
+                                            logger.error('校验失败')
+                                        else:
+                                            logger.info(f'{self.startPos}校验成功')
+                                    else:
+                                        logger.debug('跳过校验')
+                                mission.process += len_chunk
+                                self.process = self.endPos
+                                finished = True
+                                break
 
                 except Exception as e:
                     logger.info(f"Task: {mission.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
