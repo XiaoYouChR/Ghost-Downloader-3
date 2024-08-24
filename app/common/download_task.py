@@ -267,7 +267,7 @@ class DownloadTask(QThread):
                             self.workers.append(
                                 DownloadWorker(i["start"], i["process"], i["end"], self))
 
-                    self.refreshLastProgress.emit(str(sum([i.process for i in self.workers])))  # 要不然速度会错
+                    self.refreshLastProgress.emit(str(sum([i.endPos - i.process for i in self.workers])))  # 要不然速度会错
                 # TODO 错误处理
                 except:
                     stepList = self.clacDivisionalRange()
@@ -287,11 +287,11 @@ class DownloadTask(QThread):
             # fileResolve = Path(f"{self.filePath}/{self.fileName}")
             # 实时统计进度并写入历史记录文件
             self.process = sum([i.process - i.startPos + 1 for i in self.workers])
-            async with aiofiles.open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
-                while not self.process == self.fileSize:
+            while not self.process == self.fileSize:
+                with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
                     info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
-                    await f.write(str(info))
-                    await f.flush()
+                    f.write(str(info))
+                    f.flush()
 
                     # self.process = os.path.getsize(fileResolve)
                     # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
