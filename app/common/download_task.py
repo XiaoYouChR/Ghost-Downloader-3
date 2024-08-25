@@ -266,7 +266,7 @@ class DownloadTask(QThread):
                             self.workers.append(
                                 DownloadWorker(i["start"], i["process"], i["end"], self))
 
-                    self.refreshLastProgress.emit(str(sum([i.endPos - i.process for i in self.workers])))  # 要不然速度会错
+                    #self.refreshLastProgress.emit(str(sum([i.process - i.startPos for i in self.workers])))  # 要不然速度会错
                 # TODO 错误处理
                 except:
                     stepList = self.clacDivisionalRange()
