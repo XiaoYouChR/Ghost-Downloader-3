@@ -245,9 +245,6 @@ class DownloadTask(QThread):
             if not self.filePath.exists():
                 self.filePath.mkdir()
 
-        # 创建空文件
-        Path(f"{self.filePath}/{self.fileName}").touch()
-
         self.taskInited.emit()
         
         # TODO 发消息给主线程
@@ -306,6 +303,7 @@ class DownloadTask(QThread):
             #等待所有任务完成,不加会报错
             for i in self.workers:
                 await i.task
+            await self.file.close()
             
 
         # 删除历史记录文件
