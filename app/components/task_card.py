@@ -275,7 +275,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def taskFinished(self):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
-        self.clicked.connect(lambda: os.system(f"{self.filePath}/{self.fileName}"))
+        self.clicked.connect(lambda: os.startfile(f"{self.filePath}/{self.fileName}"))
         self.speedLable.setText("任务已经完成")
 
         try:    # 程序启动时不要发
