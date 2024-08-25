@@ -84,7 +84,7 @@ class DownloadTask(QThread):
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
 
-        self.process = []
+        self.process = 0
         self.url = url
         self.fileName = fileName
         self.filePath = filePath
@@ -143,10 +143,10 @@ class DownloadTask(QThread):
 
         for i in range(len(arr) - 1):  #
 
-            s_pos, e_pos = arr[i], arr[i + 1] - 1
+            s_pos, e_pos = arr[i], arr[i + 1]
             step_list.append([s_pos, e_pos])
 
-        step_list[-1][-1] = self.fileSize - 1  # 修正
+        step_list[-1][-1] = self.fileSize # 不用修正
 
         return step_list
 
@@ -282,7 +282,7 @@ class DownloadTask(QThread):
 
             # fileResolve = Path(f"{self.filePath}/{self.fileName}")
             # 实时统计进度并写入历史记录文件
-            self.process = sum([i.process - i.startPos + 1 for i in self.workers])
+            self.process = sum([i.process - i.startPos for i in self.workers])
             while not self.process == self.fileSize:
                 with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
                     info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
@@ -298,7 +298,7 @@ class DownloadTask(QThread):
 
                     # print(self.process, self.fileSize)
 
-                    await asyncio.sleep(1)
+                await asyncio.sleep(1)
             info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]#完成后额外刷新一次
             #等待所有任务完成,不加会报错
             for i in self.workers:
@@ -367,6 +367,7 @@ class DownloadWorker:
                                 self.process = self.endPos
                                 finished = True
                                 break
+
 
                 except Exception as e:
                     logger.info(f"Task: {mission.fileName}, Thread {self} is reconnecting to the server, Error: {e}")
