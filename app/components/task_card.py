@@ -105,8 +105,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.completelyDelAction.triggered.connect(lambda: self.cancelTask(True))
         if sys.platform == "win32":
             self.folderButton.clicked.connect(lambda: os.startfile(path))
+        elif sys.platform == "darwin":  # macOS
+            self.folderButton.clicked.connect(lambda: os.system(f"open '{path}'"))
         else:  # Linux 下打开文件夹
-            self.folderButton.clicked.connect(lambda: os.system(f"xdg-open {path}"))
+            self.folderButton.clicked.connect(lambda: os.system(f"xdg-open '{path}'"))
 
         if self.status == "working":
             # 开始下载
@@ -278,7 +280,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def taskFinished(self):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
-        self.clicked.connect(lambda: os.startfile(f"{self.filePath}/{self.fileName}"))
+
+        if sys.platform == "win32":
+            self.clicked.connect(lambda: os.startfile(f"{self.filePath}/{self.fileName}"))
+        elif sys.platform == "darwin":  # macOS
+            self.clicked.connect(lambda: os.system(f"open '{self.filePath}/{self.fileName}'"))
+        else:  # Linux 下打开文件夹
+            self.clicked.connect(lambda: os.system(f"xdg-open '{self.filePath}/{self.fileName}'"))
+
         self.speedLable.setText("任务已经完成")
 
         try:    # 程序启动时不要发
