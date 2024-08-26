@@ -1,5 +1,5 @@
 # coding:utf-8
-import sys
+import sys, os
 
 from PySide6.QtCore import Qt, Signal, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
@@ -252,10 +252,30 @@ class SettingInterface(ScrollArea):
                 key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                      r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
                 winreg.DeleteValue(key, 'GhostDownloader')
+        elif sys.platform == "darwin":
+            if value:
+                with open(f"/Users/{os.getlogin()}/Library/LaunchAgents/app.ghost.downloader.plist", "w") as f:
+                    f.write(f"""<?xml version="1.0" encoding="UTF-8"?>
+                                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                                <plist version="1.0">
+                                <dict>
+                                <key>Label</key>
+                                <string>app.ghost.downloader</string>
+                                <key>ProgramArguments</key>
+                                <array>
+                                <string>{QApplication.applicationFilePath()}</string>
+                                <string>--silence</string>
+                                </array>
+                                <key>RunAtLoad</key>
+                                <true/>
+                                </dict>
+                                </plist>""")
+            else:
+                os.remove(f"/Users/{os.getlogin()}/Library/LaunchAgents/app.ghost.downloader.plist")
         else:
             InfoBar.warning(
                 title='注意',
-                content=f"该功能仅在 Windows 平台有效.",
+                content=f"该功能仅在 Windows/macOS 平台有效.",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
