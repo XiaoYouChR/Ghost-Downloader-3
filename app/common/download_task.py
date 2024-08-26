@@ -80,7 +80,8 @@ class DownloadTask(QThread):
     workerInfoChange = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
-
+    client = httpx.AsyncClient(headers=Headers, verify=False,
+                                   proxy=getProxy())
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
 
@@ -90,11 +91,9 @@ class DownloadTask(QThread):
         self.filePath = filePath
         self.maxBlockNum = maxBlockNum
         self.workers: list[DownloadWorker] = []
-        self.file_manager = aiofiles.open(f"{filePath}/{fileName}",'w+b')
+
         self.file_lock = asyncio.Lock()#锁
 
-        self.client = httpx.AsyncClient(headers=Headers, verify=False,
-                                   proxy=getProxy())
 
     def reassignWorker(self):
 
@@ -252,7 +251,7 @@ class DownloadTask(QThread):
             self.maxBlockNum = 1
         # 读取历史记录
         # 历史记录.ghd文件采用格式示例: ["start": 0, "process": 0, "end": 100, }, {"start": 101, "process": 111, "end": 200}]
-        async with self.file_manager as self.file:
+        async with aiofiles.open(f"{self.filePath}/{self.fileName}",'w+b') as self.file:
 
             if Path(f"{self.filePath}/{self.fileName}.ghd").exists():
                 try:
