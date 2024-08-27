@@ -76,6 +76,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
             if name:
                 self.task = DownloadTask(url, maxBlockNum, path, name)
+
+                self.__onTaskInited()
+                if self.status == "paused":
+                    self.speedLable.setText("任务已经暂停")
+
             else:
                 self.task = DownloadTask(url, maxBlockNum, path)
 
@@ -153,12 +158,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             try:
                 for i in self.task.workers:
-                    try:
-                        i.file.close()
-                    except Exception as e:
-                        logger.warning(
-                            f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
+                    # try:
+                    #     i.file.close()
+                    # except Exception as e:
+                    #     logger.warning(
+                    #         f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
                     i.terminate()
+
                 self.task.terminate()
 
                 # 改变记录状态

@@ -6,7 +6,7 @@ from qfluentwidgets.components.material import AcrylicMenu
 
 
 class FixedAcrylicSystemTrayMenu(AcrylicMenu):
-    """ 修复背景获取便宜的问题 """
+    """ 修复背景获取偏移的问题 """
 
     def showEvent(self, e):
         super().showEvent(e)
@@ -78,14 +78,15 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         for i in self.parent().taskInterface.cards:
             if i.status == 'working':
                 for j in i.task.workers:
-                    try:
-                        j.file.close()
-                    except AttributeError as e:
-                        logger.info(f"Task:{i.task.fileName}, users operate too quickly!, thread {i} error: {e}")
-                    except Exception as e:
-                        logger.warning(
-                            f"Task:{i.task.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
+                    # try:
+                    #     j.file.close()
+                    # except AttributeError as e:
+                    #     logger.info(f"Task:{i.task.fileName}, users operate too quickly!, thread {i} error: {e}")
+                    # except Exception as e:
+                    #     logger.warning(
+                    #         f"Task:{i.task.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
                     j.terminate()
+
                 i.task.terminate()
 
         QApplication.quit()
