@@ -21,6 +21,7 @@ log/
 Ghost Downloader 记录文件
 Ghost Downloader 配置文件.json
 
-# 忽略构建文件夹
+# 忽略构建文件
 build/
 dist/
+*.spec
