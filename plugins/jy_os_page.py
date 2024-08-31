@@ -11,7 +11,7 @@ from loguru import logger
 from qfluentwidgets import ScrollArea, TitleLabel, isDarkTheme, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
     ComboBoxSettingCard, FluentIcon as FIF, TextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, \
     RangeValidator, PrimaryPushButton, PushButton, MessageBox, CardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
-    PrimarySplitPushButton
+    PrimarySplitPushButton, NavigationItemPosition
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.methods import getProxy
@@ -30,7 +30,7 @@ class JyOSPagePlugin(PluginBase):
 
     def load(self):
         self.mainWindow.homeInterface = HomeInterface(self.mainWindow)
-        self.mainWindow.addSubInterface(self.mainWindow.homeInterface, FIF.CLOUD_DOWNLOAD, "系统下载")
+        self.mainWindow.addSubInterface(self.mainWindow.homeInterface, FIF.CLOUD_DOWNLOAD, "系统下载", position=NavigationItemPosition.SCROLL)
 
 
 class getInfoThread(QThread):

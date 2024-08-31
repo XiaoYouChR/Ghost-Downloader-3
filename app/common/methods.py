@@ -2,14 +2,13 @@ import importlib
 import inspect
 import os
 import sys
-
-from PySide6.QtWidgets import QApplication
-from loguru import logger
 from functools import wraps
 from time import sleep
 
-from app.common.plugin_base import PluginBase
+from PySide6.QtWidgets import QApplication
+from loguru import logger
 
+from app.common.plugin_base import PluginBase
 
 plugins = []
 

@@ -2,6 +2,7 @@
 
 # 创建 Application
 import sys
+
 from PySide6.QtWidgets import QApplication
 
 app = QApplication(sys.argv)

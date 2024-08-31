@@ -2,11 +2,10 @@ import os
 import re
 from pathlib import Path
 
-from PySide6.QtCore import Signal, QDir, Qt, QTimer
+from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
-from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, RangeConfigItem, RangeValidator, \
-    PushButton, PrimaryPushButton, TextEdit, \
+from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, PushButton, PrimaryPushButton, TextEdit, \
     MessageBox, isDarkTheme, InfoBar, InfoBarPosition
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase

@@ -1,13 +1,10 @@
 import hashlib
-import os
 import re
-import sys
 from pathlib import Path
-from time import sleep
 
 from PySide6.QtCore import QThread, Signal, QFileInfo
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QFileIconProvider, QApplication
+from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 from qfluentwidgets import CardWidget
 from qfluentwidgets import FluentIcon as FIF

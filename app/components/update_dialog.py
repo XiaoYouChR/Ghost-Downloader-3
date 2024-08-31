@@ -3,8 +3,8 @@ from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QHBoxLayout, QListWidgetItem
 from loguru import logger
-from qfluentwidgets import isDarkTheme, SettingCardGroup, TextEdit, ListWidget, BodyLabel, PrimaryPushButton, \
-    PushButton, TitleLabel, SubtitleLabel, InfoBar, InfoBarPosition
+from qfluentwidgets import isDarkTheme, TextEdit, ListWidget, BodyLabel, PrimaryPushButton, \
+    PushButton, SubtitleLabel, InfoBar, InfoBarPosition
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.config import VERSION, cfg

@@ -1,0 +1,50 @@
+name: Build and Package Ghost Downloader
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        arch: [x86_64, aarch64]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Create dist directory
+      run: mkdir dist
+
+    - name: Package with PyInstaller on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        pyinstaller main.py --noconfirm --noconsole --distpath=dist --workpath=build --icon=/images/icon.icns --osx-bundle-identifier app.ghost.downloader
+
+    - name: Add plugins folder to dist
+      run: cp -r ./plugins dist/main/
+
+    - name: Compress the package on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        7z a -t7z -mx=9 dist/Ghost-Downloader-macOS-amd64-PyInstaller.7z ./dist/main/*
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: Ghost-Downloader-${{ matrix.os }}-amd64-PyInstaller.7z
+        path: |
+          dist/Ghost-Downloader-macOS-amd64-PyInstaller.7z

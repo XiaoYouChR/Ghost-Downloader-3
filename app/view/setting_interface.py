@@ -1,7 +1,8 @@
 # coding:utf-8
-import sys, os
+import os
+import sys
 
-from PySide6.QtCore import Qt, Signal, QUrl, QResource
+from PySide6.QtCore import Qt, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition
