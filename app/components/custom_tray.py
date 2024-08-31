@@ -1,7 +1,8 @@
 from PySide6.QtCore import QRect
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
-from loguru import logger
-from qfluentwidgets import Action, MessageBox
+from qfluentwidgets import Action
+from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.components.material import AcrylicMenu
 
 
@@ -22,57 +23,41 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
         self.menu = FixedAcrylicSystemTrayMenu(parent=parent)
 
-        # self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
-
-
-        self.showAction = Action('🎤 显示主窗口', self.menu)
-        self.showAction.triggered.connect(self.showMainWindow)
+        self.showAction = Action(QIcon(":/image/logo.png") ,'仪表盘', self.menu)
+        self.showAction.triggered.connect(self.__onShowActionTriggered)
         self.menu.addAction(self.showAction)
 
-        self.ikunAction = Action('🏀 唱跳RAP', self.menu)
-        self.ikunAction.triggered.connect(self.ikun)
-        self.menu.addAction(self.ikunAction)
+        self.allPauseAction = Action(FIF.PLAY, '全部开始', self.menu)
+        self.allPauseAction.triggered.connect(self.__onAllStartActionTriggered)
+        self.menu.addAction(self.allPauseAction)
 
-        self.quitAction = Action('🕺 退出程序', self.menu)
-        self.quitAction.triggered.connect(self.quitApplication)
+        self.allPauseAction = Action(FIF.STOP_WATCH, '全部暂停', self.menu)
+        self.allPauseAction.triggered.connect(self.__onAllPauseActionTriggered)
+        self.menu.addAction(self.allPauseAction)
+
+        self.quitAction = Action(FIF.CLOSE, '退出程序', self.menu)
+        self.quitAction.triggered.connect(self.__onQuitActionTriggered)
         self.menu.addAction(self.quitAction)
 
         self.setContextMenu(self.menu)
 
         self.activated.connect(self.onTrayIconClick)
-        self.messageClicked.connect(self.showMainWindow)
+        self.messageClicked.connect(self.__onShowActionTriggered)
 
-    def showMainWindow(self):
+    def __onShowActionTriggered(self):
         self.parent().show()
         if self.parent().isMinimized():
             self.parent().showNormal()
         # 激活窗口，使其显示在最前面
         self.parent().activateWindow()
 
-    def ikun(self):
-        self.parent().show()
-        content = """巅峰产生虚伪的拥护，黄昏见证真正的使徒 🏀
+    def __onAllStartActionTriggered(self):
+        self.parent().taskInterface.allStartTasks()
 
-                         ⠀⠰⢷⢿⠄
-                   ⠀⠀⠀⠀⠀⣼⣷⣄
-                   ⠀⠀⣤⣿⣇⣿⣿⣧⣿⡄
-                   ⢴⠾⠋⠀⠀⠻⣿⣷⣿⣿⡀
-                   ⠀⢀⣿⣿⡿⢿⠈⣿
-                   ⠀⠀⠀⢠⣿⡿⠁⠀⡊⠀⠙
-                   ⠀⠀⠀⢿⣿⠀⠀⠹⣿
-                   ⠀⠀⠀⠀⠹⣷⡀⠀⣿⡄
-                   ⠀⠀⠀⠀⣀⣼⣿⠀⢈⣧
-        """
-        w = MessageBox(
-            title='坤家军！集合！',
-            content=content,
-            parent=self.parent()
-        )
-        w.yesButton.setText('献出心脏')
-        w.cancelButton.setText('你干嘛~')
-        w.exec()
+    def __onAllPauseActionTriggered(self):
+        self.parent().taskInterface.allPauseTasks()
     
-    def quitApplication(self):
+    def __onQuitActionTriggered(self):
         self.parent().themeChangedListener.terminate()
 
         for i in self.parent().taskInterface.cards:
@@ -93,4 +78,4 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
     def onTrayIconClick(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
-            self.showMainWindow()
+            self.__onShowActionTriggered()
