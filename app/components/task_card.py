@@ -16,7 +16,7 @@ from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
-from ..common.methods import getProxy, getReadableSize, retry
+from ..common.methods import getProxy, getReadableSize, retry, openFile
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -42,7 +42,8 @@ proxy = getProxy()
 
 
 class TaskCard(CardWidget, Ui_TaskCard):
-    # removeTaskSignal = Signal(int, bool)
+    taskFinished = Signal()
+
     def __init__(self, url, path, maxBlockNum: int, name: str = None, status: str = "working",
                  parent=None, autoCreated=False):
         super().__init__(parent=parent)
@@ -84,10 +85,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             else:
                 self.task = DownloadTask(url, maxBlockNum, path)
 
-            self.task.taskInited.connect(self.__onTaskInited)
-            self.task.workerInfoChange.connect(self.__changeInfo)
-            self.task.taskFinished.connect(self.taskFinished)
-            self.task.gotWrong.connect(self.__onTaskError)
+            self.__connectSignalToSlot()
 
         elif self.status == "finished":
             # TODO 超分辨率触发条件
@@ -102,18 +100,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.LogoPixmapLabel.setPixmap(pixmap)
             self.LogoPixmapLabel.setFixedSize(91, 91)
 
-            self.taskFinished()
+            self.__onTaskFinished()
 
         # 连接信号到槽
         self.pauseButton.clicked.connect(self.pauseTask)
         self.delAction.triggered.connect(lambda: self.cancelTask(False))
         self.completelyDelAction.triggered.connect(lambda: self.cancelTask(True))
-        if sys.platform == "win32":
-            self.folderButton.clicked.connect(lambda: os.startfile(path))
-        elif sys.platform == "darwin":  # macOS
-            self.folderButton.clicked.connect(lambda: os.system(f"open '{path}'"))
-        else:  # Linux 下打开文件夹
-            self.folderButton.clicked.connect(lambda: os.system(f"xdg-open '{path}'"))
+        self.folderButton.clicked.connect(lambda: openFile(path))
 
         if self.status == "working":
             # 开始下载
@@ -193,10 +186,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             except: # TODO 没有 fileName 的情况
                 self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath)
 
-            self.task.taskInited.connect(self.__onTaskInited)
-            self.task.workerInfoChange.connect(self.__changeInfo)
-            self.task.taskFinished.connect(self.taskFinished)
-            self.task.gotWrong.connect(self.__onTaskError)
+            self.__connectSignalToSlot()
 
             self.task.start()
 
@@ -283,16 +273,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.lastProcess = process
 
-    def taskFinished(self):
+    def __onTaskFinished(self):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
 
-        if sys.platform == "win32":
-            self.clicked.connect(lambda: os.startfile(f"{self.filePath}/{self.fileName}"))
-        elif sys.platform == "darwin":  # macOS
-            self.clicked.connect(lambda: os.system(f"open '{self.filePath}/{self.fileName}'"))
-        else:  # Linux 下打开文件夹
-            self.clicked.connect(lambda: os.system(f"xdg-open '{self.filePath}/{self.fileName}'"))
+        self.clicked.connect(lambda: openFile(f"{self.filePath}/{self.fileName}"))
 
         self.speedLable.setText("任务已经完成")
 
@@ -337,6 +322,15 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.clacTask = ClacMD5Thread(f"{self.filePath}/{self.fileName}")
         self.clacTask.returnMD5.connect(lambda x: self.speedLable.setText(f"校验完成！文件的MD5值是：{x}"))
         self.clacTask.start()
+
+    def __connectSignalToSlot(self):
+        self.task.taskInited.connect(self.__onTaskInited)
+        self.task.workerInfoChange.connect(self.__changeInfo)
+
+        self.task.taskFinished.connect(self.__onTaskFinished)
+        self.task.taskFinished.connect(self.TaskFinished)
+
+        self.task.gotWrong.connect(self.__onTaskError)
 
 
 class ClacMD5Thread(QThread):

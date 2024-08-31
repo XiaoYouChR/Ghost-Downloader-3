@@ -123,3 +123,12 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
 
     return decorator
 
+
+def openFile(fileResolve):
+    
+    if sys.platform == "win32":
+        os.startfile(f"{fileResolve}")
+    elif sys.platform == "darwin":  # macOS
+        os.system(f"open '{fileResolve}'")
+    else:
+        os.system(f"xdg-open '{fileResolve}'")
