@@ -32,7 +32,7 @@ jobs:
     - name: Package with PyInstaller on macOS
       if: matrix.os == 'macos-latest'
       run: |
-        pyinstaller main.py --noconfirm --noconsole --distpath=dist --workpath=build --icon=/images/icon.icns --osx-bundle-identifier app.ghost.downloader
+        pyinstaller main.py --noconfirm --noconsole --distpath=dist --workpath=build --icon=images/logo.icns --osx-bundle-identifier app.ghost.downloader
 
     - name: Add plugins folder to dist
       run: cp -r ./plugins dist/main/
@@ -40,11 +40,11 @@ jobs:
     - name: Compress the package on macOS
       if: matrix.os == 'macos-latest'
       run: |
-        7z a -t7z -mx=9 dist/Ghost-Downloader-macOS-amd64-PyInstaller.7z ./dist/main/*
+        7z a -t7z -mx=9 dist/Ghost-Downloader-${{ matrix.os }}-${{ matrix.arch }}-PyInstaller.7z ./dist/main/*
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: Ghost-Downloader-${{ matrix.os }}-amd64-PyInstaller.7z
+        name: Ghost-Downloader-${{ matrix.os }}-${{ matrix.arch }}-PyInstaller.7z
         path: |
-          dist/Ghost-Downloader-macOS-amd64-PyInstaller.7z
+          dist/Ghost-Downloader-${{ matrix.os }}-${{ matrix.arch }}-PyInstaller.7z
