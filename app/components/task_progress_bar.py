@@ -29,4 +29,4 @@ class TaskProgressBar(QWidget):
         self.blockNum += quantity
 
         for e, i in enumerate(content):  # 更改 Stretch
-            self.progressBar.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
+            self.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB

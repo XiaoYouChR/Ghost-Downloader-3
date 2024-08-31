@@ -1,4 +1,5 @@
 import re
+import struct
 import urllib
 from email.utils import decode_rfc2231
 from pathlib import Path
@@ -83,7 +84,7 @@ class DownloadTask(QThread):
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
 
-        self.process = []
+        self.process = 0
         self.url = url
         self.fileName = fileName
         self.filePath = filePath
@@ -129,7 +130,7 @@ class DownloadTask(QThread):
             logger.info(
                 f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
 
-    def clacDivisionalRange(self):
+    def __clacDivisionalRange(self):
         step = self.fileSize // self.maxBlockNum  # 每块大小
         arr = list(range(0, self.fileSize, step))
 
@@ -148,19 +149,14 @@ class DownloadTask(QThread):
 
         return step_list
 
+    def __getLinkInfo(self):
 
-    @retry(3, 0.1)
-    def run(self):
-        try:
-            # 初始化信息
-            # 获取真实URL
-            self.url = getRealUrl(self.url)
+        response = self.client.head(self.url, follow_redirects=True)
+        response.raise_for_status() # 如果状态码不是 2xx，抛出异常
 
-            head = httpx.head(self.url, headers=Headers, proxy=getProxy()).headers
+        head = response.headers
 
-        except Exception as e: # 重试也没用
-
-            self.gotWrong.emit(str(e))
+        self.url = str(response.url)
 
         # 获取文件大小, 判断是否可以分块下载
         if "content-length" not in head:
@@ -173,7 +169,7 @@ class DownloadTask(QThread):
         # 获取文件名
         if not self.fileName:
             try:
-                # 首先，尝试处理 Content-Disposition 中的 self.fileName* (RFC 5987 格式)
+                # 尝试处理 Content-Disposition 中的 self.fileName* (RFC 5987 格式)
                 headerValue = head["content-disposition"]
                 if 'fileName*' in headerValue:
                     match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
@@ -230,10 +226,51 @@ class DownloadTask(QThread):
         # 获取文件路径
         if not self.filePath and Path(self.filePath).is_dir() == False:
             self.filePath = Path.cwd()
+
         else:
             self.filePath = Path(self.filePath)
             if not self.filePath.exists():
                 self.filePath.mkdir()
+
+    def __loadWorkers(self):
+        # 如果 .ghd 文件存在，读取并解析二进制数据
+        filePath = Path(f"{self.filePath}/{self.fileName}.ghd")
+        if filePath.exists():
+            try:
+                with open(filePath, "rb") as f:
+                    while True:
+                        data = f.read(24)  # 每个 worker 有 3 个 64 位的无符号整数，共 24 字节
+
+                        if not data:
+                            break
+
+                        start, process, end = struct.unpack("<QQQ", data)
+                        self.workers.append(
+                            DownloadWorker(start, process, end, self.url, self.filePath,
+                                           self.fileName, self.client))
+
+            except Exception as e:
+                logger.error(f"Failed to load workers: {e}")
+                for i in range(self.maxBlockNum):
+                    stepList = self.__clacDivisionalRange()
+                    self.workers.append(
+                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
+                                       self.fileName, self.client))
+        else:
+            for i in range(self.maxBlockNum):
+                stepList = self.__clacDivisionalRange()
+                self.workers.append(
+                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
+                                   self.fileName, self.client))
+
+    @retry(3, 0.1)
+    def run(self):
+        try:
+            self.__getLinkInfo()
+
+        except Exception as e: # 重试也没用
+
+            self.gotWrong.emit(str(e))
 
         # 创建空文件
         Path(f"{self.filePath}/{self.fileName}").touch()
@@ -243,31 +280,9 @@ class DownloadTask(QThread):
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
             self.maxBlockNum = 1
-        # 读取历史记录
-        # 历史记录.ghd文件采用格式示例: ["start": 0, "process": 0, "end": 100, }, {"start": 101, "process": 111, "end": 200}]
-        if Path(f"{self.filePath}/{self.fileName}.ghd").exists():
-            try:
-                with open(f"{self.filePath}/{self.fileName}.ghd", "r", encoding="utf-8") as f:
-                    workersInfo = eval(f.read())
-                    logger.debug(f"Task:{self.fileName}, history info is: {workersInfo}")
-                    for i in workersInfo:
-                        self.workers.append(
-                            DownloadWorker(i["start"], i["process"], i["end"], self.url, self.filePath,
-                                           self.fileName, self.client))
 
-            # TODO 错误处理
-            except:
-                for i in range(self.maxBlockNum):
-                    stepList = self.clacDivisionalRange()
-                    self.workers.append(
-                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
-                                       self.fileName, self.client))
-        else:
-            for i in range(self.maxBlockNum):
-                stepList = self.clacDivisionalRange()
-                self.workers.append(
-                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.url, self.filePath,
-                                   self.fileName, self.client))
+        # 加载分块
+        self.__loadWorkers()
 
         for i in self.workers:
             logger.debug(f"Task {self.fileName}, starting the thread {i}...")
@@ -276,23 +291,29 @@ class DownloadTask(QThread):
 
         # fileResolve = Path(f"{self.filePath}/{self.fileName}")
         # 实时统计进度并写入历史记录文件
-        while not self.process == self.fileSize:
-            with open(f"{self.filePath}/{self.fileName}.ghd", "w", encoding="utf-8") as f:
-                info = [{"start": i.startPos, "process": i.process, "end": i.endPos} for i in self.workers]
-                f.write(str(info))
+        with open(f"{self.filePath}/{self.fileName}.ghd", "wb") as f:
+            while not self.process == self.fileSize:
+
+                f.seek(0)
+                info = []
+                self.process = 0
+
+                for i in self.workers:
+
+                    info.append({"start": i.startPos, "process": i.process, "end": i.endPos})
+
+                    self.process += (i.process - i.startPos + 1)
+
+                    # 保存 workers 信息为二进制格式
+                    data = struct.pack("<QQQ", i.startPos, i.process, i.endPos)
+                    f.write(data)
+
                 f.flush()
+                f.truncate()
 
-            # self.process = os.path.getsize(fileResolve)
-            # self.process = sum([i.process - i.startProcess + 1 for i in self.workers])
-            # self.processChange.emit(str(self.process))
+                self.workerInfoChange.emit(info)
 
-            self.process = sum([i.process - i.startPos + 1 for i in self.workers])
-
-            self.workerInfoChange.emit(info)
-
-            # print(self.process, self.fileSize)
-
-            sleep(1)
+                sleep(1)
 
         # 删除历史记录文件
         try:
