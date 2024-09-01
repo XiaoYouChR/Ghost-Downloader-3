@@ -325,7 +325,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.task.workerInfoChange.connect(self.__changeInfo)
 
         self.task.taskFinished.connect(self.__onTaskFinished)
-        self.task.taskFinished.connect(self.TaskFinished)
+        self.task.taskFinished.connect(self.taskFinished)
 
         self.task.gotWrong.connect(self.__onTaskError)
 
