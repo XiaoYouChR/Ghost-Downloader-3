@@ -1,6 +1,7 @@
 # coding:utf-8
 import os
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
@@ -264,7 +265,7 @@ class SettingInterface(ScrollArea):
                                 <string>app.ghost.downloader</string>
                                 <key>ProgramArguments</key>
                                 <array>
-                                <string>{QApplication.applicationFilePath()}</string>
+                                <string>'{QApplication.applicationFilePath()}'</string>
                                 <string>--silence</string>
                                 </array>
                                 <key>RunAtLoad</key>
@@ -273,10 +274,33 @@ class SettingInterface(ScrollArea):
                                 </plist>""")
             else:
                 os.remove(f"/Users/{os.getlogin()}/Library/LaunchAgents/app.ghost.downloader.plist")
+        elif sys.platform == "linux":
+            if value:
+                autoStartPath = Path(f'/home/{os.getlogin()}/.config/autostart/')
+                if not autoStartPath.exists():
+                    autoStartPath.mkdir(parents=True, exist_ok=True)
+
+                with open(f"/home/{os.getlogin()}/.config/autostart/gd3.desktop", "w", encoding="utf-8") as f:
+                    _ = (f"""[Desktop Entry]
+Type=Application
+Version={VERSION}
+Name=Ghost Downloader 3
+Comment=A multi-threading downloader with QThread based on PySide6
+Exec="'{QApplication.applicationFilePath()}' --slience"
+StartupNotify=false
+Terminal=false
+""")
+                    print(_)
+                    f.write(_)
+                    f.flush()
+
+            else:
+                os.remove(f"/home/{os.getlogin()}/.config/autostart/gd3.desktop")
+
         else:
             InfoBar.warning(
-                title='注意',
-                content=f"该功能仅在 Windows/macOS 平台有效.",
+                title='警告',
+                content=f"鬼知道你用的是什么平台？",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
