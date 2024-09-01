@@ -286,7 +286,7 @@ Type=Application
 Version={VERSION}
 Name=Ghost Downloader 3
 Comment=A multi-threading downloader with QThread based on PySide6
-Exec="'{QApplication.applicationFilePath()}' --slience"
+Exec="{QApplication.applicationFilePath()}" --silence
 StartupNotify=false
 Terminal=false
 """)
