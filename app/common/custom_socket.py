@@ -29,6 +29,8 @@ class GhostDownloaderSocketServer(QObject):
         # 接收新连接的客户端
         client = self.server.nextPendingConnection()
 
+        logger.debug(f"New client connected: {client.peerAddress().toString()}:{client.peerPort()}")
+
         # 信号槽连接：接收客户端消息时触发
         client.textMessageReceived.connect(self.processTextMessage)
 

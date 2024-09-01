@@ -39,7 +39,8 @@ function connectWebSocket() {
     }
     catch (e) {
         // 捕获并打印任何其他异常
-        console.error("Exception in WebSocket connection: ", e);
+        console.log("Exception in WebSocket connection: ", e);
+        setTimeout(connectWebSocket, 2500);
     }
 }
 
@@ -60,33 +61,30 @@ function updateStatus(connected) {
 chrome.downloads.onCreated.addListener((downloadItem) => {
     // 检查扩展是否被禁用
     chrome.storage.local.get(["shouldDisableExtension"], (result) => {
-        if (result.shouldDisableExtension) {
-            console.log("Extension is disabled, not processing downloads.");
-            return;
-        }
+        if (!(result.shouldDisableExtension) && (isConnected && socket.readyState === WebSocket.OPEN)) {
+            console.log("Download started: ", downloadItem);
 
-        console.log("Download started: ", downloadItem);
+            // 取消下载
+            chrome.downloads.cancel(downloadItem.id, () => {
+                console.log(`Download cancelled: ${downloadItem.id}`);
+            });
 
-        const downloadInfo = {
-            id: downloadItem.id,
-            url: downloadItem.url,
-            // filename: downloadItem.filename,
-            mime: downloadItem.mime,
-            fileSize: downloadItem.fileSize,
-            startTime: downloadItem.startTime,
-            state: downloadItem.state,
-        };
+            const downloadInfo = {
+                id: downloadItem.id,
+                url: downloadItem.url,
+                // filename: downloadItem.filename,
+                mime: downloadItem.mime,
+                fileSize: downloadItem.fileSize,
+                startTime: downloadItem.startTime,
+                state: downloadItem.state,
+            };
 
-        // 取消下载
-        chrome.downloads.cancel(downloadItem.id, () => {
-            console.log(`Download cancelled: ${downloadItem.id}`);
-        });
-
-        // 发送下载信息到服务器
-        if (isConnected && socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify(downloadInfo));
-        } else {
-            console.error("WebSocket is not open");
+            // 发送下载信息到服务器
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(downloadInfo));
+            } else {
+                console.error("WebSocket is not open");
+            }
         }
     });
 });

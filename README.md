@@ -51,26 +51,23 @@
 
 ## 须知
 * 在开发环境中运行 `main.py` 时请加上 `--debug` 实参。
-* `PySide6` `v6.4.2` 以上版本与 `PySide6-Fluent-Widgets` 兼容不佳，需要手动调整 `PySide6-Fluent-Widgets` 的代码。
+
 
 <!-- ROADMAP -->
 ## 计划
 
 - [x] 全局设置
-- [ ] 浏览器插件优化
+- [ ] 浏览器插件优化（还没有找到在该死的 Manifest V3 中实现抓取 Headers 和 Cookie 的方法 😠）
 - [ ] 更详细的下载信息
 - [ ] 开放捐赠入口
 - [ ] 磁力 / BT 下载
 - [ ] 插件市场
-- [ ] 内存占用优化
+- [x] 内存占用优化
     - [x] 升级 Qt 版本
     - [x] 实现 HttpClient 复用
     - [ ] 用协程来代替部分多线程功能
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
-
-
-
 
 
 <!-- CONTRIBUTING -->
@@ -87,9 +84,6 @@
 5. 创建一个拉取请求（Pull Request）
 
 
-
-
-
 <!-- LICENSE -->
 ## 许可证
 
@@ -103,10 +97,6 @@
 ## 联系
 
 [@晓游ChR](https://space.bilibili.com/437313511) - XiaoYouChR@outlook.com
-
-
-
-
 
 
 <!-- ACKNOWLEDGMENTS -->
