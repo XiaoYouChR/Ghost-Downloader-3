@@ -53,8 +53,8 @@ class UpdateDialog(MaskDialogBase):
 
         self.widget.setLayout(self.VBoxLayout)
 
-        self.widget.setMinimumSize(410, 420)
-        self.widget.setMaximumSize(520, 420)
+        self.widget.setMinimumSize(520, 520)
+        self.widget.setMaximumSize(820, 650)
 
         if isDarkTheme():
             # C = ThemeColor.DARK_3.color()
@@ -67,8 +67,8 @@ class UpdateDialog(MaskDialogBase):
 
         self.logTextEdit = TextEdit(self)
         self.logTextEdit.setReadOnly(True)
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.logTextEdit.setSizePolicy(sizePolicy)
+
+        self.logTextEdit.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
 
         self.VBoxLayout.addWidget(self.logTextEdit)
 
@@ -76,6 +76,7 @@ class UpdateDialog(MaskDialogBase):
         self.VBoxLayout.addWidget(self.updateTimeLabel)
 
         self.fileListWidget = ListWidget(self)
+        self.fileListWidget.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum))
         self.VBoxLayout.addWidget(self.fileListWidget)
 
         self.buttonLayout = QHBoxLayout()
