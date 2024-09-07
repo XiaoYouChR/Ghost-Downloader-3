@@ -250,13 +250,12 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
     def __changeInfo(self, content: list):
         # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题
-        # process = int(content)
+
         _ = len(content) - self.progressBar.blockNum
         if _:
             self.progressBar.addProgressBar(content, _)
 
         process = 0
-
 
         for e, i in enumerate(content):
             process += i["process"] - i["start"]

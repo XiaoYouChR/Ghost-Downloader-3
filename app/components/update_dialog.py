@@ -1,15 +1,16 @@
 import httpx
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QHBoxLayout, QListWidgetItem
+from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QHBoxLayout, QListWidgetItem, QTableWidgetItem
 from loguru import logger
 from qfluentwidgets import isDarkTheme, TextEdit, ListWidget, BodyLabel, PrimaryPushButton, \
     PushButton, SubtitleLabel, InfoBar, InfoBarPosition
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.config import VERSION, cfg
-from app.common.methods import getProxy
+from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize
 from app.common.signal_bus import signalBus
+from app.components.Ui_UpdateDialog import Ui_UpdateDialog
 
 
 class GetUpdateThread(QThread):
@@ -38,61 +39,29 @@ class GetUpdateThread(QThread):
             self.gotResponse.emit({"ERROR" : f"获取更新失败：{repr(e)}"})
 
 
-class UpdateDialog(MaskDialogBase):
+class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
     def __init__(self, parent, content: dict):
         super().__init__(parent=parent)
 
         self.content = content
-        self.urls = []
+        self.tabelViewInfos = []
+        self.urls: list[str] = []
 
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
 
-        self.VBoxLayout = QVBoxLayout()
-        self.VBoxLayout.setContentsMargins(18, 18, 18, 18)
+        self.setupUi(self.widget)
 
-        self.widget.setLayout(self.VBoxLayout)
+        self.widget.setLayout(self.verticalLayout)
 
-        self.widget.setMinimumSize(520, 520)
-        self.widget.setMaximumSize(820, 650)
+        self.widget.setMinimumSize(520, 650)
+        self.widget.setMaximumSize(680, 720)
 
         if isDarkTheme():
             # C = ThemeColor.DARK_3.color()
             self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:rgb(39,39,39)}")
         else:
             self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:white}")
-
-        self.titleLabel = SubtitleLabel("检测到新版本", self.widget)
-        self.VBoxLayout.addWidget(self.titleLabel)
-
-        self.logTextEdit = TextEdit(self)
-        self.logTextEdit.setReadOnly(True)
-
-        self.logTextEdit.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
-
-        self.VBoxLayout.addWidget(self.logTextEdit)
-
-        self.updateTimeLabel = BodyLabel(self)
-        self.VBoxLayout.addWidget(self.updateTimeLabel)
-
-        self.fileListWidget = ListWidget(self)
-        self.fileListWidget.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum))
-        self.VBoxLayout.addWidget(self.fileListWidget)
-
-        self.buttonLayout = QHBoxLayout()
-
-        self.yesButton = PrimaryPushButton(self)
-        self.yesButton.setObjectName("yesButton")
-        self.yesButton.setText("下载此版本")
-        self.noButton = PushButton(self)
-        self.noButton.setObjectName("noButton")
-        self.noButton.setText("稍后再说")
-
-        self.buttonLayout.addWidget(self.noButton)
-        self.buttonLayout.addWidget(self.yesButton)
-        self.buttonLayout.setSpacing(18)
-
-        self.VBoxLayout.addLayout(self.buttonLayout)
 
         self.__analyzeContent()
 
@@ -101,20 +70,28 @@ class UpdateDialog(MaskDialogBase):
         self.yesButton.clicked.connect(self.__onYesButtonClicked)
 
     def __analyzeContent(self):
+
         assets = self.content["assets"]
         for i in assets:
-            _ = QListWidgetItem(i["name"])
-            _.setData(1, i["browser_download_url"])
-            self.fileListWidget.addItem(_)
+            self.tabelViewInfos.append([i["name"], getReadableSize(i["size"]), str(i["download_count"])])
+            self.urls.append(i["browser_download_url"])
 
-        body = self.content["body"]
+        self.tableView.setRowCount(len(assets))
 
-        self.logTextEdit.setMarkdown(body)
-        self.updateTimeLabel.setText(f"更新时间：{self.content['published_at']}")
-        self.titleLabel.setText(f"检测到新版本：{self.content['tag_name']}")
+        # 添加数据
+        for i, tabelViewInfo in enumerate(self.tabelViewInfos):
+            for j in range(3):
+                self.tableView.setItem(i, j, QTableWidgetItem(tabelViewInfo[j]))
+
+        self.tableView.setHorizontalHeaderLabels(['文件名', '文件大小', '下载次数'])
+        self.tableView.resizeColumnsToContents()
+
+        self.logTextEdit.setMarkdown(self.content["body"])
+        self.updatedDateLabel.setText(f"Updated Time：{getLocalTimeFromGithubApiTime(self.content['published_at'])}")
+        self.versionLabel.setText(f"Version: {self.content['tag_name']} " + ("Pre-Release" if self.content["prerelease"] else "Release"))
 
     def __onYesButtonClicked(self):
-        url = self.fileListWidget.currentItem().data(1)
+        url = self.urls[self.tableView.currentRow()]
         signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", False)
         self.close()
 
@@ -124,7 +101,7 @@ def __showResponse(parent, content: dict):
     elif "ERROR" in content:
         InfoBar.error(title="检查更新失败", content=content["ERROR"], position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
     else:
-        UpdateDialog(parent, content).exec()
+        UpdateDialog(parent, content).show()
 
 def checkUpdate(parent):
     thread = GetUpdateThread(parent)

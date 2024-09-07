@@ -3,7 +3,8 @@ import inspect
 import os
 import sys
 from functools import wraps
-from time import sleep
+from time import sleep, localtime
+from datetime import datetime, timedelta, timezone
 
 from PySide6.QtWidgets import QApplication
 from loguru import logger
@@ -131,3 +132,22 @@ def openFile(fileResolve):
         os.system(f"open '{fileResolve}'")
     else:
         os.system(f"xdg-open '{fileResolve}'")
+
+
+def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
+    # 解析 GMT 时间
+    gmtTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00"))
+
+    # 获取本地时间的时区偏移量（秒）
+    localTimeOffsetSec = localtime().tm_gmtoff
+
+    # 创建带有本地时区偏移量的时区信息
+    localTz = timezone(timedelta(seconds=localTimeOffsetSec))
+
+    # 转换为系统本地时间
+    localTime = gmtTime.astimezone(localTz)
+
+    # 去掉时区信息
+    localTimeNaive = localTime.replace(tzinfo=None)
+
+    return localTimeNaive

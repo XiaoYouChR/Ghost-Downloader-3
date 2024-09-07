@@ -312,7 +312,7 @@ Terminal=false
     def __onAboutCardClicked(self):
         """ check update and show information """
         InfoBar.info("请稍候", "正在检查更新...", position=InfoBarPosition.TOP_RIGHT, duration=1000, parent=self)
-        checkUpdate(self)
+        checkUpdate(self.window())
 
     def __connectSignalToSlot(self):
         """ connect signal to slot """
