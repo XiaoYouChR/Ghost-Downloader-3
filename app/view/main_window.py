@@ -3,9 +3,9 @@ import ctypes
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
@@ -18,6 +18,19 @@ from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
+
+class CustomSplashScreen(SplashScreen):
+
+    def finish(self):
+        """ fade out splash screen """
+        opacityEffect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(opacityEffect)
+        opacityAni = QPropertyAnimation(opacityEffect, b'opacity', self)
+        opacityAni.setStartValue(1)
+        opacityAni.setEndValue(0)
+        opacityAni.setDuration(200)
+        opacityAni.finished.connect(self.deleteLater)
+        opacityAni.start()
 
 
 class ThemeChangedListener(QThread):
@@ -126,7 +139,7 @@ class MainWindow(MSFluentWindow):
         self.setWindowTitle('Ghost Downloader')
 
         # create splash screen
-        self.splashScreen = SplashScreen(self.windowIcon(), self)
+        self.splashScreen = CustomSplashScreen(self.windowIcon(), self)
         self.splashScreen.setIconSize(QSize(106, 106))
         self.splashScreen.raise_()
 
