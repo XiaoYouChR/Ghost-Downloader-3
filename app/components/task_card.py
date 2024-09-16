@@ -113,7 +113,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PLAY)
 
     def __onTaskError(self, exception: str):
-        self.TitleLabel.setText(f"请重新启动任务!")
         self.speedLable.setText(f"Error: {exception}")
 
     def __onTaskInited(self):

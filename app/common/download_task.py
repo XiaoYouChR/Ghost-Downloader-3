@@ -136,8 +136,7 @@ class DownloadTask(QThread):
 
             newWorker = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.client)
 
-            loop = asyncio.get_event_loop()
-            newTask = loop.create_task(self.__handleWorker(newWorker))
+            newTask = asyncio.create_task(self.__handleWorker(newWorker))
             newTask.add_done_callback(self.__reassignWorker)
 
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, newWorker)
