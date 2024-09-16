@@ -230,24 +230,28 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 except Exception as e:
                     raise e
 
-            # 删除记录文件
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                _ = f.read()
-
-            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
-
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                f.write(_)
-
         except Exception as e:
             logger.warning(f"Task:{self.fileName}, 删除时遇到错误: {e}")
 
         finally:
-            self.status = "canceled"
-            # Remove Widget
-            self.parent().parent().parent().expandLayout.removeWidget(self)
-            self.hide()
+
+            try:
+                # 删除记录文件
+                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
+                    _ = f.read()
+
+                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                                   "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
+
+                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
+                    f.write(_)
+
+            finally:
+
+                self.status = "canceled"
+                # Remove Widget
+                self.parent().parent().parent().expandLayout.removeWidget(self)
+                self.hide()
 
     def __changeInfo(self, content: list):
         # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题

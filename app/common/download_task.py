@@ -17,7 +17,16 @@ from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize
 
 Headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "zh-CN,zh;q=0.9",
+    "cache-control": "max-age=0",
+    "cookie": "down_ip=1",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "none",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
 
 urlRe = re.compile(r"^" +
                    "((?:https?|ftp)://)" +
@@ -160,7 +169,7 @@ class DownloadTask(QThread):
 
     def __getLinkInfo(self):
         try:
-            response = httpx.head(self.url, follow_redirects=True)
+            response = httpx.head(self.url, headers=Headers, verify=False, proxy=getProxy(), follow_redirects=True)
             response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
 
             head = response.headers
@@ -174,6 +183,8 @@ class DownloadTask(QThread):
             else:
                 self.fileSize = int(head["content-length"])
                 self.ableToParallelDownload = True
+
+            print(head)
 
             # 获取文件名
             if not self.fileName:
@@ -223,16 +234,19 @@ class DownloadTask(QThread):
                         logger.debug(f"方法2获取文件名成功, 文件名:{self.fileName}")
 
                     except (KeyError, IndexError) as e:
-                        # 处理没有文件名的情况
+
                         logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
                         self.fileName = urlparse(self.url).path.split('/')[-1]
-                        logger.debug(f"方法3获取文件名成功, 文件名:{self.fileName}")
-                except Exception as e:
-                    # 什么都 Get 不到的情况
-                    logger.info(f"获取文件名失败, Exception:{e}")
-                    content_type = head["content-type"].split('/')[-1]
-                    self.fileName = f"downloaded_file{int(time())}.{content_type}"
-                    logger.debug(f"方法4获取文件名成功, 文件名:{self.fileName}")
+
+                        if self.fileName:
+                            logger.debug(f"方法3获取文件名成功, 文件名:{self.fileName}")
+                        else:
+                            logger.debug("方法3获取文件名失败, 文件名为空")
+                            # 什么都 Get 不到的情况
+                            logger.info(f"获取文件名失败, 错误:{e}")
+                            content_type = head["content-type"].split('/')[-1]
+                            self.fileName = f"downloaded_file{int(time())}.{content_type}"
+                            logger.debug(f"方法4获取文件名成功, 文件名:{self.fileName}")
 
             # 获取文件路径
             if not self.filePath and Path(self.filePath).is_dir() == False:
@@ -283,8 +297,7 @@ class DownloadTask(QThread):
             finished = False
             while not finished:
                 try:
-                    download_headers = {"Range": f"bytes={worker.process}-{worker.endPos}",
-                                        "User-Agent": Headers["User-Agent"]}
+                    download_headers = Headers.update({"Range": f"bytes={worker.process}-{worker.endPos}"})  # 添加范围
 
                     async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
                                                     method="GET") as res:
