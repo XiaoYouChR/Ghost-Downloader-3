@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'TaskCard.ui'
+## 你猜是不是 UIC 生成的
 ##
 ## Created by: Qt User Interface Compiler version 6.4.3
 ##
@@ -9,12 +9,11 @@
 ################################################################################
 
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
-from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QSpacerItem,
-                               QVBoxLayout)
-
-from qfluentwidgets import (BodyLabel, PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
-
+from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
 from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import (PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
+
+from app.components.icon_label import IconBodyLabel
 
 
 class Ui_TaskCard(object):
@@ -24,8 +23,8 @@ class Ui_TaskCard(object):
         TaskCard.resize(793, 119)
         TaskCard.setMinimumSize(QSize(793, 119))
         TaskCard.setMaximumSize(QSize(16777215, 119))
-        self.horizontalLayout_3 = QHBoxLayout(TaskCard)
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.cardHorizontalLayout = QHBoxLayout(TaskCard)
+        self.cardHorizontalLayout.setObjectName(u"cardHorizontalLayout")
         self.LogoPixmapLabel = PixmapLabel(TaskCard)
         self.LogoPixmapLabel.setObjectName(u"LogoPixmapLabel")
         self.LogoPixmapLabel.setMinimumSize(QSize(91, 91))
@@ -33,7 +32,7 @@ class Ui_TaskCard(object):
         self.LogoPixmapLabel.setScaledContents(True)
         self.LogoPixmapLabel.setAlignment(Qt.AlignCenter)
 
-        self.horizontalLayout_3.addWidget(self.LogoPixmapLabel)
+        self.cardHorizontalLayout.addWidget(self.LogoPixmapLabel)
 
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setSpacing(0)
@@ -53,9 +52,57 @@ class Ui_TaskCard(object):
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setSpacing(6)
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.horizontalLayout.addItem(self.horizontalSpacer)
+        self.verticalLayout.addSpacing(15) # 把整体往下撑
+
+        # 还需要把 statusHorizonLayout 在 horizonLayout 里面往下撑, 要不然非常难看!
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+
+        self.verticalLayout_2.addSpacing(15)
+
+        self.statusHorizonLayout = QHBoxLayout()
+        self.statusHorizonLayout.setObjectName(u"statusHorizonLayout")
+        self.statusHorizonLayout.setSpacing(8)
+        self.speedLabel = IconBodyLabel("下载速度", FIF.SPEED_HIGH, TaskCard)
+        self.speedLabel.setObjectName(u"speedLabel")
+        self.speedLabel.setMinimumSize(QSize(0, 19))
+        self.speedLabel.setMaximumSize(QSize(16777215, 19))
+
+        self.statusHorizonLayout.addWidget(self.speedLabel)
+
+        self.leftTimeLabel = IconBodyLabel("剩余时间", FIF.STOP_WATCH, TaskCard)
+        self.leftTimeLabel.setObjectName(u"leftTimeLabel")
+        self.leftTimeLabel.setMinimumSize(QSize(0, 19))
+        self.leftTimeLabel.setMaximumSize(QSize(16777215, 19))
+
+        self.statusHorizonLayout.addWidget(self.leftTimeLabel)
+
+        self.processLabel = IconBodyLabel("下载进度", FIF.LIBRARY, TaskCard)
+        self.processLabel.setObjectName(u"processLabel")
+        self.processLabel.setMinimumSize(QSize(0, 19))
+        self.processLabel.setMaximumSize(QSize(16777215, 19))
+
+        self.statusHorizonLayout.addWidget(self.processLabel)
+        self.statusHorizonLayout.addSpacing(1677215)
+
+        self.verticalLayout_2.addLayout(self.statusHorizonLayout)  # 先加入 后期代码处理
+
+        self.infoHorizonLayout = QHBoxLayout(TaskCard)
+        self.infoHorizonLayout.setObjectName(u"infoHorizonLayout")
+        self.infoHorizonLayout.setSpacing(8)
+
+        self.infoLabel = IconBodyLabel("若任务初始化过久，请检查网络连接后重试.", FIF.INFO, TaskCard)
+        self.infoLabel.setObjectName(u"infoLabel")
+        self.infoLabel.setMinimumSize(QSize(0, 19))
+        self.infoLabel.setMaximumSize(QSize(16777215, 19))
+
+        self.infoHorizonLayout.addWidget(self.infoLabel)
+
+        self.verticalLayout_2.addLayout(self.infoHorizonLayout)
+
+        self.horizontalLayout.addLayout(self.verticalLayout_2)
 
         self.pauseButton = PrimaryToolButton(TaskCard)
         self.pauseButton.setObjectName(u"pauseButton")
@@ -80,39 +127,9 @@ class Ui_TaskCard(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.speedLable = BodyLabel(TaskCard)
-        self.speedLable.setObjectName(u"speedLable")
-        self.speedLable.setMinimumSize(QSize(0, 19))
-        self.speedLable.setMaximumSize(QSize(601, 19))
-
-        self.horizontalLayout_2.addWidget(self.speedLable)
-
-        self.leftTimeLabel = BodyLabel(TaskCard)
-        self.leftTimeLabel.setObjectName(u"leftTimeLabel")
-        self.leftTimeLabel.setMinimumSize(QSize(0, 19))
-        self.leftTimeLabel.setMaximumSize(QSize(151, 19))
-
-        self.horizontalLayout_2.addWidget(self.leftTimeLabel)
-
-        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
-
-        self.processLabel = BodyLabel(TaskCard)
-        self.processLabel.setObjectName(u"processLabel")
-        self.processLabel.setMinimumSize(QSize(0, 19))
-        self.processLabel.setMaximumSize(QSize(201, 19))
-
-        self.horizontalLayout_2.addWidget(self.processLabel)
-
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
-
-        self.horizontalLayout_3.addLayout(self.verticalLayout)
+        self.cardHorizontalLayout.addLayout(self.verticalLayout)
 
         # 初始化 Icon 类
-
         self.pauseButton.setIcon(FIF.PAUSE)
         self.cancelButton.setIcon(FIF.DELETE)
         self.folderButton.setIcon(FIF.FOLDER)
@@ -125,8 +142,4 @@ class Ui_TaskCard(object):
 
     def retranslateUi(self, TaskCard):
         TaskCard.setWindowTitle(QCoreApplication.translate("TaskCard", u"Form", None))
-        self.pauseButton.setText("")
-        self.cancelButton.setText("")
-        self.folderButton.setText("")
-        self.processLabel.setText("")
     # retranslateUi

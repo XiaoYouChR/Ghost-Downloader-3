@@ -15,7 +15,7 @@ from .del_dialog import DelDialog
 from .task_progress_bar import TaskProgressBar
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
-from ..common.methods import getProxy, getReadableSize, retry, openFile
+from ..common.methods import getProxy, getReadableSize, openFile
 
 Headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
@@ -59,7 +59,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.autoCreated = autoCreated
 
         # Show Information
-        self.speedLable.setText("若任务初始化过久，请检查网络连接后重试.")
+
+        self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
         self.TitleLabel.setText("正在初始化任务...")
 
         self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
@@ -79,7 +80,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
                 self.__onTaskInited()
                 if self.status == "paused":
-                    self.speedLable.setText("任务已经暂停")
+                    self.__showInfo("任务已经暂停")
 
             else:
                 self.task = DownloadTask(url, maxBlockNum, path)
@@ -113,7 +114,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PLAY)
 
     def __onTaskError(self, exception: str):
-        self.speedLable.setText(f"Error: {exception}")
+        self.__showInfo(f"Error: {exception}")
 
     def __onTaskInited(self):
         self.fileName = self.task.fileName
@@ -170,7 +171,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     f.write(_)
 
             finally:
-                self.speedLable.setText("任务已经暂停")
+                self.__showInfo("任务已经暂停")
                 self.status = "paused"
                 self.pauseButton.setEnabled(True)
 
@@ -202,12 +203,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     f.write(_)
 
             finally:
-                self.speedLable.setText("任务正在开始")
+                self.__showInfo("任务正在开始")
                 self.status = "working"
                 self.pauseButton.setEnabled(True)
 
-
-    @retry(3, 0.1)
     def cancelTask(self, surely=False, completely=False):
 
         if not surely:
@@ -259,7 +258,24 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     self.parent().parent().parent().expandLayout.removeWidget(self)
                     self.hide()
 
-    def __changeInfo(self, content: list):
+    def __showInfo(self, content:str):
+        # 隐藏 statusHorizontalLayout
+        self.speedLabel.hide()
+        self.leftTimeLabel.hide()
+        self.processLabel.hide()
+
+        # 显示 infoLayout
+        self.infoLabel.show()
+        self.infoLabel.setText(content)
+
+    def __hideInfo(self):
+        self.infoLabel.hide()
+
+        self.speedLabel.show()
+        self.leftTimeLabel.show()
+        self.processLabel.show()
+
+    def __changeStatus(self, content: list):
         # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题
 
         _ = len(content) - self.progressBar.blockNum
@@ -274,9 +290,19 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         duringLastSecondProcess = process - self.lastProcess
 
-        self.speedLable.setText(f"{getReadableSize(duringLastSecondProcess)}/s")
+        # 如果还在显示消息状态，则调用 __hideInfo
+        if self.infoLabel.isVisible():
+            self.__hideInfo()
+
+        self.speedLabel.setText(f"{getReadableSize(duringLastSecondProcess)}/s")
         self.processLabel.setText(f"{getReadableSize(process)}/{getReadableSize(self.task.fileSize)}")
-        # self.ProgressBar.setValue((process / self.task.fileSize) * 100)
+
+        # 计算剩余时间，并转换为 MM:SS
+        try:
+            leftTime = (self.task.fileSize - process) / duringLastSecondProcess
+            self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
+        except ZeroDivisionError:
+            self.leftTimeLabel.setText("Infinity")
 
         self.lastProcess = process
 
@@ -286,7 +312,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.clicked.connect(lambda: openFile(f"{self.filePath}/{self.fileName}"))
 
-        self.speedLable.setText("任务已经完成")
+        self.__showInfo("任务已经完成")
 
         try:    # 程序启动时不要发
             self.window().tray.showMessage(self.window().windowTitle(), f"任务 {self.fileName} 已完成！", self.window().windowIcon())
@@ -323,16 +349,15 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.setDisabled(False)
         self.cancelButton.setDisabled(False)
 
-
     def runClacTask(self):
-        self.speedLable.setText("正在校验MD5...")
+        self.__showInfo("正在校验MD5...")
         self.clacTask = ClacMD5Thread(f"{self.filePath}/{self.fileName}")
-        self.clacTask.returnMD5.connect(lambda x: self.speedLable.setText(f"校验完成！文件的MD5值是：{x}"))
+        self.clacTask.returnMD5.connect(lambda x: self.__showInfo(f"校验完成！文件的MD5值是：{x}"))
         self.clacTask.start()
 
     def __connectSignalToSlot(self):
         self.task.taskInited.connect(self.__onTaskInited)
-        self.task.workerInfoChange.connect(self.__changeInfo)
+        self.task.workerInfoChange.connect(self.__changeStatus)
 
         self.task.taskFinished.connect(self.__onTaskFinished)
         self.task.taskFinished.connect(self.taskFinished)

@@ -32,7 +32,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         self.allPauseAction.triggered.connect(self.__onAllStartActionTriggered)
         self.menu.addAction(self.allPauseAction)
 
-        self.allPauseAction = Action(FIF.STOP_WATCH, '全部暂停', self.menu)
+        self.allPauseAction = Action(FIF.PAUSE, '全部暂停', self.menu)
         self.allPauseAction.triggered.connect(self.__onAllPauseActionTriggered)
         self.menu.addAction(self.allPauseAction)
 

@@ -68,7 +68,7 @@ class TaskInterface(ScrollArea):
 
         self.allPauseButton = PushButton(self.toolsBar)
         self.allPauseButton.setObjectName(u"allPauseButton")
-        self.allPauseButton.setIcon(FIF.STOP_WATCH)
+        self.allPauseButton.setIcon(FIF.PAUSE)
         self.horizontalLayout.addWidget(self.allPauseButton)
 
         self.allDeleteButton = PushButton(self.toolsBar)
