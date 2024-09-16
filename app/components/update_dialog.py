@@ -1,10 +1,9 @@
 import httpx
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QVBoxLayout, QSizePolicy, QHBoxLayout, QListWidgetItem, QTableWidgetItem
+from PySide6.QtWidgets import QTableWidgetItem
 from loguru import logger
-from qfluentwidgets import isDarkTheme, TextEdit, ListWidget, BodyLabel, PrimaryPushButton, \
-    PushButton, SubtitleLabel, InfoBar, InfoBarPosition
+from qfluentwidgets import InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.config import VERSION, cfg
@@ -43,6 +42,8 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
     def __init__(self, parent, content: dict):
         super().__init__(parent=parent)
 
+        FluentStyleSheet.DIALOG.apply(self.widget)
+
         self.content = content
         self.tabelViewInfos = []
         self.urls: list[str] = []
@@ -56,12 +57,6 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
         self.widget.setMinimumSize(520, 650)
         self.widget.setMaximumSize(680, 720)
-
-        if isDarkTheme():
-            # C = ThemeColor.DARK_3.color()
-            self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:rgb(39,39,39)}")
-        else:
-            self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:white}")
 
         self.__analyzeContent()
 

@@ -8,10 +8,10 @@ from PySide6.QtCore import Qt, QThread, Signal, QDir, QUrl, QSize, QMetaObject, 
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
 from loguru import logger
-from qfluentwidgets import ScrollArea, TitleLabel, isDarkTheme, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
+from qfluentwidgets import ScrollArea, TitleLabel, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
     ComboBoxSettingCard, FluentIcon as FIF, TextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, \
     RangeValidator, PrimaryPushButton, PushButton, MessageBox, CardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
-    PrimarySplitPushButton, NavigationItemPosition
+    PrimarySplitPushButton, NavigationItemPosition, FluentStyleSheet
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.methods import getProxy
@@ -129,6 +129,8 @@ class DownloadOptionDialog(MaskDialogBase):
     def __init__(self, parent=None, list=None, dict=None):
         super().__init__(parent=parent)
 
+        FluentStyleSheet.DIALOG.apply(self.widget)
+
         self.dict = dict
         self.list = list
         self.versions = []
@@ -143,11 +145,6 @@ class DownloadOptionDialog(MaskDialogBase):
 
         self.widget.setMinimumSize(510, 530)
         self.widget.setMaximumSize(680, 540)
-        if isDarkTheme():
-            # C = ThemeColor.DARK_3.color()
-            self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:rgb(39,39,39)}")
-        else:
-            self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:white}")
 
         # 版本组
         self.versionGroup = SettingCardGroup(

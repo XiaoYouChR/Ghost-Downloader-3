@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 from qfluentwidgets import CardWidget
 from qfluentwidgets import FluentIcon as FIF
+from shiboken6.Shiboken import delete
 
 from .Ui_TaskCard import Ui_TaskCard
 from .task_progress_bar import TaskProgressBar
@@ -147,15 +148,15 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PLAY)
 
             try:
-                for i in self.task.workers:
-                    # try:
-                    #     i.file.close()
-                    # except Exception as e:
-                    #     logger.warning(
-                    #         f"Task:{self.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
-                    i.terminate()
+                for i in self.task.tasks:
+                    i.cancel()
 
+                self.task.file.close()
+                self.task.ghdFile.close()
                 self.task.terminate()
+                self.task.deleteLater()
+
+                delete(self.task)
 
                 # 改变记录状态
                 with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:

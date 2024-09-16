@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
 from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, PushButton, PrimaryPushButton, TextEdit, \
-    MessageBox, isDarkTheme, InfoBar, InfoBarPosition
+    MessageBox, InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
@@ -36,6 +36,8 @@ class AddTaskOptionDialog(MaskDialogBase):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
+        FluentStyleSheet.DIALOG.apply(self.widget)
+
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
 
@@ -46,11 +48,6 @@ class AddTaskOptionDialog(MaskDialogBase):
 
         self.widget.setMinimumSize(510, 420)
         self.widget.setMaximumSize(680, 430)
-        if isDarkTheme():
-            # C = ThemeColor.DARK_3.color()
-            self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:rgb(39,39,39)}")
-        else:
-            self.widget.setStyleSheet(".QFrame{border-radius:10px;background-color:white}")
 
         # 下载链接组
         self.linkGroup = SettingCardGroup(

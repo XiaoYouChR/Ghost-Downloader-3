@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QSystemTrayIcon, QApplication
 from qfluentwidgets import Action
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.components.material import AcrylicMenu
+from shiboken6.Shiboken import delete
 
 
 class FixedAcrylicSystemTrayMenu(AcrylicMenu):
@@ -60,19 +61,17 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
     def __onQuitActionTriggered(self):
         self.parent().themeChangedListener.terminate()
 
-        for i in self.parent().taskInterface.cards:
+        for i in self.parent().taskInterface.cards:  # 是为了不写入历史记录安全的退出
             if i.status == 'working':
-                for j in i.task.workers:
-                    # try:
-                    #     j.file.close()
-                    # except AttributeError as e:
-                    #     logger.info(f"Task:{i.task.fileName}, users operate too quickly!, thread {i} error: {e}")
-                    # except Exception as e:
-                    #     logger.warning(
-                    #         f"Task:{i.task.fileName}, it seems that cannot cancel thread {i} occupancy of the file, error: {e}")
-                    j.terminate()
+                for j in i.task.tasks:
+                    j.cancel()
 
+                i.task.file.close()
+                i.task.ghdFile.close()
                 i.task.terminate()
+                i.task.deleteLater()
+
+                delete(i.task)
 
         QApplication.quit()
 
