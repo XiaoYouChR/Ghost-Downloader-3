@@ -1,10 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import ScrollArea, TitleLabel, PrimaryPushButton, PushButton, ExpandLayout, SplitPushButton, \
-    RoundMenu, Action, InfoBar, InfoBarPosition
+from qfluentwidgets import ScrollArea, TitleLabel, PrimaryPushButton, PushButton, ExpandLayout, InfoBar, InfoBarPosition
 
 from ..common.signal_bus import signalBus
+from ..components.del_dialog import DelDialog
 from ..components.task_card import TaskCard
 
 
@@ -20,7 +20,6 @@ class TaskInterface(ScrollArea):
         self.allStartButton.clicked.connect(self.allStartTasks)
         self.allPauseButton.clicked.connect(self.allPauseTasks)
         self.allDeleteButton.clicked.connect(self.allCancelTasks)
-        self.completelyDelAction.triggered.connect(lambda: self.allCancelTasks(True))
 
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
@@ -72,15 +71,9 @@ class TaskInterface(ScrollArea):
         self.allPauseButton.setIcon(FIF.STOP_WATCH)
         self.horizontalLayout.addWidget(self.allPauseButton)
 
-        self.allDeleteButton = SplitPushButton(self.toolsBar)
+        self.allDeleteButton = PushButton(self.toolsBar)
         self.allDeleteButton.setObjectName(u"allDeleteButton")
         self.allDeleteButton.setIcon(FIF.DELETE)
-
-        self.Menu = RoundMenu(parent=self)
-        self.completelyDelAction = Action(FIF.CLOSE, "全部彻底删除")
-        self.Menu.addAction(self.completelyDelAction)
-        self.allDeleteButton.setFlyout(self.Menu)
-
         self.horizontalLayout.addWidget(self.allDeleteButton)
 
         self.horizontalSpacer = QSpacerItem(447, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -165,9 +158,15 @@ class TaskInterface(ScrollArea):
             if card.status == "working":
                 card.pauseTask()
 
-    def allCancelTasks(self, completely: bool = False):
-        for card in self.cards:
-            if card.status == "canceled":
-                continue
+    def allCancelTasks(self):
+        dialog = DelDialog(self.window())
+        if dialog.exec():
+            completely = dialog.checkBox.isChecked()
 
-            card.cancelTask(completely)
+            for card in self.cards:
+                if card.status == "canceled":
+                    continue
+
+                card.cancelTask(True, completely)
+
+        dialog.deleteLater()

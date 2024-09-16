@@ -11,6 +11,7 @@ from qfluentwidgets import FluentIcon as FIF
 from shiboken6.Shiboken import delete
 
 from .Ui_TaskCard import Ui_TaskCard
+from .del_dialog import DelDialog
 from .task_progress_bar import TaskProgressBar
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
@@ -102,8 +103,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         # 连接信号到槽
         self.pauseButton.clicked.connect(self.pauseTask)
-        self.delAction.triggered.connect(lambda: self.cancelTask(False))
-        self.completelyDelAction.triggered.connect(lambda: self.cancelTask(True))
+        self.cancelButton.clicked.connect(self.cancelTask)
         self.folderButton.clicked.connect(lambda: openFile(path))
 
         if self.status == "working":
@@ -208,49 +208,56 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
 
     @retry(3, 0.1)
-    def cancelTask(self, completely: bool = False):
-        self.pauseButton.setDisabled(True)
-        self.cancelButton.setDisabled(True)
+    def cancelTask(self, surely=False, completely=False):
 
-        try:
-            if self.status == "working":
-                self.pauseTask()
+        if not surely:
+            dialog = DelDialog(self.window())
+            if dialog.exec():
+                completely = dialog.checkBox.isChecked()
+                surely = True
+            dialog.deleteLater()
 
-            if completely:
-                # 删除文件
-                try:
-                    Path(f"{self.filePath}/{self.fileName}").unlink()
-                    Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-                    logger.info(f"self:{self.fileName}, delete file successfully!")
-
-                except FileNotFoundError:
-                    pass
-
-                except Exception as e:
-                    raise e
-
-        except Exception as e:
-            logger.warning(f"Task:{self.fileName}, 删除时遇到错误: {e}")
-
-        finally:
+        if surely:
+            self.pauseButton.setDisabled(True)
+            self.cancelButton.setDisabled(True)
 
             try:
-                # 删除记录文件
-                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                    _ = f.read()
+                if self.status == "working":
+                    self.pauseTask()
 
-                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
+                if completely:
+                    # 删除文件
+                    try:
+                        Path(f"{self.filePath}/{self.fileName}").unlink()
+                        Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+                        logger.info(f"self:{self.fileName}, delete file successfully!")
 
-                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                    f.write(_)
+                    except FileNotFoundError:
+                        pass
+
+                    except Exception as e:
+                        raise e
+
+            except Exception as e:
+                logger.warning(f"Task:{self.fileName}, 删除时遇到错误: {e}")
 
             finally:
+                try:
+                    # 删除记录文件
+                    with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
+                        _ = f.read()
 
-                self.status = "canceled"
-                # Remove Widget
-                self.parent().parent().parent().expandLayout.removeWidget(self)
-                self.hide()
+                    _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                                       "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
+
+                    with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
+                        f.write(_)
+
+                finally:
+                    self.status = "canceled"
+                    # Remove Widget
+                    self.parent().parent().parent().expandLayout.removeWidget(self)
+                    self.hide()
 
     def __changeInfo(self, content: list):
         # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题

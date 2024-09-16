@@ -2,10 +2,12 @@ import importlib
 import inspect
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from time import sleep, localtime
-from datetime import datetime, timedelta, timezone
 
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
@@ -125,13 +127,12 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
 
 
 def openFile(fileResolve):
-    
-    if sys.platform == "win32":
-        os.startfile(f"{fileResolve}")
-    elif sys.platform == "darwin":  # macOS
-        os.system(f"open '{fileResolve}'")
-    else:
-        os.system(f"xdg-open '{fileResolve}'")
+    """
+    打开文件
+
+    :param fileResolve: 文件路径
+    """
+    QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
 
 
 def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
