@@ -11,6 +11,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
+from app.common.config import cfg
 from app.common.plugin_base import PluginBase
 
 plugins = []
@@ -46,7 +47,7 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
         logger.error(f"Error loading plugins: {e}")
 
 
-def getProxy():
+def getSystemProxy():
     if sys.platform == "win32":
         try:
             import winreg
@@ -75,6 +76,14 @@ def getProxy():
             logger.error(f"Cannot get Linux proxy server：{e}")
             return None
 
+def getProxy():
+    # print(cfg.proxyServer.value)
+    if cfg.proxyServer.value == "Off":
+        return None
+    elif cfg.proxyServer.value == "Auto":
+        return getSystemProxy()
+    else:
+        return cfg.proxyServer.value
 
 def getReadableSize(size):
     units = ["B", "KB", "MB", "GB", "TB", "PB"]

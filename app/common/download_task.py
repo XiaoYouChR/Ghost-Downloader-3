@@ -47,7 +47,7 @@ urlRe = re.compile(r"^" +
 
 # def getRealUrl(url: str):
 #     response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-#                           proxy=getProxy())
+#                           proxyServer=getProxy())
 #
 #     if response.status_code == 400:  # Bad Requests
 #         # TODO 报错处理
@@ -68,7 +68,7 @@ urlRe = re.compile(r"^" +
 #             logger.info(f"HTTP status code:302, Redirect to {url}")
 #
 #         response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-#                               proxy=getProxy())  # 再访问一次
+#                               proxyServer=getProxy())  # 再访问一次
 #
 #     return url
 class DownloadWorker:

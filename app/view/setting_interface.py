@@ -5,15 +5,172 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication
-from qfluentwidgets import FluentIcon as FIF, InfoBarPosition
+from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
+    QSizePolicy
+from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
+    BodyLabel, RadioButton, ComboBox, LineEdit
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
                             setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
+from ..common.methods import getSystemProxy
 from ..components.update_dialog import checkUpdate
+
+
+class CustomProxySettingCard(ExpandGroupSettingCard):
+    """ Custom proxyServer setting card """
+
+    def __init__(self, configItem: ConfigItem, parent=None):
+        """
+        Parameters
+        ----------
+        configItem: ColorConfigItem
+            options config item
+
+        parent: QWidget
+            parent window
+        """
+        icon = FIF.GLOBE
+        title = "代理"
+        content = "设置下载时希望使用的代理"
+
+        super().__init__(icon, title, content, parent=parent)
+
+        self.configItem = configItem
+
+        self.choiceLabel = BodyLabel(self)
+
+        self.radioWidget = QWidget(self.view)
+        self.radioLayout = QVBoxLayout(self.radioWidget)
+        self.offRadioButton = RadioButton(
+            "不使用代理", self.radioWidget)
+        self.defaultRadioButton = RadioButton(
+            "自动检测系统代理", self.radioWidget)
+        self.customRadioButton = RadioButton(
+            "使用自定义代理", self.radioWidget)
+
+        self.buttonGroup = QButtonGroup(self)
+
+        self.customProxyWidget = QWidget(self.view)
+        self.customProxyLayout = QHBoxLayout(self.customProxyWidget)
+        self.customLabel = BodyLabel(
+            "编辑代理服务器: ", self.customProxyWidget)
+        self.customProtocolComboBox = ComboBox(self.customProxyWidget)
+        self.customProtocolComboBox.addItems(["socks5", "http", "https"])
+        self.label_1 = BodyLabel("://", self.customProxyWidget)
+        self.customIPLineEdit = LineEdit(self.customProxyWidget)
+        self.customIPLineEdit.setPlaceholderText("代理 IP 地址")
+        self.label_2 = BodyLabel(":", self.customProxyWidget)
+        self.customPortLineEdit = LineEdit(self.customProxyWidget)
+        self.customPortLineEdit.setPlaceholderText("端口")
+
+        self.__initWidget()
+
+        if self.configItem.value == "Auto":
+            self.defaultRadioButton.setChecked(True)
+            self.__onRadioButtonClicked(self.defaultRadioButton)
+        elif self.configItem.value == "Off":
+            self.offRadioButton.setChecked(True)
+            self.__onRadioButtonClicked(self.offRadioButton)
+        else:
+            self.customRadioButton.setChecked(True)
+            self.__onRadioButtonClicked(self.customRadioButton)
+            self.customProtocolComboBox.setCurrentText(self.configItem.value[:self.configItem.value.find("://")])
+            _ = self.configItem.value[self.configItem.value.find("://")+3:].split(":")
+            self.customIPLineEdit.setText(_[0])
+            self.customPortLineEdit.setText(_[1])
+
+            self.choiceLabel.setText(self.buttonGroup.checkedButton().text())
+            self.choiceLabel.adjustSize()
+
+    def __initWidget(self):
+        self.__initLayout()
+
+        self.buttonGroup.buttonClicked.connect(self.__onRadioButtonClicked)
+
+    def __initLayout(self):
+        self.addWidget(self.choiceLabel)
+
+        self.radioLayout.setSpacing(19)
+        self.radioLayout.setAlignment(Qt.AlignTop)
+        self.radioLayout.setContentsMargins(48, 18, 0, 18)
+
+        self.buttonGroup.addButton(self.offRadioButton)
+        self.buttonGroup.addButton(self.defaultRadioButton)
+        self.buttonGroup.addButton(self.customRadioButton)
+
+        self.radioLayout.addWidget(self.offRadioButton)
+        self.radioLayout.addWidget(self.defaultRadioButton)
+        self.radioLayout.addWidget(self.customRadioButton)
+        self.radioLayout.setSizeConstraint(QVBoxLayout.SetMinimumSize)
+
+        self.customProxyLayout.setContentsMargins(48, 18, 44, 18)
+        self.customProxyLayout.addWidget(self.customLabel, 0, Qt.AlignLeft)
+        self.customProxyLayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        self.customProxyLayout.addWidget(self.customProtocolComboBox, 0, Qt.AlignLeft)
+        self.customProxyLayout.addWidget(self.label_1, 0, Qt.AlignLeft)
+        self.customProxyLayout.addWidget(self.customIPLineEdit, 0, Qt.AlignLeft)
+        self.customProxyLayout.addWidget(self.label_2, 0, Qt.AlignLeft)
+        self.customProxyLayout.addWidget(self.customPortLineEdit, 0, Qt.AlignLeft)
+        self.customProxyLayout.setSizeConstraint(QHBoxLayout.SetMinimumSize)
+
+        self.viewLayout.setSpacing(0)
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.addGroupWidget(self.radioWidget)
+        self.addGroupWidget(self.customProxyWidget)
+
+    def __onRadioButtonClicked(self, button: RadioButton):
+        """ radio button clicked slot """
+        if button.text() == self.choiceLabel.text():
+            return
+
+        self.choiceLabel.setText(button.text())
+        self.choiceLabel.adjustSize()
+
+        if button is self.defaultRadioButton:  # 自动
+            # 禁用 custom 选项
+            self.customProxyWidget.setDisabled(True)
+
+            _ = getSystemProxy()
+            # 分析 SystemProxy, SystemProxy 可能为 None, "", 类似于 "http://127.0.0.1:1080" 的格式, 若不为空则自动填充 custom 选项
+            if _:
+                protocol = _[:_.find("://")]
+                self.customProtocolComboBox.setCurrentText(protocol)
+                _ = _[_.find("://")+3:].split(":")
+                self.customIPLineEdit.setText(_[0])
+                self.customPortLineEdit.setText(_[1])
+            else:
+                self.customProtocolComboBox.setCurrentText("")
+                self.customIPLineEdit.setText("未检测到代理")
+                self.customPortLineEdit.setText("")
+
+            cfg.set(self.configItem, "Auto")
+
+        elif button is self.offRadioButton:  # 关闭
+            # 禁用 custom 选项
+            self.customProxyWidget.setDisabled(True)
+
+            cfg.set(self.configItem, "Off")
+
+        elif button is self.customRadioButton:
+            # 启用 custom 选项
+            self.customProxyWidget.setDisabled(False)
+
+    def leaveEvent(self, event): # 鼠标离开时检测 custom 选项是否合法并保存配置
+        if self.customRadioButton.isChecked():
+            protocol = self.customProtocolComboBox.currentText()
+            ip = self.customIPLineEdit.text()
+            port = self.customPortLineEdit.text()
+
+            proxyServer = f"{protocol}://{ip}:{port}"
+            if cfg.proxyServer.validator.PATTERN.match(proxyServer):
+                cfg.set(self.configItem, proxyServer)
+            else:
+                self.defaultRadioButton.click()
+                self.defaultRadioButton.setChecked(True)
+
 
 
 class SettingInterface(ScrollArea):
@@ -50,6 +207,11 @@ class SettingInterface(ScrollArea):
             FIF.DOWNLOAD,
             "下载路径",
             cfg.get(cfg.downloadFolder),
+            self.downloadGroup
+        )
+
+        self.proxyServerCard = CustomProxySettingCard(
+            cfg.proxyServer,
             self.downloadGroup
         )
 
@@ -184,6 +346,7 @@ class SettingInterface(ScrollArea):
         self.downloadGroup.addSettingCard(self.blockNumCard)
         self.downloadGroup.addSettingCard(self.maxReassignSizeCard)
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
+        self.downloadGroup.addSettingCard(self.proxyServerCard)
 
         self.browserGroup.addSettingCard(self.browserExtensionCard)
         self.browserGroup.addSettingCard(self.installExtensionCard)

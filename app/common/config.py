@@ -1,11 +1,27 @@
 # coding:utf-8
 
+from re import compile
+
 from PySide6.QtCore import QDir
 from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderValidator)
+                            FolderValidator, ConfigValidator)
 
 
+class ProxyValidator(ConfigValidator):
+
+    PATTERN = compile(r'^(socks5|http|https):\/\/'
+                      r'((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
+                      r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):'
+                      r'(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|[1-5]?[0-9]{1,4})$')
+
+    def validate(self, value: str) -> bool:
+        # 判断代理地址是否合法
+        # print(value, self.PATTERN.match(value))
+        return bool(self.PATTERN.match(value)) or value == "Auto" or value == "Off"
+
+    def correct(self, value) -> str:
+        return value if self.validate(value) else "Auto"
 
 
 class Config(QConfig):
@@ -16,6 +32,7 @@ class Config(QConfig):
         "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
+    proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
     # browser
     enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
 
