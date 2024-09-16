@@ -76,5 +76,5 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         QApplication.quit()
 
     def onTrayIconClick(self, reason):
-        if reason == QSystemTrayIcon.DoubleClick:
+        if reason == QSystemTrayIcon.Trigger:
             self.__onShowActionTriggered()
