@@ -11,7 +11,7 @@ from loguru import logger
 from qfluentwidgets import ScrollArea, TitleLabel, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
     ComboBoxSettingCard, FluentIcon as FIF, TextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, \
     RangeValidator, PrimaryPushButton, PushButton, MessageBox, CardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
-    PrimarySplitPushButton, NavigationItemPosition, FluentStyleSheet
+    PrimarySplitPushButton, NavigationItemPosition, FluentStyleSheet, IndeterminateProgressRing
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.methods import getProxy
@@ -75,10 +75,9 @@ class HomeInterface(ScrollArea):
         self.scrollWidget.setMinimumWidth(816)
         self.expandLayout = QVBoxLayout(self.scrollWidget)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.loadingLabel = TitleLabel("正在加载", self.scrollWidget)
-        self.loadingLabel.setObjectName("noTaskLabel")
-        self.loadingLabel.setAlignment(Qt.AlignCenter)
-        self.expandLayout.addWidget(self.loadingLabel)
+        self.loadingRing = IndeterminateProgressRing(self.scrollWidget)
+        self.loadingRing.setObjectName("LoadingRing")
+        self.expandLayout.addWidget(self.loadingRing, alignment=Qt.AlignCenter)
         self.scrollWidget.setMinimumWidth(816)
 
         self.GetInfoThread = getInfoThread(self)
@@ -118,9 +117,10 @@ class HomeInterface(ScrollArea):
 
             _.show()
 
-        self.expandLayout.removeWidget(self.loadingLabel)
-        self.loadingLabel.hide()
-        self.loadingLabel.setParent(None)
+        self.expandLayout.removeWidget(self.loadingRing)
+        self.loadingRing.hide()
+        self.loadingRing.setParent(None)
+        self.loadingRing.deleteLater()
 
 
 class DownloadOptionDialog(MaskDialogBase):
