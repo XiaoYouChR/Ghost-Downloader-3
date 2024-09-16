@@ -135,7 +135,9 @@ class DownloadTask(QThread):
             s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
 
             newWorker = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.client)
-            newTask = asyncio.create_task(self.__handleWorker(newWorker))
+
+            loop = asyncio.get_event_loop()
+            newTask = loop.create_task(self.__handleWorker(newWorker))
             newTask.add_done_callback(self.__reassignWorker)
 
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, newWorker)
@@ -183,8 +185,6 @@ class DownloadTask(QThread):
             else:
                 self.fileSize = int(head["content-length"])
                 self.ableToParallelDownload = True
-
-            print(head)
 
             # 获取文件名
             if not self.fileName:
@@ -297,7 +297,8 @@ class DownloadTask(QThread):
             finished = False
             while not finished:
                 try:
-                    download_headers = Headers.update({"Range": f"bytes={worker.process}-{worker.endPos}"})  # 添加范围
+                    download_headers = Headers
+                    download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
 
                     async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
                                                     method="GET") as res:
