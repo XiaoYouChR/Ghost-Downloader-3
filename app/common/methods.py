@@ -1,11 +1,16 @@
 import importlib
 import inspect
 import os
+import re
 import sys
+import urllib
 from datetime import datetime, timedelta, timezone
+from email.utils import decode_rfc2231
 from functools import wraps
-from time import sleep, localtime
+from time import sleep, localtime, time
+from urllib.parse import unquote, parse_qs, urlparse
 
+import httpx
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
@@ -76,6 +81,7 @@ def getSystemProxy():
             logger.error(f"Cannot get Linux proxy server：{e}")
             return None
 
+
 def getProxy():
     # print(cfg.proxyServer.value)
     if cfg.proxyServer.value == "Off":
@@ -84,6 +90,7 @@ def getProxy():
         return getSystemProxy()
     else:
         return cfg.proxyServer.value
+
 
 def getReadableSize(size):
     units = ["B", "KB", "MB", "GB", "TB", "PB"]
@@ -161,3 +168,82 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
     localTimeNaive = localTime.replace(tzinfo=None)
 
     return localTimeNaive
+
+
+def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy:str=getProxy(), followRedirects:bool=True) -> tuple:
+    response = httpx.head(url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects)
+    response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
+
+    head = response.headers
+
+    url = str(response.url)
+
+    # 获取文件大小, 判断是否可以分块下载
+    if "content-length" not in head:
+        fileSize = 0
+    else:
+        fileSize = int(head["content-length"])
+
+    # 获取文件名
+    if not fileName:
+        try:
+            # 尝试处理 Content-Disposition 中的 fileName* (RFC 5987 格式)
+            headerValue = head["content-disposition"]
+            if 'fileName*' in headerValue:
+                match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
+                if match:
+                    fileName = match.group(1)
+                    fileName = decode_rfc2231(fileName)
+                    fileName = urllib.parse.unquote(fileName[2])  # fileName* 后的部分是编码信息
+
+            # 如果 fileName* 没有成功获取，尝试处理普通的 fileName
+            if not fileName and 'filename' in headerValue:
+                match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
+                if match:
+                    fileName = match.group(1)
+
+            # 移除文件名头尾可能存在的引号
+            if fileName:
+                fileName = fileName.strip('"\'')
+            else:
+                raise KeyError
+
+            logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
+        except (KeyError, IndexError) as e:
+            try:
+                logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
+                # 解析 URL
+                # 解析查询字符串
+                # 获取 response-content-disposition 参数
+                # 解码并分割 disposition
+                # 提取文件名
+                fileName = \
+                    unquote(parse_qs(urlparse(url).query).get('response-content-disposition', [''])[0]).split(
+                        "filename=")[-1]
+                # 去掉可能存在的引号
+                if fileName.startswith('"') and fileName.endswith('"'):
+                    fileName = fileName[1:-1]
+                elif fileName.startswith("'") and fileName.endswith("'"):
+                    fileName = fileName[1:-1]
+
+                if not fileName:
+                    raise KeyError
+
+                logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
+
+            except (KeyError, IndexError) as e:
+
+                logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
+                fileName = urlparse(url).path.split('/')[-1]
+
+                if fileName:
+                    logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+                else:
+                    logger.debug("方法3获取文件名失败, 文件名为空")
+                    # 什么都 Get 不到的情况
+                    logger.info(f"获取文件名失败, 错误:{e}")
+                    content_type = head["content-type"].split('/')[-1]
+                    fileName = f"downloaded_file{int(time())}.{content_type}"
+                    logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
+
+    return url, fileName, fileSize

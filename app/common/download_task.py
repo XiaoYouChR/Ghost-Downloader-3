@@ -1,25 +1,20 @@
 import asyncio
 import re
 import struct
-import urllib
-from email.utils import decode_rfc2231
 from pathlib import Path
 from threading import Thread
-from time import time
 from types import coroutine
-from urllib.parse import urlparse, parse_qs, unquote
 
 import httpx
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
 from app.common.config import cfg
-from app.common.methods import getProxy, getReadableSize
+from app.common.methods import getProxy, getReadableSize, getLinkInfo
 
 Headers = {
     "accept-encoding": "gzip, deflate, br",
     "accept-language": "zh-CN,zh;q=0.9",
-    "cache-control": "max-age=0",
     "cookie": "down_ip=1",
     "sec-fetch-dest": "document",
     "sec-fetch-mode": "navigate",
@@ -169,82 +164,12 @@ class DownloadTask(QThread):
 
     def __getLinkInfo(self):
         try:
-            response = httpx.head(self.url, headers=Headers, verify=False, proxy=getProxy(), follow_redirects=True)
-            response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
+            self.url, self.fileName, self.fileSize = getLinkInfo(self.url, Headers, self.fileName)
 
-            head = response.headers
-
-            self.url = str(response.url)
-
-            # 获取文件大小, 判断是否可以分块下载
-            if "content-length" not in head:
-                self.fileSize = 1
-                self.ableToParallelDownload = False
-            else:
-                self.fileSize = int(head["content-length"])
+            if self.fileSize:
                 self.ableToParallelDownload = True
-
-            # 获取文件名
-            if not self.fileName:
-                try:
-                    # 尝试处理 Content-Disposition 中的 self.fileName* (RFC 5987 格式)
-                    headerValue = head["content-disposition"]
-                    if 'fileName*' in headerValue:
-                        match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
-                        if match:
-                            self.fileName = match.group(1)
-                            self.fileName = decode_rfc2231(self.fileName)
-                            self.fileName = urllib.parse.unquote(self.fileName[2])  # self.fileName* 后的部分是编码信息
-
-                    # 如果 self.fileName* 没有成功获取，尝试处理普通的 self.fileName
-                    if not self.fileName and 'filename' in headerValue:
-                        match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
-                        if match:
-                            self.fileName = match.group(1)
-
-                    # 移除文件名头尾可能存在的引号
-                    if self.fileName:
-                        self.fileName = self.fileName.strip('"\'')
-                    else:
-                        raise KeyError
-
-                    logger.debug(f"方法1获取文件名成功, 文件名:{self.fileName}")
-                except (KeyError, IndexError) as e:
-                    try:
-                        logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
-                        # 解析 URL
-                        # 解析查询字符串
-                        # 获取 response-content-disposition 参数
-                        # 解码并分割 disposition
-                        # 提取文件名
-                        self.fileName = \
-                        unquote(parse_qs(urlparse(self.url).query).get('response-content-disposition', [''])[0]).split(
-                            "filename=")[-1]
-                        # 去掉可能存在的引号
-                        if self.fileName.startswith('"') and self.fileName.endswith('"'):
-                            self.fileName = self.fileName[1:-1]
-                        elif self.fileName.startswith("'") and self.fileName.endswith("'"):
-                            self.fileName = self.fileName[1:-1]
-
-                        if not self.fileName:
-                            raise KeyError
-
-                        logger.debug(f"方法2获取文件名成功, 文件名:{self.fileName}")
-
-                    except (KeyError, IndexError) as e:
-
-                        logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
-                        self.fileName = urlparse(self.url).path.split('/')[-1]
-
-                        if self.fileName:
-                            logger.debug(f"方法3获取文件名成功, 文件名:{self.fileName}")
-                        else:
-                            logger.debug("方法3获取文件名失败, 文件名为空")
-                            # 什么都 Get 不到的情况
-                            logger.info(f"获取文件名失败, 错误:{e}")
-                            content_type = head["content-type"].split('/')[-1]
-                            self.fileName = f"downloaded_file{int(time())}.{content_type}"
-                            logger.debug(f"方法4获取文件名成功, 文件名:{self.fileName}")
+            else:
+                self.ableToParallelDownload = False  # TODO 处理无法并行下载的情况
 
             # 获取文件路径
             if not self.filePath and Path(self.filePath).is_dir() == False:

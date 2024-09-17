@@ -1,20 +1,23 @@
 import os
 import re
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QVBoxLayout, QFileDialog, QHBoxLayout, QSizePolicy
-from qfluentwidgets import PushSettingCard, SettingCardGroup, RangeSettingCard, PushButton, PrimaryPushButton, TextEdit, \
-    MessageBox, InfoBar, InfoBarPosition, FluentStyleSheet
+from PySide6.QtWidgets import QFileDialog, QTableWidgetItem
+from qfluentwidgets import PushSettingCard, RangeSettingCard, MessageBox, InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
+from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from ..common.config import cfg
+from ..common.download_task import Headers
+from ..common.methods import getReadableSize, getLinkInfo
 from ..common.signal_bus import signalBus
 
 urlRe = re.compile(r"^" +
-                   "((?:https?|ftp)://)" +
+                   "(https?://)" +
                    "(?:\\S+(?::\\S*)?@)?" +
                    "(?:" +
                    "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
@@ -30,59 +33,24 @@ urlRe = re.compile(r"^" +
                    "$", re.IGNORECASE)
 
 
-class AddTaskOptionDialog(MaskDialogBase):
+class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
+
     startSignal = Signal()
+    __addTableRowSignal = Signal(str, str)  # fileName, fileSize, 同理因为int最大值仅支持到2^31 PyQt无法定义int64 故只能使用str代替
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
         FluentStyleSheet.DIALOG.apply(self.widget)
+        self.widget.setContentsMargins(11, 11, 11, 11)
 
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
 
-        self.VBoxLayout = QVBoxLayout(self.widget)
-        self.VBoxLayout.setContentsMargins(18, 18, 18, 18)
+        self.setupUi(self.widget)
 
-        self.widget.setLayout(self.VBoxLayout)
-
-        self.widget.setMinimumSize(510, 420)
-        self.widget.setMaximumSize(680, 430)
-
-        # 下载链接组
-        self.linkGroup = SettingCardGroup(
-            "新建任务", self.widget)
-
-        self.linkTextEdit = TextEdit(self.linkGroup)
-        self.linkTextEdit.setPlaceholderText("添加多个下载链接时, 请确保每行只有一个链接.")
-        self.linkTextEdit.setMinimumHeight(100)
-        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
-        self.linkTextEdit.setSizePolicy(sizePolicy)
-
-        # self.taskTableView = TableView(self.linkGroup)
-        # self.taskTableView.setObjectName("taskTableView")
-        # self.taskTableView.setMinimumHeight(200)
-        # self.taskTableView.setSizePolicy(sizePolicy)
-        #
-        # # 初始化
-        # self.taskTableView.setBorderVisible(True)
-        # self.taskTableView.setBorderRadius(8)
-        #
-        # self.taskTableView.setWordWrap(False)
-        # self.taskTableView.setRowCount(0)
-        # self.taskTableView.setColumnCount(3)
-        #
-        # self.taskTableView.verticalHeader().hide()
-        # self.taskTableView.setHorizontalHeaderLabels(['文件名', '类型', '大小'])
-        #
-        # self.taskList = []
-
-        self.linkGroup.addSettingCard(self.linkTextEdit)
-        # self.linkGroup.addSettingCard(self.taskTableView)
-
-        # 下载设置组
-        self.settingGroup = SettingCardGroup(
-            "下载设置", self.widget)
+        self.verticalLayout.setSpacing(8)
+        self.widget.setLayout(self.verticalLayout)
 
         # Choose Folder Card
         self.downloadFolderCard = PushSettingCard(
@@ -90,7 +58,7 @@ class AddTaskOptionDialog(MaskDialogBase):
             FIF.DOWNLOAD,
             "下载目录",
             cfg.downloadFolder.value,
-            self.settingGroup
+            self.widget
         )
 
         # Choose Threading Card
@@ -99,41 +67,25 @@ class AddTaskOptionDialog(MaskDialogBase):
             FIF.CLOUD,
             "下载线程数",
             '下载线程越多，下载越快，同时也越吃性能',
-            self.settingGroup
+            self.widget
         )
 
-        self.buttonLayout = QHBoxLayout()
-
-        self.yesButton = PrimaryPushButton(self)
-        self.yesButton.setObjectName("yesButton")
-        self.yesButton.setDisabled(True)
-        self.yesButton.setText("开始下载")
-        self.noButton = PushButton(self)
-        self.noButton.setObjectName("noButton")
-        self.noButton.setText("取消下载")
-
-        self.buttonLayout.addWidget(self.noButton)
-        self.buttonLayout.addWidget(self.yesButton)
-        self.buttonLayout.setSpacing(18)
-
-        self.settingGroup.addSettingCards([self.downloadFolderCard, self.blockNumCard])
-
-        self.VBoxLayout.addWidget(self.linkGroup)
-        self.VBoxLayout.addWidget(self.settingGroup)
-        self.VBoxLayout.addLayout(self.buttonLayout)
+        self.verticalLayout.insertWidget(4, self.downloadFolderCard)
+        self.verticalLayout.insertWidget(5, self.blockNumCard)
 
         self.__connectSignalToSlot()
 
     def __connectSignalToSlot(self):
         self.downloadFolderCard.clicked.connect(
             self.__onDownloadFolderCardClicked)
+
         self.noButton.clicked.connect(self.close)
-
-        self.yesButton.clicked.connect(self.startTask)
-
+        self.yesButton.clicked.connect(self.__onYesButtonClicked)
+        self.taskTableWidget.itemChanged.connect(self.__onTaskTableWidgetItemChanged)
         self.linkTextEdit.textChanged.connect(self.__onLinkTextChanged)
+        self.__addTableRowSignal.connect(self.__addTableRow)
 
-    def startTask(self):
+    def __onYesButtonClicked(self):
         path = Path(self.downloadFolderCard.contentLabel.text())
 
         # 检测路径是否有权限写入
@@ -147,12 +99,16 @@ class AddTaskOptionDialog(MaskDialogBase):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
 
         text = self.linkTextEdit.toPlainText().split("\n")
-        for url in text:
+
+        for i, url in enumerate(text):  # 不希望在记录文件里写入重定向之后的Url，故使用用户输入的Url
             _ = urlRe.search(url)
+
+            # fileName = self.taskTableWidget.item(i + 1, 0).text()
+
             if _:
                 signalBus.addTaskSignal.emit(url,
                                              str(path), self.blockNumCard.configItem.value,
-                                             "", "working", False)
+                                             self.taskTableWidget.item(i, 0).text(), "working", False)
 
         self.close()
 
@@ -175,8 +131,34 @@ class AddTaskOptionDialog(MaskDialogBase):
         self._timer.timeout.connect(self.__processTextChange)
         self._timer.start(1000)  # 1秒后处理
 
+    def __handleUrl(self, url: str):
+        url, fileName, fileSize = getLinkInfo(url, Headers)
+
+        self.__addTableRowSignal.emit(fileName, str(fileSize))
+
+    def __addTableRow(self, fileName: str, fileSize: str):
+        """ add table row slot """
+        self.taskTableWidget.insertRow(self.taskTableWidget.rowCount())
+        _ = QTableWidgetItem(fileName)
+        _.setData(1, fileName) # 设置默认值, 当用户修改后的内容为空是，使用默认值替换
+        self.taskTableWidget.setItem(self.taskTableWidget.rowCount() - 1, 0, _)
+        _ = QTableWidgetItem(getReadableSize(int(fileSize)))
+        # _.setData(1, fileSize)
+        _.setFlags(Qt.ItemIsEnabled)  # 禁止编辑
+        self.taskTableWidget.setItem(self.taskTableWidget.rowCount() - 1, 1, _)
+
+        self.taskTableWidget.resizeColumnsToContents()
+
+    def __onTaskTableWidgetItemChanged(self, item: QTableWidgetItem):
+        """ task table widget item changed slot """
+        if item.text() == '':
+            item.setText(item.data(1))
+
     def __processTextChange(self):
         """ link text changed slot """
+        # 清除所有行
+        self.taskTableWidget.setRowCount(0)
+
         text: list = self.linkTextEdit.toPlainText().split("\n")
 
         for index, url in enumerate(text, start=1):
@@ -185,10 +167,12 @@ class AddTaskOptionDialog(MaskDialogBase):
 
             if _:
                 self.yesButton.setEnabled(True)
+                threading.Thread(target=self.__handleUrl, args=(url,), daemon=True).start()
+
             else:
                 InfoBar.warning(
                     title='警告',
-                    content=f"第{index}个链接可能无效!",
+                    content=f"第{index}个链接无效!",
                     orient=Qt.Horizontal,
                     isClosable=True,
                     position=InfoBarPosition.TOP,
