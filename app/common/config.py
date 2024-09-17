@@ -50,7 +50,7 @@ class Config(QConfig):
 
 YEAR = 2024
 AUTHOR = "XiaoYouChR"
-VERSION = "3.3.6"
+VERSION = "3.4.0"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"

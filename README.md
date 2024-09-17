@@ -57,15 +57,17 @@
 ## 计划
 
 - [x] 全局设置
+- [x] 更详细的下载信息
+- [ ] 计划任务功能（中秋假期看来是来不及了）
+- [ ] 全局限速（还没找到一个合适的实现方法）
 - [ ] 浏览器插件优化（还没有找到在该死的 Manifest V3 中实现抓取 Headers 和 Cookie 的方法 😠）
-- [ ] 更详细的下载信息
 - [ ] 开放捐赠入口
 - [ ] 磁力 / BT 下载
 - [ ] 插件市场
 - [x] 内存占用优化
     - [x] 升级 Qt 版本
     - [x] 实现 HttpClient 复用
-    - [ ] 用协程来代替部分多线程功能
+    - [x] 用协程来代替部分多线程功能
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
@@ -96,14 +98,16 @@
 <!-- CONTACT -->
 ## 联系
 
-[@晓游ChR](https://space.bilibili.com/437313511) - XiaoYouChR@outlook.com
+* [@晓游ChR](https://space.bilibili.com/437313511) - XiaoYouChR@outlook.com
 
 
 <!-- ACKNOWLEDGMENTS -->
-## 致谢
+## 引用
 
 * [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大且方便的 UI 库
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template)  方便的 README 模板
+
+## 致谢
 
 * [@ZhiYiyo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
 * [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本
