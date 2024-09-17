@@ -19,6 +19,7 @@ from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
 
+
 class CustomSplashScreen(SplashScreen):
 
     def finish(self):

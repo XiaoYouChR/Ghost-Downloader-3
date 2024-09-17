@@ -9,11 +9,11 @@
 ################################################################################
 
 from PySide6.QtCore import (QCoreApplication, QMetaObject)
-from PySide6.QtWidgets import (QFrame, QHBoxLayout,
+from PySide6.QtWidgets import (QHBoxLayout,
                                QSizePolicy, QVBoxLayout, QAbstractItemView)
 
 from qfluentwidgets import (PillPushButton, PrimaryPushButton, PushButton, StrongBodyLabel,
-                            SubtitleLabel, TextEdit, TableWidget, TitleLabel, FluentIcon)
+                            SubtitleLabel, TextEdit, TableWidget, FluentIcon)
 
 class Ui_UpdateDialog(object):
     def setupUi(self, UpdateDialog):

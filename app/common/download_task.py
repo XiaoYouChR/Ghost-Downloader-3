@@ -104,7 +104,6 @@ class DownloadTask(QThread):
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
-        self.fileLock = asyncio.Lock()
 
         self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__tempThread.start()
@@ -305,10 +304,9 @@ class DownloadTask(QThread):
                             if worker.endPos <= worker.process:
                                 break
                             if chunk:
-                                async with self.fileLock:  # 必须加锁！
-                                    self.file.seek(worker.process)
-                                    self.file.write(chunk)
-                                    worker.process += 65536
+                                self.file.seek(worker.process)
+                                self.file.write(chunk)
+                                worker.process += 65536
 
                     if worker.process >= worker.endPos:
                         worker.process = worker.endPos
