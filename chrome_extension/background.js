@@ -9,45 +9,42 @@ function connectWebSocket() {
     try {
         socket = new WebSocket("ws://localhost:14370");
 
-        socket.onopen = function () {
+        socket.onopen = () => {
             console.log("WebSocket connection opened");
-            isConnected = true;
-            updateBadge("connected");
-            updateStatus(true);
+            updateConnectionStatus(true);
         };
 
-        socket.onerror = function (error) {
-            // 仅打印错误信息，而不抛出异常
-            console.error("WebSocket error: ", error);
-            isConnected = false;
-            updateBadge("error");
-            updateStatus(false);
+        socket.onerror = (error) => {
+            console.log("WebSocket error: ", error);
+            updateConnectionStatus(false);
         };
 
-        socket.onclose = function () {
-            // 打印连接关闭信息
-            console.log("WebSocket connection closed, retrying in 5 seconds");
-            isConnected = false;
-            updateBadge("disconnected");
-            updateStatus(false);
-
+        socket.onclose = () => {
+            console.log("WebSocket connection closed, retrying in 2500 microseconds");
+            updateConnectionStatus(false);
             if (!shouldDisableExtension) {
-                // 在连接关闭后尝试重新连接
-                setTimeout(connectWebSocket, 5000);
+                setTimeout(connectWebSocket, 2500);
             }
         };
-    }
-    catch (e) {
-        // 捕获并打印任何其他异常
+    } catch (e) {
         console.log("Exception in WebSocket connection: ", e);
         setTimeout(connectWebSocket, 2500);
     }
 }
 
+// 更新连接状态并更新扩展状态和徽章
+function updateConnectionStatus(connected) {
+    isConnected = connected;
+    updateBadge(connected ? "connected" : "disconnected");
+    updateStatus(connected);
+}
+
 // 更新扩展图标徽章
 function updateBadge(status) {
-    chrome.action.setBadgeBackgroundColor({ color: status === "connected" ? "green" : "red" });
-    chrome.action.setBadgeText({ text: status === "connected" ? "" : "!" });
+    const badgeColor = (status === "connected") ? "green" : "pink";
+    const badgeText = (status === "connected") ? "√" : "×";
+    chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+    chrome.action.setBadgeText({ text: badgeText });
 }
 
 // 更新扩展状态
@@ -59,35 +56,40 @@ function updateStatus(connected) {
 
 // 监听下载开始事件并阻止下载
 chrome.downloads.onCreated.addListener((downloadItem) => {
-    // 检查扩展是否被禁用
     chrome.storage.local.get(["shouldDisableExtension"], (result) => {
-        if (!(result.shouldDisableExtension) && (isConnected && socket.readyState === WebSocket.OPEN)) {
+        if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
             console.log("Download started: ", downloadItem);
-
-            // 取消下载
-            chrome.downloads.cancel(downloadItem.id, () => {
-                console.log(`Download cancelled: ${downloadItem.id}`);
-            });
-
-            const downloadInfo = {
-                id: downloadItem.id,
-                url: downloadItem.url,
-                // filename: downloadItem.filename,
-                mime: downloadItem.mime,
-                fileSize: downloadItem.fileSize,
-                startTime: downloadItem.startTime,
-                state: downloadItem.state,
-            };
-
-            // 发送下载信息到服务器
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify(downloadInfo));
-            } else {
-                console.error("WebSocket is not open");
-            }
+            cancelDownload(downloadItem);
         }
     });
 });
+
+// 取消下载并发送下载信息到服务器
+function cancelDownload(downloadItem) {
+    chrome.downloads.cancel(downloadItem.id, () => {
+        console.log(`Download cancelled: ${downloadItem.id}`);
+
+        const downloadInfo = {
+            id: downloadItem.id,
+            url: downloadItem.url,
+            mime: downloadItem.mime,
+            fileSize: downloadItem.fileSize,
+            startTime: downloadItem.startTime,
+            state: downloadItem.state,
+        };
+
+        sendDownloadInfo(downloadInfo);
+    });
+}
+
+// 发送下载信息到服务器
+function sendDownloadInfo(downloadInfo) {
+    if (isConnected && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(downloadInfo));
+    } else {
+        console.error("WebSocket is not open");
+    }
+}
 
 // 启动 WebSocket 连接
 connectWebSocket();

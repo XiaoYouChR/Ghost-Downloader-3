@@ -12,7 +12,7 @@
         #status {
             margin-bottom: 10px;
         }
-        #disable-button {
+        #enable-button {
             background-color: #ff4c4c;
             color: white;
             padding: 10px;
@@ -20,10 +20,10 @@
             width: 100%;
             cursor: pointer;
         }
-        #disable-button:hover {
+        #enable-button:hover {
             background-color: #ff0000;
         }
-        #enable-button {
+        #disable-button {
             background-color: #4caf50;
             color: white;
             padding: 10px;
@@ -32,15 +32,15 @@
             cursor: pointer;
             display: none;
         }
-        #enable-button:hover {
+        #disable-button:hover {
             background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <div id="status">状态: <span id="status-text">正在尝试连接...</span></div>
-    <button id="disable-button">禁用插件</button>
-    <button id="enable-button">启用插件</button>
+    <button id="disable-button">插件已启用</button>
+    <button id="enable-button">插件已禁用</button>
 
     <script src="popup.js"></script>
 </body>

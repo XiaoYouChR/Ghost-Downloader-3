@@ -8,7 +8,7 @@ const enableButton = document.getElementById("enable-button");
 // 更新状态文本
 function updateStatus() {
     chrome.storage.local.get("isConnected", (data) => {
-        statusText.textContent = data.isConnected ? "已连接" : "已断开连接";
+        statusText.textContent = data.isConnected ? "连接成功" : "连接已断开";
     });
 
     // 检查禁用状态
@@ -39,9 +39,11 @@ enableButton.addEventListener("click", () => {
     });
 });
 
-// 读取连接状态并更新UI
-chrome.storage.local.get(["isConnected"], (data) => {
-    updateStatus();
+// 监听存储变化
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.isConnected) {
+        updateStatus(); // 当 isConnected 发生变化时，更新状态
+    }
 });
 
 // 更新状态

@@ -16,7 +16,7 @@ class GhostDownloaderSocketServer(QObject):
 
         # 监听 localhost:14370
         if self.server.listen(QHostAddress.LocalHost, 14370):
-            logger.info(f"Ghost Downloader Socket Server started on ws://localhost:{self.server.serverPort()}")
+            logger.info(f"Ghost Downloader Socket Server started on ws://{self.server.serverAddress().toString()}:{self.server.serverPort()}")
 
         # 信号槽连接：有新客户端连接时触发
         self.server.newConnection.connect(self.onNewConnection)
@@ -39,6 +39,7 @@ class GhostDownloaderSocketServer(QObject):
 
     @Slot(str)
     def processTextMessage(self, message: str):
+        logger.debug(f"Received message from client: {message}")
         # 处理客户端发送的消息
         try:
             self.receiveUrl.emit(json.loads(message)["url"])
