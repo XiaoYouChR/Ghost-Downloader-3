@@ -50,6 +50,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
+        self.setClosableOnMaskClicked(True)
 
         self.setupUi(self.widget)
 
