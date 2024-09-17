@@ -1,9 +1,9 @@
 import asyncio
 import re
 import struct
+from asyncio import Task
 from pathlib import Path
 from threading import Thread
-from types import coroutine
 
 import httpx
 from PySide6.QtCore import QThread, Signal
@@ -95,7 +95,7 @@ class DownloadTask(QThread):
         self.filePath = filePath
         self.maxBlockNum = maxBlockNum
         self.workers: list[DownloadWorker] = []
-        self.tasks: list[coroutine] = []
+        self.tasks: list[Task] = []
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
@@ -103,7 +103,7 @@ class DownloadTask(QThread):
         self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__tempThread.start()
 
-    def __reassignWorker(self, task: coroutine):
+    def __reassignWorker(self, task: Task):
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -130,7 +130,7 @@ class DownloadTask(QThread):
 
             newWorker = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.client)
 
-            newTask = asyncio.create_task(self.__handleWorker(newWorker))
+            newTask = self.loop.create_task(self.__handleWorker(newWorker))
             newTask.add_done_callback(self.__reassignWorker)
 
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, newWorker)
@@ -220,7 +220,7 @@ class DownloadTask(QThread):
             finished = False
             while not finished:
                 try:
-                    download_headers = Headers
+                    download_headers = Headers.copy()
                     download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
 
                     async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
@@ -296,6 +296,20 @@ class DownloadTask(QThread):
             # 关闭
             await self.client.aclose()
 
+            self.file.close()
+            self.ghdFile.close()
+
+            # 删除历史记录文件
+            try:
+                Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+
+            except Exception as e:
+                logger.error(f"Failed to delete the history file, please delete it manually. Err: {e}")
+
+            logger.info(f"Task {self.fileName} finished!")
+
+            self.taskFinished.emit()
+
         except Exception as e:
             self.gotWrong.emit(repr(e))
 
@@ -314,27 +328,13 @@ class DownloadTask(QThread):
         self.__loadWorkers()
 
         # 主逻辑, 使用事件循环启动异步任务
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
         try:
-            loop.run_until_complete(self.__main())
-        except asyncio.CancelledError:
-            pass
+            self.loop.run_until_complete(self.__main())
+        except asyncio.CancelledError as e:
+            print(e)
         finally:
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
-
-        self.file.close()
-        self.ghdFile.close()
-
-        # 删除历史记录文件
-        try:
-            Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-
-        except Exception as e:
-            logger.error(f"Failed to delete the history file, please delete it manually. Err: {e}")
-
-        logger.info(f"Task {self.fileName} finished!")
-
-        self.taskFinished.emit()
+            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+            self.loop.close()

@@ -1,3 +1,5 @@
+import time
+
 from PySide6.QtCore import QRect
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
@@ -66,12 +68,14 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
                 for j in i.task.tasks:
                     j.cancel()
 
+                while not all(j.done() for j in i.task.tasks):
+                    time.sleep(0.05)
+
                 i.task.file.close()
                 i.task.ghdFile.close()
                 i.task.terminate()
+                i.task.wait()
                 i.task.deleteLater()
-
-                delete(i.task)
 
         QApplication.quit()
 

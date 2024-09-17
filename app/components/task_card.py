@@ -1,5 +1,6 @@
 import hashlib
 import re
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QThread, Signal, QFileInfo
@@ -148,12 +149,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 for i in self.task.tasks:
                     i.cancel()
 
+                while not all(i.done() for i in self.task.tasks):
+                    time.sleep(0.05)
+
                 self.task.file.close()
                 self.task.ghdFile.close()
                 self.task.terminate()
+                self.task.wait()
                 self.task.deleteLater()
-
-                delete(self.task)
 
                 # 改变记录状态
                 with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
