@@ -1,12 +1,9 @@
-import time
-
 from PySide6.QtCore import QRect
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
 from qfluentwidgets import Action
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.components.material import AcrylicMenu
-from shiboken6.Shiboken import delete
 
 
 class FixedAcrylicSystemTrayMenu(AcrylicMenu):
@@ -17,6 +14,7 @@ class FixedAcrylicSystemTrayMenu(AcrylicMenu):
         self.adjustPosition()
         self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
 
+
 class CustomSystemTrayIcon(QSystemTrayIcon):
 
     def __init__(self, parent=None):
@@ -26,7 +24,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
         self.menu = FixedAcrylicSystemTrayMenu(parent=parent)
 
-        self.showAction = Action(QIcon(":/image/logo.png") ,'仪表盘', self.menu)
+        self.showAction = Action(QIcon(":/image/logo.png"), '仪表盘', self.menu)
         self.showAction.triggered.connect(self.__onShowActionTriggered)
         self.menu.addAction(self.showAction)
 
@@ -59,21 +57,15 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
     def __onAllPauseActionTriggered(self):
         self.parent().taskInterface.allPauseTasks()
-    
+
     def __onQuitActionTriggered(self):
         self.parent().themeChangedListener.terminate()
 
         for i in self.parent().taskInterface.cards:  # 是为了不写入历史记录安全的退出
             if i.status == 'working':
-                for j in i.task.tasks:
-                    j.cancel()
+                i.task.stop()
 
-                while not all(j.done() for j in i.task.tasks):
-                    time.sleep(0.05)
-
-                i.task.file.close()
-                i.task.ghdFile.close()
-                i.task.terminate()
+                # self.task.terminate()
                 i.task.wait()
                 i.task.deleteLater()
 

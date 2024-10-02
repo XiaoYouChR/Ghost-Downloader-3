@@ -1,6 +1,7 @@
 import asyncio
 import re
 import struct
+import time
 from asyncio import Task
 from pathlib import Path
 from threading import Thread
@@ -13,7 +14,7 @@ from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo
 
 Headers = {
-    "accept-encoding": "gzip, deflate, br",
+    "accept-encoding": "deflate, br",
     "accept-language": "zh-CN,zh;q=0.9",
     "cookie": "down_ip=1",
     "sec-fetch-dest": "document",
@@ -288,10 +289,13 @@ class DownloadTask(QThread):
                 self.tasks.append(_)
 
             self.ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
-            supervisorTask = asyncio.create_task(self.__supervisor())
+            self.supervisorTask = asyncio.create_task(self.__supervisor())
 
             # 仅仅需要等待 supervisorTask
-            await supervisorTask
+            try:
+                await self.supervisorTask  # supervisorTask 被 cancel 后，会抛出 CancelledError, 所以之后的代码不会执行
+            except asyncio.CancelledError:
+                await self.client.aclose()
 
             # 关闭
             await self.client.aclose()
@@ -299,19 +303,34 @@ class DownloadTask(QThread):
             self.file.close()
             self.ghdFile.close()
 
-            # 删除历史记录文件
-            try:
-                Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+            print("File closed.")
 
-            except Exception as e:
-                logger.error(f"Failed to delete the history file, please delete it manually. Err: {e}")
+            if self.process == self.fileSize:
+                # 删除历史记录文件
+                try:
+                    Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
 
-            logger.info(f"Task {self.fileName} finished!")
+                except Exception as e:
+                    logger.error(f"Failed to delete the history file, please delete it manually. Err: {e}")
 
-            self.taskFinished.emit()
+                logger.info(f"Task {self.fileName} finished!")
+
+                self.taskFinished.emit()
 
         except Exception as e:
             self.gotWrong.emit(repr(e))
+
+    def stop(self):
+        for task in self.tasks:
+            task.cancel()
+
+        # 关闭
+        self.supervisorTask.cancel()
+        self.file.close()
+        self.ghdFile.close()
+
+        while not all(task.done() for task in self.tasks):  # 等待所有任务完成
+            time.sleep(0.01)
 
     # @retry(3, 0.1)
     def run(self):

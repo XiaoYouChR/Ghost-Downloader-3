@@ -1,6 +1,5 @@
 import hashlib
 import re
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QThread, Signal, QFileInfo
@@ -9,7 +8,6 @@ from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 from qfluentwidgets import CardWidget
 from qfluentwidgets import FluentIcon as FIF
-from shiboken6.Shiboken import delete
 
 from .Ui_TaskCard import Ui_TaskCard
 from .del_dialog import DelDialog
@@ -146,15 +144,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PLAY)
 
             try:
-                for i in self.task.tasks:
-                    i.cancel()
+                self.task.stop()
 
-                while not all(i.done() for i in self.task.tasks):
-                    time.sleep(0.05)
-
-                self.task.file.close()
-                self.task.ghdFile.close()
-                self.task.terminate()
+                # self.task.terminate()
                 self.task.wait()
                 self.task.deleteLater()
 
@@ -169,6 +161,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
                 with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
                     f.write(_)
+
+            except Exception as e:
+                logger.warning(f"Task:{self.fileName}, 暂停时遇到错误: {repr(e)}")
 
             finally:
                 self.__showInfo("任务已经暂停")
