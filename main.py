@@ -1,10 +1,33 @@
 # coding:utf-8
 
+import os
 # 创建 Application
 import sys
 
 from PySide6.QtWidgets import QApplication
-from qframelesswindow.utils import getSystemAccentColor
+from qfluentwidgets import qconfig
+
+from app.common.config import cfg
+
+# 设置程序运行路径, 便于调试
+if "--debug" in sys.argv:  # 调试时候请使用相对路径！
+    cfg.appPath = "./"
+    qconfig.load('./Ghost Downloader 配置文件.json', cfg)
+else:  # 编译后
+    cfg.appPath = os.path.dirname(sys.executable)
+    qconfig.load('{}/Ghost Downloader 配置文件.json'.format(os.path.dirname(sys.executable)), cfg)
+
+    def exceptionHandler(type, value, traceback):  # 自定义错误捕捉函数
+        logger.exception(f"意料之外的错误! {type}: {value}. Traceback: {traceback}")
+
+    sys.excepthook = exceptionHandler
+
+# 必须在 QApplication 创建前设置缩放比例
+if cfg.get(cfg.dpiScale) == "Auto":
+    pass
+else:
+    os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+    os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 app = QApplication(sys.argv)
 
@@ -36,8 +59,6 @@ if sharedMemory.attach():  # 访问成功, 说明程序正在运行
 sharedMemory.create(1)
 
 # Starting Program
-import os
-
 import time
 import warnings
 
@@ -47,29 +68,15 @@ from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
 
 from loguru import logger
-from qfluentwidgets import setTheme, Theme, setThemeColor, qconfig
+from qframelesswindow.utils import getSystemAccentColor
+
+from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 import Res_rc
 
-from app.common.config import cfg
 from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow
-
-# 设置程序运行路径, 便于调试
-if "--debug" in sys.argv:  # 调试时候请使用相对路径！
-    cfg.appPath = "./"
-    qconfig.load('./Ghost Downloader 配置文件.json', cfg)
-else:  # 编译后
-    cfg.appPath = app.applicationDirPath()
-    qconfig.load('{}/Ghost Downloader 配置文件.json'.format(QApplication.applicationDirPath()), cfg)
-
-
-    def exceptionHandler(type, value, traceback):  # 自定义错误捕捉函数
-        logger.exception(f"意料之外的错误! {type}: {value}. Traceback: {traceback}")
-
-
-    sys.excepthook = exceptionHandler
 
 # 防止 Mica 背景失效
 app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
@@ -79,14 +86,6 @@ logger.add('{}/Ghost Downloader 运行日志.log'.format(cfg.appPath), rotation=
 logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 
 warnings.warn = logger.warning
-
-
-# enable dpi scale
-if cfg.get(cfg.dpiScale) == "Auto":
-    pass
-else:
-    os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
-    os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 # Enable Theme
 setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
