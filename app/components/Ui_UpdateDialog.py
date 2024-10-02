@@ -42,6 +42,8 @@ class Ui_UpdateDialog(object):
 
         self.horizontalLayout.addWidget(self.updatedDateLabel)
 
+        self.horizontalLayout.addSpacing(16777215)
+
         self.sponsorButton = PillPushButton(UpdateDialog)
         self.sponsorButton.setObjectName(u"sponsorButton")
         self.sponsorButton.setProperty("hasIcon", True)

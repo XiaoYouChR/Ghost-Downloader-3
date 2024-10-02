@@ -57,7 +57,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
         self.widget.setLayout(self.verticalLayout)
 
         self.widget.setMinimumSize(520, 650)
-        self.widget.setMaximumSize(680, 720)
+        self.widget.setMaximumSize(920, 820)
 
         self.__analyzeContent()
 
