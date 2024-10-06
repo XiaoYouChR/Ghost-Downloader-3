@@ -3,11 +3,22 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
 from qfluentwidgets import Action
 from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qfluentwidgets.components.material import AcrylicMenu
 
 
 class FixedAcrylicSystemTrayMenu(AcrylicMenu):
-    """ 修复背景获取偏移的问题 """
+    """ 修复背景获取偏移、位置偏移的问题 """
+
+    def adjustPosition(self):
+        m = self.layout().contentsMargins()
+        rect = getCurrentScreenGeometry()
+        w, h = self.layout().sizeHint().width() + 5, self.layout().sizeHint().height()
+
+        x = min(self.x() - m.left(), rect.right() - w)
+        y = self.y() - 45
+
+        self.move(x, y)
 
     def showEvent(self, e):
         super().showEvent(e)
