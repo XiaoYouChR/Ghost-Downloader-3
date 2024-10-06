@@ -254,14 +254,15 @@ class SettingInterface(ScrollArea):
         #     self.tr('Change the theme color of you application'),
         #     self.personalGroup
         # )
-        self.backgroundEffectCard = ComboBoxSettingCard(
-            cfg.backgroundEffect,
-            FIF.BRUSH,
-            "窗口背景透明材质",
-            "设置窗口背景透明效果和透明材质",
-            texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero"],
-            parent=self.personalGroup
-        )
+        if sys.platform == "win32":
+            self.backgroundEffectCard = ComboBoxSettingCard(
+                cfg.backgroundEffect,
+                FIF.BRUSH,
+                "窗口背景透明材质",
+                "设置窗口背景透明效果和透明材质",
+                texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero"],
+                parent=self.personalGroup
+            )
 
         self.zoomCard = ComboBoxSettingCard(
             cfg.dpiScale,
@@ -361,7 +362,8 @@ class SettingInterface(ScrollArea):
         self.browserGroup.addSettingCard(self.installExtensionCard)
         # self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
-        self.personalGroup.addSettingCard(self.backgroundEffectCard)
+        if sys.platform == "win32":
+            self.personalGroup.addSettingCard(self.backgroundEffectCard)
         self.personalGroup.addSettingCard(self.zoomCard)
         # self.personalGroup.addSettingCard(self.languageCard)
 
@@ -506,7 +508,8 @@ class SettingInterface(ScrollArea):
         self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
 
         # personalization
-        self.backgroundEffectCard.comboBox.currentIndexChanged.connect(self.__onBackgroundEffectCardChanged)
+        if sys.platform == "win32":
+            self.backgroundEffectCard.comboBox.currentIndexChanged.connect(self.__onBackgroundEffectCardChanged)
 
         # software
         self.autoRunCard.checkedChanged.connect(self.__onAutoRunCardChecked)
