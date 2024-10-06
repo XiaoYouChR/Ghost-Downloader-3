@@ -93,7 +93,7 @@ setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
 # Get Theme Color
 # try:
 # 上游仅支持 Windows 和 macOS
-if sys.platform == "win32" and "darwin":
+if sys.platform == "win32" or "darwin":
     setThemeColor(getSystemAccentColor(), save=False)
 if sys.platform == "linux":
 
