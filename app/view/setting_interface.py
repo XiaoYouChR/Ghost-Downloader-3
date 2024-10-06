@@ -8,9 +8,9 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
     QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
-    BodyLabel, RadioButton, ComboBox, LineEdit
+    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard
 from qfluentwidgets import InfoBar
-from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, OptionsSettingCard, PushSettingCard,
+from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
                             setTheme, RangeSettingCard)
 
@@ -254,7 +254,16 @@ class SettingInterface(ScrollArea):
         #     self.tr('Change the theme color of you application'),
         #     self.personalGroup
         # )
-        self.zoomCard = OptionsSettingCard(
+        self.backgroundEffectCard = ComboBoxSettingCard(
+            cfg.backgroundEffect,
+            FIF.BRUSH,
+            "窗口背景透明材质",
+            "设置窗口背景透明效果和透明材质",
+            texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero"],
+            parent=self.personalGroup
+        )
+
+        self.zoomCard = ComboBoxSettingCard(
             cfg.dpiScale,
             FIF.ZOOM,
             "界面缩放",
@@ -352,6 +361,7 @@ class SettingInterface(ScrollArea):
         self.browserGroup.addSettingCard(self.installExtensionCard)
         # self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
+        self.personalGroup.addSettingCard(self.backgroundEffectCard)
         self.personalGroup.addSettingCard(self.zoomCard)
         # self.personalGroup.addSettingCard(self.languageCard)
 
@@ -390,6 +400,10 @@ class SettingInterface(ScrollArea):
 
         cfg.set(cfg.downloadFolder, folder)
         self.downloadFolderCard.setContent(folder)
+
+    def __onBackgroundEffectCardChanged(self, option):
+        """ background effect card changed slot """
+        self.window().applyBackgroundEffectByCfg()
 
     def __onBrowserExtensionCardChecked(self, value: bool):
         if value: # enable
@@ -445,14 +459,14 @@ class SettingInterface(ScrollArea):
 
                 with open(f"/home/{os.getlogin()}/.config/autostart/gd3.desktop", "w", encoding="utf-8") as f:
                     _ = (f"""[Desktop Entry]
-Type=Application
-Version={VERSION}
-Name=Ghost Downloader 3
-Comment=A multi-threading downloader with QThread based on PySide6
-Exec="{QApplication.applicationFilePath()}" --silence
-StartupNotify=false
-Terminal=false
-""")
+                        Type=Application
+                        Version={VERSION}
+                        Name=Ghost Downloader 3
+                        Comment=A multi-threading downloader with QThread based on PySide6
+                        Exec="{QApplication.applicationFilePath()}" --silence
+                        StartupNotify=false
+                        Terminal=false
+                        """)
                     print(_)
                     f.write(_)
                     f.flush()
@@ -490,6 +504,9 @@ Terminal=false
         # extension
         self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)
         self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
+
+        # personalization
+        self.backgroundEffectCard.comboBox.currentIndexChanged.connect(self.__onBackgroundEffectCardChanged)
 
         # software
         self.autoRunCard.checkedChanged.connect(self.__onAutoRunCardChecked)

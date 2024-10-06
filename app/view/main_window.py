@@ -1,5 +1,6 @@
 # coding: utf-8
 import ctypes
+from ctypes import byref, c_int
 from pathlib import Path
 
 import darkdetect
@@ -57,6 +58,9 @@ class MainWindow(MSFluentWindow):
         # add items to navigation interface
         self.initNavigation()
 
+        # 设置背景特效
+        self.applyBackgroundEffectByCfg()
+
         # 创建检测主题色更改线程
         self.themeChangedListener = ThemeChangedListener(self)
         self.themeChangedListener.themeChanged.connect(self.toggleTheme)
@@ -111,12 +115,31 @@ class MainWindow(MSFluentWindow):
     def toggleTheme(self, callback: str):
         if callback == 'Dark':  # PySide6 特性，需要重试
             setTheme(Theme.DARK, save=False)
-            QTimer.singleShot(100, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
-            QTimer.singleShot(200, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
-            QTimer.singleShot(300, lambda: self.windowEffect.setMicaEffect(self.winId(), True))
+            if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
+                QTimer.singleShot(100, self.applyBackgroundEffectByCfg)
+                QTimer.singleShot(200, self.applyBackgroundEffectByCfg)
+                QTimer.singleShot(300, self.applyBackgroundEffectByCfg)
 
         elif callback == 'Light':
             setTheme(Theme.LIGHT, save=False)
+
+        self.applyBackgroundEffectByCfg()
+
+    def applyBackgroundEffectByCfg(self):  # 不应设置 _isMicaEnabled 的值
+        self.windowEffect.removeBackgroundEffect(self.winId())
+
+        if cfg.backgroundEffect.value == 'Acrylic':
+            self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F230" if darkdetect.isDark() else "00000030")
+        elif cfg.backgroundEffect.value == 'Mica':
+            self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
+        elif cfg.backgroundEffect.value == 'MicaBlur':
+            self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
+            self.windowEffect.DwmSetWindowAttribute(self.winId(), 38, byref(c_int(3)), 4)
+        elif cfg.backgroundEffect.value == 'MicaAlt':
+            self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark(), True)
+        elif cfg.backgroundEffect.value == 'Aero':
+            self.windowEffect.setAeroEffect(self.winId())
+
 
     def initNavigation(self):
         # add navigation items

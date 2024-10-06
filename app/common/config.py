@@ -23,7 +23,6 @@ class ProxyValidator(ConfigValidator):
     def correct(self, value) -> str:
         return value if self.validate(value) else "Auto"
 
-
 class Config(QConfig):
     """ Config of application """
     # download
@@ -33,12 +32,15 @@ class Config(QConfig):
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
+
     # browser
     enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
 
-    # main window
+    # personalization
+    # backgroundEffect = OptionsConfigItem("Personalization", "BackgroundEffect", "Mica", OptionsValidator(["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Transparent", "Aero", "None"]))
+    backgroundEffect = OptionsConfigItem("Personalization", "BackgroundEffect", "Mica", OptionsValidator(["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero"]))
     dpiScale = OptionsConfigItem(
-        "MainWindow", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]), restart=True)
+        "Personalization", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]), restart=True)
 
     # software
     checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
