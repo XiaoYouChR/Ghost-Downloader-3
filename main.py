@@ -79,7 +79,7 @@ from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow
 
 # 防止 Mica 背景失效
-app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
+# app.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
 # config loguru
 logger.add('{}/Ghost Downloader 运行日志.log'.format(cfg.appPath), rotation="512 KB")

@@ -1,5 +1,6 @@
 # coding: utf-8
 import ctypes
+import sys
 from ctypes import byref, c_int
 from pathlib import Path
 
@@ -126,19 +127,20 @@ class MainWindow(MSFluentWindow):
         self.applyBackgroundEffectByCfg()
 
     def applyBackgroundEffectByCfg(self):  # 不应设置 _isMicaEnabled 的值
-        self.windowEffect.removeBackgroundEffect(self.winId())
+        if sys.platform == 'win32':
+            self.windowEffect.removeBackgroundEffect(self.winId())
 
-        if cfg.backgroundEffect.value == 'Acrylic':
-            self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F230" if darkdetect.isDark() else "00000030")
-        elif cfg.backgroundEffect.value == 'Mica':
-            self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
-        elif cfg.backgroundEffect.value == 'MicaBlur':
-            self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
-            self.windowEffect.DwmSetWindowAttribute(self.winId(), 38, byref(c_int(3)), 4)
-        elif cfg.backgroundEffect.value == 'MicaAlt':
-            self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark(), True)
-        elif cfg.backgroundEffect.value == 'Aero':
-            self.windowEffect.setAeroEffect(self.winId())
+            if cfg.backgroundEffect.value == 'Acrylic':
+                self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F230" if darkdetect.isDark() else "00000030")
+            elif cfg.backgroundEffect.value == 'Mica':
+                self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
+            elif cfg.backgroundEffect.value == 'MicaBlur':
+                self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
+                self.windowEffect.DwmSetWindowAttribute(self.winId(), 38, byref(c_int(3)), 4)
+            elif cfg.backgroundEffect.value == 'MicaAlt':
+                self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark(), True)
+            elif cfg.backgroundEffect.value == 'Aero':
+                self.windowEffect.setAeroEffect(self.winId())
 
 
     def initNavigation(self):
