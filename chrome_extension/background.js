@@ -3,6 +3,7 @@
 let socket;
 let isConnected = false;
 let shouldDisableExtension = false;
+let heartbeatInterval = null;
 
 // 创建 WebSocket 连接
 function connectWebSocket() {
@@ -12,11 +13,29 @@ function connectWebSocket() {
         socket.onopen = () => {
             console.log("WebSocket connection opened");
             updateConnectionStatus(true);
+            startHeartbeat();
+        };
+
+        socket.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            // console.log("Received message", message.ClientVersion, message.LatestExtensionVersion);
+            if (message.type === "version") {
+                // 保存版本信息到 chrome.storage.local
+                chrome.storage.local.set({ ClientVersion: message.ClientVersion }, function() {
+                    // console.log("ClientVersion stored:", message.ClientVersion);
+                });
+                chrome.storage.local.set({ LatestExtensionVersion: message.LatestExtensionVersion }, function() {
+                    // console.log("LatestExtensionVersion stored:", message.LatestExtensionVersion);
+                });
+            } else {
+                console.log("Received message:", event.data);
+            }
         };
 
         socket.onerror = (error) => {
             console.log("WebSocket error: ", error);
             updateConnectionStatus(false);
+            stopHeartbeat(); // 关闭连接时停止心跳
         };
 
         socket.onclose = () => {
@@ -25,6 +44,7 @@ function connectWebSocket() {
             if (!shouldDisableExtension) {
                 setTimeout(connectWebSocket, 2500);
             }
+            stopHeartbeat(); // 关闭连接时停止心跳
         };
     } catch (e) {
         console.log("Exception in WebSocket connection: ", e);
@@ -54,14 +74,40 @@ function updateStatus(connected) {
     });
 }
 
+// 启动心跳机制
+function startHeartbeat() {
+    if (!heartbeatInterval) { // 检查是否已有定时器
+        heartbeatInterval = setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+                try {
+                    socket.send(JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }));
+                    console.log("Heartbeat sent");
+                } catch (error) {
+                    console.error("Error sending heartbeat:", error); // 仅记录错误，不影响执行
+                }
+            }
+        }, 5000); // 每5秒发送一次心跳
+    }
+}
+
+// 停止心跳机制
+function stopHeartbeat() {
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval); // 清除定时器
+        heartbeatInterval = null; // 重置定时器变量
+    }
+}
+
 // 监听下载开始事件并阻止下载
 chrome.downloads.onCreated.addListener((downloadItem) => {
-    chrome.storage.local.get(["shouldDisableExtension"], (result) => {
-        if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
-            console.log("Download started: ", downloadItem);
-            cancelDownload(downloadItem);
-        }
-    });
+    if (downloadItem.state === "in_progress") {
+        chrome.storage.local.get(["shouldDisableExtension"], (result) => {
+            if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
+                console.log("Download started: ", downloadItem);
+                cancelDownload(downloadItem);
+            }
+        });
+    }
 });
 
 // 取消下载并发送下载信息到服务器

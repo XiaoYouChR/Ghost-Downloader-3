@@ -46,5 +46,39 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
 });
 
+function isVersionNewer(v1, v2) {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const num1 = parts1[i] || 0;
+        const num2 = parts2[i] || 0;
+        if (num1 !== num2) {
+            return num1 > num2; // 如果 v1 更新，返回 true
+        }
+    }
+    return false;
+}
+
+// 打印插件版本到插件页面
+// 打印插件版本到插件页面
+document.addEventListener('DOMContentLoaded', () => {
+
+    const ExtensionVersion = chrome.runtime.getManifest().version;
+
+    // 获取客户端版本和最新插件版本
+    chrome.storage.local.get(["ClientVersion", "LatestExtensionVersion"], (result) => {
+        const ClientVersion = result.ClientVersion || "Unknown";
+        const LatestExtensionVersion = result.LatestExtensionVersion || "Unknown";
+        // console.log(ExtensionVersion, ClientVersion, LatestExtensionVersion);
+
+        if (isVersionNewer(LatestExtensionVersion, ExtensionVersion)) {
+            document.getElementById('version').innerHTML = `插件版本: ${ExtensionVersion}&nbsp;&nbsp客户端版本: ${ClientVersion}<br/><span style="color: palevioletred;">插件有新版本，请前往客户端手动更新!</span>`;
+        } else {
+            document.getElementById('version').innerHTML = `插件版本: ${ExtensionVersion}&nbsp;&nbsp客户端版本: ${ClientVersion}`;
+        }
+    });
+});
+
 // 更新状态
 updateStatus();
