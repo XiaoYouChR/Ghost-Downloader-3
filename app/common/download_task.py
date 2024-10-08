@@ -221,7 +221,7 @@ class DownloadTask(QThread):
 
                     finished = True
 
-                except Exception as e:
+                except httpx.HTTPError as e:
                     logger.info(
                         f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
 
