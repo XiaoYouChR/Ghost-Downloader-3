@@ -74,11 +74,24 @@ def getSystemProxy():
         except Exception as e:
             logger.error(f"Cannot get Windows proxy server：{e}")
             return None
-    else:  # 读取 Linux 系统代理
+
+    elif sys.platform == "linux":  # 读取 Linux 系统代理
         try:
             return os.environ.get("http_proxy")
         except Exception as e:
             logger.error(f"Cannot get Linux proxy server：{e}")
+            return None
+
+    elif sys.platform == "darwin":
+        import SystemConfiguration
+
+        _ = SystemConfiguration.SCDynamicStoreCopyProxies(None)
+
+        if _.get('SOCKSEnable', 0):
+            return f"socks5://{_.get('SOCKSProxy')}:{_.get('SOCKSPort')}"
+        elif _.get('HTTPEnable', 0):
+            return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
+        else:
             return None
 
 
