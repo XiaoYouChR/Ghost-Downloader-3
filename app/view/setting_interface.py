@@ -8,7 +8,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
     QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
-    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard
+    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
@@ -226,10 +226,17 @@ class SettingInterface(ScrollArea):
             self.browserGroup,
         )
         self.installExtensionCard = PushSettingCard(
-            "导出浏览器插件",
+            "导出浏览器扩展",
             FIF.DICTIONARY,
             "安装浏览器扩展",
             "需要您导出 .crx 文件后手动安装至 Chromium 内核的浏览器",
+            self.browserGroup
+        )
+        self.installExtensionGuidanceCard = PushSettingCard(
+            "查看安装指南",
+            FIF.HELP,
+            "浏览器扩展安装指南",
+            "解决安装浏览器扩展时遇到的常见问题",
             self.browserGroup
         )
 
@@ -360,6 +367,7 @@ class SettingInterface(ScrollArea):
 
         self.browserGroup.addSettingCard(self.browserExtensionCard)
         self.browserGroup.addSettingCard(self.installExtensionCard)
+        self.browserGroup.addSettingCard(self.installExtensionGuidanceCard)
         # self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
         if sys.platform == "win32":
@@ -419,6 +427,21 @@ class SettingInterface(ScrollArea):
         if fileResolve:
             with open(fileResolve, "wb") as f:
                 f.write(QResource(":/res/chrome_extension.crx").data())
+
+    def __onInstallExtensionGuidanceClicked(self):
+        """ install extension guidance card clicked slot """
+        view = FlyoutView(
+            title="安装指南",
+            content="请按照步骤安装浏览器扩展",
+            image=':/res/install_chrome_extension_guidance.png',
+            isClosable=True
+        )
+
+        view.viewLayout.insertSpacing(0, 960)
+
+        # show view
+        w = Flyout.make(view, self.installExtensionGuidanceCard.button, self)
+        view.closed.connect(w.close)
 
     def __onAutoRunCardChecked(self, value: bool):
         """ Set auto run """
@@ -506,6 +529,7 @@ class SettingInterface(ScrollArea):
         # extension
         self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)
         self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
+        self.installExtensionGuidanceCard.clicked.connect(self.__onInstallExtensionGuidanceClicked)
 
         # personalization
         if sys.platform == "win32":
