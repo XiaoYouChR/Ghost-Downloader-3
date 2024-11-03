@@ -1,6 +1,7 @@
 # coding: utf-8
 import ctypes
 import sys
+from ast import literal_eval
 from ctypes import byref, c_int
 from pathlib import Path
 
@@ -76,7 +77,7 @@ class MainWindow(MSFluentWindow):
                 logger.debug(f"Unfinished Task is following:{unfinishedTaskInfo}")
                 for i in unfinishedTaskInfo:
                     if i:  # 避免空行
-                        i = eval(i)
+                        i = literal_eval(i)
                         signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], True)
         else:
             historyFile.touch()
