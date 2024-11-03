@@ -5,9 +5,8 @@ from PySide6.QtNetwork import QHostAddress
 from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 
-from app.common.config import VERSION
+from app.common.config import VERSION, LATEST_EXTENSION_VERSION
 
-LATEST_EXTENSION_VERSION = "1.0.3"
 
 class GhostDownloaderSocketServer(QObject):
     receiveUrl = Signal(str)
