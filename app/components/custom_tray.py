@@ -1,4 +1,3 @@
-from PySide6.QtCore import QRect
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
 from qfluentwidgets import Action
@@ -23,7 +22,7 @@ class FixedAcrylicSystemTrayMenu(AcrylicMenu):
     def showEvent(self, e):
         super().showEvent(e)
         self.adjustPosition()
-        self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
+        # self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
 
 
 class CustomSystemTrayIcon(QSystemTrayIcon):

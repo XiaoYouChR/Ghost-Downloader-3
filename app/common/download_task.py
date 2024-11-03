@@ -73,6 +73,7 @@ class DownloadTask(QThread):
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
 
+        self.isStop = False
         self.process = 0
         self.url = url
         self.fileName = fileName
@@ -88,6 +89,8 @@ class DownloadTask(QThread):
         self.__tempThread.start()
 
     def __reassignWorker(self, task: Task):
+        if self.isStop:
+            return
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -286,8 +289,6 @@ class DownloadTask(QThread):
             self.file.close()
             self.ghdFile.close()
 
-            print("File closed.")
-
             if self.process == self.fileSize:
                 # 删除历史记录文件
                 try:
@@ -304,16 +305,28 @@ class DownloadTask(QThread):
             self.gotWrong.emit(repr(e))
 
     def stop(self):
+        self.isStop = True
+
         for task in self.tasks:
             task.cancel()
 
         # 关闭
-        self.supervisorTask.cancel()
-        self.file.close()
-        self.ghdFile.close()
+        try:
+            self.supervisorTask.cancel()
+        finally:
+            self.file.close()
+            self.ghdFile.close()
 
         while not all(task.done() for task in self.tasks):  # 等待所有任务完成
-            time.sleep(0.01)
+            for task in self.tasks:
+                try:
+                    task.cancel()
+                except RuntimeError:
+                    pass
+                except Exception as e:
+                    raise e
+
+            time.sleep(0.05)
 
     # @retry(3, 0.1)
     def run(self):

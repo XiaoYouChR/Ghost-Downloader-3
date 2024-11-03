@@ -131,7 +131,7 @@ class MainWindow(MSFluentWindow):
             self.windowEffect.removeBackgroundEffect(self.winId())
 
             if cfg.backgroundEffect.value == 'Acrylic':
-                self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F230" if darkdetect.isDark() else "00000030")
+                self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if darkdetect.isDark() else "F2F2F230")
             elif cfg.backgroundEffect.value == 'Mica':
                 self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
             elif cfg.backgroundEffect.value == 'MicaBlur':
