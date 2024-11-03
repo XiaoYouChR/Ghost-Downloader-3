@@ -457,8 +457,9 @@ class SettingInterface(ScrollArea):
                                      r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_WRITE)
                 winreg.DeleteValue(key, 'GhostDownloader')
         elif sys.platform == "darwin":
+            import pwd
             if value:
-                with open(f"/Users/{os.getlogin()}/Library/LaunchAgents/app.ghost.downloader.plist", "w") as f:
+                with open(f"/Users/{pwd.getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/app.ghost.downloader.plist", "w") as f:
                     f.write(f"""<?xml version="1.0" encoding="UTF-8"?>
                                 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
                                 <plist version="1.0">
@@ -475,7 +476,7 @@ class SettingInterface(ScrollArea):
                                 </dict>
                                 </plist>""")
             else:
-                os.remove(f"/Users/{os.getlogin()}/Library/LaunchAgents/app.ghost.downloader.plist")
+                os.remove(f"/Users/{pwd.getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/app.ghost.downloader.plist")
         elif sys.platform == "linux":
             if value:
                 autoStartPath = Path(f'/home/{os.getlogin()}/.config/autostart/')
