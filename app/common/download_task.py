@@ -13,7 +13,7 @@ from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo
 
 Headers = {
-    "accept-encoding": "deflate, br",
+    "accept-encoding": "deflate, br, gzip",
     "accept-language": "zh-CN,zh;q=0.9",
     "cookie": "down_ip=1",
     "sec-fetch-dest": "document",
@@ -208,7 +208,7 @@ class DownloadTask(QThread):
 
                     async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
                                                     method="GET") as res:
-                        async for chunk in res.aiter_raw(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
+                        async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
                             if worker.endPos <= worker.process:
                                 break
                             if chunk:
