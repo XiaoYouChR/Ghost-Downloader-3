@@ -7,7 +7,7 @@ import urllib
 from datetime import datetime, timedelta, timezone
 from email.utils import decode_rfc2231
 from functools import wraps
-from time import sleep, localtime, time
+from time import sleep, localtime, time_ns
 from urllib.parse import unquote, parse_qs, urlparse
 
 import httpx
@@ -214,6 +214,7 @@ def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy
                 match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
                 if match:
                     fileName = match.group(1)
+                    fileName = urllib.parse.unquote(fileName)
 
             # 移除文件名头尾可能存在的引号
             if fileName:
@@ -256,7 +257,7 @@ def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy
                     # 什么都 Get 不到的情况
                     logger.info(f"获取文件名失败, 错误:{e}")
                     content_type = head["content-type"].split('/')[-1]
-                    fileName = f"downloaded_file{int(time())}.{content_type}"
+                    fileName = f"downloaded_file{int(time_ns())}.{content_type}"
                     logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
 
     return url, fileName, fileSize
