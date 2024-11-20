@@ -48,6 +48,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.progressBar.setObjectName(u"progressBar")
 
         self.verticalLayout.addWidget(self.progressBar)
+        self.historySpeed = [0] * 10
 
         if name:
             self.fileName = name
@@ -267,16 +268,21 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         duringLastSecondProcess = process - self.lastProcess
 
+        self.historySpeed.pop(0)
+        self.historySpeed.append(duringLastSecondProcess)
+        avgSpeed = sum(self.historySpeed) / len(self.historySpeed)
+
         # 如果还在显示消息状态，则调用 __hideInfo
         if self.infoLabel.isVisible():
             self.__hideInfo()
 
-        self.speedLabel.setText(f"{getReadableSize(duringLastSecondProcess)}/s")
+        self.speedLabel.setText(f"{getReadableSize(avgSpeed)}/s")
         self.processLabel.setText(f"{getReadableSize(process)}/{getReadableSize(self.task.fileSize)}")
 
+        
         # 计算剩余时间，并转换为 MM:SS
         try:
-            leftTime = (self.task.fileSize - process) / duringLastSecondProcess
+            leftTime = (self.task.fileSize - process) / avgSpeed
             self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
         except ZeroDivisionError:
             self.leftTimeLabel.setText("Infinity")
