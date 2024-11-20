@@ -73,7 +73,6 @@ class DownloadTask(QThread):
     def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
         super().__init__(parent)
 
-        self.isStop = False
         self.process = 0
         self.url = url
         self.fileName = fileName
@@ -89,8 +88,6 @@ class DownloadTask(QThread):
         self.__tempThread.start()
 
     def __reassignWorker(self, task: Task):
-        if self.isStop:
-            return
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -305,8 +302,6 @@ class DownloadTask(QThread):
             self.gotWrong.emit(repr(e))
 
     def stop(self):
-        self.isStop = True
-
         for task in self.tasks:
             task.cancel()
 
