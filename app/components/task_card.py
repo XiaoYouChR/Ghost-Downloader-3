@@ -58,6 +58,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.task = DownloadTask(url, maxBlockNum, path, name)
 
                 self.__onTaskInited()
+
+                # 写入未完成任务记录文件，以供下次打开时继续下载
+                if not self.autoCreated:
+                    with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "a", encoding="utf-8") as f:
+                        _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
+                             "blockNum": self.maxBlockNum, "status": self.status}
+                        f.write(str(_) + "\n")
+
                 if self.status == "paused":
                     self.__showInfo("任务已经暂停")
 
@@ -113,13 +121,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(91, 91)
         # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
-
-        # 写入未完成任务记录文件，以供下次打开时继续下载
-        if not self.autoCreated:
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "a", encoding="utf-8") as f:
-                _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                     "blockNum": self.maxBlockNum, "status": self.status}
-                f.write(str(_) + "\n")
 
     def pauseTask(self):
         if self.status == "working":  # 暂停
