@@ -163,8 +163,6 @@ class DownloadTask(QThread):
                 if not self.filePath.exists():
                     self.filePath.mkdir()
 
-            self.taskInited.emit()
-
         except Exception as e:  # 重试也没用
             self.gotWrong.emit(str(e))
 
@@ -325,6 +323,9 @@ class DownloadTask(QThread):
     # @retry(3, 0.1)
     def run(self):
         self.__tempThread.join()
+
+        # 任务初始化完成
+        self.taskInited.emit()
 
         # 创建空文件
         Path(f"{self.filePath}/{self.fileName}").touch()

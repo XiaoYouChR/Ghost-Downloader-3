@@ -54,6 +54,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.fileName = name
 
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
+
+            self.pauseButton.setDisabled(True)
+
             if name:
                 self.task = DownloadTask(url, maxBlockNum, path, name)
 
@@ -120,6 +123,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.TitleLabel.setText(self.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(91, 91)
+
+        self.pauseButton.setEnabled(True)
         # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
 
     def pauseTask(self):
@@ -184,7 +189,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             finally:
                 self.__showInfo("任务正在开始")
                 self.status = "working"
-                self.pauseButton.setEnabled(True)
+                # 得让 self.__tempThread 运行完才能运行暂停！ self.pauseButton.setEnabled(True)
 
     def cancelTask(self, surely=False, completely=False):
 
