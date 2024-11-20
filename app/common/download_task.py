@@ -70,7 +70,7 @@ class DownloadTask(QThread):
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
 
-    def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoCreateTask = True, parent=None):
+    def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoSpeedUp=cfg.autoSpeedUp.value, parent=None):
         super().__init__(parent)
 
         self.process = 0
@@ -78,7 +78,7 @@ class DownloadTask(QThread):
         self.fileName = fileName
         self.filePath = filePath
         self.preBlockNum = preTaskNum
-        self.autoCreateTask = autoCreateTask
+        self.autoSpeedUp = autoSpeedUp
         self.workers: list[DownloadWorker] = []
         self.tasks: list[Task] = []
 
@@ -234,7 +234,7 @@ class DownloadTask(QThread):
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
 
-        if self.autoCreateTask:
+        if self.autoSpeedUp:
             # 初始化变量
             for i in self.workers:
                 self.process += (i.process - i.startPos + 1)  # 最初为计算每个线程的平均速度
@@ -263,25 +263,33 @@ class DownloadTask(QThread):
 
             self.workerInfoChange.emit(info)
 
-            if self.autoCreateTask:
+            if self.autoSpeedUp:
                 speed = (self.process - LastProcess) / 1
+                LastProcess = self.process
                 speedPerConnect = formerSpeed / len(self.tasks)
                 
                 if speedPerConnect > maxSpeedPerConnect:
                     maxSpeedPerConnect = speedPerConnect
-            
+
+                if maxSpeedPerConnect <= 1:
+                    await asyncio.sleep(1)
+                    continue
+
+                if formerSpeed == 0:
+                    formerSpeed = speed
+                    await asyncio.sleep(1)
+                    continue
+
                 #print(f'{self.taskNum}\t{(speed - formerSpeed) / newTaskNum}\t{maxSpeedPerConnect}\t{(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
 
-                if (speed - formerSpeed) / newTaskNum / maxSpeedPerConnect >= 0.9:
+                if (speed - formerSpeed) / newTaskNum / maxSpeedPerConnect >= 0.85:
                     #  新增加线程的效率 >= 0.9 时，新增线程
                     logger.debug(f'自动提速增加新线程  {(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
                     formerSpeed = speed
                     newTaskNum = 1
-                    
-                    self.__reassignWorker()  # 新增线程
 
-                LastProcess = self.process
-
+                    if len(self.tasks)  < 256:
+                        self.__reassignWorker()  # 新增线程
 
 
             await asyncio.sleep(1)

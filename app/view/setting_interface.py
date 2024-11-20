@@ -201,6 +201,13 @@ class SettingInterface(ScrollArea):
             self.downloadGroup
         )
 
+        self.autoSpeedUpCard = SwitchSettingCard(
+            FIF.SPEED_HIGH,
+            "自动提速",
+            "实时检测线程效率并自动添加线程以提高下载速度 (Algorithm by @Alpha_Qian)",
+            cfg.autoSpeedUp,
+            self.downloadGroup
+        )
 
         self.downloadFolderCard = PushSettingCard(
             "选择文件夹",
@@ -362,6 +369,7 @@ class SettingInterface(ScrollArea):
         # add cards to group
         self.downloadGroup.addSettingCard(self.blockNumCard)
         self.downloadGroup.addSettingCard(self.maxReassignSizeCard)
+        self.downloadGroup.addSettingCard(self.autoSpeedUpCard)
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
         self.downloadGroup.addSettingCard(self.proxyServerCard)
 

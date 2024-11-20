@@ -31,6 +31,7 @@ class Config(QConfig):
         "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
+    autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
 
     # browser
