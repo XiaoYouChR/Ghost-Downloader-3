@@ -87,7 +87,7 @@ class DownloadTask(QThread):
         self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__tempThread.start()
 
-    def __reassignWorker(self, task: Task):
+    def __reassignWorker(self):
 
         # 找到剩余进度最多的线程
         maxRemainder = 0
@@ -115,7 +115,6 @@ class DownloadTask(QThread):
             newWorker = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.client)
 
             newTask = self.loop.create_task(self.__handleWorker(newWorker))
-            newTask.add_done_callback(self.__reassignWorker)
 
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, newWorker)
             self.tasks.append(newTask)
@@ -222,7 +221,7 @@ class DownloadTask(QThread):
 
                     finished = True
 
-                except Exception as e:
+                except httpx.HTTPError as e:
                     logger.info(
                         f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
 
@@ -231,6 +230,7 @@ class DownloadTask(QThread):
                     await asyncio.sleep(5)
 
             worker.process = worker.endPos
+        self.__reassignWorker()
 
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
@@ -267,7 +267,6 @@ class DownloadTask(QThread):
                 logger.debug(f"Task {self.fileName}, starting the thread {i}...")
 
                 _ = asyncio.create_task(self.__handleWorker(i))
-                _.add_done_callback(self.__reassignWorker)
 
                 self.tasks.append(_)
 
