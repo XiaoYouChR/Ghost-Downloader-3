@@ -70,14 +70,15 @@ class DownloadTask(QThread):
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
 
-    def __init__(self, url, maxBlockNum: int = 8, filePath=None, fileName=None, parent=None):
+    def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoCreateTask = True, parent=None):
         super().__init__(parent)
 
         self.process = 0
         self.url = url
         self.fileName = fileName
         self.filePath = filePath
-        self.maxBlockNum = maxBlockNum
+        self.preBlockNum = preTaskNum
+        self.autoCreateTask = autoCreateTask
         self.workers: list[DownloadWorker] = []
         self.tasks: list[Task] = []
 
@@ -127,11 +128,11 @@ class DownloadTask(QThread):
                 f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
 
     def __clacDivisionalRange(self):
-        step = self.fileSize // self.maxBlockNum  # 每块大小
+        step = self.fileSize // self.preBlockNum  # 每块大小
         arr = list(range(0, self.fileSize, step))
 
         # 否则线程数可能会不按预期地少一个
-        if self.fileSize % self.maxBlockNum == 0:
+        if self.fileSize % self.preBlockNum == 0:
             arr.append(self.fileSize)
 
         step_list = []
@@ -186,13 +187,13 @@ class DownloadTask(QThread):
                 logger.error(f"Failed to load workers: {e}")
                 stepList = self.__clacDivisionalRange()
 
-                for i in range(self.maxBlockNum):
+                for i in range(self.preBlockNum):
                     self.workers.append(
                         DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
         else:
             stepList = self.__clacDivisionalRange()
 
-            for i in range(self.maxBlockNum):
+            for i in range(self.preBlockNum):
                 self.workers.append(
                     DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
 
@@ -233,6 +234,15 @@ class DownloadTask(QThread):
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
 
+        if self.autoCreateTask:
+            # 初始化变量
+            for i in self.workers:
+                self.process += (i.process - i.startPos + 1)  # 最初为计算每个线程的平均速度
+            LastProcess = self.process
+            maxSpeedPerConnect = 1  # 防止除以0
+            newTaskNum = len(self.tasks)
+            formerSpeed = 0
+
         while not self.process == self.fileSize:
 
             self.ghdFile.seek(0)
@@ -252,6 +262,27 @@ class DownloadTask(QThread):
             self.ghdFile.truncate()
 
             self.workerInfoChange.emit(info)
+
+            if self.autoCreateTask:
+                speed = (self.process - LastProcess) / 1
+                speedPerConnect = formerSpeed / len(self.tasks)
+                
+                if speedPerConnect > maxSpeedPerConnect:
+                    maxSpeedPerConnect = speedPerConnect
+            
+                #print(f'{self.taskNum}\t{(speed - formerSpeed) / newTaskNum}\t{maxSpeedPerConnect}\t{(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
+
+                if (speed - formerSpeed) / newTaskNum / maxSpeedPerConnect >= 0.9:
+                    #  新增加线程的效率 >= 0.9 时，新增线程
+                    logger.debug(f'自动提速增加新线程  {(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
+                    formerSpeed = speed
+                    newTaskNum = 1
+                    
+                    self.__reassignWorker()  # 新增线程
+
+                LastProcess = self.process
+
+
 
             await asyncio.sleep(1)
 
@@ -332,7 +363,7 @@ class DownloadTask(QThread):
 
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
-            self.maxBlockNum = 1
+            self.preBlockNum = 1
 
         # 加载分块
         self.__loadWorkers()
