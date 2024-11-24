@@ -248,7 +248,7 @@ class DownloadTask(QThread):
 
         while not self.process == self.fileSize:
 
-            self.ghdFile.seek(0)
+            await self.ghdFile.seek(0)
             info = []
             self.process = 0
 
@@ -259,10 +259,10 @@ class DownloadTask(QThread):
 
                 # 保存 workers 信息为二进制格式
                 data = struct.pack("<QQQ", i.startPos, i.process, i.endPos)
-                self.ghdFile.write(data)
+                await self.ghdFile.write(data)
 
-            self.ghdFile.flush()
-            self.ghdFile.truncate()
+            await self.ghdFile.flush()
+            await self.ghdFile.truncate()
 
             self.workerInfoChange.emit(info)
 
@@ -310,7 +310,7 @@ class DownloadTask(QThread):
 
                 self.tasks.append(_)
 
-            self.ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
+            self.ghdFile = await aiofiles.open(f"{self.filePath}/{self.fileName}.ghd", "wb")
             self.supervisorTask = asyncio.create_task(self.__supervisor())
 
             # 仅仅需要等待 supervisorTask
@@ -322,7 +322,7 @@ class DownloadTask(QThread):
                 # 关闭
                 await self.file.close()
                 await self.client.aclose()
-                self.ghdFile.close()
+                await self.ghdFile.close()
                 logger.debug("File closed.")
 
             if self.process == self.fileSize:
@@ -346,7 +346,6 @@ class DownloadTask(QThread):
 
         # 关闭
         self.supervisorTask.cancel()
-        self.ghdFile.close()
 
         while not all(task.done() for task in self.tasks):  # 等待所有任务完成
             for task in self.tasks:
