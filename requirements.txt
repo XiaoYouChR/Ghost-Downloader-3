@@ -1,5 +1,6 @@
 PySide6-Fluent-Widgets>=1.6.4
 PySide6==6.7.2
 loguru~=0.7.2
+aiofiles==24.1.0
 httpx[socks]~=0.27.0
 darkdetect~=0.8.0
