@@ -23,7 +23,35 @@ Headers = {
     "upgrade-insecure-requests": "1",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
 
+class SpeedRecoder:
+    def __init__(self,process = 0):
+        self.process = process
+        self.start_time = time.time()
 
+    def reset(self, process):
+        self.process = process
+        self.start_time = time.time()
+
+    def flash(self, process):
+        
+        d_time = time.time() - self.start_time
+        #if d_time != 0:
+        speed = (process - self.process) / (d_time)
+        #else:
+        #    logger.warning("Time cannot be zero")
+        #    speed = 0
+        #    d_time = 0.01#天天出花里胡哨的bug烦死我了
+        return SpeedInfo(speed, d_time)
+
+
+class SpeedInfo:
+    def __init__(self, speed = 0, time = 1):
+        if time != 0:
+            self.speed = speed
+            self.time = time
+        else:
+            raise ValueError("Time cannot be zero")
+    
 # def getRealUrl(url: str):
 #     response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
 #                           proxyServer=getProxy())
@@ -60,6 +88,35 @@ class DownloadWorker:
 
         self.client = client
 
+    @property
+    def task(self):
+        if hasattr(self, "_task"):
+            return self._task
+        else:
+            logger.error("Task not set yet")
+
+    @task.setter
+    def task(self, task:asyncio.Task):
+        if not self.running:
+            self._task = task
+        else:
+            self._task.cancel()
+            self._task = task
+            logger.warning("Task is running, cannot set task")
+
+
+    @property
+    def running(self):
+        if hasattr(self, "_task"):
+            return not self._task.done()
+        else:
+            return False
+
+    def cancel(self):
+        if hasattr(self, "_task"):
+            self._task.cancel()
+
+
 
 class DownloadTask(QThread):
     """TaskManager"""
@@ -81,6 +138,7 @@ class DownloadTask(QThread):
         self.autoSpeedUp = autoSpeedUp
         self.workers: list[DownloadWorker] = []
         self.tasks: list[Task] = []
+        self._taskNum = 0
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
@@ -88,63 +146,53 @@ class DownloadTask(QThread):
         self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__tempThread.start()
 
-    def __reassignWorker(self):
 
-        # 找到剩余进度最多的线程
-        maxRemainder = 0
-        maxRemainderWorkerProcess = 0
-        maxRemainderWorkerEnd = 0
-        maxRemainderWorker: DownloadWorker = None
+    def __reassignWorker(self, times:int = 1):
+        '''相当于运行times次__reassignWorker,但效果更好。在只有一个worker时相当于__clacDivisionalWorker'''
+        count:dict[DownloadWorker,int] = {}
+        for work in self.workers:
+            count[work] = 1 if work.running else 0
+        
+        for i in range(times):#查找分割times次的最优解
+            maxremain = 0
+            maxworker = None
+            for work in self.workers:
+                if (remain := ( work.endPos - work.process ) / ( count[work] + 1 )) > maxremain:
+                    maxremain = remain
+                    maxworker = work
 
-        for i in self.workers:
-            if (i.endPos - i.process) > maxRemainder:  # TODO 其实逻辑有一点问题, 但是影响不大
-                maxRemainderWorkerProcess = i.process
-                maxRemainderWorkerEnd = i.endPos
-                maxRemainder = (maxRemainderWorkerEnd - maxRemainderWorkerProcess)
-                maxRemainderWorker = i
+            if maxremain < cfg.maxReassignSize.value * 1024 ** 2:
+                break
+            
+            if maxworker is not None:
+                count[maxworker] += 1
 
-        if maxRemainderWorker and maxRemainder > cfg.maxReassignSize.value * 1048576:  # 转换成 MB
-            # 平均分配工作量
-            baseShare = maxRemainder // 2
-            remainder = maxRemainder % 2
+        for work, divitionTimes in count.items():#根据最优解创建线程
 
-            maxRemainderWorker.endPos = maxRemainderWorkerProcess + baseShare + remainder  # 直接修改好像也不会怎么样
+            if not work.running and divitionTimes >= 1:#检查是否需要启动work
+                self.start_worker(work)
 
-            # 安配新的工人
-            s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
+            if divitionTimes >= 2:#检查是否需要分割并添加新worker
+                size = (work.endPos - work.process) // divitionTimes
+                index = self.workers.index(work)
+                for j in range(1, divitionTimes):
+                    index += 1
+                    start = work.process + j * size
+                    end = work.process + (j + 1) * size######
+                    _ = DownloadWorker(start, start, end, self.client)
+                    self.workers.insert(index, _)
+                    self.start_worker(_)
+                _.endPos = work.endPos
+                work.endPos = work.process + size
 
-            newWorker = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.client)
 
-            newTask = self.loop.create_task(self.__handleWorker(newWorker))
 
-            self.workers.insert(self.workers.index(maxRemainderWorker) + 1, newWorker)
-            self.tasks.append(newTask)
-
-            logger.info(
-                f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{newWorker}，新线程的StartPos：{s_pos}")
-
-        else:
-            logger.info(
-                f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
-
-    def __clacDivisionalRange(self):
-        step = self.fileSize // self.preBlockNum  # 每块大小
-        arr = list(range(0, self.fileSize, step))
-
-        # 否则线程数可能会不按预期地少一个
-        if self.fileSize % self.preBlockNum == 0:
-            arr.append(self.fileSize)
-
-        step_list = []
-
-        for i in range(len(arr) - 1):  #
-
-            s_pos, e_pos = arr[i], arr[i + 1] - 1
-            step_list.append([s_pos, e_pos])
-
-        step_list[-1][-1] = self.fileSize - 1  # 修正
-
-        return step_list
+    def start_worker(self, worker: DownloadWorker):
+        """启动worker"""
+        _ = asyncio.create_task(self.__handleWorker(worker))
+        worker.task = _
+        self.tasks.append(_)
+        self._taskNum += 1
 
     def __getLinkInfo(self):
         try:
@@ -168,6 +216,7 @@ class DownloadTask(QThread):
             self.gotWrong.emit(str(e))
 
     def __loadWorkers(self):
+        """初始化并运行任务"""
         # 如果 .ghd 文件存在，读取并解析二进制数据
         filePath = Path(f"{self.filePath}/{self.fileName}.ghd")
         if filePath.exists():
@@ -183,76 +232,89 @@ class DownloadTask(QThread):
                         self.workers.append(
                             DownloadWorker(start, process, end, self.client))
 
+                    logger.debug(f"pretasknum: {self.preBlockNum}")
+
+                    
+
             except Exception as e:
                 logger.error(f"Failed to load workers: {e}")
-                stepList = self.__clacDivisionalRange()
-
-                for i in range(self.preBlockNum):
-                    self.workers.append(
-                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
+                self.workers = [DownloadWorker(0, 0, self.fileSize, self.client)]
         else:
-            stepList = self.__clacDivisionalRange()
-
-            for i in range(self.preBlockNum):
-                self.workers.append(
-                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
+            self.workers = [DownloadWorker(0, 0, self.fileSize, self.client)]
+        self.__reassignWorker(self.preBlockNum)
 
     async def __handleWorker(self, worker: DownloadWorker):
-        if worker.process < worker.endPos:  # 因为可能会创建空线程
-            finished = False
-            while not finished:
-                try:
-                    download_headers = Headers.copy()
-                    download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
+        try:
+            download_headers = Headers.copy()
+            download_headers["range"] = f"bytes={worker.process}-{worker.endPos - 1}"  # 添加范围
 
-                    async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
-                                                    method="GET") as res:
-                        async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
-                            if worker.endPos <= worker.process:
-                                break
-                            if chunk:
-                                self.file.seek(worker.process)
-                                self.file.write(chunk)
-                                worker.process += 65536
+            async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
+                                            method="GET") as res:
+                async for chunk in res.aiter_bytes(chunk_size=64 * 1024):
+                    if worker.endPos <= worker.process:
+                        break
+                    if chunk:
+                        self.file.seek(worker.process)
+                        self.file.write(chunk)
+                        worker.process += len(chunk)
 
-                    if worker.process >= worker.endPos:
-                        worker.process = worker.endPos
+            if worker.process >= worker.endPos:
+                worker.process = worker.endPos
 
-                    finished = True
 
-                except httpx.HTTPError as e:
-                    logger.info(
-                        f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
+        except Exception as e:
+            logger.info(
+                f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
+            self.gotWrong.emit(repr(e))
+            if not self.autoSpeedUp:
+                await asyncio.sleep(5)
+                self.__reassignWorker()
 
-                    self.gotWrong.emit(repr(e))
+        except asyncio.CancelledError:
+            logger.debug('task Canceled')
 
-                    await asyncio.sleep(5)
-
+        else:
+            #self.workers.remove(worker)
             worker.process = worker.endPos
-        self.__reassignWorker()
+            if not self.autoSpeedUp:
+                self.__reassignWorker()
 
+        finally:
+            self._taskNum -= 1
+            
+
+    @property
+    def task_num(self):#供TaskCard使用的只读属性
+        return self._taskNum
+    
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
 
         if self.autoSpeedUp:
             # 初始化变量
             for i in self.workers:
-                self.process += (i.process - i.startPos + 1)  # 最初为计算每个线程的平均速度
-            LastProcess = self.process
+                self.process += i.process - i.startPos  # 最初为计算每个线程的平均速度
+
+            recorder = SpeedRecoder(self.process)
+            threshold = 0.1 # 判断阈值
+            accuracy = 1  # 判断精度
+
             maxSpeedPerConnect = 1  # 防止除以0
-            newTaskNum = len(self.tasks)
-            formerSpeed = 0
+
+            info = SpeedInfo()
+            formerInfo = SpeedInfo()
+            formerTaskNum = taskNum = 0
 
         while not self.process == self.fileSize:
 
             self.ghdFile.seek(0)
-            info = []
+            process_info = []
             self.process = 0
 
             for i in self.workers:
-                info.append({"start": i.startPos, "process": i.process, "end": i.endPos})
+                process_info.append({"start": i.startPos, "process": i.process, "end": i.endPos})
 
-                self.process += (i.process - i.startPos + 1)
+                self.process += i.process - i.startPos
 
                 # 保存 workers 信息为二进制格式
                 data = struct.pack("<QQQ", i.startPos, i.process, i.endPos)
@@ -261,51 +323,50 @@ class DownloadTask(QThread):
             self.ghdFile.flush()
             self.ghdFile.truncate()
 
-            self.workerInfoChange.emit(info)
-
+            self.workerInfoChange.emit(process_info)
+            
+            
             if self.autoSpeedUp:
-                speed = (self.process - LastProcess) / 1
-                LastProcess = self.process
-                speedPerConnect = formerSpeed / len(self.tasks)
+
+                if taskNum != self._taskNum:#更新taskNum， formerTaskNum，formerInfo，重置recorder
+                    formerTaskNum = taskNum
+                    taskNum = self._taskNum
+                    formerInfo = info
+                    recorder.reset(self.process)
+                    logger.info(f'taskNum changed task_num: {self._taskNum}')
+
+                elif recorder.flash(self.process).time > 60: #超时重置
+                    recorder.reset(self.process)
+
+                else:
+                    info = recorder.flash(self.process) #更新info
+                    if self._taskNum > 0:#更新speedPerConnect，maxSpeedPerConnect
+                        speedPerConnect = info.speed / self._taskNum
+                        if speedPerConnect > maxSpeedPerConnect:
+                            maxSpeedPerConnect = speedPerConnect
+                    
+                    speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)# 平均速度增量
+                    offset = (1 / info.time) * accuracy#误差补偿偏移
+                    efficiency = speedDeltaPerNewThread / maxSpeedPerConnect# 线程效率
+                    logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}  taskNum {self._taskNum}')
+                    if efficiency >= threshold + offset:
+                        if self._taskNum  < 256:
+                            logger.debug(f'自动提速增加新线程  {efficiency}')
+                            self.__reassignWorker()  # 新增线程
                 
-                if speedPerConnect > maxSpeedPerConnect:
-                    maxSpeedPerConnect = speedPerConnect
-
-                if maxSpeedPerConnect <= 1:
-                    await asyncio.sleep(1)
-                    continue
-
-                if formerSpeed == 0:
-                    formerSpeed = speed
-                    await asyncio.sleep(1)
-                    continue
-
-                #print(f'{self.taskNum}\t{(speed - formerSpeed) / newTaskNum}\t{maxSpeedPerConnect}\t{(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
-
-                if (speed - formerSpeed) / newTaskNum / maxSpeedPerConnect >= 0.85:
-                    #  新增加线程的效率 >= 0.9 时，新增线程
-                    logger.debug(f'自动提速增加新线程  {(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
-                    formerSpeed = speed
-                    newTaskNum = 1
-
-                    if len(self.tasks)  < 256:
-                        self.__reassignWorker()  # 新增线程
-
+                    if self._taskNum == 0 and self.process < self.fileSize:
+                        logger.warning(f'线程意外消失')
+                        self.__reassignWorker()  # 防止最后一个线程意外消失
 
             await asyncio.sleep(1)
+                
 
     async def __main(self):
         try:
             # 打开下载文件
             self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
 
-            # 启动 Worker
-            for i in self.workers:
-                logger.debug(f"Task {self.fileName}, starting the thread {i}...")
-
-                _ = asyncio.create_task(self.__handleWorker(i))
-
-                self.tasks.append(_)
+            self.__loadWorkers()
 
             self.ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
             self.supervisorTask = asyncio.create_task(self.__supervisor())
@@ -372,9 +433,6 @@ class DownloadTask(QThread):
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
             self.preBlockNum = 1
-
-        # 加载分块
-        self.__loadWorkers()
 
         # 主逻辑, 使用事件循环启动异步任务
         self.loop = asyncio.new_event_loop()
