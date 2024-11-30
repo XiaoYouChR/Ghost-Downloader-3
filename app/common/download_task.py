@@ -1,5 +1,6 @@
 import asyncio
 import struct
+import sys
 import time
 from asyncio import Task
 from pathlib import Path
@@ -23,33 +24,6 @@ Headers = {
     "upgrade-insecure-requests": "1",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
 
-
-# def getRealUrl(url: str):
-#     response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-#                           proxyServer=getProxy())
-#
-#     if response.status_code == 400:  # Bad Requests
-#         # TODO 报错处理
-#         logger.error("HTTP status code 400, it seems that the url is unavailable")
-#         return
-#
-#     while response.status_code == 302:  # 当302的时候
-#         rs = response.headers["location"]  # 获取重定向信息
-#         logger.info(f'HTTP status code:302, Headers["Location"] is: {rs}')
-#         # 看它返回的是不是完整的URL
-#         t = urlRe.search(rs)
-#         if t:  # 是的话直接跳转
-#             url = rs
-#         elif not t:  # 不是在前面加上URL
-#             url = re.findall(r"((?:https?|ftp)://[\s\S]*?)/", url)
-#             url = url[0] + rs
-#
-#             logger.info(f"HTTP status code:302, Redirect to {url}")
-#
-#         response = httpx.head(url=url, headers=Headers, follow_redirects=False, verify=False,
-#                               proxyServer=getProxy())  # 再访问一次
-#
-#     return url
 class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
 
@@ -363,11 +337,16 @@ class DownloadTask(QThread):
     def run(self):
         self.__tempThread.join()
 
+        # 检验文件合法性并自动重命名
+        if sys.platform == "win32":
+            self.fileName = ''.join([i for i in self.fileName if i not in r'\/:*?"<>|'])  # 去除Windows系统不允许的字符
+        if len(self.fileName) > 255:
+            self.fileName = self.fileName[:255]
+
+        Path(f"{self.filePath}/{self.fileName}").touch()
+
         # 任务初始化完成
         self.taskInited.emit()
-
-        # 创建空文件
-        Path(f"{self.filePath}/{self.fileName}").touch()
 
         # TODO 发消息给主线程
         if not self.ableToParallelDownload:
