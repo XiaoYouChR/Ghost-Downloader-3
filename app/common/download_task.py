@@ -40,7 +40,8 @@ class DownloadTask(QThread):
 
     taskInited = Signal()  # 线程初始化成功
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
-    workerInfoChange = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
+    workerInfoChanged = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
+    speedChanged = Signal(int)  # 平均速度 因为 autoSpeedUp 功能需要实时计算平均速度 v3.4.4 起移入后端计算速度, 每秒速度可能超过 2^31 Bytes 吗？
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
 
@@ -53,8 +54,10 @@ class DownloadTask(QThread):
         self.filePath = filePath
         self.preBlockNum = preTaskNum
         self.autoSpeedUp = autoSpeedUp
+
         self.workers: list[DownloadWorker] = []
         self.tasks: list[Task] = []
+        self.historySpeed = [0] * 10  # 历史速度 10 秒内的平均速度
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
@@ -208,17 +211,20 @@ class DownloadTask(QThread):
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
 
+        for i in self.workers:
+            self.process += (i.process - i.startPos + 1)
+            LastProcess = self.process
+
         if self.autoSpeedUp:
             # 初始化变量
-            for i in self.workers:
-                self.process += (i.process - i.startPos + 1)  # 最初为计算每个线程的平均速度
-            LastProcess = self.process
-            maxSpeedPerConnect = 1  # 防止除以0
-            newTaskNum = len(self.tasks)
-            formerSpeed = 0
+            maxSpeedPerConnect = 1 # 防止除以0
+            additionalTaskNum = len(self.tasks) # 最初为计算每个线程的平均速度
+            formerAvgSpeed = 0 # 提速之前的平均速度
+            duringTime = 0 # 计算平均速度的时间间隔, 为 10 秒
 
         while not self.process == self.fileSize:
 
+            # 记录每块信息
             self.ghdFile.seek(0)
             info = []
             self.process = 0
@@ -235,35 +241,47 @@ class DownloadTask(QThread):
             self.ghdFile.flush()
             self.ghdFile.truncate()
 
-            self.workerInfoChange.emit(info)
+            self.workerInfoChanged.emit(info)
+
+            # 计算速度
+            speed = (self.process - LastProcess)
+            print(f"speed: {speed}, process: {self.process}, LastProcess: {LastProcess}")
+            LastProcess = self.process
+            self.historySpeed.pop(0)
+            self.historySpeed.append(speed)
+            avgSpeed = sum(self.historySpeed) / 10
+
+            self.speedChanged.emit(avgSpeed)
+
+            # print(f"avgSpeed: {avgSpeed}, historySpeed: {self.historySpeed}")
 
             if self.autoSpeedUp:
-                speed = (self.process - LastProcess) / 1
-                LastProcess = self.process
-                speedPerConnect = formerSpeed / len(self.tasks)
-                
-                if speedPerConnect > maxSpeedPerConnect:
-                    maxSpeedPerConnect = speedPerConnect
+                if duringTime < 10:
+                    duringTime += 1
+                else:
+                    duringTime = 0
 
-                if maxSpeedPerConnect <= 1:
-                    await asyncio.sleep(1)
-                    continue
+                    speedPerConnect = avgSpeed / len(self.tasks)
+                    # print(f"taskNum: {len(self.tasks)}, speedPerConnect: {speedPerConnect}, maxSpeedPerConnect: {maxSpeedPerConnect}")
 
-                if formerSpeed == 0:
-                    formerSpeed = speed
-                    await asyncio.sleep(1)
-                    continue
+                    if speedPerConnect > maxSpeedPerConnect:
+                        maxSpeedPerConnect = speedPerConnect
 
-                #print(f'{self.taskNum}\t{(speed - formerSpeed) / newTaskNum}\t{maxSpeedPerConnect}\t{(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
+                    # if maxSpeedPerConnect <= 1:
+                    #     await asyncio.sleep(1)
+                    #     continue
 
-                if (speed - formerSpeed) / newTaskNum / maxSpeedPerConnect >= 0.85:
-                    #  新增加线程的效率 >= 0.9 时，新增线程
-                    logger.debug(f'自动提速增加新线程  {(speed - formerSpeed) / newTaskNum / maxSpeedPerConnect}')
-                    formerSpeed = speed
-                    newTaskNum = 1
+                    # logger.debug(f"当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}, speed: {speed}, formerAvgSpeed: {formerAvgSpeed}, additionalTaskNum: {additionalTaskNum}, maxSpeedPerConnect: {maxSpeedPerConnect}")
 
-                    if len(self.tasks)  < 256:
-                        self.__reassignWorker()  # 新增线程
+                    if (avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85:
+                        #  新增加线程的效率 >= 0.85 时，新增线程
+                        # logger.debug(f'自动提速增加新线程, 当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}')
+                        formerAvgSpeed = avgSpeed
+                        additionalTaskNum = 4
+
+                        if len(self.tasks)  < 253:
+                            for i in range(4):
+                                self.__reassignWorker()  # 新增线程
 
 
             await asyncio.sleep(1)
@@ -286,7 +304,7 @@ class DownloadTask(QThread):
 
             # 仅仅需要等待 supervisorTask
             try:
-                await self.supervisorTask  # supervisorTask 被 cancel 后，会抛出 CancelledError, 所以之后的代码不会执行
+                await self.supervisorTask
             except asyncio.CancelledError:
                 await self.client.aclose()
 
@@ -297,7 +315,7 @@ class DownloadTask(QThread):
             self.ghdFile.close()
 
             if self.process == self.fileSize:
-                # 删除历史记录文件
+                # 下载完成时删除历史记录文件, 防止没下载完时误删
                 try:
                     Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
 
