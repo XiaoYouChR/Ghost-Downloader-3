@@ -6,6 +6,7 @@ from asyncio import Task
 from pathlib import Path
 from threading import Thread
 
+import aiofiles
 import httpx
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
@@ -48,6 +49,7 @@ class DownloadTask(QThread):
     def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoSpeedUp=cfg.autoSpeedUp.value, parent=None):
         super().__init__(parent)
 
+        self.aioLock = asyncio.Lock()
         self.process = 0
         self.url = url
         self.fileName = fileName
@@ -188,9 +190,10 @@ class DownloadTask(QThread):
                             if worker.endPos <= worker.process:
                                 break
                             if chunk:
-                                self.file.seek(worker.process)
-                                self.file.write(chunk)
-                                worker.process += 65536
+                                async with self.aioLock:
+                                    await self.file.seek(worker.process)
+                                    await self.file.write(chunk)
+                                    worker.process += 65536
 
                     if worker.process >= worker.endPos:
                         worker.process = worker.endPos
@@ -225,7 +228,7 @@ class DownloadTask(QThread):
         while not self.process == self.fileSize:
 
             # 记录每块信息
-            self.ghdFile.seek(0)
+            await self.ghdFile.seek(0)
             info = []
             self.process = 0
 
@@ -236,10 +239,10 @@ class DownloadTask(QThread):
 
                 # 保存 workers 信息为二进制格式
                 data = struct.pack("<QQQ", i.startPos, i.process, i.endPos)
-                self.ghdFile.write(data)
+                await self.ghdFile.write(data)
 
-            self.ghdFile.flush()
-            self.ghdFile.truncate()
+            await self.ghdFile.flush()
+            await self.ghdFile.truncate()
 
             self.workerInfoChanged.emit(info)
 
@@ -289,7 +292,7 @@ class DownloadTask(QThread):
     async def __main(self):
         try:
             # 打开下载文件
-            self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
+            self.file = await aiofiles.open(f"{self.filePath}/{self.fileName}", "rb+")
 
             # 启动 Worker
             for i in self.workers:
@@ -299,7 +302,7 @@ class DownloadTask(QThread):
 
                 self.tasks.append(_)
 
-            self.ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
+            self.ghdFile = await aiofiles.open(f"{self.filePath}/{self.fileName}.ghd", "wb")
             self.supervisorTask = asyncio.create_task(self.__supervisor())
 
             # 仅仅需要等待 supervisorTask
@@ -311,8 +314,8 @@ class DownloadTask(QThread):
             # 关闭
             await self.client.aclose()
 
-            self.file.close()
-            self.ghdFile.close()
+            await self.file.close()
+            await self.ghdFile.close()
 
             if self.process == self.fileSize:
                 # 下载完成时删除历史记录文件, 防止没下载完时误删
@@ -337,19 +340,17 @@ class DownloadTask(QThread):
         try:
             self.supervisorTask.cancel()
         finally:
-            self.file.close()
-            self.ghdFile.close()
 
-        while not all(task.done() for task in self.tasks):  # 等待所有任务完成
-            for task in self.tasks:
-                try:
-                    task.cancel()
-                except RuntimeError:
-                    pass
-                except Exception as e:
-                    raise e
+            while not all(task.done() for task in self.tasks):  # 等待所有任务完成
+                for task in self.tasks:
+                    try:
+                        task.cancel()
+                    except RuntimeError:
+                        pass
+                    except Exception as e:
+                        raise e
 
-            time.sleep(0.05)
+                time.sleep(0.05)
 
     # @retry(3, 0.1)
     def run(self):
