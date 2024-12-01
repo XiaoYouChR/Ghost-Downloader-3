@@ -1,0 +1,150 @@
+name: Build Ghost Downloader 3
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 -r requirements.txt
+          pip install nuitka
+
+      - name: Build with Nuitka
+        run: |
+          mv main.py GhostDownloader3.py
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --windows-console-mode=disable --windows-icon-from-ico=images/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.4.4 --product-version=3.4.4 GhostDownloader3.py
+          nuitka --module plugins/jy_os_page.py
+          mv jy_os_page*.pyd output/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Ghost-Downloader-v3.4.4-Windows-${{ matrix.architecture }}
+          path: output/
+
+  build-macos-14-arm:
+    strategy:
+      matrix:
+        architecture: [arm64]
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 -r requirements.txt
+          pip install nuitka
+
+      - name: Build with Nuitka
+        run: |
+          mv main.py "GhostDownloader3.py"
+          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          version=$(sed -n '4p' version.txt)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "VERSION=${{ env.VERSION }}"
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --macos-app-icon=images/logo.icns --macos-create-app-bundle --company-name=XiaoYouChR --macos-app-name="GhostDownloader3" --macos-app-version=$version GhostDownloader3.py
+          nuitka --module plugins/jy_os_page.py
+          mkdir -p "output/GhostDownloader3.app/Contents/MacOS/plugins/"
+          mv jy_os_page*.so "output/GhostDownloader3.app/Contents/MacOS/plugins/"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
+          path: output/
+
+  build-macos-13-x86_64:
+    strategy:
+      matrix:
+        architecture: [x86_64]
+    runs-on: macos-13
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 -r requirements.txt
+          pip install nuitka==1.8.6
+
+      - name: Build with Nuitka
+        run: |
+          mv main.py "GhostDownloader3.py"
+          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          version=$(sed -n '4p' version.txt)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "VERSION=${{ env.VERSION }}"
+          nuitka3 --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --macos-app-icon=images/logo.icns --macos-create-app-bundle --company-name=XiaoYouChR --macos-app-name="GhostDownloader3" --macos-app-version=$version GhostDownloader3.py
+          nuitka3 --module plugins/jy_os_page.py
+          mkdir -p "output/GhostDownloader3.app/Contents/MacOS/plugins/"
+          mv jy_os_page*.so "output/GhostDownloader3.app/Contents/MacOS/plugins/"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
+          path: output/
+
+#  build-ubuntu:
+#    strategy:
+#      matrix:
+#        architecture: [x86_64, arm64]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v2
+#
+#      - name: Set up Python 3.11
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: '3.11'
+#
+#      - name: Install dependencies
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y libegl1-mesa
+#          pip install --timeout=300 -r requirements.txt
+#          pip install nuitka
+#
+#      - name: Build with Nuitka
+#        run: |
+#          mv main.py "GhostDownloader3.py"
+#          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+#          version=$(sed -n '4p' version.txt)
+#          echo "VERSION=$version" >> "$GITHUB_ENV"
+#          echo "VERSION=${{ env.VERSION }}"
+#          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --company-name=XiaoYouChR --product-name="GhostDownloader3" --file-description="GhostDownloader3" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=$version --product-version=$version "GhostDownloader3.py"
+#          nuitka --module plugins/jy_os_page.py
+#          mkdir -p "output/GhostDownloader3.dist/plugins/"
+#          mv jy_os_page*.so "output/GhostDownloader3.dist/plugins/"
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
+#          path: output/GhostDownloader3.dist
