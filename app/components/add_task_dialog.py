@@ -36,7 +36,7 @@ urlRe = re.compile(r"^" +
 class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     startSignal = Signal()
-    __addTableRowSignal = Signal(str, str)  # fileName, fileSize, 同理因为int最大值仅支持到2^31 PyQt无法定义int64 故只能使用str代替
+    __addTableRowSignal = Signal(str, str, str)  # fileName, fileSize, Url, 同理因为int最大值仅支持到2^31 PyQt无法定义int64 故只能使用str代替
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -99,17 +99,12 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             if not os.access(path, os.W_OK):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
 
-        text = self.linkTextEdit.toPlainText().split("\n")
+        for i in range(self.taskTableWidget.rowCount()):
+            item = self.taskTableWidget.item(i, 0)
 
-        for i, url in enumerate(text):  # 不希望在记录文件里写入重定向之后的Url，故使用用户输入的Url
-            _ = urlRe.search(url)
-
-            # fileName = self.taskTableWidget.item(i + 1, 0).text()
-
-            if _:
-                signalBus.addTaskSignal.emit(url,
-                                             str(path), self.blockNumCard.configItem.value,
-                                             self.taskTableWidget.item(i, 0).text(), "working", False)
+            signalBus.addTaskSignal.emit(item.data(1),
+                                         str(path), self.blockNumCard.configItem.value,
+                                         item.text(), "working", False)
 
         self.close()
 
@@ -133,27 +128,27 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self._timer.start(1000)  # 1秒后处理
 
     def __handleUrl(self, url: str):
-        url, fileName, fileSize = getLinkInfo(url, Headers)
+        _url, fileName, fileSize = getLinkInfo(url, Headers)
 
-        self.__addTableRowSignal.emit(fileName, str(fileSize))
+        self.__addTableRowSignal.emit(fileName, str(fileSize), url)  # 不希望使用重定向后的url，故使用原始url
 
-    def __addTableRow(self, fileName: str, fileSize: str):
+    def __addTableRow(self, fileName: str, fileSize: str, url: str):
         """ add table row slot """
         self.taskTableWidget.insertRow(self.taskTableWidget.rowCount())
         _ = QTableWidgetItem(fileName)
-        _.setData(1, fileName) # 设置默认值, 当用户修改后的内容为空是，使用默认值替换
+        _.setData(1, url) # 记录 Url
+        _.setData(2, fileName) # 设置默认值, 当用户修改后的内容为空是，使用默认值替换
         self.taskTableWidget.setItem(self.taskTableWidget.rowCount() - 1, 0, _)
         _ = QTableWidgetItem(getReadableSize(int(fileSize)))
-        # _.setData(1, fileSize)
         _.setFlags(Qt.ItemIsEnabled)  # 禁止编辑
         self.taskTableWidget.setItem(self.taskTableWidget.rowCount() - 1, 1, _)
 
-        self.taskTableWidget.resizeColumnsToContents()
+        # self.taskTableWidget.resizeColumnsToContents()
 
     def __onTaskTableWidgetItemChanged(self, item: QTableWidgetItem):
         """ task table widget item changed slot """
         if item.text() == '':
-            item.setText(item.data(1))
+            item.setText(item.data(2))
 
     def __processTextChange(self):
         """ link text changed slot """

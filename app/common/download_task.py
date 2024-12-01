@@ -248,7 +248,7 @@ class DownloadTask(QThread):
 
             # 计算速度
             speed = (self.process - LastProcess)
-            print(f"speed: {speed}, process: {self.process}, LastProcess: {LastProcess}")
+            # print(f"speed: {speed}, process: {self.process}, LastProcess: {LastProcess}")
             LastProcess = self.process
             self.historySpeed.pop(0)
             self.historySpeed.append(speed)

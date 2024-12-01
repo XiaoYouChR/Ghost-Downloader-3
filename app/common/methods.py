@@ -247,7 +247,11 @@ def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy
                 logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
                 fileName = unquote(urlparse(url).path.split('/')[-1])
 
-                if fileName:
+                if fileName:  # 如果没有后缀名，则使用 content-type 作为后缀名
+                    _ = fileName.split('.')
+                    if len(_) == 1:
+                        fileName += '.' + head["content-type"].split('/')[-1]
+
                     logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
                 else:
                     logger.debug("方法3获取文件名失败, 文件名为空")
