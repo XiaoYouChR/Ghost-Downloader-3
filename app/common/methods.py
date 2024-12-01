@@ -26,8 +26,12 @@ plugins = []
 def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
     try:
         for filename in os.listdir(directory):
-            if filename.endswith(".py"):
-                module_name = filename[:-3]  # 去掉文件的 .py 后缀
+            if filename.endswith(".py") or filename.endswith(".pyd"):
+                if filename.endswith(".py"):
+                    module_name = filename[:-3]  # 去掉文件的 .py 后缀
+                elif filename.endswith(".pyd"):
+                    module_name = filename[:-4]  # 去掉文件的 .pyd 后缀
+
                 file_path = os.path.join(directory, filename)
 
                 # 动态导入模块
