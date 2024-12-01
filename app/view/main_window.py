@@ -161,7 +161,24 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.settingInterface, FIF.SETTING, "设置", position=NavigationItemPosition.BOTTOM)
 
     def initWindow(self):
-        self.resize(960, 780)
+
+        if cfg.geometry.value == "Default":
+            self.resize(960, 780)
+            desktop = QApplication.screens()[0].availableGeometry()
+            w, h = desktop.width(), desktop.height()
+            self.move(w//2 - self.width()//2, h//2 - self.height()//2)
+        else:
+            try:
+                self.setGeometry(cfg.get(cfg.geometry))
+            except Exception as e:
+                logger.error(f"Failed to restore geometry: {e}")
+                cfg.set(cfg.geometry, "Default")
+
+                self.resize(960, 780)
+                desktop = QApplication.screens()[0].availableGeometry()
+                w, h = desktop.width(), desktop.height()
+                self.move(w//2 - self.width()//2, h//2 - self.height()//2)
+
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
 
@@ -170,10 +187,8 @@ class MainWindow(MSFluentWindow):
         self.splashScreen.setIconSize(QSize(106, 106))
         self.splashScreen.raise_()
 
-        desktop = QApplication.screens()[0].availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.move(w//2 - self.width()//2, h//2 - self.height()//2)
         self.show()
+
         QApplication.processEvents()
 
 
@@ -184,6 +199,9 @@ class MainWindow(MSFluentWindow):
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
         event.ignore()
+        # 保存窗口位置
+        cfg.set(cfg.geometry, self.geometry())
+
         self.hide()
 
     def nativeEvent(self, eventType, message):
