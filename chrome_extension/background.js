@@ -104,7 +104,9 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
         chrome.storage.local.get(["shouldDisableExtension"], (result) => {
             if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
                 console.log("Download started: ", downloadItem);
-                cancelDownload(downloadItem);
+                if (downloadItem.url.startsWith("http")) {
+                    cancelDownload(downloadItem);
+                }
             }
         });
     }
