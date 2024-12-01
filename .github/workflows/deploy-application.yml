@@ -1,0 +1,44 @@
+name: Build Ghost Downloader
+
+on:
+  workflow_dispatch:  # Manual trigger for the workflow
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]  # Compile for both architectures
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 -r requirements.txt
+          pip install nuitka
+
+      - name: Prepare icon for packaging
+        run: |
+          cp images/logo.ico .
+
+      - name: Build with Nuitka (x86_64 and arm64)
+        run: |
+          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)"
+          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          echo "(Get-Content version.txt)[3]"
+          $version = (Get-Content version.txt)[3]
+          echo "VERSION=$version"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --output-filename="Ghost Downloader.exe" --disable-console --windows-icon-from-ico=logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=$version --product-version=$version main.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Ghost-Downloader-v3.4.4-${{ matrix.os }}-${{ matrix.architecture }}
+          path: output/main.dist
