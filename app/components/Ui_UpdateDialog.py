@@ -10,7 +10,7 @@
 
 from PySide6.QtCore import (QCoreApplication, QMetaObject)
 from PySide6.QtWidgets import (QHBoxLayout,
-                               QSizePolicy, QVBoxLayout, QAbstractItemView)
+                               QSizePolicy, QVBoxLayout, QAbstractItemView, QHeaderView)
 
 from qfluentwidgets import (PillPushButton, PrimaryPushButton, PushButton, StrongBodyLabel,
                             SubtitleLabel, TextEdit, TableWidget, FluentIcon)
@@ -68,10 +68,11 @@ class Ui_UpdateDialog(object):
         self.tableView = TableWidget(UpdateDialog)
         
         self.tableView.setObjectName(u"tableView")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.tableView.setFixedHeight(150)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.tableView.sizePolicy().hasHeightForWidth())
+        # sizePolicy1.setHeightForWidth(self.tableView.sizePolicy().hasHeightForWidth())
         self.tableView.setSizePolicy(sizePolicy1)
         
         self.tableView.setBorderVisible(True)
@@ -80,6 +81,7 @@ class Ui_UpdateDialog(object):
         self.tableView.setEditTriggers(QAbstractItemView.NoEditTriggers)  # ReadOnly
         self.tableView.setColumnCount(3)
         self.tableView.verticalHeader().setVisible(False)  # 隐藏垂直表头
+        self.tableView.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)  # 第一列拉伸
 
         self.verticalLayout.addWidget(self.tableView)
 

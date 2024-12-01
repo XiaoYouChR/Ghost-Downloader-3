@@ -48,6 +48,8 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
         self.tabelViewInfos = []
         self.urls: list[str] = []
 
+        self._hBoxLayout.setContentsMargins(120, 80, 120, 80)
+
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
         self.setClosableOnMaskClicked(True)
@@ -56,7 +58,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
         self.widget.setLayout(self.verticalLayout)
 
-        self.widget.setMinimumSize(520, 650)
+        self.widget.setMinimumSize(520, 450)
         self.widget.setMaximumSize(920, 820)
 
         self.__analyzeContent()
@@ -80,7 +82,6 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
                 self.tableView.setItem(i, j, QTableWidgetItem(tabelViewInfo[j]))
 
         self.tableView.setHorizontalHeaderLabels(['文件名', '文件大小', '下载次数'])
-        self.tableView.resizeColumnsToContents()
 
         self.logTextEdit.setMarkdown(self.content["body"])
         self.updatedDateLabel.setText(f"Updated Time：{getLocalTimeFromGithubApiTime(self.content['published_at'])}")
