@@ -20,15 +20,17 @@ class Ui_TaskCard(object):
     def setupUi(self, TaskCard):
         if not TaskCard.objectName():
             TaskCard.setObjectName(u"TaskCard")
-        TaskCard.resize(793, 119)
-        TaskCard.setMinimumSize(QSize(793, 119))
-        TaskCard.setMaximumSize(QSize(16777215, 119))
+        TaskCard.resize(793, 100)
+        TaskCard.setMinimumSize(QSize(793, 90))
+        TaskCard.setMaximumSize(QSize(16777215, 90))
         self.cardHorizontalLayout = QHBoxLayout(TaskCard)
         self.cardHorizontalLayout.setObjectName(u"cardHorizontalLayout")
+        self.cardHorizontalLayout.setContentsMargins(18, 8, 18, 8)
+        self.cardHorizontalLayout.setSpacing(18)
         self.LogoPixmapLabel = PixmapLabel(TaskCard)
         self.LogoPixmapLabel.setObjectName(u"LogoPixmapLabel")
-        self.LogoPixmapLabel.setMinimumSize(QSize(91, 91))
-        self.LogoPixmapLabel.setMaximumSize(QSize(91, 91))
+        self.LogoPixmapLabel.setMinimumSize(QSize(70, 70))
+        self.LogoPixmapLabel.setMaximumSize(QSize(70, 70))
         self.LogoPixmapLabel.setScaledContents(True)
         self.LogoPixmapLabel.setAlignment(Qt.AlignCenter)
 
@@ -37,6 +39,17 @@ class Ui_TaskCard(object):
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
+
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setSpacing(6)
+
+        # self.verticalLayout.addSpacing(15) # 把整体往下撑
+
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+
         self.TitleLabel = TitleLabel(TaskCard)
         self.TitleLabel.setObjectName(u"TitleLabel")
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -47,20 +60,10 @@ class Ui_TaskCard(object):
         self.TitleLabel.setMinimumSize(QSize(0, 38))
         self.TitleLabel.setMaximumSize(QSize(16777215, 38))
 
-        self.verticalLayout.addWidget(self.TitleLabel)
-
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setSpacing(6)
-
-        self.verticalLayout.addSpacing(15) # 把整体往下撑
+        self.verticalLayout_2.addWidget(self.TitleLabel)
 
         # 还需要把 statusHorizonLayout 在 horizonLayout 里面往下撑, 要不然非常难看!
-        self.verticalLayout_2 = QVBoxLayout()
-        self.verticalLayout_2.setSpacing(0)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-
-        self.verticalLayout_2.addSpacing(15)
+        self.verticalLayout_2.addSpacing(8)
 
         self.statusHorizonLayout = QHBoxLayout()
         self.statusHorizonLayout.setObjectName(u"statusHorizonLayout")

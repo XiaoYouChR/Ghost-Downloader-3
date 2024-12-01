@@ -41,7 +41,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.TitleLabel.setText("正在初始化任务...")
 
         self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
-        self.LogoPixmapLabel.setFixedSize(91, 91)
+        self.LogoPixmapLabel.setFixedSize(70, 70)
 
         self.progressBar = TaskProgressBar(maxBlockNum, self)
         self.progressBar.setObjectName(u"progressBar")
@@ -79,7 +79,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             self.TitleLabel.setText(self.fileName)
             self.LogoPixmapLabel.setPixmap(pixmap)
-            self.LogoPixmapLabel.setFixedSize(91, 91)
+            self.LogoPixmapLabel.setFixedSize(70, 70)
 
             self.__onTaskFinished()
 
@@ -110,7 +110,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.autoCreated = True
 
         # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
-        # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(91, 91, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+        # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
         #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
         _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
 
@@ -122,7 +122,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 显示信息
         self.TitleLabel.setText(self.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
-        self.LogoPixmapLabel.setFixedSize(91, 91)
+        self.LogoPixmapLabel.setFixedSize(70, 70)
 
         self.pauseButton.setEnabled(True)
         # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
@@ -318,7 +318,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             else:
                 _ = QPixmap(":/image/logo.png")
             self.LogoPixmapLabel.setPixmap(_)
-            self.LogoPixmapLabel.setFixedSize(91, 91)
+            self.LogoPixmapLabel.setFixedSize(70, 70)
 
         self.status = "finished"
 
