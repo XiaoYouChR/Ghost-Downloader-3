@@ -19,7 +19,7 @@ from ..common.methods import getProxy, getReadableSize, openFile
 proxy = getProxy()
 
 class TaskCard(CardWidget, Ui_TaskCard):
-    taskFinished = Signal()
+    taskStatusChanged = Signal()
 
     def __init__(self, url, path, maxBlockNum: int, name: str = None, status: str = "working",
                  parent=None, autoCreated=False):
@@ -172,7 +172,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             self.task.start()
 
-
             try:
                 # 改变记录状态
                 with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
@@ -190,6 +189,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.__showInfo("任务正在开始")
                 self.status = "working"
                 # 得让 self.__tempThread 运行完才能运行暂停！ self.pauseButton.setEnabled(True)
+
+        self.taskStatusChanged.emit()
 
     def cancelTask(self, surely=False, completely=False):
 
@@ -328,6 +329,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.setDisabled(False)
         self.cancelButton.setDisabled(False)
 
+        self.taskStatusChanged.emit()
+
     def runClacTask(self):
         self.__showInfo("正在校验MD5...")
         self.clacTask = ClacMD5Thread(f"{self.filePath}/{self.fileName}")
@@ -340,7 +343,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.task.speedChanged.connect(self.__UpdateSpeed)
 
         self.task.taskFinished.connect(self.__onTaskFinished)
-        self.task.taskFinished.connect(self.taskFinished)
 
         self.task.gotWrong.connect(self.__onTaskError)
 

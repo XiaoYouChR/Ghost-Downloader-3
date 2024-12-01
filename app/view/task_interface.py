@@ -8,6 +8,16 @@ from ..components.del_dialog import DelDialog
 from ..components.task_card import TaskCard
 
 
+class ExpandLayout(ExpandLayout):  # 修复 takeAt 方法
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+    def takeAt(self, index):
+        if 0 <= index < len(self.__widgets):
+            return self.__widgets.pop(index)
+
+        return None
+
 class TaskInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -133,16 +143,35 @@ class TaskInterface(ScrollArea):
 
         _ = TaskCard(url, path, block_num, name, status, self.scrollWidget, autoCreated)
 
+        _.taskStatusChanged.connect(self.__sortTask)
+
         self.cards.append(_)
 
         self.expandLayout.addWidget(_)
 
         _.show()
 
+        self.__sortTask()
+
         # 如果 self.noTaskLabel 存在，则隐藏
         if self.noTaskLabel.parent():
             self.expandLayout.removeWidget(self.noTaskLabel)
             self.noTaskLabel.hide()
+
+    def __sortTask(self):  # 将任务按照状态 working waiting paused canceled 排序
+        statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3}
+
+        items = []
+
+        for i in range(len(self.cards)):
+            _ = self.expandLayout.takeAt(2)  # 跳过 toolsBar 和 noTaskLabel
+
+            items.append(_)
+
+        items.sort(key=lambda item: statusOrder[item.status])
+
+        for i in items:
+            self.expandLayout.addWidget(i)
 
     def allStartTasks(self):
         for card in self.cards:
