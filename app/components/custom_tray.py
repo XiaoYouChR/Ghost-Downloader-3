@@ -34,7 +34,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
         self.menu = FixedAcrylicSystemTrayMenu(parent=parent)
 
-        self.showAction = Action(QIcon(":/image/logo.png"), '仪表盘', self.menu)
+        self.showAction = Action(QIcon(":/image/logo_withoutBackground.png"), '仪表盘', self.menu)
         self.showAction.triggered.connect(self.__onShowActionTriggered)
         self.menu.addAction(self.showAction)
 

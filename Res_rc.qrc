@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="image">
     <file>logo.png</file>
+    <file>logo_withoutBackground.png</file>
   </qresource>
   <qresource prefix="res">
     <file>chrome_extension.crx</file>
