@@ -125,55 +125,46 @@ class DownloadTask(QThread):
         self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__tempThread.start()
 
-    def __divitionTask(self, startPos:int):
-        """根据开始位置创建新线程，并将原线程分割"""
-        if len(self.workers) > 0 and startPos < self.workers[-1].endPos: #判断是否需要进行分割
-            match = False
-            for oldWorker in self.workers:
-                if oldWorker.process < startPos < oldWorker.endPos:
-                    match = True
-                    newWorker = DownloadWorker(startPos, startPos, oldWorker.endPos, self.client) #分割
-                    oldWorker.endPos = startPos
-                    self.workers.insert(self.workers.index(oldWorker)+1, newWorker)
-                    break
-            if not match:
-                logger.warning("无法分割任务")
-        else:
-            #无需分割的情况
-            newWorker = DownloadWorker(startPos, startPos, self.fileSize, self.client)
-            self.workers.append(newWorker)
-  
-        self.start_worker(newWorker)
 
-    def __reassignWorker(self):
-        """自动在合适的位置创建一个新线程"""
-        maxRemain = 0
-        match = False
-
+    def __reassignWorker(self, times:int = 1):
+        '''相当于运行times次__reassignWorker,但效果更好。在只有一个worker时相当于__clacDivisionalWorker'''
+        count:dict[DownloadWorker,int] = {}
         for work in self.workers:
-            if work.running:
-                if (work.endPos - work.process) // 2 > maxRemain:
-                    maxRemain = (work.endPos - work.process)//2
-                    maxWorker = work
-                    match = True
-            else:
-                if work.endPos - work.process > maxRemain:
-                    maxRemain = work.endPos - work.process
-                    maxWorker = work
-                    match = True
-        if match:
-            if maxWorker.running:
-                if maxRemain >= cfg.maxReassignSize.value * 1048576:#1MB
-                    self.__divitionTask((maxWorker.process + maxWorker.endPos)//2)
-                    logger.info(
-                        f'Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemain)}')
-                else:
-                    logger.info(
-                        f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemain)}")
-            else:
-                if maxRemain > 0:
-                    logger.info("启动已有worker")
-                    self.start_worker(maxWorker)
+            count[work] = 1 if work.running else 0
+        
+        for i in range(times):#查找分割times次的最优解
+            maxremain = 0
+            maxworker = None
+            for work in self.workers:
+                if (remain := ( work.endPos - work.process ) / ( count[work] + 1 )) > maxremain:
+                    maxremain = remain
+                    maxworker = work
+
+            if maxremain < cfg.maxReassignSize.value * 1024 ** 2:
+                break
+            
+            if maxworker is not None:
+                count[maxworker] += 1
+
+        for work, divitionTimes in count.items():#根据最优解创建线程
+
+            if not work.running and divitionTimes >= 1:#检查是否需要启动work
+                self.start_worker(work)
+
+            if divitionTimes >= 2:#检查是否需要分割并添加新worker
+                size = (work.endPos - work.process) // divitionTimes
+                index = self.workers.index(work)
+                for j in range(1, divitionTimes):
+                    index += 1
+                    start = work.process + j * size
+                    end = work.process + (j + 1) * size######
+                    _ = DownloadWorker(start, start, end, self.client)
+                    self.workers.insert(index, _)
+                    self.start_worker(_)
+                _.endPos = work.endPos
+                work.endPos = work.process + size
+
+
 
     def start_worker(self, worker: DownloadWorker):
         """启动worker"""
@@ -181,13 +172,6 @@ class DownloadTask(QThread):
         worker.task = _
         self.tasks.append(_)
         self._taskNum += 1
-
-    def __clacDivisionalWorker(self):
-        """预创建线程"""
-        block_size = self.fileSize // self.preBlockNum
-        if self.preBlockNum != 0:
-            for i in range(0, self.fileSize - self.preBlockNum, block_size):
-                self.__divitionTask(i)
 
     def __getLinkInfo(self):
         try:
@@ -229,14 +213,14 @@ class DownloadTask(QThread):
 
                     logger.debug(f"pretasknum: {self.preBlockNum}")
 
-                    for i in range(self.preBlockNum):
-                        self.__reassignWorker()
+                    
 
             except Exception as e:
                 logger.error(f"Failed to load workers: {e}")
-                self.__clacDivisionalWorker()
+                self.workers = [DownloadWorker(0, 0, self.fileSize, self.client)]
         else:
-            self.__clacDivisionalWorker()
+            self.workers = [DownloadWorker(0, 0, self.fileSize, self.client)]
+        self.__reassignWorker(self.preBlockNum)
 
     async def __handleWorker(self, worker: DownloadWorker):
         try:
@@ -332,7 +316,7 @@ class DownloadTask(QThread):
                     taskNum = self._taskNum
                     formerInfo = info
                     recorder.reset(self.process)
-                    logger.info('taskNum changed')
+                    logger.info(f'taskNum changed task_num: {self._taskNum}')
 
                 elif recorder.flash(self.process).time > 60: #超时重置
                     recorder.reset(self.process)
@@ -347,11 +331,10 @@ class DownloadTask(QThread):
                     speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)# 平均速度增量
                     offset = (1 / info.time) * accuracy#误差补偿偏移
                     efficiency = speedDeltaPerNewThread / maxSpeedPerConnect# 线程效率
-                    logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}')
+                    logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}  taskNum {self._taskNum}')
                     if efficiency >= threshold + offset:
-                        logger.debug(f'自动提速增加新线程  {efficiency}')
-
                         if self._taskNum  < 256:
+                            logger.debug(f'自动提速增加新线程  {efficiency}')
                             self.__reassignWorker()  # 新增线程
                 
                     if self._taskNum == 0 and self.process < self.fileSize:
