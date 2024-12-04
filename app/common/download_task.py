@@ -37,11 +37,12 @@ class SpeedRecoder:
     def flash(self, process):
         
         d_time = time.time() - self.start_time
-        if d_time != 0:
-            speed = (process - self.process) / (time.time() - self.start_time)
-        else:
-            speed = 0
-            d_time = 0.01#天天出花里胡哨的bug烦死我了
+        #if d_time != 0:
+        speed = (process - self.process) / (d_time)
+        #else:
+        #    logger.warning("Time cannot be zero")
+        #    speed = 0
+        #    d_time = 0.01#天天出花里胡哨的bug烦死我了
         return SpeedInfo(speed, d_time)
 
 
@@ -56,7 +57,7 @@ class SpeedInfo:
 class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
 
-    def __init__(self, start, process, end, client: httpx.AsyncClient,*, running = True):
+    def __init__(self, start, process, end, client: httpx.AsyncClient):
         self.startPos = start
         self.process = process
         self.endPos = end
@@ -131,7 +132,7 @@ class DownloadTask(QThread):
             for oldWorker in self.workers:
                 if oldWorker.process < startPos < oldWorker.endPos:
                     match = True
-                    newWorker = DownloadWorker(startPos, startPos, oldWorker.endPos, self.client, running = True) #分割
+                    newWorker = DownloadWorker(startPos, startPos, oldWorker.endPos, self.client) #分割
                     oldWorker.endPos = startPos
                     self.workers.insert(self.workers.index(oldWorker)+1, newWorker)
                     break
@@ -139,7 +140,7 @@ class DownloadTask(QThread):
                 logger.warning("无法分割任务")
         else:
             #无需分割的情况
-            newWorker = DownloadWorker(startPos, startPos, self.fileSize, self.client, running = True)
+            newWorker = DownloadWorker(startPos, startPos, self.fileSize, self.client)
             self.workers.append(newWorker)
   
         self.start_worker(newWorker)
@@ -325,43 +326,40 @@ class DownloadTask(QThread):
             
             
             if self.autoSpeedUp:
-                
-                if self._taskNum > 0:#更新speedPerConnect，maxSpeedPerConnect
-                    speedPerConnect = info.speed / self._taskNum
-                    if speedPerConnect > maxSpeedPerConnect:
-                        maxSpeedPerConnect = speedPerConnect
-                
+
                 if taskNum != self._taskNum:#更新taskNum， formerTaskNum，formerInfo，重置recorder
                     formerTaskNum = taskNum
                     taskNum = self._taskNum
                     formerInfo = info
                     recorder.reset(self.process)
-                
-                info = recorder.flash(self.process) #更新info
+                    logger.info('taskNum changed')
 
-                #print(f'new_task_num{taskNum - formerTaskNum}   info.time{info.time}  info_cache.time{formerInfo.time}  max{maxSpeedPerConnect}')
-                
-                speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)# 平均速度增量
-                #logger.debug(f'{getReadableSize(info.speed - formerInfo.speed)} / {taskNum - formerTaskNum} ')
-                offset = (1 / info.time) * accuracy#误差补偿偏移
-                efficiency = speedDeltaPerNewThread / maxSpeedPerConnect# 线程效率
-                logger.debug(f'{getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}')
-                if efficiency >= threshold + offset:
-                    logger.debug(f'自动提速增加新线程  {efficiency}')
+                elif recorder.flash(self.process).time > 60: #超时重置
+                    recorder.reset(self.process)
 
-                    if self._taskNum  < 256:
-                        self.__reassignWorker()  # 新增线程
+                else:
+                    info = recorder.flash(self.process) #更新info
+                    if self._taskNum > 0:#更新speedPerConnect，maxSpeedPerConnect
+                        speedPerConnect = info.speed / self._taskNum
+                        if speedPerConnect > maxSpeedPerConnect:
+                            maxSpeedPerConnect = speedPerConnect
+                    
+                    speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)# 平均速度增量
+                    offset = (1 / info.time) * accuracy#误差补偿偏移
+                    efficiency = speedDeltaPerNewThread / maxSpeedPerConnect# 线程效率
+                    logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}')
+                    if efficiency >= threshold + offset:
+                        logger.debug(f'自动提速增加新线程  {efficiency}')
+
+                        if self._taskNum  < 256:
+                            self.__reassignWorker()  # 新增线程
                 
-                if self._taskNum == 0 and self.process < self.fileSize:
-                    logger.warning(f'线程意外消失')
-                    self.__reassignWorker()  # 防止最后一个线程意外消失
-                
+                    if self._taskNum == 0 and self.process < self.fileSize:
+                        logger.warning(f'线程意外消失')
+                        self.__reassignWorker()  # 防止最后一个线程意外消失
+
             await asyncio.sleep(1)
                 
-                
-
-
-            
 
     async def __main(self):
         try:
