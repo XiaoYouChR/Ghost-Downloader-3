@@ -75,10 +75,6 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
             if i.status == 'working':
                 i.task.stop()
 
-                # self.task.terminate()
-                i.task.wait()
-                i.task.deleteLater()
-
         QApplication.quit()
 
     def onTrayIconClick(self, reason):

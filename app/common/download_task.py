@@ -6,7 +6,7 @@ from pathlib import Path
 from threading import Thread
 
 import httpx
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QObject
 from loguru import logger
 
 from app.common.config import cfg
@@ -60,8 +60,37 @@ class DownloadWorker:
 
         self.client = client
 
+class DownloadThread(QThread):
+    """下载线程"""
+    thread_started = Signal()  # 线程启动信号
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self._loop = asyncio.new_event_loop()
 
-class DownloadTask(QThread):
+    def run(self):
+        self._loop.run_until_complete(self.main())
+
+    def handleTask(self, coro):
+        if self.isRunning():
+            self._loop.call_soon_threadsafe(self.__callback, coro)
+            logger.info("任务已加入下载队列")
+        else:
+            self.taskGroup = asyncio.TaskGroup()
+            self.firstCoro = coro
+            self.start()
+            logger.info("线程启动成功")
+
+    def __callback(self, coro):
+        self.taskGroup.create_task(coro)
+
+    async def main(self):
+        async with self.taskGroup:
+            self.taskGroup.create_task(self.firstCoro)
+        logger.info("线程退出")
+
+downloadThread = DownloadThread()
+
+class DownloadTask(QObject):
     """TaskManager"""
 
     taskInited = Signal()  # 线程初始化成功
@@ -348,19 +377,8 @@ class DownloadTask(QThread):
             self.file.close()
             self.ghdFile.close()
 
-        while not all(task.done() for task in self.tasks):  # 等待所有任务完成
-            for task in self.tasks:
-                try:
-                    task.cancel()
-                except RuntimeError:
-                    pass
-                except Exception as e:
-                    raise e
-
-            time.sleep(0.05)
-
     # @retry(3, 0.1)
-    def run(self):
+    def start(self):
         self.__tempThread.join()
 
         # 任务初始化完成
@@ -377,13 +395,4 @@ class DownloadTask(QThread):
         self.__loadWorkers()
 
         # 主逻辑, 使用事件循环启动异步任务
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-        try:
-            self.loop.run_until_complete(self.__main())
-        except asyncio.CancelledError as e:
-            print(e)
-        finally:
-            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-            self.loop.close()
+        downloadThread.handleTask(self.__main())

@@ -135,9 +135,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
             try:
                 self.task.stop()
 
-                # self.task.terminate()
-                self.task.wait()
-                self.task.deleteLater()
 
                 # 改变记录状态
                 with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
