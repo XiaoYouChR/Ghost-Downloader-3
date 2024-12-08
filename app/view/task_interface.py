@@ -159,7 +159,7 @@ class TaskInterface(ScrollArea):
             self.noTaskLabel.hide()
 
     def __sortTask(self):  # 将任务按照状态 working waiting paused canceled 排序
-        statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3}
+        statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3, "canceled": 4}
 
         items = []
 
