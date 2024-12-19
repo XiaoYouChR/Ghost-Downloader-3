@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QThread, Signal, QDir, QUrl, QSize, QMetaObject, 
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
 from loguru import logger
-from qfluentwidgets import ScrollArea, TitleLabel, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
+from qfluentwidgets import SmoothScrollArea, TitleLabel, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
     ComboBoxSettingCard, FluentIcon as FIF, TextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, \
     RangeValidator, PrimaryPushButton, PushButton, MessageBox, CardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
     PrimarySplitPushButton, NavigationItemPosition, FluentStyleSheet, IndeterminateProgressRing
@@ -51,7 +51,7 @@ class getInfoThread(QThread):
             proxy=getProxy(), follow_redirects=True).text)["OS"])
 
 
-class HomeInterface(ScrollArea):
+class HomeInterface(SmoothScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -105,7 +105,7 @@ class HomeInterface(ScrollArea):
             _.pixmap.loadFromData(data)
 
             _.LogoPixmapLabel.setPixmap(_.pixmap)
-            _.LogoPixmapLabel.setFixedSize(101, 101)
+            _.LogoPixmapLabel.setFixedSize(71, 71)
 
             _.BodyLabel.setText(i["Intro"].replace(r"\n", "\n"))
 
@@ -267,16 +267,16 @@ class Ui_SystemInfoCard(object):
     def setupUi(self, SystemInfoCard):
         if not SystemInfoCard.objectName():
             SystemInfoCard.setObjectName(u"SystemInfoCard")
-        SystemInfoCard.resize(793, 131)
-        SystemInfoCard.setMinimumSize(QSize(793, 131))
-        SystemInfoCard.setMaximumSize(QSize(16777215, 131))
+        SystemInfoCard.resize(793, 91)
+        SystemInfoCard.setMinimumSize(QSize(793, 91))
+        SystemInfoCard.setMaximumSize(QSize(16777215, 91))
         self.horizontalLayout = QHBoxLayout(SystemInfoCard)
         self.horizontalLayout.setSpacing(12)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.LogoPixmapLabel = PixmapLabel(SystemInfoCard)
         self.LogoPixmapLabel.setObjectName(u"LogoPixmapLabel")
-        self.LogoPixmapLabel.setMinimumSize(QSize(101, 101))
-        self.LogoPixmapLabel.setMaximumSize(QSize(101, 101))
+        self.LogoPixmapLabel.setMinimumSize(QSize(71, 71))
+        self.LogoPixmapLabel.setMaximumSize(QSize(71, 71))
         self.LogoPixmapLabel.setScaledContents(True)
         self.LogoPixmapLabel.setAlignment(Qt.AlignCenter)
 
@@ -302,7 +302,7 @@ class Ui_SystemInfoCard(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.BodyLabel.sizePolicy().hasHeightForWidth())
         self.BodyLabel.setSizePolicy(sizePolicy1)
-        self.BodyLabel.setMaximumSize(QSize(16777215, 101))
+        self.BodyLabel.setMaximumSize(QSize(16777215, 61))
         self.BodyLabel.setWordWrap(True)
 
         self.BodyVBoxLayout.addWidget(self.BodyLabel)
