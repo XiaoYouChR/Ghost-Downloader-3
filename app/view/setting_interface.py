@@ -11,7 +11,7 @@ from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettin
     BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
-                            HyperlinkCard, PrimaryPushSettingCard, ScrollArea,
+                            HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
                             setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL
@@ -173,7 +173,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
 
 
 
-class SettingInterface(ScrollArea):
+class SettingInterface(SmoothScrollArea):
     """ Setting interface """
 
     def __init__(self, parent=None):

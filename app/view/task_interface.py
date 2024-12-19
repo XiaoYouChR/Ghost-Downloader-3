@@ -1,24 +1,13 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy
-from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import ScrollArea, TitleLabel, PrimaryPushButton, PushButton, ExpandLayout, InfoBar, InfoBarPosition
+from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout
+from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, InfoBar, InfoBarPosition
 
 from ..common.signal_bus import signalBus
 from ..components.del_dialog import DelDialog
 from ..components.task_card import TaskCard
 
 
-class ExpandLayout(ExpandLayout):  # 修复 takeAt 方法
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-
-    def takeAt(self, index):
-        if 0 <= index < len(self.__widgets):
-            return self.__widgets.pop(index)
-
-        return None
-
-class TaskInterface(ScrollArea):
+class TaskInterface(SmoothScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
@@ -54,10 +43,9 @@ class TaskInterface(ScrollArea):
         self.scrollWidget = QWidget()
         self.scrollWidget.setObjectName("scrollWidget")
         self.scrollWidget.setMinimumWidth(816)
-        self.expandLayout = ExpandLayout(self.scrollWidget)
+        self.expandLayout = QVBoxLayout(self.scrollWidget)
         self.expandLayout.setObjectName("expandLayout")
-
-        # Fixed ExpandLayout 向下偏移的问题 (等待上游修复)
+        self.expandLayout.setAlignment(Qt.AlignTop)
         self.expandLayout.setContentsMargins(11, 11, 11, 0)
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -86,8 +74,7 @@ class TaskInterface(ScrollArea):
         self.allDeleteButton.setIcon(FIF.DELETE)
         self.horizontalLayout.addWidget(self.allDeleteButton)
 
-        self.horizontalSpacer = QSpacerItem(447, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(self.horizontalSpacer)
+        self.horizontalLayout.addSpacing(16777215)
 
         self.allStartButton.setText("全部开始")
         self.allPauseButton.setText("全部暂停")
@@ -95,7 +82,6 @@ class TaskInterface(ScrollArea):
 
         self.expandLayout.addWidget(self.toolsBar)
 
-        # 新增Label防止expandLayout被内存回收
         self.noTaskLabel = TitleLabel("暂无任务", self.scrollWidget)
         self.noTaskLabel.setObjectName("noTaskLabel")
         self.noTaskLabel.setAlignment(Qt.AlignCenter)
@@ -111,8 +97,6 @@ class TaskInterface(ScrollArea):
 
         # 逐个对照现有任务url, 若重复则不添加
         for card in self.cards:
-            if card.status == "canceled":
-                continue
 
             if card.url == url:
                 InfoBar.error(
@@ -151,27 +135,27 @@ class TaskInterface(ScrollArea):
 
         _.show()
 
-        self.__sortTask()
-
-        # 如果 self.noTaskLabel 存在，则隐藏
-        if self.noTaskLabel.parent():
+        # 如果 self.noTaskLabel 可见，则隐藏
+        if self.noTaskLabel.isVisible():
             self.expandLayout.removeWidget(self.noTaskLabel)
             self.noTaskLabel.hide()
 
-    def __sortTask(self):  # 将任务按照状态 working waiting paused canceled 排序
-        statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3, "canceled": 4}
+        self.__sortTask()
+
+
+    def __sortTask(self):  # 将任务按照状态 working waiting paused 排序
+        statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3}
 
         items = []
 
         for i in range(len(self.cards)):
-            _ = self.expandLayout.takeAt(2)  # 跳过 toolsBar 和 noTaskLabel
-
+            _ = self.expandLayout.takeAt(1)  # 跳过 toolsBar
             items.append(_)
 
-        items.sort(key=lambda item: statusOrder[item.status])
+        items.sort(key=lambda item: statusOrder[item.widget().status])
 
         for i in items:
-            self.expandLayout.addWidget(i)
+            self.expandLayout.addItem(i)
 
     def allStartTasks(self):
         for card in self.cards:
@@ -193,9 +177,6 @@ class TaskInterface(ScrollArea):
             completely = dialog.checkBox.isChecked()
 
             for card in self.cards:
-                if card.status == "canceled":
-                    continue
-
                 card.cancelTask(True, completely)
 
         dialog.deleteLater()

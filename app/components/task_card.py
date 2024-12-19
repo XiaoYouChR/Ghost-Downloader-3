@@ -32,7 +32,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.url = url
         self.filePath = path
         self.maxBlockNum = maxBlockNum
-        self.status = status  # working paused finished canceled
+        self.status = status  # working paused finished
         self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
 
         # Show Information
@@ -238,10 +238,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
                         f.write(_)
 
                 finally:
-                    self.status = "canceled"
                     # Remove Widget
                     self.parent().parent().parent().expandLayout.removeWidget(self)
-                    self.hide()
+                    self.parent().parent().parent().cards.remove(self)
+                    self.deleteLater()
 
     def __showInfo(self, content:str):
         # 隐藏 statusHorizontalLayout
