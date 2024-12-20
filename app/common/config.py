@@ -48,11 +48,11 @@ class GeometrySerializer(ConfigSerializer):  # 将字符串 "x,y,w,h," 转换为
 class Config(QConfig):
     """ Config of application """
     # download
-    maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 15, RangeValidator(1, 100))
+    maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 8, RangeValidator(1, 100))
     downloadFolder = ConfigItem(
         "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
 
-    maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 32, RangeValidator(1, 256))
+    maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
 

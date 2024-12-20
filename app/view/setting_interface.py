@@ -189,7 +189,7 @@ class SettingInterface(SmoothScrollArea):
             cfg.maxBlockNum,
             FIF.CLOUD,
             "下载线程数",
-            '下载线程越多，下载越快，同时也越吃性能',
+            '下载线程越多，下载越快。当线程数大于 64 时，有文件损坏的风险。',
             self.downloadGroup
         )
 
@@ -551,3 +551,4 @@ class SettingInterface(SmoothScrollArea):
         self.aboutCard.clicked.connect(self.__onAboutCardClicked)
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
+
