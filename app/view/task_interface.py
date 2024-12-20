@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout
-from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, InfoBar, InfoBarPosition
+from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
+from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, InfoBar, \
+    InfoBarPosition
 
 from ..common.signal_bus import signalBus
 from ..components.del_dialog import DelDialog
@@ -51,36 +52,31 @@ class TaskInterface(SmoothScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         # 全部开始/暂停 全部删除等其它功能区 TODO 计划任务
-        self.toolsBar = QWidget(self)
-        self.toolsBar.setObjectName("toolsBar")
-        self.toolsBar.resize(447, 60)
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setContentsMargins(2,2,2,2)
 
-        self.horizontalLayout = QHBoxLayout(self.toolsBar)
-
-        self.toolsBar.setLayout(self.horizontalLayout)
-
-        self.allStartButton = PrimaryPushButton(self.toolsBar)
+        self.allStartButton = PrimaryPushButton(self)
         self.allStartButton.setObjectName(u"allStartButton")
         self.allStartButton.setIcon(FIF.PLAY)
         self.horizontalLayout.addWidget(self.allStartButton)
 
-        self.allPauseButton = PushButton(self.toolsBar)
+        self.allPauseButton = PushButton(self)
         self.allPauseButton.setObjectName(u"allPauseButton")
         self.allPauseButton.setIcon(FIF.PAUSE)
         self.horizontalLayout.addWidget(self.allPauseButton)
 
-        self.allDeleteButton = PushButton(self.toolsBar)
+        self.allDeleteButton = PushButton(self)
         self.allDeleteButton.setObjectName(u"allDeleteButton")
         self.allDeleteButton.setIcon(FIF.DELETE)
         self.horizontalLayout.addWidget(self.allDeleteButton)
 
-        self.horizontalLayout.addSpacing(16777215)
+        self.horizontalLayout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         self.allStartButton.setText("全部开始")
         self.allPauseButton.setText("全部暂停")
         self.allDeleteButton.setText("全部删除")
 
-        self.expandLayout.addWidget(self.toolsBar)
+        self.expandLayout.addLayout(self.horizontalLayout)
 
         self.noTaskLabel = TitleLabel("暂无任务", self.scrollWidget)
         self.noTaskLabel.setObjectName("noTaskLabel")
@@ -136,8 +132,8 @@ class TaskInterface(SmoothScrollArea):
         _.show()
 
         # 如果 self.noTaskLabel 可见，则隐藏
+        self.expandLayout.removeWidget(self.noTaskLabel)
         if self.noTaskLabel.isVisible():
-            self.expandLayout.removeWidget(self.noTaskLabel)
             self.noTaskLabel.hide()
 
         self.__sortTask()
@@ -156,6 +152,10 @@ class TaskInterface(SmoothScrollArea):
 
         for i in items:
             self.expandLayout.addItem(i)
+
+        if not items:
+            self.expandLayout.addWidget(self.noTaskLabel)
+            self.noTaskLabel.show()
 
     def allStartTasks(self):
         for card in self.cards:
@@ -176,7 +176,11 @@ class TaskInterface(SmoothScrollArea):
         if dialog.exec():
             completely = dialog.checkBox.isChecked()
 
-            for card in self.cards:
+            cards = self.cards.copy()  # 防止列表变化导致迭代器异常
+
+            for card in cards:
                 card.cancelTask(True, completely)
+
+            del cards
 
         dialog.deleteLater()

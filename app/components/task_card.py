@@ -241,6 +241,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     # Remove Widget
                     self.parent().parent().parent().expandLayout.removeWidget(self)
                     self.parent().parent().parent().cards.remove(self)
+                    self.taskStatusChanged.emit()
                     self.deleteLater()
 
     def __showInfo(self, content:str):
