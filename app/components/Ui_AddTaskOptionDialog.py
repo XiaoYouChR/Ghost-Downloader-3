@@ -10,9 +10,11 @@
 
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QTableWidgetItem, QVBoxLayout, QApplication, QHeaderView)
+from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import (PushButton, SubtitleLabel,
+                            TableWidget, TextEdit, RoundMenu, Action)
+from qfluentwidgets.components.widgets.button import PrimarySplitPushButton
 
-from qfluentwidgets import (PrimaryPushButton, PushButton, SubtitleLabel,
-                            TableWidget, TextEdit)
 
 class DisabledRichTextEdit(TextEdit):
     def __init__(self, parent=None):
@@ -96,17 +98,28 @@ class Ui_AddTaskOptionDialog(object):
         self.noButton = PushButton(AddTaskOptionDialog)
         self.noButton.setObjectName(u"noButton")
 
-        self.buttonLayout.addWidget(self.noButton)
+        self.buttonLayout.addWidget(self.noButton, stretch=1)
 
-        self.yesButton = PrimaryPushButton(AddTaskOptionDialog)
+        self.laterMenu = RoundMenu(parent=AddTaskOptionDialog)
+        self.laterMenu.setObjectName(u"laterMenu")
+        self.laterAction = Action(FIF.STOP_WATCH, "稍后下载")
+        self.laterMenu.addAction(self.laterAction)
+
+        self.yesButton = PrimarySplitPushButton(AddTaskOptionDialog)
         self.yesButton.setObjectName(u"yesButton")
+
+        # Fix PyQt-Fluent-Widgets Bug
+        self.yesButton.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        _ = self.yesButton.hBoxLayout.takeAt(0).widget()
+        _.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.yesButton.hBoxLayout.insertWidget(0, _)
+
         self.yesButton.setEnabled(False)
+        self.yesButton.setFlyout(self.laterMenu)
 
-        self.buttonLayout.addWidget(self.yesButton)
-
+        self.buttonLayout.addWidget(self.yesButton, stretch=1)
 
         self.verticalLayout.addLayout(self.buttonLayout)
-
 
         self.retranslateUi(AddTaskOptionDialog)
 
