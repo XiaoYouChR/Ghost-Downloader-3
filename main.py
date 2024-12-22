@@ -65,7 +65,6 @@ import warnings
 import darkdetect
 
 from PySide6.QtGui import QColor
-from PySide6.QtCore import Qt
 
 from loguru import logger
 from qframelesswindow.utils import getSystemAccentColor

@@ -1,10 +1,11 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, InfoBar, \
-    InfoBarPosition
+    InfoBarPosition, ToggleButton
 
 from ..common.signal_bus import signalBus
 from ..components.del_dialog import DelDialog
+from ..components.plan_task_dialog import PlanTaskDialog
 from ..components.task_card import TaskCard
 
 
@@ -20,6 +21,7 @@ class TaskInterface(SmoothScrollArea):
         self.allStartButton.clicked.connect(self.allStartTasks)
         self.allPauseButton.clicked.connect(self.allPauseTasks)
         self.allDeleteButton.clicked.connect(self.allCancelTasks)
+        self.planTaskToggleButton.clicked.connect(self.__onPlanTaskToggleBtnClicked)
 
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
@@ -70,11 +72,17 @@ class TaskInterface(SmoothScrollArea):
         self.allDeleteButton.setIcon(FIF.DELETE)
         self.horizontalLayout.addWidget(self.allDeleteButton)
 
+        self.planTaskToggleButton = ToggleButton(self)
+        self.planTaskToggleButton.setObjectName(u"planTaskToggleButton")
+        self.planTaskToggleButton.setIcon(FIF.CALENDAR)
+        self.horizontalLayout.addWidget(self.planTaskToggleButton)
+
         self.horizontalLayout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         self.allStartButton.setText("全部开始")
         self.allPauseButton.setText("全部暂停")
         self.allDeleteButton.setText("全部删除")
+        self.planTaskToggleButton.setText("计划任务")
 
         self.expandLayout.addLayout(self.horizontalLayout)
 
@@ -139,7 +147,7 @@ class TaskInterface(SmoothScrollArea):
         self.__sortTask()
 
 
-    def __sortTask(self):  # 将任务按照状态 working waiting paused 排序
+    def __sortTask(self):  # 将任务按照状态 working waiting paused finished 排序
         statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3}
 
         items = []
@@ -156,6 +164,10 @@ class TaskInterface(SmoothScrollArea):
         if not items:
             self.expandLayout.addWidget(self.noTaskLabel)
             self.noTaskLabel.show()
+            return
+
+        if all(card.status == "finished" for card in self.cards):  # 全部任务完成
+            signalBus.allTaskFinished.emit()
 
     def allStartTasks(self):
         for card in self.cards:
@@ -184,3 +196,12 @@ class TaskInterface(SmoothScrollArea):
             del cards
 
         dialog.deleteLater()
+
+    def __onPlanTaskToggleBtnClicked(self):
+        if not self.planTaskToggleButton.isChecked():  # 取消计划任务
+            signalBus.allTaskFinished.disconnect()
+        if self.planTaskToggleButton.isChecked():  # 设定计划任务
+            if PlanTaskDialog(self.window()).exec():
+                self.planTaskToggleButton.setChecked(True)
+            else:
+                self.planTaskToggleButton.setChecked(False)
