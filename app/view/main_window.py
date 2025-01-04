@@ -78,7 +78,7 @@ class MainWindow(MSFluentWindow):
                 for i in unfinishedTaskInfo:
                     if i:  # 避免空行
                         i = literal_eval(i)
-                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], True)
+                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], True, None)
         else:
             historyFile.touch()
 
@@ -110,8 +110,8 @@ class MainWindow(MSFluentWindow):
 
         self.browserExtensionServer = None
 
-    def __addDownloadTaskFromWebSocket(self, url: str):
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", None)
+    def __addDownloadTaskFromWebSocket(self, url: str, cookies: str = None):
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", None, cookies)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):

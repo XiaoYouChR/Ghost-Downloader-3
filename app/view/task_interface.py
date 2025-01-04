@@ -93,7 +93,7 @@ class TaskInterface(SmoothScrollArea):
         self.scrollWidget.setMinimumWidth(816)
 
     def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working",
-                        autoCreated: bool = False):
+                        autoCreated: bool = False, cookies: str = None):
         # # 任务唯一标识符
         # number = len(self.cards)
         # _ = TaskCard(url, path, block_num, number, pixmap, name, self.scrollWidget, autoCreated)
@@ -129,7 +129,7 @@ class TaskInterface(SmoothScrollArea):
                 return
 
 
-        _ = TaskCard(url, path, block_num, name, status, self.scrollWidget, autoCreated)
+        _ = TaskCard(url, path, block_num, name, status, self.scrollWidget, autoCreated, cookies)
 
         _.taskStatusChanged.connect(self.__sortTask)
 

@@ -117,7 +117,23 @@ function cancelDownload(downloadItem) {
     chrome.downloads.cancel(downloadItem.id, () => {
         console.log(`Download cancelled: ${downloadItem.id}`);
 
+        let url = downloadItem.url, cookiesData = [], cookieString = '';
+
+        chrome.cookies.getAll( {url}, (cookies) => {
+            if(cookies){
+                cookiesData=cookies
+            }else{
+                cookiesData=''
+            }
+        });
+
+        cookieString = '';
+        for(let i=0;i<cookiesData.length;i++){
+            cookieString += cookiesData[i].name + '=' + cookiesData[i].value + '; ';
+        }
+
         const downloadInfo = {
+            cookiesData: cookieString,
             id: downloadItem.id,
             url: downloadItem.url,
             mime: downloadItem.mime,

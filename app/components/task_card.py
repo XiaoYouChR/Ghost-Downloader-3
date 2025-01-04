@@ -22,7 +22,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
     def __init__(self, url, path, maxBlockNum: int, name: str = None, status: str = "working",
-                 parent=None, autoCreated=False):
+                 parent=None, autoCreated=False, cookies: str = None):
         super().__init__(parent=parent)
 
         self.setupUi(self)
@@ -34,6 +34,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.maxBlockNum = maxBlockNum
         self.status = status  # working paused finished
         self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
+        self.cookies = cookies # Cookies
 
         # Show Information
 
@@ -64,7 +65,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     self.__showInfo("任务已经暂停")
 
             else:
-                self.task = DownloadTask(url, maxBlockNum, path)
+                self.task = DownloadTask(url, maxBlockNum, path, cookies)
 
             self.__connectSignalToSlot()
 

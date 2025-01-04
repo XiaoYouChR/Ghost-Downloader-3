@@ -1,6 +1,6 @@
 {
   "name": "Ghost Downloader Browser Extension",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "manifest_version": 3,
   "description": "Ghost Downloader 的浏览器辅助插件，用于捕获浏览器下载任务.",
   "background": {
@@ -19,6 +19,6 @@
     "48": "icon48.png",
     "128": "icon128.png"
   },
-  "permissions": ["downloads", "webRequest", "activeTab", "storage"],
-  "host_permissions": ["http://localhost/*"]
+  "permissions": ["downloads", "webRequest", "activeTab", "storage", "cookies", "activeTab"],
+  "host_permissions": ["<all_urls>"]
 }

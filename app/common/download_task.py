@@ -23,7 +23,8 @@ Headers = {
     "sec-fetch-site": "none",
     "sec-fetch-user": "?1",
     "upgrade-insecure-requests": "1",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
 
 class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
@@ -34,6 +35,8 @@ class DownloadWorker:
         self.endPos = end
 
         self.client = client
+
+        self.ableToParallelDownload = True  # 是否可以并行下载， 临时解决一点小 Bug
 
 
 class DownloadTask(QThread):
@@ -46,7 +49,7 @@ class DownloadTask(QThread):
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
 
-    def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoSpeedUp=cfg.autoSpeedUp.value, parent=None):
+    def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoSpeedUp=cfg.autoSpeedUp.value, cookies=None, parent=None):
         super().__init__(parent)
 
         self.aioLock = asyncio.Lock()
@@ -60,6 +63,10 @@ class DownloadTask(QThread):
         self.workers: list[DownloadWorker] = []
         self.tasks: list[Task] = []
         self.historySpeed = [0] * 10  # 历史速度 10 秒内的平均速度
+
+        Headers["cookie"] = cookies if cookies else ""
+
+        if cookies:logger.info(f"Cookie: {cookies}")
 
         self.client = httpx.AsyncClient(headers=Headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
