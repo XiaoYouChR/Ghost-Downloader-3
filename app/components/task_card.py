@@ -21,7 +21,7 @@ proxy = getProxy()
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
-    def __init__(self, url, path, maxBlockNum: int, name: str = None, status: str = "working",
+    def __init__(self, url, path, maxBlockNum: int, headers:dict, name: str = None, status: str = "working",
                  parent=None, autoCreated=False):
         super().__init__(parent=parent)
 
@@ -30,6 +30,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 初始化参数
 
         self.url = url
+        self.headers = headers
         self.filePath = path
         self.maxBlockNum = maxBlockNum
         self.status = status  # working paused finished
@@ -56,7 +57,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setDisabled(True)
 
             if name:
-                self.task = DownloadTask(url, maxBlockNum, path, name)
+                self.task = DownloadTask(url, headers, maxBlockNum, path, name)
 
                 self.__onTaskInited()
 
@@ -64,7 +65,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     self.__showInfo("任务已经暂停")
 
             else:
-                self.task = DownloadTask(url, maxBlockNum, path)
+                self.task = DownloadTask(url, headers, maxBlockNum, path)
 
             self.__connectSignalToSlot()
 
@@ -164,9 +165,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PAUSE)
 
             try:
-                self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath, self.fileName)
+                self.task = DownloadTask(self.url, self.headers, self.maxBlockNum, self.filePath, self.fileName)
             except: # TODO 没有 fileName 的情况
-                self.task = DownloadTask(self.url, self.maxBlockNum, self.filePath)
+                self.task = DownloadTask(self.url, self.headers, self.maxBlockNum, self.filePath)
 
             self.__connectSignalToSlot()
 

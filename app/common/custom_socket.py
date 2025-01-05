@@ -9,7 +9,7 @@ from app.common.config import VERSION, LATEST_EXTENSION_VERSION
 
 
 class GhostDownloaderSocketServer(QObject):
-    receiveUrl = Signal(str)
+    receiveUrl = Signal(str, dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -53,10 +53,8 @@ class GhostDownloaderSocketServer(QObject):
                 return  # 忽略心跳消息
             logger.debug(f"Received message: {message}")
             url = data["url"]
-            self.receiveUrl.emit(url)
-        except json.JSONDecodeError:
-            logger.error("Failed to decode JSON message")
-        except KeyError:
-            logger.error("Received message does not contain 'url'")
+            headers = data["headers"]
+            self.receiveUrl.emit(url, headers)
+
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
+            logger.error(f"Error processing message: {repr(e)}")

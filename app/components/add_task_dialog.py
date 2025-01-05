@@ -11,8 +11,7 @@ from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
-from ..common.config import cfg
-from ..common.download_task import Headers
+from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo
 from ..common.signal_bus import signalBus
 
@@ -119,7 +118,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
             signalBus.addTaskSignal.emit(item.data(1),
                                          str(path), self.blockNumCard.configItem.value,
-                                         item.text(), "working", False)
+                                         item.text(), "working", Headers, False)
 
         self.close()
 
@@ -141,7 +140,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
             signalBus.addTaskSignal.emit(item.data(1),
                                          str(path), self.blockNumCard.configItem.value,
-                                         item.text(), "paused", False)
+                                         item.text(), "paused", Headers, False)
 
         self.close()
 

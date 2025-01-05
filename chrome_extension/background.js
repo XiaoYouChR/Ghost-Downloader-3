@@ -105,39 +105,85 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
             if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
                 console.log("Download started: ", downloadItem);
                 if (downloadItem.url.startsWith("http")) {
-                    cancelDownload(downloadItem);
+                    chrome.downloads.cancel(downloadItem.id);
                 }
             }
         });
     }
 });
 
-// 取消下载并发送下载信息到服务器
-function cancelDownload(downloadItem) {
-    chrome.downloads.cancel(downloadItem.id, () => {
-        console.log(`Download cancelled: ${downloadItem.id}`);
+let requestHeadersMap = new Map(); // 存储请求头信息的映射表
 
-        const downloadInfo = {
-            id: downloadItem.id,
-            url: downloadItem.url,
-            mime: downloadItem.mime,
-            fileSize: downloadItem.fileSize,
-            startTime: downloadItem.startTime,
-            state: downloadItem.state,
-        };
+// 监听 onBeforeSendHeaders 事件，捕获请求头信息并转为字典形式
+chrome.webRequest.onBeforeSendHeaders.addListener(
+    (details) => {
+        // 将请求头数组转换为字典（键值对形式）
+        const requestHeadersDict = details.requestHeaders.reduce((acc, header) => {
+            acc[header.name.toLowerCase()] = header.value;
+            return acc;
+        }, {});
 
-        sendDownloadInfo(downloadInfo);
-    });
-}
+        // 存储请求头信息到映射表中，以请求 ID 为键
+        requestHeadersMap.set(details.requestId, requestHeadersDict);
+    },
+    {
+        urls: ["<all_urls>"], // 监听所有请求
+        types: ["main_frame", "sub_frame", "xmlhttprequest", "other"], // 资源类型
+    },
+    ["requestHeaders"] // 需要访问请求头
+);
 
-// 发送下载信息到服务器
-function sendDownloadInfo(downloadInfo) {
+// 监听 onHeadersReceived 事件，捕获响应头并匹配下载文件类型
+chrome.webRequest.onHeadersReceived.addListener(
+    (details) => {
+        // 查找响应头中的 content-type
+        const contentDispositionHeader = details.responseHeaders.find(
+            (header) => header.name.toLowerCase() === "content-disposition"
+        );
+
+        if (contentDispositionHeader) {
+            const contentDisposition = contentDispositionHeader.value.toLowerCase();
+
+            if (contentDisposition.includes("attachment")) {
+                // 从映射表中获取对应的请求头
+                const requestHeaders = requestHeadersMap.get(details.requestId) || {};
+
+                // 构造完整的请求信息
+                const requestInfo = {
+                    url: details.url,
+                    headers: requestHeaders,
+                };
+
+                console.log("捕获到的下载请求信息:", requestInfo);
+
+                // 将请求信息发送到 WebSocket
+                sendDownloadInfo(requestInfo);
+            }
+        }
+
+        // 清理已处理的请求头记录
+        requestHeadersMap.delete(details.requestId);
+    },
+    {
+        urls: ["<all_urls>"], // 监听所有请求
+        types: ["main_frame", "sub_frame", "xmlhttprequest", "other"], // 资源类型
+    },
+    ["responseHeaders"] // 需要访问响应头
+);
+
+// 修改 sendDownloadInfo 函数，将请求信息发送到 WebSocket
+function sendDownloadInfo(requestInfo) {
     if (isConnected && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(downloadInfo));
+        try {
+            socket.send(JSON.stringify(requestInfo));
+        } catch (error) {
+            console.error("发送下载信息时发生错误:", error);
+        }
     } else {
-        console.error("WebSocket is not open");
+        console.error("WebSocket 未连接");
     }
 }
+
 
 // 启动 WebSocket 连接
 connectWebSocket();
