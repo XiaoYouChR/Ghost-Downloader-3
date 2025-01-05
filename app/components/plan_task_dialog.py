@@ -16,11 +16,11 @@ class PlanTaskDialog(MaskDialogBase, Ui_PlanTaskDialog):
 
         FluentStyleSheet.DIALOG.apply(self.widget)
 
+        self.setupUi(self.widget)
+
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
         self.setClosableOnMaskClicked(True)
-
-        self.setupUi(self.widget)
 
         # Connect signals to slots
         self.powerOffButton.toggled.connect(self.updateControls)

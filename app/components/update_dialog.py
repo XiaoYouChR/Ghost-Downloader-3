@@ -6,7 +6,7 @@ from loguru import logger
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
-from app.common.config import VERSION, cfg
+from app.common.config import VERSION, cfg, Headers
 from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize
 from app.common.signal_bus import signalBus
 from app.components.Ui_UpdateDialog import Ui_UpdateDialog
@@ -89,7 +89,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
     def __onYesButtonClicked(self):
         url = self.urls[self.tableView.currentRow()]
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", False)
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", Headers ,False)
         self.close()
 
 def __showResponse(parent, content: dict):

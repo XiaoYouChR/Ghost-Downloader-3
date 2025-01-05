@@ -15,7 +15,7 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg
+from ..common.config import cfg, Headers
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
@@ -78,7 +78,7 @@ class MainWindow(MSFluentWindow):
                 for i in unfinishedTaskInfo:
                     if i:  # 避免空行
                         i = literal_eval(i)
-                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], True)
+                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], Headers, True)
         else:
             historyFile.touch()
 
@@ -110,8 +110,8 @@ class MainWindow(MSFluentWindow):
 
         self.browserExtensionServer = None
 
-    def __addDownloadTaskFromWebSocket(self, url: str):
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", None)
+    def __addDownloadTaskFromWebSocket(self, url: str, headers: dict):
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", headers, None)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):

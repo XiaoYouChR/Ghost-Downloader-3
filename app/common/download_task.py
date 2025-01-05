@@ -14,16 +14,6 @@ from loguru import logger
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo
 
-Headers = {
-    "accept-encoding": "deflate, br, gzip",
-    "accept-language": "zh-CN,zh;q=0.9",
-    "cookie": "down_ip=1",
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-site": "none",
-    "sec-fetch-user": "?1",
-    "upgrade-insecure-requests": "1",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
 
 class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
@@ -46,12 +36,13 @@ class DownloadTask(QThread):
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
 
-    def __init__(self, url, preTaskNum: int = 8, filePath=None, fileName=None, autoSpeedUp=cfg.autoSpeedUp.value, parent=None):
+    def __init__(self, url, headers, preTaskNum: int = 8, filePath=None, fileName=None, autoSpeedUp=cfg.autoSpeedUp.value, parent=None):
         super().__init__(parent)
 
         self.aioLock = asyncio.Lock()
         self.process = 0
         self.url = url
+        self.headers = headers
         self.fileName = fileName
         self.filePath = filePath
         self.preBlockNum = preTaskNum
@@ -61,7 +52,7 @@ class DownloadTask(QThread):
         self.tasks: list[Task] = []
         self.historySpeed = [0] * 10  # 历史速度 10 秒内的平均速度
 
-        self.client = httpx.AsyncClient(headers=Headers, verify=False,
+        self.client = httpx.AsyncClient(headers=headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
 
         self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
@@ -127,7 +118,7 @@ class DownloadTask(QThread):
 
     def __getLinkInfo(self):
         try:
-            self.url, self.fileName, self.fileSize = getLinkInfo(self.url, Headers, self.fileName)
+            self.url, self.fileName, self.fileSize = getLinkInfo(self.url, self.headers, self.fileName)
 
             if self.fileSize:
                 self.ableToParallelDownload = True
@@ -181,7 +172,7 @@ class DownloadTask(QThread):
             finished = False
             while not finished:
                 try:
-                    download_headers = Headers.copy()
+                    download_headers = self.headers.copy()
                     download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
 
                     async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,

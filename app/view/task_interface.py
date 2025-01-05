@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacer
 from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, InfoBar, \
     InfoBarPosition, ToggleButton
 
+from ..common.config import Headers
 from ..common.signal_bus import signalBus
 from ..components.del_dialog import DelDialog
 from ..components.plan_task_dialog import PlanTaskDialog
@@ -93,7 +94,7 @@ class TaskInterface(SmoothScrollArea):
         self.scrollWidget.setMinimumWidth(816)
 
     def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working",
-                        autoCreated: bool = False):
+                        headers: dict = Headers, autoCreated: bool = False):
         # # 任务唯一标识符
         # number = len(self.cards)
         # _ = TaskCard(url, path, block_num, number, pixmap, name, self.scrollWidget, autoCreated)
@@ -129,7 +130,7 @@ class TaskInterface(SmoothScrollArea):
                 return
 
 
-        _ = TaskCard(url, path, block_num, name, status, self.scrollWidget, autoCreated)
+        _ = TaskCard(url, path, block_num, headers, name, status, self.scrollWidget, autoCreated)
 
         _.taskStatusChanged.connect(self.__sortTask)
 
