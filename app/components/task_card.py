@@ -1,4 +1,5 @@
 import hashlib
+import pickle
 from pathlib import Path
 
 from PySide6.QtCore import QThread, Signal, QFileInfo
@@ -21,14 +22,13 @@ proxy = getProxy()
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
-    def __init__(self, url, path, maxBlockNum: int, headers:dict, name: str = None, status: str = "working",
+    def __init__(self, url, path, maxBlockNum: int, headers: dict, name: str = None, status: str = "working",
                  parent=None, autoCreated=False):
         super().__init__(parent=parent)
 
         self.setupUi(self)
 
         # 初始化参数
-
         self.url = url
         self.headers = headers
         self.filePath = path
@@ -37,7 +37,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
 
         # Show Information
-
         self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
         self.TitleLabel.setText("正在初始化任务...")
 
@@ -53,7 +52,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.fileName = name
 
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
-
             self.pauseButton.setDisabled(True)
 
             if name:
@@ -95,6 +93,55 @@ class TaskCard(CardWidget, Ui_TaskCard):
         elif self.status == "paused":
             self.pauseButton.setIcon(FIF.PLAY)
 
+    def updateTaskRecord(self, newStatus: str):
+        recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
+
+        # 读取所有记录
+        records = []
+        try:
+            with open(recordPath, "rb") as f:
+                while True:
+                    try:
+                        record = pickle.load(f)
+                        records.append(record)
+                    except EOFError:
+                        break
+        except FileNotFoundError:
+            pass
+
+        # 检查是否已有匹配的记录
+        found = False
+        updatedRecords = []
+        for record in records:
+            if (record["url"] == self.url and
+                    record["fileName"] == self.fileName and
+                    record["filePath"] == str(self.filePath) and
+                    record["blockNum"] == self.maxBlockNum and
+                    record["headers"] == self.headers):
+                found = True
+                if newStatus != "deleted":
+                    record["status"] = newStatus
+                    updatedRecords.append(record)
+            else:
+                updatedRecords.append(record)
+
+        # 如果没有找到匹配的记录且 newStatus 不是 "deleted"，则添加新记录
+        if not found and newStatus != "deleted":
+            updatedRecords.append({
+                "url": self.url,
+                "fileName": self.fileName,
+                "filePath": str(self.filePath),
+                "blockNum": self.maxBlockNum,
+                "status": self.status,
+                "headers": self.headers
+            })
+
+        # 写回记录文件
+        with open(recordPath, "wb") as f:
+            for record in updatedRecords:
+                pickle.dump(record, f)
+
+
     def __onTaskError(self, exception: str):
         self.__showInfo(f"Error: {exception}")
 
@@ -103,11 +150,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         # 写入未完成任务记录文件，以供下次打开时继续下载
         if self.fileName and not self.autoCreated:
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "a", encoding="utf-8") as f:
-                _ = {"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                     "blockNum": self.maxBlockNum, "status": self.status}
-                f.write(str(_) + "\n")
-
+            self.updateTaskRecord(self.status)
             self.autoCreated = True
 
         # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
@@ -141,16 +184,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.task.deleteLater()
 
                 # 改变记录状态
-                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                    _ = f.read()
-
-                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
-                              str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum, "status": "paused"}) + "\n")
-
-                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                    f.write(_)
+                self.updateTaskRecord("paused")
 
             except Exception as e:
                 logger.warning(f"Task:{self.fileName}, 暂停时遇到错误: {repr(e)}")
@@ -166,7 +200,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             try:
                 self.task = DownloadTask(self.url, self.headers, self.maxBlockNum, self.filePath, self.fileName)
-            except: # TODO 没有 fileName 的情况
+            except:  # TODO 没有 fileName 的情况
                 self.task = DownloadTask(self.url, self.headers, self.maxBlockNum, self.filePath)
 
             self.__connectSignalToSlot()
@@ -175,16 +209,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             try:
                 # 改变记录状态
-                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                    _ = f.read()
-
-                _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
-                              str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                   "blockNum": self.maxBlockNum, "status": "working"}) + "\n")
-
-                with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                    f.write(_)
+                self.updateTaskRecord("working")
 
             finally:
                 self.__showInfo("任务正在开始")
@@ -229,14 +254,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             finally:
                 try:
                     # 删除记录文件
-                    with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                        _ = f.read()
-
-                    _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                                       "blockNum": self.maxBlockNum, "status": self.status}) + "\n", "")
-
-                    with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                        f.write(_)
+                    self.updateTaskRecord("deleted")
 
                 finally:
                     # Remove Widget
@@ -245,7 +263,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     self.taskStatusChanged.emit()
                     self.deleteLater()
 
-    def __showInfo(self, content:str):
+    def __showInfo(self, content: str):
         # 隐藏 statusHorizontalLayout
         self.speedLabel.hide()
         self.leftTimeLabel.hide()
@@ -270,7 +288,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.progressBar.addProgressBar(content, _)
 
         for e, i in enumerate(content):
-            self.progressBar.progressBarList[e].setValue( ( (i["process"] - i["start"]) / (i["end"] - i["start"]) ) * 100)
+            self.progressBar.progressBarList[e].setValue(((i["process"] - i["start"]) / (i["end"] - i["start"])) * 100)
 
         # 如果还在显示消息状态，则调用 __hideInfo
         if self.infoLabel.isVisible():
@@ -296,23 +314,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.__showInfo("任务已经完成")
 
-        try:    # 程序启动时不要发
+        try:  # 程序启动时不要发
             self.window().tray.showMessage(self.window().windowTitle(), f"任务 {self.fileName} 已完成！", self.window().windowIcon())
         except:
             pass
 
         if not self.status == "finished":  # 不是自动创建的已完成任务
             # 改变记录状态
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "r", encoding="utf-8") as f:
-                _ = f.read()
-
-            _ = _.replace(str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": self.status}) + "\n",
-                          str({"url": self.url, "fileName": self.fileName, "filePath": str(self.filePath),
-                               "blockNum": self.maxBlockNum, "status": "finished"}) + "\n")
-
-            with open("{}/Ghost Downloader 记录文件".format(cfg.appPath), "w", encoding="utf-8") as f:
-                f.write(_)
+            self.updateTaskRecord("finished")
 
             # 再获取一次图标
             _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标

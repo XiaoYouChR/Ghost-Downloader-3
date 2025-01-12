@@ -1,7 +1,7 @@
 # coding: utf-8
 import ctypes
+import pickle
 import sys
-from ast import literal_eval
 from ctypes import byref, c_int
 from pathlib import Path
 
@@ -15,7 +15,7 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg, Headers
+from ..common.config import cfg
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
@@ -70,15 +70,15 @@ class MainWindow(MSFluentWindow):
 
         # 创建未完成的任务
         historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
-        # 未完成任务记录文件格式示例: [{"url": "xxx", "fileName": "xxx", "filePath": "xxx", "blockNum": x, "status": "xxx"}]
         if historyFile.exists():
-            with open(historyFile, 'r', encoding='utf-8') as f:
-                unfinishedTaskInfo = f.readlines()
-                logger.debug(f"Unfinished Task is following:{unfinishedTaskInfo}")
-                for i in unfinishedTaskInfo:
-                    if i:  # 避免空行
-                        i = literal_eval(i)
-                        signalBus.addTaskSignal.emit(i['url'], i['filePath'], i['blockNum'], i['fileName'], i["status"], Headers, True)
+            with open(historyFile, 'rb') as f:
+                try:
+                    while True:
+                        taskRecord = pickle.load(f)
+                        logger.debug(f"Unfinished Task is following: {taskRecord}")
+                        signalBus.addTaskSignal.emit(taskRecord['url'], taskRecord['filePath'], taskRecord['blockNum'], taskRecord['fileName'], taskRecord['status'], taskRecord['headers'], True)
+                except EOFError:
+                    pass
         else:
             historyFile.touch()
 

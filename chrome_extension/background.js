@@ -98,6 +98,13 @@ function stopHeartbeat() {
     }
 }
 
+// 提取获取 shouldDisableExtension 的逻辑到一个单独的函数
+function isExtensionDisabled(callback) {
+    chrome.storage.local.get(["shouldDisableExtension"], (result) => {
+        callback(result.shouldDisableExtension || false);
+    });
+}
+
 // 监听下载开始事件并阻止下载
 chrome.downloads.onCreated.addListener((downloadItem) => {
     if (downloadItem.state === "in_progress") {
@@ -136,7 +143,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 // 监听 onHeadersReceived 事件，捕获响应头并匹配下载文件类型
 chrome.webRequest.onHeadersReceived.addListener(
     (details) => {
-        // 查找响应头中的 content-type
+        // 查找响应头中的 content-disposition
         const contentDispositionHeader = details.responseHeaders.find(
             (header) => header.name.toLowerCase() === "content-disposition"
         );
@@ -156,8 +163,13 @@ chrome.webRequest.onHeadersReceived.addListener(
 
                 console.log("捕获到的下载请求信息:", requestInfo);
 
-                // 将请求信息发送到 WebSocket
-                sendDownloadInfo(requestInfo);
+                // 检查是否禁用扩展
+                isExtensionDisabled((shouldDisableExtension) => {
+                    if (!shouldDisableExtension) {
+                        // 将请求信息发送到 WebSocket
+                        sendDownloadInfo(requestInfo);
+                    }
+                });
             }
         }
 
