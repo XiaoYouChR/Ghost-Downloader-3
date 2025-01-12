@@ -358,7 +358,7 @@ class DownloadTask(QThread):
         # 任务初始化完成
         self.taskInited.emit()
 
-        # TODO 发消息给主线程
+        # TODO 发消息给 TaskCard
         if not self.ableToParallelDownload:
             self.preBlockNum = 1
 
