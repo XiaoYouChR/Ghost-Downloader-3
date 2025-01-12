@@ -143,15 +143,20 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 // 监听 onHeadersReceived 事件，捕获响应头并匹配下载文件类型
 chrome.webRequest.onHeadersReceived.addListener(
     (details) => {
-        // 查找响应头中的 content-disposition
+        // 查找响应头中的 content-disposition 和 content-type
         const contentDispositionHeader = details.responseHeaders.find(
             (header) => header.name.toLowerCase() === "content-disposition"
         );
+        const contentTypeHeader = details.responseHeaders.find(
+            (header) => header.name.toLowerCase() === "content-type"
+        );
 
-        if (contentDispositionHeader) {
+        if (contentDispositionHeader && contentTypeHeader) {
             const contentDisposition = contentDispositionHeader.value.toLowerCase();
+            const contentType = contentTypeHeader.value.toLowerCase();
 
-            if (contentDisposition.includes("attachment")) {
+            // 只有在 content-disposition 包含 attachment 并且 content-type 包含 application/ 或 octet-stream 时才认为是下载任务
+            if ((contentDisposition.includes("attachment") && (contentType.includes("application/") || contentType.includes("octet-stream")) && !contentType.includes("application/json"))) {
                 // 从映射表中获取对应的请求头
                 const requestHeaders = requestHeadersMap.get(details.requestId) || {};
 
