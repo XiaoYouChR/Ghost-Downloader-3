@@ -6,7 +6,7 @@ from PySide6.QtCore import QThread, Signal, QFileInfo
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
-from qfluentwidgets import CardWidget
+from qfluentwidgets import CardWidget, IndeterminateProgressBar, ProgressBar
 from qfluentwidgets import FluentIcon as FIF
 
 from .Ui_TaskCard import Ui_TaskCard
@@ -35,6 +35,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.maxBlockNum = maxBlockNum
         self.status = status  # working paused finished
         self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
+        self.ableToParallelDownload = False # 是否可以并行下载
 
         # Show Information
         self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
@@ -43,9 +44,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
         self.LogoPixmapLabel.setFixedSize(70, 70)
 
-        self.progressBar = TaskProgressBar(maxBlockNum, self)
+        self.progressBar = ProgressBar(self)
         self.progressBar.setObjectName(u"progressBar")
-
         self.verticalLayout.addWidget(self.progressBar)
 
         if name:
@@ -57,7 +57,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if name:
                 self.task = DownloadTask(url, headers, maxBlockNum, path, name)
 
-                self.__onTaskInited()
+                self.__onTaskInited(self.ableToParallelDownload)
 
                 if self.status == "paused":
                     self.__showInfo("任务已经暂停")
@@ -145,13 +145,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def __onTaskError(self, exception: str):
         self.__showInfo(f"Error: {exception}")
 
-    def __onTaskInited(self):
+    def __onTaskInited(self, ableToParallelDownload: bool):
         self.fileName = self.task.fileName
-
-        # 写入未完成任务记录文件，以供下次打开时继续下载
-        if self.fileName and not self.autoCreated:
-            self.updateTaskRecord(self.status)
-            self.autoCreated = True
+        self.ableToParallelDownload = ableToParallelDownload
 
         # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
         # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
@@ -168,8 +164,24 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(70, 70)
 
-        self.pauseButton.setEnabled(True)
-        # self.processLabel.setText(f"0B/{getReadableSize(self.task.fileSize)}")
+        if self.ableToParallelDownload:
+            self.progressBar.deleteLater()
+            self.progressBar = TaskProgressBar(self.maxBlockNum, self)
+            self.progressBar.setObjectName(u"progressBar")
+
+            self.verticalLayout.addWidget(self.progressBar)
+
+            # 写入未完成任务记录文件，以供下次打开时继续下载
+            if self.fileName and not self.autoCreated:
+                self.updateTaskRecord(self.status)
+                self.autoCreated = True
+
+            self.pauseButton.setEnabled(True)
+        else:
+            self.progressBar.deleteLater()
+            self.progressBar = IndeterminateProgressBar(self)
+            self.progressBar.setObjectName(u"progressBar")
+            self.verticalLayout.addWidget(self.progressBar)
 
     def pauseTask(self):
         if self.status == "working":  # 暂停
@@ -281,30 +293,37 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.processLabel.show()
 
     def __updateProcess(self, content: list):
-        # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题
-
-        _ = len(content) - self.progressBar.blockNum
-        if _:
-            self.progressBar.addProgressBar(content, _)
-
-        for e, i in enumerate(content):
-            self.progressBar.progressBarList[e].setValue(((i["process"] - i["start"]) / (i["end"] - i["start"])) * 100)
-
         # 如果还在显示消息状态，则调用 __hideInfo
         if self.infoLabel.isVisible():
             self.__hideInfo()
 
-        self.processLabel.setText(f"{getReadableSize(self.task.process)}/{getReadableSize(self.task.fileSize)}")
+        if self.ableToParallelDownload:
+            # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题
+            _ = len(content) - self.progressBar.blockNum
+            if _:
+                self.progressBar.addProgressBar(content, _)
+
+            for e, i in enumerate(content):
+                self.progressBar.progressBarList[e].setValue(((i["process"] - i["start"]) / (i["end"] - i["start"])) * 100)
+
+            self.processLabel.setText(f"{getReadableSize(self.task.process)}/{getReadableSize(self.task.fileSize)}")
+
+        else: # 不能并行下载
+            self.processLabel.setText(f"{getReadableSize(self.task.process)}")
 
     def __UpdateSpeed(self, avgSpeed: int):
 
         self.speedLabel.setText(f"{getReadableSize(avgSpeed)}/s")
-        # 计算剩余时间，并转换为 MM:SS
-        try:
-            leftTime = (self.task.fileSize - self.task.process) / avgSpeed
-            self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
-        except ZeroDivisionError:
-            self.leftTimeLabel.setText("Infinity")
+
+        if self.ableToParallelDownload:
+            # 计算剩余时间，并转换为 MM:SS
+            try:
+                leftTime = (self.task.fileSize - self.task.process) / avgSpeed
+                self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
+            except ZeroDivisionError:
+                self.leftTimeLabel.setText("Infinity")
+        else:
+            self.leftTimeLabel.setText("Unknown")
 
     def __onTaskFinished(self):
         self.pauseButton.setDisabled(True)
@@ -313,6 +332,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.clicked.connect(lambda: openFile(f"{self.filePath}/{self.fileName}"))
 
         self.__showInfo("任务已经完成")
+
+        self.progressBar.deleteLater()
+
+        self.progressBar = ProgressBar(self)
+        self.progressBar.setObjectName(u"progressBar")
+        self.verticalLayout.addWidget(self.progressBar)
+
+        self.progressBar.setValue(100)
 
         try:  # 程序启动时不要发
             self.window().tray.showMessage(self.window().windowTitle(), f"任务 {self.fileName} 已完成！", self.window().windowIcon())
