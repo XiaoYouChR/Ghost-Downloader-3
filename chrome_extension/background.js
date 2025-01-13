@@ -113,6 +113,23 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
                 console.log("Download started: ", downloadItem);
                 if (downloadItem.url.startsWith("http")) {
                     chrome.downloads.cancel(downloadItem.id);
+
+                    // 从映射表中获取对应的请求头
+                    const requestHeaders = requestHeadersMap.get(downloadItem.url) || {};
+
+                    // 构造完整的请求信息
+                    const requestInfo = {
+                        url: downloadItem.url,
+                        headers: requestHeaders,
+                    };
+
+                    console.log("捕获到的下载请求信息:", requestInfo);
+
+                    // 将请求信息发送到 WebSocket
+                    sendDownloadInfo(requestInfo);
+
+                    // 清空 requestHeadersMap
+                    requestHeadersMap.clear();
                 }
             }
         });
@@ -131,61 +148,14 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         }, {});
 
         // 存储请求头信息到映射表中，以请求 ID 为键
-        requestHeadersMap.set(details.requestId, requestHeadersDict);
+        requestHeadersMap.set(details.url, requestHeadersDict);
+        console.log("Details url:", details.url);
     },
     {
         urls: ["<all_urls>"], // 监听所有请求
         types: ["main_frame", "sub_frame", "xmlhttprequest", "other"], // 资源类型
     },
     ["requestHeaders"] // 需要访问请求头
-);
-
-// 监听 onHeadersReceived 事件，捕获响应头并匹配下载文件类型
-chrome.webRequest.onHeadersReceived.addListener(
-    (details) => {
-        // 查找响应头中的 content-disposition 和 content-type
-        const contentDispositionHeader = details.responseHeaders.find(
-            (header) => header.name.toLowerCase() === "content-disposition"
-        );
-        const contentTypeHeader = details.responseHeaders.find(
-            (header) => header.name.toLowerCase() === "content-type"
-        );
-
-        if (contentDispositionHeader && contentTypeHeader) {
-            const contentDisposition = contentDispositionHeader.value.toLowerCase();
-            const contentType = contentTypeHeader.value.toLowerCase();
-
-            // 只有在 content-disposition 包含 attachment 并且 content-type 包含 application/ 或 octet-stream 时才认为是下载任务
-            if ((contentDisposition.includes("attachment") && (contentType.includes("application/") || contentType.includes("octet-stream")) && !contentType.includes("application/json"))) {
-                // 从映射表中获取对应的请求头
-                const requestHeaders = requestHeadersMap.get(details.requestId) || {};
-
-                // 构造完整的请求信息
-                const requestInfo = {
-                    url: details.url,
-                    headers: requestHeaders,
-                };
-
-                console.log("捕获到的下载请求信息:", requestInfo);
-
-                // 检查是否禁用扩展
-                isExtensionDisabled((shouldDisableExtension) => {
-                    if (!shouldDisableExtension) {
-                        // 将请求信息发送到 WebSocket
-                        sendDownloadInfo(requestInfo);
-                    }
-                });
-            }
-        }
-
-        // 清理已处理的请求头记录
-        requestHeadersMap.delete(details.requestId);
-    },
-    {
-        urls: ["<all_urls>"], // 监听所有请求
-        types: ["main_frame", "sub_frame", "xmlhttprequest", "other"], // 资源类型
-    },
-    ["responseHeaders"] // 需要访问响应头
 );
 
 // 修改 sendDownloadInfo 函数，将请求信息发送到 WebSocket
