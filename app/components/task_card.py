@@ -363,17 +363,12 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         # 将暂停按钮改成校验按钮
         self.pauseButton.setIcon(FIF.UPDATE)
-        self.pauseButton.clicked.connect(self.runCalcTask)
+        self.pauseButton.clicked.disconnect()
+        self.pauseButton.clicked.connect(self.runCalcMD5Task)
         self.pauseButton.setDisabled(False)
         self.cancelButton.setDisabled(False)
 
         self.taskStatusChanged.emit()
-
-    def runCalcTask(self):
-        self.__showInfo("正在校验MD5...")
-        self.calcTask = CalcMD5Thread(f"{self.filePath}/{self.fileName}")
-        self.calcTask.returnMD5.connect(lambda x: self.__showInfo(f"校验完成！文件的MD5值是：{x}"))
-        self.calcTask.start()
 
     def __connectSignalToSlot(self):
         self.task.taskInited.connect(self.__onTaskInited)
@@ -384,8 +379,28 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.task.gotWrong.connect(self.__onTaskError)
 
+    def runCalcMD5Task(self):
+        self.__showInfo("正在校验 MD5, 请稍后...")
+        self.pauseButton.setDisabled(True)
+        self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
+
+        self.calcTask = CalcMD5Thread(f"{self.filePath}/{self.fileName}")
+        self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)))
+        self.calcTask.returnMD5.connect(self.whenMD5CalcFinished)
+        self.calcTask.start()
+
+    def whenMD5CalcFinished(self, result: str):
+        self.calcTask.deleteLater()
+        self.__showInfo(f"校验完成，文件的MD5值是: {result}")
+        # 把校验按钮变成复制按钮
+        from PySide6.QtWidgets import QApplication
+        self.pauseButton.setIcon(FIF.COPY)
+        self.pauseButton.clicked.disconnect()
+        self.pauseButton.clicked.connect(lambda: QApplication.clipboard().setText(result))
+        self.pauseButton.setDisabled(False)
 
 class CalcMD5Thread(QThread):
+    calcProgress = Signal(str)  # 因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
     returnMD5 = Signal(str)
 
     def __init__(self, fileResolvedPath: str, parent=None):
@@ -393,16 +408,19 @@ class CalcMD5Thread(QThread):
         self.fileResolvedPath = fileResolvedPath
 
     def run(self):
-        hash_algorithm = getattr(hashlib, "md5")()
+        hashAlgorithm = getattr(hashlib, "md5")()
+        progress = 0
 
         with open(self.fileResolvedPath, "rb") as file:
-            chunk_size = 65536  # 64 KiB chunks
+            chunk_size = 1048576  # 1MiB chunks
             while True:
                 chunk = file.read(chunk_size)
                 if not chunk:
                     break
-                hash_algorithm.update(chunk)
+                hashAlgorithm.update(chunk)
+                progress += 1048576
+                self.calcProgress.emit(str(progress))
 
-        result = hash_algorithm.hexdigest()
+        result = hashAlgorithm.hexdigest()
 
         self.returnMD5.emit(result)
