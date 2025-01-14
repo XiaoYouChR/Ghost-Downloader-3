@@ -10,6 +10,7 @@ from qfluentwidgets import PushSettingCard, RangeSettingCard, MessageBox, InfoBa
 from qfluentwidgets.common.icon import FluentIcon as FIF
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
+from app.components.edit_headers_dialog import EditHeadersDialog  # 添加导入
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo
@@ -41,6 +42,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
+        self.customHeaders = Headers.copy()
+
         FluentStyleSheet.DIALOG.apply(self.widget)
         self.widget.setContentsMargins(11, 11, 11, 11)
 
@@ -62,7 +65,6 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             self.widget
         )
 
-        # Choose Threading Card
         self.blockNumCard = RangeSettingCard(
             cfg.maxBlockNum,
             FIF.CLOUD,
@@ -71,8 +73,18 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             self.widget
         )
 
+        # Edit customHeaders Card
+        self.editHeadersCard = PushSettingCard(
+            "编辑请求标头",
+            FIF.EDIT,
+            "自定义请求标头",
+            "",
+            self.widget
+        )
+
         self.verticalLayout.insertWidget(4, self.downloadFolderCard)
         self.verticalLayout.insertWidget(5, self.blockNumCard)
+        self.verticalLayout.insertWidget(6, self.editHeadersCard)
 
         self.__connectSignalToSlot()
 
@@ -87,6 +99,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self.linkTextEdit.textChanged.connect(self.__onLinkTextChanged)
         self.__addTableRowSignal.connect(self.__addTableRow)
         self.__gotWrong.connect(self.__handleWrong)
+        self.editHeadersCard.clicked.connect(self.__onEditHeadersCardClicked)
 
     def __handleWrong(self, error: str, index: int):
         InfoBar.error(
@@ -95,10 +108,17 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
-            # position='Custom',   # NOTE: use custom info bar manager
             duration=10000,
             parent=self.parent()
         )
+
+    def __onEditHeadersCardClicked(self):
+        dialog = EditHeadersDialog(self, initialHeaders=self.customHeaders)
+        dialog.headersUpdated.connect(self.__onHeadersUpdated)
+        dialog.exec()
+
+    def __onHeadersUpdated(self, newHeaders):
+        self.customHeaders = newHeaders
 
     def __onYesButtonClicked(self):
         path = Path(self.downloadFolderCard.contentLabel.text())
@@ -118,7 +138,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
             signalBus.addTaskSignal.emit(item.data(1),
                                          str(path), self.blockNumCard.configItem.value,
-                                         item.text(), "working", Headers, False)
+                                         item.text(), "working", self.customHeaders, False)  # 使用新的 customHeaders
 
         self.close()
 
@@ -140,7 +160,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
             signalBus.addTaskSignal.emit(item.data(1),
                                          str(path), self.blockNumCard.configItem.value,
-                                         item.text(), "paused", Headers, False)
+                                         item.text(), "paused", self.customHeaders, False)  # 使用新的 customHeaders
 
         self.close()
 
@@ -153,7 +173,6 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
         self.downloadFolderCard.setContent(folder)
 
-
     def __onLinkTextChanged(self):
         if hasattr(self, '_timer'):
             self._timer.stop()
@@ -165,12 +184,11 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     def __handleUrl(self, url: str, index: int):
         try:
-            _url, fileName, fileSize = getLinkInfo(url, Headers)
+            _url, fileName, fileSize = getLinkInfo(url, self.customHeaders)
             self.__addTableRowSignal.emit(fileName, str(fileSize), url)  # 不希望使用重定向后的url，故使用原始url
-            
+        
         except Exception as e:
             self.__gotWrong.emit(repr(e), index)
-
 
     def __addTableRow(self, fileName: str, fileSize: str, url: str):
         """ add table row slot """
@@ -214,7 +232,6 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
                     orient=Qt.Horizontal,
                     isClosable=True,
                     position=InfoBarPosition.TOP,
-                    # position='Custom',   # NOTE: use custom info bar manager
                     duration=1000,
                     parent=self.parent()
                 )
@@ -224,7 +241,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
                 thread.start()
 
             Thread(target=self.__waitForThreads, daemon=True).start()
-            
+        
     def __waitForThreads(self):
         for thread in self.threads:
             thread.join()

@@ -10,7 +10,7 @@
 
 from PySide6.QtCore import (QCoreApplication)
 from PySide6.QtWidgets import (QHBoxLayout,
-                               QSizePolicy, QVBoxLayout, QAbstractItemView, QHeaderView)
+                               QSizePolicy, QVBoxLayout, QAbstractItemView, QHeaderView, QSpacerItem)
 
 from qfluentwidgets import (PillPushButton, PrimaryPushButton, PushButton, StrongBodyLabel,
                             SubtitleLabel, TextEdit, TableWidget, FluentIcon)
@@ -42,7 +42,7 @@ class Ui_UpdateDialog(object):
 
         self.horizontalLayout.addWidget(self.updatedDateLabel)
 
-        self.horizontalLayout.addSpacing(16777215)
+        self.horizontalLayout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
 
         self.sponsorButton = PillPushButton(UpdateDialog)
         self.sponsorButton.setObjectName(u"sponsorButton")
