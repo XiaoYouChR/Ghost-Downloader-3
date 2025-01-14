@@ -21,12 +21,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka
+          pip install nuitka==2.5.4
 
       - name: Build with Nuitka
         run: |
           mv main.py Ghost-Downloader-3.py
-          nuitka --enable-plugin=pyside6 --show-memory --output-dir=output --windows-disable-console --windows-icon-from-ico=images/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.4.6 --product-version=3.4.6 Ghost-Downloader-3.py
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --windows-console-mode=disable --windows-icon-from-ico=images/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.4.6 --product-version=3.4.6 Ghost-Downloader-3.py
 #          nuitka --module plugins/jy_os_page.py
 #          mv jy_os_page*.pyd output/
 
@@ -53,7 +53,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka
+          pip install nuitka==2.5.4
 
       - name: Build with Nuitka
         run: |
