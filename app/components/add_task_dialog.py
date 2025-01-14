@@ -69,7 +69,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             cfg.maxBlockNum,
             FIF.CLOUD,
             "下载线程数",
-            '下载线程越多，下载越快，同时也越吃性能',
+            '',
             self.widget
         )
 
@@ -210,38 +210,61 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     def __progressTextChange(self):
         """ link text changed slot """
-        # 清除所有行
-        self.taskTableWidget.setRowCount(0)
         self.threads = []
         
         self.yesButton.setEnabled(False)
 
         text: list = self.linkTextEdit.toPlainText().split("\n")
 
-        for index, url in enumerate(text, start=1):
+        # 获取当前输入的URL列表
+        currentUrls = [url.strip() for url in text if url.strip()]
+        # 获取之前的URL列表
+        previousUrls = [self.taskTableWidget.item(i, 0).data(1) for i in range(self.taskTableWidget.rowCount())]
 
-            _ = urlRe.search(url)
+        # 找出新增、删除和修改的URL
+        addedUrls = set(currentUrls) - set(previousUrls)
+        removedUrls = set(previousUrls) - set(currentUrls)
+        modifiedUrls = set(currentUrls).intersection(set(previousUrls))
 
-            if _:
-                self.threads.append(Thread(target=self.__handleUrl, args=(url, index), daemon=True))
+        # 删除被删除的URL的行（从后向前遍历）
+        for url in removedUrls:
+            for i in range(self.taskTableWidget.rowCount() - 1, -1, -1):  # 从后向前遍历
+                if self.taskTableWidget.item(i, 0).data(1) == url:
+                    self.taskTableWidget.removeRow(i)
+                    break
 
-            else:
-                InfoBar.warning(
-                    title='警告',
-                    content=f"第{index}个链接无效!",
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=1000,
-                    parent=self.parent()
-                )
+        # 重新生成被编辑过的URL的行
+        for url in modifiedUrls:
+            for i in range(self.taskTableWidget.rowCount()):
+                if self.taskTableWidget.item(i, 0).data(1) == url:
+                    item = self.taskTableWidget.item(i, 0)
+                    if item.text() != item.data(2):  # 如果用户修改了文件名
+                        self.__handleUrl(url, i + 1)  # 重新处理URL
+                    break
+
+        # 添加新增的URL的行
+        for index, url in enumerate(currentUrls, start=1):
+            if url in addedUrls:
+                _ = urlRe.search(url)
+                if _:
+                    self.threads.append(Thread(target=self.__handleUrl, args=(url, index), daemon=True))
+                else:
+                    InfoBar.warning(
+                        title='警告',
+                        content=f"第{index}个链接无效!",
+                        orient=Qt.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=1000,
+                        parent=self.parent()
+                    )
 
         if self.threads:
             for thread in self.threads:
                 thread.start()
 
             Thread(target=self.__waitForThreads, daemon=True).start()
-        
+    
     def __waitForThreads(self):
         for thread in self.threads:
             thread.join()
