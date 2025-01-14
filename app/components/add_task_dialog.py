@@ -160,7 +160,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
         self._timer = QTimer()
         self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self.__processTextChange)
+        self._timer.timeout.connect(self.__progressTextChange)
         self._timer.start(1000)  # 1秒后处理
 
     def __handleUrl(self, url: str, index: int):
@@ -190,7 +190,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         if item.text() == '':
             item.setText(item.data(2))
 
-    def __processTextChange(self):
+    def __progressTextChange(self):
         """ link text changed slot """
         # 清除所有行
         self.taskTableWidget.setRowCount(0)

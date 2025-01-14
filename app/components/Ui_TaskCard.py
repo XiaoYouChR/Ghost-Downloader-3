@@ -82,12 +82,12 @@ class Ui_TaskCard(object):
 
         self.statusHorizonLayout.addWidget(self.leftTimeLabel)
 
-        self.processLabel = IconBodyLabel("下载进度", FIF.LIBRARY, TaskCard)
-        self.processLabel.setObjectName(u"processLabel")
-        self.processLabel.setMinimumSize(QSize(0, 19))
-        self.processLabel.setMaximumSize(QSize(16777215, 19))
+        self.progressLabel = IconBodyLabel("下载进度", FIF.LIBRARY, TaskCard)
+        self.progressLabel.setObjectName(u"progressLabel")
+        self.progressLabel.setMinimumSize(QSize(0, 19))
+        self.progressLabel.setMaximumSize(QSize(16777215, 19))
 
-        self.statusHorizonLayout.addWidget(self.processLabel)
+        self.statusHorizonLayout.addWidget(self.progressLabel)
         self.statusHorizonLayout.addSpacing(1677215)
 
         self.verticalLayout_2.addLayout(self.statusHorizonLayout)  # 先加入 后期代码处理

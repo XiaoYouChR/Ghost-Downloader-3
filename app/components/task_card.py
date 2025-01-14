@@ -279,7 +279,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 隐藏 statusHorizontalLayout
         self.speedLabel.hide()
         self.leftTimeLabel.hide()
-        self.processLabel.hide()
+        self.progressLabel.hide()
 
         # 显示 infoLayout
         self.infoLabel.show()
@@ -290,9 +290,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.speedLabel.show()
         self.leftTimeLabel.show()
-        self.processLabel.show()
+        self.progressLabel.show()
 
-    def __updateProcess(self, content: list):
+    def __updateProgress(self, content: list):
         # 如果还在显示消息状态，则调用 __hideInfo
         if self.infoLabel.isVisible():
             self.__hideInfo()
@@ -304,12 +304,12 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.progressBar.addProgressBar(content, _)
 
             for e, i in enumerate(content):
-                self.progressBar.progressBarList[e].setValue(((i["process"] - i["start"]) / (i["end"] - i["start"])) * 100)
+                self.progressBar.progressBarList[e].setValue(((i["progress"] - i["start"]) / (i["end"] - i["start"])) * 100)
 
-            self.processLabel.setText(f"{getReadableSize(self.task.process)}/{getReadableSize(self.task.fileSize)}")
+            self.progressLabel.setText(f"{getReadableSize(self.task.progress)}/{getReadableSize(self.task.fileSize)}")
 
         else: # 不能并行下载
-            self.processLabel.setText(f"{getReadableSize(self.task.process)}")
+            self.progressLabel.setText(f"{getReadableSize(self.task.progress)}")
 
     def __UpdateSpeed(self, avgSpeed: int):
 
@@ -318,7 +318,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if self.ableToParallelDownload:
             # 计算剩余时间，并转换为 MM:SS
             try:
-                leftTime = (self.task.fileSize - self.task.process) / avgSpeed
+                leftTime = (self.task.fileSize - self.task.progress) / avgSpeed
                 self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
             except ZeroDivisionError:
                 self.leftTimeLabel.setText("Infinity")
@@ -363,21 +363,21 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         # 将暂停按钮改成校验按钮
         self.pauseButton.setIcon(FIF.UPDATE)
-        self.pauseButton.clicked.connect(self.runClacTask)
+        self.pauseButton.clicked.connect(self.runCalcTask)
         self.pauseButton.setDisabled(False)
         self.cancelButton.setDisabled(False)
 
         self.taskStatusChanged.emit()
 
-    def runClacTask(self):
+    def runCalcTask(self):
         self.__showInfo("正在校验MD5...")
-        self.clacTask = ClacMD5Thread(f"{self.filePath}/{self.fileName}")
-        self.clacTask.returnMD5.connect(lambda x: self.__showInfo(f"校验完成！文件的MD5值是：{x}"))
-        self.clacTask.start()
+        self.calcTask = CalcMD5Thread(f"{self.filePath}/{self.fileName}")
+        self.calcTask.returnMD5.connect(lambda x: self.__showInfo(f"校验完成！文件的MD5值是：{x}"))
+        self.calcTask.start()
 
     def __connectSignalToSlot(self):
         self.task.taskInited.connect(self.__onTaskInited)
-        self.task.workerInfoChanged.connect(self.__updateProcess)
+        self.task.workerInfoChanged.connect(self.__updateProgress)
         self.task.speedChanged.connect(self.__UpdateSpeed)
 
         self.task.taskFinished.connect(self.__onTaskFinished)
@@ -385,7 +385,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.task.gotWrong.connect(self.__onTaskError)
 
 
-class ClacMD5Thread(QThread):
+class CalcMD5Thread(QThread):
     returnMD5 = Signal(str)
 
     def __init__(self, fileResolvedPath: str, parent=None):

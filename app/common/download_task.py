@@ -18,9 +18,9 @@ from app.common.methods import getProxy, getReadableSize, getLinkInfo
 class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
 
-    def __init__(self, start, process, end, client: httpx.AsyncClient):
+    def __init__(self, start, progress, end, client: httpx.AsyncClient):
         self.startPos = start
-        self.process = process
+        self.progress = progress
         self.endPos = end
 
         self.client = client
@@ -40,7 +40,7 @@ class DownloadTask(QThread):
         super().__init__(parent)
 
         self.aioLock = asyncio.Lock()
-        self.process = 0
+        self.progress = 0
         self.url = url
         self.headers = headers
         self.fileName = fileName
@@ -68,8 +68,8 @@ class DownloadTask(QThread):
         maxRemainderWorker: DownloadWorker = None
 
         for i in self.workers:
-            if (i.endPos - i.process) > maxRemainder:  # TODO 其实逻辑有一点问题, 但是影响不大
-                maxRemainderWorkerProcess = i.process
+            if (i.endPos - i.progress) > maxRemainder:  # 其实逻辑有一点问题, 但是影响不大
+                maxRemainderWorkerProcess = i.progress
                 maxRemainderWorkerEnd = i.endPos
                 maxRemainder = (maxRemainderWorkerEnd - maxRemainderWorkerProcess)
                 maxRemainderWorker = i
@@ -82,9 +82,9 @@ class DownloadTask(QThread):
             maxRemainderWorker.endPos = maxRemainderWorkerProcess + baseShare + remainder  # 直接修改好像也不会怎么样
 
             # 安配新的工人
-            s_pos = maxRemainderWorkerProcess + baseShare + remainder + 1
+            startPos = maxRemainderWorkerProcess + baseShare + remainder + 1
 
-            newWorker = DownloadWorker(s_pos, s_pos, maxRemainderWorkerEnd, self.client)
+            newWorker = DownloadWorker(startPos, startPos, maxRemainderWorkerEnd, self.client)
 
             newTask = self.loop.create_task(self.__handleWorker(newWorker))
 
@@ -92,13 +92,13 @@ class DownloadTask(QThread):
             self.tasks.append(newTask)
 
             logger.info(
-                f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{newWorker}，新线程的StartPos：{s_pos}")
+                f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{newWorker}，新线程的StartPos：{startPos}")
 
         else:
             logger.info(
                 f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}")
 
-    def __clacDivisionalRange(self):
+    def __calcDivisionalRange(self):
         step = self.fileSize // self.preBlockNum  # 每块大小
         arr = list(range(0, self.fileSize, step))
 
@@ -106,16 +106,16 @@ class DownloadTask(QThread):
         if self.fileSize % self.preBlockNum == 0:
             arr.append(self.fileSize)
 
-        step_list = []
+        stepList = []
 
         for i in range(len(arr) - 1):  #
 
-            s_pos, e_pos = arr[i], arr[i + 1] - 1
-            step_list.append([s_pos, e_pos])
+            startPos, endPos = arr[i], arr[i + 1] - 1
+            stepList.append([startPos, endPos])
 
-        step_list[-1][-1] = self.fileSize - 1  # 修正
+        stepList[-1][-1] = self.fileSize - 1  # 修正
 
-        return step_list
+        return stepList
 
     def __getLinkInfo(self):
         try:
@@ -161,40 +161,40 @@ class DownloadTask(QThread):
 
             except Exception as e:
                 logger.error(f"Failed to load workers: {e}")
-                stepList = self.__clacDivisionalRange()
+                stepList = self.__calcDivisionalRange()
 
                 for i in range(self.preBlockNum):
                     self.workers.append(
                         DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
         else:
-            stepList = self.__clacDivisionalRange()
+            stepList = self.__calcDivisionalRange()
 
             for i in range(self.preBlockNum):
                 self.workers.append(
                     DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
 
     async def __handleWorker(self, worker: DownloadWorker):
-        if worker.process < worker.endPos:  # 因为可能会创建空线程
+        if worker.progress < worker.endPos:  # 因为可能会创建空线程
             finished = False
             while not finished:
                 try:
-                    download_headers = self.headers.copy()
+                    workingRangeHeaders = self.headers.copy()
 
-                    download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
+                    workingRangeHeaders["range"] = f"bytes={worker.progress}-{worker.endPos}"  # 添加范围
 
-                    async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
+                    async with worker.client.stream(url=self.url, headers=workingRangeHeaders, timeout=30,
                                                     method="GET") as res:
                         async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
-                            if worker.endPos <= worker.process:
+                            if worker.endPos <= worker.progress:
                                 break
                             if chunk:
                                 async with self.aioLock:
-                                    await self.file.seek(worker.process)
+                                    await self.file.seek(worker.progress)
                                     await self.file.write(chunk)
-                                    worker.process += 65536
+                                    worker.progress += 65536
 
-                    if worker.process >= worker.endPos:
-                        worker.process = worker.endPos
+                    if worker.progress >= worker.endPos:
+                        worker.progress = worker.endPos
 
                     finished = True
 
@@ -206,25 +206,25 @@ class DownloadTask(QThread):
 
                     await asyncio.sleep(5)
 
-            worker.process = worker.endPos
+            worker.progress = worker.endPos
 
         self.__reassignWorker()
 
     async def __handleWorkerWhenUnableToParallelDownload(self, worker: DownloadWorker):
-        if worker.process < worker.endPos:  # 因为可能会创建空线程
+        if worker.progress < worker.endPos:  # 因为可能会创建空线程
             finished = False
             while not finished:
                 try:
-                    download_headers = self.headers.copy()
-                    async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
+                    WorkingRangeHeaders = self.headers.copy()
+                    async with worker.client.stream(url=self.url, headers=WorkingRangeHeaders, timeout=30,
                                                     method="GET") as res:
                         async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
 
                             if chunk:
                                 async with self.aioLock:
-                                    await self.file.seek(worker.process)
+                                    await self.file.seek(worker.progress)
                                     await self.file.write(chunk)
-                                    worker.process += len(chunk)
+                                    worker.progress += len(chunk)
 
                     self.ableToParallelDownload = True # 事实上用来表示任务已经完成
 
@@ -238,13 +238,13 @@ class DownloadTask(QThread):
 
                     await asyncio.sleep(5)
 
-            worker.process = worker.endPos
+            worker.progress = worker.endPos
 
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
         for i in self.workers:
-            self.process += (i.process - i.startPos + 1)
-            LastProcess = self.process
+            self.progress += (i.progress - i.startPos + 1)
+            LastProcess = self.progress
 
         if self.ableToParallelDownload:
             if self.autoSpeedUp:
@@ -254,21 +254,21 @@ class DownloadTask(QThread):
                 formerAvgSpeed = 0 # 提速之前的平均速度
                 duringTime = 0 # 计算平均速度的时间间隔, 为 10 秒
 
-            while not self.process == self.fileSize:
+            while not self.progress == self.fileSize:
 
                 info = []
                 # 记录每块信息
                 await self.ghdFile.seek(0)
 
-                self.process = 0
+                self.progress = 0
 
                 for i in self.workers:
-                    info.append({"start": i.startPos, "process": i.process, "end": i.endPos})
+                    info.append({"start": i.startPos, "progress": i.progress, "end": i.endPos})
 
-                    self.process += (i.process - i.startPos + 1)
+                    self.progress += (i.progress - i.startPos + 1)
 
                     # 保存 workers 信息为二进制格式
-                    data = struct.pack("<QQQ", i.startPos, i.process, i.endPos)
+                    data = struct.pack("<QQQ", i.startPos, i.progress, i.endPos)
                     await self.ghdFile.write(data)
 
                 await self.ghdFile.flush()
@@ -277,9 +277,9 @@ class DownloadTask(QThread):
                 self.workerInfoChanged.emit(info)
 
                 # 计算速度
-                speed = (self.process - LastProcess)
-                # print(f"speed: {speed}, process: {self.process}, LastProcess: {LastProcess}")
-                LastProcess = self.process
+                speed = (self.progress - LastProcess)
+                # print(f"speed: {speed}, progress: {self.progress}, LastProcess: {LastProcess}")
+                LastProcess = self.progress
                 self.historySpeed.pop(0)
                 self.historySpeed.append(speed)
                 avgSpeed = sum(self.historySpeed) / 10
@@ -319,16 +319,16 @@ class DownloadTask(QThread):
                 await asyncio.sleep(1)
         else:
             while not self.ableToParallelDownload:  # 实际上此时 self.ableToParallelDownload 用于记录任务是否完成
-                self.process = 0
+                self.progress = 0
 
                 for i in self.workers:
-                    self.process += (i.process - i.startPos + 1)
+                    self.progress += (i.progress - i.startPos + 1)
 
                 self.workerInfoChanged.emit([])
 
                 # 计算速度
-                speed = (self.process - LastProcess)
-                LastProcess = self.process
+                speed = (self.progress - LastProcess)
+                LastProcess = self.progress
                 self.historySpeed.pop(0)
                 self.historySpeed.append(speed)
                 avgSpeed = sum(self.historySpeed) / 10
@@ -375,7 +375,7 @@ class DownloadTask(QThread):
                 logger.info(f"Task {self.fileName} finished!")
                 self.taskFinished.emit()
 
-            if self.process == self.fileSize:
+            if self.progress == self.fileSize:
                 # 下载完成时删除历史记录文件, 防止没下载完时误删
                 try:
                     Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
