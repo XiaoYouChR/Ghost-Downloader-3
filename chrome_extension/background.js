@@ -111,15 +111,15 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
         chrome.storage.local.get(["shouldDisableExtension"], (result) => {
             if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
                 console.log("Download started: ", downloadItem);
-                if (downloadItem.url.startsWith("http")) {
+                if (downloadItem.finalUrl.startsWith("http")) {
                     chrome.downloads.cancel(downloadItem.id);
 
                     // 从映射表中获取对应的请求头
-                    const requestHeaders = requestHeadersMap.get(downloadItem.url) || {};
+                    const requestHeaders = requestHeadersMap.get(downloadItem.finalUrl) || {};
 
                     // 构造完整的请求信息
                     const requestInfo = {
-                        url: downloadItem.url,
+                        url: downloadItem.finalUrl,
                         headers: requestHeaders,
                     };
 
