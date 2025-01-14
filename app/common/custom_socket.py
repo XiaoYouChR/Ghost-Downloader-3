@@ -45,7 +45,6 @@ class GhostDownloaderSocketServer(QObject):
     @Slot(str)
     def processTextMessage(self, message: str):
         """处理客户端发送的消息"""
-
         try:
             data = json.loads(message)
             if data.get("type") == "heartbeat":

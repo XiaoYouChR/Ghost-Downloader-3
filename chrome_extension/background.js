@@ -155,7 +155,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         urls: ["<all_urls>"], // 监听所有请求
         types: ["main_frame", "sub_frame", "xmlhttprequest", "other"], // 资源类型
     },
-    ["requestHeaders"] // 需要访问请求头
+    ["requestHeaders", "extraHeaders"] // 需要访问请求头
 );
 
 // 修改 sendDownloadInfo 函数，将请求信息发送到 WebSocket
