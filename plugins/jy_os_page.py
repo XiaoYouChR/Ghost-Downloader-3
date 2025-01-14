@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import httpx
-from PySide6.QtCore import Qt, QThread, Signal, QDir, QUrl, QSize, QMetaObject, QCoreApplication
+from PySide6.QtCore import Qt, QThread, Signal, QDir, QUrl, QSize, QCoreApplication
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
 from loguru import logger
@@ -319,7 +319,6 @@ class Ui_SystemInfoCard(object):
 
         self.retranslateUi(SystemInfoCard)
 
-        QMetaObject.connectSlotsByName(SystemInfoCard)
 
     # setupUi
 

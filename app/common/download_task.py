@@ -179,34 +179,22 @@ class DownloadTask(QThread):
             while not finished:
                 try:
                     download_headers = self.headers.copy()
-                    if self.ableToParallelDownload:
-                        download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
 
-                        async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
-                                                        method="GET") as res:
-                            async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
-                                if worker.endPos <= worker.process:
-                                    break
-                                if chunk:
-                                    async with self.aioLock:
-                                        await self.file.seek(worker.process)
-                                        await self.file.write(chunk)
-                                        worker.process += 65536
+                    download_headers["range"] = f"bytes={worker.process}-{worker.endPos}"  # 添加范围
 
-                        if worker.process >= worker.endPos and self.ableToParallelDownload:
-                            worker.process = worker.endPos
-                    else:
-                        async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
-                                                        method="GET") as res:
-                            async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
+                    async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
+                                                    method="GET") as res:
+                        async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
+                            if worker.endPos <= worker.process:
+                                break
+                            if chunk:
+                                async with self.aioLock:
+                                    await self.file.seek(worker.process)
+                                    await self.file.write(chunk)
+                                    worker.process += 65536
 
-                                if chunk:
-                                    async with self.aioLock:
-                                        await self.file.seek(worker.process)
-                                        await self.file.write(chunk)
-                                        worker.process += len(chunk)
-
-                        self.ableToParallelDownload = True # 事实上用来表示任务已经完成
+                    if worker.process >= worker.endPos:
+                        worker.process = worker.endPos
 
                     finished = True
 
@@ -220,8 +208,37 @@ class DownloadTask(QThread):
 
             worker.process = worker.endPos
 
-        if self.ableToParallelDownload:
-            self.__reassignWorker()
+        self.__reassignWorker()
+
+    async def __handleWorkerWhenUnableToParallelDownload(self, worker: DownloadWorker):
+        if worker.process < worker.endPos:  # 因为可能会创建空线程
+            finished = False
+            while not finished:
+                try:
+                    download_headers = self.headers.copy()
+                    async with worker.client.stream(url=self.url, headers=download_headers, timeout=30,
+                                                    method="GET") as res:
+                        async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
+
+                            if chunk:
+                                async with self.aioLock:
+                                    await self.file.seek(worker.process)
+                                    await self.file.write(chunk)
+                                    worker.process += len(chunk)
+
+                    self.ableToParallelDownload = True # 事实上用来表示任务已经完成
+
+                    finished = True
+
+                except httpx.HTTPError as e:
+                    logger.info(
+                        f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
+
+                    self.gotWrong.emit(repr(e))
+
+                    await asyncio.sleep(5)
+
+            worker.process = worker.endPos
 
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
@@ -325,16 +342,19 @@ class DownloadTask(QThread):
             # 打开下载文件
             self.file = await aiofiles.open(f"{self.filePath}/{self.fileName}", "rb+")
 
-            # 启动 Worker
-            for i in self.workers:
-                logger.debug(f"Task {self.fileName}, starting the thread {i}...")
-
-                _ = asyncio.create_task(self.__handleWorker(i))
-
-                self.tasks.append(_)
-
             if self.ableToParallelDownload:
+                for i in self.workers:  # 启动 Worker
+                    logger.debug(f"Task {self.fileName}, starting the thread {i}...")
+
+                    _ = asyncio.create_task(self.__handleWorker(i))
+
+                    self.tasks.append(_)
+
                 self.ghdFile = await aiofiles.open(f"{self.filePath}/{self.fileName}.ghd", "wb")
+            else:
+                logger.debug(f"Task {self.fileName}, starting single thread...")
+                _ = asyncio.create_task(self.__handleWorkerWhenUnableToParallelDownload(self.workers[0]))
+                self.tasks.append(_)
 
             self.supervisorTask = asyncio.create_task(self.__supervisor())
 

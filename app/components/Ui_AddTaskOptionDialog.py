@@ -8,7 +8,7 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
+from PySide6.QtCore import (QCoreApplication, QSize, Qt)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QTableWidgetItem, QVBoxLayout, QApplication, QHeaderView)
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (PushButton, SubtitleLabel,
@@ -123,7 +123,6 @@ class Ui_AddTaskOptionDialog(object):
 
         self.retranslateUi(AddTaskOptionDialog)
 
-        QMetaObject.connectSlotsByName(AddTaskOptionDialog)
     # setupUi
 
     def retranslateUi(self, AddTaskOptionDialog):

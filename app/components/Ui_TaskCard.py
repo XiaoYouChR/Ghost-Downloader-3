@@ -8,7 +8,7 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QSize, Qt)
+from PySide6.QtCore import (QCoreApplication, QSize, Qt)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
@@ -139,7 +139,6 @@ class Ui_TaskCard(object):
 
         self.retranslateUi(TaskCard)
 
-        QMetaObject.connectSlotsByName(TaskCard)
 
     # setupUi
 
