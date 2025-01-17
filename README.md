@@ -20,7 +20,6 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![License][license-shield]][license-url]
 [![Release][release-shield]][release-url]
 [![Downloads][downloads-shield]][release-url]
 
@@ -136,8 +135,6 @@ Copyright © 2025 XiaoYouChR.
 [stars-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/stargazers
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
-[license-shield]: https://img.shields.io/github/license/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
-[license-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/blob/master/LICENSE
 [product-screenshot]: images/screenshot.png
 [release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
 [release-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest
