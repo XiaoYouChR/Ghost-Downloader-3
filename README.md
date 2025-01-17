@@ -54,7 +54,7 @@
   - ✅ 用协程来代替部分多线程功能
 - ❌ 开放捐赠入口
 - ❌ 磁力 / BT 下载
-- ❌ 插件市场3
+- ❌ 插件市场
 - ❌ 全局限速（还没找到一个合适的实现方法）
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
