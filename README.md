@@ -1,3 +1,9 @@
+> [!NOTE]
+> 在开发环境中运行 `main.py` 时请加上 `--debug` 形参。
+
+> [!TIP]
+> 由于项目开发者高三冲刺，项目更新十分缓慢😭 可加 QQ 群获取项目作者最新消息: <a href="https://qm.qq.com/q/PlUBdzqZCm">531928387</a>
+
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -5,40 +11,26 @@
     <img src="images/logo.png" alt="Logo" width="100" height="100">
   </a>
 
-<h3 align="center">Ghost-Downloader 3</h3>
+<h1 align="center">Ghost Downloader</h1>
 
-[![Contributors][contributors-shield]][contributors-url]
+<p>
+    AI 赋能的新一代跨平台多线程下载器
+</p>
+
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
+[![Release][release-shield]][release-url]
+[![Downloads][downloads-shield]][release-url]
 
-  <p align="center">
-    AI 赋能的基于 PySide6 的新一代多线程下载器, 使用 QThread 实现多线程功能
-    <br />
-    由于项目开发者高三开学，项目更新十分缓慢😭 可加QQ群获取项目作者最新消息: 531928387
-    <br />
-    <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-    ·
-    <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
-  </p>
+
+<p>
+  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+·    
+  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+</p>
 </div>
-
-
-
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>目录</summary>
-  <ol>
-    <li><a href="#关于本项目">关于本项目</a></li>
-    <li><a href="#须知">须知</a></li>
-    <li><a href="#计划">计划</a></li>
-    <li><a href="#贡献">贡献</a></li>
-    <li><a href="#许可证">许可证</a></li>
-    <li><a href="#联系">联系</a></li>
-    <li><a href="#致谢">致谢</a></li>
-  </ol>
-</details>
 
 
 
@@ -47,10 +39,7 @@
 
 [![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
-在兴趣驱动下完成的一个下载器，是本人的第一个Python项目😫，本来的目的是帮B站上一位UP主做资源整合的😵。支持多线程下载、AI加速、断点续传、下载记录、校验文件等功能。特点是能像IDM一样智能分块但又不需要合并文件，还有 AI 自动调整线程数的功能。但是Python和Qt💩一样的内存占用成为项目很大的槽点😭不过得益于Python人人都可以开发的特性。本项目未来将会开放插件功能，发挥Python最大的优势。
-
-## 须知
-* 在开发环境中运行 `main.py` 时请加上 `--debug` 实参。
+在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😫，本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵。支持多线程下载、智能加速、断点续传、下载记录、校验文件等功能。特点是能像 IDM 一样智能分块但又不需要合并文件，还有智能加速的功能。但是 Python 和 Qt 💩一样的内存占用成为项目很大的槽点😭不过得益于 Python 人人都可以开发的特性。本项目未来将会开放插件功能，发挥 Python 最大的优势。
 
 
 <!-- ROADMAP -->
@@ -85,39 +74,62 @@
 4. 推送到该分支 (git push origin feature/AmazingFeature)
 5. 创建一个拉取请求（Pull Request）
 
+感谢所有为该项目做出贡献的人！
+
+[![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 <!-- LICENSE -->
 ## 许可证
 
 根据 GPL v3.0 许可证分发。打开 `LICENSE` 查看更多内容。
 
-
-
-
+Copyright © 2025 XiaoYouChR.
 
 <!-- CONTACT -->
 ## 联系
 
-* [@晓游ChR](https://space.bilibili.com/437313511) - XiaoYouChR@outlook.com
-
+* [E-mail](mailto:XiaoYouChR@qq.com) - XiaoYouChR@qq.com
+* [QQ 群](https://qm.qq.com/q/PlUBdzqZCm) - 531928387
 
 <!-- ACKNOWLEDGMENTS -->
 ## 引用
 
 * [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大且方便的 UI 库
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)  方便的 README 模板
+* [Httpx](https://github.com/projectdiscovery/httpx) A fast and multi-purpose HTTP toolkit
+* [Aiofiles](https://github.com/Tinche/aiofiles) File support for asyncio
+* [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
+* [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
+* [PySide6](https://github.com/PySide/pyside-setup) The official Python module
+* [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
+
 
 ## 致谢
 
 * [@ZhiYiyo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
 * [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本
 
+<picture>
+  <source
+    media="(prefers-color-scheme: dark)"
+    srcset="
+      https://api.star-history.com/svg?repos=XiaoYouChR/Ghost-Downloader-3&type=Date&theme=dark
+    "
+  />
+  <source
+    media="(prefers-color-scheme: light)"
+    srcset="
+      https://api.star-history.com/svg?repos=XiaoYouChR/Ghost-Downloader-3&type=Date&theme=dark
+    "
+  />
+  <img
+    alt="Star History Chart"
+    src="https://api.star-history.com/svg?repos=XiaoYouChR/Ghost-Downloader-3&type=Date&theme=dark"
+  />
+</picture>
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
-[contributors-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [forks-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/network/members
 [stars-shield]: https://img.shields.io/github/stars/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
@@ -127,3 +139,6 @@
 [license-shield]: https://img.shields.io/github/license/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [license-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/blob/master/LICENSE
 [product-screenshot]: images/screenshot.png
+[release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
+[release-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest
+[downloads-shield]: https://img.shields.io/github/downloads/XiaoYouChR/Ghost-Downloader-3/total?style=for-the-badge
