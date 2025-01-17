@@ -1,10 +1,11 @@
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QVBoxLayout
-from qfluentwidgets import FluentStyleSheet, MaskDialogBase, InfoBar, InfoBarPosition, PrimaryPushButton, \
+from qfluentwidgets import FluentStyleSheet, InfoBar, InfoBarPosition, PrimaryPushButton, \
     SubtitleLabel
 
 from app.components.disabled_rich_text_edit import DisabledRichTextEdit
+from app.components.fixed_mask_dialog_base import MaskDialogBase
 
 
 class EditHeadersDialog(MaskDialogBase):

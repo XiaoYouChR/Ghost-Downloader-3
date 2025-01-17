@@ -3,11 +3,12 @@ import sys
 
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QFileDialog, QApplication
-from qfluentwidgets import FluentStyleSheet, MaskDialogBase
+from qfluentwidgets import FluentStyleSheet
 
 from app.common.methods import openFile
 from app.common.signal_bus import signalBus
 from app.components.Ui_PlanTaskDialog import Ui_PlanTaskDialog
+from app.components.fixed_mask_dialog_base import MaskDialogBase
 
 
 class PlanTaskDialog(MaskDialogBase, Ui_PlanTaskDialog):

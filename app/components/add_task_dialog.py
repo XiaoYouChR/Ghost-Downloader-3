@@ -8,9 +8,9 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QFileDialog, QTableWidgetItem
 from qfluentwidgets import PushSettingCard, RangeSettingCard, MessageBox, InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.common.icon import FluentIcon as FIF
-from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.components.edit_headers_dialog import EditHeadersDialog  # 添加导入
+from app.components.fixed_mask_dialog_base import MaskDialogBase
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo

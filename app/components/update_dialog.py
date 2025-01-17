@@ -4,12 +4,12 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QTableWidgetItem
 from loguru import logger
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentStyleSheet
-from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.common.config import VERSION, cfg, Headers
 from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize
 from app.common.signal_bus import signalBus
 from app.components.Ui_UpdateDialog import Ui_UpdateDialog
+from app.components.fixed_mask_dialog_base import MaskDialogBase
 
 
 class GetUpdateThread(QThread):
