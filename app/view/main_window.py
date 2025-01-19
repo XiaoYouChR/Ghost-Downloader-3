@@ -6,8 +6,8 @@ from ctypes import byref, c_int
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QUrl, Slot, SignalInstance
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
@@ -97,6 +97,8 @@ class MainWindow(MSFluentWindow):
             checkUpdate(self)
 
         self.splashScreen.finish()
+        self.drop_timmer = QTimer()
+        self.drop_timmer.timeout.connect(self._showAddTaskBox)
 
     def runBrowserExtensionServer(self):
         if not self.browserExtensionServer:
@@ -191,10 +193,16 @@ class MainWindow(MSFluentWindow):
 
         QApplication.processEvents()
 
-
     def showAddTaskBox(self):
         w = AddTaskOptionDialog(self)
         w.exec()
+
+    def _showAddTaskBox(self):
+        text = self.urls_text
+        w = AddTaskOptionDialog(self)
+        w.linkTextEdit.setText(text)
+        w.exec()
+        self.drop_timmer.stop()
 
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
@@ -215,3 +223,24 @@ class MainWindow(MSFluentWindow):
                 return True, 0
 
         return super().nativeEvent(eventType, message)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        logger.debug(f'Get event: {event}')
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        urls = event.mimeData().urls()  # type: list[QUrl]
+        urls_text = '\n'.join([url.toString() for url in urls])
+        self.urls_text = urls_text
+        event.accept()
+        # logger.debug('Event accepted')
+        logger.debug(f'Drop Urls: {urls},\n\tand text: {urls_text}')
+        # logger.debug(f'Event status: {event.isAccepted()}')
+        # logger.debug('Event emitted')
+        self.drop_timmer.start(1000)
+        # QApplication.processEvents()
+
+# https://github.com/XiaoYouChR/Ghost-Downloader-3
