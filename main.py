@@ -113,6 +113,7 @@ if sys.platform == "linux":
     
 # create main window
 w = MainWindow()
+w.setAcceptDrops(True)
 
 # loading plugins
 pluginsPath=os.path.join(cfg.appPath, "plugins")
