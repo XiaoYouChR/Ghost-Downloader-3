@@ -55,6 +55,7 @@ class Config(QConfig):
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
+    clipboardListenerCard = ConfigItem("Download", "ClipboardListener", True, BoolValidator())
 
     # browser
     enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())

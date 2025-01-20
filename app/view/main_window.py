@@ -264,11 +264,13 @@ class MainWindow(MSFluentWindow):
     def __checkUrl(self, url):
         try:
             res = urllib.parse.urlparse(url)
-            return res.scheme in ['http', 'https'] # 保证是http/s协议
+            return res.scheme in ['http', 'https']  # 保证是http/s协议
         except ValueError:
             return False
 
     def __clipboardChanged(self):
+        if not cfg.clipboardListenerCard.value:
+            return
         text = self.clipboard.text()
         if text.isspace():
             logger.debug("None in clipboard")
@@ -289,7 +291,7 @@ class MainWindow(MSFluentWindow):
 
     def __bringToTop(self):
         self.showNormal()
-        self.raise_()
         self.activateWindow()
+        self.raise_()
 
 # https://github.com/XiaoYouChR/Ghost-Downloader-3

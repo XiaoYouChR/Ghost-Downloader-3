@@ -315,6 +315,13 @@ class SettingInterface(SmoothScrollArea):
             configItem=cfg.autoRun,
             parent=self.updateSoftwareGroup
         )
+        self.clipboardListenerCard = SwitchSettingCard(
+            FIF.PASTE,
+            "剪贴板监听",
+            "剪贴板监听器将自动检测剪贴板中的链接并添加下载任务",
+            configItem=cfg.clipboardListenerCard,
+            parent=self.updateSoftwareGroup
+        )
 
         # application
         self.aboutGroup = SettingCardGroup("关于", self.scrollWidget)
@@ -386,6 +393,7 @@ class SettingInterface(SmoothScrollArea):
 
         self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
         self.updateSoftwareGroup.addSettingCard(self.autoRunCard)
+        self.updateSoftwareGroup.addSettingCard(self.clipboardListenerCard)
 
         self.aboutGroup.addSettingCard(self.authorCard)
         self.aboutGroup.addSettingCard(self.feedbackCard)
