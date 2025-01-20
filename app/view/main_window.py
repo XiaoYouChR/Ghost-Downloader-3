@@ -7,7 +7,7 @@ from pathlib import Path
 
 import darkdetect
 from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QUrl, Slot, SignalInstance
-from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
@@ -97,8 +97,8 @@ class MainWindow(MSFluentWindow):
             checkUpdate(self)
 
         self.splashScreen.finish()
-        self.drop_timmer = QTimer()
-        self.drop_timmer.timeout.connect(self._showAddTaskBox)
+        self.dropTimmer = QTimer()
+        self.dropTimmer.timeout.connect(self._showAddTaskBox)
 
     def runBrowserExtensionServer(self):
         if not self.browserExtensionServer:
@@ -198,11 +198,11 @@ class MainWindow(MSFluentWindow):
         w.exec()
 
     def _showAddTaskBox(self):
-        text = self.urls_text
+        text = self.urlsText
         w = AddTaskOptionDialog(self)
         w.linkTextEdit.setText(text)
         w.exec()
-        self.drop_timmer.stop()
+        self.dropTimmer.stop()
 
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
@@ -226,21 +226,33 @@ class MainWindow(MSFluentWindow):
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         logger.debug(f'Get event: {event}')
-        if event.mimeData().hasUrls():
+        if event.mimeData().hasUrls() or event.mimeData().hasText():
             event.acceptProposedAction()
         else:
             event.ignore()
 
+    def __setUrlsAndShowAddTaskBox(self, text):
+        self.urlsText = text
+        self.dropTimmer.start(1000)
+
     def dropEvent(self, event: QDropEvent):
-        urls = event.mimeData().urls()  # type: list[QUrl]
-        urls_text = '\n'.join([url.toString() for url in urls])
-        self.urls_text = urls_text
+        mime = event.mimeData()
+        if mime.hasUrls():
+            urls = mime.urls()
+            text = '\n'.join([url.toString() for url in urls])
+        elif mime.hasText():
+            text = mime.text()
+        else:
+            return
+        self.__setUrlsAndShowAddTaskBox(text)
         event.accept()
-        # logger.debug('Event accepted')
-        logger.debug(f'Drop Urls: {urls},\n\tand text: {urls_text}')
-        # logger.debug(f'Event status: {event.isAccepted()}')
-        # logger.debug('Event emitted')
-        self.drop_timmer.start(1000)
-        # QApplication.processEvents()
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Paste):
+            text = QApplication.clipboard().text()
+            self.__setUrlsAndShowAddTaskBox(text)
+        else:
+            super().keyPressEvent(event)
+
 
 # https://github.com/XiaoYouChR/Ghost-Downloader-3
