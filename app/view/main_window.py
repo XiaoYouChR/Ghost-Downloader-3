@@ -2,7 +2,6 @@
 import ctypes
 import pickle
 import sys
-import urllib.parse
 from ctypes import byref, c_int
 from pathlib import Path
 
@@ -16,8 +15,9 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg
+from ..common.config import cfg, Headers, attachmentTypes
 from ..common.custom_socket import GhostDownloaderSocketServer
+from ..common.methods import getLinkInfo
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
@@ -222,11 +222,11 @@ class MainWindow(MSFluentWindow):
         w.exec()
 
     def __showAddTaskBox(self):
+        self.dropTimmer.stop()
         text = self.urlsText
         w = AddTaskOptionDialog(self)
         w.linkTextEdit.setText(text)
         w.exec()
-        self.dropTimmer.stop()
 
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
@@ -280,14 +280,15 @@ class MainWindow(MSFluentWindow):
 
     def __checkUrl(self, url):
         try:
-            res = urllib.parse.urlparse(url)
-            return res.scheme in ['http', 'https']  # 保证是http/s协议
+            _, fileName, __ = getLinkInfo(url, Headers)
+            if fileName.lower().endswith(tuple(attachmentTypes.split())):
+                return url
+
+            return
         except ValueError:
             return False
 
     def __clipboardChanged(self):
-        if not cfg.enableClipboardListener.value:
-            return
         text = self.clipboard.text()
         if text.isspace():
             logger.debug("None in clipboard")
@@ -310,5 +311,3 @@ class MainWindow(MSFluentWindow):
         self.showNormal()
         self.activateWindow()
         self.raise_()
-
-# https://github.com/XiaoYouChR/Ghost-Downloader-3
