@@ -17,7 +17,7 @@ from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo
+from ..common.methods import getLinkInfo, bringWindowToTop
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
@@ -304,10 +304,5 @@ class MainWindow(MSFluentWindow):
             return
         ans = '\n'.join(results)
         logger.debug(f"Clipboard changed: {ans}")
-        self.__bringToTop()
+        bringWindowToTop(self)
         self.__setUrlsAndShowAddTaskBox(ans)
-
-    def __bringToTop(self):
-        self.showNormal()
-        self.activateWindow()
-        self.raise_()
