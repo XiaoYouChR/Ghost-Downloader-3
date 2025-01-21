@@ -62,6 +62,9 @@ class MainWindow(MSFluentWindow):
         # add items to navigation interface
         self.initNavigation()
 
+        # 允许拖拽
+        self.setAcceptDrops(True)
+
         # 设置背景特效
         self.applyBackgroundEffectByCfg()
 
@@ -86,26 +89,40 @@ class MainWindow(MSFluentWindow):
         else:
             historyFile.touch()
 
-        # 启动浏览器扩展服务器
+        # 启动浏览器扩展服务器和剪切板监听器
         self.browserExtensionServer = None
+        self.clipboard = None
 
-        if cfg.enableBrowserExtension.value == True:
+        if cfg.enableBrowserExtension.value:
             self.runBrowserExtensionServer()
+
+        if cfg.enableClipboardListener.value:
+            self.runClipboardListener()
 
         # 创建托盘
         self.tray = CustomSystemTrayIcon(self)
         self.tray.show()
 
         # 检查更新
-        if cfg.checkUpdateAtStartUp.value == True:
+        if cfg.checkUpdateAtStartUp.value:
             checkUpdate(self)
 
         self.splashScreen.finish()
         self.dropTimmer = QTimer()
         self.dropTimmer.timeout.connect(self.__showAddTaskBox)
-        self.clipboard = QApplication.clipboard()
-        self.clipboard.dataChanged.connect(self.__clipboardChanged)
+
+
         self.urlsText = ''
+
+    def runClipboardListener(self):
+        if not self.clipboard:
+            self.clipboard = QApplication.clipboard()
+            self.clipboard.dataChanged.connect(self.__clipboardChanged)
+
+    def stopClipboardListener(self):
+            self.clipboard.dataChanged.disconnect(self.__clipboardChanged)
+            self.clipboard.deleteLater()
+            self.clipboard = None
 
     def runBrowserExtensionServer(self):
         if not self.browserExtensionServer:
@@ -269,7 +286,7 @@ class MainWindow(MSFluentWindow):
             return False
 
     def __clipboardChanged(self):
-        if not cfg.clipboardListenerCard.value:
+        if not cfg.enableClipboardListener.value:
             return
         text = self.clipboard.text()
         if text.isspace():

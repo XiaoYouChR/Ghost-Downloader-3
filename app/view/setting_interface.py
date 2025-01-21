@@ -319,7 +319,7 @@ class SettingInterface(SmoothScrollArea):
             FIF.PASTE,
             "剪贴板监听",
             "剪贴板监听器将自动检测剪贴板中的链接并添加下载任务",
-            configItem=cfg.clipboardListenerCard,
+            configItem=cfg.enableClipboardListener,
             parent=self.updateSoftwareGroup
         )
 
@@ -436,6 +436,12 @@ class SettingInterface(SmoothScrollArea):
             self.window().runBrowserExtensionServer()
         if not value:
             self.window().stopBrowserExtensionServer()
+
+    def __onClipboardListenerCardChecked(self, value: bool):
+        if value:
+            self.window().runClipboardListener()
+        else:
+            self.window().stopClipboardListener()
 
     def __onInstallExtensionCardClicked(self):
         """ install extension card clicked slot """
