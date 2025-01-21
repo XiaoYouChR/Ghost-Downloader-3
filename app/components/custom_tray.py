@@ -5,6 +5,8 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qfluentwidgets.components.material import AcrylicMenu
 
+from app.common.methods import bringWindowToTop
+
 
 class FixedAcrylicSystemTrayMenu(AcrylicMenu):
     """ 修复背景获取偏移、位置偏移的问题 """
@@ -56,11 +58,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         self.messageClicked.connect(self.__onShowActionTriggered)
 
     def __onShowActionTriggered(self):
-        self.parent().show()
-        if self.parent().isMinimized():
-            self.parent().showNormal()
-        # 激活窗口，使其显示在最前面
-        self.parent().activateWindow()
+        bringWindowToTop(self.parent())
 
     def __onAllStartActionTriggered(self):
         self.parent().taskInterface.allStartTasks()

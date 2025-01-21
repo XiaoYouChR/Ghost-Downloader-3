@@ -7,7 +7,7 @@ from pathlib import Path
 
 import darkdetect
 from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
@@ -15,8 +15,9 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg
+from ..common.config import cfg, Headers, attachmentTypes
 from ..common.custom_socket import GhostDownloaderSocketServer
+from ..common.methods import getLinkInfo, bringWindowToTop
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
@@ -39,6 +40,7 @@ class CustomSplashScreen(SplashScreen):
 
 class ThemeChangedListener(QThread):
     themeChanged = Signal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -60,6 +62,9 @@ class MainWindow(MSFluentWindow):
         # add items to navigation interface
         self.initNavigation()
 
+        # 允许拖拽
+        self.setAcceptDrops(True)
+
         # 设置背景特效
         self.applyBackgroundEffectByCfg()
 
@@ -76,27 +81,48 @@ class MainWindow(MSFluentWindow):
                     while True:
                         taskRecord = pickle.load(f)
                         logger.debug(f"Unfinished Task is following: {taskRecord}")
-                        signalBus.addTaskSignal.emit(taskRecord['url'], taskRecord['filePath'], taskRecord['blockNum'], taskRecord['fileName'], taskRecord['status'], taskRecord['headers'], True)
+                        signalBus.addTaskSignal.emit(taskRecord['url'], taskRecord['filePath'], taskRecord['blockNum'],
+                                                     taskRecord['fileName'], taskRecord['status'],
+                                                     taskRecord['headers'], True)
                 except EOFError:
                     pass
         else:
             historyFile.touch()
 
-        # 启动浏览器扩展服务器
+        # 启动浏览器扩展服务器和剪切板监听器
         self.browserExtensionServer = None
+        self.clipboard = None
 
-        if cfg.enableBrowserExtension.value == True:
+        if cfg.enableBrowserExtension.value:
             self.runBrowserExtensionServer()
+
+        if cfg.enableClipboardListener.value:
+            self.runClipboardListener()
 
         # 创建托盘
         self.tray = CustomSystemTrayIcon(self)
         self.tray.show()
 
         # 检查更新
-        if cfg.checkUpdateAtStartUp.value == True:
+        if cfg.checkUpdateAtStartUp.value:
             checkUpdate(self)
 
         self.splashScreen.finish()
+        self.dropTimmer = QTimer()
+        self.dropTimmer.timeout.connect(self.__showAddTaskBox)
+
+
+        self.urlsText = ''
+
+    def runClipboardListener(self):
+        if not self.clipboard:
+            self.clipboard = QApplication.clipboard()
+            self.clipboard.dataChanged.connect(self.__clipboardChanged)
+
+    def stopClipboardListener(self):
+            self.clipboard.dataChanged.disconnect(self.__clipboardChanged)
+            self.clipboard.deleteLater()
+            self.clipboard = None
 
     def runBrowserExtensionServer(self):
         if not self.browserExtensionServer:
@@ -111,7 +137,8 @@ class MainWindow(MSFluentWindow):
         self.browserExtensionServer = None
 
     def __addDownloadTaskFromWebSocket(self, url: str, headers: dict):
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", headers, None)
+        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", headers,
+                                     None)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):
@@ -143,7 +170,6 @@ class MainWindow(MSFluentWindow):
             elif cfg.backgroundEffect.value == 'Aero':
                 self.windowEffect.setAeroEffect(self.winId())
 
-
     def initNavigation(self):
         # add navigation items
         self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
@@ -166,7 +192,7 @@ class MainWindow(MSFluentWindow):
             self.resize(960, 780)
             desktop = QApplication.screens()[0].availableGeometry()
             w, h = desktop.width(), desktop.height()
-            self.move(w//2 - self.width()//2, h//2 - self.height()//2)
+            self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
         else:
             try:
                 self.setGeometry(cfg.get(cfg.geometry))
@@ -177,7 +203,7 @@ class MainWindow(MSFluentWindow):
                 self.resize(960, 780)
                 desktop = QApplication.screens()[0].availableGeometry()
                 w, h = desktop.width(), desktop.height()
-                self.move(w//2 - self.width()//2, h//2 - self.height()//2)
+                self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
@@ -191,9 +217,15 @@ class MainWindow(MSFluentWindow):
 
         QApplication.processEvents()
 
-
     def showAddTaskBox(self):
         w = AddTaskOptionDialog(self)
+        w.exec()
+
+    def __showAddTaskBox(self):
+        self.dropTimmer.stop()
+        text = self.urlsText
+        w = AddTaskOptionDialog(self)
+        w.linkTextEdit.setText(text)
         w.exec()
 
     def closeEvent(self, event):
@@ -215,3 +247,62 @@ class MainWindow(MSFluentWindow):
                 return True, 0
 
         return super().nativeEvent(eventType, message)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        logger.debug(f'Get event: {event}')
+        if event.mimeData().hasUrls() or event.mimeData().hasText():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def __setUrlsAndShowAddTaskBox(self, text):
+        self.urlsText = text
+        self.dropTimmer.start(100)
+
+    def dropEvent(self, event: QDropEvent):
+        mime = event.mimeData()
+        if mime.hasUrls():
+            urls = mime.urls()
+            text = '\n'.join([url.toString() for url in urls])
+        elif mime.hasText():
+            text = mime.text()
+        else:
+            return
+        self.__setUrlsAndShowAddTaskBox(text)
+        event.accept()
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Paste):
+            text = self.clipboard.text()
+            self.__setUrlsAndShowAddTaskBox(text)
+        else:
+            super().keyPressEvent(event)
+
+    def __checkUrl(self, url):
+        try:
+            _, fileName, __ = getLinkInfo(url, Headers)
+            if fileName.lower().endswith(tuple(attachmentTypes.split())):
+                return url
+
+            return
+        except ValueError:
+            return False
+
+    def __clipboardChanged(self):
+        text = self.clipboard.text()
+        if text.isspace():
+            logger.debug("None in clipboard")
+            return
+        urls = text.strip().split('\n')  # .strip()主要去两头的空格
+        results = []
+        for url in urls:
+            if self.__checkUrl(url):
+                results.append(url)
+            else:
+                logger.debug(f"Invalid url: {url}")
+        if not results:
+            return
+        ans = '\n'.join(results)
+        logger.debug(f"Clipboard changed: {ans}")
+        bringWindowToTop(self)
+        self.__setUrlsAndShowAddTaskBox(ans)

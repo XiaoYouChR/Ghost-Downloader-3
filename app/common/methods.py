@@ -263,3 +263,12 @@ def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy
                     logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
 
     return url, fileName, fileSize
+
+
+def bringWindowToTop(window):
+    window.show()
+    if window.isMinimized():
+        window.showNormal()
+    # 激活窗口，使其显示在最前面
+    window.activateWindow()
+    window.raise_()
