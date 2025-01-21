@@ -4,6 +4,7 @@ import pickle
 import sys
 import urllib.parse
 from ctypes import byref, c_int
+from fnmatch import fnmatch
 from pathlib import Path
 
 import darkdetect
@@ -205,11 +206,11 @@ class MainWindow(MSFluentWindow):
         w.exec()
 
     def __showAddTaskBox(self):
+        self.dropTimmer.stop()
         text = self.urlsText
         w = AddTaskOptionDialog(self)
         w.linkTextEdit.setText(text)
         w.exec()
-        self.dropTimmer.stop()
 
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
@@ -261,10 +262,35 @@ class MainWindow(MSFluentWindow):
         else:
             super().keyPressEvent(event)
 
+    def __isUrlFile(self, urlparse: urllib.parse.ParseResult, types: str = None):
+        if types is None:
+            types = ('3GP 7Z AAC ACE AIF ARJ ASF AVI BIN BZ2 EXE GZ GZIP IMG ISO LZH M4A M4V MKV MOV MP3 MP4 MPA MPE '
+                     'MPEG MPG MSI MSU OGG OGV PDF PLJ PPS PPT QT R0* R1* RA RAR RM RMVB SEA SIT SITX TAR TIF TIFF '
+                     'WAV WMA WMV Z ZIP ESD WIM MSP APK APKS APKM CAB MSP')
+
+        # 获取Url路径,分离types字符串
+        string = Path(urlparse.path).name
+        type_ls = types.split()
+        logger.debug(string)
+        return any(
+            map(
+                lambda x: fnmatch(string, '*.' + x),  # 对于每一个Pattern都进行判断,只要有一个匹配,就返回True
+                type_ls
+            )
+        )
+
     def __checkUrl(self, url):
+        """
+        判断url格式是否正确,协议是否支持,是否可下载
+        :param url:
+        :return:
+        """
         try:
             res = urllib.parse.urlparse(url)
-            return res.scheme in ['http', 'https']  # 保证是http/s协议
+            return all([
+                res.scheme in ['http', 'https'],
+                self.__isUrlFile(res)
+            ])
         except ValueError:
             return False
 

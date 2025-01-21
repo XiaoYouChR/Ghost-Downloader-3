@@ -390,7 +390,6 @@ class SettingInterface(SmoothScrollArea):
         self.personalGroup.addSettingCard(self.zoomCard)
         # self.personalGroup.addSettingCard(self.languageCard)
 
-
         self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
         self.updateSoftwareGroup.addSettingCard(self.autoRunCard)
         self.updateSoftwareGroup.addSettingCard(self.clipboardListenerCard)

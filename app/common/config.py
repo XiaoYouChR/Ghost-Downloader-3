@@ -55,7 +55,6 @@ class Config(QConfig):
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
-    clipboardListenerCard = ConfigItem("Download", "ClipboardListener", True, BoolValidator())
 
     # browser
     enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
@@ -69,6 +68,7 @@ class Config(QConfig):
 
     # software
     checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
+    clipboardListenerCard = ConfigItem("Download", "ClipboardListener", True, BoolValidator())
     autoRun = ConfigItem("Software", "AutoRun", False, BoolValidator())
     geometry = ConfigItem("Software", "Geometry", "Default", GeometryValidator(), GeometrySerializer())  # 保存程序的位置和大小, Validator 在 mainWindow 中设置
     # 程序运行路径
