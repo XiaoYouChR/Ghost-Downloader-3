@@ -1,8 +1,11 @@
-> [!NOTE]
+> [!IMPORTANT]
 > 在开发环境中运行 `main.py` 时请加上 `--debug` 形参。
 
+> [!NOTE]
+> Windows 7 用户请下载 [`v3.4.6.1-win7`](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/tag/v3.4.6.1-win7) 版本
+
 > [!TIP]
-> 由于项目开发者高三冲刺，项目更新十分缓慢😭 可加 QQ 群获取项目作者最新消息: <a href="https://qm.qq.com/q/PlUBdzqZCm">531928387</a>
+> 由于项目开发者高三冲刺，项目更新十分缓慢😭 可加 QQ 群获取项目作者最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
 <!-- PROJECT LOGO -->
 <br />
