@@ -15,6 +15,7 @@ from .task_progress_bar import TaskProgressBar
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
 from ..common.methods import getProxy, getReadableSize, openFile
+from ..view.pop_up_window import PopUpWindow
 
 # 获取系统代理
 proxy = getProxy()
@@ -343,7 +344,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.progressBar.setValue(100)
 
         try:  # 程序启动时不要发
-            self.window().tray.showMessage(self.window().windowTitle(), f"任务 {self.fileName} 已完成！", self.window().windowIcon())
+            if self.window().tray:
+                PopUpWindow(f"{self.filePath}/{self.fileName}", self.window())
         except:
             pass
 
@@ -352,11 +354,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.updateTaskRecord("finished")
 
             # 再获取一次图标
-            _ = QFileIconProvider().icon(QFileInfo()).pixmap(128, 128)  # 自动获取图标
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+
             if _:
                 pass
             else:
                 _ = QPixmap(":/image/logo.png")
+
             self.LogoPixmapLabel.setPixmap(_)
             self.LogoPixmapLabel.setFixedSize(70, 70)
 
@@ -400,9 +404,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.clicked.connect(lambda: QApplication.clipboard().setText(result))
         self.pauseButton.setDisabled(False)
 
-
     def startDrag(self, event):
-        print('start drag')
         drag = QDrag(self)
         mimeData = QMimeData()
         mimeData.setUrls([QUrl.fromLocalFile(f'{self.filePath}/{self.fileName}')])
