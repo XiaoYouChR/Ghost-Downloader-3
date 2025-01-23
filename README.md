@@ -8,7 +8,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3">
-    <img src="images/logo.png" alt="Logo" width="100" height="100">
+    <img src="resources/logo.png" alt="Logo" width="100" height="100">
   </a>
 
 <h1 align="center">Ghost Downloader</h1>
@@ -135,7 +135,7 @@ Copyright © 2025 XiaoYouChR.
 [stars-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/stargazers
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: resources/screenshot.png
 [release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
 [release-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest
 [downloads-shield]: https://img.shields.io/github/downloads/XiaoYouChR/Ghost-Downloader-3/total?style=for-the-badge

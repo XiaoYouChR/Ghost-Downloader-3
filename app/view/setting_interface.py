@@ -464,8 +464,8 @@ class SettingInterface(SmoothScrollArea):
         # show view
         w = Flyout.make(view, self.installExtensionGuidanceCard.button, self)
         view.closed.connect(w.close)
-        view.closed.connect(w.deleteLater)
-        view.closed.connect(view.deleteLater)
+        # view.closed.connect(w.deleteLater)
+        # view.closed.connect(view.deleteLater)
 
     def __onAutoRunCardChecked(self, value: bool):
         """ Set auto run """
