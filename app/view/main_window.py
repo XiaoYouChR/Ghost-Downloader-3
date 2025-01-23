@@ -289,20 +289,23 @@ class MainWindow(MSFluentWindow):
             return False
 
     def __clipboardChanged(self):
-        text = self.clipboard.text()
-        if text.isspace():
-            logger.debug("None in clipboard")
-            return
-        urls = text.strip().split('\n')  # .strip()主要去两头的空格
-        results = []
-        for url in urls:
-            if self.__checkUrl(url):
-                results.append(url)
-            else:
-                logger.debug(f"Invalid url: {url}")
-        if not results:
-            return
-        ans = '\n'.join(results)
-        logger.debug(f"Clipboard changed: {ans}")
-        bringWindowToTop(self)
-        self.__setUrlsAndShowAddTaskBox(ans)
+        try:
+            text = self.clipboard.text()
+            if text.isspace():
+                logger.debug("None in clipboard")
+                return
+            urls = text.strip().split('\n')  # .strip()主要去两头的空格
+            results = []
+            for url in urls:
+                if self.__checkUrl(url):
+                    results.append(url)
+                else:
+                    logger.debug(f"Invalid url: {url}")
+            if not results:
+                return
+            ans = '\n'.join(results)
+            logger.debug(f"Clipboard changed: {ans}")
+            bringWindowToTop(self)
+            self.__setUrlsAndShowAddTaskBox(ans)
+        except Exception as e:
+            logger.warning(f"Failed to check clipboard: {e}")
