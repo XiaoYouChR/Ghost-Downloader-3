@@ -5,8 +5,7 @@ from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, Prim
 
 from ..common.config import Headers
 from ..common.signal_bus import signalBus
-from ..components.del_dialog import DelDialog
-from ..components.plan_task_dialog import PlanTaskDialog
+from ..components.custom_dialogs import DelDialog, PlanTaskDialog
 from ..components.task_card import TaskCard
 
 

@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
 
-from app.components.icon_label import IconBodyLabel
+from app.components.custom_components import IconBodyLabel
 
 
 class Ui_TaskCard(object):

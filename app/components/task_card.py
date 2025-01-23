@@ -10,8 +10,8 @@ from qfluentwidgets import CardWidget, IndeterminateProgressBar, ProgressBar
 from qfluentwidgets import FluentIcon as FIF
 
 from .Ui_TaskCard import Ui_TaskCard
-from .del_dialog import DelDialog
-from .task_progress_bar import TaskProgressBar
+from .custom_components import TaskProgressBar
+from .custom_dialogs import DelDialog, CustomInputDialog
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
 from ..common.methods import getProxy, getReadableSize, openFile
@@ -385,10 +385,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.task.gotWrong.connect(self.__onTaskError)
 
     def showHashAlgorithmDialog(self):
-        from PySide6.QtWidgets import QMessageBox, QInputDialog
 
-        algorithms = ["MD5", "SHA1", "SHA256"]
-        selected_algorithm, ok = QInputDialog.getItem(self, "选择校验算法", "请选择一个校验算法:", algorithms, 0, False)
+        algorithms = ["MD5", "SHA1","SHA224", "SHA256","SHA384", "SHA512", "BLAKE2B", "BLAKE2S", "SHA3_224", "SHA3_256", "SHA3_384", "SHA3_512", "SHAKE_128", "SHAKE_256"]
+
+        dialog = CustomInputDialog("选择校验算法", "请选择一个校验算法:", algorithms, self.window())
+        selected_algorithm, ok = dialog.get_item()
 
         if ok and selected_algorithm:
             self.runCalcHashTask(selected_algorithm)
@@ -462,7 +463,10 @@ class CalcHashThread(QThread):
                 progress += 1048576
                 self.calcProgress.emit(str(progress))
 
-        result = hashAlgorithm.hexdigest()
+        if self.algorithm in ["SHAKE_128", "SHAKE_256"]:
+            result = hashAlgorithm.hexdigest(32)
+        else:
+            result = hashAlgorithm.hexdigest()
 
         self.returnHash.emit(result)
 

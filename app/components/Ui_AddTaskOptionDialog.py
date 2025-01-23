@@ -15,7 +15,7 @@ from qfluentwidgets import (PushButton, SubtitleLabel,
                             TableWidget, TextEdit, RoundMenu, Action)
 from qfluentwidgets.components.widgets.button import PrimarySplitPushButton
 
-from app.components.disabled_rich_text_edit import DisabledRichTextEdit
+from app.components.custom_components import DisabledRichTextEdit
 
 
 class Ui_AddTaskOptionDialog(object):

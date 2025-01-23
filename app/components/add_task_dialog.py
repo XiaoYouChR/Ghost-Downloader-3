@@ -9,9 +9,9 @@ from PySide6.QtWidgets import QFileDialog, QTableWidgetItem
 from qfluentwidgets import PushSettingCard, RangeSettingCard, MessageBox, InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.common.icon import FluentIcon as FIF
 
-from app.components.edit_headers_dialog import EditHeadersDialog  # 添加导入
-from app.components.fixed_mask_dialog_base import MaskDialogBase
+from app.components.custom_mask_dialog_base import MaskDialogBase
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
+from .custom_dialogs import EditHeadersDialog
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo
 from ..common.signal_bus import signalBus
@@ -113,12 +113,9 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         )
 
     def __onEditHeadersCardClicked(self):
-        dialog = EditHeadersDialog(self, initialHeaders=self.customHeaders)
-        dialog.headersUpdated.connect(self.__onHeadersUpdated)
-        dialog.exec()
-
-    def __onHeadersUpdated(self, newHeaders):
-        self.customHeaders = newHeaders
+        newHeaders, ok = EditHeadersDialog(self, initialHeaders=self.customHeaders).getHeaders()
+        if newHeaders and ok:
+            self.customHeaders = newHeaders
 
     def __onYesButtonClicked(self):
         path = Path(self.downloadFolderCard.contentLabel.text())

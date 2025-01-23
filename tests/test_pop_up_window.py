@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QApplication
 
 from app.view.pop_up_window import PopUpWindow
 
+# noinspection PyUnresolvedReferences
 import Res_rc
 
 app = QApplication(sys.argv)
