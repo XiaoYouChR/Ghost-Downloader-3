@@ -2,8 +2,8 @@ import hashlib
 import pickle
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal, QFileInfo
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QThread, Signal, QFileInfo, QMimeData, Qt, QUrl
+from PySide6.QtGui import QPixmap, QDrag
 from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 from qfluentwidgets import CardWidget, IndeterminateProgressBar, ProgressBar
@@ -351,7 +351,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.updateTaskRecord("finished")
 
             # 再获取一次图标
-            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+            _ = QFileIconProvider().icon(QFileInfo()).pixmap(128, 128)  # 自动获取图标
             if _:
                 pass
             else:
