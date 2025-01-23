@@ -36,6 +36,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.status = status  # working paused finished
         self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
         self.ableToParallelDownload = False # 是否可以并行下载
+        self.clickPos = None
 
         # Show Information
         self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
@@ -399,6 +400,32 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.clicked.connect(lambda: QApplication.clipboard().setText(result))
         self.pauseButton.setDisabled(False)
 
+
+    def startDrag(self, event):
+        print('start drag')
+        drag = QDrag(self)
+        mimeData = QMimeData()
+        mimeData.setUrls([QUrl.fromLocalFile(f'{self.filePath}/{self.fileName}')])
+        drag.setMimeData(mimeData)
+        drag.setPixmap(self.LogoPixmapLabel.pixmap().copy())
+        drag.exec(Qt.CopyAction | Qt.MoveAction)
+
+    def __calcDistance(self, startPos, endPos):
+        return (startPos.x() - endPos.x()) ** 2 + (startPos.y() - endPos.y()) ** 2  # 加不加平方根都一样
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clickPos = event.pos()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        event.accept()
+        if self.clickPos:
+            if self.__calcDistance(self.clickPos, event.pos()) >= 4:
+                self.startDrag(event)
+
+
+
 class CalcMD5Thread(QThread):
     calcProgress = Signal(str)  # 因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
     returnMD5 = Signal(str)
@@ -424,3 +451,4 @@ class CalcMD5Thread(QThread):
         result = hashAlgorithm.hexdigest()
 
         self.returnMD5.emit(result)
+

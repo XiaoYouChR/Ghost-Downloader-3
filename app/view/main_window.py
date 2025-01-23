@@ -108,8 +108,6 @@ class MainWindow(MSFluentWindow):
             checkUpdate(self)
 
         self.splashScreen.finish()
-        self.dropTimmer = QTimer()
-        self.dropTimmer.timeout.connect(self.__showAddTaskBox)
 
 
         self.urlsText = ''
@@ -222,7 +220,6 @@ class MainWindow(MSFluentWindow):
         w.exec()
 
     def __showAddTaskBox(self):
-        self.dropTimmer.stop()
         text = self.urlsText
         w = AddTaskOptionDialog(self)
         w.linkTextEdit.setText(text)
@@ -257,13 +254,13 @@ class MainWindow(MSFluentWindow):
 
     def __setUrlsAndShowAddTaskBox(self, text):
         self.urlsText = text
-        self.dropTimmer.start(100)
+        QTimer.singleShot(10, self.__showAddTaskBox)
 
     def dropEvent(self, event: QDropEvent):
         mime = event.mimeData()
         if mime.hasUrls():
             urls = mime.urls()
-            text = '\n'.join([url.toString() for url in urls])
+            text = '\n'.join([url.toString() for url in urls if url.toString().startswith('http')])
         elif mime.hasText():
             text = mime.text()
         else:
@@ -283,7 +280,6 @@ class MainWindow(MSFluentWindow):
             _, fileName, __ = getLinkInfo(url, Headers)
             if fileName.lower().endswith(tuple(attachmentTypes.split())):
                 return url
-
             return
         except ValueError:
             return False
