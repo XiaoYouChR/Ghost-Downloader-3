@@ -142,8 +142,7 @@ class TaskInterface(SmoothScrollArea):
 
         # 如果 self.noTaskLabel 可见，则隐藏
         self.expandLayout.removeWidget(self.noTaskLabel)
-        if self.noTaskLabel.isVisible():
-            self.noTaskLabel.hide()
+        self.noTaskLabel.hide()
 
         self.__sortTask()
 
