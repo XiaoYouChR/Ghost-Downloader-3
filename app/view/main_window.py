@@ -265,7 +265,10 @@ class MainWindow(MSFluentWindow):
             text = mime.text()
         else:
             return
-        self.__setUrlsAndShowAddTaskBox(text)
+
+        if text:
+            self.__setUrlsAndShowAddTaskBox(text)
+
         event.accept()
 
     def keyPressEvent(self, event):
