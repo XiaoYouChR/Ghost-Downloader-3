@@ -1,71 +1,73 @@
-# -*- coding: utf-8 -*-
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QSizePolicy,
+    QVBoxLayout, QWidget)
 
-################################################################################
-## Form generated from reading UI file 'PlanTaskDialog.ui'
-##
-## Created by: Qt User Interface Compiler version 6.7.2
-##
-## WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
-from PySide6.QtCore import (QCoreApplication, QRect,
-                            QSize)
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (LineEdit, PrimaryPushButton, PrimaryToolButton, PushButton,
-                            RadioButton, SubtitleLabel)
-
+                            RadioButton, SubtitleLabel, ToolButton, FluentIcon)
 
 class Ui_PlanTaskDialog(object):
-    def setupUi(self, Form):
-        if not Form.objectName():
-            Form.setObjectName(u"PlanTaskDialog")
-        Form.resize(410, 225)
-        Form.setFixedSize(QSize(410, 225))
+    def setupUi(self, viewLayout):
+        viewLayout.setSpacing(10)
+        viewLayout.setObjectName(u"verticalLayout")
+        viewLayout.setContentsMargins(26, 16, 26, 18)
+        self.SubtitleLabel = SubtitleLabel(self)
+        self.SubtitleLabel.setObjectName(u"SubtitleLabel")
 
-        self.powerOffButton = RadioButton(Form)
+        viewLayout.addWidget(self.SubtitleLabel)
+
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setSpacing(0)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.powerOffButton = RadioButton(self)
         self.powerOffButton.setObjectName(u"powerOffButton")
-        self.powerOffButton.setGeometry(QRect(30, 55, 112, 24))
-        self.powerOffButton.setChecked(True)
 
-        self.quitButton = RadioButton(Form)
+        self.horizontalLayout.addWidget(self.powerOffButton)
+
+        self.quitButton = RadioButton(self)
         self.quitButton.setObjectName(u"quitButton")
-        self.quitButton.setGeometry(QRect(230, 55, 112, 24))
 
-        self.openFileButton = RadioButton(Form)
+        self.horizontalLayout.addWidget(self.quitButton)
+
+
+        viewLayout.addLayout(self.horizontalLayout)
+
+        self.openFileButton = RadioButton(self)
         self.openFileButton.setObjectName(u"openFileButton")
-        self.openFileButton.setGeometry(QRect(30, 95, 112, 24))
 
-        self.filePathEdit = LineEdit(Form)
+        viewLayout.addWidget(self.openFileButton)
+
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.filePathEdit = LineEdit(self)
         self.filePathEdit.setObjectName(u"filePathEdit")
-        self.filePathEdit.setGeometry(QRect(20, 130, 326, 33))
-        self.filePathEdit.setReadOnly(True)
         self.filePathEdit.setEnabled(False)
 
-        self.selectFileButton = PrimaryToolButton(Form)
+        self.horizontalLayout_3.addWidget(self.filePathEdit)
+
+        self.selectFileButton = PrimaryToolButton(self)
         self.selectFileButton.setObjectName(u"selectFileButton")
-        self.selectFileButton.setGeometry(QRect(350, 130, 33, 33))
         self.selectFileButton.setEnabled(False)
-        self.selectFileButton.setIcon(FIF.FOLDER)
+        self.selectFileButton.setIcon(FluentIcon.FOLDER)
 
-        self.yesButton = PrimaryPushButton(Form)
-        self.yesButton.setObjectName(u"yesButton")
-        self.yesButton.setGeometry(QRect(212, 180, 181, 32))
+        self.horizontalLayout_3.addWidget(self.selectFileButton)
 
-        self.noButton = PushButton(Form)
-        self.noButton.setObjectName(u"noButton")
-        self.noButton.setGeometry(QRect(20, 180, 181, 32))
 
-        self.SubtitleLabel = SubtitleLabel(Form)
-        self.SubtitleLabel.setObjectName(u"SubtitleLabel")
-        self.SubtitleLabel.setGeometry(QRect(20, 10, 131, 38))
+        viewLayout.addLayout(self.horizontalLayout_3)
 
-        self.retranslateUi(Form)
+        self.retranslateUi(self)
+    # setupUi
 
-    def retranslateUi(self, Form):
-        Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
-        self.powerOffButton.setText(QCoreApplication.translate("Form", u"\u5173\u673a", None))
-        self.quitButton.setText(QCoreApplication.translate("Form", u"\u9000\u51fa\u7a0b\u5e8f", None))
-        self.openFileButton.setText(QCoreApplication.translate("Form", u"\u6253\u5f00", None))
-        self.yesButton.setText(QCoreApplication.translate("Form", u"\u8bbe\u7f6e\u8ba1\u5212\u4efb\u52a1", None))
-        self.noButton.setText(QCoreApplication.translate("Form", u"\u53d6\u6d88", None))
-        self.SubtitleLabel.setText(QCoreApplication.translate("Form", u"\u8bbe\u7f6e\u8ba1\u5212\u4efb\u52a1", None))
+    def retranslateUi(self, PlanTaskDialog):
+        PlanTaskDialog.setWindowTitle(QCoreApplication.translate("viewLayout", u"Form", None))
+        self.SubtitleLabel.setText(QCoreApplication.translate("viewLayout", u"\u8bbe\u7f6e\u8ba1\u5212\u4efb\u52a1", None))
+        self.powerOffButton.setText(QCoreApplication.translate("viewLayout", u"\u5173\u673a", None))
+        self.quitButton.setText(QCoreApplication.translate("viewLayout", u"\u9000\u51fa\u7a0b\u5e8f", None))
+        self.openFileButton.setText(QCoreApplication.translate("viewLayout", u"\u6253\u5f00", None))
+    # retranslateUi
+
