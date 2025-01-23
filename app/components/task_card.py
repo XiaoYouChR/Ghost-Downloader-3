@@ -369,7 +369,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 将暂停按钮改成校验按钮
         self.pauseButton.setIcon(FIF.UPDATE)
         self.pauseButton.clicked.disconnect()
-        self.pauseButton.clicked.connect(self.runCalcMD5Task)
+        self.pauseButton.clicked.connect(self.showHashAlgorithmDialog)
         self.pauseButton.setDisabled(False)
         self.cancelButton.setDisabled(False)
 
@@ -384,19 +384,30 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.task.gotWrong.connect(self.__onTaskError)
 
-    def runCalcMD5Task(self):
-        self.__showInfo("正在校验 MD5, 请稍后...")
+    def showHashAlgorithmDialog(self):
+        from PySide6.QtWidgets import QMessageBox, QInputDialog
+
+        algorithms = ["MD5", "SHA1", "SHA256"]
+        selected_algorithm, ok = QInputDialog.getItem(self, "选择校验算法", "请选择一个校验算法:", algorithms, 0, False)
+
+        if ok and selected_algorithm:
+            self.runCalcHashTask(selected_algorithm)
+
+    def runCalcHashTask(self, algorithm):
+        self.__showInfo(f"正在校验 {algorithm}, 请稍后...")
         self.pauseButton.setDisabled(True)
         self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
 
-        self.calcTask = CalcMD5Thread(f"{self.filePath}/{self.fileName}")
+        self.calcTask = CalcHashThread(f"{self.filePath}/{self.fileName}", algorithm)
         self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)))
-        self.calcTask.returnMD5.connect(self.whenMD5CalcFinished)
+        self.calcTask.returnHash.connect(self.whenHashCalcFinished)
         self.calcTask.start()
 
-    def whenMD5CalcFinished(self, result: str):
+    def whenHashCalcFinished(self, result: str):
         self.calcTask.deleteLater()
-        self.__showInfo(f"校验完成，文件的MD5值是: {result}")
+        self.progressBar.setMaximum(100)
+        self.progressBar.setValue(100)
+        self.__showInfo(f"校验完成，文件的 {self.calcTask.algorithm} 是: {result}")
         # 把校验按钮变成复制按钮
         from PySide6.QtWidgets import QApplication
         self.pauseButton.setIcon(FIF.COPY)
@@ -428,16 +439,17 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
 
 
-class CalcMD5Thread(QThread):
+class CalcHashThread(QThread):
     calcProgress = Signal(str)  # 因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
-    returnMD5 = Signal(str)
+    returnHash = Signal(str)
 
-    def __init__(self, fileResolvedPath: str, parent=None):
+    def __init__(self, fileResolvedPath: str, algorithm: str, parent=None):
         super().__init__(parent=parent)
         self.fileResolvedPath = fileResolvedPath
+        self.algorithm = algorithm
 
     def run(self):
-        hashAlgorithm = getattr(hashlib, "md5")()
+        hashAlgorithm = getattr(hashlib, self.algorithm.lower())()
         progress = 0
 
         with open(self.fileResolvedPath, "rb") as file:
@@ -452,5 +464,5 @@ class CalcMD5Thread(QThread):
 
         result = hashAlgorithm.hexdigest()
 
-        self.returnMD5.emit(result)
+        self.returnHash.emit(result)
 
