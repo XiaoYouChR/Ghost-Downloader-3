@@ -56,8 +56,8 @@ class DownloadTask(QThread):
         self.client = httpx.AsyncClient(headers=headers, verify=False,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
 
-        self.__tempThread = Thread(target=self.__getLinkInfo, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
-        self.__tempThread.start()
+        self.__initThread = Thread(target=self.__initTask, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
+        self.__initThread.start()
 
     def __reassignWorker(self):
 
@@ -117,7 +117,8 @@ class DownloadTask(QThread):
 
         return stepList
 
-    def __getLinkInfo(self):
+    def __initTask(self):
+        """获取链接信息并初始化线程"""
         try:
             self.url, self.fileName, self.fileSize = getLinkInfo(self.url, self.headers, self.fileName)
 
@@ -134,6 +135,21 @@ class DownloadTask(QThread):
                 self.filePath = Path(self.filePath)
                 if not self.filePath.exists():
                     self.filePath.mkdir()
+
+            # 检验文件合法性并自动重命名
+            if sys.platform == "win32":
+                self.fileName = ''.join([i for i in self.fileName if i not in r'\/:*?"<>|'])  # 去除Windows系统不允许的字符
+            if len(self.fileName) > 255:
+                self.fileName = self.fileName[:255]
+
+            Path(f"{self.filePath}/{self.fileName}").touch()
+
+            # 任务初始化完成
+            if self.ableToParallelDownload:
+                self.taskInited.emit(True)
+            else:
+                self.taskInited.emit(False)
+                self.preBlockNum = 1
 
         except Exception as e:  # 重试也没用
             self.gotWrong.emit(str(e))
@@ -412,22 +428,7 @@ class DownloadTask(QThread):
 
     # @retry(3, 0.1)
     def run(self):
-        self.__tempThread.join()
-
-        # 检验文件合法性并自动重命名
-        if sys.platform == "win32":
-            self.fileName = ''.join([i for i in self.fileName if i not in r'\/:*?"<>|'])  # 去除Windows系统不允许的字符
-        if len(self.fileName) > 255:
-            self.fileName = self.fileName[:255]
-
-        Path(f"{self.filePath}/{self.fileName}").touch()
-
-        # 任务初始化完成
-        if self.ableToParallelDownload:
-            self.taskInited.emit(True)
-        else:
-            self.taskInited.emit(False)
-            self.preBlockNum = 1
+        self.__initThread.join()
 
         # 加载分块
         self.__loadWorkers()

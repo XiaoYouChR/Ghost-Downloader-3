@@ -228,8 +228,9 @@ class MainWindow(MSFluentWindow):
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
         event.ignore()
-        # 保存窗口位置
-        cfg.set(cfg.geometry, self.geometry())
+        # 保存窗口位置，最大化时不保存
+        if not self.isMaximized():
+            cfg.set(cfg.geometry, self.geometry())
 
         self.hide()
 

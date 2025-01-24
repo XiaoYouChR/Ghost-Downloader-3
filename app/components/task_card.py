@@ -17,9 +17,6 @@ from ..common.download_task import DownloadTask
 from ..common.methods import getProxy, getReadableSize, openFile
 from ..view.pop_up_window import PopUpWindow
 
-# 获取系统代理
-proxy = getProxy()
-
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
@@ -34,7 +31,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.headers = headers
         self.filePath = path
         self.maxBlockNum = maxBlockNum
-        self.status = status  # working paused finished
+        self.status = status  # working waiting paused finished
         self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
         self.ableToParallelDownload = False # 是否可以并行下载
         self.clickPos = None
@@ -63,6 +60,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
                 if self.status == "paused":
                     self.__showInfo("任务已经暂停")
+                elif self.status == "waiting":
+                    self.__showInfo("排队中...")
 
             else:
                 self.task = DownloadTask(url, headers, maxBlockNum, path)
@@ -92,7 +91,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if self.status == "working":
             # 开始下载
             self.task.start()
-        elif self.status == "paused":
+        elif self.status == "paused" or self.status == "waiting":
             self.pauseButton.setIcon(FIF.PLAY)
 
     def updateTaskRecord(self, newStatus: str):
@@ -166,6 +165,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(70, 70)
 
+        if self.status == "waiting":
+            self.__showInfo("排队中...")
+
         if self.ableToParallelDownload:
             self.progressBar.deleteLater()
             self.progressBar = TaskProgressBar(self.maxBlockNum, self)
@@ -208,7 +210,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.status = "paused"
                 self.pauseButton.setEnabled(True)
 
-        elif self.status == "paused":  # 继续
+        elif self.status == "paused" or self.status == "waiting":  # 继续
+
             self.pauseButton.setDisabled(True)
             self.pauseButton.setIcon(FIF.PAUSE)
 
@@ -228,7 +231,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             finally:
                 self.__showInfo("任务正在开始")
                 self.status = "working"
-                # 得让 self.__tempThread 运行完才能运行暂停！ self.pauseButton.setEnabled(True)
+                # 得让 self.__initThread 运行完才能运行暂停！ self.pauseButton.setEnabled(True)
 
         self.taskStatusChanged.emit()
 
@@ -263,7 +266,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                         raise e
 
             except Exception as e:
-                logger.warning(f"Task:{self.fileName}, 删除时遇到错误: {e}")
+                logger.warning(f"Task 删除时遇到错误: {e}")
 
             finally:
                 try:
@@ -313,7 +316,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         else: # 不能并行下载
             self.progressLabel.setText(f"{getReadableSize(self.task.progress)}")
 
-    def __UpdateSpeed(self, avgSpeed: int):
+    def __updateSpeed(self, avgSpeed: int):
 
         self.speedLabel.setText(f"{getReadableSize(avgSpeed)}/s")
 
@@ -378,7 +381,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def __connectSignalToSlot(self):
         self.task.taskInited.connect(self.__onTaskInited)
         self.task.workerInfoChanged.connect(self.__updateProgress)
-        self.task.speedChanged.connect(self.__UpdateSpeed)
+        self.task.speedChanged.connect(self.__updateSpeed)
 
         self.task.taskFinished.connect(self.__onTaskFinished)
 

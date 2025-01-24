@@ -201,6 +201,14 @@ class SettingInterface(SmoothScrollArea):
             self.downloadGroup
         )
 
+        self.maxTaskNumCard = RangeSettingCard(
+            cfg.maxTaskNum,
+            FIF.TRAIN,
+            "最大任务数",
+            '最多能同时进行的任务数量',
+            self.downloadGroup
+        )
+
         self.autoSpeedUpCard = SwitchSettingCard(
             FIF.SPEED_HIGH,
             "自动提速",
@@ -299,28 +307,28 @@ class SettingInterface(SmoothScrollArea):
         # )
 
         # update software
-        self.updateSoftwareGroup = SettingCardGroup(
+        self.softwareGroup = SettingCardGroup(
             "应用", self.scrollWidget)
         self.updateOnStartUpCard = SwitchSettingCard(
             FIF.UPDATE,
             "在应用程序启动时检查更新",
             "新版本将更稳定，并具有更多功能",
             configItem=cfg.checkUpdateAtStartUp,
-            parent=self.updateSoftwareGroup
+            parent=self.softwareGroup
         )
         self.autoRunCard = SwitchSettingCard(
             FIF.VPN,
             "开机启动",
             "在系统启动时静默运行 Ghost Downloader",
             configItem=cfg.autoRun,
-            parent=self.updateSoftwareGroup
+            parent=self.softwareGroup
         )
         self.clipboardListenerCard = SwitchSettingCard(
             FIF.PASTE,
             "剪贴板监听",
             "剪贴板监听器将自动检测剪贴板中的链接并添加下载任务",
             configItem=cfg.enableClipboardListener,
-            parent=self.updateSoftwareGroup
+            parent=self.softwareGroup
         )
 
         # application
@@ -376,6 +384,7 @@ class SettingInterface(SmoothScrollArea):
         # add cards to group
         self.downloadGroup.addSettingCard(self.blockNumCard)
         self.downloadGroup.addSettingCard(self.maxReassignSizeCard)
+        self.downloadGroup.addSettingCard(self.maxTaskNumCard)
         self.downloadGroup.addSettingCard(self.autoSpeedUpCard)
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
         self.downloadGroup.addSettingCard(self.proxyServerCard)
@@ -391,9 +400,9 @@ class SettingInterface(SmoothScrollArea):
         # self.personalGroup.addSettingCard(self.languageCard)
 
 
-        self.updateSoftwareGroup.addSettingCard(self.updateOnStartUpCard)
-        self.updateSoftwareGroup.addSettingCard(self.autoRunCard)
-        self.updateSoftwareGroup.addSettingCard(self.clipboardListenerCard)
+        self.softwareGroup.addSettingCard(self.updateOnStartUpCard)
+        self.softwareGroup.addSettingCard(self.clipboardListenerCard)
+        self.softwareGroup.addSettingCard(self.autoRunCard)
 
         self.aboutGroup.addSettingCard(self.authorCard)
         self.aboutGroup.addSettingCard(self.feedbackCard)
@@ -405,7 +414,7 @@ class SettingInterface(SmoothScrollArea):
         self.expandLayout.addWidget(self.downloadGroup)
         self.expandLayout.addWidget(self.browserGroup)
         self.expandLayout.addWidget(self.personalGroup)
-        self.expandLayout.addWidget(self.updateSoftwareGroup)
+        self.expandLayout.addWidget(self.softwareGroup)
         self.expandLayout.addWidget(self.aboutGroup)
 
     def __showRestartTooltip(self):

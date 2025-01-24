@@ -183,7 +183,10 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
     return localTimeNaive
 
 
-def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy:str=getProxy(), followRedirects:bool=True) -> tuple:
+def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy:str="", followRedirects:bool=True) -> tuple:
+    if not proxy:
+        proxy = getProxy()
+
     response = httpx.head(url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects)
     response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
 
