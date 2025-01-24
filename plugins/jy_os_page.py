@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QSizePolicy, QHBoxLa
 from loguru import logger
 from qfluentwidgets import SmoothScrollArea, TitleLabel, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
     ComboBoxSettingCard, FluentIcon as FIF, TextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, \
-    RangeValidator, PrimaryPushButton, PushButton, MessageBox, CardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
+    RangeValidator, PrimaryPushButton, PushButton, MessageBox, ElevatedCardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
     PrimarySplitPushButton, NavigationItemPosition, FluentStyleSheet, IndeterminateProgressRing
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
@@ -330,7 +330,7 @@ class Ui_SystemInfoCard(object):
     # retranslateUi
 
 
-class SystemInfoCard(CardWidget, Ui_SystemInfoCard):
+class SystemInfoCard(ElevatedCardWidget, Ui_SystemInfoCard):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setupUi(self)
