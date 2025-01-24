@@ -6,6 +6,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import decode_rfc2231
 from functools import wraps
+from os.path import basename
 from time import sleep, localtime, time_ns
 from urllib.parse import unquote, parse_qs, urlparse
 
@@ -13,12 +14,12 @@ import httpx
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
-from loguru import logger
-
 from app.common.config import cfg
 from app.common.plugin_base import PluginBase
+from loguru import logger
 
 plugins = []
+
 
 # def isWin11():
 #     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
@@ -146,7 +147,7 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
                             break
                     else:
                         logger.warning(
-                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i+1}/{retries}]次重试...'
+                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i + 1}/{retries}]次重试...'
                         )
                         sleep(delay)
 
@@ -164,7 +165,7 @@ def openFile(fileResolve):
     QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
 
 
-def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
+def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
     # 解析 GMT 时间
     gmtTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00"))
 
@@ -183,7 +184,97 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
     return localTimeNaive
 
 
-def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy:str=getProxy(), followRedirects:bool=True) -> tuple:
+def _getFileName__1(url, head):
+    try:
+        headerValue = head["content-disposition"]
+        if 'fileName*' in headerValue:
+            match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
+            if match:
+                fileName = match.group(1)
+                fileName = decode_rfc2231(fileName)[2]  # fileName* 后的部分是编码信息
+
+        # 如果 fileName* 没有成功获取，尝试处理普通的 fileName
+        if not fileName and 'filename' in headerValue:
+            match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
+            if match:
+                fileName = match.group(1)
+
+        # 移除文件名头尾可能存在的引号并解码
+        if fileName:
+            fileName = unquote(fileName)
+            fileName = fileName.strip('"\'')
+        else:
+            raise KeyError
+
+        logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
+        return fileName
+
+    except (KeyError, IndexError) as e:
+        logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
+        return None
+
+
+def _getFileName__2(url, head):
+    try:
+        logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
+        # 解析 URL
+        # 解析查询字符串
+        # 获取 response-content-disposition 参数
+        # 解码并分割 disposition
+        # 提取文件名
+        fileName = \
+            unquote(parse_qs(urlparse(url).query).get('response-content-disposition', [''])[0]).split(
+                "filename=")[-1]
+
+        # 移除文件名头尾可能存在的引号并解码
+        if fileName:
+            fileName = unquote(fileName)
+            fileName = fileName.strip('"\'')
+        else:
+            raise KeyError
+
+        logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
+        return fileName
+
+    except (KeyError, IndexError) as e:
+        logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
+        return
+
+
+def _getFileName__3(url, head):
+    fileName = unquote(basename(urlparse(url).path))
+    if fileName:
+        _ = fileName.split('.')
+        if len(_) == 1:
+            fileName += '.' + basename(head['content-type'])
+            logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+            return fileName
+    else:
+        logger.debug("方法3获取文件名失败, 文件名为空")
+        return
+
+
+def _getFileName__4(url, head):
+    content_type = basename(head['content-type'])
+    fileName = f'downloaded_file{int(time_ns())}.{content_type}'
+    logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
+    return fileName
+
+
+def getFileNameByUrlAndHeaders(url: str, head: dict):
+    fileName = _getFileName__1(url, head)  # 尝试使用方法1获取文件名
+    if not fileName:
+        fileName = _getFileName__2(url, head)  # 尝试使用方法2获取文件名
+    if not fileName:
+        fileName = _getFileName__3(url, head)  # 尝试使用方法3获取文件名
+    if not fileName:
+        fileName = _getFileName__4(url, head)  # 尝试使用方法4获取文件名,因为4方法一定能获取到文件名,所以不需要继续检查
+    return fileName
+
+
+def getLinkInfo(
+        url: str, headers: dict, fileName: str = "", verify: bool = False, proxy: str = getProxy(),
+        followRedirects: bool = True) -> tuple:
     response = httpx.head(url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects)
     response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
 
@@ -199,67 +290,6 @@ def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy
 
     # 获取文件名
     if not fileName:
-        try:
-            # 尝试处理 Content-Disposition 中的 fileName* (RFC 5987 格式)
-            headerValue = head["content-disposition"]
-            if 'fileName*' in headerValue:
-                match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
-                if match:
-                    fileName = match.group(1)
-                    fileName = decode_rfc2231(fileName)[2] # fileName* 后的部分是编码信息
-
-            # 如果 fileName* 没有成功获取，尝试处理普通的 fileName
-            if not fileName and 'filename' in headerValue:
-                match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
-                if match:
-                    fileName = match.group(1)
-
-            # 移除文件名头尾可能存在的引号并解码
-            if fileName:
-                fileName = unquote(fileName)
-                fileName = fileName.strip('"\'')
-            else:
-                raise KeyError
-
-            logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
-        except (KeyError, IndexError) as e:
-            try:
-                logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
-                # 解析 URL
-                # 解析查询字符串
-                # 获取 response-content-disposition 参数
-                # 解码并分割 disposition
-                # 提取文件名
-                fileName = \
-                    unquote(parse_qs(urlparse(url).query).get('response-content-disposition', [''])[0]).split(
-                        "filename=")[-1]
-
-                # 移除文件名头尾可能存在的引号并解码
-                if fileName:
-                    fileName = unquote(fileName)
-                    fileName = fileName.strip('"\'')
-                else:
-                    raise KeyError
-
-                logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
-
-            except (KeyError, IndexError) as e:
-
-                logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
-                fileName = unquote(urlparse(url).path.split('/')[-1])
-
-                if fileName:  # 如果没有后缀名，则使用 content-type 作为后缀名
-                    _ = fileName.split('.')
-                    if len(_) == 1:
-                        fileName += '.' + head["content-type"].split('/')[-1]
-
-                    logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
-                else:
-                    logger.debug("方法3获取文件名失败, 文件名为空")
-                    # 什么都 Get 不到的情况
-                    logger.info(f"获取文件名失败, 错误:{e}")
-                    content_type = head["content-type"].split('/')[-1]
-                    fileName = f"downloaded_file{int(time_ns())}.{content_type}"
-                    logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
+        fileName = getFileNameByUrlAndHeaders(url, head)
 
     return url, fileName, fileSize
