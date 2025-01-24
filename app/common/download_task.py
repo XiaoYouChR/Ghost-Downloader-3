@@ -89,7 +89,7 @@ class DownloadWorker:
         return self.progress >= self.endPos
 
     async def update(self, chunk):
-        if not chunk: return
+        if not chunk: return False
 
         self.completedSize += len(chunk)
 
