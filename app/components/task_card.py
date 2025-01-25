@@ -14,7 +14,7 @@ from .custom_components import TaskProgressBar
 from .custom_dialogs import DelDialog, CustomInputDialog
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
-from ..common.methods import getProxy, getReadableSize, openFile
+from ..common.methods import getReadableSize, openFile
 from ..view.pop_up_window import PopUpWindow
 
 class TaskCard(CardWidget, Ui_TaskCard):
@@ -29,6 +29,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 初始化参数
         self.url = url
         self.headers = headers
+        self.fileName = name
         self.filePath = path
         self.maxBlockNum = maxBlockNum
         self.status = status  # working waiting paused finished
@@ -39,7 +40,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         # Show Information
         self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
-        self.TitleLabel.setText("正在初始化任务...")
+        self.titleLabel.setText("正在初始化任务...")
 
         self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
         self.LogoPixmapLabel.setFixedSize(70, 70)
@@ -47,9 +48,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.progressBar = ProgressBar(self)
         self.progressBar.setObjectName(u"progressBar")
         self.verticalLayout.addWidget(self.progressBar)
-
-        if name:
-            self.fileName = name
 
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
             self.pauseButton.setDisabled(True)
@@ -78,7 +76,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             else:
                 pixmap = QPixmap(":/image/logo.png")
 
-            self.TitleLabel.setText(self.fileName)
+            self.titleLabel.setText(self.fileName)
             self.LogoPixmapLabel.setPixmap(pixmap)
             self.LogoPixmapLabel.setFixedSize(70, 70)
 
@@ -146,6 +144,11 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
     def __onTaskError(self, exception: str):
         self.__showInfo(f"Error: {exception}")
+        if not self.fileName:
+            self.status = "paused"
+            self.pauseButton.setEnabled(True)
+            self.pauseButton.setIcon(FIF.PLAY)
+            self.titleLabel.setText("任务初始化失败")
 
     def __onTaskInited(self, ableToParallelDownload: bool):
         self.fileName = self.task.fileName
@@ -162,7 +165,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             pixmap = QPixmap(":/image/logo.png")
 
         # 显示信息
-        self.TitleLabel.setText(self.fileName)
+        self.titleLabel.setText(self.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(70, 70)
 

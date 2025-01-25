@@ -50,17 +50,17 @@ class Ui_TaskCard(object):
         self.verticalLayout_2.setSpacing(0)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
 
-        self.TitleLabel = TitleLabel(TaskCard)
-        self.TitleLabel.setObjectName(u"TitleLabel")
+        self.titleLabel = TitleLabel(TaskCard)
+        self.titleLabel.setObjectName(u"titleLabel")
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.TitleLabel.sizePolicy().hasHeightForWidth())
-        self.TitleLabel.setSizePolicy(sizePolicy)
-        self.TitleLabel.setMinimumSize(QSize(0, 38))
-        self.TitleLabel.setMaximumSize(QSize(16777215, 38))
+        sizePolicy.setHeightForWidth(self.titleLabel.sizePolicy().hasHeightForWidth())
+        self.titleLabel.setSizePolicy(sizePolicy)
+        self.titleLabel.setMinimumSize(QSize(0, 38))
+        self.titleLabel.setMaximumSize(QSize(16777215, 38))
 
-        self.verticalLayout_2.addWidget(self.TitleLabel)
+        self.verticalLayout_2.addWidget(self.titleLabel)
 
         # 还需要把 statusHorizonLayout 在 horizonLayout 里面往下撑, 要不然非常难看!
         self.verticalLayout_2.addSpacing(8)
