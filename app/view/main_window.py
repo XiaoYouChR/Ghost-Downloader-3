@@ -17,8 +17,7 @@ from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop
-from ..common.signal_bus import addDownloadTask
+from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
@@ -81,7 +80,7 @@ class MainWindow(MSFluentWindow):
                 while True:
                     taskRecord = pickle.load(f)
                     logger.debug(f"Unfinished Task is following: {taskRecord}")
-                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['status'], taskRecord['blockNum'], taskRecord['headers'], True, taskRecord['fileSize'])
+                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
             except EOFError:  # 读取完毕
                 f.close()
             except Exception as e:
@@ -128,7 +127,6 @@ class MainWindow(MSFluentWindow):
     def runBrowserExtensionServer(self):
         if not self.browserExtensionServer:
             self.browserExtensionServer = GhostDownloaderSocketServer(self)
-            self.browserExtensionServer.receiveUrl.connect(self.__addDownloadTaskFromWebSocket)
 
     def stopBrowserExtensionServer(self):
         self.browserExtensionServer.server.close()
@@ -136,11 +134,6 @@ class MainWindow(MSFluentWindow):
         self.browserExtensionServer.deleteLater()
 
         self.browserExtensionServer = None
-
-    def __addDownloadTaskFromWebSocket(self, url: str, headers: dict):
-        # signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.preBlockNum.value, None, "working", headers,
-        #                              None)
-        self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):
         if callback == 'Dark':  # PySide6 特性，需要重试
