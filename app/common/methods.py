@@ -15,8 +15,9 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.common.config import cfg
+from app.common.config import cfg, Headers
 from app.common.plugin_base import PluginBase
+from app.common.signal_bus import signalBus
 
 plugins = []
 
@@ -275,3 +276,18 @@ def bringWindowToTop(window):
     # 激活窗口，使其显示在最前面
     window.activateWindow()
     window.raise_()
+
+
+def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
+                    headers: dict = None, status:str = "working", preBlockNum: int= None, notCreateHistoryFile: bool = False, fileSize: int = -1):
+    """ Global function to add download task """
+    if not filePath:
+        filePath = cfg.downloadFolder.value
+
+    if not preBlockNum:
+        preBlockNum = cfg.preBlockNum.value
+
+    if not headers:
+        headers = Headers
+
+    signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))

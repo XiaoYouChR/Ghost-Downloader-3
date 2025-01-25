@@ -13,8 +13,7 @@ from app.components.custom_mask_dialog_base import MaskDialogBase
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from .custom_dialogs import EditHeadersDialog
 from ..common.config import cfg, Headers
-from ..common.methods import getReadableSize, getLinkInfo
-from ..common.signal_bus import addDownloadTask
+from ..common.methods import getReadableSize, getLinkInfo, addDownloadTask
 
 urlRe = re.compile(r"^" +
                    "(https?://)" +
@@ -125,7 +124,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             try:
                 path.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                MessageBox("错误", str(e), self)
+                MessageBox("错误", repr(e), self)
         else:
             if not os.access(path, os.W_OK):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
@@ -145,7 +144,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             try:
                 path.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                MessageBox("错误", str(e), self)
+                MessageBox("错误", repr(e), self)
         else:
             if not os.access(path, os.W_OK):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)

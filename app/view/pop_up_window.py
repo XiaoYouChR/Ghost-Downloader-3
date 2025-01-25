@@ -186,7 +186,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
 
     @classmethod
     def showPopUpWindow(cls, fileResolvePath:str, mainWindow=None):
-        print("PopUpWindow Created")
+        # print("PopUpWindow Created")
         return cls(fileResolvePath, mainWindow)
 
 
@@ -209,7 +209,7 @@ class PopUpWindowManager(QObject):
         PopUpWindowManager._initialized = True
 
     def add(self, popUpWindow: PopUpWindow):
-        print("PopUpWindow Added")
+        # print("PopUpWindow Added")
         if popUpWindow not in self.popUpWindows:
             self.popUpWindows.append(popUpWindow)
             # 按照 PopUpWindow 的数量移动 PopUpWindow 的 y 坐标
@@ -218,7 +218,7 @@ class PopUpWindowManager(QObject):
                     popUp.move(popUp.x(), getCurrentScreenGeometry().height() - ((popUp.height() + 13) * (len(self.popUpWindows) - i)))
 
     def remove(self, popUpWindow: PopUpWindow):
-        print("PopUpWindow Destroyed")
+        # print("PopUpWindow Destroyed")
         if popUpWindow in self.popUpWindows:
             self.popUpWindows.remove(popUpWindow)
             # 按照 PopUpWindow 的数量移动 PopUpWindow 的 y 坐标

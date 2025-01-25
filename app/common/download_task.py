@@ -27,7 +27,8 @@ class DownloadWorker:
 
 
 class DownloadTask(QThread):
-    """TaskManager"""
+    """ Task Manager
+        self.fileSize == -1 表示自动获取; == 0 表示不能并行下载; else 表示正常"""
 
     taskInited = Signal(bool)  # 线程初始化成功, 并传递是否支持并行下载的信息
     # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
@@ -120,46 +121,41 @@ class DownloadTask(QThread):
 
     def __initTask(self):
         """获取链接信息并初始化线程"""
-        if self.fileSize == -1 or not self.fileName:
-            try:
+        try:
+            if self.fileSize == -1 or not self.fileName:
                 self.url, self.fileName, self.fileSize = getLinkInfo(self.url, self.headers, self.fileName)
 
-                if self.fileSize:
-                    self.ableToParallelDownload = True
-                else:
-                    self.ableToParallelDownload = False  # 处理无法并行下载的情况
-
-                # 获取文件路径
-                if not self.filePath and Path(self.filePath).is_dir() == False:
-                    self.filePath = Path.cwd()
-
-                else:
-                    self.filePath = Path(self.filePath)
-                    if not self.filePath.exists():
-                        self.filePath.mkdir()
-
-                # 检验文件合法性并自动重命名
-                if sys.platform == "win32":
-                    self.fileName = ''.join([i for i in self.fileName if i not in r'\/:*?"<>|'])  # 去除Windows系统不允许的字符
-                if len(self.fileName) > 255:
-                    self.fileName = self.fileName[:255]
-
-                Path(f"{self.filePath}/{self.fileName}").touch()
-
-                # 任务初始化完成
-                if self.ableToParallelDownload:
-                    self.taskInited.emit(True)
-                else:
-                    self.taskInited.emit(False)
-                    self.preBlockNum = 1
-
-            except Exception as e:  # 重试也没用
-                self.gotWrong.emit(repr(e))
-        else:
             if self.fileSize:
                 self.ableToParallelDownload = True
             else:
                 self.ableToParallelDownload = False  # 处理无法并行下载的情况
+
+            # 获取文件路径
+            if not self.filePath and Path(self.filePath).is_dir() == False:
+                self.filePath = Path.cwd()
+
+            else:
+                self.filePath = Path(self.filePath)
+                if not self.filePath.exists():
+                    self.filePath.mkdir()
+
+            # 检验文件合法性并自动重命名
+            if sys.platform == "win32":
+                self.fileName = ''.join([i for i in self.fileName if i not in r'\/:*?"<>|'])  # 去除Windows系统不允许的字符
+            if len(self.fileName) > 255:
+                self.fileName = self.fileName[:255]
+
+            Path(f"{self.filePath}/{self.fileName}").touch()
+
+            # 任务初始化完成
+            if self.ableToParallelDownload:
+                self.taskInited.emit(True)
+            else:
+                self.taskInited.emit(False)
+                self.preBlockNum = 1
+
+        except Exception as e:  # 重试也没用
+            self.gotWrong.emit(repr(e))
 
     def __loadWorkers(self):
         if not self.ableToParallelDownload:

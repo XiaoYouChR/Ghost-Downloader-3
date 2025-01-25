@@ -6,8 +6,7 @@ from loguru import logger
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentStyleSheet
 
 from app.common.config import VERSION
-from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize
-from app.common.signal_bus import addDownloadTask
+from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize, addDownloadTask
 from app.components.Ui_UpdateDialog import Ui_UpdateDialog
 from app.components.custom_mask_dialog_base import MaskDialogBase
 
