@@ -1,6 +1,7 @@
+import weakref
 from os.path import dirname, basename
 
-from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo
+from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath
 from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtWidgets import QWidget, QFileIconProvider
@@ -96,7 +97,10 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
         self.openPathBtn.clicked.connect(lambda: openFile(dirname(fileResolvePath)))
         self.screenGeometry = getCurrentScreenGeometry()
         self.move(self.screenGeometry.width(), self.screenGeometry.height() - self.height() - 13)
+        self.__manager = PopUpWindowManager()
+        self.__manager.add(self)
         self.show()
+
 
     def paintEvent(self, e):
         # 解决鼠标穿透问题
@@ -106,6 +110,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
         paint.drawPath(self.globalPath)
         super().paintEvent(e)
 
+
     def showEvent(self, event):
         self.raise_()
         QTimer.singleShot(50, self.__moveIn)
@@ -114,6 +119,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
         self.closeTimer.timeout.connect(self.__moveOut)
         self.closeTimer.start(10000)
         super().showEvent(event)
+
 
     def __moveIn(self):
         # 设置音效
@@ -125,16 +131,22 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
         self.geometryAnimation = QPropertyAnimation(self, b"geometry")
         self.geometryAnimation.setDuration(500)
         self.geometryAnimation.setStartValue(self.geometry())
-        self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width() - self.width() - 13, self.screenGeometry.height() - self.height() - 13, self.width(), self.height()))
+        self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width() - self.width() - 13, self.y(), self.width(), self.height()))
         self.geometryAnimation.setEasingCurve(QEasingCurve.OutCubic)
         self.geometryAnimation.start()
+
 
     def __moveOut(self):
         self.geometryAnimation.setDuration(500)
         self.geometryAnimation.setStartValue(self.geometry())
-        self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width(), self.screenGeometry.height() - self.height() - 13, self.width(), self.height()))
+        self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width(), self.y(), self.width(), self.height()))
         self.geometryAnimation.finished.connect(self.close)
         self.geometryAnimation.start()
+
+
+    def closeEvent(self, event):
+        self.__manager.remove(self)
+        super().closeEvent(event)
 
 
     def mousePressEvent(self, event):
@@ -167,7 +179,49 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
                 self.geometryAnimation.stop()
                 self.geometryAnimation.setDuration(200)
                 self.geometryAnimation.setStartValue(self.geometry())
-                self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width() - self.width() - 13, self.screenGeometry.height() - self.height() - 13, self.width(), self.height()))
+                self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width() - self.width() - 13, self.y(), self.width(), self.height()))
                 self.geometryAnimation.start()
 
         super().mouseReleaseEvent(event)
+
+
+    @classmethod
+    def showPopUpWindow(cls, fileResolvePath:str, mainWindow=None):
+        print("PopUpWindow Created")
+        return cls(fileResolvePath, mainWindow)
+
+
+class PopUpWindowManager(QObject):
+    """当多个 PopUpWindow 同时出现时，使用 PopUpWindowManager 来管理它们"""
+
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
+    def __init__(self):
+        if PopUpWindowManager._initialized:
+            return
+        super().__init__()
+        self.popUpWindows = []  # 强引用列表
+        PopUpWindowManager._initialized = True
+
+    def add(self, popUpWindow: PopUpWindow):
+        print("PopUpWindow Added")
+        if popUpWindow not in self.popUpWindows:
+            self.popUpWindows.append(popUpWindow)
+            # 按照 PopUpWindow 的数量移动 PopUpWindow 的 y 坐标
+            if len(self.popUpWindows) > 1:
+                for i, popUp in enumerate(self.popUpWindows):
+                    popUp.move(popUp.x(), getCurrentScreenGeometry().height() - ((popUp.height() + 13) * (len(self.popUpWindows) - i)))
+
+    def remove(self, popUpWindow: PopUpWindow):
+        print("PopUpWindow Destroyed")
+        if popUpWindow in self.popUpWindows:
+            self.popUpWindows.remove(popUpWindow)
+            # 按照 PopUpWindow 的数量移动 PopUpWindow 的 y 坐标
+            for i, popUp in enumerate(self.popUpWindows):
+                popUp.move(popUp.x(), getCurrentScreenGeometry().height() - ((popUp.height() + 13) * (len(self.popUpWindows) - i)))

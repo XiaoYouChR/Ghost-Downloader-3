@@ -352,7 +352,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         try:  # 程序启动时不要发
             if self.window().tray:
-                PopUpWindow(f"{self.filePath}/{self.fileName}", self.window())
+                PopUpWindow.showPopUpWindow(f"{self.filePath}/{self.fileName}", self.window())
         except:
             pass
 
