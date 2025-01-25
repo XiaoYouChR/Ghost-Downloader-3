@@ -348,7 +348,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.clicked.connect(lambda: openFile(f"{self.filePath}/{self.fileName}"))
 
-        self.__showInfo("任务已经完成")
+        self.__showInfo("任务已经完成  {}".format(QFileInfo(f"{self.filePath}/{self.fileName}").lastModified().toString("yyyy-MM-dd hh:mm:ss")))
 
         self.progressBar.deleteLater()
 

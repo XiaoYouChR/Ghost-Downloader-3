@@ -3,6 +3,7 @@ import struct
 import sys
 import time
 from asyncio import Task
+from os import system
 from pathlib import Path
 from threading import Thread
 
@@ -145,7 +146,10 @@ class DownloadTask(QThread):
             if len(self.fileName) > 255:
                 self.fileName = self.fileName[:255]
 
-            Path(f"{self.filePath}/{self.fileName}").touch()
+            if sys.platform == "win32":
+                system(f"fsutil file createnew {self.filePath}/{self.fileName} {self.fileSize}")
+            else:
+                Path(f"{self.filePath}/{self.fileName}").touch()
 
             # 任务初始化完成
             if self.ableToParallelDownload:
@@ -436,7 +440,7 @@ class DownloadTask(QThread):
 
                 time.sleep(0.05)
 
-    # @retry(3, 0.1)
+
     def run(self):
         self.__initThread.join()
 

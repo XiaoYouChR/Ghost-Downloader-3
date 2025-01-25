@@ -52,8 +52,6 @@ class GhostDownloaderSocketServer(QObject):
                 return  # 忽略心跳消息
             logger.debug(f"Received message: {message}")
 
-            print(data)
-
             url = data["url"]
             headers = data["headers"]
             if data["referer"]:

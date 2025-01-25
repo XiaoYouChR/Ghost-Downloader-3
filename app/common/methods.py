@@ -255,14 +255,14 @@ def getLinkInfo(url:str, headers:dict, fileName:str="", verify:bool=False, proxy
                 if fileName:  # 如果没有后缀名，则使用 content-type 作为后缀名
                     _ = fileName.split('.')
                     if len(_) == 1:
-                        fileName += '.' + head["content-type"].split('/')[-1]
+                        fileName += '.' + head["content-type"].split('/')[-1].split(';')[0]
 
                     logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
                 else:
                     logger.debug("方法3获取文件名失败, 文件名为空")
                     # 什么都 Get 不到的情况
                     logger.info(f"获取文件名失败, 错误:{e}")
-                    content_type = head["content-type"].split('/')[-1]
+                    content_type = head["content-type"].split('/')[-1].split(';')[0]
                     fileName = f"downloaded_file{int(time_ns())}.{content_type}"
                     logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
 

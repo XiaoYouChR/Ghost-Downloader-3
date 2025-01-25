@@ -164,7 +164,7 @@ class TaskInterface(SmoothScrollArea):
 
         # 如果 sender 的 status 为 working, 则把 sender 移到第一个
         try:
-            print(self.sender().fileName)
+            # print(self.sender().fileName)
             if self.sender().status == "working":
                 self.expandLayout.takeAt(self.expandLayout.indexOf(self.sender()))
                 self.expandLayout.insertWidget(1, self.sender())  # 0 是 toolsBar
