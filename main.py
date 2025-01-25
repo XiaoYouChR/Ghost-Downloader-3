@@ -32,7 +32,7 @@ else:
 app = QApplication(sys.argv)
 
 # 检测程序重复运行
-from PySide6.QtCore import QSharedMemory
+from PySide6.QtCore import QSharedMemory, QTimer
 
 # 尝试访问
 sharedMemory = QSharedMemory()
@@ -110,7 +110,13 @@ if sys.platform == "linux":
 
 # except Exception as e:
 #     logger.error(f"Cannot get theme color: {e}")
-    
+
+# create SpeedLimiter
+speedLimiter = QTimer()  # 限速器
+speedLimiter.setInterval(1000)  # 一秒刷新一次
+speedLimiter.timeout.connect(cfg.resetGlobalSpeed)  # 刷新 globalSpeed为 0
+speedLimiter.start()
+
 # create main window
 w = MainWindow()
 

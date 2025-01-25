@@ -2,7 +2,7 @@
 import sys
 from re import compile
 
-from PySide6.QtCore import QDir, QRect
+from PySide6.QtCore import QDir, QRect, QTimer
 from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator, ConfigValidator, ConfigSerializer)
@@ -54,6 +54,7 @@ class Config(QConfig):
 
     maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 8, RangeValidator(1, 256))
     maxTaskNum = RangeConfigItem("Download", "MaxTaskNum", 3, RangeValidator(1, 10))
+    speedLimitation = RangeConfigItem("Download", "SpeedLimitation", 0, RangeValidator(0, 104857600))  # 单位 KB
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
 
@@ -72,9 +73,13 @@ class Config(QConfig):
     autoRun = ConfigItem("Software", "AutoRun", False, BoolValidator())
     enableClipboardListener = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
     geometry = ConfigItem("Software", "Geometry", "Default", GeometryValidator(), GeometrySerializer())  # 保存程序的位置和大小, Validator 在 mainWindow 中设置
-    # 程序运行路径
-    appPath = "./"
 
+    # 全局变量
+    appPath = "./"
+    globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
+
+    def resetGlobalSpeed(self):
+        self.globalSpeed = 0
 
 YEAR = 2024
 AUTHOR = "XiaoYouChR"
@@ -83,6 +88,7 @@ LATEST_EXTENSION_VERSION = "1.0.5"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
+
 Headers = {
     "accept-encoding": "deflate, br, gzip",
     "accept-language": "zh-CN,zh;q=0.9",
@@ -94,7 +100,7 @@ Headers = {
     "upgrade-insecure-requests": "1",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
 
-# WARN 附件类型必须全部小写
+# 附件类型必须全部小写
 attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 exe gz gzip img iso lzh m4a m4v mkv mov mp3 mp4 mpa mpe
                                  mpeg mpg msi msu ogg ogv pdf plj pps ppt qt ra rar rm rmvb sea sit sitx tar tif tiff
                                  wav wma wmv z zip esd wim msp apk apks apkm cab msp"""

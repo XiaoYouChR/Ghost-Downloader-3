@@ -279,7 +279,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
                 finally:
                     # Remove Widget
-                    self.parent().parent().parent().expandLayout.removeWidget(self)
+                    self.parent().parent().parent().expandLayout.takeAt(self.parent().parent().parent().expandLayout.indexOf(self))
                     self.parent().parent().parent().cards.remove(self)
                     self.taskStatusChanged.emit()
                     self.deleteLater()

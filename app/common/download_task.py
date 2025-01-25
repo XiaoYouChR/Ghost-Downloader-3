@@ -5,6 +5,7 @@ import time
 from asyncio import Task
 from pathlib import Path
 from threading import Thread
+from time import sleep
 
 import aiofiles
 import httpx
@@ -208,6 +209,10 @@ class DownloadTask(QThread):
                                     await self.file.seek(worker.progress)
                                     await self.file.write(chunk)
                                     worker.progress += 65536
+                                    cfg.globalSpeed += 64 # 我真的不想使用 len(chunk), 因为误差只有一点点
+                                    if cfg.speedLimitation.value:
+                                        if cfg.globalSpeed >= cfg.speedLimitation.value:
+                                            await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
 
                     if worker.progress >= worker.endPos:
                         worker.progress = worker.endPos
@@ -220,7 +225,7 @@ class DownloadTask(QThread):
 
                     self.gotWrong.emit(repr(e))
 
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(5)  # 5s 后重试
 
             worker.progress = worker.endPos
 
@@ -237,10 +242,13 @@ class DownloadTask(QThread):
                         async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
 
                             if chunk:
-                                async with self.aioLock:
-                                    await self.file.seek(worker.progress)
-                                    await self.file.write(chunk)
-                                    worker.progress += len(chunk)
+                                await self.file.seek(worker.progress)
+                                await self.file.write(chunk)
+                                worker.progress += len(chunk)
+                                cfg.globalSpeed += len(chunk) / 1024  # B 转 KB
+                                if cfg.speedLimitation.value:
+                                    if cfg.globalSpeed >= cfg.speedLimitation.value:
+                                        await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
 
                     self.ableToParallelDownload = True # 事实上用来表示任务已经完成
 

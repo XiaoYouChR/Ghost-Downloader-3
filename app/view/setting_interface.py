@@ -8,7 +8,8 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
     QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
-    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout
+    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox, \
+    SpinBox
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
@@ -32,11 +33,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
         parent: QWidget
             parent window
         """
-        icon = FIF.GLOBE
-        title = "代理"
-        content = "设置下载时希望使用的代理"
-
-        super().__init__(icon, title, content, parent=parent)
+        super().__init__(FIF.GLOBE, "代理", "设置下载时希望使用的代理", parent=parent)
 
         self.configItem = configItem
 
@@ -171,6 +168,31 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
                 self.defaultRadioButton.click()
                 self.defaultRadioButton.setChecked(True)
 
+class SpeedLimitationSettingCard(SettingCard):
+    """ Speed limitation setting card """
+
+    def __init__(self, configItem: ConfigItem=None, parent=None):
+        super().__init__(FIF.SPEED_OFF, "下载限速", "限制每秒全局下载速度, 0 为不限速", parent=parent)
+
+        self.configItem = configItem
+
+        self.spinBox = CompactSpinBox(self)
+        self.spinBox.setObjectName('spinBox')
+        self.spinBox.setRange(0, 104857600)
+        self.spinBox.setValue(self.configItem.value)
+        self.spinBox.setSingleStep(512)
+        self.spinBox.setMinimumWidth(180)
+        self.spinBox.setSuffix(" KB/s")
+
+        self.hBoxLayout.addWidget(self.spinBox)
+        self.hBoxLayout.addSpacing(24)
+
+        self.spinBox.setValue(self.configItem.value)
+        self.spinBox.valueChanged.connect(self.setValue)
+
+    def setValue(self, value):
+        if self.configItem:
+            cfg.set(self.configItem, value)
 
 
 class SettingInterface(SmoothScrollArea):
@@ -189,7 +211,7 @@ class SettingInterface(SmoothScrollArea):
             cfg.maxBlockNum,
             FIF.CLOUD,
             "下载线程数",
-            '下载线程越多，下载越快。当线程数大于 64 时，有文件损坏的风险。',
+            '线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险',
             self.downloadGroup
         )
 
@@ -197,7 +219,7 @@ class SettingInterface(SmoothScrollArea):
             cfg.maxReassignSize,
             FIF.LIBRARY,
             "最大重新分配大小 (MB)",
-            '每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发',
+            '每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配',
             self.downloadGroup
         )
 
@@ -206,6 +228,11 @@ class SettingInterface(SmoothScrollArea):
             FIF.TRAIN,
             "最大任务数",
             '最多能同时进行的任务数量',
+            self.downloadGroup
+        )
+
+        self.speedLimitationCard = SpeedLimitationSettingCard(
+            cfg.speedLimitation,
             self.downloadGroup
         )
 
@@ -357,15 +384,6 @@ class SettingInterface(SmoothScrollArea):
             self.aboutGroup
         )
 
-        self.__initWidget()
-
-        # Apply QSS
-        self.setStyleSheet("""QScrollArea, .QWidget {
-                                border: none;
-                                background-color: transparent;
-                            }""")
-
-    def __initWidget(self):
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setWidget(self.scrollWidget)
@@ -374,6 +392,10 @@ class SettingInterface(SmoothScrollArea):
 
         # initialize style sheet
         self.scrollWidget.setObjectName('scrollWidget')
+        self.setStyleSheet("""QScrollArea, .QWidget {
+                                border: none;
+                                background-color: transparent;
+                            }""")
 
         # initialize layout
         self.__initLayout()
@@ -385,6 +407,7 @@ class SettingInterface(SmoothScrollArea):
         self.downloadGroup.addSettingCard(self.blockNumCard)
         self.downloadGroup.addSettingCard(self.maxReassignSizeCard)
         self.downloadGroup.addSettingCard(self.maxTaskNumCard)
+        self.downloadGroup.addSettingCard(self.speedLimitationCard)
         self.downloadGroup.addSettingCard(self.autoSpeedUpCard)
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
         self.downloadGroup.addSettingCard(self.proxyServerCard)
