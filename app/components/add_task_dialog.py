@@ -14,7 +14,7 @@ from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from .custom_dialogs import EditHeadersDialog
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo
-from ..common.signal_bus import signalBus
+from ..common.signal_bus import addDownloadTask
 
 urlRe = re.compile(r"^" +
                    "(https?://)" +
@@ -66,7 +66,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         )
 
         self.blockNumCard = RangeSettingCard(
-            cfg.maxBlockNum,
+            cfg.preBlockNum,
             FIF.CLOUD,
             "下载线程数",
             '',
@@ -133,9 +133,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         for i in range(self.taskTableWidget.rowCount()):
             item = self.taskTableWidget.item(i, 0)
 
-            signalBus.addTaskSignal.emit(item.data(1),
-                                         str(path), self.blockNumCard.configItem.value,
-                                         item.text(), "working", self.customHeaders, False)  # 使用新的 customHeaders
+            addDownloadTask(item.data(1), item.text(),  str(path), self.customHeaders, preBlockNum=self.blockNumCard.configItem.value)
 
         self.close()
 
@@ -155,9 +153,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         for i in range(self.taskTableWidget.rowCount()):
             item = self.taskTableWidget.item(i, 0)
 
-            signalBus.addTaskSignal.emit(item.data(1),
-                                         str(path), self.blockNumCard.configItem.value,
-                                         item.text(), "paused", self.customHeaders, False)  # 使用新的 customHeaders
+            addDownloadTask(item.data(1), item.text(),  str(path), self.customHeaders, "waiting", self.blockNumCard.configItem.value)
 
         self.close()
 

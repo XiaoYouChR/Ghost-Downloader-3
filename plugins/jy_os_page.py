@@ -17,7 +17,7 @@ from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 from app.common.config import Headers
 from app.common.methods import getProxy
 from app.common.plugin_base import PluginBase
-from app.common.signal_bus import signalBus
+from app.common.signal_bus import signalBus, addDownloadTask
 
 
 class JyOSPagePlugin(PluginBase):
@@ -246,9 +246,8 @@ class DownloadOptionDialog(MaskDialogBase):
             if not os.access(path, os.W_OK):
                 MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
 
-        signalBus.addTaskSignal.emit(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
-                                     str(path), self.blockNumCard.configItem.value,
-                                     "", "working", Headers, False)
+        addDownloadTask(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
+                                     filePath=str(path), preBlockNum=self.blockNumCard.configItem.value)
         self.close()
 
     def __onDownloadFolderCardClicked(self):

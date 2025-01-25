@@ -1,10 +1,10 @@
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
 from loguru import logger
-from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, TitleLabel, PrimaryPushButton, PushButton, InfoBar, \
+from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, PrimaryPushButton, PushButton, InfoBar, \
     InfoBarPosition, ToggleButton
 
-from ..common.config import cfg, Headers
+from ..common.config import cfg
 from ..common.signal_bus import signalBus
 from ..components.custom_dialogs import DelDialog, PlanTaskDialog
 from ..components.task_card import TaskCard
@@ -30,8 +30,8 @@ class TaskInterface(SmoothScrollArea):
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
 
-        # 在这里创建下载任务
-        signalBus.addTaskSignal.connect(self.addDownloadTask)
+        # 连接新建下载任务信号
+        signalBus.addTaskSignal.connect(self.__addDownloadTask)
 
         # Apply QSS
         self.setStyleSheet("""QScrollArea, .QWidget {
@@ -92,16 +92,10 @@ class TaskInterface(SmoothScrollArea):
 
         self.scrollWidget.setMinimumWidth(816)
 
-    def addDownloadTask(self, url: str, path: str, block_num: int, name: str = None, status:str = "working",
-                        headers: dict = Headers, autoCreated: bool = False):
-        # # 任务唯一标识符
-        # number = len(self.cards)
-        # _ = TaskCard(url, path, block_num, number, pixmap, name, self.scrollWidget, autoCreated)
-        # _.removeTaskSignal.connect(self.removeTask)
-
+    def __addDownloadTask(self, url: str, fileName: str, filePath: str,
+                          headers: dict, status:str, preBlockNum: int, notCreateHistoryFile: bool, fileSize: str="-1"):
         # 逐个对照现有任务url, 若重复则不添加
         for card in self.cards:
-
             if card.url == url:
                 InfoBar.error(
                     title='错误',
@@ -114,8 +108,9 @@ class TaskInterface(SmoothScrollArea):
                     parent=self.parent()
                 )
                 return
+
             try:
-                if card.fileName == name and card.filePath == path:
+                if card.fileName == fileName and card.filePath == filePath:
                     InfoBar.error(
                         title='错误',
                         content="已创建相同文件名和路径的任务!",
@@ -135,7 +130,7 @@ class TaskInterface(SmoothScrollArea):
         if len(runningTasks) >= cfg.maxTaskNum.value and status == "working":
             status = "waiting"
 
-        _ = TaskCard(url, path, block_num, headers, name, status, self.scrollWidget, autoCreated)
+        _ = TaskCard(url, fileName, filePath, preBlockNum, headers, status, notCreateHistoryFile, int(fileSize), self.scrollWidget)
 
         _.taskStatusChanged.connect(self.__handleTaskStatusChange)
 

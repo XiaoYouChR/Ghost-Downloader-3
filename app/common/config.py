@@ -2,7 +2,7 @@
 import sys
 from re import compile
 
-from PySide6.QtCore import QDir, QRect, QTimer
+from PySide6.QtCore import QDir, QRect
 from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator, ConfigValidator, ConfigSerializer)
@@ -52,7 +52,7 @@ class Config(QConfig):
     downloadFolder = ConfigItem(
         "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
 
-    maxBlockNum = RangeConfigItem("Download", "MaxBlockNum", 8, RangeValidator(1, 256))
+    preBlockNum = RangeConfigItem("Download", "PreBlockNum", 8, RangeValidator(1, 256))
     maxTaskNum = RangeConfigItem("Download", "MaxTaskNum", 3, RangeValidator(1, 10))
     speedLimitation = RangeConfigItem("Download", "SpeedLimitation", 0, RangeValidator(0, 104857600))  # 单位 KB
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())

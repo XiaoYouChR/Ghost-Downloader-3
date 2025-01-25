@@ -8,8 +8,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
     QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
-    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox, \
-    SpinBox
+    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
@@ -208,9 +207,9 @@ class SettingInterface(SmoothScrollArea):
             "下载相关设置", self.scrollWidget)
 
         self.blockNumCard = RangeSettingCard(
-            cfg.maxBlockNum,
+            cfg.preBlockNum,
             FIF.CLOUD,
-            "下载线程数",
+            "预分配线程数",
             '线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险',
             self.downloadGroup
         )
@@ -239,7 +238,7 @@ class SettingInterface(SmoothScrollArea):
         self.autoSpeedUpCard = SwitchSettingCard(
             FIF.SPEED_HIGH,
             "自动提速",
-            "AI 实时检测线程效率并自动重新分配线程以提高下载速度",
+            "AI 实时检测各线程效率并自动增加线程数以提高下载速度",
             cfg.autoSpeedUp,
             self.downloadGroup
         )
@@ -579,7 +578,7 @@ class SettingInterface(SmoothScrollArea):
         cfg.themeChanged.connect(setTheme)
 
         # download
-        self.blockNumCard.valueChanged.connect(lambda: cfg.set(cfg.maxBlockNum, self.blockNumCard.configItem.value))
+        self.blockNumCard.valueChanged.connect(lambda: cfg.set(cfg.preBlockNum, self.blockNumCard.configItem.value))
         self.downloadFolderCard.clicked.connect(
             self.__onDownloadFolderCardClicked)
 

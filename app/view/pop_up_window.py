@@ -1,4 +1,3 @@
-import weakref
 from os.path import dirname, basename
 
 from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject

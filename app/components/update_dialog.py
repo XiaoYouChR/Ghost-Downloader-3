@@ -5,9 +5,9 @@ from PySide6.QtWidgets import QTableWidgetItem
 from loguru import logger
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentStyleSheet
 
-from app.common.config import VERSION, cfg, Headers
+from app.common.config import VERSION
 from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize
-from app.common.signal_bus import signalBus
+from app.common.signal_bus import addDownloadTask
 from app.components.Ui_UpdateDialog import Ui_UpdateDialog
 from app.components.custom_mask_dialog_base import MaskDialogBase
 
@@ -89,7 +89,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
     def __onYesButtonClicked(self):
         url = self.urls[self.tableView.currentRow()]
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", Headers ,False)
+        addDownloadTask(url)
         self.close()
 
 def __showResponse(parent, content: dict):

@@ -17,11 +17,12 @@ from ..common.download_task import DownloadTask
 from ..common.methods import getReadableSize, openFile
 from ..view.pop_up_window import PopUpWindow
 
+
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
-    def __init__(self, url, path, maxBlockNum: int, headers: dict, name: str = None, status: str = "working",
-                 parent=None, autoCreated=False):
+    def __init__(self, url:str, fileName: str, filePath:str, preBlockNum: int, headers: dict, status: str,
+                 notCreatedHistoryFile:bool, fileSize: int=-1, parent=None):
         super().__init__(parent=parent)
 
         self.setupUi(self)
@@ -29,11 +30,12 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 初始化参数
         self.url = url
         self.headers = headers
-        self.fileName = name
-        self.filePath = path
-        self.maxBlockNum = maxBlockNum
+        self.fileName = fileName
+        self.filePath = filePath
+        self.preBlockNum = preBlockNum
         self.status = status  # working waiting paused finished
-        self.autoCreated = autoCreated  # 事实上用来记录历史文件是否已经创建
+        self.notCreateHistoryFile = notCreatedHistoryFile  # 事实上用来记录历史文件是否已经创建
+        self.fileSize = fileSize
         self.ableToParallelDownload = False # 是否可以并行下载
 
         self.__clickPos = None
@@ -52,8 +54,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
             self.pauseButton.setDisabled(True)
 
-            if name:
-                self.task = DownloadTask(url, headers, maxBlockNum, path, name)
+            if fileName:
+                self.__instantiateTask(url, filePath, preBlockNum, headers, fileSize, fileName)
 
                 self.__onTaskInited(self.ableToParallelDownload)
 
@@ -63,7 +65,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                     self.__showInfo("排队中...")
 
             else:
-                self.task = DownloadTask(url, headers, maxBlockNum, path)
+                self.__instantiateTask(url, filePath, preBlockNum, headers, fileSize)
 
             self.__connectSignalToSlot()
 
@@ -85,13 +87,17 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 连接信号到槽
         self.pauseButton.clicked.connect(self.pauseTask)
         self.cancelButton.clicked.connect(self.cancelTask)
-        self.folderButton.clicked.connect(lambda: openFile(path))
+        self.folderButton.clicked.connect(lambda: openFile(filePath))
 
         if self.status == "working":
             # 开始下载
             self.task.start()
         elif self.status == "paused" or self.status == "waiting":
             self.pauseButton.setIcon(FIF.PLAY)
+
+    def __instantiateTask(self, url:str, filePath: str, preBlockNum: int, headers: dict, fileSize: int=-1, fileName: str=None):
+        autoSpeedUp = cfg.autoSpeedUp.value
+        self.task = DownloadTask(url, headers, preBlockNum, filePath, fileName, autoSpeedUp, fileSize)
 
     def updateTaskRecord(self, newStatus: str):
         recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
@@ -116,7 +122,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if (record["url"] == self.url and
                     record["fileName"] == self.fileName and
                     record["filePath"] == str(self.filePath) and
-                    record["blockNum"] == self.maxBlockNum and
+                    record["blockNum"] == self.preBlockNum and
                     record["headers"] == self.headers):
                 found = True
                 if newStatus != "deleted":
@@ -131,9 +137,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 "url": self.url,
                 "fileName": self.fileName,
                 "filePath": str(self.filePath),
-                "blockNum": self.maxBlockNum,
+                "blockNum": self.preBlockNum,
                 "status": self.status,
-                "headers": self.headers
+                "headers": self.headers,
+                "fileSize": self.fileSize
             })
 
         # 写回记录文件
@@ -152,6 +159,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
     def __onTaskInited(self, ableToParallelDownload: bool):
         self.fileName = self.task.fileName
+        self.fileSize = self.task.fileSize
         self.ableToParallelDownload = ableToParallelDownload
 
         # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
@@ -174,15 +182,15 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         if self.ableToParallelDownload:
             self.progressBar.deleteLater()
-            self.progressBar = TaskProgressBar(self.maxBlockNum, self)
+            self.progressBar = TaskProgressBar(self.preBlockNum, self)
             self.progressBar.setObjectName(u"progressBar")
 
             self.verticalLayout.addWidget(self.progressBar)
 
             # 写入未完成任务记录文件，以供下次打开时继续下载
-            if self.fileName and not self.autoCreated:
+            if self.fileName and not self.notCreateHistoryFile:
                 self.updateTaskRecord(self.status)
-                self.autoCreated = True
+                self.notCreateHistoryFile = True
 
             self.pauseButton.setEnabled(True)
         else:
@@ -220,9 +228,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.pauseButton.setIcon(FIF.PAUSE)
 
             try:
-                self.task = DownloadTask(self.url, self.headers, self.maxBlockNum, self.filePath, self.fileName)
+                self.__instantiateTask(self.url, self.filePath, self.preBlockNum, self.headers, self.fileSize, self.fileName)
             except:  # TODO 没有 fileName 的情况
-                self.task = DownloadTask(self.url, self.headers, self.maxBlockNum, self.filePath)
+                self.__instantiateTask(self.url, self.filePath, self.preBlockNum, self.headers, self.fileSize)
 
             self.__connectSignalToSlot()
 

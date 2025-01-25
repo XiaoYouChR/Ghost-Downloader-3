@@ -18,7 +18,7 @@ from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.methods import getLinkInfo, bringWindowToTop
-from ..common.signal_bus import signalBus
+from ..common.signal_bus import addDownloadTask
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
@@ -76,16 +76,19 @@ class MainWindow(MSFluentWindow):
         # 创建未完成的任务
         historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
         if historyFile.exists():
-            with open(historyFile, 'rb') as f:
-                try:
-                    while True:
-                        taskRecord = pickle.load(f)
-                        logger.debug(f"Unfinished Task is following: {taskRecord}")
-                        signalBus.addTaskSignal.emit(taskRecord['url'], taskRecord['filePath'], taskRecord['blockNum'],
-                                                     taskRecord['fileName'], taskRecord['status'],
-                                                     taskRecord['headers'], True)
-                except EOFError:
-                    pass
+            f = open(historyFile, 'rb')
+            try:
+                while True:
+                    taskRecord = pickle.load(f)
+                    logger.debug(f"Unfinished Task is following: {taskRecord}")
+                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['status'], taskRecord['blockNum'], taskRecord['headers'], True, taskRecord['fileSize'])
+            except EOFError:  # 读取完毕
+                f.close()
+            except Exception as e:
+                logger.error(f"Failed to load unfinished task: {e}")
+                f.close()
+                historyFile.unlink()
+                historyFile.touch()
         else:
             historyFile.touch()
 
@@ -135,8 +138,8 @@ class MainWindow(MSFluentWindow):
         self.browserExtensionServer = None
 
     def __addDownloadTaskFromWebSocket(self, url: str, headers: dict):
-        signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.maxBlockNum.value, None, "working", headers,
-                                     None)
+        # signalBus.addTaskSignal.emit(url, cfg.downloadFolder.value, cfg.preBlockNum.value, None, "working", headers,
+        #                              None)
         self.tray.showMessage(self.windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.windowIcon())
 
     def toggleTheme(self, callback: str):
