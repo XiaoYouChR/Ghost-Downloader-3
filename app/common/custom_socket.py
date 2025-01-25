@@ -6,10 +6,10 @@ from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 
 from app.common.config import VERSION, LATEST_EXTENSION_VERSION
+from app.common.methods import addDownloadTask
 
 
 class GhostDownloaderSocketServer(QObject):
-    receiveUrl = Signal(str, dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -51,9 +51,18 @@ class GhostDownloaderSocketServer(QObject):
                 # logger.debug("Heartbeat received")
                 return  # 忽略心跳消息
             logger.debug(f"Received message: {message}")
+
+            print(data)
+
             url = data["url"]
             headers = data["headers"]
-            self.receiveUrl.emit(url, headers)
+            if data["referer"]:
+                headers["referer"] = data["referer"]
+            filename = data["filename"]
+            filesize = data["filesize"]
+
+            addDownloadTask(url, filename, headers=headers, fileSize=filesize)
+            self.parent().tray.showMessage(self.parent().windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.parent().windowIcon())
 
         except Exception as e:
             logger.error(f"Error processing message: {repr(e)}")

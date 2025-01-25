@@ -106,7 +106,7 @@ function isExtensionDisabled(callback) {
 }
 
 // 监听下载开始事件并阻止下载
-chrome.downloads.onCreated.addListener((downloadItem) => {
+chrome.downloads.onDeterminingFilename.addListener((downloadItem) => {
     if (downloadItem.state === "in_progress") {
         chrome.storage.local.get(["shouldDisableExtension"], (result) => {
             if (!result.shouldDisableExtension && isConnected && socket.readyState === WebSocket.OPEN) {
@@ -120,6 +120,9 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
                     // 构造完整的请求信息
                     const requestInfo = {
                         url: downloadItem.finalUrl,
+                        filesize: downloadItem.fileSize === -1 ? 0 : downloadItem.fileSize,  // Ghost Downloader 用 fileSize === 0 表示未知大小, 而 Chrome 使用 -1 表示未知大小
+                        filename: downloadItem.filename,
+                        referer: downloadItem.referrer || "",
                         headers: requestHeaders,
                     };
 

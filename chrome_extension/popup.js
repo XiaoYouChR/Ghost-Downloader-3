@@ -78,6 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('version').innerHTML = `插件版本: ${ExtensionVersion}&nbsp;&nbsp客户端版本: ${ClientVersion}`;
         }
     });
+
+    // 检测系统颜色模式并在初始时设置
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark-mode');
+    }
+});
+
+// 添加检测系统颜色模式变化的事件监听器
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+    document.body.classList.toggle('dark-mode', event.matches);
 });
 
 // 更新状态
