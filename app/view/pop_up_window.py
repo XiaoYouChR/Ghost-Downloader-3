@@ -23,7 +23,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
 
         # Acrylic Effect
         self.windowEffect = WindowEffect(self)
-        self.windowEffect.setAcrylicEffect(self.winId())
+        self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F200")
 
         # 初始化 globalPath, 用于解决鼠标穿透
         self.globalPath = QPainterPath()
@@ -41,7 +41,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
             }
             QLabel#fileNameLabel, QLabel#captionLabel {
                 font: 12pt;
-                color: #505050;
+                color: #4F4F4F;
             }
             QLabel#titleLabel {
                 font: 11pt;
