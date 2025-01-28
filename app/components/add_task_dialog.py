@@ -131,8 +131,9 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
         for i in range(self.taskTableWidget.rowCount()):
             item = self.taskTableWidget.item(i, 0)
+            fileName = item.text() if item.text() != item.data(1) else None
 
-            addDownloadTask(item.data(1), item.text(),  str(path), self.customHeaders, preBlockNum=self.blockNumCard.configItem.value)
+            addDownloadTask(item.data(1), fileName, str(path), self.customHeaders, preBlockNum=self.blockNumCard.configItem.value)
 
         self.close()
 
@@ -151,8 +152,9 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
         for i in range(self.taskTableWidget.rowCount()):
             item = self.taskTableWidget.item(i, 0)
+            fileName = item.text() if item.text() != item.data(1) else None
 
-            addDownloadTask(item.data(1), item.text(),  str(path), self.customHeaders, "waiting", self.blockNumCard.configItem.value)
+            addDownloadTask(item.data(1), fileName, str(path), self.customHeaders, "paused", self.blockNumCard.configItem.value)
 
         self.close()
 
@@ -177,8 +179,15 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
     def __handleUrl(self, url: str, index: int):
         try:
             _url, fileName, fileSize = getLinkInfo(url, self.customHeaders)
-            self.__addTableRowSignal.emit(fileName, str(fileSize), url)  # 不希望使用重定向后的url，故使用原始url
-        
+            # 查找是否存在该 URL 的行
+            for i in range(self.taskTableWidget.rowCount()):
+                if self.taskTableWidget.item(i, 0).data(1) == url:
+                    # 更新文件名和文件大小
+                    self.taskTableWidget.item(i, 0).setText(fileName)
+                    self.taskTableWidget.item(i, 1).setText(getReadableSize(int(fileSize)))
+                    return
+            # 如果不存在则添加新行
+            self.__addTableRowSignal.emit(fileName, str(fileSize), url)
         except Exception as e:
             self.__gotWrong.emit(repr(e), index)
 
@@ -239,6 +248,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             if url in addedUrls:
                 _ = urlRe.search(url)
                 if _:
+                    self.__addTableRow(url, "0", url)  # 新增卡片并设置文件名和文件大小为“正在获取...”
                     self.threads.append(Thread(target=self.__handleUrl, args=(url, index), daemon=True))
                 else:
                     InfoBar.warning(
@@ -251,6 +261,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
                         parent=self.parent()
                     )
 
+        self.yesButton.setEnabled(True)
+
         if self.threads:
             for thread in self.threads:
                 thread.start()
@@ -260,6 +272,3 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
     def __waitForThreads(self):
         for thread in self.threads:
             thread.join()
-
-        if self.taskTableWidget.rowCount() >= 0:
-            self.yesButton.setEnabled(True)

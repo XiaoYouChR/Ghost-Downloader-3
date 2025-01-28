@@ -67,7 +67,8 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         self.parent().taskInterface.allPauseTasks()
 
     def __onQuitActionTriggered(self):
-        self.parent().themeChangedListener.terminate()
+        if self.parent().themeChangedListener:
+            self.parent().themeChangedListener.terminate()
 
         for i in self.parent().taskInterface.cards:  # 是为了不写入历史记录安全的退出
             if i.status == 'working':

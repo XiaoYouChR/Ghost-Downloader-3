@@ -69,6 +69,7 @@ class MainWindow(MSFluentWindow):
 
         # 自定义主题信号连接
         self.themeChangedListener = None
+        self.__onCustomThemeModeChanged(cfg.customThemeMode.value)
         cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
 
         # 创建未完成的任务
@@ -252,7 +253,7 @@ class MainWindow(MSFluentWindow):
     def __showAddTaskBox(self):
         text = self.urlsText
         w = AddTaskOptionDialog(self)
-        w.linkTextEdit.setText(text)
+        w.linkTextEdit.setPlainText(text)
         w.exec()
 
     def closeEvent(self, event):
