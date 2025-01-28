@@ -315,7 +315,7 @@ class SettingInterface(SmoothScrollArea):
                 FIF.BRUSH,
                 "窗口背景透明材质",
                 "设置窗口背景透明效果和透明材质",
-                texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero"],
+                texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"],
                 parent=self.personalGroup
             )
 

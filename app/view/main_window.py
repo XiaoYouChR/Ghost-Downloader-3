@@ -148,21 +148,28 @@ class MainWindow(MSFluentWindow):
 
         self.applyBackgroundEffectByCfg()
 
-    def applyBackgroundEffectByCfg(self):  # 不应设置 _isMicaEnabled 的值
+    def applyBackgroundEffectByCfg(self):
         if sys.platform == 'win32':
             self.windowEffect.removeBackgroundEffect(self.winId())
 
             if cfg.backgroundEffect.value == 'Acrylic':
+                self._isMicaEnabled = True
                 self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if darkdetect.isDark() else "F2F2F230")
             elif cfg.backgroundEffect.value == 'Mica':
+                self._isMicaEnabled = True
                 self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
             elif cfg.backgroundEffect.value == 'MicaBlur':
+                self._isMicaEnabled = True
                 self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
                 self.windowEffect.DwmSetWindowAttribute(self.winId(), 38, byref(c_int(3)), 4)
             elif cfg.backgroundEffect.value == 'MicaAlt':
+                self._isMicaEnabled = True
                 self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark(), True)
             elif cfg.backgroundEffect.value == 'Aero':
+                self._isMicaEnabled = True
                 self.windowEffect.setAeroEffect(self.winId())
+            elif cfg.backgroundEffect.value == 'None':
+                self._isMicaEnabled = False
 
     def initNavigation(self):
         # add navigation items
