@@ -26,14 +26,14 @@ jobs:
       - name: Build with Nuitka
         run: |
           mv main.py Ghost-Downloader-3.py
-          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --windows-console-mode=disable --windows-icon-from-ico=resources/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.5.0 --product-version=3.5.0 Ghost-Downloader-3.py
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --windows-console-mode=disable --windows-icon-from-ico=resources/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.5.1 --product-version=3.5.1 Ghost-Downloader-3.py
 #          nuitka --module plugins/jy_os_page.py
 #          mv jy_os_page*.pyd output/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Ghost-Downloader-v3.5.0-Windows-${{ matrix.architecture }}
+          name: Ghost-Downloader-v3.5.1-Windows-${{ matrix.architecture }}
           path: output/Ghost-Downloader-3.dist
 
   build-macos-14-arm:
@@ -64,9 +64,10 @@ jobs:
           echo "VERSION=${{ env.VERSION }}"
           nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --macos-app-icon=resources/logo.icns --macos-create-app-bundle --company-name=XiaoYouChR --macos-app-name="Ghost-Downloader-3" --macos-app-version=$version Ghost-Downloader-3.py
           chmod u+x "output/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
-#          nuitka --module plugins/jy_os_page.py
-#          mkdir -p "output/Ghost-Downloader-3.app/Contents/MacOS/plugins/"
-#          mv jy_os_page*.so "output/Ghost-Downloader-3.app/Contents/MacOS/plugins/"
+          rm -rf "output/Ghost-Downloader-3.build"
+          cd "output/"
+          ln -s /Applications Applications
+          hdiutil create -srcfolder "output/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 200m "Ghost-Downloader-3.dmg"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -102,9 +103,10 @@ jobs:
           echo "VERSION=${{ env.VERSION }}"
           nuitka3 --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --macos-app-icon=resources/logo.icns --macos-create-app-bundle --company-name=XiaoYouChR --macos-app-name="Ghost-Downloader-3" --macos-app-version=$version Ghost-Downloader-3.py
           chmod u+x "output/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
-#          nuitka3 --module plugins/jy_os_page.py
-#          mkdir -p "output/Ghost-Downloader-3.app/Contents/MacOS/plugins/"
-#          mv jy_os_page*.so "output/Ghost-Downloader-3.app/Contents/MacOS/plugins/"
+          rm -rf "output/Ghost-Downloader-3.build"
+          cd "output/"
+          ln -s /Applications Applications
+          hdiutil create -srcfolder "output/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 200m "Ghost-Downloader-3.dmg"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
