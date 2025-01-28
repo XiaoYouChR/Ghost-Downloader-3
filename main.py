@@ -23,7 +23,7 @@ else:  # 编译后
     sys.excepthook = exceptionHandler
 
 # 必须在 QApplication 创建前设置缩放比例
-if cfg.get(cfg.dpiScale) == "Auto":
+if cfg.get(cfg.dpiScale) == 0:
     pass
 else:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"

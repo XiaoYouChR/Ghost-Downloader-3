@@ -2,14 +2,15 @@
 import os
 import sys
 from pathlib import Path
+from typing import Union
 
 from PySide6.QtCore import Qt, QUrl, QResource
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
     QSizePolicy, QPushButton
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
     BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox, \
-    HyperlinkButton
+    HyperlinkButton, FluentIconBase, RangeConfigItem, SpinBox
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
@@ -168,31 +169,32 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
                 self.defaultRadioButton.click()
                 self.defaultRadioButton.setChecked(True)
 
-class SpeedLimitationSettingCard(SettingCard):
-    """ Speed limitation setting card """
+class SpinBoxSettingCard(SettingCard):
+    """ Split Box Setting Card """
 
-    def __init__(self, configItem: ConfigItem=None, parent=None):
-        super().__init__(FIF.SPEED_OFF, "下载限速", "限制每秒全局下载速度, 0 为不限速", parent=parent)
-
+    def __init__(self, icon: Union[str, QIcon, FluentIconBase], title, content=None, suffix:str=None, configItem: RangeConfigItem = None, parent=None, singleStep:int=50, division:int=1):
+        super().__init__(icon, title, content, parent)
+        self.division = division
         self.configItem = configItem
 
-        self.spinBox = CompactSpinBox(self)
+        self.spinBox = SpinBox(self)
         self.spinBox.setObjectName('spinBox')
-        self.spinBox.setRange(0, 104857600)
-        self.spinBox.setValue(self.configItem.value)
-        self.spinBox.setSingleStep(512)
+        self.spinBox.setSingleStep(singleStep)
         self.spinBox.setMinimumWidth(180)
-        self.spinBox.setSuffix(" KB/s")
+        self.spinBox.setSuffix(suffix)
+
+        if configItem:
+            _ = configItem.range
+            self.spinBox.setRange(_[0]*division, _[1]*division)
 
         self.hBoxLayout.addWidget(self.spinBox)
         self.hBoxLayout.addSpacing(24)
 
-        self.spinBox.setValue(self.configItem.value)
-        self.spinBox.valueChanged.connect(self.setValue)
+        self.spinBox.setValue(self.configItem.value*division)
 
-    def setValue(self, value):
+    def leaveEvent(self, event):
         if self.configItem:
-            cfg.set(self.configItem, value)
+            cfg.set(self.configItem, self.spinBox.value()/self.division)
 
 
 class SettingInterface(SmoothScrollArea):
@@ -231,9 +233,14 @@ class SettingInterface(SmoothScrollArea):
             self.downloadGroup
         )
 
-        self.speedLimitationCard = SpeedLimitationSettingCard(
+        self.speedLimitationCard = SpinBoxSettingCard(
+            FIF.SPEED_OFF,
+            "下载限速",
+            "限制每秒全局下载速度, 0 为不限速",
+            " KB/s",
             cfg.speedLimitation,
-            self.downloadGroup
+            self.downloadGroup,
+            512
         )
 
         self.autoSpeedUpCard = SwitchSettingCard(
@@ -319,16 +326,14 @@ class SettingInterface(SmoothScrollArea):
                 parent=self.personalGroup
             )
 
-        self.zoomCard = ComboBoxSettingCard(
-            cfg.dpiScale,
+        self.zoomCard = SpinBoxSettingCard(
             FIF.ZOOM,
             "界面缩放",
-            "改变应用程序界面的缩放比例",
-            texts=[
-                "100%", "125%", "150%", "175%", "200%",
-                "自动"
-            ],
-            parent=self.personalGroup
+            "改变应用程序界面的缩放比例, 0% 为自动",
+            " %",
+            cfg.dpiScale,
+            self.personalGroup,
+            division=100
         )
         # self.languageCard = ComboBoxSettingCard(
         #     cfg.language,
