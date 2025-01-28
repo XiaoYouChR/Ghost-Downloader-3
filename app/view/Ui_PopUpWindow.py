@@ -8,7 +8,7 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QRect)
+from PySide6.QtCore import (QCoreApplication, QRect, Qt)
 from PySide6.QtWidgets import (QPushButton, QLabel, QToolButton)
 
 from qfluentwidgets import PixmapLabel
@@ -18,41 +18,31 @@ class Ui_PopUpWindow(object):
         if not PopUpWindow.objectName():
             PopUpWindow.setObjectName(u"PopUpWindow")
         PopUpWindow.setFixedSize(362, 125)
-        self.fileIconLabel = PixmapLabel(PopUpWindow)
-        self.fileIconLabel.setObjectName(u"fileIconLabel")
-        self.fileIconLabel.setGeometry(QRect(15, 41, 65, 65))
+        self.contentIconLabel = PixmapLabel(PopUpWindow)
+        self.contentIconLabel.setObjectName(u"contentIconLabel")
+        self.contentIconLabel.setGeometry(QRect(15, 41, 65, 65))
         self.logoLabel = PixmapLabel(PopUpWindow)
         self.logoLabel.setObjectName(u"logoLabel")
         self.logoLabel.setGeometry(QRect(15, 15, 16, 16))
         self.titleLabel = QLabel(PopUpWindow)
         self.titleLabel.setObjectName(u"titleLabel")
         self.titleLabel.setGeometry(QRect(40, 12, 231, 19))
-        self.openPathBtn = QPushButton(PopUpWindow)
-        self.openPathBtn.setObjectName(u"openPathBtn")
-        self.openPathBtn.setGeometry(QRect(90, 82, 125, 28))
-        self.openFileBtn = QPushButton(PopUpWindow)
-        self.openFileBtn.setObjectName(u"openFileBtn")
-        self.openFileBtn.setGeometry(QRect(223, 82, 125, 28))
         self.captionLabel = QLabel(PopUpWindow)
         self.captionLabel.setObjectName(u"captionLabel")
         self.captionLabel.setGeometry(QRect(90, 40, 261, 20))
-        self.fileNameLabel = QLabel(PopUpWindow)
-        self.fileNameLabel.setObjectName(u"fileNameLabel")
-        self.fileNameLabel.setGeometry(QRect(90, 60, 261, 20))
+        self.contentLabel = QLabel(PopUpWindow)
+        self.contentLabel.setObjectName(u"contentLabel")
+        self.contentLabel.setGeometry(QRect(90, 60, 261, 50))
+        self.contentLabel.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.contentLabel.setWordWrap(True)
         self.closeBtn = QToolButton(PopUpWindow)
         self.closeBtn.setObjectName(u"closeBtn")
         self.closeBtn.setGeometry(QRect(320, 13, 24, 24))
-        self.mainWindowBtn = QToolButton(PopUpWindow)
-        self.mainWindowBtn.setObjectName(u"mainWindowBtn")
-        self.mainWindowBtn.setGeometry(QRect(280, 13, 24, 24))
 
         self.retranslateUi(PopUpWindow)
     # setupUi
 
     def retranslateUi(self, PopUpWindow):
         self.titleLabel.setText(QCoreApplication.translate("PopUpWindow", u"Ghost Downloader", None))
-        self.openPathBtn.setText(QCoreApplication.translate("PopUpWindow", u"\u6253\u5f00\u76ee\u5f55", None))
-        self.openFileBtn.setText(QCoreApplication.translate("PopUpWindow", u"\u6253\u5f00\u6587\u4ef6", None))
-        self.captionLabel.setText(QCoreApplication.translate("PopUpWindow", u"\u4e0b\u8f7d\u5b8c\u6210：", None))
     # retranslateUi
 

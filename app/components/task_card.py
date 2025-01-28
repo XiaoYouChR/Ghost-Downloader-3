@@ -15,7 +15,7 @@ from .custom_dialogs import DelDialog, CustomInputDialog
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
 from ..common.methods import getReadableSize, openFile
-from ..view.pop_up_window import PopUpWindow
+from ..view.pop_up_window import FinishedPopUpWindow
 
 
 class TaskCard(CardWidget, Ui_TaskCard):
@@ -362,7 +362,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         try:  # 程序启动时不要发
             if self.window().tray:
-                PopUpWindow.showPopUpWindow(f"{self.filePath}/{self.fileName}", self.window())
+                FinishedPopUpWindow.showPopUpWindow(f"{self.filePath}/{self.fileName}", self.window())
         except:
             pass
 

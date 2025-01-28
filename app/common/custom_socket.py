@@ -7,6 +7,7 @@ from loguru import logger
 
 from app.common.config import VERSION, LATEST_EXTENSION_VERSION
 from app.common.methods import addDownloadTask
+from app.view.pop_up_window import ReceivedPopUpWindow
 
 
 class GhostDownloaderSocketServer(QObject):
@@ -59,7 +60,10 @@ class GhostDownloaderSocketServer(QObject):
             filename = data["filename"]
             addDownloadTask(url, filename, headers=headers)
 
-            self.parent().tray.showMessage(self.parent().windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.parent().windowIcon())
+            if filename:
+                ReceivedPopUpWindow.showPopUpWindow(filename, self.parent())
+            else:
+                ReceivedPopUpWindow.showPopUpWindow(url, self.parent())
 
         except Exception as e:
             logger.error(f"Error processing message: {repr(e)}")

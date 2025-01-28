@@ -1,9 +1,10 @@
 from os.path import dirname, basename
 
-from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject
+from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject, \
+    QCoreApplication, QSize
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath
 from PySide6.QtMultimedia import QSoundEffect
-from PySide6.QtWidgets import QWidget, QFileIconProvider
+from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButton
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qframelesswindow import WindowEffect
@@ -12,8 +13,8 @@ from app.common.methods import openFile, bringWindowToTop
 from app.view.Ui_PopUpWindow import Ui_PopUpWindow
 
 
-class PopUpWindow(QWidget, Ui_PopUpWindow):
-    def __init__(self, fileResolvePath:str, mainWindow=None):
+class PopUpWindowBase(QWidget, Ui_PopUpWindow):
+    def __init__(self, mainWindow=None):
         super().__init__(parent=None)
 
         self.setupUi(self)
@@ -23,7 +24,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
 
         # Acrylic Effect
         self.windowEffect = WindowEffect(self)
-        self.windowEffect.setAcrylicEffect(self.winId(), "F2F2F200")
+        self.windowEffect.setAcrylicEffect(self.winId(), "FFFFFF30")
 
         # 初始化 globalPath, 用于解决鼠标穿透
         self.globalPath = QPainterPath()
@@ -39,7 +40,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
                 background-color:transparent;
                 border:none;
             }
-            QLabel#fileNameLabel, QLabel#captionLabel {
+            QLabel#contentLabel, QLabel#captionLabel {
                 font: 12pt;
                 color: #4F4F4F;
             }
@@ -70,36 +71,26 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
             """
         )
         self.closeBtn.setIcon(FIF.CLOSE.icon())
-        self.mainWindowBtn.setIcon(FIF.HOME.icon())
 
-        logoPixmap = QPixmap(":/image/logo_withoutBackground.png")
+        # 主窗口按钮
+        if mainWindow:
+            self.mainWindowBtn = QToolButton(self)
+            self.mainWindowBtn.setObjectName(u"mainWindowBtn")
+            self.mainWindowBtn.setGeometry(QRect(280, 13, 24, 24))
+            self.mainWindowBtn.setIcon(FIF.HOME.icon())
+            self.mainWindowBtn.clicked.connect(lambda: bringWindowToTop(mainWindow))
 
-        self.logoLabel.setPixmap(logoPixmap)
+        self.logoPixmap = QPixmap(":/image/logo_withoutBackground.png")
+        self.logoLabel.setPixmap(self.logoPixmap)
         self.logoLabel.setFixedSize(16, 16)
-
-        _ = QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(128, 128)  # 自动获取图标
-        if _:
-            self.fileIconLabel.setPixmap(_)
-            self.fileIconLabel.setFixedSize(64, 64)
-
-        else:
-            self.fileIconLabel.setPixmap(logoPixmap)
-            self.fileIconLabel.setFixedSize(64, 64)
-
-        self.fileNameLabel.setText(basename(fileResolvePath))
 
         # Connect Signal To Slot
         self.closeBtn.clicked.connect(self.__moveOut)
-        if mainWindow:
-            self.mainWindowBtn.clicked.connect(lambda: bringWindowToTop(mainWindow))
-        self.openFileBtn.clicked.connect(lambda: openFile(fileResolvePath))
-        self.openPathBtn.clicked.connect(lambda: openFile(dirname(fileResolvePath)))
+
         self.screenGeometry = getCurrentScreenGeometry()
         self.move(self.screenGeometry.width(), self.screenGeometry.height() - self.height() - 13)
         self.__manager = PopUpWindowManager()
         self.__manager.add(self)
-        self.show()
-
 
     def paintEvent(self, e):
         # 解决鼠标穿透问题
@@ -120,12 +111,16 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
         super().showEvent(event)
 
 
-    def __moveIn(self):
+    def __playSound(self):
         # 设置音效
         self.soundEffect = QSoundEffect(self)
         self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/completed_task.wav"))
         self.soundEffect.setVolume(100)
         self.soundEffect.play()
+
+
+    def __moveIn(self):
+        self.__playSound()
         # 动画
         self.geometryAnimation = QPropertyAnimation(self, b"geometry")
         self.geometryAnimation.setDuration(500)
@@ -185,9 +180,65 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
 
 
     @classmethod
+    def showPopUpWindow(cls, mainWindow=None):
+        return cls(mainWindow)
+
+
+class FinishedPopUpWindow(PopUpWindowBase):
+    def __init__(self, fileResolvePath: str, mainWindow=None):
+        super().__init__(mainWindow)
+
+        self.contentLabel.setGeometry(QRect(90, 60, 261, 20))
+        self.contentLabel.setWordWrap(False)
+
+        self.openPathBtn = QPushButton(self)
+        self.openPathBtn.setObjectName(u"openPathBtn")
+        self.openPathBtn.setGeometry(QRect(90, 82, 125, 28))
+        self.openFileBtn = QPushButton(self)
+        self.openFileBtn.setObjectName(u"openFileBtn")
+        self.openFileBtn.setGeometry(QRect(223, 82, 125, 28))
+
+        self.captionLabel.setText(QCoreApplication.translate("PopUpWindow", u"\u4e0b\u8f7d\u5b8c\u6210：", None))
+        self.openPathBtn.setText(QCoreApplication.translate("PopUpWindow", u"\u6253\u5f00\u76ee\u5f55", None))
+        self.openFileBtn.setText(QCoreApplication.translate("PopUpWindow", u"\u6253\u5f00\u6587\u4ef6", None))
+
+        _ = QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(128, 128)  # 自动获取图标
+        if _:
+            self.contentIconLabel.setPixmap(_)
+            self.contentIconLabel.setFixedSize(64, 64)
+
+        else:
+            self.contentIconLabel.setPixmap(self.logoPixmap)
+            self.contentIconLabel.setFixedSize(64, 64)
+
+        _ = basename(fileResolvePath)
+        self.contentLabel.setText(_)
+        self.contentLabel.fontMetrics().elidedText(_, Qt.ElideRight, 261)
+        
+        self.openFileBtn.clicked.connect(lambda: openFile(fileResolvePath))
+        self.openPathBtn.clicked.connect(lambda: openFile(dirname(fileResolvePath)))
+
+        self.show()
+
+    @classmethod
     def showPopUpWindow(cls, fileResolvePath:str, mainWindow=None):
-        # print("PopUpWindow Created")
         return cls(fileResolvePath, mainWindow)
+
+
+class ReceivedPopUpWindow(PopUpWindowBase):
+    def __init__(self, receiveContent:str, mainWindow=None):
+        super().__init__(mainWindow)
+
+        self.contentIconLabel.setPixmap(QPixmap(":/image/logo.png"))
+        self.contentIconLabel.setFixedSize(64, 64)
+        self.captionLabel.setText("接收到来自浏览器的下载任务:")
+        self.contentLabel.setText(receiveContent)
+
+        self.show()
+
+    @classmethod
+    def showPopUpWindow(cls, receiveContent:str, mainWindow=None):
+        return cls(receiveContent, mainWindow)
 
 
 class PopUpWindowManager(QObject):
@@ -208,7 +259,7 @@ class PopUpWindowManager(QObject):
         self.popUpWindows = []  # 强引用列表
         PopUpWindowManager._initialized = True
 
-    def add(self, popUpWindow: PopUpWindow):
+    def add(self, popUpWindow: PopUpWindowBase):
         # print("PopUpWindow Added")
         if popUpWindow not in self.popUpWindows:
             self.popUpWindows.append(popUpWindow)
@@ -217,7 +268,7 @@ class PopUpWindowManager(QObject):
                 for i, popUp in enumerate(self.popUpWindows):
                     popUp.move(popUp.x(), getCurrentScreenGeometry().height() - ((popUp.height() + 13) * (len(self.popUpWindows) - i)))
 
-    def remove(self, popUpWindow: PopUpWindow):
+    def remove(self, popUpWindow: PopUpWindowBase):
         # print("PopUpWindow Destroyed")
         if popUpWindow in self.popUpWindows:
             self.popUpWindows.remove(popUpWindow)
