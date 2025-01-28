@@ -15,10 +15,17 @@ class DelDialog(MessageBox):
     def __init__(self, parent=None):
         super().__init__(title="删除下载任务", content="确定要删除下载任务吗？", parent=parent)
         self.setClosableOnMaskClicked(True)
-        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.checkBox = CheckBox("彻底删除", self)
         self.textLayout.addWidget(self.checkBox)
+
+    @classmethod
+    def getCompletely(cls, parent=None):
+        dialog = cls(parent)
+        _ = dialog.exec()
+        completely = dialog.checkBox.isChecked()
+        dialog.deleteLater()
+        return _, completely
 
 
 class CustomInputDialog(MessageBox):

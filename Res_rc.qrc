@@ -5,7 +5,7 @@
   </qresource>
   <qresource prefix="res">
     <file alias="chrome_extension.crx">resources/chrome_extension.crx</file>
-    <file alias="firefox_extension.xpi">resources/firefox_extension.xpi</file>
+<!--    <file alias="firefox_extension.xpi">resources/firefox_extension.xpi</file>-->
     <file alias="install_chrome_extension_guidance.png">resources/install_chrome_extension_guidance.png</file>
     <file alias="completed_task.wav">resources/completed_task.wav</file>
     <file alias="received_info.wav">resources/received_info.wav</file>

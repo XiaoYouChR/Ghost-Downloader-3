@@ -242,18 +242,14 @@ class TaskInterface(SmoothScrollArea):
     def allCancelTasks(self):
         self.__blockSortTask = True
 
-        dialog = DelDialog(self.window())
-        if dialog.exec():
-            completely = dialog.checkBox.isChecked()
-
+        ok, completely = DelDialog.getCompletely(self.window())
+        if ok:
             cards = self.cards.copy()  # 防止列表变化导致迭代器异常
 
             for card in cards:
                 card.cancelTask(True, completely)
 
             del cards
-
-        dialog.deleteLater()
 
         self.__blockSortTask = False
 
