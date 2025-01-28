@@ -9,7 +9,7 @@
 ################################################################################
 
 from PySide6.QtCore import (QCoreApplication, QRect, Qt)
-from PySide6.QtWidgets import (QPushButton, QLabel, QToolButton)
+from PySide6.QtWidgets import (QLabel, QToolButton)
 
 from qfluentwidgets import PixmapLabel
 

@@ -67,10 +67,9 @@ class MainWindow(MSFluentWindow):
         # 设置背景特效
         self.applyBackgroundEffectByCfg()
 
-        # 创建检测主题色更改线程
-        self.themeChangedListener = ThemeChangedListener(self)
-        self.themeChangedListener.themeChanged.connect(self.toggleTheme)
-        self.themeChangedListener.start()
+        # 自定义主题信号连接
+        self.themeChangedListener = None
+        cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
 
         # 创建未完成的任务
         historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
@@ -114,6 +113,25 @@ class MainWindow(MSFluentWindow):
 
         self.urlsText = ''
 
+    def __onCustomThemeModeChanged(self, value: str):
+        if value == 'System':
+            # 创建检测主题色更改线程
+            self.themeChangedListener = ThemeChangedListener()
+            self.themeChangedListener.themeChanged.connect(self.toggleTheme)
+            self.themeChangedListener.start()
+        elif value == 'Dark':
+            if self.themeChangedListener:
+                self.themeChangedListener.terminate()
+                self.themeChangedListener.deleteLater()
+                self.themeChangedListener = None
+            setTheme(Theme.DARK, save=False)
+        else:
+            if self.themeChangedListener:
+                self.themeChangedListener.terminate()
+                self.themeChangedListener.deleteLater()
+                self.themeChangedListener = None
+            setTheme(Theme.LIGHT, save=False)
+
     def runClipboardListener(self):
         if not self.clipboard:
             self.clipboard = QApplication.clipboard()
@@ -152,19 +170,28 @@ class MainWindow(MSFluentWindow):
         if sys.platform == 'win32':
             self.windowEffect.removeBackgroundEffect(self.winId())
 
+            _ = cfg.customThemeMode.value
+
+            if _ == 'System':
+                _ = True if darkdetect.isDark() else False
+            elif _ == 'Dark':
+                _ = True
+            elif _ == 'Light':
+                _ = False
+
             if cfg.backgroundEffect.value == 'Acrylic':
                 self._isMicaEnabled = True
-                self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if darkdetect.isDark() else "F2F2F230")
+                self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if _ else "FFFFFF30")
             elif cfg.backgroundEffect.value == 'Mica':
                 self._isMicaEnabled = True
-                self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
+                self.windowEffect.setMicaEffect(self.winId(), _)
             elif cfg.backgroundEffect.value == 'MicaBlur':
                 self._isMicaEnabled = True
-                self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark())
+                self.windowEffect.setMicaEffect(self.winId(), _)
                 self.windowEffect.DwmSetWindowAttribute(self.winId(), 38, byref(c_int(3)), 4)
             elif cfg.backgroundEffect.value == 'MicaAlt':
                 self._isMicaEnabled = True
-                self.windowEffect.setMicaEffect(self.winId(), darkdetect.isDark(), True)
+                self.windowEffect.setMicaEffect(self.winId(), _, True)
             elif cfg.backgroundEffect.value == 'Aero':
                 self._isMicaEnabled = True
                 self.windowEffect.setAeroEffect(self.winId())

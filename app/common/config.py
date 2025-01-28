@@ -64,6 +64,7 @@ class Config(QConfig):
     # personalization
     if sys.platform == "win32":
         backgroundEffect = OptionsConfigItem("Personalization", "BackgroundEffect", "Mica", OptionsValidator(["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"]))
+    customThemeMode = OptionsConfigItem("Personalization", "ThemeMode", "System", OptionsValidator(["Light", "Dark", "System"]))
     dpiScale = RangeConfigItem(
         "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True)
 

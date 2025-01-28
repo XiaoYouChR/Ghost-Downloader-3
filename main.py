@@ -87,7 +87,12 @@ logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 warnings.warn = logger.warning
 
 # Enable Theme
-setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
+if cfg.customThemeMode.value == "System":
+    setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
+elif cfg.customThemeMode.value == "Light":
+    setTheme(Theme.LIGHT, save=False)
+else:
+    setTheme(Theme.DARK, save=False)
 
 # Get Theme Color
 # try:

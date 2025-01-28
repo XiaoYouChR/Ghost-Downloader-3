@@ -7,10 +7,10 @@ from typing import Union
 from PySide6.QtCore import Qt, QUrl, QResource
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
-    QSizePolicy, QPushButton
+    QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
-    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox, \
-    HyperlinkButton, FluentIconBase, RangeConfigItem, SpinBox
+    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, HyperlinkButton, \
+    FluentIconBase, RangeConfigItem, SpinBox
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
@@ -298,28 +298,30 @@ class SettingInterface(SmoothScrollArea):
         # personalization
         self.personalGroup = SettingCardGroup(
             "个性化", self.scrollWidget)
-        # self.themeCard = OptionsSettingCard(
-        #     cfg.themeMode,
-        #     FIF.BRUSH,
-        #     self.tr('Application theme'),
-        #     self.tr("Change the appearance of your application"),
-        #     texts=[
-        #         self.tr('Light'), self.tr('Dark'),
-        #         self.tr('Use system setting')
-        #     ],
-        #     parent=self.personalGroup
-        # )
+        self.themeCard = ComboBoxSettingCard(
+            cfg.customThemeMode,
+            FIF.BRUSH,
+            '应用主题',
+            '更改应用程序的外观',
+            texts=[
+                '浅色', '深色',
+                '跟随系统设置'
+            ],
+            parent=self.personalGroup
+        )
+
         # self.themeColorCard = CustomColorSettingCard(
         #     cfg.themeColor,
         #     FIF.PALETTE,
-        #     self.tr('Theme color'),
-        #     self.tr('Change the theme color of you application'),
+        #     '主题色',
+        #     '更改应用程序的主题颜色',
         #     self.personalGroup
         # )
+
         if sys.platform == "win32":
             self.backgroundEffectCard = ComboBoxSettingCard(
                 cfg.backgroundEffect,
-                FIF.BRUSH,
+                FIF.TRANSPARENT,
                 "窗口背景透明材质",
                 "设置窗口背景透明效果和透明材质",
                 texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"],
@@ -335,6 +337,7 @@ class SettingInterface(SmoothScrollArea):
             self.personalGroup,
             division=100
         )
+
         # self.languageCard = ComboBoxSettingCard(
         #     cfg.language,
         #     FIF.LANGUAGE,
@@ -426,7 +429,7 @@ class SettingInterface(SmoothScrollArea):
         self.browserGroup.addSettingCard(self.browserExtensionCard)
         self.browserGroup.addSettingCard(self.installExtensionCard)
         self.browserGroup.addSettingCard(self.installExtensionGuidanceCard)
-        # self.personalGroup.addSettingCard(self.themeCard)
+        self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
         if sys.platform == "win32":
             self.personalGroup.addSettingCard(self.backgroundEffectCard)
@@ -610,4 +613,3 @@ class SettingInterface(SmoothScrollArea):
         self.aboutCard.clicked.connect(self.__onAboutCardClicked)
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
-

@@ -1,6 +1,6 @@
 import json
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Slot
 from PySide6.QtNetwork import QHostAddress
 from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger

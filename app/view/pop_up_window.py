@@ -1,7 +1,7 @@
 from os.path import dirname, basename
 
 from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject, \
-    QCoreApplication, QSize
+    QCoreApplication
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath
 from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButton
