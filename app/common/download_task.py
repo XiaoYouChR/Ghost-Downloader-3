@@ -147,7 +147,7 @@ class DownloadTask(QThread):
                 self.fileName = self.fileName[:255]
 
             if sys.platform == "win32":
-                system(f"fsutil file createnew {self.filePath}/{self.fileName} {self.fileSize}")
+                system(f'fsutil file createnew "{self.filePath}/{self.fileName}" {self.fileSize}')
             else:
                 Path(f"{self.filePath}/{self.fileName}").touch()
 
@@ -196,6 +196,8 @@ class DownloadTask(QThread):
                 self.workers.append(
                     DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
 
+
+    # 主下载逻辑
     async def __handleWorker(self, worker: DownloadWorker):
         if worker.progress < worker.endPos:  # 因为可能会创建空线程
             finished = False

@@ -6,9 +6,10 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QUrl, QResource
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
-    QSizePolicy
+    QSizePolicy, QPushButton
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
-    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox
+    BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, CompactSpinBox, \
+    PushButton
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
@@ -267,12 +268,16 @@ class SettingInterface(SmoothScrollArea):
             self.browserGroup,
         )
         self.installExtensionCard = PushSettingCard(
-            "导出浏览器扩展",
+            "导出 Chromium 扩展",
             FIF.DICTIONARY,
             "安装浏览器扩展",
-            "需要您导出 .crx 文件后手动安装至 Chromium 内核的浏览器",
+            "需要您导出文件后手动安装至浏览器",
             self.browserGroup
         )
+        self.installFirefoxAddonsBtn = QPushButton("导出 Firefox 扩展", self.installExtensionCard)
+        self.installExtensionCard.hBoxLayout.addWidget(self.installFirefoxAddonsBtn, 0, Qt.AlignRight)
+        self.installExtensionCard.hBoxLayout.addSpacing(16)
+
         self.installExtensionGuidanceCard = PushSettingCard(
             "查看安装指南",
             FIF.HELP,
@@ -474,12 +479,12 @@ class SettingInterface(SmoothScrollArea):
         else:
             self.window().stopClipboardListener()
 
-    def __onInstallExtensionCardClicked(self):
+    def __onInstallExtensionBtnClicked(self, type:str):
         """ install extension card clicked slot """
-        fileResolve, type = QFileDialog.getSaveFileName(self, "选择导出路径", "./Extension.crx", "Chromium Extension(*.crx)")
+        fileResolve, type = QFileDialog.getSaveFileName(self, "选择导出路径", f"./Extension.{type}", "Chromium Extension(*.crx)" if type == "crx" else "Firefox Addons(*.xpi)")
         if fileResolve:
             with open(fileResolve, "wb") as f:
-                f.write(QResource(":/res/chrome_extension.crx").data())
+                f.write(QResource(":/res/chrome_extension.crx" if type == "crx" else ":/res/firefox_extension.xpi").data())
 
     def __onInstallExtensionGuidanceClicked(self):
         """ install extension guidance card clicked slot """
@@ -584,7 +589,8 @@ class SettingInterface(SmoothScrollArea):
 
         # extension
         self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)
-        self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
+        self.installExtensionCard.clicked.connect(lambda :self.__onInstallExtensionBtnClicked("crx"))
+        self.installFirefoxAddonsBtn.clicked.connect(lambda :self.__onInstallExtensionBtnClicked("xpi"))
         self.installExtensionGuidanceCard.clicked.connect(self.__onInstallExtensionGuidanceClicked)
 
         # personalization

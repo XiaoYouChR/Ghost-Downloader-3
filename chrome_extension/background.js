@@ -120,7 +120,7 @@ chrome.downloads.onDeterminingFilename.addListener((downloadItem) => {
                     // 构造完整的请求信息
                     const requestInfo = {
                         url: downloadItem.finalUrl,
-                        filesize: downloadItem.fileSize === -1 ? 0 : downloadItem.fileSize,  // Ghost Downloader 用 fileSize === 0 表示未知大小, 而 Chrome 使用 -1 表示未知大小
+                        // filesize: downloadItem.fileSize === -1 ? 0 : downloadItem.fileSize,  // Ghost Downloader 用 fileSize === 0 表示未知大小, 而 Chrome 使用 -1 表示未知大小
                         filename: downloadItem.filename,
                         referer: downloadItem.referrer || "",
                         headers: requestHeaders,

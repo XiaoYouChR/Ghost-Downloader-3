@@ -123,7 +123,7 @@ class PopUpWindow(QWidget, Ui_PopUpWindow):
     def __moveIn(self):
         # 设置音效
         self.soundEffect = QSoundEffect(self)
-        self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/completed.wav"))
+        self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/completed_task.wav"))
         self.soundEffect.setVolume(100)
         self.soundEffect.play()
         # 动画

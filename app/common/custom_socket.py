@@ -57,9 +57,8 @@ class GhostDownloaderSocketServer(QObject):
             if data["referer"]:
                 headers["referer"] = data["referer"]
             filename = data["filename"]
-            filesize = data["filesize"]
+            addDownloadTask(url, filename, headers=headers)
 
-            addDownloadTask(url, filename, headers=headers, fileSize=filesize)
             self.parent().tray.showMessage(self.parent().windowTitle(), f"已捕获来自浏览器的下载任务: \n{url}", self.parent().windowIcon())
 
         except Exception as e:
