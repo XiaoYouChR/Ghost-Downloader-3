@@ -3,12 +3,12 @@ import sys
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QFileDialog, QApplication
-from qfluentwidgets import CheckBox, MessageBox, ComboBox, MessageBoxBase, SubtitleLabel, InfoBar, InfoBarPosition
+from qfluentwidgets import CheckBox, MessageBox, ComboBox, MessageBoxBase, SubtitleLabel, InfoBar, InfoBarPosition, \
+    PlainTextEdit
 
 from app.common.methods import openFile
 from app.common.signal_bus import signalBus
 from app.components.Ui_PlanTaskDialog import Ui_PlanTaskDialog
-from app.components.custom_components import DisabledRichTextEdit
 
 
 class DelDialog(MessageBox):
@@ -58,7 +58,7 @@ class EditHeadersDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel("编辑请求标头", self.widget)
         self.viewLayout.addWidget(self.titleLabel)
 
-        self.headersTextEdit = DisabledRichTextEdit(self.widget)
+        self.headersTextEdit = PlainTextEdit(self.widget)
         self.headersTextEdit.setPlaceholderText('请输入请求标头，每行一个键值对，格式为 "key: value"')
         if initialHeaders:
             self.headersTextEdit.setPlainText("\n".join([f"{k}: {v}" for k, v in initialHeaders.items()]))

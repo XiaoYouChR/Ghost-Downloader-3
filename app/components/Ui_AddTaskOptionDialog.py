@@ -10,12 +10,10 @@
 
 from PySide6.QtCore import (QCoreApplication, QSize)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QTableWidgetItem, QVBoxLayout, QHeaderView)
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import FluentIcon as FIF, PlainTextEdit
 from qfluentwidgets import (PushButton, SubtitleLabel,
-                            TableWidget, TextEdit, RoundMenu, Action)
+                            TableWidget, RoundMenu, Action)
 from qfluentwidgets.components.widgets.button import PrimarySplitPushButton
-
-from app.components.custom_components import DisabledRichTextEdit
 
 
 class Ui_AddTaskOptionDialog(object):
@@ -32,9 +30,9 @@ class Ui_AddTaskOptionDialog(object):
 
         self.verticalLayout.addWidget(self.label)
 
-        self.linkTextEdit = DisabledRichTextEdit(AddTaskOptionDialog)
+        self.linkTextEdit = PlainTextEdit(AddTaskOptionDialog)
         self.linkTextEdit.setObjectName(u"linkTextEdit")
-        self.linkTextEdit.setLineWrapMode(TextEdit.LineWrapMode.NoWrap)  # 禁用自动换行
+        self.linkTextEdit.setLineWrapMode(PlainTextEdit.LineWrapMode.NoWrap)  # 禁用自动换行
 
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
