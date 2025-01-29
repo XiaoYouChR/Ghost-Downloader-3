@@ -46,8 +46,6 @@ class CustomInputDialog(MessageBox):
 
 
 class EditHeadersDialog(MessageBoxBase):
-    headersUpdated = Signal(dict)
-
     def __init__(self, parent=None, initialHeaders=None):
         super().__init__(parent=parent)
         self.setClosableOnMaskClicked(True)

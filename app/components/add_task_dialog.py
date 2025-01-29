@@ -177,7 +177,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self._timer.start(1000)  # 1秒后处理
 
     def __handleUrl(self, url: str, index: int):
-        try:
+        # try:
             _url, fileName, fileSize = getLinkInfo(url, self.customHeaders)
             # 查找是否存在该 URL 的行
             for i in range(self.taskTableWidget.rowCount()):
@@ -188,8 +188,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
                     return
             # 如果不存在则添加新行
             self.__addTableRowSignal.emit(fileName, str(fileSize), url)
-        except Exception as e:
-            self.__gotWrong.emit(repr(e), index)
+        # except Exception as e:
+        #     self.__gotWrong.emit(repr(e), index)
 
     def __addTableRow(self, fileName: str, fileSize: str, url: str):
         """ add table row slot """

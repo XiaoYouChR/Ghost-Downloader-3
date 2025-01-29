@@ -15,7 +15,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.common.config import cfg, Headers
+from app.common.config import cfg, Headers, pluginsRegister
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
 
@@ -29,11 +29,12 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
         for filename in os.listdir(directory):
             if filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so"):
 
-                module_name = filename.split(".")[0]
-                file_path = os.path.join(directory, filename)
+
+                moduleName = filename.split(".")[0]
+                filePath = os.path.join(directory, filename)
 
                 # 动态导入模块
-                spec = importlib.util.spec_from_file_location(module_name, file_path)
+                spec = importlib.util.spec_from_file_location(moduleName, filePath)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
 
@@ -43,14 +44,17 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
                     if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
                         try:
                             # 实例化插件并调用 load 方法
-                            plugin_instance = obj(mainWindow)
-                            plugin_instance.load()
-                            logger.info(f"Loaded plugin: {plugin_instance.name}")
-                            plugins.append(plugin_instance)
+                            pluginInstance = obj(mainWindow)
+                            pluginInstance.load()
+                            logger.info(f"Loaded plugin: {pluginInstance.name}")
+                            plugins.append(pluginInstance)
+                            # 将插件的 URL 正则表达式和插件实例注册到 pluginsRegister 字典中
+                            if pluginInstance.registerUrlRegularExpression:
+                                pluginsRegister[pluginInstance] = pluginInstance.registerUrlRegularExpression
                         except Exception as e:
-                            logger.error(f"Error loading plugin {name}: {e}")
+                            logger.error(f"Error loading plugin {name}: {repr(e)}")
     except Exception as e:
-        logger.error(f"Error loading plugins: {e}")
+        logger.error(f"Error loading plugins: {repr(e)}")
 
 
 def getSystemProxy():
@@ -185,6 +189,13 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
 
 
 def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = False, proxy: str = "", followRedirects: bool = True) -> tuple:
+    # 检查 URL 是否匹配任何已注册的插件的 URL 正则表达式
+    for plugin, regex in pluginsRegister.items():
+        if regex.match(url):
+            # 如果匹配，则调用相应插件的 parseUrl 方法
+            print(plugin.parseUrl(url))
+
+    # 如果没有匹配的插件，则使用默认的 getLinkInfo 逻辑
     if not proxy:
         proxy = getProxy()
 
