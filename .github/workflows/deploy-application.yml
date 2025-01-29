@@ -4,37 +4,37 @@ on:
   workflow_dispatch:
 
 jobs:
-#  build-windows:
-#    strategy:
-#      matrix:
-#        architecture: [x86_64, arm64]
-#    runs-on: windows-latest
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: Set up Python 3.11
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: '3.11'
-#
-#      - name: Install dependencies
-#        run: |
-#          pip install --timeout=300 -r requirements.txt
-#          pip install nuitka==2.5.4
-#
-#      - name: Build with Nuitka
-#        run: |
-#          mv main.py Ghost-Downloader-3.py
-#          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --windows-console-mode=disable --windows-icon-from-ico=resources/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.5.1 --product-version=3.5.1 Ghost-Downloader-3.py
-##          nuitka --module plugins/jy_os_page.py
-##          mv jy_os_page*.pyd output/
-#
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: Ghost-Downloader-v3.5.1-Windows-${{ matrix.architecture }}
-#          path: output/Ghost-Downloader-3.dist
+  build-windows:
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 -r requirements.txt
+          pip install nuitka==2.5.4
+
+      - name: Build with Nuitka
+        run: |
+          mv main.py Ghost-Downloader-3.py
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --windows-console-mode=disable --windows-icon-from-ico=resources/logo.ico --company-name=XiaoYouChR --product-name="Ghost Downloader" --file-description="Ghost Downloader" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=3.5.1 --product-version=3.5.1 Ghost-Downloader-3.py
+#          nuitka --module plugins/jy_os_page.py
+#          mv jy_os_page*.pyd output/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghost-Downloader-v3.5.1-Windows-${{ matrix.architecture }}
+          path: output/Ghost-Downloader-3.dist
 
   build-macos-14-arm:
     strategy:
@@ -112,41 +112,41 @@ jobs:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
           path: Ghost-Downloader-3.dmg
 
-#  build-ubuntu:
-#    strategy:
-#      matrix:
-#        architecture: [x86_64, arm64]
-#    runs-on: ubuntu-20.04
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: Set up Python 3.11
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: '3.11'
-#
-#      - name: Install dependencies
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install -y libegl1-mesa
-#          pip install --timeout=300 -r requirements.txt
-#          pip install nuitka
-#
-#      - name: Build with Nuitka
-#        run: |
-#          mv main.py "Ghost-Downloader-3.py"
-#          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
-#          version=$(sed -n '4p' version.txt)
-#          echo "VERSION=$version" >> "$GITHUB_ENV"
-#          echo "VERSION=${{ env.VERSION }}"
-#          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --company-name=XiaoYouChR --product-name="Ghost-Downloader-3" --file-description="Ghost-Downloader-3" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=$version --product-version=$version "Ghost-Downloader-3.py"
-##          nuitka --module plugins/jy_os_page.py
-##          mkdir -p "output/Ghost-Downloader-3.dist/plugins/"
-##          mv jy_os_page*.so "output/Ghost-Downloader-3.dist/plugins/"
-#
-#      - name: Upload artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
-#          path: output/Ghost-Downloader-3.dist
+  build-ubuntu:
+    strategy:
+      matrix:
+        architecture: [x86_64, arm64]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1-mesa
+          pip install --timeout=300 -r requirements.txt
+          pip install nuitka
+
+      - name: Build with Nuitka
+        run: |
+          mv main.py "Ghost-Downloader-3.py"
+          python -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          version=$(sed -n '4p' version.txt)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "VERSION=${{ env.VERSION }}"
+          nuitka --standalone --enable-plugin=pyside6 --show-memory --output-dir=output --disable-console --company-name=XiaoYouChR --product-name="Ghost-Downloader-3" --file-description="Ghost-Downloader-3" --copyright="Copyright(C) 2024 XiaoYouChR" --file-version=$version --product-version=$version "Ghost-Downloader-3.py"
+#          nuitka --module plugins/jy_os_page.py
+#          mkdir -p "output/Ghost-Downloader-3.dist/plugins/"
+#          mv jy_os_page*.so "output/Ghost-Downloader-3.dist/plugins/"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
+          path: output/Ghost-Downloader-3.dist

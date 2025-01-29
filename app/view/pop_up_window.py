@@ -33,6 +33,8 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
         self.globalPath.lineTo(0, self.height())
         self.globalPath.lineTo(0, 0)
 
+        self.geometryAnimation = QPropertyAnimation(self, b"geometry")
+
         # 设置界面图标和文字
         self.setStyleSheet(
             """
@@ -122,7 +124,6 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
     def __moveIn(self):
         self.__playSound()
         # 动画
-        self.geometryAnimation = QPropertyAnimation(self, b"geometry")
         self.geometryAnimation.setDuration(500)
         self.geometryAnimation.setStartValue(self.geometry())
         self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width() - self.width() - 13, self.y(), self.width(), self.height()))
