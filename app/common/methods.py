@@ -15,7 +15,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.common.config import cfg, Headers, pluginsRegister
+from app.common.config import cfg, Headers, registerUrlsByPlugins
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
 
@@ -25,7 +25,7 @@ plugins = []
 #     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
 
 def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
-    try:
+    # try:
         for filename in os.listdir(directory):
             if filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so"):
 
@@ -42,19 +42,16 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
                 for name, obj in inspect.getmembers(module):
                     # 检查是否是类，并且继承自 PluginBase
                     if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
-                        try:
+                        # try:
                             # 实例化插件并调用 load 方法
                             pluginInstance = obj(mainWindow)
                             pluginInstance.load()
                             logger.info(f"Loaded plugin: {pluginInstance.name}")
                             plugins.append(pluginInstance)
-                            # 将插件的 URL 正则表达式和插件实例注册到 pluginsRegister 字典中
-                            if pluginInstance.registerUrlRegularExpression:
-                                pluginsRegister[pluginInstance] = pluginInstance.registerUrlRegularExpression
-                        except Exception as e:
-                            logger.error(f"Error loading plugin {name}: {repr(e)}")
-    except Exception as e:
-        logger.error(f"Error loading plugins: {repr(e)}")
+                        # except Exception as e:
+                        #     logger.error(f"Error loading plugin {name}: {repr(e)}")
+    # except Exception as e:
+    #     logger.error(f"Error loading plugins: {repr(e)}")
 
 
 def getSystemProxy():
@@ -188,16 +185,62 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
     return localTimeNaive
 
 
-def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = False, proxy: str = "", followRedirects: bool = True) -> tuple:
-    # 检查 URL 是否匹配任何已注册的插件的 URL 正则表达式
-    for plugin, regex in pluginsRegister.items():
-        if regex.match(url):
-            # 如果匹配，则调用相应插件的 parseUrl 方法
-            print(plugin.parseUrl(url))
+def getFileSize(url: str, headers: dict, verify: bool = False, proxy: str = "", followRedirects: bool = True) -> int:
+    """
+    获取文件大小, 专门给插件提供的方便接口
 
-    # 如果没有匹配的插件，则使用默认的 getLinkInfo 逻辑
+    :param url: 文件 URL
+    :return: 文件大小，单位字节
+    """
+    # 使用 stream 请求获取响应
+    with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects) as response:
+        response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
+
+        head = response.headers
+
+        # 获取文件大小, 判断是否可以分块下载
+        if "content-length" not in head:
+            fileSize = 0
+        else:
+            fileSize = int(head["content-length"])
+
+        return fileSize
+
+
+def getFileSizeWithClient(url:str, client:httpx.Client) -> int:
+    with client.stream("GET", url) as response:
+        response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
+
+        head = response.headers
+
+        # 获取文件大小, 判断是否可以分块下载
+        if "content-length" not in head:
+            fileSize = 0
+        else:
+            fileSize = int(head["content-length"])
+
+        return fileSize
+
+
+def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = False, proxy: str = "", followRedirects: bool = True) -> tuple or list:
+    """
+    获取链接信息
+
+    :return: tuple or list
+        tuple: (url, fileName, fileSize)
+        list: [[url, fileName, fileSize], [url, fileName, fileSize], [url, fileName, fileSize], ...]
+    """
+
     if not proxy:
         proxy = getProxy()
+
+    # 检查 URL 是否匹配任何已注册的插件的 URL 正则表达式
+    for plugin, regex in registerUrlsByPlugins.items():
+        print(plugin, regex)
+        if regex.match(url):
+            # 如果匹配，则调用相应插件的 parseUrl 方法
+            print(plugin.parseUrl(url, proxy))
+            return
 
     # 使用 stream 请求获取响应
     with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects) as response:
