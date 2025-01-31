@@ -51,14 +51,15 @@
 - ✅ 更详细的下载信息
 - ✅ 计划任务功能
 - ✅ 浏览器插件优化
+- ✅ 全局限速
 - ✅ 内存占用优化
   - ✅ 升级 Qt 版本
   - ✅ 实现 HttpClient 复用
   - ✅ 用协程来代替部分多线程功能
 - ❌ 开放捐赠入口
 - ❌ 磁力 / BT 下载
-- ❌ 插件市场
-- ❌ 全局限速（还没找到一个合适的实现方法）
+- ❌ 插件功能 (开发中...详见 Folk: feature/Plugins)
+
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
