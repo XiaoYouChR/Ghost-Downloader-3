@@ -13,29 +13,26 @@ from .Ui_TaskCard import Ui_TaskCard
 from .custom_components import TaskProgressBar
 from .custom_dialogs import DelDialog, CustomInputDialog
 from ..common.config import cfg
-from ..common.download_task import DownloadTask
+from ..common.download_task import DownloadTask, DownloadTaskManager
 from ..common.methods import getReadableSize, openFile
+from ..common.task_base import TaskManagerBase
 from ..view.pop_up_window import FinishedPopUpWindow
 
 
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
-    def __init__(self, url:str, fileName: str, filePath:str, preBlockNum: int, headers: dict, status: str,
-                 notCreatedHistoryFile:bool, fileSize: int=-1, parent=None):
+    def __init__(self, taskManager: TaskManagerBase, status: str,
+                 notCreatedHistoryFile:bool, parent=None):
         super().__init__(parent=parent)
 
         self.setupUi(self)
 
         # 初始化参数
-        self.url = url
-        self.headers = headers
-        self.fileName = fileName
-        self.filePath = filePath
-        self.preBlockNum = preBlockNum
+        self.taskManager = taskManager
+
         self.status = status  # working waiting paused finished
         self.notCreateHistoryFile = notCreatedHistoryFile  # 事实上用来记录历史文件是否已经创建
-        self.fileSize = fileSize
         self.ableToParallelDownload = False # 是否可以并行下载
 
         self.__clickPos = None
@@ -54,10 +51,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
             self.pauseButton.setDisabled(True)
 
-            if fileName:
-                self.__instantiateTask(url, filePath, preBlockNum, headers, fileSize, fileName)
-
-                self.__onTaskInited(self.ableToParallelDownload)
+            if self.taskManager.fileName:
+                self.__onTaskInited(False)
 
                 if self.status == "paused":
                     self.__showInfo("任务已经暂停")
@@ -94,60 +89,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.task.start()
         elif self.status == "paused" or self.status == "waiting":
             self.pauseButton.setIcon(FIF.PLAY)
-
-    def __instantiateTask(self, url:str, filePath: str, preBlockNum: int, headers: dict, fileSize: int=-1, fileName: str=None):
-        autoSpeedUp = cfg.autoSpeedUp.value
-        self.task = DownloadTask(url, headers, preBlockNum, filePath, fileName, autoSpeedUp, fileSize)
-
-    def updateTaskRecord(self, newStatus: str):
-        recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
-
-        # 读取所有记录
-        records = []
-        try:
-            with open(recordPath, "rb") as f:
-                while True:
-                    try:
-                        record = pickle.load(f)
-                        records.append(record)
-                    except EOFError:
-                        break
-        except FileNotFoundError:
-            pass
-
-        # 检查是否已有匹配的记录
-        found = False
-        updatedRecords = []
-        for record in records:
-            if (record["url"] == self.url and
-                    record["fileName"] == self.fileName and
-                    record["filePath"] == str(self.filePath) and
-                    record["blockNum"] == self.preBlockNum and
-                    record["headers"] == self.headers):
-                found = True
-                if newStatus != "deleted":
-                    record["status"] = newStatus
-                    updatedRecords.append(record)
-            else:
-                updatedRecords.append(record)
-
-        # 如果没有找到匹配的记录且 newStatus 不是 "deleted"，则添加新记录
-        if not found and newStatus != "deleted":
-            updatedRecords.append({
-                "url": self.url,
-                "fileName": self.fileName,
-                "filePath": str(self.filePath),
-                "blockNum": self.preBlockNum,
-                "status": self.status,
-                "headers": self.headers,
-                "fileSize": self.fileSize
-            })
-
-        # 写回记录文件
-        with open(recordPath, "wb") as f:
-            for record in updatedRecords:
-                pickle.dump(record, f)
-
 
     def __onTaskError(self, exception: str):
         self.__showInfo(f"Error: {exception}")
@@ -263,19 +204,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
             try:
                 if self.status == "working":
                     self.pauseTask()
-
-                if completely:
-                    # 删除文件
-                    try:
-                        Path(f"{self.filePath}/{self.fileName}").unlink()
-                        Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-                        logger.info(f"self:{self.fileName}, delete file successfully!")
-
-                    except FileNotFoundError:
-                        pass
-
-                    except Exception as e:
-                        raise e
 
             except Exception as e:
                 logger.warning(f"Task 删除时遇到错误: {e}")

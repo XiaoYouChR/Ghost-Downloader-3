@@ -14,6 +14,7 @@ from loguru import logger
 
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo
+from app.common.task_base import TaskManagerBase
 
 
 class DownloadWorker:
@@ -27,16 +28,113 @@ class DownloadWorker:
         self.client = client
 
 
-class DownloadTask(QThread):
-    """ Task Manager
-        self.fileSize == -1 表示自动获取; == 0 表示不能并行下载; else 表示正常"""
+class DownloadTaskManager(TaskManagerBase):
+    """
+    官方下载任务支持
+    """
+    def __init__(self, url, headers, preTaskNum: int, filePath: str, fileName: str = None,
+                 fileSize: int = -1, parent=None):
+        super().__init__(url, headers, preTaskNum, filePath, fileName, fileSize, parent)
 
-    taskInited = Signal(bool)  # 线程初始化成功, 并传递是否支持并行下载的信息
-    # processChange = Signal(str)  # 目前进度 且因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
-    workerInfoChanged = Signal(list)  # 目前进度 v3.2版本引进了分段式进度条
+    def start(self):
+        autoSpeedUp = cfg.autoSpeedUp.value
+        self.task = DownloadTask(self.url, self.headers, self.preBlockNum, self.filePath, self.fileName, autoSpeedUp, self.fileSize, self)
+        self.task.start()
+        self.task.taskInited.connect(self.__onTaskInited)
+        self.task.taskFinished.connect(self.taskFinished)
+        self.task.taskGotWrong.connect(self.taskGotWrong)
+        self.task.progressInfoChanged.connect(self.progressInfoChanged)
+        self.task.speedChanged.connect(self.speedChanged)
+
+    def __onTaskInited(self, ableToParallelDownload: bool):
+        self.fileName = self.task.fileName
+        self.fileSize = self.task.fileSize
+        self.ableToParallelDownload = ableToParallelDownload
+
+        self.taskInited.emit(ableToParallelDownload)
+
+    def stop(self):
+        self.task.stop()
+        self.task.wait()
+        self.task.deleteLater()
+
+    def cancel(self, completely: bool=False):
+        self.stop()
+        if completely:
+
+        # 删除文件
+        try:
+            Path(f"{self.filePath}/{self.fileName}").unlink()
+            Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+            logger.info(f"self:{self.fileName}, delete file successfully!")
+
+        except FileNotFoundError:
+            pass
+
+        except Exception as e:
+            raise e
+
+    def updateTaskRecord(self, newStatus: str):
+        recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
+
+        # 读取所有记录
+        records = []
+        try:
+            with open(recordPath, "rb") as f:
+                while True:
+                    try:
+                        record = pickle.load(f)
+                        records.append(record)
+                    except EOFError:
+                        break
+        except FileNotFoundError:
+            pass
+
+        # 检查是否已有匹配的记录
+        found = False
+        updatedRecords = []
+        for record in records:
+            if (record["url"] == self.url and
+                    record["fileName"] == self.fileName and
+                    record["filePath"] == str(self.filePath) and
+                    record["blockNum"] == self.preBlockNum and
+                    record["headers"] == self.headers):
+                found = True
+                if newStatus != "deleted":
+                    record["status"] = newStatus
+                    updatedRecords.append(record)
+            else:
+                updatedRecords.append(record)
+
+        # 如果没有找到匹配的记录且 newStatus 不是 "deleted"，则添加新记录
+        if not found and newStatus != "deleted":
+            updatedRecords.append({
+                "url": self.url,
+                "fileName": self.fileName,
+                "filePath": str(self.filePath),
+                "blockNum": self.preBlockNum,
+                "status": self.status,
+                "headers": self.headers,
+                "fileSize": self.fileSize
+            })
+
+        # 写回记录文件
+        with open(recordPath, "wb") as f:
+            for record in updatedRecords:
+                pickle.dump(record, f)
+
+
+class DownloadTask(QThread):
+    """
+    官方下载支持,
+    Worker 工作的地方
+    """
+
+    taskInited = Signal(bool)  # 线程初始化成功, 并传递是否支持并行下载的信息 (是否支持并行下载即任务进度条是否不确定)
+    taskFinished = Signal()  # 内置的完成信号不好用
+    taskGotWrong = Signal(str)  # 任务报错 😭
+    progressInfoChanged = Signal(list)  # 目前进度 用于显示 v3.2 引进的分段式进度条
     speedChanged = Signal(int)  # 平均速度 因为 autoSpeedUp 功能需要实时计算平均速度 v3.4.4 起移入后端计算速度, 每秒速度可能超过 2^31 Bytes 吗？
-    taskFinished = Signal()  # 内置信号的不好用
-    gotWrong = Signal(str)  # 😭 我出问题了
 
     def __init__(self, url, headers, preTaskNum: int = 8, filePath:str=None, fileName:str=None, autoSpeedUp:bool=False, fileSize:int=-1, parent=None):
         super().__init__(parent)
@@ -159,7 +257,7 @@ class DownloadTask(QThread):
                 self.preBlockNum = 1
 
         except Exception as e:  # 重试也没用
-            self.gotWrong.emit(repr(e))
+            self.taskGotWrong.emit(repr(e))
 
     def __loadWorkers(self):
         if not self.ableToParallelDownload:
@@ -231,7 +329,7 @@ class DownloadTask(QThread):
                     logger.info(
                         f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
 
-                    self.gotWrong.emit(repr(e))
+                    self.taskGotWrong.emit(repr(e))
 
                     await asyncio.sleep(5)  # 5s 后重试
 
@@ -266,7 +364,7 @@ class DownloadTask(QThread):
                     logger.info(
                         f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
 
-                    self.gotWrong.emit(repr(e))
+                    self.taskGotWrong.emit(repr(e))
 
                     await asyncio.sleep(5)
 
@@ -306,7 +404,7 @@ class DownloadTask(QThread):
                 await self.ghdFile.flush()
                 await self.ghdFile.truncate()
 
-                self.workerInfoChanged.emit(info)
+                self.progressInfoChanged.emit(info)
 
                 # 计算速度
                 speed = (self.progress - LastProcess)
@@ -356,7 +454,7 @@ class DownloadTask(QThread):
                 for i in self.workers:
                     self.progress += (i.progress - i.startPos + 1)
 
-                self.workerInfoChanged.emit([])
+                self.progressInfoChanged.emit([])
 
                 # 计算速度
                 speed = (self.progress - LastProcess)
@@ -420,7 +518,7 @@ class DownloadTask(QThread):
                 self.taskFinished.emit()
 
         except Exception as e:
-            self.gotWrong.emit(repr(e))
+            self.taskGotWrong.emit(repr(e))
 
     def stop(self):
         for task in self.tasks:
