@@ -64,13 +64,13 @@ class MainWindow(MSFluentWindow):
         # 允许拖拽
         self.setAcceptDrops(True)
 
-        # 设置背景特效
-        self.applyBackgroundEffectByCfg()
-
         # 自定义主题信号连接
         self.themeChangedListener = None
         self.__onCustomThemeModeChanged(cfg.customThemeMode.value)
         cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
+
+        # 设置背景特效
+        self.applyBackgroundEffectByCfg()
 
         # 创建未完成的任务
         historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
