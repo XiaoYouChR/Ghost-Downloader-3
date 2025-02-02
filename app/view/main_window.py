@@ -15,7 +15,7 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg, Headers, attachmentTypes
+from ..common.config import cfg, Headers, attachmentTypes, registerContentsByPlugins
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask
 from ..components.add_task_dialog import AddTaskOptionDialog
@@ -312,10 +312,15 @@ class MainWindow(MSFluentWindow):
 
     def __checkUrl(self, url):
         try:
+            for plugin, contents in registerContentsByPlugins.items():
+                if contents[0].match(url):
+                    return url
+
             _, fileName, __ = getLinkInfo(url, Headers)
             if fileName.lower().endswith(tuple(attachmentTypes.split())):
                 return url
-            return
+
+            return False
         except ValueError:
             return False
 

@@ -6,6 +6,7 @@ from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 
 from app.common.config import VERSION, LATEST_EXTENSION_VERSION
+from app.common.download_task import DownloadTaskManager
 from app.common.methods import addDownloadTask
 from app.view.pop_up_window import ReceivedPopUpWindow
 
@@ -58,7 +59,7 @@ class GhostDownloaderSocketServer(QObject):
             if data["referer"]:
                 headers["referer"] = data["referer"]
             filename = data["filename"]
-            addDownloadTask(url, filename, headers=headers)
+            addDownloadTask(DownloadTaskManager, url, filename, headers=headers)
 
             if filename:
                 ReceivedPopUpWindow.showPopUpWindow(filename, self.parent())

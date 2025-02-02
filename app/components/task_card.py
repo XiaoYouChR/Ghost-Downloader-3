@@ -1,6 +1,7 @@
 import hashlib
 import pickle
 from pathlib import Path
+from typing import Type
 
 from PySide6.QtCore import QThread, Signal, QFileInfo, QMimeData, Qt, QUrl
 from PySide6.QtGui import QPixmap, QDrag
@@ -20,140 +21,127 @@ from ..view.pop_up_window import FinishedPopUpWindow
 
 
 class TaskCard(CardWidget, Ui_TaskCard):
+    """
+    taskManagerCls 为 taskManager 的实例化方法
+    接受没有 fileName 或 未知 fileSize 的 taskManager, 待 taskInited 后读取获取到 LinkInfo 重设界面
+    """
+
     taskStatusChanged = Signal()
 
-    def __init__(self, taskManager: TaskManagerBase, status: str,
-                 notCreatedHistoryFile:bool, parent=None):
+    def __init__(self, taskManagerCls: Type[TaskManagerBase], url:str, headers: dict, preBlockNum: int, fileName: str, filePath:str, status: str,
+                 notCreatedHistoryFile:bool, fileSize: int = -1, parent=None):
         super().__init__(parent=parent)
 
         self.setupUi(self)
 
-        # 初始化参数
-        self.taskManager = taskManager
+        # 初始化 TaskManager
+        self.taskManager = taskManagerCls(url, headers, preBlockNum, filePath, fileName, fileSize, self)
+        self.taskManager.taskInited.connect(self.__onTaskInited)
+        self.taskManager.taskFinished.connect(self.__onTaskFinished)
+        self.taskManager.taskGotWrong.connect(self.__onTaskError)
+        self.taskManager.progressInfoChanged.connect(self.__updateProgress)
+        self.taskManager.speedChanged.connect(self.__updateSpeed)
 
-        self.status = status  # working waiting paused finished
+        self.status = status  # 状态有: working, waiting, paused, finished. 不希望被迁移到 taskManagerBase
         self.notCreateHistoryFile = notCreatedHistoryFile  # 事实上用来记录历史文件是否已经创建
-        self.ableToParallelDownload = False # 是否可以并行下载
+        self.ableToParallelDownload = False # 记录是否可以并行下载(进度条的显示方式和进度信息的显示方式)
+        self.__clickPos = None # 记录鼠标点击位置, 用来在 dragEvent 中计算鼠标移动距离
 
-        self.__clickPos = None
-
-        # Show Information
         self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
-        self.titleLabel.setText("正在初始化任务...")
 
-        self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
-        self.LogoPixmapLabel.setFixedSize(70, 70)
-
-        self.progressBar = ProgressBar(self)
-        self.progressBar.setObjectName(u"progressBar")
-        self.verticalLayout.addWidget(self.progressBar)
+        self.cancelButton.clicked.connect(self.cancelTask)
+        self.folderButton.clicked.connect(lambda: openFile(filePath))
 
         if not self.status == "finished":  # 不是已完成的任务才要进行的操作
-            self.pauseButton.setDisabled(True)
+            self.pauseButton.clicked.connect(self.pauseTask)
+            self.pauseButton.setEnabled(False)  # 不允许暂停, 因为 __InitThread 无法停止
+            self.__onTaskInited(False)  # 有就显示, 没就等信号 TaskInited
 
-            if self.taskManager.fileName:
-                self.__onTaskInited(False)
+            if self.taskManager.fileName and self.taskManager.fileSize != -1:   # 先显示 fileName
+                self.pauseButton.setEnabled(True)   # 这种情况下 __InitThread 要不然不启动, 要不然运行完了
 
-                if self.status == "paused":
-                    self.__showInfo("任务已经暂停")
-                elif self.status == "waiting":
-                    self.__showInfo("排队中...")
-
-            else:
-                self.__instantiateTask(url, filePath, preBlockNum, headers, fileSize)
-
-            self.__connectSignalToSlot()
-
-        elif self.status == "finished":
-            # TODO 超分辨率触发条件
-            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+        elif self.status == "finished": # 已完成的任务, 就当个傀儡
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标, Qt 有 Bug, 会获取到一个只有左上角一点点的图像
 
             if _:
                 pixmap = _
             else:
-                pixmap = QPixmap(":/image/logo.png")
+                pixmap = QPixmap(":/image/logo.png")    # 无法获取
 
             self.titleLabel.setText(self.fileName)
             self.LogoPixmapLabel.setPixmap(pixmap)
             self.LogoPixmapLabel.setFixedSize(70, 70)
 
-            self.__onTaskFinished()
+            self.__onTaskFinished() # 显示完成信息, 里面处理了 pauseBtn 信号的连接
 
-        # 连接信号到槽
-        self.pauseButton.clicked.connect(self.pauseTask)
-        self.cancelButton.clicked.connect(self.cancelTask)
-        self.folderButton.clicked.connect(lambda: openFile(filePath))
-
-        if self.status == "working":
-            # 开始下载
-            self.task.start()
-        elif self.status == "paused" or self.status == "waiting":
+        if self.status == "working":  # 开始任务
+            self.taskManager.start()
+        elif self.status == "paused" or self.status == "waiting":   # 不开始
             self.pauseButton.setIcon(FIF.PLAY)
 
     def __onTaskError(self, exception: str):
         self.__showInfo(f"Error: {exception}")
-        if not self.fileName:
+        if not self.fileName or self.fileSize == -1:
             self.status = "paused"
             self.pauseButton.setEnabled(True)
             self.pauseButton.setIcon(FIF.PLAY)
             self.titleLabel.setText("任务初始化失败")
 
     def __onTaskInited(self, ableToParallelDownload: bool):
-        self.fileName = self.task.fileName
-        self.fileSize = self.task.fileSize
+        self.fileName = self.taskManager.fileName
+        self.fileSize = self.taskManager.fileSize
         self.ableToParallelDownload = ableToParallelDownload
 
-        # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
-        # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+        # _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
         #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
-        _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+        _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标, Qt 有 Bug, 会获取到一个只有左上角一点点的图像
 
         if _:
             pixmap = _
         else:
-            pixmap = QPixmap(":/image/logo.png")
+            pixmap = QPixmap(":/image/logo.png")    # 无法获取
 
         # 显示信息
         self.titleLabel.setText(self.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(70, 70)
 
+        if self.status == "paused":
+            self.__showInfo("任务已经暂停")
+        
         if self.status == "waiting":
             self.__showInfo("排队中...")
 
-        if self.ableToParallelDownload:
+        if self.ableToParallelDownload: # 可以并行下载, pauseBtn 可用
             self.progressBar.deleteLater()
-            self.progressBar = TaskProgressBar(self.preBlockNum, self)
+            self.progressBar = TaskProgressBar(self.taskManager.preBlockNum, self)
             self.progressBar.setObjectName(u"progressBar")
-
             self.verticalLayout.addWidget(self.progressBar)
 
             # 写入未完成任务记录文件，以供下次打开时继续下载
             if self.fileName and not self.notCreateHistoryFile:
-                self.updateTaskRecord(self.status)
+                self.taskManager.updateTaskRecord(self.status)
                 self.notCreateHistoryFile = True
 
             self.pauseButton.setEnabled(True)
-        else:
+        else:   # 可以并行下载, pauseBtn 事实上已被禁用
             self.progressBar.deleteLater()
             self.progressBar = IndeterminateProgressBar(self)
             self.progressBar.setObjectName(u"progressBar")
             self.verticalLayout.addWidget(self.progressBar)
 
     def pauseTask(self):
+        """
+        当不能并行下载的时候实际上也不可能触发,
+        因此不用考虑 updateTaskRecord 意外记录不应该记录的任务的问题
+        """
         if self.status == "working":  # 暂停
             self.pauseButton.setDisabled(True)
             self.pauseButton.setIcon(FIF.PLAY)
 
             try:
-                self.task.stop()
-
-                # self.task.terminate()
-                self.task.wait()
-                self.task.deleteLater()
-
-                # 改变记录状态
-                self.updateTaskRecord("paused")
+                self.taskManager.stop()
+                self.taskManager.updateTaskRecord("paused") # 改变记录状态
 
             except Exception as e:
                 logger.warning(f"Task:{self.fileName}, 暂停时遇到错误: {repr(e)}")
@@ -164,27 +152,16 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.pauseButton.setEnabled(True)
 
         elif self.status == "paused" or self.status == "waiting":  # 继续
-
             self.pauseButton.setDisabled(True)
             self.pauseButton.setIcon(FIF.PAUSE)
 
             try:
-                self.__instantiateTask(self.url, self.filePath, self.preBlockNum, self.headers, self.fileSize, self.fileName)
-            except:  # TODO 没有 fileName 的情况
-                self.__instantiateTask(self.url, self.filePath, self.preBlockNum, self.headers, self.fileSize)
+                self.taskManager.start()
+                self.taskManager.updateTaskRecord("working")
 
-            self.__connectSignalToSlot()
-
-            self.task.start()
-
-            try:
-                # 改变记录状态
-                self.updateTaskRecord("working")
-
-            finally:
+            finally:    # 得让 self.__initThread 运行完才能运行暂停! 不要恢复 self.pauseBtn 的状态
                 self.__showInfo("任务正在开始")
                 self.status = "working"
-                # 得让 self.__initThread 运行完才能运行暂停！ self.pauseButton.setEnabled(True)
 
         self.taskStatusChanged.emit()
 
@@ -203,7 +180,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             try:
                 if self.status == "working":
-                    self.pauseTask()
+                    self.pauseTask()    # 先暂停
+
+                self.taskManager.cancel(completely)
 
             except Exception as e:
                 logger.warning(f"Task 删除时遇到错误: {e}")
@@ -211,10 +190,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
             finally:
                 try:
                     # 删除记录文件
-                    self.updateTaskRecord("deleted")
+                    self.taskManager.updateTaskRecord("deleted")
 
                 finally:
-                    # Remove Widget
+                    # Remove TaskCard, 不知道怎么改得更好😵
                     self.parent().parent().parent().expandLayout.takeAt(self.parent().parent().parent().expandLayout.indexOf(self))
                     self.parent().parent().parent().cards.remove(self)
                     self.taskStatusChanged.emit()
@@ -248,13 +227,17 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if _:
                 self.progressBar.addProgressBar(content, _)
 
-            for e, i in enumerate(content):
-                self.progressBar.progressBarList[e].setValue(((i["progress"] - i["start"]) / (i["end"] - i["start"])) * 100)
+            progress = 0
 
-            self.progressLabel.setText(f"{getReadableSize(self.task.progress)}/{getReadableSize(self.task.fileSize)}")
+            for e, i in enumerate(content):
+                _ = i["progress"] - i["start"]
+                self.progressBar.progressBarList[e].setValue((_ / (i["end"] - i["start"])) * 100)
+                progress += _
+
+            self.progressLabel.setText(f"{getReadableSize(_)}/{getReadableSize(self.taskManager.fileSize)}")
 
         else: # 不能并行下载
-            self.progressLabel.setText(f"{getReadableSize(self.task.progress)}")
+            self.progressLabel.setText(f"{getReadableSize(self.taskManager.progress)}")
 
     def __updateSpeed(self, avgSpeed: int):
 
@@ -263,7 +246,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if self.ableToParallelDownload:
             # 计算剩余时间，并转换为 MM:SS
             try:
-                leftTime = (self.task.fileSize - self.task.progress) / avgSpeed
+                leftTime = (self.taskManager.fileSize - self.taskManager.progress) / avgSpeed
                 self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
             except ZeroDivisionError:
                 self.leftTimeLabel.setText("Infinity")
@@ -274,9 +257,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
 
-        self.clicked.connect(lambda: openFile(f"{self.filePath}/{self.fileName}"))
+        self.clicked.connect(lambda: openFile(f"{self.taskManager.filePath}/{self.fileName}"))
 
-        _ = QFileInfo(f"{self.filePath}/{self.fileName}").lastModified().toString("yyyy-MM-dd hh:mm:ss")
+        _ = QFileInfo(f"{self.taskManager.filePath}/{self.fileName}").lastModified().toString("yyyy-MM-dd hh:mm:ss")
 
         self.__showInfo(f"完成时间: {_}" if _ else "文件已被删除")
 
@@ -290,16 +273,16 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         try:  # 程序启动时不要发
             if self.window().tray:
-                FinishedPopUpWindow.showPopUpWindow(f"{self.filePath}/{self.fileName}", self.window())
+                FinishedPopUpWindow.showPopUpWindow(f"{self.taskManager.filePath}/{self.fileName}", self.window())
         except:
             pass
 
         if not self.status == "finished":  # 不是自动创建的已完成任务
             # 改变记录状态
-            self.updateTaskRecord("finished")
+            self.taskManager.updateTaskRecord("finished")
 
             # 再获取一次图标
-            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
 
             if _:
                 pass
@@ -320,15 +303,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         self.taskStatusChanged.emit()
 
-    def __connectSignalToSlot(self):
-        self.task.taskInited.connect(self.__onTaskInited)
-        self.task.workerInfoChanged.connect(self.__updateProgress)
-        self.task.speedChanged.connect(self.__updateSpeed)
-
-        self.task.taskFinished.connect(self.__onTaskFinished)
-
-        self.task.gotWrong.connect(self.__onTaskError)
-
     def showHashAlgorithmDialog(self):
 
         algorithms = ["MD5", "SHA1","SHA224", "SHA256","SHA384", "SHA512", "BLAKE2B", "BLAKE2S", "SHA3_224", "SHA3_256", "SHA3_384", "SHA3_512", "SHAKE_128", "SHAKE_256"]
@@ -340,16 +314,18 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.runCalcHashTask(selected_algorithm)
 
     def runCalcHashTask(self, algorithm):
+        self.progressBar:ProgressBar
         self.__showInfo(f"正在校验 {algorithm}, 请稍后...")
         self.pauseButton.setDisabled(True)
-        self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
+        self.progressBar.setMaximum(Path(f"{self.taskManager.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
 
-        self.calcTask = CalcHashThread(f"{self.filePath}/{self.fileName}", algorithm)
+        self.calcTask = CalcHashThread(f"{self.taskManager.filePath}/{self.fileName}", algorithm)
         self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)))
         self.calcTask.returnHash.connect(self.whenHashCalcFinished)
         self.calcTask.start()
 
     def whenHashCalcFinished(self, result: str):
+        self.progressBar:ProgressBar
         self.calcTask.deleteLater()
         self.progressBar.setMaximum(100)
         self.progressBar.setValue(100)
@@ -374,7 +350,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if self.__calcDistance(self.__clickPos, event.pos()) >= 4:
                 drag = QDrag(self)
                 mimeData = QMimeData()
-                mimeData.setUrls([QUrl.fromLocalFile(f'{self.filePath}/{self.fileName}')])
+                mimeData.setUrls([QUrl.fromLocalFile(f'{self.taskManager.filePath}/{self.fileName}')])
                 drag.setMimeData(mimeData)
                 drag.setPixmap(self.LogoPixmapLabel.pixmap().copy())
                 drag.exec(Qt.CopyAction | Qt.MoveAction)

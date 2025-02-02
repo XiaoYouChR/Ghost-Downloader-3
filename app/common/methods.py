@@ -1,5 +1,5 @@
 import importlib
-import inspect
+from inspect import isclass, getmembers
 import os
 import re
 import sys
@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from email.utils import decode_rfc2231
 from functools import wraps
 from time import sleep, localtime, time_ns
+from typing import Type
 from urllib.parse import unquote, parse_qs, urlparse
 
 import httpx
@@ -15,9 +16,10 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.common.config import cfg, Headers, registerUrlsByPlugins
+from app.common.config import cfg, Headers, registerContentsByPlugins
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
+from app.common.task_base import TaskManagerBase
 
 plugins = []
 
@@ -39,9 +41,9 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
                 spec.loader.exec_module(module)
 
                 # 遍历模块中的所有成员
-                for name, obj in inspect.getmembers(module):
+                for name, obj in getmembers(module):
                     # 检查是否是类，并且继承自 PluginBase
-                    if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
+                    if isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
                         # try:
                             # 实例化插件并调用 load 方法
                             pluginInstance = obj(mainWindow)
@@ -235,7 +237,7 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = Fals
         proxy = getProxy()
 
     # 检查 URL 是否匹配任何已注册的插件的 URL 正则表达式
-    for plugin, regex in registerUrlsByPlugins.items():
+    for plugin, regex in registerContentsByPlugins.items():
         print(plugin, regex)
         if regex.match(url):
             # 如果匹配，则调用相应插件的 parseUrl 方法
@@ -333,7 +335,7 @@ def bringWindowToTop(window):
     window.raise_()
 
 
-def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
+def addDownloadTask(taskManagerCls:Type[TaskManagerBase], url: str, fileName: str = None, filePath: str = None,
                     headers: dict = None, status:str = "working", preBlockNum: int= None, notCreateHistoryFile: bool = False, fileSize: int = -1):
     """ Global function to add download task """
     if not filePath:
@@ -345,4 +347,4 @@ def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
     if not headers:
         headers = Headers
 
-    signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))
+    signalBus.addTaskSignal.emit(taskManagerCls, url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))

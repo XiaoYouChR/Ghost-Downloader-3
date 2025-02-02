@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 from threading import Thread
+from typing import Type
 
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QColor
@@ -12,8 +13,10 @@ from qfluentwidgets.common.icon import FluentIcon as FIF
 from app.components.custom_mask_dialog_base import MaskDialogBase
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from .custom_dialogs import EditHeadersDialog
-from ..common.config import cfg, Headers
+from ..common.config import cfg, Headers, registerContentsByPlugins
+from ..common.download_task import DownloadTaskManager
 from ..common.methods import getReadableSize, getLinkInfo, addDownloadTask
+from ..common.task_base import TaskManagerBase
 
 urlRe = re.compile(r"^" +
                    "(https?://)" +
@@ -35,7 +38,7 @@ urlRe = re.compile(r"^" +
 class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     startSignal = Signal()
-    __addTableRowSignal = Signal(str, str, str)  # fileName, fileSize, Url, 同理因为int最大值仅支持到2^31 PyQt无法定义int64 故只能使用str代替
+    __addTableRowSignal = Signal(str, str, str, Type[TaskManagerBase])  # fileName, fileSize, Url, 同理因为int最大值仅支持到2^31 PyQt无法定义int64 故只能使用str代替
     __gotWrong = Signal(str, int) # error, index
 
     def __init__(self, parent=None):
@@ -133,7 +136,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             item = self.taskTableWidget.item(i, 0)
             fileName = item.text() if item.text() != item.data(1) else None
 
-            addDownloadTask(item.data(1), fileName, str(path), self.customHeaders, preBlockNum=self.blockNumCard.configItem.value)
+            addDownloadTask(item.data(3), item.data(1), fileName, str(path), self.customHeaders, preBlockNum=self.blockNumCard.configItem.value)
 
         self.close()
 
@@ -154,7 +157,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             item = self.taskTableWidget.item(i, 0)
             fileName = item.text() if item.text() != item.data(1) else None
 
-            addDownloadTask(item.data(1), fileName, str(path), self.customHeaders, "paused", self.blockNumCard.configItem.value)
+            addDownloadTask(item.data(3), item.data(1), fileName, str(path), self.customHeaders, "paused", self.blockNumCard.configItem.value)
 
         self.close()
 
@@ -176,27 +179,29 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self._timer.timeout.connect(self.__progressTextChange)
         self._timer.start(1000)  # 1秒后处理
 
-    def __handleUrl(self, url: str, index: int):
+    def __handleUrl(self, url: str, index: int, parseUrlFunction):
+        """一个 handleUrl 仅处理一个链接"""
         # try:
-            _url, fileName, fileSize = getLinkInfo(url, self.customHeaders)
-            # 查找是否存在该 URL 的行
-            for i in range(self.taskTableWidget.rowCount()):
-                if self.taskTableWidget.item(i, 0).data(1) == url:
-                    # 更新文件名和文件大小
-                    self.taskTableWidget.item(i, 0).setText(fileName)
-                    self.taskTableWidget.item(i, 1).setText(getReadableSize(int(fileSize)))
-                    return
-            # 如果不存在则添加新行
-            self.__addTableRowSignal.emit(fileName, str(fileSize), url)
+        _url, fileName, fileSize = parseUrlFunction(url, self.customHeaders)
+        # 查找是否存在该 URL 的行
+        for i in range(self.taskTableWidget.rowCount()):
+            if self.taskTableWidget.item(i, 0).data(1) == url:
+                # 更新文件名和文件大小
+                self.taskTableWidget.item(i, 0).setText(fileName)
+                self.taskTableWidget.item(i, 1).setText(getReadableSize(int(fileSize)))
+                return
+        # 如果不存在则添加新行
+        self.__addTableRowSignal.emit(fileName, str(fileSize), url)
         # except Exception as e:
         #     self.__gotWrong.emit(repr(e), index)
 
-    def __addTableRow(self, fileName: str, fileSize: str, url: str):
+    def __addTableRow(self, fileName: str, fileSize: str, url: str, TaskManagerCls: Type[TaskManagerBase]):
         """ add table row slot """
         self.taskTableWidget.insertRow(self.taskTableWidget.rowCount())
         _ = QTableWidgetItem(fileName)
         _.setData(1, url) # 记录 Url
         _.setData(2, fileName) # 设置默认值, 当用户修改后的内容为空是，使用默认值替换
+        _.setData(3, TaskManagerCls)
         self.taskTableWidget.setItem(self.taskTableWidget.rowCount() - 1, 0, _)
         _ = QTableWidgetItem(getReadableSize(int(fileSize)))
         _.setFlags(Qt.ItemIsEnabled)  # 禁止编辑
@@ -225,7 +230,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         # 找出新增、删除和修改的URL
         addedUrls = set(currentUrls) - set(previousUrls)
         removedUrls = set(previousUrls) - set(currentUrls)
-        modifiedUrls = set(currentUrls).intersection(set(previousUrls))
+        # modifiedUrls = set(currentUrls).intersection(set(previousUrls))
 
         # 删除被删除的URL的行（从后向前遍历）
         for url in removedUrls:
@@ -234,22 +239,30 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
                     self.taskTableWidget.removeRow(i)
                     break
 
-        # 重新生成被编辑过的URL的行
-        for url in modifiedUrls:
-            for i in range(self.taskTableWidget.rowCount()):
-                if self.taskTableWidget.item(i, 0).data(1) == url:
-                    item = self.taskTableWidget.item(i, 0)
-                    if item.text() != item.data(2):  # 如果用户修改了文件名
-                        self.__handleUrl(url, i + 1)  # 重新处理URL
-                    break
+        # # 重新生成被编辑过的URL的行
+        # for url in modifiedUrls:
+        #     for i in range(self.taskTableWidget.rowCount()):
+        #         if self.taskTableWidget.item(i, 0).data(1) == url:
+        #             item = self.taskTableWidget.item(i, 0)
+        #             if item.text() != item.data(2):  # 如果用户修改了文件名
+        #                 self.__handleUrl(url, i + 1)  # 重新处理URL
+        #             break
 
         # 添加新增的URL的行
         for index, url in enumerate(currentUrls, start=1):
             if url in addedUrls:
                 _ = urlRe.search(url)
                 if _:
-                    self.__addTableRow(url, "0", url)  # 新增卡片并设置文件名和文件大小为“正在获取...”
-                    self.threads.append(Thread(target=self.__handleUrl, args=(url, index), daemon=True))
+                    found = False
+                    for plugin, registerContents in registerContentsByPlugins.items():
+                        if registerContents[0].match(url):
+                            found = True
+                            self.__addTableRow(url, "0", url, registerContents[2])  # 新增卡片并设置文件名和文件大小为“临时值”
+                            self.threads.append(Thread(target=self.__handleUrl, args=(url, index, registerContents[1]), daemon=True))
+                            break
+                    if not found:
+                        self.__addTableRow(url, "0", url, DownloadTaskManager)  # 新增卡片并设置文件名和文件大小为“临时值”
+                        self.threads.append(Thread(target=self.__handleUrl, args=(url, index, getLinkInfo), daemon=True))
                 else:
                     InfoBar.warning(
                         title='警告',

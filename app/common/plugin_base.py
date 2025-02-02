@@ -9,7 +9,7 @@ from PySide6.QtGui import QPixmap
 from qfluentwidgets import ConfigItem, exceptionHandler, SettingCard, FluentIconBase, SwitchButton, IndicatorPosition, \
     Slider, HyperlinkButton, ColorDialog, isDarkTheme, ComboBox, OptionsConfigItem
 
-from app.common.config import cfg, registerUrlsByPlugins
+from app.common.config import cfg, registerContentsByPlugins
 
 from typing import Union
 
@@ -22,8 +22,8 @@ class PluginConfigBase(QObject):
 
     def __init__(self, pluginName):
         super().__init__()
-        print(f'{cfg.appPath}plugins/{pluginName}_config.json')
-        self.file = Path(f'{cfg.appPath}plugins/{pluginName}_config.json')
+        print(f'{cfg.appPath}plugins/{pluginName}/config.json')
+        self.file = Path(f'{cfg.appPath}plugins/{pluginName}/config.json')
         self.load()
 
     def get(self, item):
@@ -501,20 +501,7 @@ class PluginBase(ABC):
         """
         pass
 
-    def _registerUrl(self, RegularExpression: re.compile):
-        """
-        注册链接, 用于在 getLinkInfo 调用
-        """
-        registerUrlsByPlugins[self]=RegularExpression
-        print(registerUrlsByPlugins)
-
-    def _unregisterUrl(self):
-        """
-        注销链接
-        """
-        registerUrlsByPlugins.pop(self)
-
-    def parseUrl(self, url: str) -> tuple[str, str, int]:
+    def parseUrl(self, url: str, headers:dict) -> tuple[str, str, int]:
         """
         解析链接, 用于代替默认的 getLinkInfo
         返回 URL, FileName, FileSize

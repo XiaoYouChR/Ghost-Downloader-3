@@ -1,3 +1,5 @@
+from typing import Type
+
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
 from loguru import logger
@@ -6,6 +8,7 @@ from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, PrimaryPushButto
 
 from ..common.config import cfg
 from ..common.signal_bus import signalBus
+from ..common.task_base import TaskManagerBase
 from ..components.custom_dialogs import DelDialog, PlanTaskDialog
 from ..components.task_card import TaskCard
 
@@ -92,11 +95,11 @@ class TaskInterface(SmoothScrollArea):
 
         self.scrollWidget.setMinimumWidth(816)
 
-    def __addDownloadTask(self, url: str, fileName: str, filePath: str,
+    def __addDownloadTask(self, taskManagerCls:Type[TaskManagerBase], url: str, fileName: str, filePath: str,
                           headers: dict, status:str, preBlockNum: int, notCreateHistoryFile: bool, fileSize: str="-1"):
         # 逐个对照现有任务url, 若重复则不添加
         for card in self.cards:
-            if card.url == url:
+            if card.taskManager.url == url:
                 InfoBar.error(
                     title='错误',
                     content="已创建相同下载链接的任务!",
@@ -110,7 +113,7 @@ class TaskInterface(SmoothScrollArea):
                 return
 
             try:
-                if card.fileName == fileName and card.filePath == filePath:
+                if card.fileName == fileName and card.taskManager.filePath == filePath:
                     InfoBar.error(
                         title='错误',
                         content="已创建相同文件名和路径的任务!",
@@ -130,7 +133,7 @@ class TaskInterface(SmoothScrollArea):
         if len(runningTasks) >= cfg.maxTaskNum.value and status == "working":
             status = "waiting"
 
-        _ = TaskCard(url, fileName, filePath, preBlockNum, headers, status, notCreateHistoryFile, int(fileSize), self.scrollWidget)
+        _ = TaskCard(taskManagerCls, url, headers, preBlockNum, fileName, filePath, status, notCreateHistoryFile, int(fileSize), self.scrollWidget)
 
         _.taskStatusChanged.connect(self.__handleTaskStatusChange)
 

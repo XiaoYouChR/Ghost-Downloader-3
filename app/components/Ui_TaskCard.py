@@ -9,8 +9,9 @@
 ################################################################################
 
 from PySide6.QtCore import (QCoreApplication, QSize, Qt)
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import FluentIcon as FIF, ProgressBar, IndeterminateProgressBar
 from qfluentwidgets import (PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
 
 from app.components.custom_components import IconBodyLabel
@@ -130,6 +131,10 @@ class Ui_TaskCard(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
+        self.progressBar = IndeterminateProgressBar(self)
+        self.progressBar.setObjectName(u"progressBar")
+        self.verticalLayout.addWidget(self.progressBar)
+
         self.cardHorizontalLayout.addLayout(self.verticalLayout)
 
         # 初始化 Icon 类
@@ -143,5 +148,7 @@ class Ui_TaskCard(object):
     # setupUi
 
     def retranslateUi(self, TaskCard):
-        TaskCard.setWindowTitle(QCoreApplication.translate("TaskCard", u"Form", None))
+        self.titleLabel.setText("正在初始化任务...")
+        self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
+        self.LogoPixmapLabel.setFixedSize(70, 70)
     # retranslateUi

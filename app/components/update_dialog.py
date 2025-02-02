@@ -6,6 +6,7 @@ from loguru import logger
 from qfluentwidgets import InfoBar, InfoBarPosition, FluentStyleSheet
 
 from app.common.config import VERSION
+from app.common.download_task import DownloadTaskManager
 from app.common.methods import getProxy, getLocalTimeFromGithubApiTime, getReadableSize, addDownloadTask
 from app.components.Ui_UpdateDialog import Ui_UpdateDialog
 from app.components.custom_mask_dialog_base import MaskDialogBase
@@ -88,7 +89,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
     def __onYesButtonClicked(self):
         url = self.urls[self.tableView.currentRow()]
-        addDownloadTask(url)
+        addDownloadTask(DownloadTaskManager, url)
         self.close()
 
 def __showResponse(parent, content: dict):

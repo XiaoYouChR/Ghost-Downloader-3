@@ -72,11 +72,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
         for i in self.parent().taskInterface.cards:  # 是为了不写入历史记录安全的退出
             if i.status == 'working':
-                i.task.stop()
-
-                # self.task.terminate()
-                i.task.wait()
-                i.task.deleteLater()
+                i.taskManager.stop()
 
         QApplication.quit()
 

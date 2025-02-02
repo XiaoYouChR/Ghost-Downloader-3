@@ -2,6 +2,8 @@ from abc import abstractmethod
 
 from PySide6.QtCore import QObject, Signal
 
+from app.common.config import cfg
+
 
 class TaskManagerBase(QObject):
     """
@@ -14,17 +16,20 @@ class TaskManagerBase(QObject):
     progressInfoChanged = Signal(list)  # 目前进度 用于显示 v3.2 引进的分段式进度条
     speedChanged = Signal(int)  # 平均速度 因为 autoSpeedUp 功能需要实时计算平均速度 v3.4.4 起移入后端计算速度, 每秒速度可能超过 2^31 Bytes 吗？
 
-    def __init__(self, url, headers, preTaskNum: int, filePath: str, fileName: str = None,
+    def __init__(self, url, headers, preBlockNum: int, filePath: str, fileName: str = None,
                  fileSize: int = -1, parent=None):
         super().__init__(parent)
         self.url = url
         self.headers = headers
         self.fileName = fileName
         self.filePath = filePath
-        self.preBlockNum = preTaskNum
+        self.preBlockNum = preBlockNum
         self.fileSize = fileSize
 
         self.task = None
+
+    def getClsAttr(cls):
+        return cls.__module__, cls.__name__
 
     @abstractmethod
     def start(self):
@@ -36,7 +41,7 @@ class TaskManagerBase(QObject):
 
     @abstractmethod
     def updateTaskRecord(self, newStatus: str):
-        pass
+        recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
 
     @abstractmethod
     def cancel(self, completely: bool=False):

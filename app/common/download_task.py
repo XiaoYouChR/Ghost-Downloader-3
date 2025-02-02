@@ -1,4 +1,5 @@
 import asyncio
+import pickle
 import struct
 import sys
 import time
@@ -32,14 +33,15 @@ class DownloadTaskManager(TaskManagerBase):
     """
     官方下载任务支持
     """
-    def __init__(self, url, headers, preTaskNum: int, filePath: str, fileName: str = None,
+    def __init__(self, url, headers, preBlockNum: int, filePath: str, fileName: str = None,
                  fileSize: int = -1, parent=None):
-        super().__init__(url, headers, preTaskNum, filePath, fileName, fileSize, parent)
+        super().__init__(url, headers, preBlockNum, filePath, fileName, fileSize, parent)
 
     def start(self):
         autoSpeedUp = cfg.autoSpeedUp.value
         self.task = DownloadTask(self.url, self.headers, self.preBlockNum, self.filePath, self.fileName, autoSpeedUp, self.fileSize, self)
         self.task.start()
+
         self.task.taskInited.connect(self.__onTaskInited)
         self.task.taskFinished.connect(self.taskFinished)
         self.task.taskGotWrong.connect(self.taskGotWrong)
@@ -49,7 +51,6 @@ class DownloadTaskManager(TaskManagerBase):
     def __onTaskInited(self, ableToParallelDownload: bool):
         self.fileName = self.task.fileName
         self.fileSize = self.task.fileSize
-        self.ableToParallelDownload = ableToParallelDownload
 
         self.taskInited.emit(ableToParallelDownload)
 
@@ -60,22 +61,22 @@ class DownloadTaskManager(TaskManagerBase):
 
     def cancel(self, completely: bool=False):
         self.stop()
-        if completely:
+        if completely:  # 删除文件
+            try:
+                Path(f"{self.filePath}/{self.fileName}").unlink()
+                Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+                logger.info(f"self:{self.fileName}, delete file successfully!")
 
-        # 删除文件
-        try:
-            Path(f"{self.filePath}/{self.fileName}").unlink()
-            Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-            logger.info(f"self:{self.fileName}, delete file successfully!")
+            except FileNotFoundError:
+                pass
 
-        except FileNotFoundError:
-            pass
-
-        except Exception as e:
-            raise e
+            except Exception as e:
+                raise e
 
     def updateTaskRecord(self, newStatus: str):
         recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
+
+        clsModule, clsName = self.getClsAttr()
 
         # 读取所有记录
         records = []
@@ -93,12 +94,16 @@ class DownloadTaskManager(TaskManagerBase):
         # 检查是否已有匹配的记录
         found = False
         updatedRecords = []
-        for record in records:
+
+        for record in records:  # 遍历所有记录, 替换 newStatus
             if (record["url"] == self.url and
-                    record["fileName"] == self.fileName and
-                    record["filePath"] == str(self.filePath) and
-                    record["blockNum"] == self.preBlockNum and
-                    record["headers"] == self.headers):
+                record["fileName"] == self.fileName and
+                record["filePath"] == str(self.filePath) and
+                record["blockNum"] == self.preBlockNum and
+                record["headers"] == self.headers and
+                record["clsModule"] == clsModule and
+                record["clsName"] == clsName):
+
                 found = True
                 if newStatus != "deleted":
                     record["status"] = newStatus
@@ -113,9 +118,11 @@ class DownloadTaskManager(TaskManagerBase):
                 "fileName": self.fileName,
                 "filePath": str(self.filePath),
                 "blockNum": self.preBlockNum,
-                "status": self.status,
+                "status": newStatus,
                 "headers": self.headers,
-                "fileSize": self.fileSize
+                "fileSize": self.fileSize,
+                "clsModule": clsModule,
+                "clsName": clsName
             })
 
         # 写回记录文件
@@ -136,7 +143,7 @@ class DownloadTask(QThread):
     progressInfoChanged = Signal(list)  # 目前进度 用于显示 v3.2 引进的分段式进度条
     speedChanged = Signal(int)  # 平均速度 因为 autoSpeedUp 功能需要实时计算平均速度 v3.4.4 起移入后端计算速度, 每秒速度可能超过 2^31 Bytes 吗？
 
-    def __init__(self, url, headers, preTaskNum: int = 8, filePath:str=None, fileName:str=None, autoSpeedUp:bool=False, fileSize:int=-1, parent=None):
+    def __init__(self, url, headers, preBlockNum: int = 8, filePath:str=None, fileName:str=None, autoSpeedUp:bool=False, fileSize:int=-1, parent=None):
         super().__init__(parent)
 
         self.aioLock = asyncio.Lock()
@@ -145,7 +152,7 @@ class DownloadTask(QThread):
         self.headers = headers
         self.fileName = fileName
         self.filePath = filePath
-        self.preBlockNum = preTaskNum
+        self.preBlockNum = preBlockNum
         self.autoSpeedUp = autoSpeedUp
         self.fileSize = fileSize
         self.ableToParallelDownload:bool
