@@ -2,10 +2,10 @@
 > 在开发环境中运行 `main.py` 时请加上 `--debug` 形参。
 
 > [!NOTE]
-> Windows 7 用户请下载 [`v3.4.6.1-win7`](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/tag/v3.4.6.1-win7) 版本
+> 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
 > [!TIP]
-> 由于项目开发者高三冲刺，项目更新十分缓慢😭 可加 QQ 群获取项目作者最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
+> Windows 7 用户请下载 [`v3.4.6.1-win7`](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/tag/v3.4.6.1-win7) 版本
 
 <!-- PROJECT LOGO -->
 <br />
@@ -41,7 +41,10 @@
 
 [![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
-在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😫，本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵。支持多线程下载、智能加速、断点续传、下载记录、校验文件等功能。特点是能像 IDM 一样智能分块但又不需要合并文件，还有智能加速的功能。但是 Python 和 Qt 💩一样的内存占用成为项目很大的槽点😭不过得益于 Python 人人都可以开发的特性。本项目未来将会开放插件功能，发挥 Python 最大的优势。
+在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
+本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
+特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
+得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能，发挥 Python🐍 最大的优势
 
 
 <!-- ROADMAP -->
@@ -56,10 +59,9 @@
   - ✅ 升级 Qt 版本
   - ✅ 实现 HttpClient 复用
   - ✅ 用协程来代替部分多线程功能
-- ❌ 开放捐赠入口
-- ❌ 磁力 / BT 下载
-- ❌ 插件功能 (开发中...详见 Folk: feature/Plugins)
-
+- ❌ 重构下载器以及插件功能 (开发中...详见 Folk: feature/Plugins)
+- ❌ 更强大的任务编辑功能 (一个任务绑定多个 Client 等强大功能)
+- ❌ 磁力 / BT 下载 (考虑使用 libtorrent 实现)
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
@@ -97,7 +99,7 @@ Copyright © 2025 XiaoYouChR.
 <!-- ACKNOWLEDGMENTS -->
 ## 引用
 
-* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大且方便的 UI 库
+* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大、可扩展、美观优雅的 Fluent Design 风格组件库
 * [Httpx](https://github.com/projectdiscovery/httpx) A fast and multi-purpose HTTP toolkit
 * [Aiofiles](https://github.com/Tinche/aiofiles) File support for asyncio
 * [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
