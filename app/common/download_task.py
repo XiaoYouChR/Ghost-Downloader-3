@@ -209,15 +209,16 @@ class DownloadTask(QThread):
 
                     async with worker.client.stream(url=self.url, headers=workingRangeHeaders, timeout=30,
                                                     method="GET") as res:
-                        async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
+                        async for chunk in res.aiter_bytes():
                             if worker.endPos <= worker.progress:
                                 break
                             if chunk:
                                 async with self.aioLock:
                                     await self.file.seek(worker.progress)
                                     await self.file.write(chunk)
-                                    worker.progress += 65536
-                                    cfg.globalSpeed += 64 # 我真的不想使用 len(chunk), 因为误差只有一点点
+                                    _ = len(chunk)
+                                    worker.progress += _
+                                    cfg.globalSpeed += _
                                     if cfg.speedLimitation.value:
                                         if cfg.globalSpeed >= cfg.speedLimitation.value:
                                             await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
@@ -247,13 +248,14 @@ class DownloadTask(QThread):
                     WorkingRangeHeaders = self.headers.copy()
                     async with worker.client.stream(url=self.url, headers=WorkingRangeHeaders, timeout=30,
                                                     method="GET") as res:
-                        async for chunk in res.aiter_bytes(chunk_size=65536):  # aiter_content 的单位是字节, 即每64K写一次文件
+                        async for chunk in res.aiter_bytes():  # aiter_content 的单位是字节, 即每64K写一次文件
 
                             if chunk:
                                 await self.file.seek(worker.progress)
                                 await self.file.write(chunk)
-                                worker.progress += len(chunk)
-                                cfg.globalSpeed += len(chunk) / 1024  # B 转 KB
+                                _ = len(chunk)
+                                worker.progress += _
+                                cfg.globalSpeed += _ # B 转 KB
                                 if cfg.speedLimitation.value:
                                     if cfg.globalSpeed >= cfg.speedLimitation.value:
                                         await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor

@@ -123,6 +123,10 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
     def __moveIn(self):
         self.__playSound()
+
+        if not hasattr(self, "geometryAnimation"):
+            self.geometryAnimation = QPropertyAnimation(self, b"geometry")
+
         # 动画
         self.geometryAnimation.setDuration(500)
         self.geometryAnimation.setStartValue(self.geometry())
@@ -132,6 +136,9 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
 
     def __moveOut(self):
+        if not hasattr(self, "geometryAnimation"):
+            self.geometryAnimation = QPropertyAnimation(self, b"geometry")
+
         self.geometryAnimation.setDuration(500)
         self.geometryAnimation.setStartValue(self.geometry())
         self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width(), self.y(), self.width(), self.height()))

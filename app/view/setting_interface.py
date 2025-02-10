@@ -240,7 +240,8 @@ class SettingInterface(SmoothScrollArea):
             " KB/s",
             cfg.speedLimitation,
             self.downloadGroup,
-            512
+            512,
+            1/1024
         )
 
         self.autoSpeedUpCard = SwitchSettingCard(
