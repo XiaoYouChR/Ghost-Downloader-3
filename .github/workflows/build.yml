@@ -69,8 +69,8 @@ jobs:
           chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
-          mv dist/Ghost-Downloader-3.app dist/Ghost Downloader.app
-          mv resources/修复文件损坏 dist/修复文件损坏
+          mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
+          mv "resources/修复文件损坏" "dist/修复文件损坏"
 
       - name: Create DMG
         run: |
@@ -112,8 +112,8 @@ jobs:
           chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
-          mv dist/Ghost-Downloader-3.app dist/Ghost Downloader.app
-          mv resources/修复文件损坏 dist/修复文件损坏
+          mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
+          mv "resources/修复文件损坏" "dist/修复文件损坏"
 
       - name: Create DMG
         run: |
