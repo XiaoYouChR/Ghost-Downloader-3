@@ -6,7 +6,7 @@ from ctypes import byref, c_int
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect
 from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
@@ -113,6 +113,10 @@ class MainWindow(MSFluentWindow):
 
 
         self.urlsText = ''
+
+    def systemTitleBarRect(self, size: QSize) -> QRect:
+        """重写 macOS 三大件到左上角"""
+        return QRect(0, 0 if self.isFullScreen() else 9, 75, size.height())
 
     def __onCustomThemeModeChanged(self, value: str):
         if value == 'System':
@@ -236,6 +240,9 @@ class MainWindow(MSFluentWindow):
 
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
+
+        if sys.platform == 'darwin':
+            self.titleBar.hBoxLayout.insertSpacing(0, 58)
 
         if sys.platform == 'darwin':
             self.titleBar.maxBtn.hide()
