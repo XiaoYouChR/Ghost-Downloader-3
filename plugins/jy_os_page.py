@@ -10,14 +10,13 @@ from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QSizePolicy, QHBoxLa
 from loguru import logger
 from qfluentwidgets import SmoothScrollArea, TitleLabel, SettingCardGroup, OptionsConfigItem, OptionsValidator, \
     ComboBoxSettingCard, FluentIcon as FIF, TextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, \
-    RangeValidator, PrimaryPushButton, PushButton, MessageBox, ElevatedCardWidget, RoundMenu, Action, PixmapLabel, BodyLabel, \
+    RangeValidator, PrimaryPushButton, PushButton, MessageBox, ElevatedCardWidget, RoundMenu, Action, PixmapLabel, \
+    BodyLabel, \
     PrimarySplitPushButton, NavigationItemPosition, FluentStyleSheet, IndeterminateProgressRing
 from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
-from app.common.config import Headers
 from app.common.methods import getProxy, addDownloadTask
 from app.common.plugin_base import PluginBase
-from app.common.signal_bus import signalBus
 
 
 class JyOSPagePlugin(PluginBase):

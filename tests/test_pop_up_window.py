@@ -1,12 +1,10 @@
 import sys
-from time import sleep
 
 from PySide6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 
-from app.view.pop_up_window import FinishedPopUpWindow, ReceivedPopUpWindow
-
 # noinspection PyUnresolvedReferences
 import Res_rc
+from app.view.pop_up_window import FinishedPopUpWindow, ReceivedPopUpWindow
 
 
 class TestPopUpWindow(QWidget):

@@ -81,9 +81,9 @@ class Config(QConfig):
     def resetGlobalSpeed(self):
         self.globalSpeed = 0
 
-YEAR = 2024
+YEAR = 2025
 AUTHOR = "XiaoYouChR"
-VERSION = "3.5.1"
+VERSION = "3.5.2"
 LATEST_EXTENSION_VERSION = "1.1.1"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
