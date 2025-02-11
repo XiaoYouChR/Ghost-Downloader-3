@@ -20,7 +20,7 @@ if sys.platform == "win32":
         f'--file-version={VERSION}',
         f'--product-version={VERSION}',
         '--file-description="Ghost Downloader"',
-        f'--copyright="Copyright(C) {YEAR} {AUTHOR}"'
+        f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
         'Ghost-Downloader-3.py',
     ]
@@ -37,9 +37,9 @@ elif sys.platform == "darwin":
         f"--macos-app-version={VERSION}",
         '--macos-app-name="Ghost Downloader"',
         "--macos-app-icon=resources/logo.icns",
-        f'--copyright="Copyright(C) {YEAR} {AUTHOR}"'
+        f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
-        '--macos-signed-app-name=com.xiaoyouchr.ghostdownloader'
+        '--macos-signed-app-name=com.xiaoyouchr.ghostdownloader',
         'Ghost-Downloader-3.py',
     ]
 else:
@@ -58,4 +58,3 @@ else:
 
 
 os.system(' '.join(args))
-

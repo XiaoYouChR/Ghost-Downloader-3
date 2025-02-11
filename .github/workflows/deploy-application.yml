@@ -21,12 +21,15 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
+          pip install nuitka==2.6.4
 
       - name: Build with Nuitka
         run: |
-          $VERSION = python -c "from app.common.setting import VERSION; print(VERSION)"
+          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close()"
+          $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
+          del version.txt
           python deploy.py
 #          nuitka --module plugins/jy_os_page.py
 #          mv jy_os_page*.pyd output/
@@ -58,11 +61,13 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "from app.common.setting import VERSION; print(VERSION)")
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          version=$(sed -n '4p' version.txt)
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+          rm -rf version.txt
           python3 deploy.py
-          chmod u+x "dist/Ghost Downloader.app/Contents/MacOS/Ghost Downloader"
-          rm -rf "dist/Ghost Downloader.build"
+#          chmod u+x "dist/Ghost Downloader.app/Contents/MacOS/Ghost Downloader"
+#          rm -rf "dist/Ghost Downloader.build"
 
       - name: Create DMG
         run: |
@@ -73,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          path: dist/
 
   build-macos-13-x86_64:
     strategy:
@@ -96,11 +101,13 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "from app.common.setting import VERSION; print(VERSION)")
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          version=$(sed -n '4p' version.txt)
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+          rm -rf version.txt
           python3 deploy.py
-          chmod u+x "dist/Ghost Downloader.app/Contents/MacOS/Ghost Downloader"
-          rm -rf "dist/Ghost Downloader.build"
+#          chmod u+x "dist/Ghost Downloader.app/Contents/MacOS/Ghost Downloader"
+#          rm -rf "dist/Ghost Downloader.build"
 
       - name: Create DMG
         run: |
@@ -111,7 +118,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          path: dist/
 
   build-ubuntu:
     strategy:
@@ -136,8 +143,10 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "from app.common.setting import VERSION; print(VERSION)")
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          version=$(sed -n '4p' version.txt)
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+          rm -rf version.txt
           python deploy.py
 #          nuitka --module plugins/jy_os_page.py
 #          mkdir -p "output/Ghost-Downloader-3.dist/plugins/"

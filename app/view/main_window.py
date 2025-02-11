@@ -237,6 +237,9 @@ class MainWindow(MSFluentWindow):
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
 
+        if sys.platform == 'darwin':
+            self.titleBar.maxBtn.hide()
+
         # create splash screen
         self.splashScreen = CustomSplashScreen(self.windowIcon(), self)
         self.splashScreen.setIconSize(QSize(106, 106))
