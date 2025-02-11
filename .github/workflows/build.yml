@@ -66,8 +66,11 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python3 deploy.py
-#          chmod u+x "dist/Ghost Downloader.app/Contents/MacOS/Ghost Downloader"
-#          rm -rf "dist/Ghost Downloader.build"
+          chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          rm -rf "dist/Ghost-Downloader-3.build"
+          rm -rf "dist/Ghost-Downloader-3.dist"
+          mv dist/Ghost-Downloader-3.app dist/Ghost Downloader.app
+          mv resources/修复文件损坏 dist/修复文件损坏
 
       - name: Create DMG
         run: |
@@ -78,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: dist/
+          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
 
   build-macos-13-x86_64:
     strategy:
@@ -106,8 +109,11 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python3 deploy.py
-#          chmod u+x "dist/Ghost Downloader.app/Contents/MacOS/Ghost Downloader"
-#          rm -rf "dist/Ghost Downloader.build"
+          chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          rm -rf "dist/Ghost-Downloader-3.build"
+          rm -rf "dist/Ghost-Downloader-3.dist"
+          mv dist/Ghost-Downloader-3.app dist/Ghost Downloader.app
+          mv resources/修复文件损坏 dist/修复文件损坏
 
       - name: Create DMG
         run: |
@@ -118,7 +124,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: dist/
+          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
 
   build-ubuntu:
     strategy:

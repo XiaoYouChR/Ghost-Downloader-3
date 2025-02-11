@@ -35,11 +35,9 @@ elif sys.platform == "darwin":
         "--assume-yes-for-download",
         "--macos-app-mode=gui",
         f"--macos-app-version={VERSION}",
-        '--macos-app-name="Ghost Downloader"',
         "--macos-app-icon=resources/logo.icns",
         f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
-        '--macos-signed-app-name=com.xiaoyouchr.ghostdownloader',
         'Ghost-Downloader-3.py',
     ]
 else:
