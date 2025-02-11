@@ -329,22 +329,24 @@ class DownloadTask(QThread):
                         duringTime = 0
 
                         speedPerConnect = avgSpeed / len(self.tasks)
-                        # print(f"taskNum: {len(self.tasks)}, speedPerConnect: {speedPerConnect}, maxSpeedPerConnect: {maxSpeedPerConnect}")
-
                         if speedPerConnect > maxSpeedPerConnect:
                             maxSpeedPerConnect = speedPerConnect
+                            _ = (0.85 * maxSpeedPerConnect * additionalTaskNum) + formerAvgSpeed
 
                         # if maxSpeedPerConnect <= 1:
                         #     await asyncio.sleep(1)
                         #     continue
 
                         # logger.debug(f"当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}, speed: {speed}, formerAvgSpeed: {formerAvgSpeed}, additionalTaskNum: {additionalTaskNum}, maxSpeedPerConnect: {maxSpeedPerConnect}")
-
-                        if (avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85:
+                        
+                        #原公式：(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85
+                        #然后将不等号左边的计算全部移到右边
+                        if avgSpeed >= _:
                             #  新增加线程的效率 >= 0.85 时，新增线程
                             # logger.debug(f'自动提速增加新线程, 当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}')
                             formerAvgSpeed = avgSpeed
                             additionalTaskNum = 4
+                            _ = (0.85 * maxSpeedPerConnect * additionalTaskNum) + formerAvgSpeed
 
                             if len(self.tasks)  < 253:
                                 for i in range(4):
