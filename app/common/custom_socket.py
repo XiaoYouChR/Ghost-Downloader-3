@@ -55,7 +55,7 @@ class GhostDownloaderSocketServer(QObject):
 
             url = data["url"]
             headers:dict = data["headers"]
-            headers.pop("range")  # 浏览器插件会自动加上range头，导致下载失败
+            headers.pop("range", 1)  # 浏览器插件会自动加上range头，导致下载失败
             if data["referer"]:
                 headers["referer"] = data["referer"]
             filename = data["filename"]
