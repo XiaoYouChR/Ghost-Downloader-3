@@ -287,6 +287,7 @@ class DownloadTask(QThread):
                 additionalTaskNum = len(self.tasks) # 最初为计算每个线程的平均速度
                 formerAvgSpeed = 0 # 提速之前的平均速度
                 duringTime = 0 # 计算平均速度的时间间隔, 为 10 秒
+                _ = 0
 
             while not self.progress == self.fileSize:
 
