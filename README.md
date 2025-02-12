@@ -41,10 +41,10 @@
 
 [![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
-在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
-本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
-特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
-得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能，发挥 Python🐍 最大的优势
+* 在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
+* 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
+* 特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
+* 得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能，发挥 Python🐍 最大的优势
 
 
 <!-- ROADMAP -->
