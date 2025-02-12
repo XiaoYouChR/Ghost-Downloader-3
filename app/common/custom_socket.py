@@ -54,7 +54,8 @@ class GhostDownloaderSocketServer(QObject):
             logger.debug(f"Received message: {message}")
 
             url = data["url"]
-            headers = data["headers"]
+            headers:dict = data["headers"]
+            headers.pop("range")  # 浏览器插件会自动加上range头，导致下载失败
             if data["referer"]:
                 headers["referer"] = data["referer"]
             filename = data["filename"]

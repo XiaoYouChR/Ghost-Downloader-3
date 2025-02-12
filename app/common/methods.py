@@ -6,6 +6,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import decode_rfc2231
 from functools import wraps
+from http.client import responses
 from time import sleep, localtime, time_ns
 from urllib.parse import unquote, parse_qs, urlparse
 
