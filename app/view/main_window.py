@@ -6,8 +6,8 @@ from ctypes import byref, c_int
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect
-from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
@@ -15,9 +15,10 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg, Headers, attachmentTypes
+from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask
+from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox
+from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
@@ -68,6 +69,7 @@ class MainWindow(MSFluentWindow):
         self.themeChangedListener = None
         self.__onCustomThemeModeChanged(cfg.customThemeMode.value)
         cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
+        signalBus.appErrorSig.connect(self.onAppError)
 
         # 设置背景特效
         self.applyBackgroundEffectByCfg()
@@ -255,6 +257,17 @@ class MainWindow(MSFluentWindow):
         self.show()
 
         QApplication.processEvents()
+
+    def onAppError(self, message: str):
+        """ app error slot """
+        QApplication.clipboard().setText(message)
+        showMessageBox(
+            self,
+            "意料之外的错误!",
+            "错误消息已写入粘贴板和日志。是否报告?",
+            True,
+            lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
+        )
 
     def showAddTaskBox(self):
         w = AddTaskOptionDialog(self)

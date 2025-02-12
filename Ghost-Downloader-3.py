@@ -1,12 +1,12 @@
 # coding:utf-8
 
 import os
-# 创建 Application
 import sys
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QTimer
 from qfluentwidgets import qconfig
 
+from app.common.application import SingletonApplication
 from app.common.config import cfg
 
 # 设置程序运行路径, 便于调试
@@ -17,46 +17,12 @@ else:  # 编译后
     cfg.appPath = os.path.dirname(sys.executable)
     qconfig.load('{}/Ghost Downloader 配置文件.json'.format(os.path.dirname(sys.executable)), cfg)
 
-    def exceptionHandler(type, value, traceback):  # 自定义错误捕捉函数
-        logger.exception(f"意料之外的错误! {type}: {value}. Traceback: {traceback}")
-
-    sys.excepthook = exceptionHandler
-
 # 必须在 QApplication 创建前设置缩放比例
-if cfg.get(cfg.dpiScale) == 0:
-    pass
-else:
+if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
-app = QApplication(sys.argv)
-
-# 检测程序重复运行
-from PySide6.QtCore import QSharedMemory, QTimer
-
-# 尝试访问
-sharedMemory = QSharedMemory()
-sharedMemory.setKey("Ghost Downloader")
-
-if sharedMemory.attach():  # 访问成功, 说明程序正在运行
-
-    if sys.platform == "win32":
-        import win32gui
-        import win32con
-
-        hWnd = win32gui.FindWindow(None, "Ghost Downloader")
-        win32gui.ShowWindow(hWnd, 1)
-
-        # 发送自定义信息唤醒窗口
-        # WM_CUSTOM = win32con.WM_USER + 1
-        # win32gui.SendMessage(hWnd, WM_CUSTOM, 0, 0)
-        win32gui.SendMessage(hWnd, win32con.WM_USER + 1, 0, 0)
-
-        win32gui.SetForegroundWindow(hWnd)
-
-    sys.exit(-1)
-# 创建 SharedMemory
-sharedMemory.create(1)
+app = SingletonApplication(sys.argv, "Ghost Downloader")
 
 # Starting Program
 import time

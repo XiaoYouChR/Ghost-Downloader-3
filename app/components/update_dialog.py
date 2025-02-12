@@ -1,5 +1,5 @@
 import httpx
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QVersionNumber
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QTableWidgetItem
 from loguru import logger
@@ -24,8 +24,8 @@ class GetUpdateThread(QThread):
 
             tagName = content["tag_name"][1:]
 
-            latestVersion = list(map(int, tagName.split(".")))
-            currentVersion = list(map(int, VERSION.split(".")))
+            latestVersion = QVersionNumber.fromString(tagName)
+            currentVersion = QVersionNumber.fromString(VERSION)
 
             if latestVersion > currentVersion:
                 self.gotResponse.emit(content)

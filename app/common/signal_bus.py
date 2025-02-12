@@ -6,5 +6,6 @@ class SignalBus(QObject):
     """ Signal bus """
     addTaskSignal = Signal(str, str, str, dict, str, int, bool, str)  # url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, fileSize
     allTaskFinished = Signal()
+    appErrorSig = Signal(str)
 
 signalBus = SignalBus()

@@ -15,6 +15,7 @@ from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
+from qfluentwidgets import MessageBox
 
 from app.common.config import cfg, Headers
 from app.common.plugin_base import PluginBase
@@ -293,3 +294,14 @@ def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
         headers = Headers
 
     signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))
+
+def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
+    """ show message box """
+    w = MessageBox(title, content, self)
+    if not showYesButton:
+        w.cancelButton.setText('关闭')
+        w.yesButton.hide()
+        w.buttonLayout.insertStretch(0, 1)
+
+    if w.exec() and yesSlot is not None:
+        yesSlot()
