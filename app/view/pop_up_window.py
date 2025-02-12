@@ -113,7 +113,7 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
         super().showEvent(event)
 
 
-    def __playSound(self):
+    def _playSound(self):
         # 设置音效
         self.soundEffect = QSoundEffect(self)
         self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/completed_task.wav"))
@@ -122,7 +122,7 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
 
     def __moveIn(self):
-        self.__playSound()
+        self._playSound()
 
         if not hasattr(self, "geometryAnimation"):
             self.geometryAnimation = QPropertyAnimation(self, b"geometry")
@@ -243,6 +243,13 @@ class ReceivedPopUpWindow(PopUpWindowBase):
         self.contentLabel.setText(receiveContent)
 
         self.show()
+
+    def _playSound(self):
+        # 设置音效
+        self.soundEffect = QSoundEffect(self)
+        self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/received_info.wav"))
+        self.soundEffect.setVolume(100)
+        self.soundEffect.play()
 
     @classmethod
     def showPopUpWindow(cls, receiveContent:str, mainWindow=None):

@@ -248,14 +248,14 @@ class DownloadTask(QThread):
                     WorkingRangeHeaders = self.headers.copy()
                     async with worker.client.stream(url=self.url, headers=WorkingRangeHeaders, timeout=30,
                                                     method="GET") as res:
-                        async for chunk in res.aiter_bytes():  # aiter_content 的单位是字节, 即每64K写一次文件
+                        async for chunk in res.aiter_bytes():
 
                             if chunk:
                                 await self.file.seek(worker.progress)
                                 await self.file.write(chunk)
                                 _ = len(chunk)
                                 worker.progress += _
-                                cfg.globalSpeed += _ # B 转 KB
+                                cfg.globalSpeed += _
                                 if cfg.speedLimitation.value:
                                     if cfg.globalSpeed >= cfg.speedLimitation.value:
                                         await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
