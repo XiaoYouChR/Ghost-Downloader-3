@@ -75,13 +75,14 @@ jobs:
       - name: Create DMG
         run: |
           ln -s /Applications dist/Applications
+          sleep 1
           hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          path: dist/
 
   build-macos-13-x86_64:
     strategy:
@@ -91,6 +92,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Remove problematic brew libs
+        run: |
+          brew remove --force --ignore-dependencies openssl@3
+          brew cleanup openssl@3
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -115,16 +121,21 @@ jobs:
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
 
+      - name: Reinstall openssl libs
+        run: |
+          brew install openssl@3
+
       - name: Create DMG
         run: |
           ln -s /Applications dist/Applications
+          sleep 1
           hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          path: dist/
 
 #  build-ubuntu:
 #    strategy:
