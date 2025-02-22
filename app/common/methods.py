@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import os
+from pathlib import Path
 import re
 import sys
 from datetime import datetime, timedelta, timezone
@@ -52,7 +53,11 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
                         except Exception as e:
                             logger.error(f"Error loading plugin {name}: {e}")
     except Exception as e:
-        logger.error(f"Error loading plugins: {e}")
+        if not Path(directory).exists(): # 没有 plugins 文件夹就创建一个
+            os.mkdir(directory)
+            logger.debug(f"Created plugins folder at: {directory}")
+        else:
+            logger.error(f"Error loading plugins: {e}")
 
 
 def getSystemProxy():

@@ -136,14 +136,19 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
 
     def __moveOut(self):
-        if not hasattr(self, "geometryAnimation"):
-            self.geometryAnimation = QPropertyAnimation(self, b"geometry")
+        try:
+            if not hasattr(self, "geometryAnimation"):
+                self.geometryAnimation = QPropertyAnimation(self, b"geometry")
 
-        self.geometryAnimation.setDuration(500)
-        self.geometryAnimation.setStartValue(self.geometry())
-        self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width(), self.y(), self.width(), self.height()))
-        self.geometryAnimation.finished.connect(self.close)
-        self.geometryAnimation.start()
+            self.geometryAnimation.setDuration(500)
+            self.geometryAnimation.setStartValue(self.geometry())
+            self.geometryAnimation.setEndValue(QRect(self.screenGeometry.width(), self.y(), self.width(), self.height()))
+            self.geometryAnimation.finished.connect(self.close)
+            self.geometryAnimation.start()
+        except RuntimeError:  # 防止多次点击导致的错误
+            pass
+        except Exception as e:
+            raise e
 
 
     def closeEvent(self, event):
