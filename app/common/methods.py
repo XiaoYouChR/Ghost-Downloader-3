@@ -52,7 +52,7 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicati
                         except Exception as e:
                             logger.error(f"Error loading plugin {name}: {e}")
     except Exception as e:
-        logger.error(f"Error loading plugins: {e}")
+        logger.error(f"Error loading plugins: {e.__name__} {e}")
 
 
 def getSystemProxy():

@@ -5,6 +5,7 @@ import sys
 from ctypes import byref, c_int
 from pathlib import Path
 
+import ctypes.wintypes
 import darkdetect
 from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
 from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices
@@ -22,7 +23,7 @@ from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
-
+#from AppKit import NSEvent
 
 class CustomSplashScreen(SplashScreen):
 
@@ -297,6 +298,20 @@ class MainWindow(MSFluentWindow):
             if msg.message == 1024 + 1:
                 self.show()
                 return True, 0
+
+        '''# macOS暂时没有好的解决方案，先搁浅吧
+        elif eventType == "NSEvent":
+            # 从void指针获取NSEvent对象
+            print(message,message.__int__())
+            event_ptr = ctypes.pointer(message)
+            nsEvent = NSEvent.eventWithEventRef_(event_ptr)
+            #nsEvent = shiboken6.wrapInstance(event_ptr.value, NSEvent)
+            
+            # 检查是否是重新打开事件
+            if nsEvent.type() == 8:  # NSApplicationDefined = 8
+                self.show()
+                return True, 0
+        '''
 
         return super().nativeEvent(eventType, message)
 
