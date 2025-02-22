@@ -21,24 +21,34 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
+#         双方式打包，Nuitka+PyInstaller
           pip install nuitka==2.6.4
+          pip install pyinstaller
 
-      - name: Build with Nuitka
+      - name: Build with Nuitka & PyInstaller
         run: |
           python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close()"
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
           del version.txt
-          python deploy.py
+          python deploy.py nuitka
+          python deploy.py pyinstaller
 #          nuitka --module plugins/jy_os_page.py
 #          mv jy_os_page*.pyd output/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
-          path: dist/Ghost-Downloader-3.dist
+          [
+            {
+              name: Ghost-Downloader-v${{ env.VERSION }}-Nuitka-Windows-${{ matrix.architecture }},
+              path: dist/Ghost-Downloader-3.dist
+            },{
+              name: Ghost-Downloader-v${{ env.VERSION }}-PyInstaller-Windows-${{ matrix.architecture }},
+              path: dist/pyinstaller
+            }
+          ]
 
   build-macos-14-arm:
     strategy:
@@ -58,31 +68,45 @@ jobs:
         run: |
           pip install --timeout=300 -r requirements.txt
           pip install nuitka==2.6.4
+          pip install pyinstaller
 
-      - name: Build with Nuitka
+      - name: Build with Nuitka & PyInstaller
         run: |
           python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
-          python3 deploy.py
+          python3 deploy.py nuitka
+          python3 deploy.py pyinstaller
           chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          chmod u+x "dist/pyinstaller/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv dist/pyinstaller pyinstaller
+          mv "resources/修复软件损坏" "pyinstaller/修复软件损坏"
 
       - name: Create DMG
         run: |
           ln -s /Applications dist/Applications
+          ln -s /Applications pyinstaller/Applications
           sleep 1
-          hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-Nuikta-macOS-${{ matrix.architecture }}.dmg"
+          hdiutil create -srcfolder "pyinstaller/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-PyInstaller-macOS-${{ matrix.architecture }}.dmg"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          [
+            {
+              name: Ghost-Downloader-v${{ env.VERSION }}-Nuikta-macOS-${{ matrix.architecture }},
+              path: Ghost-Downloader-v${{ env.VERSION }}-Nuikta-macOS-${{ matrix.architecture }}.dmg
+            },{
+              name: Ghost-Downloader-v${{ env.VERSION }}-PyInstaller-macOS-${{ matrix.architecture }},
+              path: Ghost-Downloader-v${{ env.VERSION }}-PyInstaller-macOS-${{ matrix.architecture }}.dmg
+            }
+          ]
 
   build-macos-13-x86_64:
     strategy:
@@ -107,29 +131,35 @@ jobs:
         run: |
           pip install --timeout=300 -r requirements.txt
           pip install nuitka==2.6.4
+          pip install pyinstaller
 
-      - name: Build with Nuitka
+      - name: Build with Nuitka & PyInstaller
         run: |
           python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
-          python3 deploy.py
+          python3 deploy.py nuitka
+          python3 deploy.py pyinstaller
           chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv dist/pyinstaller pyinstaller
+          mv "resources/修复软件损坏" "pyinstaller/修复软件损坏"
 
       - name: Reinstall openssl libs
-        run: |
+        run: |  
           brew install openssl@3
 
       - name: Create DMG
         run: |
           ln -s /Applications dist/Applications
+          ln -s /Applications pyinstaller/Applications
           sleep 1
-          hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-Nuikta-macOS-${{ matrix.architecture }}.dmg"
+          hdiutil create -srcfolder "pyinstaller/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-PyInstaller-macOS-${{ matrix.architecture }}.dmg"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -157,14 +187,16 @@ jobs:
           sudo apt-get install -y libegl1-mesa
           pip install --timeout=300 -r requirements.txt
           pip install nuitka==2.6.4
+          pip install pyinstaller
 
-      - name: Build with Nuitka
+      - name: Build with Nuitka & PyInstaller
         run: |
           python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
-          python deploy.py
+          python deploy.py nuitka
+          python deploy.py pyinstaller
 #          nuitka --module plugins/jy_os_page.py
 #          mkdir -p "output/Ghost-Downloader-3.dist/plugins/"
 #          mv jy_os_page*.so "output/Ghost-Downloader-3.dist/plugins/"
@@ -172,5 +204,12 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
-          path: dist/Ghost-Downloader-3.dist
+          [
+            {
+              name: Ghost-Downloader-v${{ env.VERSION }}-Nuitka-Linux-${{ matrix.architecture }},
+              path: dist/Ghost-Downloader-3.dist
+            },{
+              name: Ghost-Downloader-v${{ env.VERSION }}-PyInstaller-Linux-${{ matrix.architecture }},
+              path: dist/pyinstaller
+            }
+          ]
