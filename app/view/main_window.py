@@ -164,10 +164,13 @@ class MainWindow(MSFluentWindow):
     def toggleTheme(self, callback: str):
         if callback == 'Dark':  # PySide6 特性，需要重试
             setTheme(Theme.DARK, save=False)
-            if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
-                QTimer.singleShot(100, self.applyBackgroundEffectByCfg)
-                QTimer.singleShot(200, self.applyBackgroundEffectByCfg)
-                QTimer.singleShot(300, self.applyBackgroundEffectByCfg)
+            try:
+                if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
+                    QTimer.singleShot(100, self.applyBackgroundEffectByCfg)
+                    QTimer.singleShot(200, self.applyBackgroundEffectByCfg)
+                    QTimer.singleShot(300, self.applyBackgroundEffectByCfg)
+            except AttributeError:
+                pass
 
         elif callback == 'Light':
             setTheme(Theme.LIGHT, save=False)
