@@ -1,5 +1,5 @@
 # coding:utf-8
-import sys
+import sys, os
 from re import compile
 
 from PySide6.QtCore import QDir, QRect
@@ -50,7 +50,7 @@ class Config(QConfig):
     # download
     maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 8, RangeValidator(1, 100))
     downloadFolder = ConfigItem(
-        "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
+        "Download", "DownloadFolder", os.path.join(os.path.expanduser("~"), "Downloads"), FolderValidator())
 
     preBlockNum = RangeConfigItem("Download", "PreBlockNum", 8, RangeValidator(1, 256))
     maxTaskNum = RangeConfigItem("Download", "MaxTaskNum", 3, RangeValidator(1, 10))
