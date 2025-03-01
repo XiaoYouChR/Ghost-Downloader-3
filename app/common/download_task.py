@@ -146,10 +146,14 @@ class DownloadTask(QThread):
             if len(self.fileName) > 255:
                 self.fileName = self.fileName[:255]
 
-            if sys.platform == "win32":
-                system(f'fsutil file createnew "{self.filePath}/{self.fileName}" {self.fileSize}')
-            else:
-                Path(f"{self.filePath}/{self.fileName}").touch()
+            Path(f"{self.filePath}/{self.fileName}").touch()
+            _ = True
+            if _:#稀疏文件
+                logger.info("稀疏文件已启用")
+                if sys.platform == "win32":
+                    print(system(f'fsutil sparse setflag "{self.filePath}/{self.fileName}"'))
+                else:
+                    logger.warning("当前系统暂时不支持稀疏文件")
 
             # 任务初始化完成
             if self.ableToParallelDownload:
