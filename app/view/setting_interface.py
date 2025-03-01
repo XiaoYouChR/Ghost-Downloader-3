@@ -18,6 +18,7 @@ from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL, FIREFOX_ADDONS_URL
 from ..common.methods import getSystemProxy
+from ..components.select_folder_setting_card import SelectFolderSettingCard
 from ..components.update_dialog import checkUpdate
 
 
@@ -251,14 +252,17 @@ class SettingInterface(SmoothScrollArea):
             cfg.autoSpeedUp,
             self.downloadGroup
         )
-
-        self.downloadFolderCard = PushSettingCard(
-            "选择文件夹",
-            FIF.DOWNLOAD,
-            "下载路径",
-            cfg.get(cfg.downloadFolder),
+        self.downloadFolderCard = SelectFolderSettingCard(
+            cfg.downloadFolder,
+            cfg.historyDownloadFolder,
             self.downloadGroup
         )
+        # self.downloadFolderCard = PushSettingCard(
+        #     "选择文件夹",
+        #     FIF.DOWNLOAD,
+        #     "下载路径",
+        #     cfg.get(cfg.downloadFolder)
+        # )
 
         self.proxyServerCard = CustomProxySettingCard(
             cfg.proxyServer,
@@ -464,15 +468,8 @@ class SettingInterface(SmoothScrollArea):
             parent=self
         )
 
-    def __onDownloadFolderCardClicked(self):
-        """ download folder card clicked slot """
-        folder = QFileDialog.getExistingDirectory(
-            self, "选择下载文件夹", "./")
-        if not folder or cfg.get(cfg.downloadFolder) == folder:
-            return
-
-        cfg.set(cfg.downloadFolder, folder)
-        self.downloadFolderCard.setContent(folder)
+    def __onDownloadFolderChanged(self, path):
+        cfg.set(cfg.downloadFolder, path)
 
     def __onBackgroundEffectCardChanged(self, option):
         """ background effect card changed slot """
@@ -595,8 +592,7 @@ class SettingInterface(SmoothScrollArea):
 
         # download
         self.blockNumCard.valueChanged.connect(lambda: cfg.set(cfg.preBlockNum, self.blockNumCard.configItem.value))
-        self.downloadFolderCard.clicked.connect(
-            self.__onDownloadFolderCardClicked)
+        self.downloadFolderCard.changeEvent.connect(self.__onDownloadFolderChanged)
 
         # extension
         self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)

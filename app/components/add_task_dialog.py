@@ -14,6 +14,7 @@ from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from .custom_dialogs import EditHeadersDialog
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo, addDownloadTask
+from .select_folder_setting_card import SelectFolderSettingCard
 
 urlRe = re.compile(r"^" +
                    "(https?://)" +
@@ -56,13 +57,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self.widget.setLayout(self.verticalLayout)
 
         # Choose Folder Card
-        self.downloadFolderCard = PushSettingCard(
-            "选择下载目录",
-            FIF.DOWNLOAD,
-            "下载目录",
-            cfg.downloadFolder.value,
-            self.widget
-        )
+        self.downloadFolderCard = SelectFolderSettingCard(cfg.downloadFolder, cfg.historyDownloadFolder, self.widget)
 
         self.blockNumCard = RangeSettingCard(
             cfg.preBlockNum,
@@ -88,8 +83,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self.__connectSignalToSlot()
 
     def __connectSignalToSlot(self):
-        self.downloadFolderCard.clicked.connect(
-            self.__onDownloadFolderCardClicked)
+        # self.downloadFolderCard.clicked.connect(
+        #     self.__onDownloadFolderCardClicked)
 
         self.noButton.clicked.connect(self.close)
         self.yesButton.clicked.connect(self.__onYesButtonClicked)

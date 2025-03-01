@@ -67,7 +67,7 @@ if sys.platform == "win32" or "darwin":
     setThemeColor(getSystemAccentColor(), save=False)
 if sys.platform == "linux":
 
-    if 'KDE_SESSION_UID' in os.environ: # KDE Plasma
+    if 'KDE_SESSION_UID' in os.environ:  # KDE Plasma
 
         import configparser
         config = configparser.ConfigParser()
