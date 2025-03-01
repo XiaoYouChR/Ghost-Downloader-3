@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> 在开发环境中运行 `main.py` 时请加上 `--debug` 形参。
+> 在开发环境中运行 `Ghost-Downloader-3.py` 时请加上 `--debug` 形参。
 
 > [!NOTE]
 > 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
@@ -59,7 +59,7 @@
   - ✅ 升级 Qt 版本
   - ✅ 实现 HttpClient 复用
   - ✅ 用协程来代替部分多线程功能
-- ❌ 重构下载器以及插件功能 (开发中...详见 Folk: feature/Plugins)
+- ❌ MVC -> MVVM 架构升级以及插件功能 (开发中...详见 Folk: feature/Plugins)
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Client 等强大功能)
 - ❌ 磁力 / BT 下载 (考虑使用 libtorrent 实现)
 
