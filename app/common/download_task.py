@@ -3,7 +3,7 @@ import struct
 import sys
 import time
 from asyncio import Task
-from os import system
+from os import popen, system
 from pathlib import Path
 from threading import Thread
 
@@ -147,7 +147,7 @@ class DownloadTask(QThread):
                 self.fileName = self.fileName[:255]
 
             if sys.platform == "win32":
-                system(f'fsutil file createnew "{self.filePath}/{self.fileName}" {self.fileSize}')
+                popen(f'fsutil file createnew "{self.filePath}/{self.fileName}" {self.fileSize}').close()
             else:
                 Path(f"{self.filePath}/{self.fileName}").touch()
 
