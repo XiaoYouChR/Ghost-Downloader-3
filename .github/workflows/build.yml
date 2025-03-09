@@ -21,7 +21,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka==2.6.4
 
       - name: Build with Nuitka
         run: |
@@ -57,7 +56,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka==2.6.4
 
       - name: Build with Nuitka
         run: |
@@ -106,7 +104,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka==2.6.4
 
       - name: Build with Nuitka
         run: |
@@ -156,7 +153,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libegl1-mesa
           pip install --timeout=300 -r requirements.txt
-          pip install nuitka==2.6.4
 
       - name: Build with Nuitka
         run: |

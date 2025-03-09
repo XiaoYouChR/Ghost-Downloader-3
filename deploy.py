@@ -22,7 +22,7 @@ if sys.platform == "win32":
         '--file-description="Ghost Downloader"',
         f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
-        'tests/test_pop_up_window.py',
+        'Ghost-Downloader-3.py',
     ]
 elif sys.platform == "darwin":
     args = [
