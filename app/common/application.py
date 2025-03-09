@@ -1,7 +1,6 @@
 # coding:utf-8
 import sys
 import traceback
-from typing import List
 
 from PySide6.QtCore import QSharedMemory
 from PySide6.QtWidgets import QApplication
@@ -13,7 +12,7 @@ from .signal_bus import signalBus
 class SingletonApplication(QApplication):
     """ Singleton application """
 
-    def __init__(self, argv: List[str], key: str):
+    def __init__(self, argv: list[str], key: str):
         super().__init__(argv)
         self.key = key
 
@@ -42,11 +41,12 @@ class SingletonApplication(QApplication):
             logger.error(self.memory.errorString())
             raise RuntimeError(self.memory.errorString())
 
+        if not "--debug" in argv:
+            sys.excepthook = exception_hook
+
 def exception_hook(exception: BaseException, value, tb):
     """ exception callback function """
     message = '\n'.join([''.join(traceback.format_tb(tb)),
                     '{0}: {1}'.format(exception.__name__, value)])
     logger.exception(f"{message}")
     signalBus.appErrorSig.emit(message)
-
-sys.excepthook = exception_hook
