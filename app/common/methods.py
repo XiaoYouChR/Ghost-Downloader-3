@@ -1,12 +1,14 @@
+import ctypes
 import importlib
 import inspect
 import os
 import re
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import decode_rfc2231
 from functools import wraps
-from http.client import responses
+from pathlib import Path
 from time import sleep, localtime, time_ns
 from urllib.parse import unquote, parse_qs, urlparse
 
@@ -305,3 +307,79 @@ def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=
 
     if w.exec() and yesSlot is not None:
         yesSlot()
+
+
+def isSparseSupported(filePath: Path) -> bool:
+    """检查文件系统是否支持稀疏文件"""
+    try:
+        if sys.platform == "win32":
+            # 获取驱动器根路径（如 C:\）
+            root_path = str(filePath.drive + '\\').encode('utf-16le')
+
+            # 定义Windows API参数类型
+            volume_name_buffer = ctypes.create_unicode_buffer(1024)
+            file_system_buffer = ctypes.create_unicode_buffer(1024)
+
+            # 调用Windows API获取卷信息
+            success = ctypes.windll.kernel32.GetVolumeInformationW(
+                ctypes.c_wchar_p(root_path.decode('utf-16le')),  # 根路径
+                volume_name_buffer,                             # 卷名缓冲区
+                ctypes.sizeof(volume_name_buffer),              # 缓冲区大小
+                None,                                           # 序列号
+                None,                                           # 最大组件长度
+                None,                                           # 文件系统标志
+                file_system_buffer,                             # 文件系统名称缓冲区
+                ctypes.sizeof(file_system_buffer)               # 缓冲区大小
+            )
+
+            return success and file_system_buffer.value in ('exFAT', 'NTFS', 'ReFS')
+        elif sys.platform == "linux":
+            fs_type = os.statvfs(filePath).f_basetype
+            return fs_type in ('ext4', 'xfs', 'btrfs', 'zfs')
+        elif sys.platform == "darwin":  # macOS
+            fs_info = os.statvfs(filePath).f_fstypename
+            return fs_info in ('apfs', 'hfs')
+        return False
+    except Exception as e:
+        logger.warning(f"文件系统检测失败: {repr(e)}")
+        return False
+
+def createSparseFile(filePath: Path) -> bool:
+    """创建稀疏文件的统一入口"""
+    if not isSparseSupported(filePath):
+        return False
+
+    try:
+        if sys.platform == "win32":
+            try:
+                # 创建空文件
+                filePath.touch()
+                # 设置稀疏属性
+                result = subprocess.run(
+                    ["fsutil", "sparse", "setflag", str(filePath)],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(f"fsutil失败: {result.stderr}")
+            except subprocess.CalledProcessError as e:
+                raise OSError(f"Windows 稀疏文件创建失败: {e.stderr}")
+        elif sys.platform == "linux":
+            try:
+                # 使用fallocate快速创建稀疏文件
+                with open(filePath, 'ab') as f:
+                    os.truncate(f.fileno(), 0)
+            except OSError as e:
+                raise OSError(f"Linux 稀疏文件创建失败: {repr(e)}")
+        elif sys.platform == "darwin":
+            try:
+                # APFS原生支持稀疏文件
+                with open(filePath, 'w') as f:
+                    os.ftruncate(f.fileno(), 0)
+            except OSError as e:
+                raise OSError(f"macOS 稀疏文件创建失败: {repr(e)}")
+        return True
+    except Exception as e:
+        logger.error(f"创建稀疏文件失败: {repr(e)}")
+        return False
