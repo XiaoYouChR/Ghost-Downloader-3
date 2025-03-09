@@ -2,7 +2,7 @@
 import sys
 from re import compile
 
-from PySide6.QtCore import QDir, QRect
+from PySide6.QtCore import QRect, QStandardPaths
 from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator, ConfigValidator, ConfigSerializer, FolderListValidator)
@@ -52,7 +52,7 @@ class Config(QConfig):
     # download
     maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 8, RangeValidator(1, 100))
     downloadFolder = ConfigItem(
-        "Download", "DownloadFolder", QDir.currentPath(), FolderValidator())
+        "Download", "DownloadFolder", QStandardPaths.writableLocation(QStandardPaths.DownloadLocation), FolderValidator())
     historyDownloadFolder = ConfigItem("Download", "HistoryDownloadFolder", [], FolderListValidator())
 
     preBlockNum = RangeConfigItem("Download", "PreBlockNum", 8, RangeValidator(1, 256))
