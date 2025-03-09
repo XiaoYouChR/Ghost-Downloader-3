@@ -3,7 +3,6 @@ import struct
 import sys
 import time
 from asyncio import Task
-from os import system
 from pathlib import Path
 from threading import Thread
 
@@ -13,7 +12,7 @@ from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
 from app.common.config import cfg
-from app.common.methods import getProxy, getReadableSize, getLinkInfo
+from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
 
 
 class DownloadWorker:
@@ -146,10 +145,13 @@ class DownloadTask(QThread):
             if len(self.fileName) > 255:
                 self.fileName = self.fileName[:255]
 
-            if sys.platform == "win32":
-                system(f'fsutil file createnew "{self.filePath}/{self.fileName}" {self.fileSize}')
-            else:
-                Path(f"{self.filePath}/{self.fileName}").touch()
+            filePath = Path(f"{self.filePath}/{self.fileName}")
+            filePath.touch()
+
+            try:
+                createSparseFile(filePath)
+            except Exception as e:
+                logger.warning("创建稀疏文件失败", repr(e))
 
             # 任务初始化完成
             if self.ableToParallelDownload:
