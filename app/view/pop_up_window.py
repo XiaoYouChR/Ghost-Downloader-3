@@ -33,8 +33,6 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
         self.globalPath.lineTo(0, self.height())
         self.globalPath.lineTo(0, 0)
 
-        self.geometryAnimation = QPropertyAnimation(self, b"geometry")
-
         # 设置界面图标和文字
         self.setStyleSheet(
             """
@@ -105,7 +103,7 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
     def showEvent(self, event):
         self.raise_()
-        QTimer.singleShot(50, self.__moveIn)
+        self.__moveIn()
         self.closeTimer = QTimer()
         self.closeTimer.setSingleShot(True)
         self.closeTimer.timeout.connect(self.__moveOut)
@@ -189,7 +187,9 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
     @classmethod
     def showPopUpWindow(cls, mainWindow=None):
-        return cls(mainWindow)
+        w = PopUpWindowBase(mainWindow)  # 若用 cls 编译后百分百闪退
+        w.show()
+        return w
 
 
 class FinishedPopUpWindow(PopUpWindowBase):
@@ -226,11 +226,11 @@ class FinishedPopUpWindow(PopUpWindowBase):
         self.openFileBtn.clicked.connect(lambda: openFile(fileResolvePath))
         self.openPathBtn.clicked.connect(lambda: openFile(dirname(fileResolvePath)))
 
-        self.show()
-
     @classmethod
     def showPopUpWindow(cls, fileResolvePath:str, mainWindow=None):
-        return cls(fileResolvePath, mainWindow)
+        w = FinishedPopUpWindow(fileResolvePath, mainWindow)
+        w.show()
+        return w
 
 
 class ReceivedPopUpWindow(PopUpWindowBase):
@@ -242,8 +242,6 @@ class ReceivedPopUpWindow(PopUpWindowBase):
         self.captionLabel.setText("接收到来自浏览器的下载任务:")
         self.contentLabel.setText(receiveContent)
 
-        self.show()
-
     def _playSound(self):
         # 设置音效
         self.soundEffect = QSoundEffect(self)
@@ -253,7 +251,9 @@ class ReceivedPopUpWindow(PopUpWindowBase):
 
     @classmethod
     def showPopUpWindow(cls, receiveContent:str, mainWindow=None):
-        return cls(receiveContent, mainWindow)
+        w = ReceivedPopUpWindow(receiveContent, mainWindow)
+        w.show()
+        return w
 
 
 class PopUpWindowManager(QObject):
@@ -275,7 +275,7 @@ class PopUpWindowManager(QObject):
         PopUpWindowManager._initialized = True
 
     def add(self, popUpWindow: PopUpWindowBase):
-        # print("PopUpWindow Added")
+        print("PopUpWindow Added", popUpWindow)
         if popUpWindow not in self.popUpWindows:
             self.popUpWindows.append(popUpWindow)
             # 按照 PopUpWindow 的数量移动 PopUpWindow 的 y 坐标

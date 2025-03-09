@@ -6,7 +6,7 @@ from app.common.config import VERSION, YEAR, AUTHOR
 if sys.platform == "win32":
     args = [
         'nuitka',
-        '--standalone',
+        '--standalone',  # Following all imports is the default for standalone mode and need not be specified.
         '--windows-console-mode=disable',
         '--plugin-enable=pyside6' ,
         '--assume-yes-for-downloads',
@@ -22,7 +22,7 @@ if sys.platform == "win32":
         '--file-description="Ghost Downloader"',
         f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
-        'Ghost-Downloader-3.py',
+        'tests/test_pop_up_window.py',
     ]
 elif sys.platform == "darwin":
     args = [
