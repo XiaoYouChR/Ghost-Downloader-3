@@ -57,8 +57,7 @@ class Ui_TaskCard(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.titleLabel.sizePolicy().hasHeightForWidth())
         self.titleLabel.setSizePolicy(sizePolicy)
-        self.titleLabel.setMinimumSize(QSize(0, 38))
-        self.titleLabel.setMaximumSize(QSize(16777215, 38))
+        self.titleLabel.setFixedHeight(38)
 
         self.verticalLayout_2.addWidget(self.titleLabel)
 
