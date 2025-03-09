@@ -592,7 +592,7 @@ class SettingInterface(SmoothScrollArea):
 
         # download
         self.blockNumCard.valueChanged.connect(lambda: cfg.set(cfg.preBlockNum, self.blockNumCard.configItem.value))
-        self.downloadFolderCard.changeEvent.connect(self.__onDownloadFolderChanged)
+        self.downloadFolderCard.pathChanged.connect(self.__onDownloadFolderChanged)
 
         # extension
         self.browserExtensionCard.checkedChanged.connect(self.__onBrowserExtensionCardChecked)
