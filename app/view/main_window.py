@@ -7,7 +7,7 @@ from pathlib import Path
 
 import darkdetect
 from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
-from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QClipboard
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
@@ -345,7 +345,6 @@ class MainWindow(MSFluentWindow):
     def __clipboardChanged(self):
         try:
             mime = self.clipboard.mimeData()
-            # print(mime.data('application/x-gd3-copy'))
             if mime.data('application/x-gd3-copy') != b'':  # if not empty
                 logger.debug("Clipboard changed from software itself")
                 return  # 当剪贴板事件来源于软件本身时, 不执行后续代码

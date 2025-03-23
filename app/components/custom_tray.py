@@ -4,7 +4,7 @@ from qfluentwidgets import Action
 from qfluentwidgets import FluentIcon as FIF
 
 from app.common.methods import bringWindowToTop
-from app.components.menus import FixedAcrylicMenu
+from app.components.custom_components import FixedAcrylicMenu
 
 
 class CustomSystemTrayIcon(QSystemTrayIcon):

@@ -12,9 +12,9 @@ from qfluentwidgets.common.icon import FluentIcon as FIF
 from app.components.custom_mask_dialog_base import MaskDialogBase
 from .Ui_AddTaskOptionDialog import Ui_AddTaskOptionDialog
 from .custom_dialogs import EditHeadersDialog
+from .select_folder_setting_card import SelectFolderSettingCard
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo, addDownloadTask
-from .select_folder_setting_card import SelectFolderSettingCard
 
 urlRe = re.compile(r"^" +
                    "(https?://)" +
