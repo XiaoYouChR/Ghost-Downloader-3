@@ -338,8 +338,30 @@ def isSparseSupported(filePath: Path) -> bool:
             fs_type = os.statvfs(filePath).f_basetype
             return fs_type in ('ext4', 'xfs', 'btrfs', 'zfs')
         elif sys.platform == "darwin":  # macOS
-            fs_info = os.statvfs(filePath).f_fstypename
-            return fs_info in ('apfs', 'hfs')
+            df_output = subprocess.check_output(
+                ["df", "-h", filePath],
+                stderr=subprocess.STDOUT,
+                universal_newlines=True
+            ).splitlines()
+
+            # 提取设备节点 (第二行第二列)
+            if len(df_output) < 2:
+                return False
+            device_node = df_output[1].split()[0]
+
+            # 获取挂载信息
+            mount_output = subprocess.check_output(
+                ["mount"],
+                universal_newlines=True
+            )
+
+            # 解析文件系统类型
+            for line in mount_output.splitlines():
+                if line.startswith(device_node):
+                    parts = line.split()
+                    for part in parts:
+                        if part.startswith("(") and "," in part:
+                            return part.strip("(),").split(",")[0] in ('apfs', 'hfs')
         return False
     except Exception as e:
         logger.warning(f"文件系统检测失败: {repr(e)}")

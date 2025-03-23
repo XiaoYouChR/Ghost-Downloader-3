@@ -146,12 +146,13 @@ class DownloadTask(QThread):
                 self.fileName = self.fileName[:255]
 
             filePath = Path(f"{self.filePath}/{self.fileName}")
-            filePath.touch()
 
-            try:
-                createSparseFile(filePath)
-            except Exception as e:
-                logger.warning("创建稀疏文件失败", repr(e))
+            if not filePath.exists():
+                filePath.touch()
+                try:
+                    createSparseFile(filePath)
+                except Exception as e:
+                    logger.warning("创建稀疏文件失败", repr(e))
 
             # 任务初始化完成
             if self.ableToParallelDownload:
