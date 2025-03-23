@@ -2,29 +2,9 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QSystemTrayIcon, QApplication
 from qfluentwidgets import Action
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets.common.screen import getCurrentScreenGeometry
-from qfluentwidgets.components.material import AcrylicMenu
 
 from app.common.methods import bringWindowToTop
-
-
-class FixedAcrylicSystemTrayMenu(AcrylicMenu):
-    """ 修复背景获取偏移、位置偏移的问题 """
-
-    def adjustPosition(self):
-        m = self.layout().contentsMargins()
-        rect = getCurrentScreenGeometry()
-        w, h = self.layout().sizeHint().width() + 5, self.layout().sizeHint().height()
-
-        x = min(self.x() - m.left(), rect.right() - w)
-        y = self.y() - 45
-
-        self.move(x, y)
-
-    def showEvent(self, e):
-        super().showEvent(e)
-        self.adjustPosition()
-        # self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))
+from app.components.menus import FixedAcrylicMenu
 
 
 class CustomSystemTrayIcon(QSystemTrayIcon):
@@ -34,7 +14,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         self.setIcon(parent.windowIcon())
         self.setToolTip('Ghost Downloader 🥰')
 
-        self.menu = FixedAcrylicSystemTrayMenu(parent=parent)
+        self.menu = FixedAcrylicMenu(parent=parent)
 
         self.showAction = Action(QIcon(":/image/logo_withoutBackground.png"), '仪表盘', self.menu)
         self.showAction.triggered.connect(self.__onShowActionTriggered)

@@ -282,6 +282,9 @@ class DownloadTask(QThread):
             self.progress += (i.progress - i.startPos + 1)
             LastProcess = self.progress
 
+        # LastProcess = self.progress  # 之前研究一个人的Log发现可能会出现unbound error，所以将LastProcess提取为函数全局变量
+        # 我不确定是否可行,你确定可以的话，请修改代码
+
         if self.ableToParallelDownload:
             if self.autoSpeedUp:
                 # 初始化变量
