@@ -2,6 +2,9 @@ from PySide6.QtCore import QSize, QRect
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from qfluentwidgets import BodyLabel, FluentIconBase, drawIcon, ProgressBar
+from qfluentwidgets.common.screen import getCurrentScreenGeometry
+from qfluentwidgets.components.material import AcrylicMenu
+
 
 # 我是傻逼
 # class DisabledRichTextEdit(TextEdit):
@@ -83,3 +86,22 @@ class TaskProgressBar(QWidget):
 
         for e, i in enumerate(content):  # 更改 Stretch
             self.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
+
+
+class FixedAcrylicMenu(AcrylicMenu):
+    """ 修复背景获取偏移、位置偏移的问题 """
+
+    def adjustPosition(self):
+        m = self.layout().contentsMargins()
+        rect = getCurrentScreenGeometry()
+        w, h = self.layout().sizeHint().width() + 5, self.layout().sizeHint().height()
+
+        x = min(self.x() - m.left(), rect.right() - w)
+        y = self.y() - 45
+
+        self.move(x, y)
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        self.adjustPosition()
+        # self.view.acrylicBrush.grabImage(QRect(self.pos() + self.view.pos(), self.view.size()))

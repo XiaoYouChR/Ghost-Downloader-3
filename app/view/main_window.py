@@ -344,20 +344,30 @@ class MainWindow(MSFluentWindow):
 
     def __clipboardChanged(self):
         try:
-            text = self.clipboard.text()
-            if text.isspace():
-                logger.debug("None in clipboard")
+            mime = self.clipboard.mimeData()
+            if mime.data('application/x-gd3-copy') != b'':  # if not empty
+                logger.debug("Clipboard changed from software itself")
+                return  # 当剪贴板事件来源于软件本身时, 不执行后续代码
+            if mime.hasText():
+                urls = mime.text().lstrip().rstrip().split('\n')  # .strip()主要去两头的空格
+            elif mime.hasUrls():
+                urls = [url.toString() for url in mime.urls()]
+            else:
                 return
-            urls = text.strip().split('\n')  # .strip()主要去两头的空格
+
             results = []
+
             for url in urls:
                 if self.__checkUrl(url):
                     results.append(url)
                 else:
                     logger.debug(f"Invalid url: {url}")
+
             if not results:
                 return
+
             ans = '\n'.join(results)
+
             logger.debug(f"Clipboard changed: {ans}")
             bringWindowToTop(self)
             self.__setUrlsAndShowAddTaskBox(ans)

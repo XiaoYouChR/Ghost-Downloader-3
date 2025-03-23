@@ -278,9 +278,11 @@ class DownloadTask(QThread):
 
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
+        LastProgress = 0  # 可能会出现unbound error，所以将LastProcess提取为函数全局变量
+
         for i in self.workers:
             self.progress += (i.progress - i.startPos + 1)
-            LastProcess = self.progress
+            LastProgress = self.progress
 
         if self.ableToParallelDownload:
             if self.autoSpeedUp:
@@ -314,9 +316,9 @@ class DownloadTask(QThread):
                 self.workerInfoChanged.emit(info)
 
                 # 计算速度
-                speed = (self.progress - LastProcess)
-                # print(f"speed: {speed}, progress: {self.progress}, LastProcess: {LastProcess}")
-                LastProcess = self.progress
+                speed = (self.progress - LastProgress)
+                # print(f"speed: {speed}, progress: {self.progress}, LastProgress: {LastProgress}")
+                LastProgress = self.progress
                 self.historySpeed.pop(0)
                 self.historySpeed.append(speed)
                 avgSpeed = sum(self.historySpeed) / 10
@@ -366,8 +368,8 @@ class DownloadTask(QThread):
                 self.workerInfoChanged.emit([])
 
                 # 计算速度
-                speed = (self.progress - LastProcess)
-                LastProcess = self.progress
+                speed = (self.progress - LastProgress)
+                LastProgress = self.progress
                 self.historySpeed.pop(0)
                 self.historySpeed.append(speed)
                 avgSpeed = sum(self.historySpeed) / 10
