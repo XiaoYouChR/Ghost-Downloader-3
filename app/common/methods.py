@@ -188,7 +188,7 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
     return localTimeNaive
 
 
-def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = False, proxy: str = "", followRedirects: bool = True) -> tuple:
+def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.SSLVerify.value, proxy: str = "", followRedirects: bool = True) -> tuple:
     if not proxy:
         proxy = getProxy()
     headers = headers.copy()

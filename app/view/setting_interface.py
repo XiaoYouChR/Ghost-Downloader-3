@@ -252,6 +252,15 @@ class SettingInterface(SmoothScrollArea):
             cfg.autoSpeedUp,
             self.downloadGroup
         )
+
+        self.SSLVerifyCard = SwitchSettingCard(
+            FIF.DEVELOPER_TOOLS,
+            "下载时验证 SSL 证书",
+            "文件无法下载时，可尝试关闭该选项",
+            cfg.SSLVerify,
+            self.downloadGroup
+        )
+
         self.downloadFolderCard = SelectFolderSettingCard(
             cfg.downloadFolder,
             cfg.historyDownloadFolder,
@@ -428,6 +437,7 @@ class SettingInterface(SmoothScrollArea):
         self.downloadGroup.addSettingCard(self.maxTaskNumCard)
         self.downloadGroup.addSettingCard(self.speedLimitationCard)
         self.downloadGroup.addSettingCard(self.autoSpeedUpCard)
+        self.downloadGroup.addSettingCard(self.SSLVerifyCard)
         self.downloadGroup.addSettingCard(self.downloadFolderCard)
         self.downloadGroup.addSettingCard(self.proxyServerCard)
 

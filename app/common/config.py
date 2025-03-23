@@ -59,6 +59,7 @@ class Config(QConfig):
     maxTaskNum = RangeConfigItem("Download", "MaxTaskNum", 3, RangeValidator(1, 10))
     speedLimitation = RangeConfigItem("Download", "SpeedLimitation", 0, RangeValidator(0, 104857600))  # 单位 KB
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
+    SSLVerify = ConfigItem("Download", "SSLVerify", True, BoolValidator(), restart=True)
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
 
     # browser

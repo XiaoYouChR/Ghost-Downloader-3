@@ -55,7 +55,7 @@ class DownloadTask(QThread):
         self.tasks: list[Task] = []
         self.historySpeed = [0] * 10  # 历史速度 10 秒内的平均速度
 
-        self.client = httpx.AsyncClient(headers=headers, verify=False,
+        self.client = httpx.AsyncClient(headers=headers, verify=cfg.SSLVerify.value,
                                         proxy=getProxy(), limits=httpx.Limits(max_connections=256))
 
         self.__initThread = Thread(target=self.__initTask, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
