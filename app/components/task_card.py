@@ -279,8 +279,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         event.accept()
 
     def mouseReleaseEvent(self, e):
-        if e.button() == Qt.LeftButton and self.isPressed:
-            openFile(f"{self.filePath}/{self.fileName}")
+        if e.button() == Qt.LeftButton and self.isPressed and self.status == "finished":
+                openFile(f"{self.filePath}/{self.fileName}")
         super().mouseReleaseEvent(e)
 
     def changeButtonStatus(self, enabled:bool=None, icon=None, slot=None):
