@@ -191,8 +191,6 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
 def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.SSLVerify.value, proxy: str = "", followRedirects: bool = True) -> tuple:
     if not proxy:
         proxy = getProxy()
-    headers = headers.copy()
-    headers["Range"] = "bytes=0-"#尝试发送范围请求
     # 使用 stream 请求获取响应
     with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects) as response:
         response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
@@ -203,7 +201,7 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
 
         # 获取文件大小, 判断是否可以分块下载
         # if "content-length" not in head or response.status_code != 200: #状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
-        if head.get("accept-ranges"):
+        if head.get("accept-ranges") == "bytes":#仅支持bytes单位，服务器可能通过返回值为none的accept-ranges头来明确拒绝范围请求
             fileSize = int(head["content-length"])
         else:
             fileSize = 0
