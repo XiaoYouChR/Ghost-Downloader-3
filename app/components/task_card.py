@@ -24,25 +24,17 @@ class MimeData(QMimeData):
         self.filepath = filepath
         self.filename = filename
         self.url = url
-        self.addFlag()
-
-    def addFlag(self):
-        self.setData('application/x-gd3-copy', b'True')
-
-    def clear(self):
-        super().clear()
-        self.addFlag()
 
     def toFile(self):
         self.clear()
-        self.setUrls([QUrl.fromLocalFile(f"{self.filepath}/{self.filename}")])
+        self.setData("text/uri-list", QUrl.fromLocalFile(f'{self.filepath}/{self.filename}').toEncoded())
         return self
 
     def toUrl(self):
         self.clear()
+        self.setData('application/x-gd3-copy', b'True')
         self.setText(self.url)
         return self
-
 
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
@@ -246,14 +238,15 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if self.status == 'finished':
                 clipboard = QApplication.clipboard()
                 menu = RoundMenu(parent=self)
+                menu.setAttribute(Qt.WA_DeleteOnClose)
 
-                openFileAction = Action(FIF.FOLDER, '打开文件夹')
+                openFileAction = Action(FIF.FOLDER, '打开文件夹', parent=menu)
                 openFileAction.triggered.connect(lambda: openFile(self.filePath))
-                copyFileAction = Action(FIF.COPY, '复制文件')
+                copyFileAction = Action(FIF.COPY, '复制文件', parent=menu)
                 copyFileAction.triggered.connect(lambda: clipboard.setMimeData(self.mimedata.toFile()))
-                copyLinkAction = Action(FIF.LINK, '复制链接')
+                copyLinkAction = Action(FIF.LINK, '复制链接', parent=menu)
                 copyLinkAction.triggered.connect(lambda: clipboard.setMimeData(self.mimedata.toUrl()))
-                restartAction = Action(FIF.RETURN, '重新下载')
+                restartAction = Action(FIF.RETURN, '重新下载', parent=menu)
                 restartAction.triggered.connect(self.restartTask)
 
                 menu.addActions([openFileAction, copyFileAction, copyLinkAction, restartAction])
@@ -268,7 +261,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if self.__calcDistance(self.__clickPos, event.pos()) >= 4:
                 drag = QDrag(self)
                 mimeData = QMimeData()
-                mimeData.setUrls([QUrl.fromLocalFile(f'{self.filePath}/{self.fileName}')])
+                mimeData.setText(self.url)
+                mimeData.setData("text/uri-list", QUrl.fromLocalFile(f'{self.filePath}/{self.fileName}').toEncoded())
                 drag.setMimeData(mimeData)
                 pixmap = self.LogoPixmapLabel.pixmap().copy()
                 # Resize
