@@ -202,10 +202,11 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
         url = str(response.url)
 
         # 获取文件大小, 判断是否可以分块下载
-        if "content-length" not in head or response.status_code == 200: #状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
-            fileSize = 0
-        else:
+        # if "content-length" not in head or response.status_code != 200: #状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
+        if head.get("accept-ranges"):
             fileSize = int(head["content-length"])
+        else:
+            fileSize = 0
 
         # 获取文件名
         if not fileName:

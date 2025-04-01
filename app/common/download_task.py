@@ -202,6 +202,7 @@ class DownloadTask(QThread):
 
     # 主下载逻辑
     async def __handleWorker(self, worker: DownloadWorker):
+        logger.debug(f"{self.fileName} task is launching the worker {worker.startPos}-{worker.endPos}...")
         if worker.progress < worker.endPos:  # 因为可能会创建空线程
             finished = False
             while not finished:
@@ -212,6 +213,8 @@ class DownloadTask(QThread):
 
                     async with worker.client.stream(url=self.url, headers=workingRangeHeaders, timeout=30,
                                                     method="GET") as res:
+                        if res.status_code != 206:
+                            raise httpx.HTTPStatusError(f"服务器拒绝了范围请求，状态码：{res.status_code}")
                         async for chunk in res.aiter_bytes():
                             if worker.endPos <= worker.progress:
                                 break
@@ -225,13 +228,15 @@ class DownloadTask(QThread):
                                     if cfg.speedLimitation.value:
                                         if cfg.globalSpeed >= cfg.speedLimitation.value:
                                             await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
+                            else:
+                                raise httpx.HTTPStatusError("服务器返回空数据")
 
                     if worker.progress >= worker.endPos:
                         worker.progress = worker.endPos
 
                     finished = True
 
-                except httpx.HTTPError as e:
+                except Exception as e:
                     logger.info(
                         f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
 
@@ -386,8 +391,6 @@ class DownloadTask(QThread):
 
             if self.ableToParallelDownload:
                 for i in self.workers:  # 启动 Worker
-                    logger.debug(f"Task {self.fileName}, starting the thread {i}...")
-
                     _ = asyncio.create_task(self.__handleWorker(i))
 
                     self.tasks.append(_)
