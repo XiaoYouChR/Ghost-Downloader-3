@@ -108,6 +108,6 @@ attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img 
                                  wav wma wmv z zip esd wim msp apk apks apkm cab msp"""
 
 # 插件在 __getLinkInfo 函数时的注册信息, 键为插件的实例, 值为 [插件的正则表达式, 插件的 parseUrl 函数, 插件的 TaskManagerCls].
-registerContentsByPlugins:dict[list] = {}
+registerContentsByPlugins:dict = {}
 
 cfg = Config()

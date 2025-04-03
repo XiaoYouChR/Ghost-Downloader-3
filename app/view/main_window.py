@@ -1,8 +1,10 @@
 # coding: utf-8
 import ctypes
+import os
 import pickle
 import sys
 from ctypes import byref, c_int
+from importlib import import_module
 from pathlib import Path
 
 import darkdetect
@@ -17,7 +19,8 @@ from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes, registerContentsByPlugins
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask
+from ..common.download_task import DownloadTaskManager
+from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, loadPlugins
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
@@ -74,17 +77,31 @@ class MainWindow(MSFluentWindow):
 
         # 创建未完成的任务
         historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
+        importModule = {}
         if historyFile.exists():
             f = open(historyFile, 'rb')
             try:
                 while True:
                     taskRecord = pickle.load(f)
                     logger.debug(f"Unfinished Task is following: {taskRecord}")
-                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
+                    clsName = taskRecord['clsName']
+                    if clsName == 'DownloadTaskManager':    # 默认
+                        addDownloadTask(DownloadTaskManager, taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
+                    else:
+                        clsModule = taskRecord['clsModule']
+                        try:
+                            if not clsModule in importModule:
+                                logger.debug(f"Import module {clsModule}")
+                                cls = getattr(import_module(clsModule), clsName)
+                                importModule[clsModule] = cls
+                                addDownloadTask(cls, taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
+                        except Exception as e:
+                            logger.error(f"Failed to import module {clsModule} when importing unfinished task: {repr(e)}")
+
             except EOFError:  # 读取完毕
                 f.close()
             except Exception as e:
-                logger.error(f"Failed to load unfinished task: {e}")
+                logger.error(f"Failed to load unfinished task: {repr(e)}")
                 f.close()
                 historyFile.unlink()
                 historyFile.touch()
@@ -313,6 +330,7 @@ class MainWindow(MSFluentWindow):
     def __checkUrl(self, url):
         try:
             for plugin, contents in registerContentsByPlugins.items():
+                print(plugin, contents)
                 if contents[0].match(url):
                     return url
 
@@ -344,4 +362,4 @@ class MainWindow(MSFluentWindow):
             bringWindowToTop(self)
             self.__setUrlsAndShowAddTaskBox(ans)
         except Exception as e:
-            logger.warning(f"Failed to check clipboard: {e}")
+            logger.warning(f"Failed to check clipboard: {repr(e)}")

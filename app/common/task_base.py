@@ -1,6 +1,9 @@
+import pickle
 from abc import abstractmethod
+from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal
+from loguru import logger
 
 from app.common.config import cfg
 
@@ -27,9 +30,11 @@ class TaskManagerBase(QObject):
         self.fileSize = fileSize
 
         self.task = None
+        self.progress = 0
 
+    @classmethod
     def getClsAttr(cls):
-        return cls.__module__, cls.__name__
+        return "plugins.{}".format(cls.__module__), cls.__name__
 
     @abstractmethod
     def start(self):
@@ -43,10 +48,76 @@ class TaskManagerBase(QObject):
     def updateTaskRecord(self, newStatus: str):
         recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
 
-    @abstractmethod
-    def cancel(self, completely: bool=False):
-        pass
+        clsModule, clsName = self.getClsAttr()
+
+        # 读取所有记录
+        records = []
+        try:
+            with open(recordPath, "rb") as f:
+                while True:
+                    try:
+                        record = pickle.load(f)
+                        records.append(record)
+                    except EOFError:
+                        break
+        except FileNotFoundError:
+            pass
+
+        # 检查是否已有匹配的记录
+        found = False
+        updatedRecords = []
+
+        for record in records:  # 遍历所有记录, 替换 newStatus
+            if (record["url"] == self.url and
+                    record["fileName"] == self.fileName and
+                    record["filePath"] == str(self.filePath) and
+                    record["blockNum"] == self.preBlockNum and
+                    record["headers"] == self.headers and
+                    record["clsModule"] == clsModule and
+                    record["clsName"] == clsName):
+
+                found = True
+                if newStatus != "deleted":
+                    record["status"] = newStatus
+                    updatedRecords.append(record)
+            else:
+                updatedRecords.append(record)
+
+        # 如果没有找到匹配的记录且 newStatus 不是 "deleted"，则添加新记录
+        if not found and newStatus != "deleted":
+            updatedRecords.append({
+                "url": self.url,
+                "fileName": self.fileName,
+                "filePath": str(self.filePath),
+                "blockNum": self.preBlockNum,
+                "status": newStatus,
+                "headers": self.headers,
+                "fileSize": self.fileSize,
+                "clsModule": clsModule,
+                "clsName": clsName
+            })
+
+        # 写回记录文件
+        with open(recordPath, "wb") as f:
+            for record in updatedRecords:
+                pickle.dump(record, f)
 
     @abstractmethod
-    def __onTaskInited(self, ableToParallelDownload: bool):
-        pass
+    def cancel(self, completely: bool=False):
+        self.stop()
+        if completely:  # 删除文件
+            try:
+                Path(f"{self.filePath}/{self.fileName}").unlink()
+                Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
+                logger.info(f"self:{self.fileName}, delete file successfully!")
+
+            except FileNotFoundError:
+                pass
+
+            except Exception as e:
+                raise e
+    @abstractmethod
+    def _onTaskInited(self, ableToParallelDownload: bool):
+        self.fileName = self.task.fileName
+        self.fileSize = self.task.fileSize
+        self.taskInited.emit(ableToParallelDownload)

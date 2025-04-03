@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QObject
+from PySide6.QtCore import Qt, QObject, Slot
 
 from PySide6.QtGui import QPixmap
 import re
@@ -72,6 +72,8 @@ class ParseBilibiliDownloadManager(TaskManagerBase):
         self.preBlockNum = preBlockNum  # 假设默认值为0
 
         self.tasks:list[DownloadTask] = []
+        self.progress = 0
+        self.finishedTaskNum = 0
 
     def __parsePageParam(self, pageParam: str, totalPages: int) -> list:
         """解析 P 参数，支持单个、区间和逗号分隔的多个 P"""
@@ -98,7 +100,7 @@ class ParseBilibiliDownloadManager(TaskManagerBase):
             self.taskGotWrong.emit("Invalid Bilibili video URL")
 
         # 反爬虫
-        headers = {
+        self.headers = {
             "accept-encoding": "deflate, br, gzip",
             "accept-language": "zh-CN,zh;q=0.9",
             "sec-fetch-dest": "document",
@@ -113,11 +115,11 @@ class ParseBilibiliDownloadManager(TaskManagerBase):
         userCookie = config.UserCookie.value
 
         if userCookie:
-            headers["cookie"] = userCookie
+            self.headers["cookie"] = userCookie
 
         # 使用 httpx.Client 来复用连接
         self.client = httpx.Client(
-            headers=headers,  # 设置默认请求头
+            headers=self.headers,  # 设置默认请求头
             timeout=60,  # 设置请求超时
             limits=httpx.Limits(max_connections=256),  # 设置最大连接数
             proxy=getProxy(),
@@ -210,16 +212,22 @@ class ParseBilibiliDownloadManager(TaskManagerBase):
 
             print("videoQuality", videoQuality)
 
+            _quality = "视频清晰度获取失败_请检查Cookie"
+
             for videoOption in pageData['dash']['video']:
                 print("ID", videoOption['id'])
                 if videoOption['id'] == videoQuality:
                     print(True)
                     url :str = videoOption['baseUrl']
+                    _quality = f"{videoOption['width']}x{videoOption['height']}"
+                    fileName: str = f"{videoTitle}_P{pageIndex+1}_{_quality}.mp4"
+                    
                     fileSize = getFileSizeWithClient(url, self.client)
                     self.fileSize += fileSize
+
                     taskInfo.append((
                         url,  # 视频下载链接
-                        f"{videoTitle}_P{pageIndex+1}_{videoOption['height']}P.mp4",  # 文件名
+                        fileName,  # 文件名
                         fileSize                        
                     ))
                     break
@@ -232,25 +240,46 @@ class ParseBilibiliDownloadManager(TaskManagerBase):
             self.fileSize += fileSize
             taskInfo.append((
                 url,
-                f"{videoTitle}_P{pageIndex+1}_{audioOption['id']}P.m4a",  # 文件名
+                f"{videoTitle}_P{pageIndex+1}_{_quality}.m4a",  # 文件名
                 fileSize
             ))
 
         autoSpeedUp = cfg.autoSpeedUp.value
 
         for task in taskInfo:
-            _ = DownloadTask(task[0], headers, self.preBlockNum, self.filePath, task[1], autoSpeedUp, task[2], self)
+            _ = DownloadTask(task[0], self.headers, self.preBlockNum, self.filePath, task[1], autoSpeedUp, task[2], self)
+            _.speedChanged.connect(self.__onSpeedChanged)
+            _.taskFinished.connect(self.__onTaskFinished)
             _.start()
             self.tasks.append(_)
 
         self.taskInited.emit(True)  # 提醒 TaskCard 更新界面
+    
+    def updateTaskRecord(self, newStatus: str):
+        super().updateTaskRecord(newStatus)
+    
+    def __onSpeedChanged(self, speed: int):
+        """更新速度和进度"""
+        speed = sum(i.avgSpeed for i in self.tasks)
+        self.speedChanged.emit(speed)
+        self.progress = sum(i.progress for i in self.tasks)
+        self.info = [{"start": 0, "progress": i.progress, "end": i.fileSize} for i in self.tasks]
+        self.progressInfoChanged.emit(self.info)
+
+    @Slot()
+    def __onTaskFinished(self):
+        self.finishedTaskNum += 1
+        if self.finishedTaskNum == len(self.tasks):
+            self.taskFinished.emit()
 
     def stop(self):
         for task in self.tasks:
             task.stop()
             task.wait()
             task.deleteLater()
-            
+
+        self.tasks = []
+
     def cancel(self, completely: bool=False):
         self.stop()
         if completely:  # 删除文件

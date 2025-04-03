@@ -61,14 +61,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.pauseButton.setEnabled(True)   # 这种情况下 __InitThread 要不然不启动, 要不然运行完了
 
         elif self.status == "finished": # 已完成的任务, 就当个傀儡
-            _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标, Qt 有 Bug, 会获取到一个只有左上角一点点的图像
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.taskManager.fileName}")).pixmap(128, 128)  # 自动获取图标, Qt 有 Bug, 会获取到一个只有左上角一点点的图像
 
             if _:
                 pixmap = _
             else:
                 pixmap = QPixmap(":/image/logo.png")    # 无法获取
 
-            self.titleLabel.setText(self.fileName)
+            self.titleLabel.setText(self.taskManager.fileName)
             self.LogoPixmapLabel.setPixmap(pixmap)
             self.LogoPixmapLabel.setFixedSize(70, 70)
 
@@ -81,20 +81,19 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
     def __onTaskError(self, exception: str):
         self.__showInfo(f"Error: {exception}")
-        if not self.fileName or self.fileSize == -1:
+        if not self.taskManager.fileName or self.taskManager.fileSize == -1:
             self.status = "paused"
             self.pauseButton.setEnabled(True)
             self.pauseButton.setIcon(FIF.PLAY)
             self.titleLabel.setText("任务初始化失败")
 
     def __onTaskInited(self, ableToParallelDownload: bool):
-        self.fileName = self.taskManager.fileName
-        self.fileSize = self.taskManager.fileSize
+        self.taskManager.fileSize = self.taskManager.fileSize
         self.ableToParallelDownload = ableToParallelDownload
 
-        # _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+        # _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.taskManager.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
         #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
-        _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标, Qt 有 Bug, 会获取到一个只有左上角一点点的图像
+        _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.taskManager.fileName}")).pixmap(128, 128)  # 自动获取图标, Qt 有 Bug, 会获取到一个只有左上角一点点的图像
 
         if _:
             pixmap = _
@@ -102,7 +101,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             pixmap = QPixmap(":/image/logo.png")    # 无法获取
 
         # 显示信息
-        self.titleLabel.setText(self.fileName)
+        self.titleLabel.setText(self.taskManager.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
         self.LogoPixmapLabel.setFixedSize(70, 70)
 
@@ -119,7 +118,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.verticalLayout.addWidget(self.progressBar)
 
             # 写入未完成任务记录文件，以供下次打开时继续下载
-            if self.fileName and not self.notCreateHistoryFile:
+            if self.taskManager.fileName and not self.notCreateHistoryFile:
                 self.taskManager.updateTaskRecord(self.status)
                 self.notCreateHistoryFile = True
 
@@ -144,7 +143,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.taskManager.updateTaskRecord("paused") # 改变记录状态
 
             except Exception as e:
-                logger.warning(f"Task:{self.fileName}, 暂停时遇到错误: {repr(e)}")
+                logger.warning(f"Task:{self.taskManager.fileName}, 暂停时遇到错误: {repr(e)}")
 
             finally:
                 self.__showInfo("任务已经暂停")
@@ -223,9 +222,12 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         if self.ableToParallelDownload:
             # 理论来说 worker 直增不减 所以ProgressBar不用考虑线程减少的问题
+            # print(len(content), self.progressBar.blockNum)
             _ = len(content) - self.progressBar.blockNum
-            if _:
+            if _ > 0:
                 self.progressBar.addProgressBar(content, _)
+            elif _ < 0:
+                self.progressBar.removeProgressBar(content, -_)
 
             progress = 0
 
@@ -257,9 +259,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.pauseButton.setDisabled(True)
         self.cancelButton.setDisabled(True)
 
-        self.clicked.connect(lambda: openFile(f"{self.taskManager.filePath}/{self.fileName}"))
+        self.clicked.connect(lambda: openFile(f"{self.taskManager.filePath}/{self.taskManager.fileName}"))
 
-        _ = QFileInfo(f"{self.taskManager.filePath}/{self.fileName}").lastModified().toString("yyyy-MM-dd hh:mm:ss")
+        _ = QFileInfo(f"{self.taskManager.filePath}/{self.taskManager.fileName}").lastModified().toString("yyyy-MM-dd hh:mm:ss")
 
         self.__showInfo(f"完成时间: {_}" if _ else "文件已被删除")
 
@@ -273,7 +275,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         try:  # 程序启动时不要发
             if self.window().tray:
-                FinishedPopUpWindow.showPopUpWindow(f"{self.taskManager.filePath}/{self.fileName}", self.window())
+                FinishedPopUpWindow.showPopUpWindow(f"{self.taskManager.filePath}/{self.taskManager.fileName}", self.window())
         except:
             pass
 
@@ -282,7 +284,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.taskManager.updateTaskRecord("finished")
 
             # 再获取一次图标
-            _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.taskManager.filePath}/{self.taskManager.fileName}")).pixmap(128, 128)  # 自动获取图标
 
             if _:
                 pass
@@ -317,9 +319,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.progressBar:ProgressBar
         self.__showInfo(f"正在校验 {algorithm}, 请稍后...")
         self.pauseButton.setDisabled(True)
-        self.progressBar.setMaximum(Path(f"{self.taskManager.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
+        self.progressBar.setMaximum(Path(f"{self.taskManager.filePath}/{self.taskManager.fileName}").stat().st_size)  # 设置进度条最大值
 
-        self.calcTask = CalcHashThread(f"{self.taskManager.filePath}/{self.fileName}", algorithm)
+        self.calcTask = CalcHashThread(f"{self.taskManager.filePath}/{self.taskManager.fileName}", algorithm)
         self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)))
         self.calcTask.returnHash.connect(self.whenHashCalcFinished)
         self.calcTask.start()
@@ -350,7 +352,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
             if self.__calcDistance(self.__clickPos, event.pos()) >= 4:
                 drag = QDrag(self)
                 mimeData = QMimeData()
-                mimeData.setUrls([QUrl.fromLocalFile(f'{self.taskManager.filePath}/{self.fileName}')])
+                mimeData.setUrls([QUrl.fromLocalFile(f'{self.taskManager.filePath}/{self.taskManager.fileName}')])
                 drag.setMimeData(mimeData)
                 drag.setPixmap(self.LogoPixmapLabel.pixmap().copy())
                 drag.exec(Qt.CopyAction | Qt.MoveAction)

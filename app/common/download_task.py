@@ -42,17 +42,18 @@ class DownloadTaskManager(TaskManagerBase):
         self.task = DownloadTask(self.url, self.headers, self.preBlockNum, self.filePath, self.fileName, autoSpeedUp, self.fileSize, self)
         self.task.start()
 
-        self.task.taskInited.connect(self.__onTaskInited)
+        self.task.taskInited.connect(self._onTaskInited)
         self.task.taskFinished.connect(self.taskFinished)
         self.task.taskGotWrong.connect(self.taskGotWrong)
         self.task.progressInfoChanged.connect(self.progressInfoChanged)
-        self.task.speedChanged.connect(self.speedChanged)
+        self.task.speedChanged.connect(self.__onTaskSpeedChanged)
 
-    def __onTaskInited(self, ableToParallelDownload: bool):
-        self.fileName = self.task.fileName
-        self.fileSize = self.task.fileSize
+    def __onTaskSpeedChanged(self, avgSpeed: int):
+        self.progress = self.task.progress
+        self.speedChanged.emit(avgSpeed)
 
-        self.taskInited.emit(ableToParallelDownload)
+    def _onTaskInited(self, ableToParallelDownload: bool):
+        super()._onTaskInited(ableToParallelDownload)
 
     def stop(self):
         self.task.stop()
@@ -60,75 +61,10 @@ class DownloadTaskManager(TaskManagerBase):
         self.task.deleteLater()
 
     def cancel(self, completely: bool=False):
-        self.stop()
-        if completely:  # 删除文件
-            try:
-                Path(f"{self.filePath}/{self.fileName}").unlink()
-                Path(f"{self.filePath}/{self.fileName}.ghd").unlink()
-                logger.info(f"self:{self.fileName}, delete file successfully!")
-
-            except FileNotFoundError:
-                pass
-
-            except Exception as e:
-                raise e
+        super().cancel(completely)
 
     def updateTaskRecord(self, newStatus: str):
-        recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
-
-        clsModule, clsName = self.getClsAttr()
-
-        # 读取所有记录
-        records = []
-        try:
-            with open(recordPath, "rb") as f:
-                while True:
-                    try:
-                        record = pickle.load(f)
-                        records.append(record)
-                    except EOFError:
-                        break
-        except FileNotFoundError:
-            pass
-
-        # 检查是否已有匹配的记录
-        found = False
-        updatedRecords = []
-
-        for record in records:  # 遍历所有记录, 替换 newStatus
-            if (record["url"] == self.url and
-                record["fileName"] == self.fileName and
-                record["filePath"] == str(self.filePath) and
-                record["blockNum"] == self.preBlockNum and
-                record["headers"] == self.headers and
-                record["clsModule"] == clsModule and
-                record["clsName"] == clsName):
-
-                found = True
-                if newStatus != "deleted":
-                    record["status"] = newStatus
-                    updatedRecords.append(record)
-            else:
-                updatedRecords.append(record)
-
-        # 如果没有找到匹配的记录且 newStatus 不是 "deleted"，则添加新记录
-        if not found and newStatus != "deleted":
-            updatedRecords.append({
-                "url": self.url,
-                "fileName": self.fileName,
-                "filePath": str(self.filePath),
-                "blockNum": self.preBlockNum,
-                "status": newStatus,
-                "headers": self.headers,
-                "fileSize": self.fileSize,
-                "clsModule": clsModule,
-                "clsName": clsName
-            })
-
-        # 写回记录文件
-        with open(recordPath, "wb") as f:
-            for record in updatedRecords:
-                pickle.dump(record, f)
+        super().updateTaskRecord(newStatus)
 
 
 class DownloadTask(QThread):
@@ -419,9 +355,9 @@ class DownloadTask(QThread):
                 LastProcess = self.progress
                 self.historySpeed.pop(0)
                 self.historySpeed.append(speed)
-                avgSpeed = sum(self.historySpeed) / 10
+                self.avgSpeed = sum(self.historySpeed) / 10
 
-                self.speedChanged.emit(avgSpeed)
+                self.speedChanged.emit(self.avgSpeed)
 
                 # print(f"avgSpeed: {avgSpeed}, historySpeed: {self.historySpeed}")
 
@@ -431,7 +367,7 @@ class DownloadTask(QThread):
                     else:
                         duringTime = 0
 
-                        speedPerConnect = avgSpeed / len(self.tasks)
+                        speedPerConnect = self.avgSpeed / len(self.tasks)
                         # print(f"taskNum: {len(self.tasks)}, speedPerConnect: {speedPerConnect}, maxSpeedPerConnect: {maxSpeedPerConnect}")
 
                         if speedPerConnect > maxSpeedPerConnect:
@@ -443,10 +379,10 @@ class DownloadTask(QThread):
 
                         # logger.debug(f"当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}, speed: {speed}, formerAvgSpeed: {formerAvgSpeed}, additionalTaskNum: {additionalTaskNum}, maxSpeedPerConnect: {maxSpeedPerConnect}")
 
-                        if (avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85:
+                        if (self.avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85:
                             #  新增加线程的效率 >= 0.85 时，新增线程
                             # logger.debug(f'自动提速增加新线程, 当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}')
-                            formerAvgSpeed = avgSpeed
+                            formerAvgSpeed = self.avgSpeed
                             additionalTaskNum = 4
 
                             if len(self.tasks)  < 253:
@@ -454,6 +390,7 @@ class DownloadTask(QThread):
                                     self.__reassignWorker()  # 新增线程
 
                 await asyncio.sleep(1)
+
         else:
             while not self.ableToParallelDownload:  # 实际上此时 self.ableToParallelDownload 用于记录任务是否完成
                 self.progress = 0
@@ -468,9 +405,9 @@ class DownloadTask(QThread):
                 LastProcess = self.progress
                 self.historySpeed.pop(0)
                 self.historySpeed.append(speed)
-                avgSpeed = sum(self.historySpeed) / 10
+                self.avgSpeed = sum(self.historySpeed) / 10
 
-                self.speedChanged.emit(avgSpeed)
+                self.speedChanged.emit(self.avgSpeed)
 
                 await asyncio.sleep(1)
 

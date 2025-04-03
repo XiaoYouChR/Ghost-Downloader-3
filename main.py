@@ -122,7 +122,7 @@ speedLimiter.setInterval(1000)  # 一秒刷新一次
 speedLimiter.timeout.connect(cfg.resetGlobalSpeed)  # 刷新 globalSpeed为 0
 speedLimiter.start()
 
-# create main window
+# create main window, 加载插件在 mainWindow 中实现
 w = MainWindow()
 
 # loading plugins

@@ -131,7 +131,7 @@ class Ui_TaskCard(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.progressBar = IndeterminateProgressBar(self)
+        self.progressBar = ProgressBar(TaskCard)    # 别改了, 要不然 Unfinished Paused Task 会显示为 IndeterminateProgressBar
         self.progressBar.setObjectName(u"progressBar")
         self.verticalLayout.addWidget(self.progressBar)
 

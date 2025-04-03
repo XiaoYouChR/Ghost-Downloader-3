@@ -237,12 +237,9 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = Fals
         proxy = getProxy()
 
     # 检查 URL 是否匹配任何已注册的插件的 URL 正则表达式
-    for plugin, regex in registerContentsByPlugins.items():
-        print(plugin, regex)
-        if regex.match(url):
-            # 如果匹配，则调用相应插件的 parseUrl 方法
-            print(plugin.parseUrl(url, proxy))
-            return
+    for plugin, contents in registerContentsByPlugins.items():
+        if contents[0].match(url):
+            return plugin.parseUrl(url, headers)
 
     # 使用 stream 请求获取响应
     with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects) as response:
