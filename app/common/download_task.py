@@ -88,7 +88,7 @@ class DownloadTask(QThread):
 
             newWorker = DownloadWorker(startPos, startPos, maxRemainderWorkerEnd, self.client)
 
-            newTask = self.loop.create_task(self.__handleWorker(newWorker))
+            newTask = asyncio.create_task(self.__handleWorker(newWorker))
 
             self.workers.insert(self.workers.index(maxRemainderWorker) + 1, newWorker)
             self.tasks.append(newTask)
@@ -460,13 +460,7 @@ class DownloadTask(QThread):
         self.__loadWorkers()
 
         # 主逻辑, 使用事件循环启动异步任务
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
         try:
-            self.loop.run_until_complete(self.__main())
-        except asyncio.CancelledError as e:
+            asyncio.run(self.__main())
+        except Exception as e:
             print(e)
-        finally:
-            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-            self.loop.close()
