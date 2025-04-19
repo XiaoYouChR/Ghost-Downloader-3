@@ -10,7 +10,7 @@ from app.common.application import SingletonApplication
 from app.common.config import cfg
 
 # 设置程序运行路径, 便于调试
-if "--debug" in sys.argv:  # 调试时候请使用相对路径！
+if not "__compiled__" in globals():  # 调试时候使用相对路径
     cfg.appPath = "./"
     qconfig.load('./Ghost Downloader 配置文件.json', cfg)
 else:  # 编译后

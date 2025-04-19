@@ -41,7 +41,7 @@ class SingletonApplication(QApplication):
             logger.error(self.memory.errorString())
             raise RuntimeError(self.memory.errorString())
 
-        if not "--debug" in argv:
+        if "__compiled__" in globals():  # 编译后的错误捕捉
             sys.excepthook = exception_hook
 
 def exception_hook(exception: BaseException, value, tb):
