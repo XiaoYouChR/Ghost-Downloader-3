@@ -25,8 +25,8 @@ from app.common.signal_bus import signalBus
 
 plugins = []
 
-# def isWin11():
-#     return sys.platform == 'win32' and sys.getwindowsversion().build >= 22000
+def isAbleToShowToast():
+    return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
 
 def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
     try:
@@ -193,8 +193,8 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
         proxy = getProxy()
     headers = headers.copy()
     headers["Range"] = "bytes=0-"#尝试发送范围请求
-    # 使用 stream 请求获取响应
-    with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects) as response:
+    # 使用 stream 请求获取响应, 反爬
+    with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects, trust_env=False) as response:
         response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
 
         head = response.headers
@@ -202,8 +202,8 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
         url = str(response.url)
 
         # 获取文件大小, 判断是否可以分块下载
-        # if "content-length" not in head or response.status_code != 200: #状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
-        if head.get("accept-ranges"):
+        # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
+        if response.status_code == 206 and "content-range" in head:
             fileSize = int(head["content-length"])
         else:
             fileSize = 0
