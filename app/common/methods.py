@@ -98,10 +98,11 @@ def getSystemProxy():
             return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
         else:
             return None
+    return None
 
 
 def getProxy():
-    # print(cfg.proxyServer.value)
+    print(cfg.proxyServer.value)
     if cfg.proxyServer.value == "Off":
         return None
     elif cfg.proxyServer.value == "Auto":

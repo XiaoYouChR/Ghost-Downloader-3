@@ -43,12 +43,12 @@ class getInfoThread(QThread):
         # with open("./Content.json", "r", encoding="utf-8") as f:
         #     self.json = json.loads(f.read())["OS"]
         #     f.close()
-
+        _ = getProxy()
         self.gotInfo.emit(json.loads(httpx.get(
             url="https://seelevollerei-my.sharepoint.com/personal/jackyao_xn--7et36u_cn/_layouts/52/download.aspx?share=Ecm5kLYVJedKlw60gcDkxPEB1PlS5Y-P-ttDSit_V8KuLw",
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-            proxy=getProxy(), follow_redirects=True).text)["OS"])
+            proxy=_, follow_redirects=True, trust_env=False).text)["OS"])
 
 
 class HomeInterface(SmoothScrollArea):

@@ -55,8 +55,10 @@ class DownloadTask(QThread):
         self.tasks: list[Task] = []
         self.historySpeed = [0] * 10  # 历史速度 10 秒内的平均速度
 
+        _ = getProxy()
+
         self.client = httpx.AsyncClient(headers=headers, verify=cfg.SSLVerify.value,
-                                        proxy=getProxy(), limits=httpx.Limits(max_connections=256))
+                                        proxy=_, limits=httpx.Limits(max_connections=256), trust_env=False)
 
         self.__initThread = Thread(target=self.__initTask, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__initThread.start()
@@ -214,7 +216,7 @@ class DownloadTask(QThread):
                     async with worker.client.stream(url=self.url, headers=workingRangeHeaders, timeout=30,
                                                     method="GET") as res:
                         if res.status_code != 206:
-                            raise httpx.HTTPStatusError(f"服务器拒绝了范围请求，状态码：{res.status_code}")
+                            raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
                         async for chunk in res.aiter_bytes():
                             if worker.endPos <= worker.progress:
                                 break
