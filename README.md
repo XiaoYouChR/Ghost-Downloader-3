@@ -1,6 +1,3 @@
-> [!IMPORTANT]
-> 在开发环境中运行 `Ghost-Downloader-3.py` 时请加上 `--debug` 形参。
-
 > [!NOTE]
 > 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
@@ -106,6 +103,7 @@ Copyright © 2025 XiaoYouChR.
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
 * [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
+* [pyqt5-concurrent](https://github.com/AresConnor/pyqt5-concurrent) A QThreadPool based task concurrency library
 
 
 ## 致谢
