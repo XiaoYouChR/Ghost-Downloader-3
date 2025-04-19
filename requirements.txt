@@ -4,3 +4,4 @@ loguru
 httpx[socks]
 aiofiles
 nuitka==2.6.7
+win11toast; sys_platform=="win32"

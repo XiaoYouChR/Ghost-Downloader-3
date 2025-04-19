@@ -9,7 +9,7 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qframelesswindow import WindowEffect
 
-from app.common.methods import openFile, bringWindowToTop
+from app.common.methods import openFile, bringWindowToTop, isAbleToShowToast
 from app.view.Ui_PopUpWindow import Ui_PopUpWindow
 
 
@@ -228,9 +228,31 @@ class FinishedPopUpWindow(PopUpWindowBase):
 
     @classmethod
     def showPopUpWindow(cls, fileResolvePath:str, mainWindow=None):
-        w = FinishedPopUpWindow(fileResolvePath, mainWindow)
-        w.show()
-        return w
+        if isAbleToShowToast():
+            from app.common.concurrent.TaskExecutor import TaskExecutor
+            from PySide6.QtCore import QStandardPaths, QFileInfo
+            from win11toast import toast
+            from PySide6.QtWidgets import QFileIconProvider
+            from os.path import dirname
+
+            iconTempFile = QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/finished_file_icon.png"
+            QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(128, 128).save(iconTempFile, "PNG")
+
+            icon = {
+                'src': f"file://{iconTempFile}",
+                'placement': 'appLogoOverride'
+            }
+
+            buttons = [
+                {'activationType': 'protocol', 'arguments': fileResolvePath, 'content': '打开文件'},
+                {'activationType': 'protocol', 'arguments': dirname(fileResolvePath), 'content': '打开目录'}
+            ]
+
+            return TaskExecutor.run(toast, "下载完成", fileResolvePath, icon=icon, buttons=buttons)
+        else:
+            w = FinishedPopUpWindow(fileResolvePath, mainWindow)
+            w.show()
+            return w
 
 
 class ReceivedPopUpWindow(PopUpWindowBase):
@@ -251,9 +273,26 @@ class ReceivedPopUpWindow(PopUpWindowBase):
 
     @classmethod
     def showPopUpWindow(cls, receiveContent:str, mainWindow=None):
-        w = ReceivedPopUpWindow(receiveContent, mainWindow)
-        w.show()
-        return w
+        if isAbleToShowToast():
+            from app.common.concurrent.TaskExecutor import TaskExecutor
+            from pathlib import Path
+            from PySide6.QtCore import QStandardPaths, QResource
+            from win11toast import toast
+
+            logoTempFile = Path(QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/gd3_logo.png")
+            if not logoTempFile.exists():
+                with open(logoTempFile, "wb") as f:
+                    f.write(QResource(":/image/logo.png").data())
+            icon = {
+                'src': f"file://{logoTempFile}",
+                'placement': 'appLogoOverride'
+            }
+            return TaskExecutor.run(toast, "接收到来自浏览器的下载任务:", receiveContent,
+                             on_click=lambda args: print('clicked!', args), icon=icon)
+        else:
+            w = ReceivedPopUpWindow(receiveContent, mainWindow)
+            w.show()
+            return w
 
 
 class PopUpWindowManager(QObject):
