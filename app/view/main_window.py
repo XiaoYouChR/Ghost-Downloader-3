@@ -113,9 +113,6 @@ class MainWindow(MSFluentWindow):
 
         self.splashScreen.finish()
 
-
-        self.urlsText = ''
-
     def systemTitleBarRect(self, size: QSize) -> QRect:
         """重写 macOS 三大件到左上角"""
         return QRect(0, 0 if self.isFullScreen() else 9, 75, size.height())
@@ -213,7 +210,7 @@ class MainWindow(MSFluentWindow):
             text='新建任务',
             selectable=False,
             icon=FIF.ADD,
-            onClick=self.showAddTaskBox,
+            onClick=lambda:self.showAddTaskDialog(),  # 否则会传奇怪的参数
             position=NavigationItemPosition.TOP,
         )
 
@@ -269,15 +266,8 @@ class MainWindow(MSFluentWindow):
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
         )
 
-    def showAddTaskBox(self):
-        w = AddTaskOptionDialog(self)
-        w.exec()
-
-    def __showAddTaskBox(self):
-        text = self.urlsText
-        w = AddTaskOptionDialog(self)
-        w.linkTextEdit.setPlainText(text)
-        w.exec()
+    def showAddTaskDialog(self, text:str="", headers:dict=None):
+        AddTaskOptionDialog.showAddTaskOptionDialog(text, self, headers)
 
     def closeEvent(self, event):
         # 拦截关闭事件，隐藏窗口而不是退出
@@ -307,9 +297,8 @@ class MainWindow(MSFluentWindow):
         else:
             event.ignore()
 
-    def __setUrlsAndShowAddTaskBox(self, text):
-        self.urlsText = text
-        QTimer.singleShot(10, self.__showAddTaskBox)
+    def __setUrlsAndShowAddTaskMsg(self, text):
+        QTimer.singleShot(10, lambda: self.showAddTaskDialog(text))
 
     def dropEvent(self, event: QDropEvent):
         mime = event.mimeData()
@@ -322,14 +311,14 @@ class MainWindow(MSFluentWindow):
             return
 
         if text:
-            self.__setUrlsAndShowAddTaskBox(text)
+            self.__setUrlsAndShowAddTaskMsg(text)
 
         event.accept()
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Paste):
             text = self.clipboard.text()
-            self.__setUrlsAndShowAddTaskBox(text)
+            self.__setUrlsAndShowAddTaskMsg(text)
         else:
             super().keyPressEvent(event)
 
@@ -366,10 +355,10 @@ class MainWindow(MSFluentWindow):
             if not results:
                 return
 
-            ans = '\n'.join(results)
+            results = '\n'.join(results)
 
-            logger.debug(f"Clipboard changed: {ans}")
+            logger.debug(f"Clipboard changed: {results}")
             bringWindowToTop(self)
-            self.__setUrlsAndShowAddTaskBox(ans)
+            self.__setUrlsAndShowAddTaskMsg(results)
         except Exception as e:
             logger.warning(f"Failed to check clipboard: {e}")

@@ -64,6 +64,7 @@ class Config(QConfig):
 
     # browser
     enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
+    enableRaiseWindowWhenReceiveMsg = ConfigItem("Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator())
 
     # personalization
     if sys.platform == "win32":

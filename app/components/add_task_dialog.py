@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from threading import Thread
 
-from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Signal, Qt, QTimer, QEvent
+from PySide6.QtGui import QColor, QResizeEvent
 from PySide6.QtWidgets import QFileDialog, QTableWidgetItem
 from qfluentwidgets import PushSettingCard, RangeSettingCard, MessageBox, InfoBar, InfoBarPosition, FluentStyleSheet
 from qfluentwidgets.common.icon import FluentIcon as FIF
@@ -34,10 +34,12 @@ urlRe = re.compile(r"^" +
 
 
 class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
-
-    startSignal = Signal()
+    
+    _instance = None  # type: 'AddTaskOptionDialog'
+    _initialized:bool = False  # 记录是否被 close
     __addTableRowSignal = Signal(str, str, str)  # fileName, fileSize, Url, 同理因为int最大值仅支持到2^31 PyQt无法定义int64 故只能使用str代替
     __gotWrong = Signal(str, int) # error, index
+
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -81,6 +83,47 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self.verticalLayout.insertWidget(6, self.editHeadersCard)
 
         self.__connectSignalToSlot()
+
+    def eventFilter(self, obj, e: QEvent):
+        if obj is self.window():
+            if e.type() == QEvent.Resize:
+                re = QResizeEvent(e)
+                self.resize(re.size())
+        elif obj is self.windowMask:
+            if e.type() == QEvent.MouseButtonRelease and e.button() == Qt.LeftButton \
+                    and self.isClosableOnMaskClicked():
+                self.close()
+
+        return super().eventFilter(obj, e)
+
+    @classmethod
+    def showAddTaskOptionDialog(cls, urlContent:str = "", parent:"QWidget"= None, headers:dict = None):
+        print(cls._initialized, urlContent)
+        if cls._initialized:
+            _ = cls._instance.linkTextEdit.toPlainText()
+            if urlContent and not urlContent in _.split('\n'):
+                _ += "\n" + urlContent
+                cls._instance.linkTextEdit.setPlainText(_)
+        else:
+            cls._instance = AddTaskOptionDialog(parent=parent)  # 防止 nuitka 打包时因 cls 未定义而报错
+            cls._initialized = True
+            cls._instance.linkTextEdit.setPlainText(urlContent)
+
+        if headers: # TODO headers 处理不合理, 应该每个 Item 都有自己的 headers, 要不然容易下不了
+            cls._instance.customHeaders = headers
+
+        cls._instance.exec()
+
+    def closeEvent(self, event):
+        self.__whenClosed()
+        super().closeEvent(event)
+        self.deleteLater()
+
+    @classmethod
+    def __whenClosed(cls):
+        cls._initialized = False
+        cls._instance = None
+        print(cls._initialized)
 
     def __connectSignalToSlot(self):
         # self.downloadFolderCard.clicked.connect(

@@ -288,6 +288,13 @@ class SettingInterface(SmoothScrollArea):
             cfg.enableBrowserExtension,
             self.browserGroup,
         )
+        self.raiseWindowWhenReceiveMsg = SwitchSettingCard(
+            FIF.CHAT,
+            "收到下载信息时弹出窗口",
+            "收到下载信息时弹出窗口，方便您调整下载参数",
+            cfg.enableRaiseWindowWhenReceiveMsg,
+            self.browserGroup,
+        )
         self.installExtensionCard = PushSettingCard(
             "导出 Chromium 扩展",
             FIF.DICTIONARY,
@@ -442,6 +449,7 @@ class SettingInterface(SmoothScrollArea):
         self.downloadGroup.addSettingCard(self.proxyServerCard)
 
         self.browserGroup.addSettingCard(self.browserExtensionCard)
+        self.browserGroup.addSettingCard(self.raiseWindowWhenReceiveMsg)
         self.browserGroup.addSettingCard(self.installExtensionCard)
         self.browserGroup.addSettingCard(self.installExtensionGuidanceCard)
         self.personalGroup.addSettingCard(self.themeCard)

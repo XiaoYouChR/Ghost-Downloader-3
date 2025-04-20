@@ -5,8 +5,8 @@ from PySide6.QtNetwork import QHostAddress
 from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 
-from app.common.config import VERSION, LATEST_EXTENSION_VERSION
-from app.common.methods import addDownloadTask
+from app.common.config import VERSION, LATEST_EXTENSION_VERSION, cfg
+from app.common.methods import addDownloadTask, bringWindowToTop
 from app.view.pop_up_window import ReceivedPopUpWindow
 
 
@@ -59,12 +59,17 @@ class GhostDownloaderSocketServer(QObject):
             if data["referer"]:
                 headers["referer"] = data["referer"]
             filename = data["filename"]
-            addDownloadTask(url, filename, headers=headers)
 
-            if filename:
-                ReceivedPopUpWindow.showPopUpWindow(filename, self.parent())
+            if cfg.enableRaiseWindowWhenReceiveMsg.value:
+                mainWindow = self.parent()
+                bringWindowToTop(mainWindow)
+                mainWindow.showAddTaskDialog(url, headers)
             else:
-                ReceivedPopUpWindow.showPopUpWindow(url, self.parent())
+                addDownloadTask(url, filename, headers=headers)
+                if filename:
+                    ReceivedPopUpWindow.showPopUpWindow(filename, self.parent())
+                else:
+                    ReceivedPopUpWindow.showPopUpWindow(url, self.parent())
 
         except Exception as e:
             logger.error(f"Error processing message: {repr(e)}")
