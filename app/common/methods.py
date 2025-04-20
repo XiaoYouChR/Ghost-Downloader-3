@@ -102,7 +102,6 @@ def getSystemProxy():
 
 
 def getProxy():
-    print(cfg.proxyServer.value)
     if cfg.proxyServer.value == "Off":
         return None
     elif cfg.proxyServer.value == "Auto":

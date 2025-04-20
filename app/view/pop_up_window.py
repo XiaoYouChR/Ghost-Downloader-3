@@ -287,13 +287,11 @@ class ReceivedPopUpWindow(PopUpWindowBase):
                 'src': f"file://{logoTempFile}",
                 'placement': 'appLogoOverride'
             }
-            return TaskExecutor.run(toast, "接收到来自浏览器的下载任务:", receiveContent,
-                             on_click=lambda args: print('clicked!', args), icon=icon)
+            return TaskExecutor.run(toast, "接收到来自浏览器的下载任务:", receiveContent, icon=icon)  # TODO 点击后 bringWindowToTop(mainWindow), 需要信号
         else:
             w = ReceivedPopUpWindow(receiveContent, mainWindow)
             w.show()
             return w
-
 
 class PopUpWindowManager(QObject):
     """当多个 PopUpWindow 同时出现时，使用 PopUpWindowManager 来管理它们"""
