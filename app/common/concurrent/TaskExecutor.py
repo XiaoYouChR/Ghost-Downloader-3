@@ -3,8 +3,9 @@ import os
 import warnings
 from typing import Dict, List, Callable, Iterable
 
-from .Future import QFuture, FutureCancelled, State
 from PySide6.QtCore import QThreadPool, QObject
+
+from .Future import QFuture, FutureCancelled, State
 from .Task import QBaseTask, QTask
 
 CPU_COUNTS = os.cpu_count()

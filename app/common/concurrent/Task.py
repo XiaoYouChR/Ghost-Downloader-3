@@ -1,8 +1,9 @@
 import functools
 from typing import Callable, Optional
 
-from .Future import QFuture
 from PySide6.QtCore import QObject, Signal, QRunnable
+
+from .Future import QFuture
 
 
 class _Signal(QObject):
