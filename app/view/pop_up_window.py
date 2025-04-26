@@ -1,13 +1,14 @@
+import sys
 from os.path import dirname, basename
 
 from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject, \
     QCoreApplication
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath
-from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButton
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qframelesswindow import WindowEffect
+from qframelesswindow.utils.win32_utils import isGreaterEqualWin10
 
 from app.common.methods import openFile, bringWindowToTop, isAbleToShowToast
 from app.view.Ui_PopUpWindow import Ui_PopUpWindow
@@ -96,7 +97,10 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
         # 解决鼠标穿透问题
         paint = QPainter(self)
         paint.setPen(Qt.transparent)
-        paint.setBrush(QColor(0, 0, 0, 1))
+        if isGreaterEqualWin10() or sys.platform == "darwin":
+            paint.setBrush(QColor(0, 0, 0, 1))
+        else:
+            paint.setBrush(Qt.white)
         paint.drawPath(self.globalPath)
         super().paintEvent(e)
 
@@ -113,10 +117,12 @@ class PopUpWindowBase(QWidget, Ui_PopUpWindow):
 
     def _playSound(self):
         # 设置音效
-        self.soundEffect = QSoundEffect(self)
-        self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/completed_task.wav"))
-        self.soundEffect.setVolume(100)
-        self.soundEffect.play()
+        if isGreaterEqualWin10():
+            from PySide6.QtMultimedia import QSoundEffect
+            self.soundEffect = QSoundEffect(self)
+            self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/completed_task.wav"))
+            self.soundEffect.setVolume(100)
+            self.soundEffect.play()
 
 
     def __moveIn(self):
@@ -266,10 +272,12 @@ class ReceivedPopUpWindow(PopUpWindowBase):
 
     def _playSound(self):
         # 设置音效
-        self.soundEffect = QSoundEffect(self)
-        self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/received_info.wav"))
-        self.soundEffect.setVolume(100)
-        self.soundEffect.play()
+        if isGreaterEqualWin10():
+            from PySide6.QtMultimedia import QSoundEffect
+            self.soundEffect = QSoundEffect(self)
+            self.soundEffect.setSource(QUrl.fromLocalFile(r":/res/received_info.wav"))
+            self.soundEffect.setVolume(100)
+            self.soundEffect.play()
 
     @classmethod
     def showPopUpWindow(cls, receiveContent:str, mainWindow=None):

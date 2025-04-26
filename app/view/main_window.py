@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
-from qframelesswindow.utils.win32_utils import isGreaterEqualWin10
+from qframelesswindow.utils.win32_utils import isGreaterEqualWin10, isGreaterEqualWin8_1
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
@@ -212,9 +212,17 @@ class MainWindow(MSFluentWindow):
                 self._isMicaEnabled = True
                 self.windowEffect.setAeroEffect(self.winId())
                 self.setStyleSheet("background-color: transparent")
+                if not isGreaterEqualWin8_1():
+                    self.titleBar.closeBtn.hide()
+                    self.titleBar.minBtn.hide()
+                    self.titleBar.maxBtn.hide()
             elif cfg.backgroundEffect.value == 'None':
                 self._isMicaEnabled = False
                 self.setStyleSheet("")
+                if not isGreaterEqualWin8_1():
+                    self.titleBar.closeBtn.show()
+                    self.titleBar.minBtn.show()
+                    self.titleBar.maxBtn.show()
 
     def initNavigation(self):
         # add navigation items
