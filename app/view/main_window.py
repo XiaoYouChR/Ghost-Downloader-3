@@ -1,8 +1,7 @@
 # coding: utf-8
-import ctypes
 import pickle
 import sys
-from ctypes import byref, c_int
+from ctypes.wintypes import MSG
 from pathlib import Path
 
 import darkdetect
@@ -10,15 +9,17 @@ from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, Q
 from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
-from qfluentwidgets import FluentIcon as FIF, setTheme, Theme
+from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
+from qframelesswindow.utils.win32_utils import isGreaterEqualWin10
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox
+from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, isBorderAccentColorOpen
 from ..common.signal_bus import signalBus
+from ..common.windows_window_effect import WindowsWindowEffect
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
@@ -52,6 +53,14 @@ class MainWindow(MSFluentWindow):
 
     def __init__(self):
         super().__init__()
+
+        # replace WindowsWindowEffect
+        if isGreaterEqualWin10():
+            self.windowEffect = WindowsWindowEffect(self.winId())
+
+            if isBorderAccentColorOpen():
+                self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
+
         self.initWindow()
 
         # create sub interface
@@ -185,22 +194,27 @@ class MainWindow(MSFluentWindow):
 
             if cfg.backgroundEffect.value == 'Acrylic':
                 self._isMicaEnabled = True
+                self.setStyleSheet("background-color: transparent")
                 self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if _ else "FFFFFF30")
             elif cfg.backgroundEffect.value == 'Mica':
                 self._isMicaEnabled = True
+                self.setStyleSheet("background-color: transparent")
                 self.windowEffect.setMicaEffect(self.winId(), _)
             elif cfg.backgroundEffect.value == 'MicaBlur':
                 self._isMicaEnabled = True
-                self.windowEffect.setMicaEffect(self.winId(), _)
-                self.windowEffect.DwmSetWindowAttribute(self.winId(), 38, byref(c_int(3)), 4)
+                self.windowEffect.setMicaEffect(self.winId(), _, isBlur=True)
+                self.setStyleSheet("background-color: transparent")
             elif cfg.backgroundEffect.value == 'MicaAlt':
                 self._isMicaEnabled = True
-                self.windowEffect.setMicaEffect(self.winId(), _, True)
+                self.windowEffect.setMicaEffect(self.winId(), _, isAlt=True)
+                self.setStyleSheet("background-color: transparent")
             elif cfg.backgroundEffect.value == 'Aero':
                 self._isMicaEnabled = True
                 self.windowEffect.setAeroEffect(self.winId())
+                self.setStyleSheet("background-color: transparent")
             elif cfg.backgroundEffect.value == 'None':
                 self._isMicaEnabled = False
+                self.setStyleSheet("")
 
     def initNavigation(self):
         # add navigation items
@@ -281,12 +295,20 @@ class MainWindow(MSFluentWindow):
     def nativeEvent(self, eventType, message):
         # 处理窗口重复打开事件
         if eventType == "windows_generic_MSG":
-            msg = ctypes.wintypes.MSG.from_address(message.__int__())
+            msg = MSG.from_address(message.__int__())
 
             # WIN_USER = 1024
             if msg.message == 1024 + 1:
                 self.show()
                 return True, 0
+
+            if msg.message == 7:
+                if isBorderAccentColorOpen():
+                    self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
+
+            if msg.message == 8:
+                if isBorderAccentColorOpen():
+                    self.windowEffect.removeBorderAccentColor(self.winId())
 
         return super().nativeEvent(eventType, message)
 

@@ -25,6 +25,22 @@ from app.common.signal_bus import signalBus
 
 plugins = []
 
+
+def isBorderAccentColorOpen():
+    """ Check whether the border accent color is open """
+    from qframelesswindow.utils.win32_utils import isGreaterEqualWin10
+
+    if not isGreaterEqualWin10():
+        return False
+
+    from winreg import OpenKey, HKEY_CURRENT_USER, KEY_READ, QueryValueEx, CloseKey
+
+    key = OpenKey(HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\DWM", 0, KEY_READ)
+    value, _ = QueryValueEx(key, "ColorPrevalence")
+    CloseKey(key)
+
+    return bool(value)
+
 def isAbleToShowToast():
     return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
 
