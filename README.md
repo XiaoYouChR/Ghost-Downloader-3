@@ -5,17 +5,13 @@
 > Windows 7 用户请下载 [`v3.4.6.1-win7`](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/tag/v3.4.6.1-win7) 版本
 
 <!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3">
-    <img src="resources/logo.png" alt="Logo" width="100" height="100">
-  </a>
 
-<h1 align="center">Ghost Downloader</h1>
+![Banner](resources/banner.webp)
 
-<p>
+<h3>
     AI 赋能的新一代跨平台多线程下载器
-</p>
+</h3>
 
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -23,26 +19,21 @@
 [![Release][release-shield]][release-url]
 [![Downloads][downloads-shield]][release-url]
 
-
-<p>
+<h4>
   <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Bug 报告</a>
 ·    
   <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml">功能需求</a>
-</p>
+</h4>
+
 </div>
-
-
 
 <!-- ABOUT THE PROJECT -->
 ## 关于本项目
-
-[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
 * 在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
 * 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
 * 特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
 * 得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能，发挥 Python🐍 最大的优势
-
 
 <!-- ROADMAP -->
 ## 计划
@@ -62,6 +53,10 @@
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
+<!-- SCREEN SHOTS -->
+## 截图
+
+[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
 <!-- CONTRIBUTING -->
 ## 贡献
@@ -105,11 +100,11 @@ Copyright © 2025 XiaoYouChR.
 * [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
 * [pyqt5-concurrent](https://github.com/AresConnor/pyqt5-concurrent) A QThreadPool based task concurrency library
 
-
 ## 致谢
 
 * [@ZhiYiyo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
 * [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本
+* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner, 感谢！
 
 <picture>
   <source
@@ -129,7 +124,6 @@ Copyright © 2025 XiaoYouChR.
     src="https://api.star-history.com/svg?repos=XiaoYouChR/Ghost-Downloader-3&type=Date&theme=dark"
   />
 </picture>
-
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
