@@ -6,7 +6,7 @@ from pathlib import Path
 
 import darkdetect
 from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
-from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor
@@ -60,6 +60,8 @@ class MainWindow(MSFluentWindow):
 
             if isBorderAccentColorOpen():
                 self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
+
+        self.setMicaEffectEnabled(False)
 
         self.initWindow()
 
@@ -132,18 +134,22 @@ class MainWindow(MSFluentWindow):
             self.themeChangedListener = ThemeChangedListener()
             self.themeChangedListener.themeChanged.connect(self.toggleTheme)
             self.themeChangedListener.start()
+            setTheme(Theme.AUTO, save=False)
+            self.applyBackgroundEffectByCfg()
         elif value == 'Dark':
             if self.themeChangedListener:
                 self.themeChangedListener.terminate()
                 self.themeChangedListener.deleteLater()
                 self.themeChangedListener = None
             setTheme(Theme.DARK, save=False)
+            self.applyBackgroundEffectByCfg()
         else:
             if self.themeChangedListener:
                 self.themeChangedListener.terminate()
                 self.themeChangedListener.deleteLater()
                 self.themeChangedListener = None
             setTheme(Theme.LIGHT, save=False)
+            self.applyBackgroundEffectByCfg()
 
     def runClipboardListener(self):
         if not self.clipboard:
@@ -167,17 +173,20 @@ class MainWindow(MSFluentWindow):
         self.browserExtensionServer = None
 
     def toggleTheme(self, callback: str):
-        if callback == 'Dark':  # PySide6 特性，需要重试
-            setTheme(Theme.DARK, save=False)
+        if callback == 'Dark':  # MS 特性，需要重试
+            setTheme(Theme.DARK, save=False, lazy=True)
             if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
-                QTimer.singleShot(100, self.applyBackgroundEffectByCfg)
-                QTimer.singleShot(200, self.applyBackgroundEffectByCfg)
-                QTimer.singleShot(300, self.applyBackgroundEffectByCfg)
+                QTimer.singleShot(500, self.applyBackgroundEffectByCfg)
+                # QTimer.singleShot(1000, self.applyBackgroundEffectByCfg)
+                # QTimer.singleShot(2000, self.applyBackgroundEffectByCfg)
 
         elif callback == 'Light':
-            setTheme(Theme.LIGHT, save=False)
+            setTheme(Theme.LIGHT, save=False, lazy=True)
 
         self.applyBackgroundEffectByCfg()
+
+    def _normalBackgroundColor(self):
+        return QColor(0, 0, 0, 0)
 
     def applyBackgroundEffectByCfg(self):
         if sys.platform == 'win32':
@@ -193,23 +202,18 @@ class MainWindow(MSFluentWindow):
                 _ = False
 
             if cfg.backgroundEffect.value == 'Acrylic':
-                self._isMicaEnabled = True
                 self.setStyleSheet("background-color: transparent")
                 self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if _ else "FFFFFF30")
             elif cfg.backgroundEffect.value == 'Mica':
-                self._isMicaEnabled = True
                 self.setStyleSheet("background-color: transparent")
                 self.windowEffect.setMicaEffect(self.winId(), _)
             elif cfg.backgroundEffect.value == 'MicaBlur':
-                self._isMicaEnabled = True
                 self.windowEffect.setMicaEffect(self.winId(), _, isBlur=True)
                 self.setStyleSheet("background-color: transparent")
             elif cfg.backgroundEffect.value == 'MicaAlt':
-                self._isMicaEnabled = True
                 self.windowEffect.setMicaEffect(self.winId(), _, isAlt=True)
                 self.setStyleSheet("background-color: transparent")
             elif cfg.backgroundEffect.value == 'Aero':
-                self._isMicaEnabled = True
                 self.windowEffect.setAeroEffect(self.winId())
                 self.setStyleSheet("background-color: transparent")
                 if not isGreaterEqualWin8_1():
@@ -217,7 +221,6 @@ class MainWindow(MSFluentWindow):
                     self.titleBar.minBtn.hide()
                     self.titleBar.maxBtn.hide()
             elif cfg.backgroundEffect.value == 'None':
-                self._isMicaEnabled = False
                 self.setStyleSheet("")
                 if not isGreaterEqualWin8_1():
                     self.titleBar.closeBtn.show()
@@ -310,13 +313,11 @@ class MainWindow(MSFluentWindow):
                 self.show()
                 return True, 0
 
-            if msg.message == 7:
-                if isBorderAccentColorOpen():
-                    self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
+            if msg.message == 7 and isBorderAccentColorOpen():
+                self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
 
-            if msg.message == 8:
-                if isBorderAccentColorOpen():
-                    self.windowEffect.removeBorderAccentColor(self.winId())
+            if msg.message == 8 and isBorderAccentColorOpen():
+                self.windowEffect.removeBorderAccentColor(self.winId())
 
         return super().nativeEvent(eventType, message)
 
