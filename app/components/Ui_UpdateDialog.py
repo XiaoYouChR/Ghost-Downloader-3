@@ -105,7 +105,6 @@ class Ui_UpdateDialog(object):
     # setupUi
 
     def retranslateUi(self, UpdateDialog):
-        UpdateDialog.setWindowTitle(QCoreApplication.translate("UpdateDialog", u"Dialog", None))
         self.titleLabel.setText(QCoreApplication.translate("UpdateDialog", u"\u68c0\u6d4b\u5230\u65b0\u7248\u672c", None))
         self.versionLabel.setText("")
         self.updatedDateLabel.setText("")

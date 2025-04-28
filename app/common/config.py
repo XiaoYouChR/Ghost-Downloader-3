@@ -1,12 +1,21 @@
 # coding:utf-8
 import sys
+from enum import Enum
 from re import compile
 
-from PySide6.QtCore import QRect, QStandardPaths
+from PySide6.QtCore import QRect, QStandardPaths, QLocale
 from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator, ConfigValidator, ConfigSerializer, FolderListValidator)
 
+
+class Language(Enum):
+    """ Language enumeration """
+
+    CHINESE_SIMPLIFIED = QLocale(QLocale.Chinese, QLocale.China)
+    CHINESE_TRADITIONAL = QLocale(QLocale.Chinese, QLocale.HongKong)
+    ENGLISH = QLocale(QLocale.English)
+    AUTO = QLocale()
 
 class ProxyValidator(ConfigValidator):
     PATTERN = compile(r'^(socks5|http|https):\/\/'
@@ -46,6 +55,14 @@ class GeometrySerializer(ConfigSerializer):  # 将字符串 "x,y,w,h," 转换为
         x, y, w, h = map(int, value.split(","))
         return QRect(x, y, w, h)
 
+class LanguageSerializer(ConfigSerializer):
+    """ Language serializer """
+
+    def serialize(self, language):
+        return language.value.name() if language != Language.AUTO else "Auto"
+
+    def deserialize(self, value: str):
+        return Language(QLocale(value)) if value != "Auto" else Language.AUTO
 
 class Config(QConfig):
     """ Config of application """
@@ -74,6 +91,8 @@ class Config(QConfig):
                                         OptionsValidator(["Light", "Dark", "System"]))
     dpiScale = RangeConfigItem(
         "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True)
+    language = OptionsConfigItem(
+        "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
 
     # software
     checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())

@@ -321,7 +321,6 @@ class Ui_SystemInfoCard(object):
     # setupUi
 
     def retranslateUi(self, SystemInfoCard):
-        SystemInfoCard.setWindowTitle(QCoreApplication.translate("SystemInfoCard", u"Form", None))
         self.PrimarySplitPushButton.setProperty("text_", QCoreApplication.translate("SystemInfoCard",
                                                                                     u"       \u4e0b\u8f7d       ",
                                                                                     None))

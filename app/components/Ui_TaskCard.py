@@ -8,7 +8,7 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QSize, Qt)
+from PySide6.QtCore import (QSize, Qt)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
@@ -135,12 +135,3 @@ class Ui_TaskCard(object):
         self.pauseButton.setIcon(FIF.PAUSE)
         self.cancelButton.setIcon(FIF.DELETE)
         self.folderButton.setIcon(FIF.FOLDER)
-
-        self.retranslateUi(TaskCard)
-
-
-    # setupUi
-
-    def retranslateUi(self, TaskCard):
-        TaskCard.setWindowTitle(QCoreApplication.translate("TaskCard", u"Form", None))
-    # retranslateUi

@@ -56,7 +56,6 @@ class Ui_PlanTaskDialog(object):
     # setupUi
 
     def retranslateUi(self, PlanTaskDialog):
-        PlanTaskDialog.setWindowTitle(QCoreApplication.translate("viewLayout", u"Form", None))
         self.SubtitleLabel.setText(QCoreApplication.translate("viewLayout", u"\u8bbe\u7f6e\u8ba1\u5212\u4efb\u52a1", None))
         self.powerOffButton.setText(QCoreApplication.translate("viewLayout", u"\u5173\u673a", None))
         self.quitButton.setText(QCoreApplication.translate("viewLayout", u"\u9000\u51fa\u7a0b\u5e8f", None))

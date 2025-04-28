@@ -3,7 +3,6 @@
 import os
 import sys
 
-from PySide6.QtCore import QTimer
 from qfluentwidgets import qconfig
 
 from app.common.application import SingletonApplication
@@ -28,14 +27,11 @@ app = SingletonApplication(sys.argv, "Ghost Downloader")
 import time
 import warnings
 
-import darkdetect
-
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
-
 from loguru import logger
 from qframelesswindow.utils import getSystemAccentColor
-
-from qfluentwidgets import setTheme, Theme, setThemeColor
+from qfluentwidgets import FluentTranslator, setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 import Res_rc
@@ -52,17 +48,20 @@ logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 
 warnings.warn = logger.warning
 
+# internationalization
+locale = cfg.language.value.value
+translator = FluentTranslator(locale)
+app.installTranslator(translator)
+
 # Enable Theme
 if cfg.customThemeMode.value == "System":
-    setTheme(Theme.DARK if darkdetect.isDark() else Theme.LIGHT, save=False)
+    setTheme(Theme.AUTO, save=False)
 elif cfg.customThemeMode.value == "Light":
     setTheme(Theme.LIGHT, save=False)
 else:
     setTheme(Theme.DARK, save=False)
 
-# Get Theme Color
-# try:
-# 上游仅支持 Windows 和 macOS
+# Get Theme Color， 上游仅支持 Windows 和 macOS
 if sys.platform == "win32" or "darwin":
     setThemeColor(getSystemAccentColor(), save=False)
 if sys.platform == "linux":
@@ -78,9 +77,6 @@ if sys.platform == "linux":
         if 'Colors:Window' in config:
             color = list(map(int, config.get('Colors:Window', 'DecorationFocus').split(",")))
             setThemeColor(QColor(*color))
-
-# except Exception as e:
-#     logger.error(f"Cannot get theme color: {e}")
 
 # create SpeedLimiter
 speedLimiter = QTimer()  # 限速器
