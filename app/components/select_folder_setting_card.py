@@ -24,7 +24,7 @@ class HistoryPathComboBox(EditableComboBox):
         if memory is None:
             memory = []
         self._currentItems = set()  # 缓存当前显示的路径集合
-        self.defaultText = '默认路径'  # 默认项显示文本
+        self.defaultText = self.tr('默认路径')  # 默认项显示文本
         self.default = default        # 默认路径值
         self.memory = memory           # 历史记录列表
 
@@ -84,7 +84,7 @@ class SelectFolderSettingCard(SettingCard):
     pathChanged = Signal(str)  # 路径修改信号
 
     def __init__(self, defaultItem: ConfigItem, memoryItem: ConfigItem, parent=None):
-        super().__init__(FIF.DOWNLOAD, "下载路径", cfg.downloadFolder.value, parent)
+        super().__init__(FIF.DOWNLOAD, self.tr("下载路径"), cfg.downloadFolder.value, parent)
         self.memoryItem = memoryItem  # 历史记录配置项
         self.defaultItem = defaultItem  # 默认路径配置项
 
@@ -108,7 +108,7 @@ class SelectFolderSettingCard(SettingCard):
 
     def __chooseFolder(self):
         """打开文件夹选择对话框"""
-        folder = QFileDialog.getExistingDirectory(None, "选择文件夹")
+        folder = QFileDialog.getExistingDirectory(None, self.tr("选择文件夹"))
         if folder:
             self.__updatePath(folder)
 

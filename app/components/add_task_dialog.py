@@ -64,16 +64,16 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
         self.blockNumCard = RangeSettingCard(
             cfg.preBlockNum,
             FIF.CLOUD,
-            "下载线程数",
+            self.tr("下载线程数"),
             '',
             self.widget
         )
 
         # Edit customHeaders Card
         self.editHeadersCard = PushSettingCard(
-            "编辑请求标头",
+            self.tr("编辑请求标头"),
             FIF.EDIT,
-            "自定义请求标头",
+            self.tr("自定义请求标头"),
             "",
             self.widget
         )
@@ -140,8 +140,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     def __handleWrong(self, error: str, index: int):
         InfoBar.error(
-            title='错误',
-            content=f"解析第 {index} 个链接时遇到错误: {error}",
+            title=self.tr('错误'),
+            content=self.tr("解析第 {} 个链接时遇到错误: {}").format(index, error),
             orient=Qt.Horizontal,
             isClosable=True,
             position=InfoBarPosition.TOP,
@@ -162,10 +162,10 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             try:
                 path.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                MessageBox("错误", repr(e), self)
+                MessageBox(self.tr("错误"), repr(e), self)
         else:
             if not os.access(path, os.W_OK):
-                MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
+                MessageBox(self.tr("错误"), self.tr("似乎是没有权限向此目录写入文件"), self)
 
         for i in range(self.taskTableWidget.rowCount()):
             item = self.taskTableWidget.item(i, 0)
@@ -183,10 +183,10 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
             try:
                 path.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                MessageBox("错误", repr(e), self)
+                MessageBox(self.tr("错误"), repr(e), self)
         else:
             if not os.access(path, os.W_OK):
-                MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
+                MessageBox(self.tr("错误"), self.tr("似乎是没有权限向此目录写入文件"), self)
 
         for i in range(self.taskTableWidget.rowCount()):
             item = self.taskTableWidget.item(i, 0)
@@ -199,7 +199,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
     def __onDownloadFolderCardClicked(self):
         """ download folder card clicked slot """
         folder = QFileDialog.getExistingDirectory(
-            self, "选择文件夹", "./")
+            self, self.tr("选择文件夹"), "./")
         if not folder or self.downloadFolderCard.contentLabel.text() == folder:
             return
 
@@ -290,8 +290,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
                     self.threads.append(Thread(target=self.__handleUrl, args=(url, index), daemon=True))
                 else:
                     InfoBar.warning(
-                        title='警告',
-                        content=f"第{index}个链接无效!",
+                        title=self.tr('警告'),
+                        content=self.tr("第{}个链接无效!").format(index),
                         orient=Qt.Horizontal,
                         isClosable=True,
                         position=InfoBarPosition.TOP,

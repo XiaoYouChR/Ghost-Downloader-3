@@ -229,10 +229,10 @@ class MainWindow(MSFluentWindow):
 
     def initNavigation(self):
         # add navigation items
-        self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, "任务列表")
+        self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, self.tr("任务列表"))
         self.navigationInterface.addItem(
             routeKey='addTaskButton',
-            text='新建任务',
+            text=self.tr('新建任务'),
             selectable=False,
             icon=FIF.ADD,
             onClick=lambda:self.showAddTaskDialog(),  # 否则会传奇怪的参数
@@ -241,7 +241,7 @@ class MainWindow(MSFluentWindow):
 
         # self.addSubInterface(self.debugInterface, FIF.DEVELOPER_TOOLS, "调试信息")
         # add custom widget to bottom
-        self.addSubInterface(self.settingInterface, FIF.SETTING, "设置", position=NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
     def initWindow(self):
 
@@ -285,8 +285,8 @@ class MainWindow(MSFluentWindow):
         QApplication.clipboard().setText(message)
         showMessageBox(
             self,
-            "意料之外的错误!",
-            "错误消息已写入粘贴板和日志。是否报告?",
+            self.tr("意料之外的错误!"),
+            self.tr("错误消息已写入粘贴板和日志。是否报告?"),
             True,
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
         )

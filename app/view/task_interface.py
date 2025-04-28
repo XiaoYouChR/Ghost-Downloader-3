@@ -83,10 +83,10 @@ class TaskInterface(SmoothScrollArea):
 
         self.horizontalLayout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        self.allStartButton.setText("全部开始")
-        self.allPauseButton.setText("全部暂停")
-        self.allDeleteButton.setText("全部删除")
-        self.planTaskToggleButton.setText("计划任务")
+        self.allStartButton.setText(self.tr("全部开始"))
+        self.allPauseButton.setText(self.tr("全部暂停"))
+        self.allDeleteButton.setText(self.tr("全部删除"))
+        self.planTaskToggleButton.setText(self.tr("计划任务"))
 
         self.expandLayout.addLayout(self.horizontalLayout)
 
@@ -98,8 +98,8 @@ class TaskInterface(SmoothScrollArea):
         for card in self.cards:
             if card.url == url:
                 InfoBar.error(
-                    title='错误',
-                    content="已创建相同下载链接的任务!",
+                    title=self.tr('错误'),
+                    content=self.tr("已创建相同下载链接的任务!"),
                     orient=Qt.Horizontal,
                     isClosable=True,
                     position=InfoBarPosition.TOP,
@@ -112,8 +112,8 @@ class TaskInterface(SmoothScrollArea):
             try:
                 if card.fileName == fileName and card.filePath == filePath:
                     InfoBar.error(
-                        title='错误',
-                        content="已创建相同文件名和路径的任务!",
+                        title=self.tr('错误'),
+                        content=self.tr("已创建相同文件名和路径的任务!"),
                         orient=Qt.Horizontal,
                         isClosable=True,
                         position=InfoBarPosition.TOP,
@@ -187,7 +187,7 @@ class TaskInterface(SmoothScrollArea):
                 if runningTasks > cfg.maxTaskNum.value:
                     _.pauseTask()
                     _.status = "waiting"
-                    _.infoLabel.setText("排队中...")
+                    _.infoLabel.setText(self.tr("排队中..."))
                     runningTasks -= 1
                     break
 
@@ -233,7 +233,7 @@ class TaskInterface(SmoothScrollArea):
                 continue
             if card.status == "waiting":
                 card.status = "paused"
-                card.infoLabel.setText("任务已经暂停")
+                card.infoLabel.setText(self.tr("任务已经暂停"))
             if card.status == "working":
                 card.pauseTask()
 

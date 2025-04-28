@@ -27,11 +27,11 @@ app = SingletonApplication(sys.argv, "Ghost Downloader")
 import time
 import warnings
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QTranslator
 from PySide6.QtGui import QColor
 from loguru import logger
 from qframelesswindow.utils import getSystemAccentColor
-from qfluentwidgets import FluentTranslator, setTheme, Theme, setThemeColor
+from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 import Res_rc
@@ -50,7 +50,9 @@ warnings.warn = logger.warning
 
 # internationalization
 locale = cfg.language.value.value
-translator = FluentTranslator(locale)
+translator = QTranslator()
+print(locale)
+translator.load(locale, "", "", ":/i18n")
 app.installTranslator(translator)
 
 # Enable Theme

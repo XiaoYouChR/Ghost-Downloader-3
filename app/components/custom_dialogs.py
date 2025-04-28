@@ -13,10 +13,10 @@ from app.components.Ui_PlanTaskDialog import Ui_PlanTaskDialog
 
 class DelDialog(MessageBox):
     def __init__(self, parent=None):
-        super().__init__(title="删除下载任务", content="确定要删除下载任务吗？", parent=parent)
+        super().__init__(title=self.tr("删除下载任务"), content=self.tr("确定要删除下载任务吗？"), parent=parent)
         self.setClosableOnMaskClicked(True)
 
-        self.checkBox = CheckBox("彻底删除", self)
+        self.checkBox = CheckBox(self.tr("彻底删除"), self)
         self.textLayout.addWidget(self.checkBox)
 
     @classmethod
@@ -55,11 +55,11 @@ class EditHeadersDialog(MessageBoxBase):
 
         self.widget.setFixedSize(400, 500)
 
-        self.titleLabel = SubtitleLabel("编辑请求标头", self.widget)
+        self.titleLabel = SubtitleLabel(self.tr("编辑请求标头"), self.widget)
         self.viewLayout.addWidget(self.titleLabel)
 
         self.headersTextEdit = PlainTextEdit(self.widget)
-        self.headersTextEdit.setPlaceholderText('请输入请求标头，每行一个键值对，格式为 "key: value"')
+        self.headersTextEdit.setPlaceholderText(self.tr('请输入请求标头，每行一个键值对，格式为 "key: value"'))
         if initialHeaders:
             self.headersTextEdit.setPlainText("\n".join([f"{k}: {v}" for k, v in initialHeaders.items()]))
         self.viewLayout.addWidget(self.headersTextEdit)
@@ -70,8 +70,8 @@ class EditHeadersDialog(MessageBoxBase):
             return True
         else:
             InfoBar.error(
-                title="错误",
-                content='请输入格式正确的请求标头, 格式为 "key: value"',
+                title=self.tr("错误"),
+                content=self.tr('请输入格式正确的请求标头, 格式为 "key: value"'),
                 position=InfoBarPosition.TOP,
                 parent=self.parent(),
                 duration=3000,
@@ -132,7 +132,7 @@ class PlanTaskDialog(MessageBoxBase, Ui_PlanTaskDialog):
 
     def selectFile(self):
         # Open file dialog and set file path to filePathEdit
-        filePath, _ = QFileDialog.getOpenFileName(None, "选择文件")
+        filePath, _ = QFileDialog.getOpenFileName(None, self.tr("选择文件"))
         if filePath:
             self.filePathEdit.setText(filePath)
 

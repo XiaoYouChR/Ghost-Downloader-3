@@ -52,13 +52,13 @@ class Ui_PlanTaskDialog(object):
 
         viewLayout.addLayout(self.horizontalLayout_3)
 
-        self.retranslateUi(self)
+        self.retranslateUi()
     # setupUi
 
-    def retranslateUi(self, PlanTaskDialog):
-        self.SubtitleLabel.setText(QCoreApplication.translate("viewLayout", u"\u8bbe\u7f6e\u8ba1\u5212\u4efb\u52a1", None))
-        self.powerOffButton.setText(QCoreApplication.translate("viewLayout", u"\u5173\u673a", None))
-        self.quitButton.setText(QCoreApplication.translate("viewLayout", u"\u9000\u51fa\u7a0b\u5e8f", None))
-        self.openFileButton.setText(QCoreApplication.translate("viewLayout", u"\u6253\u5f00", None))
+    def retranslateUi(self):
+        self.SubtitleLabel.setText(QCoreApplication.translate("viewLayout", u"设置计划任务", None))
+        self.powerOffButton.setText(QCoreApplication.translate("viewLayout", u"关机", None))
+        self.quitButton.setText(QCoreApplication.translate("viewLayout", u"退出程序", None))
+        self.openFileButton.setText(QCoreApplication.translate("viewLayout", u"打开", None))
     # retranslateUi
 

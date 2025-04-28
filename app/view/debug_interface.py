@@ -17,7 +17,7 @@ class DebugInterface(QWidget):
         self.text_browser.setReadOnly(True)
         # self.button = PushButton("Print Hello World", self)
         # self.button.clicked.connect(self.print_hello_world)
-        self.outputButton = PushButton("导出日志", self)
+        self.outputButton = PushButton(self.tr("导出日志"), self)
         self.outputButton.clicked.connect(self.output_log)
 
         layout = QVBoxLayout()
@@ -33,7 +33,7 @@ class DebugInterface(QWidget):
 
     def output_log(self):
         saveFileName = QFileDialog.getSaveFileName(
-            self, "选择导出路径", f"./导出日志-{int(time.time())}.log", "日志文件 (*.log)")[0]
+            self, self.tr("选择导出路径"), f"./导出日志-{int(time.time())}.log", self.tr("日志文件 (*.log)"))[0]
 
         if not saveFileName:
             return

@@ -10,4 +10,8 @@
     <file alias="completed_task.wav">resources/completed_task.wav</file>
     <file alias="received_info.wav">resources/received_info.wav</file>
   </qresource>
+  <qresource prefix="i18n">
+    <file alias="zh_CN.qm">resources/i18n/zh_CN.qm</file>
+    <file alias="en_US.qm">resources/i18n/en_US.qm</file>
+  </qresource>
 </RCC>

@@ -93,20 +93,20 @@ class Ui_AddTaskOptionDialog(object):
 
         self.verticalLayout.addLayout(self.buttonLayout)
 
-        self.retranslateUi(AddTaskOptionDialog)
+        self.retranslateUi()
 
     # setupUi
 
-    def retranslateUi(self, AddTaskOptionDialog):
-        self.label.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u65b0\u5efa\u4efb\u52a1", None))
-        self.linkTextEdit.setPlaceholderText(QCoreApplication.translate("AddTaskOptionDialog", u"\u6dfb\u52a0\u591a\u4e2a\u4e0b\u8f7d\u94fe\u63a5\u65f6\uff0c\u8bf7\u786e\u4fdd\u6bcf\u884c\u53ea\u6709\u4e00\u4e2a\u4e0b\u8f7d\u94fe\u63a5", None))
+    def retranslateUi(self):
+        self.label.setText(QCoreApplication.translate("AddTaskOptionDialog", u"新建任务", None))
+        self.linkTextEdit.setPlaceholderText(QCoreApplication.translate("AddTaskOptionDialog", u"添加多个下载链接时，请确保每行只有一个下载链接", None))
         ___qtablewidgetitem = self.taskTableWidget.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u6587\u4ef6\u540d", None));
+        ___qtablewidgetitem.setText(QCoreApplication.translate("AddTaskOptionDialog", u"文件名", None));
         ___qtablewidgetitem1 = self.taskTableWidget.horizontalHeaderItem(1)
-        ___qtablewidgetitem1.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u5927\u5c0f", None));
-        # self.statisticLabel.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u5171 0 \u4e2a\u6587\u4ef6", None))
-        self.label_2.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u4e0b\u8f7d\u8bbe\u7f6e", None))
-        self.noButton.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u53d6\u6d88\u4e0b\u8f7d", None))
-        self.yesButton.setText(QCoreApplication.translate("AddTaskOptionDialog", u"\u5f00\u59cb\u4e0b\u8f7d", None))
+        ___qtablewidgetitem1.setText(QCoreApplication.translate("AddTaskOptionDialog", u"大小", None));
+        # self.statisticLabel.setText(QCoreApplication.translate("AddTaskOptionDialog", u"共 0 个文件", None))
+        self.label_2.setText(QCoreApplication.translate("AddTaskOptionDialog", u"下载设置", None))
+        self.noButton.setText(QCoreApplication.translate("AddTaskOptionDialog", u"取消下载", None))
+        self.yesButton.setText(QCoreApplication.translate("AddTaskOptionDialog", u"开始下载", None))
     # retranslateUi
 

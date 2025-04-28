@@ -1,8 +1,7 @@
 import sys
 from os.path import dirname, basename
 
-from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject, \
-    QCoreApplication
+from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath
 from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButton
 from qfluentwidgets import FluentIcon as FIF
@@ -212,9 +211,9 @@ class FinishedPopUpWindow(PopUpWindowBase):
         self.openFileBtn.setObjectName(u"openFileBtn")
         self.openFileBtn.setGeometry(QRect(223, 82, 125, 28))
 
-        self.captionLabel.setText(QCoreApplication.translate("PopUpWindow", u"\u4e0b\u8f7d\u5b8c\u6210：", None))
-        self.openPathBtn.setText(QCoreApplication.translate("PopUpWindow", u"\u6253\u5f00\u76ee\u5f55", None))
-        self.openFileBtn.setText(QCoreApplication.translate("PopUpWindow", u"\u6253\u5f00\u6587\u4ef6", None))
+        self.captionLabel.setText(self.tr("下载完成："))
+        self.openPathBtn.setText(self.tr("打开目录"))
+        self.openFileBtn.setText(self.tr("打开文件"))
 
         _ = QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(128, 128)  # 自动获取图标
         if _:
@@ -250,11 +249,11 @@ class FinishedPopUpWindow(PopUpWindowBase):
             }
 
             buttons = [
-                {'activationType': 'protocol', 'arguments': fileResolvePath, 'content': '打开文件'},
-                {'activationType': 'protocol', 'arguments': dirname(fileResolvePath), 'content': '打开目录'}
+                {'activationType': 'protocol', 'arguments': fileResolvePath, 'content': cls.tr('打开文件')},
+                {'activationType': 'protocol', 'arguments': dirname(fileResolvePath), 'content': cls.tr('打开目录')}
             ]
 
-            return TaskExecutor.run(toast, "下载完成", fileResolvePath, icon=icon, buttons=buttons)
+            return TaskExecutor.run(toast, cls.tr("下载完成"), fileResolvePath, icon=icon, buttons=buttons)
         else:
             w = FinishedPopUpWindow(fileResolvePath, mainWindow)
             w.show()
@@ -267,7 +266,7 @@ class ReceivedPopUpWindow(PopUpWindowBase):
 
         self.contentIconLabel.setPixmap(QPixmap(":/image/logo.png"))
         self.contentIconLabel.setFixedSize(64, 64)
-        self.captionLabel.setText("接收到来自浏览器的下载任务:")
+        self.captionLabel.setText(self.tr("接收到来自浏览器的下载任务:"))
         self.contentLabel.setText(receiveContent)
 
     def _playSound(self):
@@ -295,7 +294,7 @@ class ReceivedPopUpWindow(PopUpWindowBase):
                 'src': f"file://{logoTempFile}",
                 'placement': 'appLogoOverride'
             }
-            return TaskExecutor.run(toast, "接收到来自浏览器的下载任务:", receiveContent, icon=icon)  # TODO 点击后 bringWindowToTop(mainWindow), 需要信号
+            return TaskExecutor.run(toast, cls.tr("接收到来自浏览器的下载任务:"), receiveContent, icon=icon)  # TODO 点击后 bringWindowToTop(mainWindow), 需要信号
         else:
             w = ReceivedPopUpWindow(receiveContent, mainWindow)
             w.show()

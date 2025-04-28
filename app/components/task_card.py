@@ -63,8 +63,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.__clickPos = None
 
         # Show Information
-        self.__showInfo("若任务初始化过久，请检查网络连接后重试.")
-        self.titleLabel.setText("正在初始化任务...")
+        self.__showInfo(self.tr("若任务初始化过久，请检查网络连接后重试."))
+        self.titleLabel.setText(self.tr("正在初始化任务..."))
 
         self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
         self.LogoPixmapLabel.setFixedSize(70, 70)
@@ -106,9 +106,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.__onTaskInited(self.ableToParallelDownload)
 
             if self.status == "paused":
-                self.__showInfo("任务已经暂停")
+                self.__showInfo(self.tr("任务已经暂停"))
             elif self.status == "waiting":
-                self.__showInfo("排队中...")
+                self.__showInfo(self.tr("排队中..."))
 
         else:
             self.__instantiateTask(self.url, self.filePath, self.preBlockNum, self.headers, self.fileSize)
@@ -177,13 +177,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 pickle.dump(record, f)
 
     def __onTaskError(self, exception: str):
-        self.__showInfo(f"Error: {exception}")
+        self.__showInfo(self.tr("错误: ") + exception)
         if not self.fileName:
             self.status = "paused"
             # self.pauseButton.setEnabled(True)
             # self.pauseButton.setIcon(FIF.PLAY)
             self.changeButtonStatus(enabled=True, icon=FIF.PLAY)
-            self.titleLabel.setText("任务初始化失败")
+            self.titleLabel.setText(self.tr("任务初始化失败"))
 
     def __calcDistance(self, startPos, endPos):
         return (startPos.x() - endPos.x()) ** 2 + (startPos.y() - endPos.y()) ** 2
@@ -209,7 +209,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.LogoPixmapLabel.setFixedSize(70, 70)
 
         if self.status == "waiting":
-            self.__showInfo("排队中...")
+            self.__showInfo(self.tr("排队中..."))
 
         if self.ableToParallelDownload:
             self.progressBar.deleteLater()
@@ -240,13 +240,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 menu = RoundMenu(parent=self)
                 menu.setAttribute(Qt.WA_DeleteOnClose)
 
-                openFileAction = Action(FIF.FOLDER, '打开文件夹', parent=menu)
+                openFileAction = Action(FIF.FOLDER, self.tr('打开文件夹'), parent=menu)
                 openFileAction.triggered.connect(lambda: openFile(self.filePath))
-                copyFileAction = Action(FIF.COPY, '复制文件', parent=menu)
+                copyFileAction = Action(FIF.COPY, self.tr('复制文件'), parent=menu)
                 copyFileAction.triggered.connect(lambda: clipboard.setMimeData(self.mimedata.toFile()))
-                copyLinkAction = Action(FIF.LINK, '复制链接', parent=menu)
+                copyLinkAction = Action(FIF.LINK, self.tr('复制链接'), parent=menu)
                 copyLinkAction.triggered.connect(lambda: clipboard.setMimeData(self.mimedata.toUrl()))
-                restartAction = Action(FIF.RETURN, '重新下载', parent=menu)
+                restartAction = Action(FIF.RETURN, self.tr('重新下载'), parent=menu)
                 restartAction.triggered.connect(self.restartTask)
 
                 menu.addActions([openFileAction, copyFileAction, copyLinkAction, restartAction])
@@ -313,7 +313,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 logger.warning(f"Task:{self.fileName}, 暂停时遇到错误: {repr(e)}")
 
             finally:
-                self.__showInfo("任务已经暂停")
+                self.__showInfo(self.tr("任务已经暂停"))
                 self.status = "paused"
                 self.changeButtonStatus(enabled=True)
 
@@ -335,7 +335,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.updateTaskRecord("working")
 
             finally:
-                self.__showInfo("任务正在开始")
+                self.__showInfo(self.tr("任务正在开始"))
                 self.status = "working"
                 # 得让 self.__initThread 运行完才能运行暂停！ self.pauseButton.setEnabled(True)
 
@@ -445,7 +445,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         fileinfo = QFileInfo(f"{self.filePath}/{self.fileName}").lastModified().toString("yyyy-MM-dd hh:mm:ss")
 
-        self.__showInfo(f"完成时间: {fileinfo}" if fileinfo else "文件已被删除")
+        self.__showInfo(self.tr("完成时间: ") + fileinfo if fileinfo else self.tr("文件已被删除"))
 
         self.progressBar.deleteLater()
 
@@ -499,7 +499,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.task.gotWrong.connect(self.__onTaskError)
 
     def runCalcHashTask(self, algorithm):
-        self.__showInfo(f"正在校验 {algorithm}, 请稍后...")
+        self.__showInfo(self.tr("正在校验 ") + algorithm + self.tr(", 请稍后..."))
         self.changeButtonStatus(enabled=False)
         self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
 
@@ -512,7 +512,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.calcTask.deleteLater()
         self.progressBar.setMaximum(100)
         self.progressBar.setValue(100)
-        self.__showInfo(f"校验完成，文件的 {self.calcTask.algorithm} 是: {result}")
+        self.__showInfo(self.tr("校验完成，文件的 ") + self.calcTask.algorithm + self.tr(" 是: ") + result)
         # 把校验按钮变成复制按钮
         self.changeButtonStatus(enabled=True, icon=FIF.COPY, slot=lambda: QApplication.clipboard().setText(result))
 
@@ -521,7 +521,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         algorithms = ["MD5", "SHA1", "SHA224", "SHA256", "SHA384", "SHA512", "BLAKE2B", "BLAKE2S", "SHA3_224",
                       "SHA3_256", "SHA3_384", "SHA3_512", "SHAKE_128", "SHAKE_256"]
 
-        dialog = CustomInputDialog("选择校验算法", "请选择一个校验算法:", algorithms, self.window())
+        dialog = CustomInputDialog(self.tr("选择校验算法"), self.tr("请选择一个校验算法:"), algorithms, self.window())
         selected_algorithm, ok = dialog.get_item()
 
         if ok and selected_algorithm:

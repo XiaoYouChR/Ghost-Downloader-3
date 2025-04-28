@@ -101,17 +101,16 @@ class Ui_UpdateDialog(object):
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
 
-        self.retranslateUi(UpdateDialog)
+        self.retranslateUi()
     # setupUi
 
-    def retranslateUi(self, UpdateDialog):
-        self.titleLabel.setText(QCoreApplication.translate("UpdateDialog", u"\u68c0\u6d4b\u5230\u65b0\u7248\u672c", None))
+    def retranslateUi(self):
+        self.titleLabel.setText(QCoreApplication.translate("UpdateDialog", u"检测到新版本", None))
         self.versionLabel.setText("")
         self.updatedDateLabel.setText("")
         self.sponsorButton.setText(QCoreApplication.translate("UpdateDialog", u"Sponsor", None))
         self.logTextEdit.setMarkdown("")
 
-        self.noButton.setText(QCoreApplication.translate("UpdateDialog", u"\u7a0d\u540e\u518d\u8bf4", None))
-        self.yesButton.setText(QCoreApplication.translate("UpdateDialog", u"\u4e0b\u8f7d\u6b64\u7248\u672c", None))
+        self.noButton.setText(QCoreApplication.translate("UpdateDialog", u"稍后再说", None))
+        self.yesButton.setText(QCoreApplication.translate("UpdateDialog", u"下载此版本", None))
     # retranslateUi
-

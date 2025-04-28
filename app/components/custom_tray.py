@@ -16,19 +16,19 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
 
         self.menu = FixedAcrylicMenu(parent=parent)
 
-        self.showAction = Action(QIcon(":/image/logo_withoutBackground.png"), '仪表盘', self.menu)
+        self.showAction = Action(QIcon(":/image/logo_withoutBackground.png"), self.tr('仪表盘'), self.menu)
         self.showAction.triggered.connect(self.__onShowActionTriggered)
         self.menu.addAction(self.showAction)
 
-        self.allPauseAction = Action(FIF.PLAY, '全部开始', self.menu)
+        self.allPauseAction = Action(FIF.PLAY, self.tr('全部开始'), self.menu)
         self.allPauseAction.triggered.connect(self.__onAllStartActionTriggered)
         self.menu.addAction(self.allPauseAction)
 
-        self.allPauseAction = Action(FIF.PAUSE, '全部暂停', self.menu)
+        self.allPauseAction = Action(FIF.PAUSE, self.tr('全部暂停'), self.menu)
         self.allPauseAction.triggered.connect(self.__onAllPauseActionTriggered)
         self.menu.addAction(self.allPauseAction)
 
-        self.quitAction = Action(FIF.CLOSE, '退出程序', self.menu)
+        self.quitAction = Action(FIF.CLOSE, self.tr('退出程序'), self.menu)
         self.quitAction.triggered.connect(self.__onQuitActionTriggered)
         self.menu.addAction(self.quitAction)
 

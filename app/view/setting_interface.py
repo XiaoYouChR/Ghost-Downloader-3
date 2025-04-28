@@ -35,7 +35,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
         parent: QWidget
             parent window
         """
-        super().__init__(FIF.GLOBE, "代理", "设置下载时希望使用的代理", parent=parent)
+        super().__init__(FIF.GLOBE, self.tr("代理"), self.tr("设置下载时希望使用的代理"), parent=parent)
 
         self.configItem = configItem
 
@@ -44,26 +44,26 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
         self.radioWidget = QWidget(self.view)
         self.radioLayout = QVBoxLayout(self.radioWidget)
         self.offRadioButton = RadioButton(
-            "不使用代理", self.radioWidget)
+            self.tr("不使用代理"), self.radioWidget)
         self.defaultRadioButton = RadioButton(
-            "自动检测系统代理", self.radioWidget)
+            self.tr("自动检测系统代理"), self.radioWidget)
         self.customRadioButton = RadioButton(
-            "使用自定义代理", self.radioWidget)
+            self.tr("使用自定义代理"), self.radioWidget)
 
         self.buttonGroup = QButtonGroup(self)
 
         self.customProxyWidget = QWidget(self.view)
         self.customProxyLayout = QHBoxLayout(self.customProxyWidget)
         self.customLabel = BodyLabel(
-            "编辑代理服务器: ", self.customProxyWidget)
+            self.tr("编辑代理服务器: "), self.customProxyWidget)
         self.customProtocolComboBox = ComboBox(self.customProxyWidget)
         self.customProtocolComboBox.addItems(["socks5", "http", "https"])
         self.label_1 = BodyLabel("://", self.customProxyWidget)
         self.customIPLineEdit = LineEdit(self.customProxyWidget)
-        self.customIPLineEdit.setPlaceholderText("代理 IP 地址")
+        self.customIPLineEdit.setPlaceholderText(self.tr("代理 IP 地址"))
         self.label_2 = BodyLabel(":", self.customProxyWidget)
         self.customPortLineEdit = LineEdit(self.customProxyWidget)
-        self.customPortLineEdit.setPlaceholderText("端口")
+        self.customPortLineEdit.setPlaceholderText(self.tr("端口"))
 
         self.__initWidget()
 
@@ -142,7 +142,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
                 self.customPortLineEdit.setText(_[1])
             else:
                 self.customProtocolComboBox.setCurrentText("")
-                self.customIPLineEdit.setText("未检测到代理")
+                self.customIPLineEdit.setText(self.tr("未检测到代理"))
                 self.customPortLineEdit.setText("")
 
             cfg.set(self.configItem, "Auto")
@@ -208,36 +208,36 @@ class SettingInterface(SmoothScrollArea):
 
         # music folders
         self.downloadGroup = SettingCardGroup(
-            "下载相关设置", self.scrollWidget)
+            self.tr("下载相关设置"), self.scrollWidget)
 
         self.blockNumCard = RangeSettingCard(
             cfg.preBlockNum,
             FIF.CLOUD,
-            "预分配线程数",
-            '线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险',
+            self.tr("预分配线程数"),
+            self.tr('线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险'),
             self.downloadGroup
         )
 
         self.maxReassignSizeCard = RangeSettingCard(
             cfg.maxReassignSize,
             FIF.LIBRARY,
-            "最大重新分配大小 (MB)",
-            '每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配',
+            self.tr("最大重新分配大小 (MB)"),
+            self.tr('每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配'),
             self.downloadGroup
         )
 
         self.maxTaskNumCard = RangeSettingCard(
             cfg.maxTaskNum,
             FIF.TRAIN,
-            "最大任务数",
-            '最多能同时进行的任务数量',
+            self.tr("最大任务数"),
+            self.tr('最多能同时进行的任务数量'),
             self.downloadGroup
         )
 
         self.speedLimitationCard = SpinBoxSettingCard(
             FIF.SPEED_OFF,
-            "下载限速",
-            "限制每秒全局下载速度, 0 为不限速",
+            self.tr("下载限速"),
+            self.tr("限制每秒全局下载速度, 0 为不限速"),
             " KB/s",
             cfg.speedLimitation,
             self.downloadGroup,
@@ -247,16 +247,16 @@ class SettingInterface(SmoothScrollArea):
 
         self.autoSpeedUpCard = SwitchSettingCard(
             FIF.SPEED_HIGH,
-            "自动提速",
-            "AI 实时检测各线程效率并自动增加线程数以提高下载速度",
+            self.tr("自动提速"),
+            self.tr("AI 实时检测各线程效率并自动增加线程数以提高下载速度"),
             cfg.autoSpeedUp,
             self.downloadGroup
         )
 
         self.SSLVerifyCard = SwitchSettingCard(
             FIF.DEVELOPER_TOOLS,
-            "下载时验证 SSL 证书",
-            "文件无法下载时，可尝试关闭该选项",
+            self.tr("下载时验证 SSL 证书"),
+            self.tr("文件无法下载时，可尝试关闭该选项"),
             cfg.SSLVerify,
             self.downloadGroup
         )
@@ -280,57 +280,55 @@ class SettingInterface(SmoothScrollArea):
 
         # browser
         self.browserGroup = SettingCardGroup(
-            "浏览器扩展", self.scrollWidget)
+            self.tr("浏览器扩展"), self.scrollWidget)
         self.browserExtensionCard = SwitchSettingCard(
             FIF.CONNECT,
-            "启用浏览器扩展",
-            "接收来自浏览器的下载信息，请安装浏览器扩展后使用",
+            self.tr("启用浏览器扩展"),
+            self.tr("接收来自浏览器的下载信息，请安装浏览器扩展后使用"),
             cfg.enableBrowserExtension,
             self.browserGroup,
         )
         self.raiseWindowWhenReceiveMsg = SwitchSettingCard(
             FIF.CHAT,
-            "收到下载信息时弹出窗口",
-            "收到下载信息时弹出窗口，方便您调整下载参数",
+            self.tr("收到下载信息时弹出窗口"),
+            self.tr("收到下载信息时弹出窗口，方便您调整下载参数"),
             cfg.enableRaiseWindowWhenReceiveMsg,
             self.browserGroup,
         )
         self.installExtensionCard = PushSettingCard(
-            "导出 Chromium 扩展",
+            self.tr("导出 Chromium 扩展"),
             FIF.DICTIONARY,
-            "安装浏览器扩展",
-            "需要您导出文件后手动安装至浏览器",
+            self.tr("安装浏览器扩展"),
+            self.tr("需要您导出文件后手动安装至浏览器"),
             self.browserGroup
         )
         self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
-        self.installFirefoxAddonsBtn.setText("安装 Firefox 扩展")
+        self.installFirefoxAddonsBtn.setText(self.tr("安装 Firefox 扩展"))
         self.installFirefoxAddonsBtn.setUrl(FIREFOX_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(5, self.installFirefoxAddonsBtn, 0, Qt.AlignRight)
         self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
 
         self.installExtensionGuidanceCard = PushSettingCard(
-            "查看安装指南",
+            self.tr("查看安装指南"),
             FIF.HELP,
-            "浏览器扩展安装指南",
-            "解决安装浏览器扩展时遇到的常见问题",
+            self.tr("浏览器扩展安装指南"),
+            self.tr("解决安装浏览器扩展时遇到的常见问题"),
             self.browserGroup
         )
-
         # personalization
         self.personalGroup = SettingCardGroup(
-            "个性化", self.scrollWidget)
+            self.tr("个性化"), self.scrollWidget)
         self.themeCard = ComboBoxSettingCard(
             cfg.customThemeMode,
             FIF.BRUSH,
-            '应用主题',
-            '更改应用程序的外观',
+            self.tr('应用主题'),
+            self.tr('更改应用程序的外观'),
             texts=[
-                '浅色', '深色',
-                '跟随系统设置'
+                self.tr('浅色'), self.tr('深色'),
+                self.tr('跟随系统设置')
             ],
             parent=self.personalGroup
         )
-
         # self.themeColorCard = CustomColorSettingCard(
         #     cfg.themeColor,
         #     FIF.PALETTE,
@@ -338,82 +336,77 @@ class SettingInterface(SmoothScrollArea):
         #     '更改应用程序的主题颜色',
         #     self.personalGroup
         # )
-
         if sys.platform == "win32":
             self.backgroundEffectCard = ComboBoxSettingCard(
                 cfg.backgroundEffect,
                 FIF.TRANSPARENT,
-                "窗口背景透明材质",
-                "设置窗口背景透明效果和透明材质",
+                self.tr("窗口背景透明材质"),
+                self.tr("设置窗口背景透明效果和透明材质"),
                 texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"],
                 parent=self.personalGroup
             )
-
         self.zoomCard = SpinBoxSettingCard(
             FIF.ZOOM,
-            "界面缩放",
-            "改变应用程序界面的缩放比例, 0% 为自动",
+            self.tr("界面缩放"),
+            self.tr("改变应用程序界面的缩放比例, 0% 为自动"),
             " %",
             cfg.dpiScale,
             self.personalGroup,
             division=100
         )
-
-        # self.languageCard = ComboBoxSettingCard(
-        #     cfg.language,
-        #     FIF.LANGUAGE,
-        #     self.tr('Language'),
-        #     self.tr('Set your preferred language for UI'),
-        #     texts=['简体中文', '繁體中文', 'English', self.tr('Use system setting')],
-        #     parent=self.personalGroup
-        # )
-
+        self.languageCard = ComboBoxSettingCard(
+            cfg.language,
+            FIF.LANGUAGE,
+            self.tr('语言'),
+            self.tr('设置界面的首选语言'),
+            texts=['简体中文', 'English (US)', self.tr('使用系统设置')],
+            parent=self.personalGroup
+        )
         # update software
         self.softwareGroup = SettingCardGroup(
-            "应用", self.scrollWidget)
+            self.tr("应用"), self.scrollWidget)
         self.updateOnStartUpCard = SwitchSettingCard(
             FIF.UPDATE,
-            "在应用程序启动时检查更新",
-            "新版本将更稳定，并具有更多功能",
+            self.tr("在应用程序启动时检查更新"),
+            self.tr("新版本将更稳定，并具有更多功能"),
             configItem=cfg.checkUpdateAtStartUp,
             parent=self.softwareGroup
         )
         self.autoRunCard = SwitchSettingCard(
             FIF.VPN,
-            "开机启动",
-            "在系统启动时静默运行 Ghost Downloader",
+            self.tr("开机启动"),
+            self.tr("在系统启动时静默运行 Ghost Downloader"),
             configItem=cfg.autoRun,
             parent=self.softwareGroup
         )
         self.clipboardListenerCard = SwitchSettingCard(
             FIF.PASTE,
-            "剪贴板监听",
-            "剪贴板监听器将自动检测剪贴板中的链接并添加下载任务",
+            self.tr("剪贴板监听"),
+            self.tr("剪贴板监听器将自动检测剪贴板中的链接并添加下载任务"),
             configItem=cfg.enableClipboardListener,
             parent=self.softwareGroup
         )
-
         # application
-        self.aboutGroup = SettingCardGroup("关于", self.scrollWidget)
+        self.aboutGroup = SettingCardGroup(self.tr("关于"), self.scrollWidget)
         self.authorCard = HyperlinkCard(
             AUTHOR_URL,
-            "打开作者的个人空间",
+            self.tr("打开作者的个人空间"),
             FIF.PROJECTOR,
-            "了解作者",
-            f"发现更多 {AUTHOR} 的作品",
+            self.tr("了解作者"),
+            self.tr(f"发现更多 {AUTHOR} 的作品"),
             self.aboutGroup
         )
         self.feedbackCard = PrimaryPushSettingCard(
-            "提供反馈",
+            self.tr("提供反馈"),
             FIF.FEEDBACK,
-            "提供反馈",
-            "通过提供反馈来帮助我们改进 Ghost Downloader",
+            self.tr("提供反馈"),
+            self.tr("通过提供反馈来帮助我们改进 Ghost Downloader"),
             self.aboutGroup
         )
         self.aboutCard = PrimaryPushSettingCard(
-            "检查更新",
+            self.tr("检查更新"),
             FIF.INFO,
-            "关于",
+            self.tr("关于"),
             '© ' + 'Copyright' + f" {YEAR}, {AUTHOR}. " +
             f'Version {VERSION}',
             self.aboutGroup
@@ -457,7 +450,7 @@ class SettingInterface(SmoothScrollArea):
         if sys.platform == "win32":
             self.personalGroup.addSettingCard(self.backgroundEffectCard)
         self.personalGroup.addSettingCard(self.zoomCard)
-        # self.personalGroup.addSettingCard(self.languageCard)
+        self.personalGroup.addSettingCard(self.languageCard)
 
 
         self.softwareGroup.addSettingCard(self.updateOnStartUpCard)
@@ -480,8 +473,8 @@ class SettingInterface(SmoothScrollArea):
     def __showRestartTooltip(self):
         """ show restart tooltip """
         InfoBar.success(
-            "已配置",
-            "重启软件后生效",
+            self.tr("已配置"),
+            self.tr("重启软件后生效"),
             duration=1500,
             parent=self
         )
@@ -507,7 +500,7 @@ class SettingInterface(SmoothScrollArea):
 
     def __onInstallExtensionCardClicked(self):
         """ install extension card clicked slot """
-        fileResolve, type = QFileDialog.getSaveFileName(self, "选择导出路径", "./Extension.crx", "Chromium Extension(*.crx)")
+        fileResolve, type = QFileDialog.getSaveFileName(self, self.tr("选择导出路径"), "./Extension.crx", "Chromium Extension(*.crx)")
         if fileResolve:
             with open(fileResolve, "wb") as f:
                 f.write(QResource(":/res/chrome_extension.crx").data())
@@ -515,8 +508,8 @@ class SettingInterface(SmoothScrollArea):
     def __onInstallExtensionGuidanceClicked(self):
         """ install extension guidance card clicked slot """
         view = FlyoutView(
-            title="安装指南",
-            content="请按照步骤安装浏览器扩展",
+            title=self.tr("安装指南"),
+            content=self.tr("请按照步骤安装浏览器扩展"),
             image=':/res/install_chrome_extension_guidance.png',
             isClosable=True
         )
@@ -588,8 +581,8 @@ class SettingInterface(SmoothScrollArea):
 
         else:
             InfoBar.warning(
-                title='警告',
-                content=f"鬼知道你用的是什么平台？",
+                title=self.tr('警告'),
+                content=self.tr("鬼知道你用的是什么平台？"),
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
@@ -600,7 +593,7 @@ class SettingInterface(SmoothScrollArea):
 
     def __onAboutCardClicked(self):
         """ check update and show information """
-        InfoBar.info("请稍候", "正在检查更新...", position=InfoBarPosition.TOP_RIGHT, duration=1000, parent=self)
+        InfoBar.info(self.tr("请稍候"), self.tr("正在检查更新..."), position=InfoBarPosition.TOP_RIGHT, duration=1000, parent=self)
         checkUpdate(self.window())
 
     def __connectSignalToSlot(self):
