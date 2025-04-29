@@ -5,9 +5,6 @@
 > [!NOTE]
 > Due to the developer's preparation for the college entrance exam (Gaokao), project updates are temporarily suspended 😭 Join QQ group [`531928387`](https://qm.qq.com/q/PlUBdzqZCm) for latest updates
 
-> [!TIP]
-> Windows 7 users please download [`v3.4.6.1-win7`](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/tag/v3.4.6.1-win7) version
-
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -38,6 +35,12 @@
 * Originally intended to help a Bilibili Uploader with resource integration 😵‍💫
 * Features include IDM-like intelligent chunking without file merging, and AI-powered smart boost 🚀
 * Thanks to Python's🐍 accessibility, the project will support plugins🧩 in the future to maximize Python's🐍 advantages
+
+|    Platform    | Required Version |  Architectures   | Compatible |
+|:--------------:|:----------------:|:----------------:|:----------:|
+|  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
+| 🪟 **Windows** |     `7 SP1+`     | `x86_64`/`arm64` |     ✅      |
+|  🍎 **macOS**  |     `11.0+`      | `x86_64`/`arm64` |     ✅      |
 
 <!-- ROADMAP -->
 ## Roadmap

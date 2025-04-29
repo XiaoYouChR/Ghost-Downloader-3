@@ -5,9 +5,6 @@
 > [!NOTE]
 > 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
-> [!TIP]
-> Windows 7 用户请下载 [`v3.4.6.1-win7`](https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/tag/v3.4.6.1-win7) 版本
-
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -38,6 +35,12 @@
 * 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
 * 特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
 * 得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能，发挥 Python🐍 最大的优势
+
+|       平台       |     版本要求      |       架构支持       | 兼容 |
+|:--------------:|:-------------:|:----------------:|:--:|
+|  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
+| 🪟 **Windows** |   `7 SP1+`    | `x86_64`/`arm64` | ✅  |
+|  🍎 **macOS**  |    `11.0+`    | `x86_64`/`arm64` | ✅  |
 
 <!-- ROADMAP -->
 ## 计划
