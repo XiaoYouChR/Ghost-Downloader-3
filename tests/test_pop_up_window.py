@@ -3,7 +3,7 @@ import sys
 from PySide6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 
 # noinspection PyUnresolvedReferences
-import Res_rc
+import resources.Res_rc
 from app.view.pop_up_window import FinishedPopUpWindow, ReceivedPopUpWindow
 
 

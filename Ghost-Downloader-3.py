@@ -34,7 +34,7 @@ from qframelesswindow.utils import getSystemAccentColor
 from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
-import Res_rc
+import resources.Res_rc
 
 from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow

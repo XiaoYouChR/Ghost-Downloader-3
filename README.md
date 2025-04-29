@@ -1,3 +1,7 @@
+<h4 align="right">
+  简体中文 | <a href="README_en.md">English</a>
+</h4>
+ 
 > [!NOTE]
 > 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
@@ -104,7 +108,7 @@ Copyright © 2025 XiaoYouChR.
 
 * [@ZhiYiyo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
 * [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本
-* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner, 感谢！
+* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner！
 
 <picture>
   <source
