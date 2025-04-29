@@ -98,7 +98,6 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     @classmethod
     def showAddTaskOptionDialog(cls, urlContent:str = "", parent:"QWidget"= None, headers:dict = None):
-        print(cls._initialized, urlContent)
         if cls._initialized:
             _ = cls._instance.linkTextEdit.toPlainText()
             if urlContent and not urlContent in _.split('\n'):
@@ -123,7 +122,6 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
     def __whenClosed(cls):
         cls._initialized = False
         cls._instance = None
-        print(cls._initialized)
 
     def __connectSignalToSlot(self):
         # self.downloadFolderCard.clicked.connect(

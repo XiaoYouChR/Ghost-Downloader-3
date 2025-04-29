@@ -1,4 +1,3 @@
-from PySide6.QtCore import (QCoreApplication)
 from PySide6.QtWidgets import (QHBoxLayout)
 
 from qfluentwidgets import (LineEdit, PrimaryToolButton, RadioButton, SubtitleLabel, FluentIcon)
@@ -56,9 +55,9 @@ class Ui_PlanTaskDialog(object):
     # setupUi
 
     def retranslateUi(self):
-        self.SubtitleLabel.setText(QCoreApplication.translate("viewLayout", u"设置计划任务", None))
-        self.powerOffButton.setText(QCoreApplication.translate("viewLayout", u"关机", None))
-        self.quitButton.setText(QCoreApplication.translate("viewLayout", u"退出程序", None))
-        self.openFileButton.setText(QCoreApplication.translate("viewLayout", u"打开", None))
+        self.SubtitleLabel.setText(self.tr("设置计划任务"))
+        self.powerOffButton.setText(self.tr("关机"))
+        self.quitButton.setText(self.tr("退出程序"))
+        self.openFileButton.setText(self.tr("打开"))
     # retranslateUi
 

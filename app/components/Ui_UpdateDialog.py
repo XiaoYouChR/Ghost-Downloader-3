@@ -8,7 +8,6 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication)
 from PySide6.QtWidgets import (QHBoxLayout,
                                QSizePolicy, QVBoxLayout, QAbstractItemView, QHeaderView, QSpacerItem)
 
@@ -105,12 +104,8 @@ class Ui_UpdateDialog(object):
     # setupUi
 
     def retranslateUi(self):
-        self.titleLabel.setText(QCoreApplication.translate("UpdateDialog", u"检测到新版本", None))
-        self.versionLabel.setText("")
-        self.updatedDateLabel.setText("")
-        self.sponsorButton.setText(QCoreApplication.translate("UpdateDialog", u"Sponsor", None))
-        self.logTextEdit.setMarkdown("")
-
-        self.noButton.setText(QCoreApplication.translate("UpdateDialog", u"稍后再说", None))
-        self.yesButton.setText(QCoreApplication.translate("UpdateDialog", u"下载此版本", None))
+        self.titleLabel.setText(self.tr("检测到新版本"))
+        self.sponsorButton.setText(self.tr("捐赠"))
+        self.noButton.setText(self.tr("稍后再说"))
+        self.yesButton.setText(self.tr("下载此版本"))
     # retranslateUi

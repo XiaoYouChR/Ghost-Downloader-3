@@ -359,7 +359,7 @@ class SettingInterface(SmoothScrollArea):
             FIF.LANGUAGE,
             self.tr('语言'),
             self.tr('设置界面的首选语言'),
-            texts=['简体中文', 'English (US)', self.tr('使用系统设置')],
+            texts=['简体中文 (中国)', 'English (US)', self.tr('使用系统设置')],
             parent=self.personalGroup
         )
         # update software
@@ -393,7 +393,7 @@ class SettingInterface(SmoothScrollArea):
             self.tr("打开作者的个人空间"),
             FIF.PROJECTOR,
             self.tr("了解作者"),
-            self.tr(f"发现更多 {AUTHOR} 的作品"),
+            self.tr("发现更多 {} 的作品").format(AUTHOR),
             self.aboutGroup
         )
         self.feedbackCard = PrimaryPushSettingCard(

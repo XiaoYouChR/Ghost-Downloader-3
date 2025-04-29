@@ -81,7 +81,7 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
             for j in range(3):
                 self.tableView.setItem(i, j, QTableWidgetItem(tabelViewInfo[j]))
 
-        self.tableView.setHorizontalHeaderLabels(['文件名', '文件大小', '下载次数'])
+        self.tableView.setHorizontalHeaderLabels([self.tr('文件名'), self.tr('文件大小'), self.tr('下载次数')])
 
         self.logTextEdit.setMarkdown(self.content["body"])
         self.updatedDateLabel.setText(f"Updated Time：{getLocalTimeFromGithubApiTime(self.content['published_at'])}")
@@ -94,9 +94,9 @@ class UpdateDialog(MaskDialogBase, Ui_UpdateDialog):
 
 def __showResponse(parent, content: dict):
     if "INFO" in content:
-        InfoBar.info(title="当前已是最新版本", content="", position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
+        InfoBar.info(title=UpdateDialog.tr("当前已是最新版本"), content="", position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
     elif "ERROR" in content:
-        InfoBar.error(title="检查更新失败", content=content["ERROR"], position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
+        InfoBar.error(title=UpdateDialog.tr("检查更新失败"), content=content["ERROR"], position=InfoBarPosition.TOP_RIGHT, parent=parent, duration=5000)
     else:
         UpdateDialog(parent, content).show()
 
