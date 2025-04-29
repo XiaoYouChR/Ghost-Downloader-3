@@ -107,7 +107,7 @@ Copyright © 2025 XiaoYouChR.
 ## Acknowledgments
 
 * [@ZhiYiyo](https://github.com/zhiyiYo/) Provided great help for this project!
-* [@一只透明人-](https://space.bilibili.com/554365148/) Tested almost every version since Ghost-Downloader-1
+* [@一只透明人-](https://space.bilibili.com/554365148/) Tested almost every version since Ghost-Downloader-1！
 * [@Sky·SuGar](https://github.com/SuGar0218/) Created the project banner！
 
 <picture>
