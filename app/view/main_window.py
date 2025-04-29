@@ -5,13 +5,12 @@ from ctypes.wintypes import MSG
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl, QOperatingSystemVersion
 from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
-from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor
+from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor, isDarkTheme
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
-from qframelesswindow.utils.win32_utils import isGreaterEqualWin10, isGreaterEqualWin8_1
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
@@ -19,11 +18,20 @@ from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, isBorderAccentColorOpen
 from ..common.signal_bus import signalBus
-from ..common.windows_window_effect import WindowsWindowEffect
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
 
+
+def isGreaterEqualWin10():
+    """ determine if the Windows version ≥ Win10 """
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() >= 10
+
+def isLessThanWin10():
+    """  determine if the Windows version < Win10"""
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() < 10
 
 class CustomSplashScreen(SplashScreen):
 
@@ -56,6 +64,7 @@ class MainWindow(MSFluentWindow):
 
         # replace WindowsWindowEffect
         if isGreaterEqualWin10():
+            from ..common.windows_window_effect import WindowsWindowEffect
             self.windowEffect = WindowsWindowEffect(self.winId())
 
             if isBorderAccentColorOpen():
@@ -177,8 +186,6 @@ class MainWindow(MSFluentWindow):
             setTheme(Theme.DARK, save=False, lazy=True)
             if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
                 QTimer.singleShot(500, self.applyBackgroundEffectByCfg)
-                # QTimer.singleShot(1000, self.applyBackgroundEffectByCfg)
-                # QTimer.singleShot(2000, self.applyBackgroundEffectByCfg)
 
         elif callback == 'Light':
             setTheme(Theme.LIGHT, save=False, lazy=True)
@@ -186,6 +193,9 @@ class MainWindow(MSFluentWindow):
         self.applyBackgroundEffectByCfg()
 
     def _normalBackgroundColor(self):
+        if self.styleSheet() == "":
+            return self._darkBackgroundColor if isDarkTheme() else self._lightBackgroundColor
+
         return QColor(0, 0, 0, 0)
 
     def applyBackgroundEffectByCfg(self):
@@ -216,13 +226,13 @@ class MainWindow(MSFluentWindow):
             elif cfg.backgroundEffect.value == 'Aero':
                 self.windowEffect.setAeroEffect(self.winId())
                 self.setStyleSheet("background-color: transparent")
-                if not isGreaterEqualWin8_1():
+                if isLessThanWin10():
                     self.titleBar.closeBtn.hide()
                     self.titleBar.minBtn.hide()
                     self.titleBar.maxBtn.hide()
             elif cfg.backgroundEffect.value == 'None':
                 self.setStyleSheet("")
-                if not isGreaterEqualWin8_1():
+                if isLessThanWin10():
                     self.titleBar.closeBtn.show()
                     self.titleBar.minBtn.show()
                     self.titleBar.maxBtn.show()

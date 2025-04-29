@@ -28,9 +28,9 @@ plugins = []
 
 def isBorderAccentColorOpen():
     """ Check whether the border accent color is open """
-    from qframelesswindow.utils.win32_utils import isGreaterEqualWin10
+    from qframelesswindow.utils.win32_utils import isGreaterEqualWin11
 
-    if not isGreaterEqualWin10():
+    if not isGreaterEqualWin11():
         return False
 
     from winreg import OpenKey, HKEY_CURRENT_USER, KEY_READ, QueryValueEx, CloseKey
