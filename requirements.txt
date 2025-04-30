@@ -1,5 +1,6 @@
 PySide6-Fluent-Widgets>=1.7.4
-PySide6==6.7.3
+PySide6==6.9.0; sys_platform!="win32"
+PySide6==6.7.3; sys_platform=="win32"
 loguru
 httpx[socks]
 aiofiles

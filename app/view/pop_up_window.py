@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButt
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qframelesswindow import WindowEffect
-from qframelesswindow.utils.win32_utils import isGreaterEqualWin10
+from app.common.methods import isGreaterEqualWin10
 
 from app.common.methods import openFile, bringWindowToTop, isAbleToShowToast
 from app.view.Ui_PopUpWindow import Ui_PopUpWindow

@@ -49,7 +49,7 @@ else:
         '--assume-yes-for-downloads',
         '--show-memory',
         '--show-progress',
-        '--linux-icon=resources/logo.ico',
+        '--linux-icon=resources/logo.png',
         '--output-dir=dist',
         'Ghost-Downloader-3.py',
     ]

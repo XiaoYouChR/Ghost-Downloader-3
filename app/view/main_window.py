@@ -16,22 +16,12 @@ from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, isBorderAccentColorOpen
+from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, isBorderAccentColorOpen, \
+    isGreaterEqualWin10, isLessThanWin10
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
-
-
-def isGreaterEqualWin10():
-    """ determine if the Windows version ≥ Win10 """
-    cv = QOperatingSystemVersion.current()
-    return sys.platform == "win32" and cv.majorVersion() >= 10
-
-def isLessThanWin10():
-    """  determine if the Windows version < Win10"""
-    cv = QOperatingSystemVersion.current()
-    return sys.platform == "win32" and cv.majorVersion() < 10
 
 class CustomSplashScreen(SplashScreen):
 

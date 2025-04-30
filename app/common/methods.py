@@ -13,7 +13,7 @@ from time import sleep, localtime, time_ns
 from urllib.parse import unquote, parse_qs, urlparse
 
 import httpx
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QOperatingSystemVersion
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
@@ -25,11 +25,22 @@ from app.common.signal_bus import signalBus
 
 plugins = []
 
+def isGreaterEqualWin10():
+    """ determine if the Windows version ≥ Win10 """
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() >= 10
+
+def isLessThanWin10():
+    """  determine if the Windows version < Win10"""
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() < 10
+
+def isGreaterEqualWin11():
+    """ determine if the windows version ≥ Win11 """
+    return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000
 
 def isBorderAccentColorOpen():
     """ Check whether the border accent color is open """
-    from qframelesswindow.utils.win32_utils import isGreaterEqualWin11
-
     if not isGreaterEqualWin11():
         return False
 
