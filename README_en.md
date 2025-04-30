@@ -42,6 +42,9 @@
 | 🪟 **Windows** |     `7 SP1+`     | `x86_64`/`arm64` |     ✅      |
 |  🍎 **macOS**  |     `11.0+`      | `x86_64`/`arm64` |     ✅      |
 
+> [!TIP]
+> **Arch Linux AUR support**: Community-maintained packages `ghost-downloader-bin` and `ghost-downloader-git` are now available (Maintainer: [@zxp19821005](https://github.com/zxp19821005))
+
 <!-- ROADMAP -->
 ## Roadmap
 

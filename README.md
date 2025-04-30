@@ -42,6 +42,9 @@
 | 🪟 **Windows** |   `7 SP1+`    | `x86_64`/`arm64` | ✅  |
 |  🍎 **macOS**  |    `11.0+`    | `x86_64`/`arm64` | ✅  |
 
+> [!TIP]  
+> **Arch Linux AUR 支持**：现已可通过社区维护的软件包 `ghost-downloader-bin` 和 `ghost-downloader-git` 进行安装（维护者：[@zxp19821005](https://github.com/zxp19821005)）
+
 <!-- ROADMAP -->
 ## 计划
 
