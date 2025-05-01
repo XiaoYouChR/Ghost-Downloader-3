@@ -1,9 +1,9 @@
 <h4 align="right">
-  简体中文 | <a href="README_en.md">English</a>
+  <a href="README_zh.md">简体中文</a> | English
 </h4>
  
 > [!NOTE]
-> 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
+> Due to the developer's preparation for the college entrance exam (Gaokao), project updates are temporarily suspended 😭 Join QQ group [`531928387`](https://qm.qq.com/q/PlUBdzqZCm) for latest updates
 
 <!-- PROJECT LOGO -->
 <div align="center">
@@ -11,7 +11,7 @@
 ![Banner](resources/banner.webp)
 
 <h3>
-    AI 赋能的新一代跨平台多线程下载器
+    AI-powered next-generation cross-platform multithreaded downloader
 </h3>
 
 [![Forks][forks-shield]][forks-url]
@@ -21,100 +21,100 @@
 [![Downloads][downloads-shield]][release-url]
 
 <h4>
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Bug 报告</a>
+  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Report Bug</a>
 ·    
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml">功能需求</a>
+  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml">Request Feature</a>
 </h4>
 
 </div>
 
 <!-- ABOUT THE PROJECT -->
-## 关于本项目
+## About The Project
 
-* 在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
-* 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
-* 特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
-* 得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能，发挥 Python🐍 最大的优势
+* A downloader developed out of personal interest, and my first Python project 😣
+* Originally intended to help a Bilibili Uploader with resource integration 😵‍💫
+* Features include IDM-like intelligent chunking without file merging, and AI-powered smart boost 🚀
+* Thanks to Python's🐍 accessibility, the project will support plugins🧩 in the future to maximize Python's🐍 advantages
 
-|       平台       |     版本要求      |       架构支持       | 兼容 |
-|:--------------:|:-------------:|:----------------:|:--:|
-|  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
-| 🪟 **Windows** |   `7 SP1+`    | `x86_64`/`arm64` | ✅  |
-|  🍎 **macOS**  |    `11.0+`    | `x86_64`/`arm64` | ✅  |
+|    Platform    | Required Version |  Architectures   | Compatible |
+|:--------------:|:----------------:|:----------------:|:----------:|
+|  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
+| 🪟 **Windows** |     `7 SP1+`     | `x86_64`/`arm64` |     ✅      |
+|  🍎 **macOS**  |     `11.0+`      | `x86_64`/`arm64` |     ✅      |
 
-> [!TIP]  
-> **Arch Linux AUR 支持**：现已可通过社区维护的软件包 `ghost-downloader-bin` 和 `ghost-downloader-git` 进行安装（维护者：[@zxp19821005](https://github.com/zxp19821005)）
+> [!TIP]
+> **Arch Linux AUR support**: Community-maintained packages `ghost-downloader-bin` and `ghost-downloader-git` are now available (Maintainer: [@zxp19821005](https://github.com/zxp19821005))
 
 <!-- ROADMAP -->
-## 计划
+## Roadmap
 
-- ✅ 全局设置
-- ✅ 更详细的下载信息
-- ✅ 计划任务功能
-- ✅ 浏览器插件优化
-- ✅ 全局限速
-- ✅ 内存占用优化
-  - ✅ 升级 Qt 版本
-  - ✅ 实现 HttpClient 复用
-  - ✅ 用协程来代替部分多线程功能
-- ❌ MVC -> MVVM 架构升级以及插件功能 (开发中...详见 Folk: feature/Plugins)
-- ❌ 更强大的任务编辑功能 (一个任务绑定多个 Client 等强大功能)
-- ❌ 磁力 / BT 下载 (考虑使用 libtorrent 实现)
+- ✅ Global settings
+- ✅ More detailed download information
+- ✅ Scheduled tasks
+- ✅ Browser extension optimization
+- ✅ Global speed limit
+- ✅ Memory optimization
+  - ✅ Upgrade Qt version
+  - ✅ Implement HttpClient reuse
+  - ✅ Replace some multithreading with coroutines
+- ❌ MVC -> MVVM architecture upgrade and plugin support (In progress...see Folk: feature/Plugins)
+- ❌ Enhanced task editing (powerful features like binding multiple Clients to one task)
+- ❌ Magnet/BT download (Considering libtorrent implementation)
 
-到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
+Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
 
 <!-- SCREEN SHOTS -->
-## 截图
+## Screenshots
 
 [![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
 <!-- CONTRIBUTING -->
-## 贡献
+## Contributing
 
-贡献让开源社区成为了一个非常适合学习、启发和创新的地方。你所做出的任何贡献都是**受人尊敬**的。
+Contributions make the open source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-如果你有好的建议，请分支（Fork）本仓库并且创建一个拉取请求（Pull Request）。你也可以简单地创建一个议题（Issue），并且添加标签「Enhancement」。不要忘记给项目点一个 Star⭐！再次感谢！
+If you have a suggestion, fork the repo and create a pull request. You can also simply open an issue with the "Enhancement" tag. Don't forget to give the project a star⭐! Thanks again!
 
-1. 复刻（Fork）本项目
-2. 创建你的 Feature 分支 (git checkout -b feature/AmazingFeature)
-3. 提交你的变更 (git commit -m 'Add some AmazingFeature')
-4. 推送到该分支 (git push origin feature/AmazingFeature)
-5. 创建一个拉取请求（Pull Request）
+1. Fork the Project
+2. Create your Feature Branch (git checkout -b feature/AmazingFeature)
+3. Commit your Changes (git commit -m 'Add some AmazingFeature')
+4. Push to the Branch (git push origin feature/AmazingFeature)
+5. Open a Pull Request
 
-感谢所有为该项目做出贡献的人！
+Thanks to all contributors who have participated in this project!
 
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 <!-- LICENSE -->
-## 许可证
+## License
 
-根据 GPL v3.0 许可证分发。打开 `LICENSE` 查看更多内容。
+Distributed under the GPL v3.0 License. See `LICENSE` for more information.
 
 Copyright © 2025 XiaoYouChR.
 
 <!-- CONTACT -->
-## 联系
+## Contact
 
 * [E-mail](mailto:XiaoYouChR@qq.com) - XiaoYouChR@qq.com
-* [QQ 群](https://qm.qq.com/q/PlUBdzqZCm) - 531928387
+* [QQ Group](https://qm.qq.com/q/PlUBdzqZCm) - 531928387
 
 <!-- ACKNOWLEDGMENTS -->
-## 引用
+## References
 
-* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大、可扩展、美观优雅的 Fluent Design 风格组件库
+* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible and beautiful Fluent Design widgets
 * [Httpx](https://github.com/projectdiscovery/httpx) A fast and multi-purpose HTTP toolkit
 * [Aiofiles](https://github.com/Tinche/aiofiles) File support for asyncio
-* [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
+* [Loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
 * [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
 * [pyqt5-concurrent](https://github.com/AresConnor/pyqt5-concurrent) A QThreadPool based task concurrency library
 
-## 致谢
+## Acknowledgments
 
-* [@ZhiYiyo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
-* [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本！
-* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner！
+* [@ZhiYiyo](https://github.com/zhiyiYo/) Provided great help for this project!
+* [@一只透明人-](https://space.bilibili.com/554365148/) Tested almost every version since Ghost-Downloader-1！
+* [@Sky·SuGar](https://github.com/SuGar0218/) Created the project banner！
 
 <picture>
   <source
