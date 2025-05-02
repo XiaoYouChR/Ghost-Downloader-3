@@ -5,7 +5,7 @@ from ctypes.wintypes import MSG
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl, QOperatingSystemVersion
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
 from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
@@ -23,11 +23,13 @@ from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
 
+
 class CustomSplashScreen(SplashScreen):
 
     def finish(self):
         """ fade out splash screen """
         opacityEffect = QGraphicsOpacityEffect(self)
+        opacityEffect.setOpacity(1)
         self.setGraphicsEffect(opacityEffect)
         opacityAni = QPropertyAnimation(opacityEffect, b'opacity', self)
         opacityAni.setStartValue(1)
@@ -310,7 +312,7 @@ class MainWindow(MSFluentWindow):
 
             # WIN_USER = 1024
             if msg.message == 1024 + 1:
-                self.show()
+                bringWindowToTop(self)
                 return True, 0
 
             if msg.message == 7 and isBorderAccentColorOpen():
