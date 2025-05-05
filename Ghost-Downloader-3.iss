@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Ghost Downloader"
-#define MyAppVersion "3.5.8"
+#define MyAppVersion "3.5.9"
 #define MyAppPublisher "XiaoYouChR"
 #define MyAppURL "https://github.com/XiaoYouChR/Ghost-Downloader-3/"
 #define MyAppExeName "Ghost-Downloader-3.exe"
