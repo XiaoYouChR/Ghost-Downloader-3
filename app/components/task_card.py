@@ -502,10 +502,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def runCalcHashTask(self, algorithm):
         self.__showInfo(self.tr("正在校验 ") + algorithm + self.tr(", 请稍后..."))
         self.changeButtonStatus(enabled=False)
-        self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size)  # 设置进度条最大值
+        self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size/1048576)  # 设置进度条最大值
 
         self.calcTask = CalcHashThread(f"{self.filePath}/{self.fileName}", algorithm)
-        self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)))
+        self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)/1048576))
         self.calcTask.returnHash.connect(self.whenHashCalcFinished)
         self.calcTask.start()
 
