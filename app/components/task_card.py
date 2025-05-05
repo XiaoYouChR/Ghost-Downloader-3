@@ -113,14 +113,14 @@ class TaskCard(CardWidget, Ui_TaskCard):
         else:
             self.__instantiateTask(self.url, self.filePath, self.preBlockNum, self.headers, self.fileSize)
 
+        self.__connectSignalToSlot()
+
         if self.status == "working":
             # 开始下载
             self.task.start()
         elif self.status == "paused" or self.status == "waiting":
             # self.pauseButton.setIcon(FIF.PLAY)
             self.changeButtonStatus(icon=FIF.PLAY)
-
-        self.__connectSignalToSlot()
 
     def __instantiateTask(self, url: str, filePath: str, preBlockNum: int, headers: dict, fileSize: int = -1,
                           fileName: str = None):
@@ -189,6 +189,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         return (startPos.x() - endPos.x()) ** 2 + (startPos.y() - endPos.y()) ** 2
 
     def __onTaskInited(self, ableToParallelDownload: bool):
+        print(ableToParallelDownload)
         self.fileName = self.task.fileName
         self.fileSize = self.task.fileSize
         self.ableToParallelDownload = ableToParallelDownload

@@ -5,6 +5,9 @@
 > [!NOTE]
 > 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
+> [!TIP]
+> 如果您想在 Windows 7 上使用 Ghost-Downloader-3，请下载 `v3.5.8-Portable` 版本.
+
 <!-- PROJECT LOGO -->
 <div align="center">
 

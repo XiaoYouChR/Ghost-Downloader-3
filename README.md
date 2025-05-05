@@ -5,6 +5,9 @@
 > [!NOTE]
 > Due to the developer's preparation for the college entrance exam (Gaokao), project updates are temporarily suspended 😭 Join QQ group [`531928387`](https://qm.qq.com/q/PlUBdzqZCm) for latest updates
 
+> [!TIP]
+> If you want to use Ghost-Downloader-3 on Windows 7, please download the version `v3.5.8-Portable`.
+
 <!-- PROJECT LOGO -->
 <div align="center">
 

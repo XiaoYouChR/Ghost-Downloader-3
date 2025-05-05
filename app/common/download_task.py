@@ -219,16 +219,16 @@ class DownloadTask(QThread):
                             if worker.endPos <= worker.progress:
                                 break
                             if chunk:
-                                self.file.seek(worker.process)
+                                self.file.seek(worker.progress)
                                 self.file.write(chunk)
-                                worker.process += 65536
+                                worker.progress += 65536
                                 cfg.globalSpeed += 65536
                                 if cfg.speedLimitation.value:
                                     if cfg.globalSpeed >= cfg.speedLimitation.value:
-                                        await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
+                                        time.sleep(1)
 
-                    if worker.process >= worker.endPos:
-                        worker.process = worker.endPos
+                    if worker.progress >= worker.endPos:
+                        worker.progress = worker.endPos
 
                     finished = True
 
@@ -251,10 +251,9 @@ class DownloadTask(QThread):
                     async with worker.client.stream(url=self.url, headers=WorkingRangeHeaders, timeout=30,
                                                     method="GET") as res:
                         async for chunk in res.aiter_bytes():
-
                             if chunk:
-                                await self.file.seek(worker.progress)
-                                await self.file.write(chunk)
+                                self.file.seek(worker.progress)
+                                self.file.write(chunk)
                                 _ = len(chunk)
                                 worker.progress += _
                                 cfg.globalSpeed += _
@@ -266,7 +265,7 @@ class DownloadTask(QThread):
 
                     finished = True
 
-                except httpx.HTTPError as e:
+                except Exception as e:
                     logger.info(
                         f"Task: {self.fileName}, Thread {worker} is reconnecting to the server, Error: {repr(e)}")
 
@@ -279,7 +278,7 @@ class DownloadTask(QThread):
 
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
-        LastProgress = 0  # 可能会出现unbound error，所以将LastProcess提取为函数全局变量
+        LastProgress = 0  # 可能会出现unbound error，所以将LastProgress提取为函数全局变量
 
         for i in self.workers:
             self.progress += (i.progress - i.startPos + 1)
@@ -407,7 +406,6 @@ class DownloadTask(QThread):
             await self.client.aclose()
 
             self.file.close()
-            self.ghdFile.close()
 
             if self.fileSize:  # 事实上表示 ableToParallelDownload 为 False
                 self.ghdFile.close()

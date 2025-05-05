@@ -6,7 +6,7 @@ from pathlib import Path
 
 import darkdetect
 from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
-from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor, Qt
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor, isDarkTheme
@@ -17,12 +17,23 @@ from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
 from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, isBorderAccentColorOpen, \
-    isGreaterEqualWin10, isLessThanWin10
+    isGreaterEqualWin10, isLessThanWin10, isGreaterEqualWin11
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
 
+
+def updateFrameless(self):
+    stayOnTop = Qt.WindowStaysOnTopHint if self.windowFlags() & Qt.WindowStaysOnTopHint else 0
+    self.setWindowFlags(Qt.FramelessWindowHint | stayOnTop)
+
+    self.windowEffect.enableBlurBehindWindow(self.winId())
+    self.windowEffect.addWindowAnimation(self.winId())
+
+    self.windowEffect.setAcrylicEffect(self.winId())
+    if isGreaterEqualWin11():
+        self.windowEffect.addShadowEffect(self.winId())
 
 class CustomSplashScreen(SplashScreen):
 
@@ -50,7 +61,6 @@ class ThemeChangedListener(QThread):
 
 
 class MainWindow(MSFluentWindow):
-
     def __init__(self):
         super().__init__()
 
@@ -395,3 +405,6 @@ class MainWindow(MSFluentWindow):
             self.__setUrlsAndShowAddTaskMsg(results)
         except Exception as e:
             logger.warning(f"Failed to check clipboard: {e}")
+
+if isGreaterEqualWin10():   # 否则 Win 10 亚克力效果失效
+    MainWindow.updateFrameless = updateFrameless
