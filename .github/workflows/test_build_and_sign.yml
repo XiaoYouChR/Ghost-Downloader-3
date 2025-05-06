@@ -1,0 +1,56 @@
+name: test-build-and-sign
+run-name: Test workflow signing with SignPath
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build_and_sign:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --timeout=300 -r requirements.txt
+
+      - name: Build with Nuitka
+        run: |
+          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close()"
+          $VERSION = gc version.txt
+          Write-Host "VERSION=$VERSION"
+          echo "VERSION=$VERSION" >> $env:GITHUB_ENV
+          del version.txt
+          python deploy.py
+
+      - name: upload-unsigned-artifact
+        id: upload-unsigned-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
+          path: dist/Ghost-Downloader-3.dist
+
+      - name: Sign
+        uses: signpath/github-action-submit-signing-request@v1.1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'Ghost-Downloader-3'
+          signing-policy-slug:  'test-signing'
+          github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: 'signed-application'
+
+      - name: upload-signed-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Signed
+          path: "signed-application"
