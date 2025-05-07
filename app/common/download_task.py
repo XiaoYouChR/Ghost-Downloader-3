@@ -84,7 +84,7 @@ class DownloadTask(QThread):
             maxRemainderWorker.endPos = maxRemainderWorkerProcess + baseShare + remainder  # 直接修改好像也不会怎么样
 
             # 安配新的工人
-            startPos = maxRemainderWorkerProcess + baseShare + remainder + 1
+            startPos = maxRemainderWorkerProcess + baseShare + remainder
 
             newWorker = DownloadWorker(startPos, startPos, maxRemainderWorkerEnd, self.client)
 
@@ -112,10 +112,10 @@ class DownloadTask(QThread):
 
         for i in range(len(arr) - 1):  #
 
-            startPos, endPos = arr[i], arr[i + 1] - 1
+            startPos, endPos = arr[i], arr[i + 1]
             stepList.append([startPos, endPos])
 
-        stepList[-1][-1] = self.fileSize - 1  # 修正
+        stepList[-1][-1] = self.fileSize  # 修正
 
         return stepList
 
@@ -209,7 +209,7 @@ class DownloadTask(QThread):
                 try:
                     workingRangeHeaders = self.headers.copy()
 
-                    workingRangeHeaders["range"] = f"bytes={worker.progress}-{worker.endPos}"  # 添加范围
+                    workingRangeHeaders["range"] = f"bytes={worker.progress}-{worker.endPos - 1}"  # 添加范围
 
                     async with worker.client.stream(url=self.url, headers=workingRangeHeaders, timeout=30,
                                                     method="GET") as res:
@@ -281,7 +281,7 @@ class DownloadTask(QThread):
         LastProgress = 0  # 可能会出现unbound error，所以将LastProgress提取为函数全局变量
 
         for i in self.workers:
-            self.progress += (i.progress - i.startPos + 1)
+            self.progress += i.progress - i.startPos
             LastProgress = self.progress
 
         if self.ableToParallelDownload:
@@ -303,7 +303,7 @@ class DownloadTask(QThread):
                 for i in self.workers:
                     info.append({"start": i.startPos, "progress": i.progress, "end": i.endPos})
 
-                    self.progress += (i.progress - i.startPos + 1)
+                    self.progress += i.progress - i.startPos
 
                     # 保存 workers 信息为二进制格式
                     data = struct.pack("<QQQ", i.startPos, i.progress, i.endPos)
@@ -362,7 +362,7 @@ class DownloadTask(QThread):
                 self.progress = 0
 
                 for i in self.workers:
-                    self.progress += (i.progress - i.startPos + 1)
+                    self.progress += i.progress - i.startPos
 
                 self.workerInfoChanged.emit([])
 
