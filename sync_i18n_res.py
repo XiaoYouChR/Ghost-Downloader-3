@@ -26,7 +26,7 @@ if __name__ == '__main__':
     appDir = 'app'  # 目标目录
     pyFiles = getPyFiles(appDir)
 
-    targetLanguages = ["zh_CN", "en_US"]
+    targetLanguages = ["zh_CN", "en_US","zh_TW"]
 
     for targetLanguage in targetLanguages:
 
