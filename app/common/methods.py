@@ -39,19 +39,6 @@ def isGreaterEqualWin11():
     """ determine if the windows version ≥ Win11 """
     return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000
 
-def isBorderAccentColorOpen():
-    """ Check whether the border accent color is open """
-    if not isGreaterEqualWin11():
-        return False
-
-    from winreg import OpenKey, HKEY_CURRENT_USER, KEY_READ, QueryValueEx, CloseKey
-
-    key = OpenKey(HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\DWM", 0, KEY_READ)
-    value, _ = QueryValueEx(key, "ColorPrevalence")
-    CloseKey(key)
-
-    return bool(value)
-
 def isAbleToShowToast():
     return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
 

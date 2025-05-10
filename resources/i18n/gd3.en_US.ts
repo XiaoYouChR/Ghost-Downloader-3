@@ -213,27 +213,27 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../app/view/main_window.py" line="232"/>
+        <location filename="../../app/view/main_window.py" line="244"/>
         <source>任务列表</source>
         <translation>Task List</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="235"/>
+        <location filename="../../app/view/main_window.py" line="247"/>
         <source>新建任务</source>
         <translation>New Task</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="244"/>
+        <location filename="../../app/view/main_window.py" line="256"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="288"/>
+        <location filename="../../app/view/main_window.py" line="300"/>
         <source>意料之外的错误!</source>
         <translation>Unexpected Error!</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="289"/>
+        <location filename="../../app/view/main_window.py" line="301"/>
         <source>错误消息已写入粘贴板和日志。是否报告?</source>
         <translation>Error message copied to clipboard and logged. Report it?</translation>
     </message>
@@ -591,13 +591,13 @@
     </message>
     <message>
         <location filename="../../app/components/task_card.py" line="109"/>
-        <location filename="../../app/components/task_card.py" line="316"/>
+        <location filename="../../app/components/task_card.py" line="317"/>
         <source>任务已经暂停</source>
         <translation>Task paused</translation>
     </message>
     <message>
         <location filename="../../app/components/task_card.py" line="111"/>
-        <location filename="../../app/components/task_card.py" line="212"/>
+        <location filename="../../app/components/task_card.py" line="213"/>
         <source>排队中...</source>
         <translation>Queuing...</translation>
     </message>
@@ -612,67 +612,67 @@
         <translation>Task initialization failed</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="243"/>
+        <location filename="../../app/components/task_card.py" line="244"/>
         <source>打开文件夹</source>
         <translation>Open Folder</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="245"/>
+        <location filename="../../app/components/task_card.py" line="246"/>
         <source>复制文件</source>
         <translation>Copy File</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="247"/>
+        <location filename="../../app/components/task_card.py" line="248"/>
         <source>复制链接</source>
         <translation>Copy Link</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="249"/>
+        <location filename="../../app/components/task_card.py" line="250"/>
         <source>重新下载</source>
         <translation>Redownload</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="338"/>
+        <location filename="../../app/components/task_card.py" line="339"/>
         <source>任务正在开始</source>
         <translation>Task starting</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="448"/>
+        <location filename="../../app/components/task_card.py" line="449"/>
         <source>完成时间: </source>
         <translation>Completion time: </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="448"/>
+        <location filename="../../app/components/task_card.py" line="449"/>
         <source>文件已被删除</source>
         <translation>File deleted</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="502"/>
+        <location filename="../../app/components/task_card.py" line="503"/>
         <source>正在校验 </source>
         <translation>Verifying </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="502"/>
+        <location filename="../../app/components/task_card.py" line="503"/>
         <source>, 请稍后...</source>
         <translation>, please wait...</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="515"/>
+        <location filename="../../app/components/task_card.py" line="516"/>
         <source>校验完成，文件的 </source>
         <translation>Verification complete, file&apos;s </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="515"/>
+        <location filename="../../app/components/task_card.py" line="516"/>
         <source> 是: </source>
         <translation> is: </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="524"/>
+        <location filename="../../app/components/task_card.py" line="525"/>
         <source>选择校验算法</source>
         <translation>Select Verification Algorithm</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="524"/>
+        <location filename="../../app/components/task_card.py" line="525"/>
         <source>请选择一个校验算法:</source>
         <translation>Please select a verification algorithm:</translation>
     </message>
@@ -772,22 +772,22 @@
 <context>
     <name>Ui_PlanTaskDialog</name>
     <message>
-        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="59"/>
+        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="58"/>
         <source>设置计划任务</source>
         <translation>Schedule Task</translation>
     </message>
     <message>
-        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="60"/>
+        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="59"/>
         <source>关机</source>
         <translation>Shutdown</translation>
     </message>
     <message>
-        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="61"/>
+        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="60"/>
         <source>退出程序</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="62"/>
+        <location filename="../../app/components/Ui_PlanTaskDialog.py" line="61"/>
         <source>打开</source>
         <translation>Open</translation>
     </message>
@@ -795,22 +795,22 @@
 <context>
     <name>Ui_UpdateDialog</name>
     <message>
-        <location filename="../../app/components/Ui_UpdateDialog.py" line="108"/>
+        <location filename="../../app/components/Ui_UpdateDialog.py" line="107"/>
         <source>检测到新版本</source>
         <translation>New Version Detected</translation>
     </message>
     <message>
-        <location filename="../../app/components/Ui_UpdateDialog.py" line="109"/>
+        <location filename="../../app/components/Ui_UpdateDialog.py" line="108"/>
         <source>捐赠</source>
         <translation>Donate</translation>
     </message>
     <message>
-        <location filename="../../app/components/Ui_UpdateDialog.py" line="110"/>
+        <location filename="../../app/components/Ui_UpdateDialog.py" line="109"/>
         <source>稍后再说</source>
         <translation>Remind Me Later</translation>
     </message>
     <message>
-        <location filename="../../app/components/Ui_UpdateDialog.py" line="111"/>
+        <location filename="../../app/components/Ui_UpdateDialog.py" line="110"/>
         <source>下载此版本</source>
         <translation>Download This Version</translation>
     </message>
