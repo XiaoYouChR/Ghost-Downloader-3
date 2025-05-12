@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Ghost Downloader"
-#define MyAppVersion "3.5.9"
+#define MyAppVersion "3.5.10"
 #define MyAppPublisher "XiaoYouChR"
 #define MyAppURL "https://github.com/XiaoYouChR/Ghost-Downloader-3/"
 #define MyAppExeName "Ghost-Downloader-3.exe"
@@ -41,6 +41,7 @@ WizardStyle=modern
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesetraditional"; MessagesFile: "compiler:Languages\ChineseTraditional.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
