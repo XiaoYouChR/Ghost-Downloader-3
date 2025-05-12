@@ -1,7 +1,8 @@
-PySide6-Fluent-Widgets>=1.7.4
-pysidesix-frameless-window>=0.7.0
-PySide6==6.9.0  # Qt 6.7.3 on Windows Has Internationalization Issues, Frameless Window Support in Qt 6.8+ Feels Buggy
+PySide6-Fluent-Widgets>=1.8.0
+PysideSix-Frameless-Window>=0.7.1
+PySide6==6.9.0  # Qt 6.7.3 on Windows Has Internationalization Issues
 loguru
 httpx[socks]
-nuitka==2.6.7
+nuitka==2.7.1
 win11toast; sys_platform=="win32"
+darkdetect[macos-listener]; sys_platform=="darwin"
