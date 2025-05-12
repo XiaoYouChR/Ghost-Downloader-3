@@ -1,7 +1,7 @@
 name: test-build-and-sign
 run-name: Test workflow signing with SignPath
 on:
-  push:
+#  push:
   workflow_dispatch:
 
 jobs:
