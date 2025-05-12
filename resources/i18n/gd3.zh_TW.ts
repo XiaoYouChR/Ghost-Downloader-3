@@ -140,7 +140,7 @@
     <message>
         <location filename="../../app/view/debug_interface.py" line="36"/>
         <source>日志文件 (*.log)</source>
-        <translation>記錄檔</translation>
+        <translation type="unfinished">記錄檔 (*.log)</translation>
     </message>
 </context>
 <context>
