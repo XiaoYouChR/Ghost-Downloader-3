@@ -7,7 +7,7 @@ if sys.platform == "win32":
     args = [
         'nuitka',
         '--standalone',  # Following all imports is the default for standalone mode and need not be specified.
-        '--windows-console-mode=disable',
+        # '--windows-console-mode=disable',
         '--plugin-enable=pyside6' ,
         '--assume-yes-for-downloads',
         # '--msvc=latest',              # Use MSVC
