@@ -115,7 +115,7 @@ Copyright © 2025 XiaoYouChR.
 
 ## 致谢
 
-* [@ZhiYiyo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
+* [@zhiyiYo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
 * [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本！
 * [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner！
 
