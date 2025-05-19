@@ -14,8 +14,10 @@ jobs:
         architecture: [x86_64, arm64]
     runs-on: windows-2019
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -34,6 +36,25 @@ jobs:
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
           del version.txt
           python deploy.py
+          mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
+
+      - name: upload-unsigned-artifact
+        id: upload-unsigned-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
+          path: dist/Ghost-Downloader-3-Unsigned.dist
+
+      - name: Sign
+        uses: signpath/github-action-submit-signing-request@v1.1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'Ghost-Downloader-3'
+          signing-policy-slug:  'release-signing'
+          github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
 
       - name: Download Inno Setup Translation Files
         run: |
@@ -72,8 +93,10 @@ jobs:
         architecture: [arm64]
     runs-on: macos-14
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -91,7 +114,7 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python3 deploy.py
-          chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
@@ -129,8 +152,10 @@ jobs:
         architecture: [x86_64]
     runs-on: macos-13
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Remove problematic brew libs
         run: |
@@ -153,7 +178,7 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python3 deploy.py
-          chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
@@ -181,8 +206,10 @@ jobs:
         architecture: [x86_64, arm64]
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -202,20 +229,21 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python deploy.py
+          chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
 
-      - name: Zip the contents of Ghost-Downloader
+      - name: Tar the contents of Ghost-Downloader
         shell: pwsh
         run: |
           $distPath = "dist/Ghost-Downloader-3.dist"
-          $zipFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.zip"
-
-          # Create a zip file containing the contents of Ghost-Downloader.dist, without the folder itself
-          Write-Output "Zipping contents of $distPath..."
-          Compress-Archive -Path "$distPath\*" -DestinationPath $zipFile
-          Write-Output "Zip created at $zipFile"
+          $tarFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
+          
+          # Create a tar.xz archive containing the contents of Ghost-Downloader.dist, without the folder itself
+          Write-Output "Creating tar.xz archive of $distPath..."
+          tar -cJf $tarFile -C $distPath .
+          Write-Output "Archive created at $tarFile"
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.zip
+          files: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz
