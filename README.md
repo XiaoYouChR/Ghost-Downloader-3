@@ -66,10 +66,11 @@
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
 
-<!-- SCREEN SHOTS -->
-## Screenshots
+<!-- SPONSOR -->
+## Sponsor
 
-[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
+| [![SignPath](https://signpath.org/assets/favicon-50x50.png)](https://signpath.org/) | Free code signing on Windows provided by [SignPath.io](https://signpath.io), certficate by [SignPath Foundation](https://signpath.org) |
+|-------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------|
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -87,6 +88,11 @@ If you have a suggestion, fork the repo and create a pull request. You can also 
 Thanks to all contributors who have participated in this project!
 
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
+
+<!-- SCREEN SHOTS -->
+## Screenshots
+
+[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
 <!-- LICENSE -->
 ## License

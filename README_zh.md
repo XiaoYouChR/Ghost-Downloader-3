@@ -66,10 +66,11 @@
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
-<!-- SCREEN SHOTS -->
-## 截图
+<!-- SPONSOR -->
+## 赞助商
 
-[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
+| [![SignPath](https://signpath.org/assets/favicon-50x50.png)](https://signpath.org/) | 由 [SignPath.io](https://about.signpath.io/) 提供免费代码签名，由 [SignPath Foundation](https://signpath.org/) 提供证书 |
+|-------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------|
 
 <!-- CONTRIBUTING -->
 ## 贡献
@@ -87,6 +88,11 @@
 感谢所有为该项目做出贡献的人！
 
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
+
+<!-- SCREEN SHOTS -->
+## 截图
+
+[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
 <!-- LICENSE -->
 ## 许可证
