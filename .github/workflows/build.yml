@@ -30,7 +30,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close()"
+          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
@@ -74,7 +74,7 @@ jobs:
 
           # Create a zip file containing the contents of Ghost-Downloader.dist, without the folder itself
           Write-Output "Zipping contents of $distPath..."
-          Compress-Archive -Path "$distPath\*" -DestinationPath $zipFile
+          7z a -tzip -mx=9 -m0=LZMA Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip dist/Ghost-Downloader-3.dist/*
           Write-Output "Zip created at $zipFile"
           
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
