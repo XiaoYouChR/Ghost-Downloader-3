@@ -2,8 +2,11 @@
   简体中文 | <a href="README.md">English</a>
 </h4>
  
-> [!NOTE]
+> [!IMPORTANT]
 > 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
+
+> [!NOTE]
+> 本软件目前还存在着许多不足，仍在积极开发中...
 
 > [!TIP]
 > 如果您想在 Windows 7 上使用 Ghost-Downloader-3，请下载 `v3.5.8-Portable` 版本.
@@ -12,6 +15,8 @@
 <div align="center">
 
 ![Banner](resources/banner.webp)
+
+<a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 <h3>
     AI 赋能的新一代跨平台多线程下载器
@@ -60,9 +65,11 @@
   - ✅ 升级 Qt 版本
   - ✅ 实现 HttpClient 复用
   - ✅ 用协程来代替部分多线程功能
-- ❌ MVC -> MVVM 架构升级以及插件功能 (开发中...详见 Folk: feature/Plugins)
+- ❌ MVC → MVVM 以及由事件驱动的架构重构 (开发中...详见分支: feature/Plugins)
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Client 等强大功能)
 - ❌ 磁力 / BT 下载 (考虑使用 libtorrent 实现)
+- ❌ 强大的插件功能
+- ❌ 强大的浏览器插件功能
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
