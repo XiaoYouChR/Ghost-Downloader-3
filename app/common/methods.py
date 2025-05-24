@@ -218,9 +218,22 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
         # 获取文件大小, 判断是否可以分块下载
         # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
         if response.status_code == 206 and "content-range" in head:
-            fileSize = int(head["content-length"])
+            #https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
+            _left, _char, right = head["content-range"].rpartition("/")
+
+            if right != "*":
+                fileSize = int(right)
+                logger.info(f"content-range: {head["content-range"]}, fileSize: {fileSize}, content-length: {head["content-length"]}")
+
+            elif "content-length" in head:
+                fileSize = int(head["content-length"])
+                
+            else:
+                fileSize = 0
+                logger.info("文件似乎支持续传，但无法获取文件大小")
         else:
             fileSize = 0
+            logger.info("文件不支持续传")
 
         # 获取文件名
         if not fileName:
