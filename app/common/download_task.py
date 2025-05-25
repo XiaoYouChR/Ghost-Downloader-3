@@ -61,7 +61,7 @@ class DownloadTask(QThread):
         _ = getProxy()
 
         self.client = httpx.AsyncClient(headers=headers, verify=cfg.SSLVerify.value,
-                                        proxy=_, limits=httpx.Limits(max_connections=256), trust_env=False)
+                                        proxy=_, limits=httpx.Limits(max_connections=256), trust_env=False, follow_redirects=True)
 
         self.__initThread = Thread(target=self.__initTask, daemon=True)  # TODO 获取文件名和文件大小的线程等信息, 暂时使用线程方式
         self.__initThread.start()
@@ -217,6 +217,7 @@ class DownloadTask(QThread):
 
                     async with worker.client.stream(url=self.url, headers=workingRangeHeaders, timeout=30,
                                                     method="GET") as res:
+                        res.raise_for_status()
                         if res.status_code != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
                         async for chunk in res.aiter_bytes(chunk_size=65536):
@@ -254,6 +255,7 @@ class DownloadTask(QThread):
                     WorkingRangeHeaders = self.headers.copy()
                     async with worker.client.stream(url=self.url, headers=WorkingRangeHeaders, timeout=30,
                                                     method="GET") as res:
+                        res.raise_for_status()
                         async for chunk in res.aiter_bytes():
                             if chunk:
                                 self.file.seek(worker.progress)
@@ -397,6 +399,8 @@ class DownloadTask(QThread):
                 logger.debug(f"Task {self.fileName}, starting single thread...")
                 _ = asyncio.create_task(self.__handleWorkerWhenUnableToParallelDownload(self.workers[0]))
                 self.tasks.append(_)
+                
+                print(self.tasks)
 
             self.supervisorTask = asyncio.create_task(self.__supervisor())
             # 仅仅需要等待 supervisorTask
@@ -460,7 +464,9 @@ class DownloadTask(QThread):
 
         # 加载分块
         self.__loadWorkers()
-
+        
+        print(self.tasks, self.workers)
+        
         # 主逻辑, 使用事件循环启动异步任务
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)

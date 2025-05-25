@@ -189,7 +189,6 @@ class TaskCard(CardWidget, Ui_TaskCard):
         return (startPos.x() - endPos.x()) ** 2 + (startPos.y() - endPos.y()) ** 2
 
     def __onTaskInited(self, ableToParallelDownload: bool):
-        print(ableToParallelDownload)
         self.fileName = self.task.fileName
         self.fileSize = self.task.fileSize
         self.ableToParallelDownload = ableToParallelDownload
