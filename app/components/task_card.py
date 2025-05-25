@@ -278,8 +278,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 openFile(f"{self.filePath}/{self.fileName}")
         super().mouseReleaseEvent(e)
 
-    def changeButtonStatus(self, enabled:bool=None, icon=None, slot=None):
-        if enabled:
+    def changeButtonStatus(self, enabled: bool | None = None, icon=None, slot=None):
+        if enabled is not None:
             self.pauseButton.setEnabled(enabled)
         if icon:
             self.pauseButton.setIcon(icon)
