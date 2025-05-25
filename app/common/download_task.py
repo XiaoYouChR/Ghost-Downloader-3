@@ -36,7 +36,10 @@ class DownloadTask(QThread):
     taskFinished = Signal()  # 内置信号的不好用
     gotWrong = Signal(str)  # 😭 我出问题了
 
-    def __init__(self, url, headers, preTaskNum: int = 8, filePath:str=None, fileName:str=None, autoSpeedUp:bool=False, fileSize:int=-1, parent=None):
+    def __init__(
+            self, url, headers, preTaskNum: int = 8,
+            filePath: str = None, fileName: str = None, autoSpeedUp: bool = False, fileSize: int = -1, parent=None
+    ):
         super().__init__(parent)
 
         self.progress = 0
@@ -47,7 +50,9 @@ class DownloadTask(QThread):
         self.preBlockNum = preTaskNum
         self.autoSpeedUp = autoSpeedUp
         self.fileSize = fileSize
-        self.ableToParallelDownload:bool
+        self.ableToParallelDownload: bool
+
+        self.ghdFile = None  # 提前初始化,避免因为不能并行下载时访问属性报错
 
         self.workers: list[DownloadWorker] = []
         self.tasks: list[Task] = []
@@ -199,7 +204,6 @@ class DownloadTask(QThread):
                 self.workers.append(
                     DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1], self.client))
 
-
     # 主下载逻辑
     async def __handleWorker(self, worker: DownloadWorker):
         logger.debug(f"{self.fileName} task is launching the worker {worker.startPos}-{worker.endPos}...")
@@ -261,7 +265,7 @@ class DownloadTask(QThread):
                                     if cfg.globalSpeed >= cfg.speedLimitation.value:
                                         await asyncio.sleep(1)  # 在锁里面睡，只阻塞 worker, 不阻塞 supervisor
 
-                    self.ableToParallelDownload = True # 事实上用来表示任务已经完成
+                    self.ableToParallelDownload = True  # 事实上用来表示任务已经完成
 
                     finished = True
 
@@ -275,7 +279,6 @@ class DownloadTask(QThread):
 
             worker.progress = worker.endPos
 
-
     async def __supervisor(self):
         """实时统计进度并写入历史记录文件"""
         LastProgress = 0  # 可能会出现unbound error，所以将LastProgress提取为函数全局变量
@@ -287,10 +290,10 @@ class DownloadTask(QThread):
         if self.ableToParallelDownload:
             if self.autoSpeedUp:
                 # 初始化变量
-                maxSpeedPerConnect = 1 # 防止除以0
-                additionalTaskNum = len(self.tasks) # 最初为计算每个线程的平均速度
-                formerAvgSpeed = 0 # 提速之前的平均速度
-                duringTime = 0 # 计算平均速度的时间间隔, 为 10 秒
+                maxSpeedPerConnect = 1  # 防止除以0
+                additionalTaskNum = len(self.tasks)  # 最初为计算每个线程的平均速度
+                formerAvgSpeed = 0  # 提速之前的平均速度
+                duringTime = 0  # 计算平均速度的时间间隔, 为 10 秒
                 _ = 0
 
             while not self.progress == self.fileSize:
@@ -343,8 +346,8 @@ class DownloadTask(QThread):
 
                         # logger.debug(f"当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}, speed: {speed}, formerAvgSpeed: {formerAvgSpeed}, additionalTaskNum: {additionalTaskNum}, maxSpeedPerConnect: {maxSpeedPerConnect}")
 
-                        #原公式：(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85
-                        #然后将不等号左边的计算全部移到右边
+                        # 原公式：(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect >= 0.85
+                        # 然后将不等号左边的计算全部移到右边
                         if avgSpeed >= _:
                             #  新增加线程的效率 >= 0.85 时，新增线程
                             # logger.debug(f'自动提速增加新线程, 当前效率: {(avgSpeed - formerAvgSpeed) / additionalTaskNum / maxSpeedPerConnect}')
@@ -352,7 +355,7 @@ class DownloadTask(QThread):
                             additionalTaskNum = 4
                             _ = (0.85 * maxSpeedPerConnect * additionalTaskNum) + formerAvgSpeed
 
-                            if len(self.tasks)  < 253:
+                            if len(self.tasks) < 253:
                                 for i in range(4):
                                     self.__reassignWorker()  # 新增线程
 
@@ -437,7 +440,8 @@ class DownloadTask(QThread):
             self.supervisorTask.cancel()
         finally:
             self.file.close()
-            self.ghdFile.close()
+            if self.ghdFile:
+                self.ghdFile.close()
 
             while not all(task.done() for task in self.tasks):  # 等待所有任务完成
                 for task in self.tasks:
