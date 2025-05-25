@@ -223,7 +223,7 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
 
             if right != "*":
                 fileSize = int(right)
-                logger.info(f"content-range: {head["content-range"]}, fileSize: {fileSize}, content-length: {head["content-length"]}")
+                logger.info(f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}")
 
             elif "content-length" in head:
                 fileSize = int(head["content-length"])
