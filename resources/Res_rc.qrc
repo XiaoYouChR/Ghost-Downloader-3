@@ -2,6 +2,7 @@
   <qresource prefix="image">
     <file>logo.png</file>
     <file>logo_withoutBackground.png</file>
+    <file>logo.ico</file>
   </qresource>
   <qresource prefix="res">
     <file>chrome_extension.crx</file>

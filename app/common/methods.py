@@ -13,7 +13,7 @@ from time import sleep, localtime, time_ns
 from urllib.parse import unquote, parse_qs, urlparse
 
 import httpx
-from PySide6.QtCore import QUrl, QOperatingSystemVersion
+from PySide6.QtCore import QUrl, QOperatingSystemVersion, QResource
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from loguru import logger
@@ -201,6 +201,25 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
 
     return localTimeNaive
 
+def attemptRegisterAppID(appId: str = "GD3", appName: str = "Ghost Downloader", iconPath: Path = Path("{}/logo.ico".format(cfg.appPath))):
+    import winreg
+    keyPath = f"SOFTWARE\\Classes\\AppUserModelId\\{appId}"
+    
+    try:
+        reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, keyPath)
+        winreg.CloseKey(reg_key)
+        return
+    except FileNotFoundError:
+        with open(iconPath, "wb") as f:
+            f.write(QResource(":/image/logo.ico").data())
+    
+        winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+        with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, keyPath) as masterKey:
+            winreg.SetValueEx(masterKey, "DisplayName", 0, winreg.REG_SZ, appName)
+            if iconPath is not None:
+                winreg.SetValueEx(masterKey, "IconUri", 0, winreg.REG_SZ, str(iconPath.resolve()))
+    except Exception as e:
+        logger.error(f"Could not register the application: {e}")
 
 def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.SSLVerify.value, proxy: str = "", followRedirects: bool = True) -> tuple:
     if not proxy:

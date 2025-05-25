@@ -7,8 +7,8 @@ from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButt
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qframelesswindow import WindowEffect
-from app.common.methods import isGreaterEqualWin10
 
+from app.common.methods import isGreaterEqualWin10, attemptRegisterAppID
 from app.common.methods import openFile, bringWindowToTop, isAbleToShowToast
 from app.view.Ui_PopUpWindow import Ui_PopUpWindow
 
@@ -252,8 +252,10 @@ class FinishedPopUpWindow(PopUpWindowBase):
                 {'activationType': 'protocol', 'arguments': fileResolvePath, 'content': cls.tr('打开文件')},
                 {'activationType': 'protocol', 'arguments': dirname(fileResolvePath), 'content': cls.tr('打开目录')}
             ]
-
-            return TaskExecutor.run(toast, cls.tr("下载完成"), fileResolvePath, icon=icon, buttons=buttons)
+                
+            attemptRegisterAppID()
+            
+            return TaskExecutor.run(toast, cls.tr("下载完成"), fileResolvePath, icon=icon, buttons=buttons, app_id="GD3")
         else:
             w = FinishedPopUpWindow(fileResolvePath, mainWindow)
             w.show()
@@ -294,7 +296,10 @@ class ReceivedPopUpWindow(PopUpWindowBase):
                 'src': f"file://{logoTempFile}",
                 'placement': 'appLogoOverride'
             }
-            return TaskExecutor.run(toast, cls.tr("接收到来自浏览器的下载任务:"), receiveContent, icon=icon)  # TODO 点击后 bringWindowToTop(mainWindow), 需要信号
+            
+            attemptRegisterAppID()
+            
+            return TaskExecutor.run(toast, cls.tr("接收到来自浏览器的下载任务:"), receiveContent, icon=icon, app_id="GD3")  # TODO 点击后 bringWindowToTop(mainWindow), 需要信号
         else:
             w = ReceivedPopUpWindow(receiveContent, mainWindow)
             w.show()
