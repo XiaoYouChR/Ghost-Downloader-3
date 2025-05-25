@@ -10,10 +10,10 @@ if sys.platform == "win32":
         '--windows-console-mode=disable',
         '--plugin-enable=pyside6' ,
         '--assume-yes-for-downloads',
-        # '--msvc=latest',              # Use MSVC
-        '--mingw64',                    # Use MinGW
-        '--show-memory' ,
-        '--show-progress' ,
+        '--msvc=latest',              # Use MSVC
+        # '--mingw64',                    # Use MinGW
+        # '--show-memory' ,
+        # '--show-progress' ,
         '--windows-icon-from-ico=resources/logo.ico',
         '--company-name=XiaoYouChR',
         '--product-name="Ghost Downloader"',
@@ -29,8 +29,8 @@ elif sys.platform == "darwin":
         'python3 -m nuitka',
         '--standalone',
         '--plugin-enable=pyside6',
-        '--show-memory',
-        '--show-progress',
+        # '--show-memory',
+        # '--show-progress',
         "--macos-create-app-bundle",
         "--assume-yes-for-download",
         "--macos-app-mode=gui",
@@ -47,8 +47,8 @@ else:
         '--plugin-enable=pyside6',
         '--include-qt-plugins=platforms',
         '--assume-yes-for-downloads',
-        '--show-memory',
-        '--show-progress',
+        # '--show-memory',
+        # '--show-progress',
         '--linux-icon=resources/logo.png',
         '--output-dir=dist',
         'Ghost-Downloader-3.py',

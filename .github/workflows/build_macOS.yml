@@ -10,8 +10,10 @@ jobs:
         architecture: [arm64]
     runs-on: macos-14
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -29,7 +31,7 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python3 deploy.py
-          chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
@@ -67,8 +69,10 @@ jobs:
         architecture: [x86_64]
     runs-on: macos-13
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Remove problematic brew libs
         run: |
@@ -91,7 +95,7 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python3 deploy.py
-          chmod u+x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
+          chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"

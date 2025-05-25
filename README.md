@@ -2,8 +2,11 @@
   <a href="README_zh.md">简体中文</a> | English
 </h4>
  
-> [!NOTE]
+> [!IMPORTANT]
 > Due to the developer's preparation for the college entrance exam (Gaokao), project updates are temporarily suspended 😭 Join QQ group [`531928387`](https://qm.qq.com/q/PlUBdzqZCm) for latest updates
+
+> [!NOTE]
+> The project is still in its early stages, and there is still a lot of shortcomings.
 
 > [!TIP]
 > If you want to use Ghost-Downloader-3 on Windows 7, please download the version `v3.5.8-Portable`.
@@ -12,6 +15,8 @@
 <div align="center">
 
 ![Banner](resources/banner.webp)
+
+<a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 <h3>
     AI-powered next-generation cross-platform multithreaded downloader
@@ -60,16 +65,19 @@
   - ✅ Upgrade Qt version
   - ✅ Implement HttpClient reuse
   - ✅ Replace some multithreading with coroutines
-- ❌ MVC -> MVVM architecture upgrade and plugin support (In progress...see Folk: feature/Plugins)
+- ❌ MVC → MVVM upgrade and a new architecture based on events (In progress...see branch: feature/Plugins)
 - ❌ Enhanced task editing (powerful features like binding multiple Clients to one task)
 - ❌ Magnet/BT download (Considering libtorrent implementation)
+- ❌ Powerful plugin system
+- ❌ Powerful browser extension features
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
 
-<!-- SCREEN SHOTS -->
-## Screenshots
+<!-- SPONSOR -->
+## Sponsor
 
-[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
+| [![SignPath](https://signpath.org/assets/favicon-50x50.png)](https://signpath.org/) | Free code signing on Windows provided by [SignPath.io](https://signpath.io), certficate by [SignPath Foundation](https://signpath.org) |
+|-------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------|
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -87,6 +95,11 @@ If you have a suggestion, fork the repo and create a pull request. You can also 
 Thanks to all contributors who have participated in this project!
 
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
+
+<!-- SCREEN SHOTS -->
+## Screenshots
+
+[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
 
 <!-- LICENSE -->
 ## License
@@ -115,7 +128,7 @@ Copyright © 2025 XiaoYouChR.
 
 ## Acknowledgments
 
-* [@ZhiYiyo](https://github.com/zhiyiYo/) Provided great help for this project!
+* [@zhiyiYo](https://github.com/zhiyiYo/) Provided great help for this project!
 * [@一只透明人-](https://space.bilibili.com/554365148/) Tested almost every version since Ghost-Downloader-1！
 * [@Sky·SuGar](https://github.com/SuGar0218/) Created the project banner！
 

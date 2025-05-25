@@ -1,7 +1,7 @@
 # coding: utf-8
+import ctypes
 import pickle
 import sys
-from ctypes.wintypes import MSG
 from pathlib import Path
 
 import darkdetect
@@ -9,14 +9,14 @@ from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, Q
 from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor, Qt
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
-from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, themeColor, isDarkTheme
+from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, isDarkTheme
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
 from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, isBorderAccentColorOpen, \
+from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, \
     isGreaterEqualWin10, isLessThanWin10, isGreaterEqualWin11
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
@@ -63,14 +63,6 @@ class ThemeChangedListener(QThread):
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
-
-        # replace WindowsWindowEffect
-        if isGreaterEqualWin10():
-            from ..common.windows_window_effect import WindowsWindowEffect
-            self.windowEffect = WindowsWindowEffect(self.winId())
-
-            if isBorderAccentColorOpen():
-                self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
 
         self.setMicaEffectEnabled(False)
 
@@ -318,18 +310,12 @@ class MainWindow(MSFluentWindow):
     def nativeEvent(self, eventType, message):
         # 处理窗口重复打开事件
         if eventType == "windows_generic_MSG":
-            msg = MSG.from_address(message.__int__())
+            msg = ctypes.wintypes.MSG.from_address(message.__int__())
 
             # WIN_USER = 1024
             if msg.message == 1024 + 1:
                 bringWindowToTop(self)
                 return True, 0
-
-            if msg.message == 7 and isBorderAccentColorOpen():
-                self.windowEffect.setBorderAccentColor(self.winId(), themeColor())
-
-            if msg.message == 8 and isBorderAccentColorOpen():
-                self.windowEffect.removeBorderAccentColor(self.winId())
 
         return super().nativeEvent(eventType, message)
 

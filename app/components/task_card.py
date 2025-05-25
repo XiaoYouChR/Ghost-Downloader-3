@@ -291,6 +291,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if self.status == "finished":
             self.status = "working"
             if self.task:
+                self.task.stop()
+                # self.task.terminate()
+                self.task.wait()
                 self.task.deleteLater()
             self.changeButtonStatus(
                 enabled=False, icon=FIF.PAUSE, slot=self.pauseTask)

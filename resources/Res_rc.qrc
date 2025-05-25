@@ -11,7 +11,9 @@
     <file>received_info.wav</file>
   </qresource>
   <qresource prefix="i18n">
-    <file alias="gd3.zh_CN.qm">i18n/gd3.zh_CN.qm</file>
     <file alias="gd3.en_US.qm">i18n/gd3.en_US.qm</file>
+    <file alias="gd3.zh_MO.qm">i18n/gd3.zh_MO.qm</file>
+    <file alias="gd3.ja_JP.qm">i18n/gd3.ja_JP.qm</file>
+    <file alias="gd3.zh_TW.qm">i18n/gd3.zh_TW.qm</file>
   </qresource>
 </RCC>

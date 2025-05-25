@@ -39,19 +39,6 @@ def isGreaterEqualWin11():
     """ determine if the windows version ≥ Win11 """
     return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000
 
-def isBorderAccentColorOpen():
-    """ Check whether the border accent color is open """
-    if not isGreaterEqualWin11():
-        return False
-
-    from winreg import OpenKey, HKEY_CURRENT_USER, KEY_READ, QueryValueEx, CloseKey
-
-    key = OpenKey(HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\DWM", 0, KEY_READ)
-    value, _ = QueryValueEx(key, "ColorPrevalence")
-    CloseKey(key)
-
-    return bool(value)
-
 def isAbleToShowToast():
     return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
 
@@ -231,9 +218,22 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
         # 获取文件大小, 判断是否可以分块下载
         # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
         if response.status_code == 206 and "content-range" in head:
-            fileSize = int(head["content-length"])
+            #https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
+            _left, _char, right = head["content-range"].rpartition("/")
+
+            if right != "*":
+                fileSize = int(right)
+                logger.info(f"content-range: {head["content-range"]}, fileSize: {fileSize}, content-length: {head["content-length"]}")
+
+            elif "content-length" in head:
+                fileSize = int(head["content-length"])
+                
+            else:
+                fileSize = 0
+                logger.info("文件似乎支持续传，但无法获取文件大小")
         else:
             fileSize = 0
+            logger.info("文件不支持续传")
 
         # 获取文件名
         if not fileName:
