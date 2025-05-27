@@ -139,10 +139,18 @@ class SingleDownloadStrategy(WorkerStrategy):
 class DownloadTask(QThread):
     """Task Manager for downloading files with support for parallel and non-parallel downloads
 
-    fileSize values:
-    - -1: Auto-detect file size
-    - 0: Non-parallel download
-    - >0: Normal parallel download with known file size
+    This class handles the download process, supporting both parallel downloads with resume
+    capability and single-threaded downloads without resume capability.
+
+    Download modes:
+    - DETECT: Auto-detect file size and determine download mode (fileSize = -1)
+    - SINGLE: Non-parallel download, no resume capability (fileSize = 0)
+    - PARALLEL: Parallel download with resume capability (fileSize > 0)
+
+    The download mode is determined based on the file size:
+    - If fileSize > 0, the download is performed in parallel with multiple workers
+    - If fileSize = 0, the download is performed with a single worker without resume capability
+    - If fileSize = -1, the file size is auto-detected and the mode is determined accordingly
     """
 
     taskInited = Signal(bool)  # Emitted when task is initialized, with parallel download capability flag
@@ -150,6 +158,11 @@ class DownloadTask(QThread):
     speedChanged = Signal(int)  # Emitted when download speed changes
     taskFinished = Signal()  # Emitted when task is finished
     gotWrong = Signal(str)  # Emitted when an error occurs
+
+    # Download modes
+    MODE_DETECT = -1
+    MODE_SINGLE = 0
+    MODE_PARALLEL = 1
 
     def __init__(
             self, url, headers, preTaskNum: int = 8,
@@ -166,7 +179,8 @@ class DownloadTask(QThread):
         self.preBlockNum = preTaskNum
         self.autoSpeedUp = autoSpeedUp
         self.fileSize = fileSize
-        self.ableToParallelDownload = False
+        self.downloadMode = self.MODE_DETECT  # Initial mode is detect
+        self.isCompleted = False  # Flag to track completion status
 
         # File handling
         self.file = None
@@ -273,56 +287,75 @@ class DownloadTask(QThread):
     def __initTask(self):
         """Initialize the download task by getting file information and preparing the file"""
         try:
-            # Get file information if needed
-            if self.fileSize == -1 or not self.fileName:
-                self.url, self.fileName, self.fileSize = getLinkInfo(self.url, self.headers, self.fileName)
-
-            # Determine if parallel download is possible
-            self.ableToParallelDownload = bool(self.fileSize)
-
-            # Setup file path
-            if not self.filePath or not Path(self.filePath).is_dir():
-                self.filePath = Path.cwd()
-            else:
-                self.filePath = Path(self.filePath)
-                if not self.filePath.exists():
-                    self.filePath.mkdir()
-
-            # Sanitize filename for Windows
-            if sys.platform == "win32":
-                self.fileName = ''.join([c for c in self.fileName if c not in r'\/:*?"<>|'])
-
-            # Truncate filename if too long
-            if len(self.fileName) > 255:
-                self.fileName = self.fileName[:255]
-
-            # Create the file if it doesn't exist
-            filePath = Path(f"{self.filePath}/{self.fileName}")
-            if not filePath.exists():
-                filePath.touch()
-                try:
-                    createSparseFile(filePath)
-                except Exception as e:
-                    logger.warning(f"Failed to create sparse file: {repr(e)}")
+            self.__getFileInfo()
+            self.__determineDownloadMode()
+            self.__setupFilePath()
+            self.__sanitizeFileName()
+            self.__createFileIfNeeded()
 
             # Signal task initialization completion
-            self.taskInited.emit(self.ableToParallelDownload)
+            # True if parallel download is possible
+            self.taskInited.emit(self.downloadMode == self.MODE_PARALLEL)
 
             # For non-parallel downloads, use only one worker
-            if not self.ableToParallelDownload:
+            if self.downloadMode == self.MODE_SINGLE:
                 self.preBlockNum = 1
 
         except Exception as e:
             self.gotWrong.emit(repr(e))
 
+    def __getFileInfo(self):
+        """Get file information if needed"""
+        if self.fileSize == self.MODE_DETECT or not self.fileName:
+            self.url, self.fileName, self.fileSize = getLinkInfo(self.url, self.headers, self.fileName)
+
+    def __determineDownloadMode(self):
+        """Determine download mode based on file size"""
+        if self.fileSize > 0:
+            self.downloadMode = self.MODE_PARALLEL
+        else:
+            self.downloadMode = self.MODE_SINGLE
+
+    def __setupFilePath(self):
+        """Setup and ensure file path exists"""
+        if not self.filePath or not Path(self.filePath).is_dir():
+            self.filePath = Path.cwd()
+            return
+
+        self.filePath = Path(self.filePath)
+        if not self.filePath.exists():
+            self.filePath.mkdir()
+
+    def __sanitizeFileName(self):
+        """Sanitize and truncate filename if needed"""
+        # Sanitize filename for Windows
+        if sys.platform == "win32":
+            self.fileName = ''.join([c for c in self.fileName if c not in r'\/:*?"<>|'])
+
+        # Truncate filename if too long
+        if len(self.fileName) > 255:
+            self.fileName = self.fileName[:255]
+
+    def __createFileIfNeeded(self):
+        """Create the file if it doesn't exist"""
+        filePath = Path(f"{self.filePath}/{self.fileName}")
+        if filePath.exists():
+            return
+
+        filePath.touch()
+        try:
+            createSparseFile(filePath)
+        except Exception as e:
+            logger.warning(f"Failed to create sparse file: {repr(e)}")
+
     def __loadWorkers(self):
         """Load or create workers for the download task"""
-        if not self.ableToParallelDownload:
+        if self.downloadMode == self.MODE_SINGLE:
             # For non-parallel downloads, create a single worker
             self.workers.append(DownloadWorker(0, 0, 1, self.client))
             return
 
-        # Check if we have a history file (.ghd) to resume download
+        # For parallel downloads, check if we have a history file (.ghd) to resume download
         historyFilePath = Path(f"{self.filePath}/{self.fileName}.ghd")
         if historyFilePath.exists():
             self.__loadWorkersFromHistory(historyFilePath)
@@ -359,8 +392,8 @@ class DownloadTask(QThread):
         """Create download tasks for all workers using the appropriate strategy"""
         logger.debug(f"Task {self.fileName}: Creating download tasks for {len(self.workers)} workers")
 
-        # Create the appropriate download strategy based on parallel download capability
-        if self.ableToParallelDownload:
+        # Create the appropriate download strategy based on download mode
+        if self.downloadMode == self.MODE_PARALLEL:
             self.downloadStrategy = ParallelDownloadStrategy(self.file, self.client, self.url)
 
             # Create tasks for all workers
@@ -373,7 +406,7 @@ class DownloadTask(QThread):
         else:
             # For non-parallel downloads, mark completion when done
             def markCompleted():
-                self.ableToParallelDownload = True  # Used to indicate task completion
+                self.isCompleted = True  # Mark task as completed
 
             self.downloadStrategy = SingleDownloadStrategy(self.file, self.client, self.url, markCompleted)
 
@@ -391,7 +424,7 @@ class DownloadTask(QThread):
             self.progress += worker.progress - worker.startPos
             lastProgress = self.progress
 
-        if self.ableToParallelDownload:
+        if self.downloadMode == self.MODE_PARALLEL:
             await self.__runParallelSupervisor(lastProgress)
         else:
             await self.__runSingleSupervisor(lastProgress)
@@ -428,8 +461,8 @@ class DownloadTask(QThread):
 
     async def __runSingleSupervisor(self, lastProgress):
         """Supervisor for non-parallel downloads"""
-        # Monitor until download is complete (marked by ableToParallelDownload flag)
-        while not self.ableToParallelDownload:
+        # Monitor until download is complete (marked by isCompleted flag)
+        while not self.isCompleted:
             # Update total progress
             self.progress = 0
             for worker in self.workers:
@@ -488,7 +521,7 @@ class DownloadTask(QThread):
 
     def __handleAutoSpeedUp(self, avgSpeed, vars):
         """Handle auto speed-up logic to optimize download speed"""
-        # Update time counter
+        # Update time counter and return if not ready for optimization
         if vars['duringTime'] < 10:
             vars['duringTime'] += 1
             return
@@ -500,21 +533,37 @@ class DownloadTask(QThread):
         speedPerConnect = avgSpeed / len(self.tasks) if self.tasks else 1
 
         # Update max speed per connection if current is higher
-        if speedPerConnect > vars['maxSpeedPerConnect']:
-            vars['maxSpeedPerConnect'] = speedPerConnect
-            vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
+        self.__updateMaxSpeedPerConnect(speedPerConnect, vars)
 
         # Check if we should add more workers based on efficiency
-        if avgSpeed >= vars['targetSpeed']:
-            # Current efficiency is good, add more workers
-            vars['formerAvgSpeed'] = avgSpeed
-            vars['additionalTaskNum'] = 4
-            vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
+        if avgSpeed < vars['targetSpeed']:
+            return  # Current efficiency is not good enough
 
-            # Limit total number of tasks
-            if len(self.tasks) < 253:
-                for _ in range(4):
-                    self.__reassignWorker()
+        # Current efficiency is good, prepare for adding more workers
+        self.__prepareForMoreWorkers(avgSpeed, vars)
+
+        # Add more workers if we haven't reached the limit
+        if len(self.tasks) < 253:
+            self.__addMoreWorkers(4)
+
+    def __updateMaxSpeedPerConnect(self, speedPerConnect, vars):
+        """Update maximum speed per connection if current is higher"""
+        if speedPerConnect <= vars['maxSpeedPerConnect']:
+            return
+
+        vars['maxSpeedPerConnect'] = speedPerConnect
+        vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
+
+    def __prepareForMoreWorkers(self, avgSpeed, vars):
+        """Prepare variables for adding more workers"""
+        vars['formerAvgSpeed'] = avgSpeed
+        vars['additionalTaskNum'] = 4
+        vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
+
+    def __addMoreWorkers(self, count):
+        """Add more workers to improve download speed"""
+        for _ in range(count):
+            self.__reassignWorker()
 
     async def __main(self):
         """Main download execution flow"""
@@ -559,13 +608,13 @@ class DownloadTask(QThread):
     async def __handleTaskCompletion(self):
         """Handle task completion and cleanup"""
         # For non-parallel downloads that completed successfully
-        if not self.ableToParallelDownload and self.fileSize == 0:
+        if self.downloadMode == self.MODE_SINGLE and self.isCompleted:
             logger.info(f"Task {self.fileName} finished!")
             self.taskFinished.emit()
             return
 
         # For parallel downloads that completed successfully
-        if self.progress == self.fileSize:
+        if self.downloadMode == self.MODE_PARALLEL and self.progress == self.fileSize:
             # Delete history file when download is complete
             try:
                 historyFile = Path(f"{self.filePath}/{self.fileName}.ghd")
@@ -614,17 +663,25 @@ class DownloadTask(QThread):
 
         while not all(task.done() for task in self.tasks) and timeout < max_timeout:
             # Try to cancel any remaining tasks
-            for task in self.tasks:
-                try:
-                    if not task.done():
-                        task.cancel()
-                except RuntimeError:
-                    pass
-                except Exception as e:
-                    logger.error(f"Error cancelling task: {e}")
+            self.__cancelRemainingTasks()
 
+            # Wait a bit before checking again
             time.sleep(0.05)
             timeout += 1
+
+    def __cancelRemainingTasks(self):
+        """Attempt to cancel any tasks that are not yet done"""
+        for task in self.tasks:
+            if task.done():
+                continue
+
+            try:
+                task.cancel()
+            except RuntimeError:
+                # RuntimeError can occur if the task is in an invalid state
+                pass
+            except Exception as e:
+                logger.error(f"Error cancelling task: {e}")
 
     def run(self):
         """Main thread entry point for the download task"""
