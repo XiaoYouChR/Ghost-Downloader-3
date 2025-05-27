@@ -17,6 +17,7 @@ class Language(Enum):
     CHINESE_LITERARY = QLocale(QLocale.Language.Chinese, QLocale.Country.Macau)  # lzh is invalid, I don't know what to do, sorry
     ENGLISH_UNITED_STATES = QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
     JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
+    GERMAN = QLocale(QLocale.Language.German, QLocale.Country.German)
     AUTO = QLocale()
 
 class ProxyValidator(ConfigValidator):
