@@ -17,8 +17,14 @@ class SingletonApplication(QApplication):
         self.key = key
 
         # cleanup (only needed for unix)
-        QSharedMemory(key).attach()
-        self.memory = QSharedMemory(self)
+        try:
+            cleanupMemory = QSharedMemory(key)
+            if cleanupMemory.attach():
+                cleanupMemory.detach()
+        except Exception as e:
+            logger.warning(f"Failed to cleanup shared memory: {e}")
+
+        self.memory = QSharedMemory()
         self.memory.setKey(key)
 
         if self.memory.attach():
@@ -38,11 +44,37 @@ class SingletonApplication(QApplication):
             sys.exit(-1)
 
         if not self.memory.create(1):
-            logger.error(self.memory.errorString())
-            raise RuntimeError(self.memory.errorString())
+            logger.error(f"Failed to create shared memory: {self.memory.errorString()}")
+            try:
+                self.memory.attach()
+                self.memory.detach()
+                if not self.memory.create(1):
+                    raise RuntimeError(self.memory.errorString())
+            except Exception as e:
+                logger.error(f"Failed to recover from shared memory error: {e}")
+                raise RuntimeError(self.memory.errorString())
 
         if "__compiled__" in globals():  # 编译后的错误捕捉
             sys.excepthook = exception_hook
+
+    # exit: cleanup shared memory
+    def exec(self):
+        try:
+            return super().exec()
+        finally:
+            try:
+                if self.memory.isAttached():
+                    self.memory.detach()
+            except Exception as e:
+                logger.warning(f"Failed to cleanup shared memory on exit: {e}")
+
+    def quit(self):
+        try:
+            if self.memory.isAttached():
+                self.memory.detach()
+        except Exception as e:
+            logger.warning(f"Failed to cleanup shared memory on quit: {e}")
+        super().quit()
 
 def exception_hook(exception: BaseException, value, tb):
     """ exception callback function """
