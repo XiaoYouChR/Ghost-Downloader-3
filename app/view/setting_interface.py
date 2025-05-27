@@ -44,18 +44,18 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
         self.radioWidget = QWidget(self.view)
         self.radioLayout = QVBoxLayout(self.radioWidget)
         self.offRadioButton = RadioButton(
-            self.tr("不使用代理"), self.radioWidget)
+            self.tr("Proxies are not used"), self.radioWidget)
         self.defaultRadioButton = RadioButton(
-            self.tr("自动检测系统代理"), self.radioWidget)
+            self.tr("Automatic detection of system agents"), self.radioWidget)
         self.customRadioButton = RadioButton(
-            self.tr("使用自定义代理"), self.radioWidget)
+            self.tr("Use custom proxie"), self.radioWidget)
 
         self.buttonGroup = QButtonGroup(self)
 
         self.customProxyWidget = QWidget(self.view)
         self.customProxyLayout = QHBoxLayout(self.customProxyWidget)
         self.customLabel = BodyLabel(
-            self.tr("编辑代理服务器: "), self.customProxyWidget)
+            self.tr("Proxy Server: "), self.customProxyWidget)
         self.customProtocolComboBox = ComboBox(self.customProxyWidget)
         self.customProtocolComboBox.addItems(["socks5", "http", "https"])
         self.label_1 = BodyLabel("://", self.customProxyWidget)
@@ -63,7 +63,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
         self.customIPLineEdit.setPlaceholderText(self.tr("代理 IP 地址"))
         self.label_2 = BodyLabel(":", self.customProxyWidget)
         self.customPortLineEdit = LineEdit(self.customProxyWidget)
-        self.customPortLineEdit.setPlaceholderText(self.tr("端口"))
+        self.customPortLineEdit.setPlaceholderText(self.tr("Port"))
 
         self.__initWidget()
 
@@ -213,7 +213,7 @@ class SettingInterface(SmoothScrollArea):
         self.blockNumCard = RangeSettingCard(
             cfg.preBlockNum,
             FIF.CLOUD,
-            self.tr("预分配线程数"),
+            self.tr("Number of threads used"),
             self.tr('线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险'),
             self.downloadGroup
         )
