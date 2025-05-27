@@ -18,9 +18,9 @@ class SingletonApplication(QApplication):
 
         # cleanup (only needed for unix)
         try:
-            cleanup_memory = QSharedMemory(key)
-            if cleanup_memory.attach():
-                cleanup_memory.detach()
+            cleanupMemory = QSharedMemory(key)
+            if cleanupMemory.attach():
+                cleanupMemory.detach()
         except Exception as e:
             logger.warning(f"Failed to cleanup shared memory: {e}")
 
