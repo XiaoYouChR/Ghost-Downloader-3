@@ -54,8 +54,8 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
             if i.status == 'working':
                 i.task.stop()
 
-                # self.task.terminate()
-                i.task.wait()
+                # Don't wait for the task to finish - this would block the UI
+                # Just schedule it for deletion and continue with the quit process
                 i.task.deleteLater()
 
         QApplication.quit()

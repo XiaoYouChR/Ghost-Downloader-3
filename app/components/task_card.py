@@ -291,8 +291,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.status = "working"
             if self.task:
                 self.task.stop()
-                # self.task.terminate()
-                self.task.wait()
+                # Don't wait for the task to finish - this would block the UI
+                # Instead, just schedule it for deletion
                 self.task.deleteLater()
             self.changeButtonStatus(
                 enabled=False, icon=FIF.PAUSE, slot=self.pauseTask)
@@ -305,8 +305,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
             try:
                 self.task.stop()
 
-                # self.task.terminate()
-                self.task.wait()
+                # Don't wait for the task to finish - this would block the UI
+                # Instead, just schedule it for deletion
                 self.task.deleteLater()
 
                 # 改变记录状态

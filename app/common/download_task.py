@@ -639,8 +639,11 @@ class DownloadTask(QThread):
             # Close files
             self.__closeFiles()
 
-            # Ensure all tasks are properly cancelled
-            self.__waitForTasksToComplete()
+            # Mark tasks as cancelled but don't wait for them
+            # This prevents blocking the UI thread
+            for task in self.tasks:
+                if task and not task.done():
+                    task.cancel()
 
     def __cancelAllTasks(self):
         """Cancel all worker tasks"""
