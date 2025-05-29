@@ -1,6 +1,6 @@
 # coding: utf-8
 import ctypes
-import pickle
+import json  # Added
 import sys
 from pathlib import Path
 
@@ -14,10 +14,10 @@ from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
-from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL
+from ..common.config import cfg, Headers, attachmentTypes, FEEDBACK_URL  # Headers might be used for default
 from ..common.custom_socket import GhostDownloaderSocketServer
-from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, \
-    isGreaterEqualWin10, isLessThanWin10, isGreaterEqualWin11
+from ..common.methods import getLinkInfo, bringWindowToTop, showMessageBox, \
+    isGreaterEqualWin10, isLessThanWin10, isGreaterEqualWin11  # addDownloadTask removed from here
 from ..common.signal_bus import signalBus
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
@@ -66,7 +66,7 @@ class MainWindow(MSFluentWindow):
 
         self.setMicaEffectEnabled(False)
 
-        self.initWindow()
+        self._initWindow() # Renamed
 
         # create sub interface
         self.taskInterface = TaskInterface(self)
@@ -74,38 +74,22 @@ class MainWindow(MSFluentWindow):
         # self.debugInterface = DebugInterface(self)
 
         # add items to navigation interface
-        self.initNavigation()
+        self._initNavigation() # Renamed
 
         # 允许拖拽
         self.setAcceptDrops(True)
 
         # 自定义主题信号连接
         self.themeChangedListener = None
-        self.__onCustomThemeModeChanged(cfg.customThemeMode.value)
-        cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
+        self._onCustomThemeModeChanged(cfg.customThemeMode.value) # Renamed
+        cfg.customThemeMode.valueChanged.connect(self._onCustomThemeModeChanged) # Renamed
         signalBus.appErrorSig.connect(self.onAppError)
 
         # 设置背景特效
         self.applyBackgroundEffectByCfg()
-
-        # 创建未完成的任务
-        historyFile = Path("{}/Ghost Downloader 记录文件".format(cfg.appPath))
-        if historyFile.exists():
-            f = open(historyFile, 'rb')
-            try:
-                while True:
-                    taskRecord = pickle.load(f)
-                    logger.debug(f"Unfinished Task is following: {taskRecord}")
-                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
-            except EOFError:  # 读取完毕
-                f.close()
-            except Exception as e:
-                logger.error(f"Failed to load unfinished task: {e}")
-                f.close()
-                historyFile.unlink()
-                historyFile.touch()
-        else:
-            historyFile.touch()
+        
+        # Load persisted application state (tasks)
+        self._loadApplicationState() # Added
 
         # 启动浏览器扩展服务器和剪切板监听器
         self.browserExtensionServer = None
@@ -131,7 +115,7 @@ class MainWindow(MSFluentWindow):
         """重写 macOS 三大件到左上角"""
         return QRect(0, 0 if self.isFullScreen() else 9, 75, size.height())
 
-    def __onCustomThemeModeChanged(self, value: str):
+    def _onCustomThemeModeChanged(self, value: str): # Renamed
         if value == 'System':
             # 创建检测主题色更改线程
             self.themeChangedListener = ThemeChangedListener()
@@ -231,7 +215,7 @@ class MainWindow(MSFluentWindow):
                     self.titleBar.minBtn.show()
                     self.titleBar.maxBtn.show()
 
-    def initNavigation(self):
+    def _initNavigation(self): # Renamed
         # add navigation items
         self.addSubInterface(self.taskInterface, FIF.DOWNLOAD, self.tr("任务列表"))
         self.navigationInterface.addItem(
@@ -247,7 +231,7 @@ class MainWindow(MSFluentWindow):
         # add custom widget to bottom
         self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
-    def initWindow(self):
+    def _initWindow(self): # Renamed
 
         if cfg.geometry.value == "Default":
             self.resize(960, 780)
@@ -284,6 +268,63 @@ class MainWindow(MSFluentWindow):
 
         QApplication.processEvents()
 
+    def _loadApplicationState(self):
+        """Loads application state, including tasks, from JSON."""
+        tasksJsonPath = Path(cfg.appPath) / "tasks.json"
+        if tasksJsonPath.exists():
+            try:
+                with open(tasksJsonPath, 'r', encoding='utf-8') as f:
+                    persistedStates = json.load(f)
+                
+                if isinstance(persistedStates, list):
+                    logger.info(f"Loading {len(persistedStates)} tasks from {tasksJsonPath}")
+                    for taskStateDict in persistedStates:
+                        if not isinstance(taskStateDict, dict): # Basic validation
+                            logger.warning(f"Skipping invalid task state entry: {taskStateDict}")
+                            continue
+
+                        fileInfo = taskStateDict.get("fileInfo", {})
+                        # taskSpecificState is the dict saved by DefaultDownloadTask.saveState()
+                        taskSpecificState = taskStateDict.get("taskSpecificState", {}) 
+
+                        payload = {
+                            'url': fileInfo.get("url"),
+                            'fileName': fileInfo.get("fileName"),
+                            'filePath': fileInfo.get("filePath"),
+                            'headers': taskSpecificState.get("headers", cfg.Headers.value), 
+                            'preBlockNum': taskSpecificState.get("preBlockNum", cfg.preBlockNum.value),
+                            'taskType': taskStateDict.get("taskType", "DefaultDownloadTask"),
+                            'initialStatus': taskStateDict.get("currentStatus", "paused"), # Use currentStatus as initial
+                            'taskSpecificStateForLoad': taskStateDict # Pass the whole original dict
+                        }
+                        
+                        if payload['url'] and payload['filePath']:
+                            signalBus.addTaskSignal.emit(payload)
+                        else:
+                            logger.warning(f"Skipping task state due to missing URL or filePath: {payload}")
+                else:
+                    logger.warning(f"tasks.json does not contain a list of states. Content: {persistedStates}")
+
+            except FileNotFoundError: # pragma: no cover
+                logger.info(f"{tasksJsonPath} not found. Starting with no persisted tasks.")
+            except json.JSONDecodeError as e: # pragma: no cover
+                logger.error(f"Error decoding {tasksJsonPath}: {e}. Starting with no persisted tasks.")
+            except Exception as e: # pragma: no cover
+                logger.error(f"Unexpected error loading tasks from {tasksJsonPath}: {e}")
+
+    def _saveApplicationState(self):
+        """Saves current application state, including tasks, to JSON."""
+        if hasattr(self, 'taskInterface') and self.taskInterface:
+            taskStates = self.taskInterface.saveAllTaskStates()
+            tasksJsonPath = Path(cfg.appPath) / "tasks.json"
+            try:
+                with open(tasksJsonPath, 'w', encoding='utf-8') as f:
+                    json.dump(taskStates, f, indent=4)
+                logger.info(f"Successfully saved {len(taskStates)} task states to {tasksJsonPath}")
+            except Exception as e: # pragma: no cover
+                logger.error(f"Error saving task states to {tasksJsonPath}: {e}")
+
+
     def onAppError(self, message: str):
         """ app error slot """
         QApplication.clipboard().setText(message)
@@ -299,6 +340,8 @@ class MainWindow(MSFluentWindow):
         AddTaskOptionDialog.showAddTaskOptionDialog(text, self, headers)
 
     def closeEvent(self, event):
+        self._saveApplicationState() # Save state before hiding/closing
+
         # 拦截关闭事件，隐藏窗口而不是退出
         event.ignore()
         # 保存窗口位置，最大化时不保存
@@ -347,11 +390,11 @@ class MainWindow(MSFluentWindow):
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.Paste):
             text = self.clipboard.text()
-            self.__setUrlsAndShowAddTaskMsg(text)
+            self.__setUrlsAndShowAddTaskMsg(text) # Renamed
         else:
             super().keyPressEvent(event)
 
-    def __checkUrl(self, url):
+    def _checkUrl(self, url): # Renamed
         try:
             _, fileName, __ = getLinkInfo(url, Headers)
             if fileName.lower().endswith(tuple(attachmentTypes.split())):
@@ -363,11 +406,11 @@ class MainWindow(MSFluentWindow):
     def __clipboardChanged(self):
         try:
             mime = self.clipboard.mimeData()
-            if mime.data('application/x-gd3-copy') != b'':  # if not empty
+            if mime.data('application/x-gd3-copy') != b'':  
                 logger.debug("Clipboard changed from software itself")
-                return  # 当剪贴板事件来源于软件本身时, 不执行后续代码
+                return  
             if mime.hasText():
-                urls = mime.text().lstrip().rstrip().split('\n')  # .strip()主要去两头的空格
+                urls = mime.text().lstrip().rstrip().split('\n')  
             elif mime.hasUrls():
                 urls = [url.toString() for url in mime.urls()]
             else:
@@ -376,7 +419,7 @@ class MainWindow(MSFluentWindow):
             results = []
 
             for url in urls:
-                if self.__checkUrl(url):
+                if self._checkUrl(url): # Renamed
                     results.append(url)
                 else:
                     logger.debug(f"Invalid url: {url}")
@@ -388,9 +431,9 @@ class MainWindow(MSFluentWindow):
 
             logger.debug(f"Clipboard changed: {results}")
             bringWindowToTop(self)
-            self.__setUrlsAndShowAddTaskMsg(results)
+            self.__setUrlsAndShowAddTaskMsg(results) # Renamed
         except Exception as e:
             logger.warning(f"Failed to check clipboard: {e}")
 
-if isGreaterEqualWin10():   # 否则 Win 10 亚克力效果失效
+if isGreaterEqualWin10():   
     MainWindow.updateFrameless = updateFrameless

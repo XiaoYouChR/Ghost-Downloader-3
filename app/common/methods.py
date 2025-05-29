@@ -1,6 +1,4 @@
 import ctypes
-import importlib
-import inspect
 import os
 import re
 import subprocess
@@ -15,15 +13,13 @@ from urllib.parse import unquote, parse_qs, urlparse
 import httpx
 from PySide6.QtCore import QUrl, QOperatingSystemVersion, QResource
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QApplication
 from loguru import logger
 from qfluentwidgets import MessageBox
 
 from app.common.config import cfg, Headers
-from app.common.plugin_base import PluginBase
+# from app.common.plugin_base import PluginBase # PluginBase is removed
 from app.common.signal_bus import signalBus
 
-plugins = []
 
 def isGreaterEqualWin10():
     """ determine if the Windows version ≥ Win10 """
@@ -41,34 +37,6 @@ def isGreaterEqualWin11():
 
 def isAbleToShowToast():
     return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
-
-def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
-    try:
-        for filename in os.listdir(directory):
-            if filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so"):
-
-                module_name = filename.split(".")[0]
-                file_path = os.path.join(directory, filename)
-
-                # 动态导入模块
-                spec = importlib.util.spec_from_file_location(module_name, file_path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                # 遍历模块中的所有成员
-                for name, obj in inspect.getmembers(module):
-                    # 检查是否是类，并且继承自 PluginBase
-                    if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
-                        try:
-                            # 实例化插件并调用 load 方法
-                            plugin_instance = obj(mainWindow)
-                            plugin_instance.load()
-                            logger.info(f"Loaded plugin: {plugin_instance.name}")
-                            plugins.append(plugin_instance)
-                        except Exception as e:
-                            logger.error(f"Error loading plugin {name}: {e}")
-    except Exception as e:
-        logger.error(f"Error loading plugins: {e}")
 
 
 def getSystemProxy():
@@ -341,9 +309,21 @@ def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
         preBlockNum = cfg.preBlockNum.value
 
     if not headers:
-        headers = Headers
+        headers = Headers # This should be cfg.Headers.value or similar if Headers is a config item
 
-    signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))
+    # Standardize payload to camelCase
+    payload = {
+        'url': url,
+        'fileName': fileName,        # Optional, DefaultDownloadTask can resolve it
+        'filePath': filePath,
+        'headers': headers,
+        'preBlockNum': preBlockNum,
+        'taskType': "DefaultDownloadTask", # Default task type for now
+        'initialStatus': status,     # e.g., "working", "paused"
+        # fileSize is determined by DefaultDownloadTask if -1 is passed to its constructor
+        # notCreateHistoryFile is an internal concern of DefaultDownloadTask/TaskManager
+    }
+    signalBus.addTaskSignal.emit(payload)
 
 def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
     """ show message box """

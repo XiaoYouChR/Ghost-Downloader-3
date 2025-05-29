@@ -36,7 +36,7 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 # noinspection PyUnresolvedReferences
 import resources.Res_rc
 
-from app.common.methods import loadPlugins
+# from app.common.methods import loadPlugins # Removed as the function is deleted
 from app.view.main_window import MainWindow
 
 # 防止 Mica 背景失效
@@ -89,8 +89,8 @@ speedLimiter.start()
 w = MainWindow()
 
 # loading plugins
-pluginsPath=os.path.join(cfg.appPath, "plugins")
-loadPlugins(w, pluginsPath)
+# pluginsPath=os.path.join(cfg.appPath, "plugins") # Removed as loadPlugins is deleted
+# loadPlugins(w, pluginsPath) # Removed as the function is deleted
 
 try:  # 静默启动
     if "--silence" in sys.argv:

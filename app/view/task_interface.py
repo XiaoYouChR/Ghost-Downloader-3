@@ -1,50 +1,51 @@
-from PySide6.QtCore import Qt, Slot
-from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
+import uuid
+from functools import partial  # Added partial
+from typing import List, Dict
+
+from PySide6.QtCore import Qt, Slot, Signal  # Added Signal
+from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy, \
+    QApplication  # Added QApplication
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, PrimaryPushButton, PushButton, InfoBar, \
-    InfoBarPosition, ToggleButton
+    ToggleButton
 
-from ..common.config import cfg
-from ..common.signal_bus import signalBus
+from app.common.signal_bus import \
+    signalBus  # signalBus.allTaskFinished will no longer be used by this class directly for plan
+from app.download.default_download_task import DefaultDownloadTask
+from app.task_manager.default_task_manager import DefaultTaskManager
+from app.ui_components.default_task_card import DefaultTaskCard
+from ..common.config import cfg, Headers
 from ..components.custom_dialogs import DelDialog, PlanTaskDialog
-from ..components.task_card import TaskCard
 
 
 class TaskInterface(SmoothScrollArea):
+    allManagedTasksTerminated = Signal() # New signal for when all managed tasks are done
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
         self.setObjectName("TaskInterface")
-        self.cards: list[TaskCard] = []
-        self.setupUi()
+        self._taskManagers: List[DefaultTaskManager] = []
+        self._taskCards: Dict[str, DefaultTaskCard] = {} 
+        self._activeManagerTaskIds: set[str] = set() # For tracking active managers
+        self._setupUi() 
         
-        self.__blockSortTask = False
-        self.__statusOrder = {"working": 0, "waiting": 1, "paused": 2, "finished": 3}
-        
-        # connect signal to slot
         self.allStartButton.clicked.connect(self.allStartTasks)
         self.allPauseButton.clicked.connect(self.allPauseTasks)
         self.allDeleteButton.clicked.connect(self.allCancelTasks)
-        self.planTaskToggleButton.clicked.connect(self.__onPlanTaskToggleBtnClicked)
+        self.planTaskToggleButton.clicked.connect(self._onPlanTaskToggleBtnClicked) # Renamed
 
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
 
-        # 连接新建下载任务信号
-        signalBus.addTaskSignal.connect(self.__addDownloadTask)
+        signalBus.addTaskSignal.connect(self._createManagedTaskFromSignal) # Renamed slot
 
-        # Apply QSS
         self.setStyleSheet("""QScrollArea, .QWidget {
                                 border: none;
                                 background-color: transparent;
                             }""")
 
-        # # For test
-        # signalBus.addTaskSignal.emit("https://jfile-b.jijidown.com:4433/PC/WPF/JiJiDown_setup.exe",
-        #                              str(Path.cwd()), 8,
-        #                              "", QPixmap())
-
-    def setupUi(self):
+    def _setupUi(self): # Renamed
         self.setMinimumWidth(816)
         self.setFrameShape(QFrame.NoFrame)
         self.scrollWidget = QWidget()
@@ -57,7 +58,6 @@ class TaskInterface(SmoothScrollArea):
 
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # 全部开始/暂停 全部删除等其它功能区 TODO 计划任务
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setContentsMargins(2,2,2,2)
 
@@ -89,175 +89,182 @@ class TaskInterface(SmoothScrollArea):
         self.planTaskToggleButton.setText(self.tr("计划任务"))
 
         self.expandLayout.addLayout(self.horizontalLayout)
-
         self.scrollWidget.setMinimumWidth(816)
 
-    def __addDownloadTask(self, url: str, fileName: str, filePath: str,
-                          headers: dict, status:str, preBlockNum: int, notCreateHistoryFile: bool, fileSize: str="-1"):
-        # 逐个对照现有任务url, 若重复则不添加
-        for card in self.cards:
-            if card.url == url:
-                InfoBar.error(
-                    title=self.tr('错误'),
-                    content=self.tr("已创建相同下载链接的任务!"),
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    # position='Custom',   # NOTE: use custom info bar manager
-                    duration=3000,
-                    parent=self.parent()
-                )
+    @Slot(dict)
+    def _createManagedTaskFromSignal(self, taskData: dict):
+        url = taskData.get('url')
+        fileName = taskData.get('fileName') 
+        filePath = taskData.get('filePath')
+        headers = taskData.get('headers', Headers) # Use default from cfg if not provided
+        preBlockNum = taskData.get('preBlockNum', cfg.preBlockNum.value)
+        taskType = taskData.get('taskType', "DefaultDownloadTask") # Default if not specified
+        initialStatus = taskData.get('initialStatus', "pending") # "pending" for new, "paused" etc. for loaded
+        taskSpecificStateForLoad = taskData.get('taskSpecificStateForLoad') # For loading existing tasks
+
+        if not url or not filePath:
+            logger.error(f"TaskInterface: Insufficient data to add task. URL or filePath missing. Data: {taskData}")
+            InfoBar.error(title=self.tr('错误'), content=self.tr("无法创建任务：URL或文件路径缺失。"), parent=self)
+            return
+        
+        # Prevent adding duplicate tasks by URL if already managed
+        for mgr in self._taskManagers:
+            task = mgr.getTask()
+            if task and task.getFileInfo() and task.getFileInfo().url == url:
+                logger.warning(f"Task with URL {url} already exists. Ignoring.")
+                InfoBar.warning(title=self.tr('提示'), content=self.tr("具有相同URL的任务已存在。"), parent=self)
                 return
 
-            try:
-                if card.fileName == fileName and card.filePath == filePath:
-                    InfoBar.error(
-                        title=self.tr('错误'),
-                        content=self.tr("已创建相同文件名和路径的任务!"),
-                        orient=Qt.Horizontal,
-                        isClosable=True,
-                        position=InfoBarPosition.TOP,
-                        # position='Custom',   # NOTE: use custom info bar manager
-                        duration=3000,
-                        parent=self.parent()
-                    )
-                    return
-            except Exception as e:
-                logger.error(f"Error while checking duplicate task: {e}")
+        actualTaskId: str
+        if taskSpecificStateForLoad and "taskId" in taskSpecificStateForLoad:
+            actualTaskId = taskSpecificStateForLoad["taskId"]
+            logger.info(f"Loading existing task with persisted taskId: {actualTaskId}")
+        else:
+            actualTaskId = str(uuid.uuid4())
+            logger.info(f"Creating new task with generated taskId: {actualTaskId}")
+        
+        managerId = f"dtm-{actualTaskId}" # Ensure managerId is also based on the correct taskId
 
-        runningTasks = [card for card in self.cards if card.status == "working"]
-
-        if len(runningTasks) >= cfg.maxTaskNum.value and status == "working":
-            status = "waiting"
-
-        _ = TaskCard(url, fileName, filePath, preBlockNum, headers, status, notCreateHistoryFile, int(fileSize), self.scrollWidget)
-
-        _.taskStatusChanged.connect(self.__handleTaskStatusChange)
-
-        self.cards.append(_)
-
-        self.expandLayout.addWidget(_)
-
-        _.show()
-
-        # 仅排序, 不考虑任务队列
-        items = []
-
-        for i in range(len(self.cards)):
-            _ = self.expandLayout.takeAt(1)  # 跳过 toolsBar
-            if _:
-                items.append(_)
-
-        items.sort(key=lambda item: self.__statusOrder[item.widget().status])
-
-        for i in items:
-            self.expandLayout.addItem(i)
-
-    @Slot()
-    def __handleTaskStatusChange(self):
-        """将任务按照 self.__statusOrder 排序;
-           进行任务队列处理;
-           并处理计划任务事件."""
-
-        if self.__blockSortTask:
+        if taskType == "DefaultDownloadTask":
+            downloadTask = DefaultDownloadTask(
+                taskId=actualTaskId, # Use the determined taskId
+                url=url,
+                headers=headers, 
+                filePath=filePath,
+                fileName=fileName or "", 
+                preBlockNum=preBlockNum,
+                autoSpeedUp=cfg.autoSpeedUp.value, 
+                fileSize=-1 # DefaultDownloadTask resolves this
+            )
+        else:
+            logger.error(f"Unsupported taskType: {taskType}")
+            InfoBar.error(title=self.tr('错误'), content=self.tr("不支持的任务类型: {}").format(taskType), parent=self)
             return
 
-        # 如果 sender 的 status 为 working, 则把 sender 移到第一个
-        try:
-            # print(self.sender().fileName)
-            if self.sender().status == "working":
-                self.expandLayout.takeAt(self.expandLayout.indexOf(self.sender()))
-                self.expandLayout.insertWidget(1, self.sender())  # 0 是 toolsBar
-        except:
-            return # sender 不是 TaskCard
+        taskManager = DefaultTaskManager(managerId=managerId)
+        taskManager.addTask(downloadTask) 
+        self._taskManagers.append(taskManager)
 
-        items = []
+        taskCard = DefaultTaskCard(taskManager=taskManager, parent=self.scrollWidget)
+        self._taskCards[actualTaskId] = taskCard # Use actualTaskId as key
 
-        for i in range(len(self.cards)):
-            _ = self.expandLayout.takeAt(1)  # 跳过 toolsBar
-            if _:
-                items.append(_)
+        taskCard.requestRemove.connect(self._handleCardRequestRemove) 
 
-        runningTasks = 0
+        self.expandLayout.addWidget(taskCard)
+        taskCard.show()
 
-        for i in items:
-            _ = i.widget()
-            if _.status == "working":
-                runningTasks += 1
-                if runningTasks > cfg.maxTaskNum.value:
-                    _.pauseTask()
-                    _.status = "waiting"
-                    _.infoLabel.setText(self.tr("排队中..."))
-                    runningTasks -= 1
-                    break
+        self._activeManagerTaskIds.add(taskManager.managerId)
+        taskManager.allTasksCompleted.connect(
+            partial(self._handleManagerAllTasksCompleted, taskManager.managerId)
+        )
 
-        if runningTasks < cfg.maxTaskNum.value:
-            for i in items:
-                _ = i.widget()
-                if _.status == "waiting":
-                    _.pauseTask()
-                    break
+        if taskSpecificStateForLoad:
+            taskManager.loadTasksState([taskSpecificStateForLoad])
+        elif initialStatus in ["pending", "working", "downloading"]:
+            taskManager.resumeTask() 
+        elif initialStatus == "paused":
+            # This case is for brand new tasks added in "paused" state from dialog
+            if not taskSpecificStateForLoad: 
+                 taskManager.pauseTask() # Ensure it's paused as per initialStatus
 
-        items.sort(key=lambda item: self.__statusOrder[item.widget().status])
+        logger.info(f"Managed task {actualTaskId} created with initial status '{initialStatus}'. ManagerID: {managerId}") # Log actualTaskId
+        self._checkIfAllManagedTasksTerminated() # Check in case this was the first task and it's already terminal
 
-        for i in items:
-            self.expandLayout.addItem(i)
 
-        if all(card.status == "finished" for card in self.cards):  # 全部任务完成
-            signalBus.allTaskFinished.emit()
+    @Slot(str) 
+    def _handleCardRequestRemove(self, taskId: str):
+        logger.info(f"TaskInterface: Received requestRemove for task {taskId}")
+        
+        managerToRemove = None
+        for manager in self._taskManagers:
+            task = manager.getTask() 
+            if task and task.taskId == taskId:
+                managerToRemove = manager
+                break
+        
+        if managerToRemove:
+            if managerToRemove.getTask(): 
+                 managerToRemove.cancelTask(taskId) 
+            
+            try:
+                # Ensure the same partial is used for disconnection
+                managerToRemove.allTasksCompleted.disconnect(
+                    partial(self._handleManagerAllTasksCompleted, managerToRemove.managerId)
+                )
+                logger.debug(f"Disconnected allTasksCompleted for manager {managerToRemove.managerId}")
+            except RuntimeError: # pragma: no cover
+                logger.warning(f"Could not disconnect allTasksCompleted for manager {managerToRemove.managerId}. Might have already been disconnected.")
+            except TypeError: # pragma: no cover
+                 logger.warning(f"TypeError disconnecting allTasksCompleted for manager {managerToRemove.managerId}.")
+
+
+            self._taskManagers.remove(managerToRemove)
+            self._activeManagerTaskIds.discard(managerToRemove.managerId)
+            logger.info(f"Task manager {managerToRemove.managerId} for task {taskId} removed from TaskInterface.")
+            self._checkIfAllManagedTasksTerminated() 
+        else:
+            logger.warning(f"TaskInterface: Task manager for task {taskId} not found for removal.")
+
+        taskCard = self._taskCards.pop(taskId, None)
+        if taskCard:
+            self.expandLayout.removeWidget(taskCard)
+            taskCard.deleteLater()
+            logger.info(f"TaskInterface: Card for task {taskId} removed from UI.")
+        else:
+            logger.warning(f"TaskInterface: Card for task {taskId} not found for removal.")
+    
+    @Slot(str)
+    def _handleManagerAllTasksCompleted(self, managerId: str):
+        logger.info(f"Manager {managerId} reported all its tasks completed.")
+        self._activeManagerTaskIds.discard(managerId)
+        self._checkIfAllManagedTasksTerminated()
+
+    def _checkIfAllManagedTasksTerminated(self):
+        if not self._activeManagerTaskIds:
+            logger.info("All managed tasks in TaskInterface have reached a terminal state or been removed.")
+            self.allManagedTasksTerminated.emit()
+        else:
+            logger.info(f"{len(self._activeManagerTaskIds)} active task managers remaining for planned shutdown consideration.")
+
+
+    def saveAllTaskStates(self) -> List[Dict]:
+        allStates = []
+        for manager in self._taskManagers:
+            taskStateList = manager.saveTasksState() 
+            if taskStateList: 
+                allStates.extend(taskStateList)
+        logger.info(f"Saved states for {len(allStates)} tasks.")
+        return allStates
 
     def allStartTasks(self):
-        runningTasks = 0
-
-        self.__blockSortTask = True
-
-        for card in self.cards:
-            if card.status == "working":
-                runningTasks += 1
-                continue
-            if card.status == "paused":
-                if runningTasks < cfg.maxTaskNum.value:
-                    card.pauseTask()
-                    runningTasks += 1
-                else:
-                    card.status = "waiting"
-                    card.infoLabel.setText("排队中...")
-
-        self.__blockSortTask = False
+        logger.info("TaskInterface: All Start Tasks requested.")
+        for manager in self._taskManagers:
+            manager.resumeAllTasks() 
 
     def allPauseTasks(self):
-        self.__blockSortTask = True
-
-        for card in self.cards:
-            if card.status == "paused":
-                continue
-            if card.status == "waiting":
-                card.status = "paused"
-                card.infoLabel.setText(self.tr("任务已经暂停"))
-            if card.status == "working":
-                card.pauseTask()
-
-        self.__blockSortTask = False
+        logger.info("TaskInterface: All Pause Tasks requested.")
+        for manager in self._taskManagers:
+            manager.pauseAllTasks()
 
     def allCancelTasks(self):
-        self.__blockSortTask = True
-
-        ok, completely = DelDialog.getCompletely(self.window())
+        logger.info("TaskInterface: All Cancel Tasks requested.")
+        ok, _ = DelDialog.getCompletely(self.window()) 
         if ok:
-            cards = self.cards.copy()  # 防止列表变化导致迭代器异常
-
-            for card in cards:
-                card.cancelTask(True, completely)
-
-            del cards
-
-        self.__blockSortTask = False
-
-    def __onPlanTaskToggleBtnClicked(self):
-        if not self.planTaskToggleButton.isChecked():  # 取消计划任务
-            signalBus.allTaskFinished.disconnect()
-        if self.planTaskToggleButton.isChecked():  # 设定计划任务
+            for manager in list(self._taskManagers):
+                manager.cancelAllTasks()
+        
+    def _onPlanTaskToggleBtnClicked(self): 
+        if not self.planTaskToggleButton.isChecked():  
+            try: 
+                self.allManagedTasksTerminated.disconnect(QApplication.instance().quit)
+                logger.info("Planned shutdown (quit on all tasks finished) disabled.")
+            except RuntimeError: # pragma: no cover
+                logger.debug("Tried to disconnect quit for planned task, but was not connected.")
+        if self.planTaskToggleButton.isChecked():  
             if PlanTaskDialog(self.window()).exec():
                 self.planTaskToggleButton.setChecked(True)
+                self.allManagedTasksTerminated.connect(QApplication.instance().quit)
+                logger.info("Planned shutdown (quit on all tasks finished) enabled.")
+                self._checkIfAllManagedTasksTerminated() # Check if all tasks already done
             else:
                 self.planTaskToggleButton.setChecked(False)

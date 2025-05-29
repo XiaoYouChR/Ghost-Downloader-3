@@ -4,7 +4,7 @@ from PySide6.QtCore import QObject, Signal
 
 class SignalBus(QObject):
     """ Signal bus """
-    addTaskSignal = Signal(str, str, str, dict, str, int, bool, str)  # url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, fileSize
+    addTaskSignal = Signal(dict)  # Updated to emit a dictionary
     allTaskFinished = Signal()
     appErrorSig = Signal(str)
 

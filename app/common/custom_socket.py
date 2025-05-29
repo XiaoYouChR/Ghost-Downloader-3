@@ -65,7 +65,7 @@ class GhostDownloaderSocketServer(QObject):
                 bringWindowToTop(mainWindow)
                 mainWindow.showAddTaskDialog(url, headers)
             else:
-                addDownloadTask(url, filename, headers=headers)
+                addDownloadTask(url=url, fileName=filename, filePath=str(cfg.downloadFolder.value), headers=headers)
                 if filename:
                     ReceivedPopUpWindow.showPopUpWindow(filename, self.parent())
                 else:
