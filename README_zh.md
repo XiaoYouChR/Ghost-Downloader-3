@@ -65,10 +65,10 @@
   - ✅ 升级 Qt 版本
   - ✅ 实现 HttpClient 复用
   - ✅ 用协程来代替部分多线程功能
-- ❌ MVC → MVVM 以及由事件驱动的架构重构 (开发中...详见分支: feature/Plugins)
+- ❌ MVC → MVVM 以及由事件驱动的架构重构 (开发中...详见分支: feature/Structure)
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Client 等强大功能)
 - ❌ 磁力 / BT 下载 (考虑使用 libtorrent 实现)
-- ❌ 强大的插件功能
+- ❌ 强大的插件功能 (开发中...详见分支: feature/Plugins)
 - ❌ 强大的浏览器插件功能
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。

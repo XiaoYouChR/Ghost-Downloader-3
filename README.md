@@ -64,11 +64,11 @@
 - ✅ Memory optimization
   - ✅ Upgrade Qt version
   - ✅ Implement HttpClient reuse
-  - ✅ Replace some multithreading with coroutines
-- ❌ MVC → MVVM upgrade and a new architecture based on events (In progress...see branch: feature/Plugins)
+  - ✅ Replace some multithreading with coroutines (In progress...see branch: feature/Structure)
+- ❌ MVC → MVVM upgrade and a new architecture based on events 
 - ❌ Enhanced task editing (powerful features like binding multiple Clients to one task)
 - ❌ Magnet/BT download (Considering libtorrent implementation)
-- ❌ Powerful plugin system
+- ❌ Powerful plugin system (In progress...see branch: feature/Plugins)
 - ❌ Powerful browser extension features
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
