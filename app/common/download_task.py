@@ -15,15 +15,7 @@ from loguru import logger
 
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
-
-@dataclass
-class AutoSpeedUpVars:
-    maxSpeedPerConnect: int = 1
-    additionalTaskNum: int = 0
-    formerAvgSpeed: float = 0
-    duringTime: int = 0
-    targetSpeed: float = 0
-    
+from app.common.speed_up_util import *
 
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
@@ -530,30 +522,9 @@ class DownloadTask(QThread):
 
     def __handleAutoSpeedUp(self, avgSpeed, vars: AutoSpeedUpVars):
         """Handle auto speed-up logic to optimize download speed"""
-        # Update time counter and return if not ready for optimization
-        if vars.duringTime < 10:
-            vars.duringTime += 1
-            return
+        recoder = SpeedRecoder(self.progress)
+        
 
-        # Reset counter for next interval
-        vars.duringTime = 0
-
-        # Calculate speed per connection
-        speedPerConnect = avgSpeed / len(self.tasks) if self.tasks else 1
-
-        # Update max speed per connection if current is higher
-        self.__updateMaxSpeedPerConnect(speedPerConnect, vars)
-
-        # Check if we should add more workers based on efficiency
-        if avgSpeed < vars.targetSpeed:
-            return  # Current efficiency is not good enough
-
-        # Current efficiency is good, prepare for adding more workers
-        self.__prepareForMoreWorkers(avgSpeed, vars)
-
-        # Add more workers if we haven't reached the limit
-        if len(self.tasks) < 253:
-            self.__addMoreWorkers(4)
 
     def __updateMaxSpeedPerConnect(self, speedPerConnect, vars: AutoSpeedUpVars):
         """Update maximum speed per connection if current is higher"""
@@ -725,33 +696,3 @@ class DownloadTask(QThread):
         except Exception as e:
             logger.error(f"Error cleaning up event loop: {e}")
 
-
-
-class SpeedRecoder:
-    def __init__(self,process = 0):
-        self.process = process
-        self.start_time = time.time()
-
-    def reset(self, process):
-        self.process = process
-        self.start_time = time.time()
-
-    def flash(self, process):
-        
-        d_time = time.time() - self.start_time
-        #if d_time != 0:
-        speed = (process - self.process) / (d_time)
-        #else:
-        #    logger.warning("Time cannot be zero")
-        #    speed = 0
-        #    d_time = 0.01#天天出花里胡哨的bug烦死我了
-        return SpeedInfo(speed, d_time)
-
-
-class SpeedInfo:
-    def __init__(self, speed = 0, time = 1):
-        if time != 0:
-            self.speed = speed
-            self.time = time
-        else:
-            raise ValueError("Time cannot be zero")
