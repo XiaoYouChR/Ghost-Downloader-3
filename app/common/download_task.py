@@ -2,6 +2,7 @@ import asyncio
 import struct
 import sys
 import time
+from dataclasses import dataclass,field
 from abc import ABC, abstractmethod
 from asyncio import Task
 from pathlib import Path
@@ -716,8 +717,14 @@ class DownloadTask(QThread):
         except Exception as e:
             logger.error(f"Error cleaning up event loop: {e}")
 
-
-
+@dataclass
+class AutoSpeedUpVars:
+    maxSpeedPerConnect: int = 1
+    additionalTaskNum: int = 0
+    formerAvgSpeed: float = 0
+    duringTime: int = 0
+    targetSpeed: float = 0
+    
 
 class SpeedRecoder:
     def __init__(self,process = 0):
