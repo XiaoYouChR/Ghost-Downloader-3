@@ -531,12 +531,12 @@ class DownloadTask(QThread):
     def __handleAutoSpeedUp(self, avgSpeed, vars: AutoSpeedUpVars):
         """Handle auto speed-up logic to optimize download speed"""
         # Update time counter and return if not ready for optimization
-        if vars['duringTime'] < 10:
-            vars['duringTime'] += 1
+        if vars.duringTime < 10:
+            vars.duringTime += 1
             return
 
         # Reset counter for next interval
-        vars['duringTime'] = 0
+        vars.duringTime = 0
 
         # Calculate speed per connection
         speedPerConnect = avgSpeed / len(self.tasks) if self.tasks else 1
@@ -545,7 +545,7 @@ class DownloadTask(QThread):
         self.__updateMaxSpeedPerConnect(speedPerConnect, vars)
 
         # Check if we should add more workers based on efficiency
-        if avgSpeed < vars['targetSpeed']:
+        if avgSpeed < vars.targetSpeed:
             return  # Current efficiency is not good enough
 
         # Current efficiency is good, prepare for adding more workers
@@ -557,17 +557,17 @@ class DownloadTask(QThread):
 
     def __updateMaxSpeedPerConnect(self, speedPerConnect, vars: AutoSpeedUpVars):
         """Update maximum speed per connection if current is higher"""
-        if speedPerConnect <= vars['maxSpeedPerConnect']:
+        if speedPerConnect <= vars.maxSpeedPerConnect:
             return
 
-        vars['maxSpeedPerConnect'] = speedPerConnect
-        vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
+        vars.maxSpeedPerConnect = speedPerConnect
+        vars.targetSpeed = (0.85 * vars.maxSpeedPerConnect * vars.additionalTaskNum) + vars.formerAvgSpeed
 
     def __prepareForMoreWorkers(self, avgSpeed, vars: AutoSpeedUpVars):
         """Prepare variables for adding more workers"""
-        vars['formerAvgSpeed'] = avgSpeed
-        vars['additionalTaskNum'] = 4
-        vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
+        vars.formerAvgSpeed = avgSpeed
+        vars.additionalTaskNum = 4
+        vars.targetSpeed = (0.85 * vars.maxSpeedPerConnect * vars.additionalTaskNum) + vars.formerAvgSpeed
 
     def __addMoreWorkers(self, count):
         """Add more workers to improve download speed"""
