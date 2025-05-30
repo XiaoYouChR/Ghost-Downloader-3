@@ -16,6 +16,14 @@ from loguru import logger
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
 
+@dataclass
+class AutoSpeedUpVars:
+    maxSpeedPerConnect: int = 1
+    additionalTaskNum: int = 0
+    formerAvgSpeed: float = 0
+    duringTime: int = 0
+    targetSpeed: float = 0
+    
 
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
@@ -435,13 +443,13 @@ class DownloadTask(QThread):
         # Initialize auto speed-up variables if enabled
         speedUpVars = None
         if self.autoSpeedUp:
-            speedUpVars = {
-                'maxSpeedPerConnect': 1,  # Prevent division by zero
-                'additionalTaskNum': len(self.tasks),  # For calculating average speed per thread
-                'formerAvgSpeed': 0,  # Speed before optimization
-                'duringTime': 0,  # Time interval for speed calculation (10 seconds)
-                'targetSpeed': 0  # Target speed for optimization
-            }
+            speedUpVars = AutoSpeedUpVars(
+                maxSpeedPerConnect = 1,  # Prevent division by zero
+                additionalTaskNum = len(self.tasks),  # For calculating average speed per thread
+                formerAvgSpeed = 0,  # Speed before optimization
+                duringTime = 0,  # Time interval for speed calculation (10 seconds)
+                targetSpeed = 0  # Target speed for optimization
+            )
 
         # Monitor until download is complete
         while self.progress != self.fileSize:
@@ -520,7 +528,7 @@ class DownloadTask(QThread):
         self.speedChanged.emit(avgSpeed)
         return avgSpeed
 
-    def __handleAutoSpeedUp(self, avgSpeed, vars):
+    def __handleAutoSpeedUp(self, avgSpeed, vars: AutoSpeedUpVars):
         """Handle auto speed-up logic to optimize download speed"""
         # Update time counter and return if not ready for optimization
         if vars['duringTime'] < 10:
@@ -547,7 +555,7 @@ class DownloadTask(QThread):
         if len(self.tasks) < 253:
             self.__addMoreWorkers(4)
 
-    def __updateMaxSpeedPerConnect(self, speedPerConnect, vars):
+    def __updateMaxSpeedPerConnect(self, speedPerConnect, vars: AutoSpeedUpVars):
         """Update maximum speed per connection if current is higher"""
         if speedPerConnect <= vars['maxSpeedPerConnect']:
             return
@@ -555,7 +563,7 @@ class DownloadTask(QThread):
         vars['maxSpeedPerConnect'] = speedPerConnect
         vars['targetSpeed'] = (0.85 * vars['maxSpeedPerConnect'] * vars['additionalTaskNum']) + vars['formerAvgSpeed']
 
-    def __prepareForMoreWorkers(self, avgSpeed, vars):
+    def __prepareForMoreWorkers(self, avgSpeed, vars: AutoSpeedUpVars):
         """Prepare variables for adding more workers"""
         vars['formerAvgSpeed'] = avgSpeed
         vars['additionalTaskNum'] = 4
@@ -717,14 +725,7 @@ class DownloadTask(QThread):
         except Exception as e:
             logger.error(f"Error cleaning up event loop: {e}")
 
-@dataclass
-class AutoSpeedUpVars:
-    maxSpeedPerConnect: int = 1
-    additionalTaskNum: int = 0
-    formerAvgSpeed: float = 0
-    duringTime: int = 0
-    targetSpeed: float = 0
-    
+
 
 class SpeedRecoder:
     def __init__(self,process = 0):
