@@ -15,7 +15,7 @@ from loguru import logger
 
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
-from app.common.dto import *
+from app.common.dto import SpeedInfo, SpeedRecoder
 
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
@@ -35,7 +35,33 @@ class DownloadWorker:
     def isCompleted(self) -> bool:
         """Check if worker has completed its task"""
         return self.progress >= self.endPos
+    
+    @property
+    def task(self):
+        if hasattr(self, '_task'):
+            return self._task
+        else:
+            logger.error("Task not set yet")
 
+    @task.setter
+    def task(self, task: asyncio.Task):
+        if not self.running:
+            self._task = task
+        else:
+            self._task.cancel()
+            self._task = task
+            logger.warning("Task is running, cancell old task before setting new one")
+
+    @property
+    def running(self) -> bool:
+        if hasattr(self, '_task'):
+            return not self._task.done()
+        else:
+            return False
+    
+    def cancel(self):
+        if hasattr(self, '_task'):
+            self._task.cancel()
 
 class WorkerStrategy(ABC):
     """Base strategy for handling download workers"""
@@ -58,6 +84,8 @@ class ParallelDownloadStrategy(WorkerStrategy):
         """Handle parallel download for a specific worker"""
         if worker.isCompleted:
             worker.progress = worker.endPos
+            logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
+            return
 
         finished = False
         while not finished:
@@ -105,6 +133,8 @@ class SingleDownloadStrategy(WorkerStrategy):
         """Handle non-parallel download for a worker"""
         if worker.isCompleted:
             worker.progress = worker.endPos
+            logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
+            return
 
         finished = False
         while not finished:
@@ -218,10 +248,16 @@ class DownloadTask(QThread):
         maxRemainingBytes = 0
 
         for worker in self.workers:
-            remainingBytes = worker.remainingBytes
-            if remainingBytes > maxRemainingBytes:
-                maxRemainingBytes = remainingBytes
-                workerWithMaxRemaining = worker
+            if worker.running:
+                remainingBytes = worker.remainingBytes
+                if remainingBytes > maxRemainingBytes:
+                    maxRemainingBytes = remainingBytes
+                    workerWithMaxRemaining = worker
+            elif not worker.isCompleted:
+                #总是优先运行未运行的worker
+                worker.task = self.loop.create_task(self.handleWorker(worker))
+                return
+            
 
         # Check if we should split the workload
         minReassignSize = cfg.maxReassignSize.value * 1048576  # Convert to bytes
@@ -243,7 +279,8 @@ class DownloadTask(QThread):
             newWorker = DownloadWorker(newStartPos, newStartPos, originalEndPos, self.client)
 
             # Create task for the new worker
-            newTask = self.loop.create_task(self.downloadStrategy.handleWorker(newWorker))
+            newTask = self.loop.create_task(self.handleWorker(newWorker))
+            newWorker.task = newTask
 
             # Add new worker and task to their respective lists
             insertIndex = self.workers.index(workerWithMaxRemaining) + 1
@@ -398,9 +435,15 @@ class DownloadTask(QThread):
             self.downloadStrategy = ParallelDownloadStrategy(self.file, self.client, self.url)
 
             # Create tasks for all workers
+            created = 0
             for worker in self.workers:
-                task = asyncio.create_task(self.downloadStrategy.handleWorker(worker))
-                self.tasks.append(task)
+                if not worker.isCompleted:
+                    task = asyncio.create_task(self.handleWorker(worker))
+                    worker.task = task
+                    self.tasks.append(task)
+                    created += 1
+                    if created >= self.preBlockNum:
+                        break
 
             # Open history file for parallel downloads
             self.ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
@@ -413,7 +456,8 @@ class DownloadTask(QThread):
 
             # Create a single task for the worker
             logger.debug(f"Task {self.fileName}: Starting single thread download")
-            task = asyncio.create_task(self.downloadStrategy.handleWorker(self.workers[0]))
+            task = asyncio.create_task(self.handleWorker(self.workers[0]))
+            self.workers[0].task = task
             self.tasks.append(task)
 
     async def __supervisor(self):
@@ -460,7 +504,7 @@ class DownloadTask(QThread):
                     taskNum = len(self.tasks)
                     formerInfo = info
                     recoder.reset(self.progress)
-                    logger.info('taskNum changed')
+                    logger.info(f'taskNum changed:{len(self.tasks)}')
                 
                 elif recoder.flash(self.progress).time > 60:  #每60秒强制刷新
                     recoder.reset(self.progress)
@@ -476,6 +520,7 @@ class DownloadTask(QThread):
                     efficiency = speedDeltaPerNewThread / maxSpeedPerConnect
                     offset = accuracy / info.time
                     logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}')
+                    logger.debug(f"offset: {offset}, accuracy: {accuracy}, efficiency: {efficiency}")
                     if efficiency >= threshold + offset:
                         logger.debug(f'自动提速增加新线程  {efficiency}')
 
@@ -487,6 +532,12 @@ class DownloadTask(QThread):
             # Wait before next update
             await asyncio.sleep(1)
 
+    async def handleWorker(self, worker: DownloadWorker):
+        await self.downloadStrategy.handleWorker(worker)
+        if not self.autoSpeedUp:# 如果开启了自动提速，则重新分配工作线程由自动提速控制
+            print("autoSpeedUp is off, reassigning worker")
+            self.__reassignWorker()
+    
     async def __runSingleSupervisor(self, lastProgress):
         """Supervisor for non-parallel downloads"""
         # Monitor until download is complete (marked by isCompleted flag)
