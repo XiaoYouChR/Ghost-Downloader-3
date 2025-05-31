@@ -15,7 +15,7 @@ from loguru import logger
 
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
-from app.common.speed_up_util import *
+from app.common.dto import *
 
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
