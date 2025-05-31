@@ -435,13 +435,14 @@ class DownloadTask(QThread):
         # Initialize auto speed-up variables if enabled
         speedUpVars = None
         if self.autoSpeedUp:
-            speedUpVars = AutoSpeedUpVars(
-                maxSpeedPerConnect = 1,  # Prevent division by zero
-                additionalTaskNum = len(self.tasks),  # For calculating average speed per thread
-                formerAvgSpeed = 0,  # Speed before optimization
-                duringTime = 0,  # Time interval for speed calculation (10 seconds)
-                targetSpeed = 0  # Target speed for optimization
-            )
+            recoder = SpeedRecoder(self.progress)
+            threshold = 0.1 # 判断阈值
+            accuracy = 1  # 判断精度
+
+            info = SpeedInfo()
+            formerInfo = SpeedInfo()
+            formerTaskNum = taskNum = 0
+            maxSpeedPerConnect = 1
 
         # Monitor until download is complete
         while self.progress != self.fileSize:
@@ -455,8 +456,35 @@ class DownloadTask(QThread):
 
             # Handle auto speed-up if enabled
             if self.autoSpeedUp:
-                self.__handleAutoSpeedUp(avgSpeed, speedUpVars)
+                if taskNum != len(self.tasks):
+                    formerTaskNum = taskNum
+                    taskNum = len(self.tasks)
+                    formerInfo = info
+                    recoder.reset(self.progress)
+                    logger.info('taskNum changed')
+                
+                elif recoder.flash(self.progress).time > 60:
+                    recoder.reset(self.progress)
 
+                else:
+                    info = recoder.flash(self.progress)
+                    if len(self.tasks) > 0:
+                        speedPerConnect = info.speed / len(self.tasks)
+                        if speedPerConnect > maxSpeedPerConnect:
+                            maxSpeedPerConnect = speedPerConnect
+                    
+                    speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
+                    efficiency = speedDeltaPerNewThread / maxSpeedPerConnect
+                    offset = accuracy / info.time
+                    logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}')
+                    if efficiency >= threshold + offset:
+                        logger.debug(f'自动提速增加新线程  {efficiency}')
+
+                        if len(self.tasks) < 256:
+                            self.__reassignWorker()
+                    if len(self.tasks) == 0 and self.progress < self.fileSize:
+                        logger.info('没有线程了，重新分配工作线程')
+                        self.__reassignWorker()
             # Wait before next update
             await asyncio.sleep(1)
 
