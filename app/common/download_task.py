@@ -481,7 +481,7 @@ class DownloadTask(QThread):
             recoder = SpeedRecoder(self.progress)
             threshold = 0.1 # 判断阈值
             accuracy = 1  # 判断精度
-
+            logger.info(f'自动提速阈值：{threshold}, 精度：{accuracy}')
             info = SpeedInfo()
             formerInfo = SpeedInfo()
             formerTaskNum = taskNum = 0
@@ -506,11 +506,11 @@ class DownloadTask(QThread):
                     recoder.reset(self.progress)
                     logger.info(f'taskNum changed:{len(self.tasks)}')
                 
-                elif recoder.flash(self.progress).time > 60:  #每60秒强制刷新
+                elif recoder.flash(self.progress).time > 60:  #每60秒强制重置
                     recoder.reset(self.progress)
 
-                else:
-                    info = recoder.flash(self.progress) #主逻辑
+                else:                                         #主逻辑
+                    info = recoder.flash(self.progress) 
                     if len(self.tasks) > 0:
                         speedPerConnect = info.speed / len(self.tasks)
                         if speedPerConnect > maxSpeedPerConnect:
@@ -519,8 +519,7 @@ class DownloadTask(QThread):
                     speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
                     efficiency = speedDeltaPerNewThread / maxSpeedPerConnect
                     offset = accuracy / info.time
-                    logger.debug(f'speed:{getReadableSize(info.speed)}  {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency {efficiency}')
-                    logger.debug(f"offset: {offset}, accuracy: {accuracy}, efficiency: {efficiency}")
+                    logger.debug(f'speed:{getReadableSize(info.speed)}/s {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency:{efficiency:.2f}, offset:{offset:.2f}, time:{info.time:.2f}s')
                     if efficiency >= threshold + offset:
                         logger.debug(f'自动提速增加新线程  {efficiency}')
 
@@ -597,31 +596,6 @@ class DownloadTask(QThread):
         avgSpeed = sum(self.historySpeed) / 10
         self.speedChanged.emit(avgSpeed)
         return avgSpeed
-
-    # def __handleAutoSpeedUp(self, avgSpeed, vars: AutoSpeedUpVars):
-    #     """Handle auto speed-up logic to optimize download speed"""
-    #     recoder = SpeedRecoder(self.progress)
-        
-
-
-    # def __updateMaxSpeedPerConnect(self, speedPerConnect, vars: AutoSpeedUpVars):
-    #     """Update maximum speed per connection if current is higher"""
-    #     if speedPerConnect <= vars.maxSpeedPerConnect:
-    #         return
-
-    #     vars.maxSpeedPerConnect = speedPerConnect
-    #     vars.targetSpeed = (0.85 * vars.maxSpeedPerConnect * vars.additionalTaskNum) + vars.formerAvgSpeed
-
-    # def __prepareForMoreWorkers(self, avgSpeed, vars: AutoSpeedUpVars):
-    #     """Prepare variables for adding more workers"""
-    #     vars.formerAvgSpeed = avgSpeed
-    #     vars.additionalTaskNum = 4
-    #     vars.targetSpeed = (0.85 * vars.maxSpeedPerConnect * vars.additionalTaskNum) + vars.formerAvgSpeed
-
-    # def __addMoreWorkers(self, count):
-    #     """Add more workers to improve download speed"""
-    #     for _ in range(count):
-    #         self.__reassignWorker()
 
     async def __main(self):
         """Main download execution flow"""
