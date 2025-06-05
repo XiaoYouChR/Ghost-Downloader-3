@@ -220,6 +220,7 @@ class DownloadTask(QThread):
         # Worker and task management
         self.workers: List[DownloadWorker] = []
         self.tasks: List[Task] = []
+        self.doneTask: int = 0  # Count of completed tasks
         self.supervisorTask = None
         self.downloadStrategy = None
 
@@ -240,6 +241,7 @@ class DownloadTask(QThread):
         # Initialize task in a separate thread
         self.initThread = Thread(target=self.__initTask, daemon=True)
         self.initThread.start()
+
 
     def __reassignWorker(self):
         """Find the worker with the most remaining work and split its workload"""
@@ -499,20 +501,20 @@ class DownloadTask(QThread):
 
             # Handle auto speed-up if enabled
             if self.autoSpeedUp:
-                if taskNum != len(self.tasks):  #如果线程数发生变化：
+                if taskNum != self.taskNum:  #如果线程数发生变化：
                     formerTaskNum = taskNum
-                    taskNum = len(self.tasks)
+                    taskNum = self.taskNum
                     formerInfo = info
                     recoder.reset(self.progress)
-                    logger.info(f'taskNum changed:{len(self.tasks)}')
+                    logger.info(f'taskNum changed:{self.taskNum}')
                 
                 elif recoder.flash(self.progress).time > 60:  #每60秒强制重置
                     recoder.reset(self.progress)
 
                 else:                                         #主逻辑
                     info = recoder.flash(self.progress) 
-                    if len(self.tasks) > 0:
-                        speedPerConnect = info.speed / len(self.tasks)
+                    if self.taskNum > 0:
+                        speedPerConnect = info.speed / self.taskNum
                         if speedPerConnect > maxSpeedPerConnect:
                             maxSpeedPerConnect = speedPerConnect
                     
@@ -523,9 +525,9 @@ class DownloadTask(QThread):
                     if efficiency >= threshold + offset:
                         logger.debug(f'自动提速增加新线程  {efficiency}')
 
-                        if len(self.tasks) < 256:
+                        if self.taskNum < 256:
                             self.__reassignWorker()
-                    if len(self.tasks) == 0 and self.progress < self.fileSize:
+                    if self.taskNum == 0 and self.progress < self.fileSize:
                         logger.info('没有线程了，立即重新分配工作线程')
                         self.__reassignWorker()
             # Wait before next update
@@ -536,6 +538,7 @@ class DownloadTask(QThread):
         if not self.autoSpeedUp:# 如果开启了自动提速，则重新分配工作线程由自动提速控制
             print("autoSpeedUp is off, reassigning worker")
             self.__reassignWorker()
+        self.doneTask += 1
     
     async def __runSingleSupervisor(self, lastProgress):
         """Supervisor for non-parallel downloads"""
@@ -747,4 +750,9 @@ class DownloadTask(QThread):
             self.loop.close()
         except Exception as e:
             logger.error(f"Error cleaning up event loop: {e}")
+    
+    @property
+    def taskNum(self) -> int:
+        """Get the number of active tasks"""
+        return len(self.tasks) - self.doneTask
 
