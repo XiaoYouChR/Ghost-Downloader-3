@@ -2,12 +2,12 @@ import asyncio
 import struct
 import sys
 import time
-from dataclasses import dataclass,field
 from abc import ABC, abstractmethod
 from asyncio import Task
 from pathlib import Path
 from threading import Thread
 from typing import List
+from asyncio import CancelledError
 
 import httpx
 from PySide6.QtCore import QThread, Signal
@@ -15,7 +15,7 @@ from loguru import logger
 
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
-from app.common.dto import SpeedInfo, SpeedRecoder
+from app.common.dto import SpeedInfo, SpeedRecorder
 
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
@@ -480,10 +480,10 @@ class DownloadTask(QThread):
         """Supervisor for parallel downloads with history tracking and speed optimization"""
         # Initialize auto speed-up variables if enabled
         if self.autoSpeedUp:
-            recoder = SpeedRecoder(self.progress)
-            threshold = 0.1 # 判断阈值
-            accuracy = 1  # 判断精度
-            logger.info(f'自动提速阈值：{threshold}, 精度：{accuracy}')
+            BASE_UTILIZATION_THRESHOLD = 0.1 # 判断阈值
+            TIME_WEIGHT_FACTOR = 1  # 判断精度
+            recoder = SpeedRecorder(self.progress)
+            logger.info(f'自动提速阈值：{ BASE_UTILIZATION_THRESHOLD}, 精度：{TIME_WEIGHT_FACTOR}')
             info = SpeedInfo()
             formerInfo = SpeedInfo()
             formerTaskNum = taskNum = 0
@@ -504,26 +504,27 @@ class DownloadTask(QThread):
                 if taskNum != self.taskNum:  #如果线程数发生变化：
                     formerTaskNum = taskNum
                     taskNum = self.taskNum
-                    formerInfo = info
+                    formerInfo: SpeedInfo = info
                     recoder.reset(self.progress)
                     logger.info(f'taskNum changed:{self.taskNum}')
                 
-                elif recoder.flash(self.progress).time > 60:  #每60秒强制重置
+                elif recoder.update(self.progress).time > 60:  #每60秒强制重置
                     recoder.reset(self.progress)
 
                 else:                                         #主逻辑
-                    info = recoder.flash(self.progress) 
+                    info: SpeedInfo = recoder.update(self.progress) 
                     if self.taskNum > 0:
                         speedPerConnect = info.speed / self.taskNum
                         if speedPerConnect > maxSpeedPerConnect:
                             maxSpeedPerConnect = speedPerConnect
                     
-                    speedDeltaPerNewThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
-                    efficiency = speedDeltaPerNewThread / maxSpeedPerConnect
-                    offset = accuracy / info.time
-                    logger.debug(f'speed:{getReadableSize(info.speed)}/s {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = efficiency:{efficiency:.2f}, offset:{offset:.2f}, time:{info.time:.2f}s')
-                    if efficiency >= threshold + offset:
-                        logger.debug(f'自动提速增加新线程  {efficiency}')
+                    speedIncreasePerThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
+                    threadUtilization = speedIncreasePerThread / maxSpeedPerConnect
+                    timeCompensation = TIME_WEIGHT_FACTOR / info.time
+                    logger.debug(f'speed:{getReadableSize(info.speed)}/s {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = threadUtilization:{threadUtilization:.2f}, timeCompensation:{timeCompensation:.2f}, time:{info.time:.2f}s')
+                    adjustedEfficiencyThreshold =  BASE_UTILIZATION_THRESHOLD + timeCompensation
+                    if threadUtilization >= adjustedEfficiencyThreshold:
+                        logger.debug(f'自动提速增加新线程  {threadUtilization}')
 
                         if self.taskNum < 256:
                             self.__reassignWorker()

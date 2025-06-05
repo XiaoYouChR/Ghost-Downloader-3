@@ -1,30 +1,26 @@
 from time import time
 
 class SpeedInfo:
-    def __init__(self, speed = 0, time = 1):
-        if time != 0:
+    __slot__ = ('speed', 'time')
+    def __init__(self, speed = 0, elapsedTime = 1):
+        if elapsedTime != 0:
             self.speed = speed
-            self.time = time
+            self.time = elapsedTime
         else:
             raise ValueError("Time cannot be zero")
 
-class SpeedRecoder:
-    def __init__(self,process = 0):
-        self.process = process
-        self.start_time = time()
+class SpeedRecorder:
+    __slot__ = ('progress', 'startTime')
+    def __init__(self, progress = 0):
+        self.progress = progress
+        self.startTime = time()
 
-    def reset(self, process):
-        self.process = process
-        self.start_time = time()
+    def reset(self, progress):
+        self.progress = progress
+        self.startTime = time()
 
-    def flash(self, process) -> SpeedInfo:
-        
-        d_time = time() - self.start_time
-        #if d_time != 0:
-        speed = (process - self.process) / (d_time)
-        #else:
-        #    logger.warning("Time cannot be zero")
-        #    speed = 0
-        #    d_time = 0.01#天天出花里胡哨的bug烦死我了
-        return SpeedInfo(speed, d_time)
+    def update(self, progress) -> SpeedInfo:
+        elapsedTime = time() - self.startTime
+        speed = (progress - self.progress) / elapsedTime
+        return SpeedInfo(speed, elapsedTime)
     
