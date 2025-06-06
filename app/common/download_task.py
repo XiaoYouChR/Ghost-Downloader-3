@@ -116,7 +116,7 @@ class ParallelDownloadStrategy(WorkerStrategy):
                 finished = True
 
             except Exception as e:
-                logger.info(f"Thread {worker.startPos}-{worker.endPos} is reconnecting, Error: {repr(e)}")
+                logger.info(f"Thread {worker.startPos}-{worker.endPos} is reconnecting, progress: {worker.progress}, Error: {repr(e)}")
                 await asyncio.sleep(5)
 
         worker.progress = worker.endPos
