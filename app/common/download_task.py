@@ -523,20 +523,16 @@ class DownloadTask(QThread):
                     timeCompensation = TIME_WEIGHT_FACTOR / info.time
                     logger.debug(f'speed:{getReadableSize(info.speed)}/s {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = threadUtilization:{threadUtilization:.2f}, timeCompensation:{timeCompensation:.2f}, time:{info.time:.2f}s')
                     adjustedEfficiencyThreshold =  BASE_UTILIZATION_THRESHOLD + timeCompensation
-                    if threadUtilization >= adjustedEfficiencyThreshold:
+                    
+                    if threadUtilization >= adjustedEfficiencyThreshold and self.taskNum < 256:
                         logger.debug(f'自动提速增加新线程  {threadUtilization}')
-
-                        if self.taskNum < 256:
-                            self.__reassignWorker()
-                    if self.taskNum == 0 and self.progress < self.fileSize:
-                        logger.info('没有线程了，立即重新分配工作线程')
                         self.__reassignWorker()
             # Wait before next update
             await asyncio.sleep(1)
 
     async def handleWorker(self, worker: DownloadWorker):
         await self.downloadStrategy.handleWorker(worker)
-        if not self.autoSpeedUp:# 如果开启了自动提速，则重新分配工作线程由自动提速控制
+        if not self.autoSpeedUp or self.taskNum <= self.preBlockNum:# 如果开启了自动提速且添加了额外线程，则重新分配工作线程由自动提速控制
             print("autoSpeedUp is off, reassigning worker")
             self.__reassignWorker()
         self.doneTask += 1
