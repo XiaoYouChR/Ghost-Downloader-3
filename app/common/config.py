@@ -119,6 +119,8 @@ AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 FIREFOX_ADDONS_URL = "https://addons.mozilla.org/zh-CN/firefox/addon/ghost-downloader/"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
+BASE_UTILIZATION_THRESHOLD = 0.1 # 判断阈值
+TIME_WEIGHT_FACTOR = 1  # 判断精度
 
 Headers = {
     "accept-encoding": "deflate, br, gzip",

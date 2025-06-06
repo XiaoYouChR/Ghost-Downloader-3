@@ -7,15 +7,15 @@ from asyncio import Task
 from pathlib import Path
 from threading import Thread
 from typing import List
-from asyncio import CancelledError
 
 import httpx
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
-from app.common.config import cfg
-from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
+from app.common.config import cfg, BASE_UTILIZATION_THRESHOLD, TIME_WEIGHT_FACTOR
 from app.common.dto import SpeedInfo, SpeedRecorder
+from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
+
 
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
@@ -478,11 +478,10 @@ class DownloadTask(QThread):
 
     async def __runParallelSupervisor(self, lastProgress):
         """Supervisor for parallel downloads with history tracking and speed optimization"""
-        # Initialize auto speed-up variables if enabled
+        # Initialize smart-boost variables if enabled
         if self.autoSpeedUp:
-            BASE_UTILIZATION_THRESHOLD = 0.1 # 判断阈值
-            TIME_WEIGHT_FACTOR = 1  # 判断精度
-            recoder = SpeedRecorder(self.progress)
+
+            recorder = SpeedRecorder(self.progress)
             logger.info(f'自动提速阈值：{ BASE_UTILIZATION_THRESHOLD}, 精度：{TIME_WEIGHT_FACTOR}')
             info = SpeedInfo()
             formerInfo = SpeedInfo()
@@ -505,14 +504,14 @@ class DownloadTask(QThread):
                     formerTaskNum = taskNum
                     taskNum = self.taskNum
                     formerInfo: SpeedInfo = info
-                    recoder.reset(self.progress)
+                    recorder.reset(self.progress)
                     logger.info(f'taskNum changed:{self.taskNum}')
                 
-                elif recoder.update(self.progress).time > 60:  #每60秒强制重置
-                    recoder.reset(self.progress)
+                elif recorder.update(self.progress).time > 60:  #每60秒强制重置
+                    recorder.reset(self.progress)
 
                 else:                                         #主逻辑
-                    info: SpeedInfo = recoder.update(self.progress) 
+                    info: SpeedInfo = recorder.update(self.progress) 
                     if self.taskNum > 0:
                         speedPerConnect = info.speed / self.taskNum
                         if speedPerConnect > maxSpeedPerConnect:
