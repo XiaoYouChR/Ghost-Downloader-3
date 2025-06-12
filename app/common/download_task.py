@@ -12,7 +12,7 @@ import httpx
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
-from app.common.config import cfg, BASE_UTILIZATION_THRESHOLD, TIME_WEIGHT_FACTOR
+from app.common.config import cfg, BASE_EFFICIENCY_THRESHOLD
 from app.common.dto import SpeedInfo, SpeedRecorder
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
 
@@ -256,7 +256,7 @@ class DownloadTask(QThread):
                     maxRemainingBytes = remainingBytes
                     workerWithMaxRemaining = worker
             elif not worker.isCompleted:
-                #总是优先运行未运行的worker
+                # 总是优先运行未运行的worker
                 worker.task = self.loop.create_task(self.handleWorker(worker))
                 return
             
@@ -482,7 +482,6 @@ class DownloadTask(QThread):
         if self.autoSpeedUp:
 
             recorder = SpeedRecorder(self.progress)
-            logger.info(f'自动提速阈值：{ BASE_UTILIZATION_THRESHOLD}, 精度：{TIME_WEIGHT_FACTOR}')
             info = SpeedInfo()
             formerInfo = SpeedInfo()
             formerTaskNum = taskNum = 0
@@ -491,12 +490,12 @@ class DownloadTask(QThread):
         # Monitor until download is complete
         while self.progress != self.fileSize:
             # Update progress and history file
-            workerInfo = self.__updateProgressAndHistory() #用不到的workerInfo
+            workerInfo = self.__updateProgressAndHistory() #用不到的 workerInfo
 
             # Calculate and emit current speed
             currentSpeed = self.progress - lastProgress
             lastProgress = self.progress
-            avgSpeed = self.__updateSpeedHistory(currentSpeed) #用不到avgSpeed
+            avgSpeed = self.__updateSpeedHistory(currentSpeed) #用不到 avgSpeed
 
             # Handle auto speed-up if enabled
             if self.autoSpeedUp:
@@ -507,24 +506,24 @@ class DownloadTask(QThread):
                     recorder.reset(self.progress)
                     logger.info(f'taskNum changed:{self.taskNum}')
                 
-                elif recorder.update(self.progress).time > 60:  #每60秒强制重置
+                elif recorder.update(self.progress).time > 60:  # 每60秒强制重置
                     recorder.reset(self.progress)
 
-                else:                                         #主逻辑
+                else: # 主逻辑
                     info: SpeedInfo = recorder.update(self.progress) 
                     if self.taskNum > 0:
                         speedPerConnect = info.speed / self.taskNum
                         if speedPerConnect > maxSpeedPerConnect:
                             maxSpeedPerConnect = speedPerConnect
                     
-                    speedIncreasePerThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
-                    threadUtilization = speedIncreasePerThread / maxSpeedPerConnect
-                    timeCompensation = TIME_WEIGHT_FACTOR / info.time
-                    logger.debug(f'speed:{getReadableSize(info.speed)}/s {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = threadUtilization:{threadUtilization:.2f}, timeCompensation:{timeCompensation:.2f}, time:{info.time:.2f}s')
-                    adjustedEfficiencyThreshold =  BASE_UTILIZATION_THRESHOLD + timeCompensation
+                    speedPerAdditionalThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
+                    threadEfficiency = speedPerAdditionalThread / maxSpeedPerConnect
+                    # timeCompensation = 0.8 ** info.time
+                    timeCompensation = 1/(1 + 3 ** (2 * info.time / 3 - 3))  # \frac{1}{1+3^{\left(\frac{2}{3}x-3\right)}}
+                    adjustedEfficiencyThreshold = BASE_EFFICIENCY_THRESHOLD + timeCompensation
                     
-                    if threadUtilization >= adjustedEfficiencyThreshold and self.taskNum < 256:
-                        logger.debug(f'自动提速增加新线程  {threadUtilization}')
+                    if threadEfficiency >= adjustedEfficiencyThreshold and self.taskNum < 256:
+                        logger.debug(f'自动提速增加新线程  {threadEfficiency}, {adjustedEfficiencyThreshold}')
                         self.__reassignWorker()
             # Wait before next update
             await asyncio.sleep(1)
