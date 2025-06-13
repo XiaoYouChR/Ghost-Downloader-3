@@ -7,3 +7,4 @@ curl-cffi
 nuitka==2.7.1
 windows-toasts
 darkdetect[macos-listener]; sys_platform=="darwin"
+trio
