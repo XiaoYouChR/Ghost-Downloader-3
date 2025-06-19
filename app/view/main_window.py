@@ -84,6 +84,7 @@ class MainWindow(MSFluentWindow):
         self.__onCustomThemeModeChanged(cfg.customThemeMode.value)
         cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
         signalBus.appErrorSig.connect(self.onAppError)
+        signalBus.showMainWindow.connect(lambda :bringWindowToTop(self))
 
         # 设置背景特效
         self.applyBackgroundEffectByCfg()

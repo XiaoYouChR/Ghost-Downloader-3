@@ -2,10 +2,11 @@
 import sys
 import traceback
 
-from PySide6.QtCore import QSharedMemory
+from PySide6.QtCore import QSharedMemory, Qt, QEvent
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
+from .methods import bringWindowToTop
 from .signal_bus import signalBus
 
 
@@ -54,6 +55,9 @@ class SingletonApplication(QApplication):
                 logger.error(f"Failed to recover from shared memory error: {e}")
                 raise RuntimeError(self.memory.errorString())
 
+        self._prev_app_state = Qt.ApplicationState.ApplicationInactive
+
+
         if "__compiled__" in globals():  # 编译后的错误捕捉
             sys.excepthook = exception_hook
 
@@ -75,6 +79,13 @@ class SingletonApplication(QApplication):
         except Exception as e:
             logger.warning(f"Failed to cleanup shared memory on quit: {e}")
         super().quit()
+
+    def event(self, e: QEvent) -> bool:
+        if sys.platform == "darwin":
+            if e.type() == QEvent.Type.ApplicationActivate:
+                signalBus.showMainWindow.emit()
+
+        return super().event(e)
 
 def exception_hook(exception: BaseException, value, tb):
     """ exception callback function """
