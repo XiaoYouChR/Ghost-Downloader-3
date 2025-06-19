@@ -4,7 +4,7 @@ from qfluentwidgets import Action
 from qfluentwidgets import FluentIcon as FIF
 
 from app.common.methods import bringWindowToTop
-from app.components.custom_components import FixedAcrylicMenu
+from app.components.custom_components import CustomAcrylicMenu
 
 
 class CustomSystemTrayIcon(QSystemTrayIcon):
@@ -14,7 +14,7 @@ class CustomSystemTrayIcon(QSystemTrayIcon):
         self.setIcon(parent.windowIcon())
         self.setToolTip('Ghost Downloader 🥰')
 
-        self.menu = FixedAcrylicMenu(parent=parent)
+        self.menu = CustomAcrylicMenu(parent=parent)
 
         self.showAction = Action(QIcon(":/image/logo_withoutBackground.png"), self.tr('仪表盘'), self.menu)
         self.showAction.triggered.connect(self.__onShowActionTriggered)
