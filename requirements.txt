@@ -1,10 +1,9 @@
 PySide6-Fluent-Widgets>=1.8.0
 PysideSix-Frameless-Window>=0.7.1
-PySide6==6.9.1; sys_platform!="darwin"  # Qt 6.7.3 on Windows Has Internationalization Issues
-PySide6==6.7.2; sys_platform=="darwin"  # Qt 6.9.0 on macOS Has Layout Issues
+PySide6==6.9.1
 loguru
-curl-cffi
-nuitka==2.7.1
-windows-toasts
+niquests
+nuitka==2.7.10
+desktop-notifier
 darkdetect[macos-listener]; sys_platform=="darwin"
-trio
+qt-async-threads
