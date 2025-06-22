@@ -1,8 +1,8 @@
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
 from loguru import logger
-from qfluentwidgets import FluentIcon as FIF, SmoothScrollArea, PrimaryPushButton, PushButton, InfoBar, \
-    InfoBarPosition, ToggleButton
+from qfluentwidgets import FluentIcon as FIF, PrimaryPushButton, PushButton, InfoBar, \
+    InfoBarPosition, ToggleButton, ScrollArea
 
 from ..common.config import cfg
 from ..common.signal_bus import signalBus
@@ -10,7 +10,7 @@ from ..components.custom_dialogs import DelDialog, PlanTaskDialog
 from ..components.task_card import TaskCard
 
 
-class TaskInterface(SmoothScrollArea):
+class TaskInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
