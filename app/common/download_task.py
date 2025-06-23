@@ -21,6 +21,7 @@ class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
 
     def __init__(self, start, progress, end, client: httpx.AsyncClient):
+        self._task = None
         self.startPos = start
         self.progress = progress
         self.endPos = end
@@ -42,6 +43,7 @@ class DownloadWorker:
             return self._task
         else:
             logger.error("Task not set yet")
+            return None
 
     @task.setter
     def task(self, task: asyncio.Task):
@@ -50,7 +52,7 @@ class DownloadWorker:
         else:
             self._task.cancel()
             self._task = task
-            logger.warning("Task is running, cancell old task before setting new one")
+            logger.warning("Task is running, cancel old task before setting new one")
 
     @property
     def running(self) -> bool:
@@ -87,8 +89,7 @@ class ParallelDownloadStrategy(WorkerStrategy):
             logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
             return
 
-        finished = False
-        while not finished:
+        while worker.progress <= worker.endPos:
             try:
                 workingRangeHeaders = self.client.headers.copy()
                 workingRangeHeaders["range"] = f"bytes={worker.progress}-{worker.endPos - 1}"
@@ -110,10 +111,9 @@ class ParallelDownloadStrategy(WorkerStrategy):
                             cfg.globalSpeed += 65536
 
                             if cfg.speedLimitation.value and cfg.globalSpeed >= cfg.speedLimitation.value:
-                                time.sleep(1)
+                                await asyncio.sleep(2)
 
                 worker.progress = worker.endPos
-                finished = True
 
             except Exception as e:
                 logger.info(f"Thread {worker.startPos}-{worker.endPos} is reconnecting, progress: {worker.progress}, Error: {repr(e)}")
@@ -136,8 +136,7 @@ class SingleDownloadStrategy(WorkerStrategy):
             logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
             return
 
-        finished = False
-        while not finished:
+        while worker.progress <= worker.endPos:
             try:
                 workingHeaders = self.client.headers.copy()
                 async with self.client.stream(url=self.url, headers=workingHeaders, 
@@ -153,12 +152,10 @@ class SingleDownloadStrategy(WorkerStrategy):
                             cfg.globalSpeed += chunkSize
 
                             if cfg.speedLimitation.value and cfg.globalSpeed >= cfg.speedLimitation.value:
-                                time.sleep(1)
+                                await asyncio.sleep(2)
 
                 if self.onComplete:
                     self.onComplete()
-
-                finished = True
 
             except Exception as e:
                 logger.info(f"Thread {worker.startPos}-{worker.endPos} is reconnecting, Error: {repr(e)}")
