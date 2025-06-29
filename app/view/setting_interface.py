@@ -359,7 +359,7 @@ class SettingInterface(ScrollArea):
             FIF.LANGUAGE,
             self.tr('语言'),
             self.tr('设置界面的首选语言'),
-            texts=['简体中文 (中国大陆)', '正體中文 (台灣)', '文言 (華夏)', 'English (US)', '日本語 (日本)', self.tr('使用系统设置')],
+            texts=['简体中文 (中国大陆)', '正體中文 (台灣)', '繁體中文（香港）', '文言 (華夏)', 'English (US)', '日本語 (日本)', self.tr('使用系统设置')],
             parent=self.personalGroup
         )
         # update software
