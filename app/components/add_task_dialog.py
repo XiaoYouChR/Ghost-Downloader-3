@@ -43,7 +43,7 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-
+        self.shutdown_event = threading.Event()  # 添加退出事件
         self.customHeaders = Headers.copy()
 
         FluentStyleSheet.DIALOG.apply(self.widget)
@@ -214,6 +214,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     def __handleUrl(self, url: str, index: int):
         try:
+            if self.shutdown_event.is_set():
+                return
             _url, fileName, fileSize = getLinkInfo(url, self.customHeaders)
             # 查找是否存在该 URL 的行
             for i in range(self.taskTableWidget.rowCount()):
@@ -247,6 +249,8 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
     def __progressTextChange(self):
         """ link text changed slot """
+        if self.shutdown_event.is_set():
+            return
         self.threads = []
         
         self.yesButton.setEnabled(False)
@@ -305,6 +309,31 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
 
             Thread(target=self.__waitForThreads, daemon=True).start()
     
+
     def __waitForThreads(self):
-        for thread in self.threads:
-            thread.join()
+        try:
+            # 使用带超时的 join() 并循环检查
+            while any(t.is_alive() for t in self.threads):
+                for thread in self.threads:
+                    if thread.is_alive():
+                        # 短时等待，定期检查中断
+                        thread.join(timeout=0.1)
+        
+        except KeyboardInterrupt:
+            print("\nKeyboardInterrupt received. Stopping threads...")
+            
+            # 设置退出标志
+            self.shutdown_event.set()
+            
+            # 给线程退出时间
+            for thread in self.threads:
+                if thread.is_alive():
+                    thread.join(timeout=0.5)  # 最多等待0.5秒
+            
+            # 检查并报告未退出的线程
+            alive_threads = [t for t in self.threads if t.is_alive()]
+            if alive_threads:
+                print(f"警告: {len(alive_threads)} 线程未正常退出")
+            
+            # 重新抛出异常让上层处理
+            raise

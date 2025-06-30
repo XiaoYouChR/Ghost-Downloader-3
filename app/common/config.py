@@ -108,7 +108,11 @@ class Config(QConfig):
     globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
 
     def resetGlobalSpeed(self):
-        self.globalSpeed = 0
+        try:
+            self.globalSpeed = 0
+        except KeyboardInterrupt:
+            # 捕获中断但不处理，避免重复中断
+            pass
 
 
 YEAR = 2025
