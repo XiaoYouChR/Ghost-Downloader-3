@@ -6,4 +6,4 @@ niquests
 nuitka==2.7.10
 desktop-notifier
 darkdetect[macos-listener]; sys_platform=="darwin"
-qt-async-threads
+AsyncioPySide6

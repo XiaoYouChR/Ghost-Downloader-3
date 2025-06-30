@@ -1,15 +1,17 @@
 # coding:utf-8
-
+from time import time_ns
 import os
 import sys
+import warnings
 
 from qfluentwidgets import qconfig
+from loguru import logger
 
-from app.view.supports.application import SingletonApplication
-from app.view.supports.config import cfg
+from app.supports import SingletonApplication
+from app.supports.config import cfg
 
 # 设置程序运行路径, 便于调试
-if not "__compiled__" in globals():  # 调试时候使用相对路径
+if "__compiled__" not in globals():  # 调试时候使用相对路径
     cfg.appPath = "./"
     qconfig.load('./gd3_config.json', cfg)
 else:  # 编译后
@@ -21,29 +23,27 @@ if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
-application = SingletonApplication(sys.argv, "Ghost Downloader")
+# config loguru
+logger.add("{}/gd3.log".format(cfg.appPath), rotation="512 KB")
+logger.info(f"Ghost Downloader is launched at {time_ns()}")
+warnings.warn = logger.warning
+
+application = SingletonApplication(sys.argv, "gd3")
 
 # Starting Program
-import time
-import warnings
-
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QColor
-from loguru import logger
 from qfluentwidgets import setTheme, Theme, setThemeColor
 
 # noinspection PyUnresolvedReferences
 from app.assets import Res_rc
-from app.view.supports.utils import setAppColor
+
+from app.supports.utils import setAppColor
+from app.view.windows import MainWindow
 
 # 防止 Mica 背景失效
 # application.setAttribute(Qt.AA_DontCreateNativeWidgetSiblings)
 
-# config loguru
-logger.add('{}/gd3.log'.format(cfg.appPath), rotation="512 KB")
-logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
-
-warnings.warn = logger.warning
 
 # internationalization
 locale = cfg.language.value.value
@@ -65,8 +65,8 @@ else:
     setThemeColor(QColor(cfg.get(cfg.appColor.value)), save=False)
 
 if "--silence" in sys.argv:
-    w = mainWindow(silence=True)
+    w = MainWindow(silence=True)
 else:
-    w = mainWindow()
+    w = MainWindow()
 
 sys.exit(application.exec())

@@ -2,7 +2,7 @@
 import sys
 import traceback
 
-from PySide6.QtCore import QSharedMemory
+from PySide6.QtCore import QSharedMemory, QEvent
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
@@ -10,7 +10,7 @@ from .signal_bus import signalBus
 
 
 class SingletonApplication(QApplication):
-    """ Singleton application """
+    """Singleton application"""
 
     def __init__(self, argv: list[str], key: str):
         super().__init__(argv)
@@ -75,13 +75,21 @@ class SingletonApplication(QApplication):
             logger.warning(f"Failed to cleanup shared memory on quit: {e}")
         super().quit()
 
+    def event(self, e: QEvent) -> bool:
+        if sys.platform == "darwin":
+            if e.type() == QEvent.Type.ApplicationActivate:
+                signalBus.showMainWindowSignal.emit()
+
+        return super().event(e)
+
+
 def exceptionHook(exception: BaseException, value, tb):
-    """ exception callback function """
+    """exception callback function"""
     # 获取完整的异常信息，包括异常类型、值和完整的堆栈跟踪
     exceptionLines = traceback.format_exception(exception, value, tb)
     # 格式化异常信息
-    message = ''.join(exceptionLines)
+    message = "".join(exceptionLines)
     # 记录详细的异常信息
     logger.exception(message)
     # 发送异常信号
-    signalBus.appErrorSig.emit(message)
+    signalBus.appErrorSignal.emit(message)

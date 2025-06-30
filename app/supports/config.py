@@ -1,10 +1,11 @@
 # coding:utf-8
 import sys
 from enum import Enum
-from re import compile
+from re import compile, VERBOSE, IGNORECASE
 from typing import Literal
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, RangeConfigItem, RangeValidator,
                             FolderValidator, ConfigValidator, ConfigSerializer, FolderListValidator, ColorValidator,
@@ -22,12 +23,38 @@ class Language(Enum):
     AUTO = QLocale()
 
 class ProxyValidator(ConfigValidator):
-    PATTERN = compile(r'^(socks5|http|https):\/\/'
-                      r'((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
-                      r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):'
-                      r'(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|[1-5]?[0-9]{1,4})$')
+    PATTERN = compile(
+        r"""
+        ^                                       # 字符串开始
+        (?P<protocol>socks5|http|https)://      # 协议头 (http, https, socks5)
+        (?:                                     # 认证信息组 (可选)
+            (?P<user>[^:@\s/]+)                 # 用户名 (不能包含 : @ / 或空白)
+            (?::(?P<password>[^@\s/]*))?        # 密码 (可选, 不能包含 @ / 或空白)
+            @
+        )?
+        (?P<host>                               # 主机地址组
+            localhost|                          # 本地主机
+            # IP 地址 v4
+            (?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|
+            # 域名
+            (?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}
+        )
+        :                                       # 端口分隔符
+        (?P<port>                               # 端口号组 (1-65535)
+            [1-9][0-9]{0,3}|                    # 1-9999
+            [1-5][0-9]{4}|                      # 10000-59999
+            6[0-4][0-9]{3}|                     # 60000-64999
+            65[0-4][0-9]{2}|                    # 65000-65499
+            655[0-2][0-9]|                      # 65500-65529
+            6553[0-5]                           # 65530-65535
+        )
+        /?                                      # 可选的末尾斜杠
+        $                                       # 字符串结束
+        """,
+        VERBOSE | IGNORECASE
+    )
 
-    def validate(self, value: str) -> bool:
+    def validate(self, value: str) -> bool: # type: ignore
         """判断代理地址是否合法"""
         return bool(self.PATTERN.match(value)) or value == "Auto" or value == "Off"
 
@@ -36,12 +63,17 @@ class ProxyValidator(ConfigValidator):
 
 
 class GeometryValidator(ConfigValidator):  # geometry 为程序的位置和大小, 保存为字符串 "x,y,w,h," 默认为 Default
-    def validate(self, value: QRect) -> bool:
+    def validate(self, value: QRect) -> bool:  # type: ignore
         if value == "Default":
             return True
-        if type(value) == QRect:
+        if isinstance(value, QRect):
+            screen = QApplication.primaryScreen()
+            if not screen:
+                return False
+            if not screen.availableGeometry().contains(value):
+                return False
             return True
-        
+
         return False
 
     def correct(self, value) -> str:
@@ -51,7 +83,7 @@ class GeometryValidator(ConfigValidator):  # geometry 为程序的位置和大�
 class GeometrySerializer(ConfigSerializer):  # 将字符串 "x,y,w,h," 转换为QRect (x, y, w, h), "Default" 除外
     def serialize(self, value: QRect) -> str:
         if value == "Default":
-            return value
+            return "Default"
         return f"{value.x()},{value.y()},{value.width()},{value.height()}"
 
     def deserialize(self, value: str) -> Literal["Default"] | QRect:
@@ -63,7 +95,7 @@ class GeometrySerializer(ConfigSerializer):  # 将字符串 "x,y,w,h," 转换为
 class LanguageSerializer(ConfigSerializer):
     """ Language serializer """
 
-    def serialize(self, language):
+    def serialize(self, language):  # type: ignore
         return language.value.name() if language != Language.AUTO else "Auto"
 
     def deserialize(self, value: str):
