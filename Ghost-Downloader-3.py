@@ -2,11 +2,27 @@
 
 import os
 import sys
+import signal  # 添加 signal 模块
+import threading  # 添加 threading 模块
 
 from qfluentwidgets import qconfig
 
 from app.common.application import SingletonApplication
 from app.common.config import cfg
+
+# 创建全局退出事件
+global_shutdown_event = threading.Event()
+
+# 信号处理函数
+def signal_handler(sig, frame):
+    print("\n程序终止请求")
+    global_shutdown_event.set()
+    # 等待一段时间让线程退出
+    app.quit()  # 优雅退出应用程序
+
+# 设置信号处理
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 # 设置程序运行路径, 便于调试
 if not "__compiled__" in globals():  # 调试时候使用相对路径
@@ -22,6 +38,9 @@ if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 app = SingletonApplication(sys.argv, "Ghost Downloader")
+
+# 在应用程序中设置全局退出事件
+app.global_shutdown_event = global_shutdown_event
 
 # Starting Program
 import time
@@ -85,8 +104,14 @@ speedLimiter.setInterval(1000)  # 一秒刷新一次
 speedLimiter.timeout.connect(cfg.resetGlobalSpeed)  # 刷新 globalSpeed为 0
 speedLimiter.start()
 
+# 在应用程序退出时停止定时器
+app.aboutToQuit.connect(speedLimiter.stop)
+
 # create main window
 w = MainWindow()
+
+# 在主窗口中也设置全局退出事件
+w.global_shutdown_event = global_shutdown_event
 
 # loading plugins
 pluginsPath=os.path.join(cfg.appPath, "plugins")
