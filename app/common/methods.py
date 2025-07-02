@@ -42,7 +42,7 @@ def isGreaterEqualWin11():
 def isAbleToShowToast():
     return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
 
-def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
+def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
     try:
         for filename in os.listdir(directory):
             if filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so"):
