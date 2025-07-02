@@ -27,7 +27,7 @@ if __name__ == '__main__':
     pyFiles = getPyFiles(appDir)
 
     # targetLanguages = ["lzh", "en_US", "ja_JP"]
-    targetLanguages = ["zh_MO", "en_US", "ja_JP", "zh_TW"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
+    targetLanguages = ["zh_MO", "en_US", "ja_JP", "zh_TW", "yue_HK"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
 
     for targetLanguage in targetLanguages:
 

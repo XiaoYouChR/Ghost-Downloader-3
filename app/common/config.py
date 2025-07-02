@@ -14,6 +14,7 @@ class Language(Enum):
 
     CHINESE_SIMPLIFIED = QLocale(QLocale.Language.Chinese, QLocale.Country.China)
     CHINESE_TRADITIONAL = QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
+    CANTONESE = QLocale(QLocale.Language.Cantonese, QLocale.Country.HongKong)
     CHINESE_LITERARY = QLocale(QLocale.Language.Chinese, QLocale.Country.Macau)  # lzh is invalid, I don't know what to do, sorry
     ENGLISH_UNITED_STATES = QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
     JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
