@@ -50,10 +50,8 @@ warnings.warn = logger.warning
 
 # internationalization
 locale = cfg.language.value.value
-print(locale)
 translator = QTranslator()
 translator.load(locale, "gd3", ".", ":/i18n")
-print(translator.filePath(), translator.language())
 app.installTranslator(translator)
 
 # Enable Theme
