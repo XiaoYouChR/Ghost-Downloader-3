@@ -23,18 +23,6 @@ if cfg.get(cfg.dpiScale) != 0:
 
 app = SingletonApplication(sys.argv, "Ghost Downloader")
 
-# Set macOS-compatible font fallback
-if sys.platform == "darwin":
-    from PySide6.QtGui import QFont
-    font = QFont(".SF NS Text")
-    app.setFont(font)
-
-# Set macOS-compatible font fallback
-if sys.platform == "darwin":
-    font = app.font()
-    font.setFamily(".SF NS Text")
-    app.setFont(font)
-
 # Starting Program
 import time
 import warnings
@@ -61,33 +49,12 @@ logger.info(f"Ghost Downloader is launched at {time.time_ns()}")
 warnings.warn = logger.warning
 
 # internationalization
-from app.common.config import Language
-
-if cfg.get(cfg.language) == Language.AUTO:
-    locale = QLocale.system().name()
-else:
-    locale = cfg.get(cfg.language).value.name()
-
-print(f"Loading translations for locale: {locale}")  # Debug
+locale = cfg.language.value.value
+print(locale)
 translator = QTranslator()
-paths_tried = [
-    f":/i18n/gd3.{locale}.qm",
-    f":/i18n/gd3.{locale.split('_')[0]}.qm",
-    f"resources/i18n/gd3.{locale}.qm"
-]
-
-loaded = False
-for path in paths_tried:
-    if translator.load(path):
-        print(f"Successfully loaded translations from {path}")
-        app.installTranslator(translator)
-        loaded = True
-        break
-        
-if not loaded:
-    print(f"Failed to load translations for {locale}. Tried paths:")
-    for path in paths_tried:
-        print(f" - {path}")
+translator.load(locale, "gd3", ".", ":/i18n")
+print(translator.filePath(), translator.language())
+app.installTranslator(translator)
 
 # Enable Theme
 if cfg.customThemeMode.value == "System":
