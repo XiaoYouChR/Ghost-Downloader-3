@@ -457,10 +457,9 @@ def createSparseFile(filePath: Path) -> bool:
 
     try:
         if sys.platform == "win32":
-            # 1. 创建一个空文件
+            # 创建一个空文件
             filePath.touch()
-            # 2. 使用 fsutil 将其标记为稀疏文件
-            #    这使得系统知道可以为该文件分配稀疏空间
+            # 使用 fsutil 将其标记为稀疏文件
             result = subprocess.run(
                 ["fsutil", "sparse", "setflag", str(filePath)],
                 capture_output=True,
