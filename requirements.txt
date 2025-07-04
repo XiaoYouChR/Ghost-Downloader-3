@@ -3,6 +3,6 @@ PysideSix-Frameless-Window>=0.7.1
 PySide6==6.9.1
 loguru
 httpx[socks]
-nuitka==2.7.10
+nuitka==2.7.11
 win11toast; sys_platform=="win32"
 darkdetect[macos-listener]; sys_platform=="darwin"
