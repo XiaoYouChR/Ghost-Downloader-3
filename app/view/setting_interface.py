@@ -10,10 +10,10 @@ from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, Q
     QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
     BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, HyperlinkButton, \
-    FluentIconBase, RangeConfigItem, SpinBox
+    FluentIconBase, RangeConfigItem, SpinBox, ScrollArea
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
-                            HyperlinkCard, PrimaryPushSettingCard, SmoothScrollArea,
+                            HyperlinkCard, PrimaryPushSettingCard,
                             setTheme, RangeSettingCard)
 
 from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL, FIREFOX_ADDONS_URL
@@ -198,7 +198,7 @@ class SpinBoxSettingCard(SettingCard):
             cfg.set(self.configItem, self.spinBox.value()/self.division)
 
 
-class SettingInterface(SmoothScrollArea):
+class SettingInterface(ScrollArea):
     """ Setting interface """
 
     def __init__(self, parent=None):
@@ -359,7 +359,7 @@ class SettingInterface(SmoothScrollArea):
             FIF.LANGUAGE,
             self.tr('语言'),
             self.tr('设置界面的首选语言'),
-            texts=['简体中文 (中国大陆)', '正體中文 (台灣)', '文言 (華夏)', 'English (US)', '日本語 (日本)', self.tr('使用系统设置')],
+            texts=['简体中文 (中国大陆)', '正體中文 (台灣)', '粤语 (香港)', '文言 (華夏)', 'English (US)', '日本語 (日本)', self.tr('使用系统设置')],
             parent=self.personalGroup
         )
         # update software

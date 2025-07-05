@@ -42,7 +42,7 @@ def isGreaterEqualWin11():
 def isAbleToShowToast():
     return sys.platform == 'win32' and sys.getwindowsversion().build >= 16299  # 高于 Win10 1709
 
-def loadPlugins(mainWindow, directory="{}/plugins".format(QApplication.applicationDirPath())):
+def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
     try:
         for filename in os.listdir(directory):
             if filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so"):
@@ -358,98 +358,139 @@ def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=
 
 
 def isSparseSupported(filePath: Path) -> bool:
-    """检查文件系统是否支持稀疏文件"""
+    """
+    检查给定路径所在的文件系统是否支持稀疏文件。
+
+    Args:
+        filePath: 要检查的文件路径。
+
+    Returns:
+        如果支持稀疏文件则返回 True，否则返回 False。
+    """
     try:
+        # 如果文件/目录不存在，则检查其父目录的文件系统
+        checkPath = filePath
+        if not checkPath.exists():
+            checkPath = filePath.parent
+            # 确保父目录存在
+            checkPath.mkdir(parents=True, exist_ok=True)
+
         if sys.platform == "win32":
-            # 获取驱动器根路径（如 C:\）
-            root_path = str(filePath.drive + '\\').encode('utf-16le')
+            # NTFS, ReFS 支持稀疏文件。exFAT 不支持。
+            supportedFileSystems = ('NTFS', 'ReFS')
 
-            # 定义Windows API参数类型
-            volume_name_buffer = ctypes.create_unicode_buffer(1024)
-            file_system_buffer = ctypes.create_unicode_buffer(1024)
-
-            # 调用Windows API获取卷信息
-            success = ctypes.windll.kernel32.GetVolumeInformationW(
-                ctypes.c_wchar_p(root_path.decode('utf-16le')),  # 根路径
-                volume_name_buffer,                             # 卷名缓冲区
-                ctypes.sizeof(volume_name_buffer),              # 缓冲区大小
-                None,                                           # 序列号
-                None,                                           # 最大组件长度
-                None,                                           # 文件系统标志
-                file_system_buffer,                             # 文件系统名称缓冲区
-                ctypes.sizeof(file_system_buffer)               # 缓冲区大小
-            )
-
-            return success and file_system_buffer.value in ('exFAT', 'NTFS', 'ReFS')
-        elif sys.platform == "linux":
-            fs_type = os.statvfs(filePath).f_basetype
-            return fs_type in ('ext4', 'xfs', 'btrfs', 'zfs')
-        elif sys.platform == "darwin":  # macOS
-            df_output = subprocess.check_output(
-                ["df", "-h", filePath],
-                stderr=subprocess.STDOUT,
-                universal_newlines=True
-            ).splitlines()
-
-            # 提取设备节点 (第二行第二列)
-            if len(df_output) < 2:
+            # 使用 pathlib.Path.anchor 获取驱动器根路径 (例如 'C:\\')
+            rootPath = checkPath.anchor
+            if not rootPath:
+                logger.warning(f"无法确定路径 '{checkPath}' 的驱动器根目录。")
                 return False
-            device_node = df_output[1].split()[0]
 
-            # 获取挂载信息
-            mount_output = subprocess.check_output(
-                ["mount"],
-                universal_newlines=True
+            volumeNameBuffer = ctypes.create_unicode_buffer(1024)
+            fileSystemBuffer = ctypes.create_unicode_buffer(1024)
+
+            # 调用 Windows API 获取卷信息
+            success = ctypes.windll.kernel32.GetVolumeInformationW(
+                ctypes.c_wchar_p(rootPath),          # 根路径
+                volumeNameBuffer,                    # 卷名缓冲区
+                ctypes.sizeof(volumeNameBuffer),     # 缓冲区大小
+                None,                                # 序列号
+                None,                                # 最大组件长度
+                None,                                # 文件系统标志
+                fileSystemBuffer,                    # 文件系统名称缓冲区
+                ctypes.sizeof(fileSystemBuffer)      # 缓冲区大小
             )
 
-            # 解析文件系统类型
-            for line in mount_output.splitlines():
-                if line.startswith(device_node):
-                    parts = line.split()
-                    for part in parts:
-                        if part.startswith("(") and "," in part:
-                            return part.strip("(),").split(",")[0] in ('apfs', 'hfs')
+            if not success:
+                # 获取更详细的错误信息
+                errorCode = ctypes.GetLastError()
+                logger.warning(f"GetVolumeInformationW 失败，错误码: {errorCode}")
+                return False
+
+            return fileSystemBuffer.value in supportedFileSystems
+
+        elif sys.platform == "linux":
+            # 主流的 Linux 文件系统，如 ext3, ext4, xfs, btrfs, f2fs, zfs 都支持稀疏文件
+            supportedFileSystems = ('ext3', 'ext4', 'xfs', 'btrfs', 'f2fs', 'zfs')
+
+            statvfsResult = os.statvfs(checkPath)
+            # f_basetype 在某些系统上可能不存在，作为备用
+            fileSystemType = getattr(statvfsResult, 'f_basetype', '').decode('utf-8').rstrip('\x00')
+            return fileSystemType in supportedFileSystems
+
+        elif sys.platform == "darwin":  # macOS
+            # APFS 和 HFS+ 支持稀疏文件
+            supportedFileSystems = ('apfs', 'hfs')
+
+            # 使用 'stat' 命令是获取文件系统类型的最可靠方法
+            # 'stat -f %T /path' 直接输出文件系统类型字符串
+            result = subprocess.run(
+                ["stat", "-f", "%T", str(checkPath)],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            fileSystemType = result.stdout.strip()
+            return fileSystemType in supportedFileSystems
+
+        # 对于其他未知操作系统，默认不支持
         return False
     except Exception as e:
         logger.warning(f"文件系统检测失败: {repr(e)}")
         return False
 
 def createSparseFile(filePath: Path) -> bool:
-    """创建稀疏文件的统一入口"""
+    """
+    创建一个支持稀疏写入的空文件。
+
+    在 Windows 上，它会创建一个空文件并设置稀疏标志。
+    在 Linux/macOS 上，它仅创建一个空文件，因为文件系统会自动处理稀疏性。
+
+    Args:
+        filePath: 要创建的稀疏文件的路径。
+
+    Returns:
+        如果创建成功则返回 True，否则返回 False。
+    """
     if not isSparseSupported(filePath):
+        logger.warning(f"文件系统不支持在 '{filePath}' 创建稀疏文件。")
         return False
 
     try:
         if sys.platform == "win32":
-            try:
-                # 创建空文件
-                filePath.touch()
-                # 设置稀疏属性
-                result = subprocess.run(
-                    ["fsutil", "sparse", "setflag", str(filePath)],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                if result.returncode != 0:
-                    raise RuntimeError(f"fsutil失败: {result.stderr}")
-            except subprocess.CalledProcessError as e:
-                raise OSError(f"Windows 稀疏文件创建失败: {e.stderr}")
-        elif sys.platform == "linux":
-            try:
-                # 使用fallocate快速创建稀疏文件
-                with open(filePath, 'ab') as f:
-                    os.truncate(f.fileno(), 0)
-            except OSError as e:
-                raise OSError(f"Linux 稀疏文件创建失败: {repr(e)}")
-        elif sys.platform == "darwin":
-            try:
-                # APFS原生支持稀疏文件
-                with open(filePath, 'w') as f:
-                    os.ftruncate(f.fileno(), 0)
-            except OSError as e:
-                raise OSError(f"macOS 稀疏文件创建失败: {repr(e)}")
+            # 创建一个空文件
+            filePath.touch()
+            # 使用 fsutil 将其标记为稀疏文件
+            result = subprocess.run(
+                ["fsutil", "sparse", "setflag", str(filePath)],
+                capture_output=True,
+                text=True,
+                check=True, # 如果命令返回非零退出码，则引发 CalledProcessError
+                creationflags=subprocess.CREATE_NO_WINDOW # 不显示控制台窗口
+            )
+            # check=True 会处理错误，但为清晰起见保留检查
+            if result.returncode != 0:
+                raise RuntimeError(f"fsutil 失败: {result.stderr}")
+
+        elif sys.platform in ("linux", "darwin"):
+            # 在 Linux 和 macOS (APFS/HFS+) 上，文件系统本身支持稀疏文件。
+            # 无需特殊标志或API调用来“创建”一个稀疏文件。
+            # 只需创建一个普通空文件，后续通过 fseek/lseek 跳过大块区域并写入数据时，
+            # 文件系统会自动创建“空洞”，从而形成稀疏文件。
+            filePath.touch()
+
+        else:
+            # 对于其他系统，我们可能不知道如何操作，所以失败
+            logger.error(f"不支持在操作系统 '{sys.platform}' 上创建稀疏文件。")
+            return False
+
         return True
-    except Exception as e:
-        logger.error(f"创建稀疏文件失败: {repr(e)}")
+    except (OSError, subprocess.CalledProcessError, RuntimeError) as e:
+        logger.error(f"在 '{filePath}' 创建稀疏文件失败: {repr(e)}")
+        # 如果失败，尝试清理创建的文件
+        if filePath.exists():
+            try:
+                filePath.unlink()
+            except OSError as cleanup_error:
+                logger.error(f"清理失败的文件 '{filePath}' 时出错: {cleanup_error}")
         return False
+    

@@ -13,7 +13,7 @@ import httpx
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
-from app.common.config import cfg, BASE_UTILIZATION_THRESHOLD, TIME_WEIGHT_FACTOR
+from app.common.config import cfg, BASE_EFFICIENCY_THRESHOLD
 from app.common.dto import SpeedInfo, SpeedRecorder
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
 
@@ -22,6 +22,7 @@ class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
 
     def __init__(self, start, progress, end, client: httpx.AsyncClient):
+        self._task = None
         self.startPos = start
         self.progress = progress
         self.endPos = end
@@ -43,6 +44,7 @@ class DownloadWorker:
             return self._task
         else:
             logger.error("Task not set yet")
+            return None
 
     @task.setter
     def task(self, task: asyncio.Task):
@@ -51,7 +53,7 @@ class DownloadWorker:
         else:
             self._task.cancel()
             self._task = task
-            logger.warning("Task is running, cancell old task before setting new one")
+            logger.warning("Task is running, cancel old task before setting new one")
 
     @property
     def running(self) -> bool:
@@ -88,8 +90,7 @@ class ParallelDownloadStrategy(WorkerStrategy):
             logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
             return
 
-        finished = False
-        while not finished:
+        while worker.progress <= worker.endPos:
             try:
                 workingRangeHeaders = self.client.headers.copy()
                 workingRangeHeaders["range"] = f"bytes={worker.progress}-{worker.endPos - 1}"
@@ -111,10 +112,9 @@ class ParallelDownloadStrategy(WorkerStrategy):
                             cfg.globalSpeed += 65536
 
                             if cfg.speedLimitation.value and cfg.globalSpeed >= cfg.speedLimitation.value:
-                                time.sleep(1)
+                                await asyncio.sleep(2)
 
                 worker.progress = worker.endPos
-                finished = True
 
             except Exception as e:
                 logger.info(f"Thread {worker.startPos}-{worker.endPos} is reconnecting, progress: {worker.progress}, Error: {repr(e)}")
@@ -137,8 +137,7 @@ class SingleDownloadStrategy(WorkerStrategy):
             logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
             return
 
-        finished = False
-        while not finished:
+        while worker.progress <= worker.endPos:
             try:
                 workingHeaders = self.client.headers.copy()
                 async with self.client.stream(url=self.url, headers=workingHeaders, 
@@ -154,12 +153,10 @@ class SingleDownloadStrategy(WorkerStrategy):
                             cfg.globalSpeed += chunkSize
 
                             if cfg.speedLimitation.value and cfg.globalSpeed >= cfg.speedLimitation.value:
-                                time.sleep(1)
+                                await asyncio.sleep(2)
 
                 if self.onComplete:
                     self.onComplete()
-
-                finished = True
 
             except Exception as e:
                 logger.info(f"Thread {worker.startPos}-{worker.endPos} is reconnecting, Error: {repr(e)}")
@@ -257,7 +254,7 @@ class DownloadTask(QThread):
                     maxRemainingBytes = remainingBytes
                     workerWithMaxRemaining = worker
             elif not worker.isCompleted:
-                #总是优先运行未运行的worker
+                # 总是优先运行未运行的worker
                 worker.task = self.loop.create_task(self.handleWorker(worker))
                 return
             
@@ -483,7 +480,6 @@ class DownloadTask(QThread):
         if self.autoSpeedUp:
 
             recorder = SpeedRecorder(self.progress)
-            logger.info(f'自动提速阈值：{ BASE_UTILIZATION_THRESHOLD}, 精度：{TIME_WEIGHT_FACTOR}')
             info = SpeedInfo()
             formerInfo = SpeedInfo()
             formerTaskNum = taskNum = 0
@@ -492,7 +488,7 @@ class DownloadTask(QThread):
         # Monitor until download is complete
         while self.progress != self.fileSize:
             # Update progress and history file
-            workerInfo = self.__updateProgressAndHistory() #用不到的workerInfo
+            workerInfo = self.__updateProgressAndHistory() #用不到的 workerInfo
 
             # Calculate and emit current speed
             self.__updateSmoothedSpeed()
@@ -506,24 +502,24 @@ class DownloadTask(QThread):
                     recorder.reset(self.progress)
                     logger.info(f'taskNum changed:{self.taskNum}')
                 
-                elif recorder.update(self.progress).time > 60:  #每60秒强制重置
+                elif recorder.update(self.progress).time > 60:  # 每60秒强制重置
                     recorder.reset(self.progress)
 
-                else:                                         #主逻辑
+                else: # 主逻辑
                     info: SpeedInfo = recorder.update(self.progress) 
                     if self.taskNum > 0:
                         speedPerConnect = info.speed / self.taskNum
                         if speedPerConnect > maxSpeedPerConnect:
                             maxSpeedPerConnect = speedPerConnect
                     
-                    speedIncreasePerThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
-                    threadUtilization = speedIncreasePerThread / maxSpeedPerConnect
-                    timeCompensation = TIME_WEIGHT_FACTOR / info.time
-                    logger.debug(f'speed:{getReadableSize(info.speed)}/s {getReadableSize(info.speed - formerInfo.speed)}/s / {taskNum - formerTaskNum} / maxSpeedPerThread {getReadableSize(maxSpeedPerConnect)}/s = threadUtilization:{threadUtilization:.2f}, timeCompensation:{timeCompensation:.2f}, time:{info.time:.2f}s')
-                    adjustedEfficiencyThreshold =  BASE_UTILIZATION_THRESHOLD + timeCompensation
+                    speedPerAdditionalThread = (info.speed - formerInfo.speed) / (taskNum - formerTaskNum)                    
+                    threadEfficiency = speedPerAdditionalThread / maxSpeedPerConnect
+                    # timeCompensation = 0.8 ** info.time
+                    timeCompensation = 1/(1 + 3 ** (2 * info.time / 3 - 3))  # \frac{1}{1+3^{\left(\frac{2}{3}x-3\right)}}
+                    adjustedEfficiencyThreshold = BASE_EFFICIENCY_THRESHOLD + timeCompensation
                     
-                    if threadUtilization >= adjustedEfficiencyThreshold and self.taskNum < 256:
-                        logger.debug(f'自动提速增加新线程  {threadUtilization}')
+                    if threadEfficiency >= adjustedEfficiencyThreshold and self.taskNum < 256:
+                        logger.debug(f'自动提速增加新线程  {threadEfficiency}, {adjustedEfficiencyThreshold}')
                         self.__reassignWorker()
             # Wait before next update
             await asyncio.sleep(1)

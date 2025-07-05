@@ -14,6 +14,7 @@ class Language(Enum):
 
     CHINESE_SIMPLIFIED = QLocale(QLocale.Language.Chinese, QLocale.Country.China)
     CHINESE_TRADITIONAL = QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
+    CANTONESE = QLocale(QLocale.Language.Cantonese, QLocale.Country.HongKong)
     CHINESE_LITERARY = QLocale(QLocale.Language.Chinese, QLocale.Country.Macau)  # lzh is invalid, I don't know what to do, sorry
     ENGLISH_UNITED_STATES = QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
     JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
@@ -113,14 +114,13 @@ class Config(QConfig):
 
 YEAR = 2025
 AUTHOR = "XiaoYouChR"
-VERSION = "3.5.13"
+VERSION = "3.5.14"
 LATEST_EXTENSION_VERSION = "1.1.1"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 FIREFOX_ADDONS_URL = "https://addons.mozilla.org/zh-CN/firefox/addon/ghost-downloader/"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
-BASE_UTILIZATION_THRESHOLD = 0.1 # 判断阈值
-TIME_WEIGHT_FACTOR = 1  # 判断精度
+BASE_EFFICIENCY_THRESHOLD = 0.88 # 判断阈值
 
 Headers = {
     "accept-encoding": "deflate, br, gzip",

@@ -16,5 +16,6 @@
     <file alias="gd3.zh_MO.qm">i18n/gd3.zh_MO.qm</file>
     <file alias="gd3.ja_JP.qm">i18n/gd3.ja_JP.qm</file>
     <file alias="gd3.zh_TW.qm">i18n/gd3.zh_TW.qm</file>
+    <file alias="gd3.yue_HK.qm">i18n/gd3.yue_HK.qm</file>
   </qresource>
 </RCC>

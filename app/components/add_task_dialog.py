@@ -16,21 +16,50 @@ from .select_folder_setting_card import SelectFolderSettingCard
 from ..common.config import cfg, Headers
 from ..common.methods import getReadableSize, getLinkInfo, addDownloadTask
 
-urlRe = re.compile(r"^" +
-                   "(https?://)" +
-                   "(?:\\S+(?::\\S*)?@)?" +
-                   "(?:" +
-                   "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
-                   "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
-                   "(\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
-                   "|" +
-                   "((?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)" +
-                   '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*' +
-                   "(\\.([a-z\\u00a1-\\uffff]{2,}))" +
-                   ")" +
-                   "(?::\\d{2,5})?" +
-                   "(?:/\\S*)?" +
-                   "$", re.IGNORECASE)
+urlRe = re.compile(r"""
+    ^
+    (https?://)                                                         # 协议
+    (?:
+        \S+ (?::\S*)? @                                                 # 用户信息 e.g., user:pass@
+    )?
+    (   
+                # a. IPv6
+        \[
+            (?:
+                (?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}
+                |
+                (?!.*::.*::)
+                    (?:
+                        (?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4}
+                    )?
+                    ::
+                    (?:
+                        (?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4}
+                    )?
+                |
+                # IPv4 映射
+                (?:(?:[0-9a-f]{1,4}:){6})?
+                (?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}
+                (?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)
+            )
+        ]
+        |
+        (?:
+            (?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) \.
+        ){3}
+        (?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)                        # b.IP 地址
+        |
+        localhost                                                       # c. Localhost
+        |                                                                     # d.域名
+        (?: (?:[a-z¡-￿0-9]-*)*[a-z¡-￿0-9]+ | xn--[a-z0-9-]+ )                   # 域名标签 (e.g., "example", "xn--ls8h", "你好")
+        (?: \. (?: (?:[a-z¡-￿0-9]-*)*[a-z¡-￿0-9]+ | xn--[a-z0-9-]+ ) )*         # 后续子域名
+        ( \. (?: [a-z¡-￿]{2,} | xn--[a-z0-9-]+ ) )                             # 顶级域名
+        |
+    )
+    (?::\d{2,5})?                                                       # 端口
+    (?:/ \S*)?                                                          # 路径
+    $
+    """, re.VERBOSE | re.IGNORECASE)
 
 
 class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
