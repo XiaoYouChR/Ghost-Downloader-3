@@ -61,12 +61,17 @@ class ThemeChangedListener(QThread):
 
 
 class MainWindow(MSFluentWindow):
-    def __init__(self):
+    def __init__(self, silence=False):
         super().__init__()
 
         self.setMicaEffectEnabled(False)
 
         self.initWindow()
+
+        if not silence:
+            self.show()
+
+        QApplication.processEvents()
 
         # create sub interface
         self.taskInterface = TaskInterface(self)
@@ -280,10 +285,6 @@ class MainWindow(MSFluentWindow):
         self.splashScreen = CustomSplashScreen(self.windowIcon(), self)
         self.splashScreen.setIconSize(QSize(106, 106))
         self.splashScreen.raise_()
-
-        self.show()
-
-        QApplication.processEvents()
 
     def onAppError(self, message: str):
         """ app error slot """

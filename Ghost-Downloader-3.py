@@ -85,17 +85,10 @@ speedLimiter.setInterval(1000)  # 一秒刷新一次
 speedLimiter.timeout.connect(cfg.resetGlobalSpeed)  # 刷新 globalSpeed为 0
 speedLimiter.start()
 
-# create main window
-w = MainWindow()
+w = MainWindow(silence=True if "--silence" in sys.argv else False)
 
 # loading plugins
 pluginsPath=os.path.join(cfg.appPath, "plugins")
 loadPlugins(w, pluginsPath)
-
-try:  # 静默启动
-    if "--silence" in sys.argv:
-        w.hide()
-except:
-    w.show()
 
 sys.exit(app.exec())
