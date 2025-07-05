@@ -10,7 +10,12 @@ from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, Q
     QSizePolicy
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
     BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, HyperlinkButton, \
-    FluentIconBase, RangeConfigItem, SpinBox, ScrollArea
+    FluentIconBase, RangeConfigItem, SpinBox
+
+if sys.platform=="win32":
+    from qfluentwidgets import SmoothScrollArea as ScrollArea
+else:
+    from qfluentwidgets import ScrollArea
 from qfluentwidgets import InfoBar
 from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard,
                             HyperlinkCard, PrimaryPushSettingCard,
