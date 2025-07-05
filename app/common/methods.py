@@ -10,12 +10,12 @@ from email.utils import decode_rfc2231
 from functools import wraps
 from pathlib import Path
 from time import sleep, localtime, time_ns
-from typing import Optional
 from urllib.parse import unquote, parse_qs, urlparse
 
-import niquests
+import httpx
 from PySide6.QtCore import QUrl, QOperatingSystemVersion
 from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QApplication
 from loguru import logger
 from qfluentwidgets import MessageBox
 
@@ -25,27 +25,22 @@ from app.common.signal_bus import signalBus
 
 plugins = []
 
-
 def isGreaterEqualWin10():
     """ determine if the Windows version ≥ Win10 """
     cv = QOperatingSystemVersion.current()
     return sys.platform == "win32" and cv.majorVersion() >= 10
-
 
 def isLessThanWin10():
     """  determine if the Windows version < Win10"""
     cv = QOperatingSystemVersion.current()
     return sys.platform == "win32" and cv.majorVersion() < 10
 
-
 def isGreaterEqualWin11():
     """ determine if the windows version ≥ Win11 """
     return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000
 
-
 def isAbleToShowToast():
     return (sys.platform == 'win32' and sys.getwindowsversion().build >= 10240) or True
-
 
 def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
     try:
@@ -76,7 +71,7 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
         logger.error(f"Error loading plugins: {e}")
 
 
-def getSystemProxy() -> Optional[str]:
+def getSystemProxy():
     if sys.platform == "win32":
         try:
             import winreg
@@ -120,19 +115,13 @@ def getSystemProxy() -> Optional[str]:
     return None
 
 
-def getProxy() -> Optional[dict]:
+def getProxy():
     if cfg.proxyServer.value == "Off":
         return None
     elif cfg.proxyServer.value == "Auto":
-        return {
-            "http": getSystemProxy(),
-            "https": getSystemProxy(),
-        }
+        return getSystemProxy()
     else:
-        return {
-            "http": cfg.proxyServer.value,
-            "https": cfg.proxyServer.value,
-        }
+        return cfg.proxyServer.value
 
 
 def getReadableSize(size):
@@ -176,7 +165,7 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
                             break
                     else:
                         logger.warning(
-                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i + 1}/{retries}]次重试...'
+                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i+1}/{retries}]次重试...'
                         )
                         sleep(delay)
 
@@ -194,7 +183,7 @@ def openFile(fileResolve):
     QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
 
 
-def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
+def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
     # 解析 GMT 时间
     gmtTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00"))
 
@@ -234,20 +223,13 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
 #     except Exception as e:
 #         logger.error(f"Could not register the application: {e}")
 
-
-def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.SSLVerify.value, proxies=None,
-                followRedirects: bool = True) -> tuple:
-    if proxies is not None:
-        proxies = getProxy()
-    else:
-        proxies = {}
-
+def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.SSLVerify.value, proxy: str = "", followRedirects: bool = True) -> tuple:
+    if not proxy:
+        proxy = getProxy()
     headers = headers.copy()
-    headers["Range"] = "bytes=0-"  #尝试发送范围请求
-
+    headers["Range"] = "bytes=0-"#尝试发送范围请求
     # 使用 stream 请求获取响应, 反爬
-    with niquests.get(url, headers=headers, verify=verify, proxies=proxies, allow_redirects=followRedirects,
-                      stream=True) as response:
+    with httpx.stream("GET", url, headers=headers, verify=verify, proxy=proxy, follow_redirects=followRedirects, trust_env=False) as response:
         response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
 
         head = response.headers
@@ -262,8 +244,7 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
 
             if right != "*":
                 fileSize = int(right)
-                logger.info(
-                    f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}")
+                logger.info(f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}")
 
             elif "content-length" in head:
                 fileSize = int(head["content-length"])
@@ -353,8 +334,7 @@ def bringWindowToTop(window):
 
 
 def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
-                    headers: dict = None, status: str = "working", preBlockNum: int = None,
-                    notCreateHistoryFile: bool = False, fileSize: int = -1):
+                    headers: dict = None, status:str = "working", preBlockNum: int= None, notCreateHistoryFile: bool = False, fileSize: int = -1):
     """ Global function to add download task """
     if not filePath:
         filePath = cfg.downloadFolder.value
@@ -365,9 +345,7 @@ def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
     if not headers:
         headers = Headers
 
-    signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile,
-                                 str(fileSize))
-
+    signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))
 
 def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
     """ show message box """
@@ -414,14 +392,14 @@ def isSparseSupported(filePath: Path) -> bool:
 
             # 调用 Windows API 获取卷信息
             success = ctypes.windll.kernel32.GetVolumeInformationW(
-                ctypes.c_wchar_p(rootPath),  # 根路径
-                volumeNameBuffer,  # 卷名缓冲区
-                ctypes.sizeof(volumeNameBuffer),  # 缓冲区大小
-                None,  # 序列号
-                None,  # 最大组件长度
-                None,  # 文件系统标志
-                fileSystemBuffer,  # 文件系统名称缓冲区
-                ctypes.sizeof(fileSystemBuffer)  # 缓冲区大小
+                ctypes.c_wchar_p(rootPath),          # 根路径
+                volumeNameBuffer,                    # 卷名缓冲区
+                ctypes.sizeof(volumeNameBuffer),     # 缓冲区大小
+                None,                                # 序列号
+                None,                                # 最大组件长度
+                None,                                # 文件系统标志
+                fileSystemBuffer,                    # 文件系统名称缓冲区
+                ctypes.sizeof(fileSystemBuffer)      # 缓冲区大小
             )
 
             if not success:
@@ -462,7 +440,6 @@ def isSparseSupported(filePath: Path) -> bool:
         logger.warning(f"文件系统检测失败: {repr(e)}")
         return False
 
-
 def createSparseFile(filePath: Path) -> bool:
     """
     创建一个支持稀疏写入的空文件。
@@ -489,8 +466,8 @@ def createSparseFile(filePath: Path) -> bool:
                 ["fsutil", "sparse", "setflag", str(filePath)],
                 capture_output=True,
                 text=True,
-                check=True,  # 如果命令返回非零退出码，则引发 CalledProcessError
-                creationflags=subprocess.CREATE_NO_WINDOW  # 不显示控制台窗口
+                check=True, # 如果命令返回非零退出码，则引发 CalledProcessError
+                creationflags=subprocess.CREATE_NO_WINDOW # 不显示控制台窗口
             )
             # check=True 会处理错误，但为清晰起见保留检查
             if result.returncode != 0:
