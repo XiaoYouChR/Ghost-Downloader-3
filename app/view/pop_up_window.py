@@ -1,16 +1,30 @@
 import sys
 from os.path import dirname, basename
+from pathlib import Path
 
-from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject
+from PySide6.QtCore import Qt, QUrl, QTimer, QEasingCurve, QPropertyAnimation, QRect, QFileInfo, QObject, \
+    QStandardPaths, QResource
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPainterPath
 from PySide6.QtWidgets import QWidget, QFileIconProvider, QPushButton, QToolButton
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qframelesswindow import WindowEffect
 
-from app.common.methods import isGreaterEqualWin10, attemptRegisterAppID
+from app.common.methods import isGreaterEqualWin10
 from app.common.methods import openFile, bringWindowToTop, isAbleToShowToast
+from app.common.signal_bus import signalBus
 from app.view.Ui_PopUpWindow import Ui_PopUpWindow
+
+if isAbleToShowToast():
+    from desktop_notifier import DesktopNotifierSync, Icon, Button
+
+    _ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
+    if not _.exists():
+        with open(_, "wb") as f:
+            f.write(QResource(":/image/logo.png").data())
+
+    desktopNotifierIcon = Icon(path=_)
+    desktopNotifier = DesktopNotifierSync(app_name="Ghost Downloader", app_icon=desktopNotifierIcon)
 
 
 class PopUpWindowBase(QWidget, Ui_PopUpWindow):
@@ -226,7 +240,7 @@ class FinishedPopUpWindow(PopUpWindowBase):
 
         _ = basename(fileResolvePath)
         self.contentLabel.setText(_)
-        self.contentLabel.fontMetrics().elidedText(_, Qt.ElideRight, 261)
+        self.contentLabel.fontMetrics().elidedText(_, Qt.TextElideMode.ElideRight, 261)
         
         self.openFileBtn.clicked.connect(lambda: openFile(fileResolvePath))
         self.openPathBtn.clicked.connect(lambda: openFile(dirname(fileResolvePath)))
@@ -234,33 +248,18 @@ class FinishedPopUpWindow(PopUpWindowBase):
     @classmethod
     def showPopUpWindow(cls, fileResolvePath:str, mainWindow=None):
         if isAbleToShowToast():
-            from app.common.concurrent.TaskExecutor import TaskExecutor
-            from PySide6.QtCore import QStandardPaths, QFileInfo
-            from win11toast import toast
-            from PySide6.QtWidgets import QFileIconProvider
-            from os.path import dirname
+            iconTempFile = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/finished_file_icon.png"
+            QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(48, 48).scaled(128, 128, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+                                   mode=Qt.TransformationMode.SmoothTransformation).save(iconTempFile, "PNG")
 
-            iconTempFile = QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/finished_file_icon.png"
-            QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(128, 128).save(iconTempFile, "PNG")
+            buttons = [Button(cls.tr('打开文件'), lambda: openFile(fileResolvePath)),
+                       Button(cls.tr('打开目录'), lambda: openFile(dirname(fileResolvePath)))]
+            return desktopNotifier.send(cls.tr("下载完成"), fileResolvePath, buttons=buttons, on_clicked=signalBus.showMainWindow.emit, icon=Icon(Path(iconTempFile)))
 
-            icon = {
-                'src': f"file://{iconTempFile}",
-                'placement': 'appLogoOverride'
-            }
-
-            buttons = [
-                {'activationType': 'protocol', 'arguments': fileResolvePath, 'content': cls.tr('打开文件')},
-                {'activationType': 'protocol', 'arguments': dirname(fileResolvePath), 'content': cls.tr('打开目录')}
-            ]
-                
-            attemptRegisterAppID()
-            
-            return TaskExecutor.run(toast, cls.tr("下载完成"), fileResolvePath, icon=icon, buttons=buttons, app_id="GD3")
         else:
             w = FinishedPopUpWindow(fileResolvePath, mainWindow)
             w.show()
             return w
-
 
 class ReceivedPopUpWindow(PopUpWindowBase):
     def __init__(self, receiveContent:str, mainWindow=None):
@@ -283,23 +282,8 @@ class ReceivedPopUpWindow(PopUpWindowBase):
     @classmethod
     def showPopUpWindow(cls, receiveContent:str, mainWindow=None):
         if isAbleToShowToast():
-            from app.common.concurrent.TaskExecutor import TaskExecutor
-            from pathlib import Path
-            from PySide6.QtCore import QStandardPaths, QResource
-            from win11toast import toast
+            return desktopNotifier.send(cls.tr("接收到来自浏览器的下载任务:"), receiveContent, on_clicked=signalBus.showMainWindow.emit)
 
-            logoTempFile = Path(QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/gd3_logo.png")
-            if not logoTempFile.exists():
-                with open(logoTempFile, "wb") as f:
-                    f.write(QResource(":/image/logo.png").data())
-            icon = {
-                'src': f"file://{logoTempFile}",
-                'placement': 'appLogoOverride'
-            }
-            
-            attemptRegisterAppID()
-            
-            return TaskExecutor.run(toast, cls.tr("接收到来自浏览器的下载任务:"), receiveContent, icon=icon, app_id="GD3")  # TODO 点击后 bringWindowToTop(mainWindow), 需要信号
         else:
             w = ReceivedPopUpWindow(receiveContent, mainWindow)
             w.show()

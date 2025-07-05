@@ -34,51 +34,22 @@ class TestPopUpWindow(QWidget):
         self.setLayout(layout)
 
     def show_received_toast(self):
-        from app.common.concurrent.TaskExecutor import TaskExecutor
-        from pathlib import Path
-        from PySide6.QtCore import QStandardPaths, QResource
-        from win11toast import toast
-
-        logoTempFile = Path(QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/gd3_logo.png")
-        if not logoTempFile.exists():
-            with open(logoTempFile, "wb") as f:
-                f.write(QResource(":/image/logo.png").data())
-        icon = {
-            'src': f"file://{logoTempFile}",
-            'placement': 'appLogoOverride'
-        }
-        TaskExecutor.run(toast, "接收到来自浏览器的下载任务:", "https://cn.pornhub.com", on_click=lambda args: print('clicked!', args), icon=icon)
+        pass
+        # TaskExecutor.run(desktopNotifier.send, "Received:", "https://github.com", buttons=[
+        #     Button("OpenFile", lambda :openFile(r"C:\Users\XiaoYouChR\Downloads\10.0 Cheetah & 10.1 Puma.png"))
+        # ],)
 
     def show_finished_toast(self):
-        from app.common.concurrent.TaskExecutor import TaskExecutor
-        from PySide6.QtCore import QStandardPaths, QFileInfo
-        from win11toast import toast
-        from PySide6.QtWidgets import QFileIconProvider
-        from os.path import dirname
-
-        fileResolovePath = r"C:\Users\BGTV\Downloads\Ghost-Downloader-v3.5.4-Windows-x86_64.zip"
-
-        iconTempFile = QStandardPaths.writableLocation(QStandardPaths.TempLocation) + "/finished_file_icon.png"
-        QFileIconProvider().icon(QFileInfo(fileResolovePath)).pixmap(128, 128).save(iconTempFile, "PNG")
-
-        icon = {
-            'src': f"file://{iconTempFile}",
-            'placement': 'appLogoOverride'
-        }
-
-        buttons = [
-            {'activationType': 'protocol', 'arguments': fileResolovePath, 'content': '打开文件'},
-            {'activationType': 'protocol', 'arguments': dirname(fileResolovePath), 'content': '打开目录'}
-        ]
-
-        TaskExecutor.run(toast, "下载完成", fileResolovePath, icon=icon, buttons=buttons)
-
+        pass
+        # TaskExecutor.run(desktopNotifier.send, "Received:", "https://github.com", buttons=[
+        #     Button("OpenFile", lambda :openFile(r"C:\Users\XiaoYouChR\Downloads\10.0 Cheetah & 10.1 Puma.png"))
+        # ])
 
     def show_received_pop_up(self):
         ReceivedPopUpWindow.showPopUpWindow(f"")
 
     def show_finished_pop_up(self):
-        FinishedPopUpWindow.showPopUpWindow(r"F:\Class-Widget\audio\attend_class.wav")
+        FinishedPopUpWindow.showPopUpWindow(r"C:\Users\XiaoYouChR\Downloads\OfficeSetup.exe")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

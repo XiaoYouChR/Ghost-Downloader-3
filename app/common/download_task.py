@@ -664,7 +664,10 @@ class DownloadTask(QThread):
         """Cancel all worker tasks"""
         for task in self.tasks:
             if task and not task.done():
-                task.cancel()
+                try:
+                    task.cancel()
+                finally:
+                    pass
 
     def __closeFiles(self):
         """Close all open files"""

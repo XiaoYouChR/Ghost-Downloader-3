@@ -6,7 +6,6 @@ from PySide6.QtCore import QSharedMemory, Qt, QEvent
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from .methods import bringWindowToTop
 from .signal_bus import signalBus
 
 
