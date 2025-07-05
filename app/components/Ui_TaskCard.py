@@ -10,8 +10,8 @@
 
 from PySide6.QtCore import (QSize, Qt)
 from PySide6.QtWidgets import (QHBoxLayout, QSizePolicy, QVBoxLayout)
-from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import (PixmapLabel, TitleLabel, ToolButton, PrimaryToolButton)
+from qfluentwidgets import FluentIcon as FIF, SubtitleLabel
+from qfluentwidgets import (PixmapLabel, ToolButton, PrimaryToolButton)
 
 from app.components.custom_components import IconBodyLabel
 
@@ -21,70 +21,58 @@ class Ui_TaskCard(object):
         if not TaskCard.objectName():
             TaskCard.setObjectName(u"TaskCard")
         TaskCard.resize(793, 100)
-        TaskCard.setMinimumSize(QSize(793, 90))
-        TaskCard.setMaximumSize(QSize(16777215, 90))
-        self.cardHorizontalLayout = QHBoxLayout(TaskCard)
-        self.cardHorizontalLayout.setObjectName(u"cardHorizontalLayout")
-        self.cardHorizontalLayout.setContentsMargins(18, 8, 18, 8)
-        self.cardHorizontalLayout.setSpacing(18)
+        TaskCard.setFixedHeight(68)
+
+        self.vBoxLayout = QVBoxLayout(TaskCard)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.setContentsMargins(4, 0, 4, 0)
+
+        self.horizontalLayout = QHBoxLayout(TaskCard)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(14, 0, 14, 0)
+        self.horizontalLayout.setSpacing(8)
         self.LogoPixmapLabel = PixmapLabel(TaskCard)
         self.LogoPixmapLabel.setObjectName(u"LogoPixmapLabel")
-        self.LogoPixmapLabel.setMinimumSize(QSize(70, 70))
-        self.LogoPixmapLabel.setMaximumSize(QSize(70, 70))
+        self.LogoPixmapLabel.setFixedSize(QSize(48, 48))
         self.LogoPixmapLabel.setScaledContents(True)
-        self.LogoPixmapLabel.setAlignment(Qt.AlignCenter)
+        self.LogoPixmapLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.cardHorizontalLayout.addWidget(self.LogoPixmapLabel)
+        self.horizontalLayout.addWidget(self.LogoPixmapLabel)
 
-        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout = QVBoxLayout() # 放进度条的
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
-
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setSpacing(6)
-
-        # self.verticalLayout.addSpacing(15) # 把整体往下撑
 
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setSpacing(0)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
 
-        self.titleLabel = TitleLabel(TaskCard)
+        self.titleLabel = SubtitleLabel(TaskCard)
         self.titleLabel.setObjectName(u"titleLabel")
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.titleLabel.sizePolicy().hasHeightForWidth())
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.titleLabel.setSizePolicy(sizePolicy)
         self.titleLabel.setFixedHeight(38)
 
         self.verticalLayout_2.addWidget(self.titleLabel)
-
-        # 还需要把 statusHorizonLayout 在 horizonLayout 里面往下撑, 要不然非常难看!
-        self.verticalLayout_2.addSpacing(8)
 
         self.statusHorizonLayout = QHBoxLayout()
         self.statusHorizonLayout.setObjectName(u"statusHorizonLayout")
         self.statusHorizonLayout.setSpacing(8)
         self.speedLabel = IconBodyLabel("下载速度", FIF.SPEED_HIGH, TaskCard)
         self.speedLabel.setObjectName(u"speedLabel")
-        self.speedLabel.setMinimumSize(QSize(0, 19))
-        self.speedLabel.setMaximumSize(QSize(16777215, 19))
+        self.speedLabel.setFixedHeight(19)
 
         self.statusHorizonLayout.addWidget(self.speedLabel)
 
         self.leftTimeLabel = IconBodyLabel("剩余时间", FIF.STOP_WATCH, TaskCard)
         self.leftTimeLabel.setObjectName(u"leftTimeLabel")
-        self.leftTimeLabel.setMinimumSize(QSize(0, 19))
-        self.leftTimeLabel.setMaximumSize(QSize(16777215, 19))
+        self.leftTimeLabel.setFixedHeight(19)
 
         self.statusHorizonLayout.addWidget(self.leftTimeLabel)
 
         self.progressLabel = IconBodyLabel("下载进度", FIF.LIBRARY, TaskCard)
         self.progressLabel.setObjectName(u"progressLabel")
-        self.progressLabel.setMinimumSize(QSize(0, 19))
-        self.progressLabel.setMaximumSize(QSize(16777215, 19))
+        self.progressLabel.setFixedHeight(19)
 
         self.statusHorizonLayout.addWidget(self.progressLabel)
         self.statusHorizonLayout.addSpacing(1677215)
@@ -97,8 +85,7 @@ class Ui_TaskCard(object):
 
         self.infoLabel = IconBodyLabel("若任务初始化过久，请检查网络连接后重试.", FIF.INFO, TaskCard)
         self.infoLabel.setObjectName(u"infoLabel")
-        self.infoLabel.setMinimumSize(QSize(0, 19))
-        self.infoLabel.setMaximumSize(QSize(16777215, 19))
+        self.infoLabel.setFixedHeight(19)
 
         self.infoHorizonLayout.addWidget(self.infoLabel)
 
@@ -108,28 +95,24 @@ class Ui_TaskCard(object):
 
         self.pauseButton = PrimaryToolButton(TaskCard)
         self.pauseButton.setObjectName(u"pauseButton")
-        self.pauseButton.setMinimumSize(QSize(31, 31))
-        self.pauseButton.setMaximumSize(QSize(31, 31))
+        self.pauseButton.setFixedSize(QSize(31, 31))
 
         self.horizontalLayout.addWidget(self.pauseButton)
 
         self.folderButton = ToolButton(TaskCard)
         self.folderButton.setObjectName(u"folderButton")
-        self.folderButton.setMinimumSize(QSize(31, 31))
-        self.folderButton.setMaximumSize(QSize(31, 31))
+        self.folderButton.setFixedSize(QSize(31, 31))
 
         self.horizontalLayout.addWidget(self.folderButton)
 
         self.cancelButton = ToolButton(TaskCard)
         self.cancelButton.setObjectName(u"cancelButton")
-        self.cancelButton.setMinimumSize(QSize(31, 31))
-        self.cancelButton.setMaximumSize(QSize(31, 31))
+        self.cancelButton.setFixedSize(QSize(31, 31))
 
         self.horizontalLayout.addWidget(self.cancelButton)
 
-        self.verticalLayout.addLayout(self.horizontalLayout)
-
-        self.cardHorizontalLayout.addLayout(self.verticalLayout)
+        self.vBoxLayout.addLayout(self.horizontalLayout)
+        self.vBoxLayout.addLayout(self.verticalLayout)
 
         # 初始化 Icon 类
         self.pauseButton.setIcon(FIF.PAUSE)

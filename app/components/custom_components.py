@@ -41,7 +41,7 @@ class IconBodyLabel(BodyLabel):
         super().__init__(parent)
         self.setText(text)
         self.icon = icon
-        self.setContentsMargins(24, 0, 0, 0)  # 给 Icon 和 Text 之间留出 4px 的间距
+        self.setContentsMargins(20, 0, 0, 2)  # 给 Icon 和 Text 之间留出 4px 的间距
         self.iconSize = QSize(16, 16)
 
     def paintEvent(self, event):
@@ -53,7 +53,7 @@ class IconBodyLabel(BodyLabel):
 
         # 绘制图标
         iconHeight, iconWidth = self.iconSize.height(), self.iconSize.width()
-        iconRect = QRect(4, (self.height() - iconHeight) // 2, iconWidth, iconHeight)
+        iconRect = QRect(0, (self.height() - iconHeight) // 2, iconWidth, iconHeight)
         drawIcon(self.icon, painter, iconRect)
 
 

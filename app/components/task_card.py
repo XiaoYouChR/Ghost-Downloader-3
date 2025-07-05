@@ -67,7 +67,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.titleLabel.setText(self.tr("正在初始化任务..."))
 
         self.LogoPixmapLabel.setPixmap(QPixmap(":/image/logo.png"))
-        self.LogoPixmapLabel.setFixedSize(70, 70)
+        self.LogoPixmapLabel.setFixedSize(48, 48)
 
         self.progressBar = ProgressBar(self)
         self.progressBar.setObjectName(u"progressBar")
@@ -78,7 +78,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         elif self.status == "finished":
             # TODO 超分辨率触发条件
-            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+            _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(128, 128, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+                                   mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
 
             if _:
                 pixmap = _
@@ -87,7 +88,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
             self.titleLabel.setText(self.fileName)
             self.LogoPixmapLabel.setPixmap(pixmap)
-            self.LogoPixmapLabel.setFixedSize(70, 70)
+            self.LogoPixmapLabel.setFixedSize(48, 48)
 
             self.__onTaskFinished()
 
@@ -193,10 +194,9 @@ class TaskCard(CardWidget, Ui_TaskCard):
         self.fileSize = self.task.fileSize
         self.ableToParallelDownload = ableToParallelDownload
 
-        # TODO 因为Windows会返回已经处理过的只有左上角一点点的图像，所以需要超分辨率触发条件
-        # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(70, 70, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
-        #                            mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
-        _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
+        _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(128, 128, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+                                   mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
+        # _ = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128, 128)  # 自动获取图标
 
         if _:
             pixmap = _
@@ -206,7 +206,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 显示信息
         self.titleLabel.setText(self.fileName)
         self.LogoPixmapLabel.setPixmap(pixmap)
-        self.LogoPixmapLabel.setFixedSize(70, 70)
+        self.LogoPixmapLabel.setFixedSize(48, 48)
 
         if self.status == "waiting":
             self.__showInfo(self.tr("排队中..."))
@@ -469,8 +469,8 @@ class TaskCard(CardWidget, Ui_TaskCard):
             self.updateTaskRecord("finished")
 
             # 再获取一次图标
-            fileinfo = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(128,
-                                                                                                      128)  # 自动获取图标
+            fileinfo = QFileIconProvider().icon(QFileInfo(f"{self.filePath}/{self.fileName}")).pixmap(48, 48).scaled(128, 128, aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+                                   mode=Qt.TransformationMode.SmoothTransformation)  # 自动获取图标
 
             if fileinfo:
                 pass
@@ -478,7 +478,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 fileinfo = QPixmap(":/image/logo.png")
 
             self.LogoPixmapLabel.setPixmap(fileinfo)
-            self.LogoPixmapLabel.setFixedSize(70, 70)
+            self.LogoPixmapLabel.setFixedSize(48, 48)
 
         self.status = "finished"
 
