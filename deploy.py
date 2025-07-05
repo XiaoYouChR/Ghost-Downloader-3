@@ -31,6 +31,7 @@ elif sys.platform == "darwin":
         '--plugin-enable=pyside6',
         # '--show-memory',
         # '--show-progress',
+        '--static-libpython=no',
         "--macos-create-app-bundle",
         "--assume-yes-for-download",
         "--macos-app-mode=gui",

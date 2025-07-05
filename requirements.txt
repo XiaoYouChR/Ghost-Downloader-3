@@ -2,7 +2,7 @@ PySide6-Fluent-Widgets>=1.8.0
 PysideSix-Frameless-Window>=0.7.1
 PySide6==6.8.3
 loguru
-niquests[socks]
+httpx[socks]
 nuitka==2.7.11
 desktop-notifier
 darkdetect[macos-listener]; sys_platform=="darwin"

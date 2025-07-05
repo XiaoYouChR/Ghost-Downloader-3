@@ -1,4 +1,4 @@
-import niquests
+import httpx
 from PySide6.QtCore import QThread, Signal, QVersionNumber
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QTableWidgetItem
@@ -19,9 +19,9 @@ class GetUpdateThread(QThread):
     def run(self):
         try:
             _ = getProxy()
-            content = niquests.get(url="https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest", headers={
+            content = httpx.get(url="https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest", headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-                                proxies=_, allow_redirects=True).json()
+                                proxy=_, follow_redirects=True, trust_env=False).json()
 
             tagName = content["tag_name"][1:]
 
