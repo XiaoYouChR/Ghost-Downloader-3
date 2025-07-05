@@ -27,6 +27,50 @@ if isAbleToShowToast():
     desktopNotifier = DesktopNotifierSync(app_name="Ghost Downloader", app_icon=desktopNotifierIcon)
 
 
+class LimitedRunTimer(QTimer):
+    """
+    一个在运行指定次数后会自动销毁的 QTimer。
+    """
+
+    _activeTimers = set()   # 防止垃圾回收
+
+    def __init__(self, callback, parent=None):
+        super().__init__(parent)
+        self._callback = callback
+        self._runCount = 0
+        self.maxRuns = 50  # 总运行次数
+
+        self.setInterval(200)  # 设置时间间隔为 200ms
+        self.timeout.connect(self._onTimeout)
+
+    def _onTimeout(self):
+        """计时器每次超时时调用的内部槽函数。"""
+        self._runCount += 1
+
+        # 执行回调函数
+        if self._callback:
+            try:
+                self._callback()
+            except Exception:
+                self.stopAndDestroy()
+                return
+
+        if self._runCount >= self.maxRuns:
+            self.stopAndDestroy()
+
+    def stopAndDestroy(self):
+        self.stop()
+        LimitedRunTimer._activeTimers.discard(self)
+        self.deleteLater()
+
+    @staticmethod
+    def create(callback):
+        timerInstance = LimitedRunTimer(callback)
+        LimitedRunTimer._activeTimers.add(timerInstance) # 将实例添加到集合中，以保证其存活
+        timerInstance.start()
+        return timerInstance
+
+
 class PopUpWindowBase(QWidget, Ui_PopUpWindow):
     def __init__(self, mainWindow=None):
         super().__init__(parent=None)
@@ -254,7 +298,10 @@ class FinishedPopUpWindow(PopUpWindowBase):
 
             buttons = [Button(cls.tr('打开文件'), lambda: openFile(fileResolvePath)),
                        Button(cls.tr('打开目录'), lambda: openFile(dirname(fileResolvePath)))]
-            return desktopNotifier.send(cls.tr("下载完成"), fileResolvePath, buttons=buttons, on_clicked=signalBus.showMainWindow.emit, icon=Icon(Path(iconTempFile)))
+
+            LimitedRunTimer.create(desktopNotifier.get_current_notifications)
+
+            return desktopNotifier.send(cls.tr("下载完成"), fileResolvePath, buttons=buttons, on_clicked=signalBus.showMainWindow.emit, icon=Icon(Path(iconTempFile)), timeout=10)
 
         else:
             w = FinishedPopUpWindow(fileResolvePath, mainWindow)
@@ -282,6 +329,8 @@ class ReceivedPopUpWindow(PopUpWindowBase):
     @classmethod
     def showPopUpWindow(cls, receiveContent:str, mainWindow=None):
         if isAbleToShowToast():
+            LimitedRunTimer.create(desktopNotifier.get_current_notifications)
+
             return desktopNotifier.send(cls.tr("接收到来自浏览器的下载任务:"), receiveContent, on_clicked=signalBus.showMainWindow.emit)
 
         else:
