@@ -142,7 +142,7 @@ class CustomAcrylicMenu(RoundMenu):
 
     def __initWidgets(self):
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint |
-                            Qt.WindowType.NoDropShadowWindowHint)
+                            Qt.WindowType.NoDropShadowWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
 
@@ -152,7 +152,7 @@ class CustomAcrylicMenu(RoundMenu):
         self.timer.setInterval(400)
         self.timer.timeout.connect(self._onShowMenuTimeOut)
 
-        self.hBoxLayout.addWidget(self.view, 1, Qt.AlignCenter)
+        self.hBoxLayout.addWidget(self.view, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
         FluentStyleSheet.MENU.apply(self)

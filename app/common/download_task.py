@@ -22,7 +22,6 @@ class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
 
     def __init__(self, start, progress, end, client: httpx.AsyncClient):
-        self._task = None
         self.startPos = start
         self.progress = progress
         self.endPos = end
@@ -44,7 +43,6 @@ class DownloadWorker:
             return self._task
         else:
             logger.error("Task not set yet")
-            return None
 
     @task.setter
     def task(self, task: asyncio.Task):
