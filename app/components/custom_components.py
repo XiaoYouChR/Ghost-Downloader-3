@@ -1,9 +1,12 @@
+import darkdetect
 from PySide6.QtCore import QSize, QRect, QTimer
 from PySide6.QtGui import QPainter, Qt, QIcon
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QStyleFactory, QStyle, QProxyStyle, QMenu
 from qfluentwidgets import BodyLabel, FluentIconBase, drawIcon, ProgressBar, RoundMenu, FluentStyleSheet
 from qfluentwidgets.components.widgets.menu import MenuActionListWidget
 from qframelesswindow import WindowEffect
+
+from app.common.config import cfg
 
 
 # 我是傻逼
@@ -165,6 +168,6 @@ class CustomAcrylicMenu(RoundMenu):
         self.windowEffect.addMenuShadowEffect(self.winId())
         self.windowEffect.addShadowEffect(self.winId())
         self.windowEffect.enableBlurBehindWindow(self.winId())
-        self.windowEffect.setAcrylicEffect(self.winId())
+        self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if (darkdetect.isDark() if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark') else "FFFFFF30")
 
         super().showEvent(event)

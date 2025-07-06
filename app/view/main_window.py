@@ -202,14 +202,7 @@ class MainWindow(MSFluentWindow):
         if sys.platform == 'win32':
             self.windowEffect.removeBackgroundEffect(self.winId())
 
-            _ = cfg.customThemeMode.value
-
-            if _ == 'System':
-                _ = True if darkdetect.isDark() else False
-            elif _ == 'Dark':
-                _ = True
-            elif _ == 'Light':
-                _ = False
+            _ = darkdetect.isDark() if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark'
 
             if cfg.backgroundEffect.value == 'Acrylic':
                 self.setStyleSheet("background-color: transparent")
