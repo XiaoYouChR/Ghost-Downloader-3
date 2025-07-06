@@ -21,7 +21,8 @@ from qfluentwidgets import (SettingCardGroup, SwitchSettingCard, PushSettingCard
                             HyperlinkCard, PrimaryPushSettingCard,
                             setTheme, RangeSettingCard)
 
-from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL, FIREFOX_ADDONS_URL
+from ..common.config import cfg, FEEDBACK_URL, AUTHOR, VERSION, YEAR, AUTHOR_URL, FIREFOX_ADDONS_URL, EDGE_ADDONS_URL, \
+    CHROME_ADDONS_URL
 from ..common.methods import getSystemProxy
 from ..components.select_folder_setting_card import SelectFolderSettingCard
 from ..components.update_dialog import checkUpdate
@@ -304,12 +305,24 @@ class SettingInterface(ScrollArea):
             self.tr("导出 Chromium 扩展"),
             FIF.DICTIONARY,
             self.tr("安装浏览器扩展"),
-            self.tr("需要您导出文件后手动安装至浏览器"),
+            self.tr("请选择最适合您的浏览器扩展安装方式"),
             self.browserGroup
         )
         self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
-        self.installFirefoxAddonsBtn.setText(self.tr("安装 Firefox 扩展"))
+        self.installFirefoxAddonsBtn.setText(self.tr("Firefox 扩展商店"))
         self.installFirefoxAddonsBtn.setUrl(FIREFOX_ADDONS_URL)
+        self.installExtensionCard.hBoxLayout.insertWidget(5, self.installFirefoxAddonsBtn, 0, Qt.AlignRight)
+        self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
+
+        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installFirefoxAddonsBtn.setText(self.tr("Edge 扩展商店"))
+        self.installFirefoxAddonsBtn.setUrl(EDGE_ADDONS_URL)
+        self.installExtensionCard.hBoxLayout.insertWidget(5, self.installFirefoxAddonsBtn, 0, Qt.AlignRight)
+        self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
+
+        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installFirefoxAddonsBtn.setText(self.tr("Chrome 扩展商店"))
+        self.installFirefoxAddonsBtn.setUrl(CHROME_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(5, self.installFirefoxAddonsBtn, 0, Qt.AlignRight)
         self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
 

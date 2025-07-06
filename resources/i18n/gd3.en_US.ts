@@ -4,52 +4,52 @@
 <context>
     <name>AddTaskOptionDialog</name>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="67"/>
+        <location filename="../../app/components/add_task_dialog.py" line="96"/>
         <source>下载线程数</source>
         <translation>Download Threads</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="74"/>
+        <location filename="../../app/components/add_task_dialog.py" line="103"/>
         <source>编辑请求标头</source>
         <translation>Edit Request Headers</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="76"/>
+        <location filename="../../app/components/add_task_dialog.py" line="105"/>
         <source>自定义请求标头</source>
         <translation>Custom Request Headers</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="141"/>
-        <location filename="../../app/components/add_task_dialog.py" line="163"/>
-        <location filename="../../app/components/add_task_dialog.py" line="166"/>
-        <location filename="../../app/components/add_task_dialog.py" line="184"/>
-        <location filename="../../app/components/add_task_dialog.py" line="187"/>
+        <location filename="../../app/components/add_task_dialog.py" line="170"/>
+        <location filename="../../app/components/add_task_dialog.py" line="192"/>
+        <location filename="../../app/components/add_task_dialog.py" line="195"/>
+        <location filename="../../app/components/add_task_dialog.py" line="213"/>
+        <location filename="../../app/components/add_task_dialog.py" line="216"/>
         <source>错误</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="142"/>
+        <location filename="../../app/components/add_task_dialog.py" line="171"/>
         <source>解析第 {} 个链接时遇到错误: {}</source>
         <translation>Error parsing link {}: {}</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="166"/>
-        <location filename="../../app/components/add_task_dialog.py" line="187"/>
+        <location filename="../../app/components/add_task_dialog.py" line="195"/>
+        <location filename="../../app/components/add_task_dialog.py" line="216"/>
         <source>似乎是没有权限向此目录写入文件</source>
         <translation>No permission to write files to this directory</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="200"/>
+        <location filename="../../app/components/add_task_dialog.py" line="229"/>
         <source>选择文件夹</source>
         <translation>Select Folder</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="291"/>
+        <location filename="../../app/components/add_task_dialog.py" line="320"/>
         <source>警告</source>
         <translation>Warning</translation>
     </message>
     <message>
-        <location filename="../../app/components/add_task_dialog.py" line="292"/>
+        <location filename="../../app/components/add_task_dialog.py" line="321"/>
         <source>第{}个链接无效!</source>
         <translation>Link {} is invalid!</translation>
     </message>
@@ -57,47 +57,47 @@
 <context>
     <name>CustomProxySettingCard</name>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="38"/>
+        <location filename="../../app/view/setting_interface.py" line="44"/>
         <source>代理</source>
         <translation>Proxy</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="38"/>
+        <location filename="../../app/view/setting_interface.py" line="44"/>
         <source>设置下载时希望使用的代理</source>
         <translation>Set proxy for downloads</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="47"/>
+        <location filename="../../app/view/setting_interface.py" line="53"/>
         <source>不使用代理</source>
         <translation>No Proxy</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="49"/>
+        <location filename="../../app/view/setting_interface.py" line="55"/>
         <source>自动检测系统代理</source>
         <translation>Auto-detect System Proxy</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="51"/>
+        <location filename="../../app/view/setting_interface.py" line="57"/>
         <source>使用自定义代理</source>
         <translation>Use Custom Proxy</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="58"/>
+        <location filename="../../app/view/setting_interface.py" line="64"/>
         <source>编辑代理服务器: </source>
         <translation>Edit Proxy Server: </translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="63"/>
+        <location filename="../../app/view/setting_interface.py" line="69"/>
         <source>代理 IP 地址</source>
         <translation>Proxy IP Address</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="66"/>
+        <location filename="../../app/view/setting_interface.py" line="72"/>
         <source>端口</source>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="145"/>
+        <location filename="../../app/view/setting_interface.py" line="151"/>
         <source>未检测到代理</source>
         <translation>No Proxy Detected</translation>
     </message>
@@ -187,17 +187,17 @@
 <context>
     <name>FinishedPopUpWindow</name>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="214"/>
+        <location filename="../../app/view/pop_up_window.py" line="272"/>
         <source>下载完成：</source>
         <translation>Download Complete: </translation>
     </message>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="215"/>
+        <location filename="../../app/view/pop_up_window.py" line="273"/>
         <source>打开目录</source>
         <translation>Open Folder</translation>
     </message>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="216"/>
+        <location filename="../../app/view/pop_up_window.py" line="274"/>
         <source>打开文件</source>
         <translation>Open File</translation>
     </message>
@@ -213,27 +213,27 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../app/view/main_window.py" line="244"/>
+        <location filename="../../app/view/main_window.py" line="242"/>
         <source>任务列表</source>
         <translation>Task List</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="247"/>
+        <location filename="../../app/view/main_window.py" line="245"/>
         <source>新建任务</source>
         <translation>New Task</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="256"/>
+        <location filename="../../app/view/main_window.py" line="254"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="300"/>
+        <location filename="../../app/view/main_window.py" line="294"/>
         <source>意料之外的错误!</source>
         <translation>Unexpected Error!</translation>
     </message>
     <message>
-        <location filename="../../app/view/main_window.py" line="301"/>
+        <location filename="../../app/view/main_window.py" line="295"/>
         <source>错误消息已写入粘贴板和日志。是否报告?</source>
         <translation>Error message copied to clipboard and logged. Report it?</translation>
     </message>
@@ -249,7 +249,7 @@
 <context>
     <name>ReceivedPopUpWindow</name>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="269"/>
+        <location filename="../../app/view/pop_up_window.py" line="317"/>
         <source>接收到来自浏览器的下载任务:</source>
         <translation>Received download task from browser:</translation>
     </message>
@@ -270,309 +270,327 @@
 <context>
     <name>SettingInterface</name>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="211"/>
+        <location filename="../../app/view/setting_interface.py" line="217"/>
         <source>下载相关设置</source>
         <translation>Download Settings</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="216"/>
+        <location filename="../../app/view/setting_interface.py" line="222"/>
         <source>预分配线程数</source>
         <translation>Pre-distribute Threads</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="217"/>
+        <location filename="../../app/view/setting_interface.py" line="223"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
         <translation>More threads speed up downloads. Over 64 threads may trigger anti-scraping and corrupt files</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="224"/>
+        <location filename="../../app/view/setting_interface.py" line="230"/>
         <source>最大重新分配大小 (MB)</source>
         <translation>Max Redistribute Size (MB)</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="225"/>
+        <location filename="../../app/view/setting_interface.py" line="231"/>
         <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
         <translation>Redistribute if thread&apos;s workload &gt;= this value and (thread completes or auto boost)</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="232"/>
+        <location filename="../../app/view/setting_interface.py" line="238"/>
         <source>最大任务数</source>
         <translation>Max Concurrent Tasks</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="233"/>
+        <location filename="../../app/view/setting_interface.py" line="239"/>
         <source>最多能同时进行的任务数量</source>
         <translation>Maximum number of simultaneous tasks</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="239"/>
+        <location filename="../../app/view/setting_interface.py" line="245"/>
         <source>下载限速</source>
         <translation>Download Speed Limit</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="240"/>
+        <location filename="../../app/view/setting_interface.py" line="246"/>
         <source>限制每秒全局下载速度, 0 为不限速</source>
         <translation>Global download speed limit (0 for unlimited)</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="250"/>
+        <location filename="../../app/view/setting_interface.py" line="256"/>
         <source>自动提速</source>
         <translation>Auto Boost</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="251"/>
+        <location filename="../../app/view/setting_interface.py" line="257"/>
         <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
         <translation>AI monitors thread efficiency and auto-increases threads to boost speed</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="258"/>
+        <location filename="../../app/view/setting_interface.py" line="264"/>
         <source>下载时验证 SSL 证书</source>
         <translation>Verify SSL Certificates</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="259"/>
+        <location filename="../../app/view/setting_interface.py" line="265"/>
         <source>文件无法下载时，可尝试关闭该选项</source>
         <translation>Disable if files fail to download</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="283"/>
+        <location filename="../../app/view/setting_interface.py" line="289"/>
         <source>浏览器扩展</source>
         <translation>Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="286"/>
+        <location filename="../../app/view/setting_interface.py" line="292"/>
         <source>启用浏览器扩展</source>
         <translation>Enable Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="287"/>
+        <location filename="../../app/view/setting_interface.py" line="293"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>Receive downloads from browser - install extension first</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="293"/>
+        <location filename="../../app/view/setting_interface.py" line="299"/>
         <source>收到下载信息时弹出窗口</source>
         <translation>Popup on New Downloads</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="294"/>
+        <location filename="../../app/view/setting_interface.py" line="300"/>
         <source>收到下载信息时弹出窗口，方便您调整下载参数</source>
         <translation>Popup window for adjusting download parameters</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="299"/>
+        <location filename="../../app/view/setting_interface.py" line="305"/>
         <source>导出 Chromium 扩展</source>
         <translation>Export Chromium Extension</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="301"/>
+        <location filename="../../app/view/setting_interface.py" line="307"/>
         <source>安装浏览器扩展</source>
         <translation>Install Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="302"/>
         <source>需要您导出文件后手动安装至浏览器</source>
-        <translation>Export and manually install to browser</translation>
+        <translation type="vanished">Export and manually install to browser</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="306"/>
         <source>安装 Firefox 扩展</source>
-        <translation>Install Firefox Extension</translation>
+        <translation type="vanished">Install Firefox Extension</translation>
+    </message>
+    <message>
+        <location filename="../../app/view/setting_interface.py" line="308"/>
+        <source>请选择最适合您的浏览器扩展安装方式</source>
+        <translation>Please choose the most suitable installation method for your browser extension</translation>
     </message>
     <message>
         <location filename="../../app/view/setting_interface.py" line="312"/>
+        <source>Firefox 扩展商店</source>
+        <translation>Firefox Add-ons Store</translation>
+    </message>
+    <message>
+        <location filename="../../app/view/setting_interface.py" line="318"/>
+        <source>Edge 扩展商店</source>
+        <translation>Edge Add-ons Store</translation>
+    </message>
+    <message>
+        <location filename="../../app/view/setting_interface.py" line="324"/>
+        <source>Chrome 扩展商店</source>
+        <translation>Chrome Add-ons Store</translation>
+    </message>
+    <message>
+        <location filename="../../app/view/setting_interface.py" line="330"/>
         <source>查看安装指南</source>
         <translation>View Installation Guide</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="314"/>
+        <location filename="../../app/view/setting_interface.py" line="332"/>
         <source>浏览器扩展安装指南</source>
         <translation>Browser Extension Installation Guide</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="315"/>
+        <location filename="../../app/view/setting_interface.py" line="333"/>
         <source>解决安装浏览器扩展时遇到的常见问题</source>
         <translation>Troubleshoot common installation issues</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="320"/>
+        <location filename="../../app/view/setting_interface.py" line="338"/>
         <source>个性化</source>
         <translation>Personalization</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="324"/>
+        <location filename="../../app/view/setting_interface.py" line="342"/>
         <source>应用主题</source>
         <translation>Application Theme</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="325"/>
+        <location filename="../../app/view/setting_interface.py" line="343"/>
         <source>更改应用程序的外观</source>
         <translation>Change application appearance</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="327"/>
+        <location filename="../../app/view/setting_interface.py" line="345"/>
         <source>浅色</source>
         <translation>Light</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="327"/>
+        <location filename="../../app/view/setting_interface.py" line="345"/>
         <source>深色</source>
         <translation>Dark</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="329"/>
+        <location filename="../../app/view/setting_interface.py" line="347"/>
         <source>跟随系统设置</source>
         <translation>Follow System Settings</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="343"/>
+        <location filename="../../app/view/setting_interface.py" line="361"/>
         <source>窗口背景透明材质</source>
         <translation>Window Transparency</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="344"/>
+        <location filename="../../app/view/setting_interface.py" line="362"/>
         <source>设置窗口背景透明效果和透明材质</source>
         <translation>Set window transparency effect</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="350"/>
+        <location filename="../../app/view/setting_interface.py" line="368"/>
         <source>界面缩放</source>
         <translation>UI Scaling</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="351"/>
+        <location filename="../../app/view/setting_interface.py" line="369"/>
         <source>改变应用程序界面的缩放比例, 0% 为自动</source>
         <translation>Adjust UI scaling (0% for auto)</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="360"/>
+        <location filename="../../app/view/setting_interface.py" line="378"/>
         <source>语言</source>
         <translation>Language</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="361"/>
+        <location filename="../../app/view/setting_interface.py" line="379"/>
         <source>设置界面的首选语言</source>
         <translation>Set preferred UI language</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="362"/>
+        <location filename="../../app/view/setting_interface.py" line="380"/>
         <source>使用系统设置</source>
         <translation>Use System Settings</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="367"/>
+        <location filename="../../app/view/setting_interface.py" line="385"/>
         <source>应用</source>
         <translation>Apply</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="370"/>
+        <location filename="../../app/view/setting_interface.py" line="388"/>
         <source>在应用程序启动时检查更新</source>
         <translation>Check for updates on startup</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="371"/>
+        <location filename="../../app/view/setting_interface.py" line="389"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>New versions are more stable with more features</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="377"/>
+        <location filename="../../app/view/setting_interface.py" line="395"/>
         <source>开机启动</source>
         <translation>Start on Boot</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="378"/>
+        <location filename="../../app/view/setting_interface.py" line="396"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation>Run Ghost Downloader silently at system startup</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="384"/>
+        <location filename="../../app/view/setting_interface.py" line="402"/>
         <source>剪贴板监听</source>
         <translation>Clipboard Monitor</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="385"/>
+        <location filename="../../app/view/setting_interface.py" line="403"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>Automatically detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="390"/>
-        <location filename="../../app/view/setting_interface.py" line="409"/>
+        <location filename="../../app/view/setting_interface.py" line="408"/>
+        <location filename="../../app/view/setting_interface.py" line="427"/>
         <source>关于</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="393"/>
+        <location filename="../../app/view/setting_interface.py" line="411"/>
         <source>打开作者的个人空间</source>
         <translation>Open Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="395"/>
+        <location filename="../../app/view/setting_interface.py" line="413"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="396"/>
+        <location filename="../../app/view/setting_interface.py" line="414"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="400"/>
-        <location filename="../../app/view/setting_interface.py" line="402"/>
+        <location filename="../../app/view/setting_interface.py" line="418"/>
+        <location filename="../../app/view/setting_interface.py" line="420"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="403"/>
+        <location filename="../../app/view/setting_interface.py" line="421"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader</source>
         <translation>Help improve Ghost Downloader by providing feedback</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="407"/>
+        <location filename="../../app/view/setting_interface.py" line="425"/>
         <source>检查更新</source>
         <translation>Check for Updates</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="476"/>
+        <location filename="../../app/view/setting_interface.py" line="494"/>
         <source>已配置</source>
         <translation>Configured</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="477"/>
+        <location filename="../../app/view/setting_interface.py" line="495"/>
         <source>重启软件后生效</source>
         <translation>Requires restart to take effect</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="503"/>
+        <location filename="../../app/view/setting_interface.py" line="521"/>
         <source>选择导出路径</source>
         <translation>Select Export Path</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="511"/>
+        <location filename="../../app/view/setting_interface.py" line="529"/>
         <source>安装指南</source>
         <translation>Installation Guide</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="512"/>
+        <location filename="../../app/view/setting_interface.py" line="530"/>
         <source>请按照步骤安装浏览器扩展</source>
         <translation>Follow steps to install browser extension</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="584"/>
+        <location filename="../../app/view/setting_interface.py" line="602"/>
         <source>警告</source>
         <translation>Warning</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="585"/>
+        <location filename="../../app/view/setting_interface.py" line="603"/>
         <source>鬼知道你用的是什么平台？</source>
         <translation>What platform are you using?</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="596"/>
+        <location filename="../../app/view/setting_interface.py" line="614"/>
         <source>请稍候</source>
         <translation>Please wait</translation>
     </message>
     <message>
-        <location filename="../../app/view/setting_interface.py" line="596"/>
+        <location filename="../../app/view/setting_interface.py" line="614"/>
         <source>正在检查更新...</source>
         <translation>Checking for updates...</translation>
     </message>
@@ -590,89 +608,89 @@
         <translation>Initializing task...</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="109"/>
-        <location filename="../../app/components/task_card.py" line="317"/>
+        <location filename="../../app/components/task_card.py" line="110"/>
+        <location filename="../../app/components/task_card.py" line="319"/>
         <source>任务已经暂停</source>
         <translation>Task paused</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="111"/>
-        <location filename="../../app/components/task_card.py" line="213"/>
+        <location filename="../../app/components/task_card.py" line="112"/>
+        <location filename="../../app/components/task_card.py" line="212"/>
         <source>排队中...</source>
         <translation>Queuing...</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="180"/>
+        <location filename="../../app/components/task_card.py" line="181"/>
         <source>错误: </source>
         <translation>Error: </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="186"/>
+        <location filename="../../app/components/task_card.py" line="187"/>
         <source>任务初始化失败</source>
         <translation>Task initialization failed</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="244"/>
+        <location filename="../../app/components/task_card.py" line="243"/>
         <source>打开文件夹</source>
         <translation>Open Folder</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="246"/>
+        <location filename="../../app/components/task_card.py" line="245"/>
         <source>复制文件</source>
         <translation>Copy File</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="248"/>
+        <location filename="../../app/components/task_card.py" line="247"/>
         <source>复制链接</source>
         <translation>Copy Link</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="250"/>
+        <location filename="../../app/components/task_card.py" line="249"/>
         <source>重新下载</source>
         <translation>Redownload</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="339"/>
+        <location filename="../../app/components/task_card.py" line="341"/>
         <source>任务正在开始</source>
         <translation>Task starting</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="449"/>
+        <location filename="../../app/components/task_card.py" line="451"/>
         <source>完成时间: </source>
         <translation>Completion time: </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="449"/>
+        <location filename="../../app/components/task_card.py" line="451"/>
         <source>文件已被删除</source>
         <translation>File deleted</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="503"/>
+        <location filename="../../app/components/task_card.py" line="505"/>
         <source>正在校验 </source>
         <translation>Verifying </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="503"/>
+        <location filename="../../app/components/task_card.py" line="505"/>
         <source>, 请稍后...</source>
         <translation>, please wait...</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="516"/>
+        <location filename="../../app/components/task_card.py" line="518"/>
         <source>校验完成，文件的 </source>
         <translation>Verification complete, file&apos;s </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="516"/>
+        <location filename="../../app/components/task_card.py" line="518"/>
         <source> 是: </source>
         <translation> is: </translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="525"/>
+        <location filename="../../app/components/task_card.py" line="527"/>
         <source>选择校验算法</source>
         <translation>Select Verification Algorithm</translation>
     </message>
     <message>
-        <location filename="../../app/components/task_card.py" line="525"/>
+        <location filename="../../app/components/task_card.py" line="527"/>
         <source>请选择一个校验算法:</source>
         <translation>Please select a verification algorithm:</translation>
     </message>
@@ -846,22 +864,22 @@
 <context>
     <name>cls</name>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="252"/>
+        <location filename="../../app/view/pop_up_window.py" line="299"/>
         <source>打开文件</source>
         <translation>Open File</translation>
     </message>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="256"/>
+        <location filename="../../app/view/pop_up_window.py" line="300"/>
         <source>打开目录</source>
         <translation>Open Folder</translation>
     </message>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="256"/>
+        <location filename="../../app/view/pop_up_window.py" line="304"/>
         <source>下载完成</source>
         <translation>Download Complete</translation>
     </message>
     <message>
-        <location filename="../../app/view/pop_up_window.py" line="297"/>
+        <location filename="../../app/view/pop_up_window.py" line="334"/>
         <source>接收到来自浏览器的下载任务:</source>
         <translation>Received download task from browser:</translation>
     </message>
