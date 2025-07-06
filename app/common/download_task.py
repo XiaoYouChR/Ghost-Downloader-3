@@ -4,12 +4,12 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from asyncio import Task
+from collections import deque
 from pathlib import Path
 from threading import Thread
 from typing import List
-from collections import deque
 
-import httpx
+import curl_cffi
 from PySide6.QtCore import QThread, Signal
 from loguru import logger
 
@@ -21,7 +21,7 @@ from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSpa
 class DownloadWorker:
     """Worker responsible for downloading a specific range of a file"""
 
-    def __init__(self, start, progress, end, client: httpx.AsyncClient):
+    def __init__(self, start, progress, end, client: curl_cffi.AsyncSession):
         self.startPos = start
         self.progress = progress
         self.endPos = end
@@ -67,7 +67,7 @@ class DownloadWorker:
 class WorkerStrategy(ABC):
     """Base strategy for handling download workers"""
 
-    def __init__(self, file, client: httpx.AsyncClient, url: str):
+    def __init__(self, file, client: curl_cffi.AsyncSession, url: str):
         self.file = file
         self.client = client
         self.url = url
@@ -88,26 +88,28 @@ class ParallelDownloadStrategy(WorkerStrategy):
             logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
             return
 
-        while worker.progress <= worker.endPos:
+        while worker.progress < worker.endPos:
             try:
                 workingRangeHeaders = self.client.headers.copy()
                 workingRangeHeaders["range"] = f"bytes={worker.progress}-{worker.endPos - 1}"
 
-                async with self.client.stream(url=self.url, headers=workingRangeHeaders, 
-                                             timeout=30, method="GET") as res:
+                async with self.client.stream("GET", self.url, headers=workingRangeHeaders,
+                                             timeout=30) as res:
+                    res: curl_cffi.Response
                     res.raise_for_status()
                     if res.status_code != 206:
                         raise Exception(f"Server rejected range request, status code: {res.status_code}")
 
-                    async for chunk in res.aiter_bytes(chunk_size=65536):
+                    async for chunk in res.aiter_content():
                         if worker.isCompleted:
                             break
 
                         if chunk:
                             self.file.seek(worker.progress)
                             self.file.write(chunk)
-                            worker.progress += 65536
-                            cfg.globalSpeed += 65536
+                            chunkSize = len(chunk)
+                            worker.progress += chunkSize
+                            cfg.globalSpeed += chunkSize
 
                             if cfg.speedLimitation.value and cfg.globalSpeed >= cfg.speedLimitation.value:
                                 await asyncio.sleep(2)
@@ -124,7 +126,7 @@ class ParallelDownloadStrategy(WorkerStrategy):
 class SingleDownloadStrategy(WorkerStrategy):
     """Strategy for non-parallel downloading"""
 
-    def __init__(self, file, client: httpx.AsyncClient, url: str, onComplete: callable = None):
+    def __init__(self, file, client: curl_cffi.AsyncSession, url: str, onComplete: callable = None):
         super().__init__(file, client, url)
         self.onComplete = onComplete
 
@@ -135,14 +137,14 @@ class SingleDownloadStrategy(WorkerStrategy):
             logger.warning(f"Worker {worker.startPos}-{worker.endPos} is already completed, skipping download.")
             return
 
-        while worker.progress <= worker.endPos:
+        while worker.progress < worker.endPos:
             try:
                 workingHeaders = self.client.headers.copy()
-                async with self.client.stream(url=self.url, headers=workingHeaders, 
-                                             timeout=30, method="GET") as res:
+                async with self.client.stream("GET", self.url, headers=workingHeaders,
+                                             timeout=30) as res:
                     res.raise_for_status()
 
-                    async for chunk in res.aiter_bytes():
+                    async for chunk in res.aiter_content():
                         if chunk:
                             self.file.seek(worker.progress)
                             self.file.write(chunk)
@@ -225,13 +227,15 @@ class DownloadTask(QThread):
 
         # HTTP client setup
         proxy = getProxy()
-        self.client = httpx.AsyncClient(
+        self.client = curl_cffi.AsyncSession(
             headers=headers, 
             verify=cfg.SSLVerify.value,
             proxy=proxy, 
-            limits=httpx.Limits(max_connections=256), 
+            max_clients=256,
             trust_env=False, 
-            follow_redirects=True
+            allow_redirects=True,
+            impersonate="chrome",
+            http_version="v3"
         )
 
         # Initialize task in a separate thread
@@ -386,6 +390,7 @@ class DownloadTask(QThread):
 
     def __loadWorkers(self):
         """Load or create workers for the download task"""
+        print(self.downloadMode)
         if self.downloadMode == self.MODE_SINGLE:
             # For non-parallel downloads, create a single worker
             self.workers.append(DownloadWorker(0, 0, 1, self.client))
@@ -525,7 +530,6 @@ class DownloadTask(QThread):
     async def handleWorker(self, worker: DownloadWorker):
         await self.downloadStrategy.handleWorker(worker)
         if not self.autoSpeedUp or self.taskNum <= self.preBlockNum:# 如果开启了自动提速且添加了额外线程，则重新分配工作线程由自动提速控制
-            print("autoSpeedUp is off, reassigning worker")
             self.__reassignWorker()
         self.doneTask += 1
     
@@ -603,7 +607,7 @@ class DownloadTask(QThread):
             try:
                 await self.supervisorTask
             except asyncio.CancelledError:
-                await self.client.aclose()
+                await self.client.close()
 
             # Clean up resources
             await self.__cleanupResources()
@@ -617,7 +621,7 @@ class DownloadTask(QThread):
     async def __cleanupResources(self):
         """Clean up resources after download completes or is cancelled"""
         # Close HTTP client
-        await self.client.aclose()
+        await self.client.close()
 
         # Close the download file
         if self.file:
@@ -717,6 +721,9 @@ class DownloadTask(QThread):
         self.__loadWorkers()
 
         # Create and configure event loop
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
