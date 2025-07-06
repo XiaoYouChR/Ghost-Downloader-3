@@ -218,7 +218,7 @@ class MainWindow(MSFluentWindow):
                 self.setStyleSheet("background-color: transparent")
                 self.windowEffect.setMicaEffect(self.winId(), _)
             elif cfg.backgroundEffect.value == 'MicaBlur':
-                self.windowEffect.setMicaEffect(self.winId(), _, isBlur=True)
+                self.windowEffect.setMicaEffect(self.winId(), _)
                 self.setStyleSheet("background-color: transparent")
             elif cfg.backgroundEffect.value == 'MicaAlt':
                 self.windowEffect.setMicaEffect(self.winId(), _, isAlt=True)
