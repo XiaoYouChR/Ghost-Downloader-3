@@ -6,7 +6,7 @@
     <message>
         <location filename="../../app/components/add_task_dialog.py" line="67"/>
         <source>下载线程数</source>
-        <translation>下載綫程數</translation>
+        <translation>下載執行緒數</translation>
     </message>
     <message>
         <location filename="../../app/components/add_task_dialog.py" line="74"/>
@@ -277,12 +277,12 @@
     <message>
         <location filename="../../app/view/setting_interface.py" line="216"/>
         <source>预分配线程数</source>
-        <translation>預分配線程</translation>
+        <translation>預分配執行緒</translation>
     </message>
     <message>
         <location filename="../../app/view/setting_interface.py" line="217"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
-        <translation>線程越多，下載越快。線程數大於 64 時，有觸發反爬導致檔案損毀的風險</translation>
+        <translation>執行緒越多，下載越快。執行緒數大於 64 時，有觸發反爬導致檔案損毀的風險</translation>
     </message>
     <message>
         <location filename="../../app/view/setting_interface.py" line="224"/>
@@ -322,7 +322,7 @@
     <message>
         <location filename="../../app/view/setting_interface.py" line="251"/>
         <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
-        <translation>AI 即時偵測每個線程的效率，並自動增加線程數量以提高下載速度</translation>
+        <translation>AI 即時偵測每個執行緒的效率，並自動增加執行緒數量以提高下載速度</translation>
     </message>
     <message>
         <location filename="../../app/view/setting_interface.py" line="258"/>
@@ -477,7 +477,7 @@
     <message>
         <location filename="../../app/view/setting_interface.py" line="377"/>
         <source>开机启动</source>
-        <translation>啓動時執行</translation>
+        <translation>啟動時執行</translation>
     </message>
     <message>
         <location filename="../../app/view/setting_interface.py" line="378"/>
@@ -614,7 +614,7 @@
     <message>
         <location filename="../../app/components/task_card.py" line="244"/>
         <source>打开文件夹</source>
-        <translation>開啓資料夾</translation>
+        <translation>開啟資料夾</translation>
     </message>
     <message>
         <location filename="../../app/components/task_card.py" line="246"/>
@@ -634,7 +634,7 @@
     <message>
         <location filename="../../app/components/task_card.py" line="339"/>
         <source>任务正在开始</source>
-        <translation>任務正在啓動</translation>
+        <translation>任務正在啟動</translation>
     </message>
     <message>
         <location filename="../../app/components/task_card.py" line="449"/>
@@ -741,7 +741,7 @@
     <message>
         <location filename="../../app/components/Ui_AddTaskOptionDialog.py" line="102"/>
         <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
-        <translation>創建多個下載鏈接是，清華確認每行只有一個下載鏈接</translation>
+        <translation>創建多個下載任務時，請確保每行只有一條下載連結</translation>
     </message>
     <message>
         <location filename="../../app/components/Ui_AddTaskOptionDialog.py" line="104"/>
@@ -789,7 +789,7 @@
     <message>
         <location filename="../../app/components/Ui_PlanTaskDialog.py" line="61"/>
         <source>打开</source>
-        <translation>開啓</translation>
+        <translation>開啟</translation>
     </message>
 </context>
 <context>
@@ -848,12 +848,12 @@
     <message>
         <location filename="../../app/view/pop_up_window.py" line="252"/>
         <source>打开文件</source>
-        <translation>開啓檔案</translation>
+        <translation>開啟檔案</translation>
     </message>
     <message>
         <location filename="../../app/view/pop_up_window.py" line="256"/>
         <source>打开目录</source>
-        <translation>開啓目錄</translation>
+        <translation>開啟目錄</translation>
     </message>
     <message>
         <location filename="../../app/view/pop_up_window.py" line="256"/>
