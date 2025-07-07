@@ -12,7 +12,7 @@ from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettin
     BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, HyperlinkButton, \
     FluentIconBase, RangeConfigItem, SpinBox
 
-if sys.platform=="win32":
+if sys.platform!="darwin":
     from qfluentwidgets import SmoothScrollArea as ScrollArea
 else:
     from qfluentwidgets import ScrollArea

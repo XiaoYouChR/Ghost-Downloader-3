@@ -1,8 +1,15 @@
+import sys
+
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QWidget, QFrame, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, PrimaryPushButton, PushButton, InfoBar, \
-    InfoBarPosition, ToggleButton, ScrollArea
+    InfoBarPosition, ToggleButton
+
+if sys.platform!="darwin":
+    from qfluentwidgets import SmoothScrollArea as ScrollArea
+else:
+    from qfluentwidgets import ScrollArea
 
 from ..common.config import cfg
 from ..common.signal_bus import signalBus
