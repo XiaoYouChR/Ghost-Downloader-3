@@ -1,9 +1,6 @@
 <h4 align="right">
   简体中文 | <a href="README.md">English</a>
 </h4>
- 
-> [!IMPORTANT]
-> 由于开发者高三冲刺，项目更新暂停😭 可加 QQ 群获取项目最新消息: [`531928387`](https://qm.qq.com/q/PlUBdzqZCm)
 
 > [!NOTE]
 > 本软件目前还存在着许多不足，仍在积极开发中...
@@ -27,6 +24,7 @@
 [![Issues][issues-shield]][issues-url]
 [![Release][release-shield]][release-url]
 [![Downloads][downloads-shield]][release-url]
+[![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 
 <h4>
   <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Bug 报告</a>

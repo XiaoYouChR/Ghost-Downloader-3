@@ -1,9 +1,6 @@
 <h4 align="right">
   <a href="README_zh.md">简体中文</a> | English
 </h4>
- 
-> [!IMPORTANT]
-> Due to the developer's preparation for the college entrance exam (Gaokao), project updates are temporarily suspended 😭 Join QQ group [`531928387`](https://qm.qq.com/q/PlUBdzqZCm) for latest updates
 
 > [!NOTE]
 > The project is still in its early stages, and there is still a lot of shortcomings.
@@ -27,6 +24,7 @@
 [![Issues][issues-shield]][issues-url]
 [![Release][release-shield]][release-url]
 [![Downloads][downloads-shield]][release-url]
+[![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 
 <h4>
   <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Report Bug</a>
