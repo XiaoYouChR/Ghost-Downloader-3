@@ -2,6 +2,7 @@
 
 import os
 import sys
+import signal
 
 from qfluentwidgets import qconfig
 
@@ -24,6 +25,14 @@ if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 app = SingletonApplication(sys.argv, "Ghost Downloader")
+
+# 添加信号处理器
+def signal_handler(signum, frame):
+    """处理 SIGINT 信号（Ctrl+C）"""
+    print("\n接收到退出信号，正在关闭应用...")
+    app.quit()
+
+signal.signal(signal.SIGINT, signal_handler)
 
 # Starting Program
 import time
@@ -87,10 +96,17 @@ speedLimiter.setInterval(1000)  # 一秒刷新一次
 speedLimiter.timeout.connect(cfg.resetGlobalSpeed)  # 刷新 globalSpeed为 0
 speedLimiter.start()
 
-w = MainWindow(silence=True if "--silence" in sys.argv else False)
+try:
+    w = MainWindow(silence=True if "--silence" in sys.argv else False)
 
-# loading plugins
-pluginsPath=os.path.join(cfg.appPath, "plugins")
-loadPlugins(w, pluginsPath)
+    # loading plugins
+    pluginsPath=os.path.join(cfg.appPath, "plugins")
+    loadPlugins(w, pluginsPath)
 
-sys.exit(app.exec())
+    sys.exit(app.exec())
+
+except KeyboardInterrupt:
+    print("\n用户中断，正在退出...")
+    speedLimiter.stop()
+    app.quit()
+    sys.exit(0)
