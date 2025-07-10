@@ -4,7 +4,6 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from asyncio import Task
-from collections import deque
 from pathlib import Path
 from threading import Thread
 from typing import List
@@ -390,7 +389,6 @@ class DownloadTask(QThread):
 
     def __loadWorkers(self):
         """Load or create workers for the download task"""
-        print(self.downloadMode)
         if self.downloadMode == self.MODE_SINGLE:
             # For non-parallel downloads, create a single worker
             self.workers.append(DownloadWorker(0, 0, 1, self.client))
