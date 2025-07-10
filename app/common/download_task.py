@@ -223,7 +223,7 @@ class DownloadTask(QThread):
         self.downloadStrategy = None
 
         # Speed tracking
-        self.historyProgress = deque([self.progress] * 10)  # Rolling window of 10 seconds for speed calculation
+        self.historySpeed = [0] * 10  # Rolling window of 10 seconds for speed calculation
 
         # HTTP client setup
         proxy = getProxy()
@@ -494,7 +494,9 @@ class DownloadTask(QThread):
             workerInfo = self.__updateProgressAndHistory() #用不到的 workerInfo
 
             # Calculate and emit current speed
-            self.__updateSmoothedSpeed()
+            currentSpeed = self.progress - lastProgress
+            lastProgress = self.progress
+            avgSpeed = self.__updateSpeedHistory(currentSpeed) #用不到 avgSpeed
 
             # Handle auto speed-up if enabled
             if self.autoSpeedUp:
@@ -546,7 +548,9 @@ class DownloadTask(QThread):
             self.workerInfoChanged.emit([])
 
             # Calculate and emit current speed
-            self.__updateSmoothedSpeed()
+            currentSpeed = self.progress - lastProgress
+            lastProgress = self.progress
+            avgSpeed = self.__updateSpeedHistory(currentSpeed)
 
             # Wait before next update
             await asyncio.sleep(1)
@@ -583,11 +587,11 @@ class DownloadTask(QThread):
 
         return workerInfo
 
-    def __updateSmoothedSpeed(self):
+    def __updateSpeedHistory(self, currentSpeed):
         """Update speed history and calculate average speed"""
-        formerProgress = self.historyProgress.pop()
-        self.historyProgress.appendleft(self.progress)
-        avgSpeed = (self.progress - formerProgress) / 10
+        self.historySpeed.pop(0)
+        self.historySpeed.append(currentSpeed)
+        avgSpeed = sum(self.historySpeed) / 10
         self.speedChanged.emit(avgSpeed)
         return avgSpeed
 
