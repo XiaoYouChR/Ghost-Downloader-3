@@ -1,10 +1,74 @@
 import sys
+from os.path import dirname
+from pathlib import Path
 
-from PySide6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QStandardPaths, QFileInfo, QTimer, QResource, Qt, QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget, QFileIconProvider
+from desktop_notifier import DesktopNotifierSync, Icon, Button
 
 # noinspection PyUnresolvedReferences
 import resources.Res_rc
-from app.view.pop_up_window import FinishedPopUpWindow, ReceivedPopUpWindow
+
+
+def openFile(fileResolve):
+    """
+    打开文件
+
+    :param fileResolve: 文件路径
+    """
+    QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
+
+_ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
+if not _.exists():
+    with open(_, "wb") as f:
+        f.write(QResource(":/image/logo.png").data())
+
+desktopNotifierIcon = Icon(path=_)
+desktopNotifier = DesktopNotifierSync(app_name="Ghost Downloader", app_icon=desktopNotifierIcon)
+
+class LimitedRunTimer(QTimer):
+    """
+    一个在运行指定次数后会自动销毁的 QTimer。
+    """
+
+    _activeTimers = set()   # 防止垃圾回收
+
+    def __init__(self, callback, parent=None):
+        super().__init__(parent)
+        self._callback = callback
+        self._runCount = 0
+        self.maxRuns = 50  # 总运行次数
+
+        self.setInterval(200)  # 设置时间间隔为 200ms
+        self.timeout.connect(self._onTimeout)
+
+    def _onTimeout(self):
+        """计时器每次超时时调用的内部槽函数。"""
+        self._runCount += 1
+
+        # 执行回调函数
+        if self._callback:
+            try:
+                self._callback()
+            except Exception:
+                self.stopAndDestroy()
+                return
+
+        if self._runCount >= self.maxRuns:
+            self.stopAndDestroy()
+
+    def stopAndDestroy(self):
+        self.stop()
+        LimitedRunTimer._activeTimers.discard(self)
+        self.deleteLater()
+
+    @staticmethod
+    def create(callback):
+        timerInstance = LimitedRunTimer(callback)
+        LimitedRunTimer._activeTimers.add(timerInstance) # 将实例添加到集合中，以保证其存活
+        timerInstance.start()
+        return timerInstance
 
 
 class TestPopUpWindow(QWidget):
@@ -19,37 +83,23 @@ class TestPopUpWindow(QWidget):
         received_button.clicked.connect(self.show_received_pop_up)
         layout.addWidget(received_button)
 
-        finished_button = QPushButton("Show Finished PopUp")
-        finished_button.clicked.connect(self.show_finished_pop_up)
-        layout.addWidget(finished_button)
-
-        toast_receive_button = QPushButton("Show Toast Receive Button")
-        toast_receive_button.clicked.connect(self.show_received_toast)
-        layout.addWidget(toast_receive_button)
-
-        toast_finished_button = QPushButton("Show Toast Finished Button")
-        toast_finished_button.clicked.connect(self.show_finished_toast)
-        layout.addWidget(toast_finished_button)
-
         self.setLayout(layout)
 
-    def show_received_toast(self):
-        pass
-        # TaskExecutor.run(desktopNotifier.send, "Received:", "https://github.com", buttons=[
-        #     Button("OpenFile", lambda :openFile(r"C:\Users\XiaoYouChR\Downloads\10.0 Cheetah & 10.1 Puma.png"))
-        # ],)
-
-    def show_finished_toast(self):
-        pass
-        # TaskExecutor.run(desktopNotifier.send, "Received:", "https://github.com", buttons=[
-        #     Button("OpenFile", lambda :openFile(r"C:\Users\XiaoYouChR\Downloads\10.0 Cheetah & 10.1 Puma.png"))
-        # ])
-
     def show_received_pop_up(self):
-        ReceivedPopUpWindow.showPopUpWindow(f"")
+        fileResolvePath = r"C:\Users\XiaoYouChR\Downloads\OfficeSetup.exe"
 
-    def show_finished_pop_up(self):
-        FinishedPopUpWindow.showPopUpWindow(r"C:\Users\XiaoYouChR\Downloads\OfficeSetup.exe")
+        iconTempFile = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.TempLocation) + "/finished_file_icon.png"
+        QFileIconProvider().icon(QFileInfo(fileResolvePath)).pixmap(48, 48).scaled(128, 128,
+                                                                                   aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                   mode=Qt.TransformationMode.SmoothTransformation).save(iconTempFile, "PNG")
+
+        buttons = [Button(('打开文件'), lambda: openFile(fileResolvePath)), Button(('打开目录'), lambda: openFile(dirname(fileResolvePath)))]
+
+        LimitedRunTimer.create(desktopNotifier.get_current_notifications)
+
+        return desktopNotifier.send("下载完成", fileResolvePath, buttons=buttons,
+                                    on_clicked=lambda: print("PopUpClicked"), icon=Icon(Path(iconTempFile)), timeout=10)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
