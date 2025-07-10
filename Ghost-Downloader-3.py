@@ -38,6 +38,9 @@ from qfluentwidgets import setTheme, Theme, setThemeColor
 # noinspection PyUnresolvedReferences
 import resources.Res_rc
 
+# noinspection PyUnresolvedReferences
+import winrt._winrt_windows_foundation  # 修复 Nuitka 编译后 Windows 不显示弹窗的问题
+
 from app.common.methods import loadPlugins
 from app.view.main_window import MainWindow
 
