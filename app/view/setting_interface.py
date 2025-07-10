@@ -7,7 +7,7 @@ from typing import Union
 from PySide6.QtCore import Qt, QUrl, QResource
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QWidget, QFileDialog, QVBoxLayout, QApplication, QButtonGroup, QHBoxLayout, QSpacerItem, \
-    QSizePolicy
+    QSizePolicy, QLineEdit
 from qfluentwidgets import FluentIcon as FIF, InfoBarPosition, ExpandGroupSettingCard, ConfigItem, \
     BodyLabel, RadioButton, ComboBox, LineEdit, ComboBoxSettingCard, FlyoutView, Flyout, SettingCard, HyperlinkButton, \
     FluentIconBase, RangeConfigItem, SpinBox
@@ -203,6 +203,29 @@ class SpinBoxSettingCard(SettingCard):
         if self.configItem:
             cfg.set(self.configItem, self.spinBox.value()/self.division)
 
+class TitleSettingCard(SettingCard):
+    """ 窗口标题设置卡 """
+    
+    def __init__(self, configItem: ConfigItem, parent=None):
+        super().__init__(FIF.TAG, self.tr("窗口标题"), self.tr("设置主窗口显示的标题"), parent)
+        self.configItem = configItem
+        self.titleEdit = LineEdit(self)
+        self.titleEdit.setMinimumWidth(200)
+        self.titleEdit.setStyleSheet("QLineEdit{color:rgb(255,255,255);border-width:0;border-style:outset}")
+        self.titleEdit.setPlaceholderText(self.tr("输入窗口标题"))
+        self.titleEdit.setText(configItem.value)
+        self.hBoxLayout.addWidget(self.titleEdit)
+        self.hBoxLayout.addSpacing(16)
+        
+    def leaveEvent(self, event):
+        """ 鼠标离开时保存设置 """
+        newTitle = self.titleEdit.text().strip()
+        if newTitle:
+            cfg.set(self.configItem, newTitle)
+        else:
+            # 如果用户清空输入框，恢复默认值
+            self.titleEdit.setText(cfg.title.default)
+            cfg.set(self.configItem, cfg.title.default)
 
 class SettingInterface(ScrollArea):
     """ Setting interface """
@@ -336,6 +359,8 @@ class SettingInterface(ScrollArea):
         # personalization
         self.personalGroup = SettingCardGroup(
             self.tr("个性化"), self.scrollWidget)
+        # 添加窗口标题设置卡
+        self.titleCard = TitleSettingCard(cfg.title, self.personalGroup)
         self.themeCard = ComboBoxSettingCard(
             cfg.customThemeMode,
             FIF.BRUSH,
@@ -463,6 +488,8 @@ class SettingInterface(ScrollArea):
         self.browserGroup.addSettingCard(self.raiseWindowWhenReceiveMsg)
         self.browserGroup.addSettingCard(self.installExtensionCard)
         self.browserGroup.addSettingCard(self.installExtensionGuidanceCard)
+        # 在个性化分组中添加窗口标题设置卡
+        self.personalGroup.addSettingCard(self.titleCard)
         self.personalGroup.addSettingCard(self.themeCard)
         # self.personalGroup.addSettingCard(self.themeColorCard)
         if sys.platform == "win32":

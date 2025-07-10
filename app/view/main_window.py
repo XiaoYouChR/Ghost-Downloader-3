@@ -266,7 +266,7 @@ class MainWindow(MSFluentWindow):
                 self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
         self.setWindowIcon(QIcon(':/image/logo.png'))
-        self.setWindowTitle('Ghost Downloader')
+        self.setWindowTitle(cfg.title.value)
 
         if sys.platform == 'darwin':
             self.titleBar.hBoxLayout.insertSpacing(0, 58)

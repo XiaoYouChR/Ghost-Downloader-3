@@ -67,6 +67,16 @@ class LanguageSerializer(ConfigSerializer):
     def deserialize(self, value: str):
         return Language(QLocale(value)) if value != "Auto" else Language.AUTO
 
+# 添加字符串验证器
+class StringValidator(ConfigValidator):
+    """ 字符串验证器，确保字符串长度在1到100之间 """
+    
+    def validate(self, value):
+        return isinstance(value, str) and 1 <= len(value) <= 100
+    
+    def correct(self, value):
+        return value if self.validate(value) else "Ghost Downloader"
+
 class Config(QConfig):
     """ Config of application """
     # download
@@ -96,6 +106,8 @@ class Config(QConfig):
         "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True)
     language = OptionsConfigItem(
         "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
+    # 添加Title配置项
+    title = ConfigItem("MainWindow", "Title", "Ghost Downloader", StringValidator())
 
     # software
     checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
