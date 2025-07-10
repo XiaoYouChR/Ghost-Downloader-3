@@ -24,6 +24,12 @@ if sys.platform == "win32":
         '--output-dir=dist',
         'Ghost-Downloader-3.py',
     ]
+
+    if "--onefile" in sys.argv:
+        args.pop(args.index("--standalone"))
+        args.insert(1, "--onefile")
+        args.insert(1, "--onefile-cache-mode=cached")
+
 elif sys.platform == "darwin":
     args = [
         'python3 -m nuitka',
@@ -55,5 +61,5 @@ else:
         'Ghost-Downloader-3.py',
     ]
 
-
+print(args)
 os.system(' '.join(args))
