@@ -19,14 +19,15 @@ from ..common.custom_socket import GhostDownloaderSocketServer
 from ..common.methods import getLinkInfo, bringWindowToTop, addDownloadTask, showMessageBox, \
     isGreaterEqualWin10, isLessThanWin10, isGreaterEqualWin11
 from ..common.signal_bus import signalBus
+from ..common.concurrent.TaskExecutor import TaskExecutor
 from ..components.add_task_dialog import AddTaskOptionDialog
 from ..components.custom_tray import CustomSystemTrayIcon
 from ..components.update_dialog import checkUpdate
 
 
 def updateFrameless(self):
-    stayOnTop = Qt.WindowStaysOnTopHint if self.windowFlags() & Qt.WindowStaysOnTopHint else 0
-    self.setWindowFlags(Qt.FramelessWindowHint | stayOnTop)
+    stayOnTop = Qt.WindowType.WindowStaysOnTopHint if self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint else 0
+    self.setWindowFlags(Qt.WindowType.FramelessWindowHint | stayOnTop)
 
     self.windowEffect.enableBlurBehindWindow(self.winId())
     self.windowEffect.addWindowAnimation(self.winId())
@@ -290,7 +291,7 @@ class MainWindow(MSFluentWindow):
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
         )
 
-    def showAddTaskDialog(self, text:str="", headers:dict=None):
+    def showAddTaskDialog(self, text: str = "", headers: dict = None):
         AddTaskOptionDialog.showAddTaskOptionDialog(text, self, headers)
 
     def closeEvent(self, event):
@@ -340,7 +341,7 @@ class MainWindow(MSFluentWindow):
         event.accept()
 
     def keyPressEvent(self, event):
-        if event.matches(QKeySequence.Paste):
+        if event.matches(QKeySequence.StandardKey.Paste):
             text = self.clipboard.text()
             self.__setUrlsAndShowAddTaskMsg(text)
         else:
@@ -355,6 +356,28 @@ class MainWindow(MSFluentWindow):
         except ValueError:
             return False
 
+    def __checkUrlsAsync(self, urls):
+        """异步检查URL列表的有效性"""
+        validUrls = []
+        for url in urls:
+            if self.__checkUrl(url):
+                validUrls.append(url)
+            else:
+                logger.debug(f"Invalid url: {url}")
+        return validUrls
+
+    def __onUrlCheckCompleted(self, results):
+        try:
+            if not results:
+                return
+
+            resultsText = '\n'.join(results)
+            logger.debug(f"Clipboard changed: {resultsText}")
+            bringWindowToTop(self)
+            self.__setUrlsAndShowAddTaskMsg(resultsText)
+        except Exception as e:
+            logger.warning(f"Failed to process checked URLs: {e}")
+
     def __clipboardChanged(self):
         try:
             mime = self.clipboard.mimeData()
@@ -368,22 +391,8 @@ class MainWindow(MSFluentWindow):
             else:
                 return
 
-            results = []
-
-            for url in urls:
-                if self.__checkUrl(url):
-                    results.append(url)
-                else:
-                    logger.debug(f"Invalid url: {url}")
-
-            if not results:
-                return
-
-            results = '\n'.join(results)
-
-            logger.debug(f"Clipboard changed: {results}")
-            bringWindowToTop(self)
-            self.__setUrlsAndShowAddTaskMsg(results)
+            future = TaskExecutor.run(self.__checkUrlsAsync, urls)
+            future.result.connect(self.__onUrlCheckCompleted)
         except Exception as e:
             logger.warning(f"Failed to check clipboard: {e}")
 
