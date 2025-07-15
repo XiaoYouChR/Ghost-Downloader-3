@@ -1,4 +1,5 @@
 import asyncio
+from re import T
 import struct
 import sys
 import time
@@ -512,19 +513,23 @@ class DownloadTask(QThread):
         try:
             self.supervisorTask.cancel()
         finally:
-            self.file.close()
-            self.ghdFile.close()
 
-            while not all(task.done() for task in self.tasks):  # 等待所有任务完成
-                for task in self.tasks:
-                    try:
-                        task.cancel()
-                    except RuntimeError:
-                        pass
-                    except Exception as e:
-                        raise e
+            def _stop():
+                self.file.close()
+                self.ghdFile.close()
 
-                time.sleep(0.05)
+                while not all(task.done() for task in self.tasks):  # 等待所有任务完成
+                    for task in self.tasks:
+                        try:
+                            task.cancel()
+                        except RuntimeError:
+                            pass
+                        except Exception as e:
+                            raise e
+
+                    time.sleep(0.05)
+
+            Thread(target=_stop, daemon=True).start()
 
     # @retry(3, 0.1)
     def run(self):
