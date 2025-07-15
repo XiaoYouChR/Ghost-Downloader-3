@@ -256,8 +256,7 @@ class DownloadTask(QThread):
                     workerWithMaxRemaining = worker
             elif not worker.isCompleted:
                 # 总是优先运行未运行的worker
-                worker.task = self.loop.create_task(self.handleWorker(worker))
-                self.tasks.append(worker.task)
+                self.startWorker(worker)
                 return
             
 
@@ -281,13 +280,11 @@ class DownloadTask(QThread):
             newWorker = DownloadWorker(newStartPos, newStartPos, originalEndPos, self.client)
 
             # Create task for the new worker
-            newTask = self.loop.create_task(self.handleWorker(newWorker))
-            newWorker.task = newTask
+            self.startWorker(newWorker)
 
             # Add new worker and task to their respective lists
             insertIndex = self.workers.index(workerWithMaxRemaining) + 1
             self.workers.insert(insertIndex, newWorker)
-            self.tasks.append(newTask)
 
             logger.info(
                 f"Task {self.fileName}: Split workload successfully. " +
@@ -440,9 +437,7 @@ class DownloadTask(QThread):
             created = 0
             for worker in self.workers:
                 if not worker.isCompleted:
-                    task = asyncio.create_task(self.handleWorker(worker))
-                    worker.task = task
-                    self.tasks.append(task)
+                    self.startWorker(worker)
                     created += 1
                     if created >= self.preBlockNum:
                         break
@@ -458,9 +453,7 @@ class DownloadTask(QThread):
 
             # Create a single task for the worker
             logger.debug(f"Task {self.fileName}: Starting single thread download")
-            task = asyncio.create_task(self.handleWorker(self.workers[0]))
-            self.workers[0].task = task
-            self.tasks.append(task)
+            self.startWorker(self.workers[0])
 
     async def __supervisor(self):
         """Monitor download progress, update history file, and manage speed optimization"""
@@ -755,4 +748,9 @@ class DownloadTask(QThread):
     def taskNum(self) -> int:
         """Get the number of active tasks"""
         return len(self.tasks) - self.doneTask
+    
+    def startWorker(self, worker: DownloadWorker):
+        task = self.loop.create_task(self.handleWorker(worker))
+        worker.task = task
+        self.tasks.append(task)
 
