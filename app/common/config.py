@@ -4,27 +4,44 @@ from enum import Enum
 from re import compile
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale
-from qfluentwidgets import (QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
-                            OptionsValidator, RangeConfigItem, RangeValidator,
-                            FolderValidator, ConfigValidator, ConfigSerializer, FolderListValidator)
+from qfluentwidgets import (
+    QConfig,
+    ConfigItem,
+    OptionsConfigItem,
+    BoolValidator,
+    OptionsValidator,
+    RangeConfigItem,
+    RangeValidator,
+    FolderValidator,
+    ConfigValidator,
+    ConfigSerializer,
+    FolderListValidator,
+)
 
 
 class Language(Enum):
-    """ Language enumeration """
+    """Language enumeration"""
 
     CHINESE_SIMPLIFIED = QLocale(QLocale.Language.Chinese, QLocale.Country.China)
     CHINESE_TRADITIONAL = QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
     CANTONESE = QLocale(QLocale.Language.Cantonese, QLocale.Country.HongKong)
-    CHINESE_LITERARY = QLocale(QLocale.Language.Chinese, QLocale.Country.Macau)  # lzh is invalid, I don't know what to do, sorry
-    ENGLISH_UNITED_STATES = QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
+    CHINESE_LITERARY = QLocale(
+        QLocale.Language.Chinese, QLocale.Country.Macau
+    )  # lzh is invalid, I don't know what to do, sorry
+    ENGLISH_UNITED_STATES = QLocale(
+        QLocale.Language.English, QLocale.Country.UnitedStates
+    )
     JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
     AUTO = QLocale()
 
+
 class ProxyValidator(ConfigValidator):
-    PATTERN = compile(r'^(socks5|http|https):\/\/'
-                      r'((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
-                      r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):'
-                      r'(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|[1-5]?[0-9]{1,4})$')
+    PATTERN = compile(
+        r"^(socks5|http|https):\/\/"
+        r"((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}"
+        r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):"
+        r"(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|[1-5]?[0-9]{1,4})$"
+    )
 
     def validate(self, value: str) -> bool:
         # 判断代理地址是否合法
@@ -35,7 +52,9 @@ class ProxyValidator(ConfigValidator):
         return value if self.validate(value) else "Auto"
 
 
-class GeometryValidator(ConfigValidator):  # geometry 为程序的位置和大小, 保存为字符串 "x,y,w,h," 默认为 Default
+class GeometryValidator(
+    ConfigValidator
+):  # geometry 为程序的位置和大小, 保存为字符串 "x,y,w,h," 默认为 Default
     def validate(self, value: QRect) -> bool:
         if value == "Default":
             return True
@@ -46,7 +65,9 @@ class GeometryValidator(ConfigValidator):  # geometry 为程序的位置和大�
         return value if self.validate(value) else "Default"
 
 
-class GeometrySerializer(ConfigSerializer):  # 将字符串 "x,y,w,h," 转换为QRect (x, y, w, h), "Default" 除外
+class GeometrySerializer(
+    ConfigSerializer
+):  # 将字符串 "x,y,w,h," 转换为QRect (x, y, w, h), "Default" 除外
     def serialize(self, value: QRect) -> str:
         if value == "Default":
             return value
@@ -58,8 +79,9 @@ class GeometrySerializer(ConfigSerializer):  # 将字符串 "x,y,w,h," 转换为
         x, y, w, h = map(int, value.split(","))
         return QRect(x, y, w, h)
 
+
 class LanguageSerializer(ConfigSerializer):
-    """ Language serializer """
+    """Language serializer"""
 
     def serialize(self, language):
         return language.value.name() if language != Language.AUTO else "Auto"
@@ -67,42 +89,80 @@ class LanguageSerializer(ConfigSerializer):
     def deserialize(self, value: str):
         return Language(QLocale(value)) if value != "Auto" else Language.AUTO
 
+
 class Config(QConfig):
-    """ Config of application """
+    """Config of application"""
+
     # download
-    maxReassignSize = RangeConfigItem("Download", "MaxReassignSize", 8, RangeValidator(1, 100))
+    maxReassignSize = RangeConfigItem(
+        "Download", "MaxReassignSize", 8, RangeValidator(1, 100)
+    )
     downloadFolder = ConfigItem(
-        "Download", "DownloadFolder", QStandardPaths.writableLocation(QStandardPaths.DownloadLocation), FolderValidator())
-    historyDownloadFolder = ConfigItem("Download", "HistoryDownloadFolder", [], FolderListValidator())
+        "Download",
+        "DownloadFolder",
+        QStandardPaths.writableLocation(QStandardPaths.DownloadLocation),
+        FolderValidator(),
+    )
+    historyDownloadFolder = ConfigItem(
+        "Download", "HistoryDownloadFolder", [], FolderListValidator()
+    )
 
     preBlockNum = RangeConfigItem("Download", "PreBlockNum", 8, RangeValidator(1, 256))
     maxTaskNum = RangeConfigItem("Download", "MaxTaskNum", 3, RangeValidator(1, 10))
-    speedLimitation = RangeConfigItem("Download", "SpeedLimitation", 0, RangeValidator(0, 104857600))  # 单位 KB
+    speedLimitation = RangeConfigItem(
+        "Download", "SpeedLimitation", 0, RangeValidator(0, 104857600)
+    )  # 单位 KB
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
     SSLVerify = ConfigItem("Download", "SSLVerify", True, BoolValidator(), restart=True)
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
 
     # browser
-    enableBrowserExtension = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
-    enableRaiseWindowWhenReceiveMsg = ConfigItem("Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator())
+    enableBrowserExtension = ConfigItem(
+        "Browser", "EnableBrowserExtension", False, BoolValidator()
+    )
+    enableRaiseWindowWhenReceiveMsg = ConfigItem(
+        "Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator()
+    )
 
     # personalization
     if sys.platform == "win32":
-        backgroundEffect = OptionsConfigItem("Personalization", "BackgroundEffect", "Mica", OptionsValidator(
-            ["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"]))
-    customThemeMode = OptionsConfigItem("Personalization", "ThemeMode", "System",
-                                        OptionsValidator(["Light", "Dark", "System"]))
+        backgroundEffect = OptionsConfigItem(
+            "Personalization",
+            "BackgroundEffect",
+            "Mica",
+            OptionsValidator(
+                ["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"]
+            ),
+        )
+    customThemeMode = OptionsConfigItem(
+        "Personalization",
+        "ThemeMode",
+        "System",
+        OptionsValidator(["Light", "Dark", "System"]),
+    )
     dpiScale = RangeConfigItem(
-        "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True)
+        "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True
+    )
     language = OptionsConfigItem(
-        "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
+        "MainWindow",
+        "Language",
+        Language.AUTO,
+        OptionsValidator(Language),
+        LanguageSerializer(),
+        restart=True,
+    )
 
     # software
-    checkUpdateAtStartUp = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
+    checkUpdateAtStartUp = ConfigItem(
+        "Software", "CheckUpdateAtStartUp", True, BoolValidator()
+    )
     autoRun = ConfigItem("Software", "AutoRun", False, BoolValidator())
-    enableClipboardListener = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
-    geometry = ConfigItem("Software", "Geometry", "Default", GeometryValidator(),
-                          GeometrySerializer())  # 保存程序的位置和大小, Validator 在 mainWindow 中设置
+    enableClipboardListener = ConfigItem(
+        "Software", "ClipboardListener", True, BoolValidator()
+    )
+    geometry = ConfigItem(
+        "Software", "Geometry", "Default", GeometryValidator(), GeometrySerializer()
+    )  # 保存程序的位置和大小, Validator 在 mainWindow 中设置
 
     # 全局变量
     appPath = "./"
@@ -122,7 +182,7 @@ FIREFOX_ADDONS_URL = "https://addons.mozilla.org/zh-CN/firefox/addon/ghost-downl
 EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downloader-browser/odaohmfjjbompdkmfbambadnagplcmce"
 CHROME_ADDONS_URL = "https://chromewebstore.google.com/detail/ghost-downloader-browser/pinckpkeeajogfgajbicpnengimiblch"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
-BASE_EFFICIENCY_THRESHOLD = 0.8 # 判断阈值
+BASE_EFFICIENCY_THRESHOLD = 0.8  # 判断阈值
 
 Headers = {
     "accept-encoding": "deflate, br, gzip",
@@ -133,11 +193,12 @@ Headers = {
     "sec-fetch-site": "none",
     "sec-fetch-user": "?1",
     "upgrade-insecure-requests": "1",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"}
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64",
+}
 
 # 附件类型必须全部小写
 attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img iso lzh m4a m4v mkv mov mp3 mp4 mpa mpe
                                  mpeg mpg msi msu ogg ogv pdf plj pps ppt qt ra rar rm rmvb sea sit sitx tar tif tiff
-                                 wav wma wmv z zip esd wim msp apk apks apkm cab msp"""
+                                 wav wma wmv z zip esd wim msp apk apks apkm cab msp pkg"""
 
 cfg = Config()
