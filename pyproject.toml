@@ -1,0 +1,14 @@
+[project]
+name = "ghost-downloader-3"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "curl-cffi>=0.12.0",
+    "darkdetect[macos-listener]>=0.8.0 ; sys_platform == 'darwin'",
+    "desktop-notifier>=6.1.1",
+    "loguru>=0.7.3",
+    "nuitka==2.7.11",
+    "pyside6==6.9.1",
+    "pyside6-fluent-widgets>=1.8.0",
+    "pysidesix-frameless-window>=0.7.1",
+]
