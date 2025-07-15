@@ -1,8 +1,23 @@
 import darkdetect
 from PySide6.QtCore import QSize, QRect, QTimer
 from PySide6.QtGui import QPainter, Qt, QIcon
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QStyleFactory, QStyle, QProxyStyle, QMenu
-from qfluentwidgets import BodyLabel, FluentIconBase, drawIcon, ProgressBar, RoundMenu, FluentStyleSheet
+from PySide6.QtWidgets import (
+    QWidget,
+    QHBoxLayout,
+    QStyleFactory,
+    QStyle,
+    QProxyStyle,
+    QMenu,
+)
+from qfluentwidgets import (
+    BodyLabel,
+    FluentIconBase,
+    drawIcon,
+    ProgressBar,
+    RoundMenu,
+    FluentStyleSheet,
+)
+from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qfluentwidgets.components.widgets.menu import MenuActionListWidget
 from qframelesswindow import WindowEffect
 
@@ -40,7 +55,7 @@ from app.common.config import cfg
 
 
 class IconBodyLabel(BodyLabel):
-    def __init__(self, text:str, icon: FluentIconBase, parent=None):
+    def __init__(self, text: str, icon: FluentIconBase, parent=None):
         super().__init__(parent)
         self.setText(text)
         self.icon = icon
@@ -51,8 +66,7 @@ class IconBodyLabel(BodyLabel):
         super().paintEvent(event)
 
         painter = QPainter(self)
-        painter.setRenderHints(QPainter.Antialiasing |
-                               QPainter.SmoothPixmapTransform)
+        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
 
         # 绘制图标
         iconHeight, iconWidth = self.iconSize.height(), self.iconSize.width()
@@ -88,10 +102,13 @@ class TaskProgressBar(QWidget):
         self.blockNum += quantity
 
         for e, i in enumerate(content):  # 更改 Stretch
-            self.HBoxLayout.setStretch(e, int((i["end"] - i["start"]) / 1048576))  # 除以1MB
+            self.HBoxLayout.setStretch(
+                e, int((i["end"] - i["start"]) / 1048576)
+            )  # 除以1MB
+
 
 class CustomMenuStyle(QProxyStyle):
-    """ Custom menu style """
+    """Custom menu style"""
 
     def __init__(self, iconSize=14):
         """
@@ -117,7 +134,7 @@ class CustomMenuStyle(QProxyStyle):
 
 
 class CustomAcrylicMenu(RoundMenu):
-    """ Win32API 绘制 Acrylic/Aero Menu """
+    """Win32API 绘制 Acrylic/Aero Menu"""
 
     def __init__(self, title="", parent=None):
         QMenu.__init__(self, parent)
@@ -144,8 +161,12 @@ class CustomAcrylicMenu(RoundMenu):
         self.__initWidgets()
 
     def __initWidgets(self):
-        self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint |
-                            Qt.WindowType.NoDropShadowWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(
+            Qt.WindowType.Popup
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.NoDropShadowWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setMouseTracking(True)
 
@@ -164,10 +185,45 @@ class CustomAcrylicMenu(RoundMenu):
         self.view.itemClicked.connect(self._onItemClicked)
         self.view.itemEntered.connect(self._onItemEntered)
 
+    def adjustPosition(self):
+        m = self.hBoxLayout.contentsMargins()
+        rect = getCurrentScreenGeometry()
+        w, h = (
+            self.hBoxLayout.sizeHint().width() + 5,
+            self.hBoxLayout.sizeHint().height(),
+        )
+
+        x = min(self.x() - m.left(), rect.right() - w)
+        y = self.y() - 45
+
+        self.move(x, y)
+
     def showEvent(self, event, /):
         self.windowEffect.addMenuShadowEffect(self.winId())
         self.windowEffect.addShadowEffect(self.winId())
         self.windowEffect.enableBlurBehindWindow(self.winId())
-        self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if (darkdetect.isDark() if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark') else "FFFFFF30")
+        self.windowEffect.setAcrylicEffect(
+            self.winId(),
+            (
+                "00000030"
+                if (
+                    darkdetect.isDark()
+                    if cfg.customThemeMode.value == "System"
+                    else cfg.customThemeMode.value == "Dark"
+                )
+                else "FFFFFF30"
+            ),
+        )
+
+        self.adjustPosition()
 
         super().showEvent(event)
+
+    def nativeEvent(self, eventType, message):
+        if eventType == "windows_generic_MSG":
+            from ctypes.wintypes import MSG
+
+            msg = MSG.from_address(message.__int__())
+            if msg.message == 8:
+                self.close()
+                return True, 0
