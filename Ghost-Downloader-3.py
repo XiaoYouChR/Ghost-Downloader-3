@@ -3,6 +3,13 @@
 import os
 import sys
 
+# --- Allow Ctrl+C to stop the PyQt application (SIGINT handler) ---
+import signal
+def _sigint_handler(signum, frame):
+    print("\nCtrl+C pressed, exiting...")
+    sys.exit(0)
+signal.signal(signal.SIGINT, _sigint_handler)
+
 from qfluentwidgets import qconfig
 
 # noinspection PyUnresolvedReferences
