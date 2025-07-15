@@ -257,6 +257,7 @@ class DownloadTask(QThread):
             elif not worker.isCompleted:
                 # 总是优先运行未运行的worker
                 worker.task = self.loop.create_task(self.handleWorker(worker))
+                self.tasks.append(worker.task)
                 return
             
 
