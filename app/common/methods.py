@@ -10,8 +10,10 @@ from email.utils import decode_rfc2231
 from functools import wraps
 from pathlib import Path
 from time import sleep, localtime, time_ns
+from typing import TYPE_CHECKING
 from urllib.parse import unquote, parse_qs, urlparse
 
+from PySide6.QtWidgets import QApplication
 import curl_cffi
 from PySide6.QtCore import QUrl, QOperatingSystemVersion
 from PySide6.QtGui import QDesktopServices
@@ -22,29 +24,41 @@ from app.common.config import cfg, Headers
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
 
+if TYPE_CHECKING:
+    from qframelesswindow import FramelessWindow
+
 plugins = []
 
+
 def isGreaterEqualWin10():
-    """ determine if the Windows version ≥ Win10 """
+    """determine if the Windows version ≥ Win10"""
     cv = QOperatingSystemVersion.current()
     return sys.platform == "win32" and cv.majorVersion() >= 10
 
+
 def isLessThanWin10():
-    """  determine if the Windows version < Win10"""
+    """determine if the Windows version < Win10"""
     cv = QOperatingSystemVersion.current()
     return sys.platform == "win32" and cv.majorVersion() < 10
 
+
 def isGreaterEqualWin11():
-    """ determine if the windows version ≥ Win11 """
+    """determine if the windows version ≥ Win11"""
     return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000
 
+
 def isAbleToShowToast():
-    return (sys.platform == 'win32' and sys.getwindowsversion().build >= 10240) or True
+    return (sys.platform == "win32" and sys.getwindowsversion().build >= 10240) or True
+
 
 def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
     try:
         for filename in os.listdir(directory):
-            if filename.endswith(".py") or filename.endswith(".pyd") or filename.endswith(".so"):
+            if (
+                filename.endswith(".py")
+                or filename.endswith(".pyd")
+                or filename.endswith(".so")
+            ):
 
                 module_name = filename.split(".")[0]
                 file_path = os.path.join(directory, filename)
@@ -57,7 +71,11 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
                 # 遍历模块中的所有成员
                 for name, obj in inspect.getmembers(module):
                     # 检查是否是类，并且继承自 PluginBase
-                    if inspect.isclass(obj) and issubclass(obj, PluginBase) and obj is not PluginBase:
+                    if (
+                        inspect.isclass(obj)
+                        and issubclass(obj, PluginBase)
+                        and obj is not PluginBase
+                    ):
                         try:
                             # 实例化插件并调用 load 方法
                             plugin_instance = obj(mainWindow)
@@ -76,15 +94,17 @@ def getSystemProxy():
             import winreg
 
             # 打开 Windows 注册表项
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                                 r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+            )
 
             # 获取代理开关状态
-            proxy_enable, _ = winreg.QueryValueEx(key, 'ProxyEnable')
+            proxy_enable, _ = winreg.QueryValueEx(key, "ProxyEnable")
 
             if proxy_enable:
                 # 获取代理地址和端口号
-                proxy_server, _ = winreg.QueryValueEx(key, 'ProxyServer')
+                proxy_server, _ = winreg.QueryValueEx(key, "ProxyServer")
                 return "http://" + proxy_server
             else:
                 return None
@@ -105,9 +125,9 @@ def getSystemProxy():
 
         _ = SystemConfiguration.SCDynamicStoreCopyProxies(None)
 
-        if _.get('SOCKSEnable', 0):
+        if _.get("SOCKSEnable", 0):
             return f"socks5://{_.get('SOCKSProxy')}:{_.get('SOCKSPort')}"
-        elif _.get('HTTPEnable', 0):
+        elif _.get("HTTPEnable", 0):
             return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
         else:
             return None
@@ -157,7 +177,9 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
                 except Exception as e:
                     # 检查重试次数
                     if i == retries:
-                        logger.error(f'Error: {repr(e)}! "{func.__name__}()" 执行失败，已重试{retries}次.')
+                        logger.error(
+                            f'Error: {repr(e)}! "{func.__name__}()" 执行失败，已重试{retries}次.'
+                        )
                         try:
                             handleFunction(e)
                         finally:
@@ -182,7 +204,7 @@ def openFile(fileResolve):
     QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
 
 
-def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
+def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
     # 解析 GMT 时间
     gmtTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00"))
 
@@ -222,13 +244,29 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr:str):
 #     except Exception as e:
 #         logger.error(f"Could not register the application: {e}")
 
-def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.SSLVerify.value, proxy: str = "", followRedirects: bool = True) -> tuple:
+
+def getLinkInfo(
+    url: str,
+    headers: dict,
+    fileName: str = "",
+    verify: bool = cfg.SSLVerify.value,
+    proxy: str = "",
+    followRedirects: bool = True,
+) -> tuple:
     if not proxy:
         proxy = getProxy()
     headers = headers.copy()
-    headers["Range"] = "bytes=0-"#尝试发送范围请求
+    headers["Range"] = "bytes=0-"  # 尝试发送范围请求
     # 使用 stream 请求获取响应, 反爬
-    response = curl_cffi.get(url, stream=True, headers=headers, verify=verify, proxy=proxy, allow_redirects=followRedirects, impersonate="chrome")
+    response = curl_cffi.get(
+        url,
+        stream=True,
+        headers=headers,
+        verify=verify,
+        proxy=proxy,
+        allow_redirects=followRedirects,
+        impersonate="chrome",
+    )
     response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
 
     head = response.headers
@@ -238,12 +276,14 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
     # 获取文件大小, 判断是否可以分块下载
     # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
     if response.status_code == 206 and "content-range" in head:
-        #https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
+        # https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
         _left, _char, right = head["content-range"].rpartition("/")
 
         if right != "*":
             fileSize = int(right)
-            logger.info(f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}")
+            logger.info(
+                f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}"
+            )
 
         elif "content-length" in head:
             fileSize = int(head["content-length"])
@@ -262,22 +302,28 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
         try:
             # 尝试处理 Content-Disposition 中的 fileName* (RFC 5987 格式)
             headerValue = head["content-disposition"]
-            if 'fileName*' in headerValue:
-                match = re.search(r'filename\*\s*=\s*([^;]+)', headerValue, re.IGNORECASE)
+            if "fileName*" in headerValue:
+                match = re.search(
+                    r"filename\*\s*=\s*([^;]+)", headerValue, re.IGNORECASE
+                )
                 if match:
                     fileName = match.group(1)
-                    fileName = decode_rfc2231(fileName)[2]  # fileName* 后的部分是编码信息
+                    fileName = decode_rfc2231(fileName)[
+                        2
+                    ]  # fileName* 后的部分是编码信息
 
             # 如果 fileName* 没有成功获取，尝试处理普通的 fileName
-            if not fileName and 'filename' in headerValue:
-                match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE)
+            if not fileName and "filename" in headerValue:
+                match = re.search(
+                    r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE
+                )
                 if match:
                     fileName = match.group(1)
 
             # 移除文件名头尾可能存在的引号并解码
             if fileName:
                 fileName = unquote(fileName)
-                fileName = fileName.strip('"\'')
+                fileName = fileName.strip("\"'")
             else:
                 raise KeyError
 
@@ -290,14 +336,16 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
                 # 获取 response-content-disposition 参数
                 # 解码并分割 disposition
                 # 提取文件名
-                fileName = \
-                    unquote(parse_qs(urlparse(url).query).get('response-content-disposition', [''])[0]).split(
-                        "filename=")[-1]
+                fileName = unquote(
+                    parse_qs(urlparse(url).query).get(
+                        "response-content-disposition", [""]
+                    )[0]
+                ).split("filename=")[-1]
 
                 # 移除文件名头尾可能存在的引号并解码
                 if fileName:
                     fileName = unquote(fileName)
-                    fileName = fileName.strip('"\'')
+                    fileName = fileName.strip("\"'")
                 else:
                     raise KeyError
 
@@ -306,37 +354,49 @@ def getLinkInfo(url: str, headers: dict, fileName: str = "", verify: bool = cfg.
             except (KeyError, IndexError) as e:
 
                 logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
-                fileName = unquote(urlparse(url).path.split('/')[-1])
+                fileName = unquote(urlparse(url).path.split("/")[-1])
 
                 if fileName:  # 如果没有后缀名，则使用 content-type 作为后缀名
-                    _ = fileName.split('.')
+                    _ = fileName.split(".")
                     if len(_) == 1:
-                        fileName += '.' + head["content-type"].split('/')[-1].split(';')[0]
+                        fileName += (
+                            "." + head["content-type"].split("/")[-1].split(";")[0]
+                        )
 
                     logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
                 else:
                     logger.debug("方法3获取文件名失败, 文件名为空")
                     # 什么都 Get 不到的情况
                     logger.info(f"获取文件名失败, 错误:{e}")
-                    content_type = head["content-type"].split('/')[-1].split(';')[0]
+                    content_type = head["content-type"].split("/")[-1].split(";")[0]
                     fileName = f"downloaded_file{int(time_ns())}.{content_type}"
                     logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
 
     return url, fileName, fileSize
 
 
-def bringWindowToTop(window):
+def bringWindowToTop(window: "FramelessWindow"):
+    window.setStayOnTop(True)
     window.show()
+    QApplication.processEvents()
     if window.isMinimized():
         window.showNormal()
-    # 激活窗口，使其显示在最前面
     window.activateWindow()
     window.raise_()
+    window.setStayOnTop(False)
 
 
-def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
-                    headers: dict = None, status:str = "working", preBlockNum: int= None, notCreateHistoryFile: bool = False, fileSize: int = -1):
-    """ Global function to add download task """
+def addDownloadTask(
+    url: str,
+    fileName: str = None,
+    filePath: str = None,
+    headers: dict = None,
+    status: str = "working",
+    preBlockNum: int = None,
+    notCreateHistoryFile: bool = False,
+    fileSize: int = -1,
+):
+    """Global function to add download task"""
     if not filePath:
         filePath = cfg.downloadFolder.value
 
@@ -346,13 +406,23 @@ def addDownloadTask(url: str, fileName: str = None, filePath: str = None,
     if not headers:
         headers = Headers
 
-    signalBus.addTaskSignal.emit(url, fileName, filePath, headers, status, preBlockNum, notCreateHistoryFile, str(fileSize))
+    signalBus.addTaskSignal.emit(
+        url,
+        fileName,
+        filePath,
+        headers,
+        status,
+        preBlockNum,
+        notCreateHistoryFile,
+        str(fileSize),
+    )
+
 
 def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
-    """ show message box """
+    """show message box"""
     w = MessageBox(title, content, self)
     if not showYesButton:
-        w.cancelButton.setText('关闭')
+        w.cancelButton.setText("关闭")
         w.yesButton.hide()
         w.buttonLayout.insertStretch(0, 1)
 
@@ -380,7 +450,7 @@ def isSparseSupported(filePath: Path) -> bool:
 
         if sys.platform == "win32":
             # NTFS, ReFS 支持稀疏文件。exFAT 不支持。
-            supportedFileSystems = ('NTFS', 'ReFS')
+            supportedFileSystems = ("NTFS", "ReFS")
 
             # 使用 pathlib.Path.anchor 获取驱动器根路径 (例如 'C:\\')
             rootPath = checkPath.anchor
@@ -393,14 +463,14 @@ def isSparseSupported(filePath: Path) -> bool:
 
             # 调用 Windows API 获取卷信息
             success = ctypes.windll.kernel32.GetVolumeInformationW(
-                ctypes.c_wchar_p(rootPath),          # 根路径
-                volumeNameBuffer,                    # 卷名缓冲区
-                ctypes.sizeof(volumeNameBuffer),     # 缓冲区大小
-                None,                                # 序列号
-                None,                                # 最大组件长度
-                None,                                # 文件系统标志
-                fileSystemBuffer,                    # 文件系统名称缓冲区
-                ctypes.sizeof(fileSystemBuffer)      # 缓冲区大小
+                ctypes.c_wchar_p(rootPath),  # 根路径
+                volumeNameBuffer,  # 卷名缓冲区
+                ctypes.sizeof(volumeNameBuffer),  # 缓冲区大小
+                None,  # 序列号
+                None,  # 最大组件长度
+                None,  # 文件系统标志
+                fileSystemBuffer,  # 文件系统名称缓冲区
+                ctypes.sizeof(fileSystemBuffer),  # 缓冲区大小
             )
 
             if not success:
@@ -413,16 +483,18 @@ def isSparseSupported(filePath: Path) -> bool:
 
         elif sys.platform == "linux":
             # 主流的 Linux 文件系统，如 ext3, ext4, xfs, btrfs, f2fs, zfs 都支持稀疏文件
-            supportedFileSystems = ('ext3', 'ext4', 'xfs', 'btrfs', 'f2fs', 'zfs')
+            supportedFileSystems = ("ext3", "ext4", "xfs", "btrfs", "f2fs", "zfs")
 
             statvfsResult = os.statvfs(checkPath)
             # f_basetype 在某些系统上可能不存在，作为备用
-            fileSystemType = getattr(statvfsResult, 'f_basetype', '').decode('utf-8').rstrip('\x00')
+            fileSystemType = (
+                getattr(statvfsResult, "f_basetype", "").decode("utf-8").rstrip("\x00")
+            )
             return fileSystemType in supportedFileSystems
 
         elif sys.platform == "darwin":  # macOS
             # APFS 和 HFS+ 支持稀疏文件
-            supportedFileSystems = ('apfs', 'hfs')
+            supportedFileSystems = ("apfs", "hfs")
 
             # 使用 'stat' 命令是获取文件系统类型的最可靠方法
             # 'stat -f %T /path' 直接输出文件系统类型字符串
@@ -430,7 +502,7 @@ def isSparseSupported(filePath: Path) -> bool:
                 ["stat", "-f", "%T", str(checkPath)],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
             )
             fileSystemType = result.stdout.strip()
             return fileSystemType in supportedFileSystems
@@ -440,6 +512,7 @@ def isSparseSupported(filePath: Path) -> bool:
     except Exception as e:
         logger.warning(f"文件系统检测失败: {repr(e)}")
         return False
+
 
 def createSparseFile(filePath: Path) -> bool:
     """
@@ -467,8 +540,8 @@ def createSparseFile(filePath: Path) -> bool:
                 ["fsutil", "sparse", "setflag", str(filePath)],
                 capture_output=True,
                 text=True,
-                check=True, # 如果命令返回非零退出码，则引发 CalledProcessError
-                creationflags=subprocess.CREATE_NO_WINDOW # 不显示控制台窗口
+                check=True,  # 如果命令返回非零退出码，则引发 CalledProcessError
+                creationflags=subprocess.CREATE_NO_WINDOW,  # 不显示控制台窗口
             )
             # check=True 会处理错误，但为清晰起见保留检查
             if result.returncode != 0:
