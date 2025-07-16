@@ -1,5 +1,4 @@
 import asyncio
-from re import T
 import struct
 import sys
 import time
