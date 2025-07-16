@@ -26,6 +26,7 @@ class Ui_AddTaskOptionDialog(object):
             AddTaskOptionDialog.setObjectName("AddTaskOptionDialog")
         self.scrollWidget = QWidget()
         self.scrollWidget.setMinimumSize(QSize(510, 510))
+        self.scrollWidget.setStyleSheet("background: transparent")
         self.verticalLayout = QVBoxLayout(self.scrollWidget)
         self.verticalLayout.setObjectName("verticalLayout")
         self.scrollWidget.setLayout(self.verticalLayout)

@@ -165,7 +165,6 @@ class AddTaskOptionDialog(MaskDialogBase, Ui_AddTaskOptionDialog):
     def closeEvent(self, event):
         self.__whenClosed()
         super().closeEvent(event)
-        self.deleteLater()
 
     @classmethod
     def __whenClosed(cls):
