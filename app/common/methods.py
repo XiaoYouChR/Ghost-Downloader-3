@@ -10,12 +10,11 @@ from email.utils import decode_rfc2231
 from functools import wraps
 from pathlib import Path
 from time import sleep, localtime, time_ns
-from typing import TYPE_CHECKING
+
 from urllib.parse import unquote, parse_qs, urlparse
 
-from PySide6.QtWidgets import QApplication
 import curl_cffi
-from PySide6.QtCore import QUrl, QOperatingSystemVersion
+from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from qfluentwidgets import MessageBox
@@ -24,8 +23,6 @@ from app.common.config import cfg, Headers
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
 
-if TYPE_CHECKING:
-    from qframelesswindow import FramelessWindow
 
 plugins = []
 
@@ -375,13 +372,11 @@ def getLinkInfo(
     return url, fileName, fileSize
 
 
-def bringWindowToTop(window: "FramelessWindow"):
-    window.setStayOnTop(True)
+def bringWindowToTop(window):
+    window.setWindowState(Qt.WindowActive)
     window.show()
-    QApplication.processEvents()
     window.activateWindow()
     window.raise_()
-    window.setStayOnTop(False)
 
 
 def addDownloadTask(
