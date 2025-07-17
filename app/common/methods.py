@@ -379,8 +379,6 @@ def bringWindowToTop(window: "FramelessWindow"):
     window.setStayOnTop(True)
     window.show()
     QApplication.processEvents()
-    if window.isMinimized():
-        window.showNormal()
     window.activateWindow()
     window.raise_()
     window.setStayOnTop(False)
