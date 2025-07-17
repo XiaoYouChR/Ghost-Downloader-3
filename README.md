@@ -115,14 +115,13 @@ Copyright © 2025 XiaoYouChR.
 <!-- ACKNOWLEDGMENTS -->
 ## References
 
-* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible and beautiful Fluent Design widgets
-* [Httpx](https://github.com/projectdiscovery/httpx) A fast and multi-purpose HTTP toolkit
-* [Aiofiles](https://github.com/Tinche/aiofiles) File support for asyncio
-* [Loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
+* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible and beautiful Fluent Design widgets* [Curl-cffi](https://github.com/lexiforest/curl_cffi) A http client that can impersonate browser tls/ja3/http2 fingerprints
+* [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
 * [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
 * [pyqt5-concurrent](https://github.com/AresConnor/pyqt5-concurrent) A QThreadPool based task concurrency library
+* [Desktop-notifier](https://github.com/samschott/desktop-notifier)Python library for cross-platform desktop notifications
 
 ## Acknowledgments
 

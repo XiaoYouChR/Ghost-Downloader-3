@@ -1,5 +1,5 @@
 PySide6-Fluent-Widgets>=1.8.0
-PysideSix-Frameless-Window>=0.7.1
+PySideSix-Frameless-Window>=0.7.1
 PySide6==6.9.1
 loguru
 curl-cffi

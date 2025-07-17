@@ -8,6 +8,9 @@
 > [!TIP]
 > 如果您想在 Windows 7 上使用 Ghost-Downloader-3，请下载 `v3.5.8-Portable` 版本.
 
+> [!IMPORTANT]
+> 欢迎加入 Ghost Downloader 用户交流群 [756042420](https://qm.qq.com/q/gPk6FR1Hby)
+
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -116,13 +119,13 @@ Copyright © 2025 XiaoYouChR.
 ## 引用
 
 * [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大、可扩展、美观优雅的 Fluent Design 风格组件库
-* [Httpx](https://github.com/projectdiscovery/httpx) A fast and multi-purpose HTTP toolkit
-* [Aiofiles](https://github.com/Tinche/aiofiles) File support for asyncio
+* [Curl-cffi](https://github.com/lexiforest/curl_cffi) A http client that can impersonate browser tls/ja3/http2 fingerprints
 * [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
 * [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
 * [pyqt5-concurrent](https://github.com/AresConnor/pyqt5-concurrent) A QThreadPool based task concurrency library
+* [Desktop-notifier](https://github.com/samschott/desktop-notifier)Python library for cross-platform desktop notifications
 
 ## 致谢
 
