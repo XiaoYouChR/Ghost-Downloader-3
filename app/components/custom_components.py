@@ -185,6 +185,20 @@ class CustomAcrylicMenu(RoundMenu):
         self.view.itemClicked.connect(self._onItemClicked)
         self.view.itemEntered.connect(self._onItemEntered)
 
+    def adjustPosition(self):
+        m = self.hBoxLayout.contentsMargins()
+        rect = getCurrentScreenGeometry()
+        w, h = (
+            self.hBoxLayout.sizeHint().width() + 5,
+            self.hBoxLayout.sizeHint().height(),
+        )
+
+        x = min(self.x() - m.left(), rect.right() - w)
+        y = self.y() - 45
+
+        self.move(x, y)
+
+
     def showEvent(self, event, /):
         self.windowEffect.addMenuShadowEffect(self.winId())
         self.windowEffect.addShadowEffect(self.winId())
@@ -202,6 +216,7 @@ class CustomAcrylicMenu(RoundMenu):
             ),
         )
 
+        self.adjustPosition()
         self.raise_()
         self.activateWindow()
         self.setFocus()
