@@ -95,7 +95,7 @@ class Config(QConfig):
 
     # download
     maxReassignSize = RangeConfigItem(
-        "Download", "MaxReassignSize", 8, RangeValidator(1, 100)
+        "Download", "MaxReassignSize", 3, RangeValidator(1, 100)
     )
     downloadFolder = ConfigItem(
         "Download",
@@ -113,7 +113,7 @@ class Config(QConfig):
         "Download", "SpeedLimitation", 0, RangeValidator(0, 104857600)
     )  # 单位 KB
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
-    SSLVerify = ConfigItem("Download", "SSLVerify", True, BoolValidator(), restart=True)
+    SSLVerify = ConfigItem("Download", "SSLVerify", False, BoolValidator(), restart=True)
     proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
 
     # browser
