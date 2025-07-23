@@ -115,7 +115,8 @@ Copyright © 2025 XiaoYouChR.
 <!-- ACKNOWLEDGMENTS -->
 ## References
 
-* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible and beautiful Fluent Design widgets* [Curl-cffi](https://github.com/lexiforest/curl_cffi) A http client that can impersonate browser tls/ja3/http2 fingerprints
+* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible and beautiful Fluent Design widgets
+* [Curl-cffi](https://github.com/lexiforest/curl_cffi) A http client that can impersonate browser tls/ja3/http2 fingerprints
 * [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
