@@ -1,17 +1,15 @@
 import ctypes
-import importlib
+import importlib.util
 import inspect
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
-from email.utils import decode_rfc2231
 from functools import wraps
 from pathlib import Path
 from time import sleep, localtime, time_ns
-
-from urllib.parse import unquote, parse_qs, urlparse
+from urllib.parse import urlparse, parse_qs, unquote
 
 import curl_cffi
 from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt
@@ -22,7 +20,6 @@ from qfluentwidgets import MessageBox
 from app.common.config import cfg, Headers
 from app.common.plugin_base import PluginBase
 from app.common.signal_bus import signalBus
-
 
 plugins = []
 
@@ -52,9 +49,9 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
     try:
         for filename in os.listdir(directory):
             if (
-                filename.endswith(".py")
-                or filename.endswith(".pyd")
-                or filename.endswith(".so")
+                    filename.endswith(".py")
+                    or filename.endswith(".pyd")
+                    or filename.endswith(".so")
             ):
 
                 module_name = filename.split(".")[0]
@@ -69,9 +66,9 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
                 for name, obj in inspect.getmembers(module):
                     # 检查是否是类，并且继承自 PluginBase
                     if (
-                        inspect.isclass(obj)
-                        and issubclass(obj, PluginBase)
-                        and obj is not PluginBase
+                            inspect.isclass(obj)
+                            and issubclass(obj, PluginBase)
+                            and obj is not PluginBase
                     ):
                         try:
                             # 实例化插件并调用 load 方法
@@ -84,51 +81,87 @@ def loadPlugins(mainWindow, directory="{}/plugins".format(cfg.appPath)):
     except Exception as e:
         logger.error(f"Error loading plugins: {e}")
 
+#
+# def getSystemProxy():
+#     if sys.platform == "win32":
+#         try:
+#             import winreg
+#
+#             # 打开 Windows 注册表项
+#             key = winreg.OpenKey(
+#                 winreg.HKEY_CURRENT_USER,
+#                 r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+#             )
+#
+#             # 获取代理开关状态
+#             proxy_enable, _ = winreg.QueryValueEx(key, "ProxyEnable")
+#
+#             if proxy_enable:
+#                 # 获取代理地址和端口号
+#                 proxy_server, _ = winreg.QueryValueEx(key, "ProxyServer")
+#                 return "http://" + proxy_server
+#             else:
+#                 return None
+#
+#         except Exception as e:
+#             logger.error(f"Cannot get Windows proxy server：{e}")
+#             return None
+#
+#     elif sys.platform == "linux":  # 读取 Linux 系统代理
+#         try:
+#             return os.environ.get("http_proxy")
+#         except Exception as e:
+#             logger.error(f"Cannot get Linux proxy server：{e}")
+#             return None
+#
+#     elif sys.platform == "darwin":
+#         import SystemConfiguration
+#
+#         _ = SystemConfiguration.SCDynamicStoreCopyProxies(None)
+#
+#         if _.get("SOCKSEnable", 0):
+#             return f"socks5://{_.get('SOCKSProxy')}:{_.get('SOCKSPort')}"
+#         elif _.get("HTTPEnable", 0):
+#             return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
+#         else:
+#             return None
+#     return None
 
-def getSystemProxy():
-    if sys.platform == "win32":
-        try:
-            import winreg
+proxyParser = re.compile(
+    r'(\w+)=(.+)'
+)
 
-            # 打开 Windows 注册表项
-            key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
-            )
+def GetWin32Proxy() -> dict[str, str] | None:
+    try:
+        import winreg
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Internet Settings")
 
-            # 获取代理开关状态
-            proxy_enable, _ = winreg.QueryValueEx(key, "ProxyEnable")
+        proxyEnable, _ = winreg.QueryValueEx(key, "ProxyEnable")
+        if proxyEnable:
+            proxyServer, _ = winreg.QueryValueEx(key, "ProxyServer")
+            # 一般的代理格式: http://127.0.0.1
+            # Win11 的代理格式: http=http://xxx.xxx.xxx.xxx:0000;https=https://....
+            proxies = {}
+            if '=' in proxyServer:
+                for pair in proxyServer.split(';'):
+                    match = proxyParser.match(pair)
+                    if match:
+                        protrol, server = match.groups()
+                        proxies[protrol] = server
+                    else:
+                        logger.warning("Invalid proxy server: " + pair)
 
-            if proxy_enable:
-                # 获取代理地址和端口号
-                proxy_server, _ = winreg.QueryValueEx(key, "ProxyServer")
-                return "http://" + proxy_server
             else:
-                return None
+                proxies = {
+                    proxyServer.split(':')[0]: proxyServer
+                }
 
-        except Exception as e:
-            logger.error(f"Cannot get Windows proxy server：{e}")
-            return None
+            return proxies
 
-    elif sys.platform == "linux":  # 读取 Linux 系统代理
-        try:
-            return os.environ.get("http_proxy")
-        except Exception as e:
-            logger.error(f"Cannot get Linux proxy server：{e}")
-            return None
-
-    elif sys.platform == "darwin":
-        import SystemConfiguration
-
-        _ = SystemConfiguration.SCDynamicStoreCopyProxies(None)
-
-        if _.get("SOCKSEnable", 0):
-            return f"socks5://{_.get('SOCKSProxy')}:{_.get('SOCKSPort')}"
-        elif _.get("HTTPEnable", 0):
-            return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
-        else:
-            return None
-    return None
+    except Exception as e:
+        return None
 
 
 def getProxy():
@@ -183,7 +216,7 @@ def retry(retries: int = 3, delay: float = 0.1, handleFunction: callable = None)
                             break
                     else:
                         logger.warning(
-                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i+1}/{retries}]次重试...'
+                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i + 1}/{retries}]次重试...'
                         )
                         sleep(delay)
 
@@ -242,134 +275,237 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
 #         logger.error(f"Could not register the application: {e}")
 
 
-def getLinkInfo(
-    url: str,
-    headers: dict,
-    fileName: str = "",
-    verify: bool = cfg.SSLVerify.value,
-    proxy: str = "",
-    followRedirects: bool = True,
-) -> tuple:
-    if not proxy:
-        proxy = getProxy()
-    headers = headers.copy()
-    headers["Range"] = "bytes=0-"  # 尝试发送范围请求
-    # 使用 stream 请求获取响应, 反爬
-    response = curl_cffi.get(
-        url,
-        stream=True,
-        headers=headers,
-        verify=verify,
-        proxy=proxy,
-        allow_redirects=followRedirects,
-        impersonate="chrome",
-    )
-    response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
+# def getLinkInfo(
+#     url: str,
+#     headers: dict,
+#     fileName: str = "",
+#     verify: bool = cfg.SSLVerify.value,
+#     proxy: str = "",
+#     followRedirects: bool = True,
+# ) -> tuple:
+#     if not proxy:
+#         proxy = getProxy()
+#     headers = headers.copy()
+#     headers["Range"] = "bytes=0-"  # 尝试发送范围请求
+#     # 使用 stream 请求获取响应, 反爬
+#     response = curl_cffi.get(
+#         url,
+#         stream=True,
+#         headers=headers,
+#         verify=verify,
+#         proxy=proxy,
+#         allow_redirects=followRedirects,
+#         impersonate="chrome",
+#     )
+#     response.raise_for_status()  # 如果状态码不是 2xx，抛出异常
+#
+#     head = response.headers
+#
+#     url = str(response.url)
+#
+#     # 获取文件大小, 判断是否可以分块下载
+#     # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
+#     if response.status_code == 206 and "content-range" in head:
+#         # https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
+#         _left, _char, right = head["content-range"].rpartition("/")
+#
+#         if right != "*":
+#             fileSize = int(right)
+#             logger.info(
+#                 f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}"
+#             )
+#
+#         elif "content-length" in head:
+#             fileSize = int(head["content-length"])
+#
+#         else:
+#             fileSize = 0
+#             logger.info("文件似乎支持续传，但无法获取文件大小")
+#     else:
+#         fileSize = 0
+#         logger.info("文件不支持续传")
+#
+#     response.close()
+#
+#     # 获取文件名
+#     if not fileName:
+#         try:
+#             # 尝试处理 Content-Disposition 中的 fileName* (RFC 5987 格式)
+#             headerValue = head["content-disposition"]
+#             if "fileName*" in headerValue:
+#                 match = re.search(
+#                     r"filename\*\s*=\s*([^;]+)", headerValue, re.IGNORECASE
+#                 )
+#                 if match:
+#                     fileName = match.group(1)
+#                     fileName = decode_rfc2231(fileName)[
+#                         2
+#                     ]  # fileName* 后的部分是编码信息
+#
+#             # 如果 fileName* 没有成功获取，尝试处理普通的 fileName
+#             if not fileName and "filename" in headerValue:
+#                 match = re.search(
+#                     r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE
+#                 )
+#                 if match:
+#                     fileName = match.group(1)
+#
+#             # 移除文件名头尾可能存在的引号并解码
+#             if fileName:
+#                 fileName = unquote(fileName)
+#                 fileName = fileName.strip("\"'")
+#             else:
+#                 raise KeyError
+#
+#             logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
+#         except (KeyError, IndexError) as e:
+#             try:
+#                 logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
+#                 # 解析 URL
+#                 # 解析查询字符串
+#                 # 获取 response-content-disposition 参数
+#                 # 解码并分割 disposition
+#                 # 提取文件名
+#                 fileName = unquote(
+#                     parse_qs(urlparse(url).query).get(
+#                         "response-content-disposition", [""]
+#                     )[0]
+#                 ).split("filename=")[-1]
+#
+#                 # 移除文件名头尾可能存在的引号并解码
+#                 if fileName:
+#                     fileName = unquote(fileName)
+#                     fileName = fileName.strip("\"'")
+#                 else:
+#                     raise KeyError
+#
+#                 logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
+#
+#             except (KeyError, IndexError) as e:
+#
+#                 logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
+#                 fileName = unquote(urlparse(url).path.split("/")[-1])
+#
+#                 if fileName:  # 如果没有后缀名，则使用 content-type 作为后缀名
+#                     _ = fileName.split(".")
+#                     if len(_) == 1:
+#                         fileName += (
+#                             "." + head["content-type"].split("/")[-1].split(";")[0]
+#                         )
+#
+#                     logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
+#                 else:
+#                     logger.debug("方法3获取文件名失败, 文件名为空")
+#                     # 什么都 Get 不到的情况
+#                     logger.info(f"获取文件名失败, 错误:{e}")
+#                     content_type = head["content-type"].split("/")[-1].split(";")[0]
+#                     fileName = f"downloaded_file{int(time_ns())}.{content_type}"
+#                     logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
+#
+#     return url, fileName, fileSize
 
-    head = response.headers
+def choose(*values):
+    res = values[0]
+    for v in values:
+        res = v or res
 
+        if res:
+            return res
+
+    return res
+
+
+def getFileNameFromDisposition(response):
+    if 'content-disposition' in response.headers:
+        disposition = response.headers['content-disposition']
+        match = re.search(r'filename\s*=\s*"(.+)"', disposition)
+        if match:
+            return match.group(1)
+    return None
+
+
+def getFileNameFromUrlQuery(response):
     url = str(response.url)
+    res = urlparse(url)
+    fileName = parse_qs(res.query).get('response-content-disposition', [''])[0] \
+        .removeprefix('filename=')
+    if fileName:
+        fileName = unquote(fileName)
+        fileName = fileName.strip('"')
+        return fileName
 
-    # 获取文件大小, 判断是否可以分块下载
-    # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
-    if response.status_code == 206 and "content-range" in head:
-        # https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
-        _left, _char, right = head["content-range"].rpartition("/")
-
-        if right != "*":
-            fileSize = int(right)
-            logger.info(
-                f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}"
-            )
-
-        elif "content-length" in head:
-            fileSize = int(head["content-length"])
-
-        else:
-            fileSize = 0
-            logger.info("文件似乎支持续传，但无法获取文件大小")
     else:
-        fileSize = 0
-        logger.info("文件不支持续传")
+        return None
 
-    response.close()
 
-    # 获取文件名
-    if not fileName:
-        try:
-            # 尝试处理 Content-Disposition 中的 fileName* (RFC 5987 格式)
-            headerValue = head["content-disposition"]
-            if "fileName*" in headerValue:
-                match = re.search(
-                    r"filename\*\s*=\s*([^;]+)", headerValue, re.IGNORECASE
-                )
-                if match:
-                    fileName = match.group(1)
-                    fileName = decode_rfc2231(fileName)[
-                        2
-                    ]  # fileName* 后的部分是编码信息
+def getFileNameFromUrl(response):
+    fileName = unquote(urlparse(response.url).path.split('/')[-1])
 
-            # 如果 fileName* 没有成功获取，尝试处理普通的 fileName
-            if not fileName and "filename" in headerValue:
-                match = re.search(
-                    r'filename\s*=\s*["\']?([^"\';]+)["\']?', headerValue, re.IGNORECASE
-                )
-                if match:
-                    fileName = match.group(1)
+    if fileName:
+        if '.' not in fileName:  # 无后缀名
+            content_type = response.headers['content-type'].split('/')[-1].split(';')[0]
+            fileName += f'.{content_type}'
+    else:
+        fileName = None
+    return fileName
 
-            # 移除文件名头尾可能存在的引号并解码
-            if fileName:
-                fileName = unquote(fileName)
-                fileName = fileName.strip("\"'")
-            else:
-                raise KeyError
 
-            logger.debug(f"方法1获取文件名成功, 文件名:{fileName}")
-        except (KeyError, IndexError) as e:
-            try:
-                logger.info(f"方法1获取文件名失败, KeyError or IndexError:{e}")
-                # 解析 URL
-                # 解析查询字符串
-                # 获取 response-content-disposition 参数
-                # 解码并分割 disposition
-                # 提取文件名
-                fileName = unquote(
-                    parse_qs(urlparse(url).query).get(
-                        "response-content-disposition", [""]
-                    )[0]
-                ).split("filename=")[-1]
+def getFileNameFromTime(response):
+    content_type = response.headers['content-type'].split('/')[-1].removesuffix(';')
+    fileName = f"download_file{int(time_ns())}.{content_type}"
+    return fileName
 
-                # 移除文件名头尾可能存在的引号并解码
-                if fileName:
-                    fileName = unquote(fileName)
-                    fileName = fileName.strip("\"'")
-                else:
-                    raise KeyError
 
-                logger.debug(f"方法2获取文件名成功, 文件名:{fileName}")
+def getFileName(response):
+    return choose(
+        getFileNameFromDisposition(response),
+        getFileNameFromUrlQuery(response),
+        getFileNameFromUrl(response),
+        getFileNameFromTime(response)
+    )
 
-            except (KeyError, IndexError) as e:
 
-                logger.info(f"方法2获取文件名失败, KeyError or IndexError:{e}")
-                fileName = unquote(urlparse(url).path.split("/")[-1])
+def getFileSize(response):
+    fileSize = 0
+    if response.status_code == 206 and 'content-range' in response.headers:
+        size_str = response.headers['content-range'].split('/')[-1]
+        if size_str != '*':
+            fileSize = int(size_str)
+            logger.info(
+                f"content-range: {response.headers['content-range']}, fileSize: {fileSize}, content-length: {response.headers['content-length']}")
+        else:
+            fileSize = int(response.headers.get('content-length', 0))
 
-                if fileName:  # 如果没有后缀名，则使用 content-type 作为后缀名
-                    _ = fileName.split(".")
-                    if len(_) == 1:
-                        fileName += (
-                            "." + head["content-type"].split("/")[-1].split(";")[0]
-                        )
+            if fileSize == 0:
+                logger.info("文件似乎支持续传，但无法获取文件大小")
 
-                    logger.debug(f"方法3获取文件名成功, 文件名:{fileName}")
-                else:
-                    logger.debug("方法3获取文件名失败, 文件名为空")
-                    # 什么都 Get 不到的情况
-                    logger.info(f"获取文件名失败, 错误:{e}")
-                    content_type = head["content-type"].split("/")[-1].split(";")[0]
-                    fileName = f"downloaded_file{int(time_ns())}.{content_type}"
-                    logger.debug(f"方法4获取文件名成功, 文件名:{fileName}")
+    else:
+        logger.info('文件不支持续传')
 
-    return url, fileName, fileSize
+    return fileSize
+
+
+async def getLinkInfo(
+        url: str, headers: dict,
+        fileName: str = None,
+        verify: bool = None,
+        proxy: str = None,
+        followRedirects: bool = True,
+        session: curl_cffi.AsyncSession = None
+) -> tuple[str, str, int]:
+    proxy = proxy or getProxy()
+    headers = {**headers, 'Range': "bytes=0-"}
+    session = session or curl_cffi.AsyncSession()
+
+    async with session.get(
+            url, stream=True,
+            headers=headers, verify=verify,
+            allow_redirects=followRedirects,
+            impersonate="chrome", proxy=proxy
+    ) as response:
+        response.raise_for_status()
+
+        return str(response.url), getFileName(response), fileName or getFileSize(response),
 
 
 def bringWindowToTop(window):
@@ -380,14 +516,14 @@ def bringWindowToTop(window):
 
 
 def addDownloadTask(
-    url: str,
-    fileName: str = None,
-    filePath: str = None,
-    headers: dict = None,
-    status: str = "working",
-    preBlockNum: int = None,
-    notCreateHistoryFile: bool = False,
-    fileSize: int = -1,
+        url: str,
+        fileName: str = None,
+        filePath: str = None,
+        headers: dict = None,
+        status: str = "working",
+        preBlockNum: int = None,
+        notCreateHistoryFile: bool = False,
+        fileSize: int = -1,
 ):
     """Global function to add download task"""
     if not filePath:

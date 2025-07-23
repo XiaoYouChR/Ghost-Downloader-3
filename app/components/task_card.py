@@ -36,6 +36,7 @@ class MimeData(QMimeData):
         self.setText(self.url)
         return self
 
+
 class TaskCard(CardWidget, Ui_TaskCard):
     taskStatusChanged = Signal()
 
@@ -274,7 +275,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
     def mouseReleaseEvent(self, e):
         if e.button() == Qt.LeftButton and self.isPressed and self.status == "finished":
-                openFile(f"{self.filePath}/{self.fileName}")
+            openFile(f"{self.filePath}/{self.fileName}")
         super().mouseReleaseEvent(e)
 
     def changeButtonStatus(self, enabled: bool | None = None, icon=None, slot=None):
@@ -422,10 +423,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.progressBar.progressBarList[e].setValue(
                     ((i["progress"] - i["start"]) / (i["end"] - i["start"])) * 100)
 
-            self.progressLabel.setText(f"{getReadableSize(self.task.progress)}/{getReadableSize(self.task.fileSize)}")
+            self.progressLabel.setText(f"{getReadableSize(self.task.pos)}/{getReadableSize(self.task.fileSize)}")
 
         else:  # 不能并行下载
-            self.progressLabel.setText(f"{getReadableSize(self.task.progress)}")
+            self.progressLabel.setText(f"{getReadableSize(self.task.pos)}")
 
     def __updateSpeed(self, avgSpeed: int):
 
@@ -434,7 +435,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         if self.ableToParallelDownload:
             # 计算剩余时间，并转换为 MM:SS
             try:
-                leftTime = (self.task.fileSize - self.task.progress) / avgSpeed
+                leftTime = (self.task.fileSize - self.task.pos) / avgSpeed
                 self.leftTimeLabel.setText(f"{int(leftTime // 60):02d}:{int(leftTime % 60):02d}")
             except ZeroDivisionError:
                 self.leftTimeLabel.setText("Infinity")
@@ -504,10 +505,10 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def runCalcHashTask(self, algorithm):
         self.__showInfo(self.tr("正在校验 ") + algorithm + self.tr(", 请稍后..."))
         self.changeButtonStatus(enabled=False)
-        self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size/1048576)  # 设置进度条最大值
+        self.progressBar.setMaximum(Path(f"{self.filePath}/{self.fileName}").stat().st_size / 1048576)  # 设置进度条最大值
 
         self.calcTask = CalcHashThread(f"{self.filePath}/{self.fileName}", algorithm)
-        self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x)/1048576))
+        self.calcTask.calcProgress.connect(lambda x: self.progressBar.setValue(int(x) / 1048576))
         self.calcTask.returnHash.connect(self.whenHashCalcFinished)
         self.calcTask.start()
 
@@ -529,6 +530,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
 
         if ok and selected_algorithm:
             self.runCalcHashTask(selected_algorithm)
+
 
 class CalcHashThread(QThread):
     calcProgress = Signal(str)  # 因为C++ int最大值仅支持到2^31 PyQt又没有Qint类 故只能使用str代替
