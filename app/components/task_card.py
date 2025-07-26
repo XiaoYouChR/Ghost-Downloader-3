@@ -14,7 +14,7 @@ from .custom_components import TaskProgressBar
 from .custom_dialogs import DelDialog, CustomInputDialog
 from ..common.config import cfg
 from ..common.download_task import DownloadTask
-from ..common.methods import getReadableSize, openFile
+from ..common.methods import getReadableSize, openFile, openFolder
 from ..view.pop_up_window import FinishedPopUpWindow
 
 
@@ -95,7 +95,7 @@ class TaskCard(CardWidget, Ui_TaskCard):
         # 连接信号到槽
         self.pauseButton.clicked.connect(self.pauseTask)
         self.cancelButton.clicked.connect(self.cancelTask)
-        self.folderButton.clicked.connect(lambda: openFile(filePath))
+        self.folderButton.clicked.connect(lambda: openFolder(self.filePath + '/' + self.fileName))
 
     def __launchTask(self):
         # self.pauseButton.setDisabled(True)

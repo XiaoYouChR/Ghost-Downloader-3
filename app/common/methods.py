@@ -201,6 +201,22 @@ def openFile(fileResolve):
     QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
 
 
+def openFolder(path):
+    path = Path(path)
+    if path.exists():
+        folder, file = path.parent, path.name
+        match sys.platform:
+            case 'win32':
+                os.system(f'explorer.exe /select, "{path}"')
+            case 'linux':
+                os.system(f'xdg-open "{folder}"')
+            case 'darwin':
+                os.system(f'open "{folder}" -R "{folder}\\{file}"')
+
+    else:
+        raise FileNotFoundError(path)
+
+
 def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
     # 解析 GMT 时间
     gmtTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00"))
