@@ -211,7 +211,7 @@ def openFolder(path):
             case 'linux':
                 os.system(f'xdg-open "{folder}"')
             case 'darwin':
-                os.system(f'open "{folder}" -R "{folder}\\{file}"')
+                os.system(f'open -R "{path}"')
 
     else:
         raise FileNotFoundError(path)
