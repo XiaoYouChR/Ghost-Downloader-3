@@ -102,7 +102,19 @@ def getSystemProxy():
             if proxy_enable:
                 # 获取代理地址和端口号
                 proxy_server, _ = winreg.QueryValueEx(key, "ProxyServer")
-                return "http://" + proxy_server
+
+                # 检查是否为 http=...;https=... 的格式
+                if ";" in proxy_server:
+                    parts = proxy_server.split(";")
+                    for part in parts:
+                        if part.lower().startswith("http="):
+                            proxy_server = part[len("http=") :]
+                            break
+
+                # 检查是否包含协议头
+                if not proxy_server.startswith(("http://", "https://")):
+                    return "http://" + proxy_server
+                return proxy_server
             else:
                 return None
 
