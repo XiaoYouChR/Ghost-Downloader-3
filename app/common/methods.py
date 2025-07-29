@@ -204,15 +204,28 @@ def openFile(fileResolve):
 def openFolder(path):
     path = Path(path)
     if path.exists():
-        folder, file = path.parent, path.name
-        match sys.platform:
-            case 'win32':
-                os.system(f'explorer.exe /select, "{path}"')
-            case 'linux':
-                os.system(f'xdg-open "{folder}"')
-            case 'darwin':
-                os.system(f'open -R "{path}"')
-
+        folder= path.parent
+        if sys.platform == "win32":
+                subprocess.Popen(
+                    ["explorer.exe", "/select,", str(path)],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+        elif sys.platform == "linux":
+                for fm in [
+                    ["nautilus", "--select"],  # GNOME
+                    ["dolphin", "--select"],  # KDE
+                    ["nemo", "--no-desktop"],  # Cinnamon
+                    ["thunar"],  # XFCE
+                ]:
+                    try:
+                        subprocess.Popen(fm + [str(path)])
+                        break
+                    except FileNotFoundError:
+                        continue
+                else:
+                    subprocess.Popen(["xdg-open", str(folder)])
+        elif sys.platform == "darwin":
+                subprocess.Popen(["open", "-R", str(path)])
     else:
         raise FileNotFoundError(path)
 
