@@ -1,5 +1,7 @@
 # coding:utf-8
 import os
+import getpass
+
 import sys
 from pathlib import Path
 from typing import Union
@@ -684,12 +686,12 @@ class SettingInterface(ScrollArea):
                 )
         elif sys.platform == "linux":
             if value:
-                autoStartPath = Path(f"/home/{os.getlogin()}/.config/autostart/")
+                autoStartPath = Path(f"/home/{getpass.getuser()}/.config/autostart/")
                 if not autoStartPath.exists():
                     autoStartPath.mkdir(parents=True, exist_ok=True)
 
                 with open(
-                    f"/home/{os.getlogin()}/.config/autostart/gd3.desktop",
+                    f"/home/{getpass.getuser()}/.config/autostart/gd3.desktop",
                     "w",
                     encoding="utf-8",
                 ) as f:
@@ -707,7 +709,7 @@ class SettingInterface(ScrollArea):
                     f.flush()
 
             else:
-                os.remove(f"/home/{os.getlogin()}/.config/autostart/gd3.desktop")
+                os.remove(f"/home/{getpass.getuser()}/.config/autostart/gd3.desktop")
 
         else:
             InfoBar.warning(

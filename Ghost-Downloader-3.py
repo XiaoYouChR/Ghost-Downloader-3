@@ -1,5 +1,5 @@
 # coding:utf-8
-
+import getpass
 import os
 import sys
 
@@ -78,7 +78,7 @@ if sys.platform == "linux":
         import configparser
         config = configparser.ConfigParser()
 
-        config.read(f"/home/{os.getlogin()}/.config/kdeglobals")
+        config.read(f"/home/{getpass.getuser()}/.config/kdeglobals")
 
         # 获取 DecorationFocus 的值
         if 'Colors:Window' in config:
