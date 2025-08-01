@@ -2,7 +2,6 @@ import asyncio
 import struct
 import sys
 import time
-from asyncio import Task,Event
 from pathlib import Path
 from threading import Thread
 
@@ -25,12 +24,14 @@ class DownloadWorker:
 
 class MutiThreadContext:
     """多线程句柄，如果DownloadTask的方法需要使用多线程，则需要将该类作为参数传入"""
+
     def __init__(self, fileSize):
         self.workers: list[DownloadWorker] = []
         self.taskgroup = asyncio.TaskGroup()
-        self.running_task_count:int = 0
-        self.fileSize:int = fileSize
-        self.done:bool = False
+        self.running_task_count: int = 0
+        self.fileSize: int = fileSize
+        self.done: bool = False
+
 
 class DownloadTask(QThread):
     """Task Manager
@@ -117,14 +118,16 @@ class DownloadTask(QThread):
             )  # 直接修改好像也不会怎么样
 
             # 安配新的工人
-            startPos = maxRemainderWorkerProcess + baseShare + remainder + 1 #除以2向上取整
+            startPos = (
+                maxRemainderWorkerProcess + baseShare + remainder + 1
+            )  # 除以2向上取整
 
-            newWorker = DownloadWorker(
-                startPos, startPos, maxRemainderWorkerEnd
-            )
+            newWorker = DownloadWorker(startPos, startPos, maxRemainderWorkerEnd)
 
             context.taskgroup.create_task(self.__handleWorker(newWorker, context))
-            context.workers.insert(context.workers.index(maxRemainderWorker) + 1, newWorker)
+            context.workers.insert(
+                context.workers.index(maxRemainderWorker) + 1, newWorker
+            )
             context.running_task_count += 1
             logger.info(
                 f"Task{self.fileName} 分配新线程成功, 剩余量：{getReadableSize(maxRemainder)}，修改后的EndPos：{maxRemainderWorker.endPos}，新线程：{newWorker}，新线程的StartPos：{startPos}"
@@ -224,9 +227,7 @@ class DownloadTask(QThread):
                             break
 
                         start, process, end = struct.unpack("<QQQ", data)
-                        context.workers.append(
-                            DownloadWorker(start, process, end)
-                        )
+                        context.workers.append(DownloadWorker(start, process, end))
 
             except Exception as e:
                 logger.error(f"Failed to load workers: {e}")
@@ -234,18 +235,14 @@ class DownloadTask(QThread):
 
                 for i in range(self.preBlockNum):
                     context.workers.append(
-                        DownloadWorker(
-                            stepList[i][0], stepList[i][0], stepList[i][1]
-                        )
+                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1])
                     )
         else:
             stepList = self.__calcDivisionalRange(context)
 
             for i in range(self.preBlockNum):
                 context.workers.append(
-                    DownloadWorker(
-                        stepList[i][0], stepList[i][0], stepList[i][1]
-                    )
+                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1])
                 )
 
     # 多线程主下载逻辑
@@ -268,7 +265,7 @@ class DownloadTask(QThread):
                         headers=workingRangeHeaders,
                         timeout=30,
                         method="GET",
-                    ).__aenter__() #直接使用async with暂停时会卡住，原因不明
+                    ).__aenter__()  # 直接使用async with暂停时会卡住，原因不明
                     try:
                         res: curl_cffi.Response
                         res.raise_for_status()
@@ -289,7 +286,7 @@ class DownloadTask(QThread):
                                     if cfg.globalSpeed >= cfg.speedLimitation.value:
                                         time.sleep(1)
                     finally:
-                        #res: curl_cffi.Response
+                        # res: curl_cffi.Response
                         res.close()
 
                     if worker.progress >= worker.endPos:
@@ -308,7 +305,9 @@ class DownloadTask(QThread):
 
             worker.progress = worker.endPos
 
-        if not self.autoSpeedUp or context.running_task_count <= self.preBlockNum:  # 如果开启了自动提速且添加了额外线程，则重新分配工作线程由自动提速控制
+        if (
+            not self.autoSpeedUp or context.running_task_count <= self.preBlockNum
+        ):  # 如果开启了自动提速且添加了额外线程，则重新分配工作线程由自动提速控制
             self.__reassignWorker(context)
         context.running_task_count += 1
 
@@ -350,7 +349,7 @@ class DownloadTask(QThread):
 
                 await asyncio.sleep(5)
 
-        #worker.progress = worker.endPos
+        # worker.progress = worker.endPos
 
     async def __supervisor(self, context: MutiThreadContext):
         """实时统计进度并写入历史记录文件"""
@@ -365,13 +364,15 @@ class DownloadTask(QThread):
         if self.autoSpeedUp:
             # 初始化变量
             maxSpeedPerConnect = 1  # 防止除以 0
-            additionalTaskNum = context.running_task_count  # 最初为计算每个线程的平均速度
+            additionalTaskNum = (
+                context.running_task_count
+            )  # 最初为计算每个线程的平均速度
             formerAvgSpeed = 0.0  # 提速之前的平均速度
             duringTime = 0  # 计算平均速度的时间间隔, 为 10 秒
             _ = 0
         ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
         try:
-            while True: #由外层cancel退出
+            while True:  # 由外层cancel退出
 
                 info = []
                 # 记录每块信息
@@ -434,7 +435,7 @@ class DownloadTask(QThread):
         except Exception as e:
             logger.error(f"Supervisor error: {e}")
             self.gotWrong.emit(repr(e))
-        
+
         finally:
             ghdFile.close()
             if context.done:
@@ -444,8 +445,6 @@ class DownloadTask(QThread):
                     logger.error(
                         f"Failed to delete the history file, please delete it manually. Err: {e}"
                     )
-            
-        
 
     async def __supervisorSingleThread(self):
         LastProgress = 0
@@ -470,14 +469,14 @@ class DownloadTask(QThread):
             self.file = open(f"{self.filePath}/{self.fileName}", "rb+")
 
             if self.ableToParallelDownload:
-                #多线程部分
+                # 多线程部分
                 # 加载分块
                 context = MutiThreadContext(self.fileSize)
 
                 self.__loadWorkers(context)
-                superviewerTask = asyncio.create_task(self.__supervisor(context))
+                supervisorTask = asyncio.create_task(self.__supervisor(context))
                 try:
-                    async with context.taskgroup as tg:           
+                    async with context.taskgroup as tg:
                         for i in context.workers:  # 启动 Worker
                             tg.create_task(self.__handleWorker(i, context))
                             context.running_task_count += 1
@@ -486,18 +485,18 @@ class DownloadTask(QThread):
                     self.taskFinished.emit()
 
                 finally:
-                    superviewerTask.cancel()
-                    await superviewerTask
-                    
+                    supervisorTask.cancel()
+                    await supervisorTask
+
             else:
                 # 单线程部分
-                superviewer = asyncio.create_task(self.__supervisorSingleThread())
+                supervisor = asyncio.create_task(self.__supervisorSingleThread())
                 try:
                     await self.__handleWorkerWhenUnableToParallelDownload()
                 finally:
                     self.taskFinished.emit()
-                    superviewer.cancel()
-                    await superviewer
+                    supervisor.cancel()
+                    await supervisor
 
         except Exception as e:
             self.gotWrong.emit(repr(e))
@@ -508,11 +507,10 @@ class DownloadTask(QThread):
             # if not self.fileSize:
             #     logger.info(f"Task {self.fileName} finished!")
             #     self.taskFinished.emit()
-            
+
             # if self.progress == self.fileSize:
             #     logger.info(f"Task {self.fileName} finished!")
             #     self.taskFinished.emit()
-
 
     def stop(self):
         self._mainTask.cancel()
@@ -524,7 +522,7 @@ class DownloadTask(QThread):
         # 主逻辑, 使用事件循环启动异步任务
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        
+
         try:
             self._mainTask = self.loop.create_task(self.__main())
             self.loop.run_until_complete(self._mainTask)

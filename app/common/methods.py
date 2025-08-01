@@ -282,16 +282,6 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr: str):
 #     except Exception as e:
 #         logger.error(f"Could not register the application: {e}")
 
-async def getLinkInfoAsync(
-    url: str,
-    headers: dict,
-    fileName: str = "",
-    verify: bool = cfg.SSLVerify.value,
-    proxy: str = "",
-    followRedirects: bool = True,
-) -> tuple:
-    pass
-
 
 def getLinkInfo(
     url: str,
@@ -422,8 +412,6 @@ def getLinkInfo(
 
     return url, fileName, fileSize
 
-def getLinkInfoWithResponse(response):
-    pass
 
 def bringWindowToTop(window):
     window.setWindowState(Qt.WindowActive)
