@@ -3,6 +3,7 @@
 </h4>
 
 > [!NOTE]
+> Due to work reasons, the development speed of this project has slowed down recently.
 > The project is still in its early stages, and there is still a lot of shortcomings.
 
 > [!TIP]
