@@ -17,3 +17,14 @@ dependencies = [
 dev = [
     "nuitka==2.7.11"
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "app*",
+    "view*",
+    "plugins*",
+    "chrome_extension*",
+    "firefox_extension*"
+]
+exclude = ["tests*"]
