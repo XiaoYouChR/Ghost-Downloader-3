@@ -1,5 +1,5 @@
 # coding:utf-8
-import getpass
+
 import os
 import sys
 
@@ -73,17 +73,32 @@ if sys.platform == "win32" or "darwin":
     setThemeColor(getSystemAccentColor(), save=False)
 if sys.platform == "linux":
 
-    if 'KDE_SESSION_UID' in os.environ:  # KDE Plasma
+    try:
+        from pathlib import Path
 
-        import configparser
-        config = configparser.ConfigParser()
+        kde_config_path = Path.home() / ".config/kdeglobals"
+        if not kde_config_path.exists():
+            xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
+            if xdg_config_home:
+                kde_config_path = Path(xdg_config_home) / "kdeglobals"
 
-        config.read(f"/home/{getpass.getuser()}/.config/kdeglobals")
+        # 如果文件存在则读取
+        if kde_config_path.exists():
+            import configparser
 
-        # 获取 DecorationFocus 的值
-        if 'Colors:Window' in config:
-            color = list(map(int, config.get('Colors:Window', 'DecorationFocus').split(",")))
-            setThemeColor(QColor(*color))
+            config = configparser.ConfigParser()
+            config.read(str(kde_config_path))
+
+            # 获取 DecorationFocus 的值
+            if 'Colors:Window' in config:
+                color = list(map(int, config.get('Colors:Window', 'DecorationFocus').split(",")))
+                setThemeColor(QColor(*color))
+            else:
+                logger.warning("KDE 配置文件中缺少 'Colors:Window' 部分")
+        else:
+            logger.warning(f"未找到 KDE 配置文件: {kde_config_path}")
+    except Exception as e:
+        logger.error(f"读取 KDE 配置时出错: {str(e)}")
 
 # create SpeedLimiter
 speedLimiter = QTimer()  # 限速器
@@ -94,7 +109,7 @@ speedLimiter.start()
 w = MainWindow(silence=True if "--silence" in sys.argv else False)
 
 # loading plugins
-pluginsPath=os.path.join(cfg.appPath, "plugins")
+pluginsPath = os.path.join(cfg.appPath, "plugins")
 loadPlugins(w, pluginsPath)
 
 sys.exit(app.exec())
