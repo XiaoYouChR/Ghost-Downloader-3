@@ -5,12 +5,12 @@ import sys
 from pathlib import Path
 
 import darkdetect
-from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl
-from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor, Qt
+from PySide6.QtCore import QSize, QThread, Signal, QTimer, QPropertyAnimation, QRect, QUrl, Qt
+from PySide6.QtGui import QIcon, QDragEnterEvent, QDropEvent, QKeySequence, QDesktopServices, QColor, QPainter, QBrush
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
 from loguru import logger
 from qfluentwidgets import FluentIcon as FIF, setTheme, Theme, isDarkTheme
-from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen
+from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, setThemeColor
 
 from .setting_interface import SettingInterface
 from .task_interface import TaskInterface
@@ -230,6 +230,88 @@ class MainWindow(MSFluentWindow):
                     self.titleBar.closeBtn.show()
                     self.titleBar.minBtn.show()
                     self.titleBar.maxBtn.show()
+        else:
+            self.setStyleSheet(self.getFrostedGlassStyleSheet())
+
+    def getFrostedGlassStyleSheet(self):
+        # 基础透明
+        base_style = """
+            MainWindow {
+                background-color: transparent;
+                border: none;
+            }
+            QStackedWidget, QWidget#mainContent {
+                background-color: transparent;
+                border: none;
+            }
+            QDialog {
+                background-color: rgba(35, 35, 40, 0.85);
+                border-radius: 12px;
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            }
+            QDialog > QWidget {
+                background-color: transparent;
+                border-radius: 12px;
+            }
+        """
+        
+        # 内容区域样式浅色模式
+        light_content = """
+            QWidget#contentArea {
+                background-color: rgba(255, 255, 255, 0.98);
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+                margin: 0px;
+            }
+        """
+        
+        # 内容区域样式深色模式
+        dark_content = """
+            QWidget#contentArea {
+                background-color: rgba(35, 35, 40, 0.85);
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                margin: 0px;
+            }
+        """
+        
+        # 标题栏样式
+        titlebar_style = """
+            TitleBar {
+                background-color: transparent;
+            }
+        """
+        
+        # 导航栏样式
+        navigation_style = """
+            NavigationPanel {
+                background-color: transparent;
+                border: none;
+            }
+            NavigationTreeWidget {
+                background-color: transparent;
+                border: none;
+            }
+        """
+        
+        # 玄学性质的保留
+        popup_style = """
+            QMenu, QDialog, QToolTip {
+                background-color: transparent;
+                border: none;
+            }
+        """
+        
+        # 根据选择的主题显示
+        is_dark = False
+        if cfg.customThemeMode.value == "System":
+            is_dark = darkdetect.isDark()
+        elif cfg.customThemeMode.value == "Dark":
+            is_dark = True
+        
+        content_style = dark_content if is_dark else light_content
+        
+        return base_style + content_style + titlebar_style + navigation_style + popup_style
 
     def initNavigation(self):
         # add navigation items
@@ -275,10 +357,34 @@ class MainWindow(MSFluentWindow):
         if sys.platform == 'darwin':
             self.titleBar.maxBtn.hide()
 
+        # 设置窗口为透明背景
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        
+        # 应用透明样式
+        self.setStyleSheet(self.getFrostedGlassStyleSheet())
+
         # create splash screen
         self.splashScreen = CustomSplashScreen(self.windowIcon(), self)
         self.splashScreen.setIconSize(QSize(106, 106))
         self.splashScreen.raise_()
+
+    def paintEvent(self, event):
+        """透明背景"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # 区域
+        if isDarkTheme():
+            # 深色模式
+            painter.setBrush(QColor(30, 30, 35, 215))
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(self.rect(), 12, 12)
+        else:
+            # 浅色模式
+            painter.setBrush(QColor(255, 255, 255, 215))
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(self.rect(), 12, 12)
 
     def onAppError(self, message: str):
         """ app error slot """
