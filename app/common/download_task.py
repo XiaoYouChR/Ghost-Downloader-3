@@ -138,24 +138,17 @@ class DownloadTask(QThread):
                 f"Task{self.fileName} 欲分配新线程失败, 剩余量小于最小分块大小, 剩余量：{getReadableSize(maxRemainder)}"
             )
 
+
     def __calcDivisionalRange(self, context: MutiThreadContext):
         step = context.fileSize // self.preBlockNum  # 每块大小
-        arr = list(range(0, context.fileSize, step))
+        start = 0
+        for i in range(self.preBlockNum - 1):
+            end = start + step - 1
+            yield DownloadWorker(start, start, end)
+            start = end + 1
 
-        # 否则线程数可能会不按预期地少一个
-        if context.fileSize % self.preBlockNum == 0:
-            arr.append(context.fileSize)
+        yield DownloadWorker(start, start, context.fileSize - 1)
 
-        stepList = []
-
-        for i in range(len(arr) - 1):  #
-
-            startPos, endPos = arr[i], arr[i + 1] - 1
-            stepList.append([startPos, endPos])
-
-        stepList[-1][-1] = context.fileSize - 1  # 修正
-
-        return stepList
 
     def __initTask(self):
         """获取链接信息并初始化线程"""
@@ -231,19 +224,14 @@ class DownloadTask(QThread):
 
             except Exception as e:
                 logger.error(f"Failed to load workers: {e}")
-                stepList = self.__calcDivisionalRange(context)
 
-                for i in range(self.preBlockNum):
-                    context.workers.append(
-                        DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1])
-                    )
+                for worker in self.__calcDivisionalRange(context):
+                    context.workers.append(worker)
         else:
-            stepList = self.__calcDivisionalRange(context)
 
-            for i in range(self.preBlockNum):
-                context.workers.append(
-                    DownloadWorker(stepList[i][0], stepList[i][0], stepList[i][1])
-                )
+            for worker in self.__calcDivisionalRange(context):
+                context.workers.append(worker)
+            
 
     # 多线程主下载逻辑
     async def __handleWorker(self, worker: DownloadWorker, context: MutiThreadContext):
