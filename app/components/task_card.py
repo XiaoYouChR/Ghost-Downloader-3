@@ -13,7 +13,7 @@ from .Ui_TaskCard import Ui_TaskCard
 from .custom_components import TaskProgressBar
 from .custom_dialogs import DelDialog, CustomInputDialog
 from ..common.config import cfg
-from ..common.download_task import DownloadTask
+from ..common.download_task import DownloadTask, AutoSpeedUp
 from ..common.methods import getReadableSize, openFile, openFolder
 from ..view.pop_up_window import FinishedPopUpWindow
 
@@ -126,7 +126,13 @@ class TaskCard(CardWidget, Ui_TaskCard):
     def __instantiateTask(self, url: str, filePath: str, preBlockNum: int, headers: dict, fileSize: int = -1,
                           fileName: str = None):
         autoSpeedUp = cfg.autoSpeedUp.value
-        self.task = DownloadTask(url, headers, preBlockNum, filePath, fileName, autoSpeedUp, fileSize)
+        
+        if autoSpeedUp:
+            self.task = DownloadTask(url, headers, preBlockNum, filePath, fileName, AutoSpeedUp(), fileSize)
+        else:
+            self.task = DownloadTask(
+                url, headers, preBlockNum, filePath, fileName, None, fileSize
+            )
 
     def updateTaskRecord(self, newStatus: str):
         recordPath = "{}/Ghost Downloader 记录文件".format(cfg.appPath)
