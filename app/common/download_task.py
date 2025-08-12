@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 from threading import Thread
+from abc import ABC, abstractmethod
 
 import curl_cffi
 from PySide6.QtCore import QThread, Signal
@@ -11,7 +12,7 @@ from loguru import logger
 
 from app.common.config import cfg
 from app.common.methods import getProxy, getReadableSize, getLinkInfo, createSparseFile
-
+from app.common.dto import ProgressInfo, SpeedInfo
 
 class DownloadWorker:
     """只能出卖劳动力的最底层工作者"""
@@ -33,6 +34,49 @@ class MutiThreadContext:
         self.done: bool = False
 
 
+
+class AutoSpeedUpTrait(ABC):
+    @abstractmethod
+    def update(self, progress_info: ProgressInfo, task_count: int) -> int:
+        """
+        参数：
+            progress_info: 进度信息
+            task_count: 运行中任务数量
+        返回值：
+            要额外创建的线程数
+        """
+        raise NotImplementedError
+
+class AutoSpeedUp(AutoSpeedUpTrait):
+    def __init__(self, accury: float = 0.8, threshold: float = 0.1):
+        self.accury = accury
+        self.threshold = threshold
+        self.formerTaskCount = 0
+        self.formerSpeed = 0
+        self.maxSpeedPerTask = 0
+    
+    def update(self, progress_info: ProgressInfo, task_count: int) -> int:
+        additionTaskCount = task_count - self.formerTaskCount
+        self.formerTaskCount = task_count
+
+        info = progress_info.getSpeedInfo()
+        speed_delta = info.speed - self.formerSpeed
+
+        if info.speed / task_count > self.maxSpeedPerTask:
+            self.maxSpeedPerTask = info.speed / task_count
+
+        if (self.accury / info.time) ** 0.5 + self.threshold < speed_delta / additionTaskCount:
+            self.formerSpeed = info.speed
+            progress_info.reset()
+            logger.info(f"Task自动加速成功, 平均速度：{info.speed / task_count}，最大速度：{self.maxSpeedPerTask}，任务数量：{task_count}")
+            return 1
+        elif info.time > 60:  # 超过 60 秒就重置
+            progress_info.reset()
+            return 0
+        else:
+            return 0
+        
+        
 class DownloadTask(QThread):
     """Task Manager
     self.fileSize == -1 表示自动获取; == 0 表示不能并行下载; else 表示正常"""
@@ -53,7 +97,7 @@ class DownloadTask(QThread):
         preTaskNum: int = 8,
         filePath: str = None,
         fileName: str = None,
-        autoSpeedUp: bool = False,
+        autoSpeedUpStrategy: AutoSpeedUpTrait | None = AutoSpeedUp(),
         fileSize: int = -1,
         parent=None,
     ):
@@ -65,7 +109,7 @@ class DownloadTask(QThread):
         self.fileName = fileName
         self.filePath = filePath
         self.preBlockNum = preTaskNum
-        self.autoSpeedUp = autoSpeedUp
+        self.autoSpeedUpStrategy = autoSpeedUpStrategy
         self.fileSize = fileSize
         self.ableToParallelDownload: bool
 
@@ -294,7 +338,7 @@ class DownloadTask(QThread):
             worker.progress = worker.endPos
 
         if (
-            not self.autoSpeedUp or context.running_task_count <= self.preBlockNum
+            not self.autoSpeedUpStrategy or context.running_task_count <= self.preBlockNum
         ):  # 如果开启了自动提速且添加了额外线程，则重新分配工作线程由自动提速控制
             self.__reassignWorker(context)
         context.running_task_count += 1
@@ -349,15 +393,15 @@ class DownloadTask(QThread):
             self.progress += i.progress - i.startPos + 1
             LastProgress = self.progress
 
-        if self.autoSpeedUp:
-            # 初始化变量
-            maxSpeedPerConnect = 1  # 防止除以 0
-            additionalTaskNum = (
-                context.running_task_count
-            )  # 最初为计算每个线程的平均速度
-            formerAvgSpeed = 0.0  # 提速之前的平均速度
-            duringTime = 0  # 计算平均速度的时间间隔, 为 10 秒
-            _ = 0
+        # if self.autoSpeedUp:
+        #     # 初始化变量
+        #     maxSpeedPerConnect = 1  # 防止除以 0
+        #     additionalTaskNum = (
+        #         context.running_task_count
+        #     )  # 最初为计算每个线程的平均速度
+        #     formerAvgSpeed = 0.0  # 提速之前的平均速度
+        #     duringTime = 0  # 计算平均速度的时间间隔, 为 10 秒
+        #     _ = 0
         ghdFile = open(f"{self.filePath}/{self.fileName}.ghd", "wb")
         try:
             while True:  # 由外层cancel退出
@@ -395,28 +439,28 @@ class DownloadTask(QThread):
 
                 # print(f"avgSpeed: {avgSpeed}, historySpeed: {self.historySpeed}")
 
-                if self.autoSpeedUp:
-                    if duringTime < 10:
-                        duringTime += 1
-                    else:
-                        duringTime = 0
+                # if self.autoSpeedUp:
+                #     if duringTime < 10:
+                #         duringTime += 1
+                #     else:
+                #         duringTime = 0
 
-                        speedPerConnect = avgSpeed / context.running_task_count
-                        if speedPerConnect > maxSpeedPerConnect:
-                            maxSpeedPerConnect = speedPerConnect
-                            _ = (
-                                0.9 * maxSpeedPerConnect * additionalTaskNum
-                            ) + formerAvgSpeed
-                        if avgSpeed >= _:
-                            formerAvgSpeed = avgSpeed
-                            additionalTaskNum = 4
-                            _ = (
-                                0.85 * maxSpeedPerConnect * additionalTaskNum
-                            ) + formerAvgSpeed
+                #         speedPerConnect = avgSpeed / context.running_task_count
+                #         if speedPerConnect > maxSpeedPerConnect:
+                #             maxSpeedPerConnect = speedPerConnect
+                #             _ = (
+                #                 0.9 * maxSpeedPerConnect * additionalTaskNum
+                #             ) + formerAvgSpeed
+                #         if avgSpeed >= _:
+                #             formerAvgSpeed = avgSpeed
+                #             additionalTaskNum = 4
+                #             _ = (
+                #                 0.85 * maxSpeedPerConnect * additionalTaskNum
+                #             ) + formerAvgSpeed
 
-                            if context.running_task_count < 253:
-                                for i in range(4):
-                                    self.__reassignWorker(context)  # 新增线程
+                #             if context.running_task_count < 253:
+                #                 for i in range(4):
+                #                     self.__reassignWorker(context)  # 新增线程
 
                 await asyncio.sleep(1)
 
@@ -433,6 +477,22 @@ class DownloadTask(QThread):
                     logger.error(
                         f"Failed to delete the history file, please delete it manually. Err: {e}"
                     )
+
+    async def autoSpeedUp(self, context: MutiThreadContext):
+        if self.autoSpeedUpStrategy is None:
+            return
+        
+        progressInfo = ProgressInfo(self.progress)
+        while True:
+            await asyncio.sleep(1)
+            progressInfo.progress = self.progress
+            need_to_create_num = self.autoSpeedUpStrategy.update(
+                progressInfo, context.running_task_count
+            )
+            for i in range(need_to_create_num):
+                self.__reassignWorker(context)
+            
+                
 
     async def __supervisorSingleThread(self):
         LastProgress = 0
@@ -463,6 +523,7 @@ class DownloadTask(QThread):
 
                 self.__loadWorkers(context)
                 supervisorTask = asyncio.create_task(self.__supervisor(context))
+                autoSpeedUpTask = asyncio.create_task(self.autoSpeedUp(context))
                 try:
                     async with context.taskgroup as tg:
                         for i in context.workers:  # 启动 Worker
@@ -474,7 +535,10 @@ class DownloadTask(QThread):
 
                 finally:
                     supervisorTask.cancel()
+                    autoSpeedUpTask.cancel()
                     await supervisorTask
+                    await autoSpeedUpTask
+                    
 
             else:
                 # 单线程部分
@@ -519,3 +583,4 @@ class DownloadTask(QThread):
         finally:
             self.loop.run_until_complete(self.loop.shutdown_asyncgens())
             self.loop.close()
+

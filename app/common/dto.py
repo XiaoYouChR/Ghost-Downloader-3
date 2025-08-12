@@ -9,18 +9,19 @@ class SpeedInfo:
         else:
             raise ValueError("Time cannot be zero")
 
-class SpeedRecorder:
-    __slot__ = ('progress', 'startTime')
+class ProgressInfo:
+    __slot__ = ("progress", "startTime", "formerProgress")
     def __init__(self, progress = 0):
+        self.formerProgress = progress
         self.progress = progress
         self.startTime = time()
 
-    def reset(self, progress):
-        self.progress = progress
+    def reset(self):
+        self.formerProgress = self.progress
         self.startTime = time()
 
-    def update(self, progress) -> SpeedInfo:
+    def getSpeedInfo(self) -> SpeedInfo:
         elapsedTime = time() - self.startTime
-        speed = (progress - self.progress) / elapsedTime
+        speed = (self.progress - self.formerProgress) / elapsedTime
         return SpeedInfo(speed, elapsedTime)
     
