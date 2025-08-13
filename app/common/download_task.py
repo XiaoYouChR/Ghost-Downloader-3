@@ -154,9 +154,17 @@ class DownloadTask(QThread):
         """获取链接信息并初始化线程"""
         try:
             if self.fileSize == -1 or not self.fileName:
-                self.url, self.fileName, self.fileSize = getLinkInfo(
-                    self.url, self.headers, self.fileName
-                )
+                succes = False
+                while not succes:
+                    try:
+                        self.url, self.fileName, self.fileSize = getLinkInfo(
+                            self.url, self.headers, self.fileName
+                        )
+                        succes = True
+                    except Exception as e:
+                        self.gotWrong.emit(repr(e))
+                        time.sleep(3)
+
 
             if self.fileSize:
                 self.ableToParallelDownload = True
@@ -198,6 +206,7 @@ class DownloadTask(QThread):
 
         except Exception as e:  # 重试也没用
             self.gotWrong.emit(repr(e))
+            logger.error(f"Failed to init task: {e}")
 
     def __loadWorkers(self, context: MutiThreadContext):
         """可续传的情况下读取已存在的 .ghd 文件"""
