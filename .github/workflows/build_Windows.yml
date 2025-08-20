@@ -67,8 +67,8 @@ jobs:
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          api-token: '${{ github.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ github.SIGNPATH_ORGANIZATION_ID }}'
           project-slug: 'Ghost-Downloader-3'
           signing-policy-slug: 'release-signing'
           github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
