@@ -419,8 +419,17 @@ class TaskCard(CardWidget, Ui_TaskCard):
                 self.progressBar.addProgressBar(content, _)
 
             for e, i in enumerate(content):
-                self.progressBar.progressBarList[e].setValue(
-                    ((i["progress"] - i["start"]) / (i["end"] - i["start"])) * 100)
+                try:
+                    progress_range = i["end"] - i["start"]
+                    if progress_range == 0:
+                        progress_value = 100 if i["progress"] >= i["start"] else 0
+                    else:
+                        progress_value = ((i["progress"] - i["start"]) / progress_range) * 100
+                    
+                    progress_value = max(0, min(100, progress_value))
+                    self.progressBar.progressBarList[e].setValue(int(progress_value))
+                except (KeyError, TypeError, ValueError):
+                    self.progressBar.progressBarList[e].setValue(0)
 
             self.progressLabel.setText(f"{getReadableSize(self.task.progress)}/{getReadableSize(self.task.fileSize)}")
 
