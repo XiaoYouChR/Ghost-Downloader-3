@@ -98,6 +98,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           project-slug: 'Ghost-Downloader-3'
+          connector-url: https://connectors.signpath.io/
           signing-policy-slug: 'release-signing'
           github-artifact-id: ${{ steps.upload-unsigned-artifact.outputs.artifact-id }}
           wait-for-completion: true
