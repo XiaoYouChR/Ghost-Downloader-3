@@ -44,31 +44,27 @@ jobs:
       - name: Build with Nuitka
         shell: pwsh
         run: |
-          # 将需要在 runner 上执行的 Python 逻辑写入临时文件（避免复杂的命令行引号/转义问题）
-          @'
-from app.common.config import VERSION
-
-# 将版本写入 version.txt 以便后续 PowerShell 读取
-with open("version.txt", "w", encoding="utf-8") as f:
-    f.write(VERSION)
-
-# 如果你原先的 python -c 还做了对 .iss 的替换或其他修改,
-# 请把这些逻辑也放在这里或保留 deploy.py 来完成
-'@ | Out-File -FilePath get_version.py -Encoding utf8
+          # Create get_version.py by writing lines (avoids here-string parsing issues)
+          $lines = @(
+            'from app.common.config import VERSION'
+            'with open("version.txt", "w", encoding="utf-8") as f:'
+            '    f.write(VERSION)'
+            ''
+            '# If you had additional python -c logic, add it here or keep deploy.py to handle it'
+          )
+          $lines | Set-Content -Path get_version.py -Encoding utf8
 
           python get_version.py
 
-          # 读取 version.txt（使用 -Raw 保留整行，不产生数组）
+          # Read version and set env
           $VERSION = Get-Content version.txt -Raw
           Write-Host "VERSION=$VERSION"
-
-          # 将 VERSION 写入 GitHub Actions 环境文件（推荐用 Add-Content）
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
 
-          # 清理临时文件
+          # Clean up
           Remove-Item get_version.py, version.txt -ErrorAction SilentlyContinue
 
-          # 继续原有部署步骤
+          # Continue with the original deploy step
           python deploy.py
 
       - name: Prepare For Sign
