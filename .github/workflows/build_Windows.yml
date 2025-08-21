@@ -42,12 +42,33 @@ jobs:
           pip install --timeout=300 -r requirements.txt
 
       - name: Build with Nuitka
+        shell: pwsh
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSI[...]
-          $VERSION = gc version.txt
+          # 将需要在 runner 上执行的 Python 逻辑写入临时文件（避免复杂的命令行引号/转义问题）
+          @'
+from app.common.config import VERSION
+
+# 将版本写入 version.txt 以便后续 PowerShell 读取
+with open("version.txt", "w", encoding="utf-8") as f:
+    f.write(VERSION)
+
+# 如果你原先的 python -c 还做了对 .iss 的替换或其他修改,
+# 请把这些逻辑也放在这里或保留 deploy.py 来完成
+'@ | Out-File -FilePath get_version.py -Encoding utf8
+
+          python get_version.py
+
+          # 读取 version.txt（使用 -Raw 保留整行，不产生数组）
+          $VERSION = Get-Content version.txt -Raw
           Write-Host "VERSION=$VERSION"
-          echo "VERSION=$VERSION" >> $env:GITHUB_ENV
-          del version.txt
+
+          # 将 VERSION 写入 GitHub Actions 环境文件（推荐用 Add-Content）
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
+
+          # 清理临时文件
+          Remove-Item get_version.py, version.txt -ErrorAction SilentlyContinue
+
+          # 继续原有部署步骤
           python deploy.py
 
       - name: Prepare For Sign
@@ -63,7 +84,6 @@ jobs:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
           path: dist/Ghost-Downloader-3-Unsigned.dist
 
-      # ---- debug: 打印 upload-artifact 的 outputs，确认 artifact id 的名字和值 ----
       - name: Debug upload-artifact outputs
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         shell: pwsh
@@ -74,7 +94,6 @@ jobs:
           Write-Host '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
           Write-Host "outputs.artifact_id:"
           Write-Host '${{ steps.upload-unsigned-artifact.outputs.artifact_id }}'
-      # ---------------------------------------------------------------------------
 
       - name: Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
@@ -84,7 +103,6 @@ jobs:
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           project-slug: 'Ghost-Downloader-3'
           signing-policy-slug: 'release-signing'
-          # 请在调试日志确认上面哪个输出名有值，然后把下面的 github-artifact-id 调整为正确的输出：
           github-artifact-id: ${{ steps.upload-unsigned-artifact.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
@@ -92,8 +110,8 @@ jobs:
       - name: Download Inno Setup Translation Files
         if: ${{ github.event.inputs.package_installer == 'true' }}
         run: |
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\Chin[...]
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\Chi[...]
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseTraditional.isl"
 
       - name: Build Installer
         if: ${{ github.event.inputs.package_installer == 'true' }}
