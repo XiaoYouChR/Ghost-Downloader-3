@@ -43,7 +43,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
+          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSI[...]
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
@@ -63,23 +63,37 @@ jobs:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
           path: dist/Ghost-Downloader-3-Unsigned.dist
 
+      # ---- debug: 打印 upload-artifact 的 outputs，确认 artifact id 的名字和值 ----
+      - name: Debug upload-artifact outputs
+        if: ${{ github.event.inputs.sign_artifact == 'true' }}
+        shell: pwsh
+        run: |
+          Write-Host "Full step object (toJson):"
+          Write-Host '${{ toJson(steps.upload-unsigned-artifact) }}'
+          Write-Host "outputs.artifact-id:"
+          Write-Host '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          Write-Host "outputs.artifact_id:"
+          Write-Host '${{ steps.upload-unsigned-artifact.outputs.artifact_id }}'
+      # ---------------------------------------------------------------------------
+
       - name: Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           project-slug: 'Ghost-Downloader-3'
           signing-policy-slug: 'release-signing'
-          github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          # 请在调试日志确认上面哪个输出名有值，然后把下面的 github-artifact-id 调整为正确的输出：
+          github-artifact-id: ${{ steps.upload-unsigned-artifact.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
 
       - name: Download Inno Setup Translation Files
         if: ${{ github.event.inputs.package_installer == 'true' }}
         run: |
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseTraditional.isl"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\Chin[...]
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\Chi[...]
 
       - name: Build Installer
         if: ${{ github.event.inputs.package_installer == 'true' }}
@@ -106,4 +120,3 @@ jobs:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
           path: |
             dist/Ghost-Downloader-3.dist
-          
