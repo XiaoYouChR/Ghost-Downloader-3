@@ -1,4 +1,6 @@
-name: Build Windows
+# Debug-enabled Build + SignPath workflow (patch)
+# Adds connector / artifact verification steps and tweaks SignPath inputs to avoid common cancel reasons.
+name: Build Windows (debug)
 
 on:
   workflow_dispatch:
@@ -22,10 +24,11 @@ on:
 
 jobs:
   build-windows:
+    runs-on: windows-2022
     strategy:
       matrix:
         architecture: [x86_64, arm64]
-    runs-on: windows-2022
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -41,36 +44,31 @@ jobs:
         run: |
           pip install --timeout=300 -r requirements.txt
 
-      - name: Build with Nuitka
+      - name: Build & extract VERSION
         shell: pwsh
         run: |
-          # Create get_version.py by writing lines (avoids here-string parsing issues)
           $lines = @(
             'from app.common.config import VERSION'
             'with open("version.txt", "w", encoding="utf-8") as f:'
             '    f.write(VERSION)'
-            ''
-            '# If you had additional python -c logic, add it here or keep deploy.py to handle it'
           )
           $lines | Set-Content -Path get_version.py -Encoding utf8
-
           python get_version.py
-
-          # Read version and set env
           $VERSION = Get-Content version.txt -Raw
-          Write-Host "VERSION=$VERSION"
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
-
-          # Clean up
           Remove-Item get_version.py, version.txt -ErrorAction SilentlyContinue
-
-          # Continue with the original deploy step
           python deploy.py
 
       - name: Prepare For Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
+        shell: pwsh
         run: |
-          mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
+          if (Test-Path dist/Ghost-Downloader-3.dist) {
+            mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
+          } else {
+            Write-Host "dist/Ghost-Downloader-3.dist not found — aborting"
+            exit 1
+          }
 
       - name: upload-unsigned-artifact
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
@@ -84,54 +82,79 @@ jobs:
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         shell: pwsh
         run: |
-          Write-Host "Full step object (toJson):"
+          Write-Host "---- upload-unsigned-artifact toJson ----"
           Write-Host '${{ toJson(steps.upload-unsigned-artifact) }}'
-          Write-Host "outputs.artifact-id:"
+          Write-Host "---- outputs.artifact-id ----"
           Write-Host '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
-          Write-Host "outputs.artifact_id:"
+          Write-Host "---- outputs.artifact_id ----"
           Write-Host '${{ steps.upload-unsigned-artifact.outputs.artifact_id }}'
 
-      - name: Sign
+      - name: Check uploaded artifact via GitHub API
+        if: ${{ github.event.inputs.sign_artifact == 'true' }}
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $artifactId = '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
+          if (-not $artifactId) {
+            Write-Host "Artifact ID is empty — cannot verify artifact in GitHub API."
+            exit 1
+          }
+          $uri = "https://api.github.com/repos/szdxs114514/Ghost-Downloader-3/actions/artifacts/$artifactId"
+          Write-Host "Checking artifact metadata: $uri"
+          try {
+            $resp = Invoke-RestMethod -Uri $uri -Headers @{ Authorization = "token $env:GITHUB_TOKEN"; Accept = "application/vnd.github.v3+json" } -Method Get -UseBasicParsing -TimeoutSec 30
+            Write-Host "Artifact metadata:"
+            $resp | ConvertTo-Json -Depth 5 | Write-Host
+          } catch {
+            Write-Host "Failed to fetch artifact metadata: $($_.Exception.Message)"
+            exit 1
+          }
+
+      - name: Test SignPath connector URL reachability
+        if: ${{ github.event.inputs.sign_artifact == 'true' }}
+        shell: pwsh
+        run: |
+          # NOTE: do not include trailing slash here
+          $connectorUrl = 'https://connectors.signpath.io'
+          Write-Host "Testing connector URL: $connectorUrl"
+          try {
+            $resp = Invoke-WebRequest -Uri $connectorUrl -Method Head -UseBasicParsing -TimeoutSec 30
+            Write-Host "Connector reachable. HTTP status: $($resp.StatusCode)"
+          } catch {
+            Write-Host "Connector reachability test failed: $($_.Exception.Message)"
+            # continue to sign action so you can see full action error; uncomment exit to fail fast:
+            # exit 1
+          }
+
+      - name: Sign (SignPath) - debug-friendly
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         uses: signpath/github-action-submit-signing-request@v1.1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           project-slug: 'Ghost-Downloader-3'
-          connector-url: https://connectors.signpath.io/
           signing-policy-slug: 'release-signing'
+          # prefer artifact-id (debug step will tell which field is populated)
           github-artifact-id: ${{ steps.upload-unsigned-artifact.outputs.artifact-id }}
           wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1200
+          service-unavailable-timeout-in-seconds: 1200
+          download-signed-artifact-timeout-in-seconds: 600
           output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # connector-url omitted here to use action default; if you must set it, use exact URL without trailing slash:
+          # connector-url: 'https://connectors.signpath.io'
 
       - name: Download Inno Setup Translation Files
         if: ${{ github.event.inputs.package_installer == 'true' }}
+        shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseTraditional.isl"
 
-      - name: Build Installer
-        if: ${{ github.event.inputs.package_installer == 'true' }}
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
-        with:
-          path: Ghost-Downloader-3.iss
-
-      - name: Rename Installer
-        if: ${{ github.event.inputs.package_installer == 'true' }}
-        shell: pwsh
-        run: |
-          mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
-
-      - name: Upload Installer
-        if: ${{ github.event.inputs.package_installer == 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup
-          path: dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
-
-      - name: Upload artifacts
+      - name: Upload artifacts (final)
         uses: actions/upload-artifact@v4
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
-          path: |
-            dist/Ghost-Downloader-3.dist
+          path: dist/Ghost-Downloader-3.dist
