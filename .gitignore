@@ -29,3 +29,5 @@ build/
 dist/
 output/
 *.spec
+
+venv/
