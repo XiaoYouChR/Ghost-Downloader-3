@@ -117,7 +117,14 @@ class TaskInterface(ScrollArea):
                 return
             try:
                 if card.fileName == fileName and card.filePath == filePath:
-                    fileName = fileName+"_1"
+                    check_filename_times = 0
+                    while True:
+                        check_filename_times += 1
+                        fileName_temp = fileName
+                        if card.fileName == fileName_temp and card.filePath == filePath:
+                            fileName = fileName_temp + f"_{check_filename_times}"
+                        else:
+                            break
                     InfoBar.error(
                         title=self.tr('警告'),
                         content=self.tr("已创建相同文件名和路径的任务!已为你重命名为%s" % fileName),
