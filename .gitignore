@@ -29,3 +29,6 @@ build/
 dist/
 output/
 *.spec
+
+# 忽略虚拟文件
+.venv/

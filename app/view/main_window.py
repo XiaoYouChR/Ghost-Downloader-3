@@ -26,7 +26,8 @@ from ..components.update_dialog import checkUpdate
 
 
 def updateFrameless(self):
-    stayOnTop = Qt.WindowType.WindowStaysOnTopHint if self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint else 0
+    stayOnTop = Qt.WindowType.WindowStaysOnTopHint if self.windowFlags(
+    ) & Qt.WindowType.WindowStaysOnTopHint else 0
     self.setWindowFlags(Qt.WindowType.FramelessWindowHint | stayOnTop)
 
     self.windowEffect.enableBlurBehindWindow(self.winId())
@@ -35,6 +36,7 @@ def updateFrameless(self):
     self.windowEffect.setAcrylicEffect(self.winId())
     if isGreaterEqualWin11():
         self.windowEffect.addShadowEffect(self.winId())
+
 
 class CustomSplashScreen(SplashScreen):
 
@@ -88,9 +90,10 @@ class MainWindow(MSFluentWindow):
         # 自定义主题信号连接
         self.themeChangedListener = None
         self.__onCustomThemeModeChanged(cfg.customThemeMode.value)
-        cfg.customThemeMode.valueChanged.connect(self.__onCustomThemeModeChanged)
+        cfg.customThemeMode.valueChanged.connect(
+            self.__onCustomThemeModeChanged)
         signalBus.appErrorSig.connect(self.onAppError)
-        signalBus.showMainWindow.connect(lambda :bringWindowToTop(self))
+        signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
 
         # 设置背景特效
         self.applyBackgroundEffectByCfg()
@@ -103,7 +106,8 @@ class MainWindow(MSFluentWindow):
                 while True:
                     taskRecord = pickle.load(f)
                     logger.debug(f"Unfinished Task is following: {taskRecord}")
-                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'], taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
+                    addDownloadTask(taskRecord['url'], taskRecord['fileName'], taskRecord['filePath'],
+                                    taskRecord['headers'], taskRecord['status'], taskRecord['blockNum'],  True, taskRecord['fileSize'])
             except EOFError:  # 读取完毕
                 f.close()
             except Exception as e:
@@ -131,6 +135,10 @@ class MainWindow(MSFluentWindow):
         # 检查更新
         if cfg.checkUpdateAtStartUp.value:
             checkUpdate(self)
+
+        # MacOS 隐藏程序坞
+        if sys.platform == "darwin":
+            self.setDockIconVisible(not cfg.hideFromDock.value)
 
         self.splashScreen.finish()
 
@@ -167,9 +175,9 @@ class MainWindow(MSFluentWindow):
             self.clipboard.dataChanged.connect(self.__clipboardChanged)
 
     def stopClipboardListener(self):
-            self.clipboard.dataChanged.disconnect(self.__clipboardChanged)
-            self.clipboard.deleteLater()
-            self.clipboard = None
+        self.clipboard.dataChanged.disconnect(self.__clipboardChanged)
+        self.clipboard.deleteLater()
+        self.clipboard = None
 
     def runBrowserExtensionServer(self):
         if not self.browserExtensionServer:
@@ -203,11 +211,13 @@ class MainWindow(MSFluentWindow):
         if sys.platform == 'win32':
             self.windowEffect.removeBackgroundEffect(self.winId())
 
-            _ = darkdetect.isDark() if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark'
+            _ = darkdetect.isDark(
+            ) if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark'
 
             if cfg.backgroundEffect.value == 'Acrylic':
                 self.setStyleSheet("background-color: transparent")
-                self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if _ else "FFFFFF30")
+                self.windowEffect.setAcrylicEffect(
+                    self.winId(), "00000030" if _ else "FFFFFF30")
             elif cfg.backgroundEffect.value == 'Mica':
                 self.setStyleSheet("background-color: transparent")
                 self.windowEffect.setMicaEffect(self.winId(), _)
@@ -239,13 +249,14 @@ class MainWindow(MSFluentWindow):
             text=self.tr('新建任务'),
             selectable=False,
             icon=FIF.ADD,
-            onClick=lambda:self.showAddTaskDialog(),  # 否则会传奇怪的参数
+            onClick=lambda: self.showAddTaskDialog(),  # 否则会传奇怪的参数
             position=NavigationItemPosition.TOP,
         )
 
         # self.addSubInterface(self.debugInterface, FIF.DEVELOPER_TOOLS, "调试信息")
         # add custom widget to bottom
-        self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr(
+            "设置"), position=NavigationItemPosition.BOTTOM)
 
     def initWindow(self):
 
@@ -264,7 +275,8 @@ class MainWindow(MSFluentWindow):
                 self.resize(960, 780)
                 desktop = QApplication.screens()[0].availableGeometry()
                 w, h = desktop.width(), desktop.height()
-                self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+                self.move(w // 2 - self.width() // 2,
+                          h // 2 - self.height() // 2)
 
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
@@ -329,7 +341,8 @@ class MainWindow(MSFluentWindow):
         mime = event.mimeData()
         if mime.hasUrls():
             urls = mime.urls()
-            text = '\n'.join([url.toString() for url in urls if url.toString().startswith('http')])
+            text = '\n'.join([url.toString()
+                             for url in urls if url.toString().startswith('http')])
         elif mime.hasText():
             text = mime.text()
         else:
@@ -395,6 +408,83 @@ class MainWindow(MSFluentWindow):
             future.result.connect(self.__onUrlCheckCompleted)
         except Exception as e:
             logger.warning(f"Failed to check clipboard: {e}")
+
+    def setDockIconVisible(self, visible: bool):
+        """MacOS 控制程序坞方法"""
+        if sys.platform != "darwin":
+            return
+
+        # 防抖逻辑：检测快速点击
+        import time
+        from qfluentwidgets import InfoBar, InfoBarPosition
+
+        current_time = time.time()
+        # 初始化计数器
+        if not hasattr(self, '_dock_click_count'):
+            self._dock_click_count = 0
+            self._last_dock_click_time = 0
+
+        # 如果两次点击间隔小于 1 秒，计数器加 1
+        if current_time - self._last_dock_click_time < 1.0:
+            self._dock_click_count += 1
+        else:
+            self._dock_click_count = 1  # 超过 1 秒重置计数
+
+        self._last_dock_click_time = current_time
+
+        # 超过 4 次连续快速点击，拦截并弹窗
+        if self._dock_click_count >= 4:
+            InfoBar.warning(
+                title=self.tr("操作过快"),
+                content=self.tr("请勿频繁切换程序坞显示状态，这可能导致系统图标异常。"),
+                orient=Qt.Orientation.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
+            return
+
+        try:
+            import ctypes
+            import ctypes.util
+
+            objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
+
+            objc.objc_getClass.restype = ctypes.c_void_p
+            objc.sel_registerName.restype = ctypes.c_void_p
+            objc.objc_msgSend.restype = ctypes.c_void_p
+            objc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+
+            NSApplication = objc.objc_getClass(b'NSApplication')
+            sharedApplication = objc.sel_registerName(b'sharedApplication')
+            setActivationPolicy = objc.sel_registerName(
+                b'setActivationPolicy:')
+            activateIgnoringOtherApps = objc.sel_registerName(
+                b'activateIgnoringOtherApps:')
+
+            app = objc.objc_msgSend(NSApplication, sharedApplication)
+
+            # 保存当前窗口可见性状态
+            was_visible = self.isVisible()
+
+            policy = 0 if visible else 1
+
+            objc.objc_msgSend.argtypes = [
+                ctypes.c_void_p, ctypes.c_void_p, ctypes.c_long]
+            objc.objc_msgSend(app, setActivationPolicy, policy)
+
+            # 如果窗口之前是可见的，重新显示和激活
+            if was_visible and not visible:
+                self.show()
+                self.raise_()
+                self.activateWindow()
+                objc.objc_msgSend.argtypes = [
+                    ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+                objc.objc_msgSend(app, activateIgnoringOtherApps, 1)
+
+        except Exception as e:
+            logger.error(f"Failed to set dock visibility: {e}")
 
 if isGreaterEqualWin10():   # 否则 Win 10 亚克力效果失效
     MainWindow.updateFrameless = updateFrameless

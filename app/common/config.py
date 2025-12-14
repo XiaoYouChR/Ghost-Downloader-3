@@ -22,8 +22,10 @@ from qfluentwidgets import (
 class Language(Enum):
     """Language enumeration"""
 
-    CHINESE_SIMPLIFIED = QLocale(QLocale.Language.Chinese, QLocale.Country.China)
-    CHINESE_TRADITIONAL = QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
+    CHINESE_SIMPLIFIED = QLocale(
+        QLocale.Language.Chinese, QLocale.Country.China)
+    CHINESE_TRADITIONAL = QLocale(
+        QLocale.Language.Chinese, QLocale.Country.Taiwan)
     CANTONESE = QLocale(QLocale.Language.Cantonese, QLocale.Country.HongKong)
     CHINESE_LITERARY = QLocale(
         QLocale.Language.Chinese, QLocale.Country.Macau
@@ -107,14 +109,18 @@ class Config(QConfig):
         "Download", "HistoryDownloadFolder", [], FolderListValidator()
     )
 
-    preBlockNum = RangeConfigItem("Download", "PreBlockNum", 8, RangeValidator(1, 256))
-    maxTaskNum = RangeConfigItem("Download", "MaxTaskNum", 3, RangeValidator(1, 10))
+    preBlockNum = RangeConfigItem(
+        "Download", "PreBlockNum", 8, RangeValidator(1, 256))
+    maxTaskNum = RangeConfigItem(
+        "Download", "MaxTaskNum", 3, RangeValidator(1, 10))
     speedLimitation = RangeConfigItem(
         "Download", "SpeedLimitation", 0, RangeValidator(0, 104857600)
     )  # 单位 KB
     autoSpeedUp = ConfigItem("Download", "AutoSpeedUp", True, BoolValidator())
-    SSLVerify = ConfigItem("Download", "SSLVerify", False, BoolValidator(), restart=True)
-    proxyServer = ConfigItem("Download", "ProxyServer", "Auto", ProxyValidator())
+    SSLVerify = ConfigItem("Download", "SSLVerify", False,
+                           BoolValidator(), restart=True)
+    proxyServer = ConfigItem("Download", "ProxyServer",
+                             "Auto", ProxyValidator())
 
     # browser
     enableBrowserExtension = ConfigItem(
@@ -160,6 +166,9 @@ class Config(QConfig):
     enableClipboardListener = ConfigItem(
         "Software", "ClipboardListener", True, BoolValidator()
     )
+    if sys.platform == "darwin":
+        hideFromDock = ConfigItem("Software", "HideFromDock", False, BoolValidator()
+    ) # MacOs 下从程序坞中隐藏
     geometry = ConfigItem(
         "Software", "Geometry", "Default", GeometryValidator(), GeometrySerializer()
     )  # 保存程序的位置和大小, Validator 在 mainWindow 中设置

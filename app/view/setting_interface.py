@@ -132,7 +132,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
             self.customProtocolComboBox.setCurrentText(
                 self.configItem.value[: self.configItem.value.find("://")]
             )
-            _ = self.configItem.value[self.configItem.value.find("://") + 3 :].split(
+            _ = self.configItem.value[self.configItem.value.find("://") + 3:].split(
                 ":"
             )
             self.customIPLineEdit.setText(_[0])
@@ -160,23 +160,27 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
         self.radioLayout.addWidget(self.offRadioButton)
         self.radioLayout.addWidget(self.defaultRadioButton)
         self.radioLayout.addWidget(self.customRadioButton)
-        self.radioLayout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
+        self.radioLayout.setSizeConstraint(
+            QVBoxLayout.SizeConstraint.SetMinimumSize)
 
         self.customProxyLayout.setContentsMargins(48, 18, 44, 18)
         self.customProxyLayout.addWidget(
             self.customLabel, 0, Qt.AlignmentFlag.AlignLeft
         )
         self.customProxyLayout.addSpacerItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding,
+                        QSizePolicy.Policy.Minimum)
         )
         self.customProxyLayout.addWidget(
             self.customProtocolComboBox, 0, Qt.AlignmentFlag.AlignLeft
         )
-        self.customProxyLayout.addWidget(self.label_1, 0, Qt.AlignmentFlag.AlignLeft)
+        self.customProxyLayout.addWidget(
+            self.label_1, 0, Qt.AlignmentFlag.AlignLeft)
         self.customProxyLayout.addWidget(
             self.customIPLineEdit, 0, Qt.AlignmentFlag.AlignLeft
         )
-        self.customProxyLayout.addWidget(self.label_2, 0, Qt.AlignmentFlag.AlignLeft)
+        self.customProxyLayout.addWidget(
+            self.label_2, 0, Qt.AlignmentFlag.AlignLeft)
         self.customProxyLayout.addWidget(
             self.customPortLineEdit, 0, Qt.AlignmentFlag.AlignLeft
         )
@@ -206,7 +210,7 @@ class CustomProxySettingCard(ExpandGroupSettingCard):
             if _:
                 protocol = _[: _.find("://")]
                 self.customProtocolComboBox.setCurrentText(protocol)
-                _ = _[_.find("://") + 3 :].split(":")
+                _ = _[_.find("://") + 3:].split(":")
                 self.customIPLineEdit.setText(_[0])
                 self.customPortLineEdit.setText(_[1])
             else:
@@ -361,7 +365,8 @@ class SettingInterface(ScrollArea):
         )
 
         # browser
-        self.browserGroup = SettingCardGroup(self.tr("浏览器扩展"), self.scrollWidget)
+        self.browserGroup = SettingCardGroup(
+            self.tr("浏览器扩展"), self.scrollWidget)
         self.browserExtensionCard = SwitchSettingCard(
             FIF.CONNECT,
             self.tr("启用浏览器扩展"),
@@ -383,7 +388,8 @@ class SettingInterface(ScrollArea):
             self.tr("请选择最适合您的浏览器扩展安装方式"),
             self.browserGroup,
         )
-        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installFirefoxAddonsBtn = HyperlinkButton(
+            self.installExtensionCard)
         self.installFirefoxAddonsBtn.setText(self.tr("Firefox"))
         self.installFirefoxAddonsBtn.setUrl(FIREFOX_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(
@@ -391,7 +397,8 @@ class SettingInterface(ScrollArea):
         )
         self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
 
-        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installFirefoxAddonsBtn = HyperlinkButton(
+            self.installExtensionCard)
         self.installFirefoxAddonsBtn.setText(self.tr("Edge"))
         self.installFirefoxAddonsBtn.setUrl(EDGE_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(
@@ -399,7 +406,8 @@ class SettingInterface(ScrollArea):
         )
         self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
 
-        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installFirefoxAddonsBtn = HyperlinkButton(
+            self.installExtensionCard)
         self.installFirefoxAddonsBtn.setText(self.tr("Chrome"))
         self.installFirefoxAddonsBtn.setUrl(CHROME_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(
@@ -415,7 +423,8 @@ class SettingInterface(ScrollArea):
             self.browserGroup,
         )
         # personalization
-        self.personalGroup = SettingCardGroup(self.tr("个性化"), self.scrollWidget)
+        self.personalGroup = SettingCardGroup(
+            self.tr("个性化"), self.scrollWidget)
         self.themeCard = ComboBoxSettingCard(
             cfg.customThemeMode,
             FIF.BRUSH,
@@ -437,7 +446,8 @@ class SettingInterface(ScrollArea):
                 FIF.TRANSPARENT,
                 self.tr("窗口背景透明材质"),
                 self.tr("设置窗口背景透明效果和透明材质"),
-                texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"],
+                texts=["Acrylic", "Mica", "MicaBlur",
+                       "MicaAlt", "Aero", "None"],
                 parent=self.personalGroup,
             )
         self.zoomCard = SpinBoxSettingCard(
@@ -488,6 +498,15 @@ class SettingInterface(ScrollArea):
             configItem=cfg.enableClipboardListener,
             parent=self.softwareGroup,
         )
+        if sys.platform == "darwin":
+            # MacOS 启用后程序将在程序坞中隐藏，仅保留托盘图标
+            self.hideFromDockCard = SwitchSettingCard(
+                FIF.HIDE,
+                self.tr("在程序坞中隐藏"),
+                self.tr("启用后程序将在程序坞中隐藏，仅保留托盘图标"),
+                configItem=cfg.hideFromDock,
+                parent=self.softwareGroup,
+            )
         # application
         self.aboutGroup = SettingCardGroup(self.tr("关于"), self.scrollWidget)
         self.authorCard = HyperlinkCard(
@@ -514,7 +533,8 @@ class SettingInterface(ScrollArea):
         )
 
         self.resize(1000, 800)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
         self.setObjectName("settingInterface")
@@ -538,6 +558,8 @@ class SettingInterface(ScrollArea):
         self.downloadGroup.addSettingCard(self.blockNumCard)
         self.downloadGroup.addSettingCard(self.maxReassignSizeCard)
         self.downloadGroup.addSettingCard(self.maxTaskNumCard)
+        if sys.platform == "darwin":
+            self.softwareGroup.addSettingCard(self.hideFromDockCard)
         self.downloadGroup.addSettingCard(self.speedLimitationCard)
         self.downloadGroup.addSettingCard(self.autoSpeedUpCard)
         self.downloadGroup.addSettingCard(self.SSLVerifyCard)
@@ -608,6 +630,10 @@ class SettingInterface(ScrollArea):
         if fileResolve:
             with open(fileResolve, "wb") as f:
                 f.write(QResource(":/res/chrome_extension.crx").data())
+
+    def __onHideFromDockCardChecked(self, value: bool):
+        """Toggle dock visibility on macOS"""
+        self.window().setDockIconVisible(not value)
 
     def __onInstallExtensionGuidanceClicked(self):
         """install extension guidance card clicked slot"""
@@ -686,7 +712,8 @@ class SettingInterface(ScrollArea):
                 )
         elif sys.platform == "linux":
             if value:
-                autoStartPath = Path(f"/home/{getpass.getuser()}/.config/autostart/")
+                autoStartPath = Path(
+                    f"/home/{getpass.getuser()}/.config/autostart/")
                 if not autoStartPath.exists():
                     autoStartPath.mkdir(parents=True, exist_ok=True)
 
@@ -709,7 +736,8 @@ class SettingInterface(ScrollArea):
                     f.flush()
 
             else:
-                os.remove(f"/home/{getpass.getuser()}/.config/autostart/gd3.desktop")
+                os.remove(
+                    f"/home/{getpass.getuser()}/.config/autostart/gd3.desktop")
 
         else:
             InfoBar.warning(
@@ -741,15 +769,24 @@ class SettingInterface(ScrollArea):
 
         # download
         self.blockNumCard.valueChanged.connect(
-            lambda: cfg.set(cfg.preBlockNum, self.blockNumCard.configItem.value)
+            lambda: cfg.set(cfg.preBlockNum,
+                            self.blockNumCard.configItem.value)
         )
-        self.downloadFolderCard.pathChanged.connect(self.__onDownloadFolderChanged)
+        self.downloadFolderCard.pathChanged.connect(
+            self.__onDownloadFolderChanged)
 
         # extension
         self.browserExtensionCard.checkedChanged.connect(
             self.__onBrowserExtensionCardChecked
         )
-        self.installExtensionCard.clicked.connect(self.__onInstallExtensionCardClicked)
+
+        self.installExtensionCard.clicked.connect(
+            self.__onInstallExtensionCardClicked)
+
+        if sys.platform == "darwin":
+            self.hideFromDockCard.checkedChanged.connect(
+                self.__onHideFromDockCardChecked)
+
         self.installExtensionGuidanceCard.clicked.connect(
             self.__onInstallExtensionGuidanceClicked
         )
