@@ -449,7 +449,11 @@ class MainWindow(MSFluentWindow):
             import ctypes
             import ctypes.util
 
-            objc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('objc'))
+            lib_name = ctypes.util.find_library('objc')
+            if not lib_name:
+                lib_name = '/usr/lib/libobjc.dylib'
+
+            objc = ctypes.cdll.LoadLibrary(lib_name)
 
             objc.objc_getClass.restype = ctypes.c_void_p
             objc.sel_registerName.restype = ctypes.c_void_p
@@ -485,6 +489,7 @@ class MainWindow(MSFluentWindow):
 
         except Exception as e:
             logger.error(f"Failed to set dock visibility: {e}")
+
 
 if isGreaterEqualWin10():   # 否则 Win 10 亚克力效果失效
     MainWindow.updateFrameless = updateFrameless
