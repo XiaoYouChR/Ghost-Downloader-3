@@ -1,0 +1,15 @@
+[project]
+name = "ghost-downloader-future"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "black>=26.1.0",
+    "logger>=1.4",
+    "loguru>=0.7.3",
+    "niquests>=3.17.0",
+    "pyside6>=6.10.1",
+    "pyside6-fluent-widgets>=1.11.0",
+    "ty>=0.0.15",
+]

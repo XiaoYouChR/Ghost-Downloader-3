@@ -1,0 +1,171 @@
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy, \
+    QGraphicsDropShadowEffect
+from qfluentwidgets import ScrollArea, FlowLayout, setFont, TitleLabel, PrimaryPushButton, FluentIcon, PushButton, \
+    SearchLineEdit, DropDownPushButton, ToolButton, ToggleButton, ToggleToolButton, ToolTipFilter, RoundMenu, Action, \
+    CommandBarView, isDarkTheme, SimpleCardWidget, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType
+
+from app.view.components.label import IconBodyLabel
+from app.view.components.task_card import TaskCardBase, TaskCard
+from app.bases.models import Task
+
+
+class TaskCommandBarView(CommandBarView):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.openAction = Action(FluentIcon.FOLDER, self.tr("打开文件夹"), self)
+        self.redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
+        self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
+        self.selectAllAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("全选"), self)
+        self.cancelAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("取消全选"), self)
+
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.setIconSize(QSize(18, 18))
+        self.addAction(self.openAction)
+        self.addAction(self.redownloadAction)
+        self.addAction(self.deleteAction)
+        self.addSeparator()
+        self.addAction(self.selectAllAction)
+        self.addAction(self.cancelAction)
+        self.resizeToSuitableWidth()
+        self.setShadowEffect()
+
+    def setShadowEffect(self, blurRadius=35, offset=(0, 8)):
+        """ add shadow to dialog """
+        color = QColor(0, 0, 0, 80 if isDarkTheme() else 30)
+        self.shadowEffect = QGraphicsDropShadowEffect(self)
+        self.shadowEffect.setBlurRadius(blurRadius)
+        self.shadowEffect.setOffset(*offset)
+        self.shadowEffect.setColor(color)
+        self.setGraphicsEffect(None)
+        self.setGraphicsEffect(self.shadowEffect)
+
+
+class EmptyStatusWidget(SimpleCardWidget):
+
+    def __init__(self, icon, text, parent=None):
+        super().__init__(parent=parent)
+        self.iconWidget = IconWidget(icon)
+        self.label = CaptionLabel(text)
+        self.vBoxLayout = QVBoxLayout(self)
+
+        self.initWidget()
+
+    def initWidget(self):
+        self.setBorderRadius(10)
+
+        self.iconWidget.setFixedSize(80, 80)
+
+        self.label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.vBoxLayout.setSpacing(10)
+        self.vBoxLayout.setContentsMargins(16, 20, 16, 20)
+        self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.vBoxLayout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter)
+
+    def setIcon(self, icon):
+        self.iconWidget.setIcon(icon)
+
+    def setText(self, text):
+        self.label.setText(text)
+
+    def _normalBackgroundColor(self):
+        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+        painter.setBrush(self.backgroundColor)
+        painter.setPen(Qt.PenStyle.NoPen)
+
+        r = self.borderRadius
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), r, r)
+
+
+class TaskPage(ScrollArea):
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.container = QWidget(self)
+        self.vBoxLayout = QVBoxLayout(self)
+        self.viewLayout = QVBoxLayout(self.container)
+        # init ToolBar
+        self.toolBar = QWidget(self)
+        self.toolBarLayout = QHBoxLayout(self.toolBar)
+        self.allStartButton = PrimaryPushButton(FluentIcon.PLAY, self.tr("全部开始"), self)
+        self.allPauseButton = PushButton(FluentIcon.PAUSE, self.tr("全部暂停"), self)
+        self.selectButton = PushButton(FluentIcon.CLEAR_SELECTION, self.tr("选择任务"), self)
+        self.planButton = ToggleToolButton(FluentIcon.STOP_WATCH, self)
+        self.rateLimitButton = ToggleToolButton(FluentIcon.SPEED_OFF, self)
+        self.speedBadge = IconBodyLabel(self.tr("0.00KB/s"), FluentIcon.SPEED_HIGH, self)
+        self.sortButton = DropDownPushButton(FluentIcon.LAYOUT, self.tr("排序"), self)
+        self.sortMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.timeSortAction = Action(FluentIcon.DATE_TIME, self.tr('按时间排序'), self, checkable=True)
+        self.nameSortAction = Action(FluentIcon.FONT, self.tr('按名称排序'), self, checkable=True)
+        self.ascendingSortAction = Action(FluentIcon.UP, self.tr('顺序'), self, checkable=True)
+        self.reverseSortAction = Action(FluentIcon.DOWN, self.tr('倒序'), self, checkable=True)
+        self.searchLineEdit = SearchLineEdit(self)
+        # other widgets
+        self.commandView = TaskCommandBarView(self)
+        self.emptyStatusWidget = EmptyStatusWidget(FluentIcon.EMOJI_TAB_SYMBOLS, self.tr("暂无下载任务"), self)
+
+        self.initWidget()
+        self.initLayout()
+
+        # TODO create for test
+        self.testCard = TaskCard(Task(title="SSIS-484.avi"), self)
+        self.testCard.setObjectName("testCard")
+        self.viewLayout.addWidget(self.testCard, alignment=Qt.AlignmentFlag.AlignTop)
+        self.timeSortAction.setChecked(True)
+        self.reverseSortAction.setChecked(True)
+
+    def initWidget(self):
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setWidget(self.container)
+        self.setObjectName("TaskPage")
+        self.setWidgetResizable(True)
+        self.enableTransparentBackground()
+        self.setViewportMargins(0, 60, 0, 0)
+        # Tool Bar
+        self.sortMenu.addAction(self.timeSortAction)
+        self.sortMenu.addAction(self.nameSortAction)
+        self.sortMenu.addSeparator()
+        self.sortMenu.addAction(self.ascendingSortAction)
+        self.sortMenu.addAction(self.reverseSortAction)
+        self.sortButton.setMenu(self.sortMenu)
+        self.planButton.setToolTip(self.tr("计划任务"))
+        self.planButton.installEventFilter(ToolTipFilter(self.planButton))
+        self.rateLimitButton.setToolTip(self.tr("限速"))
+        self.rateLimitButton.installEventFilter(ToolTipFilter(self.rateLimitButton))
+        # other widgets
+        self.emptyStatusWidget.setMinimumWidth(200)
+        self.emptyStatusWidget.adjustSize()
+        self.searchLineEdit.setPlaceholderText(self.tr("搜索任务"))
+
+    def initLayout(self):
+        self.vBoxLayout.setSpacing(20)
+        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # Tool Bar
+        self.vBoxLayout.addWidget(self.toolBar)
+        self.toolBarLayout.addWidget(self.allStartButton)
+        self.toolBarLayout.addWidget(self.allPauseButton)
+        self.toolBarLayout.addWidget(self.selectButton)
+        self.toolBarLayout.addWidget(self.planButton)
+        self.toolBarLayout.addWidget(self.rateLimitButton)
+        self.toolBarLayout.addSpacing(10)
+        self.toolBarLayout.addWidget(self.speedBadge)
+        self.toolBarLayout.addStretch(1)
+        self.toolBarLayout.addWidget(self.sortButton)
+        self.toolBarLayout.addWidget(self.searchLineEdit)
+        self.searchLineEdit.setMinimumWidth(200)
+        self.searchLineEdit.setMaximumWidth(300)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        width = self.width()
+        height = self.height()
+        self.commandView.move((width - self.commandView.width()) >> 1, height - self.commandView.sizeHint().height() - 20)
+        self.emptyStatusWidget.move((width - self.emptyStatusWidget.width()) >> 1, (height - self.emptyStatusWidget.height()) >> 1)
