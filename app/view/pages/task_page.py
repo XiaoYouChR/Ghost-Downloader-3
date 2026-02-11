@@ -124,7 +124,7 @@ class TaskPage(ScrollArea):
         # TODO create for test
         self.cards = []
         for i in range(10):
-            self.cards.append(TaskCard(Task(title=f"SSIS-448-{i}.avi"), self))
+            self.cards.append(TaskCard(Task(title=f"DingTalk-{i}.avi"), self))
             self.cards[-1].setObjectName(f"testCard{i}")
             self.viewLayout.addWidget(self.cards[-1], alignment=Qt.AlignmentFlag.AlignTop)
 

@@ -1,11 +1,14 @@
+from importlib.metadata import files
 from typing import Any
 
 from PySide6.QtCore import QEvent, Qt, QPoint, QObject, QMargins, QFileInfo
-from PySide6.QtGui import QTextOption, QMouseEvent, QColor, QPainter
+from PySide6.QtGui import QTextOption, QMouseEvent, QColor, QPainter, QFont
 from PySide6.QtWidgets import QTextEdit, QWidget, QVBoxLayout, QLayout, QSizePolicy, QHBoxLayout, QSpacerItem, \
-    QFileIconProvider
+    QFileIconProvider, QLabel
 from qfluentwidgets import MessageBoxBase, SubtitleLabel, TextEdit, ScrollArea, SettingCardGroup, SimpleCardWidget, \
-    ImageLabel, LineEdit, Action, FluentIcon, GroupHeaderCardWidget, BodyLabel, StrongBodyLabel, isDarkTheme
+    ImageLabel, LineEdit, Action, FluentIcon, GroupHeaderCardWidget, BodyLabel, StrongBodyLabel, isDarkTheme, \
+    PlainTextEdit, setFont
+from qfluentwidgets.components.widgets.card_widget import CardSeparator
 
 from app.supports.config import cfg
 from app.supports.utils import getReadableSize
@@ -107,15 +110,86 @@ class ResultCardBase(QWidget):
     def paintEvent(self, e):
         painter = QPainter(self)
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+
+        if isDarkTheme():
+            painter.setPen(QColor(0, 0, 0, 48))
+        else:
+            painter.setPen(QColor(0, 0, 0, 12))
+
+        painter.drawLine(self.rect().topLeft(), self.rect().topRight())
+
+
+class ParseResultHeaderCardWidget(QWidget):
+    """解析结果标题栏组件"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.borderRadius = 5
+
+        self.viewLayout = QVBoxLayout(self)
+        self.headerLabel = QLabel("     " + self.tr("解析结果"), self)
+
+        self.scrollArea = ScrollArea(self)
+        self.scrollWidget = QWidget(self)
+        self.scrollLayout = QVBoxLayout(self.scrollWidget)
+
+        self.initWidget()
+        self.initLayout()
+
+    def initWidget(self):
+        setFont(self.headerLabel, 15, QFont.Weight.DemiBold)
+        self.headerLabel.setFixedHeight(30)
+        self.headerLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        self.scrollArea.setWidget(self.scrollWidget)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.enableTransparentBackground()
+
+    def initLayout(self):
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.viewLayout.setSpacing(0)
+        self.viewLayout.addWidget(self.headerLabel)
+        self.viewLayout.addWidget(self.scrollArea)
+
+        self.scrollLayout.setContentsMargins(0, 0, 0, 0)
+        self.scrollLayout.setSpacing(0)
+
+    @property
+    def backgroundColor(self):
+        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
         painter.setBrush(self.backgroundColor)
 
         if isDarkTheme():
-            painter.setPen(QColor(255, 255, 255, 46))
+            painter.setPen(QColor(0, 0, 0, 48))
         else:
             painter.setPen(QColor(0, 0, 0, 12))
 
         r = self.borderRadius
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), r, r)
+        # painter.drawLine(self.rect().topLeft() + QPoint(0, 30), self.rect().topRight() + QPoint(0, 30))
+        painter.drawRoundedRect(self.rect(), r, r)
+
+    def addWidget(self, widget):
+        self.scrollLayout.addWidget(widget)
+
+    def clearResults(self):
+        """清空所有解析结果"""
+        while self.scrollLayout.count():
+            child = self.scrollLayout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    def getAllResults(self) -> list:
+        """获取所有解析结果的数据"""
+        results = []
+        for i in range(self.scrollLayout.count()):
+            widget = self.scrollLayout.itemAt(i).widget()
+            if isinstance(widget, ResultCardBase):
+                results.append(widget.getData())
+        return results
+
 
 
 class AddTaskDialog(MessageBoxBase):
@@ -125,10 +199,8 @@ class AddTaskDialog(MessageBoxBase):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(self.tr("添加任务"), self)
-        self.urlEdit = TextEdit(self)
-        self.scrollArea = ScrollArea(self)
-        self.scrollWidget = QWidget(self)
-        self.scrollLayout = QVBoxLayout(self.scrollWidget)
+        self.urlEdit = PlainTextEdit(self)
+        self.parseResultGroup = ParseResultHeaderCardWidget(self)
         self.settingGroup = GroupHeaderCardWidget(self)
         self.pathEdit = LineEdit(self)
         self.selectFolderAction = Action(FluentIcon.FOLDER, self.tr("选择文件夹"), self)
@@ -136,9 +208,9 @@ class AddTaskDialog(MessageBoxBase):
         self.initWidget()
         self.initLayout()
         # TODO For Test
-        # self.scrollArea.hide()
+        # self.parseResultGroup.hide()
         for i in range(5):
-            self.scrollLayout.addWidget(ResultCardBase(f"ssis-448-{i}.avi", 123456789, "https://example.com/ssis-448.avi", self.scrollWidget))
+            self.parseResultGroup.addWidget(ResultCardBase(f"DingTalk-{i}.avi", 123456789, "https://example.com/DingTalk.exe", self.parseResultGroup))
 
 
     def initWidget(self):
@@ -149,21 +221,15 @@ class AddTaskDialog(MessageBoxBase):
         self.urlEdit.setWordWrapMode(QTextOption.WrapMode.NoWrap)
         # Setting Group
         self.settingGroup.setTitle(self.tr("下载设置"))
+        self.settingGroup.headerView.setFixedHeight(30)
         self.pathEdit.addAction(self.selectFolderAction)
         self.settingGroup.addGroup(FluentIcon.DOWNLOAD, self.tr("选择下载路径"), self.tr("下载路径"), self.pathEdit, 2)
-
-        self.scrollArea.setWidget(self.scrollWidget)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.enableTransparentBackground()
 
     def initLayout(self):
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.urlEdit)
-        self.viewLayout.addWidget(self.scrollArea)
+        self.viewLayout.addWidget(self.parseResultGroup)
         self.viewLayout.addWidget(self.settingGroup)
-
-        self.scrollLayout.setContentsMargins(0, 0, 0, 0)
-        self.scrollLayout.setSpacing(0)
 
     def parse(self, payload: dict[str, Any]):
         ...
@@ -172,27 +238,11 @@ class AddTaskDialog(MessageBoxBase):
         ...
         super().done(code)
 
-    def addParseResult(self, filename: str, file_size: int, url: str):
+    def addParseResult(self, filename: str, fileSize: int, url: str):
         """添加解析结果卡片到滚动区域"""
-        resultCard = ResultCardBase(filename, file_size, url, self.scrollWidget)
-        self.scrollLayout.addWidget(resultCard)
+        resultCard = ResultCardBase(filename, fileSize, url, self.parseResultGroup)
+        self.parseResultGroup.addWidget(resultCard)
         return resultCard
-        
-    def clearResults(self):
-        """清空所有解析结果"""
-        while self.scrollLayout.count():
-            child = self.scrollLayout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-                
-    def getAllResults(self) -> list:
-        """获取所有解析结果的数据"""
-        results = []
-        for i in range(self.scrollLayout.count()):
-            widget = self.scrollLayout.itemAt(i).widget()
-            if isinstance(widget, ResultCardBase):
-                results.append(widget.getData())
-        return results
 
     @classmethod
     def display(cls, payload: dict[str, Any]=None, parent=None):
@@ -203,7 +253,7 @@ class AddTaskDialog(MessageBoxBase):
 
     def closeEvent(self, e):
         self.urlEdit.clear()
-        self.clearResults()
+        self.parseResultGroup.clearResults()
         return super().closeEvent(e)
 
     def eventFilter(self, obj, e: QEvent):
