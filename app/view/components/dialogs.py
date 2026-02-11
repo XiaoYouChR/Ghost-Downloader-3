@@ -3,11 +3,15 @@ from typing import Dict, Any, List
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QScrollArea, QWidget
+from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QScrollArea, QWidget, QSizePolicy, QAbstractItemView, \
+    QHeaderView, QTableWidgetItem
 from qfluentwidgets import (
     MessageBoxBase, SubtitleLabel, BodyLabel, CheckBox,
-    PrimaryPushButton, PushButton, CaptionLabel, FluentIcon
+    PrimaryPushButton, PushButton, CaptionLabel, FluentIcon, TextEdit, TableWidget, PrimaryToolButton, ToolButton
 )
+
+from app.supports.config import cfg, AUTHOR_URL
+from app.supports.utils import getLocalTimeFromGithubApiTime, getReadableSize
 
 
 class DeleteTaskDialog(MessageBoxBase):
@@ -30,158 +34,142 @@ class DeleteTaskDialog(MessageBoxBase):
         self.deleteFileCheckBox.setChecked(True)
         self.widget.setMinimumWidth(330)
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        layout.addWidget(self.titleLabel)
-        layout.addSpacing(12)
-        layout.addWidget(self.contentLabel)
-        layout.addSpacing(10)
-        layout.addWidget(self.deleteFileCheckBox)
-        self.viewLayout.addLayout(layout)
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(12)
+        self.viewLayout.addWidget(self.contentLabel)
+        self.viewLayout.addSpacing(10)
+        self.viewLayout.addWidget(self.deleteFileCheckBox)
 
 
 class ReleaseInfoDialog(MessageBoxBase):
-    """GitHub Release 信息对话框"""
-
-    def __init__(self, release_data: Dict[str, Any], parent=None, deleteOnClose=True):
+    def __init__(self, releaseData: dict[str, Any], parent=None, deleteOnClose=True):
         super().__init__(parent)
-        self.release_data = release_data
+        self.releaseData = releaseData
+        self.versionLabel = SubtitleLabel(self)
+        self.dateLabel = CaptionLabel(self)
+        self.prereleaseLabel = None
+        self.detailButton = None
+        self.sponsorButton = ToolButton(FluentIcon.HEART, self)
+        # content components
+        self.descriptionEdit = TextEdit(self)
+        self.tableView = None
 
         if deleteOnClose:
             self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 
         self.initWidget()
+        self.initLayout()
 
     def initWidget(self):
-        self.widget.setMinimumWidth(500)
-        self.widget.setMinimumHeight(400)
+        self.setDraggable(True)
+        self.widget.setMinimumSize(620, 620)
 
-        # 主容器
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        self._initTitleComponents()
+        self._initContentComponents()
+        self._initTableComponents()
 
-        # 标题区域
-        title_layout = QVBoxLayout()
-        title_layout.setContentsMargins(0, 0, 0, 0)
-        title_layout.setSpacing(6)
+    def _initTitleComponents(self):
+        """初始化标题栏组件"""
+        versionName = self.releaseData.get("name", "Release")
+        self.versionLabel.setText(versionName)
 
-        # 版本标题
-        version_label = SubtitleLabel(self.release_data.get("name", "Release"), self)
-        title_layout.addWidget(version_label)
-
-        # 发布时间
-        published_at = self.release_data.get("published_at", "")
-        if published_at:
-            try:
-                pub_date = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
-                date_str = pub_date.strftime("%Y-%m-%d %H:%M:%S")
-            except Exception:
-                date_str = published_at
+        publishedAt = self.releaseData.get("published_at", "")
+        if publishedAt:
+            publishDate = getLocalTimeFromGithubApiTime(publishedAt)
         else:
-            date_str = "Unknown"
+            publishDate = "Unknown"
+        self.dateLabel.setText(self.tr("发布时间: ") + publishDate)
 
-        date_label = CaptionLabel(self.tr("发布时间: ") + date_str, self)
-        title_layout.addWidget(date_label)
+        if self.releaseData.get("prerelease", False):
+            self.prereleaseLabel = CaptionLabel(self.tr("⚠️ 预发布版本"), self)
 
-        # Tag 和预发布标签
-        tag_layout = QHBoxLayout()
-        tag_layout.setContentsMargins(0, 0, 0, 0)
-        tag_layout.setSpacing(8)
+        htmlUrl = self.releaseData.get("html_url", "")
+        if htmlUrl:
+            self.detailButton = PrimaryToolButton(FluentIcon.LINK, self)
+            self.detailButton.clicked.connect(lambda: QDesktopServices.openUrl(htmlUrl))
 
-        tag_name = self.release_data.get("tag_name", "")
-        tag_label = CaptionLabel(f"Tag: {tag_name}", self)
-        tag_layout.addWidget(tag_label)
+        self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(AUTHOR_URL))
 
-        if self.release_data.get("prerelease", False):
-            prerelease_label = CaptionLabel(self.tr("⚠️ 预发布版本"), self)
-            tag_layout.addWidget(prerelease_label)
+    def _initContentComponents(self):
+        """初始化内容组件"""
+        description = self.releaseData.get("body", "暂无更新说明")
+        self.descriptionEdit.setObjectName(u"descriptionEdit")
 
-        tag_layout.addStretch()
-        title_layout.addLayout(tag_layout)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.descriptionEdit.setSizePolicy(sizePolicy)
+        
+        self.descriptionEdit.setReadOnly(True)
+        self.descriptionEdit.setMarkdown(description)
 
-        main_layout.addLayout(title_layout)
-        main_layout.addSpacing(12)
+    def _initTableComponents(self):
+        """初始化表格组件"""
+        assets = self.releaseData.get("assets", [])
+        if not assets:
+            return
+            
+        self.tableView = TableWidget(self)
+        self.tableView.setObjectName(u"tableView")
+        self.tableView.setFixedHeight(150)
 
-        # 发布说明区域（可滚动）
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setStyleSheet("QScrollArea { border: none; }")
+        tableSizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.tableView.setSizePolicy(tableSizePolicy)
 
-        scroll_widget = QWidget()
-        scroll_layout = QVBoxLayout(scroll_widget)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_layout.setSpacing(12)
+        self.tableView.setBorderVisible(True)
+        self.tableView.setBorderRadius(8)
+        self.tableView.setWordWrap(False)
+        self.tableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.tableView.setColumnCount(3)
+        self.tableView.verticalHeader().setVisible(False)
+        self.tableView.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        
+        # 填充表格数据
+        self._populateTableData(assets)
+        
+        # 设置表头标签
+        self.tableView.setHorizontalHeaderLabels([
+            self.tr('文件名'), 
+            self.tr('文件大小'), 
+            self.tr('下载次数')
+        ])
 
-        # 发布说明标题
-        changelog_title = CaptionLabel(self.tr("版本更新说明"), self)
-        scroll_layout.addWidget(changelog_title)
+    def _populateTableData(self, assets: List[Dict[str, Any]]):
+        """填充表格数据"""
+        tableViewInfos = []
 
-        # 发布说明内容
-        body = self.release_data.get("body", "")
-        if body:
-            body_label = BodyLabel(body, self)
-            body_label.setWordWrap(True)
-            scroll_layout.addWidget(body_label)
-        else:
-            empty_label = BodyLabel(self.tr("暂无更新说明"), self)
-            scroll_layout.addWidget(empty_label)
+        for asset in assets:
+            tableViewInfos.append([
+                asset["name"],
+                getReadableSize(asset["size"]),
+                str(asset["download_count"]),
+                asset["browser_download_url"]
+            ])
 
-        # 资源列表
-        assets = self.release_data.get("assets", [])
-        if assets:
-            scroll_layout.addSpacing(12)
-            assets_title = CaptionLabel(self.tr("下载资源"), self)
-            scroll_layout.addWidget(assets_title)
+        self.tableView.setRowCount(len(assets))
+        
+        for row, rowData in enumerate(tableViewInfos):
+            for col in range(3):
+                item = QTableWidgetItem(rowData[col])
+                # 在第一列存储下载链接
+                if col == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, rowData[3])
+                self.tableView.setItem(row, col, item)
 
-            for asset in assets:
-                asset_name = asset.get("name", "Unknown")
-                size_bytes = asset.get("size", 0)
-                size_str = self._format_size(size_bytes)
-                download_count = asset.get("download_count", 0)
+    def initLayout(self):
+        """初始化布局"""
+        titleLayout = QHBoxLayout()
+        titleLayout.setContentsMargins(0, 0, 0, 0)
+        titleLayout.setSpacing(6)
+        titleLayout.addWidget(self.versionLabel)
+        titleLayout.addWidget(self.dateLabel)
+        if self.prereleaseLabel:
+            titleLayout.addWidget(self.prereleaseLabel)
+        titleLayout.addStretch()
+        if self.detailButton:
+            titleLayout.addWidget(self.detailButton)
+        titleLayout.addWidget(self.sponsorButton)
 
-                asset_label = BodyLabel(
-                    f"📦 {asset_name}\n"
-                    f"   大小: {size_str} | 下载: {download_count}次",
-                    self
-                )
-                asset_label.setWordWrap(True)
-                scroll_layout.addWidget(asset_label)
-
-        scroll_layout.addStretch()
-        scroll_area.setWidget(scroll_widget)
-
-        main_layout.addWidget(scroll_area)
-        main_layout.addSpacing(12)
-
-        # 按钮区域
-        button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(0, 0, 0, 0)
-        button_layout.setSpacing(8)
-
-        # 查看详情按钮
-        html_url = self.release_data.get("html_url", "")
-        if html_url:
-            view_btn = PrimaryPushButton(
-                FluentIcon.LINK, self.tr("查看详情"), self
-            )
-            view_btn.clicked.connect(lambda: QDesktopServices.openUrl(html_url))
-            button_layout.addWidget(view_btn)
-
-        # 关闭按钮
-        close_btn = PushButton(self.tr("关闭"), self)
-        close_btn.clicked.connect(self.close)
-        button_layout.addWidget(close_btn)
-
-        main_layout.addLayout(button_layout)
-        self.viewLayout.addLayout(main_layout)
-
-    @staticmethod
-    def _format_size(size_bytes: int) -> str:
-        """格式化文件大小"""
-        for unit in ['B', 'KB', 'MB', 'GB']:
-            if size_bytes < 1024.0:
-                return f"{size_bytes:.2f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.2f} TB"
+        self.viewLayout.addLayout(titleLayout)
+        self.viewLayout.addSpacing(12)
+        self.viewLayout.addWidget(self.descriptionEdit)
+        if self.tableView:
+            self.viewLayout.addWidget(self.tableView)

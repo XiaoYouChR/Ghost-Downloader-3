@@ -9,11 +9,11 @@ from qfluentwidgets import (CardWidget, IconWidget, ToolButton, FluentIcon,
                             MessageBoxBase, SubtitleLabel, CheckBox, InfoBar, InfoBarPosition,
                             PushButton, ToolTipFilter, InfoLevel, DotInfoBadge, MessageBox,
                             isDarkTheme, themeColor, RoundMenu, Action, MenuAnimationType, StrongBodyLabel,
-                            PrimaryPushButton)
+                            PrimaryPushButton, TransparentToolButton, PrimaryToolButton)
 
 from app.view.components.dialogs import DeleteTaskDialog
 from app.bases.models import Task
-from app.view.components.label import IconBodyLabel
+from app.view.components.labels import IconBodyLabel
 
 
 class TaskCardBase(CardWidget):
@@ -97,17 +97,22 @@ class TaskCard(TaskCardBase):
 
         self.hBoxLayout = QHBoxLayout(self)
         self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo("C:/Users/XiaoYouChR/Videos/Captures/反恐精英：全球攻势 2025-11-09 12-51-21.mp4")).pixmap(48, 48), self)
+        # TODO macOS
+        self.iconLabel.setFixedSize(48, 48)
+
         self.infoVBoxLayout = QVBoxLayout(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.infoLayout = QHBoxLayout(self)
         self.speedLabel = IconBodyLabel("0.00MB/s", FluentIcon.SPEED_HIGH, self)
         self.leftTimeLabel = IconBodyLabel("00:00:00", FluentIcon.STOP_WATCH, self)
         self.progressLabel = IconBodyLabel("2.22MB/342.12MB", FluentIcon.LIBRARY, self)
-        self.pauseButton = PrimaryPushButton(FluentIcon.PAUSE, self.tr("暂停"), self)
-        self.openFileButton = ToolButton(FluentIcon.SEND, self)
+        self.pauseButton = PrimaryToolButton(FluentIcon.PAUSE, self)
+        self.openFileButton = ToolButton(FluentIcon.LINK, self)
         self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
+        self.cancelButton = TransparentToolButton(FluentIcon.CLOSE, self)
         self.progressBar = ProgressBar(self)
         self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        # init
         self.initLayout()
         # TODO For Test
         self.progressBar.setValue(24)
@@ -127,8 +132,9 @@ class TaskCard(TaskCardBase):
         self.hBoxLayout.addWidget(self.pauseButton)
         self.hBoxLayout.addWidget(self.openFileButton)
         self.hBoxLayout.addWidget(self.openFolderButton)
+        self.hBoxLayout.addWidget(self.cancelButton)
 
-        self.hBoxLayout.setContentsMargins(12, 0, 16, 0)
+        self.hBoxLayout.setContentsMargins(12, 0, 12, 0)
 
     def resizeEvent(self, e):
         self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)

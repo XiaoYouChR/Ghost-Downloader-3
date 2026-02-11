@@ -330,7 +330,9 @@ class SelectFolderSettingCard(SettingCard):
 
         # UI组件
         self.editableComboBox = EditableComboBox(self)
-        self.editableComboBox.setMinimumWidth(250)
+        # self.editableComboBox.setMinimumWidth(250)
+        # TODO editableComboBox 若 Editable, 会导致重大 Bug
+        self.editableComboBox.setReadOnly(True)
         self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
         self.restoreDefaultButton = ToolButton(
             FluentIcon.CANCEL, self
@@ -349,14 +351,14 @@ class SelectFolderSettingCard(SettingCard):
         self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
 
         # 布局设置
-        self.hBoxLayout.addWidget(self.editableComboBox, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addWidget(self.editableComboBox, 3)
         self.hBoxLayout.addSpacing(5)
         self.hBoxLayout.addWidget(
-            self.chooseFolderButton, 0, Qt.AlignmentFlag.AlignRight
+            self.chooseFolderButton
         )
         self.hBoxLayout.addSpacing(5)
         self.hBoxLayout.addWidget(
-            self.restoreDefaultButton, 0, Qt.AlignmentFlag.AlignRight
+            self.restoreDefaultButton
         )
         self.hBoxLayout.addSpacing(16)
 

@@ -4,9 +4,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSpacer
     QGraphicsDropShadowEffect
 from qfluentwidgets import ScrollArea, FlowLayout, setFont, TitleLabel, PrimaryPushButton, FluentIcon, PushButton, \
     SearchLineEdit, DropDownPushButton, ToolButton, ToggleButton, ToggleToolButton, ToolTipFilter, RoundMenu, Action, \
-    CommandBarView, isDarkTheme, SimpleCardWidget, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType
+    CommandBarView, isDarkTheme, SimpleCardWidget, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
+    DropDownToolButton
 
-from app.view.components.label import IconBodyLabel
+from app.view.components.labels import IconBodyLabel
 from app.view.components.task_card import TaskCardBase, TaskCard
 from app.bases.models import Task
 
@@ -43,20 +44,19 @@ class TaskCommandBarView(CommandBarView):
         self.setGraphicsEffect(self.shadowEffect)
 
 
-class EmptyStatusWidget(SimpleCardWidget):
+class EmptyStatusWidget(QWidget):
 
     def __init__(self, icon, text, parent=None):
         super().__init__(parent=parent)
         self.iconWidget = IconWidget(icon)
         self.label = CaptionLabel(text)
         self.vBoxLayout = QVBoxLayout(self)
+        self.borderRadius = 10
 
         self.initWidget()
 
     def initWidget(self):
-        self.setBorderRadius(10)
-
-        self.iconWidget.setFixedSize(80, 80)
+        self.iconWidget.setFixedSize(64, 64)
 
         self.label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -72,7 +72,8 @@ class EmptyStatusWidget(SimpleCardWidget):
     def setText(self, text):
         self.label.setText(text)
 
-    def _normalBackgroundColor(self):
+    @property
+    def backgroundColor(self):
         return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
 
     def paintEvent(self, e):
@@ -82,7 +83,7 @@ class EmptyStatusWidget(SimpleCardWidget):
         painter.setPen(Qt.PenStyle.NoPen)
 
         r = self.borderRadius
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), r, r)
+        painter.drawRoundedRect(self.rect(), r, r)
 
 
 class TaskPage(ScrollArea):
@@ -97,16 +98,21 @@ class TaskPage(ScrollArea):
         self.toolBarLayout = QHBoxLayout(self.toolBar)
         self.allStartButton = PrimaryPushButton(FluentIcon.PLAY, self.tr("全部开始"), self)
         self.allPauseButton = PushButton(FluentIcon.PAUSE, self.tr("全部暂停"), self)
-        self.selectButton = PushButton(FluentIcon.CLEAR_SELECTION, self.tr("选择任务"), self)
-        self.planButton = ToggleToolButton(FluentIcon.STOP_WATCH, self)
+        self.selectButton = ToolButton(FluentIcon.CLEAR_SELECTION, self)
+        self.planButton = ToggleToolButton(FluentIcon.DATE_TIME, self)
         self.rateLimitButton = ToggleToolButton(FluentIcon.SPEED_OFF, self)
         self.speedBadge = IconBodyLabel(self.tr("0.00KB/s"), FluentIcon.SPEED_HIGH, self)
-        self.sortButton = DropDownPushButton(FluentIcon.LAYOUT, self.tr("排序"), self)
+        self.sortButton = DropDownToolButton(FluentIcon.LAYOUT, self)
         self.sortMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
         self.timeSortAction = Action(FluentIcon.DATE_TIME, self.tr('按时间排序'), self, checkable=True)
         self.nameSortAction = Action(FluentIcon.FONT, self.tr('按名称排序'), self, checkable=True)
         self.ascendingSortAction = Action(FluentIcon.UP, self.tr('顺序'), self, checkable=True)
         self.reverseSortAction = Action(FluentIcon.DOWN, self.tr('倒序'), self, checkable=True)
+        self.filterButton = DropDownToolButton(FluentIcon.FILTER, self)
+        self.filterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.noFilterAction = Action(FluentIcon.FILTER, self.tr('全部任务'), self, checkable=True)
+        self.activeFilterAction = Action(FluentIcon.DOWNLOAD, self.tr('活动任务'), self, checkable=True)
+        self.completedFilterAction = Action(FluentIcon.TRAIN, self.tr('完成任务'), self, checkable=True)
         self.searchLineEdit = SearchLineEdit(self)
         # other widgets
         self.commandView = TaskCommandBarView(self)
@@ -116,11 +122,16 @@ class TaskPage(ScrollArea):
         self.initLayout()
 
         # TODO create for test
-        self.testCard = TaskCard(Task(title="SSIS-484.avi"), self)
-        self.testCard.setObjectName("testCard")
-        self.viewLayout.addWidget(self.testCard, alignment=Qt.AlignmentFlag.AlignTop)
+        self.cards = []
+        for i in range(10):
+            self.cards.append(TaskCard(Task(title=f"SSIS-448-{i}.avi"), self))
+            self.cards[-1].setObjectName(f"testCard{i}")
+            self.viewLayout.addWidget(self.cards[-1], alignment=Qt.AlignmentFlag.AlignTop)
+
         self.timeSortAction.setChecked(True)
         self.reverseSortAction.setChecked(True)
+        self.noFilterAction.setChecked(True)
+        # self.emptyStatusWidget.hide()
 
     def initWidget(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -136,6 +147,14 @@ class TaskPage(ScrollArea):
         self.sortMenu.addAction(self.ascendingSortAction)
         self.sortMenu.addAction(self.reverseSortAction)
         self.sortButton.setMenu(self.sortMenu)
+
+        self.filterMenu.addAction(self.noFilterAction)
+        self.filterMenu.addAction(self.activeFilterAction)
+        self.filterMenu.addAction(self.completedFilterAction)
+        self.filterButton.setMenu(self.filterMenu)
+
+        self.selectButton.setToolTip(self.tr("选择任务"))
+        self.selectButton.installEventFilter(ToolTipFilter(self.selectButton))
         self.planButton.setToolTip(self.tr("计划任务"))
         self.planButton.installEventFilter(ToolTipFilter(self.planButton))
         self.rateLimitButton.setToolTip(self.tr("限速"))
@@ -148,8 +167,10 @@ class TaskPage(ScrollArea):
     def initLayout(self):
         self.vBoxLayout.setSpacing(20)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.viewLayout.setContentsMargins(12, 0, 12, 12)
         # Tool Bar
         self.vBoxLayout.addWidget(self.toolBar)
+        self.toolBarLayout.setContentsMargins(0, 0, 0 ,0)
         self.toolBarLayout.addWidget(self.allStartButton)
         self.toolBarLayout.addWidget(self.allPauseButton)
         self.toolBarLayout.addWidget(self.selectButton)
@@ -159,6 +180,7 @@ class TaskPage(ScrollArea):
         self.toolBarLayout.addWidget(self.speedBadge)
         self.toolBarLayout.addStretch(1)
         self.toolBarLayout.addWidget(self.sortButton)
+        self.toolBarLayout.addWidget(self.filterButton)
         self.toolBarLayout.addWidget(self.searchLineEdit)
         self.searchLineEdit.setMinimumWidth(200)
         self.searchLineEdit.setMaximumWidth(300)

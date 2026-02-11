@@ -2,13 +2,13 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout
+from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, SwitchSettingCard
 
 from app.supports.config import cfg
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
 
 if sys.platform != "darwin":
-    from qfluentwidgets import SmoothScrollArea as ScrollArea, SettingCardGroup, RangeSettingCard, FluentIcon, \
-        SwitchSettingCard
+    from qfluentwidgets import SmoothScrollArea as ScrollArea
 else:
     from qfluentwidgets import ScrollArea
 
@@ -25,6 +25,7 @@ class SettingPage(ScrollArea):
         self.initWidget()
         self.initCards()
         self.initLayout()
+        self.connectSignalToSlot()
 
     def initWidget(self):
         self.setWidget(self.container)
@@ -75,3 +76,6 @@ class SettingPage(ScrollArea):
 
     def initLayout(self):
         self.vBoxLayout.addWidget(self.generalDownloadGroup)
+
+    def connectSignalToSlot(self):
+        self.downloadFolderCard.pathChanged.connect(lambda x: cfg.set(cfg.downloadFolder, x))

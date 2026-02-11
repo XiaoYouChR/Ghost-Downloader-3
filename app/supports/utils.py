@@ -141,14 +141,12 @@ def getProxy():
         return cfg.proxyServer.value
 
 
-def getReadableSize(size):
-    units = ["B", "KB", "MB", "GB", "TB", "PB"]
-    unit_index = 0
-    K = 1024.0
-    while size >= K:
-        size = size / K
-        unit_index += 1
-    return "%.2f %s" % (size, units[unit_index])
+def getReadableSize(size: int):
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+    return f"{size:.2f} TB"
 
 
 def retry(
@@ -204,7 +202,7 @@ def openFile(fileResolve):
     QDesktopServices.openUrl(QUrl.fromLocalFile(fileResolve))
 
 
-def getLocalTimeFromGithubApiTime(gmtTimeStr: str) -> datetime:
+def getLocalTimeFromGithubApiTime(gmtTimeStr: str) -> str:
     """
     将 GitHub API 返回的 GMT 时间字符串（ISO8601 格式）转换为本地时间（无时区信息）。
 
@@ -214,12 +212,9 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr: str) -> datetime:
     Returns:
         本地时间（datetime，无 tzinfo）
     """
-    # 解析为带时区的 datetime
-    gmtTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00"))
-    # 转换为本地时区
-    localTime = gmtTime.astimezone()
-    # 返回去除 tzinfo 的本地时间
-    return localTime.replace(tzinfo=None)
+    localTime = datetime.fromisoformat(gmtTimeStr.replace("Z", "+00:00")).astimezone()
+
+    return localTime.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def bringWindowToTop(window):

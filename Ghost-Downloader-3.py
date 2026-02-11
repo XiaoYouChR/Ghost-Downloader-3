@@ -16,7 +16,7 @@ if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
-application = SingletonApplication(sys.argv, "GhostDownloader")
+application = SingletonApplication(sys.argv, "gd3")
 
 # --- Start Program ---
 from loguru import logger

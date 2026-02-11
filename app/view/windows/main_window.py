@@ -11,6 +11,7 @@ from app.supports.config import cfg
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt
 
 from app.supports.utils import getProxy
+from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 from app.view.components.dialogs import ReleaseInfoDialog
@@ -49,7 +50,7 @@ class MainWindow(MSFluentWindow):
         self.showUpdateToolTip({"version": "0.0.1", "content": "This is a test tooltip."})
 
     def _restoreGeometry(self):
-        self.resize(960, 780)
+        self.resize(960, 540)
         desktop = QApplication.primaryScreen().availableGeometry()
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
@@ -80,7 +81,18 @@ class MainWindow(MSFluentWindow):
         self.taskPage = TaskPage(self)
         self.settingPage = SettingPage(self)
         self.addSubInterface(self.taskPage, FluentIcon.DOWNLOAD, self.tr("下载任务"), position=NavigationItemPosition.TOP)
+        self.navigationInterface.addItem(
+            routeKey='addTaskButton',
+            text=self.tr('新建任务'),
+            selectable=False,
+            icon=FluentIcon.ADD,
+            onClick=self.showAddTaskDialog,
+            position=NavigationItemPosition.TOP,
+        )
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
+
+    def showAddTaskDialog(self, triggeredByUser: bool = False):
+        AddTaskDialog.display(parent=self)
 
     def showUpdateToolTip(self, payload: dict):
         infoBar = InfoBar(
