@@ -1,9 +1,9 @@
-import itertools
+import os.path
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QFileDialog
-from qfluentwidgets import EditableComboBox, ToolButton, FluentIcon as FIF, SettingCard, ConfigItem
+from qfluentwidgets import EditableComboBox, ToolButton, FluentIcon as FIF, SettingCard, ConfigItem, InfoBar
 
 from ..common.config import cfg
 
@@ -12,69 +12,43 @@ class HistoryPathComboBox(EditableComboBox):
     """自定义可编辑组合框，支持默认项和历史记录功能"""
     pathChanged = Signal(str)  # 路径改变信号
 
-    def __init__(self, parent=None, default: str = "", memory: list = None):
+    def __init__(self, parent=None, current: str = "", memory: list = None):
         super().__init__(parent)
         self.setMinimumWidth(250)
 
         if memory is None:
             memory = []
         self._currentItems = set()  # 缓存当前显示的路径集合
-        self.defaultText = self.tr('默认路径')  # 默认项显示文本
-        self.default = default  # 默认路径值
+        self.currentPath = current  # 默认路径值
         self.memory = memory  # 历史记录列表
 
         self.flashList()  # 初始化列表显示
-        # self.currentTextChanged.connect(self._changed)
-        self.editingFinished.connect(self._changed)
+        self.editingFinished.connect(self.__pathChanged)  # 绑定编辑结束事件
+        self.currentIndexChanged.connect(self.__pathChanged)
 
-        self.setCurrentText(default)
+        self.setCurrentText(current)
 
-    def _changed(self):
+    def __pathChanged(self):
         """处理选项改变事件"""
         text = self.text()
-        if text != self.defaultText:
-            self.pathChanged.emit(text)
-        else:
-            self.pathChanged.emit(self.default)
+        if not text:  # 清空之后确定不算改变
+            self.setText(self.currentPath)
+            return
+
+        self.pathChanged.emit(text)  # 发送
 
     def flashList(self):
         """刷新下拉列表，合并默认项和历史记录"""
-        newPaths = set()
-        newPaths.add(self.defaultText)
-        for path in itertools.chain([self.default], self.memory):
-            if path:  # 忽略空路径
-                newPaths.add(path)
-
-        # 计算需要添加/移除的项
-        toRemove = self._currentItems - newPaths
-        toAdd = newPaths - self._currentItems
-
-        if not (toRemove or toAdd):
-            return  # 无变化时直接返回
-
-        # 执行增删操作
-        for path in toRemove:
-            self.removeItem(self.findText(path))
-        for path in toAdd:
-            self.addItem(path)
-
-        self._currentItems = newPaths.copy()  # 更新缓存
+        self.items.clear()
+        self.addItems([item for item in self.memory if item])
 
     def focusInEvent(self, e):
         """获取焦点时同步配置并刷新列表"""
         _ = cfg.historyDownloadFolder.value
-        if not _ == self.memory:
-            self.setMemory(_)
+        if _ != self.memory:
+            self.memory = _
             self.flashList()
         super().focusInEvent(e)
-
-    def setDefault(self, default):
-        """设置默认路径"""
-        self.default = default
-
-    def setMemory(self, memory):
-        """设置历史记录"""
-        self.memory = memory
 
 
 class SelectFolderSettingCard(SettingCard):
@@ -103,6 +77,7 @@ class SelectFolderSettingCard(SettingCard):
         self.hBoxLayout.addSpacing(16)
 
         self.editableComboBox.flashList()
+        self.setContent(defaultItem.value)
 
     def __chooseFolder(self):
         """打开文件夹选择对话框"""
@@ -112,7 +87,6 @@ class SelectFolderSettingCard(SettingCard):
 
     def __append(self, path):
         """添加新路径到历史记录"""
-        # print('Append', path)
         if path:
             self.editableComboBox.memory.append(path)
             if len(self.editableComboBox.memory) > 7:
@@ -123,19 +97,20 @@ class SelectFolderSettingCard(SettingCard):
     def __isPathExists(self, path):
         """检查路径是否已存在"""
         return (path in self.memoryItem.value or
-                path == self.editableComboBox.default or
+                path == self.editableComboBox.currentPath or
                 path in self.editableComboBox.memory)
 
     @Slot(str)
     def __updatePath(self, path: str):
         """更新当前路径"""
+        if not os.path.isabs(path):
+            InfoBar.error(self.tr('路径不正确'), path, parent=self)
+            return
+
         if not self.__isPathExists(path):
             self.__append(path)
 
         self.setContent(path)  # 更新卡片显示
-
-        self.editableComboBox.setCurrentText(path)
-
         self.pathChanged.emit(path)  # 发出修改信号
 
     def __del__(self):
