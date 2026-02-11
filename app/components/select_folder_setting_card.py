@@ -1,3 +1,5 @@
+import itertools
+
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QFileDialog
@@ -6,18 +8,11 @@ from qfluentwidgets import EditableComboBox, ToolButton, FluentIcon as FIF, Sett
 from ..common.config import cfg
 
 
-def connectList(l1, l2):
-    """连接两个列表的生成器函数，用于合并两个列表的迭代"""
-    for i in l1:
-        yield i
-    for i in l2:
-        yield i
-
 class HistoryPathComboBox(EditableComboBox):
     """自定义可编辑组合框，支持默认项和历史记录功能"""
     pathChanged = Signal(str)  # 路径改变信号
 
-    def __init__(self, parent=None, default:str="", memory:list=None):
+    def __init__(self, parent=None, default: str = "", memory: list = None):
         super().__init__(parent)
         self.setMinimumWidth(250)
 
@@ -25,16 +20,18 @@ class HistoryPathComboBox(EditableComboBox):
             memory = []
         self._currentItems = set()  # 缓存当前显示的路径集合
         self.defaultText = self.tr('默认路径')  # 默认项显示文本
-        self.default = default        # 默认路径值
-        self.memory = memory           # 历史记录列表
+        self.default = default  # 默认路径值
+        self.memory = memory  # 历史记录列表
 
         self.flashList()  # 初始化列表显示
-        self.currentTextChanged.connect(self._changed)
+        # self.currentTextChanged.connect(self._changed)
+        self.editingFinished.connect(self._changed)
 
         self.setCurrentText(default)
 
-    def _changed(self, text):
+    def _changed(self):
         """处理选项改变事件"""
+        text = self.text()
         if text != self.defaultText:
             self.pathChanged.emit(text)
         else:
@@ -44,7 +41,7 @@ class HistoryPathComboBox(EditableComboBox):
         """刷新下拉列表，合并默认项和历史记录"""
         newPaths = set()
         newPaths.add(self.defaultText)
-        for path in connectList([self.default], self.memory):
+        for path in itertools.chain([self.default], self.memory):
             if path:  # 忽略空路径
                 newPaths.add(path)
 
@@ -78,6 +75,7 @@ class HistoryPathComboBox(EditableComboBox):
     def setMemory(self, memory):
         """设置历史记录"""
         self.memory = memory
+
 
 class SelectFolderSettingCard(SettingCard):
     """下载路径设置卡片组件"""
@@ -114,6 +112,7 @@ class SelectFolderSettingCard(SettingCard):
 
     def __append(self, path):
         """添加新路径到历史记录"""
+        # print('Append', path)
         if path:
             self.editableComboBox.memory.append(path)
             if len(self.editableComboBox.memory) > 7:
