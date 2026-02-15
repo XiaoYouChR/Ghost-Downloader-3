@@ -69,7 +69,7 @@ class DownloadTask(QThread):
         self.fileSize = fileSize
         self.ableToParallelDownload: bool
 
-        self.historySpeed = [0] * 10  # 历史速度 10 秒内的平均速度
+        self.historySpeed = [0] * 100  # 历史速度 10 秒内的平均速度
 
         proxy = getProxy()
 
@@ -418,7 +418,7 @@ class DownloadTask(QThread):
                                 for i in range(4):
                                     self.__reassignWorker(context)  # 新增线程
 
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.1) #加快刷新显示速度
 
         except Exception as e:
             logger.error(f"Supervisor error: {e}")
@@ -449,7 +449,7 @@ class DownloadTask(QThread):
 
             self.speedChanged.emit(avgSpeed)
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1) #加快刷新显示速度
 
     async def __main(self):
         try:
