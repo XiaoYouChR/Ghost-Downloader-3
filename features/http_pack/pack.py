@@ -87,7 +87,7 @@ def _extractFileName(url: str, headers: dict) -> str:
 
     return fileName.strip()
 
-async def parse(payload: dict) -> HttpResultCard:
+async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
     headers: dict = payload['headers']
     proxies: dict = payload['proxies']
@@ -130,4 +130,4 @@ async def parse(payload: dict) -> HttpResultCard:
     fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取
 
     task = HttpTask(title=fileName, url=url, fileSize=fileSize, headers=headers)
-    return HttpResultCard(task)
+    return task

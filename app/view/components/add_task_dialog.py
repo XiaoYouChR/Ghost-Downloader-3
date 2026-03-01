@@ -13,6 +13,7 @@ from qfluentwidgets import (
     PlainTextEdit,
 )
 
+from app.bases.models import Task
 from app.services.core_service import coreService
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
@@ -102,21 +103,20 @@ class AddTaskDialog(MessageBoxBase):
                 except Exception as e:
                     logger.error(f"提交解析请求失败: {repr(e)}")
 
-    def _handleParseResult(self, resultCard: ResultCard, error: str = None):
+    def _handleParseResult(self, resultTask: HttpTask, error: str = None):
         """处理 URL 解析结果的回调函数
 
         Args:
             resultCard: 解析成功时的结果卡片
             error: 解析失败时的错误信息
         """
-        print(resultCard, error)
         if error:
             logger.error(error)
             # TODO: 显示错误信息给用户
             return
 
-        if resultCard:
-            resultCard.setParent(self.parseResultGroup)
+        if Task:
+            resultCard = HttpResultCard(resultTask, self.parseResultGroup)
             self.parseResultGroup.addWidget(resultCard)
 
     def done(self, code):

@@ -58,7 +58,7 @@ class HeaderCardWidgetBase(QWidget):
         painter.drawRoundedRect(self.rect(), r, r)
 
     def addWidget(self, widget):
-        self.scrollLayout.addWidget(widget)
+        self.scrollLayout.addWidget(widget, alignment=Qt.AlignmentFlag.AlignTop)
 
     def setTitle(self, title: str):
         self.headerLabel.setText("    " + title)
@@ -72,20 +72,19 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
 
     def clearResults(self):
         """清空所有解析结果"""
-        pass
-        # while self.scrollLayout.count():
-        #     child = self.scrollLayout.takeAt(0)
-        #     if child.widget():
-        #         child.widget().deleteLater()
+        while self.scrollLayout.count():
+            child = self.scrollLayout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
-    def getAllResults(self) -> list:
-        """获取所有解析结果的数据"""
-        results = []
-        for i in range(self.scrollLayout.count()):
-            widget = self.scrollLayout.itemAt(i).widget()
-            if isinstance(widget, ResultCard):
-                results.append(widget.getData())
-        return results
+    # def getAllResults(self) -> list:
+    #     """获取所有解析结果的数据"""
+    #     results = []
+    #     for i in range(self.scrollLayout.count()):
+    #         widget = self.scrollLayout.itemAt(i).widget()
+    #         if isinstance(widget, ResultCard):
+    #             results.append(widget.getData())
+    #     return results
 
 
 class SettingHeaderCardWidget(HeaderCardWidgetBase):
