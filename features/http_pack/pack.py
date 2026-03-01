@@ -89,7 +89,7 @@ def _extractFileName(url: str, headers: dict) -> str:
 
 async def parse(payload: dict) -> HttpResultCard:
     url: str = payload['url']
-    headers: dict = payload['payload']
+    headers: dict = payload['headers']
     proxies: dict = payload['proxies']
 
     requestHeaders = headers.copy()
@@ -124,7 +124,7 @@ async def parse(payload: dict) -> HttpResultCard:
         fileSize = SpecialFileSize.NOT_SUPPORTED
         logger.info("文件不支持续传")
 
-    await response.aclose()
+    await response.close()
 
     # 获取文件名
     fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取

@@ -110,7 +110,7 @@ class CoreService(QThread):
                 self._executeCallback(callback, None, errorMsg)
 
     def parseUrl(self, payload: dict, callback: Callable) -> str:
-        callbackId = f"parse_{id(callback)}_{hash(payload)}"
+        callbackId = f"parse_{id(callback)}_{hash(str(payload))}"
         self._pendingCallbacks[callbackId] = callback
 
         self.loop.create_task(self._parseUrl(payload, callbackId))
@@ -271,3 +271,5 @@ class CoreService(QThread):
         self.tasks.clear()
 
 coreService = CoreService()
+
+# TODO 程序现在无法正常退出 何意味?

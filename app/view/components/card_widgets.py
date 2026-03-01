@@ -72,10 +72,11 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
 
     def clearResults(self):
         """清空所有解析结果"""
-        while self.scrollLayout.count():
-            child = self.scrollLayout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+        pass
+        # while self.scrollLayout.count():
+        #     child = self.scrollLayout.takeAt(0)
+        #     if child.widget():
+        #         child.widget().deleteLater()
 
     def getAllResults(self) -> list:
         """获取所有解析结果的数据"""

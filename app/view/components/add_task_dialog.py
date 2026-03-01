@@ -2,13 +2,24 @@ from typing import Any
 
 from PySide6.QtCore import QEvent, Qt, QPoint, QTimer
 from PySide6.QtGui import QTextOption
-from qfluentwidgets import MessageBoxBase, SubtitleLabel, LineEdit, Action, FluentIcon, GroupHeaderCardWidget, \
-    PlainTextEdit
+from loguru import logger
+from qfluentwidgets import (
+    MessageBoxBase,
+    SubtitleLabel,
+    LineEdit,
+    Action,
+    FluentIcon,
+    GroupHeaderCardWidget,
+    PlainTextEdit,
+)
 
 from app.services.core_service import coreService
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
-from app.view.components.card_widgets import ParseResultHeaderCardWidget, SettingHeaderCardWidget
+from app.view.components.card_widgets import (
+    ParseResultHeaderCardWidget,
+    SettingHeaderCardWidget,
+)
 from app.view.components.cards import ResultCard
 from features.http_pack.cards import HttpResultCard
 from features.http_pack.task import HttpTask
@@ -37,17 +48,29 @@ class AddTaskDialog(MessageBoxBase):
         # self.parseResultGroup.hide()
         for i in range(5):
             self.parseResultGroup.addWidget(
-                HttpResultCard(HttpTask(title="DingTalk-{i}.avi", fileSize=123456789, url="https://example.com/DingTalk.exe"), self.parseResultGroup))
+                HttpResultCard(
+                    HttpTask(
+                        title=f"DingTalk-{i}.avi",
+                        fileSize=123456789,
+                        url="https://example.com/DingTalk.exe",
+                    ),
+                    self.parseResultGroup,
+                )
+            )
 
     def initWidget(self):
         self.setObjectName("AddTaskDialog")
         self.widget.setFixedWidth(700)
 
-        self.urlEdit.setPlaceholderText(self.tr("添加多个下载链接时，请确保每行只有一个下载链接"))
+        self.urlEdit.setPlaceholderText(
+            self.tr("添加多个下载链接时，请确保每行只有一个下载链接")
+        )
         self.urlEdit.setWordWrapMode(QTextOption.WrapMode.NoWrap)
 
         self.pathEdit.addAction(self.selectFolderAction)
-        self.settingGroup.addGroup(FluentIcon.DOWNLOAD, self.tr("选择下载路径"), self.pathEdit, 2)
+        self.settingGroup.addGroup(
+            FluentIcon.DOWNLOAD, self.tr("选择下载路径"), self.pathEdit, 2
+        )
 
     def initLayout(self):
         self.viewLayout.addWidget(self.titleLabel)
@@ -56,8 +79,11 @@ class AddTaskDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.settingGroup)
 
     def connectSignalToSlot(self):
+        self.finished.connect(self._onFinish)
         self._timer.timeout.connect(self.parse)
-        self.pathEdit.textChanged.connect(lambda: (self._timer.stop(), self._timer.start(1000)))
+        self.urlEdit.textChanged.connect(
+            lambda: (self._timer.stop(), self._timer.start(1000))
+        )
 
     def parse(self):
         """解析输入的URL列表"""
@@ -66,83 +92,54 @@ class AddTaskDialog(MessageBoxBase):
         proxies = getProxies()
 
         self.parseResultGroup.clearResults()
-        
+
         for url in urls:
             url = url.strip()
             if url:  # 跳过空行
-                payload = {
-                    "url": url,
-                    "headers": headers,
-                    "proxies": proxies
-                }
-                # 使用回调函数处理解析结果
+                payload = {"url": url, "headers": headers, "proxies": proxies}
                 try:
                     coreService.parseUrl(payload, self._handleParseResult)
                 except Exception as e:
-                    print(f"提交解析请求失败: {e}")
+                    logger.error(f"提交解析请求失败: {repr(e)}")
 
-    def _handleParseResult(self, result: dict, error: str = None):
+    def _handleParseResult(self, resultCard: ResultCard, error: str = None):
         """处理 URL 解析结果的回调函数
-        
+
         Args:
-            result: 解析成功时的结果字典
+            resultCard: 解析成功时的结果卡片
             error: 解析失败时的错误信息
         """
+        print(resultCard, error)
         if error:
-            # 处理解析错误
-            print(f"解析失败: {error}")
+            logger.error(error)
             # TODO: 显示错误信息给用户
             return
-        
-        if result:
-            # TODO 直接改成 Task
-            # 提取解析结果
-            filename = result.get('filename', '未知文件')
-            file_size = result.get('fileSize', 0)
-            url = result.get('url', '')
-            
-            # 添加到界面
-            self.addHttpParseResult(filename, file_size, url)
 
-    def addHttpParseResult(self, filename: str, fileSize: int, url: str) -> ResultCard | None:
-        """添加解析结果卡片到滚动区域
-        
-        Args:
-            filename: 文件名
-            fileSize: 文件大小
-            url: 下载链接
-        
-        Returns:
-            ResultCard: 创建的结果卡片对象
-        """
-        try:
-            resultCard = ResultCard(filename, fileSize, url, self.parseResultGroup)
+        if resultCard:
+            resultCard.setParent(self.parseResultGroup)
             self.parseResultGroup.addWidget(resultCard)
-            return resultCard
-        except Exception as e:
-            print(f"添加解析结果失败: {e}")
-            return None
 
     def done(self, code):
         ...
         super().done(code)
 
     @classmethod
-    def display(cls, payload: dict[str, Any]=None, parent=None):
+    def display(cls, payload: dict[str, Any] = None, parent=None):
         if cls._instance is None:
             cls._instance = cls(parent)
 
         cls._instance.exec()
 
-    def closeEvent(self, e):
-        print(1111)
+    def _onFinish(self):
         self.urlEdit.clear()
         self.parseResultGroup.clearResults()
-        return super().closeEvent(e)
 
     def eventFilter(self, obj, e: QEvent):
         if obj is self.windowMask:
-            if e.type() == QEvent.Type.MouseButtonPress and e.button() == Qt.MouseButton.LeftButton:
+            if (
+                e.type() == QEvent.Type.MouseButtonPress
+                and e.button() == Qt.MouseButton.LeftButton
+            ):
                 self._dragPos = e.pos()
                 return True
             elif e.type() == QEvent.Type.MouseMove and not self._dragPos.isNull():
