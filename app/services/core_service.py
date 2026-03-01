@@ -10,6 +10,7 @@ from loguru import logger
 
 from app.bases.models import Task
 from app.services.feature_service import featureService
+from features.http_pack.pack import parse
 
 
 class CoreService(QThread):
@@ -29,97 +30,99 @@ class CoreService(QThread):
         asyncio.set_event_loop(self.loop)
         self.mainLoop = self.loop.create_task(self.main())
         self.tasks: set[Task] = set()
-        self._pending_callbacks: Dict[str, Callable] = {}  # 存储待执行的回调函数
+        self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
 
-    def runCoroutine(self, coroutine: Coroutine, callback):
-        # 生成回调标识符
-        callback_id = f"custom_{id(callback)}_{hash(str(coroutine))}"
+    def runCoroutine(self, coroutine: Coroutine, callback: Callable[[dict, str | None], Coroutine | None] | None = None):
+        if callback is not None:
+            callbackId = f"custom_{id(callback)}_{hash(coroutine)}"
 
-        # 存储回调函数
-        self._pending_callbacks[callback_id] = callback
+            self._pendingCallbacks[callbackId] = callback
 
-        self.loop.create_task(self._runCoroutine(coroutine, callback_id))
+            self.loop.create_task(self._runCoroutine(coroutine, callbackId))
 
-        return callback_id
+            return callbackId
 
-    async def _runCoroutine(self, coroutine: Coroutine, callback_id):
+        return ""
+
+    async def _runCoroutine(self, coroutine: Coroutine, callbackId):
         try:
             result = await coroutine
-            callback = self._pending_callbacks.pop(callback_id)
+            callback = self._pendingCallbacks.pop(callbackId)
             self._executeCallback(callback, result, None)
         except Exception as e:
-            callback = self._pending_callbacks.pop(callback_id)
+            callback = self._pendingCallbacks.pop(callbackId)
             self._executeCallback(callback, None, repr(e))
 
-    async def _parseUrl(self, payload: dict, callback_id: str = None):
+    def _executeCallback(self, callback: Callable, result: Any, error: str = None):
+        """线程安全地执行回调函数
+
+        通过 Qt 的事件循环机制确保回调在主线程中执行，
+        避免子线程直接操作 UI 导致的崩溃问题。
+
+        Args:
+            callback: 回调函数
+            result: 成功结果
+            error: 错误信息
+        """
+
+        def wrapper():
+            try:
+                if asyncio.iscoroutinefunction(callback):
+                    self.loop.create_task(callback(result, error))
+                else:
+                    callback(result, error)
+            except Exception as e:
+                errorMsg = f"回调函数执行失败: {str(e)}\n{traceback.format_exc()}"
+                logger.exception(errorMsg)
+
+        application = QApplication.instance()
+        if application:
+            QTimer.singleShot(0, application, wrapper)
+        else:
+            wrapper()
+
+    async def _parseUrl(self, payload: dict, callbackId: str = None):
         """内部异步方法：解析 URL 并通过线程安全方式调用回调
 
         Args:
             payload: 包含 url, headers, proxies 等信息的字典
-            callback_id: 回调函数标识符
+            callbackId: 回调函数标识符
         """
         try:
             url = payload.get('url', '')
             if not url:
                 raise ValueError("URL 不能为空")
-            
-            # 从 FeatureService 获取对应的解析函数
-            parse_function = featureService.getParseFunction(url)
-            if parse_function is None:
-                raise ValueError(f"不支持的 URL 类型: {url}")
-            
-            # 执行解析
-            result = await parse_function(payload)
-            
-            # 通过线程安全方式调用回调
-            if callback_id and callback_id in self._pending_callbacks:
-                callback = self._pending_callbacks.pop(callback_id)
-                self._executeCallback(callback, result, None)
-                
-        except Exception as e:
-            error_msg = f"解析 URL 失败: {str(e)}\n{traceback.format_exc()}"
-            # 在子线程中打印错误信息到终端
-            logger.exception(error_msg)
-            
-            if callback_id and callback_id in self._pending_callbacks:
-                callback = self._pending_callbacks.pop(callback_id)
-                self._executeCallback(callback, None, error_msg)
 
-    def parseUrl(self, payload: dict, callback: Callable = None) -> str:
-        """线程安全的 URL 解析接口，仅使用回调函数
-        
-        Args:
-            payload: 包含解析所需信息的字典
-                    必须包含: url (str)
-                    可选包含: headers (dict), proxies (dict)
-            callback: 回调函数，签名应为 callback(result: dict, error: str = None)
-        
-        Returns:
-            str: 操作标识符，可用于追踪该解析请求
-        """
-        if not self.loop or not self.loop.is_running():
-            raise RuntimeError("CoreService 事件循环未运行")
-        
-        if callback is None:
-            raise ValueError("必须提供回调函数")
-        
-        # 生成回调标识符
-        callback_id = f"parse_{id(callback)}_{hash(str(payload))}"
-        
-        # 存储回调函数
-        self._pending_callbacks[callback_id] = callback
-        
-        # 在事件循环中调度解析任务
-        self.loop.create_task(self._parseUrl(payload, callback_id))
-        
-        return callback_id
+            parseFunction = parse
+
+            result = await parseFunction(payload)
+
+            if callbackId and callbackId in self._pendingCallbacks:
+                callback = self._pendingCallbacks.pop(callbackId)
+                self._executeCallback(callback, result, None)
+
+        except Exception as e:
+            errorMsg = f"解析 URL 失败: {str(e)}\n{traceback.format_exc()}"
+            logger.exception(errorMsg)
+
+            if callbackId and callbackId in self._pendingCallbacks:
+                callback = self._pendingCallbacks.pop(callbackId)
+                self._executeCallback(callback, None, errorMsg)
+
+    def parseUrl(self, payload: dict, callback: Callable) -> str:
+        callbackId = f"parse_{id(callback)}_{hash(payload)}"
+        self._pendingCallbacks[callbackId] = callback
+
+        self.loop.create_task(self._parseUrl(payload, callbackId))
+
+        return callbackId
 
     async def _createTask(self, payload: dict) -> Task:
         """内部异步方法：创建下载任务
-        
+
         Args:
             payload: 包含任务创建信息的字典
-        
+
         Returns:
             Task: 创建的任务对象
         """
@@ -127,7 +130,7 @@ class CoreService(QThread):
             # TODO: 实现具体的任务创建逻辑
             # 这里应该调用 FeatureService 获取相应的任务创建函数
             # 然后执行任务创建流程
-            
+
             # 示例实现
             task_data = {
                 'title': payload.get('filename', '未知文件'),
@@ -137,15 +140,30 @@ class CoreService(QThread):
                     'download_path': payload.get('downloadPath', '')
                 }
             }
-            
+
             task = Task(**task_data)
             self.tasks.add(task)
-            
+
             return task
-            
+
         except Exception as e:
             error_msg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
-            raise
+            raise e
+
+    async def _createTaskWithCallback(self, payload: dict, callbackId: str):
+        """带回调的任务创建包装方法"""
+        try:
+            task = await self._createTask(payload)
+            if callbackId in self._pendingCallbacks:
+                callback = self._pendingCallbacks.pop(callbackId)
+                self._executeCallback(callback, task, None)
+        except Exception as e:
+            error_msg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
+            logger.exception(error_msg)
+
+            if callbackId in self._pendingCallbacks:
+                callback = self._pendingCallbacks.pop(callbackId)
+                self._executeCallback(callback, None, str(e))
 
     def createTask(self, payload: dict, callback: Callable = None) -> str:
         """线程安全的任务创建接口，使用回调函数
@@ -164,31 +182,15 @@ class CoreService(QThread):
             raise ValueError("必须提供回调函数")
         
         # 生成回调标识符
-        callback_id = f"create_{id(callback)}_{hash(str(payload))}"
+        callbackId = f"create_{id(callback)}_{hash(str(payload))}"
         
         # 存储回调函数
-        self._pending_callbacks[callback_id] = callback
+        self._pendingCallbacks[callbackId] = callback
         
         # 在事件循环中调度任务创建
-        self.loop.create_task(self._createTaskWithCallback(payload, callback_id))
+        self.loop.create_task(self._createTaskWithCallback(payload, callbackId))
         
-        return callback_id
-    
-    async def _createTaskWithCallback(self, payload: dict, callback_id: str):
-        """带回调的任务创建包装方法"""
-        try:
-            task = await self._createTask(payload)
-            if callback_id in self._pending_callbacks:
-                callback = self._pending_callbacks.pop(callback_id)
-                self._executeCallback(callback, task, None)
-        except Exception as e:
-            error_msg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
-            # 在子线程中打印错误信息到终端
-            logger.exception(error_msg)
-            
-            if callback_id in self._pending_callbacks:
-                callback = self._pending_callbacks.pop(callback_id)
-                self._executeCallback(callback, None, str(e))
+        return callbackId
 
     def getAllTaskInfo(self) -> set:
         """获取所有任务信息
@@ -198,62 +200,34 @@ class CoreService(QThread):
         """
         return self.tasks.copy()
     
-    def getTaskById(self, task_id: str) -> Task:
-        """根据任务ID获取任务对象
+    def getTaskById(self, taskId: str) -> Task | None:
+        """根据任务Id获取任务对象
         
         Args:
-            task_id: 任务ID
+            taskId: 任务Id
         
         Returns:
             Task: 对应的任务对象，如果不存在则返回None
         """
         for task in self.tasks:
-            if task.taskId == task_id:
+            if task.taskId == taskId:
                 return task
         return None
     
-    def removeCallback(self, callback_id: str) -> bool:
+    def removeCallback(self, callbackId: str) -> bool:
         """移除待执行的回调函数
         
         Args:
-            callback_id: 回调函数标识符
+            callbackId: 回调函数标识符
         
         Returns:
             bool: 是否成功移除
         """
-        if callback_id in self._pending_callbacks:
-            del self._pending_callbacks[callback_id]
+        if callbackId in self._pendingCallbacks:
+            del self._pendingCallbacks[callbackId]
             return True
         return False
     
-    def _executeCallback(self, callback: Callable, result: Any, error: str = None):
-        """线程安全地执行回调函数
-        
-        通过 Qt 的事件循环机制确保回调在主线程中执行，
-        避免子线程直接操作 UI 导致的崩溃问题。
-        
-        Args:
-            callback: 回调函数
-            result: 成功结果
-            error: 错误信息
-        """
-        def wrapper():
-            try:
-                if asyncio.iscoroutinefunction(callback):
-                    # 如果是协程函数，在事件循环中执行
-                    self.loop.create_task(callback(result, error))
-                else:
-                    # 普通函数直接调用
-                    callback(result, error)
-            except Exception as e:
-                errorMsg = f"回调函数执行失败: {str(e)}\n{traceback.format_exc()}"
-                logger.exception(errorMsg)
-
-        if QApplication.instance():
-            QTimer.singleShot(0, QApplication.instance(), wrapper)
-        else:
-            wrapper()
-
     async def main(self):
         """主事件循环
         
@@ -270,7 +244,6 @@ class CoreService(QThread):
                 await asyncio.sleep(1)
                 
             except asyncio.CancelledError:
-                # 优雅退出
                 break
             except Exception as e:
                 print(f"主循环发生错误: {e}")
@@ -289,19 +262,12 @@ class CoreService(QThread):
     def stop(self):
         """停止服务"""
         if self.loop and self.loop.is_running():
-            # 取消主循环任务
             if hasattr(self, 'mainLoop') and not self.mainLoop.done():
                 self.mainLoop.cancel()
-            
-            # 关闭事件循环
+
             self.loop.call_soon_threadsafe(self.loop.stop)
 
-    # def isRunning(self) -> bool:
-    #     """检查服务是否正在运行
-    #
-    #     Returns:
-    #         bool: 服务运行状态
-    #     """
-    #     return self.loop is not None and self.loop.is_running()
+        self._pendingCallbacks.clear()
+        self.tasks.clear()
 
 coreService = CoreService()

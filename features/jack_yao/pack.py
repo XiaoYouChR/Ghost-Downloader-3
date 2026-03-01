@@ -8,7 +8,7 @@ from PySide6.QtGui import QPixmap, QColor, QDesktopServices, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
 from loguru import logger
 
-from app.bases.interfaces import FeaturePackBase
+from app.bases.interfaces import FeaturePack
 from typing import TYPE_CHECKING
 
 from app.services.core_service import coreService
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
 
 
-class JackYaoPack(FeaturePackBase):
+class JackYaoPack(FeaturePack):
 
     def load(self, mainWindow:"MainWindow"):
         mainWindow.resourceInterface = ResourceInterface()

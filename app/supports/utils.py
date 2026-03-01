@@ -71,6 +71,7 @@ def getSystemProxy():
             if proxyEnable:
                 proxyServer, _ = winreg.QueryValueEx(key, "ProxyServer")
 
+                # TODO http=10.1.1.1:8080;https=10.1.1.1:8080
                 if "http=" in proxyServer:
                     proxyServer = proxyServer.split(";")[0].split("=")[1]
 

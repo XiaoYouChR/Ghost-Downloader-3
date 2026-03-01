@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from time import time_ns
+from typing import Any, Optional, Self
 from uuid import uuid4
 import time
 
@@ -17,16 +18,15 @@ class TaskStatus(Enum):
     FAILED = auto()
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TaskStage:
     """Represents a single, executable stage within a parent Task."""
 
-    taskId: str
     stageIndex: int
     displayIntent: str
     workerType: str
     stageId: str = field(default_factory=lambda: f"stg_{uuid4().hex}")
-    instructionPayload: dict[str, Any] = field(default_factory=dict)
+    # metadata: dict[str, Any] = field(default_factory=dict)
     status: TaskStatus = TaskStatus.WAITING
     progress: float = 0.0
 
@@ -35,14 +35,26 @@ class TaskStage:
         if not (0 <= self.progress <= 1):
             raise ValueError(f"progress must be between 0 and 1, got {self.progress}")
 
+    def serialize(self) -> dict[str, Any]:
+        raise NotImplementedError
 
-@dataclass
+    def deserialize(self, dict: dict[str, Any]) -> Self:
+        raise NotImplementedError
+
+
+@dataclass(kw_only=True)
 class Task:
     """Represents a logical, user-facing task, which is a collection of stages."""
 
     title: str
     taskId: str = field(default_factory=lambda: f"tsk_{uuid4().hex}")
     status: TaskStatus = TaskStatus.RUNNING
-    currentStageId: Optional[str] = None
-    createdAt: int = field(default_factory=lambda: int(time.time()))
-    metadata: dict[str, Any] = field(default_factory=dict)
+    stages: list[TaskStage] = field(default_factory=list)
+    createdAt: int = field(default_factory=lambda: int(time_ns()))
+    # metadata: dict[str, Any] = field(default_factory=dict)
+
+    def serialize(self) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def deserialize(self, dict: dict[str, Any]) -> Self:
+        raise NotImplementedError

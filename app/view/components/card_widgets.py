@@ -3,7 +3,7 @@ from PySide6.QtGui import QFont, QColor, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from qfluentwidgets import ScrollArea, setFont, isDarkTheme, CardGroupWidget
 
-from app.view.components.cards import ResultCardBase, GroupSettingCard
+from app.view.components.cards import ResultCard, GroupSettingCard
 
 
 class HeaderCardWidgetBase(QWidget):
@@ -82,7 +82,7 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
         results = []
         for i in range(self.scrollLayout.count()):
             widget = self.scrollLayout.itemAt(i).widget()
-            if isinstance(widget, ResultCardBase):
+            if isinstance(widget, ResultCard):
                 results.append(widget.getData())
         return results
 

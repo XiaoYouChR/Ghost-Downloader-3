@@ -9,7 +9,9 @@ from app.services.core_service import coreService
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
 from app.view.components.card_widgets import ParseResultHeaderCardWidget, SettingHeaderCardWidget
-from app.view.components.cards import ResultCardBase
+from app.view.components.cards import ResultCard
+from features.http_pack.cards import HttpResultCard
+from features.http_pack.task import HttpTask
 
 
 class AddTaskDialog(MessageBoxBase):
@@ -35,7 +37,7 @@ class AddTaskDialog(MessageBoxBase):
         # self.parseResultGroup.hide()
         for i in range(5):
             self.parseResultGroup.addWidget(
-                ResultCardBase(f"DingTalk-{i}.avi", 123456789, "https://example.com/DingTalk.exe", self.parseResultGroup))
+                HttpResultCard(HttpTask(title="DingTalk-{i}.avi", fileSize=123456789, url="https://example.com/DingTalk.exe"), self.parseResultGroup))
 
     def initWidget(self):
         self.setObjectName("AddTaskDialog")
@@ -62,8 +64,7 @@ class AddTaskDialog(MessageBoxBase):
         urls = self.urlEdit.toPlainText().strip().split("\n")
         headers = DEFAULT_HEADERS
         proxies = getProxies()
-        
-        # 清空之前的解析结果
+
         self.parseResultGroup.clearResults()
         
         for url in urls:
@@ -79,7 +80,7 @@ class AddTaskDialog(MessageBoxBase):
                     coreService.parseUrl(payload, self._handleParseResult)
                 except Exception as e:
                     print(f"提交解析请求失败: {e}")
-    
+
     def _handleParseResult(self, result: dict, error: str = None):
         """处理 URL 解析结果的回调函数
         
@@ -94,15 +95,16 @@ class AddTaskDialog(MessageBoxBase):
             return
         
         if result:
+            # TODO 直接改成 Task
             # 提取解析结果
             filename = result.get('filename', '未知文件')
             file_size = result.get('fileSize', 0)
             url = result.get('url', '')
             
             # 添加到界面
-            self.addParseResult(filename, file_size, url)
+            self.addHttpParseResult(filename, file_size, url)
 
-    def addParseResult(self, filename: str, fileSize: int, url: str):
+    def addHttpParseResult(self, filename: str, fileSize: int, url: str) -> ResultCard | None:
         """添加解析结果卡片到滚动区域
         
         Args:
@@ -111,10 +113,10 @@ class AddTaskDialog(MessageBoxBase):
             url: 下载链接
         
         Returns:
-            ResultCardBase: 创建的结果卡片对象
+            ResultCard: 创建的结果卡片对象
         """
         try:
-            resultCard = ResultCardBase(filename, fileSize, url, self.parseResultGroup)
+            resultCard = ResultCard(filename, fileSize, url, self.parseResultGroup)
             self.parseResultGroup.addWidget(resultCard)
             return resultCard
         except Exception as e:
@@ -133,6 +135,7 @@ class AddTaskDialog(MessageBoxBase):
         cls._instance.exec()
 
     def closeEvent(self, e):
+        print(1111)
         self.urlEdit.clear()
         self.parseResultGroup.clearResults()
         return super().closeEvent(e)
