@@ -10,7 +10,7 @@ from app.supports.config import cfg
 
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt
 
-from app.supports.utils import getProxy
+from app.supports.utils import getProxies
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
@@ -119,6 +119,6 @@ class MainWindow(MSFluentWindow):
         """显示 Release 详情对话框"""
         releaseData = niquests.get(url="https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest", headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-                                allow_redirects=True).json()
+                                allow_redirects=True, proxies=getProxies()).json()
         dialog = ReleaseInfoDialog(releaseData, parent=self)
         dialog.exec()

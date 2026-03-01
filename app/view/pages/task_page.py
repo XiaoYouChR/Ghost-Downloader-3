@@ -8,7 +8,7 @@ from qfluentwidgets import ScrollArea, FlowLayout, setFont, TitleLabel, PrimaryP
     DropDownToolButton
 
 from app.view.components.labels import IconBodyLabel
-from app.view.components.task_card import TaskCardBase, TaskCard
+from app.view.components.cards import TaskCardBase, TaskCard
 from app.bases.models import Task
 
 

@@ -1,10 +1,15 @@
-import os
 import sys
+import os
+
+# import orjson
+# sys.modules['json'] = orjson
 
 from PySide6.QtCore import QStandardPaths
 
 from qfluentwidgets import qconfig
 
+from app.services.core_service import coreService
+from app.services.feature_service import featureService
 from app.supports.application import SingletonApplication
 from app.supports.config import cfg
 
@@ -32,6 +37,8 @@ logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotati
 logger.info(f"Ghost Downloader v{VERSION} is Launched at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}")
 warnings.warn = logger.warning
 
+coreService.start()
 mainWindow = MainWindow(silent = "silent" in sys.argv)
+featureService.loadFeatures(mainWindow)
 
 sys.exit(application.exec())

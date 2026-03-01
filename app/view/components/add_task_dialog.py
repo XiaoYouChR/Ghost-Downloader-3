@@ -1,195 +1,15 @@
-from importlib.metadata import files
 from typing import Any
 
-from PySide6.QtCore import QEvent, Qt, QPoint, QObject, QMargins, QFileInfo
-from PySide6.QtGui import QTextOption, QMouseEvent, QColor, QPainter, QFont
-from PySide6.QtWidgets import QTextEdit, QWidget, QVBoxLayout, QLayout, QSizePolicy, QHBoxLayout, QSpacerItem, \
-    QFileIconProvider, QLabel
-from qfluentwidgets import MessageBoxBase, SubtitleLabel, TextEdit, ScrollArea, SettingCardGroup, SimpleCardWidget, \
-    ImageLabel, LineEdit, Action, FluentIcon, GroupHeaderCardWidget, BodyLabel, StrongBodyLabel, isDarkTheme, \
-    PlainTextEdit, setFont
-from qfluentwidgets.components.widgets.card_widget import CardSeparator
+from PySide6.QtCore import QEvent, Qt, QPoint, QTimer
+from PySide6.QtGui import QTextOption
+from qfluentwidgets import MessageBoxBase, SubtitleLabel, LineEdit, Action, FluentIcon, GroupHeaderCardWidget, \
+    PlainTextEdit
 
-from app.supports.config import cfg
-from app.supports.utils import getReadableSize
-from app.view.components.setting_cards import SelectFolderSettingCard
-
-
-class ResultCardBase(QWidget):
-    """显示下载链接解析结果的卡片组件"""
-    
-    def __init__(self, filename: str, fileSize: int, url: str, parent: QWidget = None):
-        super().__init__(parent)
-        self.filename = filename
-        self.fileSize = fileSize
-        self.url = url
-        self.borderRadius = 5
-
-        self.iconLabel = ImageLabel(self)
-        self.filenameLabel = StrongBodyLabel(filename, self)
-        self.filenameEdit = LineEdit(self)
-        self.sizeLabel = BodyLabel(getReadableSize(fileSize), self)
-        self.mainLayout = QHBoxLayout(self)
-
-        self.initWidget()
-        self.initLayout()
-        
-    def initWidget(self):
-        """初始化组件属性"""
-        self.setFixedHeight(35)
-        self.resetFileIcon()
-        # 设置文件名标签
-        self.filenameLabel.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.filenameLabel.installEventFilter(self)
-        # 设置编辑框
-        self.filenameEdit.setText(self.filename)
-        self.filenameEdit.editingFinished.connect(self._onEditingFinished)
-        self.filenameEdit.hide()
-        
-    def initLayout(self):
-        """初始化布局"""
-        self.mainLayout.setContentsMargins(10, 2, 10, 2)
-        self.mainLayout.setSpacing(12)
-        self.mainLayout.addWidget(self.iconLabel)
-        self.mainLayout.addWidget(self.filenameLabel)
-        self.mainLayout.addWidget(self.filenameEdit)
-        self.mainLayout.addStretch()
-        self.mainLayout.addWidget(self.sizeLabel)
-        
-    def eventFilter(self, obj, event: QEvent):
-        """事件过滤器，处理双击事件"""
-        if obj is self.filenameLabel:
-            if event.type() == QEvent.Type.MouseButtonDblClick and isinstance(event, QMouseEvent):
-                if event.button() == Qt.MouseButton.LeftButton:
-                    self._enterEditMode()
-                    return True
-        return super().eventFilter(obj, event)
-
-    def resetFileIcon(self):
-        icon = QFileIconProvider().icon(QFileInfo(self.filename))
-        self.iconLabel.setImage(icon.pixmap(16, 16))
-        self.iconLabel.setFixedSize(16, 16)
-
-    def _enterEditMode(self):
-        """进入编辑模式"""
-        self.filenameLabel.hide()
-        self.filenameEdit.show()
-        self.filenameEdit.setFocus()
-        self.filenameEdit.selectAll()
-        
-    def _onEditingFinished(self):
-        """编辑完成回调"""
-        newFilename = self.filenameEdit.text().strip()
-        if newFilename and newFilename != self.filename:
-            self.filename = newFilename
-            self.filenameLabel.setText(newFilename)
-            self.resetFileIcon()
-
-        self.filenameEdit.hide()
-        self.filenameLabel.show()
-        self.filenameLabel.setFocus()
-        
-    def getData(self) -> dict:
-        """获取卡片数据"""
-        return {
-            "filename": self.filename,
-            "file_size": self.file_size,
-            "url": self.url
-        }
-
-    def setFilename(self, filename: str):
-        """设置文件名"""
-        self.filename = filename
-        self.filenameLabel.setText(filename)
-        self.filenameEdit.setText(filename)
-
-    @property
-    def backgroundColor(self):
-        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
-
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
-
-        if isDarkTheme():
-            painter.setPen(QColor(0, 0, 0, 48))
-        else:
-            painter.setPen(QColor(0, 0, 0, 12))
-
-        painter.drawLine(self.rect().topLeft(), self.rect().topRight())
-
-
-class ParseResultHeaderCardWidget(QWidget):
-    """解析结果标题栏组件"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.borderRadius = 5
-
-        self.viewLayout = QVBoxLayout(self)
-        self.headerLabel = QLabel("     " + self.tr("解析结果"), self)
-
-        self.scrollArea = ScrollArea(self)
-        self.scrollWidget = QWidget(self)
-        self.scrollLayout = QVBoxLayout(self.scrollWidget)
-
-        self.initWidget()
-        self.initLayout()
-
-    def initWidget(self):
-        setFont(self.headerLabel, 15, QFont.Weight.DemiBold)
-        self.headerLabel.setFixedHeight(30)
-        self.headerLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        self.scrollArea.setWidget(self.scrollWidget)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.enableTransparentBackground()
-
-    def initLayout(self):
-        self.viewLayout.setContentsMargins(0, 0, 0, 0)
-        self.viewLayout.setSpacing(0)
-        self.viewLayout.addWidget(self.headerLabel)
-        self.viewLayout.addWidget(self.scrollArea)
-
-        self.scrollLayout.setContentsMargins(0, 0, 0, 0)
-        self.scrollLayout.setSpacing(0)
-
-    @property
-    def backgroundColor(self):
-        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
-
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
-        painter.setBrush(self.backgroundColor)
-
-        if isDarkTheme():
-            painter.setPen(QColor(0, 0, 0, 48))
-        else:
-            painter.setPen(QColor(0, 0, 0, 12))
-
-        r = self.borderRadius
-        # painter.drawLine(self.rect().topLeft() + QPoint(0, 30), self.rect().topRight() + QPoint(0, 30))
-        painter.drawRoundedRect(self.rect(), r, r)
-
-    def addWidget(self, widget):
-        self.scrollLayout.addWidget(widget)
-
-    def clearResults(self):
-        """清空所有解析结果"""
-        while self.scrollLayout.count():
-            child = self.scrollLayout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-    def getAllResults(self) -> list:
-        """获取所有解析结果的数据"""
-        results = []
-        for i in range(self.scrollLayout.count()):
-            widget = self.scrollLayout.itemAt(i).widget()
-            if isinstance(widget, ResultCardBase):
-                results.append(widget.getData())
-        return results
-
+from app.services.core_service import coreService
+from app.supports.config import cfg, DEFAULT_HEADERS
+from app.supports.utils import getProxies
+from app.view.components.card_widgets import ParseResultHeaderCardWidget, SettingHeaderCardWidget
+from app.view.components.cards import ResultCardBase
 
 
 class AddTaskDialog(MessageBoxBase):
@@ -201,17 +21,21 @@ class AddTaskDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel(self.tr("添加任务"), self)
         self.urlEdit = PlainTextEdit(self)
         self.parseResultGroup = ParseResultHeaderCardWidget(self)
-        self.settingGroup = GroupHeaderCardWidget(self)
+        self.settingGroup = SettingHeaderCardWidget(self)
         self.pathEdit = LineEdit(self)
         self.selectFolderAction = Action(FluentIcon.FOLDER, self.tr("选择文件夹"), self)
 
+        self._timer = QTimer(self, singleShot=True)
+
         self.initWidget()
         self.initLayout()
+        self.connectSignalToSlot()
+
         # TODO For Test
         # self.parseResultGroup.hide()
         for i in range(5):
-            self.parseResultGroup.addWidget(ResultCardBase(f"DingTalk-{i}.avi", 123456789, "https://example.com/DingTalk.exe", self.parseResultGroup))
-
+            self.parseResultGroup.addWidget(
+                ResultCardBase(f"DingTalk-{i}.avi", 123456789, "https://example.com/DingTalk.exe", self.parseResultGroup))
 
     def initWidget(self):
         self.setObjectName("AddTaskDialog")
@@ -219,11 +43,9 @@ class AddTaskDialog(MessageBoxBase):
 
         self.urlEdit.setPlaceholderText(self.tr("添加多个下载链接时，请确保每行只有一个下载链接"))
         self.urlEdit.setWordWrapMode(QTextOption.WrapMode.NoWrap)
-        # Setting Group
-        self.settingGroup.setTitle(self.tr("下载设置"))
-        self.settingGroup.headerView.setFixedHeight(30)
+
         self.pathEdit.addAction(self.selectFolderAction)
-        self.settingGroup.addGroup(FluentIcon.DOWNLOAD, self.tr("选择下载路径"), self.tr("下载路径"), self.pathEdit, 2)
+        self.settingGroup.addGroup(FluentIcon.DOWNLOAD, self.tr("选择下载路径"), self.pathEdit, 2)
 
     def initLayout(self):
         self.viewLayout.addWidget(self.titleLabel)
@@ -231,18 +53,77 @@ class AddTaskDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.parseResultGroup)
         self.viewLayout.addWidget(self.settingGroup)
 
-    def parse(self, payload: dict[str, Any]):
-        ...
+    def connectSignalToSlot(self):
+        self._timer.timeout.connect(self.parse)
+        self.pathEdit.textChanged.connect(lambda: (self._timer.stop(), self._timer.start(1000)))
+
+    def parse(self):
+        """解析输入的URL列表"""
+        urls = self.urlEdit.toPlainText().strip().split("\n")
+        headers = DEFAULT_HEADERS
+        proxies = getProxies()
+        
+        # 清空之前的解析结果
+        self.parseResultGroup.clearResults()
+        
+        for url in urls:
+            url = url.strip()
+            if url:  # 跳过空行
+                payload = {
+                    "url": url,
+                    "headers": headers,
+                    "proxies": proxies
+                }
+                # 使用回调函数处理解析结果
+                try:
+                    coreService.parseUrl(payload, self._handleParseResult)
+                except Exception as e:
+                    print(f"提交解析请求失败: {e}")
+    
+    def _handleParseResult(self, result: dict, error: str = None):
+        """处理 URL 解析结果的回调函数
+        
+        Args:
+            result: 解析成功时的结果字典
+            error: 解析失败时的错误信息
+        """
+        if error:
+            # 处理解析错误
+            print(f"解析失败: {error}")
+            # TODO: 显示错误信息给用户
+            return
+        
+        if result:
+            # 提取解析结果
+            filename = result.get('filename', '未知文件')
+            file_size = result.get('fileSize', 0)
+            url = result.get('url', '')
+            
+            # 添加到界面
+            self.addParseResult(filename, file_size, url)
+
+    def addParseResult(self, filename: str, fileSize: int, url: str):
+        """添加解析结果卡片到滚动区域
+        
+        Args:
+            filename: 文件名
+            fileSize: 文件大小
+            url: 下载链接
+        
+        Returns:
+            ResultCardBase: 创建的结果卡片对象
+        """
+        try:
+            resultCard = ResultCardBase(filename, fileSize, url, self.parseResultGroup)
+            self.parseResultGroup.addWidget(resultCard)
+            return resultCard
+        except Exception as e:
+            print(f"添加解析结果失败: {e}")
+            return None
 
     def done(self, code):
         ...
         super().done(code)
-
-    def addParseResult(self, filename: str, fileSize: int, url: str):
-        """添加解析结果卡片到滚动区域"""
-        resultCard = ResultCardBase(filename, fileSize, url, self.parseResultGroup)
-        self.parseResultGroup.addWidget(resultCard)
-        return resultCard
 
     @classmethod
     def display(cls, payload: dict[str, Any]=None, parent=None):

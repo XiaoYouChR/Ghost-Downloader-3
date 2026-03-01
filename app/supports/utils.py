@@ -129,16 +129,17 @@ def getSystemProxy():
             return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
         else:
             return None
+
     return None
 
 
-def getProxy():
+def getProxies():
     if cfg.proxyServer.value == "Off":
         return None
     elif cfg.proxyServer.value == "Auto":
-        return getSystemProxy()
+        return {"http": getSystemProxy(), "https": getSystemProxy()}
     else:
-        return cfg.proxyServer.value
+        return {"http": cfg.proxyServer.value, "https": cfg.proxyServer.value}
 
 
 def getReadableSize(size: int):
