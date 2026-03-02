@@ -1,9 +1,12 @@
 from enum import Enum, auto
 from dataclasses import dataclass, field
+from pathlib import Path
 from time import time_ns
 from typing import Any, Optional, Self
 from uuid import uuid4
 import time
+
+from app.supports.config import cfg
 
 
 class TaskStatus(Enum):
@@ -51,7 +54,7 @@ class Task:
     status: TaskStatus = TaskStatus.RUNNING
     stages: list[TaskStage] = field(default_factory=list)
     createdAt: int = field(default_factory=lambda: int(time_ns()))
-    # metadata: dict[str, Any] = field(default_factory=dict)
+    path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
 
     def serialize(self) -> dict[str, Any]:
         raise NotImplementedError

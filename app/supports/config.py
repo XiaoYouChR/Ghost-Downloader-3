@@ -1,6 +1,7 @@
 import sys
 from enum import Enum
 from re import compile
+from time import sleep
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale, QTimer
 from qfluentwidgets import (
@@ -29,6 +30,7 @@ DEFAULT_HEADERS = {
     "upgrade-insecure-requests": "1",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
 }
+
 
 class Language(Enum):
     """Language enumeration"""
@@ -100,6 +102,7 @@ class LanguageSerializer(ConfigSerializer):
 
 class HeadersValidator(ConfigValidator):
     """Headers 验证器"""
+
     def validate(self, value: dict) -> bool:
         """验证 Headers 是否为非空字典类型"""
         return isinstance(value, dict) and len(value) > 0
@@ -111,6 +114,7 @@ class HeadersValidator(ConfigValidator):
 
 class HeadersSerializer(ConfigSerializer):
     """Headers 序列化器"""
+
     def serialize(self, value: dict) -> str:
         """将字典序列化为 JSON 字符串"""
         return dumps(value, ensure_ascii=False)
@@ -198,7 +202,11 @@ class Config(QConfig):
         "Software", "ClipboardListener", True, BoolValidator()
     )
     geometry = ConfigItem(
-        "Software", "Geometry", QRect(0, 0, 0, 0), GeometryValidator(), GeometrySerializer()
+        "Software",
+        "Geometry",
+        QRect(0, 0, 0, 0),
+        GeometryValidator(),
+        GeometrySerializer(),
     )  # 由于 QScreen 必须在 QApplication 初始化之后调用, 所以由 MainWindow 处理特殊情况
 
     # 网络设置
@@ -215,6 +223,14 @@ class Config(QConfig):
 
     def resetGlobalSpeed(self):
         self.globalSpeed = 0
+
+    def checkSpeedLimitation(self) -> bool:
+        limitation = self.speedLimitation.value
+        if not limitation or self.globalSpeed <= limitation:
+            return False
+        while self.globalSpeed > limitation:
+            sleep(0.1)
+        return True
 
 
 YEAR = 2026
