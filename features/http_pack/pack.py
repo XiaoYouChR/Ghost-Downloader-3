@@ -93,7 +93,7 @@ async def parse(payload: dict) -> HttpTask:
     proxies: dict = payload['proxies']
 
     requestHeaders = headers.copy()
-    requestHeaders["Range"] = "bytes=0-"
+    requestHeaders["range"] = "bytes=0-"    # 小写好像更好来着?
 
     # TODO verify config
     response = await niquests.aget(url, headers=requestHeaders, proxies=proxies, verify=False, allow_redirects=True, stream=True)

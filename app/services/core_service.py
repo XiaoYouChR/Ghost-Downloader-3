@@ -147,7 +147,7 @@ class CoreService(QThread):
             return task
 
         except Exception as e:
-            error_msg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
+            errorMsg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
             raise e
 
     async def _createTaskWithCallback(self, payload: dict, callbackId: str):
@@ -158,14 +158,14 @@ class CoreService(QThread):
                 callback = self._pendingCallbacks.pop(callbackId)
                 self._executeCallback(callback, task, None)
         except Exception as e:
-            error_msg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
-            logger.exception(error_msg)
+            errorMsg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
+            logger.exception(errorMsg)
 
             if callbackId in self._pendingCallbacks:
                 callback = self._pendingCallbacks.pop(callbackId)
                 self._executeCallback(callback, None, str(e))
 
-    def createTask(self, payload: dict, callback: Callable = None) -> str:
+    def createTask(self, payload: dict, callback: Callable) -> str:
         """线程安全的任务创建接口，使用回调函数
         
         Args:
@@ -175,19 +175,10 @@ class CoreService(QThread):
         Returns:
             str: 操作标识符
         """
-        if not self.loop or not self.loop.is_running():
-            raise RuntimeError("CoreService 事件循环未运行")
-        
-        if callback is None:
-            raise ValueError("必须提供回调函数")
-        
-        # 生成回调标识符
+
+
         callbackId = f"create_{id(callback)}_{hash(str(payload))}"
-        
-        # 存储回调函数
         self._pendingCallbacks[callbackId] = callback
-        
-        # 在事件循环中调度任务创建
         self.loop.create_task(self._createTaskWithCallback(payload, callbackId))
         
         return callbackId

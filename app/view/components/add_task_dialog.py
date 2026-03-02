@@ -2,6 +2,7 @@ from typing import Any
 
 from PySide6.QtCore import QEvent, Qt, QPoint, QTimer
 from PySide6.QtGui import QTextOption
+from PySide6.QtWidgets import QDialog
 from loguru import logger
 from qfluentwidgets import (
     MessageBoxBase,
@@ -80,7 +81,6 @@ class AddTaskDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.settingGroup)
 
     def connectSignalToSlot(self):
-        self.finished.connect(self._onFinish)
         self._timer.timeout.connect(self.parse)
         self.urlEdit.textChanged.connect(
             lambda: (self._timer.stop(), self._timer.start(1000))
@@ -107,12 +107,11 @@ class AddTaskDialog(MessageBoxBase):
         """处理 URL 解析结果的回调函数
 
         Args:
-            resultCard: 解析成功时的结果卡片
+            resultTask: 解析成功时的结果
             error: 解析失败时的错误信息
         """
         if error:
             logger.error(error)
-            # TODO: 显示错误信息给用户
             return
 
         if Task:
@@ -120,7 +119,13 @@ class AddTaskDialog(MessageBoxBase):
             self.parseResultGroup.addWidget(resultCard)
 
     def done(self, code):
-        ...
+        if code == QDialog.DialogCode.Accepted:
+            for task in self.parseResultGroup.getAllTasks():
+                print(task)
+
+        self.urlEdit.clear()
+        self.parseResultGroup.clearResults()
+
         super().done(code)
 
     @classmethod
@@ -129,10 +134,6 @@ class AddTaskDialog(MessageBoxBase):
             cls._instance = cls(parent)
 
         cls._instance.exec()
-
-    def _onFinish(self):
-        self.urlEdit.clear()
-        self.parseResultGroup.clearResults()
 
     def eventFilter(self, obj, e: QEvent):
         if obj is self.windowMask:

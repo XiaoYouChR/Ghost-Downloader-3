@@ -67,14 +67,11 @@ class HttpTaskCard(TaskCard):
 class HttpResultCard(ResultCard):
     def __init__(self, task: HttpTask, parent: QWidget = None):
         super().__init__(task, parent)
-        self.filename = task.title
-        self.fileSize = task.fileSize
-        self.url = task.url
-
+        self.task = task
         self.iconLabel = ImageLabel(self)
-        self.filenameLabel = StrongBodyLabel(self.filename, self)
+        self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.filenameEdit = LineEdit(self)
-        self.sizeLabel = BodyLabel(getReadableSize(self.fileSize), self)
+        self.sizeLabel = BodyLabel(getReadableSize(self.task.fileSize), self)
         self.mainLayout = QHBoxLayout(self)
 
         self.initWidget()
@@ -88,7 +85,7 @@ class HttpResultCard(ResultCard):
         self.filenameLabel.setCursor(Qt.CursorShape.PointingHandCursor)
         self.filenameLabel.installEventFilter(self)
         # 设置编辑框
-        self.filenameEdit.setText(self.filename)
+        self.filenameEdit.setText(self.task.title)
         self.filenameEdit.editingFinished.connect(self._onEditingFinished)
         self.filenameEdit.hide()
 
@@ -112,7 +109,7 @@ class HttpResultCard(ResultCard):
         return super().eventFilter(obj, event)
 
     def resetFileIcon(self):
-        icon = QFileIconProvider().icon(QFileInfo(self.filename))
+        icon = QFileIconProvider().icon(QFileInfo(self.task.title))
         self.iconLabel.setImage(icon.pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
 
@@ -126,8 +123,8 @@ class HttpResultCard(ResultCard):
     def _onEditingFinished(self):
         """编辑完成回调"""
         newFilename = self.filenameEdit.text().strip()
-        if newFilename and newFilename != self.filename:
-            self.filename = newFilename
+        if newFilename and newFilename != self.task.title:
+            self.task.title = newFilename
             self.filenameLabel.setText(newFilename)
             self.resetFileIcon()
 
@@ -135,16 +132,11 @@ class HttpResultCard(ResultCard):
         self.filenameLabel.show()
         self.filenameLabel.setFocus()
 
-    def getData(self) -> dict:
-        """获取卡片数据"""
-        return {
-            "filename": self.filename,
-            "file_size": self.fileSize,
-            "url": self.url
-        }
-
     def setFilename(self, filename: str):
         """设置文件名"""
-        self.filename = filename
+        self.task.title = filename
         self.filenameLabel.setText(filename)
         self.filenameEdit.setText(filename)
+
+    def getTask(self) -> HttpTask:
+        return self.task

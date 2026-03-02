@@ -14,8 +14,11 @@ class ResultCard(QWidget):
 
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(parent)
-        self.task = task
+        # self.task = task
         self.borderRadius = 5
+
+    def getTask(self) -> Task:
+        raise NotImplementedError
 
     @property
     def backgroundColor(self):

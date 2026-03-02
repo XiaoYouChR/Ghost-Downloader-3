@@ -3,6 +3,7 @@ from PySide6.QtGui import QFont, QColor, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from qfluentwidgets import ScrollArea, setFont, isDarkTheme, CardGroupWidget
 
+from app.bases.models import Task
 from app.view.components.cards import ResultCard, GroupSettingCard
 
 
@@ -77,14 +78,14 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
             if child.widget():
                 child.widget().deleteLater()
 
-    # def getAllResults(self) -> list:
-    #     """获取所有解析结果的数据"""
-    #     results = []
-    #     for i in range(self.scrollLayout.count()):
-    #         widget = self.scrollLayout.itemAt(i).widget()
-    #         if isinstance(widget, ResultCard):
-    #             results.append(widget.getData())
-    #     return results
+    def getAllTasks(self) -> list[Task]:
+        """获取所有解析结果的数据"""
+        results = []
+        for i in range(self.scrollLayout.count()):
+            widget = self.scrollLayout.itemAt(i).widget()
+            if isinstance(widget, ResultCard):
+                results.append(widget.getTask())
+        return results
 
 
 class SettingHeaderCardWidget(HeaderCardWidgetBase):
