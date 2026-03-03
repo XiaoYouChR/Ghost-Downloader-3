@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum, auto, IntEnum
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time_ns
@@ -9,7 +9,7 @@ import time
 from app.supports.config import cfg
 
 
-class TaskStatus(Enum):
+class TaskStatus(IntEnum):
     """
     Enumeration for the lifecycle status of an individual TaskStage.
     """
@@ -26,12 +26,11 @@ class TaskStage:
     """Represents a single, executable stage within a parent Task."""
 
     stageIndex: int
-    displayIntent: str
-    workerType: str
     stageId: str = field(default_factory=lambda: f"stg_{uuid4().hex}")
     # metadata: dict[str, Any] = field(default_factory=dict)
     status: TaskStatus = TaskStatus.WAITING
-    progress: float = 0.0
+    progress: float = 0   # 0 ~ 100
+    speed: int = field(default=1)
 
     def __post_init__(self) -> None:
         """Validate progress is between 0 and 1."""
@@ -61,3 +60,10 @@ class Task:
 
     def deserialize(self, dict: dict[str, Any]) -> Self:
         raise NotImplementedError
+
+    async def run(self):
+        self.stages.sort(key=lambda stage: stage.stageIndex)
+        raise NotImplementedError
+
+    def __hash__(self):
+        return hash(self.taskId)

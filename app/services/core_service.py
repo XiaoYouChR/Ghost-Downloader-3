@@ -1,15 +1,12 @@
 import asyncio
 import traceback
-import sys
 from typing import Callable, Dict, Any, Coroutine
-from concurrent.futures import Future
 
 from PySide6.QtCore import QThread, QTimer
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
 from app.bases.models import Task
-from app.services.feature_service import featureService
 from features.http_pack.pack import parse
 
 
@@ -30,6 +27,7 @@ class CoreService(QThread):
         asyncio.set_event_loop(self.loop)
         self.mainLoop = self.loop.create_task(self.main())
         self.tasks: set[Task] = set()
+        self.runningTasks: dict[str, asyncio.Task] = {}
         self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
 
     def runCoroutine(self, coroutine: Coroutine, callback: Callable[[dict, str | None], Coroutine | None] | None = None):
@@ -117,71 +115,21 @@ class CoreService(QThread):
 
         return callbackId
 
-    async def _createTask(self, payload: dict) -> Task:
-        """内部异步方法：创建下载任务
+    async def _runTask(self, task: Task):
+        self.runningTasks[task.taskId] = asyncio.create_task(task.run())
 
-        Args:
-            payload: 包含任务创建信息的字典
+    def createTask(self, task: Task):
+        self.tasks.add(task)
+        self.loop.create_task(self._runTask(task))
 
-        Returns:
-            Task: 创建的任务对象
-        """
-        try:
-            # TODO: 实现具体的任务创建逻辑
-            # 这里应该调用 FeatureService 获取相应的任务创建函数
-            # 然后执行任务创建流程
+    async def _stopTask(self, task: Task):
+        self.tasks.remove(task)
+        if task.taskId in self.runningTasks:
+            if self.runningTasks[task.taskId].cancel():
+                await self.runningTasks[task.taskId]
 
-            # 示例实现
-            task_data = {
-                'title': payload.get('filename', '未知文件'),
-                'metadata': {
-                    'url': payload.get('url', ''),
-                    'file_size': payload.get('fileSize', 0),
-                    'download_path': payload.get('downloadPath', '')
-                }
-            }
-
-            task = Task(**task_data)
-            self.tasks.add(task)
-
-            return task
-
-        except Exception as e:
-            errorMsg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
-            raise e
-
-    async def _createTaskWithCallback(self, payload: dict, callbackId: str):
-        """带回调的任务创建包装方法"""
-        try:
-            task = await self._createTask(payload)
-            if callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, task, None)
-        except Exception as e:
-            errorMsg = f"创建任务失败: {str(e)}\n{traceback.format_exc()}"
-            logger.exception(errorMsg)
-
-            if callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, None, str(e))
-
-    def createTask(self, payload: dict, callback: Callable) -> str:
-        """线程安全的任务创建接口，使用回调函数
-        
-        Args:
-            payload: 包含任务创建所需信息的字典
-            callback: 回调函数，签名应为 callback(task: Task, error: str = None)
-        
-        Returns:
-            str: 操作标识符
-        """
-
-
-        callbackId = f"create_{id(callback)}_{hash(str(payload))}"
-        self._pendingCallbacks[callbackId] = callback
-        self.loop.create_task(self._createTaskWithCallback(payload, callbackId))
-        
-        return callbackId
+    def stopTask(self, task: Task):
+        self.loop.create_task(self._stopTask(task))
 
     def getAllTaskInfo(self) -> set:
         """获取所有任务信息

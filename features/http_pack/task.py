@@ -9,13 +9,13 @@ import niquests
 from loguru import logger
 
 from app.bases.interfaces import Worker
-from app.bases.models import Task, TaskStage
+from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, getReadableSize
 from features.http_pack.const import SpecialFileSize
 from app.supports.sysio import pwrite
 
-
+@dataclass
 class HttpTaskStage(TaskStage):
     url: str
     fileSize: int
@@ -23,6 +23,7 @@ class HttpTaskStage(TaskStage):
     proxies: dict
     resolvePath: str
     blockNum: int
+    receivedBytes: int = field(default=0)
 
 
 @dataclass
@@ -33,6 +34,18 @@ class HttpTask(Task):
     proxies: dict = field(default_factory=getProxies)
     blockNum: int = field(default=8)  # TODO 下载设置项
 
+    async def run(self):
+        try:
+            self.stages.sort(key=lambda stage: stage.stageIndex)
+            for stage in self.stages:
+                if stage.status != TaskStatus.COMPLETED:
+                    await HttpWorker(stage).run()
+                    stage.status = TaskStatus.COMPLETED
+        except CancelledError:
+            logger.info(f"{self.title} 停止下载")
+
+    def __hash__(self):
+        return hash(self.taskId)
 
 @dataclass
 class HttpSubworker:
@@ -95,7 +108,7 @@ class HttpWorker(Worker):
     async def supervisor(self):
         recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
         try:
-            lastProgress = sum(subworker.progress - subworker.start for subworker in self.subworkers)
+            self.stage.receiveBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
             while True:
                 data = tuple(val for subworker in self.subworkers for val in (subworker.start, subworker.progress, subworker.end))
                 recordFileHandle.seek(0)
@@ -103,10 +116,12 @@ class HttpWorker(Worker):
                 recordFileHandle.flush()
                 recordFileHandle.truncate()
 
-                progress = sum(subworker.progress - subworker.start for subworker in self.subworkers)
-                speed = getReadableSize(progress - lastProgress)
-                lastProgress = progress
-                print(speed)
+                receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
+                self.stage.speed = receivedBytes - self.stage.receiveBytes
+                print(self.stage.speed)
+                self.stage.receiveBytes = receivedBytes
+                self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
+                print(getReadableSize(self.stage.speed))
 
                 await asyncio.sleep(1)
         except CancelledError:

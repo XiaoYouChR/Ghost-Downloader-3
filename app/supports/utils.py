@@ -150,6 +150,14 @@ def getReadableSize(size: int):
         size /= 1024.0
     return f"{size:.2f} TB"
 
+def getReadableTime(seconds: int) -> str:
+    if seconds < 60:
+        return f"{seconds}s"
+    elif seconds < 3600:
+        return f"{seconds // 60}m{seconds % 60}s"
+    else:
+        remainingSeconds = seconds % 3600
+        return f"{int(seconds // 3600)}h{int(remainingSeconds // 60)}m{remainingSeconds % 60}s"
 
 def retry(
     retries: int = 3, delay: float = 0.1, handleFunction: Callable = lambda e: None

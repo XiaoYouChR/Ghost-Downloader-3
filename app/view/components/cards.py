@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import Qt, QEvent, QFileInfo, Signal
 from PySide6.QtGui import QMouseEvent, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider
@@ -5,6 +7,7 @@ from qfluentwidgets import ImageLabel, StrongBodyLabel, LineEdit, BodyLabel, isD
     themeColor, IconWidget
 
 from app.bases.models import Task
+from app.services.core_service import coreService
 from app.supports.utils import getReadableSize
 from app.view.components.dialogs import DeleteTaskDialog
 
@@ -79,13 +82,13 @@ class GroupSettingCard(QWidget):
 class TaskCard(CardWidget):
     """ Task card base class """
 
-    deleted = Signal(str)   # Send Task ID
+    deleted = Signal()   # TODO Send Task ID, or lambda function?
     checkedChanged = Signal(bool)
 
-    def __init__(self, parent=None):
+    def __init__(self, task: Task, parent=None):
         super().__init__(parent)
-
-        self.keyword = ""   # Task keyword, 用于搜索
+        self.task = task
+        # self.keyword = ""   # Task keyword, 用于搜索
 
         self.checkBox = CheckBox(self)
         self.checkBox.setFixedSize(23, 23)
@@ -101,6 +104,9 @@ class TaskCard(CardWidget):
 
         self.update()
 
+    def refresh(self):
+        raise NotImplementedError
+
     def isChecked(self):
         return self.checkBox.isChecked()
 
@@ -111,7 +117,17 @@ class TaskCard(CardWidget):
         self.checkBox.setChecked(checked)
         self.update()
 
+    def resumeTask(self):
+        coreService.createTask(self.task)
+        raise NotImplementedError
+
+    def pauseTask(self):
+        coreService.stopTask(self.task)
+        raise NotImplementedError
+
     def removeTask(self, deleteFile=False):
+        coreService.stopTask(self.task)
+        # TODO task resolve path
         raise NotImplementedError
 
     def mouseReleaseEvent(self, e):

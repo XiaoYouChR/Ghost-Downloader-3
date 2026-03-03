@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtCore import Qt, Signal, QSize, QTimeZone, QTimer
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy, \
     QGraphicsDropShadowEffect
@@ -124,15 +124,34 @@ class TaskPage(ScrollArea):
 
         # TODO create for test
         self.cards = []
-        for i in range(10):
-            self.cards.append(HttpTaskCard(Task(title=f"DingTalk-{i}.avi"), self))
-            self.cards[-1].setObjectName(f"testCard{i}")
-            self.viewLayout.addWidget(self.cards[-1], alignment=Qt.AlignmentFlag.AlignTop)
 
         self.timeSortAction.setChecked(True)
         self.reverseSortAction.setChecked(True)
         self.noFilterAction.setChecked(True)
         # self.emptyStatusWidget.hide()
+        self.refreshTimer = QTimer(self, interval=1000)
+        self.refreshTimer.timeout.connect(self.refreshTaskCards)
+        self.refreshTimer.start()
+
+    def refreshTaskCards(self):
+        print("refresh")
+        for card in self.cards:
+            card.refresh()
+
+    def addCard(self, card: TaskCard):
+        card.deleted.connect(lambda: self.removeCard(card))
+        self.cards.append(card)
+        self.viewLayout.addWidget(card, alignment=Qt.AlignmentFlag.AlignTop)
+
+        if self.emptyStatusWidget.isVisible():
+            self.emptyStatusWidget.hide()
+
+    def removeCard(self, card: TaskCard):
+        self.cards.remove(card)
+        self.viewLayout.removeWidget(card)
+
+        if not self.cards:
+            self.emptyStatusWidget.show()
 
     def initWidget(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)

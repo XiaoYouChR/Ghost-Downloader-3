@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 from PySide6.QtCore import QEvent, Qt, QPoint, QTimer
 from PySide6.QtGui import QTextOption
@@ -29,7 +29,7 @@ from features.http_pack.task import HttpTask
 
 class AddTaskDialog(MessageBoxBase):
 
-    _instance = None
+    instance: Self = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -48,17 +48,17 @@ class AddTaskDialog(MessageBoxBase):
 
         # TODO For Test
         # self.parseResultGroup.hide()
-        for i in range(5):
-            self.parseResultGroup.addWidget(
-                HttpResultCard(
-                    HttpTask(
-                        title=f"DingTalk-{i}.avi",
-                        fileSize=123456789,
-                        url="https://example.com/DingTalk.exe",
-                    ),
-                    self.parseResultGroup,
-                )
-            )
+        # for i in range(5):
+        #     self.parseResultGroup.addWidget(
+        #         HttpResultCard(
+        #             HttpTask(
+        #                 title=f"DingTalk-{i}.avi",
+        #                 fileSize=123456789,
+        #                 url="https://example.com/DingTalk.exe",
+        #             ),
+        #             self.parseResultGroup,
+        #         )
+        #     )
 
     def initWidget(self):
         self.setObjectName("AddTaskDialog")
@@ -119,21 +119,20 @@ class AddTaskDialog(MessageBoxBase):
             self.parseResultGroup.addWidget(resultCard)
 
     def done(self, code):
-        if code == QDialog.DialogCode.Accepted:
-            for task in self.parseResultGroup.getAllTasks():
-                print(task)
+        if code == QDialog.DialogCode.Rejected:
+            self.urlEdit.clear()
+            self.parseResultGroup.clearResults()
 
-        self.urlEdit.clear()
-        self.parseResultGroup.clearResults()
+        # Accept 情况由 MainWindow 处理
 
         super().done(code)
 
     @classmethod
     def display(cls, payload: dict[str, Any] = None, parent=None):
-        if cls._instance is None:
-            cls._instance = cls(parent)
+        if cls.instance is None:
+            cls.instance = cls(parent)
 
-        cls._instance.exec()
+        return cls.instance.exec()
 
     def eventFilter(self, obj, e: QEvent):
         if obj is self.windowMask:

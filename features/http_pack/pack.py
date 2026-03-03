@@ -2,18 +2,19 @@ import re
 from email.message import Message
 from enum import Enum
 from mimetypes import guess_extension
+from pathlib import Path
 from time import time_ns
 from urllib.parse import unquote, urlparse, parse_qs
 
 from loguru import logger
 
 from app.bases.interfaces import FeaturePack
-from .cards import HttpTaskCard, HttpResultCard
+from app.supports.config import cfg
 
 import niquests
 
 from .const import SpecialFileSize
-from .task import HttpTask
+from .task import HttpTask, HttpTaskStage
 
 
 def _extractFileName(url: str, headers: dict) -> str:
@@ -91,6 +92,7 @@ async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
     headers: dict = payload['headers']
     proxies: dict = payload['proxies']
+    # TODO payload 提供下载路径
 
     requestHeaders = headers.copy()
     requestHeaders["range"] = "bytes=0-"    # 小写好像更好来着?
@@ -133,4 +135,6 @@ async def parse(payload: dict) -> HttpTask:
     fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取
 
     task = HttpTask(title=fileName, url=url, fileSize=fileSize, headers=headers)
+    stage = HttpTaskStage(stageIndex=1, url=url, fileSize=fileSize, headers=headers, proxies=proxies, resolvePath=str(Path(cfg.downloadFolder.value) / fileName), blockNum=task.blockNum)
+    task.stages.append(stage)
     return task

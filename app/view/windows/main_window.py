@@ -1,11 +1,12 @@
 import niquests
 from PySide6.QtGui import QIcon
 from loguru import logger
-from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect
+from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton
 from typing import Optional, Dict, Any
 
+from app.services.core_service import coreService
 from app.supports.config import cfg
 
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt
@@ -15,6 +16,7 @@ from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 from app.view.components.dialogs import ReleaseInfoDialog
+from features.http_pack.cards import HttpTaskCard
 
 
 class CustomSplashScreen(SplashScreen):
@@ -92,7 +94,14 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
     def showAddTaskDialog(self, triggeredByUser: bool = False):
-        AddTaskDialog.display(parent=self)
+        if AddTaskDialog.display(parent=self) == QDialog.DialogCode.Accepted:
+            for task in AddTaskDialog.instance.parseResultGroup.getAllTasks():
+                card = HttpTaskCard(task, self)
+                self.taskPage.addCard(card)
+                card.resumeTask()
+
+            AddTaskDialog.instance.urlEdit.clear()
+            AddTaskDialog.instance.parseResultGroup.clearResults()
 
     def showUpdateToolTip(self, payload: dict):
         infoBar = InfoBar(

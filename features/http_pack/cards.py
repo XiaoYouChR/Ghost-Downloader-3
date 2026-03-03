@@ -4,16 +4,17 @@ from PySide6.QtWidgets import QHBoxLayout, QFileIconProvider, QVBoxLayout, QWidg
 from qfluentwidgets import ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
     TransparentToolButton, ProgressBar, LineEdit, BodyLabel
 
-from app.bases.models import Task
-from app.supports.utils import getReadableSize
+from app.bases.models import Task, TaskStatus
+from app.services.core_service import coreService
+from app.supports.utils import getReadableSize, getReadableTime
 from app.view.components.cards import TaskCard, ResultCard
 from app.view.components.labels import IconBodyLabel
-from features.http_pack.task import HttpTask
+from features.http_pack.task import HttpTask, HttpTaskStage
 
 
 class HttpTaskCard(TaskCard):
     """ Task card """
-    def __init__(self, task: Task, parent=None):
+    def __init__(self, task: HttpTask, parent=None):
         super().__init__(parent)
         self.task = task
         self.setFixedHeight(60)
@@ -26,19 +27,49 @@ class HttpTaskCard(TaskCard):
         self.infoVBoxLayout = QVBoxLayout(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.infoLayout = QHBoxLayout(self)
-        self.speedLabel = IconBodyLabel("0.00MB/s", FluentIcon.SPEED_HIGH, self)
-        self.leftTimeLabel = IconBodyLabel("00:00:00", FluentIcon.STOP_WATCH, self)
-        self.progressLabel = IconBodyLabel("2.22MB/342.12MB", FluentIcon.LIBRARY, self)
-        self.pauseButton = PrimaryToolButton(FluentIcon.PAUSE, self)
+        self.speedLabel = IconBodyLabel("", FluentIcon.SPEED_HIGH, self)
+        self.leftTimeLabel = IconBodyLabel("", FluentIcon.STOP_WATCH, self)
+        self.progressLabel = IconBodyLabel("", FluentIcon.LIBRARY, self)
+        self.toggleRunningStatusButton = PrimaryToolButton(FluentIcon.PAUSE, self)
         self.openFileButton = ToolButton(FluentIcon.LINK, self)
         self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
         self.cancelButton = TransparentToolButton(FluentIcon.CLOSE, self)
+        # TODO 分段进度条
         self.progressBar = ProgressBar(self)
         self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         # init
         self.initLayout()
         # TODO For Test
-        self.progressBar.setValue(24)
+        # self.progressBar.setValue(24)
+
+    def connectSignalToSlot(self):
+        self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
+
+    def toggleRunningStatus(self):
+        if self.task.status == TaskStatus.RUNNING:
+            self.pauseTask()
+        else:
+            self.resumeTask()
+
+    def refresh(self):
+        """通过 self.task 刷新界面"""
+        stage: HttpTaskStage = self.task.stages[0]
+        speed = stage.speed
+        # for stage in self.task.stages:
+        #     progress += stage.progress
+        #     speed += stage.speed
+        self.progressBar.setValue(stage.progress)
+        self.speedLabel.setText(getReadableSize(speed))
+        self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
+        self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - stage.receivedBytes) / speed)))
+
+    def resumeTask(self):
+        coreService.createTask(self.task)
+        self.task.status = TaskStatus.RUNNING
+
+    def pauseTask(self):
+        coreService.stopTask(self.task)
+        self.task.status = TaskStatus.PAUSED
 
     def initLayout(self):
         self.hBoxLayout.addWidget(self.checkBox)
@@ -52,7 +83,7 @@ class HttpTaskCard(TaskCard):
         self.infoVBoxLayout.setContentsMargins(2, 8, 2, 8)
         self.hBoxLayout.addLayout(self.infoVBoxLayout)
         self.hBoxLayout.addStretch()
-        self.hBoxLayout.addWidget(self.pauseButton)
+        self.hBoxLayout.addWidget(self.toggleRunningStatusButton)
         self.hBoxLayout.addWidget(self.openFileButton)
         self.hBoxLayout.addWidget(self.openFolderButton)
         self.hBoxLayout.addWidget(self.cancelButton)

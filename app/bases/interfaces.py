@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 
 from app.bases.models import TaskStage
-from app.view.components.cards import TaskCard
 
 if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
+    from app.view.components.cards import TaskCard
+
 
 
 class Worker:
@@ -14,7 +15,7 @@ class Worker:
 
 class FeaturePack:
 
-    async def parse(self, payload: dict) -> TaskCard:
+    async def parse(self, payload: dict) -> "TaskCard":
         raise NotImplementedError
 
     def load(self, mainWindow: "MainWindow"):
