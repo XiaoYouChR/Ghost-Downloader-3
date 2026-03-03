@@ -96,7 +96,10 @@ async def parse(payload: dict) -> HttpTask:
     requestHeaders["range"] = "bytes=0-"    # 小写好像更好来着?
 
     # TODO verify config
-    response = await niquests.aget(url, headers=requestHeaders, proxies=proxies, verify=False, allow_redirects=True, stream=True)
+    client = niquests.AsyncSession(happy_eyeballs=True)
+    client.trust_env = False
+    response = await client.get(url, headers=requestHeaders, proxies=proxies, verify=False, allow_redirects=True, stream=True)
+    await client.close()
     response.raise_for_status()
 
     head = response.headers

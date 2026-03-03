@@ -1,6 +1,6 @@
 import asyncio
 import os
-from asyncio import TaskGroup
+from asyncio import TaskGroup, CancelledError
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
@@ -24,13 +24,15 @@ class HttpTaskStage(TaskStage):
     resolvePath: str
     blockNum: int
 
+
 @dataclass
 class HttpTask(Task):
     url: str
     fileSize: int
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default=8)    # TODO 下载设置项
+    blockNum: int = field(default=8)  # TODO 下载设置项
+
 
 @dataclass
 class HttpSubworker:
@@ -44,8 +46,7 @@ class HttpWorker(Worker):
         super().__init__(stage)
         self.stage = stage
 
-    async def reassignWorker(self) -> HttpSubworker:
-        ...
+    async def reassignWorker(self) -> HttpSubworker: ...
 
     async def handleSubworker(self, subworker: HttpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
@@ -53,6 +54,7 @@ class HttpWorker(Worker):
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:  # 不支持断点续传
             ...
         else:  # 正常下载
+            print(subworker.start, subworker.progress, subworker.end)
             while subworker.progress < subworker.end:
                 try:
                     requestHeaders = self.stage.headers.copy()
@@ -66,14 +68,16 @@ class HttpWorker(Worker):
                             raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
 
                         async for chunk in await res.iter_raw(chunk_size=65536):
+                            if not chunk:
+                                continue
+                            offset = subworker.progress
+                            pwrite(self.fileHandle, chunk, offset)
+                            # inc = len(chunk)
+                            subworker.progress += 65536
+                            cfg.globalSpeed += 65536
+                            cfg.checkSpeedLimitation()
                             if subworker.progress >= subworker.end:
                                 break
-                            if chunk:
-                                offset = subworker.progress
-                                pwrite(self.fileHandle, chunk, offset)
-                                subworker.progress += 65536
-                                cfg.globalSpeed += 65536
-                                cfg.checkSpeedLimitation()
                     except Exception as e:
                         raise e
                     finally:
@@ -94,6 +98,7 @@ class HttpWorker(Worker):
             lastProgress = sum(subworker.progress - subworker.start for subworker in self.subworkers)
             while True:
                 data = tuple(val for subworker in self.subworkers for val in (subworker.start, subworker.progress, subworker.end))
+                recordFileHandle.seek(0)
                 recordFileHandle.write(pack("<" + "Q" * len(data), *data))
                 recordFileHandle.flush()
                 recordFileHandle.truncate()
@@ -104,6 +109,10 @@ class HttpWorker(Worker):
                 print(speed)
 
                 await asyncio.sleep(1)
+        except CancelledError:
+            logger.info(f"{self.stage.resolvePath} 停止下载")
+        except Exception as e:
+            logger.error(f"{self.stage.resolvePath} 出现异常: {e}")
         finally:
             recordFileHandle.close()
 
@@ -138,13 +147,26 @@ class HttpWorker(Worker):
         self.subworkers.append(HttpSubworker(start, start, self.stage.fileSize - 1)) # Http 请求是以 0 开头的
 
     async def run(self):
-        self.fileHandle = os.open(self.stage.resolvePath, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o666)
+        # prepare async components
         self.taskGroup = TaskGroup()
         self.subworkers: list = []
         self.client = niquests.AsyncSession(happy_eyeballs=True)
+        self.client.trust_env = False
 
-        if not self.restoreProgress():
+        restored = self.restoreProgress()
+        if not restored:
+            print("正在生成下载任务")
             self.generateSubworkers()
+        else:
+            print("从文件恢复下载进度")
+
+        self.fileHandle = os.open(self.stage.resolvePath, os.O_RDWR | os.O_CREAT, 0o666)
+
+        if not restored:
+            try:
+                os.ftruncate(self.fileHandle, self.stage.fileSize)
+            except Exception as e:
+                print(repr(e))
 
         supervisor = asyncio.create_task(self.supervisor())
 
@@ -157,6 +179,6 @@ class HttpWorker(Worker):
         except Exception as e:
             logger.error(f"{self.stage.resolvePath} 错误: {repr(e)}")
         finally:
-            supervisor.cancel()
-            await supervisor
+            if not supervisor.cancel():
+                await supervisor
             os.close(self.fileHandle)
