@@ -6,7 +6,8 @@ from qfluentwidgets import ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolB
 
 from app.bases.models import TaskStatus
 from app.services.core_service import coreService
-from app.supports.utils import getReadableSize, getReadableTime
+from app.supports.recorder import taskRecorder
+from app.supports.utils import getReadableSize, getReadableTime, openFile
 from app.view.components.cards import TaskCard, ResultCard
 from app.view.components.labels import IconBodyLabel
 from features.http_pack.task import HttpTask, HttpTaskStage
@@ -41,11 +42,11 @@ class HttpTaskCard(TaskCard):
         # init
         self.initLayout()
         self.connectSignalToSlot()
-        # TODO For Test
-        # self.progressBar.setValue(24)
 
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
+        self.openFileButton.clicked.connect(lambda: (openFile(self.task.path / self.task.title)))
+        self.openFolderButton.clicked.connect(lambda: (openFile(self.task.path)))
 
     def toggleRunningStatus(self):
         print("toggleRunningStatus", self.task.status)
@@ -73,14 +74,22 @@ class HttpTaskCard(TaskCard):
             self.taskStatus = TaskStatus.COMPLETED
 
     def resumeTask(self):
+        self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
+        self.toggleRunningStatusButton.setDisabled(True)
         coreService.createTask(self.task)
         self.task.status = TaskStatus.RUNNING
         self.taskStatus = TaskStatus.RUNNING
+        taskRecorder.flush()
+        self.toggleRunningStatusButton.setEnabled(True)
 
     def pauseTask(self):
+        self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
+        self.toggleRunningStatusButton.setDisabled(True)
         coreService.stopTask(self.task)
         self.task.status = TaskStatus.PAUSED
         self.taskStatus = TaskStatus.PAUSED
+        taskRecorder.flush()
+        self.toggleRunningStatusButton.setEnabled(True)
 
     def initLayout(self):
         self.hBoxLayout.addWidget(self.checkBox)

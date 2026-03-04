@@ -202,7 +202,7 @@ def retry(
     return decorator
 
 
-def openFile(fileResolve):
+def openFile(fileResolve: "str | bytes | os.PathLike[str]"):
     """
     打开文件
 

@@ -7,6 +7,7 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
     PushButton, PrimaryPushButton
 
 from app.supports.config import cfg
+from app.supports.recorder import taskRecorder
 from app.supports.utils import getProxies
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.dialogs import ReleaseInfoDialog
@@ -92,9 +93,12 @@ class MainWindow(MSFluentWindow):
     def showAddTaskDialog(self, triggeredByUser: bool = False):
         if AddTaskDialog.display(parent=self) == QDialog.DialogCode.Accepted:
             for task in AddTaskDialog.instance.parseResultGroup.getAllTasks():
+                taskRecorder.add(task, False)
                 card = HttpTaskCard(task, self)
                 self.taskPage.addCard(card)
                 card.resumeTask()
+
+            taskRecorder.flush()
 
             AddTaskDialog.instance.urlEdit.clear()
             AddTaskDialog.instance.parseResultGroup.clearResults()

@@ -6,8 +6,11 @@ from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton
     CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
     DropDownToolButton
 
+from app.bases.models import TaskStatus
+from app.supports.recorder import taskRecorder
 from app.view.components.cards import TaskCard
 from app.view.components.labels import IconBodyLabel
+from features.http_pack.cards import HttpTaskCard
 
 
 class TaskCommandBarView(CommandBarView):
@@ -88,6 +91,8 @@ class TaskPage(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.cards = []
+
         self.container = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self)
         self.viewLayout = QVBoxLayout(self.container)
@@ -118,9 +123,7 @@ class TaskPage(ScrollArea):
 
         self.initWidget()
         self.initLayout()
-
-        # TODO create for test
-        self.cards = []
+        self.resumeMemorizedTasks()
 
         self.timeSortAction.setChecked(True)
         self.reverseSortAction.setChecked(True)
@@ -130,8 +133,14 @@ class TaskPage(ScrollArea):
         self.refreshTimer.timeout.connect(self.refreshTaskCards)
         self.refreshTimer.start()
 
+    def resumeMemorizedTasks(self):
+        for task in taskRecorder.memorizedTasks.values():
+            card = HttpTaskCard(task, self)
+            if task.status == TaskStatus.RUNNING:
+                card.resumeTask()
+            self.addCard(card)
+
     def refreshTaskCards(self):
-        print("refresh")
         for card in self.cards:
             card.refresh()
 

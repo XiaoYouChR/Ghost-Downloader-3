@@ -161,4 +161,3 @@ class TaskCard(CardWidget):
             painter.drawRoundedRect(self.rect().adjusted(2, 2, -2, -2), r, r)
 
         return super().paintEvent(e)
-
