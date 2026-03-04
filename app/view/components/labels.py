@@ -1,7 +1,6 @@
 import typing
 
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtGui import QPainter
 from qfluentwidgets import BodyLabel
 
 if typing.TYPE_CHECKING:

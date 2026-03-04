@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+from json import dumps, loads
 from re import compile
 from time import sleep
 
@@ -17,7 +18,6 @@ from qfluentwidgets import (
     ConfigSerializer,
     FolderListValidator,
 )
-from json import dumps, loads
 
 DEFAULT_HEADERS = {
     "accept-encoding": "deflate, br, gzip",

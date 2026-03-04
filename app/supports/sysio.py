@@ -1,5 +1,5 @@
-from sys import platform
 import typing
+from sys import platform
 
 if platform == "win32":
     import msvcrt
@@ -72,4 +72,5 @@ if platform == "win32":
         return written.value
 
 else:
+    # noinspection PyUnresolvedReferences
     from os import pwrite

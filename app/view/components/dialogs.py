@@ -1,16 +1,15 @@
-from datetime import datetime
 from typing import Dict, Any, List
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QScrollArea, QWidget, QSizePolicy, QAbstractItemView, \
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QAbstractItemView, \
     QHeaderView, QTableWidgetItem
 from qfluentwidgets import (
     MessageBoxBase, SubtitleLabel, BodyLabel, CheckBox,
-    PrimaryPushButton, PushButton, CaptionLabel, FluentIcon, TextEdit, TableWidget, PrimaryToolButton, ToolButton
+    CaptionLabel, FluentIcon, TextEdit, TableWidget, PrimaryToolButton, ToolButton
 )
 
-from app.supports.config import cfg, AUTHOR_URL
+from app.supports.config import AUTHOR_URL
 from app.supports.utils import getLocalTimeFromGithubApiTime, getReadableSize
 
 

@@ -1,16 +1,13 @@
-from PySide6.QtCore import Qt, Signal, QSize, QTimeZone, QTimer
-from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy, \
-    QGraphicsDropShadowEffect
-from qfluentwidgets import ScrollArea, FlowLayout, setFont, TitleLabel, PrimaryPushButton, FluentIcon, PushButton, \
-    SearchLineEdit, DropDownPushButton, ToolButton, ToggleButton, ToggleToolButton, ToolTipFilter, RoundMenu, Action, \
-    CommandBarView, isDarkTheme, SimpleCardWidget, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
+from PySide6.QtCore import Qt, QSize, QTimer
+from PySide6.QtGui import QPainter, QColor
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect
+from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton, \
+    SearchLineEdit, ToolButton, ToggleToolButton, ToolTipFilter, Action, \
+    CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
     DropDownToolButton
 
-from app.view.components.labels import IconBodyLabel
 from app.view.components.cards import TaskCard
-from features.http_pack.cards import HttpTaskCard
-from app.bases.models import Task
+from app.view.components.labels import IconBodyLabel
 
 
 class TaskCommandBarView(CommandBarView):

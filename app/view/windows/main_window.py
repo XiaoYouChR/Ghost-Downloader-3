@@ -1,21 +1,17 @@
 import niquests
+from PySide6.QtCore import QRect, QPropertyAnimation, Qt
 from PySide6.QtGui import QIcon
-from loguru import logger
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
+from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton
-from typing import Optional, Dict, Any
 
-from app.services.core_service import coreService
 from app.supports.config import cfg
-
-from PySide6.QtCore import QRect, QPropertyAnimation, Qt
-
 from app.supports.utils import getProxies
 from app.view.components.add_task_dialog import AddTaskDialog
+from app.view.components.dialogs import ReleaseInfoDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
-from app.view.components.dialogs import ReleaseInfoDialog
 from features.http_pack.cards import HttpTaskCard
 
 

@@ -1,7 +1,7 @@
 import sys
 import traceback
 
-from PySide6.QtCore import QSharedMemory, Qt, QEvent
+from PySide6.QtCore import QSharedMemory, QEvent
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 

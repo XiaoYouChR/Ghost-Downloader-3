@@ -1,18 +1,14 @@
 import re
 from email.message import Message
-from enum import Enum
 from mimetypes import guess_extension
 from pathlib import Path
 from time import time_ns
 from urllib.parse import unquote, urlparse, parse_qs
 
+import niquests
 from loguru import logger
 
-from app.bases.interfaces import FeaturePack
 from app.supports.config import cfg
-
-import niquests
-
 from .const import SpecialFileSize
 from .task import HttpTask, HttpTaskStage
 

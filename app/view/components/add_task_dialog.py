@@ -10,19 +10,17 @@ from qfluentwidgets import (
     LineEdit,
     Action,
     FluentIcon,
-    GroupHeaderCardWidget,
     PlainTextEdit,
 )
 
 from app.bases.models import Task
 from app.services.core_service import coreService
-from app.supports.config import cfg, DEFAULT_HEADERS
+from app.supports.config import DEFAULT_HEADERS
 from app.supports.utils import getProxies
 from app.view.components.card_widgets import (
     ParseResultHeaderCardWidget,
     SettingHeaderCardWidget,
 )
-from app.view.components.cards import ResultCard
 from features.http_pack.cards import HttpResultCard
 from features.http_pack.task import HttpTask
 

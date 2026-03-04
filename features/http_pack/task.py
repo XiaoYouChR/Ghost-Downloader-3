@@ -11,9 +11,10 @@ from loguru import logger
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.sysio import pwrite
 from app.supports.utils import getProxies, getReadableSize
 from features.http_pack.const import SpecialFileSize
-from app.supports.sysio import pwrite
+
 
 @dataclass
 class HttpTaskStage(TaskStage):
@@ -119,7 +120,7 @@ class HttpWorker(Worker):
                 receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
                 self.stage.speed = receivedBytes - self.stage.receiveBytes
                 print(self.stage.speed)
-                self.stage.receiveBytes = receivedBytes
+                self.stage.receivedBytes = receivedBytes
                 self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
                 print(getReadableSize(self.stage.speed))
 

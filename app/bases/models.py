@@ -1,10 +1,9 @@
-from enum import Enum, auto, IntEnum
 from dataclasses import dataclass, field
+from enum import auto, IntEnum
 from pathlib import Path
 from time import time_ns
-from typing import Any, Optional, Self
+from typing import Any, Self
 from uuid import uuid4
-import time
 
 from app.supports.config import cfg
 

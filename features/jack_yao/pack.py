@@ -1,25 +1,23 @@
 import sys
 from base64 import b64decode
+from typing import TYPE_CHECKING
 
 import niquests
 import orjson
-from PySide6.QtCore import QThread, Signal, Qt, QSize, QUrl
+from PySide6.QtCore import Signal, Qt, QSize, QUrl
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
 from loguru import logger
-
-from app.bases.interfaces import FeaturePack
-from typing import TYPE_CHECKING
-
-from app.services.core_service import coreService
-from app.supports.config import cfg
-from app.supports.utils import getProxies
-
-from qfluentwidgets import IndeterminateProgressRing, MaskDialogBase, \
+from qfluentwidgets import MaskDialogBase, \
     FluentStyleSheet, SettingCardGroup, OptionsConfigItem, OptionsValidator, ComboBoxSettingCard, FluentIcon, \
     PlainTextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, RangeValidator, PrimaryPushButton, PushButton, \
     PixmapLabel, TitleLabel, BodyLabel, PrimarySplitPushButton, SimpleCardWidget, RoundMenu, Action, IconWidget, \
     CaptionLabel, isDarkTheme
+
+from app.bases.interfaces import FeaturePack
+from app.services.core_service import coreService
+from app.supports.config import cfg
+from app.supports.utils import getProxies
 
 if sys.platform != "darwin":
     from qfluentwidgets import SmoothScrollArea as ScrollArea

@@ -1,8 +1,8 @@
-from time import sleep
 import os
 import sys
 from datetime import datetime
 from functools import wraps
+from time import sleep
 from typing import Callable
 
 from PySide6.QtCore import QUrl, QOperatingSystemVersion
@@ -11,8 +11,7 @@ from loguru import logger
 from qfluentwidgets import MessageBox, setThemeColor
 from qframelesswindow.utils import getSystemAccentColor
 
-from app.supports.config import cfg, DEFAULT_HEADERS
-from app.supports.signal_bus import signalBus
+from app.supports.config import cfg
 
 
 def setAppColor(color: QColor | None = None):

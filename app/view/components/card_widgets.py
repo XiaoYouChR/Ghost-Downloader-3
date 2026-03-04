@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from qfluentwidgets import ScrollArea, setFont, isDarkTheme, CardGroupWidget
+from qfluentwidgets import ScrollArea, setFont, isDarkTheme
 
 from app.bases.models import Task
 from app.view.components.cards import ResultCard, GroupSettingCard

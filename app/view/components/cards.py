@@ -1,14 +1,11 @@
-from pathlib import Path
-
-from PySide6.QtCore import Qt, QEvent, QFileInfo, Signal
-from PySide6.QtGui import QMouseEvent, QColor, QPainter, QPen
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider
-from qfluentwidgets import ImageLabel, StrongBodyLabel, LineEdit, BodyLabel, isDarkTheme, CardWidget, CheckBox, \
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import QWidget, QHBoxLayout
+from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget
 
 from app.bases.models import Task
 from app.services.core_service import coreService
-from app.supports.utils import getReadableSize
 from app.view.components.dialogs import DeleteTaskDialog
 
 
@@ -82,7 +79,8 @@ class GroupSettingCard(QWidget):
 class TaskCard(CardWidget):
     """ Task card base class """
 
-    deleted = Signal()   # TODO Send Task ID, or lambda function?
+    deleted = Signal()  # TODO Send Task ID, or lambda function?
+    finished = Signal() # TODO 更改记录文件?
     checkedChanged = Signal(bool)
 
     def __init__(self, task: Task, parent=None):

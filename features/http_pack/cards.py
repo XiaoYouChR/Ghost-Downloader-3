@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QHBoxLayout, QFileIconProvider, QVBoxLayout, QWidg
 from qfluentwidgets import ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
     TransparentToolButton, ProgressBar, LineEdit, BodyLabel
 
-from app.bases.models import Task, TaskStatus
+from app.bases.models import TaskStatus
 from app.services.core_service import coreService
 from app.supports.utils import getReadableSize, getReadableTime
 from app.view.components.cards import TaskCard, ResultCard
@@ -18,6 +18,7 @@ class HttpTaskCard(TaskCard):
         super().__init__(parent)
         self.task = task
         self.setFixedHeight(60)
+        self.taskStatus = TaskStatus.WAITING
 
         self.hBoxLayout = QHBoxLayout(self)
         self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo("C:/Users/XiaoYouChR/Videos/Captures/反恐精英：全球攻势 2025-11-09 12-51-21.mp4")).pixmap(48, 48), self)
@@ -39,6 +40,7 @@ class HttpTaskCard(TaskCard):
         self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         # init
         self.initLayout()
+        self.connectSignalToSlot()
         # TODO For Test
         # self.progressBar.setValue(24)
 
@@ -46,6 +48,7 @@ class HttpTaskCard(TaskCard):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
 
     def toggleRunningStatus(self):
+        print("toggleRunningStatus", self.task.status)
         if self.task.status == TaskStatus.RUNNING:
             self.pauseTask()
         else:
@@ -54,22 +57,30 @@ class HttpTaskCard(TaskCard):
     def refresh(self):
         """通过 self.task 刷新界面"""
         stage: HttpTaskStage = self.task.stages[0]
-        speed = stage.speed
-        # for stage in self.task.stages:
-        #     progress += stage.progress
-        #     speed += stage.speed
-        self.progressBar.setValue(stage.progress)
-        self.speedLabel.setText(getReadableSize(speed))
-        self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
-        self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - stage.receivedBytes) / speed)))
+        if stage.status == TaskStatus.RUNNING:
+            speed = stage.speed
+            # for stage in self.task.stages:
+            #     progress += stage.progress
+            #     speed += stage.speed
+            self.progressBar.setValue(stage.progress)
+            self.speedLabel.setText(getReadableSize(speed))
+            self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
+            self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - stage.receivedBytes) / speed)))
+        elif stage.status == TaskStatus.COMPLETED and self.taskStatus != TaskStatus.COMPLETED:
+            self.progressBar.setValue(100)
+            self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
+            self.leftTimeLabel.setText("完成")
+            self.taskStatus = TaskStatus.COMPLETED
 
     def resumeTask(self):
         coreService.createTask(self.task)
         self.task.status = TaskStatus.RUNNING
+        self.taskStatus = TaskStatus.RUNNING
 
     def pauseTask(self):
         coreService.stopTask(self.task)
         self.task.status = TaskStatus.PAUSED
+        self.taskStatus = TaskStatus.PAUSED
 
     def initLayout(self):
         self.hBoxLayout.addWidget(self.checkBox)
