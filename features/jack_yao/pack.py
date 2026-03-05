@@ -40,11 +40,14 @@ async def run():
     #     self.json = json.loads(f.read())["OS"]
     #     f.close()
     _ = getProxies()
-    result = await niquests.aget(
+    client = niquests.AsyncSession(happy_eyeballs=True)
+    client.trust_env = False
+    result = await client.get(
         url="https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc",
         headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
         proxies=_, allow_redirects=True)
+    await client.close()
     return orjson.loads(result.text)["OS"]
 
 
