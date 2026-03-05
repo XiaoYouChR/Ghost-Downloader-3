@@ -68,8 +68,10 @@ class HttpTaskCard(TaskCard):
             self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
             self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - stage.receivedBytes) / speed)))
         elif stage.status == TaskStatus.COMPLETED and self.taskStatus != TaskStatus.COMPLETED:
+            self.onTaskFinished()
+
+    def onTaskFinished(self):
             self.progressBar.setValue(100)
-            self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
             self.leftTimeLabel.setText("完成")
             self.taskStatus = TaskStatus.COMPLETED
 

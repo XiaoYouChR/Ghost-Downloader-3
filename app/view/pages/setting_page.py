@@ -6,6 +6,7 @@ from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, Switc
 
 from app.supports.config import cfg
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
+from features.http_pack.config import httpConfig
 
 if sys.platform != "darwin":
     from qfluentwidgets import SmoothScrollArea as ScrollArea
@@ -21,11 +22,15 @@ class SettingPage(ScrollArea):
         # Initialize
         self.container = QWidget()
         self.vBoxLayout = QVBoxLayout(self.container)
+        self.generalDownloadGroup = SettingCardGroup(self.tr("综合下载设置"), self.container)
 
         self.initWidget()
         self.initCards()
         self.initLayout()
         self.connectSignalToSlot()
+
+        # TODO Through Feature Service to load setting cards
+        httpConfig.loadSettingCards(self)
 
     def initWidget(self):
         self.setWidget(self.container)
@@ -36,7 +41,6 @@ class SettingPage(ScrollArea):
 
     def initCards(self):
         # General Download
-        self.generalDownloadGroup = SettingCardGroup(self.tr("综合下载设置"), self.container)
         self.maxTaskNumCard = RangeSettingCard(
             cfg.maxTaskNum,
             FluentIcon.TRAIN,

@@ -1,15 +1,20 @@
 from dataclasses import asdict, dataclass, field, is_dataclass
 
-from typing import ClassVar, Dict, Type, Any
+from typing import ClassVar, Dict, Type, Any, TYPE_CHECKING, Iterable
 from enum import auto, IntEnum
 from pathlib import Path
 from time import time_ns
 from uuid import uuid4
 
+from PySide6.QtCore import QCoreApplication
 from orjson import loads, dumps
+from qfluentwidgets import SettingCard
 
-from app.supports.config import cfg
+from app.supports.config import cfg, ConfigItem
 
+if TYPE_CHECKING:
+    from app.view.pages.setting_page import SettingPage
+    from PySide6.QtWidgets import QWidget
 
 def _toSerializable(obj: Any) -> Any:
     if isinstance(obj, TaskStatus):
@@ -139,3 +144,25 @@ class Task:
 
     def __hash__(self):
         return hash(self.taskId)
+
+class PackConfig:
+    def __init_subclass__(cls, **kwargs):
+        """将子类的所有 ConfigItem 成员添加到 cfg 中，并使用 cfg.load 重新加载配置文件"""
+        super().__init_subclass__(**kwargs)
+
+        for attr_name, attr_value in cls.__dict__.items():
+            if isinstance(attr_value, ConfigItem):
+                setattr(cfg.__class__, attr_name, attr_value)
+
+        cfg.load()
+
+    def loadSettingCards(self, settingPage: "SettingPage"):
+        """加载设置界面上的设置卡片，子类可重写此方法以添加自定义的设置卡片"""
+        raise NotImplementedError
+
+    def getDialogCards(self, parent: "QWidget") -> Iterable["SettingCard"]:
+        """在解析时往解析窗口加入设置卡片"""
+        raise NotImplementedError
+
+    def tr(self, text: str) -> str:
+        return QCoreApplication.translate(self.__class__.__name__, text)
