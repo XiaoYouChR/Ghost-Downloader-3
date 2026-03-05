@@ -13,6 +13,7 @@ from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.sysio import pwrite
 from app.supports.utils import getProxies, getReadableSize
+from features.http_pack.config import httpConfig
 from features.http_pack.const import SpecialFileSize
 
 
@@ -25,6 +26,7 @@ class HttpTaskStage(TaskStage):
     resolvePath: str
     blockNum: int
     receivedBytes: int = field(default=0)
+    accelerated: bool = field(default=False)
 
 
 @dataclass
@@ -59,8 +61,20 @@ class HttpWorker(Worker):
     def __init__(self, stage: HttpTaskStage):
         super().__init__(stage)
         self.stage = stage
+        self.speedHistory = []
+        self.accelCheckTime = 0
 
-    async def reassignWorker(self) -> HttpSubworker: ...
+    def reassignSubworker(self):
+        slowestSubworker = max(self.subworkers, key=lambda subworker: subworker.end - subworker.progress)
+        remainingBytes = slowestSubworker.end - slowestSubworker.progress
+        if remainingBytes < httpConfig.maxReassignSize.value * 1048576:
+            return
+        base = remainingBytes // 2
+        remainder = remainingBytes % 2
+        slowestSubworker.end = slowestSubworker.progress + base + remainder
+        newSubworker = HttpSubworker(slowestSubworker.end + 1, slowestSubworker.end + 1, slowestSubworker.end + base)
+        self.subworkers.insert(self.subworkers.index(slowestSubworker) + 1, newSubworker)
+        self.taskGroup.create_task(self.handleSubworker(newSubworker))
 
     async def handleSubworker(self, subworker: HttpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
@@ -104,7 +118,54 @@ class HttpWorker(Worker):
                     logger.error(f"{self.stage.resolvePath}. {subworker} is reconnecting to the server, Error: {repr(e)}")
                     await asyncio.sleep(5)
 
-            await self.reassignWorker()
+            self.reassignSubworker()
+
+    def checkIfAutoAcceleration(self):
+        if self.stage.accelerated or not httpConfig.autoSpeedUp.value:
+            return
+
+        self.speedHistory.append(self.stage.speed)
+        if len(self.speedHistory) > 5:
+            self.speedHistory.pop(0)
+        if len(self.speedHistory) < 5:
+            return
+
+        avgSpeed = sum(self.speedHistory) / len(self.speedHistory)
+        if avgSpeed == 0:
+            return
+
+        maxDeviation = max(abs(speed - avgSpeed) / avgSpeed for speed in self.speedHistory)
+        if maxDeviation > 0.15:
+            return
+
+        if self.accelCheckTime == 0:
+            self.accelInitialWorkers = len(self.subworkers)
+            self.accelInitialSpeed = avgSpeed
+            self.accelCheckTime = asyncio.get_event_loop().time()
+
+            for _ in range(4):
+                self.reassignSubworker()
+        else:
+            elapsedTime = asyncio.get_event_loop().time() - self.accelCheckTime
+            if elapsedTime <= 5:
+                return
+
+            currentWorkers = len(self.subworkers)
+            workerIncreaseRatio = ((currentWorkers - self.accelInitialWorkers) / self.accelInitialWorkers)
+            speedIncreaseRatio = ((avgSpeed - self.accelInitialSpeed) / self.accelInitialSpeed)
+
+            if speedIncreaseRatio < 0.8 * workerIncreaseRatio:
+                self.stage.accelerated = True
+                logger.info(
+                    f"自动加速已禁用，subworker 增加比: {workerIncreaseRatio:.2%}, "
+                    f"速度提升比: {speedIncreaseRatio:.2%}"
+                )
+            else:
+                self.accelCheckTime = 0
+                logger.info(
+                    f"继续自动加速，subworker 增加比: {workerIncreaseRatio:.2%}, "
+                    f"速度提升比: {speedIncreaseRatio:.2%}"
+                )
 
     async def supervisor(self):
         recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
@@ -119,10 +180,11 @@ class HttpWorker(Worker):
 
                 receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
                 self.stage.speed = receivedBytes - self.stage.receiveBytes
-                print(self.stage.speed)
                 self.stage.receivedBytes = receivedBytes
                 self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
                 print(getReadableSize(self.stage.speed))
+
+                self.checkIfAutoAcceleration()
 
                 await asyncio.sleep(1)
         except CancelledError:
@@ -165,7 +227,7 @@ class HttpWorker(Worker):
     async def run(self):
         # prepare async components
         self.taskGroup = TaskGroup()
-        self.subworkers: list = []
+        self.subworkers: list[HttpSubworker] = []
         self.client = niquests.AsyncSession(happy_eyeballs=True)
         self.client.trust_env = False
 
