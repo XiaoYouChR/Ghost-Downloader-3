@@ -1,16 +1,17 @@
 from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QPainter, QColor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect
+from loguru import logger
 from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton, \
     SearchLineEdit, ToolButton, ToggleToolButton, ToolTipFilter, Action, \
     CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
     DropDownToolButton
 
+from app.services.feature_service import featureService
 from app.bases.models import TaskStatus
 from app.supports.recorder import taskRecorder
 from app.view.components.cards import TaskCard
 from app.view.components.labels import IconBodyLabel
-from features.http_pack.cards import HttpTaskCard
 
 
 class TaskCommandBarView(CommandBarView):
@@ -123,7 +124,6 @@ class TaskPage(ScrollArea):
 
         self.initWidget()
         self.initLayout()
-        self.resumeMemorizedTasks()
 
         self.timeSortAction.setChecked(True)
         self.reverseSortAction.setChecked(True)
@@ -135,7 +135,12 @@ class TaskPage(ScrollArea):
 
     def resumeMemorizedTasks(self):
         for task in taskRecorder.memorizedTasks.values():
-            card = HttpTaskCard(task, self)
+            try:
+                card = featureService.createTaskCard(task, self)
+            except Exception as e:
+                logger.error(f"无法恢复任务卡片 {task.taskId}: {repr(e)}")
+                continue
+
             if task.status == TaskStatus.RUNNING:
                 card.resumeTask()
             self.addCard(card)

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication
 from loguru import logger
 
 from app.bases.models import Task
-from features.http_pack.pack import parse
+from app.services.feature_service import featureService
 
 
 class CoreService(QThread):
@@ -91,9 +91,7 @@ class CoreService(QThread):
             if not url:
                 raise ValueError("URL 不能为空")
 
-            parseFunction = parse
-
-            result = await parseFunction(payload)
+            result = await featureService.parse(payload)
 
             if callbackId and callbackId in self._pendingCallbacks:
                 callback = self._pendingCallbacks.pop(callbackId)

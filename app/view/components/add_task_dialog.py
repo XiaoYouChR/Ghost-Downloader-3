@@ -15,14 +15,13 @@ from qfluentwidgets import (
 
 from app.bases.models import Task
 from app.services.core_service import coreService
+from app.services.feature_service import featureService
 from app.supports.config import DEFAULT_HEADERS
 from app.supports.utils import getProxies
 from app.view.components.card_widgets import (
     ParseResultHeaderCardWidget,
     SettingHeaderCardWidget,
 )
-from features.http_pack.cards import HttpResultCard
-from features.http_pack.task import HttpTask
 
 
 class AddTaskDialog(MessageBoxBase):
@@ -71,6 +70,8 @@ class AddTaskDialog(MessageBoxBase):
         self.settingGroup.addGroup(
             FluentIcon.DOWNLOAD, self.tr("选择下载路径"), self.pathEdit, 2
         )
+        for card in featureService.getDialogCards(self.settingGroup):
+            self.settingGroup.addWidget(card)
 
     def initLayout(self):
         self.viewLayout.addWidget(self.titleLabel)
@@ -101,7 +102,7 @@ class AddTaskDialog(MessageBoxBase):
                 except Exception as e:
                     logger.error(f"提交解析请求失败: {repr(e)}")
 
-    def _handleParseResult(self, resultTask: HttpTask, error: str = None):
+    def _handleParseResult(self, resultTask: Task, error: str = None):
         """处理 URL 解析结果的回调函数
 
         Args:
@@ -112,9 +113,12 @@ class AddTaskDialog(MessageBoxBase):
             logger.error(error)
             return
 
-        if Task:
-            resultCard = HttpResultCard(resultTask, self.parseResultGroup)
-            self.parseResultGroup.addWidget(resultCard)
+        if resultTask:
+            try:
+                resultCard = featureService.createResultCard(resultTask, self.parseResultGroup)
+                self.parseResultGroup.addWidget(resultCard)
+            except Exception as e:
+                logger.error(f"无法创建解析结果卡片: {repr(e)}")
 
     def done(self, code):
         if code == QDialog.DialogCode.Rejected:

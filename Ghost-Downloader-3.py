@@ -30,6 +30,7 @@ import warnings
 
 from app.supports.config import VERSION
 from app.view.windows.main_window import MainWindow
+from app.supports.recorder import taskRecorder
 # noinspection PyUnresolvedReferences
 import app.assets.resources
 
@@ -37,8 +38,13 @@ logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotati
 logger.info(f"Ghost Downloader v{VERSION} is Launched at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}")
 warnings.warn = logger.warning
 
+isSilently = "silent" in sys.argv
 coreService.start()
-mainWindow = MainWindow(silent = "silent" in sys.argv)
+mainWindow = MainWindow(isSilently)
 featureService.loadFeatures(mainWindow)
+taskRecorder.load()
+mainWindow.taskPage.resumeMemorizedTasks()
+if not isSilently:
+    mainWindow.splashScreen.finish()
 
 sys.exit(application.exec())

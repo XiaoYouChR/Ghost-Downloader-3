@@ -6,6 +6,7 @@ from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton
 
+from app.services.feature_service import featureService
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
 from app.supports.utils import getProxies
@@ -13,7 +14,6 @@ from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.dialogs import ReleaseInfoDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
-from features.http_pack.cards import HttpTaskCard
 
 
 class CustomSplashScreen(SplashScreen):
@@ -32,18 +32,15 @@ class CustomSplashScreen(SplashScreen):
 
 
 class MainWindow(MSFluentWindow):
-    def __init__(self, silent = False):
+    def __init__(self, isSilently = False):
         super().__init__(parent = None)
 
         self.initWindow()
-        if not silent:
+        if not isSilently:
             self.initSplashScreen()
         self.initPagesAndNavigation()
 
         QApplication.processEvents()
-
-        if not silent:
-            self.splashScreen.finish()
 
         # TODO show update tooltip for Test
         self.showUpdateToolTip({"version": "0.0.1", "content": "This is a test tooltip."})
@@ -93,10 +90,13 @@ class MainWindow(MSFluentWindow):
     def showAddTaskDialog(self, triggeredByUser: bool = False):
         if AddTaskDialog.display(parent=self) == QDialog.DialogCode.Accepted:
             for task in AddTaskDialog.instance.parseResultGroup.getAllTasks():
-                taskRecorder.add(task, False)
-                card = HttpTaskCard(task, self)
-                self.taskPage.addCard(card)
-                card.resumeTask()
+                try:
+                    card = featureService.createTaskCard(task, self)
+                    taskRecorder.add(task, False)
+                    self.taskPage.addCard(card)
+                    card.resumeTask()
+                except Exception as e:
+                    logger.error(f"无法创建任务卡片: {repr(e)}")
 
             taskRecorder.flush()
 

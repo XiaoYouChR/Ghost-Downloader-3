@@ -8,7 +8,11 @@ from urllib.parse import unquote, urlparse, parse_qs
 import niquests
 from loguru import logger
 
+from app.bases.interfaces import FeaturePack
+from app.bases.models import Task
 from app.supports.config import cfg
+from .cards import HttpTaskCard, HttpResultCard
+from .config import httpConfig
 from .const import SpecialFileSize
 from .task import HttpTask, HttpTaskStage
 
@@ -88,6 +92,7 @@ async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
     headers: dict = payload['headers']
     proxies: dict = payload['proxies']
+    blockNum = payload.get("blockNum", httpConfig.preBlockNum.value)
     # TODO payload 提供下载路径
 
     requestHeaders = headers.copy()
@@ -130,7 +135,44 @@ async def parse(payload: dict) -> HttpTask:
     # 获取文件名
     fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取
 
-    task = HttpTask(title=fileName, url=url, fileSize=fileSize, headers=headers)
-    stage = HttpTaskStage(stageIndex=1, url=url, fileSize=fileSize, headers=headers, proxies=proxies, resolvePath=str(Path(cfg.downloadFolder.value) / fileName), blockNum=task.blockNum)
+    task = HttpTask(
+        title=fileName,
+        url=url,
+        fileSize=fileSize,
+        headers=headers,
+        proxies=proxies,
+        blockNum=blockNum,
+    )
+    stage = HttpTaskStage(
+        stageIndex=1,
+        url=url,
+        fileSize=fileSize,
+        headers=headers,
+        proxies=proxies,
+        resolvePath=str(Path(cfg.downloadFolder.value) / fileName),
+        blockNum=blockNum,
+    )
     task.stages.append(stage)
     return task
+
+
+class HttpPack(FeaturePack):
+    priority = 100
+    taskType = HttpTask
+    config = httpConfig
+
+    def canHandle(self, url: str) -> bool:
+        return urlparse(url).scheme.lower() in {"http", "https"}
+
+    async def parse(self, payload: dict) -> Task:
+        return await parse(payload)
+
+    def createTaskCard(self, task: Task, parent=None):
+        if isinstance(task, HttpTask):
+            return HttpTaskCard(task, parent)
+        return None
+
+    def createResultCard(self, task: Task, parent=None):
+        if isinstance(task, HttpTask):
+            return HttpResultCard(task, parent)
+        return None

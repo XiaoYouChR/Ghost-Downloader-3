@@ -18,7 +18,10 @@ class TaskRecorder:
 
         self.fileHandle = open(recordFile, "a+", encoding="utf-8")
         self.fileHandle.seek(0)
-        self.memorizedTasks: dict[str, Task] = self.read()
+        self.memorizedTasks: dict[str, Task] = []
+
+    def load(self):
+        self.memorizedTasks = self.read()
 
     def read(self) -> dict[str, Task]:
         tasks: dict[str, Task] = {}

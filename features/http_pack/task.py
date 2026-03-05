@@ -42,6 +42,7 @@ class HttpTask(Task):
             self.stages.sort(key=lambda stage: stage.stageIndex)
             for stage in self.stages:
                 if stage.status != TaskStatus.COMPLETED:
+                    stage.status = TaskStatus.RUNNING
                     await HttpWorker(stage).run()
                     stage.status = TaskStatus.COMPLETED
         except CancelledError:
@@ -170,7 +171,7 @@ class HttpWorker(Worker):
     async def supervisor(self):
         recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
         try:
-            self.stage.receiveBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
+            self.stage.receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
             while True:
                 data = tuple(val for subworker in self.subworkers for val in (subworker.start, subworker.progress, subworker.end))
                 recordFileHandle.seek(0)
@@ -179,7 +180,7 @@ class HttpWorker(Worker):
                 recordFileHandle.truncate()
 
                 receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
-                self.stage.speed = receivedBytes - self.stage.receiveBytes
+                self.stage.speed = receivedBytes - self.stage.receivedBytes
                 self.stage.receivedBytes = receivedBytes
                 self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
                 print(getReadableSize(self.stage.speed))
