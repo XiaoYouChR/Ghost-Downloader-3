@@ -121,10 +121,13 @@ class CoreService(QThread):
         self.loop.create_task(self._runTask(task))
 
     async def _stopTask(self, task: Task):
-        self.tasks.remove(task)
-        if task.taskId in self.runningTasks:
-            if self.runningTasks[task.taskId].cancel():
-                await self.runningTasks[task.taskId]
+        self.tasks.discard(task)
+        runningTask = self.runningTasks.pop(task.taskId, None)
+        if runningTask is not None and runningTask.cancel():
+            try:
+                await runningTask
+            except asyncio.CancelledError:
+                pass
 
     def stopTask(self, task: Task):
         self.loop.create_task(self._stopTask(task))

@@ -43,20 +43,6 @@ class AddTaskDialog(MessageBoxBase):
         self.initLayout()
         self.connectSignalToSlot()
 
-        # TODO For Test
-        # self.parseResultGroup.hide()
-        # for i in range(5):
-        #     self.parseResultGroup.addWidget(
-        #         HttpResultCard(
-        #             HttpTask(
-        #                 title=f"DingTalk-{i}.avi",
-        #                 fileSize=123456789,
-        #                 url="https://example.com/DingTalk.exe",
-        #             ),
-        #             self.parseResultGroup,
-        #         )
-        #     )
-
     def initWidget(self):
         self.setObjectName("AddTaskDialog")
         self.widget.setFixedWidth(700)

@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from PySide6.QtCore import QFileInfo, Qt, QEvent
 from PySide6.QtGui import QColor, QMouseEvent
 from PySide6.QtWidgets import QHBoxLayout, QFileIconProvider, QVBoxLayout, QWidget
+from loguru import logger
 from qfluentwidgets import ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
     TransparentToolButton, ProgressBar, LineEdit, BodyLabel
 
@@ -16,13 +19,12 @@ from features.http_pack.task import HttpTask, HttpTaskStage
 class HttpTaskCard(TaskCard):
     """ Task card """
     def __init__(self, task: HttpTask, parent=None):
-        super().__init__(parent)
-        self.task = task
+        super().__init__(task, parent)
         self.setFixedHeight(60)
         self.taskStatus = TaskStatus.WAITING
 
         self.hBoxLayout = QHBoxLayout(self)
-        self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo("C:/Users/XiaoYouChR/Videos/Captures/反恐精英：全球攻势 2025-11-09 12-51-21.mp4")).pixmap(48, 48), self)
+        self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo(self.task.stages[0].resolvePath)).pixmap(48, 48), self)
         # TODO macOS
         self.iconLabel.setFixedSize(48, 48)
 
@@ -47,6 +49,7 @@ class HttpTaskCard(TaskCard):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
         self.openFileButton.clicked.connect(lambda: (openFile(self.task.path / self.task.title)))
         self.openFolderButton.clicked.connect(lambda: (openFile(self.task.path)))
+        self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
 
     def toggleRunningStatus(self):
         print("toggleRunningStatus", self.task.status)
@@ -74,6 +77,33 @@ class HttpTaskCard(TaskCard):
             self.progressBar.setValue(100)
             self.leftTimeLabel.setText("完成")
             self.taskStatus = TaskStatus.COMPLETED
+
+    def onTaskDeleted(self, completely: bool = False):
+        if not completely:
+            return
+
+        candidates: set[Path] = set()
+        candidates.add(Path(self.task.path) / self.task.title)
+        for stage in self.task.stages:
+            resolvePath = getattr(stage, "resolvePath", None)
+            if resolvePath:
+                candidates.add(Path(resolvePath))
+
+        for target in candidates:
+            if not target:
+                continue
+
+            for path in (target, Path(str(target) + ".ghd")):
+                try:
+                    if path.is_file() or path.is_symlink():
+                        path.unlink()
+                except FileNotFoundError:
+                    continue
+                except Exception as e:
+                    logger.error(f"failed to remove file {path}: {repr(e)}")
+
+    def onTaskFailed(self):
+        ...
 
     def resumeTask(self):
         self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)

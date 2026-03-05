@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget, QHBoxLayout
+from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget
 
@@ -125,8 +128,12 @@ class TaskCard(CardWidget):
 
     def removeTask(self, deleteFile=False):
         coreService.stopTask(self.task)
-        # TODO task resolve path
-        raise NotImplementedError
+        try:
+            self.onTaskDeleted(deleteFile)
+        except Exception as e:
+            logger.error(f"failed to delete task resources: {repr(e)}")
+        finally:
+            self.deleted.emit()
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
@@ -161,3 +168,15 @@ class TaskCard(CardWidget):
             painter.drawRoundedRect(self.rect().adjusted(2, 2, -2, -2), r, r)
 
         return super().paintEvent(e)
+
+    def onTaskFinished(self):
+        raise NotImplementedError
+
+    def onTaskDeleted(self, completely: bool = False):
+        if not completely:
+            return
+
+        raise NotImplementedError
+
+    def onTaskFailed(self):
+        raise NotImplementedError

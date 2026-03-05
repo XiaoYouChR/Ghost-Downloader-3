@@ -143,6 +143,7 @@ class TaskPage(ScrollArea):
 
             if task.status == TaskStatus.RUNNING:
                 card.resumeTask()
+
             self.addCard(card)
 
     def refreshTaskCards(self):
@@ -158,8 +159,13 @@ class TaskPage(ScrollArea):
             self.emptyStatusWidget.hide()
 
     def removeCard(self, card: TaskCard):
+        taskRecorder.remove(card.task)
+        if card not in self.cards:
+            return
+
         self.cards.remove(card)
         self.viewLayout.removeWidget(card)
+        card.deleteLater()
 
         if not self.cards:
             self.emptyStatusWidget.show()
