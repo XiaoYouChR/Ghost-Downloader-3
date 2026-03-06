@@ -99,6 +99,11 @@ class FilterMode(IntEnum):
     COMPLETE = 2
 
 
+class SortField(IntEnum):
+    TIME = 0
+    NAME = 1
+
+
 class TaskPage(ScrollArea):
 
     def __init__(self, parent=None):
@@ -108,6 +113,8 @@ class TaskPage(ScrollArea):
         self.isSelectionMode = False
         self.searchKeyword = ""
         self.filterMode: FilterMode = FilterMode.ALL
+        self.sortField: SortField = SortField.TIME
+        self.sortReverse = True
 
         self.container = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self)
@@ -123,6 +130,8 @@ class TaskPage(ScrollArea):
         self.speedBadge = IconBodyLabel(self.tr("0.00KB/s"), FluentIcon.SPEED_HIGH, self)
         self.sortButton = DropDownToolButton(FluentIcon.LAYOUT, self)
         self.sortMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.sortFieldActionGroup = QActionGroup(self)
+        self.sortOrderActionGroup = QActionGroup(self)
         self.timeSortAction = Action(FluentIcon.DATE_TIME, self.tr('按时间排序'), self, checkable=True)
         self.nameSortAction = Action(FluentIcon.FONT, self.tr('按名称排序'), self, checkable=True)
         self.ascendingSortAction = Action(FluentIcon.UP, self.tr('顺序'), self, checkable=True)
@@ -173,7 +182,8 @@ class TaskPage(ScrollArea):
         card.deleted.connect(lambda: self.removeCard(card))
         card.checkedChanged.connect(self.onCardCheckedChanged)
         self.cards.append(card)
-        self.viewLayout.addWidget(card, alignment=Qt.AlignmentFlag.AlignTop)
+        self.viewLayout.addWidget(card)
+        self.sortCards()
         self.refreshCardVisibility()
 
     def removeCard(self, card: TaskCard):
@@ -194,6 +204,10 @@ class TaskPage(ScrollArea):
         self.enableTransparentBackground()
         self.setViewportMargins(0, 60, 0, 0)
         # Tool Bar
+        self.sortFieldActionGroup.addAction(self.timeSortAction)
+        self.sortFieldActionGroup.addAction(self.nameSortAction)
+        self.sortOrderActionGroup.addAction(self.ascendingSortAction)
+        self.sortOrderActionGroup.addAction(self.reverseSortAction)
         self.sortMenu.addAction(self.timeSortAction)
         self.sortMenu.addAction(self.nameSortAction)
         self.sortMenu.addSeparator()
@@ -220,6 +234,8 @@ class TaskPage(ScrollArea):
         self.emptyStatusWidget.adjustSize()
         self.emptyStatusWidget.hide()
 
+        self.commandView.hide()
+
         self.searchLineEdit.setPlaceholderText(self.tr("搜索任务"))
 
         self.timeSortAction.setChecked(True)
@@ -230,6 +246,7 @@ class TaskPage(ScrollArea):
         self.vBoxLayout.setSpacing(20)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.viewLayout.setContentsMargins(12, 0, 12, 12)
+        self.viewLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         # Tool Bar
         self.vBoxLayout.addWidget(self.toolBar)
         self.toolBarLayout.setContentsMargins(0, 0, 0 ,0)
@@ -252,12 +269,30 @@ class TaskPage(ScrollArea):
         self.commandView.deleteAction.triggered.connect(self.onDeleteActionTriggered)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
-        self.noFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
-        self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
-        self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETE))
+        self.timeSortAction.triggered.connect(lambda : self.setSortField(SortField.TIME))
+        self.nameSortAction.triggered.connect(lambda : self.setSortField(SortField.NAME))
+        self.ascendingSortAction.triggered.connect(lambda : self.setSortOrder(True))
+        self.reverseSortAction.triggered.connect(lambda : self.setSortOrder(False))
+        self.noFilterAction.triggered.connect(lambda : self.setFilterMode(FilterMode.ALL))
+        self.activeFilterAction.triggered.connect(lambda : self.setFilterMode(FilterMode.ACTIVE))
+        self.completedFilterAction.triggered.connect(lambda : self.setFilterMode(FilterMode.COMPLETE))
         self.searchLineEdit.textChanged.connect(self.onSearchTextChanged)
         self.searchLineEdit.searchSignal.connect(self.onSearchTextChanged)
         self.searchLineEdit.clearSignal.connect(lambda: self.onSearchTextChanged(""))
+
+    def _getSortKey(self, card: TaskCard):
+        if self.sortField == SortField.NAME:
+            return str(getattr(card.task, "title", "")).lower()
+        return getattr(card.task, "createdAt", 0)
+
+    def sortCards(self):
+        if len(self.cards) < 2:
+            return
+
+        self.cards.sort(key=self._getSortKey, reverse=self.sortReverse)
+
+        for i, card in enumerate(self.cards):
+            self.viewLayout.insertWidget(i, card)
 
     def _setEmptyStatusText(self, text: str):
         self.emptyStatusWidget.setText(text)
@@ -325,8 +360,25 @@ class TaskPage(ScrollArea):
         self.refreshCardVisibility()
 
     def setFilterMode(self, mode: FilterMode):
+        if self.filterMode == mode:
+            return
+
         self.filterMode = mode
         self.refreshCardVisibility()
+
+    def setSortField(self, field: SortField):
+        if self.sortField == field:
+            return
+
+        self.sortField = field
+        self.sortCards()
+
+    def setSortOrder(self, ascending: bool):
+        if self.sortReverse == ascending:
+            return
+
+        self.sortReverse = ascending
+        self.sortCards()
 
     def selectAll(self):
         for card in self.cards:
