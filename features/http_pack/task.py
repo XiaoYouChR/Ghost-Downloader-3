@@ -11,7 +11,7 @@ from loguru import logger
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.sysio import pwrite
+from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import getProxies
 from features.http_pack.config import httpConfig
 from features.http_pack.const import SpecialFileSize
@@ -248,7 +248,7 @@ class HttpWorker(Worker):
 
         if not restored:
             try:
-                os.ftruncate(self.fileHandle, self.stage.fileSize)
+                ftruncate(self.fileHandle, self.stage.fileSize)
             except Exception as e:
                 print(repr(e))
 

@@ -3,7 +3,8 @@ from sys import platform
 
 if platform == "win32":
     import msvcrt
-    from ctypes import wintypes, Structure, Union, c_void_p, POINTER, windll, WinError, cast, c_char_p, byref
+    from ctypes import wintypes, Structure, Union, c_void_p, POINTER, windll, WinError, cast, c_char_p, byref, \
+        c_longlong, get_last_error
 
     INVALID_HANDLE_VALUE = -1
 
@@ -71,6 +72,71 @@ if platform == "win32":
         )
         return written.value
 
+    FSCTL_SET_SPARSE = 0x000900C4
+    FILE_BEGIN = 0
+
+    DeviceIoControl = windll.kernel32.DeviceIoControl
+    DeviceIoControl.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        POINTER(wintypes.DWORD),
+        wintypes.LPVOID,
+    ]
+    DeviceIoControl.restype = wintypes.BOOL
+
+    SetFilePointerEx = windll.kernel32.SetFilePointerEx
+    SetFilePointerEx.argtypes = [
+        wintypes.HANDLE,
+        c_longlong,
+        POINTER(c_longlong),
+        wintypes.DWORD,
+    ]
+    SetFilePointerEx.restype = wintypes.BOOL
+
+    SetEndOfFile = windll.kernel32.SetEndOfFile
+    SetEndOfFile.argtypes = [wintypes.HANDLE]
+    SetEndOfFile.restype = wintypes.BOOL
+
+
+    def _raise_winerror(msg: str):
+        err = get_last_error()
+        raise OSError(err, f"{msg}, WinError={err}")
+
+    def ftruncate(fd: typing.Union[int, wintypes.HANDLE], size: int) -> None:
+        if isinstance(fd, int):
+            handle = wintypes.HANDLE(
+                msvcrt.get_osfhandle(fd)
+            )
+        else:
+            handle = fd
+
+        returned = wintypes.DWORD(0)
+        ok = DeviceIoControl(
+            handle,
+            FSCTL_SET_SPARSE,
+            None,
+            0,
+            None,
+            0,
+            byref(returned),
+            None,
+        )
+        if not ok:
+            _raise_winerror("FSCTL_SET_SPARSE failed")
+
+        newPos = c_longlong()
+        ok = SetFilePointerEx(handle, size, byref(newPos), FILE_BEGIN)
+        if not ok:
+            _raise_winerror("SetFilePointerEx failed")
+
+        ok = SetEndOfFile(handle)
+        if not ok:
+            _raise_winerror("SetEndOfFile failed")
+
 else:
     # noinspection PyUnresolvedReferences
-    from os import pwrite
+    from os import pwrite, ftruncate
