@@ -11,7 +11,7 @@ from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
 from app.supports.utils import getProxies
 from app.view.components.add_task_dialog import AddTaskDialog
-from app.view.components.dialogs import ReleaseInfoDialog
+from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 

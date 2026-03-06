@@ -83,7 +83,7 @@ class TaskCard(CardWidget):
     """ Task card base class """
 
     deleted = Signal()  # TODO Send Task ID, or lambda function?
-    finished = Signal() # TODO 更改记录文件?
+    finished = Signal()
     checkedChanged = Signal(bool)
 
     def __init__(self, task: Task, parent=None):
@@ -170,7 +170,7 @@ class TaskCard(CardWidget):
         return super().paintEvent(e)
 
     def onTaskFinished(self):
-        raise NotImplementedError
+        self.finished.emit()
 
     def onTaskDeleted(self, completely: bool = False):
         if not completely:

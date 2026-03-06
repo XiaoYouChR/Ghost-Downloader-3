@@ -1,8 +1,9 @@
 from enum import IntEnum
+from sys import platform
 
 from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QPainter, QColor, QActionGroup
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect, QDialog
 from loguru import logger
 from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton, \
     SearchLineEdit, ToolButton, ToggleToolButton, ToolTipFilter, Action, \
@@ -13,9 +14,9 @@ from app.services.feature_service import featureService
 from app.bases.models import TaskStatus
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
-from app.supports.utils import getReadableSize
+from app.supports.utils import getReadableSize, openFile
 from app.view.components.cards import TaskCard
-from app.view.components.dialogs import DeleteTaskDialog
+from app.view.components.dialogs import DeleteTaskDialog, PlanTaskDialog
 from app.view.components.labels import IconBodyLabel
 
 
@@ -115,6 +116,8 @@ class TaskPage(ScrollArea):
         self.filterMode: FilterMode = FilterMode.ALL
         self.sortField: SortField = SortField.TIME
         self.sortReverse = True
+        self.planAction: int | None = None
+        self.planFilePath = ""
 
         self.container = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self)
@@ -180,11 +183,52 @@ class TaskPage(ScrollArea):
 
     def addCard(self, card: TaskCard):
         card.deleted.connect(lambda: self.removeCard(card))
-        card.checkedChanged.connect(self.onCardCheckedChanged)
+        card.finished.connect(self._onCardFinished)
+        card.checkedChanged.connect(self._onCardCheckedChanged)
         self.cards.append(card)
         self.viewLayout.addWidget(card)
         self.sortCards()
         self.refreshCardVisibility()
+
+    def _onCardFinished(self):
+        if not self.planButton.isChecked() or not self.planAction or not self.cards:
+            return
+
+        if any(card.task.status != TaskStatus.COMPLETED for card in self.cards):
+            return
+
+        action = self.planAction
+        filePath = self.planFilePath
+        self.planButton.setChecked(False)
+        self.planAction = None
+        self.planFilePath = ""
+
+        try:
+            if action == PlanTaskDialog.OPEN_FILE:
+                if filePath:
+                    openFile(filePath)
+                return
+
+            from subprocess import Popen
+
+            if action == PlanTaskDialog.RESTART:
+                if platform == "win32":
+                    Popen(["shutdown", "/r", "/t", "0"])
+                elif platform == "darwin":
+                    Popen(["osascript", "-e", 'tell app "System Events" to restart'])
+                else:
+                    Popen(["shutdown", "-r", "now"])
+                return
+
+            if platform == "win32":
+                Popen(["shutdown", "/s", "/t", "0"])
+            elif platform == "darwin":
+                Popen(["osascript", "-e", 'tell app "System Events" to shut down'])
+            else:
+                Popen(["shutdown", "-h", "now"])
+
+        except Exception as e:
+            logger.error(f"计划任务执行失败: {repr(e)}")
 
     def removeCard(self, card: TaskCard):
         taskRecorder.remove(card.task)
@@ -269,7 +313,7 @@ class TaskPage(ScrollArea):
         self.allStartButton.clicked.connect(self.startAllTasks)
         self.allPauseButton.clicked.connect(self.pauseAllTasks)
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self.isSelectionMode))
-        self.commandView.deleteAction.triggered.connect(self.onDeleteActionTriggered)
+        self.commandView.deleteAction.triggered.connect(self._onDeleteActionTriggered)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
         self.timeSortAction.triggered.connect(lambda: self.setSortField(SortField.TIME))
@@ -279,14 +323,31 @@ class TaskPage(ScrollArea):
         self.noFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
         self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
         self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETE))
-        self.searchLineEdit.textChanged.connect(self.onSearchTextChanged)
-        self.searchLineEdit.searchSignal.connect(self.onSearchTextChanged)
-        self.searchLineEdit.clearSignal.connect(lambda: self.onSearchTextChanged(""))
-        self.rateLimitButton.clicked.connect(self.onRateLimitButtonClicked)
+        self.searchLineEdit.textChanged.connect(self._onSearchTextChanged)
+        self.searchLineEdit.searchSignal.connect(self._onSearchTextChanged)
+        self.searchLineEdit.clearSignal.connect(lambda: self._onSearchTextChanged(""))
+        self.rateLimitButton.clicked.connect(self._onRateLimitButtonClicked)
+        self.planButton.clicked.connect(self._onPlanButtonClicked)
 
-    def onRateLimitButtonClicked(self):
+    def _onRateLimitButtonClicked(self):
         checked = self.rateLimitButton.isChecked()
         cfg.set(cfg.enableSpeedLimitation, checked)
+
+    def _onPlanButtonClicked(self):
+        checked = self.planButton.isChecked()
+        if checked:
+            w = PlanTaskDialog(self.window(), deleteOnClose=False)
+            if w.exec() == QDialog.DialogCode.Accepted:
+                self.planAction = w.selectedAction()
+                self.planFilePath = w.selectedFilePath()
+            else:
+                self.planButton.setChecked(False)
+                self.planAction = None
+                self.planFilePath = ""
+            w.deleteLater()
+        else:
+            self.planAction = None
+            self.planFilePath = ""
 
     def _getSortKey(self, card: TaskCard):
         if self.sortField == SortField.NAME:
@@ -363,7 +424,7 @@ class TaskPage(ScrollArea):
         self._setEmptyStatusText(self._getEmptyTextForFilter())
         self.emptyStatusWidget.show()
 
-    def onSearchTextChanged(self, text: str):
+    def _onSearchTextChanged(self, text: str):
         self.searchKeyword = text.strip().lower()
         self.refreshCardVisibility()
 
@@ -410,7 +471,7 @@ class TaskPage(ScrollArea):
         self.commandView.move((width - self.commandView.width()) >> 1, height - self.commandView.sizeHint().height() - 20)
         self.emptyStatusWidget.move((width - self.emptyStatusWidget.width()) >> 1, (height - self.emptyStatusWidget.height()) >> 1)
 
-    def onCardCheckedChanged(self, checked: bool):
+    def _onCardCheckedChanged(self, checked: bool):
         if checked:
             self.selectionCount += 1
             self.setSelectionMode(True)
@@ -419,7 +480,7 @@ class TaskPage(ScrollArea):
             if self.selectionCount == 0:
                 self.setSelectionMode(False)
 
-    def onDeleteActionTriggered(self):
+    def _onDeleteActionTriggered(self):
         w = DeleteTaskDialog(self.window(), deleteOnClose=False)
         w.deleteFileCheckBox.setChecked(False)
 

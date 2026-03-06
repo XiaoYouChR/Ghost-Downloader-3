@@ -106,6 +106,7 @@ class HttpTaskCard(TaskCard):
             self.refreshToggleButton()
 
     def onTaskFinished(self):
+        super().onTaskFinished()
         self.progressBar.setValue(100)
         self.speedLabel.setText("0.00 B/s")
         self.leftTimeLabel.setText("完成")
