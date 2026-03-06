@@ -6,7 +6,7 @@ from PySide6.QtCore import QThread, QTimer
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.bases.models import Task
+from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
 
 
@@ -119,6 +119,7 @@ class CoreService(QThread):
     def createTask(self, task: Task):
         self.tasks.add(task)
         self.loop.create_task(self._runTask(task))
+        task.setStatus(TaskStatus.RUNNING)
 
     async def _stopTask(self, task: Task):
         self.tasks.discard(task)
@@ -131,6 +132,7 @@ class CoreService(QThread):
 
     def stopTask(self, task: Task):
         self.loop.create_task(self._stopTask(task))
+        task.setStatus(TaskStatus.PAUSED)
 
     def getAllTaskInfo(self) -> set:
         """获取所有任务信息

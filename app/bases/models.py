@@ -59,7 +59,17 @@ class TaskStage:
     stageId: str = field(default_factory=lambda: f"stg_{uuid4().hex}")
     status: TaskStatus = TaskStatus.WAITING
     progress: float = 0   # 0 ~ 100
-    speed: int = field(default=1)
+    speed: int = field(default=1)   # division cannot be 0
+
+    def setStatus(self, status: TaskStatus):
+        self.status = status
+        if status == TaskStatus.COMPLETED:
+            self.progress = 100
+            self.speed = 0
+            return
+
+        if status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.FAILED}:
+            self.speed = 0
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
@@ -94,10 +104,35 @@ class Task:
 
     title: str
     taskId: str = field(default_factory=lambda: f"tsk_{uuid4().hex}")
-    status: TaskStatus = TaskStatus.RUNNING
+    status: TaskStatus = TaskStatus.WAITING
     stages: list[TaskStage] = field(default_factory=list)
     createdAt: int = field(default_factory=lambda: int(time_ns()))
     path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
+
+    def syncStatus(self) -> TaskStatus:
+        if not self.stages:
+            return self.status
+
+        stageStatus = [stage.status for stage in self.stages]
+        if any(status == TaskStatus.FAILED for status in stageStatus):
+            self.status = TaskStatus.FAILED
+        elif all(status == TaskStatus.COMPLETED for status in stageStatus):
+            self.status = TaskStatus.COMPLETED
+        elif any(status == TaskStatus.RUNNING for status in stageStatus):
+            self.status = TaskStatus.RUNNING
+        elif all(status == TaskStatus.PAUSED for status in stageStatus):
+            self.status = TaskStatus.PAUSED
+        else:
+            self.status = TaskStatus.WAITING
+
+        return self.status
+
+    def setStatus(self, status: TaskStatus):
+        for stage in self.stages:
+            if stage.status == TaskStatus.COMPLETED:
+                continue
+            stage.setStatus(status)
+        self.status = status
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)

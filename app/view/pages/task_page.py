@@ -13,7 +13,7 @@ from app.services.feature_service import featureService
 from app.bases.models import TaskStatus
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
-from app.supports.utils import getReadableSize, openFile
+from app.supports.utils import getReadableSize
 from app.view.components.cards import TaskCard
 from app.view.components.dialogs import DeleteTaskDialog
 from app.view.components.labels import IconBodyLabel
@@ -265,17 +265,19 @@ class TaskPage(ScrollArea):
         self.searchLineEdit.setMaximumWidth(300)
 
     def connectSignalToSlot(self):
+        self.allStartButton.clicked.connect(self.startAllTasks)
+        self.allPauseButton.clicked.connect(self.pauseAllTasks)
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self.isSelectionMode))
         self.commandView.deleteAction.triggered.connect(self.onDeleteActionTriggered)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
-        self.timeSortAction.triggered.connect(lambda : self.setSortField(SortField.TIME))
-        self.nameSortAction.triggered.connect(lambda : self.setSortField(SortField.NAME))
-        self.ascendingSortAction.triggered.connect(lambda : self.setSortOrder(True))
-        self.reverseSortAction.triggered.connect(lambda : self.setSortOrder(False))
-        self.noFilterAction.triggered.connect(lambda : self.setFilterMode(FilterMode.ALL))
-        self.activeFilterAction.triggered.connect(lambda : self.setFilterMode(FilterMode.ACTIVE))
-        self.completedFilterAction.triggered.connect(lambda : self.setFilterMode(FilterMode.COMPLETE))
+        self.timeSortAction.triggered.connect(lambda: self.setSortField(SortField.TIME))
+        self.nameSortAction.triggered.connect(lambda: self.setSortField(SortField.NAME))
+        self.ascendingSortAction.triggered.connect(lambda: self.setSortOrder(False))
+        self.reverseSortAction.triggered.connect(lambda: self.setSortOrder(True))
+        self.noFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
+        self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
+        self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETE))
         self.searchLineEdit.textChanged.connect(self.onSearchTextChanged)
         self.searchLineEdit.searchSignal.connect(self.onSearchTextChanged)
         self.searchLineEdit.clearSignal.connect(lambda: self.onSearchTextChanged(""))
@@ -373,12 +375,23 @@ class TaskPage(ScrollArea):
         self.sortField = field
         self.sortCards()
 
-    def setSortOrder(self, ascending: bool):
-        if self.sortReverse == ascending:
+    def setSortOrder(self, reverse: bool):
+        if self.sortReverse == reverse:
             return
 
-        self.sortReverse = ascending
+        self.sortReverse = reverse
         self.sortCards()
+
+    def startAllTasks(self):
+        for card in self.cards:
+            status = card.task.status
+            if status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.FAILED}:
+                card.resumeTask()
+
+    def pauseAllTasks(self):
+        for card in self.cards:
+            if card.task.status == TaskStatus.RUNNING:
+                card.pauseTask()
 
     def selectAll(self):
         for card in self.cards:

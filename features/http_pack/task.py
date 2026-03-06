@@ -12,7 +12,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.sysio import pwrite
-from app.supports.utils import getProxies, getReadableSize
+from app.supports.utils import getProxies
 from features.http_pack.config import httpConfig
 from features.http_pack.const import SpecialFileSize
 
@@ -38,15 +38,21 @@ class HttpTask(Task):
     blockNum: int = field(default=8)  # TODO 下载设置项
 
     async def run(self):
+        self.status = TaskStatus.RUNNING
+        self.stages.sort(key=lambda stage: stage.stageIndex)
         try:
-            self.stages.sort(key=lambda stage: stage.stageIndex)
             for stage in self.stages:
-                if stage.status != TaskStatus.COMPLETED:
-                    stage.status = TaskStatus.RUNNING
-                    await HttpWorker(stage).run()
-                    stage.status = TaskStatus.COMPLETED
+                if stage.status == TaskStatus.COMPLETED:
+                    continue
+
+                stage.setStatus(TaskStatus.RUNNING)
+                await HttpWorker(stage).run()
         except CancelledError:
             logger.info(f"{self.title} 停止下载")
+        except Exception as e:
+            logger.error(f"{self.title} 下载失败: {repr(e)}")
+        finally:
+            self.syncStatus()
 
     def __hash__(self):
         return hash(self.taskId)
@@ -183,6 +189,7 @@ class HttpWorker(Worker):
                 self.stage.speed = receivedBytes - self.stage.receivedBytes
                 self.stage.receivedBytes = receivedBytes
                 self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
+                print(self.stage.speed)
 
                 self.checkIfAutoAcceleration()
 
@@ -253,8 +260,12 @@ class HttpWorker(Worker):
                 for subworker in self.subworkers:
                     self.taskGroup.create_task(self.handleSubworker(subworker))
 
+            self.stage.setStatus(TaskStatus.COMPLETED)
             logger.info(f"{self.stage.resolvePath} 下载完成")
+        except CancelledError:
+            self.stage.setStatus(TaskStatus.PAUSED)
         except Exception as e:
+            self.stage.setStatus(TaskStatus.FAILED)
             logger.error(f"{self.stage.resolvePath} 错误: {repr(e)}")
         finally:
             if not supervisor.cancel():

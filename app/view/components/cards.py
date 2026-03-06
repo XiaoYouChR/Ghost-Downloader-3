@@ -7,7 +7,7 @@ from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget
 
-from app.bases.models import Task
+from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
 from app.view.components.dialogs import DeleteTaskDialog
 
