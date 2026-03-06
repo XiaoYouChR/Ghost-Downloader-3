@@ -13,7 +13,7 @@ from app.services.feature_service import featureService
 from app.supports.application import SingletonApplication
 from app.supports.config import cfg
 
-appLocalDataLocation = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.AppLocalDataLocation)[0]
+appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
 
 qconfig.load(f"{appLocalDataLocation}/GhostDownloader/UserConfig.json", cfg)
 

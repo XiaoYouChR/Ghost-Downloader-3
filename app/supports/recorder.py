@@ -10,7 +10,7 @@ from app.bases.models import Task
 class TaskRecorder:
 
     def __init__(self):
-        appLocalDataLocation = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.AppLocalDataLocation)[0]
+        appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
         recordFile = Path(f"{appLocalDataLocation}/GhostDownloader/Memory.log")
         if not recordFile.exists():
             recordFile.parent.mkdir(parents=True, exist_ok=True)
@@ -18,7 +18,7 @@ class TaskRecorder:
 
         self.fileHandle = open(recordFile, "a+", encoding="utf-8")
         self.fileHandle.seek(0)
-        self.memorizedTasks: dict[str, Task] = []
+        self.memorizedTasks: dict[str, Task] = {}
 
     def load(self):
         self.memorizedTasks = self.read()

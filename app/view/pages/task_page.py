@@ -1,7 +1,7 @@
 from enum import IntEnum
 from sys import platform
 
-from PySide6.QtCore import Qt, QSize, QTimer
+from PySide6.QtCore import Qt, QSize, QTimer, Slot
 from PySide6.QtGui import QPainter, QColor, QActionGroup
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect, QDialog
 from loguru import logger
@@ -10,6 +10,7 @@ from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton
     CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
     DropDownToolButton
 
+from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.bases.models import TaskStatus
 from app.supports.config import cfg
@@ -190,7 +191,12 @@ class TaskPage(ScrollArea):
         self.sortCards()
         self.refreshCardVisibility()
 
+    @Slot()
     def _onCardFinished(self):
+        sender = self.sender()
+        if isinstance(sender, TaskCard):
+            coreService.sendNotification(sender.task)
+
         if not self.planButton.isChecked() or not self.planAction or not self.cards:
             return
 

@@ -1,25 +1,26 @@
 import asyncio
 import traceback
+from pathlib import Path
 from typing import Callable, Dict, Any, Coroutine
 
-from PySide6.QtCore import QThread, QTimer
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QThread, QTimer, QStandardPaths, QResource, QFileInfo, Qt
+from PySide6.QtWidgets import QApplication, QFileIconProvider
+from desktop_notifier import DesktopNotifier, Icon, Button
 from loguru import logger
 
 from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
+from app.supports.utils import openFile
 
+
+def getNotifierIcon() -> Path:
+    _ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
+    if not _.exists():
+        with open(_, "wb") as f:
+            f.write(QResource(":/image/logo.png").data())
+    return _
 
 class CoreService(QThread):
-    """核心服务类，在子线程中运行独立的 AsyncIO 事件循环
-    
-    设计理念：
-    1. 在 QThread 子线程中创建并运行独立的 asyncio 事件循环
-    2. 提供线程安全的接口供主线程(Qt UI)调用
-    3. 仅使用回调函数进行通知，避免 Qt Signal 的维护复杂性
-    4. 通过 Qt 的线程安全机制确保 UI 更新的安全性
-    5. 协调 FeatureService 进行 URL 解析和任务创建
-    """
 
     def __init__(self):
         super().__init__()
@@ -29,6 +30,16 @@ class CoreService(QThread):
         self.tasks: set[Task] = set()
         self.runningTasks: dict[str, asyncio.Task] = {}
         self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
+        self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))
+
+    def sendNotification(self, task: Task):
+        iconTempPath = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)) / "finished_file_icon.png"
+        QFileIconProvider().icon(QFileInfo(task.stages[0].resolvePath)).pixmap(48, 48).scaled(128, 128,
+                                                                                   aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+                                                                                   mode=Qt.TransformationMode.SmoothTransformation).save(str(iconTempPath), "PNG")
+        buttons = [Button(self.tr('打开文件'), lambda: openFile(task.stages[0].resolvePath)), Button(self.tr('打开目录'), lambda: openFile(task.path))]
+        self.loop.create_task(self.desktopNotifier.send(self.tr("下载完成"), task.title, buttons=buttons, on_clicked=lambda: openFile(task.stages[0].resolvePath), icon=Icon(path=iconTempPath)))
+
 
     def runCoroutine(self, coroutine: Coroutine, callback: Callable[[dict, str | None], Coroutine | None] | None = None):
         if callback is not None:
