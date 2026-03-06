@@ -4,7 +4,7 @@ from json import dumps, loads
 from re import compile
 from time import sleep
 
-from PySide6.QtCore import QRect, QStandardPaths, QLocale, QTimer
+from PySide6.QtCore import QRect, QStandardPaths, QLocale
 from qfluentwidgets import (
     QConfig,
     ConfigItem,
@@ -149,8 +149,9 @@ class Config(QConfig):
     maxTaskNum = RangeConfigItem(
         "GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10)
     )
+    enableSpeedLimitation = ConfigItem("GeneralDownload", "enableSpeedLimitation", False, BoolValidator())
     speedLimitation = RangeConfigItem(
-        "GeneralDownload", "SpeedLimitation", 0, RangeValidator(0, 104857600)
+        "GeneralDownload", "SpeedLimitation", 4194304, RangeValidator(1024, 104857600)
     )  # 单位 KB
     SSLVerify = ConfigItem(
         "GeneralDownload", "SSLVerify", False, BoolValidator(), restart=True
@@ -224,13 +225,10 @@ class Config(QConfig):
     def resetGlobalSpeed(self):
         self.globalSpeed = 0
 
-    def checkSpeedLimitation(self) -> bool:
-        limitation = self.speedLimitation.value
-        if not limitation or self.globalSpeed <= limitation:
-            return False
-        while self.globalSpeed > limitation:
-            sleep(0.1)
-        return True
+    def checkSpeedLimitation(self):
+        if self.enableSpeedLimitation.value:
+            while self.globalSpeed > self.speedLimitation.value:
+                sleep(0.1)
 
 
 YEAR = 2026

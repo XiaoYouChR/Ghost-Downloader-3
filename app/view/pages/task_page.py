@@ -214,6 +214,7 @@ class TaskPage(ScrollArea):
         self.sortMenu.addAction(self.ascendingSortAction)
         self.sortMenu.addAction(self.reverseSortAction)
         self.sortButton.setMenu(self.sortMenu)
+        self.rateLimitButton.setChecked(cfg.get(cfg.enableSpeedLimitation))
 
         self.filterActionGroup.addAction(self.noFilterAction)
         self.filterActionGroup.addAction(self.activeFilterAction)
@@ -281,6 +282,11 @@ class TaskPage(ScrollArea):
         self.searchLineEdit.textChanged.connect(self.onSearchTextChanged)
         self.searchLineEdit.searchSignal.connect(self.onSearchTextChanged)
         self.searchLineEdit.clearSignal.connect(lambda: self.onSearchTextChanged(""))
+        self.rateLimitButton.clicked.connect(self.onRateLimitButtonClicked)
+
+    def onRateLimitButtonClicked(self):
+        checked = self.rateLimitButton.isChecked()
+        cfg.set(cfg.enableSpeedLimitation, checked)
 
     def _getSortKey(self, card: TaskCard):
         if self.sortField == SortField.NAME:
