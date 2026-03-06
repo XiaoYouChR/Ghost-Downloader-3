@@ -113,6 +113,10 @@ class Task:
     createdAt: int = field(default_factory=lambda: int(time_ns()))
     path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
 
+    @property
+    def resolvePath(self) -> str:
+        return str(self.path / self.title)
+
     def __post_init__(self):
         for stage in self.stages:
             stage.bindTask(self)

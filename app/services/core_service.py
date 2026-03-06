@@ -33,12 +33,32 @@ class CoreService(QThread):
         self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))
 
     def sendNotification(self, task: Task):
+        resolvePath = task.resolvePath
+        if not resolvePath:
+            logger.error(f"task {task.taskId} has no resolvePath for notification")
+            return
+
+        directoryPath = str(Path(resolvePath).parent)
         iconTempPath = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)) / "finished_file_icon.png"
-        QFileIconProvider().icon(QFileInfo(task.stages[0].resolvePath)).pixmap(48, 48).scaled(128, 128,
-                                                                                   aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
-                                                                                   mode=Qt.TransformationMode.SmoothTransformation).save(str(iconTempPath), "PNG")
-        buttons = [Button(self.tr('打开文件'), lambda: openFile(task.stages[0].resolvePath)), Button(self.tr('打开目录'), lambda: openFile(task.path))]
-        self.loop.create_task(self.desktopNotifier.send(self.tr("下载完成"), task.title, buttons=buttons, on_clicked=lambda: openFile(task.stages[0].resolvePath), icon=Icon(path=iconTempPath)))
+        QFileIconProvider().icon(QFileInfo(resolvePath)).pixmap(48, 48).scaled(
+            128,
+            128,
+            aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
+            mode=Qt.TransformationMode.SmoothTransformation,
+        ).save(str(iconTempPath), "PNG")
+        buttons = [
+            Button(self.tr('打开文件'), lambda: openFile(resolvePath)),
+            Button(self.tr('打开目录'), lambda: openFile(directoryPath)),
+        ]
+        self.loop.create_task(
+            self.desktopNotifier.send(
+                self.tr("下载完成"),
+                task.title,
+                buttons=buttons,
+                on_clicked=lambda: openFile(resolvePath),
+                icon=Icon(path=iconTempPath),
+            )
+        )
 
 
     def runCoroutine(self, coroutine: Coroutine, callback: Callable[[dict, str | None], Coroutine | None] | None = None):

@@ -25,7 +25,7 @@ class HttpTaskCard(TaskCard):
         self.cardStatus = self.task.status
 
         self.hBoxLayout = QHBoxLayout(self)
-        self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo(self.task.stages[0].resolvePath)).pixmap(48, 48), self)
+        self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo(self.task.resolvePath)).pixmap(48, 48), self)
         # TODO macOS
         self.iconLabel.setFixedSize(48, 48)
 
@@ -49,8 +49,8 @@ class HttpTaskCard(TaskCard):
 
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
-        self.openFileButton.clicked.connect(lambda: (openFile(self.task.path / self.task.title)))
-        self.openFolderButton.clicked.connect(lambda: (openFile(self.task.path)))
+        self.openFileButton.clicked.connect(lambda: openFile(self.task.resolvePath))
+        self.openFolderButton.clicked.connect(lambda: openFile(self.task.path))
         self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
 
     def toggleRunningStatus(self):
@@ -128,7 +128,8 @@ class HttpTaskCard(TaskCard):
             return
 
         candidates: set[Path] = set()
-        candidates.add(Path(self.task.path) / self.task.title)
+        if self.task.resolvePath:
+            candidates.add(Path(self.task.resolvePath))
         for stage in self.task.stages:
             resolvePath = getattr(stage, "resolvePath", None)
             if resolvePath:
@@ -238,7 +239,7 @@ class HttpResultCard(ResultCard):
         return super().eventFilter(obj, event)
 
     def resetFileIcon(self):
-        icon = QFileIconProvider().icon(QFileInfo(self.task.title))
+        icon = QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
         self.iconLabel.setImage(icon.pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
 
@@ -266,6 +267,7 @@ class HttpResultCard(ResultCard):
         self.task.title = filename
         self.filenameLabel.setText(filename)
         self.filenameEdit.setText(filename)
+        self.resetFileIcon()
 
     def getTask(self) -> HttpTask:
         return self.task

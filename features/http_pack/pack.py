@@ -135,6 +135,8 @@ async def parse(payload: dict) -> HttpTask:
     # 获取文件名
     fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取
 
+    resolvePath = str(Path(cfg.downloadFolder.value) / fileName)
+
     task = HttpTask(
         title=fileName,
         url=url,
@@ -149,7 +151,7 @@ async def parse(payload: dict) -> HttpTask:
         fileSize=fileSize,
         headers=headers,
         proxies=proxies,
-        resolvePath=str(Path(cfg.downloadFolder.value) / fileName),
+        resolvePath=resolvePath,
         blockNum=blockNum,
     )
     task.addStage(stage)
