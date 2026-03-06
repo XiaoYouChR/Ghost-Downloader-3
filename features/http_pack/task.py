@@ -183,7 +183,6 @@ class HttpWorker(Worker):
                 self.stage.speed = receivedBytes - self.stage.receivedBytes
                 self.stage.receivedBytes = receivedBytes
                 self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
-                print(getReadableSize(self.stage.speed))
 
                 self.checkIfAutoAcceleration()
 

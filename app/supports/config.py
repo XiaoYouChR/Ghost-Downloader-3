@@ -251,5 +251,3 @@ attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img 
                                  wav wma wmv z zip esd wim msp apk apks apkm cab msp pkg"""
 
 cfg = Config()
-speedTimer = QTimer(interval=1000)
-speedTimer.timeout.connect(cfg.resetGlobalSpeed)

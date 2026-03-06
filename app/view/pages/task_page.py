@@ -9,8 +9,11 @@ from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton
 
 from app.services.feature_service import featureService
 from app.bases.models import TaskStatus
+from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
+from app.supports.utils import getReadableSize, openFile
 from app.view.components.cards import TaskCard
+from app.view.components.dialogs import DeleteTaskDialog
 from app.view.components.labels import IconBodyLabel
 
 
@@ -18,7 +21,7 @@ class TaskCommandBarView(CommandBarView):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.openAction = Action(FluentIcon.FOLDER, self.tr("打开文件夹"), self)
+        # self.openAction = Action(FluentIcon.FOLDER, self.tr("打开文件夹"), self)
         self.redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
         self.selectAllAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("全选"), self)
@@ -26,7 +29,7 @@ class TaskCommandBarView(CommandBarView):
 
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.setIconSize(QSize(18, 18))
-        self.addAction(self.openAction)
+        # self.addAction(self.openAction)
         self.addAction(self.redownloadAction)
         self.addAction(self.deleteAction)
         self.addSeparator()
@@ -92,7 +95,10 @@ class TaskPage(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.cards = []
+        self.cards: list[TaskCard] = []
+        self.selectionCount = 0
+        self.isSelectionMode = False
+        self.searchKeyword = ""
 
         self.container = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self)
@@ -124,13 +130,10 @@ class TaskPage(ScrollArea):
 
         self.initWidget()
         self.initLayout()
+        self.connectSignalToSlot()
 
-        self.timeSortAction.setChecked(True)
-        self.reverseSortAction.setChecked(True)
-        self.noFilterAction.setChecked(True)
-        # self.emptyStatusWidget.hide()
         self.refreshTimer = QTimer(self, interval=1000)
-        self.refreshTimer.timeout.connect(self.refreshTaskCards)
+        self.refreshTimer.timeout.connect(self.refresh)
         self.refreshTimer.start()
 
     def resumeMemorizedTasks(self):
@@ -146,17 +149,19 @@ class TaskPage(ScrollArea):
 
             self.addCard(card)
 
-    def refreshTaskCards(self):
+    def refresh(self):
         for card in self.cards:
             card.refresh()
 
+        self.speedBadge.setText(f"{getReadableSize(cfg.globalSpeed)}/s")
+        cfg.resetGlobalSpeed()
+
     def addCard(self, card: TaskCard):
         card.deleted.connect(lambda: self.removeCard(card))
+        card.checkedChanged.connect(self.onCardCheckedChanged)
         self.cards.append(card)
         self.viewLayout.addWidget(card, alignment=Qt.AlignmentFlag.AlignTop)
-
-        if self.emptyStatusWidget.isVisible():
-            self.emptyStatusWidget.hide()
+        self.refreshCardVisibility()
 
     def removeCard(self, card: TaskCard):
         taskRecorder.remove(card.task)
@@ -166,9 +171,7 @@ class TaskPage(ScrollArea):
         self.cards.remove(card)
         self.viewLayout.removeWidget(card)
         card.deleteLater()
-
-        if not self.cards:
-            self.emptyStatusWidget.show()
+        self.refreshCardVisibility()
 
     def initWidget(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -199,7 +202,13 @@ class TaskPage(ScrollArea):
         # other widgets
         self.emptyStatusWidget.setMinimumWidth(200)
         self.emptyStatusWidget.adjustSize()
+        self.emptyStatusWidget.hide()
+
         self.searchLineEdit.setPlaceholderText(self.tr("搜索任务"))
+
+        self.timeSortAction.setChecked(True)
+        self.reverseSortAction.setChecked(True)
+        self.noFilterAction.setChecked(True)
 
     def initLayout(self):
         self.vBoxLayout.setSpacing(20)
@@ -222,9 +231,97 @@ class TaskPage(ScrollArea):
         self.searchLineEdit.setMinimumWidth(200)
         self.searchLineEdit.setMaximumWidth(300)
 
+    def connectSignalToSlot(self):
+        self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self.isSelectionMode))
+        self.commandView.deleteAction.triggered.connect(self.onDeleteActionTriggered)
+        self.commandView.selectAllAction.triggered.connect(self.selectAll)
+        self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
+        self.searchLineEdit.textChanged.connect(self.onSearchTextChanged)
+        self.searchLineEdit.searchSignal.connect(self.onSearchTextChanged)
+        self.searchLineEdit.clearSignal.connect(lambda: self.onSearchTextChanged(""))
+
+    def _setEmptyStatusText(self, text: str):
+        self.emptyStatusWidget.setText(text)
+        self.emptyStatusWidget.adjustSize()
+        self.emptyStatusWidget.move(
+            (self.width() - self.emptyStatusWidget.width()) >> 1,
+            (self.height() - self.emptyStatusWidget.height()) >> 1,
+        )
+
+    def _matchCard(self, card: TaskCard) -> bool:
+        if not self.searchKeyword:
+            return True
+
+        query = self.searchKeyword
+        return query in str(card.task.title).strip().lower()
+
+    def refreshCardVisibility(self):
+        if not self.cards:
+            self._setEmptyStatusText(self.tr("暂无下载任务"))
+            self.emptyStatusWidget.show()
+            return
+
+        visibleCount = 0
+        for card in self.cards:
+            visible = self._matchCard(card)
+            card.setVisible(visible)
+            if visible:
+                visibleCount += 1
+
+        if visibleCount > 0:
+            self.emptyStatusWidget.hide()
+            return
+
+        self._setEmptyStatusText(self.tr("没有匹配的任务"))
+        self.emptyStatusWidget.show()
+
+    def onSearchTextChanged(self, text: str):
+        self.searchKeyword = text.strip().lower()
+        self.refreshCardVisibility()
+
+    def selectAll(self):
+        for card in self.cards:
+            card.setChecked(True)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         width = self.width()
         height = self.height()
         self.commandView.move((width - self.commandView.width()) >> 1, height - self.commandView.sizeHint().height() - 20)
         self.emptyStatusWidget.move((width - self.emptyStatusWidget.width()) >> 1, (height - self.emptyStatusWidget.height()) >> 1)
+
+    def onCardCheckedChanged(self, checked: bool):
+        if checked:
+            self.selectionCount += 1
+            self.setSelectionMode(True)
+        else:
+            self.selectionCount -= 1
+            if self.selectionCount == 0:
+                self.setSelectionMode(False)
+
+    def onDeleteActionTriggered(self):
+        w = DeleteTaskDialog(self.window(), deleteOnClose=False)
+        w.deleteFileCheckBox.setChecked(False)
+
+        if w.exec():
+            for card in self.cards.copy():
+                if card.isChecked():
+                    card.removeTask(w.deleteFileCheckBox.isChecked())
+
+        w.deleteLater()
+
+    def setSelectionMode(self, enter: bool):
+        if self.isSelectionMode == enter:
+            return
+
+        self.isSelectionMode = enter
+
+        for card in self.cards:
+            card.setSelectionMode(enter)
+
+        if enter:
+            self.commandView.setVisible(True)
+            self.commandView.raise_()
+        else:
+            self.commandView.setVisible(False)
+            self.selectionCount = 0
