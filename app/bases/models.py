@@ -61,15 +61,19 @@ class TaskStage:
     progress: float = 0   # 0 ~ 100
     speed: int = field(default=1)   # division cannot be 0
 
-    def setStatus(self, status: TaskStatus):
+    def bindTask(self, task: "Task"):
+        self._task = task
+
+    def setStatus(self, status: TaskStatus, notifyTask: bool = True):
         self.status = status
         if status == TaskStatus.COMPLETED:
             self.progress = 100
             self.speed = 0
-            return
-
-        if status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.FAILED}:
+        elif status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.FAILED}:
             self.speed = 0
+
+        if notifyTask and hasattr(self, "_task"):
+            self._task.syncStatusFromStages()
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
@@ -109,7 +113,17 @@ class Task:
     createdAt: int = field(default_factory=lambda: int(time_ns()))
     path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
 
-    def syncStatus(self) -> TaskStatus:
+    def __post_init__(self):
+        for stage in self.stages:
+            stage.bindTask(self)
+        self.syncStatusFromStages()
+
+    def addStage(self, stage: TaskStage):
+        stage.bindTask(self)
+        self.stages.append(stage)
+        self.syncStatusFromStages()
+
+    def syncStatusFromStages(self) -> TaskStatus:
         if not self.stages:
             return self.status
 
@@ -127,12 +141,17 @@ class Task:
 
         return self.status
 
-    def setStatus(self, status: TaskStatus):
+    def setStatus(self, status: TaskStatus) -> TaskStatus:
+        if not self.stages:
+            self.status = status
+            return self.status
+
         for stage in self.stages:
             if stage.status == TaskStatus.COMPLETED:
                 continue
-            stage.setStatus(status)
-        self.status = status
+            stage.setStatus(status, notifyTask=False)
+
+        return self.syncStatusFromStages()
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)

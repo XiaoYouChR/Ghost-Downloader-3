@@ -5,6 +5,7 @@ description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.22.1",
+    "desktop-notifier>=6.2.0",
     "loguru>=0.7.3",
     "niquests[http3,socks,speedups]>=3.17.0",
     "pyside6>=6.10.1",

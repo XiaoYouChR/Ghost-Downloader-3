@@ -152,7 +152,7 @@ async def parse(payload: dict) -> HttpTask:
         resolvePath=str(Path(cfg.downloadFolder.value) / fileName),
         blockNum=blockNum,
     )
-    task.stages.append(stage)
+    task.addStage(stage)
     return task
 
 

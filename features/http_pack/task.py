@@ -38,21 +38,20 @@ class HttpTask(Task):
     blockNum: int = field(default=8)  # TODO 下载设置项
 
     async def run(self):
-        self.status = TaskStatus.RUNNING
         self.stages.sort(key=lambda stage: stage.stageIndex)
         try:
             for stage in self.stages:
+                if self.status != TaskStatus.RUNNING:
+                    break
+
                 if stage.status == TaskStatus.COMPLETED:
                     continue
 
-                stage.setStatus(TaskStatus.RUNNING)
                 await HttpWorker(stage).run()
         except CancelledError:
             logger.info(f"{self.title} 停止下载")
         except Exception as e:
             logger.error(f"{self.title} 下载失败: {repr(e)}")
-        finally:
-            self.syncStatus()
 
     def __hash__(self):
         return hash(self.taskId)

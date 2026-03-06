@@ -22,7 +22,7 @@ class HttpTaskCard(TaskCard):
         super().__init__(task, parent)
         self.setFixedHeight(60)
         self.task = task
-        self.cardStatus = TaskStatus.RUNNING
+        self.cardStatus = self.task.status
 
         self.hBoxLayout = QHBoxLayout(self)
         self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo(self.task.stages[0].resolvePath)).pixmap(48, 48), self)
@@ -45,7 +45,7 @@ class HttpTaskCard(TaskCard):
         # init
         self.initLayout()
         self.connectSignalToSlot()
-        self.refreshToggleButton()
+        self._renderTaskState()
 
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
@@ -54,7 +54,6 @@ class HttpTaskCard(TaskCard):
         self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
 
     def toggleRunningStatus(self):
-        print("toggleRunningStatus", self.task.status)
         if self.task.status == TaskStatus.RUNNING:
             self.pauseTask()
         else:
@@ -71,14 +70,8 @@ class HttpTaskCard(TaskCard):
             self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
             self.toggleRunningStatusButton.setEnabled(True)
 
-    def refresh(self):
-        """通过 self.task 刷新界面"""
-        if self.cardStatus == TaskStatus.COMPLETED:
-            return
-
+    def _renderTaskState(self):
         stage: HttpTaskStage = self.task.stages[0]
-
-        self.task.syncStatus()
         self.progressBar.setValue(stage.progress)
 
         if self.task.fileSize > 0:
@@ -91,19 +84,38 @@ class HttpTaskCard(TaskCard):
             self.speedLabel.setText(f"{getReadableSize(speed)}/s")
             self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
             self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - stage.receivedBytes) / speed)) if speed != 0 else "--m--s")
-        elif self.cardStatus != TaskStatus.COMPLETED and stage.status == TaskStatus.COMPLETED:
-            self.onTaskFinished()
-        elif self.cardStatus != TaskStatus.FAILED and self.task.status == TaskStatus.FAILED:
-            self.onTaskFailed()
-            # TODO 上报错误暂未实现
-        elif self.cardStatus != TaskStatus.WAITING and self.task.status == TaskStatus.WAITING:
+        elif self.task.status == TaskStatus.COMPLETED:
+            self.progressBar.setValue(100)
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("完成")
+        elif self.task.status == TaskStatus.FAILED:
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("失败")
+        elif self.task.status == TaskStatus.PAUSED:
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("已暂停")
+        else:
             self.speedLabel.setText("0.00 B/s")
             self.leftTimeLabel.setText("等待中")
+
+        self.refreshToggleButton()
+
+    def refresh(self):
+        """通过 self.task 刷新界面"""
+        if self.cardStatus == TaskStatus.COMPLETED:
+            return
+
+        if self.task.status == TaskStatus.COMPLETED and self.cardStatus != TaskStatus.COMPLETED:
+            self.onTaskFinished()
+        elif self.task.status == TaskStatus.FAILED and self.cardStatus != TaskStatus.FAILED:
+            self.onTaskFailed()
+            # TODO 上报错误暂未实现
+
+        self._renderTaskState()
 
         if self.task.status != self.cardStatus:
             taskRecorder.flush()
             self.cardStatus = self.task.status
-            self.refreshToggleButton()
 
     def onTaskFinished(self):
         super().onTaskFinished()
@@ -144,6 +156,7 @@ class HttpTaskCard(TaskCard):
         self.toggleRunningStatusButton.setDisabled(True)
         coreService.createTask(self.task)
         self.cardStatus = self.task.status
+        self._renderTaskState()
         taskRecorder.flush()
         self.toggleRunningStatusButton.setEnabled(True)
 
@@ -152,9 +165,9 @@ class HttpTaskCard(TaskCard):
         self.toggleRunningStatusButton.setDisabled(True)
         coreService.stopTask(self.task)
         self.cardStatus = self.task.status
+        self._renderTaskState()
         taskRecorder.flush()
         self.toggleRunningStatusButton.setEnabled(True)
-        # TODO 暂停样式
 
     def initLayout(self):
         self.hBoxLayout.addWidget(self.checkBox)

@@ -129,8 +129,8 @@ class CoreService(QThread):
 
     def createTask(self, task: Task):
         self.tasks.add(task)
-        self.loop.create_task(self._runTask(task))
         task.setStatus(TaskStatus.RUNNING)
+        self.loop.create_task(self._runTask(task))
 
     async def _stopTask(self, task: Task):
         self.tasks.discard(task)
@@ -142,8 +142,8 @@ class CoreService(QThread):
                 pass
 
     def stopTask(self, task: Task):
-        self.loop.create_task(self._stopTask(task))
         task.setStatus(TaskStatus.PAUSED)
+        self.loop.create_task(self._stopTask(task))
 
     def getAllTaskInfo(self) -> set:
         """获取所有任务信息
