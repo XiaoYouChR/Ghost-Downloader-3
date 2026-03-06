@@ -8,7 +8,7 @@ from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 
 if TYPE_CHECKING:
-    from qfluentwidgets import SettingCard
+    from app.view.components.cards import ParseSettingCard
 
     from app.view.windows.main_window import MainWindow
 
@@ -64,7 +64,7 @@ class FeatureService:
 
         packConfig.loadSettingCards(settingPage)
 
-    def getDialogCards(self, parent) -> list["SettingCard"]:
+    def getDialogCards(self, parent) -> list["ParseSettingCard"]:
         cards = []
         for packName, packInstance in self.sortedPacksCache:
             packConfig = packInstance.config

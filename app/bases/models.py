@@ -196,6 +196,11 @@ class Task:
 
         return targetCls(**obj)
 
+    def applyPayloadToTask(self, payload: dict[str, Any]):
+        path = payload.get("path")
+        if isinstance(path, (str, Path)):
+            self.path = Path(path)
+
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)
         raise NotImplementedError

@@ -92,16 +92,15 @@ async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
     headers: dict = payload['headers']
     proxies: dict = payload['proxies']
-    blockNum = payload.get("blockNum", httpConfig.preBlockNum.value)
-    # TODO payload 提供下载路径
+    blockNum: int = payload['preBlockNum']
+    path: Path = payload['path']
 
     requestHeaders = headers.copy()
     requestHeaders["range"] = "bytes=0-"    # 小写好像更好来着?
 
-    # TODO verify config
     client = niquests.AsyncSession(happy_eyeballs=True)
     client.trust_env = False
-    response = await client.get(url, headers=requestHeaders, proxies=proxies, verify=False, allow_redirects=True, stream=True)
+    response = await client.get(url, headers=requestHeaders, proxies=proxies, verify=cfg.SSLVerify.value, allow_redirects=True, stream=True)
     await client.close()
     response.raise_for_status()
 
@@ -135,7 +134,7 @@ async def parse(payload: dict) -> HttpTask:
     # 获取文件名
     fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取
 
-    resolvePath = str(Path(cfg.downloadFolder.value) / fileName)
+    resolvePath = str(path / fileName)
 
     task = HttpTask(
         title=fileName,
@@ -144,6 +143,7 @@ async def parse(payload: dict) -> HttpTask:
         headers=headers,
         proxies=proxies,
         blockNum=blockNum,
+        path=path
     )
     stage = HttpTaskStage(
         stageIndex=1,

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor, QPainter, QPen
@@ -39,7 +40,8 @@ class ResultCard(QWidget):
         painter.drawLine(self.rect().topLeft(), self.rect().topRight())
 
 
-class GroupSettingCard(QWidget):
+class ParseSettingCard(QWidget):
+    payloadChanged = Signal()
 
     def __init__(self, icon, title: str, parent=None):
         super().__init__(parent=parent)
@@ -49,8 +51,13 @@ class GroupSettingCard(QWidget):
         self.titleLabel = BodyLabel(title, self)
 
         self.initWidget()
+        self.initCustomWidget()
+
+    def initCustomWidget(self):
+        raise NotImplementedError
 
     def initWidget(self):
+        self.setFixedHeight(50)
         self.iconWidget.setFixedSize(16, 16)
 
         self.hBoxLayout.addWidget(self.iconWidget)
@@ -65,7 +72,7 @@ class GroupSettingCard(QWidget):
 
     @property
     def backgroundColor(self):
-        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
+        return QColor(255, 255, 255, 13 if isDarkTheme() else 128)
 
     def paintEvent(self, e):
         painter = QPainter(self)
@@ -74,10 +81,13 @@ class GroupSettingCard(QWidget):
         if isDarkTheme():
             painter.setPen(QColor(0, 0, 0, 96))
         else:
-            painter.setPen(QColor(0, 0, 0, 24))
+            painter.setPen(QColor(0, 0, 0, 48))
 
         painter.drawLine(self.rect().topLeft(), self.rect().topRight())
 
+    @property
+    def payload(self) -> dict[str, Any]:
+        raise NotImplementedError
 
 class TaskCard(CardWidget):
     """ Task card base class """

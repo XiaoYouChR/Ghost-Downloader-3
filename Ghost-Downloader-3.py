@@ -33,9 +33,12 @@ from app.view.windows.main_window import MainWindow
 from app.supports.recorder import taskRecorder
 # noinspection PyUnresolvedReferences
 import app.assets.resources
+from niquests.packages import urllib3
 
 logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
 logger.info(f"Ghost Downloader v{VERSION} is Launched at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}")
+
+urllib3.disable_warnings()
 warnings.warn = logger.warning
 
 isSilently = "silent" in sys.argv

@@ -4,6 +4,7 @@ from asyncio import TaskGroup, CancelledError
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
+from typing import Any
 
 import niquests
 from loguru import logger
@@ -55,6 +56,33 @@ class HttpTask(Task):
 
     def __hash__(self):
         return hash(self.taskId)
+    
+    def applyPayloadToTask(self, payload: dict[str, Any]):
+        super().applyPayloadToTask(payload)
+        headers = payload.get("headers")
+        if isinstance(headers, dict):
+            self.headers = headers.copy()
+
+        proxies = payload.get("proxies")
+        if isinstance(proxies, dict):
+            self.proxies = proxies.copy()
+
+        blockNum = payload.get("preBlockNum")
+        if isinstance(blockNum, int):
+            self.blockNum = blockNum
+
+        resolvePath = str(self.path / self.title)
+        for stage in self.stages:
+            if not isinstance(stage, HttpTaskStage):
+                continue
+
+            stage.resolvePath = resolvePath
+            if isinstance(headers, dict):
+                stage.headers = headers
+            if isinstance(proxies, dict):
+                stage.proxies = proxies
+            if isinstance(blockNum, int):
+                stage.blockNum = blockNum
 
 @dataclass
 class HttpSubworker:

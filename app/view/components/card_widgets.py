@@ -1,10 +1,12 @@
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from qfluentwidgets import ScrollArea, setFont, isDarkTheme
 
 from app.bases.models import Task
-from app.view.components.cards import ResultCard, GroupSettingCard
+from app.view.components.cards import ResultCard, ParseSettingCard
 
 
 class HeaderCardWidgetBase(QWidget):
@@ -88,32 +90,20 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
         return results
 
 
-class SettingHeaderCardWidget(HeaderCardWidgetBase):
-    """设置标题栏组件"""
+class ParseSettingHeaderCardWidget(HeaderCardWidgetBase):
+    """解析设置标题栏组件"""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle("下载设置")
+        self.cards: list[ParseSettingCard] = []
 
-    def addGroup(self, icon, title: str, widget: QWidget, stretch=0) -> GroupSettingCard:
-        """ add widget to a new group
+    def addCard(self, card: ParseSettingCard):
+        if not isinstance(card, ParseSettingCard):
+            raise TypeError("card must be GroupSettingCard")
 
-        Parameters
-        ----------
-        icon: str | QIcon | FluentIconBase
-            the icon to be drawn
+        self.cards.append(card)
+        self.scrollLayout.addWidget(card)
 
-        title: str
-            the title of card
-
-        widget: QWidget
-            the widget to be added
-
-        stretch: int
-            the layout stretch of widget
-        """
-        group = GroupSettingCard(icon, title, self)
-        group.addWidget(widget, stretch=stretch)
-
-        self.scrollLayout.addWidget(group)
-
-        return group
+    @property
+    def payload(self) -> dict[str, Any]:
+        return {k: v for card in self.cards for k, v in card.payload.items()}
