@@ -67,7 +67,7 @@ class HttpTaskCard(TaskCard):
             #     progress += stage.progress
             #     speed += stage.speed
             self.progressBar.setValue(stage.progress)
-            self.speedLabel.setText(getReadableSize(speed))
+            self.speedLabel.setText(f"{getReadableSize(speed)}/s")
             self.progressLabel.setText(getReadableSize(stage.receivedBytes) + "/" + getReadableSize(self.task.fileSize))
             self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - stage.receivedBytes) / speed)) if speed != 0 else "--m--s")
         elif stage.status == TaskStatus.COMPLETED and self.taskStatus != TaskStatus.COMPLETED:

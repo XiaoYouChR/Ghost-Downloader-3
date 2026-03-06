@@ -1,5 +1,7 @@
+from enum import IntEnum
+
 from PySide6.QtCore import Qt, QSize, QTimer
-from PySide6.QtGui import QPainter, QColor
+from PySide6.QtGui import QPainter, QColor, QActionGroup
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect
 from loguru import logger
 from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton, \
@@ -91,6 +93,12 @@ class EmptyStatusWidget(QWidget):
         painter.drawRoundedRect(self.rect(), r, r)
 
 
+class FilterMode(IntEnum):
+    ALL = 0
+    ACTIVE = 1
+    COMPLETE = 2
+
+
 class TaskPage(ScrollArea):
 
     def __init__(self, parent=None):
@@ -99,6 +107,7 @@ class TaskPage(ScrollArea):
         self.selectionCount = 0
         self.isSelectionMode = False
         self.searchKeyword = ""
+        self.filterMode: FilterMode = FilterMode.ALL
 
         self.container = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self)
@@ -120,6 +129,7 @@ class TaskPage(ScrollArea):
         self.reverseSortAction = Action(FluentIcon.DOWN, self.tr('倒序'), self, checkable=True)
         self.filterButton = DropDownToolButton(FluentIcon.FILTER, self)
         self.filterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.filterActionGroup = QActionGroup(self)
         self.noFilterAction = Action(FluentIcon.FILTER, self.tr('全部任务'), self, checkable=True)
         self.activeFilterAction = Action(FluentIcon.DOWNLOAD, self.tr('活动任务'), self, checkable=True)
         self.completedFilterAction = Action(FluentIcon.TRAIN, self.tr('完成任务'), self, checkable=True)
@@ -156,6 +166,9 @@ class TaskPage(ScrollArea):
         self.speedBadge.setText(f"{getReadableSize(cfg.globalSpeed)}/s")
         cfg.resetGlobalSpeed()
 
+        if self.filterMode != FilterMode.ALL:
+            self.refreshCardVisibility()
+
     def addCard(self, card: TaskCard):
         card.deleted.connect(lambda: self.removeCard(card))
         card.checkedChanged.connect(self.onCardCheckedChanged)
@@ -188,6 +201,9 @@ class TaskPage(ScrollArea):
         self.sortMenu.addAction(self.reverseSortAction)
         self.sortButton.setMenu(self.sortMenu)
 
+        self.filterActionGroup.addAction(self.noFilterAction)
+        self.filterActionGroup.addAction(self.activeFilterAction)
+        self.filterActionGroup.addAction(self.completedFilterAction)
         self.filterMenu.addAction(self.noFilterAction)
         self.filterMenu.addAction(self.activeFilterAction)
         self.filterMenu.addAction(self.completedFilterAction)
@@ -236,6 +252,9 @@ class TaskPage(ScrollArea):
         self.commandView.deleteAction.triggered.connect(self.onDeleteActionTriggered)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
+        self.noFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
+        self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
+        self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETE))
         self.searchLineEdit.textChanged.connect(self.onSearchTextChanged)
         self.searchLineEdit.searchSignal.connect(self.onSearchTextChanged)
         self.searchLineEdit.clearSignal.connect(lambda: self.onSearchTextChanged(""))
@@ -248,12 +267,38 @@ class TaskPage(ScrollArea):
             (self.height() - self.emptyStatusWidget.height()) >> 1,
         )
 
-    def _matchCard(self, card: TaskCard) -> bool:
+    def _matchSearch(self, card: TaskCard) -> bool:
         if not self.searchKeyword:
             return True
 
         query = self.searchKeyword
         return query in str(card.task.title).strip().lower()
+
+    def _matchFilter(self, card: TaskCard) -> bool:
+        if self.filterMode == FilterMode.ALL:
+            return True
+
+        if self.filterMode == FilterMode.ACTIVE:
+            return not card.task.status == TaskStatus.COMPLETED
+        if self.filterMode == FilterMode.COMPLETE:
+            return card.task.status == TaskStatus.COMPLETED
+
+        return True
+
+    def _matchCard(self, card: TaskCard) -> bool:
+        return self._matchSearch(card) and self._matchFilter(card)
+
+    def _getEmptyTextForFilter(self) -> str:
+        if self.searchKeyword and self.filterMode != FilterMode.ALL:
+            return self.tr("没有匹配筛选条件的任务")
+        if self.searchKeyword:
+            return self.tr("没有匹配的任务")
+        if self.filterMode == FilterMode.ACTIVE:
+            return self.tr("暂无活动任务")
+        if self.filterMode == FilterMode.COMPLETE:
+            return self.tr("暂无完成任务")
+
+        return self.tr("暂无下载任务")
 
     def refreshCardVisibility(self):
         if not self.cards:
@@ -272,11 +317,15 @@ class TaskPage(ScrollArea):
             self.emptyStatusWidget.hide()
             return
 
-        self._setEmptyStatusText(self.tr("没有匹配的任务"))
+        self._setEmptyStatusText(self._getEmptyTextForFilter())
         self.emptyStatusWidget.show()
 
     def onSearchTextChanged(self, text: str):
         self.searchKeyword = text.strip().lower()
+        self.refreshCardVisibility()
+
+    def setFilterMode(self, mode: FilterMode):
+        self.filterMode = mode
         self.refreshCardVisibility()
 
     def selectAll(self):
