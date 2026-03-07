@@ -14,8 +14,8 @@ from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import getProxies
-from features.http_pack.config import httpConfig
-from features.http_pack.const import SpecialFileSize
+from .config import httpConfig
+from .const import SpecialFileSize
 
 
 @dataclass
@@ -26,17 +26,25 @@ class HttpTaskStage(TaskStage):
     proxies: dict
     resolvePath: str
     blockNum: int
-    receivedBytes: int = field(default=0)
     accelerated: bool = field(default=False)
 
 
 @dataclass
 class HttpTask(Task):
     url: str
-    fileSize: int
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
     blockNum: int = field(default=8)  # TODO 下载设置项
+
+    def setTitle(self, title: str):
+        self.title = title
+        self.syncStagePaths()
+
+    def syncStagePaths(self):
+        resolvePath = str(self.path / self.title)
+        for stage in self.stages:
+            if isinstance(stage, HttpTaskStage):
+                stage.resolvePath = resolvePath
 
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)
@@ -71,12 +79,11 @@ class HttpTask(Task):
         if isinstance(blockNum, int):
             self.blockNum = blockNum
 
-        resolvePath = str(self.path / self.title)
+        self.syncStagePaths()
         for stage in self.stages:
             if not isinstance(stage, HttpTaskStage):
                 continue
 
-            stage.resolvePath = resolvePath
             if isinstance(headers, dict):
                 stage.headers = headers
             if isinstance(proxies, dict):

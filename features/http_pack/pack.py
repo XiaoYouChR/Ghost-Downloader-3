@@ -11,7 +11,7 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import cfg
-from .cards import HttpTaskCard, HttpResultCard
+from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .config import httpConfig
 from .const import SpecialFileSize
 from .task import HttpTask, HttpTaskStage
@@ -171,10 +171,10 @@ class HttpPack(FeaturePack):
 
     def createTaskCard(self, task: Task, parent=None):
         if isinstance(task, HttpTask):
-            return HttpTaskCard(task, parent)
+            return UniversalTaskCard(task, parent)
         return None
 
     def createResultCard(self, task: Task, parent=None):
         if isinstance(task, HttpTask):
-            return HttpResultCard(task, parent)
+            return UniversalResultCard(task, parent)
         return None

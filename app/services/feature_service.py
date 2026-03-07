@@ -1,5 +1,6 @@
 import importlib.util
 import sys
+import tomllib
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Any
@@ -31,19 +32,102 @@ class FeatureService:
 
         for item in self.featuresPath.iterdir():
             if item.is_dir() and not item.name.startswith("."):
-                packPath = item / "pack.py"
-                if not packPath.exists():
+                manifest = self._loadPackManifest(item)
+                if manifest is None:
                     continue
 
                 featurePacks.append(
                     {
                         "name": item.name,
-                        "path": str(packPath),
+                        "path": str(item / manifest["entry"]),
                         "directory": str(item),
+                        "dependencies": manifest["dependencies"],
+                        "manifestPath": str(item / "manifest.toml"),
                     }
                 )
 
+        featurePacks.sort(key=lambda pack: pack["name"])
         return featurePacks
+
+    def _loadPackManifest(self, packDirectory: Path) -> dict[str, Any] | None:
+        manifestPath = packDirectory / "manifest.toml"
+        if not manifestPath.exists():
+            print(f"警告: FeaturePack 缺少 manifest.toml: {packDirectory}")
+            return None
+
+        try:
+            manifest = tomllib.loads(manifestPath.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"警告: 无法读取 FeaturePack manifest {manifestPath}: {repr(e)}")
+            return None
+
+        packConfig = manifest.get("pack")
+        if not isinstance(packConfig, dict):
+            print(f"警告: FeaturePack manifest 缺少 [pack] 节: {manifestPath}")
+            return None
+
+        entry = packConfig.get("entry", "pack.py")
+        if not isinstance(entry, str) or not entry.strip():
+            print(f"警告: FeaturePack manifest 的 entry 无效: {manifestPath}")
+            return None
+
+        packPath = packDirectory / entry
+        if not packPath.exists():
+            print(f"警告: FeaturePack 入口文件不存在: {packPath}")
+            return None
+
+        dependencies = packConfig.get("dependencies", [])
+        if not isinstance(dependencies, list) or any(
+            not isinstance(dependency, str) or not dependency
+            for dependency in dependencies
+        ):
+            print(f"警告: FeaturePack manifest 的 dependencies 无效: {manifestPath}")
+            return None
+
+        return {
+            "entry": entry,
+            "dependencies": tuple(dependencies),
+        }
+
+    def _sortFeaturePacksByDependencies(self, featurePacks: list[dict]) -> list[dict]:
+        packInfoByName = {pack["name"]: pack for pack in featurePacks}
+        visiting: list[str] = []
+        visited: set[str] = set()
+        ordered: list[dict] = []
+        skipped: set[str] = set()
+
+        def visit(packName: str):
+            if packName in visited:
+                return
+            if packName in skipped:
+                raise ValueError(f"{packName} 依赖的 FeaturePack 已被跳过")
+            if packName in visiting:
+                cycleStart = visiting.index(packName)
+                cyclePath = visiting[cycleStart:] + [packName]
+                raise ValueError(f"检测到 FeaturePack 循环依赖: {' -> '.join(cyclePath)}")
+
+            visiting.append(packName)
+            packInfo = packInfoByName[packName]
+
+            for dependency in packInfo.get("dependencies", ()):
+                if dependency not in packInfoByName:
+                    raise ValueError(f"{packName} 依赖未找到的 FeaturePack: {dependency}")
+                visit(dependency)
+
+            visiting.pop()
+            visited.add(packName)
+            ordered.append(packInfo)
+
+        for packInfo in featurePacks:
+            packName = packInfo["name"]
+            try:
+                visit(packName)
+            except Exception as e:
+                skipped.add(packName)
+                visiting.clear()
+                print(f"[error] 跳过 FeaturePack {packName}: {e}")
+
+        return [pack for pack in ordered if pack["name"] not in skipped]
 
     def _refreshSortedPacksCache(self):
         self.sortedPacksCache = [
@@ -51,7 +135,7 @@ class FeatureService:
             for name, info in self.loadedPacks.items()
             if isinstance(info.get("instance"), FeaturePack)
         ]
-        self.sortedPacksCache.sort(key=lambda item: (-item[1].priority, item[0]))
+        self.sortedPacksCache.sort(key=lambda item: (item[1].priority, item[0]))
 
     def _loadPackConfig(self, packInstance: FeaturePack, mainWindow: "MainWindow"):
         packConfig = packInstance.config
@@ -75,7 +159,7 @@ class FeatureService:
                 cards.extend(packConfig.getDialogCards(parent))
             except Exception as e:
                 print(
-                    f"✗ 获取 FeaturePack 对话框设置项失败 {packName}: {repr(e)}\n{traceback.format_exc()}"
+                    f"[error] 获取 FeaturePack 对话框设置项失败 {packName}: {repr(e)}\n{traceback.format_exc()}"
                 )
         return cards
 
@@ -88,7 +172,7 @@ class FeatureService:
         """加载单个 feature pack"""
         try:
             packageName = packInfo["name"]
-            moduleName = f"{packageName}.pack"
+            moduleName = packageName
 
             spec = importlib.util.spec_from_file_location(
                 moduleName,
@@ -139,14 +223,14 @@ class FeatureService:
             if refreshCache:
                 self._refreshSortedPacksCache()
 
-            print(f"✓ 成功加载 feature pack: {packInfo['name']}")
+            print(f"[ok] 成功加载 feature pack: {packInfo['name']}")
             return True
 
         except Exception as e:
-            moduleName = f"{packInfo['name']}.pack"
+            moduleName = packInfo["name"]
             if moduleName in sys.modules:
                 del sys.modules[moduleName]
-            print(f"✗ 加载 feature pack 失败 {packInfo['name']}: {str(e)}")
+            print(f"[error] 加载 feature pack 失败 {packInfo['name']}: {str(e)}")
             traceback.print_exc()
             return False
 
@@ -157,7 +241,7 @@ class FeatureService:
                     return packName, packInstance
             except Exception as e:
                 print(
-                    f"✗ FeaturePack.canHandle 失败 {packName}: {repr(e)}\n{traceback.format_exc()}"
+                    f"[error] FeaturePack.canHandle 失败 {packName}: {repr(e)}\n{traceback.format_exc()}"
                 )
         return None, None
 
@@ -176,7 +260,7 @@ class FeatureService:
                     return packName, packInstance
             except Exception as e:
                 print(
-                    f"✗ FeaturePack.canHandleTask 失败 {packName}: {repr(e)}\n{traceback.format_exc()}"
+                    f"[error] FeaturePack.canHandleTask 失败 {packName}: {repr(e)}\n{traceback.format_exc()}"
                 )
         return None, None
 
@@ -226,6 +310,11 @@ class FeatureService:
 
         print(
             f"发现 {len(featurePacks)} 个 feature packs: {[pack['name'] for pack in featurePacks]}"
+        )
+
+        featurePacks = self._sortFeaturePacksByDependencies(featurePacks)
+        print(
+            f"FeaturePack 加载顺序: {[pack['name'] for pack in featurePacks]}"
         )
 
         loadedCount = 0

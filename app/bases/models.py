@@ -59,6 +59,7 @@ class TaskStage:
     stageId: str = field(default_factory=lambda: f"stg_{uuid4().hex}")
     status: TaskStatus = TaskStatus.WAITING
     progress: float = 0   # 0 ~ 100
+    receivedBytes: int = field(default=0)
     speed: int = field(default=1)   # division cannot be 0
 
     def bindTask(self, task: "Task"):
@@ -112,10 +113,17 @@ class Task:
     stages: list[TaskStage] = field(default_factory=list)
     createdAt: int = field(default_factory=lambda: int(time_ns()))
     path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
+    fileSize: int
 
     @property
     def resolvePath(self) -> str:
         return str(self.path / self.title)
+
+    def setTitle(self, title: str):
+        self.title = title
+
+    def syncStagePaths(self):
+        raise NotImplementedError
 
     def __post_init__(self):
         for stage in self.stages:

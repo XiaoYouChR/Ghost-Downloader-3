@@ -1,16 +1,20 @@
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QWidget, QHBoxLayout
+from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent
+from PySide6.QtGui import QColor, QPainter, QPen, QMouseEvent
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayout
 from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
-    themeColor, IconWidget
+    themeColor, IconWidget, ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
+    TransparentToolButton, ProgressBar, LineEdit
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
+from app.supports.recorder import taskRecorder
+from app.supports.utils import openFile, getReadableSize, getReadableTime
 from app.view.components.dialogs import DeleteTaskDialog
+from app.view.components.labels import IconBodyLabel
 
 
 class ResultCard(QWidget):
@@ -190,3 +194,271 @@ class TaskCard(CardWidget):
 
     def onTaskFailed(self):
         raise NotImplementedError
+
+
+class UniversalTaskCard(TaskCard):
+    """ Task card """
+    def __init__(self, task: Task, parent=None):
+        super().__init__(task, parent)
+        self.setFixedHeight(60)
+        self.task = task
+        self.cardStatus = self.task.status
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo(self.task.resolvePath)).pixmap(48, 48), self)
+        # TODO macOS
+        self.iconLabel.setFixedSize(48, 48)
+
+        self.infoVBoxLayout = QVBoxLayout(self)
+        self.filenameLabel = StrongBodyLabel(self.task.title, self)
+        self.infoLayout = QHBoxLayout(self)
+        self.speedLabel = IconBodyLabel("", FluentIcon.SPEED_HIGH, self)
+        self.leftTimeLabel = IconBodyLabel("", FluentIcon.STOP_WATCH, self)
+        self.progressLabel = IconBodyLabel("", FluentIcon.LIBRARY, self)
+        self.toggleRunningStatusButton = PrimaryToolButton(FluentIcon.PAUSE, self)
+        self.openFileButton = ToolButton(FluentIcon.LINK, self)
+        self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
+        self.cancelButton = TransparentToolButton(FluentIcon.CLOSE, self)
+        # TODO 分段进度条
+        self.progressBar = ProgressBar(self)
+        self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        # init
+        self.initLayout()
+        self.connectSignalToSlot()
+        self._renderTaskState()
+
+    def connectSignalToSlot(self):
+        self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
+        self.openFileButton.clicked.connect(lambda: openFile(self.task.resolvePath))
+        self.openFolderButton.clicked.connect(lambda: openFile(self.task.path))
+        self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
+
+    def toggleRunningStatus(self):
+        if self.task.status == TaskStatus.RUNNING:
+            self.pauseTask()
+        else:
+            self.resumeTask()
+
+    def refreshToggleButton(self):
+        if self.task.status == TaskStatus.RUNNING:
+            self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
+            self.toggleRunningStatusButton.setEnabled(True)
+        elif self.task.status == TaskStatus.COMPLETED:
+            self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
+            self.toggleRunningStatusButton.setEnabled(False)
+        else:
+            self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
+            self.toggleRunningStatusButton.setEnabled(True)
+
+    def _renderTaskState(self):
+        division = len(self.task.stages)
+        progress = 0
+        speed = 0
+        receivedBytes = 0
+
+        for stage in self.task.stages:
+            progress += stage.progress
+            speed += stage.speed
+            receivedBytes += stage.receivedBytes
+
+        progress /= division
+
+        self.progressBar.setValue(progress)
+
+        if self.task.fileSize > 0:
+            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}")
+        else:
+            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
+
+        if self.task.status == TaskStatus.RUNNING:
+            self.speedLabel.setText(f"{getReadableSize(speed)}/s")
+            self.progressLabel.setText(getReadableSize(receivedBytes) + "/" + getReadableSize(self.task.fileSize))
+            self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)) if speed != 0 else "--m--s")
+        elif self.task.status == TaskStatus.COMPLETED:
+            self.progressBar.setValue(100)
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("完成")
+        elif self.task.status == TaskStatus.FAILED:
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("失败")
+        elif self.task.status == TaskStatus.PAUSED:
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("已暂停")
+        else:
+            self.speedLabel.setText("0.00 B/s")
+            self.leftTimeLabel.setText("等待中")
+
+        self.refreshToggleButton()
+
+    def refresh(self):
+        """通过 self.task 刷新界面"""
+        if self.cardStatus == TaskStatus.COMPLETED:
+            return
+
+        if self.task.status == TaskStatus.COMPLETED and self.cardStatus != TaskStatus.COMPLETED:
+            self.onTaskFinished()
+        elif self.task.status == TaskStatus.FAILED and self.cardStatus != TaskStatus.FAILED:
+            self.onTaskFailed()
+            # TODO 上报错误暂未实现
+
+        self._renderTaskState()
+
+        if self.task.status != self.cardStatus:
+            taskRecorder.flush()
+            self.cardStatus = self.task.status
+
+    def onTaskFinished(self):
+        super().onTaskFinished()
+        self.progressBar.setValue(100)
+        self.speedLabel.setText("0.00 B/s")
+        self.leftTimeLabel.setText("完成")
+
+    def onTaskDeleted(self, completely: bool = False):
+        if not completely:
+            return
+
+        candidates: set[Path] = set()
+        if self.task.resolvePath:
+            candidates.add(Path(self.task.resolvePath))
+        for stage in self.task.stages:
+            resolvePath = getattr(stage, "resolvePath", None)
+            if resolvePath:
+                candidates.add(Path(resolvePath))
+
+        for target in candidates:
+            if not target:
+                continue
+
+            for path in (target, Path(str(target) + ".ghd")):
+                try:
+                    if path.is_file() or path.is_symlink():
+                        path.unlink()
+                except FileNotFoundError:
+                    continue
+                except Exception as e:
+                    logger.error(f"failed to remove file {path}: {repr(e)}")
+
+    def onTaskFailed(self):
+        self.speedLabel.setText("0.00 B/s")
+        self.leftTimeLabel.setText("失败")
+
+    def resumeTask(self):
+        self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
+        self.toggleRunningStatusButton.setDisabled(True)
+        coreService.createTask(self.task)
+        self.cardStatus = self.task.status
+        self._renderTaskState()
+        taskRecorder.flush()
+        self.toggleRunningStatusButton.setEnabled(True)
+
+    def pauseTask(self):
+        self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
+        self.toggleRunningStatusButton.setDisabled(True)
+        coreService.stopTask(self.task)
+        self.cardStatus = self.task.status
+        self._renderTaskState()
+        taskRecorder.flush()
+        self.toggleRunningStatusButton.setEnabled(True)
+
+    def initLayout(self):
+        self.hBoxLayout.addWidget(self.checkBox)
+        self.hBoxLayout.addWidget(self.iconLabel)
+
+        self.infoVBoxLayout.addWidget(self.filenameLabel)
+        self.infoLayout.addWidget(self.speedLabel)
+        self.infoLayout.addWidget(self.leftTimeLabel)
+        self.infoLayout.addWidget(self.progressLabel)
+        self.infoLayout.addStretch()
+        self.infoVBoxLayout.addLayout(self.infoLayout)
+        self.infoVBoxLayout.setContentsMargins(2, 8, 2, 8)
+        self.hBoxLayout.addLayout(self.infoVBoxLayout)
+        self.hBoxLayout.addStretch()
+        self.hBoxLayout.addWidget(self.toggleRunningStatusButton)
+        self.hBoxLayout.addWidget(self.openFileButton)
+        self.hBoxLayout.addWidget(self.openFolderButton)
+        self.hBoxLayout.addWidget(self.cancelButton)
+
+        self.hBoxLayout.setContentsMargins(12, 0, 12, 0)
+
+    def resizeEvent(self, e):
+        self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)
+        return super().resizeEvent(e)
+
+
+class UniversalResultCard(ResultCard):
+    def __init__(self, task: Task, parent: QWidget = None):
+        super().__init__(task, parent)
+        self.task = task
+        self.iconLabel = ImageLabel(self)
+        self.filenameLabel = StrongBodyLabel(self.task.title, self)
+        self.filenameEdit = LineEdit(self)
+        self.sizeLabel = BodyLabel(getReadableSize(self.task.fileSize), self)
+        self.mainLayout = QHBoxLayout(self)
+
+        self.initWidget()
+        self.initLayout()
+
+    def initWidget(self):
+        """初始化组件属性"""
+        self.setFixedHeight(35)
+        self.resetFileIcon()
+        # 设置文件名标签
+        self.filenameLabel.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.filenameLabel.installEventFilter(self)
+        # 设置编辑框
+        self.filenameEdit.setText(self.task.title)
+        self.filenameEdit.editingFinished.connect(self._onEditingFinished)
+        self.filenameEdit.hide()
+
+    def initLayout(self):
+        """初始化布局"""
+        self.mainLayout.setContentsMargins(10, 2, 10, 2)
+        self.mainLayout.setSpacing(12)
+        self.mainLayout.addWidget(self.iconLabel)
+        self.mainLayout.addWidget(self.filenameLabel)
+        self.mainLayout.addWidget(self.filenameEdit)
+        self.mainLayout.addStretch()
+        self.mainLayout.addWidget(self.sizeLabel)
+
+    def eventFilter(self, obj, event: QEvent):
+        """事件过滤器，处理双击事件"""
+        if obj is self.filenameLabel:
+            if event.type() == QEvent.Type.MouseButtonDblClick and isinstance(event, QMouseEvent):
+                if event.button() == Qt.MouseButton.LeftButton:
+                    self._enterEditMode()
+                    return True
+        return super().eventFilter(obj, event)
+
+    def resetFileIcon(self):
+        icon = QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
+        self.iconLabel.setImage(icon.pixmap(16, 16))
+        self.iconLabel.setFixedSize(16, 16)
+
+    def _enterEditMode(self):
+        """进入编辑模式"""
+        self.filenameLabel.hide()
+        self.filenameEdit.show()
+        self.filenameEdit.setFocus()
+        self.filenameEdit.selectAll()
+
+    def _onEditingFinished(self):
+        """编辑完成回调"""
+        newFilename = self.filenameEdit.text().strip()
+        if newFilename and newFilename != self.task.title:
+            self.task.setTitle(newFilename)
+            self.filenameLabel.setText(newFilename)
+            self.resetFileIcon()
+
+        self.filenameEdit.hide()
+        self.filenameLabel.show()
+        self.filenameLabel.setFocus()
+
+    def setFilename(self, filename: str):
+        """设置文件名"""
+        self.task.setTitle(filename)
+        self.filenameLabel.setText(filename)
+        self.filenameEdit.setText(filename)
+        self.resetFileIcon()
+
+    def getTask(self) -> Task:
+        return self.task
