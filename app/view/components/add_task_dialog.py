@@ -130,9 +130,6 @@ class AddTaskDialog(MessageBoxBase):
 
     def _applyCurrentPayloadToTask(self, task: Task):
         payload = self.getCurrentPayload()
-        taskUrl = getattr(task, "url", None)
-        if isinstance(taskUrl, str) and taskUrl.strip():
-            payload["url"] = taskUrl
         task.applyPayloadToTask(payload)
 
     def syncPayload(self):

@@ -61,11 +61,11 @@ class HttpTask(Task):
         super().applyPayloadToTask(payload)
         headers = payload.get("headers")
         if isinstance(headers, dict):
-            self.headers = headers.copy()
+            self.headers = headers
 
         proxies = payload.get("proxies")
         if isinstance(proxies, dict):
-            self.proxies = proxies.copy()
+            self.proxies = proxies
 
         blockNum = payload.get("preBlockNum")
         if isinstance(blockNum, int):

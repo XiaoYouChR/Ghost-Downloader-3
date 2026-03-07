@@ -92,7 +92,7 @@ class ParseSettingCard(QWidget):
 class TaskCard(CardWidget):
     """ Task card base class """
 
-    deleted = Signal()  # TODO Send Task ID, or lambda function?
+    deleted = Signal()
     finished = Signal()
     checkedChanged = Signal(bool)
 

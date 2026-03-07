@@ -4,9 +4,18 @@ from sys import platform
 if platform == "win32":
     import msvcrt
     from ctypes import wintypes, Structure, Union, c_void_p, POINTER, windll, WinError, cast, c_char_p, byref, \
-        c_longlong, get_last_error
+        c_longlong
 
     INVALID_HANDLE_VALUE = -1
+
+    def _check_error(msg: str):
+        def _check(result, func, arg):
+            if not result:
+                err = WinError()
+                raise OSError(err.winerror, f"{msg}: {err.strerror}")
+            return result
+
+        return _check
 
     class _dummy_s(Structure):
         _fields_ = [("Offset", wintypes.DWORD), ("OffsetHigh", wintypes.DWORD)]
@@ -32,13 +41,7 @@ if platform == "win32":
         POINTER(OVERLAPPED),
     ]
     WriteFile.restype = wintypes.BOOL
-
-    def check1(result, func, arg):
-        if result == 0:
-            raise WinError()
-        return result
-
-    WriteFile.errcheck = check1
+    WriteFile.errcheck = _check_error("WriteFile failed")
 
     # _get_osfhandle = ctypes.windll.msvcrt._get_osfhandle
     # _get_osfhandle.argtypes = [ctypes.c_int]
@@ -87,6 +90,7 @@ if platform == "win32":
         wintypes.LPVOID,
     ]
     DeviceIoControl.restype = wintypes.BOOL
+    DeviceIoControl.errcheck = _check_error("FSCTL_SET_SPARSE failed")
 
     SetFilePointerEx = windll.kernel32.SetFilePointerEx
     SetFilePointerEx.argtypes = [
@@ -96,15 +100,12 @@ if platform == "win32":
         wintypes.DWORD,
     ]
     SetFilePointerEx.restype = wintypes.BOOL
+    SetFilePointerEx.errcheck = _check_error("SetFilePointerEx failed")
 
     SetEndOfFile = windll.kernel32.SetEndOfFile
     SetEndOfFile.argtypes = [wintypes.HANDLE]
     SetEndOfFile.restype = wintypes.BOOL
-
-
-    def _raise_winerror(msg: str):
-        err = get_last_error()
-        raise OSError(err, f"{msg}, WinError={err}")
+    SetEndOfFile.errcheck = _check_error("SetEndOfFile failed")
 
     def ftruncate(fd: typing.Union[int, wintypes.HANDLE], size: int) -> None:
         if isinstance(fd, int):
@@ -115,7 +116,7 @@ if platform == "win32":
             handle = fd
 
         returned = wintypes.DWORD(0)
-        ok = DeviceIoControl(
+        DeviceIoControl(
             handle,
             FSCTL_SET_SPARSE,
             None,
@@ -125,17 +126,11 @@ if platform == "win32":
             byref(returned),
             None,
         )
-        if not ok:
-            _raise_winerror("FSCTL_SET_SPARSE failed")
 
         newPos = c_longlong()
-        ok = SetFilePointerEx(handle, size, byref(newPos), FILE_BEGIN)
-        if not ok:
-            _raise_winerror("SetFilePointerEx failed")
+        SetFilePointerEx(handle, size, byref(newPos), FILE_BEGIN)
 
-        ok = SetEndOfFile(handle)
-        if not ok:
-            _raise_winerror("SetEndOfFile failed")
+        SetEndOfFile(handle)
 
 else:
     # noinspection PyUnresolvedReferences
