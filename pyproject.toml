@@ -10,4 +10,5 @@ dependencies = [
     "niquests[http3,socks,speedups]>=3.17.0",
     "pyside6>=6.10.1",
     "pyside6-fluent-widgets>=1.11.0",
+    "qrcode[pil]>=8.2",
 ]
