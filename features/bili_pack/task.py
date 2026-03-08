@@ -1,5 +1,4 @@
 import asyncio
-import time
 import shutil
 from asyncio import CancelledError
 from dataclasses import dataclass, field
@@ -24,7 +23,6 @@ class FFmpegStage(TaskStage):
     videoPath: str
     audioPath: str
     resolvePath: str
-    durationUs: int = field(default=0)
     cleanupSource: bool = field(default=True)
 
 
@@ -43,33 +41,22 @@ class FFmpegWorker(Worker):
         outputPath.parent.mkdir(parents=True, exist_ok=True)
 
         process = None
-        stderrTask = None
         try:
             self.stage.progress = 0
-            self.stage.speed = 0
-            self.stage.receivedBytes = 0
             process = await asyncio.create_subprocess_exec(
                 ffmpeg,
                 "-y",
-                "-nostats",
-                "-loglevel",
-                "error",
                 "-i",
                 self.stage.videoPath,
                 "-i",
                 self.stage.audioPath,
                 "-c",
                 "copy",
-                "-progress",
-                "pipe:1",
                 self.stage.resolvePath,
-                stdout=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
             )
-            stderrTask = asyncio.create_task(process.stderr.read())
-            await self._watchProgress(process)
-            stderr = await stderrTask
-            await process.wait()
+            _, stderr = await process.communicate()
             if process.returncode != 0:
                 message = stderr.decode("utf-8", errors="ignore").strip()
                 raise RuntimeError(message or f"ffmpeg 退出码异常: {process.returncode}")
@@ -82,80 +69,10 @@ class FFmpegWorker(Worker):
             if process is not None and process.returncode is None:
                 process.kill()
                 await process.wait()
-            if stderrTask is not None and not stderrTask.done():
-                stderrTask.cancel()
             raise
         except Exception:
             self.stage.setStatus(TaskStatus.FAILED)
-            if stderrTask is not None and not stderrTask.done():
-                stderrTask.cancel()
             raise
-
-    async def _watchProgress(self, process: asyncio.subprocess.Process):
-        if process.stdout is None:
-            return
-
-        durationUs = self.stage.durationUs
-        lastOutputSize = 0
-        lastSpeedCheck = time.monotonic()
-        progressData: dict[str, str] = {}
-
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-
-            text = line.decode("utf-8", errors="ignore").strip()
-            if not text or "=" not in text:
-                continue
-
-            key, value = text.split("=", 1)
-            progressData[key] = value
-
-            if key != "progress":
-                continue
-
-            currentOutputSize = self._safeParseInt(progressData.get("total_size"))
-            currentUs = self._parseOutputTimeUs(progressData)
-
-            now = time.monotonic()
-            elapsed = max(now - lastSpeedCheck, 1e-3)
-            self.stage.speed = max(int((currentOutputSize - lastOutputSize) / elapsed), 0)
-            lastOutputSize = currentOutputSize
-            lastSpeedCheck = now
-
-            if durationUs > 0 and currentUs >= 0:
-                self.stage.progress = min((currentUs / durationUs) * 100, 99.9)
-
-            if value == "end":
-                break
-
-            progressData.clear()
-
-    def _parseOutputTimeUs(self, progressData: dict[str, str]) -> int:
-        if "out_time_us" in progressData:
-            return self._safeParseInt(progressData.get("out_time_us"))
-
-        outTime = progressData.get("out_time")
-        if outTime:
-            try:
-                hour, minute, second = outTime.split(":")
-                totalSeconds = int(hour) * 3600 + int(minute) * 60 + float(second)
-            except (TypeError, ValueError):
-                totalSeconds = None
-            if totalSeconds is not None:
-                return int(totalSeconds * 1_000_000)
-
-        return self._safeParseInt(progressData.get("out_time_ms"))
-
-    def _safeParseInt(self, value: str | None) -> int:
-        if value is None:
-            return 0
-
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            return 0
 
     def _cleanupSourceFiles(self):
         for rawPath in (self.stage.videoPath, self.stage.audioPath):

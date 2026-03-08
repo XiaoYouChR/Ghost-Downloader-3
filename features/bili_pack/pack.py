@@ -297,7 +297,6 @@ async def parse(payload: dict) -> BilibiliTask:
             videoPath=task.videoPath,
             audioPath=task.audioPath,
             resolvePath=task.resolvePath,
-            durationUs=max(int(page.get("duration", 0)), 0) * 1_000_000,
         )
 
         task.addStage(videoStage)
