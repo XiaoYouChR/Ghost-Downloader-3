@@ -111,12 +111,7 @@ def _createQrPixmap(content: str, size: int = 240) -> QPixmap:
 
     pixmap = QPixmap()
     pixmap.loadFromData(buffer.getvalue(), "PNG")
-    return pixmap.scaled(
-        size,
-        size,
-        Qt.AspectRatioMode.KeepAspectRatio,
-        Qt.TransformationMode.SmoothTransformation,
-    )
+    return pixmap.scaled(size, size)
 
 
 def _extractCookieItemsFromResponse(response) -> dict[str, str]:
@@ -409,11 +404,11 @@ class EditCookieDialog(MessageBoxBase):
 
         self.titleLabel = SubtitleLabel(self.tr("手动导入 Cookie"), self.widget)
         self.descriptionLabel = CaptionLabel(
-            self.tr("请粘贴浏览器导出的完整 Cookie，留空后保存可清空当前 Cookie。"),
+            self.tr("请粘贴浏览器导出的完整 Cookie，留空后保存可清空当前 Cookie"),
             self.widget,
         )
         self.cookieTextEdit = PlainTextEdit(self.widget)
-        self.cookieTextEdit.setPlaceholderText(self.tr("请在此输入用户 Cookie。"))
+        self.cookieTextEdit.setPlaceholderText(self.tr("请在此输入用户 Cookie"))
         self.cookieTextEdit.setPlainText(initialCookie or "")
 
         self.viewLayout.addWidget(self.titleLabel)
@@ -440,7 +435,7 @@ class ScanLoginDialog(MessageBoxBase):
 
         self.titleLabel = SubtitleLabel(self.tr("扫码登录"), self.widget)
         self.descriptionLabel = CaptionLabel(
-            self.tr("使用哔哩哔哩手机客户端扫描下方二维码，并在手机端确认登录。"),
+            self.tr("使用哔哩哔哩手机客户端扫描下方二维码，并在手机端确认登录"),
             self.widget,
         )
         self.qrPixmapLabel = PixmapLabel(self.widget)
@@ -453,7 +448,7 @@ class ScanLoginDialog(MessageBoxBase):
         self.statusLabel.setWordWrap(True)
 
         self.tipLabel = CaptionLabel(
-            self.tr("二维码有效期约 180 秒，失效后可点击“刷新二维码”重新生成。"),
+            self.tr("二维码有效期约 180 秒，失效后可点击“刷新二维码”重新生成"),
             self.widget,
         )
         self.tipLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -538,7 +533,7 @@ class ScanLoginDialog(MessageBoxBase):
             return
 
         self.openBrowserButton.setEnabled(True)
-        self.statusLabel.setText(self.tr("等待扫码并在手机端确认登录。"))
+        self.statusLabel.setText(self.tr("等待扫码并在手机端确认登录"))
         self._polling = True
         generation = self._generation
         coreService.runCoroutine(
@@ -555,11 +550,11 @@ class ScanLoginDialog(MessageBoxBase):
             return
 
         if statusCode == _BILIBILI_QR_UNSCANNED:
-            self.statusLabel.setText(self.tr("等待扫码。"))
+            self.statusLabel.setText(self.tr("等待扫码"))
             return
 
         if statusCode == _BILIBILI_QR_SCANNED:
-            self.statusLabel.setText(self.tr("二维码已扫码，请在手机端确认登录。"))
+            self.statusLabel.setText(self.tr("二维码已扫码，请在手机端确认登录"))
             return
 
         if statusMessage:
@@ -572,7 +567,7 @@ class ScanLoginDialog(MessageBoxBase):
         self._polling = False
 
         if error:
-            self.statusLabel.setText(self.tr("轮询扫码状态失败，请点击“刷新二维码”重试。"))
+            self.statusLabel.setText(self.tr("轮询扫码状态失败，请点击“刷新二维码”重试"))
             return
 
         payload = result or {}
@@ -583,13 +578,13 @@ class ScanLoginDialog(MessageBoxBase):
             return
 
         if statusCode == _BILIBILI_QR_EXPIRED:
-            self.statusLabel.setText(self.tr("二维码已失效，请点击“刷新二维码”重新生成。"))
+            self.statusLabel.setText(self.tr("二维码已失效，请点击“刷新二维码”重新生成"))
             return
 
         if statusCode == 0:
             self.cookie = _normalizeCookieString(str(payload.get("cookie") or ""))
             if not self.cookie:
-                self.statusLabel.setText(self.tr("登录成功，但未能提取到有效 Cookie。"))
+                self.statusLabel.setText(self.tr("登录成功，但未能提取到有效 Cookie"))
                 return
 
             self.statusLabel.setText(self.tr("登录成功，正在导入 Cookie..."))
