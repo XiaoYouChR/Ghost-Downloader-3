@@ -250,7 +250,7 @@ async def _pollBilibiliQrLogin(
                 data = payload.get("data") or {}
                 cookieString = _extractCookieString(response, data) if data.get("code") == 0 else ""
             finally:
-                await response.close()
+                response.close()
 
             if payload.get("code") not in {None, 0}:
                 raise ValueError(payload.get("message") or "轮询扫码状态失败")
@@ -303,7 +303,7 @@ async def _fetchBilibiliLoginInfo(cookie: str) -> dict[str, str | bool]:
             response.raise_for_status()
             payload = response.json()
         finally:
-            await response.close()
+            response.close()
 
         data = payload.get("data") or {}
         if payload.get("code") == -101 or not data.get("isLogin"):
@@ -608,7 +608,7 @@ class BilibiliLoginSettingCard(SettingCard):
         super().__init__(
             FluentIcon.VIEW,
             "账号登录",
-            "状态：未登录\n用户名：-\nmid：-\n大会员：未开通",
+            "状态：未登录 用户名：- UID：- 会员状态：未开通",
             parent,
         )
         self.userCookieItem = userCookieItem
@@ -617,9 +617,6 @@ class BilibiliLoginSettingCard(SettingCard):
         self._uname = "-"
         self._mid = "-"
         self._vipText = "未开通"
-
-        self.setFixedHeight(118)
-        self.contentLabel.setWordWrap(True)
 
         self.operationWidget = QWidget(self)
         self.operationLayout = QHBoxLayout(self.operationWidget)
@@ -646,10 +643,10 @@ class BilibiliLoginSettingCard(SettingCard):
 
     def _renderAccountInfo(self):
         self.setContent(
-            f"状态：{self._statusText}\n"
-            f"用户名：{self._uname}\n"
-            f"mid：{self._mid}\n"
-            f"大会员：{self._vipText}"
+            f"状态：{self._statusText} "
+            f"用户名：{self._uname} "
+            f"UID：{self._mid} "
+            f"会员状态：{self._vipText}"
         )
 
     def _syncButtonsEnabled(self, busy: bool = False):
