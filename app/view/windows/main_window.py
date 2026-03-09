@@ -9,9 +9,11 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
 from app.services.feature_service import featureService
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
-from app.supports.utils import getProxies
+from app.supports.signal_bus import signalBus
+from app.supports.utils import getProxies, bringWindowToTop
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.release_info_dialog import ReleaseInfoDialog
+from app.view.components.tray import SystemTrayIcon
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 
@@ -39,12 +41,17 @@ class MainWindow(MSFluentWindow):
         if not isSilently:
             self.initSplashScreen()
         self.initPagesAndNavigation()
-        self.addTaskDialog = None
 
         QApplication.processEvents()
 
+        self.tray = SystemTrayIcon(self)
+        self.tray.show()
+        self.connectSignalToSlot()
         # TODO show update tooltip for Test
         self.showUpdateToolTip({"version": "0.0.1", "content": "This is a test tooltip."})
+
+    def connectSignalToSlot(self):
+        signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
 
     def _restoreGeometry(self):
         self.resize(960, 540)
@@ -89,12 +96,12 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
     def showAddTaskDialog(self, triggeredByUser: bool = False):
-        if self.addTaskDialog is None:
-            self.addTaskDialog = AddTaskDialog.getInstance(self)
-            self.addTaskDialog.taskConfirmed.connect(self._addTaskFromDialog)
+        if AddTaskDialog.instance is None:
+            instance = AddTaskDialog.initialize(self)
+            instance.taskConfirmed.connect(self._addTaskFromDialog)
 
-        if self.addTaskDialog.exec() == QDialog.DialogCode.Accepted:
-            for task in self.addTaskDialog.takeConfirmedTasks():
+        if AddTaskDialog.instance.exec() == QDialog.DialogCode.Accepted:
+            for task in AddTaskDialog.instance.takeConfirmedTasks():
                 self._addTaskFromDialog(task)
 
     def _addTaskFromDialog(self, task):
@@ -135,3 +142,10 @@ class MainWindow(MSFluentWindow):
                                 allow_redirects=True, proxies=getProxies()).json()
         dialog = ReleaseInfoDialog(releaseData, parent=self)
         dialog.exec()
+
+    def closeEvent(self, event, /):
+        event.ignore()
+        if not self.isMaximized():
+            cfg.set(cfg.geometry, self.geometry())
+
+        self.hide()

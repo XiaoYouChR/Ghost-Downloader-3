@@ -391,14 +391,14 @@ class AddTaskDialog(MessageBoxBase):
         return any(state.status in {"pending", "success"} for state in self._lineStates)
 
     @classmethod
-    def getInstance(cls, parent=None):
+    def initialize(cls, parent=None):
         if cls.instance is None:
             cls.instance = cls(parent)
 
         return cls.instance
 
     def eventFilter(self, obj, e: QEvent):
-        if obj is self.windowMask:
+        if obj is self.windowMask and not self.window().isMaximized():
             if (
                 e.type() == QEvent.Type.MouseButtonPress
                 and e.button() == Qt.MouseButton.LeftButton

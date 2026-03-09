@@ -244,5 +244,3 @@ class CoreService(QThread):
         self.tasks.clear()
 
 coreService = CoreService()
-
-# TODO 程序现在无法正常退出 何意味?
