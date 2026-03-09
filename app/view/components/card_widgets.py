@@ -1,8 +1,8 @@
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont, QColor, QPainter
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from qfluentwidgets import ScrollArea, setFont, isDarkTheme
 
 from app.bases.models import Task
@@ -69,9 +69,56 @@ class HeaderCardWidgetBase(QWidget):
 
 class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
     """解析结果标题栏组件"""
+    defaultCardHeight = 35
+    minimumVisibleCards = 5
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle("解析结果")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+
+    def _cardWidgets(self) -> list[ResultCard]:
+        cards: list[ResultCard] = []
+        for i in range(self.scrollLayout.count()):
+            widget = self.scrollLayout.itemAt(i).widget()
+            if isinstance(widget, ResultCard):
+                cards.append(widget)
+        return cards
+
+    def _cardDisplayHeight(self, card: ResultCard) -> int:
+        return card.height() or card.sizeHint().height() or self.defaultCardHeight
+
+    def _cardsTotalHeight(self, cards: list[ResultCard]) -> int:
+        return sum(self._cardDisplayHeight(card) for card in cards)
+
+    def _widgetChromeHeight(self) -> int:
+        margins = self.contentsMargins()
+        viewportMargins = self.scrollArea.viewportMargins()
+        return (
+            margins.top()
+            + margins.bottom()
+            + self.headerLabel.height()
+            + self.scrollArea.frameWidth() * 2
+            + viewportMargins.top()
+            + viewportMargins.bottom()
+        )
+
+    def _sizeHintForContentHeight(self, contentHeight: int) -> QSize:
+        size = super().sizeHint()
+        height = self._widgetChromeHeight() + contentHeight
+        return QSize(size.width(), height)
+
+    def minimumSizeHint(self) -> QSize:
+        cards = self._cardWidgets()
+        return self._sizeHintForContentHeight(
+            self._cardsTotalHeight(cards[:self.minimumVisibleCards])
+        )
+
+    def maximumSizeHint(self) -> QSize:
+        return self._sizeHintForContentHeight(self._cardsTotalHeight(self._cardWidgets()))
+
+    def sizeHint(self) -> QSize:
+        return self.maximumSizeHint().expandedTo(self.minimumSizeHint())
 
     def clearResults(self):
         """清空所有解析结果"""
@@ -79,6 +126,7 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
             child = self.scrollLayout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+        self.updateGeometry()
 
     def getAllTasks(self) -> list[Task]:
         """获取所有解析结果的数据"""

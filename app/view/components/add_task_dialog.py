@@ -3,9 +3,9 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Self
 
-from PySide6.QtCore import QEvent, Qt, QPoint, QTimer, Signal
+from PySide6.QtCore import QEvent, Qt, QPoint, QTimer, Signal, QSize
 from PySide6.QtGui import QTextOption
-from PySide6.QtWidgets import QDialog, QFileDialog
+from PySide6.QtWidgets import QDialog, QFileDialog, QSizePolicy
 from loguru import logger
 from qfluentwidgets import (
     MessageBoxBase,
@@ -75,6 +75,43 @@ class _AcceptedPendingParse:
     payload: dict[str, Any]
 
 
+class AutoSizingEdit(PlainTextEdit):
+    def __init__(self, parent=None, minimumVisibleLines: int = 5):
+        super().__init__(parent)
+        self._minimumVisibleLines = minimumVisibleLines
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+
+    def _lineHeight(self) -> int:
+        return self.fontMetrics().lineSpacing()
+
+    def _editorChromeHeight(self) -> int:
+        margins = self.contentsMargins()
+        viewportMargins = self.viewportMargins()
+        documentMargin = round(self.document().documentMargin() * 2)
+        return (
+            margins.top()
+            + margins.bottom()
+            + viewportMargins.top()
+            + viewportMargins.bottom()
+            + self.frameWidth() * 2
+            + documentMargin
+        )
+
+    def _sizeHintForLineCount(self, lineCount: int) -> QSize:
+        size = super().sizeHint()
+        height = self._editorChromeHeight() + self._lineHeight() * lineCount
+        return QSize(size.width(), height)
+
+    def minimumSizeHint(self) -> QSize:
+        return self._sizeHintForLineCount(min(self._minimumVisibleLines, self.document().blockCount()))
+
+    def maximumSizeHint(self) -> QSize:
+        return self._sizeHintForLineCount(self._minimumVisibleLines)
+
+    def sizeHint(self) -> QSize:
+        return self.maximumSizeHint().expandedTo(self.minimumSizeHint())
+
+
 class AddTaskDialog(MessageBoxBase):
     taskConfirmed = Signal(object)
 
@@ -83,7 +120,7 @@ class AddTaskDialog(MessageBoxBase):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(self.tr("添加任务"), self)
-        self.urlEdit = PlainTextEdit(self)
+        self.urlEdit = AutoSizingEdit(self)
         self.parseResultGroup = ParseResultHeaderCardWidget(self)
         self.settingGroup = ParseSettingHeaderCardWidget(self)
         self.selectFolderCard = SelectFolderCard(FluentIcon.DOWNLOAD, self.tr('选择下载路径'), self)
@@ -211,6 +248,7 @@ class AddTaskDialog(MessageBoxBase):
             return
 
         self.parseResultGroup.scrollLayout.removeWidget(state.resultCard)
+        self.parseResultGroup.updateGeometry()
         state.resultCard.deleteLater()
         state.resultCard = None
 
@@ -240,6 +278,8 @@ class AddTaskDialog(MessageBoxBase):
                     alignment=Qt.AlignmentFlag.AlignTop,
                 )
             visibleIndex += 1
+
+        self.parseResultGroup.updateGeometry()
 
     def _handleParseResult(self, requestId: int, resultTask: Task, error: str = None):
         state = self._activeRequests.pop(requestId, None)

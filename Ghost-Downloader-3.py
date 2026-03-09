@@ -8,8 +8,6 @@ from PySide6.QtCore import QStandardPaths
 
 from qfluentwidgets import qconfig
 
-from app.services.core_service import coreService
-from app.services.feature_service import featureService
 from app.supports.application import SingletonApplication
 from app.supports.config import cfg
 
@@ -33,6 +31,8 @@ from app.view.windows.main_window import MainWindow
 from app.supports.recorder import taskRecorder
 # noinspection PyUnresolvedReferences
 import app.assets.resources
+from app.services.core_service import coreService
+from app.services.feature_service import featureService
 from niquests.packages import urllib3
 
 logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
