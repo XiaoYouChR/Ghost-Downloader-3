@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QMenu, QHBoxLayout, QSystemTrayIcon
+from PySide6.QtGui import QColor, QIcon, QPainter
+from PySide6.QtWidgets import QApplication, QMenu, QHBoxLayout, QSystemTrayIcon, QProxyStyle, QStyle, QStyleFactory
 from qfluentwidgets import RoundMenu, FluentStyleSheet, isDarkTheme, Action, FluentIcon
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
-from qfluentwidgets.components.widgets.menu import MenuActionListWidget, CustomMenuStyle
+from qfluentwidgets.components.widgets.menu import MenuActionListWidget
 from qframelesswindow import WindowEffect
 
 from app.supports.config import cfg
@@ -14,6 +14,31 @@ from app.supports.signal_bus import signalBus
 if TYPE_CHECKING:
     from PySide6.QtGui import QAction
     from app.view.windows.main_window import MainWindow
+
+class CustomMenuStyle(QProxyStyle):
+    """Custom menu style"""
+
+    def __init__(self, iconSize=14):
+        """
+        Parameters
+        ----------
+        iconSizeL int
+            the size of icon
+        """
+        super().__init__()
+        self.iconSize = iconSize
+
+    def pixelMetric(self, metric, option, widget):
+        if metric == QStyle.PixelMetric.PM_SmallIconSize:
+            return self.iconSize
+
+        return super().pixelMetric(metric, option, widget)
+
+    def polish(self, app, /):
+        QStyleFactory.create("fusion").polish(app)
+
+    def unpolish(self, app, /):
+        QStyleFactory.create("fusion").polish(app)
 
 
 class AcrylicMenu(RoundMenu):
@@ -104,6 +129,13 @@ class AcrylicMenu(RoundMenu):
         self.setFocus()
 
         return super().showEvent(event)
+
+    def paintEvent(self, e):
+        # 解决鼠标穿透的同时保持透明
+        painter = QPainter(self)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(0, 0, 0, 1))
+        painter.drawRect(self.rect())
 
 
 class SystemTrayIcon(QSystemTrayIcon):
