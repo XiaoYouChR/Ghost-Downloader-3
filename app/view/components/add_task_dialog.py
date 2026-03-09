@@ -1,7 +1,9 @@
+from dataclasses import dataclass
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Self
 
-from PySide6.QtCore import QEvent, Qt, QPoint, QTimer
+from PySide6.QtCore import QEvent, Qt, QPoint, QTimer, Signal
 from PySide6.QtGui import QTextOption
 from PySide6.QtWidgets import QDialog, QFileDialog
 from loguru import logger
@@ -23,7 +25,7 @@ from app.view.components.card_widgets import (
     ParseResultHeaderCardWidget,
     ParseSettingHeaderCardWidget,
 )
-from app.view.components.cards import ParseSettingCard
+from app.view.components.cards import ParseSettingCard, ResultCard
 
 
 class SelectFolderCard(ParseSettingCard):
@@ -56,7 +58,25 @@ class SelectFolderCard(ParseSettingCard):
     def payload(self) -> dict[str, Any]:
         return {"path": Path(self.pathEdit.text())}
 
+
+@dataclass
+class _LineParseState:
+    url: str
+    requestId: int = 0
+    callbackId: str = ""
+    status: str = "idle"
+    task: Task | None = None
+    resultCard: ResultCard | None = None
+    error: str | None = None
+
+
+@dataclass
+class _AcceptedPendingParse:
+    payload: dict[str, Any]
+
+
 class AddTaskDialog(MessageBoxBase):
+    taskConfirmed = Signal(object)
 
     instance: Self = None
 
@@ -69,6 +89,11 @@ class AddTaskDialog(MessageBoxBase):
         self.selectFolderCard = SelectFolderCard(FluentIcon.DOWNLOAD, self.tr('选择下载路径'), self)
 
         self._timer = QTimer(self, singleShot=True)
+        self._lineStates: list[_LineParseState] = []
+        self._activeRequests: dict[int, _LineParseState] = {}
+        self._acceptedPendingParses: dict[int, _AcceptedPendingParse] = {}
+        self._confirmedTasks: list[Task] = []
+        self._requestSerial = 0
 
         self.initWidget()
         self.initLayout()
@@ -101,18 +126,34 @@ class AddTaskDialog(MessageBoxBase):
         )
 
     def parse(self):
-        """解析输入的URL列表"""
-        urls = self.urlEdit.toPlainText().strip().split("\n")
+        """按行同步解析输入的 URL 列表"""
+        currentUrls = self._getEditorUrls()
+        previousStates = self._lineStates
+        previousUrls = [state.url for state in previousStates]
+        nextStates: list[_LineParseState] = []
+        matcher = SequenceMatcher(a=previousUrls, b=currentUrls, autojunk=False)
 
-        self.parseResultGroup.clearResults()
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == "equal":
+                nextStates.extend(previousStates[i1:i2])
+                continue
 
-        for url in urls:
-            url = url.strip()
-            if url:
-                try:
-                    coreService.parseUrl(self.getPayload(url), self._handleParseResult)
-                except Exception as e:
-                    logger.error(f"提交解析请求失败: {repr(e)}")
+            for state in previousStates[i1:i2]:
+                self._disposeLineState(state, cancelRequest=True)
+
+            for url in currentUrls[j1:j2]:
+                state = _LineParseState(url=url)
+                self._submitParse(state)
+                nextStates.append(state)
+
+        self._lineStates = nextStates
+        self._rebuildResultCards()
+
+    def _getEditorUrls(self) -> list[str]:
+        text = self.urlEdit.toPlainText()
+        if not text:
+            return []
+        return [line.strip() for line in text.splitlines() if line.strip()]
 
     def getPayload(self, url) -> dict[str, Any]:
         payload = self.getCurrentPayload()
@@ -133,48 +174,188 @@ class AddTaskDialog(MessageBoxBase):
         task.applyPayloadToTask(payload)
 
     def syncPayload(self):
-        for task in self.parseResultGroup.getAllTasks():
+        for state in self._lineStates:
+            if state.task is None:
+                continue
             try:
-                self._applyCurrentPayloadToTask(task)
+                self._applyCurrentPayloadToTask(state.task)
             except Exception as e:
                 logger.error(f"同步解析结果设置失败: {repr(e)}")
 
-    def _handleParseResult(self, resultTask: Task, error: str = None):
-        """处理 URL 解析结果的回调函数
+    def _submitParse(self, state: _LineParseState):
+        self._requestSerial += 1
+        requestId = self._requestSerial
 
-        Args:
-            resultTask: 解析成功时的结果
-            error: 解析失败时的错误信息
-        """
-        if error:
-            logger.error(error)
+        state.requestId = requestId
+        state.status = "pending"
+        state.task = None
+        state.error = None
+        self._activeRequests[requestId] = state
+
+        try:
+            state.callbackId = coreService.parseUrl(
+                self.getPayload(state.url),
+                lambda resultTask, error=None, requestId=requestId: self._handleParseResult(
+                    requestId, resultTask, error
+                ),
+            )
+        except Exception as e:
+            self._activeRequests.pop(requestId, None)
+            state.callbackId = ""
+            state.status = "error"
+            state.error = repr(e)
+            logger.error(f"提交解析请求失败: {repr(e)}")
+
+    def _removeResultCard(self, state: _LineParseState):
+        if state.resultCard is None:
             return
 
-        if resultTask:
+        self.parseResultGroup.scrollLayout.removeWidget(state.resultCard)
+        state.resultCard.deleteLater()
+        state.resultCard = None
+
+    def _disposeLineState(self, state: _LineParseState, cancelRequest: bool):
+        if cancelRequest and state.requestId:
+            self._activeRequests.pop(state.requestId, None)
+            if state.callbackId:
+                coreService.removeCallback(state.callbackId)
+
+        state.callbackId = ""
+        self._removeResultCard(state)
+        state.task = None
+        state.error = None
+        state.status = "idle" if state.url else "empty"
+
+    def _rebuildResultCards(self):
+        visibleIndex = 0
+
+        for state in self._lineStates:
+            if state.resultCard is None:
+                continue
+
+            if self.parseResultGroup.scrollLayout.indexOf(state.resultCard) != visibleIndex:
+                self.parseResultGroup.scrollLayout.insertWidget(
+                    visibleIndex,
+                    state.resultCard,
+                    alignment=Qt.AlignmentFlag.AlignTop,
+                )
+            visibleIndex += 1
+
+    def _handleParseResult(self, requestId: int, resultTask: Task, error: str = None):
+        state = self._activeRequests.pop(requestId, None)
+        if state is not None:
+            state.callbackId = ""
+
+            if error or resultTask is None:
+                state.status = "error"
+                state.error = error or self.tr("解析失败")
+                state.task = None
+                self._removeResultCard(state)
+                if error:
+                    logger.error(error)
+                return
+
             try:
                 self._applyCurrentPayloadToTask(resultTask)
-                resultCard = featureService.createResultCard(resultTask, self.parseResultGroup)
-                self.parseResultGroup.addWidget(resultCard)
+                state.task = resultTask
+                state.status = "success"
+                state.error = None
+                if state.resultCard is None:
+                    state.resultCard = featureService.createResultCard(
+                        resultTask, self.parseResultGroup
+                    )
+                self._rebuildResultCards()
             except Exception as e:
+                state.status = "error"
+                state.error = repr(e)
+                state.task = None
+                self._removeResultCard(state)
                 logger.error(f"无法创建解析结果卡片: {repr(e)}")
+            return
+
+        acceptedParse = self._acceptedPendingParses.pop(requestId, None)
+        if acceptedParse is None:
+            return
+
+        if error or resultTask is None:
+            if error:
+                logger.error(error)
+            return
+
+        try:
+            resultTask.applyPayloadToTask(acceptedParse.payload)
+            self.taskConfirmed.emit(resultTask)
+        except Exception as e:
+            logger.error(f"无法创建任务卡片: {repr(e)}")
+
+    def _clearEditorState(self):
+        self._timer.stop()
+        for state in self._lineStates:
+            self._disposeLineState(state, cancelRequest=True)
+        self._lineStates.clear()
+        self.parseResultGroup.clearResults()
+
+        self.urlEdit.blockSignals(True)
+        self.urlEdit.clear()
+        self.urlEdit.blockSignals(False)
+
+    def _commitAcceptedTasks(self):
+        self._confirmedTasks.clear()
+        acceptedPayload = self.getCurrentPayload()
+
+        for state in self._lineStates:
+            if state.status == "success" and state.task is not None:
+                try:
+                    state.task.applyPayloadToTask(acceptedPayload)
+                    self._confirmedTasks.append(state.task)
+                except Exception as e:
+                    logger.error(f"同步已确认任务设置失败: {repr(e)}")
+            elif state.status == "pending" and state.requestId:
+                self._activeRequests.pop(state.requestId, None)
+                self._acceptedPendingParses[state.requestId] = _AcceptedPendingParse(
+                    payload=acceptedPayload,
+                )
+                state.callbackId = ""
+
+        self._timer.stop()
+        for state in self._lineStates:
+            keepPendingRequest = (
+                state.status == "pending" and state.requestId in self._acceptedPendingParses
+            )
+            self._disposeLineState(state, cancelRequest=not keepPendingRequest)
+        self._lineStates.clear()
+        self.parseResultGroup.clearResults()
+
+        self.urlEdit.blockSignals(True)
+        self.urlEdit.clear()
+        self.urlEdit.blockSignals(False)
+
+    def takeConfirmedTasks(self) -> list[Task]:
+        tasks = self._confirmedTasks.copy()
+        self._confirmedTasks.clear()
+        return tasks
 
     def done(self, code):
         if code == QDialog.DialogCode.Rejected:
-            self.urlEdit.clear()
-            self.parseResultGroup.clearResults()
+            self._confirmedTasks.clear()
+            self._clearEditorState()
         elif code == QDialog.DialogCode.Accepted:
-            self.syncPayload()
-
-        # Accept 情况由 MainWindow 处理
+            self._commitAcceptedTasks()
 
         super().done(code)
 
+    def validate(self) -> bool:
+        self._timer.stop()
+        self.parse()
+
+        return any(state.status in {"pending", "success"} for state in self._lineStates)
+
     @classmethod
-    def display(cls, payload: dict[str, Any] = None, parent=None):
+    def getInstance(cls, parent=None):
         if cls.instance is None:
             cls.instance = cls(parent)
 
-        return cls.instance.exec()
+        return cls.instance
 
     def eventFilter(self, obj, e: QEvent):
         if obj is self.windowMask:

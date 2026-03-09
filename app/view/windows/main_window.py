@@ -39,6 +39,7 @@ class MainWindow(MSFluentWindow):
         if not isSilently:
             self.initSplashScreen()
         self.initPagesAndNavigation()
+        self.addTaskDialog = None
 
         QApplication.processEvents()
 
@@ -88,20 +89,23 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
     def showAddTaskDialog(self, triggeredByUser: bool = False):
-        if AddTaskDialog.display(parent=self) == QDialog.DialogCode.Accepted:
-            for task in AddTaskDialog.instance.parseResultGroup.getAllTasks():
-                try:
-                    card = featureService.createTaskCard(task, self)
-                    taskRecorder.add(task, False)
-                    self.taskPage.addCard(card)
-                    card.resumeTask()
-                except Exception as e:
-                    logger.error(f"无法创建任务卡片: {repr(e)}")
+        if self.addTaskDialog is None:
+            self.addTaskDialog = AddTaskDialog.getInstance(self)
+            self.addTaskDialog.taskConfirmed.connect(self._addTaskFromDialog)
 
+        if self.addTaskDialog.exec() == QDialog.DialogCode.Accepted:
+            for task in self.addTaskDialog.takeConfirmedTasks():
+                self._addTaskFromDialog(task)
+
+    def _addTaskFromDialog(self, task):
+        try:
+            card = featureService.createTaskCard(task, self)
+            taskRecorder.add(task, False)
+            self.taskPage.addCard(card)
+            card.resumeTask()
             taskRecorder.flush()
-
-            AddTaskDialog.instance.urlEdit.clear()
-            AddTaskDialog.instance.parseResultGroup.clearResults()
+        except Exception as e:
+            logger.error(f"无法创建任务卡片: {repr(e)}")
 
     def showUpdateToolTip(self, payload: dict):
         infoBar = InfoBar(
