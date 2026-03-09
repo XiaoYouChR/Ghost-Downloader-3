@@ -85,8 +85,8 @@ def _buildViewApiUrl(videoId: str) -> str:
 
 def _buildPlayApiUrl(videoId: str, cid: int, fnval: int, qn: int) -> str:
     if videoId.startswith("av"):
-        return f"https://api.bilibili.com/x/player/wbi/playurl?avid={videoId[2:]}&cid={cid}&qn={qn}&fnval={fnval}"
-    return f"https://api.bilibili.com/x/player/wbi/playurl?bvid={videoId}&cid={cid}&qn={qn}&fnval={fnval}"
+        return f"https://api.bilibili.com/x/player/wbi/playurl?avid={videoId[2:]}&cid={cid}&qn={qn}&fnval={fnval}&fourk=1"
+    return f"https://api.bilibili.com/x/player/wbi/playurl?bvid={videoId}&cid={cid}&qn={qn}&fnval={fnval}&fourk=1"
 
 
 def _resolveRequestedFnval(videoQuality: int) -> int:
