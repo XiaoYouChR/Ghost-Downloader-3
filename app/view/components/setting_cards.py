@@ -340,11 +340,11 @@ class SelectFolderSettingCard(SettingCard):
 
         # 初始化组合框
         self._refreshComboBoxItems()
-        self.editableComboBox.currentTextChanged.connect(self.__onComboBoxTextChanged)
+        self.editableComboBox.currentTextChanged.connect(self._onComboBoxTextChanged)
 
         # 连接信号
-        self.chooseFolderButton.clicked.connect(self.__chooseFolder)
-        self.restoreDefaultButton.clicked.connect(self.__restoreDefault)
+        self.chooseFolderButton.clicked.connect(self._chooseFolder)
+        self.restoreDefaultButton.clicked.connect(self._restoreDefault)
 
         # 设置按钮提示
         self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
@@ -362,9 +362,9 @@ class SelectFolderSettingCard(SettingCard):
         )
         self.hBoxLayout.addSpacing(16)
 
-    def __onComboBoxTextChanged(self, text):
+    def _onComboBoxTextChanged(self, text):
         """处理组合框文本改变事件"""
-        self.__updatePath(text)
+        self._updatePath(text)
 
     def _refreshComboBoxItems(self):
         """刷新组合框中的路径列表"""
@@ -397,13 +397,13 @@ class SelectFolderSettingCard(SettingCard):
             self.memoryPaths = currentValue
             self._refreshComboBoxItems()
 
-    def __chooseFolder(self):
+    def _chooseFolder(self):
         """打开文件夹选择对话框"""
         folder = QFileDialog.getExistingDirectory(None, self.tr("选择文件夹"))
         if folder:
-            self.__updatePath(folder)
+            self._updatePath(folder)
 
-    def __append(self, path: str):
+    def _append(self, path: str):
         """添加新路径到历史记录"""
         self.memoryPaths.append(path)
         # 限制历史记录数量不超过7条
@@ -413,19 +413,19 @@ class SelectFolderSettingCard(SettingCard):
         self._refreshComboBoxItems()
         cfg.set(self.memoryItem, self.memoryPaths)
 
-    def __isPathExists(self, path) -> bool:
+    def _isPathExists(self, path) -> bool:
         """检查路径是否已存在"""
         return path in self.memoryPaths
 
-    def __restoreDefault(self):
+    def _restoreDefault(self):
         """恢复默认路径"""
-        self.__updatePath(self.defaultPath)
+        self._updatePath(self.defaultPath)
 
     @Slot(str)
-    def __updatePath(self, path: str):
+    def _updatePath(self, path: str):
         """更新当前路径"""
-        if path and not self.__isPathExists(path):
-            self.__append(path)
+        if path and not self._isPathExists(path):
+            self._append(path)
 
         self.setContent(path)  # 更新卡片显示
         self.editableComboBox.blockSignals(True)  # 阻止信号以避免递归
