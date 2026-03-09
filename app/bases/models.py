@@ -233,7 +233,7 @@ class PackConfig:
 
     def getDialogCards(self, parent: "QWidget") -> Iterable["SettingCard"]:
         """在解析时往解析窗口加入设置卡片"""
-        raise NotImplementedError
+        return []
 
     def tr(self, text: str) -> str:
         return QCoreApplication.translate(self.__class__.__name__, text)
