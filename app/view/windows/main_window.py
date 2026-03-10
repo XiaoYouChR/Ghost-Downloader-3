@@ -76,7 +76,8 @@ class MainWindow(MSFluentWindow):
         self.connectSignalToSlot()
         self._syncClipboardListener()
         self._onThemeChanged(cfg.customThemeMode.value)
-        self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+        if platform == 'win32':
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
         if cfg.checkUpdateAtStartUp.value:
             self.checkForUpdates()
@@ -85,8 +86,9 @@ class MainWindow(MSFluentWindow):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
         signalBus.catchException.connect(self._onExceptionCaught)
         cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
-        cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
         cfg.customThemeMode.valueChanged.connect(self._onThemeChanged)
+        if platform == 'win32':
+            cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
 
     def _onThemeChanged(self, value: "Literal['System', 'Dark', 'Light']"):
         if value == 'System':
@@ -95,14 +97,14 @@ class MainWindow(MSFluentWindow):
             self.themeChangedListener.themeChanged.connect(self._toggleTheme)
             self.themeChangedListener.start()
             setTheme(Theme.AUTO, save=False)
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
         elif value == 'Dark':
             self.terminateThemeChangedListener()
             setTheme(Theme.DARK, save=False)
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
         else:
             self.terminateThemeChangedListener()
             setTheme(Theme.LIGHT, save=False)
+
+        if platform == 'win32':
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
     def terminateThemeChangedListener(self):
