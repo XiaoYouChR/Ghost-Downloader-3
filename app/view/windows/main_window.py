@@ -8,14 +8,14 @@ from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton
 
-from app.services.feature_service import featureService
-from app.services.core_service import coreService
 from app.services.browser_service import BrowserService
+from app.services.core_service import coreService
+from app.services.feature_service import featureService
 from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
-from app.supports.utils import getProxies, bringWindowToTop
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
+from app.supports.utils import getProxies, bringWindowToTop
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.components.tray import SystemTrayIcon

@@ -1,10 +1,10 @@
 import sys
 from asyncio import sleep
 from enum import Enum
-from orjson import dumps, loads
 from re import compile
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale
+from orjson import dumps, loads
 from qfluentwidgets import (
     QConfig,
     ConfigItem,

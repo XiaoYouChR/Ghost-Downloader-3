@@ -10,9 +10,9 @@ from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton
     CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
     DropDownToolButton
 
+from app.bases.models import TaskStatus
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.bases.models import TaskStatus
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
 from app.supports.utils import getReadableSize, openFile

@@ -1,9 +1,8 @@
 from dataclasses import asdict, dataclass, field, is_dataclass
-
-from typing import ClassVar, Dict, Type, Any, TYPE_CHECKING, Iterable
 from enum import auto, IntEnum
 from pathlib import Path
 from time import time_ns
+from typing import ClassVar, Dict, Type, Any, TYPE_CHECKING, Iterable
 from uuid import uuid4
 
 from PySide6.QtCore import QCoreApplication
