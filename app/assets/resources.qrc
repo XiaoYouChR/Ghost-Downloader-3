@@ -8,13 +8,14 @@
     <file>chrome_extension.crx</file>
 <!--    <file>firefox_extension.xpi</file>-->
     <file>install_chrome_extension_guidance.png</file>
-    <file>completed_task.wav</file>
-    <file>received_info.wav</file>
+<!--    <file>completed_task.wav</file>-->
+<!--    <file>received_info.wav</file>-->
   </qresource>
-  <qresource prefix="i18n">
-    <file alias="gd3.en_US.qm">i18n/gd3.en_US.qm</file>
-    <file alias="gd3.zh_MO.qm">i18n/gd3.zh_MO.qm</file>
-    <file alias="gd3.ja_JP.qm">i18n/gd3.ja_JP.qm</file>
-    <file alias="gd3.zh_TW.qm">i18n/gd3.zh_TW.qm</file>
-  </qresource>
+<!--  <qresource prefix="i18n">-->
+<!--    <file alias="gd3.en_US.qm">i18n/gd3.en_US.qm</file>-->
+<!--    <file alias="gd3.zh_MO.qm">i18n/gd3.zh_MO.qm</file>-->
+<!--    <file alias="gd3.ja_JP.qm">i18n/gd3.ja_JP.qm</file>-->
+<!--    <file alias="gd3.zh_TW.qm">i18n/gd3.zh_TW.qm</file>-->
+<!--    <file alias="gd3.yue_HK.qm">i18n/gd3.yue_HK.qm</file>-->
+<!--  </qresource>-->
 </RCC>
