@@ -80,7 +80,7 @@ def _selectReleaseAsset(assets: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 async def _requestLatestReleaseAsset() -> dict[str, Any]:
-    client = niquests.AsyncSession(headers=_FFMPEG_HEADERS.copy(), timeout=30, happy_eyeballs=True)
+    client = niquests.AsyncSession(headers=_FFMPEG_HEADERS, timeout=30, happy_eyeballs=True)
     client.trust_env = False
 
     try:
