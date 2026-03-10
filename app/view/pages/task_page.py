@@ -463,7 +463,7 @@ class TaskPage(ScrollArea):
 
     def pauseAllTasks(self):
         for card in self.cards:
-            if card.task.status in {TaskStatus.RUNNING, TaskStatus.PAUSED}:
+            if card.task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 card.pauseTask()
 
     def selectAll(self):
