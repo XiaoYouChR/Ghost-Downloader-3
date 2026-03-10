@@ -5,7 +5,7 @@ from functools import wraps
 from time import sleep
 from typing import Callable
 
-from PySide6.QtCore import QUrl, QOperatingSystemVersion
+from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt
 from PySide6.QtGui import QDesktopServices, QColor
 from loguru import logger
 from qfluentwidgets import MessageBox, setThemeColor
@@ -245,6 +245,7 @@ def bringWindowToTop(window):
 def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
     """show message box"""
     w = MessageBox(title, content, self)
+    w.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
     if not showYesButton:
         w.cancelButton.setText("关闭")
         w.yesButton.hide()

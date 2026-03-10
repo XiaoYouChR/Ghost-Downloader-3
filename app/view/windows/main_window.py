@@ -11,11 +11,11 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION
+from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
-from app.supports.utils import getProxies, bringWindowToTop
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.components.tray import SystemTrayIcon
@@ -62,6 +62,7 @@ class MainWindow(MSFluentWindow):
 
     def connectSignalToSlot(self):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
+        signalBus.catchException.connect(self._onExceptionCaught)
         cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
 
     def _syncClipboardListener(self):
@@ -99,6 +100,20 @@ class MainWindow(MSFluentWindow):
 
         bringWindowToTop(self)
         self.showAddTaskDialog(urls=urls)
+
+    def _onExceptionCaught(self, message: str):
+        bringWindowToTop(self)
+        showMessageBox(
+            self,
+            self.tr("程序发生异常"),
+            self.tr("点击“确定”后将复制错误信息并打开反馈页面。\n{0}").format(message),
+            showYesButton=True,
+            yesSlot=lambda: self._copyExceptionAndOpenFeedback(message),
+        )
+
+    def _copyExceptionAndOpenFeedback(self, message: str):
+        QApplication.clipboard().setText(message)
+        QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
 
     def getAddTaskDialog(self) -> AddTaskDialog:
         if AddTaskDialog.instance is None:

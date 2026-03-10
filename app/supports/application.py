@@ -86,5 +86,5 @@ def exceptionHook(exception: BaseException, value, tb):
     """ exception callback function """
     message = '\n'.join([''.join(traceback.format_tb(tb)),
                     '{0}: {1}'.format(exception.__name__, value)])
-    logger.opt(exception=(exception, value, tb)).error("Unhandled application exception")
+    logger.opt(exception=exception).error("Unhandled application exception")
     signalBus.catchException.emit(message)
