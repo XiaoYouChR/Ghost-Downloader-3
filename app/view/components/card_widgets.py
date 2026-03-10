@@ -74,7 +74,7 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle("解析结果")
+        self.setTitle(self.tr("解析结果"))
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
 
     def _cardWidgets(self) -> list[ResultCard]:
@@ -142,7 +142,7 @@ class ParseSettingHeaderCardWidget(HeaderCardWidgetBase):
     """解析设置标题栏组件"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setTitle("下载设置")
+        self.setTitle(self.tr("下载设置"))
         self.cards: list[ParseSettingCard] = []
 
     def addCard(self, card: ParseSettingCard):

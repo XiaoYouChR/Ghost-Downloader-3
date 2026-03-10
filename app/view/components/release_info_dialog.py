@@ -39,14 +39,14 @@ class ReleaseInfoDialog(MessageBoxBase):
 
     def _initTitleComponents(self):
         """初始化标题栏组件"""
-        versionName = self.releaseData.get("name", "Release")
+        versionName = self.releaseData.get("name", self.tr("Release"))
         self.versionLabel.setText(versionName)
 
         publishedAt = self.releaseData.get("published_at", "")
         if publishedAt:
             publishDate = getLocalTimeFromGithubApiTime(publishedAt)
         else:
-            publishDate = "Unknown"
+            publishDate = self.tr("Unknown")
         self.dateLabel.setText(self.tr("发布时间: ") + publishDate)
 
         if self.releaseData.get("prerelease", False):
@@ -61,7 +61,7 @@ class ReleaseInfoDialog(MessageBoxBase):
 
     def _initContentComponents(self):
         """初始化内容组件"""
-        description = self.releaseData.get("body", "暂无更新说明")
+        description = self.releaseData.get("body", self.tr("暂无更新说明"))
         self.descriptionEdit.setObjectName(u"descriptionEdit")
 
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

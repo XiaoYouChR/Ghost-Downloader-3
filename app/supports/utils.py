@@ -247,7 +247,7 @@ def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=
     w = MessageBox(title, content, self)
     w.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
     if not showYesButton:
-        w.cancelButton.setText("关闭")
+        w.cancelButton.setText(self.tr("关闭"))
         w.yesButton.hide()
         w.buttonLayout.insertStretch(0, 1)
 

@@ -279,16 +279,16 @@ class UniversalTaskCard(TaskCard):
         elif self.task.status == TaskStatus.COMPLETED:
             self.progressBar.setValue(100)
             self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText("完成")
+            self.leftTimeLabel.setText(self.tr("完成"))
         elif self.task.status == TaskStatus.FAILED:
             self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText("失败")
+            self.leftTimeLabel.setText(self.tr("失败"))
         elif self.task.status == TaskStatus.PAUSED:
             self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText("已暂停")
+            self.leftTimeLabel.setText(self.tr("已暂停"))
         else:
             self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText("等待中")
+            self.leftTimeLabel.setText(self.tr("等待中"))
 
         self.refreshToggleButton()
 
@@ -313,7 +313,7 @@ class UniversalTaskCard(TaskCard):
         super().onTaskFinished()
         self.progressBar.setValue(100)
         self.speedLabel.setText("0.00 B/s")
-        self.leftTimeLabel.setText("完成")
+        self.leftTimeLabel.setText(self.tr("完成"))
         self._refreshIconLabel()
 
     def onTaskDeleted(self, completely: bool = False):
@@ -343,7 +343,7 @@ class UniversalTaskCard(TaskCard):
 
     def onTaskFailed(self):
         self.speedLabel.setText("0.00 B/s")
-        self.leftTimeLabel.setText("失败")
+        self.leftTimeLabel.setText(self.tr("失败"))
 
     def resumeTask(self):
         self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
