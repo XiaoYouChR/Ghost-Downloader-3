@@ -398,7 +398,7 @@ class AddTaskDialog(MessageBoxBase):
         return cls.instance
 
     def eventFilter(self, obj, e: QEvent):
-        if obj is self.windowMask and not self.window().isMaximized():
+        if obj is self.windowMask:
             if (
                 e.type() == QEvent.Type.MouseButtonPress
                 and e.button() == Qt.MouseButton.LeftButton
@@ -406,6 +406,9 @@ class AddTaskDialog(MessageBoxBase):
                 self._dragPos = e.pos()
                 return True
             elif e.type() == QEvent.Type.MouseMove and not self._dragPos.isNull():
+                if self.isMaximized():
+                    self.window().showNormal()
+
                 pos = self.window().pos() + e.pos() - self._dragPos
                 pos.setX(max(0, pos.x()))
                 pos.setY(max(0, pos.y()))
