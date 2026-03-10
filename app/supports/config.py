@@ -1,8 +1,8 @@
 import sys
+from asyncio import sleep
 from enum import Enum
 from json import dumps, loads
 from re import compile
-from time import sleep
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale
 from qfluentwidgets import (
@@ -211,13 +211,13 @@ class Config(QConfig):
     )  # 由于 QScreen 必须在 QApplication 初始化之后调用, 所以由 MainWindow 处理特殊情况
 
     # 网络设置
-    headers = ConfigItem(
-        "Network",
-        "Headers",
-        DEFAULT_HEADERS,
-        HeadersValidator(),
-        HeadersSerializer(),
-    )
+    # headers = ConfigItem(
+    #     "Network",
+    #     "Headers",
+    #     DEFAULT_HEADERS,
+    #     HeadersValidator(),
+    #     HeadersSerializer(),
+    # )
 
     # 全局变量
     globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
@@ -225,10 +225,10 @@ class Config(QConfig):
     def resetGlobalSpeed(self):
         self.globalSpeed = 0
 
-    def checkSpeedLimitation(self):
+    async def checkSpeedLimitation(self):
         if self.enableSpeedLimitation.value:
             while self.globalSpeed > self.speedLimitation.value:
-                sleep(0.1)
+                await sleep(0.1)
 
 
 YEAR = 2026

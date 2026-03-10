@@ -141,12 +141,12 @@ class HttpWorker(Worker):
                         async for chunk in await res.iter_raw(chunk_size=65536):
                             if not chunk:
                                 continue
+                            await cfg.checkSpeedLimitation()
                             offset = subworker.progress
                             pwrite(self.fileHandle, chunk, offset)
                             # inc = len(chunk)
                             subworker.progress += 65536
                             cfg.globalSpeed += 65536
-                            cfg.checkSpeedLimitation()
                             if subworker.progress >= subworker.end:
                                 break
                     except Exception as e:
