@@ -185,14 +185,14 @@ class Config(QConfig):
     dpiScale = RangeConfigItem(
         "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True
     )
-    language = OptionsConfigItem(
-        "Personalization",
-        "Language",
-        Language.AUTO,
-        OptionsValidator(Language),
-        LanguageSerializer(),
-        restart=True,
-    )
+    # language = OptionsConfigItem(
+    #     "Personalization",
+    #     "Language",
+    #     Language.AUTO,
+    #     OptionsValidator(Language),
+    #     LanguageSerializer(),
+    #     restart=True,
+    # )
 
     # 软件设置
     checkUpdateAtStartUp = ConfigItem(
