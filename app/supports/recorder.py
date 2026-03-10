@@ -35,7 +35,7 @@ class TaskRecorder:
                 task = Task.deserialize(obj)
                 tasks[task.taskId] = task
             except Exception as e:
-                logger.error(f"failed to parse task record: {e}")
+                logger.opt(exception=e).error("failed to parse task record")
         return tasks
 
     def add(self, task: Task, flush=True):
@@ -67,7 +67,7 @@ class TaskRecorder:
             try:
                 self.fileHandle.write(task.serialize().decode("utf-8") + "\n")
             except Exception as e:
-                logger.error(f"failed to write task {task.taskId}: {e}")
+                logger.opt(exception=e).error("failed to write task {}", task.taskId)
         self.fileHandle.flush()
 
     def __del__(self):

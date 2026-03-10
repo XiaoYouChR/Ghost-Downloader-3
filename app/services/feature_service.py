@@ -126,7 +126,7 @@ class FeatureService:
             except Exception as e:
                 skipped.add(packName)
                 visiting.clear()
-                logger.error("跳过 FeaturePack {}: {}", packName, e)
+                logger.opt(exception=e).error("跳过 FeaturePack {}", packName)
 
         return [pack for pack in ordered if pack["name"] not in skipped]
 
@@ -180,7 +180,8 @@ class FeatureService:
             )
 
             if spec is None or spec.loader is None:
-                logger.error("无法加载 FeaturePack: {}", packInfo["name"])
+                e = RuntimeError("无法创建模块规格")
+                logger.opt(exception=e).error("无法加载 FeaturePack {}", packInfo["name"])
                 return False
 
             module = importlib.util.module_from_spec(spec)

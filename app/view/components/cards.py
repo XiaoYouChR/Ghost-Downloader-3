@@ -145,7 +145,7 @@ class TaskCard(CardWidget):
         try:
             self.onTaskDeleted(deleteFile)
         except Exception as e:
-            logger.error(f"failed to delete task resources: {repr(e)}")
+            logger.opt(exception=e).error("failed to delete task resources {}", self.task.taskId)
         finally:
             self.deleted.emit()
 
@@ -339,7 +339,7 @@ class UniversalTaskCard(TaskCard):
                 except FileNotFoundError:
                     continue
                 except Exception as e:
-                    logger.error(f"failed to remove file {path}: {repr(e)}")
+                    logger.opt(exception=e).error("failed to remove file {}", path)
 
     def onTaskFailed(self):
         self.speedLabel.setText("0.00 B/s")

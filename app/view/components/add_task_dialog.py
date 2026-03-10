@@ -231,7 +231,7 @@ class AddTaskDialog(MessageBoxBase):
             try:
                 self._applyCurrentPayloadToTask(state.task)
             except Exception as e:
-                logger.error(f"同步解析结果设置失败: {repr(e)}")
+                logger.opt(exception=e).error("同步解析结果设置失败 {}", state.url)
 
     def _submitParse(self, state: _LineParseState):
         self._requestSerial += 1
@@ -255,7 +255,7 @@ class AddTaskDialog(MessageBoxBase):
             state.callbackId = ""
             state.status = "error"
             state.error = repr(e)
-            logger.error(f"提交解析请求失败: {repr(e)}")
+            logger.opt(exception=e).error("提交解析请求失败 {}", state.url)
 
     def _removeResultCard(self, state: _LineParseState):
         if state.resultCard is None:
@@ -307,7 +307,7 @@ class AddTaskDialog(MessageBoxBase):
                 state.task = None
                 self._removeResultCard(state)
                 if error:
-                    logger.error(error)
+                    logger.warning("解析任务失败 {}: {}", state.url, error)
                 return
 
             try:
@@ -325,7 +325,7 @@ class AddTaskDialog(MessageBoxBase):
                 state.error = repr(e)
                 state.task = None
                 self._removeResultCard(state)
-                logger.error(f"无法创建解析结果卡片: {repr(e)}")
+                logger.opt(exception=e).error("无法创建解析结果卡片 {}", state.url)
             return
 
         acceptedParse = self._acceptedPendingParses.pop(requestId, None)
@@ -334,14 +334,14 @@ class AddTaskDialog(MessageBoxBase):
 
         if error or resultTask is None:
             if error:
-                logger.error(error)
+                logger.warning("后台确认任务解析失败: {}", error)
             return
 
         try:
             resultTask.applyPayloadToTask(acceptedParse.payload)
             self.taskConfirmed.emit(resultTask)
         except Exception as e:
-            logger.error(f"无法创建任务卡片: {repr(e)}")
+            logger.opt(exception=e).error("无法创建任务卡片 {}", getattr(resultTask, "title", "Unknown"))
 
     def _clearEditorState(self):
         self._timer.stop()
@@ -364,7 +364,7 @@ class AddTaskDialog(MessageBoxBase):
                     state.task.applyPayloadToTask(acceptedPayload)
                     self._confirmedTasks.append(state.task)
                 except Exception as e:
-                    logger.error(f"同步已确认任务设置失败: {repr(e)}")
+                    logger.opt(exception=e).error("同步已确认任务设置失败 {}", state.url)
             elif state.status == "pending" and state.requestId:
                 self._activeRequests.pop(state.requestId, None)
                 self._acceptedPendingParses[state.requestId] = _AcceptedPendingParse(

@@ -109,7 +109,7 @@ class BilibiliTask(Task):
             logger.info(f"{self.title} 停止下载")
             raise
         except Exception as e:
-            logger.error(f"{self.title} 下载失败: {repr(e)}")
+            logger.opt(exception=e).error("{} 下载失败", self.title)
             raise
 
     def __hash__(self):

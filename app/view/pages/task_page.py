@@ -165,7 +165,7 @@ class TaskPage(ScrollArea):
             try:
                 card = featureService.createTaskCard(task, self)
             except Exception as e:
-                logger.error(f"无法恢复任务卡片 {task.taskId}: {repr(e)}")
+                logger.opt(exception=e).error("无法恢复任务卡片 {}", task.taskId)
                 continue
 
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
@@ -235,7 +235,7 @@ class TaskPage(ScrollArea):
                 Popen(["shutdown", "-h", "now"])
 
         except Exception as e:
-            logger.error(f"计划任务执行失败: {repr(e)}")
+            logger.opt(exception=e).error("计划任务执行失败")
 
     def removeCard(self, card: TaskCard):
         taskRecorder.remove(card.task)

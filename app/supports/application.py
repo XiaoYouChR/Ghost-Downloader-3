@@ -41,14 +41,15 @@ class SingletonApplication(QApplication):
             sys.exit(-1)
 
         if not self.memory.create(1):
-            logger.error(f"Failed to create shared memory: {self.memory.errorString()}")
+            e = RuntimeError(self.memory.errorString())
+            logger.opt(exception=e).error("Failed to create shared memory")
             try:
                 self.memory.attach()
                 self.memory.detach()
                 if not self.memory.create(1):
                     raise RuntimeError(self.memory.errorString())
             except Exception as e:
-                logger.error(f"Failed to recover from shared memory error: {e}")
+                logger.opt(exception=e).error("Failed to recover from shared memory error")
                 raise RuntimeError(self.memory.errorString())
 
 
@@ -85,5 +86,5 @@ def exceptionHook(exception: BaseException, value, tb):
     """ exception callback function """
     message = '\n'.join([''.join(traceback.format_tb(tb)),
                     '{0}: {1}'.format(exception.__name__, value)])
-    logger.exception(f"{message}")
+    logger.opt(exception=(exception, value, tb)).error("Unhandled application exception")
     signalBus.catchException.emit(message)

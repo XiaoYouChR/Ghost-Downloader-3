@@ -35,7 +35,7 @@ class HttpTask(Task):
     url: str
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default=8)  # TODO 下载设置项
+    blockNum: int = field(default=httpConfig.preBlockNum.value)
 
     def setTitle(self, title: str):
         self.title = title
@@ -62,7 +62,7 @@ class HttpTask(Task):
             logger.info(f"{self.title} 停止下载")
             raise
         except Exception as e:
-            logger.error(f"{self.title} 下载失败: {repr(e)}")
+            logger.opt(exception=e).error("{} 下载失败", self.title)
 
     def __hash__(self):
         return hash(self.taskId)
@@ -126,7 +126,6 @@ class HttpWorker(Worker):
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:  # 不支持断点续传
             ...
         else:  # 正常下载
-            print(subworker.start, subworker.progress, subworker.end)
             while subworker.progress < subworker.end:
                 try:
                     requestHeaders = self.stage.headers.copy()
@@ -159,7 +158,11 @@ class HttpWorker(Worker):
                         subworker.progress = subworker.end
 
                 except Exception as e:
-                    logger.error(f"{self.stage.resolvePath}. {subworker} is reconnecting to the server, Error: {repr(e)}")
+                    logger.opt(exception=e).error(
+                        "{} 的分片 {} 连接中断，5 秒后重试",
+                        self.stage.resolvePath,
+                        subworker,
+                    )
                     await asyncio.sleep(5)
 
             self.reassignSubworker()
@@ -226,7 +229,6 @@ class HttpWorker(Worker):
                 self.stage.speed = receivedBytes - self.stage.receivedBytes
                 self.stage.receivedBytes = receivedBytes
                 self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
-                print(self.stage.speed)
 
                 self.checkIfAutoAcceleration()
 
@@ -234,7 +236,7 @@ class HttpWorker(Worker):
         except CancelledError:
             logger.info(f"{self.stage.resolvePath} 停止下载")
         except Exception as e:
-            logger.error(f"{self.stage.resolvePath} 出现异常: {e}")
+            logger.opt(exception=e).error("{} 的监控协程异常退出", self.stage.resolvePath)
         finally:
             recordFileHandle.close()
 
@@ -252,7 +254,7 @@ class HttpWorker(Worker):
                 return True
 
             except Exception as e:
-                logger.error(f"Failed to load workers: {e}")
+                logger.opt(exception=e).error("恢复下载分片失败 {}", self.stage.resolvePath)
                 self.subworkers.clear()
                 return False
 
@@ -277,10 +279,10 @@ class HttpWorker(Worker):
 
         restored = self.restoreProgress()
         if not restored:
-            print("正在生成下载任务")
+            logger.info("正在为 {} 生成下载分片", self.stage.resolvePath)
             self.generateSubworkers()
         else:
-            print("从文件恢复下载进度")
+            logger.info("从进度文件恢复下载分片 {}", self.stage.resolvePath)
 
         self.fileHandle = os.open(self.stage.resolvePath, os.O_RDWR | os.O_CREAT, 0o666)
 
@@ -288,7 +290,7 @@ class HttpWorker(Worker):
             try:
                 ftruncate(self.fileHandle, self.stage.fileSize)
             except Exception as e:
-                print(repr(e))
+                logger.opt(exception=e).error("{} 预分配文件大小失败", self.stage.resolvePath)
 
         supervisor = asyncio.create_task(self.supervisor())
 
@@ -304,7 +306,7 @@ class HttpWorker(Worker):
             raise
         except Exception as e:
             self.stage.setStatus(TaskStatus.FAILED)
-            logger.error(f"{self.stage.resolvePath} 错误: {repr(e)}")
+            logger.opt(exception=e).error("{} 下载阶段失败", self.stage.resolvePath)
         finally:
             if not supervisor.done():
                 supervisor.cancel()

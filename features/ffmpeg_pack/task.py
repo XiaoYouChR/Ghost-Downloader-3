@@ -254,7 +254,7 @@ class FFmpegWorker(Worker):
                 except FileNotFoundError:
                     continue
                 except Exception as e:
-                    logger.error(f"failed to cleanup temporary file {path}: {repr(e)}")
+                    logger.opt(exception=e).error("failed to cleanup temporary file {}", path)
 
 
 @dataclass
@@ -475,7 +475,7 @@ class FFmpegInstallTask(Task):
             logger.info(f"{self.title} 停止安装")
             raise
         except Exception as e:
-            logger.error(f"{self.title} 安装失败: {repr(e)}")
+            logger.opt(exception=e).error("{} 安装失败", self.title)
             raise
 
     def __hash__(self):

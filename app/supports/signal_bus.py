@@ -7,7 +7,6 @@ class SignalBus(QObject):
     """Signal bus"""
 
     catchException = Signal(str)
-    addTask = Signal(Task)    # TODO: Define Task Details
     showMainWindow = Signal()
 
 

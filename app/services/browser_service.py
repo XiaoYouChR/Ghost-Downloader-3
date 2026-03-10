@@ -43,7 +43,8 @@ class BrowserService(QObject):
                 )
                 return
 
-            logger.error(f"Failed to start browser extension server: {self.server.errorString()}")
+            e = RuntimeError(self.server.errorString())
+            logger.opt(exception=e).error("Failed to start browser extension server")
             return
 
         for client in self.clients.copy():
@@ -109,7 +110,7 @@ class BrowserService(QObject):
 
     def _onTaskParsed(self, title: str, url: str, task, error: str | None):
         if error:
-            logger.error(f"Failed to parse browser task {url}: {error}")
+            logger.warning("浏览器任务解析失败 {}: {}", url, error)
             if self.mainWindow.isVisible():
                 InfoBar.error(
                     self.tr("浏览器任务解析失败"),
@@ -154,4 +155,4 @@ class BrowserService(QObject):
             )
 
         except Exception as e:
-            logger.opt(exception=e).error("Error processing message: {}")
+            logger.opt(exception=e).error("处理浏览器扩展消息失败")

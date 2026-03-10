@@ -320,7 +320,6 @@ class BilibiliPack(FeaturePack):
 
     def canHandle(self, url: str) -> bool:
         hostname = (urlparse(url).hostname or "").lower()
-        print(hostname)
         return hostname.endswith("bilibili.com")
 
     async def parse(self, payload: dict) -> BilibiliTask:

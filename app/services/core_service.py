@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 from pathlib import Path
 from typing import Callable, Dict, Any, Coroutine
 
@@ -38,7 +37,7 @@ class CoreService(QThread):
     def sendNotification(self, task: Task):
         resolvePath = task.resolvePath
         if not resolvePath:
-            logger.error(f"task {task.taskId} has no resolvePath for notification")
+            logger.warning("task {} has no resolvePath for notification", task.taskId)
             return
 
         directoryPath = str(Path(resolvePath).parent)
@@ -82,6 +81,7 @@ class CoreService(QThread):
             callback = self._pendingCallbacks.pop(callbackId)
             self._executeCallback(callback, result, None)
         except Exception as e:
+            logger.opt(exception=e).error("异步任务执行失败 {}", callbackId)
             callback = self._pendingCallbacks.pop(callbackId)
             self._executeCallback(callback, None, repr(e))
 
@@ -104,8 +104,7 @@ class CoreService(QThread):
                 else:
                     callback(result, error)
             except Exception as e:
-                errorMsg = f"回调函数执行失败: {str(e)}\n{traceback.format_exc()}"
-                logger.exception(errorMsg)
+                logger.opt(exception=e).error("回调函数执行失败")
 
         application = QApplication.instance()
         if application:
@@ -132,8 +131,8 @@ class CoreService(QThread):
                 self._executeCallback(callback, result, None)
 
         except Exception as e:
-            errorMsg = f"解析 URL 失败: {str(e)}\n{traceback.format_exc()}"
-            logger.exception(errorMsg)
+            errorMsg = f"解析 URL 失败: {e}"
+            logger.opt(exception=e).error("解析 URL 失败")
 
             if callbackId and callbackId in self._pendingCallbacks:
                 callback = self._pendingCallbacks.pop(callbackId)
@@ -289,7 +288,7 @@ class CoreService(QThread):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"主循环发生错误: {e}")
+                logger.opt(exception=e).error("CoreService 主循环发生错误")
                 await asyncio.sleep(1)
 
     def run(self):
@@ -297,7 +296,7 @@ class CoreService(QThread):
         try:
             self.loop.run_until_complete(self.mainLoop)
         except Exception as e:
-            print(f"CoreService 启动失败: {e}")
+            logger.opt(exception=e).error("CoreService 启动失败")
         finally:
             if self.loop:
                 self.loop.close()

@@ -70,7 +70,7 @@ def getSystemProxy():
             if proxyEnable:
                 proxyServer, _ = winreg.QueryValueEx(key, "ProxyServer")
 
-                # TODO http=10.1.1.1:8080;https=10.1.1.1:8080
+                # TODO 当 http 代理和 https 代理不同时，当前实现只能获取 http 代理，后续可以改进为分别获取 http 和 https 代理
                 if "http=" in proxyServer:
                     proxyServer = proxyServer.split(";")[0].split("=")[1]
 
@@ -107,7 +107,7 @@ def getSystemProxy():
         except FileNotFoundError:
             return None
         except Exception as e:
-            logger.error(f"无法获取 Windows 代理服务器: {e}")
+            logger.opt(exception=e).error("无法获取 Windows 代理服务器")
             return None
 
     elif sys.platform == "linux":  # 读取 Linux 系统代理
@@ -115,7 +115,7 @@ def getSystemProxy():
             proxyUrl = os.environ.get("https_proxy") or os.environ.get("http_proxy")
             return proxyUrl
         except Exception as e:
-            logger.error(f"无法获取 Linux 代理服务器: {e}")
+            logger.opt(exception=e).error("无法获取 Linux 代理服务器")
             return None
 
     elif sys.platform == "darwin":
@@ -183,8 +183,10 @@ def retry(
                 except Exception as e:
                     # 检查重试次数
                     if i == retries:
-                        logger.error(
-                            f'Error: {repr(e)}! "{func.__name__}()" 执行失败，已重试{retries}次.'
+                        logger.opt(exception=e).error(
+                            '"{}()" 执行失败，已重试 {} 次',
+                            func.__name__,
+                            retries,
                         )
                         try:
                             handleFunction(e)
@@ -192,7 +194,12 @@ def retry(
                             break
                     else:
                         logger.warning(
-                            f'Error: {repr(e)}! "{func.__name__}()"执行失败，将在{delay}秒后第[{i + 1}/{retries}]次重试...'
+                            '"{}()" 执行失败，将在 {} 秒后第 [{}/{}] 次重试: {}',
+                            func.__name__,
+                            delay,
+                            i + 1,
+                            retries,
+                            e,
                         )
                         sleep(delay)
             return None

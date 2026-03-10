@@ -123,7 +123,7 @@ class MainWindow(MSFluentWindow):
             try:
                 self.setGeometry(cfg.get(cfg.geometry))
             except Exception as e:
-                logger.error(f"Failed to restore geometry: {e}")
+                logger.opt(exception=e).error("Failed to restore geometry")
                 cfg.set(cfg.geometry, QRect(0, 0, 0, 0))
                 self._restoreGeometry()
         # Init Window
@@ -173,7 +173,7 @@ class MainWindow(MSFluentWindow):
             taskRecorder.flush()
             return True
         except Exception as e:
-            logger.error(f"无法创建任务卡片: {repr(e)}")
+            logger.opt(exception=e).error("无法创建任务卡片 {}", getattr(task, "title", "Unknown"))
             return False
 
     def closeEvent(self, event, /):
@@ -201,7 +201,7 @@ class MainWindow(MSFluentWindow):
 
     def _onLatestReleaseLoaded(self, releaseData: dict, error: str | None, manual: bool):
         if error:
-            logger.error(f"检查更新失败: {error}")
+            logger.warning("检查更新失败: {}", error)
             if manual:
                 InfoBar.error(
                     self.tr("检查更新失败"),
@@ -283,7 +283,7 @@ class MainWindow(MSFluentWindow):
 
     def _onReleaseAssetParsed(self, assetName: str, task, error: str | None):
         if error:
-            logger.error(f"创建更新下载任务失败: {error}")
+            logger.warning("创建更新下载任务失败 {}: {}", assetName, error)
             InfoBar.error(
                 self.tr("创建下载任务失败"),
                 assetName,

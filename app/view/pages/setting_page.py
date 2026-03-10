@@ -388,7 +388,6 @@ class SettingPage(ScrollArea):
                         StartupNotify=false
                         Terminal=false
                         """
-                    print(_)
                     f.write(_)
                     f.flush()
             else:
