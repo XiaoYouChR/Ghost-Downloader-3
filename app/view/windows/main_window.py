@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import urlparse
 
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QIcon
@@ -43,18 +44,64 @@ class MainWindow(MSFluentWindow):
         self.initWindow()
         if not isSilently:
             self.initSplashScreen()
-        self.initPagesAndNavigation()
 
         QApplication.processEvents()
 
+        self.initPagesAndNavigation()
+
         self.tray = SystemTrayIcon(self)
         self.tray.show()
+
         self.connectSignalToSlot()
+        self._syncClipboardListener()
         if cfg.checkUpdateAtStartUp.value:
             self.checkForUpdates()
 
     def connectSignalToSlot(self):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
+        cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
+
+    def _syncClipboardListener(self):
+        clipboard = QApplication.clipboard()
+
+        try:
+            clipboard.dataChanged.disconnect(self._onClipboardDataChanged)
+        except RuntimeError:
+            pass
+
+        if cfg.enableClipboardListener.value:
+            clipboard.dataChanged.connect(self._onClipboardDataChanged)
+
+    def _extractClipboardUrls(self, text: str) -> list[str]:
+        urls = []
+        for rawLine in text.splitlines():
+            url = rawLine.strip()
+            if not url:
+                continue
+
+            parsed = urlparse(url)
+            if not parsed.scheme or not parsed.netloc or parsed.geturl() != url:
+                continue
+
+            if featureService.canHandle(url):
+                urls.append(url)
+
+        return urls
+
+    def _onClipboardDataChanged(self):
+        urls = self._extractClipboardUrls(QApplication.clipboard().text())
+        if not urls:
+            return
+
+        bringWindowToTop(self)
+        self.showAddTaskDialog(urls=urls)
+
+    def _getAddTaskDialog(self) -> AddTaskDialog:
+        if AddTaskDialog.instance is None:
+            instance = AddTaskDialog.initialize(self)
+            instance.taskConfirmed.connect(self.addTask)
+
+        return AddTaskDialog.instance
 
     def _restoreGeometry(self):
         self.resize(960, 540)
@@ -98,13 +145,19 @@ class MainWindow(MSFluentWindow):
         )
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
-    def showAddTaskDialog(self, triggeredByUser: bool = False):
-        if AddTaskDialog.instance is None:
-            instance = AddTaskDialog.initialize(self)
-            instance.taskConfirmed.connect(self.addTask)
+    def showAddTaskDialog(self, triggeredByUser: bool = False, urls: list[str] | None = None):
+        dialog = self._getAddTaskDialog()
 
-        if AddTaskDialog.instance.exec() == QDialog.DialogCode.Accepted:
-            for task in AddTaskDialog.instance.takeConfirmedTasks():
+        if urls:
+            dialog.appendUrls(urls)
+
+        if dialog.isVisible():
+            dialog.raise_()
+            dialog.activateWindow()
+            return
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            for task in dialog.takeConfirmedTasks():
                 self.addTask(task)
 
     def addTask(self, task) -> bool:
@@ -119,6 +172,14 @@ class MainWindow(MSFluentWindow):
             logger.error(f"无法创建任务卡片: {repr(e)}")
             return False
 
+    def closeEvent(self, event, /):
+        event.ignore()
+        if not self.isMaximized():
+            cfg.set(cfg.geometry, self.geometry())
+
+        self.hide()
+
+    # 检查更新
     def checkForUpdates(self, manual: bool = False):
         if manual:
             InfoBar.info(
@@ -163,9 +224,6 @@ class MainWindow(MSFluentWindow):
             self._showReleaseDialog(releaseData)
             return
 
-        self.showUpdateToolTip(releaseData)
-
-    def showUpdateToolTip(self, releaseData: dict):
         version = releaseVersion(releaseData)
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
@@ -245,10 +303,3 @@ class MainWindow(MSFluentWindow):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self._downloadReleaseAsset(dialog.selectedAsset())
         dialog.deleteLater()
-
-    def closeEvent(self, event, /):
-        event.ignore()
-        if not self.isMaximized():
-            cfg.set(cfg.geometry, self.geometry())
-
-        self.hide()

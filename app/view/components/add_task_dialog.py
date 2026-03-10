@@ -193,6 +193,14 @@ class AddTaskDialog(MessageBoxBase):
             return []
         return [line.strip() for line in text.splitlines() if line.strip()]
 
+    def appendUrls(self, urls: list[str]):
+        if not urls:
+            return
+
+        self.urlEdit.appendPlainText("\n".join(urls))
+        self._timer.stop()
+        self.parse()
+
     def getPayload(self, url) -> dict[str, Any]:
         payload = self.getCurrentPayload()
         payload["url"] = url
