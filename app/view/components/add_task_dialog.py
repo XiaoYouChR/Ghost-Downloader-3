@@ -80,6 +80,7 @@ class AutoSizingEdit(PlainTextEdit):
         super().__init__(parent)
         self._minimumVisibleLines = minimumVisibleLines
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.document().blockCountChanged.connect(self.updateGeometry)
 
     def _lineHeight(self) -> int:
         return self.fontMetrics().lineSpacing()
@@ -106,7 +107,7 @@ class AutoSizingEdit(PlainTextEdit):
         return self._sizeHintForLineCount(min(self._minimumVisibleLines, self.document().blockCount()))
 
     def maximumSizeHint(self) -> QSize:
-        return self._sizeHintForLineCount(self._minimumVisibleLines)
+        return self._sizeHintForLineCount(self.document().blockCount())
 
     def sizeHint(self) -> QSize:
         return self.maximumSizeHint().expandedTo(self.minimumSizeHint())
