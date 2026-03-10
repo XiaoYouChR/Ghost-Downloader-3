@@ -2,7 +2,7 @@ import asyncio
 import shutil
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QStandardPaths, Qt, Signal
 from PySide6.QtWidgets import QFileDialog
@@ -13,7 +13,7 @@ from qfluentwidgets import (
     FolderValidator,
     SettingCard,
     SettingCardGroup,
-    ToolButton, PrimaryPushButton,
+    ToolButton, PrimaryPushButton, InfoBar,
 )
 
 from app.bases.models import PackConfig
@@ -21,10 +21,10 @@ from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
-from app.supports.utils import showMessageBox
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
+    from app.view.windows.main_window import MainWindow
 
 
 class ExecutablePathValidator(ConfigValidator):
@@ -189,11 +189,12 @@ class FFmpegRuntimeCard(SettingCard):
         self.installButton.setEnabled(True)
         self.installButton.setText(self.tr("一键安装"))
 
+        mainWindow: "MainWindow" = self.window()
+
         if error or result is None:
-            showMessageBox(self.window(), self.tr("安装 FFmpeg 失败"), error or self.tr("无法创建安装任务"))
+            InfoBar.error(self.tr("安装 FFmpeg 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
             return
 
-        mainWindow = self.window()
         task = result
         setattr(task, "_featurePackName", "ffmpeg_pack")
 
@@ -204,7 +205,7 @@ class FFmpegRuntimeCard(SettingCard):
             card.resumeTask()
             taskRecorder.flush()
         except Exception as e:
-            showMessageBox(mainWindow, self.tr("安装 FFmpeg 失败"), repr(e))
+            InfoBar.error(self.tr("安装 FFmpeg 失败"), repr(e), duration=-1, parent=mainWindow)
 
 
 class FFmpegConfig(PackConfig):

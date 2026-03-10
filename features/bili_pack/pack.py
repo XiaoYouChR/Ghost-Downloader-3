@@ -8,10 +8,9 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import cfg
+from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .config import bilibiliConfig
 from .task import BilibiliTask
-from app.view.components.cards import UniversalTaskCard, UniversalResultCard
-
 
 if TYPE_CHECKING:
     from features.ffmpeg_pack.task import FFmpegStage

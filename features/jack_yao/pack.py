@@ -3,7 +3,6 @@ from base64 import b64decode
 from typing import TYPE_CHECKING
 
 import niquests
-
 from PySide6.QtCore import Signal, Qt, QSize, QUrl
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog

@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING, Iterable, Any
 
 from PySide6.QtCore import Qt
-from qfluentwidgets import RangeConfigItem, RangeValidator, ConfigItem, BoolValidator, SettingCard, SettingCardGroup, \
-    RangeSettingCard, FluentIcon, SwitchSettingCard, Slider, BodyLabel
+from qfluentwidgets import RangeConfigItem, RangeValidator, ConfigItem, BoolValidator, RangeSettingCard, FluentIcon, \
+    SwitchSettingCard, Slider, BodyLabel
+
 from app.bases.models import PackConfig
 from app.view.components.card_widgets import ParseSettingCard
 

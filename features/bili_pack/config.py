@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import parse_qsl, urlparse
 
 import niquests
+import qrcode
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
@@ -32,8 +33,6 @@ from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
-
-import qrcode
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage

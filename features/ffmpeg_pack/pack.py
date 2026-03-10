@@ -3,7 +3,7 @@ from app.bases.models import Task
 from app.view.components.cards import UniversalTaskCard
 
 from .config import ffmpegConfig
-from .task import FFmpegInstallTask, FFmpegStage, FFmpegWorker
+from .task import FFmpegInstallTask
 
 
 class FFmpegPack(FeaturePack):
