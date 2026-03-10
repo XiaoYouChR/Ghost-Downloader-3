@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QResource, QCoreApplication, QUrl
 from PySide6.QtGui import QDesktopServices
@@ -12,6 +13,9 @@ from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, Switc
 from app.supports.config import cfg, FIREFOX_ADDONS_URL, EDGE_ADDONS_URL, CHROME_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
+
+if TYPE_CHECKING:
+    from app.view.windows.main_window import MainWindow
 
 if sys.platform != "darwin":
     from qfluentwidgets import SmoothScrollArea as ScrollArea
@@ -278,8 +282,8 @@ class SettingPage(ScrollArea):
         raise NotImplementedError
 
     def _onAboutCardClicked(self):
-        # Check Update
-        raise NotImplementedError
+        mainWindow: "MainWindow" = self.window()
+        mainWindow.checkForUpdates(manual=True)
 
     def _onInstallExtensionCardClicked(self):
         """install extension card clicked slot"""

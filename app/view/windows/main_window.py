@@ -1,16 +1,19 @@
-import niquests
-from PySide6.QtCore import QRect, QPropertyAnimation, Qt
-from PySide6.QtGui import QIcon
+from pathlib import Path
+
+from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton
 
 from app.services.feature_service import featureService
-from app.supports.config import cfg
+from app.services.core_service import coreService
+from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.utils import getProxies, bringWindowToTop
+from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.components.tray import SystemTrayIcon
@@ -47,8 +50,8 @@ class MainWindow(MSFluentWindow):
         self.tray = SystemTrayIcon(self)
         self.tray.show()
         self.connectSignalToSlot()
-        # TODO show update tooltip for Test
-        self.showUpdateToolTip({"version": "0.0.1", "content": "This is a test tooltip."})
+        if cfg.checkUpdateAtStartUp.value:
+            self.checkForUpdates()
 
     def connectSignalToSlot(self):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
@@ -98,27 +101,76 @@ class MainWindow(MSFluentWindow):
     def showAddTaskDialog(self, triggeredByUser: bool = False):
         if AddTaskDialog.instance is None:
             instance = AddTaskDialog.initialize(self)
-            instance.taskConfirmed.connect(self._addTaskFromDialog)
+            instance.taskConfirmed.connect(self.addTask)
 
         if AddTaskDialog.instance.exec() == QDialog.DialogCode.Accepted:
             for task in AddTaskDialog.instance.takeConfirmedTasks():
-                self._addTaskFromDialog(task)
+                self.addTask(task)
 
-    def _addTaskFromDialog(self, task):
+    def addTask(self, task) -> bool:
         try:
             card = featureService.createTaskCard(task, self)
             taskRecorder.add(task, False)
             self.taskPage.addCard(card)
             card.resumeTask()
             taskRecorder.flush()
+            return True
         except Exception as e:
             logger.error(f"无法创建任务卡片: {repr(e)}")
+            return False
 
-    def showUpdateToolTip(self, payload: dict):
+    def checkForUpdates(self, manual: bool = False):
+        if manual:
+            InfoBar.info(
+                self.tr("检查更新"),
+                self.tr("正在检查更新..."),
+                duration=1500,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                parent=self,
+            )
+
+        coreService.runCoroutine(
+            fetchLatestRelease(),
+            lambda releaseData, error, manual=manual: self._onLatestReleaseLoaded(releaseData, error, manual),
+        )
+
+    def _onLatestReleaseLoaded(self, releaseData: dict, error: str | None, manual: bool):
+        if error:
+            logger.error(f"检查更新失败: {error}")
+            if manual:
+                InfoBar.error(
+                    self.tr("检查更新失败"),
+                    self.tr("无法获取最新版本信息"),
+                    duration=3000,
+                    position=InfoBarPosition.BOTTOM_RIGHT,
+                    parent=self,
+                )
+            return
+
+        latestVersion = releaseVersion(releaseData)
+        if not hasNewerRelease(releaseData):
+            if manual:
+                InfoBar.success(
+                    self.tr("当前已是最新版本"),
+                    self.tr("当前版本 {0}，最新 Release {1}").format(VERSION, latestVersion),
+                    duration=3000,
+                    position=InfoBarPosition.BOTTOM_RIGHT,
+                    parent=self,
+                )
+            return
+
+        if manual:
+            self._showReleaseDialog(releaseData)
+            return
+
+        self.showUpdateToolTip(releaseData)
+
+    def showUpdateToolTip(self, releaseData: dict):
+        version = releaseVersion(releaseData)
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
             title=self.tr('检测到新版本'),
-            content=payload["version"],
+            content=self.tr("最新版本: {0}").format(version),
             orient=Qt.Orientation.Horizontal,
             isClosable=True,
             duration=-1,
@@ -126,22 +178,73 @@ class MainWindow(MSFluentWindow):
             parent=self
         )
         infoBar.widgetLayout.addSpacing(10)
-        infoBar.addWidget(PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr('立即下载')))
+        downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr('立即下载'))
+        downloadButton.clicked.connect(lambda: self._downloadMatchedReleaseAsset(releaseData))
+        infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr('查看版本详细'))
-        detailButton.clicked.connect(lambda: self._showReleaseDialog(payload))
+        detailButton.clicked.connect(lambda: self._showReleaseDialog(releaseData))
         infoBar.addWidget(detailButton)
 
-        infoBar.addWidget(PushButton(FluentIcon.HEART, self.tr('请作者喝咖啡')))
-        # infoBar.setCustomBackgroundColor("white", "#2a2a2a")
+        sponsorButton = PushButton(FluentIcon.HEART, self.tr('请作者喝咖啡'))
+        sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
+        infoBar.addWidget(sponsorButton)
         infoBar.show()
 
+    def _downloadMatchedReleaseAsset(self, releaseData: dict):
+        asset = selectCurrentPlatformAsset(releaseData)
+        if asset is None:
+            InfoBar.warning(
+                self.tr("未找到适配的安装包"),
+                self.tr("已打开版本详情，请手动选择要下载的文件"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                parent=self,
+            )
+            self._showReleaseDialog(releaseData)
+            return
+
+        self._downloadReleaseAsset(asset)
+
+    def _downloadReleaseAsset(self, asset: dict):
+        assetName = asset["name"]
+        payload = {
+            "url": asset["browser_download_url"],
+            "headers": DEFAULT_HEADERS,
+            "proxies": getProxies(),
+            "path": Path(cfg.downloadFolder.value),
+            "preBlockNum": cfg.preBlockNum.value,
+        }
+        coreService.parseUrl(
+            payload,
+            lambda task, error, assetName=assetName: self._onReleaseAssetParsed(assetName, task, error),
+        )
+
+    def _onReleaseAssetParsed(self, assetName: str, task, error: str | None):
+        if error:
+            logger.error(f"创建更新下载任务失败: {error}")
+            InfoBar.error(
+                self.tr("创建下载任务失败"),
+                assetName,
+                duration=3000,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                parent=self,
+            )
+            return
+
+        if self.addTask(task):
+            InfoBar.success(
+                self.tr("已添加下载任务"),
+                assetName,
+                duration=2000,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                parent=self,
+            )
+
     def _showReleaseDialog(self, releaseData: dict):
-        """显示 Release 详情对话框"""
-        releaseData = niquests.get(url="https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest", headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-                                allow_redirects=True, proxies=getProxies()).json()
-        dialog = ReleaseInfoDialog(releaseData, parent=self)
-        dialog.exec()
+        dialog = ReleaseInfoDialog(releaseData, self, False)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._downloadReleaseAsset(dialog.selectedAsset())
+        dialog.deleteLater()
 
     def closeEvent(self, event, /):
         event.ignore()
