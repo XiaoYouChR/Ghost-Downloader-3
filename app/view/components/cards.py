@@ -205,10 +205,7 @@ class UniversalTaskCard(TaskCard):
         self.cardStatus = self.task.status
 
         self.hBoxLayout = QHBoxLayout(self)
-        self.iconLabel = ImageLabel(QFileIconProvider().icon(QFileInfo(self.task.resolvePath)).pixmap(48, 48), self)
-        # TODO macOS
-        self.iconLabel.setFixedSize(48, 48)
-
+        self.iconLabel = ImageLabel(self)
         self.infoVBoxLayout = QVBoxLayout(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.infoLayout = QHBoxLayout(self)
@@ -225,7 +222,12 @@ class UniversalTaskCard(TaskCard):
         # init
         self.initLayout()
         self.connectSignalToSlot()
+        self._refreshIconLabel()
         self._renderTaskState()
+
+    def _refreshIconLabel(self):
+        self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(self.task.resolvePath)).pixmap(48, 48))
+        self.iconLabel.setFixedSize(48, 48)
 
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
@@ -312,6 +314,7 @@ class UniversalTaskCard(TaskCard):
         self.progressBar.setValue(100)
         self.speedLabel.setText("0.00 B/s")
         self.leftTimeLabel.setText("完成")
+        self._refreshIconLabel()
 
     def onTaskDeleted(self, completely: bool = False):
         if not completely:
