@@ -1,12 +1,15 @@
 from pathlib import Path
+from sys import platform
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QIcon
+import darkdetect
+from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QTimer, Signal, QThread
+from PySide6.QtGui import QDesktopServices, QIcon, QColor
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
-    PushButton, PrimaryPushButton
+    PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme
 
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
@@ -15,13 +18,16 @@ from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDB
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
-from app.supports.utils import getProxies, bringWindowToTop, showMessageBox
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, isLessThanWin10
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.components.tray import SystemTrayIcon
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 
+if TYPE_CHECKING:
+    from typing import Literal
+    from PySide6.QtGui import QClipboard
 
 class CustomSplashScreen(SplashScreen):
 
@@ -38,10 +44,20 @@ class CustomSplashScreen(SplashScreen):
         opacityAni.start()
 
 
+class ThemeChangedListener(QThread):
+    themeChanged = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def run(self):
+        darkdetect.listener(self.themeChanged.emit)
+
+
 class MainWindow(MSFluentWindow):
     def __init__(self, isSilently = False):
         super().__init__(parent = None)
-
+        self.setMicaEffectEnabled(False)    # 禁用 QFluentWidgets 管理的背景效果
         self.initWindow()
         if not isSilently:
             self.initSplashScreen()
@@ -50,13 +66,17 @@ class MainWindow(MSFluentWindow):
 
         self.initPagesAndNavigation()
 
-        self.clipboard: "QClipboard" = None
+        self.clipboard: "QClipboard | None" = None
+        self.themeChangedListener: "ThemeChangedListener | None" = None
         self.tray = SystemTrayIcon(self)
         self.tray.show()
         self.browserService = BrowserService(self)
 
         self.connectSignalToSlot()
         self._syncClipboardListener()
+        self._onThemeChanged(cfg.customThemeMode.value)
+        self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+
         if cfg.checkUpdateAtStartUp.value:
             self.checkForUpdates()
 
@@ -64,7 +84,81 @@ class MainWindow(MSFluentWindow):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
         signalBus.catchException.connect(self._onExceptionCaught)
         cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
+        cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
+        cfg.customThemeMode.valueChanged.connect(self._onThemeChanged)
 
+    def _onThemeChanged(self, value: "Literal['System', 'Dark', 'Light']"):
+        if value == 'System':
+            # 创建检测主题色更改线程
+            self.themeChangedListener = ThemeChangedListener(self)
+            self.themeChangedListener.themeChanged.connect(self._toggleTheme)
+            self.themeChangedListener.start()
+            setTheme(Theme.AUTO, save=False)
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+        elif value == 'Dark':
+            if self.themeChangedListener:
+                self.themeChangedListener.terminate()
+                self.themeChangedListener.deleteLater()
+                self.themeChangedListener = None
+            setTheme(Theme.DARK, save=False)
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+        else:
+            if self.themeChangedListener:
+                self.themeChangedListener.terminate()
+                self.themeChangedListener.deleteLater()
+                self.themeChangedListener = None
+            setTheme(Theme.LIGHT, save=False)
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+
+    def _normalBackgroundColor(self):
+        if self.styleSheet() == "":
+            return self._darkBackgroundColor if isDarkTheme() else self._lightBackgroundColor
+
+        return QColor(0, 0, 0, 0)
+      
+    def _applyBackgroundEffectByCfg(self, value: "Literal['Acrylic', 'Mica', 'MicaBlur', 'MicaAlt', 'Aero', 'None']"):
+        if platform == 'win32':
+            self.windowEffect.removeBackgroundEffect(self.winId())
+
+            isDark = darkdetect.isDark() if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark'
+
+            if value == 'Acrylic':
+                self.setStyleSheet("background-color: transparent")
+                self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if isDark else "FFFFFF30")
+            elif value == 'Mica':
+                self.setStyleSheet("background-color: transparent")
+                self.windowEffect.setMicaEffect(self.winId(), isDark)
+            elif value == 'MicaBlur':
+                self.windowEffect.setMicaEffect(self.winId(), isDark)
+                self.setStyleSheet("background-color: transparent")
+            elif value == 'MicaAlt':
+                self.windowEffect.setMicaEffect(self.winId(), isDark, isAlt=True)
+                self.setStyleSheet("background-color: transparent")
+            elif value == 'Aero':
+                self.windowEffect.setAeroEffect(self.winId())
+                self.setStyleSheet("background-color: transparent")
+                if isLessThanWin10():
+                    self.titleBar.closeBtn.hide()
+                    self.titleBar.minBtn.hide()
+                    self.titleBar.maxBtn.hide()
+            elif value == 'None':
+                self.setStyleSheet("")
+                if isLessThanWin10():
+                    self.titleBar.closeBtn.show()
+                    self.titleBar.minBtn.show()
+                    self.titleBar.maxBtn.show()
+    
+    def _toggleTheme(self, callback: str):
+        if callback == 'Dark':  # Microsoft 特性，需要重试
+            setTheme(Theme.DARK, save=False, lazy=True)
+            if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
+                QTimer.singleShot(500, self._applyBackgroundEffectByCfg)
+
+        elif callback == 'Light':
+            setTheme(Theme.LIGHT, save=False, lazy=True)
+
+        self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+    
     def _syncClipboardListener(self):
         if self.clipboard is None:
             self.clipboard = QApplication.clipboard()
@@ -75,7 +169,6 @@ class MainWindow(MSFluentWindow):
             self.clipboard.dataChanged.connect(self._onClipboardDataChanged)
         else:
             self.clipboard.dataChanged.disconnect(self._onClipboardDataChanged)
-
 
     def _extractClipboardUrls(self, text: str) -> list[str]:
         urls = []

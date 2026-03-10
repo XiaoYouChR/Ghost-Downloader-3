@@ -173,7 +173,7 @@ class Config(QConfig):
             "BackgroundEffect",
             "Mica",
             OptionsValidator(
-                ["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"]
+                ["Acrylic", "Mica", "MicaAlt", "Aero", "None"]
             ),
         )
     customThemeMode = OptionsConfigItem(

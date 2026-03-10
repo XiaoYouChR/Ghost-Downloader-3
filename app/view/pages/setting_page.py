@@ -163,7 +163,7 @@ class SettingPage(ScrollArea):
                 FluentIcon.TRANSPARENT,
                 self.tr("窗口背景透明材质"),
                 self.tr("设置窗口背景透明效果和透明材质"),
-                texts=["Acrylic", "Mica", "MicaBlur", "MicaAlt", "Aero", "None"],
+                texts=["Acrylic", "Mica", "MicaAlt", "Aero", "None"],
                 parent=self.personalGroup,
             )
             self.personalGroup.addSettingCard(self.backgroundEffectCard)
@@ -258,8 +258,6 @@ class SettingPage(ScrollArea):
         self.downloadFolderCard.pathChanged.connect(lambda x: cfg.set(cfg.downloadFolder, x))
         self.installExtensionCard.clicked.connect(self._onInstallExtensionCardClicked)
         self.installExtensionGuidanceCard.clicked.connect(self._onInstallExtensionGuidanceClicked)
-        if sys.platform == "win32":
-            cfg.backgroundEffect.valueChanged.connect(self._onBackgroundEffectChanged)
         self.autoRunCard.checkedChanged.connect(self._onAutoRunCardChecked)
         self.aboutCard.clicked.connect(self._onAboutCardClicked)
         self.feedbackCard.clicked.connect(
@@ -270,12 +268,6 @@ class SettingPage(ScrollArea):
         InfoBar.success(
             self.tr("已配置"), self.tr("重启软件后生效"), duration=1500, parent=self
         )
-
-    def _onBackgroundEffectChanged(self, option):
-        raise NotImplementedError
-
-    def _onClipboardListenerCardChecked(self, value: bool):
-        raise NotImplementedError
 
     def _onAboutCardClicked(self):
         mainWindow: "MainWindow" = self.window()
