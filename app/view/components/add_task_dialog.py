@@ -131,6 +131,7 @@ class AddTaskDialog(MessageBoxBase):
         self._activeRequests: dict[int, _LineParseState] = {}
         self._acceptedPendingParses: dict[int, _AcceptedPendingParse] = {}
         self._confirmedTasks: list[Task] = []
+        self._payloadOverrides: dict[str, dict[str, Any]] = {}  # TODO, 这是一种临时解决方案, 最佳方案是让 ResultCard 可以自定义 Payload
         self._requestSerial = 0
 
         self.initWidget()
@@ -201,8 +202,13 @@ class AddTaskDialog(MessageBoxBase):
         self._timer.stop()
         self.parse()
 
+    def appendUrlWithPayload(self, url: str, payloadOverride: dict[str, Any]):
+        self._payloadOverrides[url] = payloadOverride
+        self.appendUrls([url])
+
     def getPayload(self, url) -> dict[str, Any]:
         payload = self.getCurrentPayload()
+        payload.update(self._payloadOverrides.get(url, {}))
         payload["url"] = url
         return payload
 
@@ -266,6 +272,7 @@ class AddTaskDialog(MessageBoxBase):
             if state.callbackId:
                 coreService.removeCallback(state.callbackId)
 
+        self._payloadOverrides.pop(state.url, None)
         state.callbackId = ""
         self._removeResultCard(state)
         state.task = None

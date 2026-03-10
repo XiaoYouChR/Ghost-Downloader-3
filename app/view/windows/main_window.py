@@ -100,7 +100,7 @@ class MainWindow(MSFluentWindow):
         bringWindowToTop(self)
         self.showAddTaskDialog(urls=urls)
 
-    def _getAddTaskDialog(self) -> AddTaskDialog:
+    def getAddTaskDialog(self) -> AddTaskDialog:
         if AddTaskDialog.instance is None:
             instance = AddTaskDialog.initialize(self)
             instance.taskConfirmed.connect(self.addTask)
@@ -150,7 +150,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
     def showAddTaskDialog(self, triggeredByUser: bool = False, urls: list[str] | None = None):
-        dialog = self._getAddTaskDialog()
+        dialog = self.getAddTaskDialog()
 
         if urls:
             dialog.appendUrls(urls)

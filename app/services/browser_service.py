@@ -10,7 +10,8 @@ from qfluentwidgets import InfoBar, InfoBarPosition
 
 from app.services.core_service import coreService
 from app.supports.config import VERSION, LATEST_EXTENSION_VERSION, cfg
-from app.supports.utils import getProxies, bringWindowToTop
+from app.supports.signal_bus import signalBus
+from app.supports.utils import getProxies
 
 if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
@@ -85,6 +86,27 @@ class BrowserService(QObject):
             "preBlockNum": cfg.preBlockNum.value,
         }
 
+    def _showAddTaskDialog(self, url: str, headers: dict):
+        dialog = self.mainWindow.getAddTaskDialog()
+        signalBus.showMainWindow.emit()
+        dialog.appendUrlWithPayload(url, {"headers": headers})
+        if not dialog.isVisible():
+            dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _sendReceiveNotification(self, url: str, filename: str):
+        content = filename or url
+        coreService.loop.call_soon_threadsafe(
+            lambda: coreService.loop.create_task(
+                coreService.desktopNotifier.send(
+                    self.tr("收到浏览器下载任务"),
+                    content,
+                    on_clicked=lambda: signalBus.showMainWindow.emit(),
+                )
+            )
+        )
+
     def _onTaskParsed(self, title: str, url: str, task, error: str | None):
         if error:
             logger.error(f"Failed to parse browser task {url}: {error}")
@@ -120,9 +142,11 @@ class BrowserService(QObject):
 
             logger.debug(f"Received message: {message}")
             payload = self._buildPayload(data)
+            self._sendReceiveNotification(payload["url"], data["filename"])
 
             if cfg.enableRaiseWindowWhenReceiveMsg.value:
-                bringWindowToTop(self.mainWindow)
+                self._showAddTaskDialog(payload["url"], payload["headers"])
+                return
 
             coreService.parseUrl(
                 payload,
