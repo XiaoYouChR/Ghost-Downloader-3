@@ -51,7 +51,7 @@ else:
 
 if sys.platform in {"win32", "darwin"}:
     print(getSystemAccentColor())
-    setThemeColor(getSystemAccentColor(), save=False)
+    setThemeColor(getSystemAccentColor(), save=True)    # TODO Color 问题待调查...
 if sys.platform == "linux":
 
     if 'KDE_SESSION_UID' in os.environ:  # KDE Plasma
