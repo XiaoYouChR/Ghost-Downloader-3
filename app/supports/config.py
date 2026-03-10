@@ -1,7 +1,7 @@
 import sys
 from asyncio import sleep
 from enum import Enum
-from json import dumps, loads
+from orjson import dumps, loads
 from re import compile
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale
@@ -117,7 +117,7 @@ class HeadersSerializer(ConfigSerializer):
 
     def serialize(self, value: dict) -> str:
         """将字典序列化为 JSON 字符串"""
-        return dumps(value, ensure_ascii=False)
+        return dumps(value).decode("utf-8")
 
     def deserialize(self, value: str) -> dict:
         """将 JSON 字符串反序列化为字典，如果失败则返回默认值"""
@@ -152,7 +152,7 @@ class Config(QConfig):
     enableSpeedLimitation = ConfigItem("GeneralDownload", "enableSpeedLimitation", False, BoolValidator())
     speedLimitation = RangeConfigItem(
         "GeneralDownload", "SpeedLimitation", 4194304, RangeValidator(1024, 104857600)
-    )  # 单位 KB
+    )  # 单位 B/s
     SSLVerify = ConfigItem(
         "GeneralDownload", "SSLVerify", False, BoolValidator(), restart=True
     )

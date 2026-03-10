@@ -69,9 +69,10 @@ class HttpTask(Task):
     
     def applyPayloadToTask(self, payload: dict[str, Any]):
         super().applyPayloadToTask(payload)
-        headers = payload.get("headers")
-        if isinstance(headers, dict):
-            self.headers = headers
+        # TODO 更新 Headers 有时需要根据单独任务进行更新
+        # headers = payload.get("headers")
+        # if isinstance(headers, dict):
+        #     self.headers = headers
 
         proxies = payload.get("proxies")
         if isinstance(proxies, dict):
@@ -86,8 +87,8 @@ class HttpTask(Task):
             if not isinstance(stage, HttpTaskStage):
                 continue
 
-            if isinstance(headers, dict):
-                stage.headers = headers
+            # if isinstance(headers, dict):
+            #     stage.headers = headers
             if isinstance(proxies, dict):
                 stage.proxies = proxies
             if isinstance(blockNum, int):

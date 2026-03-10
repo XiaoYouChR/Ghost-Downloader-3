@@ -3,11 +3,12 @@ from base64 import b64decode
 from typing import TYPE_CHECKING
 
 import niquests
-import orjson
+
 from PySide6.QtCore import Signal, Qt, QSize, QUrl
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
 from loguru import logger
+from orjson import loads
 from qfluentwidgets import MaskDialogBase, \
     FluentStyleSheet, SettingCardGroup, OptionsConfigItem, OptionsValidator, ComboBoxSettingCard, FluentIcon, \
     PlainTextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, RangeValidator, PrimaryPushButton, PushButton, \
@@ -48,7 +49,7 @@ async def run():
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
         proxies=_, allow_redirects=True)
     await client.close()
-    return orjson.loads(result.text)["OS"]
+    return loads(result.text)["OS"]
 
 
 class LoadingStatusWidget(QWidget):

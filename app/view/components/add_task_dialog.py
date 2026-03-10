@@ -212,7 +212,6 @@ class AddTaskDialog(MessageBoxBase):
             "proxies": getProxies(),
         }
         payload.update(self.settingGroup.payload)
-        print(payload)
         return payload
 
     def _applyCurrentPayloadToTask(self, task: Task):
