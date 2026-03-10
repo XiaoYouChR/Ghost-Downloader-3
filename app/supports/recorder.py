@@ -36,7 +36,6 @@ class TaskRecorder:
                 tasks[task.taskId] = task
             except Exception as e:
                 logger.error(f"failed to parse task record: {e}")
-        print(tasks)
         return tasks
 
     def add(self, task: Task, flush=True):

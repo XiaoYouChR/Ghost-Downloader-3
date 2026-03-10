@@ -49,6 +49,7 @@ class MainWindow(MSFluentWindow):
 
         self.initPagesAndNavigation()
 
+        self.clipboard: "QClipboard" = None
         self.tray = SystemTrayIcon(self)
         self.tray.show()
 
@@ -62,15 +63,16 @@ class MainWindow(MSFluentWindow):
         cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
 
     def _syncClipboardListener(self):
-        clipboard = QApplication.clipboard()
-
-        try:
-            clipboard.dataChanged.disconnect(self._onClipboardDataChanged)
-        except RuntimeError:
-            pass
+        if self.clipboard is None:
+            self.clipboard = QApplication.clipboard()
+            if not cfg.enableClipboardListener.value:
+                return
 
         if cfg.enableClipboardListener.value:
-            clipboard.dataChanged.connect(self._onClipboardDataChanged)
+            self.clipboard.dataChanged.connect(self._onClipboardDataChanged)
+        else:
+            self.clipboard.dataChanged.disconnect(self._onClipboardDataChanged)
+
 
     def _extractClipboardUrls(self, text: str) -> list[str]:
         urls = []
