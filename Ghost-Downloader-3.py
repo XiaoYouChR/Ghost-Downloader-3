@@ -50,6 +50,7 @@ mainWindow.taskPage.resumeMemorizedTasks()
 if not isSilently:
     mainWindow.splashScreen.finish()
 
+application.aboutToQuit.connect(mainWindow.terminateThemeChangedListener)
 application.aboutToQuit.connect(coreService.stop)
 application.aboutToQuit.connect(taskRecorder.flush)
 

@@ -20,6 +20,7 @@ from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
 from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, isLessThanWin10
 from app.view.components.add_task_dialog import AddTaskDialog
+from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.components.tray import SystemTrayIcon
 from app.view.pages.setting_page import SettingPage
@@ -96,19 +97,19 @@ class MainWindow(MSFluentWindow):
             setTheme(Theme.AUTO, save=False)
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
         elif value == 'Dark':
-            if self.themeChangedListener:
-                self.themeChangedListener.terminate()
-                self.themeChangedListener.deleteLater()
-                self.themeChangedListener = None
+            self.terminateThemeChangedListener()
             setTheme(Theme.DARK, save=False)
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
         else:
-            if self.themeChangedListener:
-                self.themeChangedListener.terminate()
-                self.themeChangedListener.deleteLater()
-                self.themeChangedListener = None
+            self.terminateThemeChangedListener()
             setTheme(Theme.LIGHT, save=False)
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+
+    def terminateThemeChangedListener(self):
+        if self.themeChangedListener is not None:
+            self.themeChangedListener.terminate()
+            self.themeChangedListener.deleteLater()
+            self.themeChangedListener = None
 
     def _normalBackgroundColor(self):
         if self.styleSheet() == "":
@@ -152,13 +153,14 @@ class MainWindow(MSFluentWindow):
         if callback == 'Dark':  # Microsoft 特性，需要重试
             setTheme(Theme.DARK, save=False, lazy=True)
             if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
-                QTimer.singleShot(500, self._applyBackgroundEffectByCfg)
+                QTimer.singleShot(500, lambda: self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value))
 
         elif callback == 'Light':
             setTheme(Theme.LIGHT, save=False, lazy=True)
 
+        IconBodyLabel.clearCache()
         self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
-    
+
     def _syncClipboardListener(self):
         if self.clipboard is None:
             self.clipboard = QApplication.clipboard()
