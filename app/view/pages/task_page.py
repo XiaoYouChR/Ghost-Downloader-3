@@ -154,6 +154,7 @@ class TaskPage(ScrollArea):
         self.initWidget()
         self.initLayout()
         self.connectSignalToSlot()
+        self.refreshCardVisibility()
 
         self.refreshTimer = QTimer(self, interval=1000)
         self.refreshTimer.timeout.connect(self.refresh)
@@ -283,7 +284,6 @@ class TaskPage(ScrollArea):
         # other widgets
         self.emptyStatusWidget.setMinimumWidth(200)
         self.emptyStatusWidget.adjustSize()
-        self.emptyStatusWidget.hide()
 
         self.commandView.hide()
 
