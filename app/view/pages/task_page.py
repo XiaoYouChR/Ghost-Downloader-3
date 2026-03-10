@@ -168,7 +168,7 @@ class TaskPage(ScrollArea):
                 logger.error(f"无法恢复任务卡片 {task.taskId}: {repr(e)}")
                 continue
 
-            if task.status == TaskStatus.RUNNING:
+            if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 card.resumeTask()
 
             self.addCard(card)
@@ -463,7 +463,7 @@ class TaskPage(ScrollArea):
 
     def pauseAllTasks(self):
         for card in self.cards:
-            if card.task.status == TaskStatus.RUNNING:
+            if card.task.status in {TaskStatus.RUNNING, TaskStatus.PAUSED}:
                 card.pauseTask()
 
     def selectAll(self):

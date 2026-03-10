@@ -10,6 +10,7 @@ from loguru import logger
 
 from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
+from app.supports.config import cfg
 from app.supports.utils import openFile
 
 
@@ -28,9 +29,11 @@ class CoreService(QThread):
         asyncio.set_event_loop(self.loop)
         self.mainLoop = self.loop.create_task(self.main())
         self.tasks: set[Task] = set()
+        self.waitingTasks: list[Task] = []
         self.runningTasks: dict[str, asyncio.Task] = {}
         self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
         self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))
+        cfg.maxTaskNum.valueChanged.connect(lambda _: self._syncTaskLimitSoon())
 
     def sendNotification(self, task: Task):
         resolvePath = task.resolvePath
@@ -144,22 +147,95 @@ class CoreService(QThread):
 
         return callbackId
 
+    def _runningTaskCount(self) -> int:
+        return sum(1 for task in self.tasks if task.status == TaskStatus.RUNNING)
+
+    def _removeWaitingTask(self, task: Task):
+        self.waitingTasks = [queuedTask for queuedTask in self.waitingTasks if queuedTask.taskId != task.taskId]
+
+    def _enqueueTask(self, task: Task):
+        self._removeWaitingTask(task)
+        task.setStatus(TaskStatus.WAITING)
+        self.waitingTasks.append(task)
+
+    def _dispatchTask(self, task: Task):
+        self._removeWaitingTask(task)
+        task.setStatus(TaskStatus.RUNNING)
+        self.runningTasks[task.taskId] = self.loop.create_task(self._runTask(task))
+
+    def _syncTaskLimitSoon(self):
+        if self.loop.is_running():
+            self.loop.call_soon_threadsafe(lambda: self.loop.create_task(self._syncTaskLimit()))
+
+    def _scheduleWaitingTasks(self):
+        while self.waitingTasks and self._runningTaskCount() < cfg.maxTaskNum.value:
+            task = self.waitingTasks.pop(0)
+            if task.taskId in self.runningTasks:
+                continue
+
+            self._dispatchTask(task)
+
+    async def _moveRunningTaskToWaiting(self, task: Task):
+        runningTask = self.runningTasks.get(task.taskId)
+        if runningTask is None:
+            self._enqueueTask(task)
+            return
+
+        if runningTask.cancel():
+            try:
+                await runningTask
+            except asyncio.CancelledError:
+                pass
+
+        self.runningTasks.pop(task.taskId, None)
+
+        if task.status not in {TaskStatus.COMPLETED, TaskStatus.FAILED}:
+            self._enqueueTask(task)
+
+    async def _syncTaskLimit(self):
+        runningTaskIds = [
+            taskId for taskId in self.runningTasks
+            if (task := self.getTaskById(taskId)) and task.status == TaskStatus.RUNNING
+        ]
+        overflowTaskIds = runningTaskIds[cfg.maxTaskNum.value:]
+
+        for taskId in overflowTaskIds:
+            task = self.getTaskById(taskId)
+            if task is None:
+                continue
+            await self._moveRunningTaskToWaiting(task)
+
+        self._scheduleWaitingTasks()
+
     async def _runTask(self, task: Task):
-        self.runningTasks[task.taskId] = asyncio.create_task(task.run())
+        try:
+            await task.run()
+        finally:
+            self.runningTasks.pop(task.taskId, None)
+            self._scheduleWaitingTasks()
 
     def createTask(self, task: Task):
         self.tasks.add(task)
-        task.setStatus(TaskStatus.RUNNING)
-        self.loop.create_task(self._runTask(task))
+        if task.taskId in self.runningTasks:
+            return
+
+        if self._runningTaskCount() >= cfg.maxTaskNum.value:
+            self._enqueueTask(task)
+            return
+
+        self._dispatchTask(task)
 
     async def _stopTask(self, task: Task):
         self.tasks.discard(task)
-        runningTask = self.runningTasks.pop(task.taskId, None)
+        self._removeWaitingTask(task)
+        runningTask = self.runningTasks.get(task.taskId)
         if runningTask is not None and runningTask.cancel():
             try:
                 await runningTask
             except asyncio.CancelledError:
                 pass
+        self.runningTasks.pop(task.taskId, None)
+        self._scheduleWaitingTasks()
 
     def stopTask(self, task: Task):
         task.setStatus(TaskStatus.PAUSED)
@@ -208,12 +284,6 @@ class CoreService(QThread):
         """
         while True:
             try:
-                # 清理过期的回调函数（超过一定时间未执行的）
-                # TODO: 实现回调清理逻辑
-                
-                # 监控任务状态
-                # TODO: 实现任务状态监控逻辑
-                
                 await asyncio.sleep(1)
                 
             except asyncio.CancelledError:
@@ -242,5 +312,8 @@ class CoreService(QThread):
 
         self._pendingCallbacks.clear()
         self.tasks.clear()
+        self.waitingTasks.clear()
+        self.runningTasks.clear()
+        cfg.maxTaskNum.valueChanged.disconnect()
 
 coreService = CoreService()

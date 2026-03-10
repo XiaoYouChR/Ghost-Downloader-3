@@ -1,6 +1,7 @@
 import asyncio
 import os
 from asyncio import TaskGroup, CancelledError
+from contextlib import suppress
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
@@ -59,6 +60,7 @@ class HttpTask(Task):
                 await HttpWorker(stage).run()
         except CancelledError:
             logger.info(f"{self.title} 停止下载")
+            raise
         except Exception as e:
             logger.error(f"{self.title} 下载失败: {repr(e)}")
 
@@ -298,10 +300,13 @@ class HttpWorker(Worker):
             logger.info(f"{self.stage.resolvePath} 下载完成")
         except CancelledError:
             self.stage.setStatus(TaskStatus.PAUSED)
+            raise
         except Exception as e:
             self.stage.setStatus(TaskStatus.FAILED)
             logger.error(f"{self.stage.resolvePath} 错误: {repr(e)}")
         finally:
-            if not supervisor.cancel():
-                await supervisor
+            if not supervisor.done():
+                supervisor.cancel()
+                with suppress(asyncio.CancelledError):
+                    await supervisor
             os.close(self.fileHandle)
