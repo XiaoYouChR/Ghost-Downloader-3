@@ -1,7 +1,7 @@
 import os
 import sys
 
-from app.common.config import VERSION, YEAR, AUTHOR
+from app.supports.config import VERSION, YEAR, AUTHOR
 
 if sys.platform == "win32":
     args = [
@@ -14,7 +14,7 @@ if sys.platform == "win32":
         # '--mingw64',                    # Use MinGW
         # '--show-memory' ,
         # '--show-progress' ,
-        '--windows-icon-from-ico=resources/logo.ico',
+        '--windows-icon-from-ico=app/assets/logo.ico',
         '--company-name=XiaoYouChR',
         '--product-name="Ghost Downloader"',
         f'--file-version={VERSION}',
@@ -42,7 +42,7 @@ elif sys.platform == "darwin":
         "--assume-yes-for-download",
         "--macos-app-mode=gui",
         f"--macos-app-version={VERSION}",
-        "--macos-app-icon=resources/logo.icns",
+        "--macos-app-icon=app/assets/logo.icns",
         f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
         '--output-dir=dist',
         'Ghost-Downloader-3.py',
@@ -56,7 +56,7 @@ else:
         '--assume-yes-for-downloads',
         # '--show-memory',
         # '--show-progress',
-        '--linux-icon=resources/logo.png',
+        '--linux-icon=app/assets/logo.png',
         '--output-dir=dist',
         'Ghost-Downloader-3.py',
     ]
