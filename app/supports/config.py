@@ -234,7 +234,7 @@ class Config(QConfig):
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
 VERSION = "3.7"
-LATEST_EXTENSION_VERSION = "2.0"
+LATEST_EXTENSION_VERSION = "1.1.1"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 FIREFOX_ADDONS_URL = "https://addons.mozilla.org/zh-CN/firefox/addon/ghost-downloader/"

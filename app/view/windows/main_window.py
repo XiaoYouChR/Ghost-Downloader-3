@@ -10,6 +10,7 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
 
 from app.services.feature_service import featureService
 from app.services.core_service import coreService
+from app.services.browser_service import BrowserService
 from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
@@ -52,6 +53,7 @@ class MainWindow(MSFluentWindow):
         self.clipboard: "QClipboard" = None
         self.tray = SystemTrayIcon(self)
         self.tray.show()
+        self.browserService = BrowserService(self)
 
         self.connectSignalToSlot()
         self._syncClipboardListener()

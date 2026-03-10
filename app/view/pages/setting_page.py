@@ -256,7 +256,6 @@ class SettingPage(ScrollArea):
     def connectSignalToSlot(self):
         cfg.appRestartSig.connect(self._showRestartTooltip)
         self.downloadFolderCard.pathChanged.connect(lambda x: cfg.set(cfg.downloadFolder, x))
-        self.browserExtensionCard.checkedChanged.connect(self._onBrowserExtensionCardChecked)
         self.installExtensionCard.clicked.connect(self._onInstallExtensionCardClicked)
         self.installExtensionGuidanceCard.clicked.connect(self._onInstallExtensionGuidanceClicked)
         if sys.platform == "win32":
@@ -273,9 +272,6 @@ class SettingPage(ScrollArea):
         )
 
     def _onBackgroundEffectChanged(self, option):
-        raise NotImplementedError
-
-    def _onBrowserExtensionCardChecked(self, value: bool):
         raise NotImplementedError
 
     def _onClipboardListenerCardChecked(self, value: bool):
