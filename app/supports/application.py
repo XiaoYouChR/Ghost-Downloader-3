@@ -86,4 +86,4 @@ def exceptionHook(exception: BaseException, value, tb):
     message = '\n'.join([''.join(traceback.format_tb(tb)),
                     '{0}: {1}'.format(exception.__name__, value)])
     logger.exception(f"{message}")
-    signalBus.appErrorSig.emit(message)
+    signalBus.catchException.emit(message)
