@@ -43,7 +43,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
+          python -c "from app.supports.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV

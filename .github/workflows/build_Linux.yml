@@ -28,7 +28,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
