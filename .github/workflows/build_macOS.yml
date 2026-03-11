@@ -35,7 +35,7 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
-          mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv "app/assets/修复软件损坏" "dist/修复软件损坏"
 
       - name: Copy FeaturePacks
         run: |
@@ -109,7 +109,7 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
-          mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv "app/assets/修复软件损坏" "dist/修复软件损坏"
 
       - name: Copy FeaturePacks
         run: |

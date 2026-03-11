@@ -34,7 +34,7 @@ LicenseFile=LICENSE
 PrivilegesRequired=lowest
 OutputDir=dist
 OutputBaseFilename=Ghost-Downloader-v{#MyAppVersion}-Windows-Setup
-SetupIconFile=resources/logo.ico
+SetupIconFile=app/assets/logo.ico
 SolidCompression=yes
 WizardStyle=modern
 
