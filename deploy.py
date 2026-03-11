@@ -8,10 +8,14 @@ if sys.platform == "win32":
         'nuitka',
         '--standalone',  # Following all imports is the default for standalone mode and need not be specified.
         '--windows-console-mode=disable',
-        '--plugin-enable=pyside6' ,
+        '--plugin-enable=pyside6',
+        '--include-package=urllib3',
+        '--include-package=qrcode',
+        '--include-package=winrt.windows.foundation',
+        '--include-module=app.supports.sysio',
         '--assume-yes-for-downloads',
         '--msvc=latest',              # Use MSVC
-        # '--mingw64',                    # Use MinGW
+        # '--mingw64',  # Use MinGW
         # '--show-memory' ,
         # '--show-progress' ,
         '--windows-icon-from-ico=app/assets/logo.ico',
@@ -35,6 +39,9 @@ elif sys.platform == "darwin":
         'python3 -m nuitka',
         '--standalone',
         '--plugin-enable=pyside6',
+        '--include-package=urllib3',
+        '--include-package=qrcode',
+        '--include-module=app.supports.sysio',
         # '--show-memory',
         # '--show-progress',
         '--static-libpython=no',
@@ -52,6 +59,9 @@ else:
         'nuitka',
         '--standalone',
         '--plugin-enable=pyside6',
+        '--include-package=urllib3',
+        '--include-package=qrcode',
+        '--include-module=app.supports.sysio',
         '--include-qt-plugins=platforms',
         '--assume-yes-for-downloads',
         # '--show-memory',
