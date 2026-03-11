@@ -28,6 +28,7 @@ from qfluentwidgets import (
     PrimaryPushButton,
     PixmapLabel,
 )
+from qrcode.image.pure import PyPNGImage
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
@@ -104,9 +105,9 @@ def _createQrPixmap(content: str, size: int = 240) -> QPixmap:
     qrCode.add_data(content)
     qrCode.make(fit=True)
 
-    image = qrCode.make_image(fill_color="black", back_color="white").convert("RGB")
+    image = qrCode.make_image(image_factory=PyPNGImage, fill_color="black", back_color="white")
     buffer = BytesIO()
-    image.save(buffer, format="PNG")
+    image.save(buffer)
 
     pixmap = QPixmap()
     pixmap.loadFromData(buffer.getvalue(), "PNG")
@@ -529,6 +530,7 @@ class ScanLoginDialog(MessageBoxBase):
             self.qrPixmapLabel.setPixmap(_createQrPixmap(self._loginUrl))
         except Exception as e:
             self.statusLabel.setText(self.tr(f"二维码生成失败：{e}"))
+            raise e
             return
 
         self.openBrowserButton.setEnabled(True)
