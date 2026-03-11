@@ -270,6 +270,14 @@ class HttpWorker(Worker):
 
         self.subworkers.append(HttpSubworker(start, start, self.stage.fileSize - 1)) # Http 请求是以 0 开头的
 
+    def _cleanupRecordFile(self):
+        target = Path(self.stage.resolvePath + ".ghd")
+        try:
+            if target.is_file() or target.is_symlink():
+                target.unlink()
+        except Exception as e:
+            logger.opt(exception=e).error("failed to cleanup temporary file {}", target)
+
     async def run(self):
         # prepare async components
         self.taskGroup = TaskGroup()
@@ -300,6 +308,7 @@ class HttpWorker(Worker):
                     self.taskGroup.create_task(self.handleSubworker(subworker))
 
             self.stage.setStatus(TaskStatus.COMPLETED)
+            self._cleanupRecordFile()
             logger.info(f"{self.stage.resolvePath} 下载完成")
         except CancelledError:
             self.stage.setStatus(TaskStatus.PAUSED)
