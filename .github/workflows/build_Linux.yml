@@ -34,6 +34,16 @@ jobs:
           rm -rf version.txt
           python deploy.py
 
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost-Downloader-3.dist/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

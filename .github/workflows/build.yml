@@ -38,6 +38,21 @@ jobs:
           python deploy.py
           mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
 
+      - name: Copy FeaturePacks
+        shell: pwsh
+        run: |
+          $targetRoot = "dist/Ghost-Downloader-3-Unsigned.dist/features"
+          New-Item -ItemType Directory -Force -Path $targetRoot | Out-Null
+
+          foreach ($pack in @("http_pack", "bili_pack", "ffmpeg_pack")) {
+            $source = Join-Path "features" $pack
+            $target = Join-Path $targetRoot $pack
+            if (Test-Path $target) {
+              Remove-Item -Recurse -Force $target
+            }
+            Copy-Item -Recurse -Force $source $target
+          }
+
       - name: upload-unsigned-artifact
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v4
@@ -120,6 +135,16 @@ jobs:
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
 
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
+
       - name: Create DMG
         run: |
           ln -s /Applications dist/Applications
@@ -184,6 +209,16 @@ jobs:
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
 
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
+
       - name: Reinstall openssl libs
         run: |
           brew install openssl@3
@@ -230,6 +265,16 @@ jobs:
           rm -rf version.txt
           python deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost-Downloader-3.dist/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Tar the contents of Ghost-Downloader
         shell: pwsh

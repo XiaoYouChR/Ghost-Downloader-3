@@ -37,6 +37,16 @@ jobs:
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
 
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
+
       - name: Create DMG
         run: |
           ln -s /Applications dist/Applications
@@ -100,6 +110,16 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "resources/修复软件损坏" "dist/修复软件损坏"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Reinstall openssl libs
         run: |
