@@ -42,16 +42,15 @@ logger.info(f"Ghost Downloader v{VERSION} is Launched at {time.strftime('%Y-%m-%
 
 warnings.warn = logger.warning
 
-if cfg.customThemeMode.value == "System":
-    setTheme(Theme.AUTO, save=False)
-elif cfg.customThemeMode.value == "Light":
-    setTheme(Theme.LIGHT, save=False)
-else:
-    setTheme(Theme.DARK, save=False)
+isSilently = "silent" in sys.argv
+coreService.start()
+mainWindow = MainWindow(isSilently)
+featureService.loadFeatures(mainWindow)
+taskRecorder.load()
+mainWindow.taskPage.resumeMemorizedTasks()
 
 if sys.platform in {"win32", "darwin"}:
-    print(getSystemAccentColor())
-    setThemeColor(getSystemAccentColor(), save=True)    # TODO Color 问题待调查...
+    setThemeColor(getSystemAccentColor(), save=False)
 if sys.platform == "linux":
 
     if 'KDE_SESSION_UID' in os.environ:  # KDE Plasma
@@ -65,12 +64,6 @@ if sys.platform == "linux":
             color = list(map(int, config.get('Colors:Window', 'DecorationFocus').split(",")))
             setThemeColor(QColor(*color))
 
-isSilently = "silent" in sys.argv
-coreService.start()
-mainWindow = MainWindow(isSilently)
-featureService.loadFeatures(mainWindow)
-taskRecorder.load()
-mainWindow.taskPage.resumeMemorizedTasks()
 if not isSilently:
     mainWindow.splashScreen.finish()
 

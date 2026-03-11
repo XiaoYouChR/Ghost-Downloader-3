@@ -153,12 +153,12 @@ class MainWindow(MSFluentWindow):
     
     def _toggleTheme(self, callback: str):
         if callback == 'Dark':  # Microsoft 特性，需要重试
-            setTheme(Theme.DARK, save=False, lazy=True)
+            setTheme(Theme.DARK, save=False)
             if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
                 QTimer.singleShot(500, lambda: self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value))
 
         elif callback == 'Light':
-            setTheme(Theme.LIGHT, save=False, lazy=True)
+            setTheme(Theme.LIGHT, save=False)
 
         IconBodyLabel.clearCache()
         self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
