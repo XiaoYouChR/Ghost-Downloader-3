@@ -25,9 +25,10 @@ from loguru import logger
 import time
 import warnings
 from getpass import getuser
-from qfluentwidgets import setThemeColor, setTheme, Theme
+from qfluentwidgets import setThemeColor
 from qframelesswindow.utils import getSystemAccentColor
 from PySide6.QtGui import QColor
+from PySide6.QtCore import QTranslator
 
 from app.supports.config import VERSION
 from app.view.windows.main_window import MainWindow
@@ -41,6 +42,12 @@ logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotati
 logger.info(f"Ghost Downloader v{VERSION} is Launched at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}")
 
 warnings.warn = logger.warning
+
+# internationalization
+locale = cfg.language.value.value
+translator = QTranslator()
+translator.load(locale, "gd3", ".", ":/i18n")
+application.installTranslator(translator)
 
 isSilently = "silent" in sys.argv
 coreService.start()

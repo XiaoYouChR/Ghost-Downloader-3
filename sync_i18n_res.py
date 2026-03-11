@@ -22,7 +22,7 @@ def getPyFiles(rootDir):
                 # 获取相对路径并确保跨平台兼容性
                 relPath = os.path.relpath(os.path.join(root, file), rootDir)
                 # 使用os.path.join确保路径分隔符正确
-                fullPath = os.path.normpath(os.path.join('.', 'app', relPath))
+                fullPath = os.path.normpath(os.path.join('.', rootDir, relPath))
                 if fullPath not in EXCLUDED_FILES:
                     pyFiles.append(fullPath)
 
@@ -31,6 +31,7 @@ def getPyFiles(rootDir):
 if __name__ == '__main__':
     appDir = 'app'  # 目标目录
     pyFiles = getPyFiles(appDir)
+    pyFiles.extend(getPyFiles('features'))
 
     # targetLanguages = ["lzh", "en_US", "ja_JP"]
     targetLanguages = ["en_US", "ja_JP", "zh_TW", "yue_HK"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
