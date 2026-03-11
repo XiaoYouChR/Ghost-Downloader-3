@@ -11,7 +11,7 @@ if sys.platform == "win32":
         '--plugin-enable=pyside6',
         '--include-package=urllib3',
         '--include-package=qrcode',
-        '--include-package=winrt.windows.foundation',
+        '--include-package=winrt',
         '--include-module=app.supports.sysio',
         '--assume-yes-for-downloads',
         '--msvc=latest',              # Use MSVC
