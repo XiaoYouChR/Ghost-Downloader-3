@@ -1,5 +1,10 @@
 import os
-import sys
+import subprocess
+
+
+EXCLUDED_FILES = {
+    os.path.normpath("./app/assets/resources.py"),
+}
 
 def getPyFiles(rootDir):
     """
@@ -10,33 +15,37 @@ def getPyFiles(rootDir):
         list: 包含所有.py文件相对路径的列表
     """
     pyFiles = []
-    
+
     for root, dirs, files in os.walk(rootDir):
         for file in files:
             if file.endswith('.py'):
                 # 获取相对路径并确保跨平台兼容性
                 relPath = os.path.relpath(os.path.join(root, file), rootDir)
                 # 使用os.path.join确保路径分隔符正确
-                fullPath = os.path.join('.', 'app', relPath)
-                pyFiles.append(fullPath)
-    
-    return pyFiles
+                fullPath = os.path.normpath(os.path.join('.', 'app', relPath))
+                if fullPath not in EXCLUDED_FILES:
+                    pyFiles.append(fullPath)
+
+    return sorted(pyFiles)
 
 if __name__ == '__main__':
     appDir = 'app'  # 目标目录
     pyFiles = getPyFiles(appDir)
 
     # targetLanguages = ["lzh", "en_US", "ja_JP"]
-    targetLanguages = ["zh_MO", "en_US", "ja_JP", "zh_TW", "yue_HK"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
+    targetLanguages = ["en_US", "ja_JP", "zh_TW", "yue_HK"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
 
     for targetLanguage in targetLanguages:
+        tsPath = os.path.join("app", "assets", "i18n", f"gd3.{targetLanguage}.ts")
+        os.makedirs(os.path.dirname(tsPath), exist_ok=True)
 
         args = ["-no-ui-lines",
                 "-source-language", "zh_CN",
                 "-target-language", targetLanguage]
 
-        if sys.platform == "win32":
-            args.extend(pyFiles)
-            args.append("-ts")
-            args.append(f"resources/i18n/gd3.{targetLanguage}.ts")
-            os.system("pyside6-lupdate " + " ".join(args))
+        args.extend(pyFiles)
+        args.append("-ts")
+        args.append(tsPath)
+        result = subprocess.run(["pyside6-lupdate", *args], check=False)
+        if result.returncode != 0:
+            raise SystemExit(result.returncode)
