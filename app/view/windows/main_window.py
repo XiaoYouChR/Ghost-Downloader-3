@@ -288,12 +288,25 @@ class MainWindow(MSFluentWindow):
             logger.opt(exception=e).error("无法创建任务卡片 {}", getattr(task, "title", "Unknown"))
             return False
 
-    def closeEvent(self, event, /):
+    def closeEvent(self, event):
         event.ignore()
         if not self.isMaximized():
             cfg.set(cfg.geometry, self.geometry())
 
         self.hide()
+
+    def nativeEvent(self, eventType, message):
+        # 处理窗口重复打开事件
+        if eventType == "windows_generic_MSG":
+            from ctypes import wintypes
+            msg = wintypes.MSG.from_address(message.__int__())
+
+            # WIN_USER = 1024
+            if msg.message == 1024 + 1:
+                bringWindowToTop(self)
+                return True, 0
+
+        return super().nativeEvent(eventType, message)
 
     # 检查更新
     def checkForUpdates(self, manual: bool = False):
