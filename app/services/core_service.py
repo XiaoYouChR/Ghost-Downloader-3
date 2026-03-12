@@ -31,7 +31,6 @@ class CoreService(QThread):
         self.waitingTasks: list[Task] = []
         self.runningTasks: dict[str, asyncio.Task] = {}
         self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
-        self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._syncTaskLimitSoon())
 
     def sendNotification(self, task: Task):
@@ -293,6 +292,7 @@ class CoreService(QThread):
 
     def run(self):
         """启动线程和事件循环"""
+        self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))  # OSError: [WinError -2147417842] 应用程序调用一个已为另一线程整理的接口。
         try:
             self.loop.run_until_complete(self.mainLoop)
         except Exception as e:
