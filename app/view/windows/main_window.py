@@ -9,7 +9,7 @@ from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
-    PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme, setThemeColor, qconfig
+    PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme, setThemeColor
 
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
@@ -29,13 +29,6 @@ from app.view.pages.task_page import TaskPage
 if TYPE_CHECKING:
     from typing import Literal
     from PySide6.QtGui import QClipboard
-
-
-BACKGROUND_EFFECT_REFRESH_EVENTS = {
-    QEvent.Type.PaletteChange,
-    QEvent.Type.StyleChange,
-    QEvent.Type.ThemeChange
-}
 
 
 class CustomSplashScreen(SplashScreen):
@@ -74,7 +67,7 @@ class MainWindow(MSFluentWindow):
         self.connectSignalToSlot()
         self._syncClipboardListener()
         self._onThemeChanged(cfg.customThemeMode.value)
-        self._syncThemeColor()
+        self.syncThemeColor()
         if platform == 'win32':
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
@@ -121,17 +114,18 @@ class MainWindow(MSFluentWindow):
 
         return QColor(0, 0, 0, 0)
 
-    def _syncThemeColor(self):
-        palette = self.palette()
+    @staticmethod
+    def syncThemeColor():
+        palette = QApplication.palette()
 
         for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
             color = palette.color(role)
-            if not color.isValid() or qconfig.themeColor.value == color:
+            if not color.isValid() or cfg.themeColor.value == color:
                 continue
 
             setThemeColor(color, save=False)
             return
-      
+
     def _applyBackgroundEffectByCfg(self, value: "Literal['Acrylic', 'Mica', 'MicaBlur', 'MicaAlt', 'Aero', 'None']"):
         if platform == 'win32':
             self.windowEffect.removeBackgroundEffect(self.winId())
@@ -163,7 +157,7 @@ class MainWindow(MSFluentWindow):
                     self.titleBar.closeBtn.show()
                     self.titleBar.minBtn.show()
                     self.titleBar.maxBtn.show()
-    
+
     def _toggleTheme(self, callback: str):
         if callback == 'Dark':
             setTheme(Theme.DARK, save=False)
@@ -184,17 +178,12 @@ class MainWindow(MSFluentWindow):
     def changeEvent(self, event):
         super().changeEvent(event)
 
-        if event.type() in BACKGROUND_EFFECT_REFRESH_EVENTS:
-            self._syncThemeColor()
+        if event.type() == QEvent.Type.PaletteChange:
+            self.syncThemeColor()
 
-        if not self._pendingBackgroundEffectRefresh:
-            return
-
-        if event.type() not in BACKGROUND_EFFECT_REFRESH_EVENTS:
-            return
-
-        self._pendingBackgroundEffectRefresh = False
-        self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+        if self._pendingBackgroundEffectRefresh and event.type() == QEvent.Type.ThemeChange:
+            self._pendingBackgroundEffectRefresh = False
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
     def _syncClipboardListener(self):
         if self.clipboard is None:
