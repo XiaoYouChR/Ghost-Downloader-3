@@ -66,10 +66,8 @@ class MainWindow(MSFluentWindow):
 
         self.connectSignalToSlot()
         self._syncClipboardListener()
-        self._onThemeChanged(cfg.customThemeMode.value)
+        self._toggleTheme(cfg.customThemeMode.value, triggeredByUser=True)
         self.syncThemeColor()
-        if platform == 'win32':
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
         if cfg.checkUpdateAtStartUp.value:
             self.checkForUpdates()
@@ -78,24 +76,12 @@ class MainWindow(MSFluentWindow):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
         signalBus.catchException.connect(self._onExceptionCaught)
         cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
-        cfg.customThemeMode.valueChanged.connect(self._onThemeChanged)
+        cfg.customThemeMode.valueChanged.connect(
+            lambda value: self._toggleTheme(value, triggeredByUser=True)
+        )
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         if platform == 'win32':
             cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
-
-    def _onThemeChanged(self, value: "Literal['System', 'Dark', 'Light']"):
-        if value == 'System':
-            setTheme(Theme.AUTO, save=False)
-        elif value == 'Dark':
-            setTheme(Theme.DARK, save=False)
-        else:
-            setTheme(Theme.LIGHT, save=False)
-
-        IconBodyLabel.clearCache()
-        self._pendingBackgroundEffectRefresh = False
-
-        if platform == 'win32':
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
     def _onSystemColorSchemeChanged(self, colorScheme: Qt.ColorScheme):
         if cfg.customThemeMode.value != 'System':
@@ -158,22 +144,31 @@ class MainWindow(MSFluentWindow):
                     self.titleBar.minBtn.show()
                     self.titleBar.maxBtn.show()
 
-    def _toggleTheme(self, callback: str):
-        if callback == 'Dark':
+    def _toggleTheme(
+        self,
+        value: "Literal['System', 'Dark', 'Light']",
+        triggeredByUser: bool = False,
+    ):
+        if value == 'Dark':
             setTheme(Theme.DARK, save=False)
-        elif callback == 'Light':
+        elif value == 'Light':
             setTheme(Theme.LIGHT, save=False)
         else:
             setTheme(Theme.AUTO, save=False)
 
         IconBodyLabel.clearCache()
 
-        if platform == 'win32' and cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
+        if (
+            not triggeredByUser
+            and platform == 'win32'
+            and cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']
+        ):
             self._pendingBackgroundEffectRefresh = True
             return
 
         self._pendingBackgroundEffectRefresh = False
-        self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+        if platform == 'win32':
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
     def changeEvent(self, event):
         super().changeEvent(event)
