@@ -199,7 +199,20 @@ class AddTaskDialog(MessageBoxBase):
         if not urls:
             return
 
-        self.urlEdit.appendPlainText("\n".join(urls))
+        existingUrls = set(self._getEditorUrls())
+        appendableUrls: list[str] = []
+
+        for url in urls:
+            normalizedUrl = url.strip()
+            if not normalizedUrl or normalizedUrl in existingUrls:
+                continue
+            existingUrls.add(normalizedUrl)
+            appendableUrls.append(normalizedUrl)
+
+        if not appendableUrls:
+            return
+
+        self.urlEdit.appendPlainText("\n".join(appendableUrls))
         self._timer.stop()
         self.parse()
 
