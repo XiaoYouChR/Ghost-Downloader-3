@@ -12,7 +12,7 @@ from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
-from app.supports.utils import openFile, getReadableSize, getReadableTime
+from app.supports.utils import openFile, getReadableSize, getReadableTime, openFolder
 from app.view.components.dialogs import DeleteTaskDialog
 from app.view.components.labels import IconBodyLabel
 
@@ -232,7 +232,7 @@ class UniversalTaskCard(TaskCard):
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
         self.openFileButton.clicked.connect(lambda: openFile(self.task.resolvePath))
-        self.openFolderButton.clicked.connect(lambda: openFile(self.task.path))
+        self.openFolderButton.clicked.connect(lambda: openFolder(self.task.resolvePath))
         self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
 
     def toggleRunningStatus(self):

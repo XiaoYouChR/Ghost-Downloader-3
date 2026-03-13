@@ -2,6 +2,7 @@ import os
 import sys
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 from time import sleep
 from typing import Callable
 
@@ -11,6 +12,22 @@ from loguru import logger
 from qfluentwidgets import MessageBox
 
 from app.supports.config import cfg
+
+def openFolder(path):
+    path = Path(path)
+    if path.exists():
+        folder, file = path.parent, path.name
+        match sys.platform:
+            case 'win32':
+                os.system(f'explorer.exe /select, "{path}"')
+            case 'linux':
+                os.system(f'xdg-open "{folder}"')
+            case 'darwin':
+                os.system(f'open -R "{path}"')
+
+    else:
+        raise FileNotFoundError(path)
+
 
 def isGreaterEqualWin10():
     """determine if the Windows version ≥ Win10"""
