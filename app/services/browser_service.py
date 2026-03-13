@@ -94,7 +94,7 @@ class BrowserService(QObject):
                 coreService.desktopNotifier.send(
                     self.tr("收到浏览器下载任务"),
                     content,
-                    on_clicked=lambda: signalBus.showMainWindow.emit(),
+                    on_clicked=signalBus.showMainWindow.emit,
                 )
             )
         )
