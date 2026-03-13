@@ -14,6 +14,8 @@ from qfluentwidgets import (
     Action,
     FluentIcon,
     PlainTextEdit,
+    InfoBar,
+    InfoBarPosition,
 )
 
 from app.bases.models import Task
@@ -67,7 +69,6 @@ class _LineParseState:
     status: str = "idle"
     task: Task | None = None
     resultCard: ResultCard | None = None
-    error: str | None = None
 
 
 @dataclass
@@ -240,7 +241,6 @@ class AddTaskDialog(MessageBoxBase):
         state.requestId = requestId
         state.status = "pending"
         state.task = None
-        state.error = None
         self._activeRequests[requestId] = state
 
         try:
@@ -254,8 +254,8 @@ class AddTaskDialog(MessageBoxBase):
             self._activeRequests.pop(requestId, None)
             state.callbackId = ""
             state.status = "error"
-            state.error = repr(e)
             logger.opt(exception=e).error("提交解析请求失败 {}", state.url)
+            self._showParseError(state.url, str(e))
 
     def _removeResultCard(self, state: _LineParseState):
         if state.resultCard is None:
@@ -276,7 +276,6 @@ class AddTaskDialog(MessageBoxBase):
         state.callbackId = ""
         self._removeResultCard(state)
         state.task = None
-        state.error = None
         state.status = "idle" if state.url else "empty"
 
     def _rebuildResultCards(self):
@@ -296,6 +295,19 @@ class AddTaskDialog(MessageBoxBase):
 
         self.parseResultGroup.updateGeometry()
 
+    def _showParseError(self, url: str, error: str | None = None):
+        displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
+
+        content = self.tr("{0}\n{1}").format(displayUrl, error)
+
+        InfoBar.error(
+            self.tr("链接解析失败"),
+            content,
+            duration=5000,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self,
+        )
+
     def _handleParseResult(self, requestId: int, resultTask: Task, error: str = None):
         state = self._activeRequests.pop(requestId, None)
         if state is not None:
@@ -303,9 +315,9 @@ class AddTaskDialog(MessageBoxBase):
 
             if error or resultTask is None:
                 state.status = "error"
-                state.error = error or self.tr("解析失败")
                 state.task = None
                 self._removeResultCard(state)
+                self._showParseError(state.url, error or self.tr("解析失败"))
                 if error:
                     logger.warning("解析任务失败 {}: {}", state.url, error)
                 return
@@ -314,7 +326,6 @@ class AddTaskDialog(MessageBoxBase):
                 self._applyCurrentPayloadToTask(resultTask)
                 state.task = resultTask
                 state.status = "success"
-                state.error = None
                 if state.resultCard is None:
                     state.resultCard = featureService.createResultCard(
                         resultTask, self.parseResultGroup
@@ -322,10 +333,10 @@ class AddTaskDialog(MessageBoxBase):
                 self._rebuildResultCards()
             except Exception as e:
                 state.status = "error"
-                state.error = repr(e)
                 state.task = None
                 self._removeResultCard(state)
                 logger.opt(exception=e).error("无法创建解析结果卡片 {}", state.url)
+                self._showParseError(state.url, self.tr("解析结果处理失败"))
             return
 
         acceptedParse = self._acceptedPendingParses.pop(requestId, None)

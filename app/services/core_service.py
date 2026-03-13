@@ -130,12 +130,11 @@ class CoreService(QThread):
                 self._executeCallback(callback, result, None)
 
         except Exception as e:
-            errorMsg = f"解析 URL 失败: {e}"
             logger.opt(exception=e).error("解析 URL 失败")
 
             if callbackId and callbackId in self._pendingCallbacks:
                 callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, None, errorMsg)
+                self._executeCallback(callback, None, repr(e))
 
     def parseUrl(self, payload: dict, callback: Callable) -> str:
         callbackId = f"parse_{id(callback)}_{hash(str(payload))}"
