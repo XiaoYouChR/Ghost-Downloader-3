@@ -14,7 +14,7 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL
+from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
@@ -213,7 +213,12 @@ class MainWindow(MSFluentWindow):
         return urls
 
     def _onClipboardDataChanged(self):
-        urls = self._extractClipboardUrls(QApplication.clipboard().text())
+        clipboard = QApplication.clipboard()
+        mimeData = clipboard.mimeData()
+        if mimeData.hasFormat(GD3_COPY_MIME_TYPE):
+            return
+
+        urls = self._extractClipboardUrls(clipboard.text())
         if not urls:
             return
 

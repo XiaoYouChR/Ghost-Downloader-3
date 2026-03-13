@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent
+from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent, QMimeData
 from PySide6.QtGui import QColor, QPainter, QPen, QMouseEvent
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayout, QApplication
 from loguru import logger
@@ -13,6 +13,7 @@ from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, getReadableSize, getReadableTime, openFolder
+from app.supports.config import GD3_COPY_MIME_TYPE
 from app.view.components.dialogs import DeleteTaskDialog
 from app.view.components.labels import IconBodyLabel
 
@@ -151,9 +152,16 @@ class TaskCard(CardWidget):
     def createContextMenu(self) -> RoundMenu | None:
         menu = RoundMenu(parent=self)
         copyUrlAction = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
-        copyUrlAction.triggered.connect(lambda: QApplication.clipboard().setText(self.task.url))
+        copyUrlAction.triggered.connect(self._copyTaskUrl)
         menu.addAction(copyUrlAction)
         return menu
+
+    def _copyTaskUrl(self):
+        clipboard = QApplication.clipboard()
+        mimeData = QMimeData()
+        mimeData.setText(self.task.url)
+        mimeData.setData(GD3_COPY_MIME_TYPE, b"1")
+        clipboard.setMimeData(mimeData)
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
@@ -174,7 +182,7 @@ class TaskCard(CardWidget):
     def contextMenuEvent(self, e):
         menu = self.createContextMenu()
         if menu is None:
-            return super().contextMenuEvent(e)
+            super().contextMenuEvent(e)
 
         menu.exec(e.globalPos())
         e.accept()
