@@ -100,9 +100,11 @@ class MainWindow(MSFluentWindow):
         elif value == 'Dark':
             self.terminateThemeChangedListener()
             setTheme(Theme.DARK, save=False)
+            IconBodyLabel.clearCache()
         else:
             self.terminateThemeChangedListener()
             setTheme(Theme.LIGHT, save=False)
+            IconBodyLabel.clearCache()
 
         if platform == 'win32':
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
