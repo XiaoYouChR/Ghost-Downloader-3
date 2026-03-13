@@ -8,6 +8,7 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import cfg
+from app.supports.utils import getProxies
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .config import bilibiliConfig
 from .task import BilibiliTask
@@ -15,10 +16,11 @@ from .task import BilibiliTask
 if TYPE_CHECKING:
     from features.ffmpeg_pack.task import FFmpegStage
     from features.http_pack.task import HttpTaskStage
+    from features.http_pack.config import httpConfig
 else:
     from ffmpeg_pack.task import FFmpegStage
     from http_pack.task import HttpTaskStage
-
+    from http_pack.config import httpConfig
 
 def _sanitizeFileName(name: str) -> str:
     result = re.sub(r'[\x00-\x1f\\/:*?"<>|]', "_", name).strip().rstrip(".")
@@ -195,9 +197,9 @@ async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client:
 
 async def parse(payload: dict) -> BilibiliTask:
     url: str = payload["url"]
-    proxies: dict = payload["proxies"]
-    blockNum: int = payload["preBlockNum"]
-    path: Path = payload["path"]
+    proxies: dict = payload.get('proxies', getProxies())
+    blockNum: int = payload.get('preBlockNum', httpConfig.preBlockNum.value)
+    path: Path = payload.get('path', Path(cfg.downloadFolder.value))
 
     headers = _buildBilibiliHeaders(url)
     client = niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True)

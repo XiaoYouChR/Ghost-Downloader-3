@@ -198,14 +198,7 @@ class FFmpegRuntimeCard(SettingCard):
         task = result
         setattr(task, "_featurePackName", "ffmpeg_pack")
 
-        try:
-            card = featureService.createTaskCard(task, mainWindow)
-            taskRecorder.add(task, False)
-            mainWindow.taskPage.addCard(card)
-            card.resumeTask()
-            taskRecorder.flush()
-        except Exception as e:
-            InfoBar.error(self.tr("安装 FFmpeg 失败"), repr(e), duration=-1, parent=mainWindow)
+        mainWindow.addTask(task)
 
 
 class FFmpegConfig(PackConfig):

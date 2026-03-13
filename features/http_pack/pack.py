@@ -10,7 +10,8 @@ from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-from app.supports.config import cfg
+from app.supports.config import cfg, DEFAULT_HEADERS
+from app.supports.utils import getProxies
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .config import httpConfig
 from .const import SpecialFileSize
@@ -90,10 +91,10 @@ def _extractFileName(url: str, headers: dict) -> str:
 
 async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
-    headers: dict = payload['headers']
-    proxies: dict = payload['proxies']
-    blockNum: int = payload['preBlockNum']
-    path: Path = payload['path']
+    headers: dict = payload.get('headers', DEFAULT_HEADERS)
+    proxies: dict = payload.get('proxies', getProxies())
+    blockNum: int = payload.get('preBlockNum', httpConfig.preBlockNum.value)
+    path: Path = payload.get('path', Path(cfg.downloadFolder.value))
 
     requestHeaders = headers.copy()
     requestHeaders["range"] = "bytes=0-"    # 小写好像更好来着?

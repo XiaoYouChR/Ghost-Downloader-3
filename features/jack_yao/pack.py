@@ -1,5 +1,6 @@
 import sys
 from base64 import b64decode
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import niquests
@@ -12,11 +13,11 @@ from qfluentwidgets import MaskDialogBase, \
     FluentStyleSheet, SettingCardGroup, OptionsConfigItem, OptionsValidator, ComboBoxSettingCard, FluentIcon, \
     PlainTextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, RangeValidator, PrimaryPushButton, PushButton, \
     PixmapLabel, TitleLabel, BodyLabel, PrimarySplitPushButton, SimpleCardWidget, RoundMenu, Action, IconWidget, \
-    CaptionLabel, isDarkTheme
+    CaptionLabel, isDarkTheme, InfoBar, InfoBarPosition
 
 from app.bases.interfaces import FeaturePack
 from app.services.core_service import coreService
-from app.supports.config import cfg
+from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
 
 if sys.platform != "darwin":
@@ -320,21 +321,26 @@ class DownloadOptionDialog(MaskDialogBase):
 
     def startDownload(self):
         """开始下载任务"""
-        # path = Path(self.downloadFolderCard.contentLabel.text())
-        #
-        # # 检测路径是否有权限写入
-        # if not path.exists():
-        #     try:
-        #         path.mkdir(parents=True, exist_ok=True)
-        #     except Exception as e:
-        #         MessageBox("错误", repr(e), self)
-        # else:
-        #     if not os.access(path, os.W_OK):
-        #         MessageBox("错误", "似乎是没有权限向此目录写入文件", self)
-        #
-        # addDownloadTask(self.list[self.versionCard.comboBox.currentIndex()]["Url"],
-        #                              filePath=str(path), preBlockNum=self.blockNumCard.configItem.value)
+        payload = {
+            "url": self.listData[self.versionCard.comboBox.currentIndex()]["Url"],
+            "headers": DEFAULT_HEADERS,
+            "proxies": getProxies(),
+            "path": Path(cfg.downloadFolder.value),
+        }
+        coreService.parseUrl(
+            payload,
+            lambda task, error: self._onAssetParsed(task, error),
+        )
         self.close()
+
+    def _onAssetParsed(self, task, error):
+        if error:
+            InfoBar.error(self.tr("下载失败"), error, duration=-1, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
+            return
+        
+        window: "MainWindow" = self.window()
+        if window.addTask(task):
+            InfoBar.success(self.tr("下载任务已添加"), content=task.title, duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=window)
 
     def onDownloadFolderClicked(self):
         """下载目录点击事件"""
