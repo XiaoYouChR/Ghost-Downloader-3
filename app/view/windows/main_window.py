@@ -18,7 +18,7 @@ from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDB
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
-from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, isLessThanWin10
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, isLessThanWin10, ensureUniqueTaskTarget
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
@@ -319,6 +319,10 @@ class MainWindow(MSFluentWindow):
 
     def addTask(self, task) -> bool:
         try:
+            originalTitle = task.title
+            if ensureUniqueTaskTarget(task):
+                logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
+
             card = featureService.createTaskCard(task, self)
             taskRecorder.add(task, False)
             self.taskPage.addCard(card)
@@ -326,7 +330,7 @@ class MainWindow(MSFluentWindow):
             taskRecorder.flush()
             return True
         except Exception as e:
-            logger.opt(exception=e).error("无法创建任务卡片 {}", getattr(task, "title", "Unknown"))
+            logger.opt(exception=e).error("无法创建任务卡片 {}", task.title)
             return False
 
     def closeEvent(self, event):

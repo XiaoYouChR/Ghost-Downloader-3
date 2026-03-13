@@ -11,6 +11,7 @@ from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from qfluentwidgets import MessageBox
 
+from app.bases.models import Task
 from app.supports.config import cfg
 
 def openFolder(path):
@@ -148,6 +149,29 @@ def getReadableTime(seconds: int) -> str:
     else:
         remainingSeconds = seconds % 3600
         return f"{int(seconds // 3600)}h{int(remainingSeconds // 60)}m{remainingSeconds % 60}s"
+
+
+def ensureUniqueTaskTarget(
+    task: Task,
+) -> bool:
+    target = Path(task.resolvePath.strip())
+    if not target.name:
+        return False
+
+    if not target.exists() and not Path(f"{target}.ghd").exists():
+        return False
+
+    suffixes = "".join(target.suffixes)   # .tar.gz
+    stem = target.name[:-len(suffixes)] if suffixes else target.name    # stem 不会去除所有的后缀
+
+    index = 1
+    while True:
+        renamed = target.with_name(f"{stem}({index}){suffixes}")
+        if not renamed.exists() and not Path(f"{renamed}.ghd").exists():
+            task.setTitle(renamed.name)
+            return True
+        index += 1
+
 
 def retry(
     retries: int = 3, delay: float = 0.1, handleFunction: Callable = lambda e: None

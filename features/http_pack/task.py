@@ -37,10 +37,6 @@ class HttpTask(Task):
     proxies: dict = field(default_factory=getProxies)
     blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
 
-    def setTitle(self, title: str):
-        self.title = title
-        self.syncStagePaths()
-
     def syncStagePaths(self):
         resolvePath = str(self.path / self.title)
         for stage in self.stages:

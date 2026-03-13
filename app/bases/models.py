@@ -120,6 +120,7 @@ class Task:
 
     def setTitle(self, title: str):
         self.title = title
+        self.syncStagePaths()
 
     def syncStagePaths(self):
         raise NotImplementedError

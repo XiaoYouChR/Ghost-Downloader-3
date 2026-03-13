@@ -52,9 +52,6 @@ class BilibiliTask(Task):
         audioPath = finalPath.with_name(f"{finalPath.stem}.audio.m4s")
         return str(videoPath), str(audioPath)
 
-    def setTitle(self, title: str):
-        self.title = title
-
     def syncStagePaths(self):
         self.videoPath, self.audioPath = self._buildStagePaths()
         for stage in self.stages:
