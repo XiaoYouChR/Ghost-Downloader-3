@@ -13,7 +13,7 @@ from qfluentwidgets import (
     FolderValidator,
     SettingCard,
     SettingCardGroup,
-    ToolButton, PrimaryPushButton, InfoBar,
+    ToolButton, PrimaryPushButton, InfoBar, ToolTipFilter
 )
 
 from app.bases.models import PackConfig
@@ -117,7 +117,9 @@ class FFmpegInstallFolderCard(SettingCard):
         self.chooseFolderButton.clicked.connect(self._chooseFolder)
         self.restoreDefaultButton.clicked.connect(self._restoreDefault)
         self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
+        self.chooseFolderButton.installEventFilter(ToolTipFilter(self.chooseFolderButton))
         self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
+        self.restoreDefaultButton.installEventFilter(ToolTipFilter(self.restoreDefaultButton))
 
     def _updatePath(self, path: str):
         cfg.set(ffmpegConfig.installFolder, path)
