@@ -87,15 +87,6 @@ class BrowserService(QObject):
             "preBlockNum": cfg.preBlockNum.value,
         }
 
-    def _showAddTaskDialog(self, url: str, headers: dict):
-        dialog = self.mainWindow.getAddTaskDialog()
-        signalBus.showMainWindow.emit()
-        dialog.appendUrlWithPayload(url, {"headers": headers})
-        if not dialog.isVisible():
-            dialog.show()
-        dialog.raise_()
-        dialog.activateWindow()
-
     def _sendReceiveNotification(self, url: str, filename: str):
         content = filename or url
         coreService.loop.call_soon_threadsafe(
@@ -146,7 +137,11 @@ class BrowserService(QObject):
             self._sendReceiveNotification(payload["url"], data["filename"])
 
             if cfg.enableRaiseWindowWhenReceiveMsg.value:
-                self._showAddTaskDialog(payload["url"], payload["headers"])
+                self.mainWindow.showAddTaskDialog(
+                    urls=[payload["url"]],
+                    payloadOverrides={payload["url"]: {"headers": payload["headers"]}},
+                    raiseWindow=True,
+                )
                 return
 
             coreService.parseUrl(

@@ -1,6 +1,6 @@
 from pathlib import Path
 from sys import platform
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 import darkdetect
@@ -234,7 +234,7 @@ class MainWindow(MSFluentWindow):
         QApplication.clipboard().setText(message)
         QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
 
-    def getAddTaskDialog(self) -> AddTaskDialog:
+    def _getAddTaskDialog(self) -> AddTaskDialog:
         if AddTaskDialog.instance is None:
             instance = AddTaskDialog.initialize(self)
             instance.taskConfirmed.connect(self.addTask)
@@ -283,11 +283,30 @@ class MainWindow(MSFluentWindow):
         )
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
-    def showAddTaskDialog(self, triggeredByUser: bool = False, urls: list[str] | None = None):
-        dialog = self.getAddTaskDialog()
+    def showAddTaskDialog(
+            self,
+            triggeredByUser: bool = False,
+            urls: list[str] | None = None,
+            payloadOverrides: dict[str, dict[str, Any]] | None = None,
+            raiseWindow: bool = False,
+    ):
+        dialog = self._getAddTaskDialog()
+
+        if raiseWindow:
+            bringWindowToTop(self)
 
         if urls:
-            dialog.appendUrls(urls)
+            pendingUrls: list[str] = []
+            for url in urls:
+                payloadOverride = payloadOverrides.get(url) if payloadOverrides else None
+                if payloadOverride is None:
+                    pendingUrls.append(url)
+                    continue
+
+                dialog.appendUrlWithPayload(url, payloadOverride)
+
+            if pendingUrls:
+                dialog.appendUrls(pendingUrls)
 
         if dialog.isVisible():
             dialog.raise_()
