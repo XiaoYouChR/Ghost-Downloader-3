@@ -22,20 +22,15 @@ application = SingletonApplication(sys.argv, "gd3")
 
 # --- Start Program ---
 from loguru import logger
-import time
 import warnings
 from PySide6.QtCore import QTranslator
 
-from app.supports.config import VERSION
 from app.view.windows.main_window import MainWindow
 from app.supports.recorder import taskRecorder
 # noinspection PyUnresolvedReferences
 import app.assets.resources
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-
-logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
-logger.info(f"Ghost Downloader v{VERSION} is Launched at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))}")
 
 warnings.warn = logger.warning
 

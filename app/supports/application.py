@@ -1,10 +1,12 @@
 import sys
 import traceback
+from time import localtime, strftime, time
 
-from PySide6.QtCore import QSharedMemory, QEvent
+from PySide6.QtCore import QSharedMemory, QEvent, QStandardPaths
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
+from app.supports.config import VERSION
 from app.supports.signal_bus import signalBus
 
 
@@ -13,6 +15,11 @@ class SingletonApplication(QApplication):
     def __init__(self, argv: list[str], key: str):
         super().__init__(argv)
         self.key = key
+
+        appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
+        logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
+        logger.info(
+            f"Ghost Downloader v{VERSION} is Launched at {strftime('%Y-%m-%d %H:%M:%S', localtime(time()))}")
 
         # cleanup (only needed for unix)
         try:
