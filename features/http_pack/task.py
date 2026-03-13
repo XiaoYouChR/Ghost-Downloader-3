@@ -284,6 +284,7 @@ class HttpWorker(Worker):
         self.subworkers: list[HttpSubworker] = []
         self.client = niquests.AsyncSession(happy_eyeballs=True)
         self.client.trust_env = False
+        shouldCleanupRecordFile = False
 
         restored = self.restoreProgress()
         if not restored:
@@ -308,7 +309,7 @@ class HttpWorker(Worker):
                     self.taskGroup.create_task(self.handleSubworker(subworker))
 
             self.stage.setStatus(TaskStatus.COMPLETED)
-            self._cleanupRecordFile()
+            shouldCleanupRecordFile = True
             logger.info(f"{self.stage.resolvePath} 下载完成")
         except CancelledError:
             self.stage.setStatus(TaskStatus.PAUSED)
@@ -322,3 +323,5 @@ class HttpWorker(Worker):
                 with suppress(asyncio.CancelledError):
                     await supervisor
             os.close(self.fileHandle)
+            if shouldCleanupRecordFile:
+                self._cleanupRecordFile()

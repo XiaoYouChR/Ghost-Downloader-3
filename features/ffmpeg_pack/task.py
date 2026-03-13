@@ -247,7 +247,7 @@ class FFmpegWorker(Worker):
     def _cleanupSourceFiles(self):
         for rawPath in (self.stage.videoPath, self.stage.audioPath):
             target = Path(rawPath)
-            for path in (target, Path(str(target) + ".ghd")):
+            for path in (target, Path(rawPath + ".ghd")):
                 try:
                     if path.is_file() or path.is_symlink():
                         path.unlink()
