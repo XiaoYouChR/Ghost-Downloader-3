@@ -364,7 +364,7 @@ class MainWindow(MSFluentWindow):
             if manual:
                 InfoBar.success(
                     self.tr("当前已是最新版本"),
-                    self.tr("当前版本 {0}，最新 Release {1}").format(VERSION, latestVersion),
+                    self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, latestVersion),
                     duration=3000,
                     position=InfoBarPosition.BOTTOM_RIGHT,
                     parent=self,
@@ -421,7 +421,6 @@ class MainWindow(MSFluentWindow):
             "headers": DEFAULT_HEADERS,
             "proxies": getProxies(),
             "path": Path(cfg.downloadFolder.value),
-            "preBlockNum": cfg.preBlockNum.value,
         }
         coreService.parseUrl(
             payload,

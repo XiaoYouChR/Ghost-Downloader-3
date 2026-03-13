@@ -11,10 +11,10 @@ from app.supports.utils import getProxies
 
 if TYPE_CHECKING:
     from features.ffmpeg_pack.task import FFmpegStage, FFmpegWorker
-    from features.http_pack.task import HttpTaskStage, HttpWorker
+    from features.http_pack.task import HttpTaskStage, HttpWorker, httpConfig
 else:
     from ffmpeg_pack.task import FFmpegStage, FFmpegWorker
-    from http_pack.task import HttpTaskStage, HttpWorker
+    from http_pack.task import HttpTaskStage, HttpWorker, httpConfig
 
 
 @dataclass
@@ -22,7 +22,7 @@ class BilibiliTask(Task):
     url: str
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default=8)
+    blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
     pageNumber: int = field(default=1)
     videoStageId: str = field(default="")
     audioStageId: str = field(default="")
