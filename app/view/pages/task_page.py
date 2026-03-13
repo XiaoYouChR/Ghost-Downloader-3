@@ -111,7 +111,7 @@ class TaskPage(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.cards: list[TaskCard] = []
-        self.selectionCount = 0
+        self.selectionAnchor: TaskCard | None = None
         self.isSelectionMode = False
         self.searchKeyword = ""
         self.filterMode: FilterMode = FilterMode.ALL
@@ -186,7 +186,7 @@ class TaskPage(ScrollArea):
     def addCard(self, card: TaskCard):
         card.deleted.connect(lambda: self.removeCard(card))
         card.finished.connect(self._onCardFinished)
-        card.checkedChanged.connect(self._onCardCheckedChanged)
+        card.selectionChanged.connect(lambda checked, extend, card=card: self._onCardSelectionChanged(card, checked, extend))
         self.cards.append(card)
         self.viewLayout.addWidget(card)
         self.sortCards()
@@ -245,6 +245,7 @@ class TaskPage(ScrollArea):
         self.cards.remove(card)
         self.viewLayout.removeWidget(card)
         card.deleteLater()
+        self._refreshSelectionState()
         self.refreshCardVisibility()
 
     def initWidget(self):
@@ -469,6 +470,7 @@ class TaskPage(ScrollArea):
     def selectAll(self):
         for card in self.cards:
             card.setChecked(True)
+        self._refreshSelectionState()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -477,14 +479,42 @@ class TaskPage(ScrollArea):
         self.commandView.move((width - self.commandView.width()) >> 1, height - self.commandView.sizeHint().height() - 20)
         self.emptyStatusWidget.move((width - self.emptyStatusWidget.width()) >> 1, (height - self.emptyStatusWidget.height()) >> 1)
 
-    def _onCardCheckedChanged(self, checked: bool):
-        if checked:
-            self.selectionCount += 1
-            self.setSelectionMode(True)
-        else:
-            self.selectionCount -= 1
-            if self.selectionCount == 0:
-                self.setSelectionMode(False)
+    def _refreshSelectionState(self):
+        checkedCards = [card for card in self.cards if card.isChecked()]
+        self.setSelectionMode(bool(checkedCards))
+
+        if not checkedCards:
+            self.selectionAnchor = None
+        elif self.selectionAnchor not in checkedCards:
+            self.selectionAnchor = checkedCards[-1]
+
+    def _onCardSelectionChanged(self, card: TaskCard, checked: bool, extend: bool):
+        if extend:
+            cards = [item for item in self.cards if item.isVisible()]
+            if card not in cards:
+                cards = self.cards
+
+            if not cards:
+                return
+
+            anchor = self.selectionAnchor
+            if anchor not in cards or not anchor.isChecked():
+                anchor = card
+
+            start = cards.index(anchor)
+            end = cards.index(card)
+            if start > end:
+                start, end = end, start
+
+            for index, item in enumerate(cards):
+                item.setChecked(start <= index <= end)
+            self.selectionAnchor = anchor
+            self._refreshSelectionState()
+            return
+
+        card.setChecked(checked)
+        self.selectionAnchor = card if checked else None
+        self._refreshSelectionState()
 
     def _onDeleteActionTriggered(self):
         w = DeleteTaskDialog(self.window(), deleteOnClose=False)
@@ -511,4 +541,4 @@ class TaskPage(ScrollArea):
             self.commandView.raise_()
         else:
             self.commandView.setVisible(False)
-            self.selectionCount = 0
+            self.selectionAnchor = None

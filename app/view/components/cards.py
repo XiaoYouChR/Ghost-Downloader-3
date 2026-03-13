@@ -3,11 +3,11 @@ from typing import Any
 
 from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent
 from PySide6.QtGui import QColor, QPainter, QPen, QMouseEvent
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayout, QApplication
 from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget, ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
-    TransparentToolButton, ProgressBar, LineEdit
+    TransparentToolButton, ProgressBar, LineEdit, RoundMenu, Action
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
@@ -98,18 +98,17 @@ class TaskCard(CardWidget):
 
     deleted = Signal()
     finished = Signal()
-    checkedChanged = Signal(bool)
+    selectionChanged = Signal(bool, bool)
 
     def __init__(self, task: Task, parent=None):
         super().__init__(parent)
         self.task = task
-        # self.keyword = ""   # Task keyword, 用于搜索
 
         self.checkBox = CheckBox(self)
         self.checkBox.setFixedSize(23, 23)
         self.setSelectionMode(False)
 
-        self.checkBox.stateChanged.connect(self._onCheckedChanged)
+        self.checkBox.clicked.connect(lambda checked: self.selectionChanged.emit(checked, False))
 
     def setSelectionMode(self, isSelected: bool):
         self.isSelectionMode = isSelected
@@ -149,13 +148,36 @@ class TaskCard(CardWidget):
         finally:
             self.deleted.emit()
 
+    def createContextMenu(self) -> RoundMenu | None:
+        menu = RoundMenu(parent=self)
+        copyUrlAction = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
+        copyUrlAction.triggered.connect(lambda: QApplication.clipboard().setText(self.task.url))
+        menu.addAction(copyUrlAction)
+        return menu
+
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
-        if self.isSelectionMode:
-            self.setChecked(not self.isChecked())
-        else:
-            self.setSelectionMode(True)
-            self.setChecked(True)
+        if e.button() != Qt.MouseButton.LeftButton:
+            return
+
+        extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        checked = True if extend or not self.isSelectionMode else not self.isChecked()
+        self.selectionChanged.emit(checked, extend)
+
+    def mouseDoubleClickEvent(self, e):
+        super().mouseDoubleClickEvent(e)
+        if e.button() != Qt.MouseButton.LeftButton:
+            return
+
+        openFile(self.task.resolvePath)
+
+    def contextMenuEvent(self, e):
+        menu = self.createContextMenu()
+        if menu is None:
+            return super().contextMenuEvent(e)
+
+        menu.exec(e.globalPos())
+        e.accept()
 
     def _onDeleteButtonClicked(self):
         w = DeleteTaskDialog(self.window(), deleteOnClose=False)
@@ -166,10 +188,6 @@ class TaskCard(CardWidget):
 
         w.deleteLater()
 
-    def _onCheckedChanged(self):
-        self.setChecked(self.checkBox.isChecked())
-        self.checkedChanged.emit(self.checkBox.isChecked())
-        self.update()
 
     def paintEvent(self, e):
         if self.isSelectionMode and self.isChecked():

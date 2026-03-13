@@ -19,7 +19,6 @@ else:
 
 @dataclass
 class BilibiliTask(Task):
-    url: str
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
     blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)

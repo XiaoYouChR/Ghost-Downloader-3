@@ -107,6 +107,7 @@ class Task:
     """Represents a logical, user-facing task, which is a collection of stages."""
 
     title: str
+    url: str
     taskId: str = field(default_factory=lambda: f"tsk_{uuid4().hex}")
     status: TaskStatus = TaskStatus.WAITING
     stages: list[TaskStage] = field(default_factory=list)
