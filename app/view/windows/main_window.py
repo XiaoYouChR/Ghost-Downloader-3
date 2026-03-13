@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import darkdetect
-from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QTimer, Signal, QThread
+from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QTimer
 from PySide6.QtGui import QDesktopServices, QIcon, QColor
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
@@ -45,16 +45,6 @@ class CustomSplashScreen(SplashScreen):
         opacityAni.start()
 
 
-class ThemeChangedListener(QThread):
-    themeChanged = Signal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def run(self):
-        darkdetect.listener(self.themeChanged.emit)
-
-
 class MainWindow(MSFluentWindow):
     def __init__(self, isSilently = False):
         super().__init__(parent = None)
@@ -68,7 +58,6 @@ class MainWindow(MSFluentWindow):
         self.initPagesAndNavigation()
 
         self.clipboard: "QClipboard | None" = None
-        self.themeChangedListener: "ThemeChangedListener | None" = None
         self.tray = SystemTrayIcon(self)
         self.tray.show()
         self.browserService = BrowserService(self)
@@ -87,33 +76,33 @@ class MainWindow(MSFluentWindow):
         signalBus.catchException.connect(self._onExceptionCaught)
         cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
         cfg.customThemeMode.valueChanged.connect(self._onThemeChanged)
+        QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         if platform == 'win32':
             cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
 
     def _onThemeChanged(self, value: "Literal['System', 'Dark', 'Light']"):
         if value == 'System':
-            # 创建检测主题色更改线程
-            self.themeChangedListener = ThemeChangedListener(self)
-            self.themeChangedListener.themeChanged.connect(self._toggleTheme)
-            self.themeChangedListener.start()
             setTheme(Theme.AUTO, save=False)
         elif value == 'Dark':
-            self.terminateThemeChangedListener()
             setTheme(Theme.DARK, save=False)
-            IconBodyLabel.clearCache()
         else:
-            self.terminateThemeChangedListener()
             setTheme(Theme.LIGHT, save=False)
-            IconBodyLabel.clearCache()
+
+        IconBodyLabel.clearCache()
 
         if platform == 'win32':
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
-    def terminateThemeChangedListener(self):
-        if self.themeChangedListener is not None:
-            self.themeChangedListener.terminate()
-            self.themeChangedListener.deleteLater()
-            self.themeChangedListener = None
+    def _onSystemColorSchemeChanged(self, colorScheme: Qt.ColorScheme):
+        if cfg.customThemeMode.value != 'System':
+            return
+
+        if colorScheme == Qt.ColorScheme.Dark:
+            self._toggleTheme('Dark')
+        elif colorScheme == Qt.ColorScheme.Light:
+            self._toggleTheme('Light')
+        else:
+            self._toggleTheme('System')
 
     def _normalBackgroundColor(self):
         if self.styleSheet() == "":
