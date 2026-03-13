@@ -421,14 +421,15 @@ class AddTaskDialog(MessageBoxBase):
                 self._dragPos = e.pos()
                 return True
             elif e.type() == QEvent.Type.MouseMove and not self._dragPos.isNull():
-                if self.isMaximized():
-                    self.window().showNormal()
+                window = self.window()
+                if window.isMaximized():
+                    window.showNormal()
 
-                pos = self.window().pos() + e.pos() - self._dragPos
+                pos = window.pos() + e.pos() - self._dragPos
                 pos.setX(max(0, pos.x()))
                 pos.setY(max(0, pos.y()))
 
-                self.window().move(pos)
+                window.move(pos)
                 return True
             elif e.type() == QEvent.Type.MouseButtonRelease:
                 self._dragPos = QPoint()
