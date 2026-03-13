@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import darkdetect
-from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QTimer
-from PySide6.QtGui import QDesktopServices, QIcon, QColor
+from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QEvent
+from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
-    PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme
+    PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme, setThemeColor, qconfig
 
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
@@ -30,6 +30,14 @@ if TYPE_CHECKING:
     from typing import Literal
     from PySide6.QtGui import QClipboard
 
+
+BACKGROUND_EFFECT_REFRESH_EVENTS = {
+    QEvent.Type.PaletteChange,
+    QEvent.Type.StyleChange,
+    QEvent.Type.ThemeChange
+}
+
+
 class CustomSplashScreen(SplashScreen):
 
     def finish(self):
@@ -47,6 +55,7 @@ class CustomSplashScreen(SplashScreen):
 
 class MainWindow(MSFluentWindow):
     def __init__(self, isSilently = False):
+        self._pendingBackgroundEffectRefresh = False
         super().__init__(parent = None)
         self.setMicaEffectEnabled(False)    # 禁用 QFluentWidgets 管理的背景效果
         self.initWindow()
@@ -65,6 +74,7 @@ class MainWindow(MSFluentWindow):
         self.connectSignalToSlot()
         self._syncClipboardListener()
         self._onThemeChanged(cfg.customThemeMode.value)
+        self._syncThemeColor()
         if platform == 'win32':
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
@@ -89,6 +99,7 @@ class MainWindow(MSFluentWindow):
             setTheme(Theme.LIGHT, save=False)
 
         IconBodyLabel.clearCache()
+        self._pendingBackgroundEffectRefresh = False
 
         if platform == 'win32':
             self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
@@ -109,6 +120,17 @@ class MainWindow(MSFluentWindow):
             return self._darkBackgroundColor if isDarkTheme() else self._lightBackgroundColor
 
         return QColor(0, 0, 0, 0)
+
+    def _syncThemeColor(self):
+        palette = self.palette()
+
+        for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
+            color = palette.color(role)
+            if not color.isValid() or qconfig.themeColor.value == color:
+                continue
+
+            setThemeColor(color, save=False)
+            return
       
     def _applyBackgroundEffectByCfg(self, value: "Literal['Acrylic', 'Mica', 'MicaBlur', 'MicaAlt', 'Aero', 'None']"):
         if platform == 'win32':
@@ -143,15 +165,35 @@ class MainWindow(MSFluentWindow):
                     self.titleBar.maxBtn.show()
     
     def _toggleTheme(self, callback: str):
-        if callback == 'Dark':  # Microsoft 特性，需要重试
+        if callback == 'Dark':
             setTheme(Theme.DARK, save=False)
-            if cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
-                QTimer.singleShot(500, lambda: self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value))
-
         elif callback == 'Light':
             setTheme(Theme.LIGHT, save=False)
+        else:
+            setTheme(Theme.AUTO, save=False)
 
         IconBodyLabel.clearCache()
+
+        if platform == 'win32' and cfg.backgroundEffect.value in ['Mica', 'MicaBlur', 'MicaAlt']:
+            self._pendingBackgroundEffectRefresh = True
+            return
+
+        self._pendingBackgroundEffectRefresh = False
+        self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+
+        if event.type() in BACKGROUND_EFFECT_REFRESH_EVENTS:
+            self._syncThemeColor()
+
+        if not self._pendingBackgroundEffectRefresh:
+            return
+
+        if event.type() not in BACKGROUND_EFFECT_REFRESH_EVENTS:
+            return
+
+        self._pendingBackgroundEffectRefresh = False
         self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
 
     def _syncClipboardListener(self):

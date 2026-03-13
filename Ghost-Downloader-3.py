@@ -24,10 +24,6 @@ application = SingletonApplication(sys.argv, "gd3")
 from loguru import logger
 import time
 import warnings
-from getpass import getuser
-from qfluentwidgets import setThemeColor
-from qframelesswindow.utils import getSystemAccentColor
-from PySide6.QtGui import QColor
 from PySide6.QtCore import QTranslator
 
 from app.supports.config import VERSION
@@ -55,21 +51,6 @@ mainWindow = MainWindow(isSilently)
 featureService.loadFeatures(mainWindow)
 taskRecorder.load()
 mainWindow.taskPage.resumeMemorizedTasks()
-
-if sys.platform in {"win32", "darwin"}:
-    setThemeColor(getSystemAccentColor(), save=False)
-if sys.platform == "linux":
-
-    if 'KDE_SESSION_UID' in os.environ:  # KDE Plasma
-
-        import configparser
-        config = configparser.ConfigParser()
-
-        config.read(f"/home/{getuser()}/.config/kdeglobals")
-
-        if 'Colors:Window' in config:
-            color = list(map(int, config.get('Colors:Window', 'DecorationFocus').split(",")))
-            setThemeColor(QColor(*color))
 
 if not isSilently:
     mainWindow.splashScreen.finish()

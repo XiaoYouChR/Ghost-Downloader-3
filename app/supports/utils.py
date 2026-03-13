@@ -6,37 +6,11 @@ from time import sleep
 from typing import Callable
 
 from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt
-from PySide6.QtGui import QDesktopServices, QColor
+from PySide6.QtGui import QDesktopServices
 from loguru import logger
-from qfluentwidgets import MessageBox, setThemeColor
-from qframelesswindow.utils import getSystemAccentColor
+from qfluentwidgets import MessageBox
 
 from app.supports.config import cfg
-
-
-def setAppColor(color: QColor | None = None):
-    if color is None or not isinstance(color, QColor):
-        if sys.platform == "win32" or "darwin":
-            setThemeColor(getSystemAccentColor(), save=False)
-        if sys.platform == "linux":
-            if "KDE_SESSION_UID" in os.environ:  # KDE Plasma
-                import configparser
-
-                config = configparser.ConfigParser()
-                config.read(f"/home/{os.getlogin()}/.config/kdeglobals")
-
-                # 获取 DecorationFocus 的值
-                if "Colors:Window" in config:
-                    color = list(
-                        map(
-                            int,
-                            config.get("Colors:Window", "DecorationFocus").split(","),
-                        )
-                    )
-                    setThemeColor(QColor(*color))
-    else:
-        setThemeColor(color, save=False)
-
 
 def isGreaterEqualWin10():
     """determine if the Windows version ≥ Win10"""
