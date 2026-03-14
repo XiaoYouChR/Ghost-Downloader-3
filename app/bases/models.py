@@ -60,6 +60,7 @@ class TaskStage:
     progress: float = 0   # 0 ~ 100
     receivedBytes: int = field(default=0)
     speed: int = field(default=1)   # division cannot be 0
+    error: str = field(default="")
 
     def bindTask(self, task: "Task"):
         self._task = task
@@ -69,11 +70,20 @@ class TaskStage:
         if status == TaskStatus.COMPLETED:
             self.progress = 100
             self.speed = 0
-        elif status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.FAILED}:
+            self.error = ""
+        elif status in {TaskStatus.WAITING, TaskStatus.PAUSED}:
+            self.speed = 0
+            self.error = ""
+        elif status == TaskStatus.FAILED:
             self.speed = 0
 
         if notifyTask and hasattr(self, "_task"):
             self._task.syncStatusFromStages()
+
+    def setError(self, error: Any, notifyTask: bool = True):
+        message = repr(error).strip() if error is not None else ""
+        self.error = message
+        self.setStatus(TaskStatus.FAILED, notifyTask=notifyTask)
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
@@ -165,6 +175,18 @@ class Task:
             stage.setStatus(status, notifyTask=False)
 
         return self.syncStatusFromStages()
+
+    @property
+    def lastError(self) -> str:
+        for stage in reversed(self.stages):
+            if stage.status == TaskStatus.FAILED and stage.error:
+                return stage.error
+
+        for stage in reversed(self.stages):
+            if stage.error:
+                return stage.error
+
+        return ""
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)

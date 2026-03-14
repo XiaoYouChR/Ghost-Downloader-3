@@ -240,8 +240,8 @@ class FFmpegWorker(Worker):
                 with suppress(asyncio.CancelledError):
                     await progressTask
             raise
-        except Exception:
-            self.stage.setStatus(TaskStatus.FAILED)
+        except Exception as e:
+            self.stage.setError(e)
             raise
 
     def _cleanupSourceFiles(self):
@@ -408,8 +408,8 @@ class FFmpegExtractWorker(Worker):
         except asyncio.CancelledError:
             self.stage.setStatus(TaskStatus.PAUSED)
             raise
-        except Exception:
-            self.stage.setStatus(TaskStatus.FAILED)
+        except Exception as e:
+            self.stage.setError(e)
             raise
         finally:
             if tempDir.exists():
@@ -455,6 +455,7 @@ class FFmpegInstallTask(Task):
 
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)
+        currentStage = None
         try:
             for stage in self.stages:
                 if self.status != TaskStatus.RUNNING:
@@ -462,6 +463,7 @@ class FFmpegInstallTask(Task):
                 if stage.status == TaskStatus.COMPLETED:
                     continue
 
+                currentStage = stage
                 if isinstance(stage, HttpTaskStage):
                     await HttpWorker(stage).run()
                     continue
@@ -475,6 +477,8 @@ class FFmpegInstallTask(Task):
             logger.info(f"{self.title} 停止安装")
             raise
         except Exception as e:
+            if currentStage is not None and not currentStage.error:
+                currentStage.setError(e)
             logger.opt(exception=e).error("{} 安装失败", self.title)
             raise
 

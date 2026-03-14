@@ -238,6 +238,7 @@ class UniversalTaskCard(TaskCard):
         self.speedLabel = IconBodyLabel("", FluentIcon.SPEED_HIGH, self)
         self.leftTimeLabel = IconBodyLabel("", FluentIcon.STOP_WATCH, self)
         self.progressLabel = IconBodyLabel("", FluentIcon.LIBRARY, self)
+        self.infoLabel = IconBodyLabel("", FluentIcon.INFO, self)
         self.toggleRunningStatusButton = PrimaryToolButton(FluentIcon.PAUSE, self)
         self.openFileButton = ToolButton(FluentIcon.LINK, self)
         self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
@@ -245,6 +246,7 @@ class UniversalTaskCard(TaskCard):
         # TODO 分段进度条
         self.progressBar = ProgressBar(self)
         self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        self.infoLabel.hide()
         # init
         self.initLayout()
         self.connectSignalToSlot()
@@ -278,6 +280,13 @@ class UniversalTaskCard(TaskCard):
             self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
             self.toggleRunningStatusButton.setEnabled(True)
 
+    def showStatusInfo(self, text: str):
+        self.speedLabel.hide()
+        self.leftTimeLabel.hide()
+        self.progressLabel.hide()
+        self.infoLabel.setText(text)
+        self.infoLabel.show()
+
     def _renderTaskState(self):
         division = len(self.task.stages)
         progress = 0
@@ -299,35 +308,33 @@ class UniversalTaskCard(TaskCard):
             self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
 
         if self.task.status == TaskStatus.RUNNING:
+            if self.infoLabel.isVisible():
+                self.infoLabel.hide()
+                self.speedLabel.show()
+                self.leftTimeLabel.show()
+                self.progressLabel.show()
             self.speedLabel.setText(f"{getReadableSize(speed)}/s")
             self.progressLabel.setText(getReadableSize(receivedBytes) + "/" + getReadableSize(self.task.fileSize))
             self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)) if speed != 0 else "--m--s")
         elif self.task.status == TaskStatus.COMPLETED:
             self.progressBar.setValue(100)
-            self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText(self.tr("完成"))
-        elif self.task.status == TaskStatus.FAILED:
-            self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText(self.tr("失败"))
+            self.showStatusInfo(self.tr("任务已经完成"))
         elif self.task.status == TaskStatus.PAUSED:
-            self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText(self.tr("已暂停"))
+            self.showStatusInfo(self.tr("任务已经暂停"))
         else:
-            self.speedLabel.setText("0.00 B/s")
-            self.leftTimeLabel.setText(self.tr("等待中"))
+            self.showStatusInfo(self.tr("任务正在等待"))
 
         self.refreshToggleButton()
 
     def refresh(self):
         """通过 self.task 刷新界面"""
-        if self.cardStatus == TaskStatus.COMPLETED:
+        if self.cardStatus == TaskStatus.COMPLETED or self.cardStatus == TaskStatus.FAILED:
             return
 
         if self.task.status == TaskStatus.COMPLETED and self.cardStatus != TaskStatus.COMPLETED:
             self.onTaskFinished()
         elif self.task.status == TaskStatus.FAILED and self.cardStatus != TaskStatus.FAILED:
             self.onTaskFailed()
-            # TODO 上报错误暂未实现
 
         self._renderTaskState()
 
@@ -337,9 +344,6 @@ class UniversalTaskCard(TaskCard):
 
     def onTaskFinished(self):
         super().onTaskFinished()
-        self.progressBar.setValue(100)
-        self.speedLabel.setText("0.00 B/s")
-        self.leftTimeLabel.setText(self.tr("完成"))
         self._refreshIconLabel()
 
     def onTaskDeleted(self, completely: bool = False):
@@ -368,8 +372,12 @@ class UniversalTaskCard(TaskCard):
                     logger.opt(exception=e).error("failed to remove file {}", path)
 
     def onTaskFailed(self):
-        self.speedLabel.setText("0.00 B/s")
-        self.leftTimeLabel.setText(self.tr("失败"))
+        message = self.task.lastError
+        if not message:
+            message = self.tr("下载过程中发生错误，请稍后重试")
+
+        logger.warning("任务失败 {}: {}", self.task.title, message)
+        self.showStatusInfo(message)
 
     def resumeTask(self):
         self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
@@ -397,6 +405,7 @@ class UniversalTaskCard(TaskCard):
         self.infoLayout.addWidget(self.speedLabel)
         self.infoLayout.addWidget(self.leftTimeLabel)
         self.infoLayout.addWidget(self.progressLabel)
+        self.infoLayout.addWidget(self.infoLabel)
         self.infoLayout.addStretch()
         self.infoVBoxLayout.addLayout(self.infoLayout)
         self.infoVBoxLayout.setContentsMargins(2, 8, 2, 8)

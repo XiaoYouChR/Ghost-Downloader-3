@@ -85,6 +85,7 @@ class BilibiliTask(Task):
 
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)
+        currentStage = None
         try:
             for stage in self.stages:
                 if self.status != TaskStatus.RUNNING:
@@ -92,6 +93,7 @@ class BilibiliTask(Task):
                 if stage.status == TaskStatus.COMPLETED:
                     continue
 
+                currentStage = stage
                 if isinstance(stage, HttpTaskStage):
                     await HttpWorker(stage).run()
                     continue
@@ -105,6 +107,8 @@ class BilibiliTask(Task):
             logger.info(f"{self.title} 停止下载")
             raise
         except Exception as e:
+            if currentStage is not None and not currentStage.error:
+                currentStage.setError(e)
             logger.opt(exception=e).error("{} 下载失败", self.title)
             raise
 
