@@ -189,6 +189,7 @@ class SettingPage(ScrollArea):
                 # "文言 (華夏)",
                 "English (US)",
                 "日本語 (日本)",
+                "Русский (Россия)",
                 self.tr("使用系统设置"),
             ],
             parent=self.personalGroup,
