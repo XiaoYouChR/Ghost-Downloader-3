@@ -40,7 +40,7 @@ translator = QTranslator()
 translator.load(locale, "gd3", ".", ":/i18n")
 application.installTranslator(translator)
 
-isSilently = "silent" in sys.argv
+isSilently = "--silence" in sys.argv
 coreService.start()
 mainWindow = MainWindow(isSilently)
 featureService.loadFeatures(mainWindow)
