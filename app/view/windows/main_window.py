@@ -263,6 +263,7 @@ class MainWindow(MSFluentWindow):
         # Init Window
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
+        self.setMinimumSize(960, 540)
 
     def initSplashScreen(self):
         self.splashScreen = CustomSplashScreen(self.windowIcon(), self, enableShadow=False)
