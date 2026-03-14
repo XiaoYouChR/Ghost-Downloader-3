@@ -45,6 +45,7 @@ class Language(Enum):
         QLocale.Language.English, QLocale.Country.UnitedStates
     )
     JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
+    RUSSIAN = QLocale(QLocale.Language.Russian, QLocale.Country.Russia)
     AUTO = QLocale()
 
 
@@ -240,6 +241,7 @@ FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 FIREFOX_ADDONS_URL = "https://addons.mozilla.org/zh-CN/firefox/addon/ghost-downloader/"
 EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downloader-browser/odaohmfjjbompdkmfbambadnagplcmce"
 CHROME_ADDONS_URL = "https://chromewebstore.google.com/detail/ghost-downloader-browser/pinckpkeeajogfgajbicpnengimiblch"
+GD3_COPY_MIME_TYPE = "application/x-gd3-copy"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 # BASE_EFFICIENCY_THRESHOLD = 0.8  # 判断阈值
 
@@ -249,4 +251,3 @@ attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img 
                                  wav wma wmv z zip esd wim msp apk apks apkm cab msp pkg"""
 
 cfg = Config()
-GD3_COPY_MIME_TYPE = "application/x-gd3-copy"

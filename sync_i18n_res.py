@@ -34,7 +34,7 @@ if __name__ == '__main__':
     pyFiles.extend(getPyFiles('features'))
 
     # targetLanguages = ["lzh", "en_US", "ja_JP"]
-    targetLanguages = ["en_US", "ja_JP", "zh_TW", "zh_HK"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
+    targetLanguages = ["en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU"]   # 由于 Qt Bug, 暂时使用 zh_MO 代替 lzh
 
     for targetLanguage in targetLanguages:
         tsPath = os.path.join("app", "assets", "i18n", f"gd3.{targetLanguage}.ts")
