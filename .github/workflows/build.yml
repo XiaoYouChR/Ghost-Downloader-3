@@ -171,11 +171,11 @@ jobs:
         with:
           files: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
 
-  build-macos-13-x86_64:
+  build-macos-14-x86_64:
     strategy:
       matrix:
         architecture: [ x86_64 ]
-    runs-on: macos-13
+    runs-on: macos-14-large
     steps:
       - name: Checkout
         uses: actions/checkout@v3
