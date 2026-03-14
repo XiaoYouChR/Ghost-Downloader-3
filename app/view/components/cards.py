@@ -140,6 +140,9 @@ class TaskCard(CardWidget):
         coreService.stopTask(self.task)
         raise NotImplementedError
 
+    def redownloadTask(self):
+        raise NotImplementedError
+
     def removeTask(self, deleteFile=False):
         coreService.stopTask(self.task)
         try:
@@ -154,6 +157,9 @@ class TaskCard(CardWidget):
         copyUrlAction = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
         copyUrlAction.triggered.connect(self._copyTaskUrl)
         menu.addAction(copyUrlAction)
+        redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
+        redownloadAction.triggered.connect(self.redownloadTask)
+        menu.addAction(redownloadAction)
         return menu
 
     def _copyTaskUrl(self):
@@ -420,6 +426,34 @@ class UniversalTaskCard(TaskCard):
     def _onFileHashFailed(self, error: str):
         logger.warning("任务文件校验失败 {}: {}", self.task.title, error)
         self.showStatusInfo(self.tr("校验失败：{0}").format(error))
+
+    def redownloadTask(self):
+        self.toggleRunningStatusButton.setDisabled(True)
+        coreService.runCoroutine(
+            coreService._stopTask(self.task),
+            self._onTaskStoppedForRedownload,
+        )
+
+    def _onTaskStoppedForRedownload(self, _result=None, error: str | None = None):
+        if error:
+            logger.warning("重新下载任务失败 {}: {}", self.task.title, error)
+            self.showStatusInfo(self.tr("重新下载失败：{0}").format(error))
+            self.toggleRunningStatusButton.setEnabled(True)
+            return
+
+        try:
+            self.onTaskDeleted(True)
+            self.task.reset()
+            self.cardStatus = self.task.status
+            self._refreshIconLabel()
+            self._renderTaskState()
+            taskRecorder.flush()
+            self.resumeTask()
+            self.progressBar.show()
+        except Exception as e:
+            logger.opt(exception=e).error("重置任务失败 {}", self.task.title)
+            self.showStatusInfo(self.tr("重新下载失败，请稍后重试"))
+            self.toggleRunningStatusButton.setEnabled(True)
 
     def resumeTask(self):
         self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)

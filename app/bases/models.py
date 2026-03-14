@@ -85,6 +85,16 @@ class TaskStage:
         self.error = message
         self.setStatus(TaskStatus.FAILED, notifyTask=notifyTask)
 
+    def reset(self, notifyTask: bool = True):
+        self.status = TaskStatus.WAITING
+        self.progress = 0
+        self.receivedBytes = 0
+        self.speed = 0
+        self.error = ""
+
+        if notifyTask and hasattr(self, "_task"):
+            self._task.syncStatusFromStages()
+
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
         if type(self).__name__ != "TaskStage":
@@ -173,6 +183,16 @@ class Task:
             if stage.status == TaskStatus.COMPLETED:
                 continue
             stage.setStatus(status, notifyTask=False)
+
+        return self.syncStatusFromStages()
+
+    def reset(self) -> TaskStatus:
+        if not self.stages:
+            self.status = TaskStatus.WAITING
+            return self.status
+
+        for stage in self.stages:
+            stage.reset(notifyTask=False)
 
         return self.syncStatusFromStages()
 

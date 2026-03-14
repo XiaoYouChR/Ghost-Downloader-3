@@ -322,6 +322,7 @@ class TaskPage(ScrollArea):
         self.allStartButton.clicked.connect(self.startAllTasks)
         self.allPauseButton.clicked.connect(self.pauseAllTasks)
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self.isSelectionMode))
+        self.commandView.redownloadAction.triggered.connect(self._onRedownloadActionTriggered)
         self.commandView.deleteAction.triggered.connect(self._onDeleteActionTriggered)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
         self.commandView.invertSelectAction.triggered.connect(self.invertSelection)
@@ -534,6 +535,11 @@ class TaskPage(ScrollArea):
                     card.removeTask(w.deleteFileCheckBox.isChecked())
 
         w.deleteLater()
+
+    def _onRedownloadActionTriggered(self):
+        for card in self.cards:
+            if card.isChecked():
+                card.redownloadTask()
 
     def setSelectionMode(self, enter: bool):
         if self.isSelectionMode == enter:
