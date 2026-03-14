@@ -62,7 +62,7 @@ class SettingPage(ScrollArea):
         self.speedLimitationCard = SpinBoxSettingCard(
             FluentIcon.SPEED_OFF,
             self.tr("下载限速"),
-            self.tr("限制每秒全局下载速度, 0 为不限速"),
+            self.tr("当下载任务界面限速开关开启时，所有任务将根据此值进行限速"),
             " KB/s",
             cfg.speedLimitation,
             self.generalDownloadGroup,
