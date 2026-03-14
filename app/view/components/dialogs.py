@@ -1,7 +1,11 @@
-from PySide6.QtCore import Qt
+import hashlib
+from pathlib import Path
+
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import QButtonGroup, QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    MessageBoxBase, SubtitleLabel, BodyLabel, CheckBox, RadioButton, LineEdit, ToolButton, FluentIcon, ToolTipFilter
+    MessageBoxBase, SubtitleLabel, BodyLabel, CheckBox, RadioButton, LineEdit, ToolButton, FluentIcon, ToolTipFilter,
+    ComboBox, ProgressBar
 )
 
 
@@ -128,3 +132,138 @@ class PlanTaskDialog(MessageBoxBase):
             return False
 
         return True
+
+
+class FileHashWorker(QThread):
+    progressChanged = Signal(int)
+    succeeded = Signal(str)
+    failed = Signal(str)
+
+    def __init__(self, filePath: str, algorithm: str, parent=None):
+        super().__init__(parent)
+        self.filePath = filePath
+        self.algorithm = algorithm
+
+    def run(self):
+        try:
+            hasher = hashlib.new(self.algorithm)
+            fileSize = Path(self.filePath).stat().st_size
+            processed = 0
+
+            with open(self.filePath, "rb") as f:
+                while chunk := f.read(1024 * 1024):
+                    hasher.update(chunk)
+                    processed += 1024 * 1024
+                    progress = 100 if fileSize == 0 else min(100, int(processed * 100 / fileSize))
+                    self.progressChanged.emit(progress)
+
+            self.progressChanged.emit(100)
+            self.succeeded.emit(hasher.hexdigest())
+        except Exception as e:
+            message = repr(e)
+            self.failed.emit(message)
+
+
+class FileHashDialog(MessageBoxBase):
+    hashReady = Signal(str, str)
+    hashFailed = Signal(str)
+
+    def __init__(self, filePath: str, parent=None, deleteOnClose=True):
+        super().__init__(parent)
+        self.filePath = filePath
+        self.worker: FileHashWorker | None = None
+
+        self.titleLabel = SubtitleLabel(self.tr("校验下载文件"), self)
+        self.contentLabel = BodyLabel(self.tr("请选择要使用的校验算法"), self)
+        self.algorithmComboBox = ComboBox(self)
+        self.statusLabel = BodyLabel(self.tr("等待开始"), self)
+        self.progressBar = ProgressBar(self)
+
+        if deleteOnClose:
+            self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+
+        self.initWidget()
+
+    def initWidget(self):
+        self.widget.setMinimumWidth(420)
+        self.yesButton.setText(self.tr("开始校验"))
+        self.cancelButton.setText(self.tr("取消"))
+
+        algorithms = sorted(hashlib.algorithms_available)
+        self.algorithmComboBox.addItems(algorithms)
+        if "sha256" in algorithms:
+            self.algorithmComboBox.setCurrentText("sha256")
+
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(8)
+        self.viewLayout.addWidget(self.contentLabel)
+        self.viewLayout.addSpacing(8)
+        self.viewLayout.addWidget(self.algorithmComboBox)
+        self.viewLayout.addSpacing(8)
+        self.viewLayout.addWidget(self.statusLabel)
+        self.viewLayout.addSpacing(4)
+        self.viewLayout.addWidget(self.progressBar)
+
+    def selectedAlgorithm(self) -> str:
+        return self.algorithmComboBox.currentText().strip()
+
+    def accept(self):
+        if self.worker is not None:
+            return
+
+        self._startHash()
+
+    def reject(self):
+        if self.worker is not None:
+            return
+
+        super().reject()
+
+    def _startHash(self):
+        algorithm = self.selectedAlgorithm()
+        if not algorithm:
+            return
+
+        self.algorithmComboBox.setEnabled(False)
+        self.yesButton.setEnabled(False)
+        self.cancelButton.setEnabled(False)
+        self.progressBar.setError(False)
+        self.progressBar.setValue(0)
+        self.statusLabel.setText(self.tr("正在校验 {0}").format(algorithm))
+
+        self.worker = FileHashWorker(self.filePath, algorithm, self)
+        self.worker.progressChanged.connect(self._onProgressChanged)
+        self.worker.succeeded.connect(self._onHashSucceeded)
+        self.worker.failed.connect(self._onHashFailed)
+        self.worker.start()
+
+    def _finishWorker(self):
+        worker = self.worker
+        self.worker = None
+        if worker is None:
+            return
+
+        worker.wait()
+        worker.deleteLater()
+
+    def _onProgressChanged(self, value: int):
+        self.progressBar.setValue(value)
+        self.statusLabel.setText(self.tr("正在校验 {0}%").format(value))
+
+    def _onHashSucceeded(self, digest: str):
+        algorithm = self.selectedAlgorithm()
+        self.progressBar.setValue(100)
+        self.statusLabel.setText(self.tr("校验完成"))
+        self.hashReady.emit(algorithm, digest)
+        self._finishWorker()
+        super().accept()
+
+    def _onHashFailed(self, error: str):
+        self.progressBar.error()
+        self.statusLabel.setText(self.tr("校验失败：{0}").format(error))
+        self.hashFailed.emit(error)
+        self._finishWorker()
+        self.algorithmComboBox.setEnabled(True)
+        self.yesButton.setEnabled(True)
+        self.cancelButton.setEnabled(True)
+        self.yesButton.setText(self.tr("重新校验"))

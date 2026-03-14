@@ -14,7 +14,7 @@ from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, getReadableSize, getReadableTime, openFolder
 from app.supports.config import GD3_COPY_MIME_TYPE
-from app.view.components.dialogs import DeleteTaskDialog
+from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
 from app.view.components.labels import IconBodyLabel
 
 
@@ -240,16 +240,18 @@ class UniversalTaskCard(TaskCard):
         self.progressLabel = IconBodyLabel("", FluentIcon.LIBRARY, self)
         self.infoLabel = IconBodyLabel("", FluentIcon.INFO, self)
         self.toggleRunningStatusButton = PrimaryToolButton(FluentIcon.PAUSE, self)
+        self.verifyHashButton = ToolButton(FluentIcon.FINGERPRINT, self)
         self.openFileButton = ToolButton(FluentIcon.LINK, self)
         self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
         self.cancelButton = TransparentToolButton(FluentIcon.CLOSE, self)
-        # TODO 分段进度条
         if self.task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
             self.progressBar = IndeterminateProgressBar(self)
         else:
             self.progressBar = ProgressBar(self)
             self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        # init widgets
         self.infoLabel.hide()
+        self.infoLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         # init
         self.initLayout()
         self.connectSignalToSlot()
@@ -262,6 +264,7 @@ class UniversalTaskCard(TaskCard):
 
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
+        self.verifyHashButton.clicked.connect(self._onVerifyHashButtonClicked)
         self.openFileButton.clicked.connect(lambda: openFile(self.task.resolvePath))
         self.openFolderButton.clicked.connect(lambda: openFolder(self.task.resolvePath))
         self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
@@ -282,6 +285,9 @@ class UniversalTaskCard(TaskCard):
         else:
             self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
             self.toggleRunningStatusButton.setEnabled(True)
+
+        self.verifyHashButton.setVisible(self.task.status == TaskStatus.COMPLETED)
+        self.verifyHashButton.setEnabled(self.task.status == TaskStatus.COMPLETED)
 
     def showStatusInfo(self, text: str):
         self.speedLabel.hide()
@@ -396,6 +402,25 @@ class UniversalTaskCard(TaskCard):
         logger.warning("任务失败 {}: {}", self.task.title, message)
         self.showStatusInfo(message)
 
+    def _onVerifyHashButtonClicked(self):
+        if not Path(self.task.resolvePath).is_file():
+            self.showStatusInfo(self.tr("文件不存在，无法校验"))
+            return
+
+        w = FileHashDialog(self.task.resolvePath, self.window(), deleteOnClose=False)
+        w.hashReady.connect(self._onFileHashReady)
+        w.hashFailed.connect(self._onFileHashFailed)
+        w.exec()
+        w.deleteLater()
+
+    def _onFileHashReady(self, algorithm: str, digest: str):
+        logger.info("任务文件校验完成 {} {}", self.task.title, algorithm)
+        self.showStatusInfo(f"{algorithm}: {digest}")
+
+    def _onFileHashFailed(self, error: str):
+        logger.warning("任务文件校验失败 {}: {}", self.task.title, error)
+        self.showStatusInfo(self.tr("校验失败：{0}").format(error))
+
     def resumeTask(self):
         self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
         self.toggleRunningStatusButton.setDisabled(True)
@@ -432,6 +457,7 @@ class UniversalTaskCard(TaskCard):
         self.hBoxLayout.addLayout(self.infoVBoxLayout)
         self.hBoxLayout.addStretch()
         self.hBoxLayout.addWidget(self.toggleRunningStatusButton)
+        self.hBoxLayout.addWidget(self.verifyHashButton)
         self.hBoxLayout.addWidget(self.openFileButton)
         self.hBoxLayout.addWidget(self.openFolderButton)
         self.hBoxLayout.addWidget(self.cancelButton)
