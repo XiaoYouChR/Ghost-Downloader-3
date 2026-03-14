@@ -7,7 +7,7 @@ jobs:
   build-ubuntu:
     strategy:
       matrix:
-        architecture: [x86_64, arm64]
+        architecture: [ x86_64, arm64 ]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -15,10 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -28,11 +28,21 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python deploy.py
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost-Downloader-3.dist/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

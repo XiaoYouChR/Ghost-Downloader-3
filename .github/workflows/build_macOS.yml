@@ -7,7 +7,7 @@ jobs:
   build-macos-14-arm:
     strategy:
       matrix:
-        architecture: [arm64]
+        architecture: [ arm64 ]
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -15,10 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -26,7 +26,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
@@ -35,7 +35,17 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
-          mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Create DMG
         run: |
@@ -66,7 +76,7 @@ jobs:
   build-macos-13-x86_64:
     strategy:
       matrix:
-        architecture: [x86_64]
+        architecture: [ x86_64 ]
     runs-on: macos-13
     steps:
       - name: Checkout
@@ -79,10 +89,10 @@ jobs:
           brew remove --force --ignore-dependencies openssl@3
           brew cleanup openssl@3
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -90,7 +100,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
@@ -99,7 +109,17 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
-          mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Reinstall openssl libs
         run: |

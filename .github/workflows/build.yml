@@ -2,7 +2,7 @@ name: Release
 
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 permissions:
   contents: write
@@ -11,7 +11,7 @@ jobs:
   build-windows:
     strategy:
       matrix:
-        architecture: [x86_64, arm64]
+        architecture: [ x86_64, arm64 ]
     runs-on: windows-2022
     steps:
       - name: Checkout
@@ -19,10 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -30,13 +30,28 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
+          python -c "from app.supports.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
           del version.txt
           python deploy.py
           mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
+
+      - name: Copy FeaturePacks
+        shell: pwsh
+        run: |
+          $targetRoot = "dist/Ghost-Downloader-3-Unsigned.dist/features"
+          New-Item -ItemType Directory -Force -Path $targetRoot | Out-Null
+
+          foreach ($pack in @("http_pack", "bili_pack", "ffmpeg_pack")) {
+            $source = Join-Path "features" $pack
+            $target = Join-Path $targetRoot $pack
+            if (Test-Path $target) {
+              Remove-Item -Recurse -Force $target
+            }
+            Copy-Item -Recurse -Force $source $target
+          }
 
       - name: upload-unsigned-artifact
         id: upload-unsigned-artifact
@@ -51,7 +66,7 @@ jobs:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
           project-slug: 'Ghost-Downloader-3'
-          signing-policy-slug:  'release-signing'
+          signing-policy-slug: 'release-signing'
           github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
           wait-for-completion: true
           output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
@@ -86,11 +101,11 @@ jobs:
           files: |
             Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip
             dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
-            
+
   build-macos-14-arm:
     strategy:
       matrix:
-        architecture: [arm64]
+        architecture: [ arm64 ]
     runs-on: macos-14
     steps:
       - name: Checkout
@@ -98,10 +113,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -109,7 +124,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
@@ -118,7 +133,17 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
-          mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Create DMG
         run: |
@@ -139,7 +164,7 @@ jobs:
           if [ $attempt -eq $max_attempts ]; then
               echo "Failed to create DMG after $max_attempts attempts"
           fi
-          
+
       - name: Upload to release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -149,7 +174,7 @@ jobs:
   build-macos-13-x86_64:
     strategy:
       matrix:
-        architecture: [x86_64]
+        architecture: [ x86_64 ]
     runs-on: macos-13
     steps:
       - name: Checkout
@@ -162,10 +187,10 @@ jobs:
           brew remove --force --ignore-dependencies openssl@3
           brew cleanup openssl@3
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -173,7 +198,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
@@ -182,7 +207,17 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
-          mv "resources/修复软件损坏" "dist/修复软件损坏"
+          mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost Downloader.app/Contents/MacOS/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Reinstall openssl libs
         run: |
@@ -203,7 +238,7 @@ jobs:
   build-ubuntu:
     strategy:
       matrix:
-        architecture: [x86_64, arm64]
+        architecture: [ x86_64, arm64 ]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -211,10 +246,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -224,12 +259,22 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/common'); import config; print(config.VERSION)" > version.txt
+          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
           version=$(sed -n '4p' version.txt)
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           rm -rf version.txt
           python deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
+
+      - name: Copy FeaturePacks
+        run: |
+          target_root="dist/Ghost-Downloader-3.dist/features"
+          mkdir -p "$target_root"
+
+          for pack in http_pack bili_pack ffmpeg_pack; do
+            rm -rf "$target_root/$pack"
+            cp -R "features/$pack" "$target_root/$pack"
+          done
 
       - name: Tar the contents of Ghost-Downloader
         shell: pwsh

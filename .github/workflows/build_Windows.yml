@@ -24,7 +24,7 @@ jobs:
   build-windows:
     strategy:
       matrix:
-        architecture: [x86_64, arm64]
+        architecture: [ x86_64, arm64 ]
     runs-on: windows-2022
     steps:
       - name: Checkout
@@ -32,10 +32,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -43,12 +43,27 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.common.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
+          python -c "from app.supports.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
           del version.txt
           python deploy.py
+
+      - name: Copy FeaturePacks
+        shell: pwsh
+        run: |
+          $targetRoot = "dist/Ghost-Downloader-3.dist/features"
+          New-Item -ItemType Directory -Force -Path $targetRoot | Out-Null
+
+          foreach ($pack in @("http_pack", "bili_pack", "ffmpeg_pack")) {
+            $source = Join-Path "features" $pack
+            $target = Join-Path $targetRoot $pack
+            if (Test-Path $target) {
+              Remove-Item -Recurse -Force $target
+            }
+            Copy-Item -Recurse -Force $source $target
+          }
 
       - name: Prepare For Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
