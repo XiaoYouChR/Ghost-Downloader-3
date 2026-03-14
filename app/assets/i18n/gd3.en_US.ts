@@ -748,7 +748,7 @@ Install path: {1}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="38"/>
-        <location filename="../../view/pages/setting_page.py" line="243"/>
+        <location filename="../../view/pages/setting_page.py" line="244"/>
         <source>关于</source>
         <translation>About</translation>
     </message>
@@ -907,103 +907,103 @@ Install path: {1}</translation>
         <translation>Set the preferred language for the interface</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="192"/>
+        <location filename="../../view/pages/setting_page.py" line="193"/>
         <source>使用系统设置</source>
         <translation>Use system setting</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="200"/>
+        <location filename="../../view/pages/setting_page.py" line="201"/>
         <source>在应用程序启动时检查更新</source>
         <translation>Check for updates on startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="201"/>
+        <location filename="../../view/pages/setting_page.py" line="202"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>New versions are more stable with more features</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="208"/>
+        <location filename="../../view/pages/setting_page.py" line="209"/>
         <source>开机启动</source>
         <translation>Start on Boot</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="209"/>
+        <location filename="../../view/pages/setting_page.py" line="210"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation>Run Ghost Downloader silently at system startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="216"/>
+        <location filename="../../view/pages/setting_page.py" line="217"/>
         <source>剪贴板监听</source>
         <translation>Clipboard Monitor</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="217"/>
+        <location filename="../../view/pages/setting_page.py" line="218"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>Automatically detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="225"/>
+        <location filename="../../view/pages/setting_page.py" line="226"/>
         <source>打开作者的个人空间</source>
         <translation>Open Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="227"/>
+        <location filename="../../view/pages/setting_page.py" line="228"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="228"/>
+        <location filename="../../view/pages/setting_page.py" line="229"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="233"/>
-        <location filename="../../view/pages/setting_page.py" line="235"/>
+        <location filename="../../view/pages/setting_page.py" line="234"/>
+        <location filename="../../view/pages/setting_page.py" line="236"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="236"/>
+        <location filename="../../view/pages/setting_page.py" line="237"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader</source>
         <translation>Help improve Ghost Downloader by providing feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="241"/>
+        <location filename="../../view/pages/setting_page.py" line="242"/>
         <source>检查更新</source>
         <translation>Check for Updates</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>已配置</source>
         <translation>Configured</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>重启软件后生效</source>
         <translation>Requires restart to take effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="280"/>
+        <location filename="../../view/pages/setting_page.py" line="281"/>
         <source>选择导出路径</source>
         <translation>Select Export Path</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="291"/>
+        <location filename="../../view/pages/setting_page.py" line="292"/>
         <source>安装指南</source>
         <translation>Installation Guide</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="292"/>
+        <location filename="../../view/pages/setting_page.py" line="293"/>
         <source>请按照步骤安装浏览器扩展</source>
         <translation>Follow steps to install browser extension</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="390"/>
+        <location filename="../../view/pages/setting_page.py" line="391"/>
         <source>警告</source>
         <translation>Warning</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="391"/>
+        <location filename="../../view/pages/setting_page.py" line="392"/>
         <source>鬼知道你用的是什么平台？</source>
         <translation>What platform are you using?</translation>
     </message>

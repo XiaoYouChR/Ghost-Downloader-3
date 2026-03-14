@@ -748,7 +748,7 @@
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="38"/>
-        <location filename="../../view/pages/setting_page.py" line="243"/>
+        <location filename="../../view/pages/setting_page.py" line="244"/>
         <source>关于</source>
         <translation>關於</translation>
     </message>
@@ -907,103 +907,103 @@
         <translation>設定介面嘅偏好語言</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="192"/>
+        <location filename="../../view/pages/setting_page.py" line="193"/>
         <source>使用系统设置</source>
         <translation>使用系統設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="200"/>
+        <location filename="../../view/pages/setting_page.py" line="201"/>
         <source>在应用程序启动时检查更新</source>
         <translation>喺應用程式啟動時檢查更新</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="201"/>
+        <location filename="../../view/pages/setting_page.py" line="202"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>新版本會更加穩定，仲加入咗更多功能</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="208"/>
+        <location filename="../../view/pages/setting_page.py" line="209"/>
         <source>开机启动</source>
         <translation>開機啟動</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="209"/>
+        <location filename="../../view/pages/setting_page.py" line="210"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation>喺系統啟動時靜默運行 Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="216"/>
+        <location filename="../../view/pages/setting_page.py" line="217"/>
         <source>剪贴板监听</source>
         <translation>監聽剪貼板</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="217"/>
+        <location filename="../../view/pages/setting_page.py" line="218"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>剪貼板監聽器會自動檢測剪貼板入面嘅連結，然後加到下載任務入面</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="225"/>
+        <location filename="../../view/pages/setting_page.py" line="226"/>
         <source>打开作者的个人空间</source>
         <translation>打開作者嘅個人空間</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="227"/>
+        <location filename="../../view/pages/setting_page.py" line="228"/>
         <source>了解作者</source>
         <translation>認識作者</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="228"/>
+        <location filename="../../view/pages/setting_page.py" line="229"/>
         <source>发现更多 {} 的作品</source>
         <translation>發現更多 {} 嘅作品</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="233"/>
-        <location filename="../../view/pages/setting_page.py" line="235"/>
+        <location filename="../../view/pages/setting_page.py" line="234"/>
+        <location filename="../../view/pages/setting_page.py" line="236"/>
         <source>提供反馈</source>
         <translation>提供反饋</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="236"/>
+        <location filename="../../view/pages/setting_page.py" line="237"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader</source>
         <translation>透過提供反饋幫助我哋改進 Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="241"/>
+        <location filename="../../view/pages/setting_page.py" line="242"/>
         <source>检查更新</source>
         <translation>檢查更新</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>已配置</source>
         <translation>已配置</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="269"/>
+        <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>重启软件后生效</source>
         <translation>重啟軟件後生效</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="280"/>
+        <location filename="../../view/pages/setting_page.py" line="281"/>
         <source>选择导出路径</source>
         <translation>揀匯出路徑</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="291"/>
+        <location filename="../../view/pages/setting_page.py" line="292"/>
         <source>安装指南</source>
         <translation>安裝指南</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="292"/>
+        <location filename="../../view/pages/setting_page.py" line="293"/>
         <source>请按照步骤安装浏览器扩展</source>
         <translation>請跟住步驟安裝瀏覽器擴充功能</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="390"/>
+        <location filename="../../view/pages/setting_page.py" line="391"/>
         <source>警告</source>
         <translation>警告</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="391"/>
+        <location filename="../../view/pages/setting_page.py" line="392"/>
         <source>鬼知道你用的是什么平台？</source>
         <translation>鬼知你用緊乜平台？</translation>
     </message>
