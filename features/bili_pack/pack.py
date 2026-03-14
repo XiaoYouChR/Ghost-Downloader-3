@@ -225,89 +225,91 @@ async def parse(payload: dict) -> BilibiliTask:
 
         if selectedPages is None:
             selectedPages = list(range(1, len(pages) + 1))
-        selectedPages = [page for page in selectedPages if 1 <= page <= len(pages)]
-        if len(selectedPages) != 1:
-            raise ValueError("当前 BilibiliPack 仅支持单个分P下载，请在链接中指定单个 ?p= 数值")
+        selectedPages = [page for page in dict.fromkeys(selectedPages) if 1 <= page <= len(pages)]
+        if not selectedPages:
+            raise ValueError("未找到有效的分P编号")
 
-        pageNumber = selectedPages[0]
-        page = pages[pageNumber - 1]
-        cid = int(page["cid"])
-
+        videoTitle = str(viewData.get("title", "")).strip() or "bilibili_video"
         requestedQuality = bilibiliConfig.defaultQuality.value
-        playResponse = await client.get(
-            _buildPlayApiUrl(videoId, cid, _resolveRequestedFnval(requestedQuality), requestedQuality),
-            proxies=proxies,
-            allow_redirects=True,
-        )
-        try:
-            playResponse.raise_for_status()
-            playPayload = playResponse.json()
-        finally:
-            playResponse.close()
+        pageParts: list[str] = []
+        totalSize = 0
 
-        if playPayload.get("code") not in {None, 0}:
-            raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
+        if len(selectedPages) == 1:
+            title = f"{_sanitizeFileName(_pickOutputTitle(videoTitle, pages[selectedPages[0] - 1], selectedPages[0], len(pages)))}.mp4"
+        else:
+            title = f"{_sanitizeFileName(videoTitle)}.mp4"
 
-        pageData = playPayload.get("data") or {}
-
-        videoStream = _pickVideoStream(pageData, requestedQuality)
-        audioStream = _pickAudioStream(pageData)
-        videoUrl = _getStreamUrl(videoStream)
-        audioUrl = _getStreamUrl(audioStream)
-        if not videoUrl or not audioUrl:
-            raise ValueError("未能解析出完整的音视频下载链接")
-
-        videoSize = await _getFileSizeWithClient(videoUrl, headers, proxies, client)
-        audioSize = await _getFileSizeWithClient(audioUrl, headers, proxies, client)
-
-        outputTitle = _pickOutputTitle(
-            str(viewData.get("title", "")).strip() or "bilibili_video",
-            page,
-            pageNumber,
-            len(pages),
-        )
         task = BilibiliTask(
-            title=f"{_sanitizeFileName(outputTitle)}.mp4",
+            title=title,
             url=url,
-            fileSize=videoSize + audioSize,
+            fileSize=0,
             headers=headers,
             proxies=proxies,
             blockNum=blockNum,
             path=path,
-            pageNumber=pageNumber,
+            selectedPages=selectedPages.copy(),
+            totalPages=len(pages),
         )
 
-        videoStage = HttpTaskStage(
-            stageIndex=1,
-            url=videoUrl,
-            fileSize=videoSize,
-            headers=headers.copy(),
-            proxies=proxies,
-            resolvePath=task.videoPath,
-            blockNum=blockNum,
-        )
-        audioStage = HttpTaskStage(
-            stageIndex=2,
-            url=audioUrl,
-            fileSize=audioSize,
-            headers=headers.copy(),
-            proxies=proxies,
-            resolvePath=task.audioPath,
-            blockNum=blockNum,
-        )
-        mergeStage = FFmpegStage(
-            stageIndex=3,
-            videoPath=task.videoPath,
-            audioPath=task.audioPath,
-            resolvePath=task.resolvePath,
-        )
+        for index, pageNumber in enumerate(selectedPages):
+            page = pages[pageNumber - 1]
+            pageParts.append(str(page.get("part", "")).strip())
+            cid = int(page["cid"])
 
-        task.addStage(videoStage)
-        task.addStage(audioStage)
-        task.addStage(mergeStage)
-        task.videoStageId = videoStage.stageId
-        task.audioStageId = audioStage.stageId
-        task.mergeStageId = mergeStage.stageId
+            playResponse = await client.get(
+                _buildPlayApiUrl(videoId, cid, _resolveRequestedFnval(requestedQuality), requestedQuality),
+                proxies=proxies,
+                allow_redirects=True,
+            )
+            try:
+                playResponse.raise_for_status()
+                playPayload = playResponse.json()
+            finally:
+                playResponse.close()
+
+            if playPayload.get("code") not in {None, 0}:
+                raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
+
+            pageData = playPayload.get("data") or {}
+            videoStream = _pickVideoStream(pageData, requestedQuality)
+            audioStream = _pickAudioStream(pageData)
+            videoUrl = _getStreamUrl(videoStream)
+            audioUrl = _getStreamUrl(audioStream)
+            if not videoUrl or not audioUrl:
+                raise ValueError("未能解析出完整的音视频下载链接")
+
+            videoSize = await _getFileSizeWithClient(videoUrl, headers, proxies, client)
+            audioSize = await _getFileSizeWithClient(audioUrl, headers, proxies, client)
+            totalSize += videoSize + audioSize
+
+            stageIndex = index * 3
+            task.addStage(HttpTaskStage(
+                stageIndex=stageIndex + 1,
+                url=videoUrl,
+                fileSize=videoSize,
+                headers=headers.copy(),
+                proxies=proxies,
+                resolvePath="",
+                blockNum=blockNum,
+            ))
+            task.addStage(HttpTaskStage(
+                stageIndex=stageIndex + 2,
+                url=audioUrl,
+                fileSize=audioSize,
+                headers=headers.copy(),
+                proxies=proxies,
+                resolvePath="",
+                blockNum=blockNum,
+            ))
+            task.addStage(FFmpegStage(
+                stageIndex=stageIndex + 3,
+                videoPath="",
+                audioPath="",
+                resolvePath="",
+            ))
+
+        task.pageParts = pageParts
+        task.fileSize = totalSize
         task.syncStagePaths()
         return task
     finally:

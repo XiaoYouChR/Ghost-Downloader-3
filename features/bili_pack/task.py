@@ -22,47 +22,52 @@ class BilibiliTask(Task):
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
     blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
-    pageNumber: int = field(default=1)
-    videoStageId: str = field(default="")
-    audioStageId: str = field(default="")
-    mergeStageId: str = field(default="")
-    videoPath: str = field(default="")
-    audioPath: str = field(default="")
+    selectedPages: list[int] = field(default_factory=list)
+    pageParts: list[str] = field(default_factory=list)
+    totalPages: int = field(default=1)
 
     def __post_init__(self):
         super().__post_init__()
-        self._ensureStageIds()
         self.syncStagePaths()
 
-    def _ensureStageIds(self):
-        httpStages = [stage for stage in self.stages if isinstance(stage, HttpTaskStage)]
-        mergeStages = [stage for stage in self.stages if isinstance(stage, FFmpegStage)]
+    @property
+    def resolvePath(self) -> str:
+        if not self.selectedPages:
+            return str(self.path / self.title)
 
-        if not self.videoStageId and len(httpStages) >= 1:
-            self.videoStageId = httpStages[0].stageId
-        if not self.audioStageId and len(httpStages) >= 2:
-            self.audioStageId = httpStages[1].stageId
-        if not self.mergeStageId and mergeStages:
-            self.mergeStageId = mergeStages[-1].stageId
+        return str(self.path / self._buildOutputFileName(0))
 
-    def _buildStagePaths(self) -> tuple[str, str]:
-        finalPath = Path(self.resolvePath)
-        videoPath = finalPath.with_name(f"{finalPath.stem}.video.m4s")
-        audioPath = finalPath.with_name(f"{finalPath.stem}.audio.m4s")
-        return str(videoPath), str(audioPath)
+    def _baseTitle(self) -> str:
+        return self.title[:-4] if self.title.lower().endswith(".mp4") else self.title
+
+    def _buildOutputFileName(self, index: int) -> str:
+        baseTitle = self._baseTitle()
+        if len(self.selectedPages) <= 1:
+            return f"{baseTitle}.mp4"
+
+        pageNumber = self.selectedPages[index]
+        pagePart = self.pageParts[index] if index < len(self.pageParts) else ""
+        suffix = f"P{pageNumber}"
+        if pagePart and pagePart != baseTitle:
+            return f"{baseTitle} - {suffix} {pagePart}.mp4"
+        return f"{baseTitle} - {suffix}.mp4"
 
     def syncStagePaths(self):
-        self.videoPath, self.audioPath = self._buildStagePaths()
-        for stage in self.stages:
-            if isinstance(stage, HttpTaskStage):
-                if stage.stageId == self.videoStageId:
-                    stage.resolvePath = self.videoPath
-                elif stage.stageId == self.audioStageId:
-                    stage.resolvePath = self.audioPath
-            elif isinstance(stage, FFmpegStage):
-                stage.videoPath = self.videoPath
-                stage.audioPath = self.audioPath
-                stage.resolvePath = self.resolvePath
+        for index in range(len(self.selectedPages)):
+            stages = self.stages[index * 3:(index + 1) * 3]
+            if len(stages) != 3:
+                continue
+
+            videoStage, audioStage, mergeStage = stages
+            finalPath = Path(self.path / self._buildOutputFileName(index))
+            videoPath = finalPath.with_name(f"{finalPath.stem}.video.m4s")
+            audioPath = finalPath.with_name(f"{finalPath.stem}.audio.m4s")
+
+            videoStage.resolvePath = str(videoPath)
+            audioStage.resolvePath = str(audioPath)
+            mergeStage.videoPath = str(videoPath)
+            mergeStage.audioPath = str(audioPath)
+            mergeStage.resolvePath = str(finalPath)
 
     def applyPayloadToTask(self, payload: dict[str, Any]):
         super().applyPayloadToTask(payload)
