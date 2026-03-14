@@ -375,7 +375,7 @@ class HttpWorker(Worker):
         # prepare async components
         self.taskGroup = TaskGroup()
         self.subworkers: list[HttpSubworker] = []
-        self.client = niquests.AsyncSession(happy_eyeballs=True)
+        self.client = niquests.AsyncSession(happy_eyeballs=True, pool_maxsize=256)
         self.client.trust_env = False
         shouldCleanupRecordFile = False
 

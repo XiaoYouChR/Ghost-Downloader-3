@@ -327,7 +327,7 @@ class UniversalTaskCard(TaskCard):
         elif self.task.status == TaskStatus.COMPLETED:
             if self.task.fileSize > 0:
                 self.progressBar.setError(False)
-                self.progressBar.setValue(100)
+                self.progressBar.hide()
             else:
                 self.progressBar.stop()
             self.showStatusInfo(self.tr("任务已经完成"))
