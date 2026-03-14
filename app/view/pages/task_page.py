@@ -29,6 +29,7 @@ class TaskCommandBarView(CommandBarView):
         self.redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
         self.selectAllAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("全选"), self)
+        self.invertSelectAction = Action(FluentIcon.CUT, self.tr("反选"), self)
         self.cancelAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("取消全选"), self)
 
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
@@ -38,6 +39,7 @@ class TaskCommandBarView(CommandBarView):
         self.addAction(self.deleteAction)
         self.addSeparator()
         self.addAction(self.selectAllAction)
+        self.addAction(self.invertSelectAction)
         self.addAction(self.cancelAction)
         self.resizeToSuitableWidth()
         self.setShadowEffect()
@@ -322,6 +324,7 @@ class TaskPage(ScrollArea):
         self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self.isSelectionMode))
         self.commandView.deleteAction.triggered.connect(self._onDeleteActionTriggered)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
+        self.commandView.invertSelectAction.triggered.connect(self.invertSelection)
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
         self.timeSortAction.triggered.connect(lambda: self.setSortField(SortField.TIME))
         self.nameSortAction.triggered.connect(lambda: self.setSortField(SortField.NAME))
@@ -470,6 +473,11 @@ class TaskPage(ScrollArea):
     def selectAll(self):
         for card in self.cards:
             card.setChecked(True)
+        self._refreshSelectionState()
+
+    def invertSelection(self):
+        for card in self.cards:
+            card.setChecked(not card.isChecked())
         self._refreshSelectionState()
 
     def resizeEvent(self, event):
