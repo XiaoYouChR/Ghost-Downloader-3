@@ -7,9 +7,9 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayo
 from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget, ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
-    TransparentToolButton, ProgressBar, LineEdit, RoundMenu, Action
+    TransparentToolButton, ProgressBar, IndeterminateProgressBar, LineEdit, RoundMenu, Action
 
-from app.bases.models import Task, TaskStatus
+from app.bases.models import Task, TaskStatus, SpecialFileSize
 from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, getReadableSize, getReadableTime, openFolder
@@ -244,8 +244,11 @@ class UniversalTaskCard(TaskCard):
         self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
         self.cancelButton = TransparentToolButton(FluentIcon.CLOSE, self)
         # TODO 分段进度条
-        self.progressBar = ProgressBar(self)
-        self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        if self.task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
+            self.progressBar = IndeterminateProgressBar(self)
+        else:
+            self.progressBar = ProgressBar(self)
+            self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         self.infoLabel.hide()
         # init
         self.initLayout()
@@ -272,7 +275,7 @@ class UniversalTaskCard(TaskCard):
     def refreshToggleButton(self):
         if self.task.status == TaskStatus.RUNNING:
             self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
-            self.toggleRunningStatusButton.setEnabled(True)
+            self.toggleRunningStatusButton.setEnabled(self.task.fileSize != SpecialFileSize.NOT_SUPPORTED)
         elif self.task.status == TaskStatus.COMPLETED:
             self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
             self.toggleRunningStatusButton.setEnabled(False)
@@ -308,20 +311,36 @@ class UniversalTaskCard(TaskCard):
             self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
 
         if self.task.status == TaskStatus.RUNNING:
+            self.progressBar.setError(False)
             if self.infoLabel.isVisible():
                 self.infoLabel.hide()
                 self.speedLabel.show()
                 self.leftTimeLabel.show()
                 self.progressLabel.show()
             self.speedLabel.setText(f"{getReadableSize(speed)}/s")
-            self.progressLabel.setText(getReadableSize(receivedBytes) + "/" + getReadableSize(self.task.fileSize))
-            self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)) if speed != 0 else "--m--s")
+            if self.task.fileSize > 0:
+                self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}")
+                self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)) if speed != 0 else "--m--s")
+            else:
+                self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
+                self.leftTimeLabel.setText("--")
         elif self.task.status == TaskStatus.COMPLETED:
-            self.progressBar.setValue(100)
+            if self.task.fileSize > 0:
+                self.progressBar.setError(False)
+                self.progressBar.setValue(100)
+            else:
+                self.progressBar.stop()
             self.showStatusInfo(self.tr("任务已经完成"))
+        elif self.task.status == TaskStatus.FAILED:
+            self.progressBar.error()
+            self.onTaskFailed()
         elif self.task.status == TaskStatus.PAUSED:
+            self.progressBar.setError(False)
+            self.progressBar.pause()
             self.showStatusInfo(self.tr("任务已经暂停"))
         else:
+            self.progressBar.setError(False)
+            self.progressBar.pause()
             self.showStatusInfo(self.tr("任务正在等待"))
 
         self.refreshToggleButton()
@@ -333,8 +352,6 @@ class UniversalTaskCard(TaskCard):
 
         if self.task.status == TaskStatus.COMPLETED and self.cardStatus != TaskStatus.COMPLETED:
             self.onTaskFinished()
-        elif self.task.status == TaskStatus.FAILED and self.cardStatus != TaskStatus.FAILED:
-            self.onTaskFailed()
 
         self._renderTaskState()
 
@@ -389,6 +406,9 @@ class UniversalTaskCard(TaskCard):
         self.toggleRunningStatusButton.setEnabled(True)
 
     def pauseTask(self):
+        if self.task.fileSize == SpecialFileSize.NOT_SUPPORTED:
+            return
+
         self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
         self.toggleRunningStatusButton.setDisabled(True)
         coreService.stopTask(self.task)

@@ -9,12 +9,11 @@ import niquests
 from loguru import logger
 
 from app.bases.interfaces import FeaturePack
-from app.bases.models import Task
+from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .config import httpConfig
-from .const import SpecialFileSize
 from .task import HttpTask, HttpTaskStage
 
 

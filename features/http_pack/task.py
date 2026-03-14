@@ -11,12 +11,11 @@ import niquests
 from loguru import logger
 
 from app.bases.interfaces import Worker
-from app.bases.models import Task, TaskStage, TaskStatus
+from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import getProxies
 from .config import httpConfig
-from .const import SpecialFileSize
 
 
 @dataclass
@@ -108,6 +107,9 @@ class HttpWorker(Worker):
         self.accelCheckTime = 0
 
     def reassignSubworker(self):
+        if self.stage.fileSize <= 0:
+            return
+
         slowestSubworker = max(self.subworkers, key=lambda subworker: subworker.end - subworker.progress)
         remainingBytes = slowestSubworker.end - slowestSubworker.progress
         if remainingBytes < httpConfig.maxReassignSize.value * 1048576:
@@ -121,17 +123,95 @@ class HttpWorker(Worker):
 
     async def handleSubworker(self, subworker: HttpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
-            ...
+            while True:
+                try:
+                    requestHeaders = self.stage.headers.copy()
+                    requestHeaders["range"] = f"bytes={subworker.progress}-"
+
+                    res = await self.client.get(
+                        self.stage.url,
+                        headers=requestHeaders,
+                        proxies=self.stage.proxies,
+                        verify=cfg.SSLVerify.value,
+                        allow_redirects=True,
+                        stream=True,
+                    )
+                    try:
+                        res.raise_for_status()
+                        if res.status_code != 206:
+                            raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
+
+                        async for chunk in await res.iter_raw(chunk_size=65536):
+                            if not chunk:
+                                continue
+
+                            await cfg.checkSpeedLimitation()
+                            pwrite(self.fileHandle, chunk, subworker.progress)
+                            subworker.progress += 65536
+                            cfg.globalSpeed += 65536
+                    finally:
+                        await res.close()
+
+                    return
+                except Exception as e:
+                    logger.opt(exception=e).error(
+                        "{} 的未知大小分片 {} 连接中断，5 秒后重试",
+                        self.stage.resolvePath,
+                        subworker,
+                    )
+                    await asyncio.sleep(5)
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:  # 不支持断点续传
-            ...
+            while True:
+                try:
+                    ftruncate(self.fileHandle, 0)
+                    subworker.progress = 0
+
+                    res = await self.client.get(
+                        self.stage.url,
+                        headers=self.stage.headers,
+                        proxies=self.stage.proxies,
+                        verify=cfg.SSLVerify.value,
+                        allow_redirects=True,
+                        stream=True,
+                    )
+                    try:
+                        res.raise_for_status()
+                        if res.status_code not in {200, 206}:
+                            raise Exception(f"服务器返回了异常状态码：{res.status_code}")
+
+                        async for chunk in await res.iter_raw(chunk_size=65536):
+                            if not chunk:
+                                continue
+
+                            await cfg.checkSpeedLimitation()
+                            pwrite(self.fileHandle, chunk, subworker.progress)
+                            subworker.progress += 65536
+                            cfg.globalSpeed += 65536
+                    finally:
+                        await res.close()
+
+                    ftruncate(self.fileHandle, subworker.progress)
+                    return
+                except Exception as e:
+                    logger.opt(exception=e).error(
+                        "{} 不支持断点续传，已从头开始重试",
+                        self.stage.resolvePath,
+                    )
+                    await asyncio.sleep(5)
         else:  # 正常下载
             while subworker.progress < subworker.end:
                 try:
                     requestHeaders = self.stage.headers.copy()
                     requestHeaders["range"] = f"bytes={subworker.progress}-{subworker.end}"
 
-                    res = await niquests.aget(self.stage.url, headers=requestHeaders, proxies=self.stage.proxies,
-                                              verify=False, allow_redirects=True, stream=True)
+                    res = await self.client.get(
+                        self.stage.url,
+                        headers=requestHeaders,
+                        proxies=self.stage.proxies,
+                        verify=cfg.SSLVerify.value,
+                        allow_redirects=True,
+                        stream=True,
+                    )
                     try:
                         res.raise_for_status()
                         if res.status_code != 206:
@@ -143,7 +223,6 @@ class HttpWorker(Worker):
                             await cfg.checkSpeedLimitation()
                             offset = subworker.progress
                             pwrite(self.fileHandle, chunk, offset)
-                            # inc = len(chunk)
                             subworker.progress += 65536
                             cfg.globalSpeed += 65536
                             if subworker.progress >= subworker.end:
@@ -214,20 +293,26 @@ class HttpWorker(Worker):
                 )
 
     async def supervisor(self):
-        recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
+        recordFileHandle = None
+        if self.stage.fileSize != SpecialFileSize.NOT_SUPPORTED:
+            recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
         try:
             self.stage.receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
             while True:
-                data = tuple(val for subworker in self.subworkers for val in (subworker.start, subworker.progress, subworker.end))
-                recordFileHandle.seek(0)
-                recordFileHandle.write(pack("<" + "Q" * len(data), *data))
-                recordFileHandle.flush()
-                recordFileHandle.truncate()
+                if recordFileHandle is not None:
+                    data = tuple(val for subworker in self.subworkers for val in (subworker.start, subworker.progress, subworker.end))
+                    recordFileHandle.seek(0)
+                    recordFileHandle.write(pack("<" + "Q" * len(data), *data))
+                    recordFileHandle.flush()
+                    recordFileHandle.truncate()
 
                 receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
                 self.stage.speed = receivedBytes - self.stage.receivedBytes
                 self.stage.receivedBytes = receivedBytes
-                self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
+                if self.stage.fileSize > 0:
+                    self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
+                else:
+                    self.stage.progress = 0
 
                 self.checkIfAutoAcceleration()
 
@@ -237,7 +322,8 @@ class HttpWorker(Worker):
         except Exception as e:
             logger.opt(exception=e).error("{} 的监控协程异常退出", self.stage.resolvePath)
         finally:
-            recordFileHandle.close()
+            if recordFileHandle is not None:
+                recordFileHandle.close()
 
     def restoreProgress(self) -> bool:
         recordFile = Path(self.stage.resolvePath + ".ghd")
@@ -260,6 +346,14 @@ class HttpWorker(Worker):
         return False
 
     def generateSubworkers(self):
+        if self.stage.fileSize == SpecialFileSize.UNKNOWN:
+            self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.UNKNOWN))
+            return
+
+        if self.stage.fileSize == SpecialFileSize.NOT_SUPPORTED:
+            self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.NOT_SUPPORTED))
+            return
+
         step = self.stage.fileSize // self.stage.blockNum  # 每块大小
         start = 0
         for i in range(self.stage.blockNum - 1):
@@ -285,16 +379,24 @@ class HttpWorker(Worker):
         self.client.trust_env = False
         shouldCleanupRecordFile = False
 
-        restored = self.restoreProgress()
+        restored = False
+        if self.stage.fileSize != SpecialFileSize.NOT_SUPPORTED:
+            restored = self.restoreProgress()
+        else:
+            self._cleanupRecordFile()
+
         if not restored:
             logger.info("正在为 {} 生成下载分片", self.stage.resolvePath)
             self.generateSubworkers()
         else:
             logger.info("从进度文件恢复下载分片 {}", self.stage.resolvePath)
 
-        self.fileHandle = os.open(self.stage.resolvePath, os.O_RDWR | os.O_CREAT, 0o666)
+        openMode = os.O_RDWR | os.O_CREAT
+        if self.stage.fileSize == SpecialFileSize.NOT_SUPPORTED:
+            openMode |= os.O_TRUNC
+        self.fileHandle = os.open(self.stage.resolvePath, openMode, 0o666)
 
-        if not restored:
+        if not restored and self.stage.fileSize > 0:
             try:
                 ftruncate(self.fileHandle, self.stage.fileSize)
             except Exception as e:
@@ -322,5 +424,6 @@ class HttpWorker(Worker):
                 with suppress(asyncio.CancelledError):
                     await supervisor
             os.close(self.fileHandle)
+            await self.client.close()
             if shouldCleanupRecordFile:
                 self._cleanupRecordFile()

@@ -260,3 +260,8 @@ class PackConfig:
 
     def tr(self, text: str) -> str:
         return QCoreApplication.translate(self.__class__.__name__, text)
+
+
+class SpecialFileSize(IntEnum):
+    NOT_SUPPORTED = -1
+    UNKNOWN = 0
