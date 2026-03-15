@@ -9,8 +9,10 @@ from qfluentwidgets import (
     BoolValidator,
     ComboBox,
     ConfigItem,
+    ConfigValidator,
     FluentIcon,
     HyperlinkButton,
+    LineEdit,
     MessageBoxBase,
     OptionsConfigItem,
     OptionsValidator,
@@ -38,6 +40,7 @@ GITHUB_PROXY_SITES = (
     "https://ghproxy.homeboyc.cn/",
     "https://gh.llkk.cc/",
 )
+GITHUB_CUSTOM_PROXY_SITE = "__custom__"
 GITHUB_PROBE_TARGET = "https://raw.githubusercontent.com/asjdf/ghproxy/main/src/index.ts"
 
 GITHUB_USER_AGREEMENT = """使用前请确认以下风险并自行承担：
@@ -56,12 +59,57 @@ def _siteName(site: str) -> str:
     return urlparse(site).netloc or site.rstrip("/")
 
 
+def _normalizeSite(site: str) -> str:
+    value = str(site or "").strip()
+    if not value:
+        return ""
+    if "://" not in value:
+        value = f"https://{value}"
+    return value.rstrip("/")
+
+
+class GitHubProxySiteValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        site = _normalizeSite(value)
+        if not site:
+            return False
+
+        parsedSite = urlparse(site)
+        return (
+            parsedSite.scheme in {"http", "https"}
+            and bool(parsedSite.netloc)
+            and not parsedSite.params
+            and not parsedSite.query
+            and not parsedSite.fragment
+        )
+
+    def correct(self, value) -> str:
+        site = _normalizeSite(value)
+        return site if self.validate(site) else ""
+
+
+def getSelectedProxySite() -> str:
+    if githubConfig.proxySite.value == GITHUB_CUSTOM_PROXY_SITE:
+        return githubConfig.customProxySite.value
+    return githubConfig.proxySite.value
+
+
 def _siteText(site: str, latency: int | None) -> str:
     if latency is None:
         return _siteName(site)
     if latency < 0:
         return f"{_siteName(site)} (超时)"
     return f"{_siteName(site)} ({latency} ms)"
+
+
+def _customSiteText(site: str, latency: int | None) -> str:
+    if not site:
+        return "自定义"
+    if latency is None:
+        return "自定义"
+    if latency < 0:
+        return "自定义 (超时)"
+    return f"自定义 ({latency} ms)"
 
 
 class GitHubAgreementDialog(MessageBoxBase):
@@ -93,11 +141,16 @@ class GitHubAgreementDialog(MessageBoxBase):
 
 async def measureProxyLatencies() -> dict[str, int]:
     latencies: dict[str, int] = {}
+    sites = list(GITHUB_PROXY_SITES)
+    customSite = githubConfig.customProxySite.value
+    if customSite and customSite not in sites:
+        sites.append(customSite)
+
     session = niquests.AsyncSession(happy_eyeballs=True)
     session.trust_env = False
 
     try:
-        for site in GITHUB_PROXY_SITES:
+        for site in sites:
             startedAt = perf_counter()
             try:
                 response = await session.get(
@@ -133,6 +186,7 @@ class GitHubProxySiteCard(SettingCard):
         )
         self.latencies = {site: None for site in GITHUB_PROXY_SITES}
         self.comboBox = ComboBox(self)
+        self.customSiteEdit = LineEdit(self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
         self.isRefreshing = False
 
@@ -142,33 +196,60 @@ class GitHubProxySiteCard(SettingCard):
 
     def _initWidget(self):
         self.comboBox.setMinimumWidth(260)
+        self.customSiteEdit.setPlaceholderText("https://example.com/")
+        self.customSiteEdit.setClearButtonEnabled(True)
+        self.customSiteEdit.setMinimumWidth(220)
         self.refreshButton.setToolTip(self.tr("刷新延迟"))
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
         self.hBoxLayout.addWidget(self.comboBox)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.customSiteEdit)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.refreshButton)
         self.hBoxLayout.addSpacing(16)
 
     def _connectSignalToSlot(self):
         self.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
+        self.customSiteEdit.editingFinished.connect(self._onCustomSiteEditingFinished)
         self.refreshButton.clicked.connect(self.refreshLatencies)
 
     def _reloadItems(self):
         currentSite = githubConfig.proxySite.value
-        if currentSite not in GITHUB_PROXY_SITES:
+        if currentSite not in (*GITHUB_PROXY_SITES, GITHUB_CUSTOM_PROXY_SITE):
             currentSite = GITHUB_PROXY_SITES[0]
+        customSite = githubConfig.customProxySite.value
+        customLatency = self.latencies.get(customSite)
 
         self.comboBox.blockSignals(True)
+        self.customSiteEdit.blockSignals(True)
         self.comboBox.clear()
         for site in GITHUB_PROXY_SITES:
             self.comboBox.addItem(_siteText(site, self.latencies[site]))
-        self.comboBox.setCurrentIndex(GITHUB_PROXY_SITES.index(currentSite))
+        self.comboBox.addItem(_customSiteText(customSite, customLatency))
+        if currentSite == GITHUB_CUSTOM_PROXY_SITE:
+            self.comboBox.setCurrentIndex(len(GITHUB_PROXY_SITES))
+        else:
+            self.comboBox.setCurrentIndex(GITHUB_PROXY_SITES.index(currentSite))
+        self.customSiteEdit.setText(customSite)
+        self.customSiteEdit.setVisible(currentSite == GITHUB_CUSTOM_PROXY_SITE)
         self.comboBox.blockSignals(False)
+        self.customSiteEdit.blockSignals(False)
 
     def _onCurrentIndexChanged(self, index: int):
         if index < 0:
             return
-        cfg.set(githubConfig.proxySite, GITHUB_PROXY_SITES[index])
+        if index < len(GITHUB_PROXY_SITES):
+            cfg.set(githubConfig.proxySite, GITHUB_PROXY_SITES[index])
+        else:
+            cfg.set(githubConfig.proxySite, GITHUB_CUSTOM_PROXY_SITE)
+        self._reloadItems()
+
+    def _onCustomSiteEditingFinished(self):
+        oldCustomSite = githubConfig.customProxySite.value
+        cfg.set(githubConfig.customProxySite, self.customSiteEdit.text())
+        if oldCustomSite and oldCustomSite not in GITHUB_PROXY_SITES:
+            self.latencies.pop(oldCustomSite, None)
+        self._reloadItems()
 
     def refreshLatencies(self):
         if self.isRefreshing:
@@ -200,7 +281,13 @@ class GitHubConfig(PackConfig):
         "GitHub",
         "ProxySite",
         GITHUB_PROXY_SITES[0],
-        OptionsValidator(GITHUB_PROXY_SITES),
+        OptionsValidator([*GITHUB_PROXY_SITES, GITHUB_CUSTOM_PROXY_SITE]),
+    )
+    customProxySite = ConfigItem(
+        "GitHub",
+        "CustomProxySite",
+        "",
+        GitHubProxySiteValidator(),
     )
 
     def loadSettingCards(self, settingPage: "SettingPage"):

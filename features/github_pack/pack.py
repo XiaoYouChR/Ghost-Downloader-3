@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.view.components.cards import UniversalResultCard, UniversalTaskCard
-from .config import githubConfig
+from .config import githubConfig, getSelectedProxySite
 
 if TYPE_CHECKING:
     from features.http_pack.task import HttpTask
@@ -51,7 +51,8 @@ def _isSupportedGitHubUrl(url: str) -> bool:
 
 
 def _buildProxyUrl(url: str) -> str:
-    return f"{githubConfig.proxySite.value.rstrip('/')}/{url.lstrip('/')}"
+    proxySite = getSelectedProxySite()
+    return f"{proxySite.rstrip('/')}/{url.lstrip('/')}"
 
 
 async def parse(payload: dict) -> HttpTask:
@@ -69,7 +70,7 @@ class GitHubPack(FeaturePack):
     config = githubConfig
 
     def canHandle(self, url: str) -> bool:
-        return self.config.enabled.value and _isSupportedGitHubUrl(url)
+        return self.config.enabled.value and bool(getSelectedProxySite()) and _isSupportedGitHubUrl(url)
 
     def canHandleTask(self, task: Task) -> bool:
         return _isSupportedGitHubUrl(task.url)
