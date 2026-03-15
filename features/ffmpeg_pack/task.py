@@ -1,12 +1,9 @@
 import asyncio
 import platform
-import shutil
 import sys
-import zipfile
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from time import perf_counter
 from typing import Any, TYPE_CHECKING
 
 import niquests
@@ -17,18 +14,17 @@ from app.bases.models import Task, TaskStage, TaskStatus
 from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
-from .config import (
-    ffmpegConfig,
-    resolveFFmpegExecutables,
-    setPreferredFFmpegExecutables,
-)
+from .config import ffmpegConfig, resolveFFmpegExecutables
 
 if TYPE_CHECKING:
     from features.http_pack.task import HttpTaskStage, HttpWorker
+    from features.extract_pack.task import ExtractStage, ExtractWorker
 else:
     try:
+        from extract_pack.task import ExtractStage, ExtractWorker
         from http_pack.task import HttpTaskStage, HttpWorker
     except ImportError:
+        from features.extract_pack.task import ExtractStage, ExtractWorker
         from features.http_pack.task import HttpTaskStage, HttpWorker
 
 
@@ -259,165 +255,6 @@ class FFmpegWorker(Worker):
                     logger.opt(exception=e).error("failed to cleanup temporary file {}", path)
 
 
-@dataclass
-class FFmpegExtractStage(TaskStage):
-    archivePath: str
-    installFolder: str
-    ffmpegPath: str
-    ffprobePath: str
-    cleanupArchive: bool = field(default=True)
-
-
-class FFmpegExtractWorker(Worker):
-    chunkSize = 1048576
-
-    def __init__(self, stage: FFmpegExtractStage):
-        super().__init__(stage)
-        self.stage = stage
-
-    def _removePath(self, path: Path):
-        if path.is_dir() and not path.is_symlink():
-            shutil.rmtree(path, ignore_errors=True)
-        else:
-            with suppress(FileNotFoundError):
-                path.unlink()
-
-    def _updateTaskFileSize(self, extractedSize: int):
-        task = getattr(self.stage, "_task", None)
-        if task is None:
-            return
-
-        archiveSize = int(getattr(task, "archiveSize", 0) or 0)
-        task.fileSize = max(archiveSize + extractedSize, archiveSize)
-
-    def _resolveExtractedRoot(self, tempDir: Path) -> Path:
-        children = list(tempDir.iterdir())
-        if len(children) == 1 and children[0].is_dir():
-            return children[0]
-        return tempDir
-
-    def _findExecutable(self, root: Path, name: str) -> Path | None:
-        directPath = root / "bin" / name
-        if directPath.is_file():
-            return directPath
-
-        for candidate in root.rglob(name):
-            if candidate.is_file():
-                return candidate
-
-        return None
-
-    async def _extractArchive(self, archivePath: Path, tempDir: Path, totalSize: int):
-        extractedBytes = 0
-        speedBytes = 0
-        speedTime = perf_counter()
-
-        with zipfile.ZipFile(archivePath) as archive:
-            infos = [info for info in archive.infolist() if not info.is_dir()]
-            for info in infos:
-                targetPath = tempDir / info.filename
-                targetPath.parent.mkdir(parents=True, exist_ok=True)
-
-                with archive.open(info, "r") as source, open(targetPath, "wb") as target:
-                    while True:
-                        chunk = source.read(self.chunkSize)
-                        if not chunk:
-                            break
-
-                        target.write(chunk)
-                        extractedBytes += len(chunk)
-                        self.stage.receivedBytes = extractedBytes
-                        if totalSize > 0:
-                            self.stage.progress = min(99.5, max(0.0, extractedBytes / totalSize * 100))
-
-                        now = perf_counter()
-                        if now - speedTime >= 0.5:
-                            self.stage.speed = int((extractedBytes - speedBytes) / (now - speedTime))
-                            speedBytes = extractedBytes
-                            speedTime = now
-                            await asyncio.sleep(0)
-
-    def _installExtractedFiles(self, extractedRoot: Path, installDir: Path, archiveName: str, tempDirName: str) -> tuple[str, str]:
-        for child in installDir.iterdir():
-            if child.name in {archiveName, tempDirName}:
-                continue
-            self._removePath(child)
-
-        for child in list(extractedRoot.iterdir()):
-            target = installDir / child.name
-            if target.exists():
-                self._removePath(target)
-            shutil.move(str(child), str(target))
-
-        ffmpegPath = self._findExecutable(installDir, _executableName("ffmpeg"))
-        ffprobePath = self._findExecutable(installDir, _executableName("ffprobe"))
-        if ffmpegPath is None or ffprobePath is None:
-            raise RuntimeError("安装包解压完成，但未找到 ffmpeg 或 ffprobe 可执行文件")
-
-        return _normalizePath(ffmpegPath), _normalizePath(ffprobePath)
-
-    async def run(self):
-        if sys.platform != "win32":
-            self.stage.setStatus(TaskStatus.FAILED)
-            raise RuntimeError("当前平台不支持 FFmpeg 一键安装")
-
-        archivePath = Path(self.stage.archivePath)
-        if not archivePath.is_file():
-            self.stage.setStatus(TaskStatus.FAILED)
-            raise FileNotFoundError(f"未找到 FFmpeg 安装包: {archivePath}")
-
-        installDir = Path(self.stage.installFolder)
-        tempDir = installDir / ".extracting"
-
-        try:
-            self.stage.progress = 0
-            self.stage.speed = 0
-            self.stage.receivedBytes = 0
-
-            installDir.mkdir(parents=True, exist_ok=True)
-            if tempDir.exists():
-                shutil.rmtree(tempDir, ignore_errors=True)
-            tempDir.mkdir(parents=True, exist_ok=True)
-
-            with zipfile.ZipFile(archivePath) as archive:
-                extractSize = sum(info.file_size for info in archive.infolist() if not info.is_dir())
-
-            self._updateTaskFileSize(extractSize)
-            await self._extractArchive(archivePath, tempDir, extractSize)
-
-            extractedRoot = self._resolveExtractedRoot(tempDir)
-            ffmpegPath, ffprobePath = self._installExtractedFiles(
-                extractedRoot,
-                installDir,
-                archivePath.name,
-                tempDir.name,
-            )
-
-            task = getattr(self.stage, "_task", None)
-            if task is not None:
-                task.ffmpegPath = ffmpegPath
-                task.ffprobePath = ffprobePath
-
-            cfg.set(ffmpegConfig.installFolder, _normalizePath(installDir))
-            setPreferredFFmpegExecutables(ffmpegPath, ffprobePath)
-
-            if self.stage.cleanupArchive and archivePath.exists():
-                archivePath.unlink()
-
-            self.stage.ffmpegPath = ffmpegPath
-            self.stage.ffprobePath = ffprobePath
-            self.stage.setStatus(TaskStatus.COMPLETED)
-        except asyncio.CancelledError:
-            self.stage.setStatus(TaskStatus.PAUSED)
-            raise
-        except Exception as e:
-            self.stage.setError(e)
-            raise
-        finally:
-            if tempDir.exists():
-                shutil.rmtree(tempDir, ignore_errors=True)
-
-
 @dataclass(kw_only=True)
 class FFmpegInstallTask(Task):
     url: str
@@ -443,17 +280,17 @@ class FFmpegInstallTask(Task):
         installDir = Path(self.installFolder)
         self.path = installDir
         self.archivePath = _normalizePath(installDir / self.assetName)
-        self.ffmpegPath = _normalizePath(installDir / "bin" / _executableName("ffmpeg"))
-        self.ffprobePath = _normalizePath(installDir / "bin" / _executableName("ffprobe"))
+        if not self.ffmpegPath:
+            self.ffmpegPath = _normalizePath(installDir / "bin" / _executableName("ffmpeg"))
+        if not self.ffprobePath:
+            self.ffprobePath = _normalizePath(installDir / "bin" / _executableName("ffprobe"))
 
         for stage in self.stages:
             if isinstance(stage, HttpTaskStage):
                 stage.resolvePath = self.archivePath
-            elif isinstance(stage, FFmpegExtractStage):
+            elif isinstance(stage, ExtractStage):
                 stage.archivePath = self.archivePath
                 stage.installFolder = _normalizePath(installDir)
-                stage.ffmpegPath = self.ffmpegPath
-                stage.ffprobePath = self.ffprobePath
 
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)
@@ -470,8 +307,10 @@ class FFmpegInstallTask(Task):
                     await HttpWorker(stage).run()
                     continue
 
-                if isinstance(stage, FFmpegExtractStage):
-                    await FFmpegExtractWorker(stage).run()
+                if isinstance(stage, ExtractStage):
+                    await ExtractWorker(stage).run()
+                    self.ffmpegPath = stage.extractedExecutables[_executableName("ffmpeg")]
+                    self.ffprobePath = stage.extractedExecutables[_executableName("ffprobe")]
                     continue
 
                 raise TypeError(f"不支持的 FFmpegInstallTaskStage: {type(stage).__name__}")
@@ -524,16 +363,15 @@ async def createWindowsInstallTask() -> FFmpegInstallTask:
     )
 
     downloadStage.stageIndex = 1
-    downloadStage.resolvePath = task.archivePath
-    extractStage = FFmpegExtractStage(
-        stageIndex=2,
-        archivePath=task.archivePath,
-        installFolder=task.installFolder,
-        ffmpegPath=task.ffmpegPath,
-        ffprobePath=task.ffprobePath,
-    )
-
     task.addStage(downloadStage)
-    task.addStage(extractStage)
+    task.addStage(
+        ExtractStage(
+            stageIndex=2,
+            archivePath="",
+            installFolder="",
+            executableNames=[_executableName("ffmpeg"), _executableName("ffprobe")],
+        )
+    )
+    task.syncStagePaths()
     setattr(task, "_featurePackName", "ffmpeg_pack")
     return task

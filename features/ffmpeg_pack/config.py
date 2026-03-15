@@ -8,7 +8,6 @@ from PySide6.QtCore import QStandardPaths, Qt, Signal
 from PySide6.QtWidgets import QFileDialog
 from qfluentwidgets import (
     ConfigItem,
-    ConfigValidator,
     FluentIcon,
     FolderValidator,
     SettingCard,
@@ -25,16 +24,6 @@ if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
 
 
-class ExecutablePathValidator(ConfigValidator):
-    def validate(self, value) -> bool:
-        return isinstance(value, str)
-
-    def correct(self, value) -> str:
-        if not isinstance(value, str):
-            return ""
-        return str(Path(value)).replace("\\", "/") if value else ""
-
-
 def _executableName(name: str) -> str:
     return f"{name}.exe" if sys.platform == "win32" else name
 
@@ -46,11 +35,7 @@ def _guessInstallRoot(ffmpegPath: str) -> str:
     return str(path.parent).replace("\\", "/")
 
 
-def _resolveExecutable(name: str, configuredPath: str) -> str:
-    path = Path(configuredPath)
-    if configuredPath and path.is_file():
-        return str(path).replace("\\", "/")
-
+def _resolveExecutable(name: str) -> str:
     installFolder = Path(ffmpegConfig.installFolder.value)
     for candidate in (installFolder / "bin" / _executableName(name), installFolder / _executableName(name)):
         if candidate.is_file():
@@ -61,14 +46,7 @@ def _resolveExecutable(name: str, configuredPath: str) -> str:
 
 
 def resolveFFmpegExecutables() -> tuple[str, str]:
-    ffmpegPath = _resolveExecutable("ffmpeg", ffmpegConfig.ffmpegPath.value)
-    ffprobePath = _resolveExecutable("ffprobe", ffmpegConfig.ffprobePath.value)
-    return ffmpegPath, ffprobePath
-
-
-def setPreferredFFmpegExecutables(ffmpegPath: str, ffprobePath: str):
-    cfg.set(ffmpegConfig.ffmpegPath, ffmpegPath)
-    cfg.set(ffmpegConfig.ffprobePath, ffprobePath)
+    return _resolveExecutable("ffmpeg"), _resolveExecutable("ffprobe")
 
 
 async def queryFFmpegRuntime() -> dict[str, str]:
@@ -121,9 +99,6 @@ class FFmpegInstallFolderCard(SettingCard):
 
     def _updatePath(self, path: str):
         cfg.set(ffmpegConfig.installFolder, path)
-        # 修改安装目录时，清空安装器写入的首选路径，重新回到目录/PATH 探测逻辑
-        cfg.set(ffmpegConfig.ffmpegPath, "")
-        cfg.set(ffmpegConfig.ffprobePath, "")
         self.setContent(ffmpegConfig.installFolder.value)
         self.pathChanged.emit(ffmpegConfig.installFolder.value)
 
@@ -197,8 +172,6 @@ class FFmpegRuntimeCard(SettingCard):
 
 class FFmpegConfig(PackConfig):
     installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)}/GhostDownloader/FFmpeg", FolderValidator())
-    ffmpegPath = ConfigItem("FFmpeg", "PreferredFFmpegPath", "", ExecutablePathValidator())
-    ffprobePath = ConfigItem("FFmpeg", "PreferredFFprobePath", "", ExecutablePathValidator())
 
     def loadSettingCards(self, settingPage: "SettingPage"):
         self.ffmpegGroup = SettingCardGroup(self.tr("FFmpeg"), settingPage.container)

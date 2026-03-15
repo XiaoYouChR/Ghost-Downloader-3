@@ -10,7 +10,6 @@ from qfluentwidgets import (
     BoolValidator,
     ComboBoxSettingCard,
     ConfigItem,
-    ConfigValidator,
     FluentIcon,
     FolderValidator,
     InfoBar,
@@ -42,16 +41,6 @@ except ImportError:
     from features.ffmpeg_pack.config import resolveFFmpegExecutables
 
 
-class ExecutablePathValidator(ConfigValidator):
-    def validate(self, value) -> bool:
-        return isinstance(value, str)
-
-    def correct(self, value) -> str:
-        if not isinstance(value, str):
-            return ""
-        return str(Path(value)).replace("\\", "/") if value else ""
-
-
 def _normalizePath(path: Path | str) -> str:
     return str(Path(path)).replace("\\", "/")
 
@@ -64,11 +53,7 @@ def _guessInstallRoot(downloaderPath: str) -> str:
     return _normalizePath(Path(downloaderPath).parent)
 
 
-def _resolveExecutable(configuredPath: str) -> str:
-    path = Path(configuredPath)
-    if configuredPath and path.is_file():
-        return _normalizePath(path)
-
+def _resolveExecutable() -> str:
     installFolder = Path(m3u8Config.installFolder.value)
     candidate = installFolder / _executableName("N_m3u8DL-RE")
     if candidate.is_file():
@@ -81,11 +66,7 @@ def _resolveExecutable(configuredPath: str) -> str:
 
 
 def resolveM3U8DownloaderExecutable() -> str:
-    return _resolveExecutable(m3u8Config.downloaderPath.value)
-
-
-def setPreferredM3U8Downloader(path: str):
-    cfg.set(m3u8Config.downloaderPath, path)
+    return _resolveExecutable()
 
 
 async def queryM3U8Runtime() -> dict[str, str]:
@@ -138,7 +119,6 @@ class M3U8InstallFolderCard(SettingCard):
 
     def _updatePath(self, path: str):
         cfg.set(m3u8Config.installFolder, path)
-        cfg.set(m3u8Config.downloaderPath, "")
         self.setContent(m3u8Config.installFolder.value)
         self.pathChanged.emit(m3u8Config.installFolder.value)
 
@@ -182,7 +162,7 @@ class M3U8RuntimeCard(SettingCard):
         ffmpegPath = str(runtimeInfo.get("ffmpegPath") or "").strip()
 
         if downloaderPath:
-            ffmpegText = self.tr("已检测到") if ffmpegPath else self.tr("未检测到，部分流可能无法自动混流")
+            ffmpegText = ffmpegPath if ffmpegPath else self.tr("未检测到，部分流可能无法自动混流")
             content = self.tr("版本: {0}\n安装路径: {1}\nFFmpeg: {2}").format(
                 version or self.tr("未知"),
                 installPath or downloaderPath,
@@ -218,7 +198,6 @@ class M3U8Config(PackConfig):
         f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)}/GhostDownloader/M3U8DL",
         FolderValidator(),
     )
-    downloaderPath = ConfigItem("M3U8", "PreferredRuntimePath", "", ExecutablePathValidator())
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))
     threadCount = RangeConfigItem("M3U8", "ThreadCount", 8, RangeValidator(1, 64))
     retryCount = RangeConfigItem("M3U8", "RetryCount", 3, RangeValidator(0, 20))

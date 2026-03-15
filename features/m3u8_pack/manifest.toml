@@ -1,3 +1,3 @@
 [pack]
 entry = "pack.py"
-dependencies = ["http_pack", "ffmpeg_pack"]
+dependencies = ["http_pack", "extract_pack", "ffmpeg_pack"]

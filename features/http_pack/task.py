@@ -378,6 +378,7 @@ class HttpWorker(Worker):
         self.client = niquests.AsyncSession(happy_eyeballs=True, pool_maxsize=256)
         self.client.trust_env = False
         shouldCleanupRecordFile = False
+        Path(self.stage.resolvePath).parent.mkdir(parents=True, exist_ok=True)
 
         restored = False
         if self.stage.fileSize != SpecialFileSize.NOT_SUPPORTED:
