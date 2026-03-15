@@ -8,7 +8,7 @@ dependencies = [
     "desktop-notifier>=6.2.0",
     "loguru>=0.7.3",
     "niquests[http3,socks,speedups]>=3.18.1",
-    "nuitka==4.0.4",
+    "nuitka==4.0.5",
     "pyside6>=6.10.2",
     "pyside6-fluent-widgets>=1.11.1",
     "qrcode[png]>=8.2",
