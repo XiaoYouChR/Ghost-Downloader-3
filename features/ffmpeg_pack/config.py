@@ -18,9 +18,7 @@ from qfluentwidgets import (
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
-from app.services.feature_service import featureService
 from app.supports.config import cfg
-from app.supports.recorder import taskRecorder
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
@@ -174,18 +172,15 @@ class FFmpegRuntimeCard(SettingCard):
             content = self.tr("未检测到可用的 ffmpeg 和 ffprobe")
         self.setContent(content)
 
-    async def _createInstallTask(self):
-        from .task import createWindowsInstallTask
-
-        return await createWindowsInstallTask()
-
     def _onInstallClicked(self):
         if sys.platform != "win32":
             return
 
+        from .task import createWindowsInstallTask
+
         self.installButton.setEnabled(False)
         self.installButton.setText(self.tr("准备中..."))
-        coreService.runCoroutine(self._createInstallTask(), self._onInstallTaskCreated)
+        coreService.runCoroutine(createWindowsInstallTask(), self._onInstallTaskCreated)
 
     def _onInstallTaskCreated(self, result, error: str | None):
         self.installButton.setEnabled(True)
@@ -197,10 +192,7 @@ class FFmpegRuntimeCard(SettingCard):
             InfoBar.error(self.tr("安装 FFmpeg 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
             return
 
-        task = result
-        setattr(task, "_featurePackName", "ffmpeg_pack")
-
-        mainWindow.addTask(task)
+        mainWindow.addTask(result)
 
 
 class FFmpegConfig(PackConfig):

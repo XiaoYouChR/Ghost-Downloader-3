@@ -6,6 +6,7 @@ import zipfile
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import perf_counter
 from typing import Any, TYPE_CHECKING
 
 import niquests
@@ -13,6 +14,7 @@ from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
+from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
 from .config import (
@@ -24,7 +26,10 @@ from .config import (
 if TYPE_CHECKING:
     from features.http_pack.task import HttpTaskStage, HttpWorker
 else:
-    from http_pack.task import HttpTaskStage, HttpWorker
+    try:
+        from http_pack.task import HttpTaskStage, HttpWorker
+    except ImportError:
+        from features.http_pack.task import HttpTaskStage, HttpWorker
 
 
 _FFMPEG_RELEASE_API = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest"
@@ -162,9 +167,6 @@ class FFmpegWorker(Worker):
 
         return self._parseDuration(stdout.decode("utf-8", errors="ignore").strip())
 
-    async def _probeVideoDuration(self, ffprobe: str) -> float:
-        return await self._probeDuration(ffprobe, self.stage.videoPath)
-
     async def _readProgress(self, stream: asyncio.StreamReader | None, totalDuration: float):
         if stream is None:
             return
@@ -201,7 +203,7 @@ class FFmpegWorker(Worker):
             self.stage.progress = 0
             self.stage.speed = 0
             self.stage.receivedBytes = 0
-            totalDuration = await self._probeVideoDuration(ffprobe)
+            totalDuration = await self._probeDuration(ffprobe, self.stage.videoPath)
             process = await asyncio.create_subprocess_exec(
                 ffmpeg,
                 "-y",
@@ -308,7 +310,7 @@ class FFmpegExtractWorker(Worker):
     async def _extractArchive(self, archivePath: Path, tempDir: Path, totalSize: int):
         extractedBytes = 0
         speedBytes = 0
-        speedTime = asyncio.get_running_loop().time()
+        speedTime = perf_counter()
 
         with zipfile.ZipFile(archivePath) as archive:
             infos = [info for info in archive.infolist() if not info.is_dir()]
@@ -328,7 +330,7 @@ class FFmpegExtractWorker(Worker):
                         if totalSize > 0:
                             self.stage.progress = min(99.5, max(0.0, extractedBytes / totalSize * 100))
 
-                        now = asyncio.get_running_loop().time()
+                        now = perf_counter()
                         if now - speedTime >= 0.5:
                             self.stage.speed = int((extractedBytes - speedBytes) / (now - speedTime))
                             speedBytes = extractedBytes
@@ -490,29 +492,39 @@ async def createWindowsInstallTask() -> FFmpegInstallTask:
     assetInfo = await _requestLatestReleaseAsset()
     _, archLabel = _detectWindowsTarget()
     installFolder = ffmpegConfig.installFolder.value
-    installPath = Path(installFolder)
+    downloadTask = await coreService._parseUrl(
+        {
+            "url": assetInfo["url"],
+            "headers": _FFMPEG_HEADERS.copy(),
+            "proxies": getProxies(),
+            "path": Path(installFolder),
+        }
+    )
+
+    if not downloadTask.stages:
+        raise RuntimeError("解析 FFmpeg 下载链接后未获取到下载阶段")
+
+    downloadStage = downloadTask.stages[0]
+    if not isinstance(downloadStage, HttpTaskStage):
+        raise TypeError(f"解析出的下载阶段类型无效: {type(downloadStage).__name__}")
+
+    archiveSize = downloadTask.fileSize if downloadTask.fileSize > 0 else assetInfo["size"]
+    assetName = downloadTask.title or str(assetInfo["name"])
 
     task = FFmpegInstallTask(
         title=f"FFmpeg 安装 ({archLabel})",
-        url=assetInfo["url"],
-        assetName=assetInfo["name"],
-        fileSize=assetInfo["size"],
-        headers=_FFMPEG_HEADERS.copy(),
-        proxies=getProxies(),
-        path=installPath,
+        url=downloadTask.url,
+        assetName=assetName,
+        fileSize=archiveSize,
+        headers=downloadTask.headers.copy(),
+        proxies=downloadTask.proxies,
+        blockNum=downloadTask.blockNum,
         installFolder=installFolder,
-        archiveSize=assetInfo["size"],
+        archiveSize=archiveSize,
     )
 
-    downloadStage = HttpTaskStage(
-        stageIndex=1,
-        url=task.url,
-        fileSize=assetInfo["size"],
-        headers=task.headers.copy(),
-        proxies=task.proxies,
-        resolvePath=task.archivePath,
-        blockNum=task.blockNum,
-    )
+    downloadStage.stageIndex = 1
+    downloadStage.resolvePath = task.archivePath
     extractStage = FFmpegExtractStage(
         stageIndex=2,
         archivePath=task.archivePath,
@@ -523,5 +535,5 @@ async def createWindowsInstallTask() -> FFmpegInstallTask:
 
     task.addStage(downloadStage)
     task.addStage(extractStage)
-    task.syncStagePaths()
+    setattr(task, "_featurePackName", "ffmpeg_pack")
     return task
