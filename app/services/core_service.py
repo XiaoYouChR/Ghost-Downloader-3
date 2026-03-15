@@ -129,6 +129,8 @@ class CoreService(QThread):
                 callback = self._pendingCallbacks.pop(callbackId)
                 self._executeCallback(callback, result, None)
 
+            return result
+
         except Exception as e:
             logger.opt(exception=e).error("解析 URL 失败")
 
