@@ -27,6 +27,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.view.components.editors import AutoSizingEdit
 from app.view.components.setting_cards import SpinBoxSettingCard
 from .trackers import fetchWebTrackers, formatTrackers, normalizeTrackerSource, parseTrackerText
 
@@ -75,11 +76,11 @@ async def refreshConfiguredWebTrackers(sourceUrl: str | None = None) -> list[str
 class WebTrackerDialog(MessageBoxBase):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.widget.setMinimumSize(720, 560)
+        self.widget.setMinimumWidth(720)
         self.sourceLabel = BodyLabel(self.tr("Tracker 源地址"), self.widget)
         self.sourceEdit = LineEdit(self.widget)
         self.trackersLabel = BodyLabel(self.tr("当前 Tracker 列表"), self.widget)
-        self.trackersEdit = PlainTextEdit(self.widget)
+        self.trackersEdit = AutoSizingEdit(self.widget)
         self.refreshButton = PrimaryPushButton(self.tr("从源刷新"), self.widget)
 
         self.yesButton.setText(self.tr("保存"))
@@ -134,7 +135,7 @@ class WebTrackerCard(SettingCard):
         super().__init__(
             FluentIcon.GLOBE,
             self.tr("Web Tracker"),
-            "",
+            self.tr("来源: {0}\n当前缓存: {1} 条 Tracker"),
             parent,
         )
         self.manageButton = PrimaryPushButton(self.tr("管理"), self)

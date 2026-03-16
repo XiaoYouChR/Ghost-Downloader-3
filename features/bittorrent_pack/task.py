@@ -7,7 +7,8 @@ from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from tempfile import gettempdir
 from typing import Any
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import unquote, urlparse, urlsplit
+from urllib.request import url2pathname
 
 import libtorrent as lt
 import niquests
@@ -15,10 +16,12 @@ from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
-from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
 from app.supports.utils import getProxies
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .trackers import mergeTrackers
+
+BITTORRENT_USER_AGENT = f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}"
 
 
 def _storageMode(mode: str) -> int:
@@ -34,6 +37,24 @@ def _sanitizeName(name: str) -> str:
 
 def _normalizeTorrentPath(path: str) -> str:
     return str(PurePosixPath(str(path).replace("\\", "/")))
+
+
+def resolveLocalTorrentPath(source: str) -> Path | None:
+    text = str(source).strip()
+    if not text:
+        return None
+
+    parsed = urlparse(text)
+    if parsed.scheme.lower() == "file":
+        location = f"//{parsed.netloc}{parsed.path}" if parsed.netloc else parsed.path
+        path = Path(url2pathname(unquote(location))).expanduser()
+        return path if path.suffix.lower() == ".torrent" else None
+
+    if "://" in text or parsed.scheme.lower() == "magnet":
+        return None
+
+    path = Path(text).expanduser()
+    return path if path.suffix.lower() == ".torrent" else None
 
 
 def _encodeBytes(data: bytes) -> str:
@@ -101,7 +122,7 @@ def _sessionSettings(
     proxies: dict | None,
 ) -> dict[str, Any]:
     settings = {
-        "user_agent": DEFAULT_HEADERS["user-agent"],
+        "user_agent": BITTORRENT_USER_AGENT,
         "listen_interfaces": f"0.0.0.0:{listenPort}",
         "connections_limit": connectionsLimit,
         "download_rate_limit": downloadRateLimit,
@@ -264,14 +285,13 @@ class BitTorrentFile:
 @dataclass
 class BitTorrentTaskStage(TaskStage):
     resolvePath: str
-    stateText: str = field(default="")
-    peerCount: int = field(default=0)
-    seedCount: int = field(default=0)
-    downloadRate: int = field(default=0)
-    uploadRate: int = field(default=0)
-    shareRatioPercent: float = field(default=0)
-    seedingTimeSeconds: int = field(default=0)
-    isSeeding: bool = field(default=False)
+
+    def __post_init__(self):
+        self.stateText = ""
+        self.peerCount = 0
+        self.seedCount = 0
+        self.downloadRate = 0
+        self.uploadRate = 0
 
     def reset(self, notifyTask: bool = True):
         super().reset(notifyTask=notifyTask)
@@ -280,9 +300,6 @@ class BitTorrentTaskStage(TaskStage):
         self.seedCount = 0
         self.downloadRate = 0
         self.uploadRate = 0
-        self.shareRatioPercent = 0
-        self.seedingTimeSeconds = 0
-        self.isSeeding = False
 
 
 @dataclass
@@ -305,13 +322,16 @@ class BitTorrentTask(Task):
     storageMode: str = field(default_factory=lambda: bittorrentConfig.storageMode.value)
     seedRatioLimitPercent: int = field(default_factory=lambda: bittorrentConfig.seedRatioLimitPercent.value)
     seedTimeLimitMinutes: int = field(default_factory=lambda: bittorrentConfig.seedTimeLimitMinutes.value)
-    fileSelectionVersion: int = field(default=0)
+    shareRatioPercent: float = field(default=0)
+    seedingTimeSeconds: int = field(default=0)
+    isSeeding: bool = field(default=False)
 
     def __post_init__(self):
         self.files = [
             item if isinstance(item, BitTorrentFile) else BitTorrentFile(**item)
             for item in self.files
         ]
+        self.fileSelectionVersion = 0
         self.title = _sanitizeName(self.title)
         super().__post_init__()
         self._recalculateSelection()
@@ -322,8 +342,8 @@ class BitTorrentTask(Task):
         return str(self.path / self.title)
 
     @property
-    def stage(self) -> BitTorrentTaskStage | None:
-        return self.stages[0] if self.stages else None
+    def stage(self) -> BitTorrentTaskStage:
+        return self.stages[0]
 
     @property
     def selectedFileCount(self) -> int:
@@ -342,8 +362,7 @@ class BitTorrentTask(Task):
         return self.selectedFileCount < self.totalFileCount
 
     def syncStagePaths(self):
-        if self.stage is not None:
-            self.stage.resolvePath = self.resolvePath
+        self.stage.resolvePath = self.resolvePath
 
     def mappedRelativePath(self, file: BitTorrentFile) -> str:
         if self.isSingleFileTorrent:
@@ -382,21 +401,20 @@ class BitTorrentTask(Task):
         self._recalculateSelection()
 
     def reopenForAdditionalFiles(self) -> bool:
-        stage = self.stage
-        if stage is None or stage.status != TaskStatus.COMPLETED:
+        if self.stage.status != TaskStatus.COMPLETED:
             return False
 
         if not any(file.selected and not file.completed for file in self.files):
             return False
 
-        stage.isSeeding = False
-        stage.stateText = "已添加新的下载文件"
-        stage.setStatus(TaskStatus.PAUSED)
-        stage.receivedBytes = sum(file.downloadedBytes for file in self.files if file.selected)
+        self.isSeeding = False
+        self.stage.stateText = "已添加新的下载文件"
+        self.stage.setStatus(TaskStatus.PAUSED)
+        self.stage.receivedBytes = sum(file.downloadedBytes for file in self.files if file.selected)
         if self.fileSize > 0:
-            stage.progress = stage.receivedBytes / self.fileSize * 100
+            self.stage.progress = self.stage.receivedBytes / self.fileSize * 100
         else:
-            stage.progress = 0
+            self.stage.progress = 0
         return True
 
     def updateFileProgress(self, progresses: list[int]):
@@ -418,32 +436,31 @@ class BitTorrentTask(Task):
     def reset(self) -> TaskStatus:
         result = super().reset()
         self.resumeData = ""
+        self.shareRatioPercent = 0
+        self.seedingTimeSeconds = 0
+        self.isSeeding = False
         for file in self.files:
             file.downloadedBytes = 0
             file.completed = False
         return result
 
     def occupiesDownloadSlot(self) -> bool:
-        return self.status == TaskStatus.RUNNING and not self.stage.isSeeding
+        return self.status == TaskStatus.RUNNING and not self.isSeeding
 
     def willOccupyDownloadSlotWhenStarted(self) -> bool:
-        return not self.stage.isSeeding
+        return not self.isSeeding
 
     async def run(self):
-        stage = self.stage
-        if stage is None:
-            return
-
         try:
-            if self.status != TaskStatus.RUNNING or stage.status == TaskStatus.COMPLETED:
+            if self.status != TaskStatus.RUNNING or self.stage.status == TaskStatus.COMPLETED:
                 return
-            await BitTorrentWorker(stage).run()
+            await BitTorrentWorker(self.stage).run()
         except asyncio.CancelledError:
             logger.info(f"{self.title} 停止下载")
             raise
         except Exception as e:
-            if not stage.error:
-                stage.setError(e)
+            if not self.stage.error:
+                self.stage.setError(e)
             logger.opt(exception=e).error("{} 下载失败", self.title)
             raise
 
@@ -459,6 +476,8 @@ class BitTorrentWorker(Worker):
         self.session: lt.session | None = None
         self.handle: lt.torrent_handle | None = None
         self._appliedSelectionVersion = -1
+        self._seedingTimeBaseSeconds = self.task.seedingTimeSeconds
+        self._sessionSeedingStartSeconds: int | None = None
 
     def _applyTaskParams(self, params: lt.add_torrent_params):
         params.save_path = str(self.task.path)
@@ -524,17 +543,32 @@ class BitTorrentWorker(Worker):
         return mapping.get(status.state.name, status.state.name)
 
     def _syncFromStatus(self, status: lt.torrent_status):
-        wasSeeding = self.stage.isSeeding
+        wasSeeding = self.task.isSeeding
         totalWanted = int(status.total_wanted)
         totalWantedDone = int(status.total_wanted_done)
+        isSeeding = bool(status.is_seeding)
+        sessionSeedingSeconds = _seedingSeconds(status)
         self.stage.stateText = self._stateText(status)
         self.stage.peerCount = int(status.num_peers)
         self.stage.seedCount = int(status.num_seeds)
-        self.stage.isSeeding = bool(status.is_seeding)
+        self.task.isSeeding = isSeeding
         self.stage.downloadRate = int(status.download_rate)
         self.stage.uploadRate = int(status.upload_rate)
-        self.stage.shareRatioPercent = _shareRatioPercent(status)
-        self.stage.seedingTimeSeconds = _seedingSeconds(status)
+        self.task.shareRatioPercent = _shareRatioPercent(status)
+        if isSeeding:
+            if not wasSeeding:
+                self._seedingTimeBaseSeconds = self.task.seedingTimeSeconds
+                self._sessionSeedingStartSeconds = sessionSeedingSeconds
+            elif self._sessionSeedingStartSeconds is None:
+                self._sessionSeedingStartSeconds = sessionSeedingSeconds
+
+            self.task.seedingTimeSeconds = self._seedingTimeBaseSeconds + max(
+                0,
+                sessionSeedingSeconds - self._sessionSeedingStartSeconds,
+            )
+        elif wasSeeding:
+            self._seedingTimeBaseSeconds = self.task.seedingTimeSeconds
+            self._sessionSeedingStartSeconds = None
         self.stage.speed = self.stage.downloadRate
         self.stage.receivedBytes = totalWantedDone
 
@@ -546,7 +580,7 @@ class BitTorrentWorker(Worker):
         else:
             self.stage.progress = 0
 
-        if wasSeeding != self.stage.isSeeding:
+        if wasSeeding != self.task.isSeeding:
             from app.services.core_service import coreService
 
             coreService.notifyTaskSchedulingChanged()
@@ -561,17 +595,17 @@ class BitTorrentWorker(Worker):
         self.task.updateFileProgress(progresses)
 
     def _seedPauseReason(self) -> str:
-        if not self.stage.isSeeding:
+        if not self.task.isSeeding:
             return ""
 
         ratioLimit = self.task.seedRatioLimitPercent
-        if ratioLimit > 0 and self.stage.shareRatioPercent >= ratioLimit:
-            return "分享率达到 {0:.2f}% / {1}%".format(self.stage.shareRatioPercent, ratioLimit)
+        if ratioLimit > 0 and self.task.shareRatioPercent >= ratioLimit:
+            return "分享率达到 {0:.2f}% / {1}%".format(self.task.shareRatioPercent, ratioLimit)
 
         timeLimitMinutes = self.task.seedTimeLimitMinutes
-        if timeLimitMinutes > 0 and self.stage.seedingTimeSeconds >= timeLimitMinutes * 60:
+        if timeLimitMinutes > 0 and self.task.seedingTimeSeconds >= timeLimitMinutes * 60:
             return "做种时间达到 {0} / {1} 分钟".format(
-                round(self.stage.seedingTimeSeconds / 60),
+                round(self.task.seedingTimeSeconds / 60),
                 timeLimitMinutes,
             )
 
@@ -681,7 +715,7 @@ class BitTorrentWorker(Worker):
                 if pauseReason:
                     logger.info("{} 自动暂停做种: {}", self.task.title, pauseReason)
                     self.task.resumeData = await self._saveResumeData()
-                    self.stage.isSeeding = False
+                    self.task.isSeeding = False
                     self.stage.stateText = "已自动暂停做种"
                     self.stage.setStatus(TaskStatus.COMPLETED)
                     self.stage.progress = 100
@@ -691,7 +725,7 @@ class BitTorrentWorker(Worker):
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             self.task.resumeData = await asyncio.shield(self._saveResumeData())
-            wasSeeding = self.stage.isSeeding
+            wasSeeding = self.task.isSeeding
             self.stage.stateText = "已暂停做种" if wasSeeding else "已暂停下载"
             self.stage.setStatus(TaskStatus.PAUSED)
             raise
@@ -727,6 +761,13 @@ async def _fetchTorrentBytes(payload: dict) -> bytes:
             response.close()
     finally:
         await client.close()
+
+
+def _readLocalTorrentBytes(source: str) -> bytes:
+    torrentPath = resolveLocalTorrentPath(source)
+    if torrentPath is None:
+        raise ValueError("不是有效的本地 .torrent 文件路径")
+    return torrentPath.resolve().read_bytes()
 
 
 async def _resolveMagnetMetadata(payload: dict) -> tuple[lt.torrent_info, list[str], bytes]:
@@ -843,6 +884,7 @@ def buildTaskFromTorrentInfo(
         url=sourceUrl,
         fileSize=sum(entry.size for entry in entries),
         path=Path(payload.get("path", cfg.downloadFolder.value)),
+        stages=[BitTorrentTaskStage(stageIndex=1, resolvePath="")],
         sourceType=sourceType,
         torrentData=_encodeBytes(torrentBytes),
         trackers=trackers or _extractTrackers(ti),
@@ -861,12 +903,27 @@ def buildTaskFromTorrentInfo(
         seedRatioLimitPercent=bittorrentConfig.seedRatioLimitPercent.value,
         seedTimeLimitMinutes=bittorrentConfig.seedTimeLimitMinutes.value,
     )
-    task.addStage(BitTorrentTaskStage(stageIndex=1, resolvePath=task.resolvePath))
     return task
 
 
 async def parse(payload: dict) -> BitTorrentTask:
     url = str(payload["url"]).strip()
+    localTorrentPath = resolveLocalTorrentPath(url)
+    if localTorrentPath is not None:
+        torrentBytes, webTrackers = await asyncio.gather(
+            asyncio.to_thread(_readLocalTorrentBytes, url),
+            _resolveAdditionalTrackers(),
+        )
+        ti = lt.torrent_info(torrentBytes)
+        return buildTaskFromTorrentInfo(
+            ti,
+            payload=payload,
+            sourceType="torrent",
+            sourceUrl=str(localTorrentPath.resolve()),
+            torrentBytes=torrentBytes,
+            trackers=mergeTrackers(_extractTrackers(ti), webTrackers),
+        )
+
     parsedUrl = urlparse(url)
 
     if parsedUrl.scheme.lower() == "magnet":

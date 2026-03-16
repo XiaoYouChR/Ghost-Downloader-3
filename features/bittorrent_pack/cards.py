@@ -5,22 +5,26 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHeaderView,
     QHBoxLayout,
-    QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 from qfluentwidgets import (
+    Action,
     BodyLabel,
     CaptionLabel,
+    DropDownPushButton,
     FluentIcon,
     ImageLabel,
     InfoBar,
     MessageBoxBase,
     PrimaryPushButton,
     PushButton,
+    RoundMenu,
     StrongBodyLabel,
     ToolButton,
+    SubtitleLabel,
+    TreeWidget
 )
 
 from app.bases.models import TaskStatus
@@ -29,6 +33,41 @@ from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.labels import IconBodyLabel
 
 from .task import BitTorrentFile, BitTorrentTask
+
+_TORRENT_FILE_TYPE_RULES = (
+    ("video", "视频", FluentIcon.VIDEO, {
+        ".avi", ".flv", ".m2ts", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".rmvb", ".ts", ".webm", ".wmv",
+    }),
+    ("audio", "音频", FluentIcon.MUSIC, {
+        ".aac", ".ape", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".wma",
+    }),
+    ("image", "图片", FluentIcon.PHOTO, {
+        ".avif", ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".tif", ".tiff", ".webp",
+    }),
+    ("subtitle", "字幕", FluentIcon.CHAT, {
+        ".ass", ".idx", ".lrc", ".psb", ".smi", ".srt", ".ssa", ".sub", ".sup", ".vtt",
+    }),
+    ("document", "文档", FluentIcon.DOCUMENT, {
+        ".chm", ".csv", ".doc", ".docx", ".epub", ".md", ".nfo", ".odt", ".pdf", ".ppt", ".pptx", ".rtf",
+        ".txt", ".xls", ".xlsx",
+    }),
+    ("archive", "压缩包", FluentIcon.ZIP_FOLDER, {
+        ".001", ".7z", ".bz2", ".cab", ".gz", ".iso", ".rar", ".tar", ".tbz2", ".tgz", ".xz", ".zip", ".zst",
+        ".tar.bz2", ".tar.gz", ".tar.xz", ".tar.zst",
+    }),
+    ("application", "程序", FluentIcon.APPLICATION, {
+        ".apk", ".appimage", ".bat", ".com", ".deb", ".dmg", ".exe", ".iso", ".jar", ".msi", ".pkg", ".rpm", ".sh",
+    }),
+)
+
+_TORRENT_FILE_TYPE_META = {
+    key: (label, icon)
+    for key, label, icon, _ in _TORRENT_FILE_TYPE_RULES
+}
+_TORRENT_FILE_TYPE_SUFFIXES = {
+    key: suffixes
+    for key, _, _, suffixes in _TORRENT_FILE_TYPE_RULES
+}
 
 
 def _removePath(path: Path):
@@ -52,10 +91,25 @@ def _openFileSelection(task: BitTorrentTask, parent) -> set[int] | None:
         dialog.deleteLater()
 
 
-def _setIcon(label: IconBodyLabel, icon: FluentIcon):
-    label.icon = icon
-    label.cachedIconKey = label.preCacheIcon()
-    label.update()
+def _torrentFileSuffix(path: str) -> str:
+    suffixes = [suffix.lower() for suffix in PurePosixPath(path).suffixes]
+    if not suffixes:
+        return ""
+
+    if len(suffixes) > 1:
+        combined = "".join(suffixes[-2:])
+        if combined in _TORRENT_FILE_TYPE_SUFFIXES["archive"]:
+            return combined
+
+    return suffixes[-1]
+
+
+def _torrentFileType(path: str) -> str:
+    suffix = _torrentFileSuffix(path)
+    for key, _, _, suffixes in _TORRENT_FILE_TYPE_RULES:
+        if suffix in suffixes:
+            return key
+    return "other"
 
 
 class TorrentFileSelectDialog(MessageBoxBase):
@@ -66,13 +120,16 @@ class TorrentFileSelectDialog(MessageBoxBase):
         self._updatingChecks = False
 
         self.widget.setMinimumSize(720, 520)
-        self.titleLabel = StrongBodyLabel(self.tr("选择下载文件"), self.widget)
-        self.summaryLabel = CaptionLabel("", self.widget)
-        self.treeWidget = QTreeWidget(self.widget)
+        self.titleLabel = SubtitleLabel(self.tr("选择下载文件"), self.widget)
+        self.summaryLabel = BodyLabel("", self.widget)
+        self.treeWidget = TreeWidget(self.widget)
         self.actionsWidget = QWidget(self.widget)
         self.actionsLayout = QHBoxLayout(self.actionsWidget)
-        self.selectAllButton = PushButton(self.tr("全选"), self.actionsWidget)
+        self.selectAllButton = PrimaryPushButton(self.tr("全选"), self.actionsWidget)
         self.clearButton = PushButton(self.tr("全不选"), self.actionsWidget)
+        self.invertButton = PushButton(self.tr("反选"), self.actionsWidget)
+        self.selectByTypeButton = DropDownPushButton(self.tr("按类型选择"), self.actionsWidget)
+        self.selectByTypeMenu = RoundMenu(parent=self)
 
         self.yesButton.setText(self.tr("应用"))
         self.cancelButton.setText(self.tr("取消"))
@@ -92,10 +149,14 @@ class TorrentFileSelectDialog(MessageBoxBase):
         self.actionsLayout.setSpacing(8)
         self.actionsLayout.addWidget(self.selectAllButton)
         self.actionsLayout.addWidget(self.clearButton)
+        self.actionsLayout.addWidget(self.invertButton)
+        self.actionsLayout.addWidget(self.selectByTypeButton)
         self.actionsLayout.addStretch(1)
 
         self.selectAllButton.clicked.connect(self._selectAll)
         self.clearButton.clicked.connect(self._clearAll)
+        self.invertButton.clicked.connect(self._invertSelection)
+        self._initTypeMenu()
 
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.summaryLabel)
@@ -135,6 +196,23 @@ class TorrentFileSelectDialog(MessageBoxBase):
         finally:
             self._updatingChecks = False
 
+    def _initTypeMenu(self):
+        for typeKey, count in self._availableFileTypes().items():
+            label, icon = _TORRENT_FILE_TYPE_META.get(typeKey, (self.tr("其他"), FluentIcon.FOLDER))
+            action = Action(icon, self.tr("仅选{0} ({1})").format(self.tr(label), count), self)
+            action.triggered.connect(lambda _, key=typeKey: self._selectOnlyFileType(key))
+            self.selectByTypeMenu.addAction(action)
+
+        self.selectByTypeButton.setMenu(self.selectByTypeMenu)
+        self.selectByTypeButton.setEnabled(bool(self.selectByTypeMenu.actions()))
+
+    def _availableFileTypes(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for file in self.task.files:
+            typeKey = _torrentFileType(file.path)
+            counts[typeKey] = counts.get(typeKey, 0) + 1
+        return counts
+
     def _refreshParentCheckStates(self):
         root = self.treeWidget.invisibleRootItem()
         for i in range(root.childCount()):
@@ -169,6 +247,17 @@ class TorrentFileSelectDialog(MessageBoxBase):
             if item.checkState(0) == Qt.CheckState.Checked
         }
 
+    def _setSelectedIndexes(self, selectedIndexes: set[int]):
+        self._updatingChecks = True
+        try:
+            for item, file in self._itemToFile.items():
+                state = Qt.CheckState.Checked if file.index in selectedIndexes else Qt.CheckState.Unchecked
+                item.setCheckState(0, state)
+            self._refreshParentCheckStates()
+            self._updateSummary()
+        finally:
+            self._updatingChecks = False
+
     def _updateSummary(self):
         selectedIndexes = self._collectSelectedIndexes()
         selectedFiles = [file for file in self.task.files if file.index in selectedIndexes]
@@ -196,23 +285,31 @@ class TorrentFileSelectDialog(MessageBoxBase):
             self._updatingChecks = False
 
     def _setRootCheckState(self, state: Qt.CheckState):
-        self._updatingChecks = True
-        try:
-            root = self.treeWidget.invisibleRootItem()
-            for i in range(root.childCount()):
-                item = root.child(i)
-                item.setCheckState(0, state)
-                self._setChildrenState(item, state)
-            self._refreshParentCheckStates()
-            self._updateSummary()
-        finally:
-            self._updatingChecks = False
+        if state == Qt.CheckState.Checked:
+            self._setSelectedIndexes({file.index for file in self.task.files})
+            return
+        self._setSelectedIndexes(set())
 
     def _selectAll(self):
         self._setRootCheckState(Qt.CheckState.Checked)
 
     def _clearAll(self):
         self._setRootCheckState(Qt.CheckState.Unchecked)
+
+    def _invertSelection(self):
+        currentSelected = self._collectSelectedIndexes()
+        self._setSelectedIndexes({
+            file.index
+            for file in self.task.files
+            if file.index not in currentSelected
+        })
+
+    def _selectOnlyFileType(self, typeKey: str):
+        self._setSelectedIndexes({
+            file.index
+            for file in self.task.files
+            if _torrentFileType(file.path) == typeKey
+        })
 
     def validate(self) -> bool:
         if self._collectSelectedIndexes():
@@ -293,56 +390,60 @@ class BitTorrentResultCard(ResultCard):
 
 class BitTorrentTaskCard(UniversalTaskCard):
     def __init__(self, task: BitTorrentTask, parent=None):
-        self.metaInfoLabel = None
-        self.selectFilesButton = None
         super().__init__(task, parent)
         self.task: BitTorrentTask = task
-        _setIcon(self.speedLabel, FluentIcon.DOWNLOAD)
-        _setIcon(self.leftTimeLabel, FluentIcon.SHARE)
+        self.speedLabel.setIcon(FluentIcon.DOWNLOAD)
+        self.uploadRateLabel = IconBodyLabel("", FluentIcon.SHARE, self)
+        self.infoLayout.insertWidget(self.infoLayout.indexOf(self.leftTimeLabel), self.uploadRateLabel)
         self.metaInfoLabel = IconBodyLabel("", FluentIcon.INFO, self)
-        self.infoLayout.insertWidget(self.infoLayout.count() - 2, self.metaInfoLabel)
+        self.infoLayout.insertWidget(self.infoLayout.indexOf(self.infoLabel), self.metaInfoLabel)
         self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
-        self.hBoxLayout.insertWidget(self.hBoxLayout.count() - 3, self.selectFilesButton)
+        self.hBoxLayout.insertWidget(self.hBoxLayout.indexOf(self.verifyHashButton), self.selectFilesButton)
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
         self._refreshInfoLayout()
 
     def _metaText(self) -> str:
-        stage = self.task.stage
-        if stage is None:
-            return ""
-
         parts: list[str] = []
-        if stage.stateText and stage.stateText not in {"下载中", "做种中"}:
-            parts.append(stage.stateText)
-        if stage.isSeeding and stage.shareRatioPercent > 0:
-            parts.append(self.tr("分享率 {0:.2f}%").format(stage.shareRatioPercent))
-        if stage.isSeeding and stage.seedingTimeSeconds > 0:
-            parts.append(self.tr("做种 {0}").format(getReadableTime(stage.seedingTimeSeconds)))
-        if stage.peerCount or stage.seedCount:
+        if self.task.stage.stateText and self.task.stage.stateText not in {"下载中", "做种中"}:
+            parts.append(self.task.stage.stateText)
+        if self.task.isSeeding and self.task.shareRatioPercent > 0:
+            parts.append(self.tr("分享率 {0:.2f}%").format(self.task.shareRatioPercent))
+        if self.task.isSeeding and self.task.seedingTimeSeconds > 0:
+            parts.append(self.tr("做种 {0}").format(getReadableTime(self.task.seedingTimeSeconds)))
+        if self.task.stage.peerCount or self.task.stage.seedCount:
             parts.append(
                 self.tr("Peers {0} / Seeds {1}").format(
-                    stage.peerCount,
-                    stage.seedCount,
+                    self.task.stage.peerCount,
+                    self.task.stage.seedCount,
                 )
             )
         return " · ".join(parts)
 
     def _refreshInfoLayout(self):
-        stage = self.task.stage
-        if self.task.status == TaskStatus.RUNNING and stage is not None:
-            self.speedLabel.setText(f"{getReadableSize(stage.downloadRate)}/s")
-            self.leftTimeLabel.setText(f"{getReadableSize(stage.uploadRate)}/s")
+        if self.task.status == TaskStatus.RUNNING:
+            self.speedLabel.setText(f"{getReadableSize(self.task.stage.downloadRate)}/s")
+            self.uploadRateLabel.setText(f"{getReadableSize(self.task.stage.uploadRate)}/s")
+            if self.task.isSeeding:
+                self.leftTimeLabel.hide()
+            elif self.task.fileSize > 0 and self.task.stage.downloadRate > 0:
+                remainingBytes = self.task.fileSize - self.task.stage.receivedBytes
+                self.leftTimeLabel.setText(getReadableTime(int(remainingBytes / self.task.stage.downloadRate)))
+                self.leftTimeLabel.show()
+            else:
+                self.leftTimeLabel.setText("--")
+                self.leftTimeLabel.show()
             metaText = self._metaText()
             self.metaInfoLabel.setText(metaText)
             self.metaInfoLabel.setVisible(bool(metaText))
             self.speedLabel.show()
-            self.leftTimeLabel.show()
+            self.uploadRateLabel.show()
             self.progressLabel.show()
             if not metaText:
                 self.metaInfoLabel.hide()
             self.infoLabel.hide()
             return
 
+        self.uploadRateLabel.hide()
         self.metaInfoLabel.hide()
 
     def _onSelectFilesClicked(self):
@@ -358,6 +459,7 @@ class BitTorrentTaskCard(UniversalTaskCard):
     def refresh(self):
         super().refresh()
         self._refreshInfoLayout()
+        self.progressBar.setVisible(self.task.status != TaskStatus.COMPLETED and not self.task.isSeeding)
         self.verifyHashButton.setVisible(
             self.task.isSingleFileTorrent
             and self.task.status == TaskStatus.COMPLETED

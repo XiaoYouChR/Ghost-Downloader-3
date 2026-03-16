@@ -14,10 +14,14 @@ class IconBodyLabel(BodyLabel):
         super().__init__(parent)
         self.size = size
         self.setText(text)
-        self.icon = icon
         self.setContentsMargins(size + 4, 0, 0, 2)  # 给 Icon 和 Text 之间留出 4px 的间距
         self.setMinimumHeight(size)
+        self.setIcon(icon)
+
+    def setIcon(self, icon: "FluentIconBase"):
+        self.icon = icon
         self.cachedIconKey = self.preCacheIcon()
+        self.update()
 
     def preCacheIcon(self):
         """预缓存图标并返回缓存键"""

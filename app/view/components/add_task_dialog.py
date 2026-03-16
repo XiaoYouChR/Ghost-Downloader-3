@@ -3,9 +3,9 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Self
 
-from PySide6.QtCore import QEvent, Qt, QPoint, QTimer, Signal, QSize
+from PySide6.QtCore import QEvent, Qt, QPoint, QTimer, Signal
 from PySide6.QtGui import QTextOption
-from PySide6.QtWidgets import QDialog, QFileDialog, QSizePolicy
+from PySide6.QtWidgets import QDialog, QFileDialog
 from loguru import logger
 from qfluentwidgets import (
     MessageBoxBase,
@@ -13,7 +13,6 @@ from qfluentwidgets import (
     LineEdit,
     Action,
     FluentIcon,
-    PlainTextEdit,
     InfoBar,
     InfoBarPosition,
 )
@@ -28,6 +27,7 @@ from app.view.components.card_widgets import (
     ParseSettingHeaderCardWidget,
 )
 from app.view.components.cards import ParseSettingCard, ResultCard
+from app.view.components.editors import AutoSizingEdit
 
 
 class SelectFolderCard(ParseSettingCard):
@@ -74,44 +74,6 @@ class _LineParseState:
 @dataclass
 class _AcceptedPendingParse:
     payload: dict[str, Any]
-
-
-class AutoSizingEdit(PlainTextEdit):
-    def __init__(self, parent=None, minimumVisibleLines: int = 5):
-        super().__init__(parent)
-        self._minimumVisibleLines = minimumVisibleLines
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-        self.document().blockCountChanged.connect(self.updateGeometry)
-
-    def _lineHeight(self) -> int:
-        return self.fontMetrics().lineSpacing()
-
-    def _editorChromeHeight(self) -> int:
-        margins = self.contentsMargins()
-        viewportMargins = self.viewportMargins()
-        documentMargin = round(self.document().documentMargin() * 2)
-        return (
-            margins.top()
-            + margins.bottom()
-            + viewportMargins.top()
-            + viewportMargins.bottom()
-            + self.frameWidth() * 2
-            + documentMargin
-        )
-
-    def _sizeHintForLineCount(self, lineCount: int) -> QSize:
-        size = super().sizeHint()
-        height = self._editorChromeHeight() + self._lineHeight() * lineCount
-        return QSize(size.width(), height)
-
-    def minimumSizeHint(self) -> QSize:
-        return self._sizeHintForLineCount(min(self._minimumVisibleLines, self.document().blockCount()))
-
-    def maximumSizeHint(self) -> QSize:
-        return self._sizeHintForLineCount(self.document().blockCount())
-
-    def sizeHint(self) -> QSize:
-        return self.maximumSizeHint().expandedTo(self.minimumSizeHint())
 
 
 class AddTaskDialog(MessageBoxBase):

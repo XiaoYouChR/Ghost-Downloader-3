@@ -4,10 +4,13 @@ from app.bases.interfaces import FeaturePack
 
 from .cards import BitTorrentResultCard, BitTorrentTaskCard
 from .config import bittorrentConfig
-from .task import BitTorrentTask, parse
+from .task import BitTorrentTask, parse, resolveLocalTorrentPath
 
 
 def _isTorrentUrl(url: str) -> bool:
+    if resolveLocalTorrentPath(url) is not None:
+        return True
+
     parsedUrl = urlparse(url)
     scheme = parsedUrl.scheme.lower()
     if scheme == "magnet":
