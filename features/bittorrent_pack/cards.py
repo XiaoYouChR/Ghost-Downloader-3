@@ -1,13 +1,13 @@
 import shutil
 from pathlib import Path, PurePosixPath
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QFileInfo
 from PySide6.QtWidgets import (
     QHeaderView,
     QHBoxLayout,
     QTreeWidgetItem,
     QVBoxLayout,
-    QWidget,
+    QWidget, QFileIconProvider,
 )
 from qfluentwidgets import (
     Action,
@@ -15,7 +15,7 @@ from qfluentwidgets import (
     CaptionLabel,
     DropDownPushButton,
     FluentIcon,
-    ImageLabel,
+    IconWidget,
     InfoBar,
     MessageBoxBase,
     PrimaryPushButton,
@@ -168,6 +168,7 @@ class TorrentFileSelectDialog(MessageBoxBase):
     def _buildTree(self):
         folderItems: dict[tuple[str, ...], QTreeWidgetItem] = {}
         self._updatingChecks = True
+        provider = QFileIconProvider()
         try:
             for file in self.task.files:
                 path = PurePosixPath(self.task.mappedRelativePath(file))
@@ -183,12 +184,15 @@ class TorrentFileSelectDialog(MessageBoxBase):
                         item = QTreeWidgetItem(parent, [part, ""])
                         item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsAutoTristate)
                         item.setCheckState(0, Qt.CheckState.Unchecked)
+                        item.setIcon(0, provider.icon(QFileIconProvider.IconType.Folder))
                         folderItems[key] = item
                     parent = item
 
-                item = QTreeWidgetItem(parent, [parts[-1], getReadableSize(file.size)])
+                name = parts[-1]
+                item = QTreeWidgetItem(parent, [name, getReadableSize(file.size)])
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 item.setCheckState(0, Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
+                item.setIcon(0, provider.icon(QFileInfo(name)))
                 self._itemToFile[item] = file
 
             self.treeWidget.expandAll()
@@ -333,7 +337,7 @@ class BitTorrentResultCard(ResultCard):
 
         self.mainLayout = QHBoxLayout(self)
         self.textLayout = QVBoxLayout()
-        self.iconLabel = ImageLabel(self)
+        self.iconLabel = IconWidget(self)
         self.titleLabel = StrongBodyLabel(self.task.title, self)
         self.sourceLabel = CaptionLabel(self._sourceText(), self)
         self.summaryLabel = BodyLabel("", self)
@@ -344,10 +348,10 @@ class BitTorrentResultCard(ResultCard):
         self._refreshSummary()
 
     def _initWidget(self):
-        self.setFixedHeight(56)
-        self.iconLabel.setFixedSize(18, 18)
-        icon = FluentIcon.DOCUMENT if self.task.isSingleFileTorrent else FluentIcon.FOLDER
-        self.iconLabel.setImage(icon.icon().pixmap(18, 18))
+        self.setFixedHeight(45)
+        self.iconLabel.setFixedSize(20, 20)
+        icon = QFileIconProvider.IconType.File if self.task.isSingleFileTorrent else QFileIconProvider.IconType.Folder
+        self.iconLabel.setIcon(QFileIconProvider().icon(icon))
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
     def _initLayout(self):
@@ -357,7 +361,7 @@ class BitTorrentResultCard(ResultCard):
         self.textLayout.setSpacing(2)
         self.textLayout.addWidget(self.titleLabel)
         self.textLayout.addWidget(self.sourceLabel)
-        self.mainLayout.addWidget(self.iconLabel, 0, Qt.AlignmentFlag.AlignTop)
+        self.mainLayout.addWidget(self.iconLabel, 0, Qt.AlignmentFlag.AlignCenter)
         self.mainLayout.addLayout(self.textLayout)
         self.mainLayout.addStretch(1)
         self.mainLayout.addWidget(self.summaryLabel)
