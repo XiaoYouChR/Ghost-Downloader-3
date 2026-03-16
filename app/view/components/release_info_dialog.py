@@ -21,7 +21,7 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.sponsorButton = ToolButton(FluentIcon.HEART, self)
         # content components
         self.descriptionEdit = TextEdit(self)
-        self.tableView = None
+        self.tableView = TableWidget(self)
 
         if deleteOnClose:
             self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
@@ -76,7 +76,6 @@ class ReleaseInfoDialog(MessageBoxBase):
         if not assets:
             return
 
-        self.tableView = TableWidget(self)
         self.tableView.setObjectName(u"tableView")
         self.tableView.setFixedHeight(150)
 
