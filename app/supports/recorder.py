@@ -11,22 +11,24 @@ class TaskRecorder:
 
     def __init__(self):
         appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
-        recordFile = Path(f"{appLocalDataLocation}/GhostDownloader/Memory.log")
-        if not recordFile.exists():
-            recordFile.parent.mkdir(parents=True, exist_ok=True)
-            recordFile.touch()
+        self.recordFile = Path(f"{appLocalDataLocation}/GhostDownloader/Memory.log")
+        if not self.recordFile.exists():
+            self.recordFile.parent.mkdir(parents=True, exist_ok=True)
+            self.recordFile.touch()
 
-        self.fileHandle = open(recordFile, "r+", encoding="utf-8")
-        self.fileHandle.seek(0)
         self.memorizedTasks: dict[str, Task] = {}
+        self._loaded = False
 
     def load(self):
         self.memorizedTasks = self.read()
+        self._loaded = True
 
     def read(self) -> dict[str, Task]:
         tasks: dict[str, Task] = {}
-        self.fileHandle.seek(0)
-        for line in self.fileHandle.readlines():
+        with open(self.recordFile, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        for line in lines:
             line = line.strip()
             if not line:
                 continue
@@ -54,17 +56,21 @@ class TaskRecorder:
             self.flush()
 
     def flush(self):
-        self.fileHandle.seek(0)
-        self.fileHandle.truncate()
+        if not self._loaded:
+            logger.warning("skip flush because task recorder has not been loaded")
+            return
+
+        lines: list[str] = []
         for task in self.memorizedTasks.values():
             try:
-                self.fileHandle.write(task.serialize().decode("utf-8") + "\n")
+                lines.append(task.serialize().decode("utf-8") + "\n")
             except Exception as e:
                 logger.opt(exception=e).error("failed to write task {}", task.taskId)
-        self.fileHandle.flush()
 
-    def __del__(self):
-        self.flush()
-        self.fileHandle.close()
+        tempFile = self.recordFile.with_name(self.recordFile.name + ".tmp")
+        with open(tempFile, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+
+        tempFile.replace(self.recordFile)
 
 taskRecorder = TaskRecorder()
