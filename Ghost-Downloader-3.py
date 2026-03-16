@@ -11,7 +11,7 @@ from app.supports.config import cfg
 # import orjson
 # sys.modules['json'] = orjson
 
-appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
+appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
 qconfig.load(f"{appLocalDataLocation}/GhostDownloader/UserConfig.json", cfg)
 
 if cfg.get(cfg.dpiScale) != 0:

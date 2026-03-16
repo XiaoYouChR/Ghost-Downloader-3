@@ -16,7 +16,7 @@ class SingletonApplication(QApplication):
         super().__init__(argv)
         self.key = key
 
-        appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
+        appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
         logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
         logger.info(
             f"Ghost Downloader v{VERSION} is Launched at {strftime('%Y-%m-%d %H:%M:%S', localtime(time()))}")

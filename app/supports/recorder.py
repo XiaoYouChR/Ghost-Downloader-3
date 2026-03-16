@@ -10,7 +10,7 @@ from app.bases.models import Task
 class TaskRecorder:
 
     def __init__(self):
-        appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)
+        appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
         recordFile = Path(f"{appLocalDataLocation}/GhostDownloader/Memory.log")
         if not recordFile.exists():
             recordFile.parent.mkdir(parents=True, exist_ok=True)

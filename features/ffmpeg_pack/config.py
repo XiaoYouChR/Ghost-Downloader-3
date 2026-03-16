@@ -108,7 +108,7 @@ class FFmpegInstallFolderCard(SettingCard):
             self._updatePath(folder)
 
     def _restoreDefault(self):
-        self._updatePath(f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)}/GhostDownloader/FFmpeg")
+        self._updatePath(f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg")
 
 
 class FFmpegRuntimeCard(SettingCard):
@@ -171,7 +171,7 @@ class FFmpegRuntimeCard(SettingCard):
 
 
 class FFmpegConfig(PackConfig):
-    installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)}/GhostDownloader/FFmpeg", FolderValidator())
+    installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg", FolderValidator())
 
     def loadSettingCards(self, settingPage: "SettingPage"):
         self.ffmpegGroup = SettingCardGroup(self.tr("FFmpeg"), settingPage.container)

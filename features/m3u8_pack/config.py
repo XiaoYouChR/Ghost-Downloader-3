@@ -128,7 +128,7 @@ class M3U8InstallFolderCard(SettingCard):
             self._updatePath(folder)
 
     def _restoreDefault(self):
-        defaultPath = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)}/GhostDownloader/M3U8DL"
+        defaultPath = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/M3U8DL"
         self._updatePath(defaultPath)
 
 
@@ -195,7 +195,7 @@ class M3U8Config(PackConfig):
     installFolder = ConfigItem(
         "M3U8",
         "InstallFolder",
-        f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation)}/GhostDownloader/M3U8DL",
+        f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/M3U8DL",
         FolderValidator(),
     )
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))
