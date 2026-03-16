@@ -16,7 +16,7 @@ class TaskRecorder:
             recordFile.parent.mkdir(parents=True, exist_ok=True)
             recordFile.touch()
 
-        self.fileHandle = open(recordFile, "a+", encoding="utf-8")
+        self.fileHandle = open(recordFile, "r+", encoding="utf-8")
         self.fileHandle.seek(0)
         self.memorizedTasks: dict[str, Task] = {}
 
