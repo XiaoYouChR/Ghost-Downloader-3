@@ -50,21 +50,6 @@ jobs:
           del version.txt
           python deploy.py
 
-      - name: Copy FeaturePacks
-        shell: pwsh
-        run: |
-          $targetRoot = "dist/Ghost-Downloader-3.dist/features"
-          New-Item -ItemType Directory -Force -Path $targetRoot | Out-Null
-
-          foreach ($pack in @("http_pack", "bili_pack", "ffmpeg_pack")) {
-            $source = Join-Path "features" $pack
-            $target = Join-Path $targetRoot $pack
-            if (Test-Path $target) {
-              Remove-Item -Recurse -Force $target
-            }
-            Copy-Item -Recurse -Force $source $target
-          }
-
       - name: Prepare For Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         run: |
