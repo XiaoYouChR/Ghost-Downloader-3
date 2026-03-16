@@ -26,7 +26,7 @@ class TaskRecorder:
     def read(self) -> dict[str, Task]:
         tasks: dict[str, Task] = {}
         self.fileHandle.seek(0)
-        for line in self.fileHandle:
+        for line in self.fileHandle.readlines():
             line = line.strip()
             if not line:
                 continue
@@ -52,13 +52,6 @@ class TaskRecorder:
         del self.memorizedTasks[task.taskId]
         if flush:
             self.flush()
-
-    # 其实根本不用 Override, status 也能发生改变
-    # def override(self, task: Task):
-    #     if task.taskId not in self.memorizedTasks:
-    #         raise ValueError(f"task {task.taskId} does not exist")
-    #     self.memorizedTasks[task.taskId] = task
-    #     self.flush()
 
     def flush(self):
         self.fileHandle.seek(0)
