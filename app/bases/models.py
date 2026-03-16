@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import asdict, dataclass, field, fields as dataclass_fields, is_dataclass
 from enum import auto, IntEnum
 from pathlib import Path
 from time import time_ns
@@ -30,6 +30,11 @@ def _toSerializable(obj: Any) -> Any:
     if isinstance(obj, dict):
         return {k: _toSerializable(v) for k, v in obj.items()}
     return obj
+
+
+def _filterDataclassKwargs(cls: type, obj: dict[str, Any]) -> dict[str, Any]:
+    allowed = {field.name for field in dataclass_fields(cls) if field.init}
+    return {key: value for key, value in obj.items() if key in allowed}
 
 
 class TaskStatus(IntEnum):
@@ -119,7 +124,7 @@ class TaskStage:
         if "path" in obj and isinstance(obj["path"], str):
             obj["path"] = Path(obj["path"])
 
-        return stageCls(**obj)
+        return stageCls(**_filterDataclassKwargs(stageCls, obj))
 
 
 @dataclass(kw_only=True)
@@ -245,12 +250,18 @@ class Task:
             stages.append(TaskStage.deserialize(raw))
         obj["stages"] = stages
 
-        return targetCls(**obj)
+        return targetCls(**_filterDataclassKwargs(targetCls, obj))
 
     def applyPayloadToTask(self, payload: dict[str, Any]):
         path = payload.get("path")
         if isinstance(path, (str, Path)):
             self.path = Path(path)
+
+    def occupiesDownloadSlot(self) -> bool:
+        return self.status == TaskStatus.RUNNING
+
+    def willOccupyDownloadSlotWhenStarted(self) -> bool:
+        return True
 
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)

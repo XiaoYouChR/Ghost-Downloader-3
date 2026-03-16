@@ -146,8 +146,17 @@ class CoreService(QThread):
 
         return callbackId
 
+    def _downloadSlotTaskIds(self) -> list[str]:
+        taskIds: list[str] = []
+        for taskId in self.runningTasks:
+            task = self.getTaskById(taskId)
+            if task is None or not task.occupiesDownloadSlot():
+                continue
+            taskIds.append(taskId)
+        return taskIds
+
     def _runningTaskCount(self) -> int:
-        return sum(1 for task in self.tasks if task.status == TaskStatus.RUNNING)
+        return len(self._downloadSlotTaskIds())
 
     def _removeWaitingTask(self, task: Task):
         self.waitingTasks = [queuedTask for queuedTask in self.waitingTasks if queuedTask.taskId != task.taskId]
@@ -165,6 +174,9 @@ class CoreService(QThread):
     def _syncTaskLimitSoon(self):
         if self.loop.is_running():
             self.loop.call_soon_threadsafe(lambda: self.loop.create_task(self._syncTaskLimit()))
+
+    def notifyTaskSchedulingChanged(self):
+        self._syncTaskLimitSoon()
 
     def _scheduleWaitingTasks(self):
         while self.waitingTasks and self._runningTaskCount() < cfg.maxTaskNum.value:
@@ -192,10 +204,7 @@ class CoreService(QThread):
             self._enqueueTask(task)
 
     async def _syncTaskLimit(self):
-        runningTaskIds = [
-            taskId for taskId in self.runningTasks
-            if (task := self.getTaskById(taskId)) and task.status == TaskStatus.RUNNING
-        ]
+        runningTaskIds = self._downloadSlotTaskIds()
         overflowTaskIds = runningTaskIds[cfg.maxTaskNum.value:]
 
         for taskId in overflowTaskIds:
@@ -218,7 +227,7 @@ class CoreService(QThread):
         if task.taskId in self.runningTasks:
             return
 
-        if self._runningTaskCount() >= cfg.maxTaskNum.value:
+        if task.willOccupyDownloadSlotWhenStarted() and self._runningTaskCount() >= cfg.maxTaskNum.value:
             self._enqueueTask(task)
             return
 
