@@ -6,7 +6,7 @@ from pathlib import Path
 from time import sleep
 from typing import Callable
 
-from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt
+from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from qfluentwidgets import MessageBox
@@ -17,15 +17,17 @@ from app.supports.config import cfg
 def openFolder(path):
     path = Path(path)
     if path.exists():
-        folder, file = path.parent, path.name
+        folder = str(path.parent)
+        target = str(path)
         match sys.platform:
             case 'win32':
-                os.system(f'explorer.exe /select, "{path}"')
+                QProcess.startDetached("explorer.exe", ["/select,", target])
             case 'linux':
-                os.system(f'xdg-open "{folder}"')
+                QProcess.startDetached("xdg-open", [folder])
             case 'darwin':
-                os.system(f'open -R "{path}"')
-
+                QProcess.startDetached("open", ["-R", target])
+    elif path.parent.exists():
+        QDesktopServices.openUrl(QUrl.fromLocalFile(path.parent))
     else:
         raise FileNotFoundError(path)
 
