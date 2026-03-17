@@ -603,7 +603,7 @@ class BilibiliLoginSettingCard(SettingCard):
     def __init__(self, userCookieItem: ConfigItem, parent=None):
         super().__init__(
             FluentIcon.VIEW,
-            "账号登录",
+            self.tr("账号登录"),
             "状态：未登录 用户名：- UID：- 会员状态：未开通",
             parent,
         )
@@ -619,9 +619,9 @@ class BilibiliLoginSettingCard(SettingCard):
         self.operationLayout.setContentsMargins(0, 0, 0, 0)
         self.operationLayout.setSpacing(8)
 
-        self.scanLoginButton = PrimaryPushButton("扫码登录", self.operationWidget)
-        self.editCookieButton = PushButton("手动设置 Cookie", self.operationWidget)
-        self.logoutButton = PushButton("退出登录", self.operationWidget)
+        self.scanLoginButton = PrimaryPushButton(self.tr("扫码登录"), self.operationWidget)
+        self.editCookieButton = PushButton(self.tr("手动设置 Cookie"), self.operationWidget)
+        self.logoutButton = PushButton(self.tr("退出登录"), self.operationWidget)
 
         self.operationLayout.addWidget(self.scanLoginButton)
         self.operationLayout.addWidget(self.editCookieButton)
@@ -782,13 +782,13 @@ class BilibiliConfig(PackConfig):
     userCookie = ConfigItem("Download", "UserCookie", "", CookieValidator())
 
     def loadSettingCards(self, settingPage: "SettingPage"):
-        self.parseBilibiliGroup = SettingCardGroup("哔哩哔哩视频下载", settingPage.container)
+        self.parseBilibiliGroup = SettingCardGroup(self.tr("哔哩哔哩视频下载"), settingPage.container)
 
         self.defaultQualityCard = ComboBoxSettingCard(
             self.defaultQuality,
             FluentIcon.VIDEO,
-            "默认清晰度",
-            "下载视频时默认的清晰度",
+            self.tr("默认清晰度"),
+            self.tr("下载视频时默认的清晰度"),
             ["8K", "4K", "1080P60", "1080P+", "1080P", "720P60", "720P", "480P", "360P"],
             self.parseBilibiliGroup,
         )
@@ -796,24 +796,24 @@ class BilibiliConfig(PackConfig):
         self.alternativeQualityCard = ComboBoxSettingCard(
             self.alternativeQuality,
             FluentIcon.VIDEO,
-            "备选清晰度",
-            "下载视频时备选的清晰度",
-            ["可以下载的最高画质", "可以下载的最低画质"],
+            self.tr("备选清晰度"),
+            self.tr("下载视频时备选的清晰度"),
+            [self.tr("可以下载的最高画质"), self.tr("可以下载的最低画质")],
             self.parseBilibiliGroup,
         )
 
         self.parseHDRCard = SwitchSettingCard(
             FluentIcon.VIDEO,
-            "HDR",
-            "下载 HDR 视频",
+            self.tr("HDR"),
+            self.tr("下载 HDR 视频"),
             self.parseHDR,
             self.parseBilibiliGroup,
         )
 
         self.parseDolbyCard = SwitchSettingCard(
             FluentIcon.VIDEO,
-            "杜比视界",
-            "下载杜比视界视频",
+            self.tr("杜比视界"),
+            self.tr("下载杜比视界视频"),
             self.parseDolby,
             self.parseBilibiliGroup,
         )
