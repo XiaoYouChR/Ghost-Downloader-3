@@ -1,20 +1,16 @@
 name: Sync Crowdin
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "app/**/*.py"
-      - "features/**/*.py"
-      - "app/assets/i18n/*.ts"
-      - "app/assets/resources.qrc"
-      - "sync_i18n_res.py"
-      - "crowdin.yml"
-      - ".github/workflows/crowdin.yml"
   workflow_dispatch:
-  schedule:
-    - cron: "17 3 * * *"
+    inputs:
+      operation:
+        description: "Choose which Crowdin sync operation to run"
+        required: true
+        default: push
+        type: choice
+        options:
+          - push
+          - pull
 
 permissions:
   contents: write
@@ -30,7 +26,7 @@ env:
 jobs:
   push-to-crowdin:
     name: Push sources to Crowdin
-    if: github.event_name == 'push'
+    if: github.event.inputs.operation == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -71,7 +67,7 @@ jobs:
 
   pull-from-crowdin:
     name: Pull translations from Crowdin
-    if: github.event_name != 'push'
+    if: github.event.inputs.operation == 'pull'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
