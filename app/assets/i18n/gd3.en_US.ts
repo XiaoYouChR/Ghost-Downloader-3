@@ -54,57 +54,57 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="785"/>
         <source>哔哩哔哩视频下载</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilibili Video Download</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="790"/>
         <source>默认清晰度</source>
-        <translation type="unfinished"></translation>
+        <translation>Default Quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="791"/>
         <source>下载视频时默认的清晰度</source>
-        <translation type="unfinished"></translation>
+        <translation>Default video quality for downloads</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="799"/>
         <source>备选清晰度</source>
-        <translation type="unfinished"></translation>
+        <translation>Fallback Quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="800"/>
         <source>下载视频时备选的清晰度</source>
-        <translation type="unfinished"></translation>
+        <translation>Fallback video quality for downloads</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="801"/>
         <source>可以下载的最高画质</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximum Downloadable Quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="801"/>
         <source>可以下载的最低画质</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimum Downloadable Quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="807"/>
         <source>HDR</source>
-        <translation type="unfinished"></translation>
+        <translation>HDR</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="808"/>
         <source>下载 HDR 视频</source>
-        <translation type="unfinished"></translation>
+        <translation>Download HDR Videos</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="815"/>
         <source>杜比视界</source>
-        <translation type="unfinished"></translation>
+        <translation>Dolby Vision</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="816"/>
         <source>下载杜比视界视频</source>
-        <translation type="unfinished"></translation>
+        <translation>Download Dolby Vision Videos</translation>
     </message>
 </context>
 <context>
@@ -112,22 +112,22 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="606"/>
         <source>账号登录</source>
-        <translation type="unfinished"></translation>
+        <translation>Account Login</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="622"/>
         <source>扫码登录</source>
-        <translation type="unfinished">QR Code Login</translation>
+        <translation>QR Code Login</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="623"/>
         <source>手动设置 Cookie</source>
-        <translation type="unfinished"></translation>
+        <translation>Manual Cookie Setup</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="624"/>
         <source>退出登录</source>
-        <translation type="unfinished"></translation>
+        <translation>Logout</translation>
     </message>
 </context>
 <context>
@@ -135,73 +135,73 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="227"/>
         <source>BitTorrent 下载</source>
-        <translation type="unfinished"></translation>
+        <translation>BitTorrent Download</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="230"/>
         <source>监听端口</source>
-        <translation type="unfinished"></translation>
+        <translation>Listen Port</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="231"/>
         <source>0 表示交给系统自动分配可用端口</source>
-        <translation type="unfinished"></translation>
+        <translation>0 means let system auto-assign available ports</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="239"/>
         <source>元数据超时</source>
-        <translation type="unfinished"></translation>
+        <translation>Metadata Timeout</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="240"/>
         <source>解析 magnet 链接时等待元数据的最长时间</source>
-        <translation type="unfinished"></translation>
+        <translation>Max time to wait for metadata when parsing magnet links</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="249"/>
         <source>连接数上限</source>
-        <translation type="unfinished"></translation>
+        <translation>Connection Limit</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="250"/>
         <source>单个 BT 任务对应 session 的最大连接数</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximum connections per BT task session</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="255"/>
         <source>下载限速</source>
-        <translation type="unfinished">Download Speed Limit</translation>
+        <translation>Download Speed Limit</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="256"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="266"/>
         <source>0 表示不限速，单位为 session 级别的 KB/s</source>
-        <translation type="unfinished"></translation>
+        <translation>0 for unlimited, unit is KB/s at session level</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="265"/>
         <source>上传限速</source>
-        <translation type="unfinished"></translation>
+        <translation>Upload Speed Limit</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="275"/>
         <source>自动暂停做种分享率</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto Pause Seeding Share Ratio</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="276"/>
         <source>下载完成后继续做种；0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
-        <translation type="unfinished"></translation>
+        <translation>Continue seeding after download. 0 to never pause by ratio, 100% means ratio 1.0</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="284"/>
         <source>自动暂停做种时长</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto Pause Seeding Duration</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="285"/>
         <source>下载完成后继续做种；0 表示不按做种时长自动暂停</source>
-        <translation type="unfinished"></translation>
+        <translation>Continue seeding after download. 0 to never pause by duration</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="294"/>
@@ -211,16 +211,16 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="295"/>
         <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
-        <source>稀疏分配</source>
-        <translation type="unfinished"></translation>
+        <translation>Sparse allocation saves disk writes, pre-allocation exposes space issues early</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
         <source>预分配</source>
+        <translation>Pre-allocation</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
+        <source>稀疏分配</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -231,67 +231,67 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="302"/>
         <source>按文件顺序下载内容，适合边下边看但通常会影响整体效率</source>
-        <translation type="unfinished"></translation>
+        <translation>Download files sequentially for streaming, may affect overall efficiency</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="308"/>
         <source>启用 DHT</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable DHT</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="309"/>
         <source>允许通过 DHT 网络发现 peers</source>
-        <translation type="unfinished"></translation>
+        <translation>Allow peer discovery via DHT network</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="315"/>
         <source>启用 LSD</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable LSD</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="316"/>
         <source>在局域网中广播并发现同一 torrent 的 peers</source>
-        <translation type="unfinished"></translation>
+        <translation>Broadcast and discover peers on local network for the same torrent</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="322"/>
         <source>启用 UPnP</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable UPnP</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="323"/>
         <source>允许自动尝试映射路由器端口</source>
-        <translation type="unfinished"></translation>
+        <translation>Allow automatic router port mapping attempts</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="329"/>
         <source>启用 NAT-PMP</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable NAT-PMP</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="330"/>
         <source>允许自动尝试通过 NAT-PMP 映射端口</source>
-        <translation type="unfinished"></translation>
+        <translation>Allow automatic port mapping via NAT-PMP</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="336"/>
         <source>启用 Web Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable Web Tracker</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="337"/>
         <source>把配置好的额外 Trackers 合并到新建 BT 任务中</source>
-        <translation type="unfinished"></translation>
+        <translation>Merge configured extra Trackers into new BT tasks</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="343"/>
         <source>新建任务时刷新 Web Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh Web Tracker when creating new tasks</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="344"/>
         <source>创建新的 BT 任务时，先从源地址拉取最新 Tracker；失败时回退到缓存</source>
-        <translation type="unfinished"></translation>
+        <translation>When creating new BT tasks, fetch latest Trackers from source first; fallback to cache on failure</translation>
     </message>
 </context>
 <context>
@@ -299,17 +299,17 @@
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="344"/>
         <source>选择文件</source>
-        <translation type="unfinished">Select File</translation>
+        <translation>Select File</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="375"/>
         <source>{0} · {1} 个 Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>{0} · {1} Trackers</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="380"/>
         <source>{0}/{1} 个文件 · {2}</source>
-        <translation type="unfinished"></translation>
+        <translation>{0}/{1} Files · {2}</translation>
     </message>
 </context>
 <context>
@@ -317,17 +317,17 @@
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="414"/>
         <source>分享率 {0:.2f}%</source>
-        <translation type="unfinished"></translation>
+        <translation>Share Ratio {0:.2f}%</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="416"/>
         <source>做种 {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>Seeding {0}</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="419"/>
         <source>Peers {0} / Seeds {1}</source>
-        <translation type="unfinished"></translation>
+        <translation>Peers {0} / Seeds {1}</translation>
     </message>
 </context>
 <context>
@@ -571,22 +571,22 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="119"/>
         <source>GitHub 加速用户协议</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHub Acceleration User Agreement</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="131"/>
         <source>同意并启用</source>
-        <translation type="unfinished"></translation>
+        <translation>Agree and Enable</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="132"/>
         <source>取消</source>
-        <translation type="unfinished">Cancel</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="134"/>
         <source>关闭</source>
-        <translation type="unfinished">Close</translation>
+        <translation>Close</translation>
     </message>
 </context>
 <context>
@@ -594,22 +594,22 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="294"/>
         <source>GitHub 加速</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHub Acceleration</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="297"/>
         <source>启用 GitHub 加速</source>
-        <translation type="unfinished"></translation>
+        <translation>Enable GitHub Acceleration</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="298"/>
         <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto-rewrite GitHub file links to selected reverse proxy</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="303"/>
         <source>查看协议</source>
-        <translation type="unfinished"></translation>
+        <translation>View Agreement</translation>
     </message>
 </context>
 <context>
@@ -617,17 +617,17 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="183"/>
         <source>代理站</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxy Site</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="184"/>
         <source>选择 GitHub 反向代理站，延迟仅供参考</source>
-        <translation type="unfinished"></translation>
+        <translation>Select GitHub reverse proxy site, latency is for reference only</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="202"/>
         <source>刷新延迟</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh Latency</translation>
     </message>
 </context>
 <context>
@@ -669,127 +669,127 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="215"/>
         <source>流媒体下载</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream Download</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="221"/>
         <source>输出容器</source>
-        <translation type="unfinished"></translation>
+        <translation>Output Container</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="222"/>
         <source>下载完成后优先使用 ffmpeg 混流为指定容器</source>
-        <translation type="unfinished"></translation>
+        <translation>After download, prioritize ffmpeg remuxing to specified container</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="229"/>
         <source>分片线程数</source>
-        <translation type="unfinished"></translation>
+        <translation>Chunk Threads</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="230"/>
         <source>传给 N_m3u8DL-RE 的下载线程数</source>
-        <translation type="unfinished"></translation>
+        <translation>Download threads for N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="236"/>
         <source>分片重试次数</source>
-        <translation type="unfinished"></translation>
+        <translation>Chunk Retry Attempts</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="237"/>
         <source>单个分片下载失败时的最大重试次数</source>
-        <translation type="unfinished"></translation>
+        <translation>Max retry attempts for failed chunks</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="242"/>
         <source>请求超时</source>
-        <translation type="unfinished"></translation>
+        <translation>Request Timeout</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="243"/>
         <source>HTTP 请求超时时间</source>
-        <translation type="unfinished"></translation>
+        <translation>HTTP request timeout</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="251"/>
         <source>自动选择最佳轨道</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto Select Best Track</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="252"/>
         <source>默认选择最佳音视频轨道，避免每个链接都手动挑选</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto select best audio/video track to avoid manual selection</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="258"/>
         <source>并发下载音视频</source>
-        <translation type="unfinished"></translation>
+        <translation>Concurrent Audio/Video Download</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="259"/>
         <source>同时下载已选择的音频、视频和字幕轨道</source>
-        <translation type="unfinished"></translation>
+        <translation>Simultaneously download selected audio, video and subtitle tracks</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="265"/>
         <source>追加 URL 参数</source>
-        <translation type="unfinished"></translation>
+        <translation>Append URL Parameters</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="266"/>
         <source>把输入链接上的 Query 参数追加到分片请求</source>
-        <translation type="unfinished"></translation>
+        <translation>Append query parameters from input URL to chunk requests</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="272"/>
         <source>二进制合并</source>
-        <translation type="unfinished"></translation>
+        <translation>Binary Merge</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="273"/>
         <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
-        <translation type="unfinished"></translation>
+        <translation>Let N_m3u8DL-RE merge chunks in binary mode</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="279"/>
         <source>校验分片数量</source>
-        <translation type="unfinished"></translation>
+        <translation>Verify Chunk Count</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="280"/>
         <source>下载完成后检查实际分片数是否与预期一致</source>
-        <translation type="unfinished"></translation>
+        <translation>After download, verify actual chunk count matches expected</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="286"/>
         <source>直播实时合并</source>
-        <translation type="unfinished"></translation>
+        <translation>Live Real-time Merge</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="287"/>
         <source>录制直播流时边下边合并</source>
-        <translation type="unfinished"></translation>
+        <translation>Real-time merging while recording live streams</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="293"/>
         <source>直播保留分片</source>
-        <translation type="unfinished"></translation>
+        <translation>Keep Live Chunks</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="294"/>
         <source>实时合并直播时仍保留原始分片</source>
-        <translation type="unfinished"></translation>
+        <translation>Keep original chunks when real-time merging live</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="300"/>
         <source>直播管道混流</source>
-        <translation type="unfinished"></translation>
+        <translation>Live Pipe Remux</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="301"/>
         <source>直播实时合并时通过管道交给 ffmpeg 混流</source>
-        <translation type="unfinished"></translation>
+        <translation>Use pipe to ffmpeg for remuxing during live real-time merge</translation>
     </message>
 </context>
 <context>
@@ -797,22 +797,22 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="105"/>
         <source>N_m3u8DL-RE 安装目录</source>
-        <translation type="unfinished"></translation>
+        <translation>N_m3u8DL-RE Install Directory</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="115"/>
         <source>浏览文件夹</source>
-        <translation type="unfinished">Browse Folder</translation>
+        <translation>Browse Folder</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="117"/>
         <source>恢复默认路径</source>
-        <translation type="unfinished">Restore Default Path</translation>
+        <translation>Restore Default Path</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="126"/>
         <source>选择 N_m3u8DL-RE 安装目录</source>
-        <translation type="unfinished"></translation>
+        <translation>Select N_m3u8DL-RE Install Directory</translation>
     </message>
 </context>
 <context>
@@ -820,12 +820,12 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="137"/>
         <source>直播</source>
-        <translation type="unfinished"></translation>
+        <translation>Live</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="137"/>
         <source>点播</source>
-        <translation type="unfinished"></translation>
+        <translation>VOD</translation>
     </message>
 </context>
 <context>
@@ -833,61 +833,63 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="137"/>
         <source>当前 N_m3u8DL-RE</source>
-        <translation type="unfinished"></translation>
+        <translation>Current N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="137"/>
         <location filename="../../../features/m3u8_pack/config.py" line="149"/>
         <source>正在检测运行时...</source>
-        <translation type="unfinished"></translation>
+        <translation>Detecting runtime...</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="138"/>
         <location filename="../../../features/m3u8_pack/config.py" line="184"/>
         <source>一键安装</source>
-        <translation type="unfinished">One-click Install</translation>
+        <translation>One-click Install</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="155"/>
         <source>检测运行时失败</source>
-        <translation type="unfinished"></translation>
+        <translation>Runtime detection failed</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="165"/>
         <source>未检测到，部分流可能无法自动混流</source>
-        <translation type="unfinished"></translation>
+        <translation>Not detected, some streams may not auto-remux</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="166"/>
         <source>版本: {0}
 安装路径: {1}
 FFmpeg: {2}</source>
-        <translation type="unfinished"></translation>
+        <translation>Version: {0}
+Install Path: {1}
+FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="167"/>
         <source>未知</source>
-        <translation type="unfinished">Unknown</translation>
+        <translation>Unknown</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="172"/>
         <source>未检测到可用的 N_m3u8DL-RE</source>
-        <translation type="unfinished"></translation>
+        <translation>No available N_m3u8DL-RE detected</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="179"/>
         <source>准备中...</source>
-        <translation type="unfinished">Preparing...</translation>
+        <translation>Preparing...</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="188"/>
         <source>安装 N_m3u8DL-RE 失败</source>
-        <translation type="unfinished"></translation>
+        <translation>Failed to install N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="188"/>
         <source>无法创建安装任务</source>
-        <translation type="unfinished">Failed to create installation task</translation>
+        <translation>Failed to create installation task</translation>
     </message>
 </context>
 <context>
@@ -895,22 +897,22 @@ FFmpeg: {2}</source>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="42"/>
         <source>{0} / {1:.2f}%</source>
-        <translation type="unfinished"></translation>
+        <translation>{0} / {1:.2f}%</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="59"/>
         <source>任务已经完成</source>
-        <translation type="unfinished">Task Completed</translation>
+        <translation>Task Completed</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="66"/>
         <source>任务已经暂停</source>
-        <translation type="unfinished">Task Paused</translation>
+        <translation>Task Paused</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="70"/>
         <source>任务正在等待</source>
-        <translation type="unfinished">Task Pending</translation>
+        <translation>Task Pending</translation>
     </message>
 </context>
 <context>
@@ -1771,72 +1773,72 @@ FFmpeg: {2}</source>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="123"/>
         <source>选择下载文件</source>
-        <translation type="unfinished"></translation>
+        <translation>Select Download Files</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="128"/>
         <source>全选</source>
-        <translation type="unfinished">Select All</translation>
+        <translation>Select All</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="129"/>
         <source>全不选</source>
-        <translation type="unfinished"></translation>
+        <translation>Select None</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="130"/>
         <source>反选</source>
-        <translation type="unfinished">Invert Selection</translation>
+        <translation>Invert Selection</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="131"/>
         <source>按类型选择</source>
-        <translation type="unfinished"></translation>
+        <translation>Select by Type</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="134"/>
         <source>应用</source>
-        <translation type="unfinished">Apply</translation>
+        <translation>Apply</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="135"/>
         <source>取消</source>
-        <translation type="unfinished">Cancel</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="143"/>
         <source>文件</source>
-        <translation type="unfinished"></translation>
+        <translation>File</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="143"/>
         <source>大小</source>
-        <translation type="unfinished"></translation>
+        <translation>Size</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="205"/>
         <source>其他</source>
-        <translation type="unfinished"></translation>
+        <translation>Other</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="206"/>
         <source>仅选{0} ({1})</source>
-        <translation type="unfinished"></translation>
+        <translation>Only {0} ({1})</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="270"/>
         <source>已选择 {0}/{1} 个文件，共 {2}</source>
-        <translation type="unfinished"></translation>
+        <translation>Selected {0}/{1} files, total {2}</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="323"/>
         <source>至少选择一个文件</source>
-        <translation type="unfinished"></translation>
+        <translation>At least one file must be selected</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="324"/>
         <source>当前没有任何文件被勾选</source>
-        <translation type="unfinished"></translation>
+        <translation>No files are currently selected</translation>
     </message>
 </context>
 <context>
@@ -1903,39 +1905,40 @@ FFmpeg: {2}</source>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="137"/>
         <source>Web Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Web Tracker</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="138"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="156"/>
         <source>来源: {0}
 当前缓存: {1} 条 Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Source: {0}
+Current Cache: {1} Trackers</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="141"/>
         <source>管理</source>
-        <translation type="unfinished"></translation>
+        <translation>Manage</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="147"/>
         <source>刷新缓存</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh Cache</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="177"/>
         <source>刷新 Web Tracker 失败</source>
-        <translation type="unfinished"></translation>
+        <translation>Failed to refresh Web Tracker</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="181"/>
         <source>刷新完成</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh Complete</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="182"/>
         <source>已缓存 {0} 条 Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>{0} Trackers cached</translation>
     </message>
 </context>
 <context>
@@ -1943,60 +1946,60 @@ FFmpeg: {2}</source>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="80"/>
         <source>Tracker 源地址</source>
-        <translation type="unfinished"></translation>
+        <translation>Tracker Source URL</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
         <source>当前 Tracker 列表</source>
-        <translation type="unfinished"></translation>
+        <translation>Current Tracker List</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="84"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="111"/>
         <source>从源刷新</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh from Source</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="86"/>
         <source>保存</source>
-        <translation type="unfinished">Save</translation>
+        <translation>Save</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="87"/>
         <source>取消</source>
-        <translation type="unfinished">Cancel</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
         <source>源地址无效</source>
-        <translation type="unfinished"></translation>
+        <translation>Invalid Source URL</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
         <source>请输入有效的 HTTP/HTTPS 地址</source>
-        <translation type="unfinished"></translation>
+        <translation>Please enter a valid HTTP/HTTPS URL</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
         <source>刷新中...</source>
-        <translation type="unfinished"></translation>
+        <translation>Refreshing...</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="113"/>
         <source>刷新失败</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh Failed</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
         <source>刷新完成</source>
-        <translation type="unfinished"></translation>
+        <translation>Refresh Complete</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
         <source>已加载 {0} 条 Tracker</source>
-        <translation type="unfinished"></translation>
+        <translation>Loaded {0} Trackers</translation>
     </message>
 </context>
 </TS>
