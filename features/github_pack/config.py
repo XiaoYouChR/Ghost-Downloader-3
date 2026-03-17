@@ -161,7 +161,10 @@ async def measureProxyLatencies() -> dict[str, int]:
                     allow_redirects=True,
                     stream=True,
                 )
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                finally:
+                    await response.close()
 
                 latencies[site] = max(1, int((perf_counter() - startedAt) * 1000))
             except Exception as e:

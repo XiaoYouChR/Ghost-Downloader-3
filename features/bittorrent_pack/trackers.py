@@ -54,8 +54,6 @@ async def fetchWebTrackers(sourceUrl: str) -> list[str]:
     client = niquests.AsyncSession(headers=DEFAULT_HEADERS.copy(), timeout=30, happy_eyeballs=True)
     client.trust_env = False
 
-    # 像极了 Bilibili Pack, 这里在 nuitka 编译后 response.close() 也会导致没有报错的异常
-
     try:
         response = await client.get(
             normalizedSource,
@@ -63,8 +61,11 @@ async def fetchWebTrackers(sourceUrl: str) -> list[str]:
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        response.raise_for_status()
-        trackers = parseTrackerText(response.text)
+        try:
+            response.raise_for_status()
+            trackers = parseTrackerText(response.text)
+        finally:
+            response.close()
     finally:
         await client.close()
 
