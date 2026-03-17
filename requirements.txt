@@ -8,5 +8,3 @@ pyside6-fluent-widgets>=1.11.1
 qrcode[png]>=8.2
 libtorrent>=2.0.11
 libtorrent-windows-dll>=0.0.3; sys_platform == 'win32'
-winloop>=0.5.0; sys_platform == 'win32'
-uvloop>=0.22.1; sys_platform != 'win32'
