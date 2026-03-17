@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from pathlib import Path
 from typing import Callable, Dict, Any, Coroutine
 
@@ -12,6 +13,12 @@ from app.services.feature_service import featureService
 from app.supports.config import cfg
 from app.supports.utils import openFile
 
+if sys.platform == 'win32':
+    import winloop
+    winloop.install()
+elif sys.platform != 'darwin':
+    import uvloop
+    uvloop.install()
 
 def getNotifierIcon() -> Path:
     _ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
