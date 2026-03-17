@@ -7,3 +7,4 @@ pyside6>=6.10.2
 pyside6-fluent-widgets>=1.11.1
 qrcode[png]>=8.2
 libtorrent>=2.0.11
+libtorrent-windows-dll>=0.0.3; sys_platform == 'win32'
