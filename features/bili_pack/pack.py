@@ -173,8 +173,6 @@ async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client:
     requestHeaders = headers.copy()
     requestHeaders["range"] = "bytes=0-0"
 
-    # 兄弟这里有个血的教训, 在 nuitka 编译之后, 如果你 await response.close(), 那么 parse 代码就废了, 而且没有任何报错.
-
     response = await client.get(
         url,
         headers=requestHeaders,
@@ -183,15 +181,18 @@ async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client:
         allow_redirects=True,
         stream=True,
     )
-    response.raise_for_status()
-    head = {k.lower(): v for k, v in response.headers.items()}
+    try:
+        response.raise_for_status()
+        head = {k.lower(): v for k, v in response.headers.items()}
 
-    if response.status_code == 206 and "content-range" in head:
-        _left, _char, right = head["content-range"].rpartition("/")
-        if right != "*":
-            return int(right)
+        if response.status_code == 206 and "content-range" in head:
+            _left, _char, right = head["content-range"].rpartition("/")
+            if right != "*":
+                return int(right)
 
-    raise ValueError("音视频流不支持范围请求，当前实现无法下载")
+        raise ValueError("音视频流不支持范围请求，当前实现无法下载")
+    finally:
+        await response.close()
 
 
 async def parse(payload: dict) -> BilibiliTask:
