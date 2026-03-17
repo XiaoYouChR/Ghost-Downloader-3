@@ -8,11 +8,8 @@ files:
     translation: /app/assets/i18n/gd3.%locale_with_underscore%.ts
     languages_mapping:
       locale_with_underscore:
-        en: en_US
         en-US: en_US
         ja: ja_JP
-        ja-JP: ja_JP
         ru: ru_RU
-        ru-RU: ru_RU
         zh-TW: zh_TW
         zh-HK: zh_HK
