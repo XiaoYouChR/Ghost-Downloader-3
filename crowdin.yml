@@ -1,0 +1,18 @@
+project_id_env: CROWDIN_PROJECT_ID
+api_token_env: CROWDIN_PERSONAL_TOKEN
+base_path: .
+preserve_hierarchy: true
+
+files:
+  - source: /app/assets/i18n/gd3.zh_CN.ts
+    translation: /app/assets/i18n/gd3.%locale_with_underscore%.ts
+    languages_mapping:
+      locale_with_underscore:
+        en: en_US
+        en-US: en_US
+        ja: ja_JP
+        ja-JP: ja_JP
+        ru: ru_RU
+        ru-RU: ru_RU
+        zh-TW: zh_TW
+        zh-HK: zh_HK

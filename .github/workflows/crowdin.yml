@@ -1,0 +1,130 @@
+name: Sync Crowdin
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**/*.py"
+      - "features/**/*.py"
+      - "app/assets/i18n/*.ts"
+      - "app/assets/resources.qrc"
+      - "sync_i18n_res.py"
+      - "crowdin.yml"
+      - ".github/workflows/crowdin.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: crowdin-sync
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  push-to-crowdin:
+    name: Push sources to Crowdin
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate Crowdin secrets
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+        run: |
+          test -n "$CROWDIN_PROJECT_ID" || (echo "Missing CROWDIN_PROJECT_ID secret" && exit 1)
+          test -n "$CROWDIN_PERSONAL_TOKEN" || (echo "Missing CROWDIN_PERSONAL_TOKEN secret" && exit 1)
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Qt translation tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install --timeout=300 "pyside6>=6.10.2"
+
+      - name: Refresh Qt translation assets
+        run: python sync_i18n_res.py
+
+      - name: Upload sources and translations
+        uses: crowdin/github-action@v2
+        with:
+          config: crowdin.yml
+          upload_sources: true
+          upload_translations: true
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+  pull-from-crowdin:
+    name: Pull translations from Crowdin
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate Crowdin secrets
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+        run: |
+          test -n "$CROWDIN_PROJECT_ID" || (echo "Missing CROWDIN_PROJECT_ID secret" && exit 1)
+          test -n "$CROWDIN_PERSONAL_TOKEN" || (echo "Missing CROWDIN_PERSONAL_TOKEN secret" && exit 1)
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Qt translation tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install --timeout=300 "pyside6>=6.10.2"
+
+      - name: Refresh Qt translation assets
+        run: python sync_i18n_res.py
+
+      - name: Download translations
+        uses: crowdin/github-action@v2
+        with:
+          config: crowdin.yml
+          download_translations: true
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Rebuild runtime translation assets
+        run: python sync_i18n_res.py
+
+      - name: Create translation pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/crowdin-translations
+          delete-branch: true
+          title: "chore(i18n): sync translations from Crowdin"
+          commit-message: "chore(i18n): sync translations from Crowdin"
+          body: |
+            This PR was created automatically by the Crowdin sync workflow.
+
+            It refreshes the Qt `.ts` files, compiled `.qm` files, and `app/assets/resources.py`.
+          add-paths: |
+            app/assets/i18n/*.ts
+            app/assets/i18n/*.qm
+            app/assets/resources.py
