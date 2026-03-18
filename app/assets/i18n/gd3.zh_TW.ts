@@ -30,7 +30,7 @@
         <location filename="../../view/components/add_task_dialog.py" line="276"/>
         <source>{0}
 {1}</source>
-        <translation>{0}
+        <translation type="unfinished">{0}
 {1}</translation>
     </message>
     <message>
@@ -89,7 +89,7 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="807"/>
         <source>HDR</source>
-        <translation>HDR</translation>
+        <translation type="unfinished">HDR</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="808"/>
@@ -327,7 +327,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="419"/>
         <source>Peers {0} / Seeds {1}</source>
-        <translation>Peers {0} / Seeds {1}</translation>
+        <translation type="unfinished">Peers {0} / Seeds {1}</translation>
     </message>
 </context>
 <context>
@@ -407,7 +407,7 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="403"/>
         <source>取消</source>
-        <translation>取消</translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="405"/>
@@ -430,7 +430,7 @@
     <message>
         <location filename="../../../features/ffmpeg_pack/config.py" line="177"/>
         <source>FFmpeg</source>
-        <translation>FFmpeg</translation>
+        <translation type="unfinished">FFmpeg</translation>
     </message>
 </context>
 <context>
@@ -490,7 +490,7 @@
     <message>
         <location filename="../../../features/ffmpeg_pack/config.py" line="145"/>
         <source>未知</source>
-        <translation>未知</translation>
+        <translation type="unfinished">未知</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/config.py" line="147"/>
@@ -538,7 +538,7 @@
     <message>
         <location filename="../../view/components/dialogs.py" line="190"/>
         <source>取消</source>
-        <translation>取消</translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <location filename="../../view/components/dialogs.py" line="232"/>
@@ -581,7 +581,7 @@
     <message>
         <location filename="../../../features/github_pack/config.py" line="132"/>
         <source>取消</source>
-        <translation>取消</translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="134"/>
@@ -594,7 +594,7 @@
     <message>
         <location filename="../../../features/github_pack/config.py" line="294"/>
         <source>GitHub 加速</source>
-        <translation>GitHub 加速</translation>
+        <translation type="unfinished">GitHub 加速</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="297"/>
@@ -774,7 +774,7 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="293"/>
         <source>直播保留分片</source>
-        <translation>直播保留分片</translation>
+        <translation type="unfinished">直播保留分片</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="294"/>
@@ -784,7 +784,7 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="300"/>
         <source>直播管道混流</source>
-        <translation>直播管道混流</translation>
+        <translation type="unfinished">直播管道混流</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="301"/>
@@ -820,7 +820,7 @@
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="137"/>
         <source>直播</source>
-        <translation>直播</translation>
+        <translation type="unfinished">直播</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="137"/>
@@ -869,7 +869,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="167"/>
         <source>未知</source>
-        <translation>未知</translation>
+        <translation type="unfinished">未知</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="172"/>
@@ -897,7 +897,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="42"/>
         <source>{0} / {1:.2f}%</source>
-        <translation>{0} / {1:.2f}%</translation>
+        <translation type="unfinished">{0} / {1:.2f}%</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="59"/>
@@ -975,10 +975,6 @@ FFmpeg: {2}</translation>
         <translation>目前版本 {0}，最新版本 {1}</translation>
     </message>
     <message>
-        <source>当前版本 {0}，最新 Release {1}</source>
-        <translation type="vanished">目前版本 {0}，最新 Release {1}</translation>
-    </message>
-    <message>
         <location filename="../../view/windows/main_window.py" line="405"/>
         <source>检测到新版本</source>
         <translation>檢測到新版本</translation>
@@ -986,7 +982,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/windows/main_window.py" line="406"/>
         <source>最新版本: {0}</source>
-        <translation>最新版本: {0}</translation>
+        <translation type="unfinished">最新版本: {0}</translation>
     </message>
     <message>
         <location filename="../../view/windows/main_window.py" line="414"/>
@@ -1075,7 +1071,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/components/dialogs.py" line="68"/>
         <source>取消</source>
-        <translation>取消</translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <location filename="../../view/components/dialogs.py" line="76"/>
@@ -1094,7 +1090,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="83"/>
         <source>代理</source>
-        <translation>代理</translation>
+        <translation type="unfinished">代理</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="84"/>
@@ -1104,7 +1100,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="95"/>
         <source>不使用代理</source>
-        <translation>不使用代理</translation>
+        <translation type="unfinished">不使用代理</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="97"/>
@@ -1124,7 +1120,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="112"/>
         <source>代理 IP 地址</source>
-        <translation>代理 IP 地址</translation>
+        <translation type="unfinished">代理 IP 地址</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="115"/>
@@ -1157,12 +1153,12 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/components/release_info_dialog.py" line="42"/>
         <source>Release</source>
-        <translation>Release</translation>
+        <translation type="unfinished">Release</translation>
     </message>
     <message>
         <location filename="../../view/components/release_info_dialog.py" line="49"/>
         <source>Unknown</source>
-        <translation>Unknown</translation>
+        <translation type="unfinished">Unknown</translation>
     </message>
     <message>
         <location filename="../../view/components/release_info_dialog.py" line="50"/>
@@ -1364,10 +1360,6 @@ FFmpeg: {2}</translation>
         <translation>限速器</translation>
     </message>
     <message>
-        <source>限制每秒全局下载速度, 0 为不限速</source>
-        <translation type="vanished">限制每秒全局下載, 0 為不限速</translation>
-    </message>
-    <message>
         <location filename="../../view/pages/setting_page.py" line="65"/>
         <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
         <translation>當下載任務頁面的限速開關啟用時，所有任務都會依此值限速</translation>
@@ -1420,17 +1412,17 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="115"/>
         <source>Firefox</source>
-        <translation>Firefox</translation>
+        <translation type="unfinished">Firefox</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="122"/>
         <source>Edge</source>
-        <translation>Edge</translation>
+        <translation type="unfinished">Edge</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="129"/>
         <source>Chrome</source>
-        <translation>Chrome</translation>
+        <translation type="unfinished">Chrome</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="136"/>
@@ -1465,7 +1457,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="149"/>
         <source>深色</source>
-        <translation>深色</translation>
+        <translation type="unfinished">深色</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="149"/>
@@ -1571,7 +1563,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>已配置</source>
-        <translation>已配置</translation>
+        <translation type="unfinished">已配置</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="270"/>
@@ -1596,7 +1588,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="391"/>
         <source>警告</source>
-        <translation>警告</translation>
+        <translation type="unfinished">警告</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="392"/>
@@ -1683,7 +1675,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/task_page.py" line="136"/>
         <source>0.00KB/s</source>
-        <translation>0.00KB/s</translation>
+        <translation type="unfinished">0.00KB/s</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="141"/>
@@ -1740,7 +1732,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/task_page.py" line="285"/>
         <source>限速</source>
-        <translation>限速</translation>
+        <translation type="unfinished">限速</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="293"/>
@@ -1803,7 +1795,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="135"/>
         <source>取消</source>
-        <translation>取消</translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="143"/>
@@ -1813,12 +1805,12 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="143"/>
         <source>大小</source>
-        <translation>大小</translation>
+        <translation type="unfinished">大小</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="205"/>
         <source>其他</source>
-        <translation>其他</translation>
+        <translation type="unfinished">其他</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="206"/>
@@ -1843,22 +1835,6 @@ FFmpeg: {2}</translation>
 </context>
 <context>
     <name>UniversalTaskCard</name>
-    <message>
-        <source>完成</source>
-        <translation type="vanished">完成</translation>
-    </message>
-    <message>
-        <source>失败</source>
-        <translation type="vanished">失敗</translation>
-    </message>
-    <message>
-        <source>已暂停</source>
-        <translation type="vanished">已暫停</translation>
-    </message>
-    <message>
-        <source>等待中</source>
-        <translation type="vanished">等待中</translation>
-    </message>
     <message>
         <location filename="../../view/components/cards.py" line="345"/>
         <source>任务已经完成</source>
@@ -1905,7 +1881,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="137"/>
         <source>Web Tracker</source>
-        <translation>Web Tracker</translation>
+        <translation type="unfinished">Web Tracker</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="138"/>
@@ -1918,7 +1894,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="141"/>
         <source>管理</source>
-        <translation>管理</translation>
+        <translation type="unfinished">管理</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="147"/>
@@ -1967,7 +1943,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="87"/>
         <source>取消</source>
-        <translation>取消</translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
