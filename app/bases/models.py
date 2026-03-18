@@ -187,6 +187,8 @@ class Task:
         for stage in self.stages:
             if stage.status == TaskStatus.COMPLETED:
                 continue
+            if status == TaskStatus.RUNNING and stage.status == TaskStatus.FAILED:
+                stage.reset(notifyTask=False)
             stage.setStatus(status, notifyTask=False)
 
         return self.syncStatusFromStages()
