@@ -206,7 +206,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="294"/>
         <source>文件分配模式</source>
-        <translation type="unfinished"></translation>
+        <translation>File allocation mode</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="295"/>
@@ -215,18 +215,18 @@
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
+        <source>稀疏分配</source>
+        <translation>Sparse allocation</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
         <source>预分配</source>
         <translation>Pre-allocation</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
-        <source>稀疏分配</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="301"/>
         <source>顺序下载</source>
-        <translation type="unfinished"></translation>
+        <translation>Sequential download</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="302"/>
@@ -975,10 +975,6 @@ FFmpeg: {2}</translation>
         <translation>Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <source>当前版本 {0}，最新 Release {1}</source>
-        <translation type="vanished">Current version {0}, latest release {1}</translation>
-    </message>
-    <message>
         <location filename="../../view/windows/main_window.py" line="405"/>
         <source>检测到新版本</source>
         <translation>New Version Detected</translation>
@@ -1362,10 +1358,6 @@ FFmpeg: {2}</translation>
         <location filename="../../view/pages/setting_page.py" line="64"/>
         <source>下载限速</source>
         <translation>Download Speed Limit</translation>
-    </message>
-    <message>
-        <source>限制每秒全局下载速度, 0 为不限速</source>
-        <translation type="vanished">Global download speed limit (0 for unlimited)</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="65"/>
@@ -1843,22 +1835,6 @@ FFmpeg: {2}</translation>
 </context>
 <context>
     <name>UniversalTaskCard</name>
-    <message>
-        <source>完成</source>
-        <translation type="vanished">Completed</translation>
-    </message>
-    <message>
-        <source>失败</source>
-        <translation type="vanished">Failed</translation>
-    </message>
-    <message>
-        <source>已暂停</source>
-        <translation type="vanished">Paused</translation>
-    </message>
-    <message>
-        <source>等待中</source>
-        <translation type="vanished">Pending</translation>
-    </message>
     <message>
         <location filename="../../view/components/cards.py" line="345"/>
         <source>任务已经完成</source>

@@ -54,37 +54,37 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="785"/>
         <source>哔哩哔哩视频下载</source>
-        <translation>Загрузка видео Bilibili</translation>
+        <translation>Скачивание видео с Bilibili</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="790"/>
         <source>默认清晰度</source>
-        <translation>Качество по умолчанию</translation>
+        <translation>Стандартное качество</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="791"/>
         <source>下载视频时默认的清晰度</source>
-        <translation>Качество видео по умолчанию при загрузке</translation>
+        <translation>Качество по умолчанию при загрузке</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="799"/>
         <source>备选清晰度</source>
-        <translation>Альтернативное качество</translation>
+        <translation>Резервное качество</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="800"/>
         <source>下载视频时备选的清晰度</source>
-        <translation>Альтернативное качество видео при загрузке</translation>
+        <translation>Резервное качество при загрузке</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="801"/>
         <source>可以下载的最高画质</source>
-        <translation>Максимальное качество загрузки</translation>
+        <translation>Макс. качество</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="801"/>
         <source>可以下载的最低画质</source>
-        <translation>Минимальное качество загрузки</translation>
+        <translation>Мин. качество</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="807"/>
@@ -94,7 +94,7 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="808"/>
         <source>下载 HDR 视频</source>
-        <translation>Загружать видео HDR</translation>
+        <translation>Скачивать HDR-видео</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="815"/>
@@ -104,7 +104,7 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="816"/>
         <source>下载杜比视界视频</source>
-        <translation>Загружать видео Dolby Vision</translation>
+        <translation>Скачивать Dolby Vision</translation>
     </message>
 </context>
 <context>
@@ -122,12 +122,12 @@
     <message>
         <location filename="../../../features/bili_pack/config.py" line="623"/>
         <source>手动设置 Cookie</source>
-        <translation>Установить Cookie вручную</translation>
+        <translation>Задать Cookie вручную</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="624"/>
         <source>退出登录</source>
-        <translation>Выход</translation>
+        <translation>Выйти</translation>
     </message>
 </context>
 <context>
@@ -140,12 +140,12 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="230"/>
         <source>监听端口</source>
-        <translation>Порт прослушивания</translation>
+        <translation>Порт</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="231"/>
         <source>0 表示交给系统自动分配可用端口</source>
-        <translation>0 означает автоматическое назначение портов системой</translation>
+        <translation>0: порт назначит система</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="239"/>
@@ -155,17 +155,17 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="240"/>
         <source>解析 magnet 链接时等待元数据的最长时间</source>
-        <translation>Максимальное время ожидания метаданных при анализе magnet-ссылок</translation>
+        <translation>Макс. ожидание метаданных для magnet</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="249"/>
         <source>连接数上限</source>
-        <translation>Ограничение подключений</translation>
+        <translation>Лимит подключений</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="250"/>
         <source>单个 BT 任务对应 session 的最大连接数</source>
-        <translation>Максимум соединений на сеанс задачи BT</translation>
+        <translation>Макс. подключений на BT-сессию</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="255"/>
@@ -176,52 +176,52 @@
         <location filename="../../../features/bittorrent_pack/config.py" line="256"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="266"/>
         <source>0 表示不限速，单位为 session 级别的 KB/s</source>
-        <translation>0 означает без ограничения, единица KB/s на уровне сеанса</translation>
+        <translation>0: без лимита, KB/с на сессию</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="265"/>
         <source>上传限速</source>
-        <translation>Ограничение скорости загрузки</translation>
+        <translation>Лимит отдачи</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="275"/>
         <source>自动暂停做种分享率</source>
-        <translation>Автоотключение сидирования по рейтингу</translation>
+        <translation>Автопауза по ratio</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="276"/>
         <source>下载完成后继续做种；0 表示不按分享率自动暂停，100% 表示分享率 1.0</source>
-        <translation>Продолжить сидирование после загрузки；0 для отключения по рейтингу, 100% по рейтингу 1.0</translation>
+        <translation>После загрузки продолжать раздачу; 0 - без автопаузы по ratio, 100% - ratio 1.0</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="284"/>
         <source>自动暂停做种时长</source>
-        <translation>Автоотключение сидирования по времени</translation>
+        <translation>Автопауза по времени</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="285"/>
         <source>下载完成后继续做种；0 表示不按做种时长自动暂停</source>
-        <translation>Продолжить сидирование после загрузки；0 для отключения по времени</translation>
+        <translation>После загрузки продолжать раздачу; 0 - без автопаузы по времени</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="294"/>
         <source>文件分配模式</source>
-        <translation>Режим выделения файла</translation>
+        <translation>Режим выделения файлов</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="295"/>
         <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
-        <translation>Разреженное выделение экономит запись на диск, предварительное выделение раньше выявляет нехватку места</translation>
+        <translation>Sparse меньше пишет на диск, предвыделение раньше покажет нехватку места</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
         <source>稀疏分配</source>
-        <translation>Разреженное выделение</translation>
+        <translation>Sparse</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
         <source>预分配</source>
-        <translation>Предварительное выделение</translation>
+        <translation>Предвыделение</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="301"/>
@@ -231,7 +231,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="302"/>
         <source>按文件顺序下载内容，适合边下边看但通常会影响整体效率</source>
-        <translation>Загрузка файлов по порядку для потокового воспроизведения, может повлиять на общую эффективность</translation>
+        <translation>Скачивать по порядку (удобно для просмотра, но обычно медленнее)</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="308"/>
@@ -241,7 +241,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="309"/>
         <source>允许通过 DHT 网络发现 peers</source>
-        <translation>Разрешить обнаружение узлов через сеть DHT</translation>
+        <translation>Искать пиры через DHT</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="315"/>
@@ -251,7 +251,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="316"/>
         <source>在局域网中广播并发现同一 torrent 的 peers</source>
-        <translation>Вещать и обнаруживать одноранговые узлы одного торрента в локальной сети</translation>
+        <translation>Искать/объявлять пиры torrent в LAN</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="322"/>
@@ -261,7 +261,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="323"/>
         <source>允许自动尝试映射路由器端口</source>
-        <translation>Разрешить автоматическое отображение портов маршрутизатора</translation>
+        <translation>Автопроброс порта на роутере</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="329"/>
@@ -271,7 +271,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="330"/>
         <source>允许自动尝试通过 NAT-PMP 映射端口</source>
-        <translation>Разрешить автоматическое отображение портов через NAT-PMP</translation>
+        <translation>Автопроброс порта через NAT-PMP</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="336"/>
@@ -281,17 +281,17 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="337"/>
         <source>把配置好的额外 Trackers 合并到新建 BT 任务中</source>
-        <translation>Объединить настроенные дополнительные трекеры в новые BT задачи</translation>
+        <translation>Объединить настроенные дополнительные трекеры при создании новой задачи BT</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="343"/>
         <source>新建任务时刷新 Web Tracker</source>
-        <translation>Обновить Web Tracker при создании новой задачи</translation>
+        <translation>Обновлять Web Tracker при создании задачи</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="344"/>
         <source>创建新的 BT 任务时，先从源地址拉取最新 Tracker；失败时回退到缓存</source>
-        <translation>При создании новой BT задачи сначала получить последний Tracker из источника；вернуться к кэшу в случае сбоя</translation>
+        <translation>Для новой BT-задачи сначала брать трекеры из источника, при ошибке - из кэша</translation>
     </message>
 </context>
 <context>
@@ -304,12 +304,12 @@
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="375"/>
         <source>{0} · {1} 个 Tracker</source>
-        <translation>{0} · {1} трекеры</translation>
+        <translation>{0} · трекеров: {1}</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="380"/>
         <source>{0}/{1} 个文件 · {2}</source>
-        <translation>{0}/{1} файлы · {2}</translation>
+        <translation>Файлов: {0}/{1} · {2}</translation>
     </message>
 </context>
 <context>
@@ -317,17 +317,17 @@
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="414"/>
         <source>分享率 {0:.2f}%</source>
-        <translation>Рейтинг {0:.2f}%</translation>
+        <translation>Ratio {0:.2f}%</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="416"/>
         <source>做种 {0}</source>
-        <translation>Сидирование {0}</translation>
+        <translation>Раздача {0}</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="419"/>
         <source>Peers {0} / Seeds {1}</source>
-        <translation>Узлы {0} / Сидеры {1}</translation>
+        <translation>Пиры {0} / Сиды {1}</translation>
     </message>
 </context>
 <context>
@@ -571,12 +571,12 @@
     <message>
         <location filename="../../../features/github_pack/config.py" line="119"/>
         <source>GitHub 加速用户协议</source>
-        <translation>Соглашение пользователя ускорения GitHub</translation>
+        <translation>Соглашение GitHub-ускорения</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="131"/>
         <source>同意并启用</source>
-        <translation>Согласиться и включить</translation>
+        <translation>Принять и включить</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="132"/>
@@ -599,17 +599,17 @@
     <message>
         <location filename="../../../features/github_pack/config.py" line="297"/>
         <source>启用 GitHub 加速</source>
-        <translation>Включить ускорение GitHub</translation>
+        <translation>Включить GitHub-ускорение</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="298"/>
         <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation>При совпадении с ссылкой файла GitHub автоматически переписать на выбранный обратный прокси</translation>
+        <translation>При совпадении со ссылкой файла GitHub автоматически переписать на выбранный обратный прокси</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="303"/>
         <source>查看协议</source>
-        <translation>Просмотр контракта</translation>
+        <translation>Открыть соглашение</translation>
     </message>
 </context>
 <context>
@@ -617,12 +617,12 @@
     <message>
         <location filename="../../../features/github_pack/config.py" line="183"/>
         <source>代理站</source>
-        <translation>Сайт прокси</translation>
+        <translation>Прокси-узел</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="184"/>
         <source>选择 GitHub 反向代理站，延迟仅供参考</source>
-        <translation>Выберите сайт обратного прокси GitHub, задержка только для справки</translation>
+        <translation>Выберите reverse-proxy GitHub (задержка примерная)</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="202"/>
@@ -679,27 +679,27 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="222"/>
         <source>下载完成后优先使用 ffmpeg 混流为指定容器</source>
-        <translation>После загрузки приоритет использование ffmpeg для переупаковки в указанный контейнер</translation>
+        <translation>После загрузки mux в выбранный контейнер через ffmpeg</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="229"/>
         <source>分片线程数</source>
-        <translation>Количество потоков фрагментов</translation>
+        <translation>Потоков сегментов</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="230"/>
         <source>传给 N_m3u8DL-RE 的下载线程数</source>
-        <translation>Количество потоков загрузки для N_m3u8DL-RE</translation>
+        <translation>Число потоков для N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="236"/>
         <source>分片重试次数</source>
-        <translation>Повторное количество попыток фрагмента</translation>
+        <translation>Повторы сегмента</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="237"/>
         <source>单个分片下载失败时的最大重试次数</source>
-        <translation>Максимальное количество повторных попыток при сбое загрузки одного фрагмента</translation>
+        <translation>Макс. повторов при ошибке сегмента</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="242"/>
@@ -709,87 +709,87 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="243"/>
         <source>HTTP 请求超时时间</source>
-        <translation>Время тайм-аута запроса HTTP</translation>
+        <translation>Тайм-аут HTTP-запроса</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="251"/>
         <source>自动选择最佳轨道</source>
-        <translation>Автоматически выбрать лучший трек</translation>
+        <translation>Автовыбор лучших дорожек</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="252"/>
         <source>默认选择最佳音视频轨道，避免每个链接都手动挑选</source>
-        <translation>По умолчанию выбирать лучший аудио/видеотрек, избегать ручного выбора для каждой ссылки</translation>
+        <translation>По умолчанию выбирать лучшие аудио/видео дорожки</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="258"/>
         <source>并发下载音视频</source>
-        <translation>Одновременная загрузка аудио/видео</translation>
+        <translation>Параллельная загрузка аудио/видео</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="259"/>
         <source>同时下载已选择的音频、视频和字幕轨道</source>
-        <translation>Одновременно загружать выбранные аудио, видео и дорожки субтитров</translation>
+        <translation>Одновременно скачивать выбранные аудио, видео и субтитры</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="265"/>
         <source>追加 URL 参数</source>
-        <translation>Добавить параметры URL</translation>
+        <translation>Добавлять URL-параметры</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="266"/>
         <source>把输入链接上的 Query 参数追加到分片请求</source>
-        <translation>Добавить параметры запроса из входной ссылки к запросам фрагментов</translation>
+        <translation>Добавлять Query-параметры исходной ссылки к запросам сегментов</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="272"/>
         <source>二进制合并</source>
-        <translation>Бинарное слияние</translation>
+        <translation>Бинарное объединение</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="273"/>
         <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
-        <translation>Позволить N_m3u8DL-RE объединять фрагменты в двоичном режиме</translation>
+        <translation>Разрешить бинарное объединение сегментов в N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="279"/>
         <source>校验分片数量</source>
-        <translation>Проверить количество фрагментов</translation>
+        <translation>Проверка числа сегментов</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="280"/>
         <source>下载完成后检查实际分片数是否与预期一致</source>
-        <translation>После загрузки проверить совпадение фактического количества фрагментов с ожиданием</translation>
+        <translation>Проверять число сегментов после загрузки</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="286"/>
         <source>直播实时合并</source>
-        <translation>Прямое слияние в реальном времени</translation>
+        <translation>Онлайн-слияние стрима</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="287"/>
         <source>录制直播流时边下边合并</source>
-        <translation>Объединение при загрузке во время записи прямой трансляции</translation>
+        <translation>При записи стрима объединять в реальном времени</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="293"/>
         <source>直播保留分片</source>
-        <translation>Сохранить прямые фрагменты</translation>
+        <translation>Сохранять сегменты стрима</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="294"/>
         <source>实时合并直播时仍保留原始分片</source>
-        <translation>При объединении прямой трансляции в реальном времени сохранять исходные фрагменты</translation>
+        <translation>При онлайн-слиянии сохранять исходные сегменты</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="300"/>
         <source>直播管道混流</source>
-        <translation>Прямая переупаковка трубопровода</translation>
+        <translation>Pipe-mux стрима</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="301"/>
         <source>直播实时合并时通过管道交给 ffmpeg 混流</source>
-        <translation>Используйте трубопровод для ffmpeg для переупаковки во время прямого слияния в реальном времени</translation>
+        <translation>При онлайн-слиянии передавать поток в ffmpeg через pipe</translation>
     </message>
 </context>
 <context>
@@ -797,7 +797,7 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="105"/>
         <source>N_m3u8DL-RE 安装目录</source>
-        <translation>Каталог установки N_m3u8DL-RE</translation>
+        <translation>Каталог N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="115"/>
@@ -812,7 +812,7 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="126"/>
         <source>选择 N_m3u8DL-RE 安装目录</source>
-        <translation>Выберите каталог установки N_m3u8DL-RE</translation>
+        <translation>Выбрать каталог N_m3u8DL-RE</translation>
     </message>
 </context>
 <context>
@@ -820,12 +820,12 @@
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="137"/>
         <source>直播</source>
-        <translation>Прямой эфир</translation>
+        <translation>Стрим</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="137"/>
         <source>点播</source>
-        <translation>Видео по требованию</translation>
+        <translation>VOD</translation>
     </message>
 </context>
 <context>
@@ -839,7 +839,7 @@
         <location filename="../../../features/m3u8_pack/config.py" line="137"/>
         <location filename="../../../features/m3u8_pack/config.py" line="149"/>
         <source>正在检测运行时...</source>
-        <translation>Обнаружение среды выполнения...</translation>
+        <translation>Проверка рантайма...</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="138"/>
@@ -850,12 +850,12 @@
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="155"/>
         <source>检测运行时失败</source>
-        <translation>Ошибка обнаружения среды выполнения</translation>
+        <translation>Не удалось проверить рантайм</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="165"/>
         <source>未检测到，部分流可能无法自动混流</source>
-        <translation>Не обнаружено, некоторые потоки могут не переупаковываться автоматически</translation>
+        <translation>Не найдено: часть потоков может не mux-иться автоматически</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="166"/>
@@ -863,7 +863,7 @@
 安装路径: {1}
 FFmpeg: {2}</source>
         <translation>Версия: {0}
-Путь установки: {1}
+Путь: {1}
 FFmpeg: {2}</translation>
     </message>
     <message>
@@ -874,7 +874,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="172"/>
         <source>未检测到可用的 N_m3u8DL-RE</source>
-        <translation>Нет доступного N_m3u8DL-RE</translation>
+        <translation>Не найден рабочий N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="179"/>
@@ -884,7 +884,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="188"/>
         <source>安装 N_m3u8DL-RE 失败</source>
-        <translation>Ошибка установки N_m3u8DL-RE</translation>
+        <translation>Не удалось установить N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="188"/>
@@ -1675,7 +1675,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../view/pages/task_page.py" line="136"/>
         <source>0.00KB/s</source>
-        <translation>0.00KB/s</translation>
+        <translation>0.00 КБ/с</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="141"/>
@@ -1765,7 +1765,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="123"/>
         <source>选择下载文件</source>
-        <translation>Выберите файлы для загрузки</translation>
+        <translation>Выбор файлов</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="128"/>
@@ -1775,7 +1775,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="129"/>
         <source>全不选</source>
-        <translation>Снять все</translation>
+        <translation>Снять всё</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="130"/>
@@ -1810,17 +1810,17 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="205"/>
         <source>其他</source>
-        <translation>Другое</translation>
+        <translation>Прочее</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="206"/>
         <source>仅选{0} ({1})</source>
-        <translation>Выбрать только {0} ({1})</translation>
+        <translation>Только {0} ({1})</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="270"/>
         <source>已选择 {0}/{1} 个文件，共 {2}</source>
-        <translation>Выбрано {0}/{1} файлы, всего {2}</translation>
+        <translation>Выбрано: {0}/{1}, всего {2}</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="323"/>
@@ -1830,7 +1830,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="324"/>
         <source>当前没有任何文件被勾选</source>
-        <translation>В настоящее время не выбраны файлы</translation>
+        <translation>Не выбран ни один файл</translation>
     </message>
 </context>
 <context>
@@ -1889,7 +1889,7 @@ FFmpeg: {2}</translation>
         <source>来源: {0}
 当前缓存: {1} 条 Tracker</source>
         <translation>Источник: {0}
-Текущий кэш: {1} трекеры</translation>
+Кэш: {1} трекеров</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="141"/>
@@ -1904,17 +1904,17 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="177"/>
         <source>刷新 Web Tracker 失败</source>
-        <translation>Ошибка обновления Web Tracker</translation>
+        <translation>Не удалось обновить Web Tracker</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="181"/>
         <source>刷新完成</source>
-        <translation>Обновление завершено</translation>
+        <translation>Обновлено</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="182"/>
         <source>已缓存 {0} 条 Tracker</source>
-        <translation>{0} трекеры кэшированы</translation>
+        <translation>В кэше: {0} трекеров</translation>
     </message>
 </context>
 <context>
@@ -1922,7 +1922,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="80"/>
         <source>Tracker 源地址</source>
-        <translation>URL источника трекера</translation>
+        <translation>Адрес источника трекеров</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="82"/>
@@ -1949,13 +1949,13 @@ FFmpeg: {2}</translation>
         <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
         <source>源地址无效</source>
-        <translation>Недействительный URL источника</translation>
+        <translation>Некорректный адрес источника</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="102"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="125"/>
         <source>请输入有效的 HTTP/HTTPS 地址</source>
-        <translation>Пожалуйста, введите действительный адрес HTTP/HTTPS</translation>
+        <translation>Введите корректный HTTP/HTTPS-адрес</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="106"/>
@@ -1970,12 +1970,12 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="117"/>
         <source>刷新完成</source>
-        <translation>Обновление завершено</translation>
+        <translation>Обновлено</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="118"/>
         <source>已加载 {0} 条 Tracker</source>
-        <translation>Загружено {0} трекеры</translation>
+        <translation>Загружено трекеров: {0}</translation>
     </message>
 </context>
 </TS>

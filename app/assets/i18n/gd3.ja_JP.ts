@@ -165,7 +165,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="250"/>
         <source>单个 BT 任务对应 session 的最大连接数</source>
-        <translation>BT タスク セッションあたりの最大接続数</translation>
+        <translation>BT タスク Session あたりの最大接続数</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="255"/>
@@ -975,10 +975,6 @@ FFmpeg: {2}</translation>
         <translation>現在のバージョン {0}、最新バージョン {1}</translation>
     </message>
     <message>
-        <source>当前版本 {0}，最新 Release {1}</source>
-        <translation type="vanished">現在のバージョン {0}、最新リリース {1}</translation>
-    </message>
-    <message>
         <location filename="../../view/windows/main_window.py" line="405"/>
         <source>检测到新版本</source>
         <translation>新しいバージョンを検出</translation>
@@ -1362,10 +1358,6 @@ FFmpeg: {2}</translation>
         <location filename="../../view/pages/setting_page.py" line="64"/>
         <source>下载限速</source>
         <translation>ダウンロード速度制限</translation>
-    </message>
-    <message>
-        <source>限制每秒全局下载速度, 0 为不限速</source>
-        <translation type="vanished">グローバルなダウンロード速度を制限 (0は無制限)</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="65"/>
@@ -1844,22 +1836,6 @@ FFmpeg: {2}</translation>
 <context>
     <name>UniversalTaskCard</name>
     <message>
-        <source>完成</source>
-        <translation type="vanished">完了</translation>
-    </message>
-    <message>
-        <source>失败</source>
-        <translation type="vanished">失敗</translation>
-    </message>
-    <message>
-        <source>已暂停</source>
-        <translation type="vanished">一時停止中</translation>
-    </message>
-    <message>
-        <source>等待中</source>
-        <translation type="vanished">待機中</translation>
-    </message>
-    <message>
         <location filename="../../view/components/cards.py" line="345"/>
         <source>任务已经完成</source>
         <translation>タスクは完了しました</translation>
@@ -1905,7 +1881,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="137"/>
         <source>Web Tracker</source>
-        <translation>Web Tracker</translation>
+        <translation>ウェブトラッカー</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="138"/>
