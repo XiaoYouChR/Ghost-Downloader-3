@@ -481,7 +481,16 @@ class MainWindow(MSFluentWindow):
         dialog.deleteLater()
 
 if isWin10():
-    from qframelesswindow import AcrylicWindow, FramelessWindow
+    from qframelesswindow import AcrylicWindow, FramelessWindow, WindowEffect
+    from qframelesswindow.windows.c_structures import ACCENT_STATE, WINDOWCOMPOSITIONATTRIB
+    from ctypes import pointer
+
+    def resetAcrylicEffect(self, hWnd):
+        hWnd = int(hWnd)
+
+        self.accentPolicy.AccentState = ACCENT_STATE.ACCENT_ENABLE_TRANSPARENTGRADIENT.value
+        self.winCompAttrData.Attribute = WINDOWCOMPOSITIONATTRIB.WCA_ACCENT_POLICY.value
+        self.SetWindowCompositionAttribute(hWnd, pointer(self.winCompAttrData))
 
     def nativeEvent(self, eventType, message):
         if eventType == "windows_generic_MSG":
@@ -500,5 +509,6 @@ if isWin10():
 
         return FramelessWindow.nativeEvent(self, eventType, message)
 
+    WindowEffect.resetAcrylicEffect = resetAcrylicEffect
     MainWindow.updateFrameless = AcrylicWindow.updateFrameless
     MainWindow.nativeEvent = nativeEvent
