@@ -1,11 +1,12 @@
 import shutil
 from pathlib import Path, PurePosixPath
 
-from PySide6.QtCore import Qt, QFileInfo
+from PySide6.QtCore import Qt, QFileInfo, QSignalBlocker
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QHeaderView,
     QHBoxLayout,
-    QTreeWidgetItem,
     QVBoxLayout,
     QWidget, QFileIconProvider,
 )
@@ -24,7 +25,7 @@ from qfluentwidgets import (
     StrongBodyLabel,
     ToolButton,
     SubtitleLabel,
-    TreeWidget
+    TreeView
 )
 
 from app.bases.models import TaskStatus
@@ -116,13 +117,13 @@ class TorrentFileSelectDialog(MessageBoxBase):
     def __init__(self, task: BitTorrentTask, parent=None):
         super().__init__(parent=parent)
         self.task = task
-        self._itemToFile: dict[QTreeWidgetItem, BitTorrentFile] = {}
-        self._updatingChecks = False
+        self._fileItems: dict[int, QStandardItem] = {}
 
         self.widget.setMinimumSize(720, 520)
         self.titleLabel = SubtitleLabel(self.tr("选择下载文件"), self.widget)
         self.summaryLabel = BodyLabel("", self.widget)
-        self.treeWidget = TreeWidget(self.widget)
+        self.treeView = TreeView(self.widget)
+        self.treeModel = QStandardItemModel(self.treeView)
         self.actionsWidget = QWidget(self.widget)
         self.actionsLayout = QHBoxLayout(self.actionsWidget)
         self.selectAllButton = PrimaryPushButton(self.tr("全选"), self.actionsWidget)
@@ -139,11 +140,12 @@ class TorrentFileSelectDialog(MessageBoxBase):
         self._updateSummary()
 
     def _initWidget(self):
-        self.treeWidget.setColumnCount(2)
-        self.treeWidget.setHeaderLabels([self.tr("文件"), self.tr("大小")])
-        self.treeWidget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.treeWidget.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        self.treeWidget.itemChanged.connect(self._onItemChanged)
+        self.treeModel.setHorizontalHeaderLabels([self.tr("文件"), self.tr("大小")])
+        self.treeView.setModel(self.treeModel)
+        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.treeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+        self.treeModel.itemChanged.connect(self._onItemChanged)
 
         self.actionsLayout.setContentsMargins(0, 0, 0, 0)
         self.actionsLayout.setSpacing(8)
@@ -161,44 +163,53 @@ class TorrentFileSelectDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.summaryLabel)
         self.viewLayout.addSpacing(8)
-        self.viewLayout.addWidget(self.treeWidget)
+        self.viewLayout.addWidget(self.treeView)
         self.viewLayout.addSpacing(8)
         self.viewLayout.addWidget(self.actionsWidget)
 
     def _buildTree(self):
-        folderItems: dict[tuple[str, ...], QTreeWidgetItem] = {}
-        self._updatingChecks = True
+        folderItems: dict[tuple[str, ...], QStandardItem] = {}
         provider = QFileIconProvider()
-        try:
-            for file in self.task.files:
-                path = PurePosixPath(self.task.mappedRelativePath(file))
-                parts = path.parts
-                parent = self.treeWidget.invisibleRootItem()
-                prefix: list[str] = []
+        root = self.treeModel.invisibleRootItem()
+        for file in self.task.files:
+            path = PurePosixPath(self.task.mappedRelativePath(file))
+            parts = path.parts
+            parent = root
+            prefix: list[str] = []
 
-                for part in parts[:-1]:
-                    prefix.append(part)
-                    key = tuple(prefix)
-                    item = folderItems.get(key)
-                    if item is None:
-                        item = QTreeWidgetItem(parent, [part, ""])
-                        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsAutoTristate)
-                        item.setCheckState(0, Qt.CheckState.Unchecked)
-                        item.setIcon(0, provider.icon(QFileIconProvider.IconType.Folder))
-                        folderItems[key] = item
-                    parent = item
+            for part in parts[:-1]:
+                prefix.append(part)
+                key = tuple(prefix)
+                item = folderItems.get(key)
+                if item is None:
+                    item = QStandardItem(part)
+                    item.setEditable(False)
+                    item.setCheckable(True)
+                    item.setCheckState(Qt.CheckState.Unchecked)
+                    item.setIcon(provider.icon(QFileIconProvider.IconType.Folder))
+                    sizeItem = QStandardItem("")
+                    sizeItem.setEditable(False)
+                    parent.appendRow([item, sizeItem])
+                    folderItems[key] = item
+                parent = item
 
-                name = parts[-1]
-                item = QTreeWidgetItem(parent, [name, getReadableSize(file.size)])
-                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-                item.setCheckState(0, Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
-                item.setIcon(0, provider.icon(QFileInfo(name)))
-                self._itemToFile[item] = file
+            name = parts[-1]
+            item = QStandardItem(name)
+            item.setEditable(False)
+            item.setCheckable(True)
+            item.setCheckState(Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
+            item.setIcon(provider.icon(QFileInfo(name)))
+            sizeItem = QStandardItem(getReadableSize(file.size))
+            sizeItem.setEditable(False)
+            parent.appendRow([item, sizeItem])
+            self._fileItems[file.index] = item
 
-            self.treeWidget.expandAll()
-            self._refreshParentCheckStates()
-        finally:
-            self._updatingChecks = False
+        with QSignalBlocker(self.treeModel):
+            for i in range(root.rowCount()):
+                self._syncBranchCheckState(root.child(i))
+
+        self.treeView.expandAll()
+        self.treeView.resizeColumnToContents(0)
 
     def _initTypeMenu(self):
         for typeKey, count in self._availableFileTypes().items():
@@ -217,50 +228,52 @@ class TorrentFileSelectDialog(MessageBoxBase):
             counts[typeKey] = counts.get(typeKey, 0) + 1
         return counts
 
-    def _refreshParentCheckStates(self):
-        root = self.treeWidget.invisibleRootItem()
-        for i in range(root.childCount()):
-            self._updateBranchState(root.child(i))
+    def _syncBranchCheckState(self, item: QStandardItem):
+        if item.rowCount() == 0:
+            return item.checkState()
 
-    def _updateBranchState(self, item: QTreeWidgetItem):
-        if item.childCount() == 0:
-            return item.checkState(0)
-
-        states = []
-        for i in range(item.childCount()):
-            states.append(self._updateBranchState(item.child(i)))
+        states = [self._syncBranchCheckState(item.child(i)) for i in range(item.rowCount())]
 
         if all(state == Qt.CheckState.Checked for state in states):
-            item.setCheckState(0, Qt.CheckState.Checked)
+            item.setCheckState(Qt.CheckState.Checked)
         elif all(state == Qt.CheckState.Unchecked for state in states):
-            item.setCheckState(0, Qt.CheckState.Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
         else:
-            item.setCheckState(0, Qt.CheckState.PartiallyChecked)
-        return item.checkState(0)
+            item.setCheckState(Qt.CheckState.PartiallyChecked)
+        return item.checkState()
 
-    def _setChildrenState(self, item: QTreeWidgetItem, state: Qt.CheckState):
-        for i in range(item.childCount()):
+    def _syncAncestorCheckStates(self, item: QStandardItem | None):
+        while item is not None:
+            states = [item.child(i).checkState() for i in range(item.rowCount())]
+            if all(state == Qt.CheckState.Checked for state in states):
+                item.setCheckState(Qt.CheckState.Checked)
+            elif all(state == Qt.CheckState.Unchecked for state in states):
+                item.setCheckState(Qt.CheckState.Unchecked)
+            else:
+                item.setCheckState(Qt.CheckState.PartiallyChecked)
+            item = item.parent()
+
+    def _setChildrenCheckState(self, item: QStandardItem, state: Qt.CheckState):
+        for i in range(item.rowCount()):
             child = item.child(i)
-            child.setCheckState(0, state)
-            self._setChildrenState(child, state)
+            child.setCheckState(state)
+            self._setChildrenCheckState(child, state)
 
     def _collectSelectedIndexes(self) -> set[int]:
         return {
             file.index
-            for item, file in self._itemToFile.items()
-            if item.checkState(0) == Qt.CheckState.Checked
+            for file in self.task.files
+            if self._fileItems[file.index].checkState() == Qt.CheckState.Checked
         }
 
     def _setSelectedIndexes(self, selectedIndexes: set[int]):
-        self._updatingChecks = True
-        try:
-            for item, file in self._itemToFile.items():
+        with QSignalBlocker(self.treeModel):
+            for file in self.task.files:
+                item = self._fileItems[file.index]
                 state = Qt.CheckState.Checked if file.index in selectedIndexes else Qt.CheckState.Unchecked
-                item.setCheckState(0, state)
-            self._refreshParentCheckStates()
-            self._updateSummary()
-        finally:
-            self._updatingChecks = False
+                item.setCheckState(state)
+                self._syncAncestorCheckStates(item.parent())
+        self._updateSummary()
 
     def _updateSummary(self):
         selectedIndexes = self._collectSelectedIndexes()
@@ -274,19 +287,16 @@ class TorrentFileSelectDialog(MessageBoxBase):
             )
         )
 
-    def _onItemChanged(self, item: QTreeWidgetItem, column: int):
-        if column != 0 or self._updatingChecks:
+    def _onItemChanged(self, item: QStandardItem):
+        if item.column() != 0:
             return
 
-        self._updatingChecks = True
-        try:
-            state = item.checkState(0)
-            if item.childCount() > 0 and state != Qt.CheckState.PartiallyChecked:
-                self._setChildrenState(item, state)
-            self._refreshParentCheckStates()
-            self._updateSummary()
-        finally:
-            self._updatingChecks = False
+        with QSignalBlocker(self.treeModel):
+            if item.rowCount() > 0 and item.checkState() != Qt.CheckState.PartiallyChecked:
+                self._setChildrenCheckState(item, item.checkState())
+            self._syncAncestorCheckStates(item.parent())
+        self._updateSummary()
+        self.treeView.viewport().update()
 
     def _setRootCheckState(self, state: Qt.CheckState):
         if state == Qt.CheckState.Checked:
@@ -296,9 +306,11 @@ class TorrentFileSelectDialog(MessageBoxBase):
 
     def _selectAll(self):
         self._setRootCheckState(Qt.CheckState.Checked)
+        self.treeView.viewport().update()
 
     def _clearAll(self):
         self._setRootCheckState(Qt.CheckState.Unchecked)
+        self.treeView.viewport().update()
 
     def _invertSelection(self):
         currentSelected = self._collectSelectedIndexes()
@@ -307,6 +319,7 @@ class TorrentFileSelectDialog(MessageBoxBase):
             for file in self.task.files
             if file.index not in currentSelected
         })
+        self.treeView.viewport().update()
 
     def _selectOnlyFileType(self, typeKey: str):
         self._setSelectedIndexes({
@@ -314,6 +327,7 @@ class TorrentFileSelectDialog(MessageBoxBase):
             for file in self.task.files
             if _torrentFileType(file.path) == typeKey
         })
+        self.treeView.viewport().update()
 
     def validate(self) -> bool:
         if self._collectSelectedIndexes():
