@@ -22,14 +22,14 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.11"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  push-to-crowdin:
-    name: Push sources to Crowdin
-    if: github.event.inputs.operation == 'push'
+  sync-crowdin:
+    name: Sync Crowdin
     runs-on: ubuntu-latest
+    env:
+      CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+      CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -37,9 +37,6 @@ jobs:
           fetch-depth: 0
 
       - name: Validate Crowdin secrets
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
         run: |
           test -n "$CROWDIN_PROJECT_ID" || (echo "Missing CROWDIN_PROJECT_ID secret" && exit 1)
           test -n "$CROWDIN_PERSONAL_TOKEN" || (echo "Missing CROWDIN_PERSONAL_TOKEN secret" && exit 1)
@@ -58,69 +55,44 @@ jobs:
         run: python sync_i18n_res.py
 
       - name: Upload sources and translations
+        if: github.event.inputs.operation == 'push'
         uses: crowdin/github-action@v2
         with:
           config: crowdin.yml
           upload_sources: true
           upload_translations: true
         env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-
-  pull-from-crowdin:
-    name: Pull translations from Crowdin
-    if: github.event.inputs.operation == 'pull'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Validate Crowdin secrets
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-        run: |
-          test -n "$CROWDIN_PROJECT_ID" || (echo "Missing CROWDIN_PROJECT_ID secret" && exit 1)
-          test -n "$CROWDIN_PERSONAL_TOKEN" || (echo "Missing CROWDIN_PERSONAL_TOKEN secret" && exit 1)
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install Qt translation tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install --timeout=300 "pyside6>=6.10.2"
-
-      - name: Refresh Qt translation assets
-        run: python sync_i18n_res.py
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download translations
+        if: github.event.inputs.operation == 'pull'
         uses: crowdin/github-action@v2
         with:
           config: crowdin.yml
           download_translations: true
+          push_translations: false
+          create_pull_request: false
+          skip_ref_checkout: true
         env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fix workspace permissions
+      - name: Prepare downloaded translations
+        if: github.event.inputs.operation == 'pull'
         run: |
-          sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"
+          sudo chown -R "$(id -u):$(id -g)" .git app/assets
           rm -f .git/COMMIT_EDITMSG
-
-      - name: Rebuild runtime translation assets
-        run: python sync_i18n_res.py
+          python sync_i18n_res.py
 
       - name: Create translation pull request
+        if: github.event.inputs.operation == 'pull'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ github.ref_name }}
           branch: chore/crowdin-translations
           delete-branch: true
+          author: Crowdin Bot <support+bot@crowdin.com>
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           title: "chore(i18n): sync translations from Crowdin"
           commit-message: "chore(i18n): sync translations from Crowdin"
           body: |
