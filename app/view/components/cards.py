@@ -257,7 +257,7 @@ class UniversalTaskCard(TaskCard):
             self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         # init widgets
         self.infoLabel.hide()
-        self.infoLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        # self.infoLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         # init
         self.initLayout()
         self.connectSignalToSlot()

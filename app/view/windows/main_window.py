@@ -30,7 +30,7 @@ from app.view.pages.task_page import TaskPage
 
 if TYPE_CHECKING:
     from typing import Literal
-    from PySide6.QtGui import QClipboard
+    from PySide6.QtGui import QClipboard, QSize
 
 
 class CustomSplashScreen(SplashScreen):
@@ -95,6 +95,9 @@ class MainWindow(MSFluentWindow):
             self._toggleTheme('Light')
         else:
             self._toggleTheme('System')
+
+    def systemTitleBarRect(self, size: "QSize") -> "QRect":
+        return QRect(0, 10, 75, size.height())
 
     def _normalBackgroundColor(self):
         if self.styleSheet() == "":
@@ -266,6 +269,9 @@ class MainWindow(MSFluentWindow):
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
         self.setMinimumSize(960, 540)
+        # Init TitleBar
+        if sys.platform == 'darwin':
+            self.titleBar.hBoxLayout.insertSpacing(0, 60)
 
     def initSplashScreen(self):
         self.splashScreen = CustomSplashScreen(self.windowIcon(), self, enableShadow=False)
