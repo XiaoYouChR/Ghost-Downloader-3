@@ -3,7 +3,7 @@ from asyncio import sleep
 from enum import Enum
 from re import compile
 
-from PySide6.QtCore import QRect, QStandardPaths, QLocale
+from PySide6.QtCore import QRect, QStandardPaths, QLocale, QOperatingSystemVersion
 from orjson import dumps, loads
 from qfluentwidgets import (
     QConfig,
@@ -30,6 +30,26 @@ DEFAULT_HEADERS = {
     "upgrade-insecure-requests": "1",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
 }
+
+
+def isGreaterEqualWin10():
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() >= 10
+
+
+def isWin10():
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() >= 10
+
+
+def isLessThanWin10():
+    cv = QOperatingSystemVersion.current()
+    return sys.platform == "win32" and cv.majorVersion() == 10
+
+
+def isGreaterEqualWin11():
+    """determine if the Windows version ≥ Win11"""
+    return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000
 
 
 class Language(Enum):
@@ -172,7 +192,7 @@ class Config(QConfig):
         backgroundEffect = OptionsConfigItem(
             "Personalization",
             "BackgroundEffect",
-            "Mica",
+            "Acrylic" if isWin10() else "Mica",
             OptionsValidator(
                 ["Acrylic", "Mica", "MicaAlt", "Aero", "None"]
             ),

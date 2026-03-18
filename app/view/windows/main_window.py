@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from sys import platform
 from typing import TYPE_CHECKING, Any
@@ -14,11 +15,12 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE
+from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE, isWin10, \
+    isLessThanWin10
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
-from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, isLessThanWin10, ensureUniqueTaskTarget
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, ensureUniqueTaskTarget
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
@@ -344,8 +346,8 @@ class MainWindow(MSFluentWindow):
     def nativeEvent(self, eventType, message):
         # 处理窗口重复打开事件
         if eventType == "windows_generic_MSG":
-            from ctypes import wintypes
-            msg = wintypes.MSG.from_address(message.__int__())
+            from ctypes.wintypes import MSG
+            msg = MSG.from_address(message.__int__())
 
             # WIN_USER = 1024
             if msg.message == 1024 + 1:
@@ -477,3 +479,26 @@ class MainWindow(MSFluentWindow):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self._downloadReleaseAsset(dialog.selectedAsset())
         dialog.deleteLater()
+
+if isWin10():
+    from qframelesswindow import AcrylicWindow, FramelessWindow
+
+    def nativeEvent(self, eventType, message):
+        if eventType == "windows_generic_MSG":
+            from ctypes.wintypes import MSG
+            msg = MSG.from_address(message.__int__())
+
+            # WIN_USER = 1024
+            if msg.message == 561 and cfg.backgroundEffect.value == "Acrylic":
+                self.windowEffect.resetAcrylicEffect(self.winId())
+            elif msg.message == 562 and cfg.backgroundEffect.value == "Acrylic":
+                isDark = darkdetect.isDark() if cfg.customThemeMode.value == 'System' else cfg.customThemeMode.value == 'Dark'
+                self.windowEffect.setAcrylicEffect(self.winId(), "00000030" if isDark else "FFFFFF30")
+            elif msg.message == 1024 + 1:
+                bringWindowToTop(self)
+                return True, 0
+
+        return FramelessWindow.nativeEvent(self, eventType, message)
+
+    MainWindow.updateFrameless = AcrylicWindow.updateFrameless
+    MainWindow.nativeEvent = nativeEvent

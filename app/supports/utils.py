@@ -6,13 +6,14 @@ from pathlib import Path
 from time import sleep
 from typing import Callable
 
-from PySide6.QtCore import QUrl, QOperatingSystemVersion, Qt, QProcess
+from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from qfluentwidgets import MessageBox
 
 from app.bases.models import Task
 from app.supports.config import cfg
+
 
 def openFolder(path):
     path = Path(path)
@@ -30,23 +31,6 @@ def openFolder(path):
         QDesktopServices.openUrl(QUrl.fromLocalFile(path.parent))
     else:
         raise FileNotFoundError(path)
-
-
-def isGreaterEqualWin10():
-    """determine if the Windows version ≥ Win10"""
-    cv = QOperatingSystemVersion.current()
-    return sys.platform == "win32" and cv.majorVersion() >= 10
-
-
-def isLessThanWin10():
-    """determine if the Windows version < Win10"""
-    cv = QOperatingSystemVersion.current()
-    return sys.platform == "win32" and cv.majorVersion() < 10
-
-
-def isGreaterEqualWin11():
-    """determine if the Windows version ≥ Win11"""
-    return isGreaterEqualWin10() and sys.getwindowsversion().build >= 22000  # type: ignore
 
 
 def getSystemProxy():

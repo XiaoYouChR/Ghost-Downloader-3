@@ -5,8 +5,8 @@ from typing import Any
 import niquests
 from PySide6.QtCore import QVersionNumber
 
-from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
-from app.supports.utils import getProxies, isLessThanWin10
+from app.supports.config import DEFAULT_HEADERS, VERSION, cfg, isLessThanWin10
+from app.supports.utils import getProxies
 
 RELEASE_API_URL = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 RELEASE_HEADERS = {
