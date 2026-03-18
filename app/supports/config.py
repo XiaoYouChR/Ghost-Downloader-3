@@ -38,8 +38,7 @@ def isGreaterEqualWin10():
 
 
 def isWin10():
-    cv = QOperatingSystemVersion.current()
-    return sys.platform == "win32" and cv.majorVersion() >= 10
+    isGreaterEqualWin10() and sys.getwindowsversion().build < 22000
 
 
 def isLessThanWin10():
