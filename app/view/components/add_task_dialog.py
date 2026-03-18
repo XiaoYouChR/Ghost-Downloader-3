@@ -13,6 +13,7 @@ from qfluentwidgets import (
     LineEdit,
     Action,
     FluentIcon,
+    IndeterminateProgressBar,
     InfoBar,
     InfoBarPosition,
 )
@@ -85,6 +86,7 @@ class AddTaskDialog(MessageBoxBase):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(self.tr("添加任务"), self)
         self.urlEdit = AutoSizingEdit(self)
+        self.parseProgressBar = IndeterminateProgressBar(self)
         self.parseResultGroup = ParseResultHeaderCardWidget(self)
         self.settingGroup = ParseSettingHeaderCardWidget(self)
         self.selectFolderCard = SelectFolderCard(FluentIcon.DOWNLOAD, self.tr('选择下载路径'), self)
@@ -109,6 +111,7 @@ class AddTaskDialog(MessageBoxBase):
             self.tr("添加多个下载链接时，请确保每行只有一个下载链接")
         )
         self.urlEdit.setWordWrapMode(QTextOption.WrapMode.NoWrap)
+        self.parseProgressBar.hide()
 
         self.settingGroup.addCard(self.selectFolderCard)
         for card in featureService.getDialogCards(self.settingGroup):
@@ -118,6 +121,7 @@ class AddTaskDialog(MessageBoxBase):
     def initLayout(self):
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.urlEdit)
+        self.viewLayout.addWidget(self.parseProgressBar)
         self.viewLayout.addWidget(self.parseResultGroup)
         self.viewLayout.addWidget(self.settingGroup)
 
@@ -217,6 +221,7 @@ class AddTaskDialog(MessageBoxBase):
         state.status = "pending"
         state.task = None
         self._activeRequests[requestId] = state
+        self._refreshParsingState()
 
         try:
             state.callbackId = coreService.parseUrl(
@@ -229,6 +234,7 @@ class AddTaskDialog(MessageBoxBase):
             self._activeRequests.pop(requestId, None)
             state.callbackId = ""
             state.status = "error"
+            self._refreshParsingState()
             logger.opt(exception=e).error("提交解析请求失败 {}", state.url)
             self._showParseError(state.url, str(e))
 
@@ -246,6 +252,7 @@ class AddTaskDialog(MessageBoxBase):
             self._activeRequests.pop(state.requestId, None)
             if state.callbackId:
                 coreService.removeCallback(state.callbackId)
+            self._refreshParsingState()
 
         self._payloadOverrides.pop(state.url, None)
         state.callbackId = ""
@@ -283,9 +290,13 @@ class AddTaskDialog(MessageBoxBase):
             parent=self,
         )
 
+    def _refreshParsingState(self):
+        self.parseProgressBar.setVisible(bool(self._activeRequests))
+
     def _handleParseResult(self, requestId: int, resultTask: Task, error: str = None):
         state = self._activeRequests.pop(requestId, None)
         if state is not None:
+            self._refreshParsingState()
             state.callbackId = ""
 
             if error or resultTask is None:
@@ -357,6 +368,8 @@ class AddTaskDialog(MessageBoxBase):
                     payload=acceptedPayload,
                 )
                 state.callbackId = ""
+
+        self._refreshParsingState()
 
         self._timer.stop()
         for state in self._lineStates:
