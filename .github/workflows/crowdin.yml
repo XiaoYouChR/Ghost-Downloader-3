@@ -22,6 +22,8 @@ concurrency:
 
 env:
   PYTHON_VERSION: "3.11"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   push-to-crowdin:
