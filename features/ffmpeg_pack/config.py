@@ -63,6 +63,7 @@ async def queryFFmpegRuntime() -> dict[str, str]:
     process = await asyncio.create_subprocess_exec(
         ffmpegPath,
         "-version",
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,
     )

@@ -84,6 +84,7 @@ async def queryM3U8Runtime() -> dict[str, str]:
     process = await asyncio.create_subprocess_exec(
         downloaderPath,
         "--version",
+        stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )

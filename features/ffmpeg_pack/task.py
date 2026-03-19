@@ -151,6 +151,7 @@ class FFmpegWorker(Worker):
             "-of",
             "default=noprint_wrappers=1:nokey=1",
             path,
+            stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -215,6 +216,7 @@ class FFmpegWorker(Worker):
                 "-c",
                 "copy",
                 self.stage.resolvePath,
+                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.DEVNULL,
             )

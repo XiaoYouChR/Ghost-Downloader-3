@@ -526,6 +526,7 @@ class M3U8Worker(Worker):
                 downloaderPath,
                 *args,
                 cwd=str(Path(downloaderPath).parent),
+                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
             )
