@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y desktop-file-utils libegl1-mesa
+          sudo apt-get install -y desktop-file-utils libegl1-mesa-dev
           pip install --timeout=300 -r requirements.txt
 
       - name: Build with Nuitka
