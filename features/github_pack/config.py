@@ -1,3 +1,4 @@
+import asyncio
 from time import perf_counter
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
@@ -140,7 +141,6 @@ class GitHubAgreementDialog(MessageBoxBase):
 
 
 async def measureProxyLatencies() -> dict[str, int]:
-    latencies: dict[str, int] = {}
     sites = list(GITHUB_PROXY_SITES)
     customSite = githubConfig.customProxySite.value
     if customSite and customSite not in sites:
@@ -149,31 +149,33 @@ async def measureProxyLatencies() -> dict[str, int]:
     session = niquests.AsyncSession(happy_eyeballs=True)
     session.trust_env = False
 
-    try:
-        for site in sites:
-            startedAt = perf_counter()
+    async def measureSiteLatency(site: str) -> tuple[str, int]:
+        startedAt = perf_counter()
+        try:
+            response = await session.get(
+                f"{site.rstrip('/')}/{GITHUB_PROBE_TARGET}",
+                timeout=15,
+                proxies=getProxies(),
+                verify=cfg.SSLVerify.value,
+                allow_redirects=True,
+                stream=True,
+            )
             try:
-                response = await session.get(
-                    f"{site.rstrip('/')}/{GITHUB_PROBE_TARGET}",
-                    timeout=15,
-                    proxies=getProxies(),
-                    verify=cfg.SSLVerify.value,
-                    allow_redirects=True,
-                    stream=True,
-                )
-                try:
-                    response.raise_for_status()
-                finally:
-                    await response.close()
+                response.raise_for_status()
+            finally:
+                await response.close()
 
-                latencies[site] = max(1, int((perf_counter() - startedAt) * 1000))
-            except Exception as e:
-                logger.opt(exception=e).error("{} 测速失败", site)
-                latencies[site] = -1
+            return site, max(1, int((perf_counter() - startedAt) * 1000))
+        except Exception as e:
+            logger.opt(exception=e).error("{} 测速失败", site)
+            return site, -1
+
+    try:
+        results = await asyncio.gather(*(measureSiteLatency(site) for site in sites))
     finally:
         await session.close()
 
-    return latencies
+    return dict(results)
 
 
 class GitHubProxySiteCard(SettingCard):
