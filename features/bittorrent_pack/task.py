@@ -322,6 +322,7 @@ class BitTorrentTask(Task):
     storageMode: str = field(default_factory=lambda: bittorrentConfig.storageMode.value)
     seedRatioLimitPercent: int = field(default_factory=lambda: bittorrentConfig.seedRatioLimitPercent.value)
     seedTimeLimitMinutes: int = field(default_factory=lambda: bittorrentConfig.seedTimeLimitMinutes.value)
+    saveMagnetTorrentFile: bool = field(default_factory=lambda: bittorrentConfig.saveMagnetTorrentFile.value)
     shareRatioPercent: float = field(default=0)
     seedingTimeSeconds: int = field(default=0)
     isSeeding: bool = field(default=False)
@@ -344,6 +345,12 @@ class BitTorrentTask(Task):
     @property
     def stage(self) -> BitTorrentTaskStage:
         return self.stages[0]
+
+    @property
+    def magnetTorrentPath(self) -> Path | None:
+        if self.sourceType != "magnet" or not self.saveMagnetTorrentFile:
+            return None
+        return self.path / f"{self.title}.torrent"
 
     @property
     def selectedFileCount(self) -> int:
@@ -675,12 +682,23 @@ class BitTorrentWorker(Worker):
         except Exception:
             pass
 
+    def _saveMagnetTorrentFile(self):
+        torrentPath = self.task.magnetTorrentPath
+        if torrentPath is None:
+            return
+
+        try:
+            torrentPath.write_bytes(_decodeBytes(self.task.torrentData))
+        except Exception as e:
+            logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", self.task.title)
+
     async def run(self):
         if self.task.selectedFileCount <= 0:
             self.stage.setStatus(TaskStatus.FAILED)
             raise RuntimeError("至少需要选择一个文件")
 
         Path(self.task.path).mkdir(parents=True, exist_ok=True)
+        self._saveMagnetTorrentFile()
 
         self.session = _createSession(
             listenPort=self.task.listenPort,
@@ -902,6 +920,7 @@ def buildTaskFromTorrentInfo(
         storageMode=bittorrentConfig.storageMode.value,
         seedRatioLimitPercent=bittorrentConfig.seedRatioLimitPercent.value,
         seedTimeLimitMinutes=bittorrentConfig.seedTimeLimitMinutes.value,
+        saveMagnetTorrentFile=bittorrentConfig.saveMagnetTorrentFile.value,
     )
     return task
 

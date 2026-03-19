@@ -207,6 +207,7 @@ class BitTorrentConfig(PackConfig):
     enableNATPMP = ConfigItem("BitTorrent", "EnableNATPMP", True, BoolValidator())
     seedRatioLimitPercent = RangeConfigItem("BitTorrent", "SeedRatioLimitPercent", 0, RangeValidator(0, 10000))
     seedTimeLimitMinutes = RangeConfigItem("BitTorrent", "SeedTimeLimitMinutes", 0, RangeValidator(0, 43200))
+    saveMagnetTorrentFile = ConfigItem("BitTorrent", "SaveMagnetTorrentFile", False, BoolValidator())
     enableWebTrackers = ConfigItem("BitTorrent", "EnableWebTrackers", True, BoolValidator())
     autoRefreshWebTrackers = ConfigItem("BitTorrent", "AutoRefreshWebTrackers", True, BoolValidator())
     webTrackerSource = ConfigItem(
@@ -296,6 +297,13 @@ class BitTorrentConfig(PackConfig):
             texts=[self.tr("稀疏分配"), self.tr("预分配")],
             parent=self.bittorrentGroup,
         )
+        self.saveMagnetTorrentFileCard = SwitchSettingCard(
+            FluentIcon.SAVE,
+            self.tr("保存 Magnet 种子文件"),
+            self.tr("下载 magnet 链接时，在下载目录额外保存解析得到的 .torrent 文件"),
+            self.saveMagnetTorrentFile,
+            self.bittorrentGroup,
+        )
         self.sequentialDownloadCard = SwitchSettingCard(
             FluentIcon.LIBRARY,
             self.tr("顺序下载"),
@@ -356,6 +364,7 @@ class BitTorrentConfig(PackConfig):
             self.seedRatioLimitCard,
             self.seedTimeLimitCard,
             self.storageModeCard,
+            self.saveMagnetTorrentFileCard,
             self.sequentialDownloadCard,
             self.enableDHTCard,
             self.enableLSDCard,

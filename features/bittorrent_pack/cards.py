@@ -489,6 +489,8 @@ class BitTorrentTaskCard(UniversalTaskCard):
         if not completely:
             return
         _removePath(Path(self.task.resolvePath))
+        if self.task.magnetTorrentPath is not None:
+            _removePath(self.task.magnetTorrentPath)
 
     def onTaskFinished(self):
         super().onTaskFinished()
