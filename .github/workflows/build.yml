@@ -119,26 +119,39 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+          chmod +x "dist/修复软件损坏"
+
+      - name: Install DMG tooling
+        run: |
+          brew list create-dmg >/dev/null 2>&1 || brew install create-dmg
 
       - name: Create DMG
         run: |
-          ln -s /Applications dist/Applications
+          DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_SOURCE_DIR="dist/dmg-layout"
 
-          attempt=0
-          max_attempts=10
-          while [ $attempt -lt $max_attempts ]; do
-              hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader" -fs HFS+ \
-                  -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m \
-                  "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg" && break
+          rm -rf "$DMG_SOURCE_DIR"
+          mkdir -p "$DMG_SOURCE_DIR"
+          cp -R "dist/Ghost Downloader.app" "$DMG_SOURCE_DIR/"
+          find "$DMG_SOURCE_DIR" -name ".DS_Store" -delete
 
-              attempt=$((attempt + 1))
-              echo "Attempt $attempt failed, retrying..."
-              sleep 1  # 等待 1 秒后重试
-          done
-
-          if [ $attempt -eq $max_attempts ]; then
-              echo "Failed to create DMG after $max_attempts attempts"
-          fi
+          create-dmg \
+            --volname "Ghost Downloader" \
+            --volicon "app/assets/logo.icns" \
+            --background "app/assets/backgroundImage-2X.png" \
+            --window-pos 200 120 \
+            --window-size 664 404 \
+            --icon-size 72 \
+            --text-size 14 \
+            --icon "Ghost Downloader.app" 190 200 \
+            --hide-extension "Ghost Downloader.app" \
+            --app-drop-link 370 200 \
+            --add-file "修复软件损坏" "dist/修复软件损坏" 610 200 \
+            --hdiutil-quiet \
+            --hdiutil-retries 10 \
+            --applescript-sleep-duration 10 \
+            "$DMG_NAME" \
+            "$DMG_SOURCE_DIR"
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
@@ -183,16 +196,43 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+          chmod +x "dist/修复软件损坏"
 
       - name: Reinstall openssl libs
         run: |
           brew install openssl@3
 
+      - name: Install DMG tooling
+        run: |
+          brew list create-dmg >/dev/null 2>&1 || brew install create-dmg
+
       - name: Create DMG
         run: |
-          ln -s /Applications dist/Applications
-          sleep 1
-          hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_SOURCE_DIR="dist/dmg-layout"
+
+          rm -rf "$DMG_SOURCE_DIR"
+          mkdir -p "$DMG_SOURCE_DIR"
+          cp -R "dist/Ghost Downloader.app" "$DMG_SOURCE_DIR/"
+          find "$DMG_SOURCE_DIR" -name ".DS_Store" -delete
+
+          create-dmg \
+            --volname "Ghost Downloader" \
+            --volicon "app/assets/logo.icns" \
+            --background "app/assets/backgroundImage-2X.png" \
+            --window-pos 200 120 \
+            --window-size 664 404 \
+            --icon-size 72 \
+            --text-size 14 \
+            --icon "Ghost Downloader.app" 190 200 \
+            --hide-extension "Ghost Downloader.app" \
+            --app-drop-link 370 200 \
+            --add-file "修复软件损坏" "dist/修复软件损坏" 610 200 \
+            --hdiutil-quiet \
+            --hdiutil-retries 10 \
+            --applescript-sleep-duration 10 \
+            "$DMG_NAME" \
+            "$DMG_SOURCE_DIR"
 
       - name: Upload to release
         uses: softprops/action-gh-release@v2
@@ -203,8 +243,16 @@ jobs:
   build-ubuntu:
     strategy:
       matrix:
-        architecture: [ x86_64, arm64 ]
-    runs-on: ubuntu-22.04
+        include:
+          - architecture: x86_64
+            runner: ubuntu-22.04
+            deb_arch: amd64
+            appimage_arch: x86_64
+          - architecture: arm64
+            runner: ubuntu-22.04-arm
+            deb_arch: arm64
+            appimage_arch: aarch64
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -219,7 +267,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1-mesa
+          sudo apt-get install -y desktop-file-utils libegl1-mesa
           pip install --timeout=300 -r requirements.txt
 
       - name: Build with Nuitka
@@ -230,6 +278,89 @@ jobs:
           rm -rf version.txt
           python deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
+
+      - name: Build .deb and .AppImage
+        run: |
+          DIST_DIR="dist/Ghost-Downloader-3.dist"
+          DEB_ROOT="$RUNNER_TEMP/deb-root"
+          APPDIR="$RUNNER_TEMP/GhostDownloader.AppDir"
+          PACKAGE_NAME="ghost-downloader"
+          INSTALL_DIR="/opt/Ghost-Downloader-3"
+          DESKTOP_FILE="$PACKAGE_NAME.desktop"
+          ICON_FILE="$PACKAGE_NAME.png"
+          DEB_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb"
+          APPIMAGE_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage"
+          APPIMAGETOOL_FILE="appimagetool-${{ matrix.appimage_arch }}.AppImage"
+          APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/latest/download/${APPIMAGETOOL_FILE}"
+
+          rm -rf "$DEB_ROOT" "$APPDIR" "$RUNNER_TEMP/squashfs-root"
+          mkdir -p \
+            "$DEB_ROOT/DEBIAN" \
+            "$DEB_ROOT$INSTALL_DIR" \
+            "$DEB_ROOT/usr/bin" \
+            "$DEB_ROOT/usr/share/applications" \
+            "$DEB_ROOT/usr/share/icons/hicolor/256x256/apps" \
+            "$APPDIR/usr/bin" \
+            "$APPDIR/usr/lib/$PACKAGE_NAME" \
+            "$APPDIR/usr/share/applications" \
+            "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+
+          cp -R "$DIST_DIR"/. "$DEB_ROOT$INSTALL_DIR/"
+          cp -R "$DIST_DIR"/. "$APPDIR/usr/lib/$PACKAGE_NAME/"
+
+          ln -s "$INSTALL_DIR/Ghost-Downloader-3.bin" "$DEB_ROOT/usr/bin/$PACKAGE_NAME"
+          ln -s "../lib/$PACKAGE_NAME/Ghost-Downloader-3.bin" "$APPDIR/usr/bin/$PACKAGE_NAME"
+          ln -s "usr/bin/$PACKAGE_NAME" "$APPDIR/AppRun"
+
+          cat > "$DEB_ROOT/DEBIAN/control" <<EOF
+          Package: $PACKAGE_NAME
+          Version: ${{ env.VERSION }}
+          Section: net
+          Priority: optional
+          Architecture: ${{ matrix.deb_arch }}
+          Maintainer: XiaoYouChR <XiaoYouChR@qq.com>
+          Description: Ghost Downloader
+           A multi-threading downloader based on PySide6.
+          EOF
+
+          cat > "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE" <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=Ghost Downloader
+          Comment=A multi-threading downloader based on PySide6
+          Exec=$PACKAGE_NAME
+          Icon=$PACKAGE_NAME
+          Terminal=false
+          Categories=Network;Utility;
+          StartupNotify=false
+          EOF
+
+          cp "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE" "$APPDIR/usr/share/applications/$DESKTOP_FILE"
+          cp "app/assets/logo.png" "$DEB_ROOT/usr/share/icons/hicolor/256x256/apps/$ICON_FILE"
+          cp "app/assets/logo.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/$ICON_FILE"
+
+          ln -s "usr/share/applications/$DESKTOP_FILE" "$APPDIR/$DESKTOP_FILE"
+          ln -s "usr/share/icons/hicolor/256x256/apps/$ICON_FILE" "$APPDIR/$ICON_FILE"
+          ln -s "usr/share/icons/hicolor/256x256/apps/$ICON_FILE" "$APPDIR/.DirIcon"
+
+          desktop-file-validate "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE"
+          dpkg-deb --build --root-owner-group "$DEB_ROOT" "$DEB_FILE"
+
+          curl -fL "$APPIMAGETOOL_URL" -o "$RUNNER_TEMP/$APPIMAGETOOL_FILE"
+          chmod +x "$RUNNER_TEMP/$APPIMAGETOOL_FILE"
+          (
+            cd "$RUNNER_TEMP"
+            "./$APPIMAGETOOL_FILE" --appimage-extract >/dev/null
+            ARCH="${{ matrix.appimage_arch }}" \
+              ./squashfs-root/AppRun \
+              --no-appstream \
+              "$APPDIR" \
+              "$GITHUB_WORKSPACE/$APPIMAGE_FILE"
+          )
+          chmod +x "$APPIMAGE_FILE"
+
+          dpkg-deb --info "$DEB_FILE"
+          file "$APPIMAGE_FILE"
 
       - name: Tar the contents of Ghost-Downloader
         shell: pwsh
@@ -246,4 +377,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz
+          files: |
+            Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz
+            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb
+            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
