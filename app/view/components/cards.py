@@ -144,13 +144,22 @@ class TaskCard(CardWidget):
         raise NotImplementedError
 
     def removeTask(self, deleteFile=False):
-        coreService.stopTask(self.task)
+        coreService.runCoroutine(
+            coreService._stopTask(self.task),
+            lambda _result, error: self._onTaskStoppedForDeletion(deleteFile, error),
+        )
+
+    def _onTaskStoppedForDeletion(self, deleteFile: bool, error: str | None = None):
+        if error:
+            logger.warning("failed to stop task {} before deletion: {}", self.task.taskId, error)
+            return
+
+        self.deleted.emit()
+
         try:
             self.onTaskDeleted(deleteFile)
         except Exception as e:
             logger.opt(exception=e).error("failed to delete task resources {}", self.task.taskId)
-        finally:
-            self.deleted.emit()
 
     def createContextMenu(self) -> RoundMenu | None:
         menu = RoundMenu(parent=self)
@@ -396,6 +405,9 @@ class UniversalTaskCard(TaskCard):
                     if path.is_file() or path.is_symlink():
                         path.unlink()
                 except FileNotFoundError:
+                    continue
+                except PermissionError:
+                    logger.warning("skip removing busy file {}", path)
                     continue
                 except Exception as e:
                     logger.opt(exception=e).error("failed to remove file {}", path)
