@@ -259,6 +259,9 @@ class Task:
         if isinstance(path, (str, Path)):
             self.path = Path(path)
 
+    def canPause(self) -> bool:
+        return True
+
     def occupiesDownloadSlot(self) -> bool:
         return self.status == TaskStatus.RUNNING
 

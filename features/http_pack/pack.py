@@ -17,6 +17,123 @@ from .config import httpConfig
 from .task import HttpTask, HttpTaskStage
 
 
+def _parsePositiveContentLength(headers: dict[str, str]) -> int:
+    value = headers.get("content-length", "").strip()
+    if not value:
+        return SpecialFileSize.UNKNOWN
+
+    try:
+        length = int(value)
+    except ValueError:
+        return SpecialFileSize.UNKNOWN
+
+    return length if length > 0 else SpecialFileSize.UNKNOWN
+
+
+def _parseContentRangeTotal(headers: dict[str, str]) -> int:
+    contentRange = headers.get("content-range", "").strip()
+    if not contentRange or "/" not in contentRange:
+        return SpecialFileSize.UNKNOWN
+
+    _, _, total = contentRange.rpartition("/")
+    if not total or total == "*":
+        return SpecialFileSize.UNKNOWN
+
+    try:
+        size = int(total)
+    except ValueError:
+        return SpecialFileSize.UNKNOWN
+
+    return size if size > 0 else SpecialFileSize.UNKNOWN
+
+
+def _buildRangeProbeHeaders(headers: dict, rangeValue: str) -> dict:
+    requestHeaders = headers.copy()
+    requestHeaders["range"] = rangeValue
+    requestHeaders["accept-encoding"] = "identity"
+    return requestHeaders
+
+
+async def _requestProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
+    response = await client.get(
+        url,
+        headers=headers,
+        proxies=proxies,
+        verify=cfg.SSLVerify.value,
+        allow_redirects=True,
+        stream=True,
+    )
+
+    try:
+        if response.status_code not in {200, 206, 416}:
+            response.raise_for_status()
+        return response.status_code, {k.lower(): v for k, v in response.headers.items()}, str(response.url)
+    finally:
+        await response.close()
+
+
+async def _probeDownloadInfo(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
+    client = niquests.AsyncSession(happy_eyeballs=True)
+    client.trust_env = False
+
+    try:
+        statusCode, responseHeaders, finalUrl = await _requestProbe(
+            client,
+            url,
+            _buildRangeProbeHeaders(headers, "bytes=1-1"),
+            proxies,
+        )
+
+        fileSize = _parseContentRangeTotal(responseHeaders)
+        supportsRange = statusCode == 206 and "content-range" in responseHeaders
+
+        if supportsRange:
+            if fileSize == SpecialFileSize.UNKNOWN:
+                logger.info(f"偏移 Range 探测成功, content-range: {responseHeaders.get('content-range', '')}, fileSize: unknown")
+            else:
+                logger.info(
+                    f"偏移 Range 探测成功, content-range: {responseHeaders.get('content-range', '')}, fileSize: {fileSize}"
+                )
+            return fileSize, True, finalUrl, responseHeaders
+
+        fileSize = _parsePositiveContentLength(responseHeaders)
+
+        if statusCode == 200:
+            logger.info(
+                f"偏移 Range 探测返回 200, content-length: {responseHeaders.get('content-length', '')}"
+            )
+            if fileSize in {SpecialFileSize.UNKNOWN, 1}:
+                fallbackStatus, fallbackHeaders, _, = await _requestProbe(
+                    client,
+                    url,
+                    _buildRangeProbeHeaders(headers, "bytes=0-0"),  # bytes=0- 和 bytes=0-0 哪个更好存疑
+                    proxies,
+                )
+                fallbackSize = _parseContentRangeTotal(fallbackHeaders)
+                if fallbackStatus == 206 and "content-range" in fallbackHeaders:
+                    if fallbackSize == SpecialFileSize.UNKNOWN:
+                        logger.info(f"回退 Range 探测成功, content-range: {fallbackHeaders.get('content-range', '')}, fileSize: unknown")
+                    else:
+                        logger.info(
+                            f"回退 Range 探测成功, content-range: {fallbackHeaders.get('content-range', '')}, fileSize: {fallbackSize}"
+                        )
+                    return fallbackSize, True, finalUrl, fallbackHeaders
+
+                if fileSize == SpecialFileSize.UNKNOWN:
+                    fileSize = _parsePositiveContentLength(fallbackHeaders)
+                    if fileSize == SpecialFileSize.UNKNOWN and fallbackStatus == 416:
+                        fileSize = _parseContentRangeTotal(fallbackHeaders)
+
+        if fileSize == SpecialFileSize.UNKNOWN:
+            logger.info("文件大小未知，按不支持断点续传处理")
+        else:
+            logger.info(f"文件大小已知但未探测到 Range 支持, fileSize: {fileSize}")
+
+        return fileSize, False, finalUrl, responseHeaders
+    finally:
+        await client.close()
+
+
 def _extractFileName(url: str, headers: dict) -> str:
 
     fileName = ""
@@ -94,45 +211,10 @@ async def parse(payload: dict) -> HttpTask:
     proxies: dict = payload.get('proxies', getProxies())
     blockNum: int = payload.get('preBlockNum', httpConfig.preBlockNum.value)
     path: Path = payload.get('path', Path(cfg.downloadFolder.value))
-
-    requestHeaders = headers.copy()
-    requestHeaders["range"] = "bytes=0-"    # 小写好像更好来着?
-
-    client = niquests.AsyncSession(happy_eyeballs=True)
-    client.trust_env = False
-    response = await client.get(url, headers=requestHeaders, proxies=proxies, verify=cfg.SSLVerify.value, allow_redirects=True, stream=True)
-    await client.close()
-    response.raise_for_status()
-
-    head = response.headers
-    head = {k.lower(): v for k, v in head.items()}
-
-    # 获取文件大小, 判断是否可以分块下载
-    # 状态码为206才是范围请求，200表示服务器拒绝了范围请求同时将发送整个文件
-    if response.status_code == 206 and "content-range" in head:
-        # https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Reference/Headers/Content-Range
-        _left, _char, right = head["content-range"].rpartition("/")
-
-        if right != "*":
-            fileSize = int(right)
-            logger.info(
-                f"content-range: {head['content-range']}, fileSize: {fileSize}, content-length: {head['content-length']}"
-            )
-
-        elif "content-length" in head:
-            fileSize = int(head["content-length"])
-
-        else:
-            fileSize = SpecialFileSize.UNKNOWN
-            logger.info("文件似乎支持续传，但无法获取文件大小")
-    else:
-        fileSize = SpecialFileSize.NOT_SUPPORTED
-        logger.info("文件不支持续传")
-
-    await response.close()
+    fileSize, supportsRange, finalUrl, head = await _probeDownloadInfo(url, headers, proxies)
 
     # 获取文件名
-    fileName = _extractFileName(response.url, head)    # 这里取重定向之前的 URL 目的是更好的获取
+    fileName = _extractFileName(finalUrl, head)
 
     resolvePath = str(path / fileName)
 
@@ -143,6 +225,7 @@ async def parse(payload: dict) -> HttpTask:
         headers=headers,
         proxies=proxies,
         blockNum=blockNum,
+        supportsRange=supportsRange,
         path=path
     )
     stage = HttpTaskStage(
@@ -153,6 +236,7 @@ async def parse(payload: dict) -> HttpTask:
         proxies=proxies,
         resolvePath=resolvePath,
         blockNum=blockNum,
+        supportsRange=supportsRange,
     )
     task.addStage(stage)
     return task

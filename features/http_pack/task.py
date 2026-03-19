@@ -26,6 +26,7 @@ class HttpTaskStage(TaskStage):
     proxies: dict
     resolvePath: str
     blockNum: int
+    supportsRange: bool = field(default=True)
     accelerated: bool = field(default=False)
 
 
@@ -34,12 +35,17 @@ class HttpTask(Task):
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
     blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
+    supportsRange: bool = field(default=True)
 
     def syncStagePaths(self):
         resolvePath = str(self.path / self.title)
         for stage in self.stages:
             if isinstance(stage, HttpTaskStage):
                 stage.resolvePath = resolvePath
+                stage.supportsRange = self.supportsRange
+
+    def canPause(self) -> bool:
+        return self.supportsRange
 
     async def run(self):
         self.stages.sort(key=lambda stage: stage.stageIndex)
@@ -121,16 +127,19 @@ class HttpWorker(Worker):
         self.subworkers.insert(self.subworkers.index(slowestSubworker) + 1, newSubworker)
         self.taskGroup.create_task(self.handleSubworker(newSubworker))
 
+    def _buildRangeHeaders(self, rangeValue: str) -> dict:
+        requestHeaders = self.stage.headers.copy()
+        requestHeaders["range"] = rangeValue
+        requestHeaders["accept-encoding"] = "identity"
+        return requestHeaders
+
     async def handleSubworker(self, subworker: HttpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
             while True:
                 try:
-                    requestHeaders = self.stage.headers.copy()
-                    requestHeaders["range"] = f"bytes={subworker.progress}-"
-
                     res = await self.client.get(
                         self.stage.url,
-                        headers=requestHeaders,
+                        headers=self._buildRangeHeaders(f"bytes={subworker.progress}-"),
                         proxies=self.stage.proxies,
                         verify=cfg.SSLVerify.value,
                         allow_redirects=True,
@@ -201,12 +210,9 @@ class HttpWorker(Worker):
         else:  # 正常下载
             while subworker.progress < subworker.end:
                 try:
-                    requestHeaders = self.stage.headers.copy()
-                    requestHeaders["range"] = f"bytes={subworker.progress}-{subworker.end}"
-
                     res = await self.client.get(
                         self.stage.url,
-                        headers=requestHeaders,
+                        headers=self._buildRangeHeaders(f"bytes={subworker.progress}-{subworker.end}"),
                         proxies=self.stage.proxies,
                         verify=cfg.SSLVerify.value,
                         allow_redirects=True,
@@ -294,7 +300,7 @@ class HttpWorker(Worker):
 
     async def supervisor(self):
         recordFileHandle = None
-        if self.stage.fileSize != SpecialFileSize.NOT_SUPPORTED:
+        if self.stage.supportsRange:
             recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
         try:
             self.stage.receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
@@ -346,12 +352,12 @@ class HttpWorker(Worker):
         return False
 
     def generateSubworkers(self):
-        if self.stage.fileSize == SpecialFileSize.UNKNOWN:
-            self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.UNKNOWN))
+        if not self.stage.supportsRange:
+            self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.NOT_SUPPORTED))
             return
 
-        if self.stage.fileSize == SpecialFileSize.NOT_SUPPORTED:
-            self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.NOT_SUPPORTED))
+        if self.stage.fileSize == SpecialFileSize.UNKNOWN:
+            self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.UNKNOWN))
             return
 
         step = self.stage.fileSize // self.stage.blockNum  # 每块大小
@@ -381,7 +387,7 @@ class HttpWorker(Worker):
         Path(self.stage.resolvePath).parent.mkdir(parents=True, exist_ok=True)
 
         restored = False
-        if self.stage.fileSize != SpecialFileSize.NOT_SUPPORTED:
+        if self.stage.supportsRange:
             restored = self.restoreProgress()
         else:
             self._cleanupRecordFile()
@@ -393,7 +399,7 @@ class HttpWorker(Worker):
             logger.info("从进度文件恢复下载分片 {}", self.stage.resolvePath)
 
         openMode = os.O_RDWR | os.O_CREAT
-        if self.stage.fileSize == SpecialFileSize.NOT_SUPPORTED:
+        if not self.stage.supportsRange:
             openMode |= os.O_TRUNC
         self.fileHandle = os.open(self.stage.resolvePath, openMode, 0o666)
 
