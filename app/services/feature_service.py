@@ -211,9 +211,8 @@ class FeatureService:
                 return False
 
             packInstance = featurePackClass()
-            packInstance.load(mainWindow)
-
             self._loadPackConfig(packInstance, mainWindow)
+            packInstance.load(mainWindow)
 
             self.loadedPacks[packInfo["name"]] = {
                 "instance": packInstance,
