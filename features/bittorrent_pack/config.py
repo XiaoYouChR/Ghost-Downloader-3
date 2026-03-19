@@ -187,7 +187,7 @@ class WebTrackerCard(SettingCard):
 class BitTorrentConfig(PackConfig):
     listenPort = RangeConfigItem("BitTorrent", "ListenPort", 0, RangeValidator(0, 65535))
     metadataTimeout = RangeConfigItem("BitTorrent", "MetadataTimeout", 30, RangeValidator(5, 300))
-    connectionsLimit = RangeConfigItem("BitTorrent", "ConnectionsLimit", 200, RangeValidator(20, 2000))
+    connectionsLimit = RangeConfigItem("BitTorrent", "ConnectionsLimit", 500, RangeValidator(20, 2000))
     downloadRateLimit = RangeConfigItem(
         "BitTorrent",
         "DownloadRateLimit",
