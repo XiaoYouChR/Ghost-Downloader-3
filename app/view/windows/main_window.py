@@ -20,7 +20,7 @@ from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDB
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
-from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, ensureUniqueTaskTarget
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, ensureUniqueTaskTarget, openAppLogFolder
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
@@ -30,7 +30,8 @@ from app.view.pages.task_page import TaskPage
 
 if TYPE_CHECKING:
     from typing import Literal
-    from PySide6.QtGui import QClipboard, QSize
+    from PySide6.QtGui import QClipboard
+    from PySide6.QtCore import QSize
 
 
 class CustomSplashScreen(SplashScreen):
@@ -230,9 +231,11 @@ class MainWindow(MSFluentWindow):
         showMessageBox(
             self,
             self.tr("程序发生异常"),
-            self.tr("点击“确定”后将复制错误信息并打开反馈页面。\n{0}").format(message),
+            self.tr("点击“确定”后将复制错误信息并打开反馈页面。\n点击“文档”图标以打开程序日志。\n{0}").format(message),
             showYesButton=True,
             yesSlot=lambda: self._copyExceptionAndOpenFeedback(message),
+            actionIcon=FluentIcon.DOCUMENT,
+            actionSlot=openAppLogFolder,
         )
 
     def _copyExceptionAndOpenFeedback(self, message: str):

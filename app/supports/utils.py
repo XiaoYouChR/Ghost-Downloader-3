@@ -6,10 +6,10 @@ from pathlib import Path
 from time import sleep
 from typing import Callable
 
-from PySide6.QtCore import QUrl, Qt, QProcess
+from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
-from qfluentwidgets import MessageBox
+from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.bases.models import Task
 from app.supports.config import cfg
@@ -31,6 +31,11 @@ def openFolder(path):
         QDesktopServices.openUrl(QUrl.fromLocalFile(path.parent))
     else:
         raise FileNotFoundError(path)
+
+
+def openAppLogFolder():
+    appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
+    openFolder(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log")
 
 
 def getSystemProxy():
@@ -243,7 +248,15 @@ def bringWindowToTop(window):
     window.raise_()
 
 
-def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
+def showMessageBox(
+    self,
+    title: str,
+    content: str,
+    showYesButton=False,
+    yesSlot=None,
+    actionIcon: FluentIcon | None = None,
+    actionSlot=None,
+):
     """show message box"""
     w = MessageBox(title, content, self)
     w.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -251,6 +264,11 @@ def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=
         w.cancelButton.setText(self.tr("关闭"))
         w.yesButton.hide()
         w.buttonLayout.insertStretch(0, 1)
+
+    if actionIcon and actionSlot is not None:
+        actionButton = ToolButton(actionIcon, w)
+        actionButton.clicked.connect(actionSlot)
+        w.buttonLayout.insertWidget(3, actionButton)
 
     if w.exec() and yesSlot is not None:
         yesSlot()

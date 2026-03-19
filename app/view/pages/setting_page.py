@@ -8,10 +8,11 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog
 from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, SwitchSettingCard, PushSettingCard, \
     HyperlinkButton, ComboBoxSettingCard, HyperlinkCard, PrimaryPushSettingCard, InfoBar, FlyoutView, Flyout, \
-    InfoBarPosition
+    InfoBarPosition, ToolButton, ToolTipFilter
 
 from app.supports.config import cfg, FIREFOX_ADDONS_URL, EDGE_ADDONS_URL, CHROME_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
+from app.supports.utils import openAppLogFolder
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
 
 if TYPE_CHECKING:
@@ -238,6 +239,11 @@ class SettingPage(ScrollArea):
             self.aboutGroup,
         )
         self.aboutGroup.addSettingCard(self.feedbackCard)
+        self.openLogButton = ToolButton(FluentIcon.DOCUMENT, self.feedbackCard)
+        self.openLogButton.setToolTip(self.tr("查看日志"))
+        self.openLogButton.installEventFilter(ToolTipFilter(self.openLogButton))
+        self.feedbackCard.hBoxLayout.insertSpacing(6, 8)
+        self.feedbackCard.hBoxLayout.insertWidget(7, self.openLogButton, 0, Qt.AlignmentFlag.AlignRight)
         self.aboutCard = PrimaryPushSettingCard(
             self.tr("检查更新"),
             FluentIcon.INFO,
@@ -264,6 +270,7 @@ class SettingPage(ScrollArea):
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
         )
+        self.openLogButton.clicked.connect(openAppLogFolder)
 
     def _showRestartTooltip(self):
         InfoBar.success(
