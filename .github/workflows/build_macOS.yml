@@ -36,26 +36,39 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+          chmod +x "dist/修复软件损坏"
+
+      - name: Install DMG tooling
+        run: |
+          brew list create-dmg >/dev/null 2>&1 || brew install create-dmg
 
       - name: Create DMG
         run: |
-          ln -s /Applications dist/Applications
+          DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_SOURCE_DIR="dist/dmg-layout"
 
-          attempt=0
-          max_attempts=10
-          while [ $attempt -lt $max_attempts ]; do
-              hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader" -fs HFS+ \
-                  -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m \
-                  "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg" && break
+          rm -rf "$DMG_SOURCE_DIR"
+          mkdir -p "$DMG_SOURCE_DIR"
+          cp -R "dist/Ghost Downloader.app" "$DMG_SOURCE_DIR/"
+          find "$DMG_SOURCE_DIR" -name ".DS_Store" -delete
 
-              attempt=$((attempt + 1))
-              echo "Attempt $attempt failed, retrying..."
-              sleep 1  # 等待 1 秒后重试
-          done
-
-          if [ $attempt -eq $max_attempts ]; then
-              echo "Failed to create DMG after $max_attempts attempts"
-          fi
+          create-dmg \
+            --volname "Ghost Downloader" \
+            --volicon "app/assets/logo.icns" \
+            --background "app/assets/backgroundImage-2X.png" \
+            --window-pos 200 120 \
+            --window-size 664 404 \
+            --icon-size 72 \
+            --text-size 14 \
+            --icon "Ghost Downloader.app" 190 200 \
+            --hide-extension "Ghost Downloader.app" \
+            --app-drop-link 370 200 \
+            --add-file "修复软件损坏" "dist/修复软件损坏" 610 200 \
+            --hdiutil-quiet \
+            --hdiutil-retries 10 \
+            --applescript-sleep-duration 10 \
+            "$DMG_NAME" \
+            "$DMG_SOURCE_DIR"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -100,16 +113,43 @@ jobs:
           rm -rf "dist/Ghost-Downloader-3.dist"
           mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
           mv "app/assets/修复软件损坏" "dist/修复软件损坏"
+          chmod +x "dist/修复软件损坏"
 
       - name: Reinstall openssl libs
         run: |
           brew install openssl@3
 
+      - name: Install DMG tooling
+        run: |
+          brew list create-dmg >/dev/null 2>&1 || brew install create-dmg
+
       - name: Create DMG
         run: |
-          ln -s /Applications dist/Applications
-          sleep 1
-          hdiutil create -srcfolder "dist/" -volname "Ghost-Downloader-3" -fs HFS+ -fsargs "-c c=64,a=16,e=16" -format UDZO -size 400m "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_SOURCE_DIR="dist/dmg-layout"
+
+          rm -rf "$DMG_SOURCE_DIR"
+          mkdir -p "$DMG_SOURCE_DIR"
+          cp -R "dist/Ghost Downloader.app" "$DMG_SOURCE_DIR/"
+          find "$DMG_SOURCE_DIR" -name ".DS_Store" -delete
+
+          create-dmg \
+            --volname "Ghost Downloader" \
+            --volicon "app/assets/logo.icns" \
+            --background "app/assets/backgroundImage-2X.png" \
+            --window-pos 200 120 \
+            --window-size 664 404 \
+            --icon-size 72 \
+            --text-size 14 \
+            --icon "Ghost Downloader.app" 190 200 \
+            --hide-extension "Ghost Downloader.app" \
+            --app-drop-link 370 200 \
+            --add-file "修复软件损坏" "dist/修复软件损坏" 610 200 \
+            --hdiutil-quiet \
+            --hdiutil-retries 10 \
+            --applescript-sleep-duration 10 \
+            "$DMG_NAME" \
+            "$DMG_SOURCE_DIR"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
