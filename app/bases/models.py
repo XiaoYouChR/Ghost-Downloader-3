@@ -282,7 +282,7 @@ class PackConfig:
 
         for attr_name, attr_value in cls.__dict__.items():
             if isinstance(attr_value, ConfigItem):
-                setattr(cfg.__class__, attr_name, attr_value)
+                setattr(cfg.__class__, f"pack_{cls.__name__}_{attr_name}", attr_value)
 
         cfg.load()
 
