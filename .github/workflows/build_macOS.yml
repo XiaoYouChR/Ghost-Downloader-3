@@ -146,7 +146,6 @@ jobs:
             --add-file "修复软件损坏" "dist/修复软件损坏" 610 200 \
             --hdiutil-quiet \
             --hdiutil-retries 10 \
-            --applescript-sleep-duration 10 \
             "$DMG_NAME" \
             "$DMG_SOURCE_DIR"
 
