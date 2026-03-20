@@ -16,6 +16,7 @@ dependencies = [
     "qrcode[png]>=8.2",
     "winloop>=0.5.0; sys_platform == 'win32'",
     "uvloop>=0.22.1; sys_platform != 'win32'",
+    "aioftp[socks]>=0.27.2",
 ]
 
 [dependency-groups]
