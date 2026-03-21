@@ -177,6 +177,11 @@ class Config(QConfig):
         "GeneralDownload", "SSLVerify", False, BoolValidator(), restart=True
     )
     proxyServer = ConfigItem("GeneralDownload", "ProxyServer", "Auto", ProxyValidator())
+    preBlockNum = RangeConfigItem("GeneralDownload", "PreBlockNum", 8, RangeValidator(1, 256))
+    autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
+    maxReassignSize = RangeConfigItem(
+        "GeneralDownload", "MaxReassignSize", 3, RangeValidator(1, 100)
+    )
 
     # 浏览器插件设置
     enableBrowserExtension = ConfigItem(

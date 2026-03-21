@@ -16,6 +16,8 @@ from qfluentwidgets import (
     IndeterminateProgressBar,
     InfoBar,
     InfoBarPosition,
+    Slider,
+    BodyLabel,
 )
 
 from app.bases.models import Task
@@ -62,6 +64,35 @@ class SelectFolderCard(ParseSettingCard):
         return {"path": Path(self.pathEdit.text())}
 
 
+class PreBlockNumCard(ParseSettingCard):
+    def initCustomWidget(self):
+        self.slider = Slider(Qt.Orientation.Horizontal, self)
+        self.valueLabel = BodyLabel(self)
+        self.slider.setMinimumWidth(268)
+
+        self.slider.setSingleStep(1)
+        self.slider.setRange(*cfg.preBlockNum.range)
+        self.slider.setValue(cfg.preBlockNum.value)
+        self.valueLabel.setNum(cfg.preBlockNum.value)
+
+        self.hBoxLayout.addWidget(self.valueLabel)
+        self.hBoxLayout.addSpacing(6)
+        self.hBoxLayout.addWidget(self.slider)
+        self.hBoxLayout.addSpacing(16)
+
+        self.slider.valueChanged.connect(self._onValueChanged)
+
+    def _onValueChanged(self, value: int):
+        self.valueLabel.setNum(value)
+        self.valueLabel.adjustSize()
+        self.slider.setValue(value)
+        self.payloadChanged.emit()
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        return {"preBlockNum": self.slider.value()}
+
+
 @dataclass
 class _LineParseState:
     url: str
@@ -90,6 +121,7 @@ class AddTaskDialog(MessageBoxBase):
         self.parseResultGroup = ParseResultHeaderCardWidget(self)
         self.settingGroup = ParseSettingHeaderCardWidget(self)
         self.selectFolderCard = SelectFolderCard(FluentIcon.DOWNLOAD, self.tr('选择下载路径'), self)
+        self.preBlockNumCard = PreBlockNumCard(FluentIcon.CLOUD, self.tr("预分配线程数"), self)
 
         self._timer = QTimer(self, singleShot=True)
         self._lineStates: list[_LineParseState] = []
@@ -114,6 +146,7 @@ class AddTaskDialog(MessageBoxBase):
         self.parseProgressBar.hide()
 
         self.settingGroup.addCard(self.selectFolderCard)
+        self.settingGroup.addCard(self.preBlockNumCard)
         for card in featureService.getDialogCards(self.settingGroup):
             self.settingGroup.addCard(card)
             card.payloadChanged.connect(self.syncPayload)
@@ -130,6 +163,8 @@ class AddTaskDialog(MessageBoxBase):
         self.urlEdit.textChanged.connect(
             lambda: (self._timer.stop(), self._timer.start(1000))
         )
+        self.selectFolderCard.payloadChanged.connect(self.syncPayload)
+        self.preBlockNumCard.payloadChanged.connect(self.syncPayload)
 
     def parse(self):
         """按行同步解析输入的 URL 列表"""

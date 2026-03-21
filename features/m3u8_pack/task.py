@@ -21,17 +21,12 @@ from .config import m3u8Config, resolveM3U8DownloaderExecutable
 
 if TYPE_CHECKING:
     from features.ffmpeg_pack.config import resolveFFmpegExecutables
-    from features.http_pack.task import HttpTaskStage, HttpWorker, httpConfig
+    from features.http_pack.task import HttpTaskStage, HttpWorker
     from features.extract_pack.task import ExtractStage, ExtractWorker
 else:
-    try:
-        from extract_pack.task import ExtractStage, ExtractWorker
-        from ffmpeg_pack.config import resolveFFmpegExecutables
-        from http_pack.task import HttpTaskStage, HttpWorker, httpConfig
-    except ImportError:
-        from features.extract_pack.task import ExtractStage, ExtractWorker
-        from features.ffmpeg_pack.config import resolveFFmpegExecutables
-        from features.http_pack.task import HttpTaskStage, HttpWorker, httpConfig
+    from extract_pack.task import ExtractStage, ExtractWorker
+    from ffmpeg_pack.config import resolveFFmpegExecutables
+    from http_pack.task import HttpTaskStage, HttpWorker
 
 
 _KNOWN_SUFFIXES = {
@@ -627,7 +622,7 @@ class M3U8InstallTask(Task):
     assetName: str
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict | None = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
+    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
     installFolder: str
     archiveSize: int = field(default=0)
     archivePath: str = field(default="")

@@ -13,7 +13,6 @@ from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
-from .config import httpConfig
 from .task import HttpTask, HttpTaskStage
 
 
@@ -209,7 +208,7 @@ async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
     headers: dict = payload.get('headers', DEFAULT_HEADERS)
     proxies: dict = payload.get('proxies', getProxies())
-    blockNum: int = payload.get('preBlockNum', httpConfig.preBlockNum.value)
+    blockNum: int = payload.get('preBlockNum', cfg.preBlockNum.value)
     path: Path = payload.get('path', Path(cfg.downloadFolder.value))
     fileSize, supportsRange, finalUrl, head = await _probeDownloadInfo(url, headers, proxies)
 
@@ -245,7 +244,6 @@ async def parse(payload: dict) -> HttpTask:
 class HttpPack(FeaturePack):
     priority = 100
     taskType = HttpTask
-    config = httpConfig
 
     def canHandle(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"http", "https"}

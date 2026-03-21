@@ -60,6 +60,34 @@ class SettingPage(ScrollArea):
             self.generalDownloadGroup,
         )
         self.generalDownloadGroup.addSettingCard(self.maxTaskNumCard)
+        self.preBlockNumCard = RangeSettingCard(
+            cfg.preBlockNum,
+            FluentIcon.CLOUD,
+            self.tr("预分配线程数"),
+            self.tr(
+                "线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险"
+            ),
+            self.generalDownloadGroup,
+        )
+        self.generalDownloadGroup.addSettingCard(self.preBlockNumCard)
+        self.autoSpeedUpCard = SwitchSettingCard(
+            FluentIcon.SPEED_HIGH,
+            self.tr("自动提速"),
+            self.tr("AI 实时检测各线程效率并自动增加线程数以提高下载速度"),
+            cfg.autoSpeedUp,
+            self.generalDownloadGroup,
+        )
+        self.generalDownloadGroup.addSettingCard(self.autoSpeedUpCard)
+        self.maxReassignSizeCard = RangeSettingCard(
+            cfg.maxReassignSize,
+            FluentIcon.LIBRARY,
+            self.tr("最大重新分配大小 (MB)"),
+            self.tr(
+                "每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配"
+            ),
+            self.generalDownloadGroup,
+        )
+        self.generalDownloadGroup.addSettingCard(self.maxReassignSizeCard)
         self.speedLimitationCard = SpinBoxSettingCard(
             FluentIcon.SPEED_OFF,
             self.tr("下载限速"),

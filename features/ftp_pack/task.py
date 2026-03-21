@@ -18,11 +18,6 @@ from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import getProxies
 
-try:
-    from http_pack.config import httpConfig
-except ImportError:
-    from features.http_pack.config import httpConfig
-
 
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
@@ -125,7 +120,7 @@ class FtpTask(Task):
     sourceType: str = field(default="file")
     files: list[FtpRemoteFile | dict[str, Any]] = field(default_factory=list)
     proxies: dict | None = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
+    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
 
     def __post_init__(self):
         if isinstance(self.connectionInfo, dict):
@@ -386,7 +381,7 @@ class FtpWorker(Worker):
             key=lambda subworker: subworker.end - subworker.progress,
         )
         remainingBytes = slowestSubworker.end - slowestSubworker.progress
-        if remainingBytes < httpConfig.maxReassignSize.value * 1048576:
+        if remainingBytes < cfg.maxReassignSize.value * 1048576:
             return
 
         base = remainingBytes // 2
@@ -515,7 +510,7 @@ class FtpWorker(Worker):
             self.reassignSubworker()
 
     def checkIfAutoAcceleration(self):
-        if self.stage.accelerated or not httpConfig.autoSpeedUp.value:
+        if self.stage.accelerated or not cfg.autoSpeedUp.value:
             return
 
         self.speedHistory.append(self.stage.speed)
@@ -804,7 +799,7 @@ async def parse(payload: dict) -> FtpTask:
     )
     proxies = payload.get("proxies", getProxies())
     path = Path(payload.get("path", cfg.downloadFolder.value))
-    blockNum = payload.get("preBlockNum", httpConfig.preBlockNum.value)
+    blockNum = payload.get("preBlockNum", cfg.preBlockNum.value)
 
     client = await _openClient(connectionInfo, proxies)
     try:
@@ -871,7 +866,7 @@ async def parse(payload: dict) -> FtpTask:
             sourceType=sourceType,
             files=files,
             proxies=proxies,
-            blockNum=blockNum if isinstance(blockNum, int) else httpConfig.preBlockNum.value,
+            blockNum=blockNum if isinstance(blockNum, int) else cfg.preBlockNum.value,
         )
         task.syncStagePaths()
         return task

@@ -15,7 +15,6 @@ from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import getProxies
-from .config import httpConfig
 
 
 @dataclass
@@ -34,7 +33,7 @@ class HttpTaskStage(TaskStage):
 class HttpTask(Task):
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
+    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
     supportsRange: bool = field(default=True)
 
     def syncStagePaths(self):
@@ -118,7 +117,7 @@ class HttpWorker(Worker):
 
         slowestSubworker = max(self.subworkers, key=lambda subworker: subworker.end - subworker.progress)
         remainingBytes = slowestSubworker.end - slowestSubworker.progress
-        if remainingBytes < httpConfig.maxReassignSize.value * 1048576:
+        if remainingBytes < cfg.maxReassignSize.value * 1048576:
             return
         base = remainingBytes // 2
         remainder = remainingBytes % 2
@@ -252,7 +251,7 @@ class HttpWorker(Worker):
             self.reassignSubworker()
 
     def checkIfAutoAcceleration(self):
-        if self.stage.accelerated or not httpConfig.autoSpeedUp.value:
+        if self.stage.accelerated or not cfg.autoSpeedUp.value:
             return
 
         self.speedHistory.append(self.stage.speed)

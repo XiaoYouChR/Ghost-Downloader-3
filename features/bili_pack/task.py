@@ -6,22 +6,22 @@ from typing import Any, TYPE_CHECKING
 from loguru import logger
 
 from app.bases.models import Task, TaskStatus
-from app.supports.config import DEFAULT_HEADERS
+from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
 
 if TYPE_CHECKING:
     from features.ffmpeg_pack.task import FFmpegStage, FFmpegWorker
-    from features.http_pack.task import HttpTaskStage, HttpWorker, httpConfig
+    from features.http_pack.task import HttpTaskStage, HttpWorker
 else:
     from ffmpeg_pack.task import FFmpegStage, FFmpegWorker
-    from http_pack.task import HttpTaskStage, HttpWorker, httpConfig
+    from http_pack.task import HttpTaskStage, HttpWorker
 
 
 @dataclass
 class BilibiliTask(Task):
     headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
     proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: httpConfig.preBlockNum.value)
+    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
     selectedPages: list[int] = field(default_factory=list)
     pageParts: list[str] = field(default_factory=list)
     totalPages: int = field(default=1)

@@ -1,3 +1,2 @@
 [pack]
 entry = "pack.py"
-dependencies = ["http_pack"]
