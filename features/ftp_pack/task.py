@@ -129,6 +129,7 @@ class FtpTask(Task):
             item if isinstance(item, FtpRemoteFile) else FtpRemoteFile(**item)
             for item in self.files
         ]
+        self._filesByIndex = {file.index: file for file in self.files}
         self.title = _sanitizeName(self.title)
         super().__post_init__()
         self._recalculateSelection()
@@ -148,44 +149,33 @@ class FtpTask(Task):
         return self.sourceType == "dir"
 
     @property
-    def hasUnselectedFiles(self) -> bool:
-        return self.selectedFileCount < self.totalFileCount
-
-    @property
     def resolvePath(self) -> str:
         return str(Path(self.path) / self.title)
 
     @property
     def selectedStages(self) -> list["FtpTaskStage"]:
-        stages: list[FtpTaskStage] = []
-        for stage in self.stages:
-            if not isinstance(stage, FtpTaskStage):
-                continue
-            file = self.fileByIndex(stage.fileIndex)
-            if file is not None and file.selected:
-                stages.append(stage)
-        return stages
+        return [
+            stage
+            for stage in self.stages
+            if self.fileByIndex(stage.fileIndex).selected
+        ]
 
-    def fileByIndex(self, index: int) -> FtpRemoteFile | None:
-        for file in self.files:
-            if file.index == index:
-                return file
-        return None
+    def fileByIndex(self, index: int) -> FtpRemoteFile:
+        return self._filesByIndex[index]
 
     def syncStagePaths(self):
         rootPath = Path(self.path) / self.title
+        if not self.isDirectorySource:
+            resolvePath = str(rootPath)
+            for stage in self.stages:
+                stage.resolvePath = resolvePath
+            return
+
         for stage in self.stages:
-            if not isinstance(stage, FtpTaskStage):
-                continue
-
             file = self.fileByIndex(stage.fileIndex)
-            if file is None:
-                continue
-
-            if self.isDirectorySource:
-                stage.resolvePath = str(rootPath / Path(*PurePosixPath(file.relativePath).parts))
-            else:
-                stage.resolvePath = str(rootPath)
+            stage.resolvePath = str(
+                rootPath / Path(*PurePosixPath(file.relativePath).parts)
+            )
 
     def setTitle(self, title: str):
         self.title = _sanitizeName(title)
@@ -195,19 +185,10 @@ class FtpTask(Task):
         self.fileSize = sum(file.size for file in self.files if file.selected)
 
     def _syncFileProgress(self):
-        stageByFileIndex = {
-            stage.fileIndex: stage
-            for stage in self.stages
-            if isinstance(stage, FtpTaskStage)
-        }
+        stageByFileIndex = {stage.fileIndex: stage for stage in self.stages}
 
         for file in self.files:
-            stage = stageByFileIndex.get(file.index)
-            if stage is None:
-                file.downloadedBytes = 0
-                file.completed = False
-                continue
-
+            stage = stageByFileIndex[file.index]
             file.downloadedBytes = max(0, int(stage.receivedBytes))
             file.completed = stage.status == TaskStatus.COMPLETED
             if file.completed and file.size > 0:
@@ -307,15 +288,9 @@ class FtpTask(Task):
         self.stages.sort(key=lambda stage: stage.stageIndex)
         currentStage = None
         try:
-            for stage in self.stages:
+            for stage in self.selectedStages:
                 if self.status != TaskStatus.RUNNING:
                     break
-                if not isinstance(stage, FtpTaskStage):
-                    continue
-
-                file = self.fileByIndex(stage.fileIndex)
-                if file is None or not file.selected:
-                    continue
                 if stage.status == TaskStatus.COMPLETED:
                     continue
 
@@ -345,7 +320,7 @@ class FtpWorker(Worker):
     def __init__(self, stage: FtpTaskStage):
         super().__init__(stage)
         self.stage = stage
-        self.task: FtpTask = getattr(stage, "_task")
+        self.task: FtpTask = stage._task
         self.speedHistory: list[int] = []
         self.accelCheckTime = 0.0
         self.subworkerTasks: set[asyncio.Task] = set()
@@ -367,7 +342,7 @@ class FtpWorker(Worker):
             client.close()
             raise
 
-    async def _closeTransfer(self, client: aioftp.Client | None, stream):
+    def _closeTransfer(self, client: aioftp.Client | None, stream):
         with suppress(Exception):
             if stream is not None:
                 stream.close()
@@ -471,7 +446,7 @@ class FtpWorker(Worker):
                 remaining -= len(chunk)
                 cfg.globalSpeed += len(chunk)
         finally:
-            await self._closeTransfer(client, stream)
+            self._closeTransfer(client, stream)
 
     async def _transferUnknown(self, subworker: FtpSubworker):
         client = None
@@ -493,7 +468,7 @@ class FtpWorker(Worker):
                 subworker.progress += len(chunk)
                 cfg.globalSpeed += len(chunk)
         finally:
-            await self._closeTransfer(client, stream)
+            self._closeTransfer(client, stream)
 
     async def _transferWholeFile(self, subworker: FtpSubworker):
         client = None
@@ -516,7 +491,7 @@ class FtpWorker(Worker):
                 subworker.progress += len(chunk)
                 cfg.globalSpeed += len(chunk)
         finally:
-            await self._closeTransfer(client, stream)
+            self._closeTransfer(client, stream)
 
     async def handleSubworker(self, subworker: FtpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:
@@ -818,9 +793,7 @@ def _sanitizeDisplayUrl(parsed: ParseResult) -> str:
     )
 
 
-def _displayTitleForSource(path: PurePosixPath, *, host: str, sourceType: str) -> str:
-    if sourceType == "file" and path.name:
-        return _sanitizeName(path.name)
+def _displayTitleForSource(path: PurePosixPath, host: str) -> str:
     if path.name:
         return _sanitizeName(path.name)
     return _sanitizeName(host)
@@ -915,13 +888,9 @@ async def parse(payload: dict) -> FtpTask:
             )
 
         task = FtpTask(
-            title=_displayTitleForSource(
-                sourcePath,
-                host=connectionInfo.host,
-                sourceType=sourceType,
-            ),
+            title=_displayTitleForSource(sourcePath, connectionInfo.host),
             url=_sanitizeDisplayUrl(parsedUrl),
-            fileSize=sum(file.size for file in files if file.selected),
+            fileSize=sum(file.size for file in files),
             path=path,
             stages=stages,
             connectionInfo=connectionInfo,
@@ -930,7 +899,6 @@ async def parse(payload: dict) -> FtpTask:
             proxies=proxies,
             blockNum=blockNum if isinstance(blockNum, int) else cfg.preBlockNum.value,
         )
-        task.syncStagePaths()
         return task
     finally:
         await _closeClient(client)

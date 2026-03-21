@@ -18,11 +18,7 @@ class FtpPack(FeaturePack):
         return await parse(payload)
 
     def createTaskCard(self, task: Task, parent=None):
-        if isinstance(task, FtpTask):
-            return FtpTaskCard(task, parent)
-        return None
+        return FtpTaskCard(task, parent)
 
     def createResultCard(self, task: Task, parent=None):
-        if isinstance(task, FtpTask):
-            return FtpResultCard(task, parent)
-        return None
+        return FtpResultCard(task, parent)

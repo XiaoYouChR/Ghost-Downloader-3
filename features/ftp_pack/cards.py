@@ -491,7 +491,7 @@ class FtpTaskCard(UniversalTaskCard):
         return receivedBytes, speed
 
     def _openPrimaryTarget(self):
-        openFile(str(Path(self.task.resolvePath)))
+        openFile(self.task.resolvePath)
 
     def _openTaskFolder(self):
         target = Path(self.task.resolvePath)
@@ -571,7 +571,7 @@ class FtpTaskCard(UniversalTaskCard):
             return
 
         for stage in self.task.stages:
-            resolvePath = str(getattr(stage, "resolvePath", "") or "").strip()
+            resolvePath = stage.resolvePath.strip()
             if not resolvePath:
                 continue
             target = Path(resolvePath)
