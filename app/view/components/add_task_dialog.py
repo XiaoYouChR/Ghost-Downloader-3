@@ -155,11 +155,22 @@ class AddTaskDialog(MessageBoxBase):
         self._lineStates = nextStates
         self._rebuildResultCards()
 
+    def _normalizeUrl(self, url: str) -> str:
+        url = url.strip()
+        if not url:
+            return url
+
+        if "://" in url or url.lower().startswith("magnet:"):
+            return url
+
+
+        return "https://" + url
+
     def _getEditorUrls(self) -> list[str]:
         text = self.urlEdit.toPlainText()
         if not text:
             return []
-        return [line.strip() for line in text.splitlines() if line.strip()]
+        return [self._normalizeUrl(line) for line in text.splitlines() if line.strip()]
 
     def appendUrls(self, urls: list[str]):
         if not urls:
@@ -169,7 +180,7 @@ class AddTaskDialog(MessageBoxBase):
         appendableUrls: list[str] = []
 
         for url in urls:
-            normalizedUrl = url.strip()
+            normalizedUrl = self._normalizeUrl(url)
             if not normalizedUrl or normalizedUrl in existingUrls:
                 continue
             existingUrls.add(normalizedUrl)
