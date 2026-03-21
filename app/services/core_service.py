@@ -231,8 +231,11 @@ class CoreService(QThread):
 
     def createTask(self, task: Task):
         self.tasks.add(task)
-        if task.taskId in self.runningTasks:
-            return
+        runningTask = self.runningTasks.get(task.taskId)
+        if runningTask is not None:
+            if not runningTask.done():
+                return
+            self.runningTasks.pop(task.taskId, None)
 
         if task.willOccupyDownloadSlotWhenStarted() and self._runningTaskCount() >= cfg.maxTaskNum.value:
             self._enqueueTask(task)
