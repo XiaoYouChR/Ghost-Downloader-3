@@ -1,7 +1,7 @@
 import asyncio
 import os
 import re
-from asyncio import CancelledError, TaskGroup
+from asyncio import CancelledError
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
@@ -348,6 +348,8 @@ class FtpWorker(Worker):
         self.task: FtpTask = getattr(stage, "_task")
         self.speedHistory: list[int] = []
         self.accelCheckTime = 0.0
+        self.subworkerTasks: set[asyncio.Task] = set()
+        self._stopping = False
 
     async def _connectClient(self) -> aioftp.Client:
         client = aioftp.Client(**_buildClientKwargs(self.task.proxies))
@@ -372,8 +374,57 @@ class FtpWorker(Worker):
         if client is not None:
             client.close()
 
+    def _spawnSubworker(self, subworker: FtpSubworker):
+        if self._stopping:
+            return
+
+        task = asyncio.create_task(self.handleSubworker(subworker))
+        self.subworkerTasks.add(task)
+        task.add_done_callback(self.subworkerTasks.discard)
+
+    async def _cancelSubworkers(self):
+        if self._stopping:
+            return
+
+        self._stopping = True
+        runningTasks = tuple(task for task in self.subworkerTasks if not task.done())
+
+        for task in runningTasks:
+            task.cancel()
+
+        if not runningTasks:
+            return
+
+        done, pending = await asyncio.wait(runningTasks, timeout=5)
+        for finishedTask in done:
+            with suppress(Exception, CancelledError):
+                finishedTask.result()
+
+        if pending:
+            logger.warning(
+                "{} 仍有 {} 个 FTP 子任务未及时退出，已继续结束当前任务",
+                self.stage.resolvePath,
+                len(pending),
+            )
+
+    async def _waitForSubworkers(self):
+        while self.subworkerTasks:
+            currentTasks = tuple(self.subworkerTasks)
+            done, _ = await asyncio.wait(
+                currentTasks,
+                return_when=asyncio.FIRST_EXCEPTION,
+            )
+
+            for finishedTask in done:
+                if finishedTask.cancelled():
+                    raise CancelledError
+
+                exception = finishedTask.exception()
+                if exception is not None:
+                    raise exception
+
     def reassignSubworker(self):
-        if self.stage.fileSize <= 0:
+        if self._stopping or self.task.status != TaskStatus.RUNNING or self.stage.fileSize <= 0:
             return
 
         slowestSubworker = max(
@@ -396,7 +447,7 @@ class FtpWorker(Worker):
             self.subworkers.index(slowestSubworker) + 1,
             newSubworker,
         )
-        self.taskGroup.create_task(self.handleSubworker(newSubworker))
+        self._spawnSubworker(newSubworker)
 
     async def _transferRange(self, subworker: FtpSubworker):
         client = None
@@ -474,6 +525,8 @@ class FtpWorker(Worker):
                     await self._transferUnknown(subworker)
                     return
                 except Exception as e:
+                    if self._stopping or self.task.status != TaskStatus.RUNNING:
+                        raise CancelledError
                     logger.opt(exception=e).error(
                         "{} 的未知大小分片 {} 连接中断，5 秒后重试",
                         self.stage.resolvePath,
@@ -486,6 +539,8 @@ class FtpWorker(Worker):
                     await self._transferWholeFile(subworker)
                     return
                 except Exception as e:
+                    if self._stopping or self.task.status != TaskStatus.RUNNING:
+                        raise CancelledError
                     logger.opt(exception=e).error(
                         "{} 不支持断点续传，已从头开始重试",
                         self.stage.resolvePath,
@@ -497,6 +552,8 @@ class FtpWorker(Worker):
                     await self._transferRange(subworker)
                     break
                 except Exception as e:
+                    if self._stopping or self.task.status != TaskStatus.RUNNING:
+                        raise CancelledError
                     logger.opt(exception=e).error(
                         "{} 的分片 {} 连接中断，5 秒后重试",
                         self.stage.resolvePath,
@@ -662,8 +719,9 @@ class FtpWorker(Worker):
             logger.opt(exception=e).error("failed to cleanup temporary file {}", target)
 
     async def run(self):
-        self.taskGroup = TaskGroup()
         self.subworkers: list[FtpSubworker] = []
+        self.subworkerTasks.clear()
+        self._stopping = False
         shouldCleanupRecordFile = False
         Path(self.stage.resolvePath).parent.mkdir(parents=True, exist_ok=True)
 
@@ -693,17 +751,20 @@ class FtpWorker(Worker):
         supervisor = asyncio.create_task(self.supervisor())
 
         try:
-            async with self.taskGroup:
-                for subworker in self.subworkers:
-                    self.taskGroup.create_task(self.handleSubworker(subworker))
+            for subworker in self.subworkers:
+                self._spawnSubworker(subworker)
+
+            await self._waitForSubworkers()
 
             self.stage.setStatus(TaskStatus.COMPLETED)
             shouldCleanupRecordFile = True
             logger.info("{} 下载完成", self.stage.resolvePath)
         except CancelledError:
+            await self._cancelSubworkers()
             self.stage.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
+            await self._cancelSubworkers()
             self.stage.setError(e)
             logger.opt(exception=e).error("{} 下载阶段失败", self.stage.resolvePath)
             raise
@@ -712,6 +773,7 @@ class FtpWorker(Worker):
                 supervisor.cancel()
                 with suppress(asyncio.CancelledError):
                     await supervisor
+            self.subworkerTasks.clear()
             os.close(self.fileHandle)
             if shouldCleanupRecordFile:
                 self._cleanupRecordFile()
