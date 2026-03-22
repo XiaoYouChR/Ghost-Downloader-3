@@ -530,9 +530,7 @@ class FtpTaskCard(UniversalTaskCard):
                 )
 
     def _onSelectFilesClicked(self):
-        if self.task.status == TaskStatus.RUNNING:
-            return
-
+        wasCompleted = self.task.status == TaskStatus.COMPLETED
         previousSelected = {
             file.index for file in self.task.files if file.selected
         }
@@ -541,7 +539,7 @@ class FtpTaskCard(UniversalTaskCard):
             return
 
         if (
-            self.task.status == TaskStatus.COMPLETED
+            wasCompleted
             and selectedIndexes - previousSelected
             and self.task.reopenForAdditionalFiles()
         ):
@@ -560,7 +558,7 @@ class FtpTaskCard(UniversalTaskCard):
             and Path(self.task.resolvePath).is_file()
         )
         self.selectFilesButton.setVisible(self.task.totalFileCount > 1)
-        self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
+        self.selectFilesButton.setEnabled(True)
 
     def onTaskDeleted(self, completely: bool = False):
         if not completely:

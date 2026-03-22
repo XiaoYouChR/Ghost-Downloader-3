@@ -88,7 +88,7 @@ class FtpConnectionInfo:
     password: str = "anon@"
     sourcePath: str = "/"
 
-
+# 选了不一定下载, 故拆成 FtpRemoteFile 和 FtpTaskStage.
 @dataclass
 class FtpRemoteFile:
     index: int
@@ -113,6 +113,11 @@ class FtpTaskStage(TaskStage):
     supportsRange: bool = field(default=True)
     accelerated: bool = field(default=False)
 
+    def setStatus(self, status: TaskStatus, notifyTask: bool = True):
+        if status == TaskStatus.COMPLETED:
+            self.receivedBytes = self.fileSize
+        super().setStatus(status, notifyTask=notifyTask)
+
 
 @dataclass(kw_only=True)
 class FtpTask(Task):
@@ -123,6 +128,9 @@ class FtpTask(Task):
     blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
 
     def __post_init__(self):
+        self._continueRunning = self.status == TaskStatus.RUNNING
+        self._activeStageId: str | None = None
+        self._activeWorker = None
         if isinstance(self.connectionInfo, dict):
             self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
         self.files = [
@@ -163,6 +171,28 @@ class FtpTask(Task):
     def fileByIndex(self, index: int) -> FtpRemoteFile:
         return self._filesByIndex[index]
 
+    @property
+    def activeStage(self) -> "FtpTaskStage | None":
+        if self._activeStageId is None:
+            return None
+
+        for stage in self.stages:
+            if stage.stageId == self._activeStageId:
+                return stage
+        return None
+
+    def isStageSelected(self, stage: "FtpTaskStage") -> bool:
+        return self.fileByIndex(stage.fileIndex).selected
+
+    def nextPendingSelectedStage(self) -> "FtpTaskStage | None":
+        for stage in self.stages:
+            if not self.isStageSelected(stage):
+                continue
+            if stage.status == TaskStatus.COMPLETED:
+                continue
+            return stage
+        return None
+
     def syncStagePaths(self):
         rootPath = Path(self.path) / self.title
         if not self.isDirectorySource:
@@ -198,6 +228,7 @@ class FtpTask(Task):
         if not selectedIndexes:
             raise ValueError("至少需要选择一个文件")
 
+        activeStage = self.activeStage
         changed = False
         for file in self.files:
             selected = file.index in selectedIndexes
@@ -212,6 +243,11 @@ class FtpTask(Task):
         self._syncFileProgress()
         self.syncStatusFromStages()
 
+        if activeStage is not None and not self.isStageSelected(activeStage):
+            worker = self._activeWorker
+            if worker is not None:
+                worker.requestStageDeselection()
+
     def syncStatusFromStages(self) -> TaskStatus:
         self._syncFileProgress()
         selectedStages = self.selectedStages
@@ -222,6 +258,10 @@ class FtpTask(Task):
         stageStatus = [stage.status for stage in selectedStages]
         if any(status == TaskStatus.FAILED for status in stageStatus):
             self.status = TaskStatus.FAILED
+        elif self._continueRunning and any(
+            stage.status != TaskStatus.COMPLETED for stage in selectedStages
+        ):
+            self.status = TaskStatus.RUNNING
         elif all(status == TaskStatus.COMPLETED for status in stageStatus):
             self.status = TaskStatus.COMPLETED
         elif any(status == TaskStatus.RUNNING for status in stageStatus):
@@ -234,6 +274,7 @@ class FtpTask(Task):
         return self.status
 
     def setStatus(self, status: TaskStatus) -> TaskStatus:
+        self._continueRunning = status == TaskStatus.RUNNING
         selectedStageIds = {stage.stageId for stage in self.selectedStages}
         for stage in self.stages:
             if stage.stageId not in selectedStageIds:
@@ -255,7 +296,7 @@ class FtpTask(Task):
         return self.syncStatusFromStages()
 
     def reopenForAdditionalFiles(self) -> bool:
-        if self.status != TaskStatus.COMPLETED:
+        if self.status == TaskStatus.RUNNING:
             return False
 
         pendingSelectedStages = [
@@ -288,14 +329,27 @@ class FtpTask(Task):
         self.stages.sort(key=lambda stage: stage.stageIndex)
         currentStage = None
         try:
-            for stage in self.selectedStages:
-                if self.status != TaskStatus.RUNNING:
+            self._continueRunning = True
+            while self.status == TaskStatus.RUNNING:
+                stage = self.nextPendingSelectedStage()
+                if stage is None:
                     break
-                if stage.status == TaskStatus.COMPLETED:
-                    continue
-
                 currentStage = stage
-                await FtpWorker(stage).run()
+                self._activeStageId = stage.stageId
+                worker = FtpWorker(stage)
+                self._activeWorker = worker
+                try:
+                    await worker.run()
+                except CancelledError:
+                    if worker.wasDeselected() and self.status != TaskStatus.PAUSED:
+                        currentStage = None
+                        continue
+                    raise
+                finally:
+                    if self._activeWorker is worker:
+                        self._activeWorker = None
+                    if self._activeStageId == stage.stageId:
+                        self._activeStageId = None
         except CancelledError:
             logger.info(f"{self.title} 停止下载")
             raise
@@ -304,6 +358,11 @@ class FtpTask(Task):
                 currentStage.setError(e)
             logger.opt(exception=e).error("{} 下载失败", self.title)
             raise
+        finally:
+            self._activeWorker = None
+            self._activeStageId = None
+            self._continueRunning = False
+            self.syncStatusFromStages()
 
     def __hash__(self):
         return hash(self.taskId)
@@ -325,6 +384,17 @@ class FtpWorker(Worker):
         self.accelCheckTime = 0.0
         self.subworkerTasks: set[asyncio.Task] = set()
         self._stopping = False
+        self._runTask: asyncio.Task | None = None
+        self._deselected = False
+
+    def wasDeselected(self) -> bool:
+        return self._deselected
+
+    def requestStageDeselection(self):
+        self._deselected = True
+        if self._runTask is None:
+            return
+        self._runTask.get_loop().call_soon_threadsafe(self._runTask.cancel)
 
     async def _connectClient(self) -> aioftp.Client:
         client = aioftp.Client(**_buildClientKwargs(self.task.proxies))
@@ -697,8 +767,13 @@ class FtpWorker(Worker):
         self.subworkers: list[FtpSubworker] = []
         self.subworkerTasks.clear()
         self._stopping = False
+        self._runTask = asyncio.current_task()
         shouldCleanupRecordFile = False
         Path(self.stage.resolvePath).parent.mkdir(parents=True, exist_ok=True)
+
+        if self._deselected or not self.task.isStageSelected(self.stage):
+            self.stage.setStatus(TaskStatus.PAUSED)
+            raise CancelledError
 
         restored = False
         if self.stage.supportsRange:
@@ -752,6 +827,7 @@ class FtpWorker(Worker):
             os.close(self.fileHandle)
             if shouldCleanupRecordFile:
                 self._cleanupRecordFile()
+            self._runTask = None
 
 
 async def _openClient(connectionInfo: FtpConnectionInfo, proxies: dict | None) -> aioftp.Client:
