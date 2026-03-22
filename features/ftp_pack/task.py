@@ -250,13 +250,16 @@ class FtpTask(Task):
             return self.status
 
         stageStatus = [stage.status for stage in selectedStages]
-        if any(status == TaskStatus.FAILED for status in stageStatus):
+        activeStatuses = {
+            status for status in stageStatus if status != TaskStatus.COMPLETED
+        }
+        if TaskStatus.FAILED in activeStatuses:
             self.status = TaskStatus.FAILED
-        elif all(status == TaskStatus.COMPLETED for status in stageStatus):
+        elif not activeStatuses:
             self.status = TaskStatus.COMPLETED
-        elif any(status == TaskStatus.RUNNING for status in stageStatus):
+        elif TaskStatus.RUNNING in activeStatuses:
             self.status = TaskStatus.RUNNING
-        elif all(status == TaskStatus.PAUSED for status in stageStatus):
+        elif activeStatuses == {TaskStatus.PAUSED}:
             self.status = TaskStatus.PAUSED
         else:
             self.status = TaskStatus.WAITING
