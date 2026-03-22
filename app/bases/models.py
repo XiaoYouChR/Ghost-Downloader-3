@@ -203,6 +203,24 @@ class Task:
 
         return self.syncStatusFromStages()
 
+    def stagesForExecution(self) -> Iterable[TaskStage]:
+        return self.stages
+
+    def iterRunnableStages(self) -> Iterable[TaskStage]:
+        self.stages.sort(key=lambda stage: stage.stageIndex)
+        for stage in self.stagesForExecution():
+            if self.status != TaskStatus.RUNNING:
+                break
+            if stage.status == TaskStatus.COMPLETED:
+                continue
+            self.onStageStarted(stage)
+            yield stage
+
+    def onStageStarted(self, stage: TaskStage):
+        from app.supports.recorder import taskRecorder
+
+        taskRecorder.flush()
+
     @property
     def lastError(self) -> str:
         for stage in reversed(self.stages):

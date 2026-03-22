@@ -295,15 +295,9 @@ class FFmpegInstallTask(Task):
                 stage.installFolder = _normalizePath(installDir)
 
     async def run(self):
-        self.stages.sort(key=lambda stage: stage.stageIndex)
         currentStage = None
         try:
-            for stage in self.stages:
-                if self.status != TaskStatus.RUNNING:
-                    break
-                if stage.status == TaskStatus.COMPLETED:
-                    continue
-
+            for stage in self.iterRunnableStages():
                 currentStage = stage
                 if isinstance(stage, HttpTaskStage):
                     await HttpWorker(stage).run()

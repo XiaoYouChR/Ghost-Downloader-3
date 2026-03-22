@@ -459,9 +459,8 @@ class BitTorrentTask(Task):
 
     async def run(self):
         try:
-            if self.status != TaskStatus.RUNNING or self.stage.status == TaskStatus.COMPLETED:
-                return
-            await BitTorrentWorker(self.stage).run()
+            for stage in self.iterRunnableStages():
+                await BitTorrentWorker(stage).run()
         except asyncio.CancelledError:
             logger.info(f"{self.title} 停止下载")
             raise

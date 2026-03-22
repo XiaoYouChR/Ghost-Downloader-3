@@ -317,16 +317,13 @@ class FtpTask(Task):
         selectedStages = self.selectedStages
         return bool(selectedStages) and all(stage.supportsRange for stage in selectedStages)
 
+    def stagesForExecution(self):
+        return self.selectedStages
+
     async def run(self):
-        self.stages.sort(key=lambda stage: stage.stageIndex)
         currentStage = None
         try:
-            for stage in self.selectedStages:
-                if self.status != TaskStatus.RUNNING:
-                    break
-                if stage.status == TaskStatus.COMPLETED:
-                    continue
-
+            for stage in self.iterRunnableStages():
                 currentStage = stage
                 await FtpWorker(stage).run()
         except CancelledError:
