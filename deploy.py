@@ -10,7 +10,8 @@ FEATURE_PACK_BLACKLIST = {"jack_yao"}
 COMMON_INCLUDE_PACKAGES = [
     "urllib3",
     "qrcode",
-    "libtorrent"
+    "libtorrent",
+    "aioftp"
 ]
 PLATFORM_INCLUDE_PACKAGES = {
     "win32": [
