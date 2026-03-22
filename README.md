@@ -7,7 +7,7 @@
 > The project is still in its early stages, and there is still a lot of shortcomings.
 
 > [!TIP]
-> If you want to use Ghost-Downloader-3 on Windows 7, please download the version `v3.5.8-Portable`.
+> If you want to use Ghost-Downloader-3 on Windows 7, please download the version `v3.6.1-Portable`.
 
 <!-- PROJECT LOGO -->
 <div align="center">
