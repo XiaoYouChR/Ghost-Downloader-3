@@ -88,7 +88,7 @@ class FtpConnectionInfo:
     password: str = "anon@"
     sourcePath: str = "/"
 
-
+# 选了不一定下载, 故拆成 FtpRemoteFile 和 FtpTaskStage.
 @dataclass
 class FtpRemoteFile:
     index: int
@@ -112,6 +112,11 @@ class FtpTaskStage(TaskStage):
     resolvePath: str
     supportsRange: bool = field(default=True)
     accelerated: bool = field(default=False)
+
+    def setStatus(self, status: TaskStatus, notifyTask: bool = True):
+        if status == TaskStatus.COMPLETED:
+            self.receivedBytes = self.fileSize
+        super().setStatus(status, notifyTask=notifyTask)
 
 
 @dataclass(kw_only=True)
