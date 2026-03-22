@@ -1,5 +1,5 @@
 <h4 align="right">
-  简体中文 | <a href="README.md">English</a>
+  简体中文 | <a href="README.md">English</a> | <a href="README_ru.md">Русский</a>
 </h4>
 
 > [!NOTE]
@@ -132,7 +132,8 @@ Copyright © 2025 XiaoYouChR.
 
 * [@zhiyiYo](https://github.com/zhiyiYo/) 是大佬！为该项目的开发提供了很多帮助！
 * [@一只透明人-](https://space.bilibili.com/554365148/) 测试了几乎从 Ghost-Downloader-1 开始的每个程序版本！
-* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner！
+* [@空糖_SuGar](https://github.com/SuGar0218/) 制作了项目的 Banner!
+* [@ReM2812](https://github.com/ReM2812/) 已将程序界面和 README 文档翻译成俄语！
 
 <picture>
   <source
