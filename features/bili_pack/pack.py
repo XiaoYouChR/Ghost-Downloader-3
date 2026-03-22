@@ -25,6 +25,14 @@ def _sanitizeFileName(name: str) -> str:
     return result or "bilibili_video"
 
 
+def _normalizeBilibiliReferer(referer: str) -> str:
+    parsedUrl = urlparse(referer)
+    if (parsedUrl.hostname or "").lower() != "bilibili.com":
+        return referer
+
+    return parsedUrl._replace(netloc="www.bilibili.com").geturl()
+
+
 def _buildBilibiliHeaders(referer: str) -> dict[str, str]:
     headers = {
         "accept-encoding": "deflate, br, gzip",
@@ -35,7 +43,7 @@ def _buildBilibiliHeaders(referer: str) -> dict[str, str]:
         "sec-fetch-user": "?1",
         "upgrade-insecure-requests": "1",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
-        "referer": referer,
+        "referer": _normalizeBilibiliReferer(referer),
     }
 
     userCookie = bilibiliConfig.userCookie.value
