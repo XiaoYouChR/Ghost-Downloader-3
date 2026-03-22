@@ -149,14 +149,14 @@ class HttpWorker(Worker):
                         if res.status_code != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
 
-                        async for chunk in await res.iter_raw(chunk_size=65536):
+                        async for chunk in await res.iter_raw():
                             if not chunk:
                                 continue
 
                             await cfg.checkSpeedLimitation()
                             pwrite(self.fileHandle, chunk, subworker.progress)
-                            subworker.progress += 65536
-                            cfg.globalSpeed += 65536
+                            subworker.progress += len(chunk)
+                            cfg.globalSpeed += len(chunk)
                     finally:
                         await res.close()
 
