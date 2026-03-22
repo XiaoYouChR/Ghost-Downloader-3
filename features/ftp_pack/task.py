@@ -1,13 +1,14 @@
 import asyncio
 import os
 import re
+import ssl
 from asyncio import CancelledError
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from struct import pack, unpack
 from typing import Any
-from urllib.parse import ParseResult, unquote, urlparse, urlunparse
+from urllib.parse import unquote, urlparse
 
 import aioftp
 from loguru import logger
@@ -24,6 +25,8 @@ FTP_SOCKET_TIMEOUT = 30
 FTP_PATH_TIMEOUT = 30
 FTP_CHUNK_SIZE = 65536
 FTP_RETRY_DELAY = 5
+FTP_DEFAULT_PORT = 21
+FTPS_DEFAULT_PORT = 990
 
 
 def _sanitizeName(name: str) -> str:
@@ -62,7 +65,7 @@ def _buildClientKwargs(proxies: dict | None) -> dict[str, Any]:
 
     parsedProxy = urlparse(proxyUrl)
     if parsedProxy.scheme not in {"socks4", "socks5"}:
-        raise ValueError("FTP 下载目前仅支持 SOCKS4/SOCKS5 代理或直连")
+        raise ValueError("FTP/FTPS 下载目前仅支持 SOCKS4/SOCKS5 代理或直连")
     if not parsedProxy.hostname or not parsedProxy.port:
         raise ValueError("代理配置无效")
 
@@ -80,13 +83,35 @@ def _buildClientKwargs(proxies: dict | None) -> dict[str, Any]:
     return kwargs
 
 
+def _connectionAttempts(connectionInfo: "FtpConnectionInfo") -> list[tuple[int, str]]:
+    scheme = connectionInfo.scheme.lower()
+    if scheme != "ftps":
+        return [(connectionInfo.port, "plain")]
+
+    if not connectionInfo.portSpecified:
+        return [
+            (FTP_DEFAULT_PORT, "explicit"),
+            (FTPS_DEFAULT_PORT, "implicit"),
+        ]
+
+    if connectionInfo.port == FTPS_DEFAULT_PORT:
+        return [(connectionInfo.port, "implicit")]
+
+    return [
+        (connectionInfo.port, "explicit"),
+        (connectionInfo.port, "implicit"),
+    ]
+
+
 @dataclass
 class FtpConnectionInfo:
     host: str
-    port: int = 21
+    scheme: str = "ftp"
+    port: int = FTP_DEFAULT_PORT
     username: str = "anonymous"
     password: str = "anon@"
     sourcePath: str = "/"
+    portSpecified: bool = False
 
 # 选了不一定下载, 故拆成 FtpRemoteFile 和 FtpTaskStage.
 @dataclass
@@ -332,20 +357,7 @@ class FtpWorker(Worker):
         self._stopping = False
 
     async def _connectClient(self) -> aioftp.Client:
-        client = aioftp.Client(**_buildClientKwargs(self.task.proxies))
-        try:
-            await client.connect(
-                self.task.connectionInfo.host,
-                self.task.connectionInfo.port,
-            )
-            await client.login(
-                self.task.connectionInfo.username,
-                self.task.connectionInfo.password,
-            )
-            return client
-        except Exception:
-            client.close()
-            raise
+        return await _openClient(self.task.connectionInfo, self.task.proxies)
 
     def _closeTransfer(self, client: aioftp.Client | None, stream):
         with suppress(Exception):
@@ -760,14 +772,34 @@ class FtpWorker(Worker):
 
 
 async def _openClient(connectionInfo: FtpConnectionInfo, proxies: dict | None) -> aioftp.Client:
-    client = aioftp.Client(**_buildClientKwargs(proxies))
-    try:
-        await client.connect(connectionInfo.host, connectionInfo.port)
-        await client.login(connectionInfo.username, connectionInfo.password)
-        return client
-    except Exception:
-        client.close()
-        raise
+    lastError: Exception | None = None
+    attempts = _connectionAttempts(connectionInfo)
+
+    for index, (port, mode) in enumerate(attempts):
+        client = aioftp.Client(
+            **_buildClientKwargs(proxies),
+            ssl=ssl.create_default_context() if mode == "implicit" else None,
+        )
+        try:
+            await client.connect(connectionInfo.host, port)
+            if mode == "explicit":
+                await client.upgrade_to_tls()
+            await client.login(connectionInfo.username, connectionInfo.password)
+            return client
+        except Exception as e:
+            client.close()
+            lastError = e
+            if index < len(attempts) - 1:
+                logger.info(
+                    "{}://{}:{} 使用 {} TLS 连接失败，尝试下一种模式: {}",
+                    connectionInfo.scheme.lower(),
+                    connectionInfo.host,
+                    port,
+                    mode,
+                    repr(e),
+                )
+
+    raise lastError or RuntimeError("无法建立 FTP 连接")
 
 
 async def _closeClient(client: aioftp.Client | None):
@@ -777,25 +809,6 @@ async def _closeClient(client: aioftp.Client | None):
         await client.quit()
     except Exception:
         client.close()
-
-
-def _sanitizeDisplayUrl(parsed: ParseResult) -> str:
-    host = parsed.hostname or ""
-    if parsed.port:
-        host = f"{host}:{parsed.port}"
-    if parsed.username:
-        host = f"{parsed.username}@{host}"
-
-    return urlunparse(
-        (
-            parsed.scheme,
-            host,
-            parsed.path,
-            parsed.params,
-            parsed.query,
-            parsed.fragment,
-        )
-    )
 
 
 def _displayTitleForSource(path: PurePosixPath, host: str) -> str:
@@ -824,18 +837,21 @@ def _relativeRemotePath(remotePath: PurePosixPath, rootPath: PurePosixPath) -> s
 async def parse(payload: dict) -> FtpTask:
     url = str(payload["url"]).strip()
     parsedUrl = urlparse(url)
-    if parsedUrl.scheme.lower() != "ftp":
-        raise ValueError("不是有效的 FTP 链接")
+    scheme = parsedUrl.scheme.lower()
+    if scheme not in {"ftp", "ftps"}:
+        raise ValueError("不是有效的 FTP/FTPS 链接")
     if not parsedUrl.hostname:
-        raise ValueError("FTP 链接缺少主机名")
+        raise ValueError("FTP/FTPS 链接缺少主机名")
 
     sourcePath = PurePosixPath(unquote(parsedUrl.path or "/"))
     connectionInfo = FtpConnectionInfo(
+        scheme=scheme,
         host=parsedUrl.hostname,
-        port=parsedUrl.port or 21,
+        port=parsedUrl.port or FTP_DEFAULT_PORT,
         username=unquote(parsedUrl.username or "anonymous"),
         password=unquote(parsedUrl.password or "anon@"),
         sourcePath=str(sourcePath),
+        portSpecified=parsedUrl.port is not None,
     )
     proxies = payload.get("proxies", getProxies())
     path = Path(payload.get("path", cfg.downloadFolder.value))
@@ -894,7 +910,7 @@ async def parse(payload: dict) -> FtpTask:
 
         task = FtpTask(
             title=_displayTitleForSource(sourcePath, connectionInfo.host),
-            url=_sanitizeDisplayUrl(parsedUrl),
+            url=url,
             fileSize=sum(file.size for file in files),
             path=path,
             stages=stages,

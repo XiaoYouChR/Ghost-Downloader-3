@@ -12,7 +12,7 @@ class FtpPack(FeaturePack):
     taskType = FtpTask
 
     def canHandle(self, url: str) -> bool:
-        return urlparse(url).scheme.lower() == "ftp"
+        return urlparse(url).scheme.lower() in {"ftp", "ftps"}
 
     async def parse(self, payload: dict) -> Task:
         return await parse(payload)
