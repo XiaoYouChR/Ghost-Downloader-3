@@ -320,7 +320,7 @@ class AddTaskDialog(MessageBoxBase):
         InfoBar.error(
             self.tr("链接解析失败"),
             content,
-            duration=5000,
+            duration=-1,
             position=InfoBarPosition.BOTTOM_RIGHT,
             parent=self,
         )
