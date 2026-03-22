@@ -126,10 +126,6 @@ class CoreService(QThread):
             callbackId: 回调函数标识符
         """
         try:
-            url = payload.get('url', '')
-            if not url:
-                raise ValueError("URL 不能为空")
-
             result = await featureService.parse(payload)
 
             if callbackId and callbackId in self._pendingCallbacks:

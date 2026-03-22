@@ -3,6 +3,7 @@ import sys
 import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Any
+from urllib.parse import urlparse
 
 from loguru import logger
 
@@ -232,7 +233,7 @@ class FeatureService:
             logger.opt(exception=e).error("加载 FeaturePack 失败 {}", packInfo["name"])
             return False
 
-    def getPackForUrl(self, url: str) -> tuple[str, FeaturePack] | tuple[None, None]:
+    def _matchPackForUrl(self, url: str) -> tuple[str, FeaturePack] | tuple[None, None]:
         for packName, packInstance in self.sortedPacksCache:
             try:
                 if packInstance.canHandle(url):
@@ -241,8 +242,30 @@ class FeatureService:
                 logger.opt(exception=e).error("FeaturePack.canHandle 失败 {}", packName)
         return None, None
 
+    def getPackForUrl(
+        self,
+        url: str,
+    ) -> tuple[str, str | None, FeaturePack | None]:
+        url = str(url).strip()
+        if not url:
+            return "", None, None
+
+        packName, packInstance = self._matchPackForUrl(url)
+        if packInstance is not None:
+            return url, packName, packInstance
+
+        if urlparse(url).scheme:
+            return url, None, None
+
+        implicitUrl = f"http://{url}"
+        packName, packInstance = self._matchPackForUrl(implicitUrl)
+        if packInstance is None:
+            return url, None, None
+
+        return implicitUrl, packName, packInstance
+
     def canHandle(self, url: str) -> bool:
-        _, packInstance = self.getPackForUrl(url)
+        _, _, packInstance = self.getPackForUrl(url)
         return packInstance is not None
 
     def getPackForTask(self, task: Task) -> tuple[str, FeaturePack] | tuple[None, None]:
@@ -267,9 +290,13 @@ class FeatureService:
         if not url:
             raise ValueError("URL 不能为空")
 
-        packName, packInstance = self.getPackForUrl(url)
+        resolvedUrl, packName, packInstance = self.getPackForUrl(url)
         if packInstance is None:
             raise ValueError(f"未找到可处理该链接的 FeaturePack: {url}")
+
+        if payload.get("url") != resolvedUrl:
+            payload = payload.copy()
+            payload["url"] = resolvedUrl
 
         task = await packInstance.parse(payload)
         setattr(task, "_featurePackName", packName)
