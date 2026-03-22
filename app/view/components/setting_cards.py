@@ -22,9 +22,10 @@ from qfluentwidgets import (
     EditableComboBox,
     ToolButton,
 )
+from urllib.parse import urlsplit
 
 from app.supports.config import cfg
-from app.supports.utils import getSystemProxy
+from app.supports.utils import getSystemProxies
 
 
 class SpinBoxSettingCard(SettingCard):
@@ -137,31 +138,26 @@ class ProxySettingCard(ExpandGroupSettingCard):
         else:
             self.customRadioButton.setChecked(True)
             self.__onRadioButtonClicked(self.customRadioButton)
-            self.customProtocolComboBox.setCurrentText(
-                configValue[: configValue.find("://")]
-            )
-            # 解析代理字符串，格式可能是：
-            # protocol://ip:port 或 protocol://username:password@ip:port
-            proxyPart = configValue[configValue.find("://") + 3 :]
-            if "@" in proxyPart:
-                # 包含账号密码
-                credentials, hostPort = proxyPart.rsplit("@", 1)
-                if ":" in credentials:
-                    username, password = credentials.split(":", 1)
-                    self.usernameLineEdit.setText(username)
-                    self.passwordLineEdit.setText(password)
-                else:
-                    self.usernameLineEdit.setText(credentials)
-            else:
-                hostPort = proxyPart
-
-            # 解析主机和端口
-            hostAndPort = hostPort.split(":")
-            self.customIPLineEdit.setText(hostAndPort[0])
-            self.customPortLineEdit.setText(hostAndPort[1])
+            self._applyProxyUrl(configValue)
 
             self.choiceLabel.setText(self.buttonGroup.checkedButton().text())
             self.choiceLabel.adjustSize()
+
+    def _applyProxyUrl(self, proxyUrl: str | None):
+        if not proxyUrl:
+            self.customProtocolComboBox.setCurrentText("")
+            self.customIPLineEdit.setText(self.tr("未检测到代理"))
+            self.customPortLineEdit.setText("")
+            self.usernameLineEdit.setText("")
+            self.passwordLineEdit.setText("")
+            return
+
+        parsed = urlsplit(proxyUrl)
+        self.customProtocolComboBox.setCurrentText(parsed.scheme)
+        self.customIPLineEdit.setText(parsed.hostname or "")
+        self.customPortLineEdit.setText(str(parsed.port or ""))
+        self.usernameLineEdit.setText(parsed.username or "")
+        self.passwordLineEdit.setText(parsed.password or "")
 
     def __initWidget(self):
         self.__initLayout()
@@ -242,39 +238,14 @@ class ProxySettingCard(ExpandGroupSettingCard):
             self.customProxyWidget.setDisabled(True)
             self.credentialsWidget.setDisabled(True)
 
-            systemValue = getSystemProxy()
-            # 分析 SystemProxy，格式可能为：
-            # protocol://ip:port 或 protocol://username:password@ip:port
-            if systemValue:
-                protocol = systemValue[: systemValue.find("://")]
-                self.customProtocolComboBox.setCurrentText(protocol)
-
-                # 解析代理 URL，提取用户名、密码、IP、端口
-                proxyPart = systemValue[systemValue.find("://") + 3 :]
-                if "@" in proxyPart:  # 包含账号密码
-                    credentials, hostPort = proxyPart.rsplit("@", 1)
-                    if ":" in credentials:
-                        username, password = credentials.split(":", 1)
-                        self.usernameLineEdit.setText(username)
-                        self.passwordLineEdit.setText(password)
-                    else:
-                        self.usernameLineEdit.setText(credentials)
-                        self.passwordLineEdit.setText("")
-                else:  # 不包含账号密码，清空输入框
-                    self.usernameLineEdit.setText("")
-                    self.passwordLineEdit.setText("")
-                    hostPort = proxyPart
-
-                # 解析主机和端口
-                hostAndPort = hostPort.split(":")
-                self.customIPLineEdit.setText(hostAndPort[0])
-                self.customPortLineEdit.setText(hostAndPort[1])
-            else:
-                self.customProtocolComboBox.setCurrentText("")
-                self.customIPLineEdit.setText(self.tr("未检测到代理"))
-                self.customPortLineEdit.setText("")
-                self.usernameLineEdit.setText("")
-                self.passwordLineEdit.setText("")
+            systemProxies = getSystemProxies()
+            systemValue = None
+            if systemProxies:
+                for protocol in ("https", "http", "ftp"):
+                    systemValue = systemProxies.get(protocol)
+                    if systemValue:
+                        break
+            self._applyProxyUrl(systemValue)
 
             cfg.set(self.configItem, "Auto")
 

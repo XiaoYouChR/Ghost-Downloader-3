@@ -5,6 +5,7 @@ from functools import wraps
 from pathlib import Path
 from time import sleep
 from typing import Callable
+from urllib.parse import urlsplit, urlunsplit
 
 from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
 from PySide6.QtGui import QDesktopServices
@@ -13,6 +14,9 @@ from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.bases.models import Task
 from app.supports.config import cfg
+
+
+_PROXY_PROTOCOLS = ("http", "https", "ftp")
 
 
 def openFolder(path):
@@ -38,91 +42,144 @@ def openAppLogFolder():
     openFolder(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log")
 
 
-def getSystemProxy():
-    if sys.platform == "win32":
-        try:
-            import winreg
+def _getWindowsSystemProxies() -> dict[str, str]:
+    import winreg
 
-            key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+    with winreg.OpenKey(
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+    ) as key:
+        proxyEnable, _ = winreg.QueryValueEx(key, "ProxyEnable")
+        if not proxyEnable:
+            return {}
+
+        proxyServer, _ = winreg.QueryValueEx(key, "ProxyServer")
+        rawProxies: dict[str, str] = {}
+        defaultProxy = ""
+        for entry in str(proxyServer or "").split(";"):
+            entry = entry.strip()
+            if not entry:
+                continue
+
+            if "=" not in entry:
+                defaultProxy = entry
+                continue
+
+            protocol, value = entry.split("=", 1)
+            protocol = protocol.strip().lower()
+            value = value.strip()
+            if protocol in _PROXY_PROTOCOLS and value:
+                rawProxies[protocol] = value
+
+        if defaultProxy:
+            for protocol in _PROXY_PROTOCOLS:
+                rawProxies.setdefault(protocol, defaultProxy)
+
+        proxies = {
+            protocol: value if "://" in value else f"http://{value}"
+            for protocol, value in rawProxies.items()
+            if value
+        }
+        if not proxies:
+            return {}
+
+        username = None
+        password = None
+        try:
+            proxyUser, _ = winreg.QueryValueEx(key, "ProxyUser")
+            if proxyUser:
+                username = str(proxyUser)
+
+            proxyPass, _ = winreg.QueryValueEx(key, "ProxyPass")
+            if proxyPass:
+                password = str(proxyPass)
+        except (FileNotFoundError, OSError):
+            pass
+
+        if not username and not password:
+            return proxies
+
+        credentials = username or ""
+        if password is not None:
+            credentials = f"{credentials}:{password}"
+
+        proxiesWithCredentials: dict[str, str] = {}
+        for protocol, proxyUrl in proxies.items():
+            parsed = urlsplit(proxyUrl)
+            if parsed.username or parsed.password:
+                proxiesWithCredentials[protocol] = proxyUrl
+                continue
+
+            proxiesWithCredentials[protocol] = urlunsplit(
+                parsed._replace(netloc=f"{credentials}@{parsed.netloc}")
             )
 
-            proxyEnable, _ = winreg.QueryValueEx(key, "ProxyEnable")
+        return proxiesWithCredentials
 
-            if proxyEnable:
-                proxyServer, _ = winreg.QueryValueEx(key, "ProxyServer")
 
-                # TODO 当 http 代理和 https 代理不同时，当前实现只能获取 http 代理，后续可以改进为分别获取 http 和 https 代理
-                if "http=" in proxyServer:
-                    proxyServer = proxyServer.split(";")[0].split("=")[1]
+def _getLinuxSystemProxies() -> dict[str, str]:
+    proxies = {
+        protocol: str(
+            os.environ.get(f"{protocol}_proxy")
+            or os.environ.get(f"{protocol.upper()}_PROXY")
+            or ""
+        ).strip()
+        for protocol in _PROXY_PROTOCOLS
+    }
+    fallbackProxy = proxies["https"] or proxies["http"]
+    if fallbackProxy:
+        for protocol in _PROXY_PROTOCOLS:
+            if not proxies[protocol]:
+                proxies[protocol] = fallbackProxy
 
-                if not proxyServer.startswith("http://") and not proxyServer.startswith(
-                    "https://"
-                ):
-                    proxyServer = "http://" + proxyServer
+    return {protocol: proxyUrl for protocol, proxyUrl in proxies.items() if proxyUrl}
 
-                # 尝试从 Windows 凭证管理器获取用户名和密码
-                username = None
-                password = None
-                try:
-                    proxyUser, _ = winreg.QueryValueEx(key, "ProxyUser")
-                    if proxyUser:
-                        username = proxyUser
-                    proxyPass, _ = winreg.QueryValueEx(key, "ProxyPass")
-                    if proxyPass:
-                        password = proxyPass
-                except (FileNotFoundError, OSError):
-                    # 注册表中未找到用户名或密码
-                    pass
 
-                # 如果有用户名和密码，插入到代理 URL 中
-                if username or password:
-                    protocol = proxyServer[: proxyServer.find("://")]
-                    hostPort = proxyServer[proxyServer.find("://") + 3 :]
-                    credentials = f"{username or ''}:{password or ''}"
-                    proxyServer = f"{protocol}://{credentials}@{hostPort}"
+def _getDarwinSystemProxies() -> dict[str, str]:
+    import SystemConfiguration
 
-                return proxyServer
-            else:
-                return None
+    proxySettings = SystemConfiguration.SCDynamicStoreCopyProxies(None)  # type: ignore
+    if proxySettings.get("SOCKSEnable", 0):
+        proxyUrl = f"socks5://{proxySettings.get('SOCKSProxy')}:{proxySettings.get('SOCKSPort')}"
+        return {protocol: proxyUrl for protocol in _PROXY_PROTOCOLS}
 
-        except FileNotFoundError:
-            return None
-        except Exception as e:
-            logger.opt(exception=e).error("无法获取 Windows 代理服务器")
-            return None
+    if proxySettings.get("HTTPEnable", 0):
+        proxyUrl = f"http://{proxySettings.get('HTTPProxy')}:{proxySettings.get('HTTPPort')}"
+        return {protocol: proxyUrl for protocol in _PROXY_PROTOCOLS}
 
-    elif sys.platform == "linux":  # 读取 Linux 系统代理
-        try:
-            proxyUrl = os.environ.get("https_proxy") or os.environ.get("http_proxy")
-            return proxyUrl
-        except Exception as e:
-            logger.opt(exception=e).error("无法获取 Linux 代理服务器")
-            return None
+    return {}
 
-    elif sys.platform == "darwin":
-        import SystemConfiguration
 
-        _ = SystemConfiguration.SCDynamicStoreCopyProxies(None)  # type: ignore
-
-        if _.get("SOCKSEnable", 0):
-            return f"socks5://{_.get('SOCKSProxy')}:{_.get('SOCKSPort')}"
-        elif _.get("HTTPEnable", 0):
-            return f"http://{_.get('HTTPProxy')}:{_.get('HTTPPort')}"
+def getSystemProxies() -> dict[str, str] | None:
+    try:
+        if sys.platform == "win32":
+            proxies = _getWindowsSystemProxies()
+        elif sys.platform == "linux":
+            proxies = _getLinuxSystemProxies()
+        elif sys.platform == "darwin":
+            proxies = _getDarwinSystemProxies()
         else:
-            return None
-
-    return None
+            proxies = {}
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        logger.opt(exception=e).error("无法获取系统代理服务器")
+        return None
+    return proxies or None
 
 
 def getProxies():
     if cfg.proxyServer.value == "Off":
         return None
-    elif cfg.proxyServer.value == "Auto":
-        return {"http": getSystemProxy(), "https": getSystemProxy()}
-    else:
-        return {"http": cfg.proxyServer.value, "https": cfg.proxyServer.value}
+
+    if cfg.proxyServer.value == "Auto":
+        return getSystemProxies()
+
+    proxyServer = str(cfg.proxyServer.value).strip()
+    if not proxyServer:
+        return None
+
+    return {protocol: proxyServer for protocol in _PROXY_PROTOCOLS}
 
 
 def getReadableSize(size: int):
