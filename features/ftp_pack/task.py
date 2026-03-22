@@ -456,12 +456,13 @@ class FtpWorker(Worker):
                 chunk = await stream.read(min(FTP_CHUNK_SIZE, remaining))
                 if not chunk:
                     raise RuntimeError("FTP 数据流提前结束")
+                chunkSize = len(chunk)
 
                 await cfg.checkSpeedLimitation()
                 pwrite(self.fileHandle, chunk, subworker.progress)
-                subworker.progress += len(chunk)
-                remaining -= len(chunk)
-                cfg.globalSpeed += len(chunk)
+                subworker.progress += chunkSize
+                remaining -= chunkSize
+                cfg.globalSpeed += chunkSize
         finally:
             self._closeTransfer(client, stream)
 
@@ -479,11 +480,12 @@ class FtpWorker(Worker):
                 chunk = await stream.read(FTP_CHUNK_SIZE)
                 if not chunk:
                     return
+                chunkSize = len(chunk)
 
                 await cfg.checkSpeedLimitation()
                 pwrite(self.fileHandle, chunk, subworker.progress)
-                subworker.progress += len(chunk)
-                cfg.globalSpeed += len(chunk)
+                subworker.progress += chunkSize
+                cfg.globalSpeed += chunkSize
         finally:
             self._closeTransfer(client, stream)
 
@@ -502,11 +504,12 @@ class FtpWorker(Worker):
                 if not chunk:
                     ftruncate(self.fileHandle, subworker.progress)
                     return
+                chunkSize = len(chunk)
 
                 await cfg.checkSpeedLimitation()
                 pwrite(self.fileHandle, chunk, subworker.progress)
-                subworker.progress += len(chunk)
-                cfg.globalSpeed += len(chunk)
+                subworker.progress += chunkSize
+                cfg.globalSpeed += chunkSize
         finally:
             self._closeTransfer(client, stream)
 
