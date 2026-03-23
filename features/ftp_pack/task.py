@@ -1,6 +1,5 @@
 import asyncio
 import os
-import re
 import ssl
 from asyncio import CancelledError
 from contextlib import suppress
@@ -17,7 +16,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import SpecialFileSize, Task, TaskStage, TaskStatus
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, sanitizeFilename
 
 
 FTP_CONNECTION_TIMEOUT = 15
@@ -27,12 +26,6 @@ FTP_CHUNK_SIZE = 65536
 FTP_RETRY_DELAY = 5
 FTP_DEFAULT_PORT = 21
 FTPS_DEFAULT_PORT = 990
-
-
-def _sanitizeName(name: str) -> str:
-    cleaned = re.sub(r'[\x00-\x1f\\/:*?"<>|]+', "_", str(name or "")).strip().rstrip(".")
-    return cleaned or "ftp_download"
-
 
 def _parsePositiveSize(value: Any) -> int:
     try:
@@ -160,7 +153,7 @@ class FtpTask(Task):
             for item in self.files
         ]
         self._filesByIndex = {file.index: file for file in self.files}
-        self.title = _sanitizeName(self.title)
+        self.title = sanitizeFilename(self.title, fallback="ftp_download")
         super().__post_init__()
         self._recalculateSelection()
         self._syncFileProgress()
@@ -208,7 +201,7 @@ class FtpTask(Task):
             )
 
     def setTitle(self, title: str):
-        self.title = _sanitizeName(title)
+        self.title = sanitizeFilename(title, fallback=self.title or "ftp_download")
         self.syncStagePaths()
 
     def _recalculateSelection(self):
@@ -816,8 +809,8 @@ async def _closeClient(client: aioftp.Client | None):
 
 def _displayTitleForSource(path: PurePosixPath, host: str) -> str:
     if path.name:
-        return _sanitizeName(path.name)
-    return _sanitizeName(host)
+        return sanitizeFilename(path.name, fallback="ftp_download")
+    return sanitizeFilename(host, fallback="ftp_download")
 
 
 async def _probeRangeSupport(client: aioftp.Client) -> bool:

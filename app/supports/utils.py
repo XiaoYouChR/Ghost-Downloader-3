@@ -1,9 +1,10 @@
+import re
 import sys
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from niquests.utils import getproxies
 from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
@@ -11,11 +12,69 @@ from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
-from app.bases.models import Task
 from app.supports.config import cfg
+
+if TYPE_CHECKING:
+    from app.bases.models import Task
 
 
 _PROXY_PROTOCOLS = ("http", "https", "ftp")
+_INVALID_FILENAME_CHARS_PATTERN = re.compile(r'[\x00-\x1f\x7f<>:"/\\|?*]+')
+_WINDOWS_RESERVED_FILENAMES = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{i}" for i in range(1, 10)),
+    *(f"LPT{i}" for i in range(1, 10)),
+}
+
+
+def _normalizeFilenameCandidate(value: str) -> str:
+    candidate = str(value or "")
+    lastSeparator = max(candidate.rfind("/"), candidate.rfind("\\"))
+    if lastSeparator >= 0:
+        candidate = candidate[lastSeparator + 1:]
+
+    candidate = _INVALID_FILENAME_CHARS_PATTERN.sub("_", candidate).strip()
+    candidate = candidate.rstrip(". ")
+
+    if candidate in {"", ".", ".."}:
+        return ""
+
+    root, _, _ = candidate.partition(".")
+    if root.upper() in _WINDOWS_RESERVED_FILENAMES:
+        candidate = f"_{candidate}"
+
+    return candidate
+
+
+def sanitizeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:
+    normalizedFallback = ""
+    candidate = _normalizeFilenameCandidate(name)
+
+    if not candidate:
+        normalizedFallback = _normalizeFilenameCandidate(fallback) or "file"
+        candidate = normalizedFallback
+
+    if maxLength > 0 and len(candidate) > maxLength:
+        stem, dot, suffix = candidate.rpartition(".")
+        if stem and dot:
+            maxStemLength = maxLength - len(dot + suffix)
+            if maxStemLength <= 0:
+                candidate = candidate[:maxLength]
+            else:
+                candidate = f"{stem[:maxStemLength]}{dot}{suffix}"
+        else:
+            candidate = candidate[:maxLength]
+
+        candidate = candidate.rstrip(". ")
+        if candidate in {"", ".", ".."}:
+            if not normalizedFallback:
+                normalizedFallback = _normalizeFilenameCandidate(fallback) or "file"
+            candidate = normalizedFallback
+
+    return candidate
 
 
 def openFolder(path):
@@ -73,7 +132,7 @@ def getReadableTime(seconds: int) -> str:
 
 
 def ensureUniqueTaskTarget(
-    task: Task,
+    task: "Task",
 ) -> bool:
     target = Path(task.resolvePath.strip())
     if not target.name:

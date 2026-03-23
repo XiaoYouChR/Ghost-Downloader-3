@@ -16,7 +16,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, sanitizeFilename
 from .config import m3u8Config, resolveM3U8DownloaderExecutable
 
 if TYPE_CHECKING:
@@ -58,11 +58,6 @@ _M3U8DL_RELEASE_HEADERS = {
 
 def _normalizePath(path: Path | str) -> str:
     return str(Path(path)).replace("\\", "/")
-
-
-def _sanitizeName(name: str) -> str:
-    cleaned = re.sub(r'[\x00-\x1f\\/:*?"<>|]+', "_", str(name or "")).strip().rstrip(".")
-    return cleaned or "stream"
 
 
 def _stripKnownSuffix(name: str) -> str:
@@ -123,7 +118,7 @@ def _deriveDefaultTitle(url: str, headers: dict[str, str], extension: str) -> st
         candidates.append(unquote(Path(parsedUrl.path).name))
 
     for candidate in candidates:
-        name = _stripKnownSuffix(_sanitizeName(Path(candidate).name))
+        name = _stripKnownSuffix(sanitizeFilename(candidate, fallback="stream"))
         if name:
             return f"{name}.{extension}"
 
@@ -284,7 +279,7 @@ class M3U8Task(Task):
         return _normalizePath(Path(self.path) / ".gd3_m3u8" / self.taskId)
 
     def _normalizeTitle(self, title: str) -> str:
-        name = _sanitizeName(Path(str(title).strip() or "stream").name)
+        name = sanitizeFilename(title, fallback="stream")
         suffix = f".{self.outputExtension.lower()}"
         if name.lower().endswith(suffix):
             return name

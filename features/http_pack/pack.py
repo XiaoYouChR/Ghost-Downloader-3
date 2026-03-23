@@ -11,7 +11,7 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, DEFAULT_HEADERS
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, sanitizeFilename
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .task import HttpTask, HttpTaskStage
 
@@ -197,12 +197,7 @@ def _extractFileName(url: str, headers: dict) -> str:
             standardExt = guess_extension(contentType) or ""
             fileName = f"{fileName}.{standardExt}"
 
-    fileName = re.sub(r'[\x00-\x1f\\/:*?"<>|]', "_", fileName)
-    if len(fileName) > 200:
-        base, ext = (fileName.rsplit(".", 1) if "." in fileName else (fileName, ""))
-        fileName = base[:190] + ("." + ext)
-
-    return fileName.strip()
+    return sanitizeFilename(fileName, fallback=f"file_{int(time_ns())}")
 
 async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']

@@ -1,5 +1,4 @@
 import asyncio
-import re
 from base64 import b64decode, b64encode
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -17,7 +16,7 @@ from loguru import logger
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, sanitizeFilename
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .trackers import mergeTrackers
 
@@ -28,12 +27,6 @@ def _storageMode(mode: str) -> int:
     if mode == "allocate":
         return lt.storage_mode_t.storage_mode_allocate
     return lt.storage_mode_t.storage_mode_sparse
-
-
-def _sanitizeName(name: str) -> str:
-    cleaned = re.sub(r'[\x00-\x1f\\/:*?"<>|]+', "_", str(name or "")).strip().rstrip(".")
-    return cleaned or "torrent"
-
 
 def _normalizeTorrentPath(path: str) -> str:
     return str(PurePosixPath(str(path).replace("\\", "/")))
@@ -333,7 +326,7 @@ class BitTorrentTask(Task):
             for item in self.files
         ]
         self.fileSelectionVersion = 0
-        self.title = _sanitizeName(self.title)
+        self.title = sanitizeFilename(self.title, fallback="torrent")
         super().__post_init__()
         self._recalculateSelection()
         self.syncStagePaths()
@@ -894,8 +887,8 @@ def buildTaskFromTorrentInfo(
     if not entries:
         raise ValueError("该种子中没有可下载的普通文件")
 
-    rootName = _sanitizeName(PurePosixPath(entries[0].path).parts[0])
-    title = _sanitizeName(Path(entries[0].path).name) if len(entries) == 1 else rootName
+    rootName = sanitizeFilename(PurePosixPath(entries[0].path).parts[0], fallback="torrent")
+    title = sanitizeFilename(Path(entries[0].path).name, fallback="torrent") if len(entries) == 1 else rootName
     task = BitTorrentTask(
         title=title,
         url=sourceUrl,

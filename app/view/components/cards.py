@@ -585,7 +585,8 @@ class UniversalResultCard(ResultCard):
         newFilename = self.filenameEdit.text().strip()
         if newFilename and newFilename != self.task.title:
             self.task.setTitle(newFilename)
-            self.filenameLabel.setText(newFilename)
+            self.filenameLabel.setText(self.task.title)
+            self.filenameEdit.setText(self.task.title)
             self.resetFileIcon()
 
         self.filenameEdit.hide()
@@ -595,8 +596,8 @@ class UniversalResultCard(ResultCard):
     def setFilename(self, filename: str):
         """设置文件名"""
         self.task.setTitle(filename)
-        self.filenameLabel.setText(filename)
-        self.filenameEdit.setText(filename)
+        self.filenameLabel.setText(self.task.title)
+        self.filenameEdit.setText(self.task.title)
         self.resetFileIcon()
 
     def getTask(self) -> Task:

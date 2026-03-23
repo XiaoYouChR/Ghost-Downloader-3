@@ -8,7 +8,7 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import cfg
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, sanitizeFilename
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .config import bilibiliConfig
 from .task import BilibiliTask
@@ -19,11 +19,6 @@ if TYPE_CHECKING:
 else:
     from ffmpeg_pack.task import FFmpegStage
     from http_pack.task import HttpTaskStage
-
-def _sanitizeFileName(name: str) -> str:
-    result = re.sub(r'[\x00-\x1f\\/:*?"<>|]', "_", name).strip().rstrip(".")
-    return result or "bilibili_video"
-
 
 def _normalizeBilibiliReferer(referer: str) -> str:
     parsedUrl = urlparse(referer)
@@ -241,9 +236,9 @@ async def parse(payload: dict) -> BilibiliTask:
         totalSize = 0
 
         if len(selectedPages) == 1:
-            title = f"{_sanitizeFileName(_pickOutputTitle(videoTitle, pages[selectedPages[0] - 1], selectedPages[0], len(pages)))}.mp4"
+            title = f"{sanitizeFilename(_pickOutputTitle(videoTitle, pages[selectedPages[0] - 1], selectedPages[0], len(pages)), fallback='bilibili_video')}.mp4"
         else:
-            title = f"{_sanitizeFileName(videoTitle)}.mp4"
+            title = f"{sanitizeFilename(videoTitle, fallback='bilibili_video')}.mp4"
 
         task = BilibiliTask(
             title=title,

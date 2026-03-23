@@ -10,6 +10,7 @@ from orjson import loads, dumps
 from qfluentwidgets import SettingCard
 
 from app.supports.config import cfg, ConfigItem
+from app.supports.utils import sanitizeFilename
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
@@ -145,15 +146,17 @@ class Task:
         return str(self.path / self.title)
 
     def setTitle(self, title: str):
-        self.title = title
+        self.title = sanitizeFilename(title, fallback=self.title or "download")
         self.syncStagePaths()
 
     def syncStagePaths(self):
         raise NotImplementedError
 
     def __post_init__(self):
+        self.title = sanitizeFilename(self.title, fallback="download")
         for stage in self.stages:
             stage.bindTask(self)
+        self.syncStagePaths()
         self.syncStatusFromStages()
 
     def addStage(self, stage: TaskStage):
