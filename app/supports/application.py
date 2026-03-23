@@ -1,3 +1,4 @@
+from signal import signal, SIGINT
 import sys
 import traceback
 from time import localtime, strftime, time
@@ -62,6 +63,15 @@ class SingletonApplication(QApplication):
 
         if "__compiled__" in globals():  # 编译后的错误捕捉
             sys.excepthook = exceptionHook
+
+        try:
+            signal(SIGINT, self._handleInterruptSignal)
+        except Exception as e:
+            logger.warning(f"Failed to register SIGINT handler: {e}")
+
+    def _handleInterruptSignal(self, _signum, _frame):
+        logger.error("KeyboardInterrupt, quitting application")
+        self.quit()
 
     # exit: cleanup shared memory
     def exec(self):
