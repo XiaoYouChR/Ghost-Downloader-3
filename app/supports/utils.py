@@ -117,11 +117,13 @@ def _getWindowsSystemProxies() -> dict[str, str]:
         return proxiesWithCredentials
 
 
-def _getLinuxSystemProxies() -> dict[str, str]:
+def _getEnvSystemProxies() -> dict[str, str]:
+    allProxy = str(os.environ.get("all_proxy") or os.environ.get("ALL_PROXY") or "").strip()
     proxies = {
         protocol: str(
             os.environ.get(f"{protocol}_proxy")
             or os.environ.get(f"{protocol.upper()}_PROXY")
+            or allProxy
             or ""
         ).strip()
         for protocol in _PROXY_PROTOCOLS
@@ -135,10 +137,17 @@ def _getLinuxSystemProxies() -> dict[str, str]:
     return {protocol: proxyUrl for protocol, proxyUrl in proxies.items() if proxyUrl}
 
 
-def _getDarwinSystemProxies() -> dict[str, str]:
-    import SystemConfiguration
+def _getLinuxSystemProxies() -> dict[str, str]:
+    return _getEnvSystemProxies()
 
-    proxySettings = SystemConfiguration.SCDynamicStoreCopyProxies(None)  # type: ignore
+
+def _getDarwinSystemProxies() -> dict[str, str]:
+    try:
+        import SystemConfiguration
+        proxySettings = SystemConfiguration.SCDynamicStoreCopyProxies(None)  # type: ignore
+    except Exception:
+        return _getEnvSystemProxies()
+
     if proxySettings.get("SOCKSEnable", 0):
         proxyUrl = f"socks5://{proxySettings.get('SOCKSProxy')}:{proxySettings.get('SOCKSPort')}"
         return {protocol: proxyUrl for protocol in _PROXY_PROTOCOLS}
@@ -147,7 +156,7 @@ def _getDarwinSystemProxies() -> dict[str, str]:
         proxyUrl = f"http://{proxySettings.get('HTTPProxy')}:{proxySettings.get('HTTPPort')}"
         return {protocol: proxyUrl for protocol in _PROXY_PROTOCOLS}
 
-    return {}
+    return _getEnvSystemProxies()
 
 
 def getSystemProxies() -> dict[str, str] | None:
