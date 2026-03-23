@@ -500,6 +500,19 @@ class FtpTaskCard(UniversalTaskCard):
             return
         openFolder(str(target.parent))
 
+    def statusInfoText(self) -> str | None:
+        if self.task.status == TaskStatus.PAUSED:
+            return super().statusInfoText()
+
+        if self.task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED}:
+            if self.task.totalFileCount > 1 or self.task.isDirectorySource:
+                return self.tr("{0}/{1} 个文件").format(
+                    self.task.selectedFileCount,
+                    self.task.totalFileCount,
+                )
+
+        return super().statusInfoText()
+
     def _renderTaskState(self):
         super()._renderTaskState()
 
@@ -519,15 +532,6 @@ class FtpTaskCard(UniversalTaskCard):
                 self.leftTimeLabel.setText(getReadableTime(int(remaining / speed)))
             elif self.task.fileSize > 0:
                 self.leftTimeLabel.setText("--")
-
-        if self.task.status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.COMPLETED}:
-            if self.task.totalFileCount > 1 or self.task.isDirectorySource:
-                self.showStatusInfo(
-                    self.tr("{0}/{1} 个文件").format(
-                        self.task.selectedFileCount,
-                        self.task.totalFileCount,
-                    )
-                )
 
     def _onSelectFilesClicked(self):
         if self.task.status == TaskStatus.RUNNING:

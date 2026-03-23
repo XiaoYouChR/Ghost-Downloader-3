@@ -243,7 +243,7 @@ class UniversalTaskCard(TaskCard):
         super().__init__(task, parent)
         self.setFixedHeight(60)
         self.task = task
-        self.cardStatus = self.task.status
+        self.cardStatus: TaskStatus = self.task.status
 
         self.hBoxLayout = QHBoxLayout(self)
         self.iconLabel = ImageLabel(self)
@@ -311,6 +311,15 @@ class UniversalTaskCard(TaskCard):
         self.infoLabel.setText(text)
         self.infoLabel.show()
 
+    def statusInfoText(self) -> str | None:
+        if self.task.status == TaskStatus.COMPLETED:
+            return self.tr("任务已经完成")
+        if self.task.status == TaskStatus.PAUSED:
+            return self.tr("任务已经暂停")
+        if self.task.status == TaskStatus.WAITING:
+            return self.tr("任务正在等待")
+        return None
+
     def _renderTaskState(self):
         division = len(self.task.stages)
         progress = 0
@@ -351,18 +360,18 @@ class UniversalTaskCard(TaskCard):
                 self.progressBar.hide()
             else:
                 self.progressBar.stop()
-            self.showStatusInfo(self.tr("任务已经完成"))
+            self.showStatusInfo(self.statusInfoText() or "")
         elif self.task.status == TaskStatus.FAILED:
             self.progressBar.error()
             self.onTaskFailed()
         elif self.task.status == TaskStatus.PAUSED:
             self.progressBar.setError(False)
             self.progressBar.pause()
-            self.showStatusInfo(self.tr("任务已经暂停"))
+            self.showStatusInfo(self.statusInfoText() or "")
         else:
             self.progressBar.setError(False)
             self.progressBar.pause()
-            self.showStatusInfo(self.tr("任务正在等待"))
+            self.showStatusInfo(self.statusInfoText() or "")
 
         self.refreshToggleButton()
 
