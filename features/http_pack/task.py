@@ -46,11 +46,29 @@ class HttpTask(Task):
     def canPause(self) -> bool:
         return self.supportsRange
 
+    def reset(self) -> TaskStatus:
+        self._refreshDownloadInfoOnNextRun = True
+        return super().reset()
+
     async def run(self):
         currentStage = None
         try:
             for stage in self.iterRunnableStages():
                 currentStage = stage
+                if getattr(self, "_refreshDownloadInfoOnNextRun", False):
+                    from .pack import _probeDownloadInfo
+
+                    fileSize, supportsRange, _, _ = await _probeDownloadInfo(
+                        stage.url,
+                        stage.headers,
+                        stage.proxies,
+                    )
+                    self.fileSize = fileSize
+                    self.supportsRange = supportsRange
+                    stage.fileSize = fileSize
+                    stage.supportsRange = supportsRange
+                    self._refreshDownloadInfoOnNextRun = False
+
                 await HttpWorker(stage).run()
         except CancelledError:
             logger.info(f"{self.title} 停止下载")
