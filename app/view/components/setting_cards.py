@@ -25,7 +25,7 @@ from qfluentwidgets import (
 from urllib.parse import urlsplit
 
 from app.supports.config import cfg
-from app.supports.utils import getSystemProxies
+from app.supports.utils import getProxies
 
 
 class SpinBoxSettingCard(SettingCard):
@@ -238,16 +238,18 @@ class ProxySettingCard(ExpandGroupSettingCard):
             self.customProxyWidget.setDisabled(True)
             self.credentialsWidget.setDisabled(True)
 
-            systemProxies = getSystemProxies()
-            systemValue = None
-            if systemProxies:
-                for protocol in ("https", "http", "ftp"):
-                    systemValue = systemProxies.get(protocol)
-                    if systemValue:
-                        break
-            self._applyProxyUrl(systemValue)
-
             cfg.set(self.configItem, "Auto")
+            proxies = getProxies()
+            self._applyProxyUrl(
+                next(
+                    (
+                        proxies.get(protocol)
+                        for protocol in ("https", "http", "ftp")
+                        if proxies and proxies.get(protocol)
+                    ),
+                    None,
+                )
+            )
 
         elif button is self.offRadioButton:  # 关闭
             # 禁用 Custom 编辑器

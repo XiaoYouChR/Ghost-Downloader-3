@@ -1,12 +1,11 @@
-import os
 import sys
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from time import sleep
 from typing import Callable
-from urllib.parse import urlsplit, urlunsplit
 
+from niquests.utils import getproxies
 from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
@@ -42,147 +41,12 @@ def openAppLogFolder():
     openFolder(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log")
 
 
-def _getWindowsSystemProxies() -> dict[str, str]:
-    import winreg
-
-    with winreg.OpenKey(
-        winreg.HKEY_CURRENT_USER,
-        r"Software\Microsoft\Windows\CurrentVersion\Internet Settings",
-    ) as key:
-        proxyEnable, _ = winreg.QueryValueEx(key, "ProxyEnable")
-        if not proxyEnable:
-            return {}
-
-        proxyServer, _ = winreg.QueryValueEx(key, "ProxyServer")
-        rawProxies: dict[str, str] = {}
-        defaultProxy = ""
-        for entry in str(proxyServer or "").split(";"):
-            entry = entry.strip()
-            if not entry:
-                continue
-
-            if "=" not in entry:
-                defaultProxy = entry
-                continue
-
-            protocol, value = entry.split("=", 1)
-            protocol = protocol.strip().lower()
-            value = value.strip()
-            if protocol in _PROXY_PROTOCOLS and value:
-                rawProxies[protocol] = value
-
-        if defaultProxy:
-            for protocol in _PROXY_PROTOCOLS:
-                rawProxies.setdefault(protocol, defaultProxy)
-
-        proxies = {
-            protocol: value if "://" in value else f"http://{value}"
-            for protocol, value in rawProxies.items()
-            if value
-        }
-        if not proxies:
-            return {}
-
-        username = None
-        password = None
-        try:
-            proxyUser, _ = winreg.QueryValueEx(key, "ProxyUser")
-            if proxyUser:
-                username = str(proxyUser)
-
-            proxyPass, _ = winreg.QueryValueEx(key, "ProxyPass")
-            if proxyPass:
-                password = str(proxyPass)
-        except (FileNotFoundError, OSError):
-            pass
-
-        if not username and not password:
-            return proxies
-
-        credentials = username or ""
-        if password is not None:
-            credentials = f"{credentials}:{password}"
-
-        proxiesWithCredentials: dict[str, str] = {}
-        for protocol, proxyUrl in proxies.items():
-            parsed = urlsplit(proxyUrl)
-            if parsed.username or parsed.password:
-                proxiesWithCredentials[protocol] = proxyUrl
-                continue
-
-            proxiesWithCredentials[protocol] = urlunsplit(
-                parsed._replace(netloc=f"{credentials}@{parsed.netloc}")
-            )
-
-        return proxiesWithCredentials
-
-
-def _getEnvSystemProxies() -> dict[str, str]:
-    allProxy = str(os.environ.get("all_proxy") or os.environ.get("ALL_PROXY") or "").strip()
-    proxies = {
-        protocol: str(
-            os.environ.get(f"{protocol}_proxy")
-            or os.environ.get(f"{protocol.upper()}_PROXY")
-            or allProxy
-            or ""
-        ).strip()
-        for protocol in _PROXY_PROTOCOLS
-    }
-    fallbackProxy = proxies["https"] or proxies["http"]
-    if fallbackProxy:
-        for protocol in _PROXY_PROTOCOLS:
-            if not proxies[protocol]:
-                proxies[protocol] = fallbackProxy
-
-    return {protocol: proxyUrl for protocol, proxyUrl in proxies.items() if proxyUrl}
-
-
-def _getLinuxSystemProxies() -> dict[str, str]:
-    return _getEnvSystemProxies()
-
-
-def _getDarwinSystemProxies() -> dict[str, str]:
-    try:
-        import SystemConfiguration
-        proxySettings = SystemConfiguration.SCDynamicStoreCopyProxies(None)  # type: ignore
-    except Exception:
-        return _getEnvSystemProxies()
-
-    if proxySettings.get("SOCKSEnable", 0):
-        proxyUrl = f"socks5://{proxySettings.get('SOCKSProxy')}:{proxySettings.get('SOCKSPort')}"
-        return {protocol: proxyUrl for protocol in _PROXY_PROTOCOLS}
-
-    if proxySettings.get("HTTPEnable", 0):
-        proxyUrl = f"http://{proxySettings.get('HTTPProxy')}:{proxySettings.get('HTTPPort')}"
-        return {protocol: proxyUrl for protocol in _PROXY_PROTOCOLS}
-
-    return _getEnvSystemProxies()
-
-
-def getSystemProxies() -> dict[str, str] | None:
-    try:
-        if sys.platform == "win32":
-            proxies = _getWindowsSystemProxies()
-        elif sys.platform == "linux":
-            proxies = _getLinuxSystemProxies()
-        elif sys.platform == "darwin":
-            proxies = _getDarwinSystemProxies()
-        else:
-            proxies = {}
-    except FileNotFoundError:
-        return None
-    except Exception as e:
-        logger.opt(exception=e).error("无法获取系统代理服务器")
-        return None
-    return proxies or None
-
-
 def getProxies():
     if cfg.proxyServer.value == "Off":
         return None
 
     if cfg.proxyServer.value == "Auto":
-        return getSystemProxies()
+        return getproxies() or None
 
     proxyServer = str(cfg.proxyServer.value).strip()
     if not proxyServer:
