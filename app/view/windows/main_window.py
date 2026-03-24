@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 import darkdetect
-from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QEvent
+from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QEvent, QTimer
 from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
@@ -347,6 +347,13 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event):
         event.ignore()
+        if sys.platform == "darwin" and self.isFullScreen():
+            # On macOS, hiding a fullscreen window directly causes a black screen.
+            # Exit fullscreen first and wait for the animation (~500ms) before hiding.
+            self.showNormal()
+            QTimer.singleShot(500, self.hide)
+            return
+
         if not self.isMaximized():
             cfg.set(cfg.geometry, self.geometry())
 
