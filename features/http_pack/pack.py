@@ -11,7 +11,7 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, DEFAULT_HEADERS
-from app.supports.utils import getProxies, sanitizeFilename
+from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
 from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .task import HttpTask, HttpTaskStage
 
@@ -54,9 +54,11 @@ def _buildRangeProbeHeaders(headers: dict, rangeValue: str) -> dict:
 
 
 async def _requestProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
+    requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers)
     response = await client.get(
         url,
-        headers=headers,
+        headers=requestHeaders,
+        cookies=requestCookies,
         proxies=proxies,
         verify=cfg.SSLVerify.value,
         allow_redirects=True,

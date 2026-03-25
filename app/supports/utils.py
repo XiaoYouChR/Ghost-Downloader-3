@@ -6,6 +6,7 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Callable
 
+from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from niquests.utils import getproxies
 from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
 from PySide6.QtGui import QDesktopServices
@@ -112,6 +113,62 @@ def getProxies():
         return None
 
     return {protocol: proxyServer for protocol in _PROXY_PROTOCOLS}
+
+
+def _parseCookieHeader(cookieHeader: str) -> dict[str, str]:
+    cookies: dict[str, str] = {}
+    if not isinstance(cookieHeader, str):
+        return cookies
+
+    for part in cookieHeader.replace("\r", ";").replace("\n", ";").split(";"):
+        part = part.strip()
+        if not part or "=" not in part:
+            continue
+
+        name, value = part.split("=", 1)
+        name = name.strip()
+        value = value.strip()
+        if name and value:
+            cookies[name] = value
+
+    return cookies
+
+
+def _encodeCookieTransportValue(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    if any(ord(char) < 32 or ord(char) == 127 for char in text):
+        return ""
+
+    if all(ord(char) <= 255 for char in text):
+        return text
+
+    return text.encode("utf-8").decode("latin-1")
+
+
+def splitRequestHeadersAndCookies(headers: dict[str, str] | None) -> tuple[dict[str, str], RequestsCookieJar | None]:
+    requestHeaders = dict(headers or {})
+    cookieHeader = str(requestHeaders.pop("cookie", "") or "").strip()
+    if not cookieHeader:
+        return requestHeaders, None
+
+    parsedCookies = _parseCookieHeader(cookieHeader)
+    if not parsedCookies:
+        return requestHeaders, None
+
+    cookieItems: dict[str, str] = {}
+    for name, value in parsedCookies.items():
+        normalizedName = str(name or "").strip()
+        normalizedValue = _encodeCookieTransportValue(value)
+        if normalizedName and normalizedValue:
+            cookieItems[normalizedName] = normalizedValue
+
+    if not cookieItems:
+        return requestHeaders, None
+
+    return requestHeaders, cookiejar_from_dict(cookieItems)
 
 
 def getReadableSize(size: int):

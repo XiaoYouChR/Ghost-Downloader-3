@@ -16,7 +16,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies, sanitizeFilename
+from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
 from .config import m3u8Config, resolveM3U8DownloaderExecutable
 
 if TYPE_CHECKING:
@@ -545,13 +545,16 @@ async def parse(payload: dict) -> M3U8Task:
     headers = payload.get("headers", DEFAULT_HEADERS)
     proxies = payload.get("proxies", getProxies())
     path = Path(payload.get("path", cfg.downloadFolder.value))
+    requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers if isinstance(headers, dict) else DEFAULT_HEADERS)
 
-    client = niquests.AsyncSession(headers=headers, timeout=30, happy_eyeballs=True)
+    client = niquests.AsyncSession(timeout=30, happy_eyeballs=True)
     client.trust_env = False
 
     try:
         response = await client.get(
             url,
+            headers=requestHeaders,
+            cookies=requestCookies,
             proxies=proxies,
             verify=cfg.SSLVerify.value,
             allow_redirects=True,

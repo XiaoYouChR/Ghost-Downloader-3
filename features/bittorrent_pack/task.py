@@ -16,7 +16,7 @@ from loguru import logger
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
-from app.supports.utils import getProxies, sanitizeFilename
+from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .trackers import mergeTrackers
 
@@ -753,13 +753,16 @@ async def _fetchTorrentBytes(payload: dict) -> bytes:
     url = str(payload["url"]).strip()
     headers = payload.get("headers", DEFAULT_HEADERS)
     proxies = payload.get("proxies", getProxies())
+    requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers if isinstance(headers, dict) else DEFAULT_HEADERS)
 
-    client = niquests.AsyncSession(headers=headers, timeout=30, happy_eyeballs=True)
+    client = niquests.AsyncSession(timeout=30, happy_eyeballs=True)
     client.trust_env = False
 
     try:
         response = await client.get(
             url,
+            headers=requestHeaders,
+            cookies=requestCookies,
             proxies=proxies,
             verify=cfg.SSLVerify.value,
             allow_redirects=True,

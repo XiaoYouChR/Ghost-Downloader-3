@@ -14,7 +14,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, splitRequestHeadersAndCookies
 
 
 @dataclass
@@ -121,6 +121,7 @@ class HttpWorker(Worker):
         self.stage = stage
         self.speedHistory = []
         self.accelCheckTime = 0
+        self.requestHeaders, self.requestCookies = splitRequestHeadersAndCookies(stage.headers)
 
     def reassignSubworker(self):
         if self.stage.fileSize <= 0:
@@ -138,7 +139,7 @@ class HttpWorker(Worker):
         self.taskGroup.create_task(self.handleSubworker(newSubworker))
 
     def _buildRangeHeaders(self, rangeValue: str) -> dict:
-        requestHeaders = self.stage.headers.copy()
+        requestHeaders = self.requestHeaders.copy()
         requestHeaders["range"] = rangeValue
         requestHeaders["accept-encoding"] = "identity"
         return requestHeaders
@@ -150,6 +151,7 @@ class HttpWorker(Worker):
                     res = await self.client.get(
                         self.stage.url,
                         headers=self._buildRangeHeaders(f"bytes={subworker.progress}-"),
+                        cookies=self.requestCookies,
                         proxies=self.stage.proxies,
                         verify=cfg.SSLVerify.value,
                         allow_redirects=True,
@@ -187,7 +189,8 @@ class HttpWorker(Worker):
 
                     res = await self.client.get(
                         self.stage.url,
-                        headers=self.stage.headers,
+                        headers=self.requestHeaders,
+                        cookies=self.requestCookies,
                         proxies=self.stage.proxies,
                         verify=cfg.SSLVerify.value,
                         allow_redirects=True,
@@ -223,6 +226,7 @@ class HttpWorker(Worker):
                     res = await self.client.get(
                         self.stage.url,
                         headers=self._buildRangeHeaders(f"bytes={subworker.progress}-{subworker.end}"),
+                        cookies=self.requestCookies,
                         proxies=self.stage.proxies,
                         verify=cfg.SSLVerify.value,
                         allow_redirects=True,
