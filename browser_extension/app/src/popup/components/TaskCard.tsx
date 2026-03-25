@@ -19,7 +19,7 @@ import {
 
 import type { GenericTaskSummary, TaskAction } from "../../shared/types";
 import {
-  formatProgress,
+  formatBytes,
   formatTaskMetric,
   formatTaskStatus,
   taskActionLabel,
@@ -107,7 +107,9 @@ export function TaskCard({
   const showProgress = task.status !== "completed";
   const showRedownload = task.status === "completed";
   const showOpenActions = task.status === "completed";
-  const metric = task.status === "completed" ? formatProgress(task) : formatTaskMetric(task);
+  const metric = task.status === "completed"
+    ? (task.fileSize > 0 ? formatBytes(task.fileSize) : "--")
+    : formatTaskMetric(task);
 
   return (
     <Card appearance="filled-alternative" className={styles.root}>
