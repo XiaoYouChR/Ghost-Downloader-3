@@ -60,12 +60,12 @@ class MainWindow(MSFluentWindow):
 
         QApplication.processEvents()
 
+        BrowserService.initialize(self)
         self.initPagesAndNavigation()
 
         self.clipboard: "QClipboard | None" = None
         self.tray = SystemTrayIcon(self)
         self.tray.show()
-        self.browserService = BrowserService(self)
 
         self.connectSignalToSlot()
         self._syncClipboardListener()

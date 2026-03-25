@@ -250,6 +250,12 @@ class TaskPage(ScrollArea):
         self._refreshSelectionState()
         self.refreshCardVisibility()
 
+    def findCardByTaskId(self, taskId: str) -> TaskCard | None:
+        for card in self.cards:
+            if card.task.taskId == taskId:
+                return card
+        return None
+
     def initWidget(self):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setWidget(self.container)

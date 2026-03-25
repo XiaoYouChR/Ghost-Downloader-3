@@ -187,6 +187,9 @@ class Config(QConfig):
     enableBrowserExtension = ConfigItem(
         "Browser", "EnableBrowserExtension", False, BoolValidator()
     )
+    browserExtensionPairToken = ConfigItem(
+        "Browser", "BrowserExtensionPairToken", ""
+    )
     enableRaiseWindowWhenReceiveMsg = ConfigItem(
         "Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator()
     )

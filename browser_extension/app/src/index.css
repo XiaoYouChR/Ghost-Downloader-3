@@ -1,0 +1,27 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 455px;
+  height: 600px;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+#app,
+.gd4b-provider {
+  width: 100%;
+  height: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "gd3-browser-extension",
+  "private": true,
+  "version": "1.2.0",
+  "type": "module",
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.73.4",
+    "@fluentui/react-icons": "^2.0.322",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.12",
+    "@types/node": "^22.13.10",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0"
+  }
+}

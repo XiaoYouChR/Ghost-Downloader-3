@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QResource, QCoreApplication, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QApplication
 from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, SwitchSettingCard, PushSettingCard, \
     HyperlinkButton, ComboBoxSettingCard, HyperlinkCard, PrimaryPushSettingCard, InfoBar, FlyoutView, Flyout, \
     InfoBarPosition, ToolButton, ToolTipFilter
 
+from app.services.browser_service import BrowserService
 from app.supports.config import cfg, FIREFOX_ADDONS_URL, EDGE_ADDONS_URL, CHROME_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
 from app.supports.utils import openAppLogFolder
@@ -132,6 +133,21 @@ class SettingPage(ScrollArea):
             self.browserGroup,
         )
         self.browserGroup.addSettingCard(self.raiseWindowWhenReceiveMsg)
+        self.browserPairTokenCard = PrimaryPushSettingCard(
+            self.tr("复制令牌"),
+            FluentIcon.COPY,
+            self.tr("配对令牌"),
+            BrowserService.instance().pairToken,
+            self.browserGroup,
+        )
+        self.browserGroup.addSettingCard(self.browserPairTokenCard)
+        self.regeneratePairTokenButton = ToolButton(FluentIcon.SYNC, self.browserPairTokenCard)
+        self.regeneratePairTokenButton.setToolTip(self.tr("重新生成令牌"))
+        self.regeneratePairTokenButton.installEventFilter(ToolTipFilter(self.regeneratePairTokenButton))
+        self.browserPairTokenCard.hBoxLayout.insertSpacing(6, 8)
+        self.browserPairTokenCard.hBoxLayout.insertWidget(
+            7, self.regeneratePairTokenButton, 0, Qt.AlignmentFlag.AlignRight
+        )
         self.installExtensionCard = PushSettingCard(
             self.tr("导出 Chromium 扩展"),
             FluentIcon.DICTIONARY,
@@ -290,7 +306,10 @@ class SettingPage(ScrollArea):
 
     def connectSignalToSlot(self):
         cfg.appRestartSig.connect(self._showRestartTooltip)
+        cfg.browserExtensionPairToken.valueChanged.connect(lambda _: self._refreshBrowserPairTokenCard())
         self.downloadFolderCard.pathChanged.connect(lambda x: cfg.set(cfg.downloadFolder, x))
+        self.browserPairTokenCard.clicked.connect(self._copyBrowserPairToken)
+        self.regeneratePairTokenButton.clicked.connect(self._regenerateBrowserPairToken)
         self.installExtensionCard.clicked.connect(self._onInstallExtensionCardClicked)
         self.installExtensionGuidanceCard.clicked.connect(self._onInstallExtensionGuidanceClicked)
         self.autoRunCard.checkedChanged.connect(self._onAutoRunCardChecked)
@@ -308,6 +327,35 @@ class SettingPage(ScrollArea):
     def _onAboutCardClicked(self):
         mainWindow: "MainWindow" = self.window()
         mainWindow.checkForUpdates(manual=True)
+
+    def _refreshBrowserPairTokenCard(self):
+        self.browserPairTokenCard.setContent(BrowserService.instance().pairToken)
+
+    def _copyBrowserPairToken(self):
+        token = BrowserService.instance().pairToken
+        if not token:
+            return
+
+        QApplication.clipboard().setText(token)
+        InfoBar.success(
+            self.tr("已复制配对令牌"),
+            token,
+            duration=2000,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self.window(),
+        )
+
+    def _regenerateBrowserPairToken(self):
+        token = BrowserService.instance().regeneratePairToken()
+        self.browserPairTokenCard.setContent(token)
+        QApplication.clipboard().setText(token)
+        InfoBar.success(
+            self.tr("已重新生成配对令牌"),
+            self.tr("新令牌已复制到剪贴板"),
+            duration=2000,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self.window(),
+        )
 
     def _onInstallExtensionCardClicked(self):
         """install extension card clicked slot"""

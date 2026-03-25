@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Ghost Downloader Browser",
+  "description": "Manage Ghost Downloader tasks and send browser resources to GD3.",
+  "version": "1.2.0",
+  "minimum_chrome_version": "114",
+  "permissions": [
+    "alarms",
+    "declarativeNetRequest",
+    "downloads",
+    "scripting",
+    "storage",
+    "tabs",
+    "webNavigation",
+    "webRequest"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Ghost Downloader",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}
