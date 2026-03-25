@@ -209,6 +209,7 @@ class FFmpegWorker(Worker):
 
         process = None
         progressTask = None
+        stderrOutput = ""
         try:
             self.stage.progress = 0
             self.stage.speed = 0
@@ -231,13 +232,17 @@ class FFmpegWorker(Worker):
                 self.stage.resolvePath,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE,
             )
             progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
 
             await process.wait()
             await progressTask
+            if process.stderr is not None:
+                stderrOutput = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
             if process.returncode != 0:
+                if stderrOutput:
+                    raise RuntimeError(f"ffmpeg 退出码异常: {process.returncode}, {stderrOutput}")
                 raise RuntimeError(f"ffmpeg 退出码异常: {process.returncode}")
 
             self.stage.setStatus(TaskStatus.COMPLETED)

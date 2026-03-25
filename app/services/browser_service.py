@@ -295,6 +295,7 @@ class BrowserService(QObject):
         rawPath = rawPayload.get("path")
         return {
             "url": BrowserVirtualUrl.FFMPEG_MERGE,
+            "outputTitle": self._stringField(rawPayload, "outputTitle"),
             "resources": rawPayload.get("resources") or [],
             "proxies": getProxies(),
             "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
@@ -385,6 +386,7 @@ class BrowserService(QObject):
 
         if source == BrowserTaskSource.RESOURCE_MERGE:
             mergePayload = self._buildMergePayload(payload)
+            mergePayload["outputTitle"] = title
             if len(mergePayload["resources"]) != 2:
                 self._sendResult(
                     session,
@@ -397,10 +399,10 @@ class BrowserService(QObject):
 
             coreService.runCoroutine(
                 coreService._parseUrl(mergePayload),
-                lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
+                lambda task, error, session=session, requestId=requestId: self._onTaskParsed(
                     session,
                     requestId,
-                    title,
+                    "",
                     task,
                     error,
                 ),
