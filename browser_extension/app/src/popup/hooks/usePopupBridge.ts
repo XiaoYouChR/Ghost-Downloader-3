@@ -378,6 +378,31 @@ export function usePopupBridge(activeView: PopupView) {
     [refreshState, setFlash],
   );
 
+  const mergeResources = useCallback(
+    async (resourceIds: string[]) => {
+      const ids = [...new Set(resourceIds.map((value) => String(value || "")).filter(Boolean))];
+      ids.forEach((resourceId) => updateBusyState(setBusyResourceIds, resourceId, true));
+      try {
+        const result = await sendRuntimeMessage<DesktopRequestResult>({
+          type: "popup_merge_resources",
+          resourceIds: ids,
+        });
+        if (!result.ok) {
+          throw new Error(result.message || "在线合并失败");
+        }
+        await refreshState(activeViewRef.current);
+        setFlash(result.message || "资源已发送到 Ghost Downloader", "success");
+        return true;
+      } catch (error) {
+        setFlash(getErrorMessage(error, "在线合并失败"), "error");
+        return false;
+      } finally {
+        ids.forEach((resourceId) => updateBusyState(setBusyResourceIds, resourceId, false));
+      }
+    },
+    [refreshState, setFlash],
+  );
+
   const toggleFeature = useCallback(
     async (feature: AdvancedFeatureKey) => {
       if (payload.tabId == null) {
@@ -507,6 +532,7 @@ export function usePopupBridge(activeView: PopupView) {
     setInterceptDownloads,
     performTaskAction,
     sendResource,
+    mergeResources,
     toggleFeature,
     setMediaTarget,
     performMediaAction,

@@ -1,5 +1,5 @@
 import type { CapturedResource, DesktopRequestResult, PopupStatePayload } from "../shared/types";
-import { domainFromUrl, fileExtension, filenameFromUrl } from "../shared/utils";
+import { canUseOnlineMerge, domainFromUrl, fileExtension, filenameFromUrl, sortResourcesForOnlineMerge } from "../shared/utils";
 import {
   BRIDGE_HEADER_SNAPSHOTS_KEY,
   BRIDGE_LAST_ACTIVE_TAB_KEY,
@@ -197,7 +197,7 @@ export function createResourceBridge(options: {
       const name = header.name.toLowerCase();
       if (name === "content-length") {
         const size = Number.parseInt(String(header.value ?? ""), 10);
-        if (Number.isFinite(size) && size > 0) {
+        if (meta.size <= 0 && Number.isFinite(size) && size > 0) {
           meta.size = size;
         }
         continue;
@@ -542,11 +542,27 @@ export function createResourceBridge(options: {
     const normalized = normalizeCapturedResource(resource);
     const bucket = bucketForTab(normalized.tabId);
     const existing = bucket.get(normalized.id);
-    if (existing?.sentToDesktopAt) {
-      normalized.sentToDesktopAt = existing.sentToDesktopAt;
-    }
-    bucket.set(normalized.id, normalized);
-    resourcesById.set(normalized.id, normalized);
+    const merged: CapturedResource = existing
+      ? {
+          ...existing,
+          ...normalized,
+          pageTitle: normalized.pageTitle || existing.pageTitle,
+          pageUrl: normalized.pageUrl || existing.pageUrl,
+          filename: normalized.filename || existing.filename,
+          mime: normalized.mime || existing.mime,
+          size: normalized.size > 0 ? normalized.size : existing.size,
+          referer: normalized.referer || existing.referer,
+          requestHeaders:
+            Object.keys(normalized.requestHeaders).length > 0
+              ? normalized.requestHeaders
+              : existing.requestHeaders,
+          capturedAt: Math.max(existing.capturedAt, normalized.capturedAt),
+          sentToDesktopAt: existing.sentToDesktopAt ?? normalized.sentToDesktopAt,
+        }
+      : normalized;
+
+    bucket.set(merged.id, merged);
+    resourcesById.set(merged.id, merged);
     trimBucket(normalized.tabId);
     scheduleBridgeStatePersist();
   }
@@ -593,6 +609,21 @@ export function createResourceBridge(options: {
       result.push(...bucket.values());
     }
     return sortResources(result);
+  }
+
+  function deriveMergeOutputTitle(resources: CapturedResource[]): string {
+    const pageTitle = String(resources[0]?.pageTitle || "").trim();
+    if (pageTitle) {
+      return pageTitle;
+    }
+
+    const firstFileName = trimFilename(resources[0]?.filename || filenameFromUrl(resources[0]?.url || ""));
+    if (firstFileName) {
+      const extension = fileExtension(firstFileName);
+      return extension ? firstFileName.slice(0, -(extension.length + 1)) : firstFileName;
+    }
+
+    return "merged-media";
   }
 
   async function downloadResourceViaBrowser(resource: CapturedResource): Promise<void> {
@@ -758,22 +789,8 @@ export function createResourceBridge(options: {
     }
   }
 
-  async function sendResource(resourceId: string): Promise<DesktopRequestResult> {
-    const resource = findResourceById(resourceId);
-    if (!resource) {
-      return { ok: false, message: "资源不存在" };
-    }
-
+  async function sendHttpResourceToDesktop(resource: CapturedResource): Promise<DesktopRequestResult> {
     try {
-      if (resource.url.startsWith("blob:")) {
-        await downloadResourceViaBrowser(resource);
-        markResourceSent(resource.id);
-        return {
-          ok: true,
-          message: "资源已交给浏览器下载",
-        };
-      }
-
       const result = await options.sendDesktopRequest<DesktopRequestResult>({
         type: "create_task",
         source: "resource",
@@ -796,6 +813,85 @@ export function createResourceBridge(options: {
       return {
         ok: false,
         message: error instanceof Error ? error.message : "发送资源失败",
+      };
+    }
+  }
+
+  async function sendResource(resourceId: string): Promise<DesktopRequestResult> {
+    const resource = findResourceById(resourceId);
+    if (!resource) {
+      return { ok: false, message: "资源不存在" };
+    }
+
+    try {
+      if (resource.url.startsWith("blob:")) {
+        await downloadResourceViaBrowser(resource);
+        markResourceSent(resource.id);
+        return {
+          ok: true,
+          message: "资源已交给浏览器下载",
+        };
+      }
+
+      return await sendHttpResourceToDesktop(resource);
+    } catch (error) {
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : "发送资源失败",
+      };
+    }
+  }
+
+  async function mergeResources(resourceIds: string[]): Promise<DesktopRequestResult> {
+    const ids = [...new Set(resourceIds.map((value) => String(value || "")).filter(Boolean))];
+    const resources = ids
+      .map((resourceId) => findResourceById(resourceId))
+      .filter((resource): resource is CapturedResource => resource != null);
+
+    if (resources.length !== 2) {
+      return {
+        ok: false,
+        message: "在线合并暂时只支持 2 个 HTTP 音视频资源",
+      };
+    }
+
+    if (!resources.every(canUseOnlineMerge)) {
+      return {
+        ok: false,
+        message: "在线合并暂不支持 blob 或非 HTTP 音视频资源",
+      };
+    }
+
+    const orderedResources = sortResourcesForOnlineMerge(resources);
+
+    try {
+      const result = await options.sendDesktopRequest<DesktopRequestResult>({
+        type: "create_task",
+        source: "resource_merge",
+        title: deriveMergeOutputTitle(orderedResources),
+        payload: {
+          resources: orderedResources.map((resource) => ({
+            url: resource.url,
+            filename: resource.filename,
+            mime: resource.mime,
+            headers: resource.requestHeaders,
+            pageTitle: resource.pageTitle,
+          })),
+        },
+      });
+
+      if (result.ok) {
+        orderedResources.forEach((resource) => markResourceSent(resource.id));
+        return {
+          ...result,
+          message: result.message || "在线合并任务已发送到 Ghost Downloader",
+        };
+      }
+      return result;
+    } catch (error) {
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : "在线合并失败",
       };
     }
   }
@@ -863,6 +959,7 @@ export function createResourceBridge(options: {
     loadPersistentState,
     refreshActiveTabFromBrowser,
     resolveActiveTabId,
+    mergeResources,
     sendResource,
     setLastActiveTab,
   };

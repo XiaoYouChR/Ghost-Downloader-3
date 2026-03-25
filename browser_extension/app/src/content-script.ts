@@ -107,42 +107,6 @@
     return `${String(minutes).padStart(2, "0")}-${String(seconds).padStart(2, "0")}`;
   }
 
-  function deliverFfmpegPayload(payload: Record<string, any>, sendResponse: (response?: any) => void) {
-    if (!payload.files) {
-      window.postMessage(payload, "*");
-      sendResponse("ok");
-      return;
-    }
-
-    const files = Array.isArray(payload.files) ? payload.files : [];
-    if (files.length === 0) {
-      sendResponse("ok");
-      return;
-    }
-
-    const messageBase = {
-      ...payload,
-      quantity: payload.quantity ?? files.length,
-    };
-
-    Promise.all(
-      files.map(async (item) => {
-        const data = { ...messageBase, ...item, type: item.type ?? "video" };
-        if (data.data instanceof Blob) {
-          window.postMessage(data, "*");
-          return;
-        }
-        const response = await fetch(data.data);
-        data.data = await response.blob();
-        window.postMessage(data, "*");
-      }),
-    )
-      .catch(() => {
-        // Ignore bridge delivery errors.
-      })
-      .finally(() => sendResponse("ok"));
-  }
-
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (!message || typeof message !== "object") {
       return;
@@ -259,10 +223,6 @@
       sendResponse({ ok: true });
       return true;
     }
-    if (message.type === "bridge_ffmpeg_deliver" && message.payload) {
-      deliverFfmpegPayload(message.payload, sendResponse);
-      return true;
-    }
   });
 
   window.addEventListener("message", (event) => {
@@ -286,22 +246,6 @@
           },
           requestId: payload.requestId,
         },
-      });
-      return;
-    }
-
-    if (payload.action === "catCatchFFmpeg") {
-      chrome.runtime.sendMessage({
-        type: "bridge_page_ffmpeg",
-        payload,
-      });
-      return;
-    }
-
-    if (payload.action === "catCatchFFmpegResult") {
-      chrome.runtime.sendMessage({
-        type: "bridge_page_ffmpeg_result",
-        payload,
       });
       return;
     }

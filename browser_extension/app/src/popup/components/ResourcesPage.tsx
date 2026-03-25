@@ -1,10 +1,10 @@
-import { Badge, Caption1, Card, Tab, TabList, makeStyles } from "@fluentui/react-components";
+import { Badge, Button, Caption1, Card, Tab, TabList, makeStyles } from "@fluentui/react-components";
 import type { SelectTabData } from "@fluentui/react-components";
 import { TabDesktopRegular, WindowMultipleRegular } from "@fluentui/react-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { CapturedResource, ResourceCollectionState, ResourceFilter, ResourceScope } from "../../shared/types";
-import { filterResources } from "../../shared/utils";
+import { canUseOnlineMergeSelection, filterResources } from "../../shared/utils";
 import { EmptyState } from "./EmptyState";
 import { ResourceCard } from "./ResourceCard";
 
@@ -40,6 +40,21 @@ const useStyles = makeStyles({
   filterCount: {
     marginLeft: "auto",
   },
+  selectionCard: {
+    padding: "12px 16px",
+  },
+  selectionRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  selectionActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginLeft: "auto",
+  },
   list: {
     display: "flex",
     flexDirection: "column",
@@ -58,7 +73,7 @@ function emptyCopy(scope: ResourceScope, state: ResourceCollectionState, message
   if (scope === "current" && state === "restoring") {
     return {
       title: "正在恢复当前页面资源",
-      description: message || "正在恢复已捕获的 cat-catch 资源。",
+      description: message || "正在恢复已捕获的资源。",
     };
   }
   if (scope === "current" && state === "unavailable") {
@@ -69,13 +84,13 @@ function emptyCopy(scope: ResourceScope, state: ResourceCollectionState, message
   }
   if (scope === "current") {
     return {
-      title: "当前页面还没有 cat-catch 资源",
-      description: "启用 cat-catch 的深度搜索或缓存捕捉后，这里会显示桥接过来的页面资源。",
+      title: "当前页面还没有资源",
+      description: "启用深度搜索或缓存捕捉后，这里会显示桥接过来的页面资源。",
     };
   }
   return {
-    title: "还没有其他页面的 cat-catch 资源",
-    description: "切换到其他标签页并让 cat-catch 捕获资源后，这里会自动汇总显示。",
+    title: "还没有其他页面的资源",
+    description: "切换到其他标签页并捕获到资源后，这里会自动汇总显示。",
   };
 }
 
@@ -88,6 +103,7 @@ export function ResourcesPage({
   connected,
   isResourceBusy,
   onSendResource,
+  onMergeResources,
 }: {
   currentResources: CapturedResource[];
   otherResources: CapturedResource[];
@@ -97,14 +113,59 @@ export function ResourcesPage({
   connected: boolean;
   isResourceBusy: (resourceId: string) => boolean;
   onSendResource: (resourceId: string) => void;
+  onMergeResources: (resourceIds: string[]) => Promise<boolean>;
 }) {
   const styles = useStyles();
   const [scope, setScope] = useState<ResourceScope>("current");
   const [filter, setFilter] = useState<ResourceFilter>("all");
+  const [selectedResourceIds, setSelectedResourceIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const scopedResources = scope === "current" ? currentResources : otherResources;
   const filteredResources = useMemo(() => filterResources(scopedResources, filter), [filter, scopedResources]);
+  const filteredResourceIds = useMemo(() => new Set(filteredResources.map((resource) => resource.id)), [filteredResources]);
+  const selectedResources = useMemo(
+    () => filteredResources.filter((resource) => selectedResourceIds.has(resource.id)),
+    [filteredResources, selectedResourceIds],
+  );
+  const canMergeSelectedResources = connected && canUseOnlineMergeSelection(selectedResources);
   const emptyState = emptyCopy(scope, resourceState, resourceStateMessage);
+
+  useEffect(() => {
+    setSelectedResourceIds((current) => {
+      const next = new Set([...current].filter((resourceId) => filteredResourceIds.has(resourceId)));
+      return next.size === current.size ? current : next;
+    });
+  }, [filteredResourceIds]);
+
+  function toggleResource(resourceId: string, checked: boolean) {
+    setSelectedResourceIds((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(resourceId);
+      } else {
+        next.delete(resourceId);
+      }
+      return next;
+    });
+  }
+
+  function selectVisibleResources() {
+    setSelectedResourceIds(new Set(filteredResources.map((resource) => resource.id)));
+  }
+
+  function clearSelection() {
+    setSelectedResourceIds(new Set());
+  }
+
+  async function handleOnlineMerge() {
+    if (!selectedResources.length) {
+      return;
+    }
+    const success = await onMergeResources(selectedResources.map((resource) => resource.id));
+    if (success) {
+      clearSelection();
+    }
+  }
 
   return (
     <div className={styles.root}>
@@ -145,6 +206,35 @@ export function ResourcesPage({
         </Badge>
       </div>
 
+      {filteredResources.length > 0 ? (
+        <Card appearance="filled-alternative" className={styles.selectionCard}>
+          <div className={styles.selectionRow}>
+            <Badge appearance="tint" color="brand">
+              {selectedResources.length > 0 ? `已选 ${selectedResources.length} 项` : "未选择资源"}
+            </Badge>
+            <Caption1>
+              合并音视频暂时只支持 1 个 HTTP 视频资源和 1 个 HTTP 音频资源，blob 资源暂不支持
+            </Caption1>
+            <div className={styles.selectionActions}>
+              <Button appearance="secondary" size="small" onClick={selectVisibleResources}>
+                全选
+              </Button>
+              <Button appearance="subtle" size="small" onClick={clearSelection}>
+                清空
+              </Button>
+              <Button
+                appearance="primary"
+                disabled={!canMergeSelectedResources}
+                size="small"
+                onClick={() => void handleOnlineMerge()}
+              >
+                合并音视频
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       {filteredResources.length === 0 ? (
         <EmptyState
           icon={scope === "current" ? <TabDesktopRegular /> : <WindowMultipleRegular />}
@@ -159,7 +249,9 @@ export function ResourcesPage({
               resource={resource}
               connected={connected}
               busy={isResourceBusy(resource.id)}
+              selected={selectedResourceIds.has(resource.id)}
               onSend={() => onSendResource(resource.id)}
+              onSelectedChange={(checked) => toggleResource(resource.id, checked)}
             />
           ))}
         </section>

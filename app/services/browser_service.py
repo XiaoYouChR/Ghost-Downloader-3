@@ -57,6 +57,16 @@ class BrowserTaskAction(StrEnum):
     OPEN_FOLDER = "open_folder"
 
 
+class BrowserTaskSource(StrEnum):
+    DOWNLOAD = "download"
+    RESOURCE = "resource"
+    RESOURCE_MERGE = "resource_merge"
+
+
+class BrowserVirtualUrl(StrEnum):
+    FFMPEG_MERGE = "gd3+ffmpeg://merge"
+
+
 class BrowserService(QObject):
     _instance: Self | None = None
     SERVER_HOST = QHostAddress.SpecialAddress.LocalHost
@@ -194,6 +204,16 @@ class BrowserService(QObject):
             payload["requestId"] = requestId
         self._send(session, payload)
 
+    @staticmethod
+    def _stringField(data: dict[str, Any], key: str, default: str = "") -> str:
+        value = data.get(key)
+        return value if isinstance(value, str) else default
+
+    @staticmethod
+    def _positiveIntField(data: dict[str, Any], key: str, default: int) -> int:
+        value = data.get(key)
+        return value if isinstance(value, int) and value > 0 else default
+
     def _serializeTask(self, task: Task) -> dict[str, Any]:
         resolvePath = Path(task.resolvePath)
         parentPath = resolvePath.parent
@@ -262,22 +282,23 @@ class BrowserService(QObject):
                 logger.opt(exception=error).warning("Failed to push browser task snapshot")
 
     def _buildParsePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
-        headers = rawPayload.get("headers")
-        if not isinstance(headers, dict):
-            headers = {}
         rawPath = rawPayload.get("path")
-        path = Path(rawPath) if rawPath else Path(cfg.downloadFolder.value)
-
-        preBlockNum = rawPayload.get("preBlockNum")
-        if not isinstance(preBlockNum, int) or preBlockNum <= 0:
-            preBlockNum = cfg.preBlockNum.value
-
         return {
-            "url": rawPayload.get("url") if isinstance(rawPayload.get("url"), str) else "",
-            "headers": headers,
+            "url": self._stringField(rawPayload, "url"),
+            "headers": rawPayload.get("headers") or {},
             "proxies": getProxies(),
-            "path": path,
-            "preBlockNum": preBlockNum,
+            "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
+            "preBlockNum": self._positiveIntField(rawPayload, "preBlockNum", cfg.preBlockNum.value),
+        }
+
+    def _buildMergePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
+        rawPath = rawPayload.get("path")
+        return {
+            "url": BrowserVirtualUrl.FFMPEG_MERGE,
+            "resources": rawPayload.get("resources") or [],
+            "proxies": getProxies(),
+            "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
+            "preBlockNum": self._positiveIntField(rawPayload, "preBlockNum", cfg.preBlockNum.value),
         }
 
     def _sendResult(
@@ -340,8 +361,10 @@ class BrowserService(QObject):
         self._broadcastTaskSnapshots()
 
     def _handleCreateTask(self, session: _BrowserClientSession, data: dict[str, Any]):
-        requestId = data.get("requestId") if isinstance(data.get("requestId"), str) else ""
+        requestId = self._stringField(data, "requestId")
         payload = data.get("payload")
+        rawSource = self._stringField(data, "source", BrowserTaskSource.RESOURCE)
+        title = self._stringField(data, "title")
         if not requestId:
             self._sendError(session, self.tr("缺少 requestId"))
             return
@@ -352,6 +375,35 @@ class BrowserService(QObject):
                 requestId,
                 ok=False,
                 message=self.tr("无效的任务负载"),
+            )
+            return
+
+        try:
+            source = BrowserTaskSource(rawSource)
+        except ValueError:
+            source = BrowserTaskSource.RESOURCE
+
+        if source == BrowserTaskSource.RESOURCE_MERGE:
+            mergePayload = self._buildMergePayload(payload)
+            if len(mergePayload["resources"]) != 2:
+                self._sendResult(
+                    session,
+                    BrowserMessageType.CREATE_TASK_RESULT,
+                    requestId,
+                    ok=False,
+                    message=self.tr("在线合并暂时只支持 2 个资源"),
+                )
+                return
+
+            coreService.runCoroutine(
+                coreService._parseUrl(mergePayload),
+                lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
+                    session,
+                    requestId,
+                    title,
+                    task,
+                    error,
+                ),
             )
             return
 
@@ -368,7 +420,7 @@ class BrowserService(QObject):
 
         coreService.runCoroutine(
             coreService._parseUrl(parsePayload),
-            lambda task, error, session=session, requestId=requestId, title=data.get("title") if isinstance(data.get("title"), str) else "": self._onTaskParsed(
+            lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
                 session,
                 requestId,
                 title,
@@ -412,7 +464,10 @@ class BrowserService(QObject):
             candidates.add(Path(task.resolvePath))
 
         for stage in task.stages:
-            resolvePath = getattr(stage, "resolvePath", None)
+            try:
+                resolvePath = stage.resolvePath
+            except AttributeError:
+                continue
             if resolvePath:
                 candidates.add(Path(resolvePath))
 
@@ -470,9 +525,9 @@ class BrowserService(QObject):
         self._broadcastTaskSnapshots()
 
     def _handleTaskAction(self, session: _BrowserClientSession, data: dict[str, Any]):
-        requestId = data.get("requestId") if isinstance(data.get("requestId"), str) else ""
-        taskId = data.get("taskId") if isinstance(data.get("taskId"), str) else ""
-        rawAction = data.get("action") if isinstance(data.get("action"), str) else ""
+        requestId = self._stringField(data, "requestId")
+        taskId = self._stringField(data, "taskId")
+        rawAction = self._stringField(data, "action")
 
         if not requestId:
             self._sendError(session, self.tr("缺少 requestId"))
@@ -613,7 +668,7 @@ class BrowserService(QObject):
             self._sendError(session, self.tr("无效的消息结构"))
             return
 
-        rawMessageType = data.get("type") if isinstance(data.get("type"), str) else ""
+        rawMessageType = self._stringField(data, "type")
         try:
             messageType = BrowserMessageType(rawMessageType)
         except ValueError:
@@ -621,7 +676,7 @@ class BrowserService(QObject):
             return
 
         if messageType == BrowserMessageType.HELLO:
-            requestId = data.get("requestId") if isinstance(data.get("requestId"), str) and data.get("requestId") else None
+            requestId = self._stringField(data, "requestId") or None
             if int(data.get("protocolVersion") or 0) != self.PROTOCOL_VERSION:
                 self._sendError(
                     session,
@@ -632,7 +687,7 @@ class BrowserService(QObject):
                 session.socket.close()
                 return
 
-            token = data.get("token") if isinstance(data.get("token"), str) else ""
+            token = self._stringField(data, "token")
             if token != self.pairToken:
                 self._sendError(
                     session,

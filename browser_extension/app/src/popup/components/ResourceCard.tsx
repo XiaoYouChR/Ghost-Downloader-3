@@ -5,6 +5,7 @@ import {
   Button,
   Caption1,
   Card,
+  Checkbox,
   Link,
   makeStyles,
 } from "@fluentui/react-components";
@@ -29,6 +30,10 @@ const useStyles = makeStyles({
     display: "flex",
     alignItems: "flex-start",
     gap: "10px",
+  },
+  select: {
+    paddingTop: "2px",
+    flexShrink: 0,
   },
   body: {
     minWidth: 0,
@@ -69,12 +74,16 @@ export function ResourceCard({
   resource,
   connected,
   busy,
+  selected,
   onSend,
+  onSelectedChange,
 }: {
   resource: CapturedResource;
   connected: boolean;
   busy?: boolean;
+  selected?: boolean;
   onSend: () => void;
+  onSelectedChange?: (checked: boolean) => void;
 }) {
   const styles = useStyles();
   const presentation = describeResource(resource);
@@ -84,6 +93,12 @@ export function ResourceCard({
   return (
     <Card appearance="filled-alternative" className={styles.root}>
       <div className={styles.header}>
+        <Checkbox
+          aria-label={`选择 ${resource.filename || resource.url}`}
+          checked={selected}
+          className={styles.select}
+          onChange={(_event, data) => onSelectedChange?.(Boolean(data.checked))}
+        />
         <Avatar
           aria-label={resource.filename || resource.url}
           color="colorful"

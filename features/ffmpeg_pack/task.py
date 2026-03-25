@@ -5,6 +5,7 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
+from urllib.parse import urlparse
 
 import niquests
 from loguru import logger
@@ -13,7 +14,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies
+from app.supports.utils import getProxies, sanitizeFilename
 from .config import ffmpegConfig, resolveFFmpegExecutables
 
 if TYPE_CHECKING:
@@ -41,6 +42,18 @@ def _executableName(name: str) -> str:
 
 def _normalizePath(path: Path | str) -> str:
     return str(Path(path)).replace("\\", "/")
+
+
+def _resourceExtension(name: str, url: str) -> str:
+    fileName = Path(name).name if name else Path(urlparse(url).path).name
+    return Path(fileName).suffix.lstrip(".").lower()
+
+
+def _mergeOutputTitle(title: str) -> str:
+    baseTitle = sanitizeFilename(title, fallback="merged-media")
+    if baseTitle.lower().endswith(".mp4"):
+        return baseTitle
+    return f"{baseTitle}.mp4"
 
 
 def _detectWindowsTarget() -> tuple[str, str]:
@@ -258,6 +271,77 @@ class FFmpegWorker(Worker):
 
 
 @dataclass(kw_only=True)
+class FFmpegMergeTask(Task):
+    proxies: dict = field(default_factory=getProxies)
+    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
+    videoFileName: str = field(default="")
+    audioFileName: str = field(default="")
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.syncStagePaths()
+
+    def syncStagePaths(self):
+        finalPath = Path(self.path / self.title)
+        videoExt = _resourceExtension(self.videoFileName, "")
+        audioExt = _resourceExtension(self.audioFileName, "")
+        videoPath = finalPath.with_name(f"{finalPath.stem}.video{f'.{videoExt}' if videoExt else ''}")
+        audioPath = finalPath.with_name(f"{finalPath.stem}.audio{f'.{audioExt}' if audioExt else ''}")
+
+        for stage in self.stages:
+            if isinstance(stage, HttpTaskStage):
+                stage.proxies = self.proxies
+                stage.blockNum = self.blockNum
+                if stage.stageIndex == 1:
+                    stage.resolvePath = str(videoPath)
+                elif stage.stageIndex == 2:
+                    stage.resolvePath = str(audioPath)
+            elif isinstance(stage, FFmpegStage):
+                stage.videoPath = str(videoPath)
+                stage.audioPath = str(audioPath)
+                stage.resolvePath = str(finalPath)
+
+    def applyPayloadToTask(self, payload: dict[str, Any]):
+        super().applyPayloadToTask(payload)
+
+        proxies = payload.get("proxies")
+        if isinstance(proxies, dict):
+            self.proxies = proxies
+
+        blockNum = payload.get("preBlockNum")
+        if isinstance(blockNum, int) and blockNum > 0:
+            self.blockNum = blockNum
+
+        self.syncStagePaths()
+
+    async def run(self):
+        currentStage = None
+        try:
+            for stage in self.iterRunnableStages():
+                currentStage = stage
+                if isinstance(stage, HttpTaskStage):
+                    await HttpWorker(stage).run()
+                    continue
+
+                if isinstance(stage, FFmpegStage):
+                    await FFmpegWorker(stage).run()
+                    continue
+
+                raise TypeError(f"不支持的 FFmpegMergeTaskStage: {type(stage).__name__}")
+        except asyncio.CancelledError:
+            logger.info(f"{self.title} 停止下载")
+            raise
+        except Exception as e:
+            if currentStage is not None and not currentStage.error:
+                currentStage.setError(e)
+            logger.opt(exception=e).error("{} 下载失败", self.title)
+            raise
+
+    def __hash__(self):
+        return hash(self.taskId)
+
+
+@dataclass(kw_only=True)
 class FFmpegInstallTask(Task):
     url: str
     assetName: str
@@ -321,6 +405,78 @@ class FFmpegInstallTask(Task):
 
     def __hash__(self):
         return hash(self.taskId)
+
+
+async def createBrowserMergeTask(payload: dict[str, Any], title: str = "") -> FFmpegMergeTask:
+    ffmpeg, ffprobe = resolveFFmpegExecutables()
+    if not ffmpeg or not ffprobe:
+        raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
+
+    resources = payload.get("resources") or []
+    if len(resources) != 2:
+        raise RuntimeError("在线合并暂时只支持 2 个 HTTP 音视频资源")
+
+    parsedResources: list[tuple[dict[str, Any], Any]] = []
+    for item in resources:
+        url = str(item.get("url") or "").strip()
+        if not url.startswith(("http://", "https://")):
+            raise RuntimeError("在线合并暂不支持 blob 或非 HTTP 资源")
+
+        parsePayload = {
+            "url": url,
+            "headers": item.get("headers") or {},
+            "proxies": payload.get("proxies", getProxies()),
+            "path": Path(payload.get("path", cfg.downloadFolder.value)),
+            "preBlockNum": payload.get("preBlockNum", cfg.preBlockNum.value),
+        }
+        task = await coreService._parseUrl(parsePayload)
+        if not task or not task.stages:
+            raise RuntimeError("解析在线合并源文件失败")
+
+        stage = task.stages[0]
+        if not isinstance(stage, HttpTaskStage):
+            raise RuntimeError(f"在线合并源文件类型无效: {type(stage).__name__}")
+
+        parsedResources.append((item, task))
+
+    outputTitle = _mergeOutputTitle(
+        title
+        or str(payload.get("outputTitle") or "").strip()
+        or str(parsedResources[0][0].get("pageTitle") or "").strip()
+        or "merged-media"
+    )
+
+    videoTask = parsedResources[0][1]
+    audioTask = parsedResources[1][1]
+    videoStage = videoTask.stages[0]
+    audioStage = audioTask.stages[0]
+
+    task = FFmpegMergeTask(
+        title=outputTitle,
+        url=videoTask.url,
+        fileSize=max(0, int(videoTask.fileSize)) + max(0, int(audioTask.fileSize)),
+        path=Path(payload.get("path", cfg.downloadFolder.value)),
+        proxies=payload.get("proxies", getProxies()),
+        blockNum=payload.get("preBlockNum", cfg.preBlockNum.value),
+        videoFileName=videoTask.title,
+        audioFileName=audioTask.title,
+    )
+
+    videoStage.stageIndex = 1
+    audioStage.stageIndex = 2
+    task.addStage(videoStage)
+    task.addStage(audioStage)
+    task.addStage(
+        FFmpegStage(
+            stageIndex=3,
+            videoPath="",
+            audioPath="",
+            resolvePath="",
+        )
+    )
+    task.syncStagePaths()
+    setattr(task, "_featurePackName", "ffmpeg_pack")
+    return task
 
 
 async def createWindowsInstallTask() -> FFmpegInstallTask:

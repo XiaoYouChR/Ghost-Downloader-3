@@ -7,7 +7,7 @@ import type {
 
 const ACTIVE_STATUSES = new Set(["running", "waiting", "paused", "failed"]);
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv", "webm", "mov", "avi", "flv", "m4s", "ts"]);
-const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "flac", "wav", "aac", "opus", "ogg"]);
+const AUDIO_EXTENSIONS = new Set(["mp3", "m4a", "flac", "wav", "aac", "opus", "ogg", "m4s"]);
 const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif", "heic"]);
 const ARCHIVE_EXTENSIONS = new Set(["zip", "7z", "rar", "tar", "gz", "bz2", "xz"]);
 const PDF_EXTENSIONS = new Set(["pdf"]);
@@ -38,6 +38,7 @@ export type VisualKind =
   | "stream";
 type ResourceParserHint = "m3u8" | "mpd" | "media" | "download" | "other";
 type ResourceDeliveryTarget = "gd3" | "browser_download";
+type ResourceMediaKind = "video" | "audio" | "";
 
 interface ResourcePresentation {
   extension: string;
@@ -232,6 +233,57 @@ function inferParserHint(rawUrl: string, mime: string, extension: string): Resou
   return "other";
 }
 
+function inferDashTrackKind(name: string, rawUrl: string): ResourceMediaKind {
+  const filename = String(name || filenameFromUrl(rawUrl) || "");
+  const lowered = `${filename} ${rawUrl}`.toLowerCase();
+
+  if (/(^|[-_.\\/])(video)([-_.\\/]|$)/i.test(lowered)) {
+    return "video";
+  }
+  if (/(^|[-_.\\/])(audio)([-_.\\/]|$)/i.test(lowered)) {
+    return "audio";
+  }
+
+  const match = lowered.match(/-(\d{5,6})(?=\.m4s(?:$|[?#]))/i)
+    ?? lowered.match(/\/(\d{5,6})(?=\.m4s(?:$|[?#]))/i);
+  const trackId = Number(match?.[1] ?? 0);
+  if (!Number.isFinite(trackId) || trackId <= 0) {
+    return "";
+  }
+  if (trackId >= 100000) {
+    return "video";
+  }
+  if (trackId >= 30000 && trackId < 40000) {
+    return "audio";
+  }
+  return "";
+}
+
+function inferResourceMediaKind(resource: CapturedResource, extension: string): ResourceMediaKind {
+  const mime = String(resource.mime || "").toLowerCase();
+  if (extension === "m4s") {
+    const dashKind = inferDashTrackKind(resource.filename, resource.url);
+    if (dashKind) {
+      return dashKind;
+    }
+  }
+
+  if (mime.startsWith("video/")) {
+    return "video";
+  }
+  if (mime.startsWith("audio/")) {
+    return "audio";
+  }
+
+  if (VIDEO_EXTENSIONS.has(extension) && !AUDIO_EXTENSIONS.has(extension)) {
+    return "video";
+  }
+  if (AUDIO_EXTENSIONS.has(extension) && !VIDEO_EXTENSIONS.has(extension)) {
+    return "audio";
+  }
+  return "";
+}
+
 function inferDeliveryTarget(url: string): ResourceDeliveryTarget {
   return String(url || "").startsWith("blob:") ? "browser_download" : "gd3";
 }
@@ -284,12 +336,14 @@ function resourceDerivedState(resource: CapturedResource): {
   extension: string;
   parserHint: ResourceParserHint;
   deliveryTarget: ResourceDeliveryTarget;
+  mediaKind: ResourceMediaKind;
 } {
   const extension = fileExtension(resource.filename || filenameFromUrl(resource.url));
   return {
     extension,
     parserHint: inferParserHint(resource.url, resource.mime, extension),
     deliveryTarget: inferDeliveryTarget(resource.url),
+    mediaKind: inferResourceMediaKind(resource, extension),
   };
 }
 
@@ -320,9 +374,9 @@ export function describeResource(resource: CapturedResource): ResourcePresentati
   let category: ResourceFilter = "all";
   if (derived.parserHint === "m3u8" || derived.parserHint === "mpd") {
     category = "streaming";
-  } else if (mime.startsWith("audio/") || AUDIO_EXTENSIONS.has(derived.extension)) {
+  } else if (derived.mediaKind === "audio") {
     category = "audio";
-  } else if (mime.startsWith("video/") || VIDEO_EXTENSIONS.has(derived.extension)) {
+  } else if (derived.mediaKind === "video") {
     category = "video";
   }
 
@@ -372,6 +426,43 @@ export function describeResource(resource: CapturedResource): ResourcePresentati
     tags,
     visual,
   };
+}
+
+export function canUseOnlineMerge(resource: CapturedResource): boolean {
+  const derived = resourceDerivedState(resource);
+  if (derived.deliveryTarget !== "gd3") {
+    return false;
+  }
+  if (derived.parserHint === "m3u8" || derived.parserHint === "mpd") {
+    return false;
+  }
+  return derived.mediaKind === "video" || derived.mediaKind === "audio";
+}
+
+export function canUseOnlineMergeSelection(resources: CapturedResource[]): boolean {
+  if (resources.length !== 2 || !resources.every(canUseOnlineMerge)) {
+    return false;
+  }
+
+  const categories = resources.map((resource) => describeResource(resource).category);
+  return categories.includes("video") && categories.includes("audio");
+}
+
+export function sortResourcesForOnlineMerge(resources: CapturedResource[]): CapturedResource[] {
+  return [...resources].sort((left, right) => {
+    const leftCategory = describeResource(left).category;
+    const rightCategory = describeResource(right).category;
+    if (leftCategory === rightCategory) {
+      return 0;
+    }
+    if (leftCategory === "video") {
+      return -1;
+    }
+    if (rightCategory === "video") {
+      return 1;
+    }
+    return 0;
+  });
 }
 
 export function filterResources(resources: CapturedResource[], filter: ResourceFilter): CapturedResource[] {

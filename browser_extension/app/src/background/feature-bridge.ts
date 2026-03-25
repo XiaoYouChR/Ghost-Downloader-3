@@ -1,21 +1,13 @@
-import { FFMPEG_URL } from "../shared/constants";
 import type { AdvancedFeatureKey, FeatureStateMap } from "../shared/types";
 import {
-  BRIDGE_FFMPEG_QUEUE_KEY,
-  BRIDGE_PERSIST_DEBOUNCE_MS,
   FEATURE_KEYS,
   FEATURE_TAB_STATE_KEY,
   MAIN_FRAME_ID,
 } from "./constants";
 import {
-  bridgeStorageGet,
-  bridgeStorageSet,
-  createTab,
   localStorageGet,
   localStorageSet,
-  queryTabs,
   reloadTab,
-  sendMessageToTab,
 } from "./chrome-helpers";
 
 type ScriptDefinition = {
@@ -72,10 +64,6 @@ export function createFeatureBridge() {
     FEATURE_KEYS.map((key) => [key, new Set<number>()]),
   ) as Record<AdvancedFeatureKey, Set<number>>;
 
-  let ffmpegPersistTimer: number | null = null;
-  let ffmpegPendingMessages: Array<Record<string, any>> = [];
-  let ffmpegTabId = 0;
-
   function createFeatureStateMap(tabId: number | null): FeatureStateMap {
     return FEATURE_KEYS.reduce((state, key) => {
       state[key] = tabId != null && featureTabs[key].has(tabId);
@@ -92,22 +80,6 @@ export function createFeatureBridge() {
 
   async function persistFeatureTabs(): Promise<void> {
     await localStorageSet({ [FEATURE_TAB_STATE_KEY]: featureStoragePayload() });
-  }
-
-  async function persistFfmpegQueue() {
-    ffmpegPersistTimer = null;
-    await bridgeStorageSet({
-      [BRIDGE_FFMPEG_QUEUE_KEY]: ffmpegPendingMessages,
-    });
-  }
-
-  function scheduleFfmpegPersist() {
-    if (ffmpegPersistTimer !== null) {
-      return;
-    }
-    ffmpegPersistTimer = self.setTimeout(() => {
-      void persistFfmpegQueue();
-    }, BRIDGE_PERSIST_DEBOUNCE_MS);
   }
 
   async function updateSessionRules(tabId: number, enabled: boolean): Promise<void> {
@@ -240,36 +212,6 @@ export function createFeatureBridge() {
     return "功能后台状态已关闭，页面中的面板可在网页内自行关闭";
   }
 
-  async function flushFfmpegQueue(tabId: number) {
-    if (!ffmpegPendingMessages.length) {
-      return;
-    }
-
-    const messages = [...ffmpegPendingMessages];
-    ffmpegPendingMessages = [];
-    scheduleFfmpegPersist();
-
-    for (const payload of messages) {
-      await sendMessageToTab(tabId, { type: "bridge_ffmpeg_deliver", payload });
-    }
-  }
-
-  async function resumeFfmpegQueue() {
-    if (!ffmpegPendingMessages.length) {
-      return;
-    }
-    const tabs = await queryTabs({ url: `${FFMPEG_URL}*` });
-    const targetTab = tabs[0];
-    if (!targetTab?.id) {
-      return;
-    }
-    if (targetTab.status === "complete") {
-      await flushFfmpegQueue(targetTab.id);
-      return;
-    }
-    ffmpegTabId = targetTab.id;
-  }
-
   async function loadPersistentState() {
     const localState = await localStorageGet<{
       [FEATURE_TAB_STATE_KEY]: Partial<Record<AdvancedFeatureKey, number[]>>;
@@ -282,16 +224,6 @@ export function createFeatureBridge() {
       featureTabs[key] = new Set<number>((storedFeatureTabs[key] ?? []).filter((value): value is number => Number.isInteger(value)));
     }
 
-    const bridgeState = await bridgeStorageGet<{
-      [BRIDGE_FFMPEG_QUEUE_KEY]: Array<Record<string, any>>;
-    }>({
-      [BRIDGE_FFMPEG_QUEUE_KEY]: [],
-    });
-
-    ffmpegPendingMessages = Array.isArray(bridgeState[BRIDGE_FFMPEG_QUEUE_KEY])
-      ? bridgeState[BRIDGE_FFMPEG_QUEUE_KEY].map((item) => ({ ...item }))
-      : [];
-
     for (const tabId of featureTabs.mobileUserAgent) {
       try {
         await updateSessionRules(tabId, true);
@@ -300,7 +232,6 @@ export function createFeatureBridge() {
       }
     }
     await persistFeatureTabs();
-    await resumeFfmpegQueue();
   }
 
   async function toggleFeature(key: AdvancedFeatureKey, tabId: number): Promise<string> {
@@ -320,49 +251,6 @@ export function createFeatureBridge() {
     await setFeatureEnabled(key, tabId, false);
   }
 
-  async function forwardToFfmpeg(payload: Record<string, any>, sender: chrome.runtime.MessageSender) {
-    const request = {
-      ...payload,
-      Message: "ffmpeg",
-      tabId: payload.tabId ?? sender.tab?.id ?? 0,
-      version: 1,
-    };
-
-    const tabs = await queryTabs({ url: `${FFMPEG_URL}*` });
-    const targetTab = tabs[0];
-    if (!targetTab?.id) {
-      const created = await createTab({ url: FFMPEG_URL, active: payload.active ?? true });
-      ffmpegTabId = created.id ?? 0;
-      ffmpegPendingMessages.push(request);
-      scheduleFfmpegPersist();
-      return;
-    }
-
-    if (targetTab.status === "complete") {
-      await sendMessageToTab(targetTab.id, { type: "bridge_ffmpeg_deliver", payload: request });
-      return;
-    }
-
-    ffmpegTabId = targetTab.id;
-    ffmpegPendingMessages.push(request);
-    scheduleFfmpegPersist();
-  }
-
-  async function forwardFfmpegResult(payload: Record<string, any>) {
-    const tabId = Number(payload.tabId ?? 0);
-    if (!tabId) {
-      return;
-    }
-
-    await sendMessageToTab(tabId, {
-      type: "bridge_ffmpeg_deliver",
-      payload: {
-        ...payload,
-        Message: "catCatchFFmpegResult",
-      },
-    });
-  }
-
   function handleTabRemoved(tabId: number) {
     for (const key of FEATURE_KEYS) {
       featureTabs[key].delete(tabId);
@@ -371,14 +259,6 @@ export function createFeatureBridge() {
       // Ignore cleanup errors.
     });
     void persistFeatureTabs();
-  }
-
-  function handleTabUpdated(tabId: number, changeInfo: chrome.tabs.OnUpdatedInfo) {
-    if (ffmpegTabId && ffmpegTabId === tabId && changeInfo.status === "complete") {
-      self.setTimeout(() => {
-        void flushFfmpegQueue(tabId);
-      }, 600);
-    }
   }
 
   function handleNavigationCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails) {
@@ -414,12 +294,9 @@ export function createFeatureBridge() {
 
   return {
     createFeatureStateMap,
-    forwardFfmpegResult,
-    forwardToFfmpeg,
     handleBridgeScriptCommand,
     handleNavigationCommitted,
     handleTabRemoved,
-    handleTabUpdated,
     loadPersistentState,
     toggleFeature,
   };

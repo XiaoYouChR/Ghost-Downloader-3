@@ -61,6 +61,7 @@ export function App() {
             connected={bridge.isConnected}
             isResourceBusy={bridge.isResourceBusy}
             onSendResource={(resourceId) => void bridge.sendResource(resourceId)}
+            onMergeResources={(resourceIds) => bridge.mergeResources(resourceIds)}
           />
         ) : null}
 

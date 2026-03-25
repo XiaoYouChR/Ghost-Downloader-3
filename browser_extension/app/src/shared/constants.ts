@@ -2,7 +2,6 @@ import type { AdvancedFeatureKey } from "./types";
 
 export const DEFAULT_SERVER_URL = "ws://127.0.0.1:14370";
 export const EXTENSION_VERSION = chrome.runtime.getManifest().version;
-export const FFMPEG_URL = "https://ffmpeg.bmmmd.com/";
 
 export const ADVANCED_FEATURES: Array<{
   key: AdvancedFeatureKey;

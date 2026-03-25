@@ -127,10 +127,6 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   featureBridge.handleTabRemoved(tabId);
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  featureBridge.handleTabUpdated(tabId, changeInfo);
-});
-
 chrome.webNavigation.onCommitted.addListener((details) => {
   resourceBridge.handleNavigationCommitted(details);
   mediaBridge.handleNavigationCommitted(details);
@@ -186,18 +182,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "bridge_page_media") {
     void resourceBridge.capturePageResource(sender, message.payload);
-    sendResponse({ ok: true });
-    return true;
-  }
-
-  if (message.type === "bridge_page_ffmpeg") {
-    void featureBridge.forwardToFfmpeg(message.payload, sender);
-    sendResponse({ ok: true });
-    return true;
-  }
-
-  if (message.type === "bridge_page_ffmpeg_result") {
-    void featureBridge.forwardFfmpegResult(message.payload);
     sendResponse({ ok: true });
     return true;
   }
@@ -275,6 +259,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "popup_send_resource") {
     void (async () => {
       sendResponse(await resourceBridge.sendResource(String(message.resourceId ?? "")));
+    })();
+    return true;
+  }
+
+  if (message.type === "popup_merge_resources") {
+    void (async () => {
+      const resourceIds = Array.isArray(message.resourceIds)
+        ? message.resourceIds.map((value: unknown) => String(value ?? "")).filter(Boolean)
+        : [];
+      sendResponse(await resourceBridge.mergeResources(resourceIds));
     })();
     return true;
   }
