@@ -11,7 +11,7 @@ from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, Switc
     InfoBarPosition, ToolButton, ToolTipFilter
 
 from app.services.browser_service import BrowserService
-from app.supports.config import cfg, FIREFOX_ADDONS_URL, EDGE_ADDONS_URL, CHROME_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
+from app.supports.config import cfg, EDGE_ADDONS_URL, CHROME_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
 from app.supports.utils import openAppLogFolder
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
@@ -156,25 +156,25 @@ class SettingPage(ScrollArea):
             self.browserGroup,
         )
         self.browserGroup.addSettingCard(self.installExtensionCard)
-        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
-        self.installFirefoxAddonsBtn.setText(self.tr("Firefox"))
-        self.installFirefoxAddonsBtn.setUrl(FIREFOX_ADDONS_URL)
+        # self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        # self.installFirefoxAddonsBtn.setText(self.tr("Firefox"))
+        # self.installFirefoxAddonsBtn.setUrl(FIREFOX_ADDONS_URL)
+        # self.installExtensionCard.hBoxLayout.insertWidget(
+        #     5, self.installFirefoxAddonsBtn, 0, Qt.AlignmentFlag.AlignRight
+        # )
+        # self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
+        self.installEdgeAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installEdgeAddonsBtn.setText(self.tr("Edge"))
+        self.installEdgeAddonsBtn.setUrl(EDGE_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(
-            5, self.installFirefoxAddonsBtn, 0, Qt.AlignmentFlag.AlignRight
+            5, self.installEdgeAddonsBtn, 0, Qt.AlignmentFlag.AlignRight
         )
         self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
-        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
-        self.installFirefoxAddonsBtn.setText(self.tr("Edge"))
-        self.installFirefoxAddonsBtn.setUrl(EDGE_ADDONS_URL)
+        self.installChromeAddonsBtn = HyperlinkButton(self.installExtensionCard)
+        self.installChromeAddonsBtn.setText(self.tr("Chrome"))
+        self.installChromeAddonsBtn.setUrl(CHROME_ADDONS_URL)
         self.installExtensionCard.hBoxLayout.insertWidget(
-            5, self.installFirefoxAddonsBtn, 0, Qt.AlignmentFlag.AlignRight
-        )
-        self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
-        self.installFirefoxAddonsBtn = HyperlinkButton(self.installExtensionCard)
-        self.installFirefoxAddonsBtn.setText(self.tr("Chrome"))
-        self.installFirefoxAddonsBtn.setUrl(CHROME_ADDONS_URL)
-        self.installExtensionCard.hBoxLayout.insertWidget(
-            5, self.installFirefoxAddonsBtn, 0, Qt.AlignmentFlag.AlignRight
+            5, self.installChromeAddonsBtn, 0, Qt.AlignmentFlag.AlignRight
         )
         self.installExtensionCard.hBoxLayout.insertSpacing(6, 16)
         self.installExtensionGuidanceCard = PushSettingCard(
