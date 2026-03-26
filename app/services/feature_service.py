@@ -302,6 +302,25 @@ class FeatureService:
         setattr(task, "_featurePackName", packName)
         return task
 
+    async def createTaskFromPayload(self, payload: dict) -> Task:
+        url = str(payload.get("url", "")).strip()
+        if not url:
+            raise ValueError("URL 不能为空")
+
+        resolvedUrl, packName, packInstance = self.getPackForUrl(url)
+        if packInstance is None:
+            raise ValueError(f"未找到可处理该链接的 FeaturePack: {url}")
+
+        if payload.get("url") != resolvedUrl:
+            payload = payload.copy()
+            payload["url"] = resolvedUrl
+
+        task = await packInstance.createTaskFromPayload(payload)
+        if task is None:
+            raise ValueError(f"FeaturePack 不支持从已有 Payload 直接创建任务: {resolvedUrl}")
+        setattr(task, "_featurePackName", packName)
+        return task
+
     def createTaskCard(self, task: Task, parent=None):
         packName, packInstance = self.getPackForTask(task)
         if packInstance is None:

@@ -141,6 +141,23 @@ class CoreService(QThread):
                 callback = self._pendingCallbacks.pop(callbackId)
                 self._executeCallback(callback, None, repr(e))
 
+    async def _createTaskFromPayload(self, payload: dict, callbackId: str = None):
+        try:
+            result = await featureService.createTaskFromPayload(payload)
+
+            if callbackId and callbackId in self._pendingCallbacks:
+                callback = self._pendingCallbacks.pop(callbackId)
+                self._executeCallback(callback, result, None)
+
+            return result
+
+        except Exception as e:
+            logger.opt(exception=e).error("根据已有 Payload 创建任务失败")
+
+            if callbackId and callbackId in self._pendingCallbacks:
+                callback = self._pendingCallbacks.pop(callbackId)
+                self._executeCallback(callback, None, repr(e))
+
     def parseUrl(self, payload: dict, callback: Callable) -> str:
         callbackId = f"parse_{id(callback)}_{hash(str(payload))}"
         self._pendingCallbacks[callbackId] = callback

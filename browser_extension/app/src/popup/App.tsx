@@ -1,7 +1,7 @@
 import { makeStyles } from "@fluentui/react-components";
 import { useState } from "react";
 
-import type { PopupView } from "../shared/types";
+import type { PopupView, ThemePreference } from "../shared/types";
 import { AdvancedPage } from "./components/AdvancedPage";
 import { DownloadsPage } from "./components/DownloadsPage";
 import { Header } from "./components/Header";
@@ -25,7 +25,15 @@ const useStyles = makeStyles({
   },
 });
 
-export function App() {
+export function App({
+  themePreference,
+  resolvedThemePreference,
+  onThemePreferenceChange,
+}: {
+  themePreference: ThemePreference;
+  resolvedThemePreference: Exclude<ThemePreference, "system">;
+  onThemePreferenceChange: (nextPreference: ThemePreference) => void;
+}) {
   const styles = useStyles();
   const [currentView, setCurrentView] = useState<PopupView>("tasks");
   const bridge = usePopupBridge(currentView);
@@ -95,6 +103,9 @@ export function App() {
             onSaveToken={bridge.saveToken}
             onSaveServerUrl={bridge.saveServerUrl}
             onRefreshConnection={bridge.refreshConnection}
+            themePreference={themePreference}
+            resolvedThemePreference={resolvedThemePreference}
+            onThemePreferenceChange={onThemePreferenceChange}
           />
         ) : null}
       </main>

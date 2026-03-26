@@ -6,6 +6,7 @@ import {
   Input,
   MessageBar,
   MessageBarBody,
+  Select,
   makeStyles,
 } from "@fluentui/react-components";
 import {
@@ -15,7 +16,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { DEFAULT_SERVER_URL, EXTENSION_VERSION, HELP_CONTENT } from "../../shared/constants";
-import type { DesktopConnectionState } from "../../shared/types";
+import type { DesktopConnectionState, ThemePreference } from "../../shared/types";
 import { connectionLabel } from "../../shared/utils";
 import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
 
@@ -46,6 +47,10 @@ const useStyles = makeStyles({
   },
   statusCard: {
     gap: "8px",
+    padding: "16px",
+  },
+  appearanceCard: {
+    gap: "12px",
     padding: "16px",
   },
   helpSection: {
@@ -79,6 +84,9 @@ export function SettingsPage({
   onSaveToken,
   onSaveServerUrl,
   onRefreshConnection,
+  themePreference,
+  resolvedThemePreference,
+  onThemePreferenceChange,
 }: {
   connectionState: DesktopConnectionState;
   connectionMessage: string;
@@ -91,6 +99,9 @@ export function SettingsPage({
   onSaveToken: (value: string) => Promise<boolean>;
   onSaveServerUrl: (value: string) => Promise<boolean>;
   onRefreshConnection: () => Promise<boolean>;
+  themePreference: ThemePreference;
+  resolvedThemePreference: Exclude<ThemePreference, "system">;
+  onThemePreferenceChange: (nextPreference: ThemePreference) => void;
 }) {
   const styles = useStyles();
   const [tokenDraft, setTokenDraft] = useState(token);
@@ -220,6 +231,27 @@ export function SettingsPage({
         <MessageBar intent="info">
           <MessageBarBody>{`桌面端版本：${desktopVersion || "未连接"}`}</MessageBarBody>
         </MessageBar>
+      </Card>
+
+      <Card appearance="filled-alternative" className={styles.appearanceCard}>
+        <Body1Strong>界面外观</Body1Strong>
+        <Field label="主题">
+          <Select
+            value={themePreference}
+            onChange={(_event) => onThemePreferenceChange(_event.currentTarget.value as ThemePreference)}
+          >
+            <option value="system">跟随系统设置</option>
+            <option value="light">浅色</option>
+            <option value="dark">深色</option>
+          </Select>
+        </Field>
+        {/* <MessageBar intent="info">
+          <MessageBarBody>
+            {themePreference === "system"
+              ? `当前正在跟随系统，实际使用${resolvedThemePreference === "dark" ? "深色" : "浅色"}主题`
+              : `当前正在使用${themePreference === "dark" ? "深色" : "浅色"}主题`}
+          </MessageBarBody>
+        </MessageBar> */}
       </Card>
 
       <section className={styles.helpSection}>

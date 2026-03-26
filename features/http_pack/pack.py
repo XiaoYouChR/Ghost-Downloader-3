@@ -16,6 +16,49 @@ from app.view.components.cards import UniversalTaskCard, UniversalResultCard
 from .task import HttpTask, HttpTaskStage
 
 
+def _createTaskFromPayload(payload: dict) -> HttpTask | None:
+    fileName = sanitizeFilename(str(payload.get("filename") or "").strip(), fallback="")
+    if not fileName:
+        return None
+
+    url = str(payload.get("url") or "").strip()
+    if not url.startswith(("http://", "https://")):
+        return None
+
+    rawSize = payload.get("size")
+    fileSize = rawSize if isinstance(rawSize, int) and rawSize > 0 else SpecialFileSize.UNKNOWN
+    headers = payload.get("headers", DEFAULT_HEADERS)
+    proxies = payload.get("proxies", getProxies())
+    blockNum = payload.get("preBlockNum", cfg.preBlockNum.value)
+    path = payload.get("path", Path(cfg.downloadFolder.value))
+    supportsRange = bool(payload.get("supportsRange"))
+    resolvePath = str(path / fileName)
+
+    task = HttpTask(
+        title=fileName,
+        url=url,
+        fileSize=fileSize,
+        headers=headers,
+        proxies=proxies,
+        blockNum=blockNum,
+        supportsRange=supportsRange,
+        path=path,
+    )
+    task.addStage(
+        HttpTaskStage(
+            stageIndex=1,
+            url=url,
+            fileSize=fileSize,
+            headers=headers,
+            proxies=proxies,
+            resolvePath=resolvePath,
+            blockNum=blockNum,
+            supportsRange=supportsRange,
+        )
+    )
+    return task
+
+
 def _parsePositiveContentLength(headers: dict[str, str]) -> int:
     value = headers.get("content-length", "").strip()
     if not value:
@@ -241,6 +284,9 @@ async def parse(payload: dict) -> HttpTask:
 class HttpPack(FeaturePack):
     priority = 100
     taskType = HttpTask
+
+    async def createTaskFromPayload(self, payload: dict) -> Task | None:
+        return _createTaskFromPayload(payload)
 
     def canHandle(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"http", "https"}

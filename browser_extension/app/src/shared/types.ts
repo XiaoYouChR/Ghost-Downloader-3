@@ -1,5 +1,6 @@
 export type PopupView = "tasks" | "resources" | "advanced" | "settings";
 export type TaskAction = "toggle_pause" | "redownload" | "open_file" | "open_folder" | "cancel";
+export type ThemePreference = "system" | "light" | "dark";
 
 export type DesktopConnectionState =
   | "missing_token"
@@ -48,6 +49,7 @@ export interface CapturedResource {
   filename: string;
   mime: string;
   size: number;
+  supportsRange: boolean;
   referer: string;
   requestHeaders: Record<string, string>;
   capturedAt: number;

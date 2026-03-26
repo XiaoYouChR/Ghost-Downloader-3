@@ -434,7 +434,7 @@ async def createBrowserMergeTask(payload: dict[str, Any], title: str = "") -> FF
             "path": Path(payload.get("path", cfg.downloadFolder.value)),
             "preBlockNum": payload.get("preBlockNum", cfg.preBlockNum.value),
         }
-        task = await coreService._parseUrl(parsePayload)
+        task = await coreService._createTaskFromPayload(parsePayload)
         if not task or not task.stages:
             raise RuntimeError("解析在线合并源文件失败")
 

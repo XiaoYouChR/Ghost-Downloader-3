@@ -290,6 +290,9 @@ class BrowserService(QObject):
         return {
             "url": self._stringField(rawPayload, "url"),
             "headers": headers,
+            "filename": self._stringField(rawPayload, "filename"),
+            "size": self._positiveIntField(rawPayload, "size", 0),
+            "supportsRange": bool(rawPayload.get("supportsRange")),
             "proxies": getProxies(),
             "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
             "preBlockNum": self._positiveIntField(rawPayload, "preBlockNum", cfg.preBlockNum.value),
@@ -425,7 +428,7 @@ class BrowserService(QObject):
             return
 
         coreService.runCoroutine(
-            coreService._parseUrl(parsePayload),
+            coreService._createTaskFromPayload(parsePayload),
             lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
                 session,
                 requestId,
