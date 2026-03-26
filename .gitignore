@@ -32,6 +32,7 @@ output/
 # 忽略浏览器扩展依赖与构建产物
 browser_extension/app/node_modules/
 browser_extension/chromium/
+browser_extension/firefox/
 
 # 忽略 uv 锁文件
 uv.lock
