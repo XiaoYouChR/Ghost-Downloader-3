@@ -7,8 +7,16 @@ from PySide6.QtCore import QSharedMemory, QEvent, QStandardPaths
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.supports.config import VERSION
+from app.supports.config import VERSION, cfg
 from app.supports.signal_bus import signalBus
+
+if sys.platform == "darwin":
+    from AppKit import (
+        NSApp,
+        NSApplication,
+        NSApplicationActivationPolicyAccessory,
+        NSApplicationActivationPolicyRegular,
+    )
 
 
 class SingletonApplication(QApplication):
@@ -60,7 +68,6 @@ class SingletonApplication(QApplication):
                 logger.opt(exception=e).error("Failed to recover from shared memory error")
                 raise RuntimeError(self.memory.errorString())
 
-
         if "__compiled__" in globals():  # 编译后的错误捕捉
             sys.excepthook = exceptionHook
 
@@ -68,6 +75,24 @@ class SingletonApplication(QApplication):
             signal(SIGINT, self._handleInterruptSignal)
         except Exception as e:
             logger.warning(f"Failed to register SIGINT handler: {e}")
+
+        if sys.platform == "darwin":
+            self._setDockIconVisible(cfg.showDockIcon.value, activate=False)
+            cfg.showDockIcon.valueChanged.connect(lambda visible: self._setDockIconVisible(visible, activate=True))
+
+    def _setDockIconVisible(self, visible: bool, activate: bool = False):
+        if sys.platform != "darwin":
+            return
+
+        app = NSApp or NSApplication.sharedApplication()
+        policy = (
+            NSApplicationActivationPolicyRegular
+            if visible
+            else NSApplicationActivationPolicyAccessory
+        )
+        app.setActivationPolicy_(policy)
+        if activate:
+            app.activateIgnoringOtherApps_(True)
 
     def _handleInterruptSignal(self, _signum, _frame):
         logger.error("KeyboardInterrupt, quitting application")

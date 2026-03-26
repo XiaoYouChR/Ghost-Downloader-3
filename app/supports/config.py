@@ -213,6 +213,7 @@ class Config(QConfig):
     dpiScale = RangeConfigItem(
         "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True
     )
+    showDockIcon = ConfigItem("Personalization", "ShowDockIcon", True, BoolValidator())
     language = OptionsConfigItem(
         "Personalization",
         "Language",

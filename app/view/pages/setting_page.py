@@ -222,6 +222,15 @@ class SettingPage(ScrollArea):
             division=100,
         )
         self.personalGroup.addSettingCard(self.zoomCard)
+        if sys.platform == "darwin":
+            self.showDockIconCard = SwitchSettingCard(
+                FluentIcon.APPLICATION,
+                self.tr("在 Dock 栏中显示程序"),
+                self.tr("关闭后可通过菜单栏图标继续使用程序"),
+                configItem=cfg.showDockIcon,
+                parent=self.personalGroup,
+            )
+            self.personalGroup.addSettingCard(self.showDockIconCard)
         self.languageCard = ComboBoxSettingCard(
             cfg.language,
             FluentIcon.LANGUAGE,
