@@ -5,14 +5,19 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const buildTarget = process.env.GD4B_BUILD_TARGET ?? "chrome114";
+const outDir = process.env.GD4B_OUT_DIR
+  ? path.resolve(__dirname, process.env.GD4B_OUT_DIR)
+  : path.resolve(__dirname, "../chromium");
 
 export default defineConfig({
   root: path.resolve(__dirname),
   publicDir: path.resolve(__dirname, "public"),
   plugins: [react()],
   build: {
-    outDir: path.resolve(__dirname, "../chromium"),
+    outDir,
     emptyOutDir: true,
+    target: buildTarget,
     cssCodeSplit: false,
     rollupOptions: {
       input: {

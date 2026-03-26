@@ -1,5 +1,6 @@
 import type { CapturedResource, DesktopRequestResult, PopupStatePayload } from "../shared/types";
 import { canUseOnlineMerge, domainFromUrl, fileExtension, filenameFromUrl, sortResourcesForOnlineMerge } from "../shared/utils";
+import { resolveRequestSourceUrl } from "./browser-compat";
 import {
   BRIDGE_HEADER_SNAPSHOTS_KEY,
   BRIDGE_LAST_ACTIVE_TAB_KEY,
@@ -512,7 +513,7 @@ export function createResourceBridge(options: {
       return snapshotTabId;
     }
 
-    const matchedTabId = await resolveTabIdFromPageUrl(details.initiator ?? "");
+    const matchedTabId = await resolveTabIdFromPageUrl(resolveRequestSourceUrl(details));
     if (matchedTabId != null) {
       return matchedTabId;
     }
@@ -766,7 +767,8 @@ export function createResourceBridge(options: {
 
     const tab = await getTab(tabId);
     const filename = resolveNetworkResourceFilename(details.url, responseMeta);
-    const referer = requestHeaders.referer || details.initiator || tab?.url || "";
+    const sourceUrl = resolveRequestSourceUrl(details);
+    const referer = requestHeaders.referer || sourceUrl || tab?.url || "";
     const normalizedRequestHeaders = referer ? { ...requestHeaders, referer } : requestHeaders;
 
     cacheResource({
@@ -774,7 +776,7 @@ export function createResourceBridge(options: {
       tabId,
       url: details.url,
       pageTitle: tab?.title ?? "",
-      pageUrl: details.initiator ?? tab?.url ?? "",
+      pageUrl: sourceUrl || tab?.url || "",
       filename,
       mime: responseMeta.type,
       size: responseMeta.size,
@@ -789,6 +791,9 @@ export function createResourceBridge(options: {
     downloadItem: chrome.downloads.DownloadItem,
     interceptDownloads: boolean,
   ): boolean {
+    if (downloadItem.byExtensionId && downloadItem.byExtensionId === chrome.runtime.id) {
+      return false;
+    }
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
     return Boolean(interceptDownloads && options.isDesktopReady() && isCapturableUrl(finalUrl));
   }

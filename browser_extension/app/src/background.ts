@@ -10,6 +10,11 @@ import { createFeatureBridge } from "./background/feature-bridge";
 import { createMediaBridge } from "./background/media-bridge";
 import { createResourceBridge } from "./background/resource-bridge";
 import {
+  getOnResponseStartedExtraInfoSpec,
+  getOnSendHeadersExtraInfoSpec,
+  registerDownloadInterceptionListener,
+} from "./background/browser-compat";
+import {
   INTERCEPT_DOWNLOADS_KEY,
 } from "./background/constants";
 import {
@@ -138,7 +143,7 @@ chrome.webRequest.onSendHeaders.addListener(
     resourceBridge.handleRequestHeaders(details);
   },
   { urls: ["<all_urls>"] },
-  ["requestHeaders", "extraHeaders"],
+  getOnSendHeadersExtraInfoSpec(),
 );
 
 chrome.webRequest.onResponseStarted.addListener(
@@ -146,7 +151,7 @@ chrome.webRequest.onResponseStarted.addListener(
     void resourceBridge.captureNetworkResource(details);
   },
   { urls: ["<all_urls>"] },
-  ["responseHeaders"],
+  getOnResponseStartedExtraInfoSpec(),
 );
 
 chrome.webRequest.onErrorOccurred.addListener(
@@ -163,8 +168,7 @@ chrome.webRequest.onCompleted.addListener(
   { urls: ["<all_urls>"] },
 );
 
-chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
-  suggest();
+registerDownloadInterceptionListener((downloadItem) => {
   if (!resourceBridge.shouldHandoffBrowserDownload(downloadItem, interceptDownloads)) {
     return;
   }

@@ -83,6 +83,13 @@ export function createFeatureBridge() {
   }
 
   async function updateSessionRules(tabId: number, enabled: boolean): Promise<void> {
+    if (!chrome.declarativeNetRequest?.updateSessionRules) {
+      if (enabled) {
+        throw new Error("当前浏览器不支持动态请求规则，无法启用模拟手机");
+      }
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       chrome.declarativeNetRequest.updateSessionRules(
         enabled

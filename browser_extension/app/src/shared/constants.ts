@@ -1,7 +1,23 @@
 import type { AdvancedFeatureKey } from "./types";
+import { BROWSER_TARGET } from "./browser";
 
 export const DEFAULT_SERVER_URL = "ws://127.0.0.1:14370";
 export const EXTENSION_VERSION = chrome.runtime.getManifest().version;
+
+const INSTALL_GUIDE =
+  BROWSER_TARGET === "firefox"
+    ? [
+        "1. 打开 about:debugging#/runtime/this-firefox。",
+        "2. 点击“临时载入附加组件”。",
+        "3. 选择项目里的 browser_extension/firefox/manifest.json。",
+        "4. 保持桌面端浏览器服务开启即可正常连接。",
+      ]
+    : [
+        "1. 打开浏览器扩展管理页并开启开发者模式。",
+        "2. 选择“加载已解压的扩展程序”。",
+        "3. 选择项目里的 browser_extension/chromium 目录。",
+        "4. 保持桌面端浏览器服务开启即可正常连接。",
+      ];
 
 export const ADVANCED_FEATURES: Array<{
   key: AdvancedFeatureKey;
@@ -57,12 +73,7 @@ export const HELP_CONTENT: Record<string, { title: string; body: string[] }> = {
   },
   install: {
     title: "安装说明",
-    body: [
-      "1. 打开浏览器扩展管理页并开启开发者模式。",
-      "2. 选择“加载已解压的扩展程序”。",
-      "3. 选择项目里的 browser_extension/chromium 目录。",
-      "4. 保持桌面端浏览器服务开启即可正常连接。",
-    ],
+    body: INSTALL_GUIDE,
   },
   troubleshooting: {
     title: "故障排查",
