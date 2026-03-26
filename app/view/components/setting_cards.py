@@ -66,6 +66,30 @@ class SpinBoxSettingCard(SettingCard):
             cfg.set(self.configItem, self.spinBox.value() / self.division)
 
 
+class UserAgentSettingCard(SettingCard):
+    def __init__(self, configItem: ConfigItem, parent=None):
+        super().__init__(
+            FluentIcon.DEVELOPER_TOOLS,
+            self.tr("User-Agent"),
+            self.tr("设置下载请求的 User-Agent 标头"),
+            parent,
+        )
+        self.configItem = configItem
+
+        self.lineEdit = LineEdit(self)
+        self.lineEdit.setMinimumWidth(360)
+        self.lineEdit.setText(str(configItem.value or ""))
+
+        self.hBoxLayout.addWidget(self.lineEdit)
+        self.hBoxLayout.addSpacing(24)
+
+        self.lineEdit.editingFinished.connect(self._commitValue)
+        self.configItem.valueChanged.connect(lambda value: self.lineEdit.setText(str(value or "")))
+
+    def _commitValue(self):
+        cfg.set(self.configItem, self.lineEdit.text())
+
+
 class ProxySettingCard(ExpandGroupSettingCard):
     """Custom proxyServer setting card"""
 

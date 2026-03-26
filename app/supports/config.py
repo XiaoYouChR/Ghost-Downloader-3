@@ -152,6 +152,16 @@ class HeadersSerializer(ConfigSerializer):
             return DEFAULT_HEADERS
 
 
+class UserAgentValidator(ConfigValidator):
+    def validate(self, value: str) -> bool:
+        return isinstance(value, str) and bool(value.strip())
+
+    def correct(self, value) -> str:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        return DEFAULT_HEADERS["user-agent"]
+
+
 class Config(QConfig):
 
     # 总下载设置
@@ -246,6 +256,12 @@ class Config(QConfig):
     #     HeadersValidator(),
     #     HeadersSerializer(),
     # )
+    userAgent = ConfigItem(
+        "Network",
+        "UserAgent",
+        DEFAULT_HEADERS["user-agent"],
+        UserAgentValidator(),
+    )
 
     # 全局变量
     globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
@@ -278,3 +294,5 @@ attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img 
                                  wav wma wmv z zip esd wim msp apk apks apkm cab msp pkg"""
 
 cfg = Config()
+DEFAULT_HEADERS["user-agent"] = cfg.userAgent.value
+cfg.userAgent.valueChanged.connect(lambda value: DEFAULT_HEADERS.__setitem__("user-agent", str(value)))
