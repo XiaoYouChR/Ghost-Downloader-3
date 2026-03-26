@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Qt, Signal, Slot, QEvent
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -41,6 +41,7 @@ class SpinBoxSettingCard(SettingCard):
         parent=None,
         singleStep: int = 50,
         division: float = 1,
+        blockWheelEvent: bool = True,
     ):
         super().__init__(icon, title, content, parent)
         self.division = division
@@ -51,6 +52,8 @@ class SpinBoxSettingCard(SettingCard):
         self.spinBox.setSingleStep(singleStep)
         self.spinBox.setMinimumWidth(180)
         self.spinBox.setSuffix(suffix)
+        if blockWheelEvent:
+            self.spinBox.installEventFilter(self)
 
         if configItem:
             _ = configItem.range
@@ -60,6 +63,11 @@ class SpinBoxSettingCard(SettingCard):
         self.hBoxLayout.addSpacing(24)
 
         self.spinBox.setValue(self.configItem.value * division)
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.Wheel:
+            return True
+        return super().eventFilter(watched, event)
 
     def leaveEvent(self, event):
         if self.configItem:
