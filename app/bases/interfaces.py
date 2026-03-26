@@ -25,6 +25,9 @@ class FeaturePack:
     async def parse(self, payload: dict) -> "Task":
         raise NotImplementedError
 
+    async def createTaskFromPayload(self, payload: dict) -> "Task | None":
+        return None
+
     def canHandleTask(self, task: "Task") -> bool:
         if self.taskType is not None and isinstance(task, self.taskType):
             return True

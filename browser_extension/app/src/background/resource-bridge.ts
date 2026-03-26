@@ -37,6 +37,7 @@ type CatCatchResponseMeta = {
   size: number;
   type: string;
   attachment: string;
+  supportsRange: boolean;
 };
 
 type DesktopRequestSender = <T extends DesktopRequestResult>(payload: Record<string, unknown>) => Promise<T>;
@@ -167,6 +168,7 @@ export function createResourceBridge(options: {
       filename: String(resource.filename ?? ""),
       mime: String(resource.mime ?? "").toLowerCase(),
       size: Number(resource.size ?? 0),
+      supportsRange: Boolean(resource.supportsRange),
       referer: String(resource.referer ?? ""),
       requestHeaders: normalizeHeaders(resource.requestHeaders),
       capturedAt: Number(resource.capturedAt ?? Date.now()),
@@ -188,6 +190,7 @@ export function createResourceBridge(options: {
       size: 0,
       type: "",
       attachment: "",
+      supportsRange: false,
     };
 
     for (const header of headers ?? []) {
@@ -213,6 +216,15 @@ export function createResourceBridge(options: {
         meta.attachment = String(header.value ?? "").trim();
         continue;
       }
+      if (name === "accept-ranges") {
+        const value = String(header.value ?? "").toLowerCase();
+        if (value.includes("bytes")) {
+          meta.supportsRange = true;
+        } else if (value.includes("none")) {
+          meta.supportsRange = false;
+        }
+        continue;
+      }
       if (name === "content-range") {
         const size = String(header.value ?? "").split("/")[1];
         if (size && size !== "*") {
@@ -221,6 +233,7 @@ export function createResourceBridge(options: {
             meta.size = totalSize;
           }
         }
+        meta.supportsRange = true;
       }
     }
 
@@ -551,6 +564,7 @@ export function createResourceBridge(options: {
           filename: normalized.filename || existing.filename,
           mime: normalized.mime || existing.mime,
           size: normalized.size > 0 ? normalized.size : existing.size,
+          supportsRange: normalized.supportsRange || existing.supportsRange,
           referer: normalized.referer || existing.referer,
           requestHeaders:
             Object.keys(normalized.requestHeaders).length > 0
@@ -569,6 +583,20 @@ export function createResourceBridge(options: {
 
   function findResourceById(resourceId: string): CapturedResource | null {
     return resourcesById.get(resourceId) ?? null;
+  }
+
+  function findResourceByUrl(rawUrl: string): CapturedResource | null {
+    const normalizedUrl = normalizeResourceUrl(rawUrl);
+    let matched: CapturedResource | null = null;
+    for (const resource of resourcesById.values()) {
+      if (normalizeResourceUrl(resource.url) !== normalizedUrl) {
+        continue;
+      }
+      if (matched == null || resource.capturedAt > matched.capturedAt) {
+        matched = resource;
+      }
+    }
+    return matched;
   }
 
   function markResourceSent(resourceId: string) {
@@ -714,6 +742,7 @@ export function createResourceBridge(options: {
       filename,
       mime,
       size: 0,
+      supportsRange: false,
       referer: headers.referer ?? payload.href ?? tab?.url ?? "",
       requestHeaders: headers,
       capturedAt: Date.now(),
@@ -749,6 +778,7 @@ export function createResourceBridge(options: {
       filename,
       mime: responseMeta.type,
       size: responseMeta.size,
+      supportsRange: responseMeta.supportsRange,
       referer,
       requestHeaders: normalizedRequestHeaders,
       capturedAt: Date.now(),
@@ -765,6 +795,7 @@ export function createResourceBridge(options: {
 
   async function handoffBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
+    const matchedResource = findResourceByUrl(finalUrl);
 
     const headers = resolveHeadersForDownload(finalUrl);
     if (downloadItem.referrer && !headers.referer) {
@@ -779,6 +810,12 @@ export function createResourceBridge(options: {
         payload: {
           url: finalUrl,
           headers,
+          filename: trimFilename(downloadItem.filename),
+          size:
+            typeof downloadItem.totalBytes === "number" && downloadItem.totalBytes > 0
+              ? downloadItem.totalBytes
+              : matchedResource?.size ?? 0,
+          supportsRange: matchedResource?.supportsRange ?? downloadItem.canResume === true,
         },
       });
       if (result.ok) {
@@ -798,6 +835,9 @@ export function createResourceBridge(options: {
         payload: {
           url: resource.url,
           headers: resource.requestHeaders,
+          filename: resource.filename,
+          size: resource.size,
+          supportsRange: resource.supportsRange,
         },
       });
 
@@ -874,8 +914,10 @@ export function createResourceBridge(options: {
             url: resource.url,
             filename: resource.filename,
             mime: resource.mime,
+            size: resource.size,
             headers: resource.requestHeaders,
             pageTitle: resource.pageTitle,
+            supportsRange: resource.supportsRange,
           })),
         },
       });

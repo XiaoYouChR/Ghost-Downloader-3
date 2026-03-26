@@ -48,6 +48,7 @@ export interface CapturedResource {
   filename: string;
   mime: string;
   size: number;
+  supportsRange: boolean;
   referer: string;
   requestHeaders: Record<string, string>;
   capturedAt: number;
