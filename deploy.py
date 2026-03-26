@@ -67,6 +67,7 @@ def build_args() -> list[str]:
             # '--show-progress',
             '--static-libpython=no',
             "--macos-create-app-bundle",
+            f"--macos-signed-app-name=com.{AUTHOR}.Ghost-Downloader-3",
             "--assume-yes-for-download",
             "--macos-app-mode=gui",
             f"--macos-app-version={VERSION}",
