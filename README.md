@@ -100,6 +100,42 @@ Thanks to all contributors who have participated in this project!
 ## Translation Contributors
 
 <!-- CROWDIN-CONTRIBUTORS-START -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/60e068e9c11d951cadf3eccec0afbeab.jpeg" />
+          <br />
+          <sub><b>XiaoYouChR</b></sub></a>
+        <br />
+        <sub><b>13713 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
+          <br />
+          <sub><b>ReM2812</b></sub></a>
+        <br />
+        <sub><b>1010 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
+          <br />
+          <sub><b>Zhenfu Shi</b></sub>
+          <br />
+          <sub><b>(i0ntempest)</b></sub></a>
+        <br />
+        <sub><b>947 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />
+          <br />
+          <sub><b>Dima88888</b></sub></a>
+        <br />
+        <sub><b>115 words</b></sub>
+      </td>
+    </tr>
+  </tbody>
+</table>
 <!-- CROWDIN-CONTRIBUTORS-END -->
 
 <!-- SCREEN SHOTS -->
