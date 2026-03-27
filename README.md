@@ -3,11 +3,13 @@
 </h4>
 
 > [!NOTE]
-> Due to work reasons, the development speed of this project has slowed down recently.
-> The project is still in its early stages, and there is still a lot of shortcomings.
+> Due to academic commitments, development on this project has slowed down recently.
 
 > [!TIP]
-> If you want to use Ghost-Downloader-3 on Windows 7, please download the version `v3.5.8-Portable`.
+> If you want to use Ghost-Downloader-3 on Windows 7, please download version `v3.8.0-Windows7`.
+
+> [!IMPORTANT]
+> Welcome to join the Ghost Downloader user group: [756042420](https://qm.qq.com/q/gPk6FR1Hby)
 
 <!-- PROJECT LOGO -->
 <div align="center">
@@ -38,16 +40,16 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-* A downloader developed out of personal interest, and my first Python project 😣
-* Originally intended to help a Bilibili Uploader with resource integration 😵‍💫
-* Features include IDM-like intelligent chunking without file merging, and AI-powered smart boost 🚀
-* Thanks to Python's🐍 accessibility, the project will support plugins🧩 in the future to maximize Python's🐍 advantages
+* A downloader built out of passion, and my first Python project 😣
+* It was originally created to help a Bilibili creator integrate resources 😵‍💫
+* It features IDM-style intelligent chunking without requiring file merging, plus AI smart acceleration 🚀
+* Thanks to Python's🐍 accessibility, this project will open plugin🧩 support in the future (plugin API is still being stabilized...)
 
 |    Platform    | Required Version |  Architectures   | Compatible |
 |:--------------:|:----------------:|:----------------:|:----------:|
 |  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
 | 🪟 **Windows** |     `7 SP1+`     | `x86_64`/`arm64` |     ✅      |
-|  🍎 **macOS**  |     `11.0+`      | `x86_64`/`arm64` |     ✅      |
+|  🍎 **macOS**  |     `13.0+`      | `x86_64`/`arm64` |     ✅      |
 
 > [!TIP]
 > **Arch Linux AUR support**: Community-maintained packages `ghost-downloader-bin` and `ghost-downloader-git` are now available (Maintainer: [@zxp19821005](https://github.com/zxp19821005))
@@ -57,25 +59,25 @@
 
 - ✅ Global settings
 - ✅ More detailed download information
-- ✅ Scheduled tasks
+- ✅ Scheduled task support
 - ✅ Browser extension optimization
-- ✅ Global speed limit
-- ✅ Memory optimization
-  - ✅ Upgrade Qt version
-  - ✅ Implement HttpClient reuse
-  - ✅ Replace some multithreading with coroutines (In progress...see branch: feature/Structure)
-- ❌ MVC → MVVM upgrade and a new architecture based on events 
+- ✅ Global speed limiting
+- ✅ Memory usage optimization
+- ✅ Magnet / BT downloads
+- ✅ Powerful browser extension features
+- ✅ Powerful plugin support (API still needs to be stabilized...)
+- ✅ Intelligent acceleration
+- ✅ Use AsyncIO to reduce boilerplate
+- ❌ Event-driven architecture refactor (Actor Model)
 - ❌ Enhanced task editing (powerful features like binding multiple Clients to one task)
-- ❌ Magnet/BT download (Considering libtorrent implementation)
-- ❌ Powerful plugin system (In progress...see branch: feature/Plugins)
-- ❌ Powerful browser extension features
+- ❌ Support for eD2k protocol
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
 
 <!-- SPONSOR -->
 ## Sponsor
 
-| [![SignPath](https://signpath.org/assets/favicon-50x50.png)](https://signpath.org/) | Free code signing on Windows provided by [SignPath.io](https://signpath.io), certficate by [SignPath Foundation](https://signpath.org) |
+| [![SignPath](https://signpath.org/assets/favicon-50x50.png)](https://signpath.org/) | Free code signing provided by [SignPath.io](https://about.signpath.io/), with certificates by [SignPath Foundation](https://signpath.org/) |
 |-------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------|
 
 <!-- CONTRIBUTING -->
@@ -98,12 +100,12 @@ Thanks to all contributors who have participated in this project!
 <!-- SCREEN SHOTS -->
 ## Screenshots
 
-[![Demo Screenshot][product-screenshot]](https://space.bilibili.com/437313511)
+![QQ20260326-204347](https://github.com/user-attachments/assets/3e57b113-200c-4286-91cb-b52fe7d1711c)
 
 <!-- LICENSE -->
 ## License
 
-Distributed under the GPL v3.0 License. See `LICENSE` for more information.
+Distributed under the GPL v3.0 License. Open `LICENSE` for more details.
 
 Copyright © 2025 XiaoYouChR.
 
@@ -111,25 +113,24 @@ Copyright © 2025 XiaoYouChR.
 ## Contact
 
 * [E-mail](mailto:XiaoYouChR@qq.com) - XiaoYouChR@qq.com
-* [QQ Group](https://qm.qq.com/q/PlUBdzqZCm) - 531928387
+* [QQ Group](https://qm.qq.com/q/gPk6FR1Hby) - 756042420
 
 <!-- ACKNOWLEDGMENTS -->
 ## References
 
-* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible and beautiful Fluent Design widgets
-* [Curl-cffi](https://github.com/lexiforest/curl_cffi) A http client that can impersonate browser tls/ja3/http2 fingerprints
-* [Loguru](https://github.com/Delgan/loguru)  A library which aims to bring enjoyable logging in Python
+* [aioftp](https://github.com/aio-libs/aioftp) Ftp client/server for asyncio
+* [desktop-notifier](https://github.com/samschott/desktop-notifier) Python library for cross-platform desktop notifications
+* [libtorrent](https://github.com/arvidn/libtorrent) An efficient feature complete C++ bittorrent implementation
+* [loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
+* [niquests](https://github.com/jawah/niquests) Automatic HTTP/1.1, HTTP/2, and HTTP/3. WebSocket, and SSE included.
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
+* [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible, and elegant Fluent Design-style widget library
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
-* [Darkdetect](https://github.com/albertosottile/darkdetect) Allow to detect if the user is using Dark Mode on
-* [pyqt5-concurrent](https://github.com/AresConnor/pyqt5-concurrent) A QThreadPool based task concurrency library
-* [Desktop-notifier](https://github.com/samschott/desktop-notifier)Python library for cross-platform desktop notifications
 
 ## Acknowledgments
 
-* [@zhiyiYo](https://github.com/zhiyiYo/) Provided great help for this project!
-* [@一只透明人-](https://space.bilibili.com/554365148/) Tested almost every version since Ghost-Downloader-1！
-* [@Sky·SuGar](https://github.com/SuGar0218/) Created the project banner！
+* [@zhiyiYo](https://github.com/zhiyiYo/) is amazing and provided a lot of help for this project.
+* [@空糖_SuGar](https://github.com/SuGar0218/) created the project banner.
 
 <picture>
   <source

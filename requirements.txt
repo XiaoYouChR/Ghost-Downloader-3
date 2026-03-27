@@ -1,4 +1,3 @@
-darkdetect[macos-listener]>=0.8.0
 desktop-notifier>=6.2.0
 loguru>=0.7.3
 niquests[http3,socks,speedups]>=3.18.1
