@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ghost Downloader Browser",
   "description": "Manage Ghost Downloader tasks and send browser resources to GD3.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "minimum_chrome_version": "114",
   "permissions": [
     "alarms",
