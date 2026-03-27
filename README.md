@@ -69,7 +69,7 @@
 - ✅ Intelligent acceleration
 - ✅ Use AsyncIO to reduce boilerplate
 - ❌ Event-driven architecture refactor (Actor Model)
-- ❌ Enhanced task editing (powerful features like binding multiple Clients to one task)
+- ❌ Enhanced task editing (powerful features like binding multiple Sessions to one task)
 - ❌ Support for eD2k protocol
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
@@ -96,6 +96,11 @@ If you have a suggestion, fork the repo and create a pull request. You can also 
 Thanks to all contributors who have participated in this project!
 
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
+
+## Translation Contributors
+
+<!-- CROWDIN-CONTRIBUTORS-START -->
+<!-- CROWDIN-CONTRIBUTORS-END -->
 
 <!-- SCREEN SHOTS -->
 ## Screenshots

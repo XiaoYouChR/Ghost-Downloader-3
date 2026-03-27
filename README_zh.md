@@ -69,7 +69,7 @@
 - ✅ 智能加速
 - ✅ 使用 AsyncIO 解决样板代码问题
 - ❌ 由事件驱动的架构重构 (Actor Model)
-- ❌ 更强大的任务编辑功能 (一个任务绑定多个 Client 等强大功能)
+- ❌ 更强大的任务编辑功能 (一个任务绑定多个 Sessions 等强大功能)
 - ❌ 支持 eD2k 协议
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
@@ -96,6 +96,11 @@
 感谢所有为该项目做出贡献的人！
 
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
+
+## 翻译贡献者
+
+<!-- CROWDIN-CONTRIBUTORS-START -->
+<!-- CROWDIN-CONTRIBUTORS-END -->
 
 <!-- SCREEN SHOTS -->
 ## 截图
