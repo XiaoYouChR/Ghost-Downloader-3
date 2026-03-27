@@ -1,5 +1,5 @@
 <h4 align="right">
-  <a href="README_zh.md">简体中文</a> | English
+  <a href="README_zh.md">简体中文</a> | English | <a href="README_ru.md">Русский</a>
 </h4>
 
 > [!NOTE]
@@ -129,7 +129,8 @@ Copyright © 2025 XiaoYouChR.
 
 * [@zhiyiYo](https://github.com/zhiyiYo/) Provided great help for this project!
 * [@一只透明人-](https://space.bilibili.com/554365148/) Tested almost every version since Ghost-Downloader-1！
-* [@Sky·SuGar](https://github.com/SuGar0218/) Created the project banner！
+* [@Sky·SuGar](https://github.com/SuGar0218/) Created the project banner!
+* [@ReM2812](https://github.com/ReM2812/) Translated the program interface and README into Russian!
 
 <picture>
   <source
