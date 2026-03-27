@@ -542,7 +542,7 @@ class M3U8Worker(Worker):
 
 async def parse(payload: dict) -> M3U8Task:
     url = str(payload["url"]).strip()
-    headers = payload.get("headers", DEFAULT_HEADERS)
+    headers = payload.get("headers") or DEFAULT_HEADERS
     proxies = payload.get("proxies", getProxies())
     path = Path(payload.get("path", cfg.downloadFolder.value))
     requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers if isinstance(headers, dict) else DEFAULT_HEADERS)

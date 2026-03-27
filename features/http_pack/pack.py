@@ -246,7 +246,7 @@ def _extractFileName(url: str, headers: dict) -> str:
 
 async def parse(payload: dict) -> HttpTask:
     url: str = payload['url']
-    headers: dict = payload.get('headers', DEFAULT_HEADERS)
+    headers: dict = payload.get('headers') or DEFAULT_HEADERS
     proxies: dict = payload.get('proxies', getProxies())
     blockNum: int = payload.get('preBlockNum', cfg.preBlockNum.value)
     path: Path = payload.get('path', Path(cfg.downloadFolder.value))
