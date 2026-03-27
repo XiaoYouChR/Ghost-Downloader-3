@@ -24,6 +24,7 @@ const DOCUMENT_EXTENSIONS = new Set([
   "key",
   "epub",
 ]);
+const CAT_CATCH_MEDIA_EXTENSIONS = new Set(["ogg", "ogv", "mp4", "webm", "mp3", "wav", "m4a", "3gp", "mpeg", "mov", "m4s", "aac"]);
 
 export type AccentTone = "neutral" | "success" | "info" | "warning" | "danger";
 export type VisualKind =
@@ -433,19 +434,35 @@ export function canUseOnlineMerge(resource: CapturedResource): boolean {
   if (derived.deliveryTarget !== "gd3") {
     return false;
   }
-  if (derived.parserHint === "m3u8" || derived.parserHint === "mpd") {
-    return false;
+
+  if (derived.parserHint === "m3u8") {
+    return true;
   }
-  return derived.mediaKind === "video" || derived.mediaKind === "audio";
+
+  const mime = String(resource.mime || "").toLowerCase();
+  if (!mime) {
+    return CAT_CATCH_MEDIA_EXTENSIONS.has(derived.extension);
+  }
+
+  return (
+    CAT_CATCH_MEDIA_EXTENSIONS.has(derived.extension)
+    || mime.startsWith("video")
+    || mime.startsWith("audio")
+    || mime.endsWith("octet-stream")
+  );
 }
 
 export function canUseOnlineMergeSelection(resources: CapturedResource[]): boolean {
-  if (resources.length !== 2 || !resources.every(canUseOnlineMerge)) {
+  if (resources.length !== 2) {
     return false;
   }
 
-  const categories = resources.map((resource) => describeResource(resource).category);
-  return categories.includes("video") && categories.includes("audio");
+  const allM3U8 = resources.every((resource) => describeResource(resource).parserHint === "m3u8");
+  if (allM3U8) {
+    return resources.every((resource) => describeResource(resource).deliveryTarget === "gd3");
+  }
+
+  return resources.every(canUseOnlineMerge);
 }
 
 export function sortResourcesForOnlineMerge(resources: CapturedResource[]): CapturedResource[] {

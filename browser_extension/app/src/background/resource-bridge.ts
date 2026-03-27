@@ -1,5 +1,11 @@
 import type { CapturedResource, DesktopRequestResult, PopupStatePayload } from "../shared/types";
-import { canUseOnlineMerge, domainFromUrl, fileExtension, filenameFromUrl, sortResourcesForOnlineMerge } from "../shared/utils";
+import {
+  canUseOnlineMergeSelection,
+  domainFromUrl,
+  fileExtension,
+  filenameFromUrl,
+  sortResourcesForOnlineMerge,
+} from "../shared/utils";
 import {
   BRIDGE_HEADER_SNAPSHOTS_KEY,
   BRIDGE_LAST_ACTIVE_TAB_KEY,
@@ -22,6 +28,7 @@ type BridgeHeaderSnapshot = {
   headers: Record<string, string>;
   capturedAt: number;
   tabId: number | null;
+  supportsRange: boolean;
 };
 
 type BridgeResourcePayload = {
@@ -73,6 +80,7 @@ export function createResourceBridge(options: {
   const resourceCache = new Map<number, ResourceBucket>();
   const resourcesById = new Map<string, CapturedResource>();
   const headersByRequestId = new Map<string, Record<string, string>>();
+  const rangeRequestIds = new Set<string>();
   const headerSnapshotsByUrl = new Map<string, BridgeHeaderSnapshot>();
 
   function normalizeHeaders(headers: Record<string, string> | undefined): Record<string, string> {
@@ -108,6 +116,19 @@ export function createResourceBridge(options: {
       result[name] = value;
     }
     return result;
+  }
+
+  function hasRangeHeader(headers: chrome.webRequest.HttpHeader[] | undefined): boolean {
+    return (headers ?? []).some((header) => {
+      if (!header.name) {
+        return false;
+      }
+      if (header.name.toLowerCase() !== "range") {
+        return false;
+      }
+      const value = String(header.value ?? "").toLowerCase();
+      return value.startsWith("bytes=");
+    });
   }
 
   function trimFilename(value: string): string {
@@ -182,6 +203,7 @@ export function createResourceBridge(options: {
       headers: normalizeHeaders(snapshot.headers),
       capturedAt: Number(snapshot.capturedAt ?? Date.now()),
       tabId: Number.isInteger(snapshot.tabId) ? Number(snapshot.tabId) : null,
+      supportsRange: Boolean(snapshot.supportsRange),
     };
   }
 
@@ -608,9 +630,14 @@ export function createResourceBridge(options: {
     scheduleBridgeStatePersist();
   }
 
-  function rememberHeaders(url: string, headers: Record<string, string>, tabId: number | null) {
+  function rememberHeaderSnapshot(
+    url: string,
+    headers: Record<string, string>,
+    tabId: number | null,
+    supportsRange: boolean,
+  ) {
     const normalized = normalizeHeaders(headers);
-    if (Object.keys(normalized).length === 0) {
+    if (Object.keys(normalized).length === 0 && !supportsRange) {
       return;
     }
     headerSnapshotsByUrl.set(url, {
@@ -618,14 +645,19 @@ export function createResourceBridge(options: {
       headers: normalized,
       capturedAt: Date.now(),
       tabId,
+      supportsRange,
     });
     pruneHeaderSnapshots();
     scheduleBridgeStatePersist();
   }
 
-  function resolveHeadersForDownload(url: string): Record<string, string> {
+  function resolveHeaderSnapshot(url: string): BridgeHeaderSnapshot | null {
     pruneHeaderSnapshots();
-    return { ...(headerSnapshotsByUrl.get(url)?.headers ?? {}) };
+    return headerSnapshotsByUrl.get(url) ?? null;
+  }
+
+  function resolveHeadersForDownload(url: string): Record<string, string> {
+    return { ...(resolveHeaderSnapshot(url)?.headers ?? {}) };
   }
 
   function otherResourcesForTab(activeTabId: number | null): CapturedResource[] {
@@ -753,12 +785,16 @@ export function createResourceBridge(options: {
     const responseMeta = getResponseHeadersValue(details.responseHeaders);
     if (!shouldCaptureCatCatchResponse(details, responseMeta)) {
       headersByRequestId.delete(details.requestId);
+      rangeRequestIds.delete(details.requestId);
       return;
     }
 
     const tabId = await resolveNetworkResourceTabId(details);
-    const requestHeaders = normalizeHeaders(headersByRequestId.get(details.requestId) ?? resolveHeadersForDownload(details.url));
+    const headerSnapshot = resolveHeaderSnapshot(details.url);
+    const requestHadRange = rangeRequestIds.has(details.requestId) || Boolean(headerSnapshot?.supportsRange);
+    const requestHeaders = normalizeHeaders(headersByRequestId.get(details.requestId) ?? headerSnapshot?.headers ?? {});
     headersByRequestId.delete(details.requestId);
+    rangeRequestIds.delete(details.requestId);
 
     if (!tabId) {
       return;
@@ -778,7 +814,10 @@ export function createResourceBridge(options: {
       filename,
       mime: responseMeta.type,
       size: responseMeta.size,
-      supportsRange: responseMeta.supportsRange,
+      supportsRange:
+        responseMeta.supportsRange
+        || details.statusCode === 206
+        || requestHadRange,
       referer,
       requestHeaders: normalizedRequestHeaders,
       capturedAt: Date.now(),
@@ -891,14 +930,14 @@ export function createResourceBridge(options: {
     if (resources.length !== 2) {
       return {
         ok: false,
-        message: "在线合并暂时只支持 2 个 HTTP 音视频资源",
+        message: "在线合并暂时只支持选中 2 个资源",
       };
     }
 
-    if (!resources.every(canUseOnlineMerge)) {
+    if (!canUseOnlineMergeSelection(resources)) {
       return {
         ok: false,
-        message: "在线合并暂不支持 blob 或非 HTTP 音视频资源",
+        message: "当前选中的资源不符合在线合并条件",
       };
     }
 
@@ -981,11 +1020,18 @@ export function createResourceBridge(options: {
   function handleRequestHeaders(details: chrome.webRequest.OnSendHeadersDetails) {
     const headers = parseHeaderList(details.requestHeaders);
     headersByRequestId.set(details.requestId, headers);
-    rememberHeaders(details.url, headers, details.tabId > 0 ? details.tabId : lastActiveTabId);
+    const supportsRange = hasRangeHeader(details.requestHeaders);
+    if (supportsRange) {
+      rangeRequestIds.add(details.requestId);
+    } else {
+      rangeRequestIds.delete(details.requestId);
+    }
+    rememberHeaderSnapshot(details.url, headers, details.tabId > 0 ? details.tabId : lastActiveTabId, supportsRange);
   }
 
   function clearRequestHeaders(requestId: string) {
     headersByRequestId.delete(requestId);
+    rangeRequestIds.delete(requestId);
   }
 
   return {
