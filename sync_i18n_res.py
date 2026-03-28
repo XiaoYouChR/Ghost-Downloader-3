@@ -10,7 +10,7 @@ I18N_DIR = ROOT_DIR / "app" / "assets" / "i18n"
 RESOURCES_QRC = ROOT_DIR / "app" / "assets" / "resources.qrc"
 RESOURCES_PY = ROOT_DIR / "app" / "assets" / "resources.py"
 SOURCE_LANGUAGE = "zh_CN"
-RUNTIME_LANGUAGES = ["en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU"]
+RUNTIME_LANGUAGES = ["en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR"]
 SYNC_LANGUAGES = [SOURCE_LANGUAGE, *RUNTIME_LANGUAGES]
 EXCLUDED_FILES = {
     Path("app/assets/resources.py"),
