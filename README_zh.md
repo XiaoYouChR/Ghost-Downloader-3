@@ -120,9 +120,7 @@
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
           <br />
-          <sub><b>Zhenfu Shi</b></sub>
-          <br />
-          <sub><b>(i0ntempest)</b></sub></a>
+          <sub><b>i0ntempest</b></sub></a>
         <br />
         <sub><b>947 words</b></sub>
       </td>
