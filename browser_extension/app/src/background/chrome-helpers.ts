@@ -1,3 +1,7 @@
+// Browser API compatibility
+const isFirefox = typeof (global as any).browser !== "undefined";
+const chrome = isFirefox ? (global as any).browser : (global as any).chrome;
+
 export type TabMessageStatus = "ok" | "no_receiver" | "runtime_error" | "no_response";
 
 export type TabMessageResult<T> = {

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node ./scripts/build.mjs",
+    "build:firefox": "node ./scripts/build-firefox.mjs",
+    "package:firefox": "node ./scripts/package-firefox-xpi.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -19,6 +21,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "archiver": "^6.0.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.8.2",
     "vite": "^6.2.0"

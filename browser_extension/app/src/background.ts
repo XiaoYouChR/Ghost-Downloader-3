@@ -18,6 +18,11 @@ import {
   localStorageGet,
 } from "./background/chrome-helpers";
 
+// Browser API compatibility
+const isFirefox = typeof (global as any).browser !== "undefined";
+const browserAPI = isFirefox ? (global as any).browser : (global as any).chrome;
+const chrome = browserAPI;
+
 const desktopBridge = createDesktopBridge();
 const resourceBridge = createResourceBridge({
   isDesktopReady: () => desktopBridge.isReady(),

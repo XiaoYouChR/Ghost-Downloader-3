@@ -83,6 +83,12 @@ export function createFeatureBridge() {
   }
 
   async function updateSessionRules(tabId: number, enabled: boolean): Promise<void> {
+    // Firefox doesn't support declarativeNetRequest
+    const isFirefox = typeof (global as any).browser !== "undefined";
+    if (isFirefox) {
+      return; // Skip rule updates on Firefox
+    }
+
     return new Promise((resolve, reject) => {
       chrome.declarativeNetRequest.updateSessionRules(
         enabled

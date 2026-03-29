@@ -1,4 +1,8 @@
 (function installBridge() {
+  // Detect browser type
+  const isFirefox = typeof (global as any).browser !== "undefined";
+  const browserRuntime = isFirefox ? (global as any).browser.runtime : (global as any).chrome.runtime;
+
   let mediaElements: Array<HTMLVideoElement | HTMLAudioElement> = [];
   let mediaSources: string[] = [];
 
@@ -107,7 +111,7 @@
     return `${String(minutes).padStart(2, "0")}-${String(seconds).padStart(2, "0")}`;
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browserRuntime.onMessage.addListener((message, _sender, sendResponse) => {
     if (!message || typeof message !== "object") {
       return;
     }
@@ -233,7 +237,7 @@
 
     if (payload.action === "catCatchAddMedia" && typeof payload.url === "string") {
       const href = resolveEventHref(event);
-      chrome.runtime.sendMessage({
+      browserRuntime.sendMessage({
         type: "bridge_page_media",
         payload: {
           url: payload.url,
@@ -253,7 +257,7 @@
     if (payload.action === "catCatchToBackground") {
       const forwarded = { ...payload };
       delete forwarded.action;
-      chrome.runtime.sendMessage({
+      browserRuntime.sendMessage({
         type: "bridge_page_command",
         payload: forwarded,
       });
