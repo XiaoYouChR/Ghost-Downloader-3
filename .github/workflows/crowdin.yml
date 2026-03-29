@@ -83,6 +83,21 @@ jobs:
           rm -f .git/COMMIT_EDITMSG
           python sync_i18n_res.py
 
+      - name: Update Crowdin contributors
+        if: github.event.inputs.operation == 'pull'
+        uses: andrii-bodnar/action-crowdin-contributors@v3
+        with:
+          files: |
+            README.md
+            README_zh.md
+          contributors_per_line: 8
+          max_contributors: 32
+          image_size: 64
+          min_words_contributed: 100
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
       - name: Create translation pull request
         if: github.event.inputs.operation == 'pull'
         uses: peter-evans/create-pull-request@v8
@@ -98,8 +113,11 @@ jobs:
           body: |
             This PR was created automatically by the Crowdin sync workflow.
 
-            It refreshes the Qt `.ts` files, compiled `.qm` files, and `app/assets/resources.py`.
+            It refreshes the Qt `.ts` files, compiled `.qm` files,
+            `app/assets/resources.py`, and Crowdin contributors in both READMEs.
           add-paths: |
             app/assets/i18n/*.ts
             app/assets/i18n/*.qm
             app/assets/resources.py
+            README.md
+            README_zh.md

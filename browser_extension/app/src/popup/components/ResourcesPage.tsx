@@ -213,7 +213,7 @@ export function ResourcesPage({
               {selectedResources.length > 0 ? `已选 ${selectedResources.length} 项` : "未选择资源"}
             </Badge>
             <Caption1>
-              合并音视频暂时只支持 1 个 HTTP 视频资源和 1 个 HTTP 音频资源，blob 资源暂不支持
+              在线合并需要选中 2 个可合并的 HTTP 资源，blob 资源暂不支持
             </Caption1>
             <div className={styles.selectionActions}>
               <Button appearance="secondary" size="small" onClick={selectVisibleResources}>

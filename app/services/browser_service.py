@@ -12,6 +12,7 @@ from orjson import dumps, loads
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
+from app.services.feature_service import featureService
 from app.supports.config import VERSION, cfg
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
@@ -423,9 +424,16 @@ class BrowserService(QObject):
             )
             return
 
+        canCreateTaskFromPayload = featureService.canCreateTaskFromPayload(parsePayload["url"])
+        coroutine = (
+            coreService._createTaskFromPayload(parsePayload)
+            if canCreateTaskFromPayload
+            else coreService._parseUrl(parsePayload)
+        )
+
         coreService.runCoroutine(
-            coreService._createTaskFromPayload(parsePayload),
-            lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
+            coroutine,
+            lambda task, error, session=session, requestId=requestId, title=title if canCreateTaskFromPayload else "": self._onTaskParsed(
                 session,
                 requestId,
                 title,

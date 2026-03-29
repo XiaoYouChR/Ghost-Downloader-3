@@ -24,7 +24,7 @@
     <message>
         <location filename="../../view/components/add_task_dialog.py" line="124"/>
         <source>预分配线程数</source>
-        <translation>Pre-distribute Threads</translation>
+        <translation>Pre-allocated Threads</translation>
     </message>
     <message>
         <location filename="../../view/components/add_task_dialog.py" line="143"/>
@@ -145,12 +145,12 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="231"/>
         <source>监听端口</source>
-        <translation>Listen Port</translation>
+        <translation>Port</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="232"/>
         <source>0 表示交给系统自动分配可用端口</source>
-        <translation>0 means let system auto-assign available ports</translation>
+        <translation>0 for system assigned port</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="240"/>
@@ -160,12 +160,12 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="241"/>
         <source>解析 magnet 链接时等待元数据的最长时间</source>
-        <translation>Max time to wait for metadata when parsing magnet links</translation>
+        <translation>Maximum loading time for metadata when parsing magnet links</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="250"/>
         <source>连接数上限</source>
-        <translation>Connection Limit</translation>
+        <translation>Maximum Connections</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="251"/>
@@ -181,7 +181,7 @@
         <location filename="../../../features/bittorrent_pack/config.py" line="257"/>
         <location filename="../../../features/bittorrent_pack/config.py" line="267"/>
         <source>0 表示不限速，单位为 session 级别的 KB/s</source>
-        <translation>0 for unlimited, unit is KB/s at session level</translation>
+        <translation>KB/s per session, 0 for unlimited</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="266"/>
@@ -201,22 +201,22 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="285"/>
         <source>自动暂停做种时长</source>
-        <translation>Auto Pause Seeding Duration</translation>
+        <translation>Auto Seeding Time Limit</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="286"/>
         <source>下载完成后继续做种；0 表示不按做种时长自动暂停</source>
-        <translation>Continue seeding after download. 0 to never pause by duration</translation>
+        <translation>Pause seeding after specified time after task completion, set 0 to never pause</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="295"/>
         <source>文件分配模式</source>
-        <translation>File allocation mode</translation>
+        <translation>File Allocation Method</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="296"/>
         <source>稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足</source>
-        <translation>Sparse allocation saves disk writes, pre-allocation exposes space issues early</translation>
+        <translation>Sparse allocation saves disk writes, pre-allocation exposes disk space issues early</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="297"/>
@@ -231,17 +231,17 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="302"/>
         <source>保存 Magnet 种子文件</source>
-        <translation>Save Magnet torrent file</translation>
+        <translation>Save Magnet Torrent File</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="303"/>
         <source>下载 magnet 链接时，在下载目录额外保存解析得到的 .torrent 文件</source>
-        <translation>When downloading a magnet link, additionally save the resolved .torrent file in the download directory</translation>
+        <translation>Save resolved magnet link as a .torrent file in the download directory</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="309"/>
         <source>顺序下载</source>
-        <translation>Sequential download</translation>
+        <translation>Sequential Download</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="310"/>
@@ -301,7 +301,7 @@
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="351"/>
         <source>新建任务时刷新 Web Tracker</source>
-        <translation>Refresh Web Tracker when creating new tasks</translation>
+        <translation>Refresh Web Tracker on New Task Creation</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="352"/>
@@ -348,96 +348,96 @@
 <context>
     <name>BrowserService</name>
     <message>
-        <location filename="../../services/browser_service.py" line="344"/>
+        <location filename="../../services/browser_service.py" line="345"/>
         <source>无法解析该链接</source>
-        <translation type="unfinished">无法解析该链接</translation>
+        <translation>Unable to parse specified link</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="357"/>
+        <location filename="../../services/browser_service.py" line="358"/>
         <source>创建任务失败</source>
-        <translation type="unfinished">创建任务失败</translation>
+        <translation>Failed to create download task</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="373"/>
-        <location filename="../../services/browser_service.py" line="538"/>
+        <location filename="../../services/browser_service.py" line="374"/>
+        <location filename="../../services/browser_service.py" line="546"/>
         <source>缺少 requestId</source>
-        <translation type="unfinished">缺少 requestId</translation>
+        <translation>Missing requestId</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="381"/>
+        <location filename="../../services/browser_service.py" line="382"/>
         <source>无效的任务负载</source>
-        <translation type="unfinished">无效的任务负载</translation>
+        <translation>Invalid task payload</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="399"/>
+        <location filename="../../services/browser_service.py" line="400"/>
         <source>在线合并暂时只支持 2 个资源</source>
-        <translation type="unfinished">在线合并暂时只支持 2 个资源</translation>
+        <translation>Merging of at most 2 resources is supported at this time</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="422"/>
+        <location filename="../../services/browser_service.py" line="423"/>
         <source>缺少下载链接</source>
-        <translation type="unfinished">缺少下载链接</translation>
+        <translation>Missing download link</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="549"/>
+        <location filename="../../services/browser_service.py" line="557"/>
         <source>不支持的任务操作</source>
-        <translation type="unfinished">不支持的任务操作</translation>
+        <translation>Task operation not supported</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="560"/>
+        <location filename="../../services/browser_service.py" line="568"/>
         <source>任务不存在</source>
-        <translation type="unfinished">任务不存在</translation>
+        <translation>Specified task does not exist</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="573"/>
+        <location filename="../../services/browser_service.py" line="581"/>
         <source>当前任务不支持暂停</source>
-        <translation type="unfinished">当前任务不支持暂停</translation>
+        <translation>Specified task does not support pausing</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="583"/>
+        <location filename="../../services/browser_service.py" line="591"/>
         <source>任务已完成</source>
-        <translation type="unfinished">任务已完成</translation>
+        <translation>Task completed</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="627"/>
+        <location filename="../../services/browser_service.py" line="635"/>
         <source>文件尚未生成</source>
-        <translation type="unfinished">文件尚未生成</translation>
+        <translation>File not created</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="642"/>
+        <location filename="../../services/browser_service.py" line="650"/>
         <source>目录不存在</source>
-        <translation type="unfinished">目录不存在</translation>
+        <translation>Specified directory does not exist</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="669"/>
+        <location filename="../../services/browser_service.py" line="677"/>
         <source>无效的消息格式</source>
-        <translation type="unfinished">无效的消息格式</translation>
+        <translation>Invalid message format</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="673"/>
+        <location filename="../../services/browser_service.py" line="681"/>
         <source>无效的消息结构</source>
-        <translation type="unfinished">无效的消息结构</translation>
-    </message>
-    <message>
-        <location filename="../../services/browser_service.py" line="680"/>
-        <location filename="../../services/browser_service.py" line="740"/>
-        <source>未知的消息类型</source>
-        <translation type="unfinished">未知的消息类型</translation>
+        <translation>Invalid message type</translation>
     </message>
     <message>
         <location filename="../../services/browser_service.py" line="688"/>
+        <location filename="../../services/browser_service.py" line="748"/>
+        <source>未知的消息类型</source>
+        <translation>Unknown message type</translation>
+    </message>
+    <message>
+        <location filename="../../services/browser_service.py" line="696"/>
         <source>协议版本不匹配</source>
-        <translation type="unfinished">协议版本不匹配</translation>
+        <translation>Protocol version mismatch</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="699"/>
+        <location filename="../../services/browser_service.py" line="707"/>
         <source>配对令牌无效</source>
-        <translation type="unfinished">配对令牌无效</translation>
+        <translation>Invalid pairing token</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="722"/>
+        <location filename="../../services/browser_service.py" line="730"/>
         <source>请先完成握手认证</source>
-        <translation type="unfinished">请先完成握手认证</translation>
+        <translation>Authentication required</translation>
     </message>
 </context>
 <context>
@@ -565,7 +565,7 @@
         <location filename="../../../features/ffmpeg_pack/config.py" line="118"/>
         <location filename="../../../features/ffmpeg_pack/config.py" line="163"/>
         <source>一键安装</source>
-        <translation>One-click Install</translation>
+        <translation>Install</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/config.py" line="136"/>
@@ -587,7 +587,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/ffmpeg_pack/config.py" line="148"/>
         <source>未检测到可用的 ffmpeg 和 ffprobe</source>
-        <translation>No available ffmpeg or ffprobe detected</translation>
+        <translation>No available ffmpeg or ffprobe binaries detected</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/config.py" line="158"/>
@@ -615,7 +615,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../view/components/dialogs.py" line="177"/>
         <source>请选择要使用的校验算法</source>
-        <translation>Please select the verification algorithm to use</translation>
+        <translation>Select verification algorithm</translation>
     </message>
     <message>
         <location filename="../../view/components/dialogs.py" line="179"/>
@@ -741,22 +741,22 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/ftp_pack/cards.py" line="434"/>
         <source>FTP 目录</source>
-        <translation type="unfinished">FTP 目录</translation>
+        <translation>FTP Directory</translation>
     </message>
     <message>
         <location filename="../../../features/ftp_pack/cards.py" line="434"/>
         <source>FTP 文件</source>
-        <translation type="unfinished">FTP 文件</translation>
+        <translation>FTP File</translation>
     </message>
     <message>
         <location filename="../../../features/ftp_pack/cards.py" line="435"/>
         <source>{0} · {1}</source>
-        <translation type="unfinished">{0} · {1}</translation>
+        <translation>{0} · {1}</translation>
     </message>
     <message>
         <location filename="../../../features/ftp_pack/cards.py" line="443"/>
         <source>{0}/{1} 个文件 · {2}</source>
-        <translation>{0}/{1} Files · {2}</translation>
+        <translation>{0}/{1} File(s) · {2}</translation>
     </message>
 </context>
 <context>
@@ -764,7 +764,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/ftp_pack/cards.py" line="509"/>
         <source>{0}/{1} 个文件</source>
-        <translation type="unfinished">{0}/{1} 个文件</translation>
+        <translation>{0}/{1} File(s) </translation>
     </message>
 </context>
 <context>
@@ -805,7 +805,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="300"/>
         <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation>Auto-rewrite GitHub file links to selected reverse proxy</translation>
+        <translation>Automatically change GitHub file links to download through selected proxy</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="305"/>
@@ -828,7 +828,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="204"/>
         <source>刷新延迟</source>
-        <translation>Refresh Latency</translation>
+        <translation>Re-test Latency</translation>
     </message>
 </context>
 <context>
@@ -836,7 +836,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="216"/>
         <source>流媒体下载</source>
-        <translation>Stream Download</translation>
+        <translation>Media Stream Download</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="222"/>
@@ -846,7 +846,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="223"/>
         <source>下载完成后优先使用 ffmpeg 混流为指定容器</source>
-        <translation>After download, prioritize ffmpeg remuxing to specified container</translation>
+        <translation>Prioritize ffmpeg remuxing as specified container after download completion</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="230"/>
@@ -856,7 +856,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="231"/>
         <source>传给 N_m3u8DL-RE 的下载线程数</source>
-        <translation>Download threads for N_m3u8DL-RE</translation>
+        <translation>Download threads passed to N_m3u8DL-RE</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="237"/>
@@ -866,7 +866,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="238"/>
         <source>单个分片下载失败时的最大重试次数</source>
-        <translation>Max retry attempts for failed chunks</translation>
+        <translation>Maximum retries for failed chunks</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="243"/>
@@ -876,7 +876,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="244"/>
         <source>HTTP 请求超时时间</source>
-        <translation>HTTP request timeout</translation>
+        <translation>HTTP request timeout length</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="252"/>
@@ -886,12 +886,12 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="253"/>
         <source>默认选择最佳音视频轨道，避免每个链接都手动挑选</source>
-        <translation>Auto select best audio/video track to avoid manual selection</translation>
+        <translation>Auto select best audio/video track and skip manual selection</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="259"/>
         <source>并发下载音视频</source>
-        <translation>Concurrent Audio/Video Download</translation>
+        <translation>Simultaneous Audio/Video Download</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="260"/>
@@ -926,7 +926,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="281"/>
         <source>下载完成后检查实际分片数是否与预期一致</source>
-        <translation>After download, verify actual chunk count matches expected</translation>
+        <translation>Verify chunk count is as expected after download completion</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="287"/>
@@ -946,7 +946,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="295"/>
         <source>实时合并直播时仍保留原始分片</source>
-        <translation>Keep original chunks when real-time merging live</translation>
+        <translation>Keep original chunks when using live real-time merge</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="301"/>
@@ -956,7 +956,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="302"/>
         <source>直播实时合并时通过管道交给 ffmpeg 混流</source>
-        <translation>Use pipe to ffmpeg for remuxing during live real-time merge</translation>
+        <translation>Pipe content to ffmpeg for remuxing during live real-time merge</translation>
     </message>
 </context>
 <context>
@@ -1012,7 +1012,7 @@ Install path: {1}</translation>
         <location filename="../../../features/m3u8_pack/config.py" line="139"/>
         <location filename="../../../features/m3u8_pack/config.py" line="185"/>
         <source>一键安装</source>
-        <translation>One-click Install</translation>
+        <translation>Install</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="156"/>
@@ -1022,7 +1022,7 @@ Install path: {1}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="166"/>
         <source>未检测到，部分流可能无法自动混流</source>
-        <translation>Not detected, some streams may not auto-remux</translation>
+        <translation>Not detected, auto-remux may not work for some streams</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="167"/>
@@ -1041,7 +1041,7 @@ FFmpeg: {2}</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="173"/>
         <source>未检测到可用的 N_m3u8DL-RE</source>
-        <translation>No available N_m3u8DL-RE detected</translation>
+        <translation>No N_m3u8DL-RE detected</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="180"/>
@@ -1131,12 +1131,12 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/windows/main_window.py" line="396"/>
         <source>无法获取最新版本信息</source>
-        <translation>Failed to get latest version information</translation>
+        <translation>Unable to get the latest version information</translation>
     </message>
     <message>
         <location filename="../../view/windows/main_window.py" line="407"/>
         <source>当前已是最新版本</source>
-        <translation>This is the latest version</translation>
+        <translation>You&apos;re running the latest version</translation>
     </message>
     <message>
         <location filename="../../view/windows/main_window.py" line="408"/>
@@ -1146,7 +1146,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/windows/main_window.py" line="422"/>
         <source>检测到新版本</source>
-        <translation>New Version Detected</translation>
+        <translation>New Version Available</translation>
     </message>
     <message>
         <location filename="../../view/windows/main_window.py" line="423"/>
@@ -1176,7 +1176,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/windows/main_window.py" line="448"/>
         <source>已打开版本详情，请手动选择要下载的文件</source>
-        <translation>Release details opened. Please manually select the file to download.</translation>
+        <translation>Release details opened, please select a file to download</translation>
     </message>
     <message>
         <location filename="../../view/windows/main_window.py" line="475"/>
@@ -1215,7 +1215,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/components/dialogs.py" line="48"/>
         <source>所有任务完成后执行以下操作：</source>
-        <translation>After all tasks are completed, perform the following action:</translation>
+        <translation>Perform the following after all tasks are completed:</translation>
     </message>
     <message>
         <location filename="../../view/components/dialogs.py" line="50"/>
@@ -1284,7 +1284,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/components/setting_cards.py" line="115"/>
         <source>编辑代理服务器: </source>
-        <translation>Edit Proxy Server:</translation>
+        <translation>Proxy Server:</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="121"/>
@@ -1299,7 +1299,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/components/setting_cards.py" line="129"/>
         <source>认证信息: </source>
-        <translation>Authentication: </translation>
+        <translation>Proxy Credentials: </translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="131"/>
@@ -1347,7 +1347,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/components/release_info_dialog.py" line="100"/>
         <source>文件名</source>
-        <translation>Filename</translation>
+        <translation>File Name</translation>
     </message>
     <message>
         <location filename="../../view/components/release_info_dialog.py" line="101"/>
@@ -1386,7 +1386,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../../features/bili_pack/config.py" line="451"/>
         <source>二维码有效期约 180 秒，失效后可点击“刷新二维码”重新生成</source>
-        <translation>The QR code is valid for about 180 seconds. Click &quot;Refresh QR Code&quot; after it expires to generate a new one.</translation>
+        <translation>The QR code is valid for about 180 seconds. Click &quot;Refresh QR Code&quot; to generate a new one if it expires.</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="465"/>
@@ -1441,7 +1441,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../../features/bili_pack/config.py" line="588"/>
         <source>登录成功，但未能提取到有效 Cookie</source>
-        <translation>Login succeeded, but no valid Cookie could be extracted</translation>
+        <translation>Login succeeded, but unable to extract a valid Cookie</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="591"/>
@@ -1505,7 +1505,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="39"/>
         <source>应用</source>
-        <translation>Apply</translation>
+        <translation>Application</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="40"/>
@@ -1516,17 +1516,17 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="59"/>
         <source>最大任务数</source>
-        <translation>Max Concurrent Tasks</translation>
+        <translation>Maximum Concurrent Tasks</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="60"/>
         <source>最多能同时进行的任务数量</source>
-        <translation>Maximum number of simultaneous tasks</translation>
+        <translation>Maximum number of simultaneous transfers</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="67"/>
         <source>预分配线程数</source>
-        <translation>Pre-distribute Threads</translation>
+        <translation>Pre-allocated Threads</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="69"/>
@@ -1541,17 +1541,17 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="77"/>
         <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
-        <translation>AI monitors thread efficiency and auto-increases threads to boost speed</translation>
+        <translation>Monitor thread efficiencies with AI and auto-increase number of threads to boost download speed</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="85"/>
         <source>最大重新分配大小 (MB)</source>
-        <translation>Max Redistribute Size (MB)</translation>
+        <translation>Maximum Redistribution Size (MB)</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="87"/>
         <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
-        <translation>Redistribute if thread&apos;s workload &gt;= this value and (thread completes or auto boost)</translation>
+        <translation>If threads&apos; workload surpasses this value, redistribution will trigger when a thread completes or Auto Boost is enabled</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="94"/>
@@ -1561,7 +1561,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="95"/>
         <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
-        <translation>When the speed limit switch on the download tasks page is enabled, all tasks will be limited according to this value</translation>
+        <translation>If the speed limit switch is enabled on the download tasks page, all tasks will be limited according to this value</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="105"/>
@@ -1571,7 +1571,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="106"/>
         <source>文件无法下载时，可尝试关闭该选项</source>
-        <translation>Disable if files fail to download</translation>
+        <translation>Try disabling if files fail to download</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="122"/>
@@ -1581,7 +1581,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="123"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
-        <translation>Receive downloads from browser - install extension first</translation>
+        <translation>Receive downloads from browser - extension installation required</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="130"/>
@@ -1596,22 +1596,22 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="137"/>
         <source>复制令牌</source>
-        <translation type="unfinished">复制令牌</translation>
+        <translation>Copy</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="139"/>
         <source>配对令牌</source>
-        <translation type="unfinished">配对令牌</translation>
+        <translation>Pairing Token</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="145"/>
         <source>重新生成令牌</source>
-        <translation type="unfinished">重新生成令牌</translation>
+        <translation>Regenerate</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="152"/>
         <source>导出 Chromium 扩展</source>
-        <translation>Export Chromium Extension</translation>
+        <translation>Export Chromium Extension File</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="154"/>
@@ -1621,7 +1621,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="155"/>
         <source>请选择最适合您的浏览器扩展安装方式</source>
-        <translation>Please choose the most suitable installation method for your browser extension</translation>
+        <translation>Please choose a suitable installation method for your browser extension</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="167"/>
@@ -1696,12 +1696,12 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="228"/>
         <source>在 Dock 栏中显示程序</source>
-        <translation type="unfinished">在 Dock 栏中显示程序</translation>
+        <translation>Show App Icon in Dock</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="229"/>
         <source>关闭后可通过菜单栏图标继续使用程序</source>
-        <translation type="unfinished">关闭后可通过菜单栏图标继续使用程序</translation>
+        <translation>If disabled, use the menu bar item to open this window</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="237"/>
@@ -1716,7 +1716,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="247"/>
         <source>使用系统设置</source>
-        <translation>Use system setting</translation>
+        <translation>Use System Settings</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="255"/>
@@ -1726,7 +1726,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="256"/>
         <source>新版本将更稳定，并具有更多功能</source>
-        <translation>New versions are more stable with more features</translation>
+        <translation>Get more features and improved stability with new versions</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="263"/>
@@ -1741,7 +1741,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="271"/>
         <source>剪贴板监听</source>
-        <translation>Clipboard Monitor</translation>
+        <translation>Monitor Clipboard</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="272"/>
@@ -1777,7 +1777,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="296"/>
         <source>查看日志</source>
-        <translation>View log</translation>
+        <translation>View Logs</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="301"/>
@@ -1787,27 +1787,27 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="333"/>
         <source>已配置</source>
-        <translation>Configured</translation>
+        <translation>Configuration Saved</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="333"/>
         <source>重启软件后生效</source>
-        <translation>Requires restart to take effect</translation>
+        <translation>Restart required to take effect</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="350"/>
         <source>已复制配对令牌</source>
-        <translation type="unfinished">已复制配对令牌</translation>
+        <translation>Token Copied</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="362"/>
         <source>已重新生成配对令牌</source>
-        <translation type="unfinished">已重新生成配对令牌</translation>
+        <translation>Token Regenerated</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="363"/>
         <source>新令牌已复制到剪贴板</source>
-        <translation type="unfinished">新令牌已复制到剪贴板</translation>
+        <translation>Copied new token to clipboard</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="373"/>
@@ -1832,7 +1832,7 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/pages/setting_page.py" line="484"/>
         <source>鬼知道你用的是什么平台？</source>
-        <translation>What platform are you using?</translation>
+        <translation>I don&apos;t know shit about your OS, sorry!</translation>
     </message>
 </context>
 <context>
@@ -2092,12 +2092,12 @@ Click the “Document” icon to open the program log
     <message>
         <location filename="../../view/components/cards.py" line="427"/>
         <source>下载过程中发生错误，请稍后重试</source>
-        <translation>An error occurred during download. Please try again later</translation>
+        <translation>An error occurred during download, please try again later</translation>
     </message>
     <message>
         <location filename="../../view/components/cards.py" line="434"/>
         <source>文件不存在，无法校验</source>
-        <translation>File does not exist and cannot be verified</translation>
+        <translation>Cannot verify nonexistent file</translation>
     </message>
     <message>
         <location filename="../../view/components/cards.py" line="449"/>

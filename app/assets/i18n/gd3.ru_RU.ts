@@ -348,94 +348,94 @@
 <context>
     <name>BrowserService</name>
     <message>
-        <location filename="../../services/browser_service.py" line="344"/>
+        <location filename="../../services/browser_service.py" line="345"/>
         <source>无法解析该链接</source>
         <translation type="unfinished">无法解析该链接</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="357"/>
+        <location filename="../../services/browser_service.py" line="358"/>
         <source>创建任务失败</source>
         <translation type="unfinished">创建任务失败</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="373"/>
-        <location filename="../../services/browser_service.py" line="538"/>
+        <location filename="../../services/browser_service.py" line="374"/>
+        <location filename="../../services/browser_service.py" line="546"/>
         <source>缺少 requestId</source>
         <translation type="unfinished">缺少 requestId</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="381"/>
+        <location filename="../../services/browser_service.py" line="382"/>
         <source>无效的任务负载</source>
         <translation type="unfinished">无效的任务负载</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="399"/>
+        <location filename="../../services/browser_service.py" line="400"/>
         <source>在线合并暂时只支持 2 个资源</source>
         <translation type="unfinished">在线合并暂时只支持 2 个资源</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="422"/>
+        <location filename="../../services/browser_service.py" line="423"/>
         <source>缺少下载链接</source>
         <translation type="unfinished">缺少下载链接</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="549"/>
+        <location filename="../../services/browser_service.py" line="557"/>
         <source>不支持的任务操作</source>
         <translation type="unfinished">不支持的任务操作</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="560"/>
+        <location filename="../../services/browser_service.py" line="568"/>
         <source>任务不存在</source>
         <translation type="unfinished">任务不存在</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="573"/>
+        <location filename="../../services/browser_service.py" line="581"/>
         <source>当前任务不支持暂停</source>
         <translation type="unfinished">当前任务不支持暂停</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="583"/>
+        <location filename="../../services/browser_service.py" line="591"/>
         <source>任务已完成</source>
         <translation type="unfinished">任务已完成</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="627"/>
+        <location filename="../../services/browser_service.py" line="635"/>
         <source>文件尚未生成</source>
         <translation type="unfinished">文件尚未生成</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="642"/>
+        <location filename="../../services/browser_service.py" line="650"/>
         <source>目录不存在</source>
         <translation type="unfinished">目录不存在</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="669"/>
+        <location filename="../../services/browser_service.py" line="677"/>
         <source>无效的消息格式</source>
         <translation type="unfinished">无效的消息格式</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="673"/>
+        <location filename="../../services/browser_service.py" line="681"/>
         <source>无效的消息结构</source>
         <translation type="unfinished">无效的消息结构</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="680"/>
-        <location filename="../../services/browser_service.py" line="740"/>
+        <location filename="../../services/browser_service.py" line="688"/>
+        <location filename="../../services/browser_service.py" line="748"/>
         <source>未知的消息类型</source>
         <translation type="unfinished">未知的消息类型</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="688"/>
+        <location filename="../../services/browser_service.py" line="696"/>
         <source>协议版本不匹配</source>
         <translation type="unfinished">协议版本不匹配</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="699"/>
+        <location filename="../../services/browser_service.py" line="707"/>
         <source>配对令牌无效</source>
         <translation type="unfinished">配对令牌无效</translation>
     </message>
     <message>
-        <location filename="../../services/browser_service.py" line="722"/>
+        <location filename="../../services/browser_service.py" line="730"/>
         <source>请先完成握手认证</source>
         <translation type="unfinished">请先完成握手认证</translation>
     </message>
