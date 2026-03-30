@@ -1085,12 +1085,12 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="233"/>
+        <location filename="../../view/windows/main_window.py" line="238"/>
         <source>程序发生异常</source>
         <translation>В программе произошло исключение</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="234"/>
+        <location filename="../../view/windows/main_window.py" line="239"/>
         <source>点击“确定”后将复制错误信息并打开反馈页面。
 点击“文档”图标以打开程序日志。
 {0}</source>
@@ -1099,92 +1099,92 @@ FFmpeg: {2}</translation>
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="287"/>
+        <location filename="../../view/windows/main_window.py" line="292"/>
         <source>下载任务</source>
         <translation>Задачи</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="290"/>
+        <location filename="../../view/windows/main_window.py" line="295"/>
         <source>新建任务</source>
         <translation>Новая</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="296"/>
+        <location filename="../../view/windows/main_window.py" line="301"/>
         <source>设置</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="378"/>
+        <location filename="../../view/windows/main_window.py" line="383"/>
         <source>检查更新</source>
         <translation>Проверить обновления</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="379"/>
+        <location filename="../../view/windows/main_window.py" line="384"/>
         <source>正在检查更新...</source>
         <translation>Проверка обновлений...</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="395"/>
+        <location filename="../../view/windows/main_window.py" line="400"/>
         <source>检查更新失败</source>
         <translation>Не удалось проверить обновления</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="396"/>
+        <location filename="../../view/windows/main_window.py" line="401"/>
         <source>无法获取最新版本信息</source>
         <translation>Не удалось получить информацию о последней версии</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="407"/>
+        <location filename="../../view/windows/main_window.py" line="412"/>
         <source>当前已是最新版本</source>
         <translation>Уже установлена последняя версия</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="408"/>
+        <location filename="../../view/windows/main_window.py" line="413"/>
         <source>当前版本 {0}，最新版本 {1}</source>
         <translation>Текущая версия {0}, последняя версия {1}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="422"/>
+        <location filename="../../view/windows/main_window.py" line="427"/>
         <source>检测到新版本</source>
         <translation>Обнаружена новая версия</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="423"/>
+        <location filename="../../view/windows/main_window.py" line="428"/>
         <source>最新版本: {0}</source>
         <translation>Последняя версия: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="431"/>
+        <location filename="../../view/windows/main_window.py" line="436"/>
         <source>立即下载</source>
         <translation>Скачать сейчас</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="434"/>
+        <location filename="../../view/windows/main_window.py" line="439"/>
         <source>查看版本详细</source>
         <translation>Подробнее о версии</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="438"/>
+        <location filename="../../view/windows/main_window.py" line="443"/>
         <source>请作者喝咖啡</source>
         <translation>Угостить автора кофе</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="447"/>
+        <location filename="../../view/windows/main_window.py" line="452"/>
         <source>未找到适配的安装包</source>
         <translation>Подходящий установщик не найден</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="448"/>
+        <location filename="../../view/windows/main_window.py" line="453"/>
         <source>已打开版本详情，请手动选择要下载的文件</source>
         <translation>Сведения о версии открыты, выберите файл для загрузки вручную</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="475"/>
+        <location filename="../../view/windows/main_window.py" line="480"/>
         <source>创建下载任务失败</source>
         <translation>Не удалось создать задачу загрузки</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="485"/>
+        <location filename="../../view/windows/main_window.py" line="490"/>
         <source>已添加下载任务</source>
         <translation>Задача загрузки добавлена</translation>
     </message>
@@ -1622,6 +1622,11 @@ FFmpeg: {2}</translation>
         <location filename="../../view/pages/setting_page.py" line="155"/>
         <source>请选择最适合您的浏览器扩展安装方式</source>
         <translation>Выберите подходящий способ установки расширения</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="160"/>
+        <source>Firefox</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="167"/>
