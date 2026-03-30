@@ -51,7 +51,7 @@ def _buildBilibiliHeaders(referer: str) -> dict[str, str]:
 def _parseVideoIdAndPages(url: str) -> tuple[str, list[int] | None]:
     parsedUrl = urlparse(url)
     host = (parsedUrl.hostname or "").lower()
-    if host != "bilibili.com" or not host.endswith(".bilibili.com"):
+    if not (host == "bilibili.com" or host.endswith(".bilibili.com")):
         raise ValueError("Invalid Bilibili video URL")
 
     matchResult = re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", parsedUrl.path)
