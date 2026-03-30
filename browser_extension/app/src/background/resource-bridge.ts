@@ -835,6 +835,11 @@ export function createResourceBridge(options: {
   async function handoffBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
     const matchedResource = findResourceByUrl(finalUrl);
+    const resolvedFilename =
+      trimFilename(downloadItem.filename)
+      || trimFilename(matchedResource?.filename ?? "")
+      || trimFilename(filenameFromUrl(finalUrl))
+      || "resource";
 
     const headers = resolveHeadersForDownload(finalUrl);
     if (downloadItem.referrer && !headers.referer) {
@@ -845,11 +850,11 @@ export function createResourceBridge(options: {
       const result = await options.sendDesktopRequest<DesktopRequestResult>({
         type: "create_task",
         source: "download",
-        title: trimFilename(downloadItem.filename),
+        title: resolvedFilename,
         payload: {
           url: finalUrl,
           headers,
-          filename: trimFilename(downloadItem.filename),
+          filename: resolvedFilename,
           size:
             typeof downloadItem.totalBytes === "number" && downloadItem.totalBytes > 0
               ? downloadItem.totalBytes

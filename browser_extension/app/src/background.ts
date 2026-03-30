@@ -14,9 +14,14 @@ import {
 } from "./background/constants";
 import {
   cancelDownload,
+  eraseDownloadFromHistory,
   getTab,
   localStorageGet,
 } from "./background/chrome-helpers";
+import {
+  getOnSendHeadersExtraInfoSpec,
+  supportsDownloadDeterminingFilename,
+} from "./shared/browser";
 
 const desktopBridge = createDesktopBridge();
 const resourceBridge = createResourceBridge({
@@ -138,7 +143,7 @@ chrome.webRequest.onSendHeaders.addListener(
     resourceBridge.handleRequestHeaders(details);
   },
   { urls: ["<all_urls>"] },
-  ["requestHeaders", "extraHeaders"],
+  getOnSendHeadersExtraInfoSpec(),
 );
 
 chrome.webRequest.onResponseStarted.addListener(
@@ -163,17 +168,36 @@ chrome.webRequest.onCompleted.addListener(
   { urls: ["<all_urls>"] },
 );
 
-chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
-  suggest();
+async function interceptBrowserDownload(
+  downloadItem: chrome.downloads.DownloadItem,
+  options: { eraseFromHistory?: boolean } = {},
+) {
   if (!resourceBridge.shouldHandoffBrowserDownload(downloadItem, interceptDownloads)) {
     return;
   }
 
-  void cancelDownload(downloadItem.id).catch(() => {
-    // Ignore cancellation failures; the browser download may continue as fallback.
+  try {
+    await cancelDownload(downloadItem.id);
+    if (options.eraseFromHistory) {
+      await eraseDownloadFromHistory(downloadItem.id);
+    }
+  } catch {
+    // Ignore cancellation cleanup failures; the browser download may continue as fallback.
+  }
+
+  await resourceBridge.handoffBrowserDownload(downloadItem);
+}
+
+if (supportsDownloadDeterminingFilename()) {
+  chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
+    suggest();
+    void interceptBrowserDownload(downloadItem);
   });
-  void resourceBridge.handoffBrowserDownload(downloadItem);
-});
+} else if (chrome.downloads.onCreated?.addListener) {
+  chrome.downloads.onCreated.addListener((downloadItem) => {
+    void interceptBrowserDownload(downloadItem, { eraseFromHistory: true });
+  });
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message.type !== "string") {
