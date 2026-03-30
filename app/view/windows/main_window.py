@@ -204,7 +204,12 @@ class MainWindow(MSFluentWindow):
             if not url:
                 continue
 
-            parsed = urlparse(url)
+            try:
+                parsed = urlparse(url)
+            except ValueError as error:
+                logger.warning("跳过无效剪贴板链接 {}: {}", url, error)
+                continue
+
             if not parsed.scheme or not parsed.netloc or parsed.geturl() != url:
                 continue
 

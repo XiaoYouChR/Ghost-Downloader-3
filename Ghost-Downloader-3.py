@@ -1,17 +1,45 @@
 import os
 import sys
+import traceback
+from time import localtime, strftime, time
 
+from loguru import logger
 from PySide6.QtCore import QStandardPaths
-
-from qfluentwidgets import qconfig
-
-from app.supports.application import SingletonApplication
-from app.supports.config import cfg
 
 # import orjson
 # sys.modules['json'] = orjson
 
+exceptionSignalBus = None
+
+def exceptionHook(exceptionType, value, tb):
+    exceptionInfo = (exceptionType, value, tb)
+    message = "".join(traceback.format_exception(*exceptionInfo)).rstrip()
+    logger.opt(exception=exceptionInfo).error("Unhandled application exception")
+
+    if exceptionSignalBus is not None:
+        try:
+            exceptionSignalBus.catchException.emit(message)
+        except Exception as error:
+            logger.opt(exception=error).warning("Failed to emit application exception signal")
+
+    if "__compiled__" not in globals():
+        sys.__excepthook__(*exceptionInfo)
+
 appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
+logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
+sys.excepthook = exceptionHook
+
+from qfluentwidgets import qconfig
+from app.supports.application import SingletonApplication
+from app.supports.config import VERSION, cfg
+from app.supports.signal_bus import signalBus as exceptionSignalBus
+
+logger.info(
+    "Ghost Downloader v{} is launched at {}",
+    VERSION,
+    strftime("%Y-%m-%d %H:%M:%S", localtime(time())),
+)
+
 qconfig.load(f"{appLocalDataLocation}/GhostDownloader/UserConfig.json", cfg)
 
 if cfg.get(cfg.dpiScale) != 0:
@@ -21,7 +49,6 @@ if cfg.get(cfg.dpiScale) != 0:
 application = SingletonApplication(sys.argv, "gd3")
 
 # --- Start Program ---
-from loguru import logger
 import warnings
 from PySide6.QtCore import QTranslator
 
