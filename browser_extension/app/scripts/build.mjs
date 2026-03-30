@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const upstreamDir = path.resolve(appRoot, "../upstream");
 const catchScriptDir = path.resolve(upstreamDir, "catch-script");
+const firefoxAddonId = "ghostdownloader@github.com";
 const manifestTemplate = JSON.parse(
   await readFile(path.resolve(appRoot, "public/manifest.json"), "utf8"),
 );
@@ -34,6 +35,7 @@ function createManifest(target) {
     };
     manifest.browser_specific_settings = {
       gecko: {
+        id: firefoxAddonId,
         strict_min_version: "113.0",
       },
     };
