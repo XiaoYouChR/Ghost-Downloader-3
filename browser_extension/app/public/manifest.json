@@ -3,7 +3,6 @@
   "name": "Ghost Downloader Browser",
   "description": "Manage Ghost Downloader tasks and send browser resources to GD3.",
   "version": "1.2.1",
-  "minimum_chrome_version": "114",
   "permissions": [
     "alarms",
     "declarativeNetRequest",
@@ -15,9 +14,8 @@
     "webRequest"
   ],
   "host_permissions": ["<all_urls>"],
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ws://127.0.0.1:* ws://localhost:* wss://127.0.0.1:* wss://localhost:*;"
   },
   "action": {
     "default_title": "Ghost Downloader",
