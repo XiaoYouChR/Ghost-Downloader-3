@@ -122,6 +122,19 @@ export async function cancelDownload(downloadId: number): Promise<void> {
   });
 }
 
+export async function eraseDownloadFromHistory(downloadId: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.downloads.erase({ id: downloadId }, () => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError) {
+        reject(new Error(lastError.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
 export async function openActionPopup(): Promise<void> {
   if (!chrome.action?.openPopup) {
     return;

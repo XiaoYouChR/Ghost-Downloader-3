@@ -427,9 +427,16 @@ class BrowserService(QObject):
             )
             return
 
+        canCreateTaskFromPayload = featureService.canCreateTaskFromPayload(parsePayload["url"])
+        coroutine = (
+            coreService._createTaskFromPayload(parsePayload)
+            if canCreateTaskFromPayload
+            else coreService._parseUrl(parsePayload)
+        )
+
         coreService.runCoroutine(
-            coreService._createTaskFromPayload(parsePayload),
-            lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
+            coroutine,
+            lambda task, error, session=session, requestId=requestId, title=title if canCreateTaskFromPayload else "": self._onTaskParsed(
                 session,
                 requestId,
                 title,

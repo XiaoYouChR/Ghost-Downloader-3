@@ -268,6 +268,13 @@ class FeatureService:
         _, _, packInstance = self.getPackForUrl(url)
         return packInstance is not None
 
+    def canCreateTaskFromPayload(self, url: str) -> bool:
+        _, _, packInstance = self.getPackForUrl(url)
+        if packInstance is None:
+            return False
+
+        return type(packInstance).createTaskFromPayload is not FeaturePack.createTaskFromPayload
+
     def getPackForTask(self, task: Task) -> tuple[str, FeaturePack] | tuple[None, None]:
         cachedPackName = getattr(task, "_featurePackName", None)
         if (

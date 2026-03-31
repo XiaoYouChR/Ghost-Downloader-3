@@ -430,6 +430,9 @@ async def createBrowserMergeTask(payload: dict[str, Any], title: str = "") -> FF
         parsePayload = {
             "url": url,
             "headers": item.get("headers") or {},
+            "filename": str(item.get("filename") or "").strip(),
+            "size": item.get("size") or 0,
+            "supportsRange": bool(item.get("supportsRange")),
             "proxies": payload.get("proxies", getProxies()),
             "path": Path(payload.get("path", cfg.downloadFolder.value)),
             "preBlockNum": payload.get("preBlockNum", cfg.preBlockNum.value),

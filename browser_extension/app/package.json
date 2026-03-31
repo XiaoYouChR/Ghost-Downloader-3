@@ -1,7 +1,7 @@
 {
   "name": "gd3-browser-extension",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "scripts": {
     "build": "node ./scripts/build.mjs",
