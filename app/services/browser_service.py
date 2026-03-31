@@ -12,8 +12,7 @@ from orjson import dumps, loads
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
-from app.services.feature_service import featureService
-from app.supports.config import VERSION, cfg
+from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.utils import getProxies, openFile, openFolder
@@ -284,9 +283,13 @@ class BrowserService(QObject):
 
     def _buildParsePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
         rawPath = rawPayload.get("path")
+        headers = DEFAULT_HEADERS.copy()
+        rawHeaders = rawPayload.get("headers")
+        if isinstance(rawHeaders, dict):
+            headers.update(rawHeaders)
         return {
             "url": self._stringField(rawPayload, "url"),
-            "headers": rawPayload.get("headers") or {},
+            "headers": headers,
             "filename": self._stringField(rawPayload, "filename"),
             "size": self._positiveIntField(rawPayload, "size", 0),
             "supportsRange": bool(rawPayload.get("supportsRange")),
