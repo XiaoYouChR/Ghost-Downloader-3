@@ -183,7 +183,7 @@ class FFmpegConfig(PackConfig):
 
         self.ffmpegGroup.addSettingCard(self.installFolderCard)
         self.ffmpegGroup.addSettingCard(self.runtimeCard)
-        settingPage.vBoxLayout.addWidget(self.ffmpegGroup)
+        settingPage.addSettingGroup(self.ffmpegGroup)
 
         self.runtimeCard.refreshStatus()
 
