@@ -313,6 +313,15 @@ class SettingPage(ScrollArea):
         self.vBoxLayout.addWidget(self.softwareGroup)
         self.vBoxLayout.addWidget(self.aboutGroup)
 
+    def addSettingGroup(self, groupWidget):
+        # 寻找“关于”分类在当前布局中的位置
+        index = self.vBoxLayout.indexOf(self.aboutGroup)
+        if index != -1:
+            # 把它插队到“关于”的前面
+            self.vBoxLayout.insertWidget(index, groupWidget)
+        else:
+            self.vBoxLayout.addWidget(groupWidget)
+
     def connectSignalToSlot(self):
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(lambda _: self._refreshBrowserPairTokenCard())

@@ -829,7 +829,7 @@ class BilibiliConfig(PackConfig):
         self.parseBilibiliGroup.addSettingCard(self.parseDolbyCard)
         self.parseBilibiliGroup.addSettingCard(self.loginCard)
 
-        settingPage.vBoxLayout.addWidget(self.parseBilibiliGroup)
+        settingPage.addSettingGroup(self.parseBilibiliGroup)
 
 
 bilibiliConfig = BilibiliConfig()

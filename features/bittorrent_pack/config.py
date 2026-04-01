@@ -376,7 +376,7 @@ class BitTorrentConfig(PackConfig):
         ):
             self.bittorrentGroup.addSettingCard(card)
 
-        settingPage.vBoxLayout.addWidget(self.bittorrentGroup)
+        settingPage.addSettingGroup(self.bittorrentGroup)
 
 
 bittorrentConfig = BitTorrentConfig()
