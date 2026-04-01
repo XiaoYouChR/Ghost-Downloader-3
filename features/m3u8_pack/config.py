@@ -324,7 +324,7 @@ class M3U8Config(PackConfig):
         ):
             self.m3u8Group.addSettingCard(card)
 
-        settingPage.vBoxLayout.addWidget(self.m3u8Group)
+        settingPage.addSettingGroup(self.m3u8Group)
         self.runtimeCard.refreshStatus()
 
 
