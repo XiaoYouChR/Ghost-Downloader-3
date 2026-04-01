@@ -310,7 +310,7 @@ class GitHubConfig(PackConfig):
         self.githubGroup.addSettingCard(self.enableCard)
         self.githubGroup.addSettingCard(self.proxySiteCard)
 
-        settingPage.vBoxLayout.addWidget(self.githubGroup)
+        settingPage.addSettingGroup(self.githubGroup)
 
         self.enableCard.checkedChanged.connect(self._onEnabledChanged)
         self.viewAgreementButton.clicked.connect(self._showAgreement)
