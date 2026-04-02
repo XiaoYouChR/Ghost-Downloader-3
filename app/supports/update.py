@@ -123,7 +123,7 @@ async def fetchLatestRelease() -> dict[str, Any]:
         response = await session.get(
             RELEASE_API_URL,
             proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
+            verify=True,
             allow_redirects=True,
         )
         try:
