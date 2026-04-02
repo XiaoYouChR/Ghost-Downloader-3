@@ -32,11 +32,11 @@ def build_include_args() -> list[str]:
 
 
 def build_args() -> list[str]:
-    nuitka_command = f'"{sys.executable}" -m nuitka'
+    nuitka_command = [sys.executable, "-m", "nuitka"]
 
     if sys.platform == "win32":
         return [
-            nuitka_command,
+            *nuitka_command,
             '--standalone',  # Following all imports is the default for standalone mode and need not be specified.
             '--windows-console-mode=disable',
             '--plugin-enable=pyside6',
@@ -48,18 +48,18 @@ def build_args() -> list[str]:
             # '--show-progress' ,
             '--windows-icon-from-ico=app/assets/logo.ico',
             '--company-name=XiaoYouChR',
-            '--product-name="Ghost Downloader"',
+            '--product-name=Ghost Downloader',
             f'--file-version={VERSION}',
             f'--product-version={VERSION}',
-            '--file-description="Ghost Downloader"',
-            f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
+            '--file-description=Ghost Downloader',
+            f'--copyright=Copyright(C) {YEAR} {AUTHOR}',
             '--output-dir=dist',
             'Ghost-Downloader-3.py',
         ]
 
     if sys.platform == "darwin":
         return [
-            nuitka_command,
+            *nuitka_command,
             '--standalone',
             '--plugin-enable=pyside6',
             *build_include_args(),
@@ -71,13 +71,13 @@ def build_args() -> list[str]:
             "--macos-app-mode=gui",
             f"--macos-app-version={VERSION}",
             "--macos-app-icon=app/assets/logo.icns",
-            f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
+            f'--copyright=Copyright(C) {YEAR} {AUTHOR}',
             '--output-dir=dist',
             'Ghost-Downloader-3.py',
         ]
 
     return [
-        nuitka_command,
+        *nuitka_command,
         '--standalone',
         '--plugin-enable=pyside6',
         *build_include_args(),
@@ -134,12 +134,12 @@ def copy_feature_packs() -> None:
 
 def main() -> int:
     args = build_args()
-    command = ' '.join(args)
 
-    print(command)
-    result = subprocess.run(command, shell=True)
-    if result.returncode != 0:
-        return result.returncode
+    print(' '.join(args))
+    try:
+        subprocess.run(args, check=True)
+    except subprocess.CalledProcessError as error:
+        return error.returncode
 
     copy_feature_packs()
 
