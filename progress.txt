@@ -611,3 +611,24 @@
 - 风险: 本轮只新增新版内部浏览器桥接层，还没有切换旧 `app/services/browser_service.py` 的实际入口，因此浏览器 WebSocket 协议和扩展端字段切换仍要在后续任务 47 完成；此外，当前新版浏览器快照显式只依赖 `TaskSnapshot` 与派生路径信息，不再内建旧 `createdAt` 排序语义，后续接线时需要由宿主决定最终任务列表顺序。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 CoreService 的 createTask 调度入口
+### 已完成内容:
+- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.createTask()`，让宿主可以基于 `TaskInput.config.source` 走 `packForSource()` 路由并调用对应 Pack 的 `createTask()`，不再保留占位异常。
+- 新增 `app/feature_pack/internal/core.py`，实现 `FeaturePackCoreService`，把 `TaskInput -> FeatureService.createTask() -> Task` 创建链路、任务登记、运行队列、下载槽计数、等待队列提升、暂停/移除和限流重排收敛到新版内部调度层。
+- 让新版调度器继续兼容旧下载槽语义：默认任务占用下载槽，但允许任务通过 `occupiesDownloadSlot()` / `willOccupyDownloadSlotWhenStarted()` 钩子显式声明“不占槽”，从而把运行队列逻辑对接到新版 `Task` 模型。
+- 把新版调度器接入新版 `taskRecorder`，让新建任务和生命周期切换可以同步刷新记录文件，为后续切换旧 `CoreService`、`BrowserService` 和添加任务流程预留内部入口。
+- 更新 `app/feature_pack/internal/__init__.py` 导出 `FeaturePackCoreService`，并新增 `tests/feature_pack/test_feature_pack_core_v1.py`，覆盖新版 `FeatureService.createTask()` 路由、立即调度、下载槽排队、暂停后提升等待任务，以及“不占下载槽任务不受并发上限阻塞”等场景。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py app/feature_pack/internal/__init__.py app/feature_pack/internal/core.py tests/feature_pack/test_feature_pack_core_v1.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_core_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版 `app.feature_pack` 模块中补齐 `CoreService` 的任务创建与调度入口，实现新版内部 `createTask()`、运行队列、下载槽限流和任务生命周期管理，不提前切换旧 `app/services/core_service.py`、旧主窗口或旧浏览器入口。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 30；必须继续基于两份迁移文档、`TaskInput`、新版 `FeatureService` 和新版 `Task` 模型实现，不回退到旧 payload 协议或旧 `Task`/`TaskStage` V0 接口；必须先追加 `progress.txt` 再更新任务完成状态。
+  - 验收标准: 新版模块已提供 `createTask()` 调度入口；运行队列和下载槽逻辑已能驱动新版任务模型；存在显式 CoreService 调度测试覆盖任务创建、排队、限流和生命周期行为；全部验证通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `FeaturePack.createTask(data)`、`Task` 工作流职责、显式状态边界和“简单优于复杂”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskInput`、`FeatureService.createTask()` 与新版 `Task` 契约；同时建立在任务 24-29 已完成的新版 Pack 路由、UI 分发、`taskRecorder` 和浏览器桥接层之上，并为后续任务 31、47 的添加任务流程和宿主入口切换提供内部调度基础。
+- 风险: 当前新版调度器仍只存在于 `app.feature_pack.internal`，旧 `app/services/core_service.py`、旧主窗口加任务路径和旧浏览器入口还没有切换到这条链路；此外，下载槽是否占用默认回退为“占用”，后续具体 Pack 在迁移时如果存在非占槽阶段，仍需显式提供对应钩子。
+- 结论: 已完成。
+---

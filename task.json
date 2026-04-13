@@ -330,7 +330,7 @@
         "让运行队列和下载槽逻辑对接新版任务模型。",
         "补充 CoreService 调度测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 31,

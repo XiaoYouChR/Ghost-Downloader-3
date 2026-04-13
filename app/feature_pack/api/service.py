@@ -531,8 +531,19 @@ class DefaultFeatureService(FeatureService):
         return self._routeLoadedPack(lambda pack: pack.owns(task))
 
     async def createTask(self, data: TaskInput) -> Task:
-        _ = data
-        raise NotImplementedError("Task creation is implemented in a later migration task.")
+        source = data.config.source.strip()
+        if not source:
+            raise ValueError("TaskInput.config.source 不能为空")
+
+        pack = self.packForSource(source)
+        if pack is None:
+            raise ValueError(f"未找到可处理该来源的 FeaturePack: {source}")
+
+        createdTask = await pack.createTask(data)
+        if createdTask is None:
+            raise ValueError(f"FeaturePack 未创建任务: {source}")
+
+        return createdTask
 
     def configureTask(self, taskId: str, config: TaskConfig) -> None:
         _ = taskId

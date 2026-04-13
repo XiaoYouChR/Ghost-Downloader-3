@@ -7,6 +7,7 @@ from .browser import BrowserTaskActionResult
 from .browser import BrowserTaskSummary
 from .browser import buildBrowserTaskSnapshot
 from .browser import buildBrowserTaskSummary
+from .core import FeaturePackCoreService
 from .recorder import TaskRecordError
 from .recorder import TaskRecorder
 from .recorder import taskRecorder
@@ -17,6 +18,7 @@ __all__ = [
     "BrowserTaskActionMapper",
     "BrowserTaskActionResult",
     "BrowserTaskSummary",
+    "FeaturePackCoreService",
     "TaskRecordError",
     "TaskRecorder",
     "buildBrowserTaskSnapshot",
