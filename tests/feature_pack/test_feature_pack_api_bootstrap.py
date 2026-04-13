@@ -21,6 +21,7 @@ from app.feature_pack.api import form
 from app.feature_pack.api import input
 from app.feature_pack.api import loadManifest
 from app.feature_pack.api import manifest
+from app.feature_pack.api import MultiFileTask
 from app.feature_pack.api import pack
 from app.feature_pack.api import parseManifest
 from app.feature_pack.api import service
@@ -55,6 +56,7 @@ EXPECTED_EXPORTS = [
     "FeaturePack",
     "Manifest",
     "ManifestError",
+    "MultiFileTask",
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
@@ -89,6 +91,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.FeaturePack, FeaturePack)
         self.assertIs(apiPackage.Manifest, Manifest)
         self.assertIs(apiPackage.ManifestError, ManifestError)
+        self.assertIs(apiPackage.MultiFileTask, MultiFileTask)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
@@ -109,6 +112,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(snapshot.StageSnapshot, StageSnapshot)
         self.assertIs(snapshot.TaskSnapshot, TaskSnapshot)
         self.assertIs(stage.TaskStage, TaskStage)
+        self.assertIs(task.MultiFileTask, MultiFileTask)
         self.assertIs(task.SingleFileTask, SingleFileTask)
         self.assertIs(task.TaskFile, TaskFile)
         self.assertIs(task.Task, Task)

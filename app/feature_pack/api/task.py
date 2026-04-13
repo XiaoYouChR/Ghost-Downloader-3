@@ -226,8 +226,78 @@ class SingleFileTask(Task):
         raise NotImplementedError
 
 
-__all__ = ["SingleFileTask", "Task", "TaskFile"]
+class MultiFileTask(Task):
+    """
+    Workflow base class for tasks that produce multiple logical outputs.
+
+    ``MultiFileTask`` keeps the shared file container, resolved root path, and
+    selection summary in one place so packs only need to implement stage output
+    propagation and any extra task-specific behavior.
+    """
+
+    files: list[TaskFile]
+
+    def __init__(
+        self,
+        *,
+        id: str,
+        packId: str,
+        kind: str,
+        version: int,
+        config: TaskConfig,
+        stages: list[TaskStage],
+        files: list[TaskFile],
+    ) -> None:
+        self.files = files
+        super().__init__(
+            id=id,
+            packId=packId,
+            kind=kind,
+            version=version,
+            config=config,
+            stages=stages,
+        )
+
+    @property
+    def root(self) -> Path:
+        """Return the resolved root directory for multi-file outputs."""
+        return self.config.folder / self.config.name
+
+    @property
+    def fileCount(self) -> int:
+        """Return how many logical files the task currently exposes."""
+        return len(self.files)
+
+    @property
+    def selectedCount(self) -> int:
+        """Return how many files are currently selected."""
+        return sum(1 for file in self.files if file.selected)
+
+    @property
+    def selectedIds(self) -> set[str]:
+        """Return the ids of the currently selected files."""
+        return {file.id for file in self.files if file.selected}
+
+    def select(self, ids: set[str]) -> None:
+        """
+        Replace the current file selection using stable ``TaskFile.id`` values.
+
+        Unknown ids are rejected explicitly so callers do not silently drift out
+        of sync with the task's current file list.
+        """
+        knownIds = {file.id for file in self.files}
+        unknownIds = ids - knownIds
+        if unknownIds:
+            unknownList = ", ".join(sorted(unknownIds))
+            raise ValueError(f"Unknown task file ids: {unknownList}")
+
+        for file in self.files:
+            file.selected = file.id in ids
+
+
+__all__ = ["MultiFileTask", "SingleFileTask", "Task", "TaskFile"]
 
 
 Task.__abstractmethods__ = _collectAbstractMethods(Task)
 SingleFileTask.__abstractmethods__ = _collectAbstractMethods(SingleFileTask)
+MultiFileTask.__abstractmethods__ = _collectAbstractMethods(MultiFileTask)

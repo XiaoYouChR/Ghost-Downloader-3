@@ -339,3 +339,21 @@
 - 风险: 当前只固定了多文件条目的数据边界，还没有把 `TaskFile` 接入 `MultiFileTask`、默认选择对话框或具体 Pack；后续实现选择统计和路径同步时需要保持该模型简单直接，避免重新引入匿名字典或 Pack 私有文件条目结构。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 定义 MultiFileTask
+### 已完成内容:
+- 在 `app/feature_pack/api/task.py` 中新增 `MultiFileTask` 基类，正式实现 `files`、`root`、`fileCount`、`selectedCount`、`selectedIds` 和 `select(ids)`，把多文件任务的文件容器、根目录和选择统计上移到统一任务基类。
+- 让 `select(ids)` 基于稳定的 `TaskFile.id` 执行选择切换，并对未知文件 id 给出显式错误，避免多文件选择接口退回到隐式索引或静默忽略。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `MultiFileTask` 成为 `app.feature_pack.api` 的稳定公共导出，固定后续宿主、默认选择对话框和多文件 Pack 的导入路径。
+- 新增 `tests/feature_pack/test_multi_file_task.py`，覆盖抽象约束、`root/fileCount/selectedCount/selectedIds`、`select(ids)` 行为，以及多文件任务在配置变更后的根目录同步与选择统计稳定性。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_multi_file_task.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现新版 `MultiFileTask` 基类与对应测试，把多文件任务和分集选择共用的文件容器、根目录和选择接口正式上移，不提前进入默认 `MultiFileSelectDialog`、宿主编辑分发或具体 Pack 改写。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 17；必须完整覆盖 `files`、`root`、`fileCount`、`selectedCount`、`selectedIds` 和 `select(ids)`；多文件输出路径同步与选择统计要进入基类边界；验证通过前不能更新任务完成状态。
+  - 验收标准: 已存在 `MultiFileTask` 基类；多文件根目录、选择统计和基于稳定 id 的选择切换有显式实现；存在行为测试锁定抽象约束、选择更新和根目录同步。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `MultiFileTask`/`TaskFile`/`MultiFileSelectDialog` 的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `MultiFileTask` 契约；同时建立在任务 10 的 `TaskConfig`、任务 14 的 `Task`、任务 16 的 `TaskFile` 之上，并为后续任务 19、20、27、39、40、41 提供多文件任务基类。
+- 风险: 当前基类只收敛了文件列表、根目录和选择统计，还没有为具体 Pack 定义文件进度聚合或阶段路径映射细节；后续具体子类实现 `syncOutput()` 和默认选择对话框时，需要保持“基类负责稳定选择接口，子类负责阶段输出传播”的边界。
+- 结论: 已完成。
+---

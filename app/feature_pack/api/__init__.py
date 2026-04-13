@@ -22,6 +22,7 @@ from .pack import FeaturePack
 from .snapshot import StageSnapshot
 from .snapshot import TaskSnapshot
 from .stage import TaskStage
+from .task import MultiFileTask
 from .task import SingleFileTask
 from .task import Task
 from .task import TaskFile
@@ -42,6 +43,7 @@ __all__ = [
     "FeaturePack",
     "Manifest",
     "ManifestError",
+    "MultiFileTask",
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
