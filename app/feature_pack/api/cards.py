@@ -1,3 +1,6 @@
-"""Default card API placeholders for Feature Pack V1."""
+"""Default card API surface for Feature Pack V1."""
 
-__all__: list[str] = []
+from ..ui.cards import DefaultResultCard
+from ..ui.cards import DefaultTaskCard
+
+__all__ = ["DefaultResultCard", "DefaultTaskCard"]

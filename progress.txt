@@ -464,3 +464,24 @@
 - 风险: 当前只固定了声明式模型和 `FeaturePack.settingSection()` 的公开类型边界，还没有定义 `kind` 到宿主具体设置卡片的映射规则；后续实现 `SettingsInstaller` 时必须保持宿主负责渲染、Pack 只负责声明数据，避免再次退回直接操作 SettingPage 内部布局。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 改造默认 TaskCard 与 ResultCard 的编辑入口
+### 已完成内容:
+- 在 `app/feature_pack/ui/cards.py` 中新增新版默认 `DefaultTaskCard` 与 `DefaultResultCard`，为默认卡片补齐统一编辑按钮、双击触发点和基于 `TaskSnapshot` 的最小展示刷新。
+- 在 `app/feature_pack/api/service.py` 中新增 `TaskEditor` 抽象与 `DefaultTaskEditor`，让卡片统一通过宿主 `editTask()` 流程打开 `TaskConfigDialog`，并在多文件任务场景下先调用 `task.select(ids)` 再调用 `task.configure(config)`。
+- 更新 `app/feature_pack/api/cards.py`、`app/feature_pack/ui/__init__.py`、`app/feature_pack/api/__init__.py`，把默认卡片和默认任务编辑器纳入新版稳定公共导出，固定后续宿主与 Pack 的导入路径。
+- 新增 `tests/feature_pack/test_default_task_cards.py`，并更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，覆盖默认 TaskCard/ResultCard 编辑入口、宿主 `editTask()` 调用链，以及默认编辑器对 `MultiFileTask.select()` 与 `Task.configure()` 的顺序约束。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/cards.py app/feature_pack/api/service.py app/feature_pack/ui/__init__.py app/feature_pack/ui/cards.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_default_task_cards.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
+- `uv run python tests/feature_pack/test_default_task_cards.py` -> 通过（Qt 离屏环境仍输出字体目录缺失提示与 QFluentWidgets 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅改造新版默认 TaskCard / ResultCard 的编辑入口与宿主默认任务编辑链路，让默认卡片不再自己持有复杂编辑逻辑，不提前进入新版 `FeatureService` 的完整路由、加载与分发实现。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 23；默认卡片必须统一通过宿主 `editTask()` 修改任务；卡片层不能直接改任务内部字段；必须补齐默认卡片编辑入口测试；验证通过前先追加 `progress.txt` 再更新 `task.json`。
+  - 验收标准: 默认 TaskCard 与 ResultCard 已具备统一编辑动作入口；默认卡片调用的是宿主 `editTask()` 而不是直接改任务内部字段；默认编辑器能按契约在多文件任务上先 `select(ids)` 再 `configure(config)`；相关测试全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中默认卡片支持、`TaskCard -> Task -> TaskStage` 命令边界，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中“默认卡片只调用 `editTask()`”“先 `task.select(ids)` 再 `task.configure(config)`”的契约；同时建立在任务 14、17、18、19、20、22 的新版任务模型、表单、默认对话框和设置安装器基础上，并为后续任务 27、31、39、40、41、42 提供默认 UI 编辑入口。
+- 风险: 当前默认卡片仍只覆盖宿主新版默认 UI 路径，尚未接入新版 `FeatureService.createTaskCard()` / `createResultCard()` 分发；后续任务 27 需要在不破坏当前卡片编辑边界的前提下，把这些默认组件接入新版服务。
+- 结论: 已完成。
+---

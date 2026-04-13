@@ -12,6 +12,8 @@ from . import snapshot
 from . import stage
 from . import task
 from . import testing
+from .cards import DefaultResultCard
+from .cards import DefaultTaskCard
 from .config import TaskConfig
 from .form import EditMode
 from .form import FieldKind
@@ -25,7 +27,9 @@ from .manifest import loadManifest
 from .manifest import parseManifest
 from .pack import FeaturePack
 from .service import DefaultSettingsInstaller
+from .service import DefaultTaskEditor
 from .service import SettingsInstaller
+from .service import TaskEditor
 from .settings import SettingItem
 from .settings import SettingSection
 from .snapshot import StageSnapshot
@@ -53,7 +57,10 @@ __all__ = [
     "testing",
     "EditMode",
     "FieldKind",
+    "DefaultResultCard",
     "DefaultSettingsInstaller",
+    "DefaultTaskCard",
+    "DefaultTaskEditor",
     "FeaturePack",
     "FormChoice",
     "FormField",
@@ -68,6 +75,7 @@ __all__ = [
     "SettingsInstaller",
     "TaskConfig",
     "TaskConfigDialog",
+    "TaskEditor",
     "TaskFile",
     "TaskForm",
     "TaskInput",

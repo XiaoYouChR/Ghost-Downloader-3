@@ -28,8 +28,12 @@ from qfluentwidgets import SettingCard
 from qfluentwidgets import SettingCardGroup
 from qfluentwidgets import SwitchSettingCard
 
+from app.feature_pack.api.form import EditMode
 from app.feature_pack.api.settings import SettingItem
 from app.feature_pack.api.settings import SettingSection
+from app.feature_pack.api.task import MultiFileTask
+from app.feature_pack.api.task import Task
+from app.feature_pack.ui.dialogs import TaskConfigDialog
 
 if TYPE_CHECKING:
     from .pack import FeaturePack
@@ -60,6 +64,50 @@ class SettingsInstaller(ABC):
     @abstractmethod
     def install(self, page: object, pack: FeaturePack | None = None) -> SettingCardGroup | None:
         """Install one pack contribution and return its created group when present."""
+
+
+class TaskEditor(ABC):
+    """Open the default task editor and apply accepted task changes."""
+
+    @abstractmethod
+    def editTask(
+        self,
+        task: Task,
+        mode: EditMode,
+        parent: QWidget | None = None,
+    ) -> bool:
+        """Edit one task and return whether the user confirmed changes."""
+
+
+@final
+class DefaultTaskEditor(TaskEditor):
+    """Default host task editor that routes through ``TaskConfigDialog``."""
+
+    def editTask(
+        self,
+        task: Task,
+        mode: EditMode,
+        parent: QWidget | None = None,
+    ) -> bool:
+        form = task.editForm(mode)
+        if form is None:
+            return False
+
+        dialog = TaskConfigDialog(
+            task=task,
+            form=form,
+            mode=mode,
+            parent=parent,
+        )
+        accepted = dialog.exec()
+        if not accepted:
+            return False
+
+        if isinstance(task, MultiFileTask):
+            task.select(dialog.selectedIds())
+        task.configure(dialog.config())
+        task.snapshotChanged.emit(task.snapshot())
+        return True
 
 
 @final
@@ -267,4 +315,10 @@ class DefaultSettingsInstaller(SettingsInstaller):
         return _SettingPrimaryActionCard(item=item, group=group)
 
 
-__all__ = ["DefaultSettingsInstaller", "InstalledSettingSection", "SettingsInstaller"]
+__all__ = [
+    "DefaultSettingsInstaller",
+    "DefaultTaskEditor",
+    "InstalledSettingSection",
+    "SettingsInstaller",
+    "TaskEditor",
+]

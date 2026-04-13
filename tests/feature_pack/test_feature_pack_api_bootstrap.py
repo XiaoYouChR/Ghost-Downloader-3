@@ -12,6 +12,9 @@ if str(ROOT) not in sys.path:
 
 import app.feature_pack as featurePackPackage
 import app.feature_pack.api as apiPackage
+from app.feature_pack.api import DefaultResultCard
+from app.feature_pack.api import DefaultTaskCard
+from app.feature_pack.api import DefaultTaskEditor
 from app.feature_pack.api import EditMode
 from app.feature_pack.api import DefaultSettingsInstaller
 from app.feature_pack.api import FieldKind
@@ -40,6 +43,7 @@ from app.feature_pack.api import SettingsInstaller
 from app.feature_pack.api import snapshot
 from app.feature_pack.api import stage
 from app.feature_pack.api import task
+from app.feature_pack.api import TaskEditor
 from app.feature_pack.api import TaskConfig
 from app.feature_pack.api import TaskConfigDialog
 from app.feature_pack.api import TaskFile
@@ -66,7 +70,10 @@ EXPECTED_EXPORTS = [
     "testing",
     "EditMode",
     "FieldKind",
+    "DefaultResultCard",
     "DefaultSettingsInstaller",
+    "DefaultTaskCard",
+    "DefaultTaskEditor",
     "FeaturePack",
     "FormChoice",
     "FormField",
@@ -81,6 +88,7 @@ EXPECTED_EXPORTS = [
     "SettingsInstaller",
     "TaskConfig",
     "TaskConfigDialog",
+    "TaskEditor",
     "TaskFile",
     "TaskForm",
     "TaskInput",
@@ -111,7 +119,10 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.task, task)
         self.assertIs(apiPackage.testing, testing)
         self.assertIs(apiPackage.EditMode, EditMode)
+        self.assertIs(apiPackage.DefaultResultCard, DefaultResultCard)
         self.assertIs(apiPackage.DefaultSettingsInstaller, DefaultSettingsInstaller)
+        self.assertIs(apiPackage.DefaultTaskCard, DefaultTaskCard)
+        self.assertIs(apiPackage.DefaultTaskEditor, DefaultTaskEditor)
         self.assertIs(apiPackage.FieldKind, FieldKind)
         self.assertIs(apiPackage.FeaturePack, FeaturePack)
         self.assertIs(apiPackage.FormChoice, FormChoice)
@@ -127,6 +138,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.SettingsInstaller, SettingsInstaller)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
         self.assertIs(apiPackage.TaskConfigDialog, TaskConfigDialog)
+        self.assertIs(apiPackage.TaskEditor, TaskEditor)
         self.assertIs(apiPackage.TaskFile, TaskFile)
         self.assertIs(apiPackage.TaskForm, TaskForm)
         self.assertIs(apiPackage.TaskInput, TaskInput)
@@ -147,8 +159,12 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(manifest.ManifestError, ManifestError)
         self.assertIs(manifest.loadManifest, loadManifest)
         self.assertIs(manifest.parseManifest, parseManifest)
+        self.assertIs(cards.DefaultResultCard, DefaultResultCard)
+        self.assertIs(cards.DefaultTaskCard, DefaultTaskCard)
         self.assertIs(service.DefaultSettingsInstaller, DefaultSettingsInstaller)
+        self.assertIs(service.DefaultTaskEditor, DefaultTaskEditor)
         self.assertIs(service.SettingsInstaller, SettingsInstaller)
+        self.assertIs(service.TaskEditor, TaskEditor)
         self.assertIs(settings.SettingItem, SettingItem)
         self.assertIs(settings.SettingSection, SettingSection)
         self.assertIs(snapshot.StageSnapshot, StageSnapshot)
