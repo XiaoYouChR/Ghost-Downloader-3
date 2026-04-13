@@ -679,3 +679,27 @@
 - 风险: 当前命令链先在新版 API、默认卡片和默认编辑服务中落地，旧 `app.view.components.cards` 与旧宿主控制流尚未切换；此外，当前基类对通用命令只内建 `configure`、`pause`、`reset`、多文件 `select`，后续具体 Pack 若引入自定义命令，仍需通过 `dispatchCustomCommand()` 显式声明，而不是回退到直接修改对象状态。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 实现 TaskStage -> Task -> TaskCard 事件投影链
+### 已完成内容:
+- 在 `app/feature_pack/api/task.py` 中新增 `stageEventProjected`、阶段快照缓存和 `stageSnapshots()`，并在 `addStage()` 时把 `TaskStage.stateChanged/progressChanged/snapshotChanged/failed` 显式接入 `Task`，使阶段事件先汇总到任务，再由任务统一向 UI 投影。
+- 为阶段到任务的四条信号链补齐 `@Slot` 处理器，并统一使用 `Qt.ConnectionType.QueuedConnection` 连接，明确跨线程路径必须通过任务事件循环排队投递，而不是直接跨线程触碰任务或卡片状态。
+- 在任务侧加入默认投影逻辑：根据阶段快照缓存推导任务级 `state/progress/doneBytes`，并在阶段事件到达后统一触发 `Task.stateChanged`、`Task.progressChanged`、`Task.snapshotChanged`，让默认 `TaskCard` 继续只依赖任务投影而不直接观察 `TaskStage`。
+- 更新 `tests/feature_pack/test_task_base.py`，把新版 `stageEventProjected` 信号纳入基类元对象断言，并让测试任务快照走 `stageSnapshots()` 缓存路径。
+- 新增 `tests/feature_pack/test_task_event_projection.py`，覆盖 `TaskStage -> Task -> TaskCard` 事件链、阶段失败投影，以及把阶段移动到 `QThread` 后仍通过 queued connection 投递回任务线程和默认卡片刷新的跨线程场景。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/task.py tests/feature_pack/test_task_base.py tests/feature_pack/test_task_event_projection.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_task_base.py` -> 通过
+- `uv run python tests/feature_pack/test_task_event_projection.py` -> 通过（Qt 离屏环境仍输出字体目录告警，不影响结果）
+- `uv run python tests/feature_pack/test_default_task_cards.py` -> 通过（Qt 离屏环境仍输出字体目录告警，不影响结果）
+- `uv run python tests/feature_pack/test_task_command_chain.py` -> 通过（Qt 离屏环境仍输出字体目录告警，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现新版 `TaskStage -> Task -> TaskCard` 事件投影链，让阶段事件先汇总到 `Task`，再由 `Task` 向默认卡片和 UI 投影；不提前改写具体生产 Pack，也不继续扩展任务 32 之外的命令分发边界。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 33；继续遵循简单、显式、可读原则；跨线程路径必须使用 queued connection，避免 UI 或其他对象直接越过 `Task` 观察或修改 `TaskStage` 内部状态；必须先写入 `progress.txt` 再更新任务完成状态。
+  - 验收标准: 已建立阶段到任务、任务到卡片的事件投影路径；跨线程 queued connection 约束有明确实现与测试护栏；事件链和跨线程测试全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `TaskStage --event--> Task`、`Task --snapshot/event--> TaskCard` 与 queued connection 约束，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Task` / `TaskStage` 的信号边界和 Qt-free 快照契约；同时建立在任务 12、13、14、19、23、27、32 已完成的快照模型、任务/阶段基类、默认卡片、服务分发和命令链基础之上。
+- 风险: 当前事件投影链已经在新版基础设施层收口，但旧宿主入口和具体生产 Pack 还没有切换到这套链路；此外，本轮只统一了阶段事件的 queued connection 约束，跨线程命令投递仍由后续新版入口接线时继续收口。
+- 结论: 已完成。
+---

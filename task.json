@@ -363,7 +363,7 @@
         "明确跨线程路径上的 queued connection 使用约束。",
         "补充事件链与跨线程测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 34,

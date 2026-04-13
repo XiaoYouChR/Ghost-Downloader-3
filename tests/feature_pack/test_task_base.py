@@ -141,7 +141,7 @@ class DemoTask(Task):
             totalBytes=self.totalBytes,
             canPause=self.canPause(),
             target=self.target,
-            stages=tuple(stage.snapshot() for stage in self.stages),
+            stages=self.stageSnapshots(),
         )
 
 
@@ -201,6 +201,7 @@ class TaskBaseTests(unittest.TestCase):
         self.assertGreaterEqual(metaObject.indexOfSignal("snapshotChanged(PyObject)"), 0)
         self.assertGreaterEqual(metaObject.indexOfSignal("commandRequested(QString,PyObject)"), 0)
         self.assertGreaterEqual(metaObject.indexOfSignal("stageCommandForwarded(PyObject,QString,PyObject)"), 0)
+        self.assertGreaterEqual(metaObject.indexOfSignal("stageEventProjected(PyObject,QString,PyObject)"), 0)
 
     def testTaskAddsStagesAndConfiguresWorkflowOutput(self) -> None:
         config = self.makeConfig()

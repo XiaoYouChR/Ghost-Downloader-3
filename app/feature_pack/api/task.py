@@ -18,11 +18,14 @@ from typing import cast
 from typing import Self
 
 from PySide6.QtCore import QObject
+from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal
+from PySide6.QtCore import Slot
 
 from .config import TaskConfig
 from .form import EditMode
 from .form import TaskForm
+from .snapshot import StageSnapshot
 from .snapshot import TaskSnapshot
 from .stage import TaskStage
 
@@ -70,6 +73,7 @@ class Task(QObject):
     snapshotChanged: ClassVar[Signal] = Signal(object)
     commandRequested: ClassVar[Signal] = Signal(str, object)
     stageCommandForwarded: ClassVar[Signal] = Signal(object, str, object)
+    stageEventProjected: ClassVar[Signal] = Signal(object, str, object)
     __abstractmethods__: ClassVar[frozenset[str]] = frozenset()
     __recordRegistry__: ClassVar[dict[tuple[str, str, int], type["Task"]]] = {}
     recordPackId: ClassVar[str | None] = None
@@ -121,6 +125,7 @@ class Task(QObject):
         self.config = config
         self.stages = []
         self.currentStageIndex = 0
+        self._stageSnapshotsById: dict[str, StageSnapshot] = {}
         _ = self.commandRequested.connect(self._onCommandRequested)
 
         for stage in stages:
@@ -130,6 +135,8 @@ class Task(QObject):
         """Attach a stage and append it to the workflow."""
         stage.attach(self)
         self.stages.append(stage)
+        self._connectStageProjectionSignals(stage)
+        self._cacheStageSnapshot(stage)
 
     def configure(self, config: TaskConfig) -> None:
         """
@@ -154,6 +161,13 @@ class Task(QObject):
     def iterStages(self) -> Iterable[TaskStage]:
         """Iterate stages in workflow order."""
         return self.stages
+
+    def stageSnapshots(self) -> tuple[StageSnapshot, ...]:
+        """Return cached stage snapshots in workflow order."""
+        return tuple(
+            self._stageSnapshotsById.get(stage.id, self._emptyStageSnapshot(stage))
+            for stage in self.stages
+        )
 
     def canPause(self) -> bool:
         """Return whether every stage can pause safely."""
@@ -253,6 +267,223 @@ class Task(QObject):
         self.stageCommandForwarded.emit(stage, normalizedCommand, payload)
         return stage.dispatchCommand(normalizedCommand, payload)
 
+    def _connectStageProjectionSignals(self, stage: TaskStage) -> None:
+        """
+        Project stage events back through the task boundary.
+
+        The stage-to-task path always uses queued delivery so a stage living on
+        a worker thread can only hand state back through the task's event loop
+        instead of mutating UI-facing state directly.
+        """
+        queuedConnection = Qt.ConnectionType.QueuedConnection
+        _ = stage.stateChanged.connect(self._onStageStateChanged, queuedConnection)
+        _ = stage.progressChanged.connect(self._onStageProgressChanged, queuedConnection)
+        _ = stage.snapshotChanged.connect(self._onStageSnapshotChanged, queuedConnection)
+        _ = stage.failed.connect(self._onStageFailed, queuedConnection)
+
+    @Slot(str)
+    def _onStageStateChanged(self, state: str) -> None:
+        stage = self._senderStage()
+        if stage is None:
+            return
+
+        self._projectStageEvent(stage, "state", state)
+
+    @Slot(float)
+    def _onStageProgressChanged(self, progress: float) -> None:
+        stage = self._senderStage()
+        if stage is None:
+            return
+
+        self._projectStageEvent(stage, "progress", progress)
+
+    @Slot(object)
+    def _onStageSnapshotChanged(self, snapshot: object) -> None:
+        stage = self._senderStage()
+        if stage is None:
+            return
+
+        self._projectStageEvent(stage, "snapshot", snapshot)
+
+    @Slot(str)
+    def _onStageFailed(self, error: str) -> None:
+        stage = self._senderStage()
+        if stage is None:
+            return
+
+        self._projectStageEvent(stage, "failed", error)
+
+    def _projectStageEvent(
+        self,
+        stage: TaskStage,
+        event: str,
+        payload: object | None = None,
+    ) -> None:
+        normalizedEvent = self._normalizeStageEvent(event)
+        self._updateStageProjection(stage, normalizedEvent, payload)
+        self._applyProjectedTaskState()
+        self.stageEventProjected.emit(stage, normalizedEvent, payload)
+        self._emitProjectedTaskSignals(normalizedEvent)
+
+    def _updateStageProjection(
+        self,
+        stage: TaskStage,
+        event: str,
+        payload: object | None,
+    ) -> None:
+        if event == "snapshot":
+            if isinstance(payload, StageSnapshot):
+                self._stageSnapshotsById[stage.id] = payload
+            return
+
+        currentSnapshot = self._stageSnapshotsById.get(
+            stage.id,
+            self._emptyStageSnapshot(stage),
+        )
+
+        if event == "state" and isinstance(payload, str):
+            self._stageSnapshotsById[stage.id] = replace(
+                currentSnapshot,
+                state=payload,
+            )
+            return
+
+        if event == "progress":
+            if isinstance(payload, bool) or not isinstance(payload, (int, float)):
+                return
+            self._stageSnapshotsById[stage.id] = replace(
+                currentSnapshot,
+                progress=max(0.0, min(float(payload), 100.0)),
+            )
+            return
+
+        if event == "failed":
+            message = payload if isinstance(payload, str) else ""
+            self._stageSnapshotsById[stage.id] = replace(
+                currentSnapshot,
+                state="failed",
+                error=message,
+            )
+
+    def _applyProjectedTaskState(self) -> None:
+        projectedState = self._projectedTaskState()
+        projectedProgress = self._projectedTaskProgress()
+        projectedDoneBytes = self._projectedTaskDoneBytes()
+
+        self._setProjectedAttribute("state", projectedState)
+        self._setProjectedAttribute("progress", projectedProgress)
+        self._setProjectedAttribute("doneBytes", projectedDoneBytes)
+
+    def _emitProjectedTaskSignals(self, event: str) -> None:
+        taskSnapshot = self.snapshot()
+        if event in {"state", "snapshot", "failed"}:
+            self.stateChanged.emit(taskSnapshot.state)
+        if event in {"progress", "snapshot"}:
+            self.progressChanged.emit(taskSnapshot.progress)
+        self.snapshotChanged.emit(taskSnapshot)
+
+    def _cacheStageSnapshot(self, stage: TaskStage) -> None:
+        self._stageSnapshotsById[stage.id] = self._emptyStageSnapshot(stage)
+        try:
+            stageSnapshot = stage.snapshot()
+        except Exception:
+            return
+        self._stageSnapshotsById[stage.id] = stageSnapshot
+
+    def _projectedTaskState(self) -> str | None:
+        stageSnapshots = self.stageSnapshots()
+        if not stageSnapshots:
+            rawState = getattr(self, "state", None)
+            return rawState if isinstance(rawState, str) else None
+
+        normalizedStates = [
+            snapshot.state.strip().lower()
+            for snapshot in stageSnapshots
+            if snapshot.state.strip()
+        ]
+        if not normalizedStates:
+            rawState = getattr(self, "state", None)
+            return rawState if isinstance(rawState, str) else None
+
+        if any(state == "failed" for state in normalizedStates):
+            return "failed"
+        if all(state == "completed" for state in normalizedStates):
+            return "completed"
+        if any(state == "running" for state in normalizedStates):
+            return "running"
+        if all(state == "paused" for state in normalizedStates):
+            return "paused"
+        return "waiting"
+
+    def _projectedTaskProgress(self) -> float | None:
+        if not self.stages:
+            rawProgress = getattr(self, "progress", None)
+            if isinstance(rawProgress, bool) or not isinstance(rawProgress, (int, float)):
+                return None
+            return float(rawProgress)
+
+        currentStage = self._currentStage()
+        if currentStage is None:
+            return None
+
+        currentSnapshot = self._stageSnapshotsById.get(
+            currentStage.id,
+            self._emptyStageSnapshot(currentStage),
+        )
+        currentProgress = max(0.0, min(currentSnapshot.progress, 100.0))
+        currentStageIndex = self.stages.index(currentStage)
+        if currentSnapshot.state.strip().lower() == "completed":
+            completedStages = currentStageIndex + 1
+            currentProgress = 0.0
+        else:
+            completedStages = currentStageIndex
+
+        return ((completedStages + currentProgress / 100.0) / len(self.stages)) * 100.0
+
+    def _projectedTaskDoneBytes(self) -> int | None:
+        currentStage = self._currentStage()
+        if currentStage is None:
+            rawDoneBytes = getattr(self, "doneBytes", None)
+            if isinstance(rawDoneBytes, int) and not isinstance(rawDoneBytes, bool):
+                return rawDoneBytes
+            return None
+
+        return self._stageSnapshotsById.get(
+            currentStage.id,
+            self._emptyStageSnapshot(currentStage),
+        ).doneBytes
+
+    def _setProjectedAttribute(self, name: str, value: object | None) -> None:
+        if value is None or not hasattr(self, name):
+            return
+        setattr(self, name, value)
+
+    def _currentStage(self) -> TaskStage | None:
+        if not self.stages:
+            return None
+
+        stageIndex = min(self.currentStageIndex, len(self.stages) - 1)
+        return self.stages[stageIndex]
+
+    def _senderStage(self) -> TaskStage | None:
+        sender = self.sender()
+        if isinstance(sender, TaskStage) and sender in self.stages:
+            return sender
+        return None
+
+    @staticmethod
+    def _emptyStageSnapshot(stage: TaskStage) -> StageSnapshot:
+        return StageSnapshot(
+            id=stage.id,
+            kind=stage.kind,
+            name=stage.name,
+            state="waiting",
+            progress=0.0,
+            doneBytes=0,
+            speed=0,
+            error="",
+        )
+
     def _onCommandRequested(self, command: str, payload: object) -> None:
         commandResult = self.dispatchCommand(command, payload)
         self._consumeCommandResult(commandResult)
@@ -276,6 +507,13 @@ class Task(QObject):
         if not normalizedCommand:
             raise ValueError("Task command 不能为空")
         return normalizedCommand
+
+    @staticmethod
+    def _normalizeStageEvent(event: str) -> str:
+        normalizedEvent = event.strip().lower()
+        if normalizedEvent not in {"failed", "progress", "snapshot", "state"}:
+            raise ValueError(f"Unsupported stage event: {event}")
+        return normalizedEvent
 
     @staticmethod
     def _validateCommandPayload(
