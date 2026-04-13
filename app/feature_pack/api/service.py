@@ -1,12 +1,13 @@
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportAttributeAccessIssue=false, reportCallIssue=false, reportAny=false, reportMissingTypeStubs=false, reportImplicitOverride=false
 
-"""Host-side service helpers for Feature Pack V1."""
+"""Host-side service helpers and FeatureService contract for Feature Pack V1."""
 
 from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Protocol
 from typing import cast
@@ -28,12 +29,16 @@ from qfluentwidgets import SettingCard
 from qfluentwidgets import SettingCardGroup
 from qfluentwidgets import SwitchSettingCard
 
-from app.feature_pack.api.form import EditMode
-from app.feature_pack.api.settings import SettingItem
-from app.feature_pack.api.settings import SettingSection
-from app.feature_pack.api.task import MultiFileTask
-from app.feature_pack.api.task import Task
-from app.feature_pack.ui.dialogs import TaskConfigDialog
+from .config import TaskConfig
+from .form import EditMode
+from .input import TaskInput
+from .manifest import Manifest
+from .manifest import loadManifest
+from .settings import SettingItem
+from .settings import SettingSection
+from .task import MultiFileTask
+from .task import Task
+from ..ui.dialogs import TaskConfigDialog
 
 if TYPE_CHECKING:
     from .pack import FeaturePack
@@ -41,6 +46,103 @@ if TYPE_CHECKING:
 
 def _translate(context: str, text: str) -> str:
     return QCoreApplication.translate(context, text)
+
+
+def _defaultFeaturesPath() -> Path:
+    return Path(__file__).resolve().parents[3] / "features"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DiscoveredPack:
+    """Resolved manifest metadata and filesystem paths for one pack."""
+
+    manifest: Manifest
+    directory: Path
+    manifestPath: Path
+    entryPath: Path
+
+
+class PackDiscoveryError(RuntimeError):
+    """Stable discovery failure for manifest scanning and dependency sorting."""
+
+    code: str
+    reason: str
+    packId: str | None
+    path: Path | None
+
+    def __init__(
+        self,
+        *,
+        code: str,
+        reason: str,
+        packId: str | None = None,
+        path: Path | None = None,
+    ) -> None:
+        self.code = code
+        self.reason = reason
+        self.packId = packId
+        self.path = path
+
+        messageParts: list[str] = [f"[{code}]"]
+        if packId is not None:
+            messageParts.append(packId)
+        if path is not None:
+            messageParts.append(str(path))
+        messageParts.append(reason)
+        super().__init__(" ".join(messageParts))
+
+
+class FeatureService(ABC):
+    """Host-facing Feature Pack service contract."""
+
+    @abstractmethod
+    def discoverPacks(self) -> list[Manifest]:
+        """Discover and dependency-sort all manifests under ``features/``."""
+
+    @abstractmethod
+    def loadPacks(self, window: object) -> None:
+        """Load pack modules and register them into the host."""
+
+    @abstractmethod
+    def pack(self, packId: str) -> FeaturePack | None:
+        """Return one loaded pack instance by id when available."""
+
+    @abstractmethod
+    def packForSource(self, source: str) -> FeaturePack | None:
+        """Route one source string to its owning pack."""
+
+    @abstractmethod
+    def packForTask(self, task: Task) -> FeaturePack | None:
+        """Route one existing task back to its owning pack."""
+
+    @abstractmethod
+    async def createTask(self, data: TaskInput) -> Task:
+        """Create one task through the selected pack."""
+
+    @abstractmethod
+    def configureTask(self, taskId: str, config: TaskConfig) -> None:
+        """Apply one ``TaskConfig`` update through the host service."""
+
+    @abstractmethod
+    def installSettings(self, page: object) -> None:
+        """Install pack settings onto one host settings page."""
+
+    @abstractmethod
+    def editTask(
+        self,
+        task: Task,
+        mode: EditMode,
+        parent: QWidget | None = None,
+    ) -> bool:
+        """Open the host edit flow for one task."""
+
+    @abstractmethod
+    def createTaskCard(self, task: Task, parent: QWidget | None = None) -> object:
+        """Create one task card for a routed task."""
+
+    @abstractmethod
+    def createResultCard(self, task: Task, parent: QWidget | None = None) -> object:
+        """Create one result card for a routed task."""
 
 
 class SettingPageHost(Protocol):
@@ -315,10 +417,198 @@ class DefaultSettingsInstaller(SettingsInstaller):
         return _SettingPrimaryActionCard(item=item, group=group)
 
 
+@final
+class DefaultFeatureService(FeatureService):
+    """Default host service implementation for manifest discovery and ordering."""
+
+    featuresPath: Path
+    settingsInstaller: SettingsInstaller
+    taskEditor: TaskEditor
+
+    def __init__(
+        self,
+        *,
+        featuresPath: str | Path | None = None,
+        settingsInstaller: SettingsInstaller | None = None,
+        taskEditor: TaskEditor | None = None,
+    ) -> None:
+        self.featuresPath = Path(featuresPath) if featuresPath is not None else _defaultFeaturesPath()
+        self.settingsInstaller = (
+            settingsInstaller if settingsInstaller is not None else DefaultSettingsInstaller()
+        )
+        self.taskEditor = taskEditor if taskEditor is not None else DefaultTaskEditor()
+        self._discoveredPacksById: dict[str, DiscoveredPack] = {}
+        self._packOrder: tuple[str, ...] = ()
+
+    def discoverPacks(self) -> list[Manifest]:
+        discoveredPacks = self._discoverPackDescriptors()
+        orderedPacks = self._sortDiscoveredPacksByDependencies(discoveredPacks)
+        self._cacheDiscoveredPacks(orderedPacks)
+        return [discoveredPack.manifest for discoveredPack in orderedPacks]
+
+    def loadPacks(self, window: object) -> None:
+        _ = window
+        raise NotImplementedError("Pack loading is implemented in a later migration task.")
+
+    def pack(self, packId: str) -> FeaturePack | None:
+        _ = packId
+        raise NotImplementedError("Pack instance lookup is implemented in a later migration task.")
+
+    def packForSource(self, source: str) -> FeaturePack | None:
+        _ = source
+        raise NotImplementedError("Source routing is implemented in a later migration task.")
+
+    def packForTask(self, task: Task) -> FeaturePack | None:
+        _ = task
+        raise NotImplementedError("Task routing is implemented in a later migration task.")
+
+    async def createTask(self, data: TaskInput) -> Task:
+        _ = data
+        raise NotImplementedError("Task creation is implemented in a later migration task.")
+
+    def configureTask(self, taskId: str, config: TaskConfig) -> None:
+        _ = taskId
+        _ = config
+        raise NotImplementedError("Task configuration dispatch is implemented in a later migration task.")
+
+    def installSettings(self, page: object) -> None:
+        _ = page
+        raise NotImplementedError("Settings installation is implemented in a later migration task.")
+
+    def editTask(
+        self,
+        task: Task,
+        mode: EditMode,
+        parent: QWidget | None = None,
+    ) -> bool:
+        _ = task
+        _ = mode
+        _ = parent
+        raise NotImplementedError("Task editing dispatch is implemented in a later migration task.")
+
+    def createTaskCard(self, task: Task, parent: QWidget | None = None) -> object:
+        _ = task
+        _ = parent
+        raise NotImplementedError("Task card creation is implemented in a later migration task.")
+
+    def createResultCard(self, task: Task, parent: QWidget | None = None) -> object:
+        _ = task
+        _ = parent
+        raise NotImplementedError("Result card creation is implemented in a later migration task.")
+
+    def _discoverPackDescriptors(self) -> list[DiscoveredPack]:
+        if not self.featuresPath.exists():
+            self._cacheDiscoveredPacks(())
+            return []
+
+        discoveredPacks: list[DiscoveredPack] = []
+        for packDirectory in self._iterPackDirectories():
+            discoveredPack = self._discoverPack(packDirectory)
+            if discoveredPack is not None:
+                discoveredPacks.append(discoveredPack)
+        return discoveredPacks
+
+    def _iterPackDirectories(self) -> list[Path]:
+        return sorted(
+            (
+                item
+                for item in self.featuresPath.iterdir()
+                if item.is_dir() and not item.name.startswith(".")
+            ),
+            key=lambda item: item.name,
+        )
+
+    def _discoverPack(self, packDirectory: Path) -> DiscoveredPack | None:
+        manifestPath = packDirectory / "manifest.toml"
+        if not manifestPath.is_file():
+            return None
+
+        manifest = loadManifest(manifestPath)
+        entryPath = packDirectory / manifest.entry
+        if not entryPath.is_file():
+            raise PackDiscoveryError(
+                code="missing-entry-file",
+                reason=f"找不到入口文件: {manifest.entry}",
+                packId=manifest.id,
+                path=entryPath,
+            )
+
+        return DiscoveredPack(
+            manifest=manifest,
+            directory=packDirectory,
+            manifestPath=manifestPath,
+            entryPath=entryPath,
+        )
+
+    def _sortDiscoveredPacksByDependencies(
+        self,
+        discoveredPacks: list[DiscoveredPack],
+    ) -> list[DiscoveredPack]:
+        discoveredById: dict[str, DiscoveredPack] = {}
+        for discoveredPack in discoveredPacks:
+            packId = discoveredPack.manifest.id
+            if packId in discoveredById:
+                raise PackDiscoveryError(
+                    code="duplicate-pack-id",
+                    reason=f"重复的 pack id: {packId}",
+                    packId=packId,
+                    path=discoveredPack.manifestPath,
+                )
+            discoveredById[packId] = discoveredPack
+
+        orderedPacks: list[DiscoveredPack] = []
+        visiting: list[str] = []
+        visited: set[str] = set()
+
+        def visit(packId: str) -> None:
+            if packId in visited:
+                return
+            if packId in visiting:
+                cycleStart = visiting.index(packId)
+                cyclePath = visiting[cycleStart:] + [packId]
+                raise PackDiscoveryError(
+                    code="dependency-cycle",
+                    reason=f"检测到 Pack 循环依赖: {' -> '.join(cyclePath)}",
+                    packId=packId,
+                    path=discoveredById[packId].manifestPath,
+                )
+
+            discoveredPack = discoveredById[packId]
+            visiting.append(packId)
+            for dependencyId in discoveredPack.manifest.dependencies:
+                if dependencyId not in discoveredById:
+                    raise PackDiscoveryError(
+                        code="missing-dependency",
+                        reason=f"依赖的 Pack 不存在: {dependencyId}",
+                        packId=packId,
+                        path=discoveredPack.manifestPath,
+                    )
+                visit(dependencyId)
+
+            _ = visiting.pop()
+            visited.add(packId)
+            orderedPacks.append(discoveredPack)
+
+        for discoveredPack in discoveredPacks:
+            visit(discoveredPack.manifest.id)
+
+        return orderedPacks
+
+    def _cacheDiscoveredPacks(self, discoveredPacks: list[DiscoveredPack] | tuple[()]) -> None:
+        self._discoveredPacksById = {
+            discoveredPack.manifest.id: discoveredPack
+            for discoveredPack in discoveredPacks
+        }
+        self._packOrder = tuple(discoveredPack.manifest.id for discoveredPack in discoveredPacks)
+
+
 __all__ = [
+    "DefaultFeatureService",
     "DefaultSettingsInstaller",
     "DefaultTaskEditor",
+    "FeatureService",
     "InstalledSettingSection",
+    "PackDiscoveryError",
     "SettingsInstaller",
     "TaskEditor",
 ]

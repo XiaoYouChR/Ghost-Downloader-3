@@ -26,8 +26,11 @@ from .manifest import Manifest
 from .manifest import loadManifest
 from .manifest import parseManifest
 from .pack import FeaturePack
+from .service import DefaultFeatureService
 from .service import DefaultSettingsInstaller
 from .service import DefaultTaskEditor
+from .service import FeatureService
+from .service import PackDiscoveryError
 from .service import SettingsInstaller
 from .service import TaskEditor
 from .settings import SettingItem
@@ -57,17 +60,20 @@ __all__ = [
     "testing",
     "EditMode",
     "FieldKind",
+    "DefaultFeatureService",
     "DefaultResultCard",
     "DefaultSettingsInstaller",
     "DefaultTaskCard",
     "DefaultTaskEditor",
     "FeaturePack",
+    "FeatureService",
     "FormChoice",
     "FormField",
     "Manifest",
     "ManifestError",
     "MultiFileTask",
     "MultiFileSelectDialog",
+    "PackDiscoveryError",
     "SettingItem",
     "SettingSection",
     "SingleFileTask",

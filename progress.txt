@@ -485,3 +485,25 @@
 - 风险: 当前默认卡片仍只覆盖宿主新版默认 UI 路径，尚未接入新版 `FeatureService.createTaskCard()` / `createResultCard()` 分发；后续任务 27 需要在不破坏当前卡片编辑边界的前提下，把这些默认组件接入新版服务。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的 manifest 发现与依赖排序
+### 已完成内容:
+- 在 `app/feature_pack/api/service.py` 中正式定义新版 `FeatureService` 抽象接口，并新增 `DefaultFeatureService`、`DiscoveredPack`、`PackDiscoveryError`，把新版服务的 manifest 发现与依赖排序能力落到新版模块。
+- 实现 `DefaultFeatureService.discoverPacks()`，统一扫描 `features/*/manifest.toml`，复用新版 `loadManifest()` 做严格校验，并显式检查入口文件是否存在，返回按依赖排序后的 `Manifest` 列表。
+- 实现新版 Pack 依赖排序逻辑，显式处理缺失依赖、循环依赖和重复 `packId`，避免继续沿用旧 loader“记录日志后跳过坏分支”的隐式行为。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `FeatureService`、`DefaultFeatureService`、`PackDiscoveryError` 纳入新版稳定公共导出。
+- 新增 `tests/feature_pack/test_feature_service_v1_discovery.py`，覆盖新版服务抽象面、仓库现有 manifest 发现顺序、缺失 manifest 跳过、入口缺失、缺失依赖、循环依赖、重复 `packId` 以及发现结果缓存。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_v1_discovery.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_service_v1_discovery.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版模块中实现 `FeatureService` 的 manifest 发现与依赖排序能力，为后续任务 25 的 Pack 加载和任务 26/27 的路由与分发提供稳定宿主入口，不提前实现实例化、路由、卡片分发或设置分发。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 24；必须继续以 `manifest.toml` 为唯一静态元数据边界，遵循简单、显式、可读原则；发现逻辑要直接复用新版 `Manifest` 读取契约，且只能在验证通过并写入 `progress.txt` 后再更新任务完成状态。
+  - 验收标准: 新版 `FeatureService` 已能发现 `features/` 下的 manifest，能按依赖顺序输出结果，并且发现和排序行为都有显式测试护栏；全部验证通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“固定 `manifest.toml`、由 `FeatureService` 负责发现和依赖排序”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.discoverPacks()` / `loadPacks()` 契约；同时建立在任务 6 到任务 9 的 `Manifest`、读取器和 `FeaturePack` 抽象，以及任务 22/23 已存在的设置安装器与任务编辑器基础上，并为后续任务 25、26、27、46、47 提供新版服务骨架。
+- 风险: 本轮只完成发现与排序，`loadPacks()`、`packForSource()`、`packForTask()`、`createTask()` 等入口仍显式保留为后续任务实现；同时新版排序现在对缺失依赖、循环依赖和重复 `packId` 采用 fail-fast，而不是旧服务的“跳过坏分支”行为，后续切换宿主入口时需要明确这是有意的 V1 收紧。
+- 结论: 已完成。
+---

@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 
 import app.feature_pack as featurePackPackage
 import app.feature_pack.api as apiPackage
+from app.feature_pack.api import DefaultFeatureService
 from app.feature_pack.api import DefaultResultCard
 from app.feature_pack.api import DefaultTaskCard
 from app.feature_pack.api import DefaultTaskEditor
@@ -19,6 +20,7 @@ from app.feature_pack.api import EditMode
 from app.feature_pack.api import DefaultSettingsInstaller
 from app.feature_pack.api import FieldKind
 from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import FeatureService
 from app.feature_pack.api import FormChoice
 from app.feature_pack.api import FormField
 from app.feature_pack.api import Manifest
@@ -31,6 +33,7 @@ from app.feature_pack.api import loadManifest
 from app.feature_pack.api import manifest
 from app.feature_pack.api import MultiFileTask
 from app.feature_pack.api import MultiFileSelectDialog
+from app.feature_pack.api import PackDiscoveryError
 from app.feature_pack.api import pack
 from app.feature_pack.api import parseManifest
 from app.feature_pack.api import service
@@ -70,17 +73,20 @@ EXPECTED_EXPORTS = [
     "testing",
     "EditMode",
     "FieldKind",
+    "DefaultFeatureService",
     "DefaultResultCard",
     "DefaultSettingsInstaller",
     "DefaultTaskCard",
     "DefaultTaskEditor",
     "FeaturePack",
+    "FeatureService",
     "FormChoice",
     "FormField",
     "Manifest",
     "ManifestError",
     "MultiFileTask",
     "MultiFileSelectDialog",
+    "PackDiscoveryError",
     "SettingItem",
     "SettingSection",
     "SingleFileTask",
@@ -119,18 +125,21 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.task, task)
         self.assertIs(apiPackage.testing, testing)
         self.assertIs(apiPackage.EditMode, EditMode)
+        self.assertIs(apiPackage.DefaultFeatureService, DefaultFeatureService)
         self.assertIs(apiPackage.DefaultResultCard, DefaultResultCard)
         self.assertIs(apiPackage.DefaultSettingsInstaller, DefaultSettingsInstaller)
         self.assertIs(apiPackage.DefaultTaskCard, DefaultTaskCard)
         self.assertIs(apiPackage.DefaultTaskEditor, DefaultTaskEditor)
         self.assertIs(apiPackage.FieldKind, FieldKind)
         self.assertIs(apiPackage.FeaturePack, FeaturePack)
+        self.assertIs(apiPackage.FeatureService, FeatureService)
         self.assertIs(apiPackage.FormChoice, FormChoice)
         self.assertIs(apiPackage.FormField, FormField)
         self.assertIs(apiPackage.Manifest, Manifest)
         self.assertIs(apiPackage.ManifestError, ManifestError)
         self.assertIs(apiPackage.MultiFileTask, MultiFileTask)
         self.assertIs(apiPackage.MultiFileSelectDialog, MultiFileSelectDialog)
+        self.assertIs(apiPackage.PackDiscoveryError, PackDiscoveryError)
         self.assertIs(apiPackage.SettingItem, SettingItem)
         self.assertIs(apiPackage.SettingSection, SettingSection)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
@@ -161,8 +170,11 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(manifest.parseManifest, parseManifest)
         self.assertIs(cards.DefaultResultCard, DefaultResultCard)
         self.assertIs(cards.DefaultTaskCard, DefaultTaskCard)
+        self.assertIs(service.DefaultFeatureService, DefaultFeatureService)
         self.assertIs(service.DefaultSettingsInstaller, DefaultSettingsInstaller)
         self.assertIs(service.DefaultTaskEditor, DefaultTaskEditor)
+        self.assertIs(service.FeatureService, FeatureService)
+        self.assertIs(service.PackDiscoveryError, PackDiscoveryError)
         self.assertIs(service.SettingsInstaller, SettingsInstaller)
         self.assertIs(service.TaskEditor, TaskEditor)
         self.assertIs(settings.SettingItem, SettingItem)

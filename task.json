@@ -264,7 +264,7 @@
         "实现新版 Pack 依赖排序逻辑。",
         "补充发现和排序测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 25,
