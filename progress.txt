@@ -632,3 +632,26 @@
 - 风险: 当前新版调度器仍只存在于 `app.feature_pack.internal`，旧 `app/services/core_service.py`、旧主窗口加任务路径和旧浏览器入口还没有切换到这条链路；此外，下载槽是否占用默认回退为“占用”，后续具体 Pack 在迁移时如果存在非占槽阶段，仍需显式提供对应钩子。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 AddTaskDialogSession 的 TaskInput 流转
+### 已完成内容:
+- 在 `app/feature_pack/internal/add_task.py` 中新增新版 `AddTaskDialogSession`、`AddTaskInputOverride`、`FeatureServiceTaskRunner`、`buildAddTaskConfig()` 与 `buildAddTaskInput()`，把添加任务会话里的基础下载设置、单链接覆盖设置、`TaskConfig` 构造和 `TaskInput` 构造收敛到新版模块。
+- 让新版添加任务会话在预创建任务时统一走 `FeatureService.createTask()`，在结果展示时统一走 `FeatureService.createResultCard()`，在下载设置变更时统一走 `FeatureService.configureTask()`，不再依赖旧 `payload` 和 `Task.applyPayloadToTask()`。
+- 在 `app/feature_pack/api/service.py` 中补齐新版 `DefaultFeatureService.configureTask()` 与任务记忆能力，让通过新版服务创建、编辑或展示过的任务都能通过稳定的 `taskId` 回到统一配置入口。
+- 更新 `app/feature_pack/internal/__init__.py` 导出新版添加任务会话相关类型，便于后续任务 47 切换旧 `AddTaskDialog` 与宿主入口时直接接入。
+- 新增 `tests/feature_pack/test_feature_pack_add_task_v1.py`，覆盖添加任务流程中的 `TaskInput` 构造、待创建请求重启、配置更新回灌到预创建任务，以及“先确认、后完成创建”时的 `taskConfirmed` 行为。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py app/feature_pack/internal/__init__.py app/feature_pack/internal/add_task.py tests/feature_pack/test_feature_pack_add_task_v1.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_add_task_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `uv run python tests/feature_pack/test_feature_service_v1_dispatch.py` -> 通过（Qt 离屏字体目录提示仍存在，不影响结果）
+- `uv run python tests/feature_pack/test_feature_pack_core_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版 `app.feature_pack` 模块中重建添加任务对话框会话的 `TaskConfig` / `TaskInput` 流转、结果卡片生成和配置回写，不提前切换旧 `app/view/components/add_task_dialog.py`、旧 `AddTaskParseSession` 或主窗口入口。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 31；必须把添加任务流程中的配置构造、任务预创建和配置修改统一收敛到新版服务入口；继续遵循简单、显式、可读原则；必须先写入 `progress.txt` 再更新任务完成状态。
+  - 验收标准: 新版模块已提供可复用的 `AddTaskDialogSession` 与 `TaskInput` 构造能力；解析结果、配置修改和任务创建都明确走新版 `FeatureService` 入口；存在显式测试覆盖添加任务流程关键路径；全部验证通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“`parse(payload)` 迁到 `createTask(data)`”“`TaskConfig` 是唯一配置模型”“`configure(config)` 是唯一公开配置入口”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskInput`、`TaskConfig`、`FeatureService.createTask()`、`FeatureService.configureTask()`、`FeatureService.editTask()` 契约；同时建立在任务 10、11、19、23、27、30 已完成的配置模型、输入模型、默认对话框、默认结果卡片、新版 UI 分发和新版 CoreService 创建入口之上，并为后续任务 47 的添加任务流程切换提供内部会话层。
+- 风险: 当前新版添加任务会话仍只存在于 `app.feature_pack.internal`，旧 `AddTaskDialog` 和旧 `AddTaskParseSession` 还没有切换到这条链路；此外，`DefaultFeatureService.configureTask()` 目前依赖服务已记住的任务实例，真正接管宿主入口后仍需保证添加任务、恢复任务和浏览器入口都通过新版服务注册任务。
+- 结论: 已完成。
+---

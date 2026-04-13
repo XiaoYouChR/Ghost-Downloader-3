@@ -488,6 +488,7 @@ class DefaultFeatureService(FeatureService):
         self._packOrder: tuple[str, ...] = ()
         self._loadedPacksById: dict[str, LoadedPack] = {}
         self._loadedPackOrder: tuple[str, ...] = ()
+        self._knownTasksById: dict[str, Task] = {}
 
     def discoverPacks(self) -> list[Manifest]:
         discoveredPacks = self._discoverPackDescriptors()
@@ -543,12 +544,17 @@ class DefaultFeatureService(FeatureService):
         if createdTask is None:
             raise ValueError(f"FeaturePack 未创建任务: {source}")
 
+        self._rememberTask(createdTask)
         return createdTask
 
     def configureTask(self, taskId: str, config: TaskConfig) -> None:
-        _ = taskId
-        _ = config
-        raise NotImplementedError("Task configuration dispatch is implemented in a later migration task.")
+        task = self._knownTasksById.get(taskId)
+        if task is None:
+            raise ValueError(f"未找到可配置的任务: {taskId}")
+
+        self._rememberTask(task)
+        task.configure(config)
+        task.snapshotChanged.emit(task.snapshot())
 
     def installSettings(self, page: object) -> None:
         for packId in self._loadedPackOrder:
@@ -561,9 +567,11 @@ class DefaultFeatureService(FeatureService):
         mode: EditMode,
         parent: QWidget | None = None,
     ) -> bool:
+        self._rememberTask(task)
         return self.taskEditor.editTask(task, mode, parent)
 
     def createTaskCard(self, task: Task, parent: QWidget | None = None) -> object:
+        self._rememberTask(task)
         pack = self.packForTask(task)
         if pack is not None:
             card = pack.createTaskCard(task, parent)
@@ -573,6 +581,7 @@ class DefaultFeatureService(FeatureService):
         return DefaultTaskCard(task=task, editor=self, parent=parent)
 
     def createResultCard(self, task: Task, parent: QWidget | None = None) -> object:
+        self._rememberTask(task)
         pack = self.packForTask(task)
         if pack is not None:
             card = pack.createResultCard(task, parent)
@@ -580,6 +589,9 @@ class DefaultFeatureService(FeatureService):
                 return card
 
         return DefaultResultCard(task=task, editor=self, parent=parent)
+
+    def _rememberTask(self, task: Task) -> None:
+        self._knownTasksById[task.id] = task
 
     def _discoverPackDescriptors(self) -> list[DiscoveredPack]:
         if not self.featuresPath.exists():
