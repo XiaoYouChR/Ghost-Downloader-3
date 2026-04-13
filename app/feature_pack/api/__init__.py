@@ -24,6 +24,8 @@ from .manifest import Manifest
 from .manifest import loadManifest
 from .manifest import parseManifest
 from .pack import FeaturePack
+from .service import DefaultSettingsInstaller
+from .service import SettingsInstaller
 from .settings import SettingItem
 from .settings import SettingSection
 from .snapshot import StageSnapshot
@@ -51,6 +53,7 @@ __all__ = [
     "testing",
     "EditMode",
     "FieldKind",
+    "DefaultSettingsInstaller",
     "FeaturePack",
     "FormChoice",
     "FormField",
@@ -62,6 +65,7 @@ __all__ = [
     "SettingSection",
     "SingleFileTask",
     "StageSnapshot",
+    "SettingsInstaller",
     "TaskConfig",
     "TaskConfigDialog",
     "TaskFile",

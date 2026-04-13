@@ -20,6 +20,28 @@
 - 风险: 由于约定的 `task.json` 结构没有显式依赖字段，因此任务顺序被视为依赖顺序，runner 始终选择第一个未完成任务。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 实现 SettingsInstaller
+### 已完成内容:
+- 在 `app/feature_pack/api/service.py` 中实现新版宿主侧 `SettingsInstaller` 抽象与 `DefaultSettingsInstaller`，把 Pack 返回的 `SettingSection` 统一映射为 `SettingCardGroup` 并安装到 `SettingPage`。
+- 为声明式设置项补齐宿主默认卡片映射，当前支持 `toggle`、`choice`、`text`、`action`、`primaryAction` 五类 `SettingItem.kind`，并以宿主卡片负责渲染、Pack 只负责声明数据的方式保持边界清晰。
+- 为同一页面上的重复注入增加按 `SettingSection.id` 去重逻辑，避免同一 Pack 在同一 `SettingPage` 上重复生成设置分组，同时允许不同页面各自独立安装。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `SettingsInstaller`、`DefaultSettingsInstaller` 纳入新版 API 稳定公共导出。
+- 新增 `tests/feature_pack/test_settings_installer.py`，覆盖设置注入顺序、`SettingSection -> SettingCardGroup` 映射、默认卡片基础交互，以及同页重复注入与跨页独立安装行为。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_settings_installer.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
+- `uv run python tests/feature_pack/test_settings_installer.py` -> 通过（Qt 离屏环境仍输出字体目录与 `propagateSizeHints` 告警，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与已有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现宿主侧 `SettingsInstaller`，把 `SettingSection` 统一注入 `SettingPage` 和 `SettingCardGroup`，不提前进入新版 `FeatureService` 的完整设置分发或具体 Pack 改写。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 22；必须完整完成安装器实现、`SettingSection` 到设置页映射和重复注入测试；继续遵循简单、显式、可读原则；必须先写入 `progress.txt` 再更新任务完成状态。
+  - 验收标准: 已存在宿主侧 `SettingsInstaller`；`SettingSection` 能稳定映射到 `SettingPage` 与 `SettingCardGroup`；设置注入顺序与重复注入行为都有显式测试护栏；全部验证通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“Pack 返回 `SettingSection`、宿主统一映射到 `SettingCardGroup`”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `SettingsInstaller.install()`、`SettingSection`、`SettingItem` 契约；同时建立在任务 18 的 `FormChoice` 与任务 21 的设置模型之上，并为后续任务 27、42、49 提供宿主设置注入基础。
+- 风险: 当前默认映射只覆盖五类声明式设置项，复杂自定义 `QWidget`/`SettingCard` 注入仍留给后续服务层和具体 Pack 扩展；若后续新增新的 `kind`，需要先在宿主显式补充映射而不是退回直接操作 `SettingPage` 内部布局。
+- 结论: 已完成。
+---
 ## 2026-04-13 - 任务: 创建 app.feature_pack.api 目录骨架
 ### 已完成内容:
 - 新增 `app/feature_pack/__init__.py` 与 `app/feature_pack/api/` 包骨架，建立新版 Feature Pack V1 作者 API 的稳定导入命名空间。

@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 import app.feature_pack as featurePackPackage
 import app.feature_pack.api as apiPackage
 from app.feature_pack.api import EditMode
+from app.feature_pack.api import DefaultSettingsInstaller
 from app.feature_pack.api import FieldKind
 from app.feature_pack.api import FeaturePack
 from app.feature_pack.api import FormChoice
@@ -35,6 +36,7 @@ from app.feature_pack.api import SettingSection
 from app.feature_pack.api import settings
 from app.feature_pack.api import SingleFileTask
 from app.feature_pack.api import StageSnapshot
+from app.feature_pack.api import SettingsInstaller
 from app.feature_pack.api import snapshot
 from app.feature_pack.api import stage
 from app.feature_pack.api import task
@@ -64,6 +66,7 @@ EXPECTED_EXPORTS = [
     "testing",
     "EditMode",
     "FieldKind",
+    "DefaultSettingsInstaller",
     "FeaturePack",
     "FormChoice",
     "FormField",
@@ -75,6 +78,7 @@ EXPECTED_EXPORTS = [
     "SettingSection",
     "SingleFileTask",
     "StageSnapshot",
+    "SettingsInstaller",
     "TaskConfig",
     "TaskConfigDialog",
     "TaskFile",
@@ -107,6 +111,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.task, task)
         self.assertIs(apiPackage.testing, testing)
         self.assertIs(apiPackage.EditMode, EditMode)
+        self.assertIs(apiPackage.DefaultSettingsInstaller, DefaultSettingsInstaller)
         self.assertIs(apiPackage.FieldKind, FieldKind)
         self.assertIs(apiPackage.FeaturePack, FeaturePack)
         self.assertIs(apiPackage.FormChoice, FormChoice)
@@ -119,6 +124,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.SettingSection, SettingSection)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
+        self.assertIs(apiPackage.SettingsInstaller, SettingsInstaller)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
         self.assertIs(apiPackage.TaskConfigDialog, TaskConfigDialog)
         self.assertIs(apiPackage.TaskFile, TaskFile)
@@ -141,6 +147,8 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(manifest.ManifestError, ManifestError)
         self.assertIs(manifest.loadManifest, loadManifest)
         self.assertIs(manifest.parseManifest, parseManifest)
+        self.assertIs(service.DefaultSettingsInstaller, DefaultSettingsInstaller)
+        self.assertIs(service.SettingsInstaller, SettingsInstaller)
         self.assertIs(settings.SettingItem, SettingItem)
         self.assertIs(settings.SettingSection, SettingSection)
         self.assertIs(snapshot.StageSnapshot, StageSnapshot)

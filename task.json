@@ -242,7 +242,7 @@
         "把 `SettingSection` 映射到 SettingPage 和 `SettingCardGroup`。",
         "补充设置注入顺序与重复注入测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 23,
