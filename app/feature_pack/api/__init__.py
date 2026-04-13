@@ -24,6 +24,8 @@ from .manifest import Manifest
 from .manifest import loadManifest
 from .manifest import parseManifest
 from .pack import FeaturePack
+from .settings import SettingItem
+from .settings import SettingSection
 from .snapshot import StageSnapshot
 from .snapshot import TaskSnapshot
 from .stage import TaskStage
@@ -56,6 +58,8 @@ __all__ = [
     "ManifestError",
     "MultiFileTask",
     "MultiFileSelectDialog",
+    "SettingItem",
+    "SettingSection",
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",

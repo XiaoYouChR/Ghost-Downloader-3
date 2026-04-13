@@ -30,6 +30,8 @@ from app.feature_pack.api import MultiFileSelectDialog
 from app.feature_pack.api import pack
 from app.feature_pack.api import parseManifest
 from app.feature_pack.api import service
+from app.feature_pack.api import SettingItem
+from app.feature_pack.api import SettingSection
 from app.feature_pack.api import settings
 from app.feature_pack.api import SingleFileTask
 from app.feature_pack.api import StageSnapshot
@@ -69,6 +71,8 @@ EXPECTED_EXPORTS = [
     "ManifestError",
     "MultiFileTask",
     "MultiFileSelectDialog",
+    "SettingItem",
+    "SettingSection",
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
@@ -111,6 +115,8 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.ManifestError, ManifestError)
         self.assertIs(apiPackage.MultiFileTask, MultiFileTask)
         self.assertIs(apiPackage.MultiFileSelectDialog, MultiFileSelectDialog)
+        self.assertIs(apiPackage.SettingItem, SettingItem)
+        self.assertIs(apiPackage.SettingSection, SettingSection)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
@@ -135,6 +141,8 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(manifest.ManifestError, ManifestError)
         self.assertIs(manifest.loadManifest, loadManifest)
         self.assertIs(manifest.parseManifest, parseManifest)
+        self.assertIs(settings.SettingItem, SettingItem)
+        self.assertIs(settings.SettingSection, SettingSection)
         self.assertIs(snapshot.StageSnapshot, StageSnapshot)
         self.assertIs(snapshot.TaskSnapshot, TaskSnapshot)
         self.assertIs(stage.TaskStage, TaskStage)

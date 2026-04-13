@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from .input import TaskInput
 from .manifest import Manifest
+from .settings import SettingSection
 
 if TYPE_CHECKING:
     from .task import Task
@@ -35,7 +36,7 @@ class FeaturePack(ABC):
     def owns(self, task: Task) -> bool:
         """Return whether an existing task belongs to this pack."""
 
-    def settingSection(self) -> object | None:
+    def settingSection(self) -> SettingSection | object | None:
         """Optional settings-page contribution for this pack."""
         return None
 

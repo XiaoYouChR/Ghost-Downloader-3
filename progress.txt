@@ -421,3 +421,24 @@
 - 风险: 当前默认类型分类仍沿用旧 `FileSelectDialog` 的后缀规则；后续如果具体 Pack 需要更细粒度分组，应在保持宿主默认规则稳定的前提下补充，而不要重新退回 Pack 私有对话框。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 定义 SettingSection 与 SettingItem
+### 已完成内容:
+- 在 `app/feature_pack/api/settings.py` 中实现声明式 `SettingItem` 与 `SettingSection` 数据模型，固定简单设置项的 `key`、`label`、`kind`、`note`、`options`、`extra` 以及设置分组的 `id`、`title`、`items` 字段。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `SettingItem`、`SettingSection` 纳入新版 API 的稳定公共导出，固定后续宿主设置注入器和 Pack 的导入边界。
+- 收紧 `app/feature_pack/api/pack.py` 中 `FeaturePack.settingSection()` 的类型注解，让 Pack 的设置页扩展显式对齐新版 `SettingSection` 契约，同时保留复杂场景返回自定义对象的扩展空间。
+- 新增 `tests/feature_pack/test_settings_model.py`，覆盖设置模型字段顺序、默认值、关键字参数约束、冻结语义、显式选项与额外元数据输入，作为后续 `SettingsInstaller` 的模型护栏。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/pack.py app/feature_pack/api/settings.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_pack_interface.py tests/feature_pack/test_settings_model.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
+- `uv run python tests/feature_pack/test_settings_model.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与已有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现新版声明式设置模型 `SettingSection` 与 `SettingItem`，补齐公共导出与模型测试，为后续宿主设置注入器提供稳定数据边界；不提前进入 `SettingsInstaller`、SettingPage 映射或具体 Pack 设置改写。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 21；字段命名和最小字段集合必须与两份迁移文档契约一致；继续遵循简单、显式、可读原则；验证通过并追加 `progress.txt` 记录前不能修改 `passes`。
+  - 验收标准: `SettingSection` 与 `SettingItem` 已存在；简单设置项字段集合已固定；存在模型测试锁定字段结构、默认值与冻结语义；公共 API 导出稳定可用。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“Pack 返回 `SettingSection`，宿主统一映射到 SettingPage 和 SettingCardGroup”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `SettingSection`、`SettingItem`、`FormChoice` 的契约；同时建立在任务 18 的表单选项模型之上，并为后续任务 22、27、42、49 提供设置模型边界。
+- 风险: 当前只固定了声明式模型和 `FeaturePack.settingSection()` 的公开类型边界，还没有定义 `kind` 到宿主具体设置卡片的映射规则；后续实现 `SettingsInstaller` 时必须保持宿主负责渲染、Pack 只负责声明数据，避免再次退回直接操作 SettingPage 内部布局。
+- 结论: 已完成。
+---
