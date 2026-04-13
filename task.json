@@ -1,0 +1,556 @@
+{
+  "project": "Ghost Downloader 3",
+  "description": "面向 Codex 长期运行的 Feature Pack V1 迁移任务集，按依赖顺序拆分基线测试、新版宿主 API、默认 UI、新版服务、各 Pack 改写、最终切换与收口工作；不保留旧 Feature Pack 接口作为目标。",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Bootstrap Codex automation workflow",
+      "description": "Create the repository-level automation contract, task source, progress log, runner script, and minimal validation so Codex can execute one task per round with auditable state transitions.",
+      "steps": [
+        "Create AGENTS.md with the fixed per-round workflow, validation gate, and task/progress update rules.",
+        "Add run_automation.ps1 to select the first unfinished task and invoke codex exec with a fixed prompt.",
+        "Add progress.txt and automation validation tests so future rounds can verify the contract and record evidence."
+      ],
+      "passes": true
+    },
+    {
+      "id": 2,
+      "title": "建立 manifest 与 Pack loader 基线测试",
+      "description": "先为现有 `features/*/manifest.toml` 和当前 Pack 发现/排序流程建立基线测试，保证后续重写 loader 时有明确护栏。",
+      "steps": [
+        "在 `tests/feature_pack/` 中新增 manifest 发现、缺失字段、依赖排序和循环依赖的基线测试。",
+        "为当前 `FeatureService.discoverFeaturePacks()` 与 `_sortFeaturePacksByDependencies()` 的关键行为建立可复现断言。",
+        "把当前发现的异常或历史包袱写成显式测试说明，避免后续迁移时再次猜测行为。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 3,
+      "title": "建立 Task 与 TaskStage 持久化基线测试",
+      "description": "为现有 `Task`、`TaskStage`、`taskRecorder` 和恢复流程建立基线测试，先锁定用户可感知的持久化行为。",
+      "steps": [
+        "为 `Task.serialize()`、`Task.deserialize()`、`TaskStage.serialize()`、`TaskStage.deserialize()` 建立基线测试。",
+        "覆盖 `taskRecorder` 记忆化、恢复和 `BrowserService` 当前快照输出的关键字段。",
+        "记录当前持久化模型中依赖类名和瞬时属性的地方，作为后续删除旧模型前的基线参照。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 4,
+      "title": "建立对话框、卡片与设置页基线测试",
+      "description": "为现有默认卡片、文件选择对话框和设置页注入路径建立基线测试，避免 UI 迁移无护栏。",
+      "steps": [
+        "为 `UniversalTaskCard`、`UniversalResultCard` 的最小刷新和动作入口补基线测试。",
+        "为 `FileSelectDialog` 的树选择、选中结果与基础展示补测试。",
+        "为 `PackConfig.loadSettingCards()`、`getDialogCards()` 和设置页注入路径补最小基线测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 5,
+      "title": "创建 app.feature_pack.api 目录骨架",
+      "description": "先建立新版宿主作者 API 的目录与导出骨架，为后续所有类型定义提供稳定落点。",
+      "steps": [
+        "创建 `app/feature_pack/api/` 目录及最小模块文件。",
+        "补齐 `__init__.py` 的基础导出结构，保证后续类型可以稳定集中导出。",
+        "新增最小导入测试，确保新 API 包已经可被项目引用。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 6,
+      "title": "定义 Manifest 数据模型",
+      "description": "在新版 API 中正式定义 `Manifest` 数据模型，固定 Pack 元数据的 Python 侧表达。",
+      "steps": [
+        "在 `app.feature_pack.api` 中新增 `Manifest` 数据模型。",
+        "让字段命名、默认值和只读约束与迁移契约文档保持一致。",
+        "补充 Manifest 模型层测试，保证字段结构稳定。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 7,
+      "title": "实现 manifest.toml 读取与校验器",
+      "description": "把 `manifest.toml` 的读取、解析和错误报告收敛成正式读取器，而不是散在 `FeatureService` 里做弱校验。",
+      "steps": [
+        "实现 `manifest.toml` 读取和字段校验逻辑。",
+        "让错误 manifest 能给出清晰、稳定的失败原因。",
+        "补充读取器测试，覆盖合法和非法 manifest 场景。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 8,
+      "title": "补全所有 Feature Pack 的 manifest.toml",
+      "description": "把现有每个 Pack 的 `manifest.toml` 升级到新版字段集合，消除仅有 `entry/dependencies` 的弱结构。",
+      "steps": [
+        "为所有 `features/*/manifest.toml` 回填 `id`、`name`、`version`、`api` 及任务/阶段相关字段。",
+        "统一字段命名和内容风格，避免不同 Pack 再各写一套元数据习惯。",
+        "运行 manifest 测试，确认所有现有 Pack 都能通过新校验。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 9,
+      "title": "定义新版 FeaturePack 抽象接口",
+      "description": "在新版 API 中正式定义 `FeaturePack` 抽象接口，直接以 `accepts/createTask/owns` 为中心，不再继续围绕旧接口扩展。",
+      "steps": [
+        "新增新版 `FeaturePack` 抽象接口和最小公共方法集。",
+        "明确 `settingSection()`、`createTaskCard()`、`createResultCard()` 的侧边能力边界。",
+        "补充接口导入与最小实现测试，保证宿主后续可以直接依赖它。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 10,
+      "title": "定义 TaskConfig",
+      "description": "在新版 API 中正式定义 `TaskConfig`，把用户可编辑的任务配置集中到一个稳定模型。",
+      "steps": [
+        "新增 `TaskConfig` 数据模型。",
+        "固定 `source`、`folder`、`name`、`headers`、`proxies`、`chunks` 等核心字段。",
+        "补充 `TaskConfig` 创建与替换测试，保证后续配置变更有统一数据边界。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 11,
+      "title": "定义 TaskInput",
+      "description": "在新版 API 中正式定义 `TaskInput`，让宿主进入 Pack 前先整理成统一输入模型。",
+      "steps": [
+        "新增 `TaskInput` 数据模型。",
+        "固定 `config`、`size`、`hints` 等输入字段，避免匿名 payload 继续扩散。",
+        "补充 `TaskInput` 模型测试，确保输入边界稳定。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 12,
+      "title": "定义 StageSnapshot 与 TaskSnapshot",
+      "description": "在新版 API 中定义 Qt-free 的快照模型，为 UI、浏览器和测试提供稳定投影。",
+      "steps": [
+        "新增 `StageSnapshot` 与 `TaskSnapshot` 数据模型。",
+        "固定任务级和阶段级快照字段命名。",
+        "补充快照模型测试，确保后续运行时对象可以稳定投影到纯数据层。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 13,
+      "title": "定义新版 TaskStage 基类",
+      "description": "在新版 API 中正式定义 `TaskStage` 基类，使其成为 Pack 主要能力承载点。",
+      "steps": [
+        "实现新版 `TaskStage` 基类及其信号、身份字段、`configure()`、`snapshot()` 等公共接口。",
+        "明确 `TaskStage` 的 QObject 角色和信号命名。",
+        "补充 `TaskStage` 基类行为测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 14,
+      "title": "定义新版 Task 基类",
+      "description": "在新版 API 中正式定义 `Task` 作为工作流容器，固定任务级配置、编排与快照边界。",
+      "steps": [
+        "实现新版 `Task` 基类、身份字段、`configure()`、`syncOutput()`、`editForm()`、`snapshot()` 等核心接口。",
+        "明确 `Task` 对 `TaskStage` 的 attach、run、pause 与编排职责。",
+        "补充 `Task` 基类行为测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 15,
+      "title": "定义 SingleFileTask",
+      "description": "抽出 `SingleFileTask`，把单文件任务的路径、命名和输出同步共性正式上移。",
+      "steps": [
+        "实现 `SingleFileTask` 的 `folder`、`filename`、`path`、`rename()`、`move()` 等公共行为。",
+        "让 `syncOutput()` 成为单文件任务的正式内部同步钩子。",
+        "补充单文件任务路径与改名测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 16,
+      "title": "定义 TaskFile",
+      "description": "为多文件任务建立正式的 `TaskFile` 数据模型，承载路径、大小、选择状态和摘要信息。",
+      "steps": [
+        "实现 `TaskFile` 数据模型。",
+        "固定 `id`、`path`、`size`、`selected`、`note`、`doneBytes`、`finished` 等字段。",
+        "补充 `TaskFile` 模型测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 17,
+      "title": "定义 MultiFileTask",
+      "description": "抽出 `MultiFileTask`，让多文件任务和分集选择共用同一套任务容器与选择接口。",
+      "steps": [
+        "实现 `MultiFileTask` 的 `files`、`root`、`fileCount`、`selectedCount`、`selectedIds` 和 `select(ids)`。",
+        "让多文件输出路径同步与选择统计进入基类。",
+        "补充多文件任务行为测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 18,
+      "title": "定义 TaskForm 与 FormField",
+      "description": "建立声明式任务编辑表单模型，为默认配置对话框提供宿主统一输入。",
+      "steps": [
+        "实现 `TaskForm`、`FormField`、`FormChoice`。",
+        "固定常见字段类型和编辑模式。",
+        "补充表单模型测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 19,
+      "title": "实现默认 TaskConfigDialog",
+      "description": "建立宿主默认 `TaskConfigDialog`，让任务配置编辑不再依赖每个 Pack 自己写对话框。",
+      "steps": [
+        "基于现有编辑控件实现默认 `TaskConfigDialog`。",
+        "让它能根据 `TaskForm` 渲染标准字段。",
+        "补充对话框的最小渲染与结果回收测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 20,
+      "title": "实现默认 MultiFileSelectDialog",
+      "description": "把现有文件树选择能力提升为正式宿主对话框，供多文件任务和分集任务统一复用。",
+      "steps": [
+        "基于现有 `FileSelectDialog` 抽出 `MultiFileSelectDialog`。",
+        "让输入只依赖 `MultiFileTask.files`。",
+        "补充树选择、全选和结果回写测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 21,
+      "title": "定义 SettingSection 与 SettingItem",
+      "description": "建立声明式设置模型，为 Pack 设置页注入提供统一边界。",
+      "steps": [
+        "实现 `SettingSection` 与 `SettingItem`。",
+        "固定简单设置项的最小字段集合。",
+        "补充设置模型测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 22,
+      "title": "实现 SettingsInstaller",
+      "description": "在宿主侧实现设置注入器，让 Pack 设置统一进入 SettingPage，而不是各 Pack 自己操作页面布局。",
+      "steps": [
+        "实现宿主侧 `SettingsInstaller`。",
+        "把 `SettingSection` 映射到 SettingPage 和 `SettingCardGroup`。",
+        "补充设置注入顺序与重复注入测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 23,
+      "title": "改造默认 TaskCard 与 ResultCard 的编辑入口",
+      "description": "让默认卡片不再自己持有复杂编辑逻辑，而是统一通过宿主 `editTask()` 入口修改任务配置。",
+      "steps": [
+        "为默认卡片加入统一的编辑入口和动作触发点。",
+        "让默认卡片调用宿主的任务编辑流程，而不是直接操作任务内部字段。",
+        "补充默认卡片编辑入口测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 24,
+      "title": "在新版模块中实现 FeatureService 的 manifest 发现与依赖排序",
+      "description": "在新版模块中实现 `FeatureService` 的发现和依赖排序能力，为最终切换做准备。",
+      "steps": [
+        "实现新版 `FeatureService` 的 manifest 发现流程。",
+        "实现新版 Pack 依赖排序逻辑。",
+        "补充发现和排序测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 25,
+      "title": "在新版模块中实现 FeatureService 的 Pack 加载与实例管理",
+      "description": "在新版模块中实现 `FeatureService` 的 Pack 加载与实例管理，为最终切换准备新版加载器。",
+      "steps": [
+        "实现新版 `FeatureService` 的模块加载和实例化流程。",
+        "固定 Pack 加载失败时的错误报告方式。",
+        "补充加载与失败场景测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 26,
+      "title": "在新版模块中实现 FeatureService 的 source 与 task 路由",
+      "description": "在新版模块中实现按 source 和 task 进行 Pack 路由的逻辑，为最终宿主切换提供新版路由能力。",
+      "steps": [
+        "实现 `packForSource()` 与 `packForTask()` 路由。",
+        "让路由完全基于新版 `accepts()` 与 `owns()` 语义。",
+        "补充路由测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 27,
+      "title": "在新版模块中实现 FeatureService 的卡片、设置与编辑分发",
+      "description": "在新版模块中实现卡片创建、设置注入和任务编辑分发，让宿主后续能完整使用新版服务。",
+      "steps": [
+        "实现 `createTaskCard()`、`createResultCard()`、`installSettings()`、`editTask()`。",
+        "让服务统一接入默认对话框与设置注入器。",
+        "补充服务分发测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 28,
+      "title": "在新版模块中实现 taskRecorder 持久化",
+      "description": "在新版模型下重建任务持久化与恢复逻辑，使任务记录不再依赖旧 V0 模型。",
+      "steps": [
+        "让 `taskRecorder` 使用新版 `Task`、`TaskStage` 和身份字段进行序列化与恢复。",
+        "统一记录文件中的任务与阶段身份表达。",
+        "补充持久化与恢复测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 29,
+      "title": "在新版模块中实现 BrowserService 快照与任务操作映射",
+      "description": "在新版模型下重建浏览器扩展的快照与任务操作映射，使浏览器入口面向稳定的任务投影。",
+      "steps": [
+        "让浏览器任务快照基于 `TaskSnapshot` 输出。",
+        "重建浏览器任务操作到新版 `Task` 接口的映射。",
+        "补充浏览器快照与操作测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 30,
+      "title": "在新版模块中实现 CoreService 的 createTask 调度入口",
+      "description": "让 `CoreService` 的新版实现面向 `TaskInput`、新版 `FeatureService` 和新版 `Task` 调度。",
+      "steps": [
+        "在新版模块中实现 `createTask()`、调度和任务生命周期管理入口。",
+        "让运行队列和下载槽逻辑对接新版任务模型。",
+        "补充 CoreService 调度测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 31,
+      "title": "在新版模块中实现 AddTaskDialogSession 的 TaskInput 流转",
+      "description": "把添加任务对话框和解析会话重写到 `TaskInput` / `TaskConfig` 流程上，为最终宿主切换做准备。",
+      "steps": [
+        "在新版模块中实现添加任务流程中的 `TaskConfig` 与 `TaskInput` 构造。",
+        "让解析结果、配置修改和创建任务走新版服务入口。",
+        "补充添加任务流程测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 32,
+      "title": "实现 TaskCard -> Task -> TaskStage 命令链",
+      "description": "把用户命令链明确落到 `TaskCard -> Task -> TaskStage`，避免 UI 继续直接修改工作流内部状态。",
+      "steps": [
+        "建立卡片到任务、任务到阶段的命令分发路径。",
+        "统一使用 Qt 信号或等价消息机制表达命令边界。",
+        "补充命令链测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 33,
+      "title": "实现 TaskStage -> Task -> TaskCard 事件投影链",
+      "description": "把阶段事件先汇总到任务，再投影给卡片和 UI，符合 Actor 风格的状态所有权边界。",
+      "steps": [
+        "建立阶段到任务、任务到卡片的事件投影路径。",
+        "明确跨线程路径上的 queued connection 使用约束。",
+        "补充事件链与跨线程测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 34,
+      "title": "改写 http_pack 到新版接口",
+      "description": "把 `http_pack` 改写为新版 `FeaturePack`、`SingleFileTask`、`TaskConfig` 和默认编辑流程的首个生产落点。",
+      "steps": [
+        "把 `http_pack` 的 Pack、Task、Stage 改写到新版接口与命名。",
+        "让 `HttpTask` 建立在 `SingleFileTask` 与 `TaskConfig` 之上。",
+        "补充 `http_pack` 的创建、编辑、恢复与卡片测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 35,
+      "title": "改写 extract_pack 到新版接口",
+      "description": "把 `extract_pack` 改写为新版能力型 Pack，为其他 Pack 提供正式的解压工作流组件。",
+      "steps": [
+        "将 `extract_pack` 改写为新版 `FeaturePack` 实现。",
+        "把解压相关任务与阶段迁到新版任务模型。",
+        "补充解压能力测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 36,
+      "title": "改写 ffmpeg_pack 的安装任务",
+      "description": "先单独改写 `ffmpeg_pack` 的安装任务，使运行时依赖安装路径先落到新版接口。",
+      "steps": [
+        "把 FFmpeg 安装相关 Task 与 Stage 改写到新版接口。",
+        "让安装任务使用新版身份字段和快照输出。",
+        "补充安装任务测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 37,
+      "title": "改写 ffmpeg_pack 的合并任务",
+      "description": "再单独改写 `ffmpeg_pack` 的合并任务，使媒体合并工作流落到新版 `SingleFileTask` 和 Stage 模型上。",
+      "steps": [
+        "把 FFmpeg 合并相关 Task 与 Stage 改写到新版接口。",
+        "让合并任务使用新版配置和输出同步逻辑。",
+        "补充合并任务测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 38,
+      "title": "改写 github_pack 到新版接口",
+      "description": "把 `github_pack` 改写成直接建立在新版接口和 `http_pack` 能力之上的轻量组合 Pack。",
+      "steps": [
+        "把 `github_pack` 的 Pack 与任务入口改写到新版接口。",
+        "让 `github_pack` 直接复用新版 `http_pack` 的单文件下载能力。",
+        "补充 GitHub 解析与卡片测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 39,
+      "title": "改写 ftp_pack 到新版接口",
+      "description": "把 `ftp_pack` 改写为新版 `MultiFileTask` 代表实现，验证多文件下载任务在新版模型下的完整路径。",
+      "steps": [
+        "把 `FtpTask`、相关 Stage 和 Pack 入口改写到新版接口。",
+        "让文件选择、路径同步和配置修改全部进入 `MultiFileTask` 与默认对话框流程。",
+        "补充 FTP 多文件任务测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 40,
+      "title": "改写 bittorrent_pack 到新版接口",
+      "description": "把 `bittorrent_pack` 改写为新版多文件任务实现，打通种子文件选择、恢复和快照投影。",
+      "steps": [
+        "把 `BitTorrentTask`、相关 Stage 和 Pack 入口改写到新版接口。",
+        "让文件选择、恢复和浏览器快照进入新版任务模型。",
+        "补充 BitTorrent 多文件任务测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 41,
+      "title": "改写 bili_pack 的工作流与分集选择",
+      "description": "先单独改写 `bili_pack` 的工作流和分集选择，使高复杂度内容型 Pack 的核心任务模型先迁到新版。",
+      "steps": [
+        "把 `BilibiliTask`、主要 Stage 和分集选择改写到新版接口。",
+        "让分集选择进入 `MultiFileTask` 与默认选择对话框流程。",
+        "补充分集选择与工作流测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 42,
+      "title": "改写 bili_pack 的设置与卡片",
+      "description": "再单独改写 `bili_pack` 的设置注入和卡片层，使其完整进入新版宿主 UI 路径。",
+      "steps": [
+        "把 `bili_pack` 的设置页注入改写到 `SettingSection`。",
+        "把其 TaskCard、ResultCard 和编辑入口改写到新版卡片流程。",
+        "补充设置与卡片测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 43,
+      "title": "改写 m3u8_pack 的下载工作流",
+      "description": "先单独改写 `m3u8_pack` 的下载工作流，使流媒体下载核心路径进入新版任务和 Stage 模型。",
+      "steps": [
+        "把 `M3U8Task` 和主下载 Stage 改写到新版接口。",
+        "让下载任务使用新版 `SingleFileTask`、`TaskConfig` 和 `syncOutput()`。",
+        "补充流媒体下载工作流测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 44,
+      "title": "改写 m3u8_pack 的安装与设置",
+      "description": "再单独改写 `m3u8_pack` 的安装任务、设置注入和附属 UI，使其完整进入新版宿主路径。",
+      "steps": [
+        "把 `M3U8InstallTask` 和相关安装 Stage 改写到新版接口。",
+        "把 `m3u8_pack` 的设置页与编辑入口改写到新版宿主 UI。",
+        "补充安装与设置测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 45,
+      "title": "改写 jack_yao 到新版 UI-only Pack 路径",
+      "description": "为 `jack_yao` 这类 UI-only Pack 明确新版最小实现路径，避免新版接口默认把所有 Pack 当成下载器。",
+      "steps": [
+        "把 `jack_yao` 改写到新版 `FeaturePack` 接口。",
+        "只保留它真正需要的主窗口扩展和 UI 注入能力。",
+        "补充 UI-only Pack 加载测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 46,
+      "title": "切换 main window 与 FeatureService 到新版入口",
+      "description": "在新版 Pack 和服务都准备好后，先切换主窗口与 Pack 服务入口，使宿主开始从新版 `FeatureService` 读取 Pack。",
+      "steps": [
+        "把主窗口和服务初始化入口切换到新版 `FeatureService`。",
+        "让设置页注入、卡片创建和 Pack 加载都走新版服务。",
+        "补充主窗口和新版服务入口测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 47,
+      "title": "切换 CoreService、BrowserService 与添加任务流程到新版入口",
+      "description": "再切换 `CoreService`、`BrowserService` 和添加任务流程，让任务创建、浏览器入口和调度全面进入新版接口。",
+      "steps": [
+        "把 `CoreService` 切换到新版 `TaskInput` 与新版 `FeatureService`。",
+        "把 `BrowserService` 和添加任务流程切换到新版任务创建与编辑链路。",
+        "补充任务创建和浏览器入口切换测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 48,
+      "title": "删除 app.bases V0 接口与旧 payload 流程",
+      "description": "在新版入口正式接管后，彻底删除旧 `app.bases` V0 接口、旧 payload 流程和遗留命名，避免仓库继续背负两套概念。",
+      "steps": [
+        "删除旧 `FeaturePack`、`Task`、`TaskStage` V0 接口及其调用点。",
+        "删除旧 `payload` 修改链路、旧 `ParseSettingCard` 流程和遗留命名。",
+        "补充删除旧代码后的回归测试。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 49,
+      "title": "提供社区样板 Pack 与 authoring 测试",
+      "description": "在新版接口落地后提供一个最小可运行样板 Pack，让社区作者有真实代码可以照着写。",
+      "steps": [
+        "新增一个最小示例 Pack，覆盖 `manifest.toml`、`FeaturePack`、`TaskStage`、`TaskForm`、`SettingSection` 的最小组合。",
+        "为样板 Pack 编写加载和契约测试。",
+        "让迁移文档直接引用样板 Pack 的代码路径。"
+      ],
+      "passes": false
+    },
+    {
+      "id": 50,
+      "title": "执行全量验收并收口迁移文档",
+      "description": "完成所有改写后做一次全仓验收，统一回写文档、测试和自动化规则，使新版接口真正收口。",
+      "steps": [
+        "执行全量静态类型检查、`tests/` 脚本和关键手动验证。",
+        "根据实际落地结果回写两份迁移文档，删去已经失效的草案表述。",
+        "复查 `AGENTS.md`、`task.json`、`progress.txt` 与自动化测试，确保 Codex 后续只沿着收口后的标准运行。"
+      ],
+      "passes": false
+    }
+  ]
+}

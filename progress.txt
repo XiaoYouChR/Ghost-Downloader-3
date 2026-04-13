@@ -1,0 +1,22 @@
+# 进度日志
+
+## 2026-04-13 - 任务: Bootstrap Codex automation workflow
+### 已完成内容:
+- 新增 `AGENTS.md`，固定每轮 Codex 的执行流程、一轮只做一个任务的规则、验证闸口，以及 `task.json` 与 `progress.txt` 的更新顺序。
+- 新增 `run_automation.ps1`，读取 `task.json`，选择第一个未完成任务，构造固定提示词，并以非交互方式运行 `codex exec`，直到队列为空或任务阻塞。
+- 新增 `task.json`，作为唯一任务来源，并写入已完成的自动化初始化任务。
+- 新增 `tests/test_automation_contracts.py`，用于从 `tests/` 校验自动化契约与文件一致性。
+- 将 `basedpyright` 加入 dev 依赖组，保证后续每轮都有稳定的 Python 静态类型检查命令。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py`
+- `uv run python tests/test_automation_contracts.py`
+- `powershell -ExecutionPolicy Bypass -File .\run_automation.ps1 -MaxRounds 1`
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅建立仓库自动化相关文件，本轮不改 Feature Pack 实现代码。
+  - 关键约束: 保持流程简单且显式，以 `task.json` 作为唯一任务来源，将执行证据写入 `progress.txt`，并且只能在验证通过后标记任务完成。
+  - 验收标准: 每轮必须先对齐迁移文档，再完整完成一个任务，执行验证，记录证据，并保证 `task.json` 与 `progress.txt` 一致。
+  - 依赖关系: `docs/standards/feature-pack-interface-standard.md` 与 `docs/contracts/feature-pack-v1-python-contracts.md` 仍然是每轮必须回读的设计依据。
+  - 风险: 由于约定的 `task.json` 结构没有显式依赖字段，因此任务顺序被视为依赖顺序，runner 始终选择第一个未完成任务。
+- 结论: 已完成。
+---
