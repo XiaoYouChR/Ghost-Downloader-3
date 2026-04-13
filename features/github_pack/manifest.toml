@@ -1,3 +1,10 @@
 [pack]
+id = "github_pack"
+name = "GitHub Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
 dependencies = ["http_pack"]
+schemes = ["http", "https"]
+tasks = ["github_download"]
+stages = ["http_download"]

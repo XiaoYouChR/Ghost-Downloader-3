@@ -1,3 +1,10 @@
 [pack]
+id = "bili_pack"
+name = "Bilibili Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
 dependencies = ["http_pack", "ffmpeg_pack"]
+schemes = ["http", "https"]
+tasks = ["bilibili_download"]
+stages = ["http_download", "ffmpeg_merge"]

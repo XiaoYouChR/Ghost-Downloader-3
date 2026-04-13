@@ -1,2 +1,10 @@
 [pack]
+id = "ftp_pack"
+name = "FTP Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
+dependencies = []
+schemes = ["ftp", "ftps"]
+tasks = ["ftp_download"]
+stages = ["ftp_download"]

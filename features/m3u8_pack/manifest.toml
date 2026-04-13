@@ -1,3 +1,10 @@
 [pack]
+id = "m3u8_pack"
+name = "M3U8 Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
 dependencies = ["http_pack", "extract_pack", "ffmpeg_pack"]
+schemes = ["http", "https"]
+tasks = ["m3u8_download", "m3u8_install"]
+stages = ["m3u8_download", "http_download", "extract_archive"]

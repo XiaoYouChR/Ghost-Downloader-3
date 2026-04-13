@@ -22,7 +22,7 @@
         "为当前 `FeatureService.discoverFeaturePacks()` 与 `_sortFeaturePacksByDependencies()` 的关键行为建立可复现断言。",
         "把当前发现的异常或历史包袱写成显式测试说明，避免后续迁移时再次猜测行为。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 3,
@@ -33,7 +33,7 @@
         "覆盖 `taskRecorder` 记忆化、恢复和 `BrowserService` 当前快照输出的关键字段。",
         "记录当前持久化模型中依赖类名和瞬时属性的地方，作为后续删除旧模型前的基线参照。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 4,
@@ -44,7 +44,7 @@
         "为 `FileSelectDialog` 的树选择、选中结果与基础展示补测试。",
         "为 `PackConfig.loadSettingCards()`、`getDialogCards()` 和设置页注入路径补最小基线测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 5,
@@ -55,7 +55,7 @@
         "补齐 `__init__.py` 的基础导出结构，保证后续类型可以稳定集中导出。",
         "新增最小导入测试，确保新 API 包已经可被项目引用。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 6,
@@ -66,7 +66,7 @@
         "让字段命名、默认值和只读约束与迁移契约文档保持一致。",
         "补充 Manifest 模型层测试，保证字段结构稳定。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 7,
@@ -77,7 +77,7 @@
         "让错误 manifest 能给出清晰、稳定的失败原因。",
         "补充读取器测试，覆盖合法和非法 manifest 场景。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 8,
@@ -88,7 +88,7 @@
         "统一字段命名和内容风格，避免不同 Pack 再各写一套元数据习惯。",
         "运行 manifest 测试，确认所有现有 Pack 都能通过新校验。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 9,
@@ -99,7 +99,7 @@
         "明确 `settingSection()`、`createTaskCard()`、`createResultCard()` 的侧边能力边界。",
         "补充接口导入与最小实现测试，保证宿主后续可以直接依赖它。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 10,
@@ -110,7 +110,7 @@
         "固定 `source`、`folder`、`name`、`headers`、`proxies`、`chunks` 等核心字段。",
         "补充 `TaskConfig` 创建与替换测试，保证后续配置变更有统一数据边界。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 11,
@@ -121,7 +121,7 @@
         "固定 `config`、`size`、`hints` 等输入字段，避免匿名 payload 继续扩散。",
         "补充 `TaskInput` 模型测试，确保输入边界稳定。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 12,
@@ -132,7 +132,7 @@
         "固定任务级和阶段级快照字段命名。",
         "补充快照模型测试，确保后续运行时对象可以稳定投影到纯数据层。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 13,
@@ -143,7 +143,7 @@
         "明确 `TaskStage` 的 QObject 角色和信号命名。",
         "补充 `TaskStage` 基类行为测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 14,
@@ -154,7 +154,7 @@
         "明确 `Task` 对 `TaskStage` 的 attach、run、pause 与编排职责。",
         "补充 `Task` 基类行为测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 15,
@@ -165,7 +165,7 @@
         "让 `syncOutput()` 成为单文件任务的正式内部同步钩子。",
         "补充单文件任务路径与改名测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 16,

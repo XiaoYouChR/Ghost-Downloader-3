@@ -1,3 +1,10 @@
 [pack]
+id = "bittorrent_pack"
+name = "BitTorrent Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
 dependencies = []
+schemes = ["magnet", "http", "https", "file"]
+tasks = ["bittorrent_download"]
+stages = ["bittorrent_download"]

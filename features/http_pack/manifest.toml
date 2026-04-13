@@ -1,3 +1,10 @@
 [pack]
+id = "http_pack"
+name = "HTTP Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
 dependencies = []
+schemes = ["http", "https"]
+tasks = ["http_download"]
+stages = ["http_download"]

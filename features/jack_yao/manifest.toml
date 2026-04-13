@@ -1,3 +1,10 @@
 [pack]
+id = "jack_yao"
+name = "Jack Yao Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
 dependencies = []
+schemes = []
+tasks = []
+stages = []

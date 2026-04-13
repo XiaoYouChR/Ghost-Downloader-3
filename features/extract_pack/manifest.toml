@@ -1,2 +1,10 @@
 [pack]
+id = "extract_pack"
+name = "Extract Pack"
+version = "1.0.0"
+api = 1
 entry = "pack.py"
+dependencies = []
+schemes = []
+tasks = []
+stages = ["extract_archive"]
