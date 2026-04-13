@@ -13,6 +13,11 @@ from . import stage
 from . import task
 from . import testing
 from .config import TaskConfig
+from .form import EditMode
+from .form import FieldKind
+from .form import FormChoice
+from .form import FormField
+from .form import TaskForm
 from .input import TaskInput
 from .manifest import ManifestError
 from .manifest import Manifest
@@ -40,7 +45,11 @@ __all__ = [
     "stage",
     "task",
     "testing",
+    "EditMode",
+    "FieldKind",
     "FeaturePack",
+    "FormChoice",
+    "FormField",
     "Manifest",
     "ManifestError",
     "MultiFileTask",
@@ -48,6 +57,7 @@ __all__ = [
     "StageSnapshot",
     "TaskConfig",
     "TaskFile",
+    "TaskForm",
     "TaskInput",
     "TaskSnapshot",
     "Task",

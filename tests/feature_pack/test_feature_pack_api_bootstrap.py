@@ -12,7 +12,11 @@ if str(ROOT) not in sys.path:
 
 import app.feature_pack as featurePackPackage
 import app.feature_pack.api as apiPackage
+from app.feature_pack.api import EditMode
+from app.feature_pack.api import FieldKind
 from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import FormChoice
+from app.feature_pack.api import FormField
 from app.feature_pack.api import Manifest
 from app.feature_pack.api import ManifestError
 from app.feature_pack.api import cards
@@ -33,6 +37,7 @@ from app.feature_pack.api import stage
 from app.feature_pack.api import task
 from app.feature_pack.api import TaskConfig
 from app.feature_pack.api import TaskFile
+from app.feature_pack.api import TaskForm
 from app.feature_pack.api import TaskInput
 from app.feature_pack.api import TaskSnapshot
 from app.feature_pack.api import Task
@@ -53,7 +58,11 @@ EXPECTED_EXPORTS = [
     "stage",
     "task",
     "testing",
+    "EditMode",
+    "FieldKind",
     "FeaturePack",
+    "FormChoice",
+    "FormField",
     "Manifest",
     "ManifestError",
     "MultiFileTask",
@@ -61,6 +70,7 @@ EXPECTED_EXPORTS = [
     "StageSnapshot",
     "TaskConfig",
     "TaskFile",
+    "TaskForm",
     "TaskInput",
     "TaskSnapshot",
     "Task",
@@ -88,7 +98,11 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.stage, stage)
         self.assertIs(apiPackage.task, task)
         self.assertIs(apiPackage.testing, testing)
+        self.assertIs(apiPackage.EditMode, EditMode)
+        self.assertIs(apiPackage.FieldKind, FieldKind)
         self.assertIs(apiPackage.FeaturePack, FeaturePack)
+        self.assertIs(apiPackage.FormChoice, FormChoice)
+        self.assertIs(apiPackage.FormField, FormField)
         self.assertIs(apiPackage.Manifest, Manifest)
         self.assertIs(apiPackage.ManifestError, ManifestError)
         self.assertIs(apiPackage.MultiFileTask, MultiFileTask)
@@ -96,6 +110,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
         self.assertIs(apiPackage.TaskFile, TaskFile)
+        self.assertIs(apiPackage.TaskForm, TaskForm)
         self.assertIs(apiPackage.TaskInput, TaskInput)
         self.assertIs(apiPackage.TaskSnapshot, TaskSnapshot)
         self.assertIs(apiPackage.Task, Task)
@@ -104,6 +119,11 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.parseManifest, parseManifest)
         self.assertIs(pack.FeaturePack, FeaturePack)
         self.assertIs(config.TaskConfig, TaskConfig)
+        self.assertIs(form.EditMode, EditMode)
+        self.assertIs(form.FieldKind, FieldKind)
+        self.assertIs(form.FormChoice, FormChoice)
+        self.assertIs(form.FormField, FormField)
+        self.assertIs(form.TaskForm, TaskForm)
         self.assertIs(input.TaskInput, TaskInput)
         self.assertIs(manifest.Manifest, Manifest)
         self.assertIs(manifest.ManifestError, ManifestError)

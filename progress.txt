@@ -357,3 +357,23 @@
 - 风险: 当前基类只收敛了文件列表、根目录和选择统计，还没有为具体 Pack 定义文件进度聚合或阶段路径映射细节；后续具体子类实现 `syncOutput()` 和默认选择对话框时，需要保持“基类负责稳定选择接口，子类负责阶段输出传播”的边界。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 定义 TaskForm 与 FormField
+### 已完成内容:
+- 在 `app/feature_pack/api/form.py` 中实现 `TaskForm`、`FormField`、`FormChoice`，并补齐 `EditMode`、`FieldKind` 字段类型约束，正式固定声明式任务编辑表单模型。
+- 为 `FormField.modes` 提供默认的 `before/running` 编辑模式集合，保持默认对话框能基于统一字段语义判断编辑时机。
+- 更新 `app/feature_pack/api/__init__.py` 与 `app/feature_pack/api/task.py`，让表单模型成为新版 API 的稳定公共导出，并让 `Task.editForm()` 返回正式 `TaskForm | None`。
+- 更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，新增 `tests/feature_pack/test_task_form_model.py`，覆盖表单模型字段顺序、默认值、冻结语义、关键字参数约束、显式选项与模式限制。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/form.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_form_model.py` -> 通过
+- `uv run python tests/feature_pack/test_task_form_model.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现新版 `TaskForm`、`FormField`、`FormChoice` 及其公共导出，为后续默认 `TaskConfigDialog` 提供稳定、声明式的宿主输入模型，不提前进入对话框渲染或具体 Pack 编辑逻辑。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 18；字段类型和编辑模式必须与迁移文档契约一致；继续遵循简单、显式、可读原则；验证通过前不能更新任务完成状态。
+  - 验收标准: 已存在可导出的 `TaskForm`、`FormField`、`FormChoice`；常见字段类型与 `before/running` 编辑模式已经固定；存在模型测试锁定字段结构、默认值和模式约束。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 `TaskConfigDialog` 基于 `TaskForm` 渲染标准字段”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskForm`、`FormField`、`FormChoice`、`EditMode`、`FieldKind` 契约；同时建立在任务 10 的 `TaskConfig`、任务 14 的 `Task.editForm()`、任务 17 的 `MultiFileTask` 之上，并为后续任务 19、20、27、31、49 提供表单边界。
+- 风险: 当前仅固定了声明式数据模型和导出路径，还没有把字段语义映射到实际 Qt 控件；后续实现默认 `TaskConfigDialog` 时需要继续保持“表单只描述字段语义，不直接持有 widget”的边界。
+- 结论: 已完成。
+---

@@ -17,6 +17,8 @@ from PySide6.QtCore import QObject
 from PySide6.QtCore import Signal
 
 from .config import TaskConfig
+from .form import EditMode
+from .form import TaskForm
 from .snapshot import TaskSnapshot
 from .stage import TaskStage
 
@@ -129,7 +131,7 @@ class Task(QObject):
         for stage in self.stages:
             stage.configure(config)
 
-    def editForm(self, _mode: str) -> object | None:
+    def editForm(self, _mode: EditMode) -> TaskForm | None:
         """Return a declarative edit form or ``None`` when defaults are enough."""
         return None
 
