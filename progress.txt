@@ -590,3 +590,24 @@
 - 风险: 当前新版 recorder 只在新版模块内提供，还未切换旧 `app.supports.recorder` 与旧宿主调用点；真正接管运行入口仍需后续 BrowserService、CoreService 和主窗口切换任务配合完成。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 BrowserService 快照与任务操作映射
+### 已完成内容:
+- 在 `app/feature_pack/internal/browser.py` 中新增新版浏览器桥接层，提供 `buildBrowserTaskSummary()`、`buildBrowserTaskSnapshot()`、`BrowserTaskActionMapper`，把浏览器任务快照和动作分发收敛到新版模块。
+- 让浏览器任务快照直接基于 `Task.snapshot()` 返回的 `TaskSnapshot` 投影生成，统一使用 `id`、`packId`、`kind`、`name`、`state`、`progress`、`doneBytes`、`totalBytes`、`target` 等稳定字段，并补齐浏览器侧需要的 `speed`、`folder`、`canOpenFile`、`canOpenFolder`、`fileExt` 派生信息。
+- 重建浏览器任务操作到新版 `Task` 接口和宿主生命周期回调的边界：`toggle_pause` 走 `Task.pause()`，`redownload` 走 `Task.reset()` + 显式启动回调，`cancel` 走显式取消回调，打开文件/目录统一从 `TaskSnapshot.target` 推导，不再依赖旧 `Task` 的 `status`、`resolvePath` 等 V0 字段。
+- 更新 `app/feature_pack/internal/__init__.py` 导出新版浏览器桥接类型，便于后续 BrowserService 切换任务直接接入。
+- 新增 `tests/feature_pack/test_feature_pack_browser_v1.py`，覆盖浏览器快照字段生成、文件/目录目标推导、`toggle_pause`/`cancel`/`redownload`/`open_file`/`open_folder` 映射与异步宿主回调边界。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/internal/__init__.py app/feature_pack/internal/browser.py tests/feature_pack/test_feature_pack_browser_v1.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_browser_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版 `app.feature_pack` 模块中实现浏览器任务快照和任务动作映射，不提前切换旧 `app/services/browser_service.py` 的 WebSocket 入口、旧浏览器创建任务链路，且不进入后续任务 30 的新版 `CoreService.createTask()` 调度。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 29；浏览器任务快照必须基于 `TaskSnapshot` 输出，不能继续直接依赖旧 `Task` 的 `status`、`resolvePath`、`taskId`、模块名推导等 V0 细节；任务动作必须明确落在新版 `Task.snapshot()`、`Task.pause()`、`Task.reset()` 和显式宿主回调边界上；验证通过并追加 `progress.txt` 之前不能更新 `passes`。
+  - 验收标准: 新版浏览器桥接层已能基于 `TaskSnapshot` 生成稳定任务快照；`toggle_pause`、`cancel`、`redownload`、`open_file`、`open_folder` 已映射到新版 `Task` 接口与宿主回调；浏览器快照与操作测试全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `Task` / `TaskStage` 工作流边界、Actor 风格消息流与 Qt-free `TaskSnapshot` 的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskSnapshot`、`Task`、`FeatureService` 的契约；同时建立在任务 12、14、17、19、20、27、28 已完成的快照模型、任务基类、默认 UI 分发和新版 `taskRecorder` 基础之上，并为后续任务 30、31、47 的新版调度、浏览器入口切换和添加任务流程切换提供浏览器侧桥接层。
+- 风险: 本轮只新增新版内部浏览器桥接层，还没有切换旧 `app/services/browser_service.py` 的实际入口，因此浏览器 WebSocket 协议和扩展端字段切换仍要在后续任务 47 完成；此外，当前新版浏览器快照显式只依赖 `TaskSnapshot` 与派生路径信息，不再内建旧 `createdAt` 排序语义，后续接线时需要由宿主决定最终任务列表顺序。
+- 结论: 已完成。
+---
