@@ -400,3 +400,24 @@
 - 风险: 本轮对 `files` 字段只接入了现有选中集合的展示与结果回收，还没有弹出正式树形选择器；下一轮实现 `MultiFileSelectDialog` 时需要把这里的占位入口接到统一选择对话框，同时保持当前 `TaskConfigDialog` 的 `selectedIds()` 回收边界不变。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 实现默认 MultiFileSelectDialog
+### 已完成内容:
+- 在 `app/feature_pack/ui/dialogs.py` 中新增 `MultiFileSelectDialog`，基于 `MultiFileTask.files` 构建宿主默认树形选择对话框，补齐大小/备注列、全选、全不选、反选、按类型选择、分支勾选联动和 `selectedIds()` 结果回收。
+- 让 `TaskConfigDialog` 的 `files` 字段从占位摘要升级为正式入口，新增“选择”按钮并接入 `MultiFileSelectDialog`，确认后刷新已保留项摘要，保持多文件选择统一走宿主默认链路。
+- 更新 `app/feature_pack/api/__init__.py`、`app/feature_pack/ui/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `MultiFileSelectDialog` 纳入稳定公开导出，固定后续宿主与 Pack 的导入路径。
+- 新增 `tests/feature_pack/test_multi_file_select_dialog.py`，并扩展 `tests/feature_pack/test_task_config_dialog.py`，覆盖树构建、备注展示、全选/全不选/反选/按类型选择、分支勾选联动，以及默认配置对话框对正式多文件选择器的回收流程。
+### 测试验证:
+- `uv run basedpyright app/feature_pack/api/__init__.py app/feature_pack/ui/__init__.py app/feature_pack/ui/dialogs.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_config_dialog.py tests/feature_pack/test_multi_file_select_dialog.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_task_config_dialog.py` -> 通过（Qt 离屏环境仍输出字体目录提示，不影响结果）
+- `uv run python tests/feature_pack/test_multi_file_select_dialog.py` -> 通过（Qt 离屏环境仍输出主题句柄告警，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与 QFluentWidgets 提示，不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现宿主默认 `MultiFileSelectDialog`，把现有 `FileSelectDialog` 的文件树选择能力提升为正式新版对话框，并将 `TaskConfigDialog` 的 `files` 字段接到统一选择入口；不进入设置注入、服务编辑分发或具体 Pack 改写。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 20；输入必须只依赖 `MultiFileTask.files`；必须完整覆盖树选择、全选和结果回写测试；执行证据必须写入中文 `progress.txt`，且只能在验证通过并追加日志后把当前任务标记为完成。
+  - 验收标准: `MultiFileSelectDialog` 已存在且直接面向 `MultiFileTask.files`；默认提供树形勾选、全选/全不选/反选、按类型选择和备注展示；`TaskConfigDialog` 能打开正式选择对话框并回收 `selectedIds()`；相关测试全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 `MultiFileSelectDialog` 成为宿主正式能力、输入只依赖 `MultiFileTask.files`”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `MultiFileSelectDialog`、`TaskConfigDialog`、`MultiFileTask.select()` 契约；同时建立在任务 17 的 `MultiFileTask`、任务 18 的 `TaskForm`、任务 19 的 `TaskConfigDialog` 之上，并为后续任务 23、27、39、40、41 提供默认多文件选择入口。
+- 风险: 当前默认类型分类仍沿用旧 `FileSelectDialog` 的后缀规则；后续如果具体 Pack 需要更细粒度分组，应在保持宿主默认规则稳定的前提下补充，而不要重新退回 Pack 私有对话框。
+- 结论: 已完成。
+---

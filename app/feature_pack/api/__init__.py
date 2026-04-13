@@ -31,6 +31,7 @@ from .task import MultiFileTask
 from .task import SingleFileTask
 from .task import Task
 from .task import TaskFile
+from ..ui.dialogs import MultiFileSelectDialog
 from ..ui.dialogs import TaskConfigDialog
 
 __all__ = [
@@ -54,6 +55,7 @@ __all__ = [
     "Manifest",
     "ManifestError",
     "MultiFileTask",
+    "MultiFileSelectDialog",
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",

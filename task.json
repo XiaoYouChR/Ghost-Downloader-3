@@ -220,7 +220,7 @@
         "让输入只依赖 `MultiFileTask.files`。",
         "补充树选择、全选和结果回写测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 21,

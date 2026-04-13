@@ -7,6 +7,7 @@ import sys
 import unittest
 from pathlib import Path
 from typing import cast
+from unittest.mock import patch
 
 _ = os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -15,11 +16,13 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     _ = sys.path.insert(0, str(ROOT))
 
+from PySide6.QtWidgets import QDialog
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import BodyLabel
 from qfluentwidgets import ComboBox
 from qfluentwidgets import LineEdit
+from qfluentwidgets import PrimaryPushButton
 from qfluentwidgets import SpinBox
 
 from app.feature_pack.api import FormChoice
@@ -320,6 +323,58 @@ class TaskConfigDialogTests(unittest.TestCase):
 
         self.assertEqual(config.source, "https://mirror.example.com/video.mkv")
         self.assertEqual(dialog.selectedIds(), {"episode-1", "episode-3"})
+        self.assertTrue(dialog.validate())
+
+    def testTaskConfigDialogOpensMultiFileSelectDialogAndUpdatesSelectionSummary(self) -> None:
+        task = DemoMultiFileDialogTask(
+            config=self.makeConfig(),
+            files=[
+                TaskFile(id="episode-1", path="Season 1/episode-1.mp4", size=100, selected=True),
+                TaskFile(id="episode-2", path="Season 1/episode-2.mp4", size=120, selected=False),
+                TaskFile(id="episode-3", path="Season 1/episode-3.mp4", size=140, selected=True),
+            ],
+        )
+        form = TaskForm(
+            title="编辑多文件任务",
+            fields=(
+                FormField(
+                    key="files",
+                    label="保留内容",
+                    kind="files",
+                ),
+            ),
+        )
+
+        dialog = TaskConfigDialog(
+            task=task,
+            form=form,
+            mode="before",
+            parent=self.createDialogParent(),
+        )
+        self.showWidget(dialog)
+
+        filesLabel = dialog.findChild(BodyLabel, "taskConfigInput:files")
+        filesButton = dialog.findChild(PrimaryPushButton, "taskConfigAction:files")
+
+        self.assertIsNotNone(filesLabel)
+        self.assertIsNotNone(filesButton)
+
+        filesLabel = cast(BodyLabel, filesLabel)
+        filesButton = cast(PrimaryPushButton, filesButton)
+        self.assertEqual(filesLabel.text(), "已保留 2/3 项选择")
+
+        with patch("app.feature_pack.ui.dialogs.MultiFileSelectDialog") as dialogMock:
+            selector = dialogMock.return_value
+            selector.exec.return_value = QDialog.DialogCode.Accepted
+            selector.selectedIds.return_value = {"episode-2"}
+
+            filesButton.click()
+
+            dialogMock.assert_called_once()
+            selector.setSelectedIds.assert_called_once_with({"episode-1", "episode-3"})
+
+        self.assertEqual(dialog.selectedIds(), {"episode-2"})
+        self.assertEqual(filesLabel.text(), "已保留 1/3 项选择")
         self.assertTrue(dialog.validate())
 
 

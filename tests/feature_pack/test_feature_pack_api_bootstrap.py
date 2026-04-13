@@ -26,6 +26,7 @@ from app.feature_pack.api import input
 from app.feature_pack.api import loadManifest
 from app.feature_pack.api import manifest
 from app.feature_pack.api import MultiFileTask
+from app.feature_pack.api import MultiFileSelectDialog
 from app.feature_pack.api import pack
 from app.feature_pack.api import parseManifest
 from app.feature_pack.api import service
@@ -67,6 +68,7 @@ EXPECTED_EXPORTS = [
     "Manifest",
     "ManifestError",
     "MultiFileTask",
+    "MultiFileSelectDialog",
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
@@ -108,6 +110,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.Manifest, Manifest)
         self.assertIs(apiPackage.ManifestError, ManifestError)
         self.assertIs(apiPackage.MultiFileTask, MultiFileTask)
+        self.assertIs(apiPackage.MultiFileSelectDialog, MultiFileSelectDialog)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
