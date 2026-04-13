@@ -158,6 +158,7 @@ def validate_agent_contract() -> None:
         "The Zen of Python",
         "camelCase",
         "search the internet for current best practices",
+        "git commit",
     ]
 
     for token in required_tokens:
@@ -176,6 +177,7 @@ def validate_runner_contract() -> None:
         "xhigh",
         "--search",
         "--dangerously-bypass-approvals-and-sandbox",
+        "git commit",
     ]
 
     for token in required_tokens:

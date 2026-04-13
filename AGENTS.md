@@ -132,7 +132,16 @@ At the end of the round, report:
 - validation commands run
 - whether the task completed or is blocked
 
-Do not create a git commit unless the user explicitly asks for one.
+If validation passed and the task is complete:
+
+- create one formatted `git commit` for this round after updating `progress.txt` and `task.json`
+- keep the commit message direct, readable, and tied to the current task title
+- include the code changes, `progress.txt`, and `task.json` in the same commit
+- do not amend an existing commit unless the user explicitly asks for it
+
+If the task is blocked or validation failed:
+
+- do not create a git commit
 
 ## Task File Contract
 

@@ -149,12 +149,15 @@ Constraints:
 - Append progress evidence to progress.txt in Chinese.
 - Only after validation passes, set this task's passes field to true in task.json.
 - If blocked, leave passes as false and write the blocking record to progress.txt.
+- If validation passes and the task is complete, create one direct and readable git commit for this round after updating progress.txt and task.json.
+- Do not create a git commit for a blocked or failed round.
 
 Done when:
 - The task implementation is complete.
 - Validation has run.
 - progress.txt contains the current round evidence.
 - task.json matches the validation outcome.
+- A successful round ends with one git commit.
 "@
 }
 
