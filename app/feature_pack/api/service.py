@@ -42,6 +42,8 @@ from .settings import SettingItem
 from .settings import SettingSection
 from .task import MultiFileTask
 from .task import Task
+from ..ui.cards import DefaultResultCard
+from ..ui.cards import DefaultTaskCard
 from ..ui.dialogs import TaskConfigDialog
 
 
@@ -538,8 +540,9 @@ class DefaultFeatureService(FeatureService):
         raise NotImplementedError("Task configuration dispatch is implemented in a later migration task.")
 
     def installSettings(self, page: object) -> None:
-        _ = page
-        raise NotImplementedError("Settings installation is implemented in a later migration task.")
+        for packId in self._loadedPackOrder:
+            loadedPack = self._loadedPacksById[packId]
+            _ = self.settingsInstaller.install(page, loadedPack.pack)
 
     def editTask(
         self,
@@ -547,20 +550,25 @@ class DefaultFeatureService(FeatureService):
         mode: EditMode,
         parent: QWidget | None = None,
     ) -> bool:
-        _ = task
-        _ = mode
-        _ = parent
-        raise NotImplementedError("Task editing dispatch is implemented in a later migration task.")
+        return self.taskEditor.editTask(task, mode, parent)
 
     def createTaskCard(self, task: Task, parent: QWidget | None = None) -> object:
-        _ = task
-        _ = parent
-        raise NotImplementedError("Task card creation is implemented in a later migration task.")
+        pack = self.packForTask(task)
+        if pack is not None:
+            card = pack.createTaskCard(task, parent)
+            if card is not None:
+                return card
+
+        return DefaultTaskCard(task=task, editor=self, parent=parent)
 
     def createResultCard(self, task: Task, parent: QWidget | None = None) -> object:
-        _ = task
-        _ = parent
-        raise NotImplementedError("Result card creation is implemented in a later migration task.")
+        pack = self.packForTask(task)
+        if pack is not None:
+            card = pack.createResultCard(task, parent)
+            if card is not None:
+                return card
+
+        return DefaultResultCard(task=task, editor=self, parent=parent)
 
     def _discoverPackDescriptors(self) -> list[DiscoveredPack]:
         if not self.featuresPath.exists():

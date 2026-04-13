@@ -549,3 +549,24 @@
 - 风险: 当前路由只面向已加载 Pack 进行顺序匹配，异常采用显式跳过策略但暂未沉淀稳定错误报告；后续宿主切换或补齐服务分发时，如果需要观测路由失败原因，应在不破坏当前 `accepts()` / `owns()` 单一语义边界的前提下补充日志或诊断能力。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的卡片、设置与编辑分发
+### 已完成内容:
+- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.installSettings()`、`editTask()`、`createTaskCard()`、`createResultCard()`，把 UI 分发入口正式接回新版服务。
+- 让服务统一复用已注入的 `SettingsInstaller` 与 `TaskEditor`，设置注入按已加载 Pack 的依赖顺序分发，任务编辑统一委托默认编辑链路，不再保留占位异常。
+- 为卡片创建补上“Pack 自定义优先、宿主默认回退”的分发逻辑：Pack 返回自定义卡片时直接使用；未提供卡片时回退到 `DefaultTaskCard` 与 `DefaultResultCard`，并继续通过宿主 `editTask()` 入口处理编辑动作。
+- 新增 `tests/feature_pack/test_feature_service_v1_dispatch.py`，覆盖自定义卡片分发、默认卡片回退、设置注入顺序和编辑委托行为，给新版服务 UI 分发路径加上显式护栏。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_v1_dispatch.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `uv run python tests/feature_pack/test_feature_service_v1_dispatch.py` -> 通过（Qt 离屏字体目录提示与 QFluentWidgets Pro 提示仍存在，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版模块中补齐 `FeatureService` 的卡片创建、设置注入和任务编辑分发，让宿主后续能完整接入新版默认 UI 能力；不提前进入任务 28 之后的持久化、浏览器快照、调度或 Pack 改写。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 27；必须完整实现 `createTaskCard()`、`createResultCard()`、`installSettings()`、`editTask()`；服务层必须统一接入默认对话框与设置安装器；继续遵循简单、显式、可读原则；必须先写入 `progress.txt` 再更新 `task.json`。
+  - 验收标准: 新版 `FeatureService` 已能分发自定义或默认卡片、按加载顺序安装 Pack 设置、并统一委托任务编辑；相关分发测试和必需验证全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 TaskCard / ResultCard 支持”“SettingPage 设置卡片注入能力”“默认 UI 统一由宿主提供”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.installSettings()`、`editTask()`、`createTaskCard()`、`createResultCard()` 与统一编辑流转契约；同时建立在任务 19、20、22、23、24、25、26 已完成的默认对话框、设置安装器、默认卡片、发现加载和路由能力之上，并为后续任务 30、31、42、46、47 提供新版 UI 分发入口。
+- 风险: 当前 `createTaskCard()` 与 `createResultCard()` 在 Pack 未提供自定义卡片时直接回退到宿主默认卡片，这符合 V1 的默认 UI 方向；但生产 Pack 仍未迁到新版 `FeaturePack`，因此真正切换宿主入口前还需要后续 Pack 改写任务逐步接入新版卡片与设置接口。
+- 结论: 已完成。
+---
