@@ -530,3 +530,22 @@
 - 风险: 当前仓库中的生产 Pack 仍大多停留在旧接口，尚未迁到新版 `FeaturePack`，因此新版加载器目前主要通过合成测试 Pack 验证，真正接管宿主入口仍依赖后续 Pack 迁移任务完成；另外 `loadPacks()` 目前只负责加载、安装和实例缓存，路由、任务创建与 UI 分发仍待后续任务补齐。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的 source 与 task 路由
+### 已完成内容:
+- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.packForSource()` 与 `packForTask()`，让服务在已加载 Pack 顺序上执行路由，不再保留占位异常。
+- 新增内部 `_routeLoadedPack()` 路由辅助方法，把按顺序匹配、首个命中即返回、单个 Pack 谓词异常时跳过继续匹配的行为收敛到一处，保持 source 路由与 task 路由都完全基于新版 `accepts()` / `owns()` 语义。
+- 新增 `tests/feature_pack/test_feature_service_v1_routing.py`，覆盖 `packForSource()` 与 `packForTask()` 的命中、未命中、依赖顺序优先、未加载前返回 `None`，以及 `accepts()` / `owns()` 抛错时的隔离行为。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py tests/feature_pack/test_feature_service_v1_routing.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_service_v1_routing.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版模块中实现 `FeatureService` 的 `packForSource()` 与 `packForTask()` 路由，为后续任务创建、卡片分发和宿主切换提供新版 Pack 定位能力，不提前实现 `createTask()`、设置分发或卡片分发。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 26；路由必须完全依赖新版 `FeaturePack.accepts()` 与 `FeaturePack.owns()` 语义；继续遵循简单、显式、可读原则；必须在验证通过并追加 `progress.txt` 后才能更新任务完成状态。
+  - 验收标准: 新版 `FeatureService` 已实现 `packForSource()` 与 `packForTask()`；路由行为有显式测试覆盖命中、未命中、顺序和异常隔离；全部验证通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“Pack 主路径只保留 `accepts(source)`、`createTask(data)`、`owns(task)`”与“FeatureService 负责来源识别和任务归属路由”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.packForSource()`、`FeatureService.packForTask()` 契约；同时建立在任务 9 的新版 `FeaturePack` 抽象、任务 14 的新版 `Task` 基类、任务 24 的发现排序和任务 25 的加载缓存基础之上，并为后续任务 27、30、31、46、47 提供路由入口。
+- 风险: 当前路由只面向已加载 Pack 进行顺序匹配，异常采用显式跳过策略但暂未沉淀稳定错误报告；后续宿主切换或补齐服务分发时，如果需要观测路由失败原因，应在不破坏当前 `accepts()` / `owns()` 单一语义边界的前提下补充日志或诊断能力。
+- 结论: 已完成。
+---

@@ -286,7 +286,7 @@
         "让路由完全基于新版 `accepts()` 与 `owns()` 语义。",
         "补充路由测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 27,

@@ -8,6 +8,7 @@ import importlib.util
 import sys
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -522,12 +523,10 @@ class DefaultFeatureService(FeatureService):
         return loadedPack.pack
 
     def packForSource(self, source: str) -> FeaturePack | None:
-        _ = source
-        raise NotImplementedError("Source routing is implemented in a later migration task.")
+        return self._routeLoadedPack(lambda pack: pack.accepts(source))
 
     def packForTask(self, task: Task) -> FeaturePack | None:
-        _ = task
-        raise NotImplementedError("Task routing is implemented in a later migration task.")
+        return self._routeLoadedPack(lambda pack: pack.owns(task))
 
     async def createTask(self, data: TaskInput) -> Task:
         _ = data
@@ -833,6 +832,20 @@ class DefaultFeatureService(FeatureService):
             for loadedPack in loadedPacks
         }
         self._loadedPackOrder = tuple(loadedPack.manifest.id for loadedPack in loadedPacks)
+
+    def _routeLoadedPack(
+        self,
+        matcher: Callable[[FeaturePack], bool],
+    ) -> FeaturePack | None:
+        for packId in self._loadedPackOrder:
+            loadedPack = self._loadedPacksById[packId]
+            try:
+                if matcher(loadedPack.pack):
+                    return loadedPack.pack
+            except Exception:
+                continue
+
+        return None
 
 
 __all__ = [
