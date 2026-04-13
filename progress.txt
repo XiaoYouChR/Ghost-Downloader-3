@@ -507,3 +507,26 @@
 - 风险: 本轮只完成发现与排序，`loadPacks()`、`packForSource()`、`packForTask()`、`createTask()` 等入口仍显式保留为后续任务实现；同时新版排序现在对缺失依赖、循环依赖和重复 `packId` 采用 fail-fast，而不是旧服务的“跳过坏分支”行为，后续切换宿主入口时需要明确这是有意的 V1 收紧。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的 Pack 加载与实例管理
+### 已完成内容:
+- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.loadPacks()` 与 `pack()`，新增 `LoadedPack`、`PackLoadError`，把 Pack 模块加载、类发现、实例化、安装和实例缓存收敛到新版宿主服务。
+- 为加载流程固定模块命名、依赖顺序加载、失败时模块树回滚和成功后实例缓存，避免旧 loader 的隐式 `sys.modules` 污染和弱实例管理。
+- 固定新版 Pack 加载失败的稳定错误报告方式，显式区分 `module-spec-failed`、`module-load-failed`、`missing-pack-class`、`multiple-pack-classes`、`invalid-pack-manifest`、`manifest-mismatch`、`pack-init-failed`、`pack-install-failed` 等失败码。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `PackLoadError` 纳入新版 API 的稳定公共导出。
+- 新增 `tests/feature_pack/test_feature_service_v1_loading.py`，覆盖依赖顺序加载、实例缓存、相对模块导入、缺少新版 `FeaturePack` 子类、manifest 不匹配、入口导入失败、实例化失败和安装失败回滚等场景。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_v1_discovery.py tests/feature_pack/test_feature_service_v1_loading.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `uv run python tests/feature_pack/test_feature_service_v1_discovery.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `uv run python tests/feature_pack/test_feature_service_v1_loading.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版模块中实现 `FeatureService` 的 Pack 模块加载、实例化、实例缓存和失败报告，为后续任务 26、27 的路由与分发提供可复用加载器；不提前实现 source 路由、task 路由、任务创建、设置分发或卡片分发。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 25；必须继续遵守简单、显式、可读原则；新版加载器必须面向 V1 `FeaturePack` 契约而不是继续扩展旧接口；必须先写入 `progress.txt` 再更新 `task.json`。
+  - 验收标准: 新版 `FeatureService` 已能按发现顺序加载 Pack 模块并缓存实例；Pack 加载失败时存在稳定、可断言的错误报告；加载与失败场景测试全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“FeatureService 负责发现、加载和宿主注册 Pack”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.loadPacks()`、`FeatureService.pack()` 与 `FeaturePack.install()` 契约；同时建立在任务 6 到任务 9 的 `Manifest`、读取器和新版 `FeaturePack`，以及任务 24 的 manifest 发现与依赖排序基础之上，并为后续任务 26、27、46、47 提供新版加载器。
+- 风险: 当前仓库中的生产 Pack 仍大多停留在旧接口，尚未迁到新版 `FeaturePack`，因此新版加载器目前主要通过合成测试 Pack 验证，真正接管宿主入口仍依赖后续 Pack 迁移任务完成；另外 `loadPacks()` 目前只负责加载、安装和实例缓存，路由、任务创建与 UI 分发仍待后续任务补齐。
+- 结论: 已完成。
+---

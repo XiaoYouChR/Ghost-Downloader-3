@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
+import importlib.util
+import sys
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from types import ModuleType
 from typing import Protocol
 from typing import cast
 from typing import final
@@ -34,14 +36,12 @@ from .form import EditMode
 from .input import TaskInput
 from .manifest import Manifest
 from .manifest import loadManifest
+from .pack import FeaturePack
 from .settings import SettingItem
 from .settings import SettingSection
 from .task import MultiFileTask
 from .task import Task
 from ..ui.dialogs import TaskConfigDialog
-
-if TYPE_CHECKING:
-    from .pack import FeaturePack
 
 
 def _translate(context: str, text: str) -> str:
@@ -62,8 +62,52 @@ class DiscoveredPack:
     entryPath: Path
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class LoadedPack:
+    """Runtime state for one successfully loaded pack instance."""
+
+    manifest: Manifest
+    directory: Path
+    manifestPath: Path
+    entryPath: Path
+    moduleName: str
+    module: ModuleType
+    packClass: type[FeaturePack]
+    pack: FeaturePack
+
+
 class PackDiscoveryError(RuntimeError):
     """Stable discovery failure for manifest scanning and dependency sorting."""
+
+    code: str
+    reason: str
+    packId: str | None
+    path: Path | None
+
+    def __init__(
+        self,
+        *,
+        code: str,
+        reason: str,
+        packId: str | None = None,
+        path: Path | None = None,
+    ) -> None:
+        self.code = code
+        self.reason = reason
+        self.packId = packId
+        self.path = path
+
+        messageParts: list[str] = [f"[{code}]"]
+        if packId is not None:
+            messageParts.append(packId)
+        if path is not None:
+            messageParts.append(str(path))
+        messageParts.append(reason)
+        super().__init__(" ".join(messageParts))
+
+
+class PackLoadError(RuntimeError):
+    """Stable pack loading failure for module import and pack instantiation."""
 
     code: str
     reason: str
@@ -419,7 +463,7 @@ class DefaultSettingsInstaller(SettingsInstaller):
 
 @final
 class DefaultFeatureService(FeatureService):
-    """Default host service implementation for manifest discovery and ordering."""
+    """Default host service implementation for pack discovery and loading."""
 
     featuresPath: Path
     settingsInstaller: SettingsInstaller
@@ -439,6 +483,8 @@ class DefaultFeatureService(FeatureService):
         self.taskEditor = taskEditor if taskEditor is not None else DefaultTaskEditor()
         self._discoveredPacksById: dict[str, DiscoveredPack] = {}
         self._packOrder: tuple[str, ...] = ()
+        self._loadedPacksById: dict[str, LoadedPack] = {}
+        self._loadedPackOrder: tuple[str, ...] = ()
 
     def discoverPacks(self) -> list[Manifest]:
         discoveredPacks = self._discoverPackDescriptors()
@@ -447,12 +493,33 @@ class DefaultFeatureService(FeatureService):
         return [discoveredPack.manifest for discoveredPack in orderedPacks]
 
     def loadPacks(self, window: object) -> None:
-        _ = window
-        raise NotImplementedError("Pack loading is implemented in a later migration task.")
+        if self._loadedPackOrder:
+            return
+
+        discoveredPacks = self._orderedDiscoveredPacks()
+        if not discoveredPacks:
+            self._cacheLoadedPacks(())
+            return
+
+        loadedPacks: list[LoadedPack] = []
+        try:
+            for discoveredPack in discoveredPacks:
+                loadedPacks.append(self._loadPack(discoveredPack))
+
+            for loadedPack in loadedPacks:
+                self._installLoadedPack(loadedPack, window)
+        except Exception:
+            self._unloadPackModuleTrees(loadedPacks)
+            self._cacheLoadedPacks(())
+            raise
+
+        self._cacheLoadedPacks(loadedPacks)
 
     def pack(self, packId: str) -> FeaturePack | None:
-        _ = packId
-        raise NotImplementedError("Pack instance lookup is implemented in a later migration task.")
+        loadedPack = self._loadedPacksById.get(packId)
+        if loadedPack is None:
+            return None
+        return loadedPack.pack
 
     def packForSource(self, source: str) -> FeaturePack | None:
         _ = source
@@ -601,6 +668,172 @@ class DefaultFeatureService(FeatureService):
         }
         self._packOrder = tuple(discoveredPack.manifest.id for discoveredPack in discoveredPacks)
 
+    def _orderedDiscoveredPacks(self) -> list[DiscoveredPack]:
+        if not self._packOrder:
+            _ = self.discoverPacks()
+
+        return [self._discoveredPacksById[packId] for packId in self._packOrder]
+
+    def _loadPack(self, discoveredPack: DiscoveredPack) -> LoadedPack:
+        moduleName = self._moduleNameForPack(discoveredPack.manifest.id)
+        self._unloadModuleTree(moduleName)
+
+        spec = importlib.util.spec_from_file_location(
+            moduleName,
+            discoveredPack.entryPath,
+            submodule_search_locations=[str(discoveredPack.directory)],
+        )
+        if spec is None or spec.loader is None:
+            raise PackLoadError(
+                code="module-spec-failed",
+                reason="无法创建 Pack 模块规格",
+                packId=discoveredPack.manifest.id,
+                path=discoveredPack.entryPath,
+            )
+
+        module = importlib.util.module_from_spec(spec)
+        try:
+            sys.modules[moduleName] = module
+            spec.loader.exec_module(module)
+        except Exception as error:
+            self._unloadModuleTree(moduleName)
+            raise PackLoadError(
+                code="module-load-failed",
+                reason=self._describeException(error),
+                packId=discoveredPack.manifest.id,
+                path=discoveredPack.entryPath,
+            ) from error
+
+        try:
+            packClass = self._findPackClass(module=module, discoveredPack=discoveredPack)
+            packInstance = packClass()
+            self._bindManifest(packInstance=packInstance, discoveredPack=discoveredPack)
+        except PackLoadError:
+            self._unloadModuleTree(moduleName)
+            raise
+        except Exception as error:
+            self._unloadModuleTree(moduleName)
+            raise PackLoadError(
+                code="pack-init-failed",
+                reason=self._describeException(error),
+                packId=discoveredPack.manifest.id,
+                path=discoveredPack.entryPath,
+            ) from error
+
+        return LoadedPack(
+            manifest=discoveredPack.manifest,
+            directory=discoveredPack.directory,
+            manifestPath=discoveredPack.manifestPath,
+            entryPath=discoveredPack.entryPath,
+            moduleName=moduleName,
+            module=module,
+            packClass=packClass,
+            pack=packInstance,
+        )
+
+    def _findPackClass(
+        self,
+        *,
+        module: ModuleType,
+        discoveredPack: DiscoveredPack,
+    ) -> type[FeaturePack]:
+        packClasses = [
+            attr
+            for attr in vars(module).values()
+            if (
+                isinstance(attr, type)
+                and issubclass(attr, FeaturePack)
+                and attr is not FeaturePack
+                and attr.__module__ == module.__name__
+            )
+        ]
+        if not packClasses:
+            raise PackLoadError(
+                code="missing-pack-class",
+                reason="入口模块中未找到新版 FeaturePack 子类",
+                packId=discoveredPack.manifest.id,
+                path=discoveredPack.entryPath,
+            )
+        if len(packClasses) > 1:
+            classNames = ", ".join(sorted(packClass.__name__ for packClass in packClasses))
+            raise PackLoadError(
+                code="multiple-pack-classes",
+                reason=f"入口模块中存在多个 FeaturePack 子类: {classNames}",
+                packId=discoveredPack.manifest.id,
+                path=discoveredPack.entryPath,
+            )
+        return packClasses[0]
+
+    def _bindManifest(
+        self,
+        *,
+        packInstance: FeaturePack,
+        discoveredPack: DiscoveredPack,
+    ) -> None:
+        manifest = discoveredPack.manifest
+        existingManifest = getattr(packInstance, "manifest", None)
+        if existingManifest is None:
+            setattr(type(packInstance), "manifest", manifest)
+            return
+        if not isinstance(existingManifest, Manifest):
+            raise PackLoadError(
+                code="invalid-pack-manifest",
+                reason="Pack.manifest 必须是 Manifest 或保持未设置",
+                packId=manifest.id,
+                path=discoveredPack.entryPath,
+            )
+        if existingManifest != manifest:
+            raise PackLoadError(
+                code="manifest-mismatch",
+                reason="Pack.manifest 与 manifest.toml 不一致",
+                packId=manifest.id,
+                path=discoveredPack.entryPath,
+            )
+
+    def _installLoadedPack(self, loadedPack: LoadedPack, window: object) -> None:
+        try:
+            loadedPack.pack.install(window)
+        except Exception as error:
+            raise PackLoadError(
+                code="pack-install-failed",
+                reason=self._describeException(error),
+                packId=loadedPack.manifest.id,
+                path=loadedPack.entryPath,
+            ) from error
+
+    def _moduleNameForPack(self, packId: str) -> str:
+        safePackId = "".join(
+            character if character.isalnum() or character == "_" else "_"
+            for character in packId
+        )
+        return f"_ghost_feature_pack_{safePackId}"
+
+    def _describeException(self, error: BaseException) -> str:
+        message = str(error).strip()
+        if not message:
+            return error.__class__.__name__
+        return f"{error.__class__.__name__}: {message}"
+
+    def _unloadPackModuleTrees(self, loadedPacks: list[LoadedPack]) -> None:
+        for loadedPack in loadedPacks:
+            self._unloadModuleTree(loadedPack.moduleName)
+
+    def _unloadModuleTree(self, moduleName: str) -> None:
+        moduleKeys = [
+            loadedModuleName
+            for loadedModuleName in sys.modules
+            if loadedModuleName == moduleName or loadedModuleName.startswith(f"{moduleName}.")
+        ]
+        for loadedModuleName in moduleKeys:
+            _ = sys.modules.pop(loadedModuleName, None)
+
+    def _cacheLoadedPacks(self, loadedPacks: list[LoadedPack] | tuple[()]) -> None:
+        self._loadedPacksById = {
+            loadedPack.manifest.id: loadedPack
+            for loadedPack in loadedPacks
+        }
+        self._loadedPackOrder = tuple(loadedPack.manifest.id for loadedPack in loadedPacks)
+
 
 __all__ = [
     "DefaultFeatureService",
@@ -609,6 +842,7 @@ __all__ = [
     "FeatureService",
     "InstalledSettingSection",
     "PackDiscoveryError",
+    "PackLoadError",
     "SettingsInstaller",
     "TaskEditor",
 ]

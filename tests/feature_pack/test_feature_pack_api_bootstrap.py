@@ -34,6 +34,7 @@ from app.feature_pack.api import manifest
 from app.feature_pack.api import MultiFileTask
 from app.feature_pack.api import MultiFileSelectDialog
 from app.feature_pack.api import PackDiscoveryError
+from app.feature_pack.api import PackLoadError
 from app.feature_pack.api import pack
 from app.feature_pack.api import parseManifest
 from app.feature_pack.api import service
@@ -87,6 +88,7 @@ EXPECTED_EXPORTS = [
     "MultiFileTask",
     "MultiFileSelectDialog",
     "PackDiscoveryError",
+    "PackLoadError",
     "SettingItem",
     "SettingSection",
     "SingleFileTask",
@@ -140,6 +142,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.MultiFileTask, MultiFileTask)
         self.assertIs(apiPackage.MultiFileSelectDialog, MultiFileSelectDialog)
         self.assertIs(apiPackage.PackDiscoveryError, PackDiscoveryError)
+        self.assertIs(apiPackage.PackLoadError, PackLoadError)
         self.assertIs(apiPackage.SettingItem, SettingItem)
         self.assertIs(apiPackage.SettingSection, SettingSection)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
@@ -175,6 +178,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(service.DefaultTaskEditor, DefaultTaskEditor)
         self.assertIs(service.FeatureService, FeatureService)
         self.assertIs(service.PackDiscoveryError, PackDiscoveryError)
+        self.assertIs(service.PackLoadError, PackLoadError)
         self.assertIs(service.SettingsInstaller, SettingsInstaller)
         self.assertIs(service.TaskEditor, TaskEditor)
         self.assertIs(settings.SettingItem, SettingItem)

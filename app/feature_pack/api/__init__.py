@@ -31,6 +31,7 @@ from .service import DefaultSettingsInstaller
 from .service import DefaultTaskEditor
 from .service import FeatureService
 from .service import PackDiscoveryError
+from .service import PackLoadError
 from .service import SettingsInstaller
 from .service import TaskEditor
 from .settings import SettingItem
@@ -74,6 +75,7 @@ __all__ = [
     "MultiFileTask",
     "MultiFileSelectDialog",
     "PackDiscoveryError",
+    "PackLoadError",
     "SettingItem",
     "SettingSection",
     "SingleFileTask",
