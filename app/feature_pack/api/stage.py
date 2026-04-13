@@ -4,10 +4,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from abc import abstractmethod
+from collections.abc import Coroutine
 from collections.abc import Mapping
+from inspect import isawaitable
 from typing import ClassVar
 from typing import Self
+from typing import cast
 
 from PySide6.QtCore import QObject
 from PySide6.QtCore import Signal
@@ -43,6 +47,7 @@ class TaskStage(QObject):
     progressChanged: ClassVar[Signal] = Signal(float)
     snapshotChanged: ClassVar[Signal] = Signal(object)
     failed: ClassVar[Signal] = Signal(str)
+    commandRequested: ClassVar[Signal] = Signal(str, object)
     __abstractmethods__: ClassVar[frozenset[str]] = frozenset()
     __recordRegistry__: ClassVar[
         dict[tuple[str, str, int, str, int], type["TaskStage"]]
@@ -84,6 +89,7 @@ class TaskStage(QObject):
         self.version = version
         self.name = name
         self._task: object | None = None
+        _ = self.commandRequested.connect(self._onCommandRequested)
 
     def attach(self, task: object) -> None:
         """Bind this stage to its owning task workflow."""
@@ -111,6 +117,72 @@ class TaskStage(QObject):
         stage restart.
         """
         return None
+
+    def requestCommand(self, command: str, payload: object | None = None) -> None:
+        """Queue one explicit command for this stage."""
+        normalizedCommand = self._normalizeCommand(command)
+        self._validateCommandPayload(normalizedCommand, payload)
+        self.commandRequested.emit(normalizedCommand, payload)
+
+    def dispatchCommand(self, command: str, payload: object | None = None) -> object | None:
+        """Run one explicit command against this stage."""
+        normalizedCommand = self._normalizeCommand(command)
+        self._validateCommandPayload(normalizedCommand, payload)
+
+        if normalizedCommand == "configure":
+            self.configure(cast(TaskConfig, payload))
+            return None
+        if normalizedCommand == "reset":
+            self.reset()
+            return None
+        if normalizedCommand == "pause":
+            pause = getattr(self, "pause", None)
+            if callable(pause):
+                return pause()
+            return None
+
+        return self.dispatchCustomCommand(normalizedCommand, payload)
+
+    def dispatchCustomCommand(
+        self,
+        command: str,
+        payload: object | None = None,
+    ) -> object | None:
+        """Override to accept stage-specific commands beyond the base contract."""
+        _ = payload
+        raise ValueError(f"Unsupported task stage command: {command}")
+
+    def _onCommandRequested(self, command: str, payload: object) -> None:
+        commandResult = self.dispatchCommand(command, payload)
+        self._consumeCommandResult(commandResult)
+
+    def _consumeCommandResult(self, commandResult: object | None) -> None:
+        if not isawaitable(commandResult):
+            return
+        coroutine = cast(Coroutine[object, object, object], commandResult)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            _ = asyncio.run(coroutine)
+            return
+
+        _ = loop.create_task(coroutine)
+
+    @staticmethod
+    def _normalizeCommand(command: str) -> str:
+        normalizedCommand = command.strip().lower()
+        if not normalizedCommand:
+            raise ValueError("TaskStage command 不能为空")
+        return normalizedCommand
+
+    @staticmethod
+    def _validateCommandPayload(
+        command: str,
+        payload: object | None,
+    ) -> None:
+        if command == "configure" and not isinstance(payload, TaskConfig):
+            raise TypeError("configure command requires TaskConfig payload")
 
     def persistenceState(self) -> dict[str, object]:
         """Return JSON-safe state used by task persistence."""

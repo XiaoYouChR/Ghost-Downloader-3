@@ -655,3 +655,27 @@
 - 风险: 当前新版添加任务会话仍只存在于 `app.feature_pack.internal`，旧 `AddTaskDialog` 和旧 `AddTaskParseSession` 还没有切换到这条链路；此外，`DefaultFeatureService.configureTask()` 目前依赖服务已记住的任务实例，真正接管宿主入口后仍需保证添加任务、恢复任务和浏览器入口都通过新版服务注册任务。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 实现 TaskCard -> Task -> TaskStage 命令链
+### 已完成内容:
+- 在 `app/feature_pack/api/task.py` 中为新版 `Task` 增加 `commandRequested`、`stageCommandForwarded`、`requestCommand()`、`dispatchCommand()`、`dispatchToStage()`、`dispatchToStages()`，把卡片发起的任务命令和任务到阶段的转发边界显式收敛到工作流监督者上。
+- 在 `app/feature_pack/api/stage.py` 中为新版 `TaskStage` 增加 `commandRequested`、`requestCommand()`、`dispatchCommand()` 与 `dispatchCustomCommand()`，统一让阶段通过显式命令入口接收 `configure`、`pause`、`reset` 等消息，而不是继续依赖 UI 或外部对象直接改阶段状态。
+- 在 `app/feature_pack/api/service.py` 中把默认编辑流和 `configureTask()` 改成调用 `task.requestCommand(...)`，其中多文件选择先走 `select` 命令，再走 `configure` 命令，保持 `TaskCard -> Task -> TaskStage` 的命令链一致性。
+- 在 `app/feature_pack/ui/cards.py` 中给默认 `DefaultTaskCard` 增加 `commandRequested` 与 `requestTaskCommand()`，让默认卡片的命令入口明确只打到 `Task`，不直接触碰 `TaskStage`。
+- 新增 `tests/feature_pack/test_task_command_chain.py`，并扩展 `tests/feature_pack/test_task_base.py`、`tests/feature_pack/test_task_stage_base.py`，覆盖卡片到任务、任务到阶段的命令分发、命令信号暴露和命令链顺序。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/stage.py app/feature_pack/api/task.py app/feature_pack/api/service.py app/feature_pack/ui/cards.py tests/feature_pack/test_task_stage_base.py tests/feature_pack/test_task_base.py tests/feature_pack/test_default_task_cards.py tests/feature_pack/test_task_command_chain.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_task_stage_base.py` -> 通过
+- `uv run python tests/feature_pack/test_task_base.py` -> 通过
+- `uv run python tests/feature_pack/test_default_task_cards.py` -> 通过（Qt 离屏字体目录告警与 QFluentWidgets Pro 提示不影响结果）
+- `uv run python tests/feature_pack/test_task_command_chain.py` -> 通过（Qt 离屏字体目录告警与 QFluentWidgets Pro 提示不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现新版 `TaskCard -> Task -> TaskStage` 命令链，明确卡片命令先进入 `Task`，再由 `Task` 分发到当前或全部 `TaskStage`；不提前进入任务 33 的事件投影链，也不切换旧宿主入口或具体生产 Pack。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 32；命令边界必须显式、简单、可读，不能让 UI 继续直接改阶段内部状态；要统一使用 Qt 信号或等价消息机制表达命令边界；验证通过前不能更新 `passes`。
+  - 验收标准: 已存在卡片到任务、任务到阶段的命令分发路径；默认宿主编辑链路也经由 `Task` 命令边界；命令链测试和基础回归测试全部通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `TaskCard --command--> Task --command--> TaskStage`、Actor 风格单一写者边界和 queued connection 方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Task` / `TaskStage` 的 `configure(config)`、默认卡片编辑流和统一宿主编辑入口契约；同时建立在任务 13、14、19、20、23、27、31 已完成的新版任务/阶段基类、默认对话框、默认卡片、服务分发和添加任务流转之上，并为后续任务 33 的事件投影链提供对称的命令入口基础。
+- 风险: 当前命令链先在新版 API、默认卡片和默认编辑服务中落地，旧 `app.view.components.cards` 与旧宿主控制流尚未切换；此外，当前基类对通用命令只内建 `configure`、`pause`、`reset`、多文件 `select`，后续具体 Pack 若引入自定义命令，仍需通过 `dispatchCustomCommand()` 显式声明，而不是回退到直接修改对象状态。
+- 结论: 已完成。
+---

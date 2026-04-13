@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from abc import abstractmethod
+from collections.abc import Coroutine
 from collections.abc import Iterable
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -12,6 +14,7 @@ from dataclasses import replace
 from inspect import isawaitable
 from pathlib import Path
 from typing import ClassVar
+from typing import cast
 from typing import Self
 
 from PySide6.QtCore import QObject
@@ -65,6 +68,8 @@ class Task(QObject):
     stateChanged: ClassVar[Signal] = Signal(str)
     progressChanged: ClassVar[Signal] = Signal(float)
     snapshotChanged: ClassVar[Signal] = Signal(object)
+    commandRequested: ClassVar[Signal] = Signal(str, object)
+    stageCommandForwarded: ClassVar[Signal] = Signal(object, str, object)
     __abstractmethods__: ClassVar[frozenset[str]] = frozenset()
     __recordRegistry__: ClassVar[dict[tuple[str, str, int], type["Task"]]] = {}
     recordPackId: ClassVar[str | None] = None
@@ -116,6 +121,7 @@ class Task(QObject):
         self.config = config
         self.stages = []
         self.currentStageIndex = 0
+        _ = self.commandRequested.connect(self._onCommandRequested)
 
         for stage in stages:
             self.addStage(stage)
@@ -134,8 +140,7 @@ class Task(QObject):
         """
         self.config = config
         self.syncOutput()
-        for stage in self.stages:
-            stage.configure(config)
+        _ = self.dispatchToStages("configure", config)
 
     def editForm(self, _mode: EditMode) -> TaskForm | None:
         """Return a declarative edit form or ``None`` when defaults are enough."""
@@ -174,16 +179,111 @@ class Task(QObject):
         if not self.stages:
             return None
 
-        stageIndex = min(self.currentStageIndex, len(self.stages) - 1)
-        activeStage = self.stages[stageIndex]
-        pause = getattr(activeStage, "pause", None)
-
-        if callable(pause):
-            pauseResult = pause()
-            if isawaitable(pauseResult):
-                await pauseResult
+        pauseResult = self.dispatchToCurrentStage("pause")
+        if isawaitable(pauseResult):
+            await pauseResult
 
         return None
+
+    def requestCommand(self, command: str, payload: object | None = None) -> None:
+        """Queue one explicit card-to-task command."""
+        normalizedCommand = self._normalizeCommand(command)
+        self._validateCommandPayload(normalizedCommand, payload)
+        self.commandRequested.emit(normalizedCommand, payload)
+
+    def dispatchCommand(self, command: str, payload: object | None = None) -> object | None:
+        """Handle one explicit command at the task boundary."""
+        normalizedCommand = self._normalizeCommand(command)
+        self._validateCommandPayload(normalizedCommand, payload)
+
+        if normalizedCommand == "configure":
+            self.configure(cast(TaskConfig, payload))
+            return None
+        if normalizedCommand == "pause":
+            return self.dispatchToCurrentStage("pause")
+        if normalizedCommand == "reset":
+            self.reset()
+            return None
+
+        return self.dispatchCustomCommand(normalizedCommand, payload)
+
+    def dispatchCustomCommand(
+        self,
+        command: str,
+        payload: object | None = None,
+    ) -> object | None:
+        """Override to accept task-specific commands beyond the base contract."""
+        _ = payload
+        raise ValueError(f"Unsupported task command: {command}")
+
+    def dispatchToCurrentStage(
+        self,
+        command: str,
+        payload: object | None = None,
+    ) -> object | None:
+        """Forward one command to the currently active stage."""
+        if not self.stages:
+            return None
+
+        stageIndex = min(self.currentStageIndex, len(self.stages) - 1)
+        return self.dispatchToStage(self.stages[stageIndex], command, payload)
+
+    def dispatchToStages(
+        self,
+        command: str,
+        payload: object | None = None,
+    ) -> tuple[object | None, ...]:
+        """Forward one command to all stages in workflow order."""
+        return tuple(
+            self.dispatchToStage(stage, command, payload)
+            for stage in self.stages
+        )
+
+    def dispatchToStage(
+        self,
+        stage: TaskStage,
+        command: str,
+        payload: object | None = None,
+    ) -> object | None:
+        """Forward one command to one attached stage through the task boundary."""
+        if stage not in self.stages:
+            raise ValueError(f"Stage {stage.id!r} is not attached to task {self.id!r}")
+
+        normalizedCommand = self._normalizeCommand(command)
+        self.stageCommandForwarded.emit(stage, normalizedCommand, payload)
+        return stage.dispatchCommand(normalizedCommand, payload)
+
+    def _onCommandRequested(self, command: str, payload: object) -> None:
+        commandResult = self.dispatchCommand(command, payload)
+        self._consumeCommandResult(commandResult)
+
+    def _consumeCommandResult(self, commandResult: object | None) -> None:
+        if not isawaitable(commandResult):
+            return
+        coroutine = cast(Coroutine[object, object, object], commandResult)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            _ = asyncio.run(coroutine)
+            return
+
+        _ = loop.create_task(coroutine)
+
+    @staticmethod
+    def _normalizeCommand(command: str) -> str:
+        normalizedCommand = command.strip().lower()
+        if not normalizedCommand:
+            raise ValueError("Task command 不能为空")
+        return normalizedCommand
+
+    @staticmethod
+    def _validateCommandPayload(
+        command: str,
+        payload: object | None,
+    ) -> None:
+        if command == "configure" and not isinstance(payload, TaskConfig):
+            raise TypeError("configure command requires TaskConfig payload")
 
     def persistenceState(self) -> dict[str, object]:
         """Return JSON-safe task-local state used by task persistence."""
@@ -372,6 +472,22 @@ class MultiFileTask(Task):
 
         for file in self.files:
             file.selected = file.id in ids
+
+    def dispatchCustomCommand(
+        self,
+        command: str,
+        payload: object | None = None,
+    ) -> object | None:
+        if command != "select":
+            return super().dispatchCustomCommand(command, payload)
+
+        if not isinstance(payload, set) or not all(
+            isinstance(fileId, str) for fileId in payload
+        ):
+            raise TypeError("select command requires set[str] payload")
+
+        self.select(cast(set[str], payload))
+        return None
 
     def persistenceState(self) -> dict[str, object]:
         """Persist generic multi-file selection state alongside task state."""

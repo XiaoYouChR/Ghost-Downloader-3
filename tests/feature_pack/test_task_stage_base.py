@@ -118,6 +118,7 @@ class TaskStageBaseTests(unittest.TestCase):
         self.assertGreaterEqual(metaObject.indexOfSignal("progressChanged(double)"), 0)
         self.assertGreaterEqual(metaObject.indexOfSignal("snapshotChanged(PyObject)"), 0)
         self.assertGreaterEqual(metaObject.indexOfSignal("failed(QString)"), 0)
+        self.assertGreaterEqual(metaObject.indexOfSignal("commandRequested(QString,PyObject)"), 0)
 
     def testTaskStageAttachConfigureAndCanPauseUseDefaultContract(self) -> None:
         stage = DemoTaskStage()
@@ -133,6 +134,7 @@ class TaskStageBaseTests(unittest.TestCase):
 
         attachResult = stage.attach(owner)
         configureResult = stage.configure(config)
+        stage.requestCommand("configure", config)
 
         self.assertIsNone(attachResult)
         self.assertIs(stage.attachedTask(), owner)

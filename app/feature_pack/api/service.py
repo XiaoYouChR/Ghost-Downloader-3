@@ -253,8 +253,8 @@ class DefaultTaskEditor(TaskEditor):
             return False
 
         if isinstance(task, MultiFileTask):
-            task.select(dialog.selectedIds())
-        task.configure(dialog.config())
+            task.requestCommand("select", dialog.selectedIds())
+        task.requestCommand("configure", dialog.config())
         task.snapshotChanged.emit(task.snapshot())
         return True
 
@@ -553,7 +553,7 @@ class DefaultFeatureService(FeatureService):
             raise ValueError(f"未找到可配置的任务: {taskId}")
 
         self._rememberTask(task)
-        task.configure(config)
+        task.requestCommand("configure", config)
         task.snapshotChanged.emit(task.snapshot())
 
     def installSettings(self, page: object) -> None:

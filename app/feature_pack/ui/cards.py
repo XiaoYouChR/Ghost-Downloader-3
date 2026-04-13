@@ -57,9 +57,10 @@ def _progressText(snapshot: TaskSnapshot) -> str:
 
 @final
 class DefaultTaskCard(CardWidget):
-    """Default task card that forwards edit requests to the host."""
+    """Default task card that forwards edit requests and commands to the task."""
 
     editRequested: Signal = Signal(object, object, object)
+    commandRequested: Signal = Signal(object, object)
 
     def __init__(
         self,
@@ -119,6 +120,7 @@ class DefaultTaskCard(CardWidget):
     def _connectSignals(self) -> None:
         _ = self.editButton.clicked.connect(self._requestEdit)
         _ = self.editRequested.connect(self._forwardEditRequest)
+        _ = self.commandRequested.connect(self._forwardTaskCommand)
         _ = self.task.stateChanged.connect(self._onTaskStateChanged)
         _ = self.task.progressChanged.connect(self._onTaskProgressChanged)
         _ = self.task.snapshotChanged.connect(self._onSnapshotChanged)
@@ -147,6 +149,19 @@ class DefaultTaskCard(CardWidget):
 
         parentWidget = parent if isinstance(parent, QWidget) else self
         _ = self._editor.editTask(task, cast(EditMode, mode), parentWidget)
+
+    def requestTaskCommand(
+        self,
+        command: str,
+        payload: object | None = None,
+    ) -> None:
+        self.commandRequested.emit(command, payload)
+
+    def _forwardTaskCommand(self, command: object, payload: object) -> None:
+        if not isinstance(command, str):
+            return
+
+        self.task.requestCommand(command, payload)
 
     def refresh(self, snapshot: TaskSnapshot | None = None) -> None:
         taskSnapshot = snapshot or self.task.snapshot()

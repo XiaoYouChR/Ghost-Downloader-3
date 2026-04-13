@@ -199,6 +199,8 @@ class TaskBaseTests(unittest.TestCase):
         self.assertGreaterEqual(metaObject.indexOfSignal("stateChanged(QString)"), 0)
         self.assertGreaterEqual(metaObject.indexOfSignal("progressChanged(double)"), 0)
         self.assertGreaterEqual(metaObject.indexOfSignal("snapshotChanged(PyObject)"), 0)
+        self.assertGreaterEqual(metaObject.indexOfSignal("commandRequested(QString,PyObject)"), 0)
+        self.assertGreaterEqual(metaObject.indexOfSignal("stageCommandForwarded(PyObject,QString,PyObject)"), 0)
 
     def testTaskAddsStagesAndConfiguresWorkflowOutput(self) -> None:
         config = self.makeConfig()
@@ -217,6 +219,40 @@ class TaskBaseTests(unittest.TestCase):
         self.assertEqual(stageTwo.configureCalls, [config])
         self.assertEqual(stageOne.syncedTarget, str(config.folder / config.name))
         self.assertEqual(stageTwo.syncedTarget, str(config.folder / config.name))
+
+    def testTaskCommandBoundaryRoutesThroughTaskBeforeStage(self) -> None:
+        config = self.makeConfig()
+        stage = DemoTaskStage(id="stage-1")
+        workflow = DemoTask(config=config, stages=[stage])
+        receivedTaskCommands: list[tuple[str, object | None]] = []
+        receivedStageCommands: list[tuple[str, str, object | None]] = []
+
+        def onTaskCommand(command: str, payload: object) -> None:
+            receivedTaskCommands.append((command, payload))
+
+        def onStageCommand(targetStage: object, command: str, payload: object) -> None:
+            stageId = getattr(targetStage, "id", "<unknown>")
+            receivedStageCommands.append((stageId, command, payload))
+
+        workflow.commandRequested.connect(onTaskCommand)
+        workflow.stageCommandForwarded.connect(onStageCommand)
+
+        workflow.requestCommand("configure", config)
+        workflow.requestCommand("pause")
+
+        self.assertEqual(
+            receivedTaskCommands,
+            [("configure", config), ("pause", None)],
+        )
+        self.assertEqual(
+            receivedStageCommands,
+            [
+                ("stage-1", "configure", config),
+                ("stage-1", "pause", None),
+            ],
+        )
+        self.assertEqual(stage.configureCalls, [config])
+        self.assertEqual(stage.pauseCalls, 1)
 
     def testTaskCanPauseAggregatesAcrossStages(self) -> None:
         workflow = DemoTask(
