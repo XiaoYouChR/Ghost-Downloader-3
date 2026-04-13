@@ -570,3 +570,23 @@
 - 风险: 当前 `createTaskCard()` 与 `createResultCard()` 在 Pack 未提供自定义卡片时直接回退到宿主默认卡片，这符合 V1 的默认 UI 方向；但生产 Pack 仍未迁到新版 `FeaturePack`，因此真正切换宿主入口前还需要后续 Pack 改写任务逐步接入新版卡片与设置接口。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 在新版模块中实现 taskRecorder 持久化
+### 已完成内容:
+- 在 `app/feature_pack/internal/recorder.py` 中新增新版 `TaskRecorder`、`TaskRecordError` 与 `taskRecorder`，把任务记录文件写入、读取、序列化与恢复收敛到新版模块，不再依赖旧 `app.bases.models.Task/TaskStage` 的类名反射。
+- 在 `app/feature_pack/api/task.py` 与 `app/feature_pack/api/stage.py` 中补充基于稳定身份字段的持久化注册与恢复钩子，让新版 `Task` / `TaskStage` 使用 `packId`、`kind`、`version` 和阶段身份组合完成恢复，而不是把 Python 类名写入记录文件。
+- 为 `Task` 基类补充默认 `currentStageIndex` 持久化，为 `MultiFileTask` 基类补充文件选择与文件状态持久化，统一记录文件中的任务与阶段身份表达以及多文件任务的选择状态。
+- 新增 `tests/feature_pack/test_feature_pack_task_recorder_v1.py`，覆盖单文件任务序列化身份字段、多文件任务文件选择状态恢复、记录文件往返恢复，以及未知任务身份时报错等场景。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/stage.py app/feature_pack/api/task.py app/feature_pack/internal/__init__.py app/feature_pack/internal/recorder.py app/feature_pack/api/testing.py tests/feature_pack/test_feature_pack_task_recorder_v1.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_task_recorder_v1.py` -> 通过（保留 QFluentWidgets Pro 提示与 recorder 未 load 时的 warning，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅在新版模块中重建 `taskRecorder` 的任务记录与恢复逻辑，让它面向新版 `Task`、`TaskStage` 和稳定身份字段工作，不提前切换旧宿主入口、浏览器快照或 CoreService 调度。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 28；必须完成 `taskRecorder` 使用新版任务模型序列化与恢复、统一记录文件中的任务与阶段身份表达、并补齐持久化与恢复测试；继续遵循简单、显式、可读原则；验证通过并写入 `progress.txt` 之前不能修改 `passes`。
+  - 验收标准: 新版 `taskRecorder` 已能基于 `packId/kind/version` 与阶段身份恢复任务；记录文件不再依赖 Python 类名 type id；单文件与多文件任务的持久化与恢复都有显式测试护栏；全部验证通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“`Task` 是 workflow、`TaskStage` 是步骤”“新代码禁止把 Python 类名当作持久化 type id”“任务身份与阶段身份应成为正式字段”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中新版 `Task`、`TaskStage`、`TaskConfig`、`MultiFileTask` 契约；同时建立在任务 10、13、14、17、24、25、26、27 已完成的新版配置模型、任务/阶段基类、新版服务和 UI 分发基础上，并为后续任务 29、30、31、46、47 提供新版恢复底座。
+- 风险: 当前新版 recorder 只在新版模块内提供，还未切换旧 `app.supports.recorder` 与旧宿主调用点；真正接管运行入口仍需后续 BrowserService、CoreService 和主窗口切换任务配合完成。
+- 结论: 已完成。
+---

@@ -1,4 +1,4 @@
-# pyright: reportImplicitOverride=false, reportInvalidAbstractMethod=false, reportInconsistentConstructor=false, reportAny=false
+# pyright: reportImplicitOverride=false, reportInvalidAbstractMethod=false, reportInconsistentConstructor=false, reportAny=false, reportUnknownVariableType=false, reportUnknownMemberType=false
 
 """Public ``Task`` contract for Feature Pack V1."""
 
@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
+from collections.abc import Mapping
 from dataclasses import dataclass
 from dataclasses import replace
 from inspect import isawaitable
@@ -65,6 +66,10 @@ class Task(QObject):
     progressChanged: ClassVar[Signal] = Signal(float)
     snapshotChanged: ClassVar[Signal] = Signal(object)
     __abstractmethods__: ClassVar[frozenset[str]] = frozenset()
+    __recordRegistry__: ClassVar[dict[tuple[str, str, int], type["Task"]]] = {}
+    recordPackId: ClassVar[str | None] = None
+    recordKind: ClassVar[str | None] = None
+    recordVersion: ClassVar[int | None] = None
     id: str
     packId: str
     kind: str
@@ -91,6 +96,7 @@ class Task(QObject):
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
         cls.__abstractmethods__ = _collectAbstractMethods(cls)
+        cls._registerPersistentClass()
 
     def __init__(
         self,
@@ -178,6 +184,77 @@ class Task(QObject):
                 await pauseResult
 
         return None
+
+    def persistenceState(self) -> dict[str, object]:
+        """Return JSON-safe task-local state used by task persistence."""
+        return {"currentStageIndex": self.currentStageIndex}
+
+    def restorePersistentState(self, state: Mapping[str, object]) -> None:
+        """Restore task-local runtime state after stages have been rebuilt."""
+        rawStageIndex = state.get("currentStageIndex")
+        if isinstance(rawStageIndex, int) and not isinstance(rawStageIndex, bool):
+            self.currentStageIndex = rawStageIndex
+        return None
+
+    @classmethod
+    def createPersistentTask(
+        cls,
+        *,
+        id: str,
+        packId: str,
+        kind: str,
+        version: int,
+        config: TaskConfig,
+        stages: list[TaskStage],
+        state: Mapping[str, object],
+    ) -> "Task":
+        """Create one task instance from a persisted record."""
+        _ = id
+        _ = packId
+        _ = kind
+        _ = version
+        _ = config
+        _ = stages
+        _ = state
+        raise NotImplementedError(
+            f"{cls.__name__} does not support persisted task restore"
+        )
+
+    @classmethod
+    def persistentClass(
+        cls,
+        *,
+        packId: str,
+        kind: str,
+        version: int,
+    ) -> type["Task"] | None:
+        """Look up a persisted task implementation by stable identity fields."""
+        return Task.__recordRegistry__.get((packId, kind, version))
+
+    @classmethod
+    def _registerPersistentClass(cls) -> None:
+        if cls is Task or cls.__abstractmethods__:
+            return
+
+        packId = getattr(cls, "recordPackId", None)
+        kind = getattr(cls, "recordKind", None)
+        version = getattr(cls, "recordVersion", None)
+
+        if not isinstance(packId, str) or not packId:
+            return
+        if not isinstance(kind, str) or not kind:
+            return
+        if isinstance(version, bool) or not isinstance(version, int):
+            return
+
+        recordKey = (packId, kind, version)
+        existing = Task.__recordRegistry__.get(recordKey)
+        if existing is not None and existing is not cls:
+            raise ValueError(
+                f"Duplicate Task persistence identity: {recordKey!r}"
+            )
+
+        Task.__recordRegistry__[recordKey] = cls
 
     @abstractmethod
     def reset(self) -> None:
@@ -295,6 +372,67 @@ class MultiFileTask(Task):
 
         for file in self.files:
             file.selected = file.id in ids
+
+    def persistenceState(self) -> dict[str, object]:
+        """Persist generic multi-file selection state alongside task state."""
+        state = super().persistenceState()
+        state["files"] = [
+            {
+                "id": file.id,
+                "path": file.path,
+                "size": file.size,
+                "selected": file.selected,
+                "note": file.note,
+                "doneBytes": file.doneBytes,
+                "finished": file.finished,
+            }
+            for file in self.files
+        ]
+        return state
+
+    def restorePersistentState(self, state: Mapping[str, object]) -> None:
+        """Restore generic multi-file entries and selected ids."""
+        super().restorePersistentState(state)
+        rawFiles = state.get("files")
+        if not isinstance(rawFiles, list):
+            return
+
+        restoredFiles: list[TaskFile] = []
+        for rawFile in rawFiles:
+            if not isinstance(rawFile, Mapping):
+                continue
+
+            fileId = rawFile.get("id")
+            filePath = rawFile.get("path")
+            fileSize = rawFile.get("size")
+            if (
+                not isinstance(fileId, str)
+                or not isinstance(filePath, str)
+                or isinstance(fileSize, bool)
+                or not isinstance(fileSize, int)
+            ):
+                continue
+
+            rawDoneBytes = rawFile.get("doneBytes", 0)
+            doneBytes = (
+                rawDoneBytes
+                if isinstance(rawDoneBytes, int) and not isinstance(rawDoneBytes, bool)
+                else 0
+            )
+            note = rawFile.get("note")
+            restoredFiles.append(
+                TaskFile(
+                    id=fileId,
+                    path=filePath,
+                    size=fileSize,
+                    selected=bool(rawFile.get("selected", True)),
+                    note=note if isinstance(note, str) else "",
+                    doneBytes=doneBytes,
+                    finished=bool(rawFile.get("finished", False)),
+                )
+            )
+
+        self.files = restoredFiles
 
 
 __all__ = ["MultiFileTask", "SingleFileTask", "Task", "TaskFile"]
