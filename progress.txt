@@ -377,3 +377,26 @@
 - 风险: 当前仅固定了声明式数据模型和导出路径，还没有把字段语义映射到实际 Qt 控件；后续实现默认 `TaskConfigDialog` 时需要继续保持“表单只描述字段语义，不直接持有 widget”的边界。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 实现默认 TaskConfigDialog
+### 已完成内容:
+- 新增 `app/feature_pack/ui/dialogs.py` 与 `app/feature_pack/ui/__init__.py`，实现宿主默认 `TaskConfigDialog`，统一承接新版 `TaskForm` 到标准 Qt/QFluentWidgets 编辑控件的渲染。
+- 让默认对话框支持 `text`、`folder`、`headers`、`proxy`、`int`、`choice`、`files` 七类字段，并在 `config()` 中统一回收为新的 `TaskConfig`，保持 `Task.configure()` 作为唯一配置修改入口。
+- 为 `headers`、`proxies` 增加显式的 `key: value` 文本解析，为 `folder`、`chunks`、必填文本字段增加最小校验，避免默认对话框回到隐式字典协议。
+- 先为 `files` 字段接入当前多文件任务的现有已选集合回收与摘要展示，明确默认配置对话框可以承载多文件入口；正式树选择对话框仍留待下一任务实现。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `TaskConfigDialog` 纳入稳定公开导出。
+- 新增 `tests/feature_pack/test_task_config_dialog.py`，覆盖标准字段渲染、编辑模式过滤、`TaskConfig` 结果回收、`choice` 值回收以及 `files` 字段的最小展示与结果回收。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/ui/__init__.py app/feature_pack/ui/dialogs.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_config_dialog.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
+- `uv run python tests/feature_pack/test_task_config_dialog.py` -> 通过（Qt 离屏环境仍输出字体目录缺失提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与 QFluentWidgets 提示，不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现宿主默认 `TaskConfigDialog`，让任务配置编辑不再依赖各 Pack 自己写对话框，并补齐最小渲染与结果回收测试；不提前实现默认 `MultiFileSelectDialog` 或宿主编辑分发。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 19；必须基于现有编辑控件实现默认对话框；必须让它根据 `TaskForm` 渲染标准字段；必须补齐最小渲染与结果回收测试；验证通过前不能更新任务完成状态。
+  - 验收标准: 默认 `TaskConfigDialog` 已存在；能够根据 `TaskForm` 渲染标准字段；对话框最小渲染与 `TaskConfig` 结果回收测试通过。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 `TaskConfigDialog` 标准化 `folder/name/source/headers/proxies/chunks` 字段”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskConfigDialog`、`TaskForm`、`TaskConfig` 契约；同时建立在任务 10、14、17、18 产出的配置模型、任务基类和表单模型之上，并为后续任务 20、23、27、31、39、40、41 提供宿主默认编辑对话框基础。
+- 风险: 本轮对 `files` 字段只接入了现有选中集合的展示与结果回收，还没有弹出正式树形选择器；下一轮实现 `MultiFileSelectDialog` 时需要把这里的占位入口接到统一选择对话框，同时保持当前 `TaskConfigDialog` 的 `selectedIds()` 回收边界不变。
+- 结论: 已完成。
+---

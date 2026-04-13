@@ -31,6 +31,7 @@ from .task import MultiFileTask
 from .task import SingleFileTask
 from .task import Task
 from .task import TaskFile
+from ..ui.dialogs import TaskConfigDialog
 
 __all__ = [
     "cards",
@@ -56,6 +57,7 @@ __all__ = [
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
+    "TaskConfigDialog",
     "TaskFile",
     "TaskForm",
     "TaskInput",
