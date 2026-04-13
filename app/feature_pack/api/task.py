@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Iterable
+from dataclasses import dataclass
 from dataclasses import replace
 from inspect import isawaitable
 from pathlib import Path
@@ -34,6 +35,19 @@ def _collectAbstractMethods(cls: type[object]) -> frozenset[str]:
                 abstractMethods.discard(attrName)
 
     return frozenset(abstractMethods)
+
+
+@dataclass(slots=True, kw_only=True)
+class TaskFile:
+    """Unified file entry for multi-file tasks and selection dialogs."""
+
+    id: str
+    path: str
+    size: int
+    selected: bool = True
+    note: str = ""
+    doneBytes: int = 0
+    finished: bool = False
 
 
 class Task(QObject):
@@ -212,7 +226,7 @@ class SingleFileTask(Task):
         raise NotImplementedError
 
 
-__all__ = ["SingleFileTask", "Task"]
+__all__ = ["SingleFileTask", "Task", "TaskFile"]
 
 
 Task.__abstractmethods__ = _collectAbstractMethods(Task)

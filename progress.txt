@@ -321,3 +321,21 @@
 - 风险: 当前 `SingleFileTask` 只固定了单文件输出边界和配置驱动的改名改目录行为，还没有接入真实 Pack 的阶段输出字段；后续具体任务子类实现 `syncOutput()` 时必须保持“基类负责输出目标语义，子类负责阶段传播”这一边界，避免重新引入重复胶水代码。
 - 结论: 已完成。
 ---
+## 2026-04-13 - 任务: 定义 TaskFile
+### 已完成内容:
+- 在 `app/feature_pack/api/task.py` 中新增 `TaskFile` 数据模型，正式固定多文件任务条目的 `id`、`path`、`size`、`selected`、`note`、`doneBytes`、`finished` 字段及默认值。
+- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `TaskFile` 成为 `app.feature_pack.api` 的稳定公共导出，并锁定公开 API 入口。
+- 新增 `tests/feature_pack/test_task_file_model.py`，覆盖字段顺序、关键字参数约束、默认值、显式摘要字段输入，以及运行时选择与进度更新的可变行为。
+### 测试验证:
+- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_file_model.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅实现新版 `TaskFile` 数据模型与对应测试，为后续 `MultiFileTask`、默认多文件选择对话框和多文件 Pack 改写提供稳定文件条目边界，不提前进入 `MultiFileTask` 行为实现。
+  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 16；字段命名和默认值必须与两份迁移文档中的 `TaskFile` 契约一致；继续遵循简单、显式、可读原则；验证通过前不能更新任务完成状态。
+  - 验收标准: `TaskFile` 已覆盖 `id`、`path`、`size`、`selected`、`note`、`doneBytes`、`finished` 字段；存在模型测试锁定字段顺序、默认值和运行时可变语义；`app.feature_pack.api` 可稳定导出该模型。
+  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `TaskFile` 作为多文件任务统一文件条目的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskFile` 契约；同时建立在任务 14 的 `Task`、任务 15 的 `SingleFileTask` 导出模式之上，并为后续任务 17、20、39、40、41 提供稳定文件模型。
+- 风险: 当前只固定了多文件条目的数据边界，还没有把 `TaskFile` 接入 `MultiFileTask`、默认选择对话框或具体 Pack；后续实现选择统计和路径同步时需要保持该模型简单直接，避免重新引入匿名字典或 Pack 私有文件条目结构。
+- 结论: 已完成。
+---

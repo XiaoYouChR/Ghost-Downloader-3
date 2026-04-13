@@ -31,6 +31,7 @@ from app.feature_pack.api import snapshot
 from app.feature_pack.api import stage
 from app.feature_pack.api import task
 from app.feature_pack.api import TaskConfig
+from app.feature_pack.api import TaskFile
 from app.feature_pack.api import TaskInput
 from app.feature_pack.api import TaskSnapshot
 from app.feature_pack.api import Task
@@ -57,6 +58,7 @@ EXPECTED_EXPORTS = [
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
+    "TaskFile",
     "TaskInput",
     "TaskSnapshot",
     "Task",
@@ -90,6 +92,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
+        self.assertIs(apiPackage.TaskFile, TaskFile)
         self.assertIs(apiPackage.TaskInput, TaskInput)
         self.assertIs(apiPackage.TaskSnapshot, TaskSnapshot)
         self.assertIs(apiPackage.Task, Task)
@@ -107,6 +110,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(snapshot.TaskSnapshot, TaskSnapshot)
         self.assertIs(stage.TaskStage, TaskStage)
         self.assertIs(task.SingleFileTask, SingleFileTask)
+        self.assertIs(task.TaskFile, TaskFile)
         self.assertIs(task.Task, Task)
 
 

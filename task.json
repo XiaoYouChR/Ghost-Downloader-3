@@ -176,7 +176,7 @@
         "固定 `id`、`path`、`size`、`selected`、`note`、`doneBytes`、`finished` 等字段。",
         "补充 `TaskFile` 模型测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 17,

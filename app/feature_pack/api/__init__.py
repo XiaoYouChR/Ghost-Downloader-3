@@ -24,6 +24,7 @@ from .snapshot import TaskSnapshot
 from .stage import TaskStage
 from .task import SingleFileTask
 from .task import Task
+from .task import TaskFile
 
 __all__ = [
     "cards",
@@ -44,6 +45,7 @@ __all__ = [
     "SingleFileTask",
     "StageSnapshot",
     "TaskConfig",
+    "TaskFile",
     "TaskInput",
     "TaskSnapshot",
     "Task",
