@@ -744,3 +744,23 @@
 - 风险: 当前 `extract_pack` 仍保留了旧 `parse(payload)` / `createTaskFromPayload(payload)` 兼容入口，供尚未迁移的旧调用方复用；后续依赖 Pack 切换到新版宿主入口后，仍需逐步清理这些历史兼容层。
 - 结论: 已完成。
 ---
+## 2026-04-14 - 任务: 改写 ffmpeg_pack 的安装任务
+### 已完成内容:
+- 新增 `features/ffmpeg_pack/install_task.py`，将 FFmpeg 安装流程拆到新版 `FFmpegInstallTask`、`FFmpegInstallDownloadStage`、`FFmpegInstallExtractStage` 与 `createWindowsInstallTask()`，复用新版 `http_pack` 下载阶段、`extract_pack` 解压阶段以及新版持久化身份字段。
+- 更新 `features/ffmpeg_pack/pack.py`，让 `ffmpeg_pack` 通过新版 `accepts()` / `createTask()` / `owns()` 接入 `gd3+ffmpeg://install` 安装入口，同时保留合并任务的兼容解析路径，不提前改写任务 37 的合并工作流。
+- 调整 `features/ffmpeg_pack/config.py` 的安装按钮入口，运行时设置卡片现在直接调用新版安装任务创建函数。
+- 新增 `tests/feature_pack/test_ffmpeg_install_pack_v1.py`，覆盖安装任务创建、安装执行、任务恢复与稳定任务/阶段身份断言。
+### 测试验证:
+- `uv run basedpyright --level error tests/test_automation_contracts.py features/ffmpeg_pack/pack.py features/ffmpeg_pack/config.py features/ffmpeg_pack/install_task.py tests/feature_pack/test_ffmpeg_install_pack_v1.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_ffmpeg_install_pack_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、Qt 离屏字体/主题告警、旧 loader 循环依赖日志与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅处理 `task.json` 中首个未完成任务 36，把 `ffmpeg_pack` 的安装任务迁到新版 `FeaturePack`、`Task`、`TaskStage`、稳定身份字段和快照输出，不提前进入任务 37 的 FFmpeg 合并工作流改写。
+  - 关键约束: 必须完整完成 FFmpeg 安装相关 Task 与 Stage 改写、新版身份字段与快照输出、安装任务测试三项步骤；继续遵循简单、显式、可读原则；验证通过前不能更新 `passes`。
+  - 验收标准: `ffmpeg_pack` 已能通过新版入口创建安装任务；安装工作流使用新版任务/阶段身份与 `TaskSnapshot` / `StageSnapshot`；存在显式测试覆盖创建、执行、恢复与持久化身份；全部验证通过。
+  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskConfig`、`Task` / `TaskStage`、稳定持久化身份与快照模型的契约；同时建立在任务 28、34、35 已完成的新版 `TaskRecorder`、`http_pack` 下载阶段和 `extract_pack` 解压阶段基础之上，并为任务 37 的 FFmpeg 合并工作流迁移提供安装依赖基础。
+- 风险: 当前 `ffmpeg_pack` 的合并任务仍保留旧实现并继续位于 `features/ffmpeg_pack/task.py`；后续任务 37 需要继续清理同模块中的旧 V0 合并路径，不能把本轮的安装任务迁移误判为整个 `ffmpeg_pack` 已完成切换。
+- 结论: 已完成。
+---

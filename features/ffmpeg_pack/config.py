@@ -1,8 +1,10 @@
+# pyright: reportAssignmentType=false, reportUninitializedInstanceVariable=false
+
 import asyncio
 import shutil
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import QStandardPaths, Qt, Signal
 from PySide6.QtWidgets import QFileDialog
@@ -152,7 +154,7 @@ class FFmpegRuntimeCard(SettingCard):
         if sys.platform != "win32":
             return
 
-        from .task import createWindowsInstallTask
+        from .install_task import createWindowsInstallTask
 
         self.installButton.setEnabled(False)
         self.installButton.setText(self.tr("准备中..."))
@@ -162,7 +164,7 @@ class FFmpegRuntimeCard(SettingCard):
         self.installButton.setEnabled(True)
         self.installButton.setText(self.tr("一键安装"))
 
-        mainWindow: "MainWindow" = self.window()
+        mainWindow = cast("MainWindow", self.window())
 
         if error or result is None:
             InfoBar.error(self.tr("安装 FFmpeg 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
