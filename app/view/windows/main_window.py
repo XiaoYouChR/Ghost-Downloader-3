@@ -4,7 +4,6 @@ from sys import platform
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-import darkdetect
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QEvent, QTimer
 from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog, QSystemTrayIcon
@@ -26,6 +25,11 @@ from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
+
+if platform == "win32":
+    import darkdetect
+else:
+    darkdetect = None
 
 if TYPE_CHECKING:
     from typing import Literal

@@ -7,12 +7,12 @@ from secrets import token_urlsafe
 from PySide6.QtCore import QObject, QTimer, Slot
 from PySide6.QtNetwork import QHostAddress
 from loguru import logger
-from orjson import dumps, loads
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import VERSION, cfg, isAndroid
+from app.supports.json_compat import dumps, loads
 from app.supports.recorder import taskRecorder
 from app.supports.utils import getProxies, openFile, openFolder
 

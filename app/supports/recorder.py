@@ -1,10 +1,10 @@
 from pathlib import Path
 
-import orjson
 from PySide6.QtCore import QStandardPaths
 from loguru import logger
 
 from app.bases.models import Task
+from app.supports.json_compat import loads
 
 
 class TaskRecorder:
@@ -33,7 +33,7 @@ class TaskRecorder:
             if not line:
                 continue
             try:
-                obj = orjson.loads(line)
+                obj = loads(line)
                 task = Task.deserialize(obj)
                 tasks[task.taskId] = task
             except Exception as e:

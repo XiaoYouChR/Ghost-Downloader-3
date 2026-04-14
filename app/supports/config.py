@@ -5,7 +5,6 @@ from enum import Enum
 from re import compile
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale, QOperatingSystemVersion
-from orjson import dumps, loads
 from qfluentwidgets import (
     QConfig,
     ConfigItem,
@@ -19,6 +18,7 @@ from qfluentwidgets import (
     ConfigSerializer,
     FolderListValidator,
 )
+from app.supports.json_compat import dumps, loads
 
 DEFAULT_HEADERS = {
     "accept-encoding": "deflate, br, gzip",

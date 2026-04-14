@@ -6,10 +6,10 @@ from typing import ClassVar, Dict, Type, Any, TYPE_CHECKING, Iterable
 from uuid import uuid4
 
 from PySide6.QtCore import QCoreApplication
-from orjson import loads, dumps
 from qfluentwidgets import SettingCard
 
 from app.supports.config import cfg, ConfigItem
+from app.supports.json_compat import loads, dumps
 from app.supports.utils import sanitizeFilename
 
 if TYPE_CHECKING:
