@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import sys
 import tomllib
 from pathlib import Path
@@ -9,6 +10,7 @@ from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
+from app.supports.config import isAndroid
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
@@ -23,6 +25,9 @@ class FeatureService:
         self.loadedPacks: Dict[str, Any] = {}
         self.featuresPath = Path(__file__).parent.parent.parent / "features"
         self.sortedPacksCache: list[tuple[str, FeaturePack]] = []
+
+    def shouldLoadFeaturePacks(self) -> bool:
+        return not isAndroid() and os.environ.get("GD3_DISABLE_FEATURE_PACKS") != "1"
 
     def discoverFeaturePacks(self) -> list:
         """发现 features 文件夹中的所有 feature packs"""
@@ -351,7 +356,12 @@ class FeatureService:
     def loadFeatures(self, mainWindow: "MainWindow"):
         """从 ./features 文件夹自动发现并加载所有 feature packs"""
         logger.info("开始加载 FeaturePacks")
+        self.loadedPacks.clear()
         self.sortedPacksCache = []
+
+        if not self.shouldLoadFeaturePacks():
+            logger.warning("当前平台或运行模式已禁用 FeaturePacks 加载")
+            return
 
         featurePacks = self.discoverFeaturePacks()
 

@@ -1,3 +1,4 @@
+import os
 import sys
 from asyncio import sleep
 from enum import Enum
@@ -30,6 +31,15 @@ DEFAULT_HEADERS = {
     "upgrade-insecure-requests": "1",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
 }
+
+
+def isAndroid() -> bool:
+    return (
+        sys.platform == "android"
+        or hasattr(sys, "getandroidapilevel")
+        or bool(os.environ.get("ANDROID_ARGUMENT"))
+        or bool(os.environ.get("ANDROID_PRIVATE"))
+    )
 
 
 def isGreaterEqualWin10():

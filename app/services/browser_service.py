@@ -6,16 +6,20 @@ from secrets import token_urlsafe
 
 from PySide6.QtCore import QObject, QTimer, Slot
 from PySide6.QtNetwork import QHostAddress
-from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 from orjson import dumps, loads
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.supports.config import VERSION, cfg
+from app.supports.config import VERSION, cfg, isAndroid
 from app.supports.recorder import taskRecorder
 from app.supports.utils import getProxies, openFile, openFolder
+
+try:
+    from PySide6.QtWebSockets import QWebSocketServer
+except ImportError:
+    QWebSocketServer = None
 
 if TYPE_CHECKING:
     from PySide6.QtWebSockets import QWebSocket
@@ -76,17 +80,22 @@ class BrowserService(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.mainWindow: "MainWindow" = parent
-        self.server = QWebSocketServer(
-            "Ghost Downloader Browser Socket Server",
-            QWebSocketServer.SslMode.NonSecureMode,
-            parent,
-        )
-        self.server.newConnection.connect(self._onNewConnection)
         self._clientSessions: dict[int, _BrowserClientSession] = {}
         self._snapshotTimer = QTimer(self)
         self._snapshotTimer.setInterval(1000)
         self._snapshotTimer.timeout.connect(self._broadcastTaskSnapshots)
         self._snapshotTimer.start()
+
+        self.server = None
+        if self.isSupported():
+            self.server = QWebSocketServer(
+                "Ghost Downloader Browser Socket Server",
+                QWebSocketServer.SslMode.NonSecureMode,
+                parent,
+            )
+            self.server.newConnection.connect(self._onNewConnection)
+        else:
+            logger.info("当前平台跳过浏览器扩展服务初始化")
 
         self._ensurePairToken()
         cfg.enableBrowserExtension.valueChanged.connect(self._syncEnabled)
@@ -108,6 +117,10 @@ class BrowserService(QObject):
         cfg.set(cfg.browserExtensionPairToken, token)
         self._closeAllClients()
         return token
+
+    @classmethod
+    def isSupported(cls) -> bool:
+        return QWebSocketServer is not None and not isAndroid()
 
     @classmethod
     def initialize(cls, parent=None) -> Self:
@@ -138,6 +151,11 @@ class BrowserService(QObject):
 
     @Slot(bool)
     def _syncEnabled(self, enabled: bool):
+        if self.server is None:
+            if enabled:
+                logger.warning("当前平台不支持浏览器扩展服务，已跳过启用请求")
+            return
+
         if enabled:
             if self.server.isListening():
                 return

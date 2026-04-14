@@ -5,20 +5,49 @@ from typing import Callable, Dict, Any, Coroutine
 
 from PySide6.QtCore import QThread, QTimer, QStandardPaths, QResource, QFileInfo, Qt
 from PySide6.QtWidgets import QApplication, QFileIconProvider
-from desktop_notifier import DesktopNotifier, Icon, Button
 from loguru import logger
 
 from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
-from app.supports.config import cfg
+from app.supports.config import cfg, isAndroid
 from app.supports.utils import openFile
 
-if sys.platform == 'win32':
-    import winloop
-    winloop.install()
-elif sys.platform != 'darwin':
-    import uvloop
+try:
+    from desktop_notifier import DesktopNotifier, Icon, Button
+except ImportError:
+    DesktopNotifier = None
+    Icon = None
+    Button = None
+
+
+def installAsyncioEventLoop() -> None:
+    if isAndroid():
+        logger.info("Android 运行时使用标准 asyncio 事件循环")
+        return
+
+    if sys.platform == 'win32':
+        try:
+            import winloop
+        except ImportError:
+            logger.info("winloop 未安装，回退到标准 asyncio 事件循环")
+            return
+
+        winloop.install()
+        return
+
+    if sys.platform == 'darwin':
+        return
+
+    try:
+        import uvloop
+    except ImportError:
+        logger.info("uvloop 未安装，回退到标准 asyncio 事件循环")
+        return
+
     uvloop.install()
+
+
+installAsyncioEventLoop()
 
 def getNotifierIcon() -> Path:
     _ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
@@ -31,6 +60,7 @@ class CoreService(QThread):
 
     def __init__(self):
         super().__init__()
+        self.desktopNotifier = None
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.mainLoop = self.loop.create_task(self.main())
@@ -41,6 +71,9 @@ class CoreService(QThread):
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._syncTaskLimitSoon())
 
     def sendNotification(self, task: Task):
+        if self.desktopNotifier is None or Button is None or Icon is None:
+            return
+
         resolvePath = task.resolvePath
         if not resolvePath:
             logger.warning("task {} has no resolvePath for notification", task.taskId)
@@ -322,7 +355,20 @@ class CoreService(QThread):
 
     def run(self):
         """启动线程和事件循环"""
-        self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))  # OSError: [WinError -2147417842] 应用程序调用一个已为另一线程整理的接口。
+        if DesktopNotifier is None or Icon is None:
+            logger.info("desktop-notifier 未安装，桌面通知已禁用")
+        elif isAndroid():
+            logger.info("Android 运行时跳过桌面通知初始化")
+        else:
+            try:
+                self.desktopNotifier = DesktopNotifier(
+                    app_name="Ghost Downloader",
+                    app_icon=Icon(path=getNotifierIcon()),
+                )
+            except Exception as e:
+                logger.opt(exception=e).warning("桌面通知初始化失败，已禁用该功能")
+                self.desktopNotifier = None
+
         try:
             self.loop.run_until_complete(self.mainLoop)
         except Exception as e:

@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import darkdetect
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QEvent, QTimer
 from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
-from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
+from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog, QSystemTrayIcon
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme, setThemeColor
@@ -15,8 +15,8 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE, isWin10, \
-    isLessThanWin10
+from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE, isAndroid, \
+    isWin10, isLessThanWin10
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
@@ -24,7 +24,6 @@ from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, ens
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
-from app.view.components.tray import SystemTrayIcon
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 
@@ -64,8 +63,8 @@ class MainWindow(MSFluentWindow):
         self.initPagesAndNavigation()
 
         self.clipboard: "QClipboard | None" = None
-        self.tray = SystemTrayIcon(self)
-        self.tray.show()
+        self.tray = None
+        self._createSystemTray()
 
         self.connectSignalToSlot()
         self._syncClipboardListener()
@@ -85,6 +84,24 @@ class MainWindow(MSFluentWindow):
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         if platform == 'win32':
             cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
+
+    def _createSystemTray(self):
+        if isAndroid():
+            logger.info("Android 运行时跳过系统托盘初始化")
+            return
+
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            logger.info("当前平台没有可用系统托盘，跳过托盘初始化")
+            return
+
+        try:
+            from app.view.components.tray import SystemTrayIcon
+
+            self.tray = SystemTrayIcon(self)
+            self.tray.show()
+        except Exception as e:
+            logger.opt(exception=e).warning("系统托盘初始化失败，继续无托盘模式启动")
+            self.tray = None
 
     def _onSystemColorSchemeChanged(self, colorScheme: Qt.ColorScheme):
         if cfg.customThemeMode.value != 'System':
@@ -357,6 +374,13 @@ class MainWindow(MSFluentWindow):
             return False
 
     def closeEvent(self, event):
+        if self.tray is None:
+            if not self.isMaximized():
+                cfg.set(cfg.geometry, self.geometry())
+
+            super().closeEvent(event)
+            return
+
         event.ignore()
 
         if sys.platform == 'darwin' and self.isFullScreen():
