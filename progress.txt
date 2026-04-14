@@ -725,3 +725,22 @@
 - 风险: 当前旧 V0 `Task` / `TaskStage` 持久化基线与新版 `HttpTask` 已不是同一模型，因此旧基线测试改为本地旧模型桩；仓库中其他生产 Pack 仍引用旧接口，后续任务需要继续逐个迁移，不能假设本轮已经完成全仓切换。
 - 结论: 已完成。
 ---
+## 2026-04-14 - 任务: 改写 extract_pack 到新版接口
+### 已完成内容:
+- 将 `features/extract_pack/task.py` 改写为新版能力型 Pack 实现，补齐基于新版 `Task` / `TaskStage` 的 `ExtractTask`、`ExtractStage`、`ExtractWorker`、`TaskInput` 创建入口和持久化恢复能力，并保留旧 `parse(payload)` / `createTaskFromPayload(payload)` 兼容入口。
+- 将 `features/extract_pack/pack.py` 收敛到新版 `FeaturePack` 入口，保持 `accepts()` / `createTask()` / `owns()` 为主路径，同时修正兼容 `parse()` 的返回类型，使其与新版 `ExtractPack` 基类签名一致。
+- 新增 `tests/feature_pack/test_extract_pack_v1.py`，覆盖新版 `extract_pack` 的任务创建、ZIP/TAR.GZ 解压、危险路径防护以及新版 `TaskRecorder` 恢复。
+### 测试验证:
+- `uv run basedpyright --level error tests/test_automation_contracts.py features/extract_pack/task.py features/extract_pack/pack.py tests/feature_pack/test_extract_pack_v1.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_extract_pack_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅处理 `task.json` 中首个未完成任务 35，把 `extract_pack` 改写为新版 `FeaturePack`、新版任务/阶段模型和正式解压工作流组件，不提前进入 `ffmpeg_pack`、`m3u8_pack` 等后续依赖 Pack 的改写。
+  - 关键约束: 必须完整完成任务 35 的三个步骤；继续遵循简单、显式、可读原则；解压任务、阶段、持久化和能力测试都要落到新版宿主接口；验证通过并记录 `progress.txt` 之前不能修改 `task.json` 的完成状态。
+  - 验收标准: `extract_pack` 已通过 `TaskInput` 创建新版 `ExtractTask`；解压阶段已进入新版 `TaskStage` / `TaskRecorder` 持久化身份体系；存在显式测试覆盖创建、解压、恢复和安全防护；全部验证通过。
+  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskInput`、`TaskConfig`、`Task` / `TaskStage`、稳定持久化身份字段和“能力型 Pack 复用工作流组件”的契约；同时建立在任务 9-34 已完成的新版 API、服务分发、任务记录和 `http_pack` 改写基础之上，并为后续 `ffmpeg_pack`、`m3u8_pack` 的安装任务复用解压阶段提供正式组件。
+- 风险: 当前 `extract_pack` 仍保留了旧 `parse(payload)` / `createTaskFromPayload(payload)` 兼容入口，供尚未迁移的旧调用方复用；后续依赖 Pack 切换到新版宿主入口后，仍需逐步清理这些历史兼容层。
+- 结论: 已完成。
+---
