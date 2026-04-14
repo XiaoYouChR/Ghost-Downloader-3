@@ -1,0 +1,3 @@
+[pack]
+entry = "pack.py"
+dependencies = ["ffmpeg_pack"]
