@@ -374,7 +374,7 @@
         "让 `HttpTask` 建立在 `SingleFileTask` 与 `TaskConfig` 之上。",
         "补充 `http_pack` 的创建、编辑、恢复与卡片测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 35,

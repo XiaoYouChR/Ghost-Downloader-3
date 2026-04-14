@@ -703,3 +703,25 @@
 - 风险: 当前事件投影链已经在新版基础设施层收口，但旧宿主入口和具体生产 Pack 还没有切换到这套链路；此外，本轮只统一了阶段事件的 queued connection 约束，跨线程命令投递仍由后续新版入口接线时继续收口。
 - 结论: 已完成。
 ---
+## 2026-04-14 - 任务: 改写 http_pack 到新版接口
+### 已完成内容:
+- 将 `features/http_pack/pack.py` 改写到新版 `FeaturePack` 路径，使用 `accepts()` / `createTask()` / `owns()`、`TaskInput` 和 `TaskConfig` 创建 HTTP 下载任务，并保留模块级 `parse(payload)` 与 `createTaskFromPayload(payload)` 兼容入口。
+- 将 `features/http_pack/task.py` 改写为基于 `SingleFileTask` / `TaskStage` 的 `HttpTask` / `HttpTaskStage`，统一输出同步、配置下发、下载信息刷新、持久化状态和默认编辑表单，同时补上旧 UI 读取所需的状态汇总兼容层。
+- 新增 `tests/feature_pack/test_http_pack_v1.py`，覆盖 `http_pack` 在新版服务下的创建、默认卡片回退、默认编辑流程和新版 `taskRecorder` 恢复。
+- 调整 `tests/feature_pack/test_task_persistence_baseline.py`，把依赖旧 V0 dataclass 序列化的 `HttpTask` / `HttpTaskStage` 基线替换为本地旧模型桩，避免旧持久化基线反向约束新版 `http_pack`。
+### 测试验证:
+- `uv run basedpyright --level error tests/test_automation_contracts.py features/http_pack/task.py features/http_pack/pack.py tests/feature_pack/test_http_pack_v1.py tests/feature_pack/test_task_persistence_baseline.py` -> 通过
+- `uv run python tests/feature_pack/test_http_pack_v1.py` -> 通过
+- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
+- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏字体目录、Windows 主题句柄和已有布局告警仍存在，但不影响结果）
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { Write-Host ("RUN " + $_.FullName); uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅处理 `task.json` 中首个未完成任务 34，把 `http_pack` 的 Pack、Task、Stage 迁到新版 `FeaturePack`、`SingleFileTask`、`TaskConfig` 和默认编辑流程，不进入后续其他 Pack 的改写。
+  - 关键约束: 必须完整完成任务 34 的三个步骤；继续遵循简单、显式、可读原则；创建、编辑、恢复和卡片路径都要落到新版宿主接口；验证通过并记录 `progress.txt` 之前不能修改 `task.json` 的完成状态。
+  - 验收标准: `http_pack` 已能通过 `TaskInput` 创建新版 `HttpTask`，通过默认 `TaskConfigDialog` / `DefaultTaskCard` 走统一编辑链，通过新版 `taskRecorder` 恢复任务，并有显式测试覆盖创建、编辑、恢复与卡片回退。
+  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskConfig`、`SingleFileTask`、默认 `TaskConfigDialog`、默认卡片和稳定持久化身份字段的契约；实现建立在任务 9-33 已完成的新版 API、服务分发、默认 UI、任务记录与事件链基础之上。
+- 风险: 当前旧 V0 `Task` / `TaskStage` 持久化基线与新版 `HttpTask` 已不是同一模型，因此旧基线测试改为本地旧模型桩；仓库中其他生产 Pack 仍引用旧接口，后续任务需要继续逐个迁移，不能假设本轮已经完成全仓切换。
+- 结论: 已完成。
+---

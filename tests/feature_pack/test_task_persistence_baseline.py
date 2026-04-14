@@ -4,6 +4,8 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 from typing import Any, cast
 from unittest.mock import patch
@@ -20,7 +22,45 @@ from app.bases.models import Task, TaskStage, TaskStatus
 from app.services.browser_service import BrowserMessageType, BrowserService
 from app.supports.recorder import TaskRecorder
 from features.ftp_pack.task import FtpConnectionInfo, FtpRemoteFile, FtpTask, FtpTaskStage
-from features.http_pack.task import HttpTask, HttpTaskStage
+
+
+@dataclass(kw_only=True)
+class HttpTaskStage(TaskStage):
+    url: str
+    fileSize: int
+    headers: dict[str, str] = field(default_factory=dict)
+    proxies: dict[str, str] = field(default_factory=dict)
+    resolvePath: str = ""
+    blockNum: int = 1
+    supportsRange: bool = True
+
+
+@dataclass(kw_only=True)
+class HttpTask(Task):
+    headers: dict[str, str] = field(default_factory=dict)
+    proxies: dict[str, str] = field(default_factory=dict)
+    blockNum: int = 1
+    supportsRange: bool = True
+
+    def syncStagePaths(self) -> None:
+        resolvePath = self.resolvePath
+        for stage in self.stages:
+            if not isinstance(stage, HttpTaskStage):
+                continue
+            stage.resolvePath = resolvePath
+            stage.fileSize = self.fileSize
+            if self.headers and not stage.headers:
+                stage.headers = dict(self.headers)
+            if self.proxies and not stage.proxies:
+                stage.proxies = dict(self.proxies)
+            stage.blockNum = self.blockNum
+
+    async def run(self) -> None:
+        raise NotImplementedError
+
+
+HttpTask.__module__ = "features.http_pack.task"
+HttpTaskStage.__module__ = "features.http_pack.task"
 
 
 class BrowserSnapshotHarness:
