@@ -764,3 +764,22 @@
 - 风险: 当前 `ffmpeg_pack` 的合并任务仍保留旧实现并继续位于 `features/ffmpeg_pack/task.py`；后续任务 37 需要继续清理同模块中的旧 V0 合并路径，不能把本轮的安装任务迁移误判为整个 `ffmpeg_pack` 已完成切换。
 - 结论: 已完成。
 ---
+## 2026-04-14 - 任务: 改写 ffmpeg_pack 的合并任务
+### 已完成内容:
+- 新增 `features/ffmpeg_pack/merge_task.py`，将 FFmpeg 合并流程拆到新版 `FFmpegMergeTask`、`FFmpegMergeDownloadStage`、`FFmpegStage` 与 `createBrowserMergeTask()`，复用新版 `http_pack` 下载阶段并补齐新版持久化身份、快照、状态汇总和输出同步逻辑。
+- 将 `features/ffmpeg_pack/task.py` 改为兼容导出层，继续向旧调用方暴露 `FFmpegStage`、`FFmpegWorker`、`FFmpegMergeTask` 和 `createBrowserMergeTask()`，同时把真实实现收口到新版合并模块，避免继续保留旧 V0 合并任务实现。
+- 新增 `tests/feature_pack/test_ffmpeg_merge_pack_v1.py`，覆盖新版 `ffmpeg_pack` 合并任务创建、配置修改后输出路径同步且不覆盖源资源 URL/请求头、执行完成后清理临时文件，以及新版 `TaskRecorder` 恢复与稳定任务/阶段身份断言。
+### 测试验证:
+- `uv run basedpyright --level error tests/test_automation_contracts.py features/ffmpeg_pack/merge_task.py features/ffmpeg_pack/task.py tests/feature_pack/test_ffmpeg_merge_pack_v1.py` -> 通过
+- `uv run python tests/test_automation_contracts.py` -> 通过
+- `uv run python tests/feature_pack/test_ffmpeg_merge_pack_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
+- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+### 备注:
+- 对齐摘要:
+  - 目标范围: 仅处理 `task.json` 中首个未完成任务 37，把 `ffmpeg_pack` 的合并任务迁到新版 `SingleFileTask` 和 Stage 模型，不提前进入任务 38 及后续 Pack 改写。
+  - 关键约束: 必须完整完成 FFmpeg 合并相关 Task 与 Stage 改写、新版配置与输出同步逻辑、合并任务测试三项步骤；继续遵循简单、显式、可读原则；验证通过并记录 `progress.txt` 之前不能更新 `passes`。
+  - 验收标准: `ffmpeg_pack` 已能通过新版入口创建合并任务；合并工作流使用新版 `TaskConfig`、`SingleFileTask`、稳定任务/阶段身份与 `TaskSnapshot` / `StageSnapshot`；存在显式测试覆盖创建、配置同步、执行、恢复与持久化身份；全部验证通过。
+  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskConfig`、`SingleFileTask`、`Task` / `TaskStage`、稳定持久化身份和快照模型的契约；同时建立在任务 28、34、35、36 已完成的新版 `TaskRecorder`、`http_pack` 下载阶段、`extract_pack` 能力层和 FFmpeg 安装任务基础之上。
+- 风险: 当前仓库中仍有 `bili_pack` 等旧调用方通过 `features.ffmpeg_pack.task` / `ffmpeg_pack.task` 读取 FFmpeg 合并相关类型，因此本轮保留了兼容导出层；后续相关 Pack 迁移完成后，仍需要继续评估这些历史兼容入口是否可以收口。
+- 结论: 已完成。
+---
