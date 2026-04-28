@@ -495,7 +495,7 @@
         "只保留它真正需要的主窗口扩展和 UI 注入能力。",
         "补充 UI-only Pack 加载测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 46,

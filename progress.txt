@@ -420,3 +420,19 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #44，目标范围仅限改写 `m3u8_pack` 的安装任务、设置注入和附属 UI；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 `M3U8InstallTask` 和相关安装 Stage 使用 V1 `Task/TaskStage/TaskConfig/TaskSnapshot` 语义，设置页通过 `SettingSection` 进入新版宿主 UI，编辑入口通过默认卡片和宿主 `editTask()` 完成，并有安装与设置测试覆盖；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、`http_pack`、`extract_pack`、`ffmpeg_pack` 和上一轮 `m3u8_pack` 下载工作流之后；主要风险是安装阶段必须复用 HTTP 下载与解压能力但不能沿用 V0 任务身份，设置页存在真实运行时检测和一键安装按钮，测试需要避开 offscreen 环境下真实 runtime card 的 Qt 崩溃点而仍验证宿主注入契约。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 改写 jack_yao 到新版 UI-only Pack 路径
+### 已完成内容:
+- 已将 `JackYaoPack` 改为继承新版 `app.feature_pack.api.FeaturePack`，补齐 `accepts()`、`createTask()`、`owns()` 三个核心方法。
+- 已明确 `jack_yao` 是 UI-only Pack：`accepts()` 恒为 `False`，`createTask()` 恒返回 `None`，`owns()` 恒为 `False`，不参与 source 路由、任务创建或任务归属判断。
+- 已通过 `install()` / `load()` 只保留主窗口扩展能力，继续向主窗口注入 `ResourceInterface` 并注册“资源下载”子页面。
+- 已新增 `tests/feature_pack/test_jack_yao_pack_v1.py`，覆盖新版服务加载、主窗口 UI 注入和 UI-only Pack 不参与任务路由。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_jack_yao_pack_v1.py`，结果为 2 个测试通过。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py features/jack_yao/pack.py tests/feature_pack/test_jack_yao_pack_v1.py` 失败，原因是本轮首次把遗留 `features/jack_yao/pack.py` 纳入静态检查后暴露既有 PySide/qfluentwidgets UI 类型噪声；补充文件级 pyright 抑制后再次运行通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py features/jack_yao/pack.py tests/feature_pack/test_jack_yao_pack_v1.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`，输出 `automation contract validation passed`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { Write-Error "Failed: $($test.FullName)"; exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #45，目标范围仅限把 `jack_yao` 改写到新版 UI-only Pack 路径；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 `jack_yao` 使用 V1 `FeaturePack` 接口但不被默认当作下载器，只保留主窗口扩展和 UI 注入能力，并有 UI-only Pack 加载测试覆盖；依赖顺序上本任务位于新版 API、默认服务加载、设置/卡片分发以及各下载类 Pack 改写之后，后续 #46 会把主窗口与 FeatureService 切换到新版入口；主要风险是 `ResourceInterface` 初始化会触发远端资源加载，测试因此替换 `coreService.runCoroutine`，只验证宿主注入边界而不触发真实网络。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

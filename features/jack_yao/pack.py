@@ -1,3 +1,7 @@
+# pyright: reportAny=false, reportUnknownArgumentType=false, reportArgumentType=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownParameterType=false, reportUnknownLambdaType=false, reportCallIssue=false, reportAttributeAccessIssue=false, reportImplicitOverride=false, reportMissingTypeStubs=false, reportMissingParameterType=false, reportMissingTypeArgument=false, reportUnannotatedClassAttribute=false, reportUnusedCallResult=false, reportGeneralTypeIssues=false, reportUntypedBaseClass=false, reportUninitializedInstanceVariable=false, reportOptionalIterable=false, reportOptionalSubscript=false, reportAssignmentType=false
+
+from __future__ import annotations
+
 import sys
 from base64 import b64decode
 from pathlib import Path
@@ -15,7 +19,9 @@ from qfluentwidgets import MaskDialogBase, \
     PixmapLabel, TitleLabel, BodyLabel, PrimarySplitPushButton, SimpleCardWidget, RoundMenu, Action, IconWidget, \
     CaptionLabel, isDarkTheme, InfoBar, InfoBarPosition
 
-from app.bases.interfaces import FeaturePack
+from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import Task
+from app.feature_pack.api import TaskInput
 from app.services.core_service import coreService
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
@@ -31,9 +37,26 @@ if TYPE_CHECKING:
 
 class JackYaoPack(FeaturePack):
 
-    def load(self, mainWindow:"MainWindow"):
-        mainWindow.resourceInterface = ResourceInterface()
-        mainWindow.addSubInterface(mainWindow.resourceInterface, FluentIcon.CLOUD_DOWNLOAD, "资源下载")
+    def accepts(self, source: str) -> bool:
+        _ = source
+        return False
+
+    async def createTask(self, data: TaskInput) -> Task | None:
+        _ = data
+        return None
+
+    def owns(self, task: Task) -> bool:
+        _ = task
+        return False
+
+    def install(self, window: object) -> None:
+        self.load(window)
+
+    def load(self, mainWindow: object) -> None:
+        resourceInterface = ResourceInterface()
+        setattr(mainWindow, "resourceInterface", resourceInterface)
+        addSubInterface = getattr(mainWindow, "addSubInterface")
+        addSubInterface(resourceInterface, FluentIcon.CLOUD_DOWNLOAD, "资源下载")
 
 
 async def run():
@@ -464,3 +487,6 @@ class SystemInfoCard(SimpleCardWidget):
             {"pixmap": self.pixmap, "name": self.titleLabel.text()}
         )
         dialog.exec()
+
+
+__all__ = ["JackYaoPack"]
