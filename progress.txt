@@ -331,3 +331,19 @@
 ### 备注:
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #39，目标范围仅限把 `ftp_pack` 改写为新版 `MultiFileTask` 代表实现；关键约束是每轮只处理这一项任务、验证通过后先写入中文 `progress.txt` 证据再更新 `task.json`、不把旧 Feature Pack 接口作为目标、文件选择/路径同步/配置修改必须通过 `MultiFileTask`、`TaskConfig`、`configure()` 和默认对话框流程完成；验收标准是 `FtpTask`、相关 Stage 和 Pack 入口进入 V1 `FeaturePack/TaskInput/TaskConfig/TaskStage` 语义，FTP 多文件创建、选择、路径同步、默认卡片编辑和持久化恢复都有测试覆盖，并通过静态检查与全部测试脚本；依赖顺序上本任务位于新版 API、默认 UI、服务路由、持久化、Core/AddTask 流程以及 `http_pack/github_pack` 改写之后，后续 `bittorrent_pack` 和 `bili_pack` 的多文件迁移会复用该路径；主要风险是 FTP 远端 source 变更需要重新列目录，当前默认编辑表单因此不暴露 source 字段，避免在同步配置时猜测远端文件列表。
 ---
+## 2026-04-28 - 任务: 改写 bittorrent_pack 到新版接口
+### 已完成内容:
+- 已将 `bittorrent_pack` 入口改为新版 `FeaturePack.accepts/createTask/owns`，并保留 `canHandle/parse/createTaskFromPayload` 兼容入口。
+- 已将 `BitTorrentTask` 改为基于 `MultiFileTask` 与 `TaskConfig` 的多文件任务，种子文件条目使用稳定 `TaskFile.id`，文件选择、优先级、输出根目录和快照统计进入新版模型。
+- 已将 `BitTorrentTaskStage` 改为新版 `TaskStage`，使用 `bittorrent_pack/bittorrent_download@1` 稳定身份，运行状态、传输进度、错误和 resume 相关状态进入 V1 持久化。
+- 已让 BitTorrent 任务编辑使用默认卡片、默认 `TaskConfigDialog` 和默认 `MultiFileSelectDialog` 流程；本地 `.torrent`、HTTP `.torrent` 和 magnet 来源继续由 Pack 入口路由。
+- 新增 `tests/feature_pack/test_bittorrent_pack_v1.py`，覆盖本地种子多文件创建、默认编辑选择、V1 recorder 恢复和浏览器快照摘要。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_bittorrent_pack_v1.py`。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py features/bittorrent_pack/task.py features/bittorrent_pack/pack.py tests/feature_pack/test_bittorrent_pack_v1.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #40，目标范围仅限把 `bittorrent_pack` 改写为新版多文件任务实现，覆盖 `BitTorrentTask`、相关 Stage、Pack 入口、种子文件选择、恢复和浏览器快照投影；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得把 `task.json` 中本任务标记为通过，且 `progress.txt` 必须记录中文证据；验收标准是 BitTorrent 入口使用 V1 `FeaturePack/TaskInput/TaskConfig/MultiFileTask/TaskStage` 语义，文件选择进入 `MultiFileTask.select()` 和默认多文件选择流程，任务恢复与 `TaskSnapshot` 投影可被测试覆盖，并通过静态检查与 `tests/` 下 Python 测试脚本；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、浏览器快照、Core/AddTask、`http_pack/github_pack/ftp_pack` 迁移之后，直接复用前一轮 FTP 多文件路径；主要风险是 BitTorrent 种子元信息、选中文件索引和下载引擎配置之间存在映射关系，恢复时必须保持稳定文件 id，不应再依赖 V0 类名或匿名 payload 猜测状态。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件和 Windows theme 相关警告，但测试进程退出码为 0，未影响本轮验证结论。
+---

@@ -440,7 +440,7 @@
         "让文件选择、恢复和浏览器快照进入新版任务模型。",
         "补充 BitTorrent 多文件任务测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 41,

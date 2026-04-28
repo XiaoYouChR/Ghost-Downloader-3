@@ -1,26 +1,51 @@
+# pyright: reportAny=false, reportExplicitAny=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportAttributeAccessIssue=false, reportImplicitOverride=false, reportInconsistentConstructor=false, reportUnannotatedClassAttribute=false, reportArgumentType=false, reportPrivateLocalImportUsage=false, reportCallIssue=false, reportMissingTypeArgument=false, reportUnusedImport=false, reportUnusedFunction=false, reportUnusedCallResult=false, reportPropertyTypeMismatch=false, reportPrivateUsage=false, reportReturnType=false
+
+from __future__ import annotations
+
 import asyncio
 from base64 import b64decode, b64encode
+from collections.abc import Mapping
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from tempfile import gettempdir
+from time import time_ns
 from typing import Any
+from typing import cast
 from urllib.parse import unquote, urlparse, urlsplit
 from urllib.request import url2pathname
+from uuid import uuid4
 
 import libtorrent as lt
 import niquests
 from loguru import logger
 
-from app.bases.interfaces import Worker
-from app.bases.models import Task, TaskStage, TaskStatus
+from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import FormField
+from app.feature_pack.api import MultiFileTask
+from app.feature_pack.api import StageSnapshot
+from app.feature_pack.api import TaskConfig
+from app.feature_pack.api import TaskFile
+from app.feature_pack.api import TaskForm
+from app.feature_pack.api import TaskInput
+from app.feature_pack.api import TaskSnapshot
+from app.feature_pack.api import TaskStage
 from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
 from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .trackers import mergeTrackers
 
 BITTORRENT_USER_AGENT = f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}"
+
+_BITTORRENT_TASK_PACK_ID = "bittorrent_pack"
+_BITTORRENT_TASK_KIND = "bittorrent_download"
+_BITTORRENT_STAGE_KIND = "bittorrent_download"
+_BITTORRENT_TASK_VERSION = 1
+_BITTORRENT_STAGE_VERSION = 1
+_DEFAULT_STAGE_NAME = "BitTorrent 下载"
+TaskStatus = LegacyTaskStatus
 
 
 def _storageMode(mode: str) -> int:
@@ -248,6 +273,101 @@ def _seedingSeconds(status: lt.torrent_status) -> int:
     return _durationSeconds(status.seeding_duration or status.seeding_time)
 
 
+def _copyHeaders(headers: Mapping[str, str] | None) -> dict[str, str]:
+    if headers:
+        return {str(key): str(value) for key, value in headers.items()}
+    return DEFAULT_HEADERS.copy()
+
+
+def _copyProxies(
+    proxies: Mapping[str, str] | None,
+) -> dict[str, str] | None:
+    if proxies is None:
+        return None
+    return {str(key): str(value) for key, value in proxies.items()}
+
+
+def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
+    if isinstance(value, LegacyTaskStatus):
+        return value.name.lower()
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"completed", "failed", "paused", "running", "waiting"}:
+            return normalized
+    return "waiting"
+
+
+def _legacyStatus(value: str | LegacyTaskStatus | object) -> LegacyTaskStatus:
+    return {
+        "waiting": LegacyTaskStatus.WAITING,
+        "running": LegacyTaskStatus.RUNNING,
+        "paused": LegacyTaskStatus.PAUSED,
+        "completed": LegacyTaskStatus.COMPLETED,
+        "failed": LegacyTaskStatus.FAILED,
+    }[_normalizeState(value)]
+
+
+def _fileIdForIndex(index: int) -> str:
+    return f"file-{index}"
+
+
+def _fileIndexFromId(fileId: str) -> int:
+    prefix, _, suffix = fileId.partition("-")
+    if prefix == "file" and suffix.isdecimal():
+        return int(suffix)
+    if fileId.isdecimal():
+        return int(fileId)
+    return 0
+
+
+def _normalizeConfig(config: TaskConfig) -> TaskConfig:
+    rawName = str(config.name).strip()
+    return TaskConfig(
+        source=str(config.source).strip(),
+        folder=Path(config.folder),
+        name=sanitizeFilename(rawName, fallback="torrent") if rawName else "",
+        headers=_copyHeaders(config.headers),
+        proxies=_copyProxies(config.proxies),
+        chunks=max(1, int(config.chunks)),
+    )
+
+
+def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
+    rawSource = payload.get("url")
+    if not isinstance(rawSource, str):
+        return None
+
+    source = rawSource.strip()
+    if not source:
+        return None
+
+    rawFolder = payload.get("path")
+    rawName = payload.get("filename")
+    rawHeaders = payload.get("headers")
+    rawProxies = payload.get("proxies")
+    rawChunks = payload.get("preBlockNum")
+    return TaskConfig(
+        source=source,
+        folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
+        name=rawName if isinstance(rawName, str) else "",
+        headers=_copyHeaders(rawHeaders if isinstance(rawHeaders, Mapping) else None),
+        proxies=(
+            _copyProxies(cast(Mapping[str, str], rawProxies))
+            if isinstance(rawProxies, Mapping)
+            else getProxies()
+        ),
+        chunks=rawChunks if isinstance(rawChunks, int) and not isinstance(rawChunks, bool) else 1,
+    )
+
+
+def _normalizeTorrentFilePath(path: object, *, fallback: str = "torrent_file") -> str:
+    text = str(path or "").strip().replace("\\", "/")
+    if not text:
+        return fallback
+    normalizedPath = PurePosixPath(text)
+    return str(normalizedPath) if str(normalizedPath) != "." else fallback
+
+
 async def _resolveAdditionalTrackers() -> list[str]:
     if not bittorrentConfig.enableWebTrackers.value:
         return []
@@ -261,83 +381,528 @@ async def _resolveAdditionalTrackers() -> list[str]:
     return getCachedWebTrackers()
 
 
-@dataclass
-class BitTorrentFile:
-    index: int
-    path: str
-    size: int
-    selected: bool = True
+@dataclass(slots=True, kw_only=True)
+class BitTorrentFile(TaskFile):
+    id: str = ""
+    path: str = ""
+    size: int = 0
+    index: int = 0
     priority: int = 4
-    downloadedBytes: int = 0
-    completed: bool = False
 
-    def __post_init__(self):
-        self.path = _normalizeTorrentPath(self.path)
+    def __post_init__(self) -> None:
+        self.path = _normalizeTorrentFilePath(self.path)
+        if not self.id:
+            self.id = _fileIdForIndex(self.index)
+        self.size = max(0, int(self.size))
+        self.priority = 4 if self.selected else 0
+
+    @property
+    def downloadedBytes(self) -> int:
+        return self.doneBytes
+
+    @downloadedBytes.setter
+    def downloadedBytes(self, value: int) -> None:
+        self.doneBytes = max(0, int(value))
+
+    @property
+    def completed(self) -> bool:
+        return self.finished
+
+    @completed.setter
+    def completed(self, value: bool) -> None:
+        self.finished = bool(value)
 
 
-@dataclass
+def _coerceBitTorrentFile(rawFile: object, fallbackIndex: int) -> BitTorrentFile:
+    if isinstance(rawFile, BitTorrentFile):
+        return rawFile
+    if isinstance(rawFile, TaskFile):
+        index = _fileIndexFromId(rawFile.id)
+        return BitTorrentFile(
+            id=rawFile.id,
+            path=rawFile.path,
+            size=rawFile.size,
+            selected=rawFile.selected,
+            note=rawFile.note,
+            doneBytes=rawFile.doneBytes,
+            finished=rawFile.finished,
+            index=index,
+            priority=4 if rawFile.selected else 0,
+        )
+    if isinstance(rawFile, Mapping):
+        rawIndex = rawFile.get("index")
+        index = (
+            rawIndex
+            if isinstance(rawIndex, int) and not isinstance(rawIndex, bool)
+            else fallbackIndex
+        )
+        rawId = rawFile.get("id")
+        rawPath = rawFile.get("path")
+        rawSize = rawFile.get("size")
+        rawDoneBytes = rawFile.get("downloadedBytes", rawFile.get("doneBytes", 0))
+        rawPriority = rawFile.get("priority")
+        rawSelected = bool(rawFile.get("selected", True))
+        note = rawFile.get("note")
+        return BitTorrentFile(
+            id=rawId if isinstance(rawId, str) and rawId else _fileIdForIndex(index),
+            path=_normalizeTorrentFilePath(rawPath),
+            size=rawSize if isinstance(rawSize, int) and not isinstance(rawSize, bool) else 0,
+            selected=rawSelected,
+            note=note if isinstance(note, str) else "",
+            doneBytes=rawDoneBytes if isinstance(rawDoneBytes, int) and not isinstance(rawDoneBytes, bool) else 0,
+            finished=bool(rawFile.get("completed", rawFile.get("finished", False))),
+            index=index,
+            priority=rawPriority if isinstance(rawPriority, int) and not isinstance(rawPriority, bool) else (4 if rawSelected else 0),
+        )
+    raise TypeError(f"Unsupported BitTorrent task file type: {type(rawFile).__name__}")
+
+
+def _restoreBitTorrentFiles(state: Mapping[str, object]) -> list[BitTorrentFile]:
+    rawFiles = state.get("files")
+    rawMetadata = state.get("fileMetadata")
+    metadataById: dict[str, Mapping[str, object]] = {}
+    if isinstance(rawMetadata, list):
+        for item in rawMetadata:
+            if not isinstance(item, Mapping):
+                continue
+            fileId = item.get("id")
+            if isinstance(fileId, str):
+                metadataById[fileId] = item
+
+    restoredFiles: list[BitTorrentFile] = []
+    if not isinstance(rawFiles, list):
+        return restoredFiles
+
+    for fallbackIndex, rawFile in enumerate(rawFiles):
+        if not isinstance(rawFile, Mapping):
+            continue
+        fileId = rawFile.get("id")
+        if not isinstance(fileId, str) or not fileId:
+            continue
+        metadata = metadataById.get(fileId, {})
+        rawIndex = metadata.get("index")
+        rawPriority = metadata.get("priority")
+        restoredFile = _coerceBitTorrentFile(rawFile, fallbackIndex)
+        restoredFile.index = rawIndex if isinstance(rawIndex, int) and not isinstance(rawIndex, bool) else restoredFile.index
+        if isinstance(rawPriority, int) and not isinstance(rawPriority, bool):
+            restoredFile.priority = rawPriority
+        elif restoredFile.selected:
+            restoredFile.priority = 4
+        else:
+            restoredFile.priority = 0
+        restoredFiles.append(restoredFile)
+    return restoredFiles
+
+
 class BitTorrentTaskStage(TaskStage):
-    resolvePath: str
+    recordTaskPackId = _BITTORRENT_TASK_PACK_ID
+    recordTaskKind = _BITTORRENT_TASK_KIND
+    recordTaskVersion = _BITTORRENT_TASK_VERSION
+    recordKind = _BITTORRENT_STAGE_KIND
+    recordVersion = _BITTORRENT_STAGE_VERSION
 
-    def __post_init__(self):
+    def __init__(
+        self,
+        *,
+        id: str | None = None,
+        stageIndex: int = 1,
+        resolvePath: str = "",
+        kind: str = _BITTORRENT_STAGE_KIND,
+        version: int = _BITTORRENT_STAGE_VERSION,
+        name: str = _DEFAULT_STAGE_NAME,
+        state: str | LegacyTaskStatus = "waiting",
+        progress: float = 0.0,
+        doneBytes: int = 0,
+        speed: int = 0,
+        error: str = "",
+        stateText: str = "",
+        peerCount: int = 0,
+        seedCount: int = 0,
+        downloadRate: int = 0,
+        uploadRate: int = 0,
+    ) -> None:
+        super().__init__(
+            id=id or f"bittorrent-stage-{uuid4().hex}",
+            kind=kind,
+            version=version,
+            name=name,
+        )
+        self.stageIndex = max(1, int(stageIndex))
+        self.resolvePath = str(resolvePath)
+        self.state = _normalizeState(state)
+        self.progress = max(0.0, min(float(progress), 100.0))
+        self.doneBytes = max(0, int(doneBytes))
+        self.speed = max(0, int(speed))
+        self.error = str(error)
+        self.stateText = str(stateText)
+        self.peerCount = max(0, int(peerCount))
+        self.seedCount = max(0, int(seedCount))
+        self.downloadRate = max(0, int(downloadRate))
+        self.uploadRate = max(0, int(uploadRate))
+
+    @property
+    def receivedBytes(self) -> int:
+        return self.doneBytes
+
+    @receivedBytes.setter
+    def receivedBytes(self, value: int) -> None:
+        self.doneBytes = max(0, int(value))
+
+    @property
+    def status(self) -> LegacyTaskStatus:
+        return _legacyStatus(self.state)
+
+    @status.setter
+    def status(self, value: LegacyTaskStatus | str) -> None:
+        self.setStatus(value, emitSignals=False)
+
+    async def pause(self) -> None:
+        self.setStatus("paused")
+
+    async def run(self) -> None:
+        await BitTorrentWorker(self).run()
+
+    def reset(self, notifyTask: bool = True) -> None:
+        self.state = "waiting"
+        self.progress = 0.0
+        self.doneBytes = 0
+        self.speed = 0
+        self.error = ""
         self.stateText = ""
         self.peerCount = 0
         self.seedCount = 0
         self.downloadRate = 0
         self.uploadRate = 0
+        task = self._task if isinstance(self._task, BitTorrentTask) else None
+        if notifyTask and task is not None:
+            task.syncStatusFromStages()
+        self.stateChanged.emit(self.state)
+        self.progressChanged.emit(self.progress)
+        self.snapshotChanged.emit(self.snapshot())
 
-    def reset(self, notifyTask: bool = True):
-        super().reset(notifyTask=notifyTask)
-        self.stateText = ""
-        self.peerCount = 0
-        self.seedCount = 0
-        self.downloadRate = 0
-        self.uploadRate = 0
+    def setStatus(
+        self,
+        status: LegacyTaskStatus | str,
+        *,
+        emitSignals: bool = True,
+        notifyTask: bool | None = None,
+    ) -> None:
+        normalizedStatus = _normalizeState(status)
+        stateChanged = self.state != normalizedStatus
+        progressChanged = False
+        self.state = normalizedStatus
+        if normalizedStatus == "completed":
+            self.progress = 100.0
+            progressChanged = True
+            self.speed = 0
+            self.error = ""
+        elif normalizedStatus in {"paused", "waiting"}:
+            self.speed = 0
+            self.downloadRate = 0
+            self.uploadRate = 0
+            self.error = ""
+        elif normalizedStatus == "failed":
+            self.speed = 0
+
+        task = self._task if isinstance(self._task, BitTorrentTask) else None
+        if notifyTask is not False and task is not None:
+            task.syncStatusFromStages()
+
+        if not emitSignals:
+            return
+        if stateChanged:
+            self.stateChanged.emit(self.state)
+        if progressChanged:
+            self.progressChanged.emit(self.progress)
+        self.snapshotChanged.emit(self.snapshot())
+
+    def setError(self, error: object, notifyTask: bool = True) -> None:
+        message = repr(error).strip() if error is not None else ""
+        self.error = message
+        self.state = "failed"
+        self.speed = 0
+        task = self._task if isinstance(self._task, BitTorrentTask) else None
+        if notifyTask and task is not None:
+            task.syncStatusFromStages()
+        self.stateChanged.emit(self.state)
+        self.failed.emit(message)
+        self.snapshotChanged.emit(self.snapshot())
+
+    def updateTransfer(
+        self,
+        *,
+        doneBytes: int,
+        speed: int,
+        progress: float,
+        notifyTask: bool = True,
+    ) -> None:
+        self.doneBytes = max(0, int(doneBytes))
+        self.speed = max(0, int(speed))
+        self.progress = max(0.0, min(float(progress), 100.0))
+        task = self._task if isinstance(self._task, BitTorrentTask) else None
+        if notifyTask and task is not None:
+            task.syncStatusFromStages()
+        self.progressChanged.emit(self.progress)
+        self.snapshotChanged.emit(self.snapshot())
+
+    def snapshot(self) -> StageSnapshot:
+        return StageSnapshot(
+            id=self.id,
+            kind=self.kind,
+            name=self.name,
+            state=self.state,
+            progress=self.progress,
+            doneBytes=self.doneBytes,
+            speed=self.speed,
+            error=self.error,
+        )
+
+    def persistenceState(self) -> dict[str, object]:
+        return {
+            "stageIndex": self.stageIndex,
+            "resolvePath": self.resolvePath,
+            "state": self.state,
+            "progress": self.progress,
+            "doneBytes": self.doneBytes,
+            "speed": self.speed,
+            "error": self.error,
+            "stateText": self.stateText,
+            "peerCount": self.peerCount,
+            "seedCount": self.seedCount,
+            "downloadRate": self.downloadRate,
+            "uploadRate": self.uploadRate,
+        }
+
+    def restorePersistentState(self, state: Mapping[str, object]) -> None:
+        rawStageIndex = state.get("stageIndex")
+        rawResolvePath = state.get("resolvePath")
+        rawState = state.get("state")
+        rawProgress = state.get("progress")
+        rawDoneBytes = state.get("doneBytes")
+        rawSpeed = state.get("speed")
+        rawError = state.get("error")
+        rawStateText = state.get("stateText")
+        rawPeerCount = state.get("peerCount")
+        rawSeedCount = state.get("seedCount")
+        rawDownloadRate = state.get("downloadRate")
+        rawUploadRate = state.get("uploadRate")
+
+        if isinstance(rawStageIndex, int) and not isinstance(rawStageIndex, bool):
+            self.stageIndex = max(1, rawStageIndex)
+        if isinstance(rawResolvePath, str):
+            self.resolvePath = rawResolvePath
+        if isinstance(rawState, str):
+            self.state = _normalizeState(rawState)
+        if isinstance(rawProgress, int | float):
+            self.progress = max(0.0, min(float(rawProgress), 100.0))
+        if isinstance(rawDoneBytes, int) and not isinstance(rawDoneBytes, bool):
+            self.doneBytes = max(0, rawDoneBytes)
+        if isinstance(rawSpeed, int) and not isinstance(rawSpeed, bool):
+            self.speed = max(0, rawSpeed)
+        if isinstance(rawError, str):
+            self.error = rawError
+        if isinstance(rawStateText, str):
+            self.stateText = rawStateText
+        if isinstance(rawPeerCount, int) and not isinstance(rawPeerCount, bool):
+            self.peerCount = max(0, rawPeerCount)
+        if isinstance(rawSeedCount, int) and not isinstance(rawSeedCount, bool):
+            self.seedCount = max(0, rawSeedCount)
+        if isinstance(rawDownloadRate, int) and not isinstance(rawDownloadRate, bool):
+            self.downloadRate = max(0, rawDownloadRate)
+        if isinstance(rawUploadRate, int) and not isinstance(rawUploadRate, bool):
+            self.uploadRate = max(0, rawUploadRate)
+
+    @classmethod
+    def createPersistentStage(
+        cls,
+        *,
+        id: str,
+        kind: str,
+        version: int,
+        name: str,
+        state: Mapping[str, object],
+    ) -> "BitTorrentTaskStage":
+        rawStageIndex = state.get("stageIndex")
+        rawResolvePath = state.get("resolvePath")
+        rawTaskState = state.get("state")
+        rawProgress = state.get("progress")
+        rawDoneBytes = state.get("doneBytes")
+        rawSpeed = state.get("speed")
+        rawError = state.get("error")
+        rawStateText = state.get("stateText")
+        rawPeerCount = state.get("peerCount")
+        rawSeedCount = state.get("seedCount")
+        rawDownloadRate = state.get("downloadRate")
+        rawUploadRate = state.get("uploadRate")
+        return cls(
+            id=id,
+            kind=kind,
+            version=version,
+            name=name,
+            stageIndex=rawStageIndex if isinstance(rawStageIndex, int) else 1,
+            resolvePath=rawResolvePath if isinstance(rawResolvePath, str) else "",
+            state=rawTaskState if isinstance(rawTaskState, str) else "waiting",
+            progress=float(rawProgress) if isinstance(rawProgress, int | float) else 0.0,
+            doneBytes=rawDoneBytes if isinstance(rawDoneBytes, int) else 0,
+            speed=rawSpeed if isinstance(rawSpeed, int) else 0,
+            error=rawError if isinstance(rawError, str) else "",
+            stateText=rawStateText if isinstance(rawStateText, str) else "",
+            peerCount=rawPeerCount if isinstance(rawPeerCount, int) else 0,
+            seedCount=rawSeedCount if isinstance(rawSeedCount, int) else 0,
+            downloadRate=rawDownloadRate if isinstance(rawDownloadRate, int) else 0,
+            uploadRate=rawUploadRate if isinstance(rawUploadRate, int) else 0,
+        )
 
 
-@dataclass
-class BitTorrentTask(Task):
-    sourceType: str
-    torrentData: str
-    resumeData: str = field(default="")
-    trackers: list[str] = field(default_factory=list)
-    files: list[BitTorrentFile] = field(default_factory=list)
-    proxies: dict | None = field(default_factory=getProxies)
-    listenPort: int = field(default_factory=lambda: bittorrentConfig.listenPort.value)
-    connectionsLimit: int = field(default_factory=lambda: bittorrentConfig.connectionsLimit.value)
-    downloadRateLimit: int = field(default_factory=lambda: bittorrentConfig.downloadRateLimit.value)
-    uploadRateLimit: int = field(default_factory=lambda: bittorrentConfig.uploadRateLimit.value)
-    enableDHT: bool = field(default_factory=lambda: bittorrentConfig.enableDHT.value)
-    enableLSD: bool = field(default_factory=lambda: bittorrentConfig.enableLSD.value)
-    enableUPnP: bool = field(default_factory=lambda: bittorrentConfig.enableUPnP.value)
-    enableNATPMP: bool = field(default_factory=lambda: bittorrentConfig.enableNATPMP.value)
-    sequentialDownload: bool = field(default_factory=lambda: bittorrentConfig.sequentialDownload.value)
-    storageMode: str = field(default_factory=lambda: bittorrentConfig.storageMode.value)
-    seedRatioLimitPercent: int = field(default_factory=lambda: bittorrentConfig.seedRatioLimitPercent.value)
-    seedTimeLimitMinutes: int = field(default_factory=lambda: bittorrentConfig.seedTimeLimitMinutes.value)
-    saveMagnetTorrentFile: bool = field(default_factory=lambda: bittorrentConfig.saveMagnetTorrentFile.value)
-    shareRatioPercent: float = field(default=0)
-    seedingTimeSeconds: int = field(default=0)
-    isSeeding: bool = field(default=False)
+class BitTorrentTask(MultiFileTask):
+    recordPackId = _BITTORRENT_TASK_PACK_ID
+    recordKind = _BITTORRENT_TASK_KIND
+    recordVersion = _BITTORRENT_TASK_VERSION
 
-    def __post_init__(self):
-        self.files = [
-            item if isinstance(item, BitTorrentFile) else BitTorrentFile(**item)
-            for item in self.files
+    def __init__(
+        self,
+        *,
+        id: str | None = None,
+        config: TaskConfig | None = None,
+        stages: list[TaskStage] | None = None,
+        files: list[TaskFile | Mapping[str, object]] | None = None,
+        sourceType: str = "torrent",
+        torrentData: str,
+        resumeData: str = "",
+        trackers: list[str] | None = None,
+        listenPort: int | None = None,
+        connectionsLimit: int | None = None,
+        downloadRateLimit: int | None = None,
+        uploadRateLimit: int | None = None,
+        enableDHT: bool | None = None,
+        enableLSD: bool | None = None,
+        enableUPnP: bool | None = None,
+        enableNATPMP: bool | None = None,
+        sequentialDownload: bool | None = None,
+        storageMode: str | None = None,
+        seedRatioLimitPercent: int | None = None,
+        seedTimeLimitMinutes: int | None = None,
+        saveMagnetTorrentFile: bool | None = None,
+        shareRatioPercent: float = 0.0,
+        seedingTimeSeconds: int = 0,
+        isSeeding: bool = False,
+        fileSelectionVersion: int = 0,
+        createdAt: int | None = None,
+        title: str | None = None,
+        url: str | None = None,
+        fileSize: int | None = None,
+        path: Path | str | None = None,
+        proxies: Mapping[str, str] | None = None,
+    ) -> None:
+        if config is None:
+            resolvedSource = str(url or "").strip()
+            if not resolvedSource:
+                raise ValueError("BitTorrentTask requires TaskConfig or url")
+            config = TaskConfig(
+                source=resolvedSource,
+                folder=Path(path) if path is not None else Path(cfg.downloadFolder.value),
+                name=sanitizeFilename(str(title or "").strip(), fallback="torrent"),
+                headers=DEFAULT_HEADERS.copy(),
+                proxies=_copyProxies(proxies) if proxies is not None else getProxies(),
+                chunks=1,
+            )
+
+        normalizedConfig = _normalizeConfig(config)
+        if not normalizedConfig.name:
+            normalizedConfig = replace(normalizedConfig, name="torrent")
+        normalizedFiles = [
+            _coerceBitTorrentFile(rawFile, index)
+            for index, rawFile in enumerate(files or [])
         ]
-        self.fileSelectionVersion = 0
-        self.title = sanitizeFilename(self.title, fallback="torrent")
-        super().__post_init__()
+        self.sourceType = "magnet" if sourceType == "magnet" else "torrent"
+        self.torrentData = str(torrentData)
+        self.resumeData = str(resumeData)
+        self.trackers = [str(tracker) for tracker in trackers or [] if str(tracker).strip()]
+        self.listenPort = bittorrentConfig.listenPort.value if listenPort is None else int(listenPort)
+        self.connectionsLimit = bittorrentConfig.connectionsLimit.value if connectionsLimit is None else int(connectionsLimit)
+        self.downloadRateLimit = bittorrentConfig.downloadRateLimit.value if downloadRateLimit is None else int(downloadRateLimit)
+        self.uploadRateLimit = bittorrentConfig.uploadRateLimit.value if uploadRateLimit is None else int(uploadRateLimit)
+        self.enableDHT = bittorrentConfig.enableDHT.value if enableDHT is None else bool(enableDHT)
+        self.enableLSD = bittorrentConfig.enableLSD.value if enableLSD is None else bool(enableLSD)
+        self.enableUPnP = bittorrentConfig.enableUPnP.value if enableUPnP is None else bool(enableUPnP)
+        self.enableNATPMP = bittorrentConfig.enableNATPMP.value if enableNATPMP is None else bool(enableNATPMP)
+        self.sequentialDownload = bittorrentConfig.sequentialDownload.value if sequentialDownload is None else bool(sequentialDownload)
+        self.storageMode = storageMode if isinstance(storageMode, str) and storageMode else bittorrentConfig.storageMode.value
+        self.seedRatioLimitPercent = bittorrentConfig.seedRatioLimitPercent.value if seedRatioLimitPercent is None else int(seedRatioLimitPercent)
+        self.seedTimeLimitMinutes = bittorrentConfig.seedTimeLimitMinutes.value if seedTimeLimitMinutes is None else int(seedTimeLimitMinutes)
+        self.saveMagnetTorrentFile = bittorrentConfig.saveMagnetTorrentFile.value if saveMagnetTorrentFile is None else bool(saveMagnetTorrentFile)
+        self.shareRatioPercent = max(0.0, float(shareRatioPercent))
+        self.seedingTimeSeconds = max(0, int(seedingTimeSeconds))
+        self.isSeeding = bool(isSeeding)
+        self.fileSelectionVersion = max(0, int(fileSelectionVersion))
+        self.createdAt = int(time_ns()) if createdAt is None else int(createdAt)
+        self.url = normalizedConfig.source
+        self.state = "waiting"
+        self.progress = 0.0
+        self.doneBytes = 0
+        self.totalBytes = max(0, int(fileSize)) if fileSize is not None else 0
+        self.target = ""
+        self._filesByIndex: dict[int, BitTorrentFile] = {}
+        self._filesById: dict[str, BitTorrentFile] = {}
+
+        resolvedStages = stages or [BitTorrentTaskStage(stageIndex=1, resolvePath="")]
+        super().__init__(
+            id=id or f"bittorrent-task-{uuid4().hex}",
+            packId=_BITTORRENT_TASK_PACK_ID,
+            kind=_BITTORRENT_TASK_KIND,
+            version=_BITTORRENT_TASK_VERSION,
+            config=normalizedConfig,
+            stages=resolvedStages,
+            files=normalizedFiles,
+        )
+        self._rebuildFileIndexes()
+        self.syncOutput()
         self._recalculateSelection()
-        self.syncStagePaths()
+        self.syncStatusFromStages()
+
+    @property
+    def taskId(self) -> str:
+        return self.id
+
+    @property
+    def title(self) -> str:
+        return self.config.name
+
+    @title.setter
+    def title(self, value: str) -> None:
+        self.setTitle(value)
+
+    @property
+    def path(self) -> Path:
+        return self.config.folder
+
+    @property
+    def proxies(self) -> dict[str, str] | None:
+        return None if self.config.proxies is None else dict(self.config.proxies)
+
+    @property
+    def status(self) -> LegacyTaskStatus:
+        return _legacyStatus(self.state)
+
+    @status.setter
+    def status(self, value: LegacyTaskStatus | str) -> None:
+        self.state = _normalizeState(value)
+
+    @property
+    def fileSize(self) -> int:
+        return self.totalBytes
+
+    @fileSize.setter
+    def fileSize(self, value: int) -> None:
+        self.totalBytes = max(0, int(value))
 
     @property
     def resolvePath(self) -> str:
-        return str(self.path / self.title)
+        return self.target
 
     @property
     def stage(self) -> BitTorrentTaskStage:
-        return self.stages[0]
+        return cast(BitTorrentTaskStage, self.stages[0])
 
     @property
     def magnetTorrentPath(self) -> Path | None:
@@ -347,11 +912,11 @@ class BitTorrentTask(Task):
 
     @property
     def selectedFileCount(self) -> int:
-        return sum(1 for file in self.files if file.selected)
+        return self.selectedCount
 
     @property
     def totalFileCount(self) -> int:
-        return len(self.files)
+        return self.fileCount
 
     @property
     def isSingleFileTorrent(self) -> bool:
@@ -361,116 +926,432 @@ class BitTorrentTask(Task):
     def hasUnselectedFiles(self) -> bool:
         return self.selectedFileCount < self.totalFileCount
 
-    def syncStagePaths(self):
-        self.stage.resolvePath = self.resolvePath
+    @property
+    def lastError(self) -> str:
+        for stage in reversed(self.stages):
+            if isinstance(stage, BitTorrentTaskStage) and stage.error:
+                return stage.error
+        return ""
+
+    def _rebuildFileIndexes(self) -> None:
+        torrentFiles: list[BitTorrentFile] = []
+        for index, rawFile in enumerate(self.files):
+            torrentFile = _coerceBitTorrentFile(rawFile, index)
+            torrentFiles.append(torrentFile)
+        self.files = torrentFiles
+        self._filesByIndex = {file.index: file for file in torrentFiles}
+        self._filesById = {file.id: file for file in torrentFiles}
+
+    def syncStagePaths(self) -> None:
+        self.syncOutput()
+
+    def syncOutput(self) -> None:
+        self.target = str(self.root)
+        for stage in self.stages:
+            if isinstance(stage, BitTorrentTaskStage):
+                stage.resolvePath = self.target
+
+    def setTitle(self, title: str) -> None:
+        self.configure(replace(self.config, name=sanitizeFilename(title, fallback=self.config.name or "torrent")))
 
     def mappedRelativePath(self, file: BitTorrentFile) -> str:
         if self.isSingleFileTorrent:
             return self.title.replace("\\", "/")
 
         parts = list(PurePosixPath(file.path).parts)
+        if not parts:
+            return self.title
         parts[0] = self.title
         return str(PurePosixPath(*parts))
 
     def filePriorities(self) -> list[int]:
-        return [file.priority if file.selected else 0 for file in self.files]
+        prioritiesByIndex = {
+            file.index: file.priority if file.selected else 0
+            for file in self.files
+        }
+        maxIndex = max(prioritiesByIndex, default=-1)
+        return [prioritiesByIndex.get(index, 0) for index in range(maxIndex + 1)]
 
-    def _recalculateSelection(self):
-        self.fileSize = sum(file.size for file in self.files if file.selected)
+    def _recalculateSelection(self) -> None:
+        self.totalBytes = sum(file.size for file in self.files if file.selected)
 
-    def updateSelectedFiles(self, selectedIndexes: set[int]):
-        if not selectedIndexes:
+    def select(self, ids: set[str]) -> None:
+        if not ids:
             raise ValueError("至少需要选择一个文件")
+        knownIds = {file.id for file in self.files}
+        unknownIds = ids - knownIds
+        if unknownIds:
+            unknownList = ", ".join(sorted(unknownIds))
+            raise ValueError(f"Unknown task file ids: {unknownList}")
 
         changed = False
         for file in self.files:
-            selected = file.index in selectedIndexes
+            selected = file.id in ids
             priority = 4 if selected else 0
             if file.selected != selected or file.priority != priority:
                 changed = True
             file.selected = selected
             file.priority = priority
             if not selected:
-                file.downloadedBytes = 0
-                file.completed = False
+                file.doneBytes = 0
+                file.finished = False
 
         if not changed:
             return
 
         self.fileSelectionVersion += 1
         self._recalculateSelection()
+        self.syncStatusFromStages()
+        self.snapshotChanged.emit(self.snapshot())
+
+    def updateSelectedFiles(self, selectedIndexes: set[int]) -> None:
+        self.select({_fileIdForIndex(index) for index in selectedIndexes})
 
     def reopenForAdditionalFiles(self) -> bool:
         if self.stage.status != TaskStatus.COMPLETED:
             return False
-
-        if not any(file.selected and not file.completed for file in self.files):
+        if not any(file.selected and not file.finished for file in self.files):
             return False
 
         self.isSeeding = False
         self.stage.stateText = "已添加新的下载文件"
         self.stage.setStatus(TaskStatus.PAUSED)
-        self.stage.receivedBytes = sum(file.downloadedBytes for file in self.files if file.selected)
+        self.stage.receivedBytes = sum(file.doneBytes for file in self.files if file.selected)
         if self.fileSize > 0:
             self.stage.progress = self.stage.receivedBytes / self.fileSize * 100
         else:
             self.stage.progress = 0
+        self.syncStatusFromStages()
         return True
 
-    def updateFileProgress(self, progresses: list[int]):
+    def updateFileProgress(self, progresses: list[int]) -> None:
         for file in self.files:
             if not file.selected:
-                file.downloadedBytes = 0
-                file.completed = False
+                file.doneBytes = 0
+                file.finished = False
                 continue
             downloaded = int(progresses[file.index]) if file.index < len(progresses) else 0
-            file.downloadedBytes = downloaded
-            file.completed = file.size > 0 and downloaded >= file.size
+            file.doneBytes = max(0, downloaded)
+            file.finished = file.size > 0 and downloaded >= file.size
+        self.syncStatusFromStages()
 
-    def applyPayloadToTask(self, payload: dict[str, Any]):
-        super().applyPayloadToTask(payload)
+    def configure(self, config: TaskConfig) -> None:
+        normalizedConfig = _normalizeConfig(config)
+        if not normalizedConfig.name:
+            normalizedConfig = replace(normalizedConfig, name=self.config.name)
+        self.url = normalizedConfig.source
+        super().configure(normalizedConfig)
+        self.syncStatusFromStages()
+
+    def applyPayloadToTask(self, payload: dict[str, Any]) -> None:
+        updates: dict[str, object] = {}
+        rawFolder = payload.get("path")
+        if isinstance(rawFolder, (str, Path)):
+            updates["folder"] = Path(rawFolder)
+        rawName = payload.get("filename")
+        if isinstance(rawName, str) and rawName.strip():
+            updates["name"] = sanitizeFilename(rawName, fallback=self.config.name)
         if "proxies" in payload:
-            self.proxies = payload.get("proxies")
-        self.syncStagePaths()
+            rawProxies = payload.get("proxies")
+            if rawProxies is None:
+                updates["proxies"] = None
+            elif isinstance(rawProxies, Mapping):
+                updates["proxies"] = _copyProxies(cast(Mapping[str, str], rawProxies))
+        if updates:
+            self.configure(replace(self.config, **updates))
 
-    def reset(self) -> TaskStatus:
-        result = super().reset()
+    def editForm(self, _mode: str) -> TaskForm | None:
+        return TaskForm(
+            title="编辑 BitTorrent 下载任务",
+            fields=(
+                FormField(
+                    key="name",
+                    label="名称",
+                    kind="text",
+                    placeholder="输入输出名称",
+                ),
+                FormField(
+                    key="folder",
+                    label="下载目录",
+                    kind="folder",
+                    placeholder="选择输出目录",
+                ),
+                FormField(
+                    key="files",
+                    label="选择文件",
+                    kind="files",
+                ),
+                FormField(
+                    key="proxies",
+                    label="代理",
+                    kind="proxy",
+                    note="使用 key: value 的格式，每行一项；留空表示不使用代理",
+                ),
+            ),
+        )
+
+    def syncStatusFromStages(self) -> LegacyTaskStatus:
+        self._recalculateSelection()
+        if not self.stages:
+            self.state = "waiting"
+            self.progress = 0.0
+            self.doneBytes = 0
+            return self.status
+
+        stage = self.stage
+        self.state = stage.state
+        self.doneBytes = sum(file.doneBytes for file in self.files if file.selected)
+        if self.doneBytes <= 0:
+            self.doneBytes = stage.doneBytes
+        if self.totalBytes > 0:
+            self.progress = max(0.0, min((self.doneBytes / self.totalBytes) * 100.0, 100.0))
+        else:
+            self.progress = stage.progress
+        if stage.state == "completed":
+            self.progress = 100.0
+            if self.totalBytes > 0:
+                self.doneBytes = max(self.doneBytes, self.totalBytes)
+        return self.status
+
+    def setState(self, state: str) -> None:
+        normalizedState = _normalizeState(state)
+        self.state = normalizedState
+        self.stateChanged.emit(normalizedState)
+        self.snapshotChanged.emit(self.snapshot())
+
+    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+        normalizedStatus = _normalizeState(status)
+        if self.stages:
+            self.stage.setStatus(normalizedStatus, emitSignals=False, notifyTask=False)
+        self.state = normalizedStatus
+        return self.syncStatusFromStages()
+
+    async def pause(self) -> None:
+        self.setStatus("paused")
+
+    def reset(self) -> None:
         self.resumeData = ""
         self.shareRatioPercent = 0
         self.seedingTimeSeconds = 0
         self.isSeeding = False
+        self.state = "waiting"
+        self.progress = 0.0
+        self.doneBytes = 0
+        self.currentStageIndex = 0
         for file in self.files:
-            file.downloadedBytes = 0
-            file.completed = False
-        return result
+            file.doneBytes = 0
+            file.finished = False
+        for stage in self.stages:
+            if isinstance(stage, BitTorrentTaskStage):
+                stage.reset(notifyTask=False)
+            else:
+                stage.reset()
+        self.syncStatusFromStages()
+
+    def canPause(self) -> bool:
+        return self.state == "running"
+
+    def stagesForExecution(self) -> list[BitTorrentTaskStage]:
+        return [self.stage]
+
+    async def run(self) -> None:
+        try:
+            self.setState("running")
+            self.stage.setStatus("running", emitSignals=False, notifyTask=False)
+            await BitTorrentWorker(self.stage).run()
+            self.syncStatusFromStages()
+        except asyncio.CancelledError:
+            logger.info("{} 停止下载", self.title)
+            raise
+        except Exception as error:
+            if not self.stage.error:
+                self.stage.setError(error)
+            logger.opt(exception=error).error("{} 下载失败", self.title)
+            raise
+
+    def snapshot(self) -> TaskSnapshot:
+        return TaskSnapshot(
+            id=self.id,
+            packId=self.packId,
+            kind=self.kind,
+            name=self.config.name,
+            state=self.state,
+            progress=self.progress,
+            doneBytes=self.doneBytes,
+            totalBytes=max(0, self.totalBytes),
+            canPause=self.canPause(),
+            target=self.target,
+            stages=tuple(stage.snapshot() for stage in self.stages),
+        )
+
+    def persistenceState(self) -> dict[str, object]:
+        state = super().persistenceState()
+        state.update(
+            {
+                "sourceType": self.sourceType,
+                "torrentData": self.torrentData,
+                "resumeData": self.resumeData,
+                "trackers": self.trackers.copy(),
+                "listenPort": self.listenPort,
+                "connectionsLimit": self.connectionsLimit,
+                "downloadRateLimit": self.downloadRateLimit,
+                "uploadRateLimit": self.uploadRateLimit,
+                "enableDHT": self.enableDHT,
+                "enableLSD": self.enableLSD,
+                "enableUPnP": self.enableUPnP,
+                "enableNATPMP": self.enableNATPMP,
+                "sequentialDownload": self.sequentialDownload,
+                "storageMode": self.storageMode,
+                "seedRatioLimitPercent": self.seedRatioLimitPercent,
+                "seedTimeLimitMinutes": self.seedTimeLimitMinutes,
+                "saveMagnetTorrentFile": self.saveMagnetTorrentFile,
+                "shareRatioPercent": self.shareRatioPercent,
+                "seedingTimeSeconds": self.seedingTimeSeconds,
+                "isSeeding": self.isSeeding,
+                "fileSelectionVersion": self.fileSelectionVersion,
+                "createdAt": self.createdAt,
+                "url": self.url,
+                "state": self.state,
+                "progress": self.progress,
+                "doneBytes": self.doneBytes,
+                "totalBytes": self.totalBytes,
+                "fileMetadata": [
+                    {
+                        "id": file.id,
+                        "index": file.index,
+                        "priority": file.priority,
+                    }
+                    for file in self.files
+                    if isinstance(file, BitTorrentFile)
+                ],
+            }
+        )
+        return state
+
+    def restorePersistentState(self, state: Mapping[str, object]) -> None:
+        super().restorePersistentState(state)
+
+        rawSourceType = state.get("sourceType")
+        rawTorrentData = state.get("torrentData")
+        rawResumeData = state.get("resumeData")
+        rawTrackers = state.get("trackers")
+        rawCreatedAt = state.get("createdAt")
+        rawUrl = state.get("url")
+        rawTaskState = state.get("state")
+        rawProgress = state.get("progress")
+        rawDoneBytes = state.get("doneBytes")
+        rawTotalBytes = state.get("totalBytes")
+
+        if isinstance(rawSourceType, str) and rawSourceType in {"magnet", "torrent"}:
+            self.sourceType = rawSourceType
+        if isinstance(rawTorrentData, str):
+            self.torrentData = rawTorrentData
+        if isinstance(rawResumeData, str):
+            self.resumeData = rawResumeData
+        if isinstance(rawTrackers, list):
+            self.trackers = [str(tracker) for tracker in rawTrackers if isinstance(tracker, str)]
+        for attrName in (
+            "listenPort",
+            "connectionsLimit",
+            "downloadRateLimit",
+            "uploadRateLimit",
+            "seedRatioLimitPercent",
+            "seedTimeLimitMinutes",
+            "seedingTimeSeconds",
+            "fileSelectionVersion",
+        ):
+            value = state.get(attrName)
+            if isinstance(value, int) and not isinstance(value, bool):
+                setattr(self, attrName, value)
+        for attrName in (
+            "enableDHT",
+            "enableLSD",
+            "enableUPnP",
+            "enableNATPMP",
+            "sequentialDownload",
+            "saveMagnetTorrentFile",
+            "isSeeding",
+        ):
+            value = state.get(attrName)
+            if isinstance(value, bool):
+                setattr(self, attrName, value)
+        rawStorageMode = state.get("storageMode")
+        if isinstance(rawStorageMode, str) and rawStorageMode:
+            self.storageMode = rawStorageMode
+        rawShareRatio = state.get("shareRatioPercent")
+        if isinstance(rawShareRatio, int | float):
+            self.shareRatioPercent = max(0.0, float(rawShareRatio))
+        if isinstance(rawCreatedAt, int) and not isinstance(rawCreatedAt, bool):
+            self.createdAt = rawCreatedAt
+        if isinstance(rawUrl, str) and rawUrl:
+            self.url = rawUrl
+        if isinstance(rawTaskState, str):
+            self.state = _normalizeState(rawTaskState)
+        if isinstance(rawProgress, int | float):
+            self.progress = max(0.0, min(float(rawProgress), 100.0))
+        if isinstance(rawDoneBytes, int) and not isinstance(rawDoneBytes, bool):
+            self.doneBytes = max(0, rawDoneBytes)
+        if isinstance(rawTotalBytes, int) and not isinstance(rawTotalBytes, bool):
+            self.totalBytes = max(0, rawTotalBytes)
+
+        restoredFiles = _restoreBitTorrentFiles(state)
+        if restoredFiles:
+            self.files = restoredFiles
+        self._rebuildFileIndexes()
+        self.syncOutput()
+        self.syncStatusFromStages()
+
+    @classmethod
+    def createPersistentTask(
+        cls,
+        *,
+        id: str,
+        packId: str,
+        kind: str,
+        version: int,
+        config: TaskConfig,
+        stages: list[TaskStage],
+        state: Mapping[str, object],
+    ) -> "BitTorrentTask":
+        _ = packId
+        _ = kind
+        _ = version
+        rawSourceType = state.get("sourceType")
+        rawTorrentData = state.get("torrentData")
+        rawResumeData = state.get("resumeData")
+        rawTrackers = state.get("trackers")
+        rawCreatedAt = state.get("createdAt")
+        rawTotalBytes = state.get("totalBytes")
+        files = _restoreBitTorrentFiles(state)
+
+        return cls(
+            id=id,
+            config=config,
+            stages=stages,
+            files=files,
+            sourceType=rawSourceType if isinstance(rawSourceType, str) else "torrent",
+            torrentData=rawTorrentData if isinstance(rawTorrentData, str) else "",
+            resumeData=rawResumeData if isinstance(rawResumeData, str) else "",
+            trackers=[str(tracker) for tracker in rawTrackers if isinstance(tracker, str)] if isinstance(rawTrackers, list) else [],
+            createdAt=rawCreatedAt if isinstance(rawCreatedAt, int) else None,
+            fileSize=rawTotalBytes if isinstance(rawTotalBytes, int) else None,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
     def occupiesDownloadSlot(self) -> bool:
-        return self.status == TaskStatus.RUNNING and not self.isSeeding
+        return self.state == "running" and not self.isSeeding
 
     def willOccupyDownloadSlotWhenStarted(self) -> bool:
         return not self.isSeeding
 
-    async def run(self):
-        try:
-            for stage in self.iterRunnableStages():
-                await BitTorrentWorker(stage).run()
-        except asyncio.CancelledError:
-            logger.info(f"{self.title} 停止下载")
-            raise
-        except Exception as e:
-            if not self.stage.error:
-                self.stage.setError(e)
-            logger.opt(exception=e).error("{} 下载失败", self.title)
-            raise
 
-    def __hash__(self):
-        return hash(self.taskId)
-
-
-class BitTorrentWorker(Worker):
+class BitTorrentWorker:
     def __init__(self, stage: BitTorrentTaskStage):
-        super().__init__(stage)
         self.stage = stage
+        if not isinstance(stage._task, BitTorrentTask):
+            raise TypeError("BitTorrentTaskStage must be attached to BitTorrentTask")
         self.task: BitTorrentTask = stage._task
         self.session: lt.session | None = None
         self.handle: lt.torrent_handle | None = None
@@ -578,6 +1459,12 @@ class BitTorrentWorker(Worker):
             self.stage.progress = self.stage.receivedBytes / self.task.fileSize * 100
         else:
             self.stage.progress = 0
+
+        self.stage.updateTransfer(
+            doneBytes=totalWantedDone,
+            speed=self.stage.downloadRate,
+            progress=self.stage.progress,
+        )
 
         if wasSeeding != self.task.isSeeding:
             from app.services.core_service import coreService
@@ -690,6 +1577,7 @@ class BitTorrentWorker(Worker):
             raise RuntimeError("至少需要选择一个文件")
 
         Path(self.task.path).mkdir(parents=True, exist_ok=True)
+        self.stage.setStatus(TaskStatus.RUNNING)
         self._saveMagnetTorrentFile()
 
         self.session = _createSession(
@@ -884,12 +1772,13 @@ async def _resolveMagnetMetadata(payload: dict) -> tuple[lt.torrent_info, list[s
 def buildTaskFromTorrentInfo(
     ti: lt.torrent_info,
     *,
-    payload: dict,
+    config: TaskConfig,
     sourceType: str,
     sourceUrl: str,
     torrentBytes: bytes,
     trackers: list[str],
 ) -> BitTorrentTask:
+    normalizedConfig = _normalizeConfig(config)
     files = ti.files()
     entries: list[BitTorrentFile] = []
     for index in range(ti.num_files()):
@@ -897,6 +1786,7 @@ def buildTaskFromTorrentInfo(
             continue
         entries.append(
             BitTorrentFile(
+                id=_fileIdForIndex(index),
                 index=index,
                 path=files.file_path(index),
                 size=int(files.file_size(index)),
@@ -907,18 +1797,20 @@ def buildTaskFromTorrentInfo(
         raise ValueError("该种子中没有可下载的普通文件")
 
     rootName = sanitizeFilename(PurePosixPath(entries[0].path).parts[0], fallback="torrent")
-    title = sanitizeFilename(Path(entries[0].path).name, fallback="torrent") if len(entries) == 1 else rootName
-    task = BitTorrentTask(
-        title=title,
-        url=sourceUrl,
+    defaultTitle = sanitizeFilename(PurePosixPath(entries[0].path).name, fallback="torrent") if len(entries) == 1 else rootName
+    resolvedConfig = replace(
+        normalizedConfig,
+        source=sourceUrl,
+        name=normalizedConfig.name or defaultTitle,
+    )
+    return BitTorrentTask(
+        config=resolvedConfig,
         fileSize=sum(entry.size for entry in entries),
-        path=Path(payload.get("path", cfg.downloadFolder.value)),
         stages=[BitTorrentTaskStage(stageIndex=1, resolvePath="")],
         sourceType=sourceType,
         torrentData=_encodeBytes(torrentBytes),
         trackers=trackers or _extractTrackers(ti),
         files=entries,
-        proxies=payload.get("proxies", getProxies()),
         listenPort=bittorrentConfig.listenPort.value,
         connectionsLimit=bittorrentConfig.connectionsLimit.value,
         downloadRateLimit=bittorrentConfig.downloadRateLimit.value,
@@ -933,11 +1825,11 @@ def buildTaskFromTorrentInfo(
         seedTimeLimitMinutes=bittorrentConfig.seedTimeLimitMinutes.value,
         saveMagnetTorrentFile=bittorrentConfig.saveMagnetTorrentFile.value,
     )
-    return task
 
 
-async def parse(payload: dict) -> BitTorrentTask:
-    url = str(payload["url"]).strip()
+async def buildBitTorrentTask(data: TaskInput) -> BitTorrentTask:
+    config = _normalizeConfig(data.config)
+    url = config.source
     localTorrentPath = resolveLocalTorrentPath(url)
     if localTorrentPath is not None:
         torrentBytes, webTrackers = await asyncio.gather(
@@ -947,7 +1839,7 @@ async def parse(payload: dict) -> BitTorrentTask:
         ti = lt.torrent_info(torrentBytes)
         return buildTaskFromTorrentInfo(
             ti,
-            payload=payload,
+            config=config,
             sourceType="torrent",
             sourceUrl=str(localTorrentPath.resolve()),
             torrentBytes=torrentBytes,
@@ -957,10 +1849,15 @@ async def parse(payload: dict) -> BitTorrentTask:
     parsedUrl = urlparse(url)
 
     if parsedUrl.scheme.lower() == "magnet":
-        ti, trackers, torrentBytes = await _resolveMagnetMetadata(payload)
+        ti, trackers, torrentBytes = await _resolveMagnetMetadata(
+            {
+                "url": config.source,
+                "proxies": config.proxies,
+            }
+        )
         return buildTaskFromTorrentInfo(
             ti,
-            payload=payload,
+            config=config,
             sourceType="magnet",
             sourceUrl=url,
             torrentBytes=torrentBytes,
@@ -968,15 +1865,42 @@ async def parse(payload: dict) -> BitTorrentTask:
         )
 
     torrentBytes, webTrackers = await asyncio.gather(
-        _fetchTorrentBytes(payload),
+        _fetchTorrentBytes(
+            {
+                "url": config.source,
+                "headers": config.headers,
+                "proxies": config.proxies,
+            }
+        ),
         _resolveAdditionalTrackers(),
     )
     ti = lt.torrent_info(torrentBytes)
     return buildTaskFromTorrentInfo(
         ti,
-        payload=payload,
+        config=config,
         sourceType="torrent",
         sourceUrl=url,
         torrentBytes=torrentBytes,
         trackers=mergeTrackers(_extractTrackers(ti), webTrackers),
     )
+
+
+async def parse(payload: Mapping[str, object]) -> BitTorrentTask:
+    config = _buildTaskConfigFromPayload(payload)
+    if config is None:
+        raise ValueError("BitTorrent 任务缺少有效的 url")
+    return await buildBitTorrentTask(TaskInput(config=config, hints=(dict(payload),)))
+
+
+__all__ = [
+    "BITTORRENT_USER_AGENT",
+    "BitTorrentFile",
+    "BitTorrentTask",
+    "BitTorrentTaskStage",
+    "BitTorrentWorker",
+    "_buildTaskConfigFromPayload",
+    "buildBitTorrentTask",
+    "buildTaskFromTorrentInfo",
+    "parse",
+    "resolveLocalTorrentPath",
+]
