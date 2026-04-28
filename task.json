@@ -418,7 +418,7 @@
         "让 `github_pack` 直接复用新版 `http_pack` 的单文件下载能力。",
         "补充 GitHub 解析与卡片测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 39,

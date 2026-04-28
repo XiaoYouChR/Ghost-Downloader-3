@@ -299,3 +299,19 @@
 ### 备注:
 - 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
+## 2026-04-28 - 任务: 改写 github_pack 到新版接口
+### 已完成内容:
+- 已将 `github_pack` 入口改为新版 `FeaturePack.accepts/createTask/owns` 接口，并保留旧 `canHandle/parse/createTaskFromPayload` 兼容入口。
+- 新增 `GitHubDownloadTask` 与 `GitHubHttpTaskStage`，使用 `github_pack/github_download@1` 稳定身份，同时复用新版 `http_pack` 的探测、单文件下载 Stage 和默认卡片能力。
+- GitHub 链接创建任务时保留原始 `TaskConfig.source`，将实际下载 Stage URL 改写为所选 GitHub 代理站地址；编辑任务后继续通过 `configure(TaskConfig)` 同步代理 URL 与输出路径。
+- 为新版服务路由补充显式 `priority` 兼容逻辑，使启用后的 `github_pack` 可在泛 HTTP Pack 前处理 GitHub 文件链接，未声明 priority 的 Pack 仍按原加载顺序路由。
+- 新增 `tests/feature_pack/test_github_pack_v1.py`，覆盖 GitHub URL 识别、代理改写、服务路由、任务归属、默认卡片和编辑后源地址保持。
+### 测试验证:
+- 初次运行 `uv run python tests/feature_pack/test_github_pack_v1.py` 失败，原因为本地 `.venv` 中 `pyside6-fluent-widgets` 元数据存在但 `qfluentwidgets` 包目录缺失；执行 `uv pip install --force-reinstall pyside6-fluent-widgets==1.11.2` 后再执行 `uv sync --all-groups` 修复环境并恢复锁定的 PySide6 版本。
+- 通过: `uv run python tests/feature_pack/test_github_pack_v1.py`。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py features/github_pack/pack.py features/github_pack/task.py tests/feature_pack/test_github_pack_v1.py` 发现新文件类型告警；修正后再次运行通过，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests/test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #38，目标范围仅限把 `github_pack` 改写为基于新版接口和 `http_pack` 单文件下载能力的轻量组合 Pack；关键约束是每轮只处理这一项任务、保持 `task.json` 为唯一任务状态、验证通过后才能写 `passes=true`，且 `progress.txt` 必须先记录中文证据；验收标准是 Pack 与任务入口使用 V1 `FeaturePack/TaskInput/TaskConfig/Task` 语义，GitHub 解析和卡片路径有测试覆盖，并通过静态检查与测试脚本；依赖顺序上本任务位于已完成的新版 API、默认 UI、服务路由、`http_pack` 和 `ffmpeg_pack` 改写之后，直接依赖 `http_pack`；主要风险是 GitHub URL 与泛 HTTP URL 路由重叠、代理 URL 不应污染用户可编辑的原始 source、以及复用 HTTP Stage 时必须使用 `github_pack` 自己的持久化身份。
+---

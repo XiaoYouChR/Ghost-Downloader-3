@@ -868,15 +868,31 @@ class DefaultFeatureService(FeatureService):
         self,
         matcher: Callable[[FeaturePack], bool],
     ) -> FeaturePack | None:
-        for packId in self._loadedPackOrder:
+        firstMatchedPack: FeaturePack | None = None
+        prioritizedMatch: tuple[int, int, FeaturePack] | None = None
+
+        for index, packId in enumerate(self._loadedPackOrder):
             loadedPack = self._loadedPacksById[packId]
             try:
-                if matcher(loadedPack.pack):
-                    return loadedPack.pack
+                if not matcher(loadedPack.pack):
+                    continue
             except Exception:
                 continue
 
-        return None
+            if firstMatchedPack is None:
+                firstMatchedPack = loadedPack.pack
+
+            priority = getattr(loadedPack.pack, "priority", None)
+            if isinstance(priority, bool) or not isinstance(priority, int):
+                continue
+
+            if prioritizedMatch is None or (priority, -index) > (prioritizedMatch[0], -prioritizedMatch[1]):
+                prioritizedMatch = (priority, index, loadedPack.pack)
+
+        if prioritizedMatch is not None:
+            return prioritizedMatch[2]
+
+        return firstMatchedPack
 
 
 __all__ = [
