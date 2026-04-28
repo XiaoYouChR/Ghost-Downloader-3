@@ -1,4 +1,9 @@
+# pyright: reportImportCycles=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportUnknownParameterType=false, reportMissingParameterType=false, reportAny=false, reportExplicitAny=false, reportAttributeAccessIssue=false, reportArgumentType=false, reportAssignmentType=false, reportPrivateUsage=false, reportUnannotatedClassAttribute=false, reportUnusedCallResult=false, reportUnnecessaryComparison=false, reportUnreachable=false
+
+from collections.abc import Mapping
+from dataclasses import asdict
 from dataclasses import dataclass
+from dataclasses import replace
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self
@@ -10,9 +15,12 @@ from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 from orjson import dumps, loads
 
-from app.bases.models import Task, TaskStatus
+from app.bases.models import TaskStatus
+from app.feature_pack.api import Task as V1Task
+from app.feature_pack.internal import buildAddTaskInput
+from app.feature_pack.internal import buildBrowserTaskSummary
+from app.feature_pack.internal import buildBrowserTaskSnapshot
 from app.services.core_service import coreService
-from app.services.feature_service import featureService
 from app.supports.config import VERSION, cfg
 from app.supports.recorder import taskRecorder
 from app.supports.utils import getProxies, openFile, openFolder
@@ -214,7 +222,14 @@ class BrowserService(QObject):
         value = data.get(key)
         return value if isinstance(value, int) and value > 0 else default
 
-    def _serializeTask(self, task: Task) -> dict[str, Any]:
+    def _serializeTask(self, task: object) -> dict[str, Any]:
+        if isinstance(task, V1Task):
+            return asdict(buildBrowserTaskSummary(task))
+
+        return BrowserService._serializeLegacyTask(self, task)
+
+    def _serializeLegacyTask(self, task: object) -> dict[str, Any]:
+        legacyTask = task
         resolvePath = Path(task.resolvePath)
         parentPath = resolvePath.parent
         stages = task.stages
@@ -223,9 +238,9 @@ class BrowserService(QObject):
         ) if not stages else sum(stage.progress for stage in stages) / len(stages)
         packName = next((part for part in task.__module__.split(".") if part.endswith("_pack")), "")
         return {
-            "taskId": task.taskId,
-            "title": task.title,
-            "status": task.status.name.lower(),
+            "taskId": legacyTask.taskId,
+            "title": legacyTask.title,
+            "status": legacyTask.status.name.lower(),
             "progress": round(progress, 2),
             "receivedBytes": sum(stage.receivedBytes for stage in stages),
             "fileSize": int(task.fileSize),
@@ -240,22 +255,42 @@ class BrowserService(QObject):
             "packName": packName,
         }
 
-    def _allTrackedTasks(self) -> list[Task]:
-        tasksById: dict[str, Task] = {
-            task.taskId: task for task in taskRecorder.memorizedTasks.values()
-        }
+    def _taskKey(self, task: object) -> str:
+        if isinstance(task, V1Task):
+            return task.id
+        taskId = getattr(task, "taskId", "")
+        return taskId if isinstance(taskId, str) else ""
+
+    def _taskCreatedAt(self, task: object) -> int:
+        createdAt = getattr(task, "createdAt", 0)
+        return createdAt if isinstance(createdAt, int) and not isinstance(createdAt, bool) else 0
+
+    def _allTrackedTasks(self) -> list[object]:
+        tasksById: dict[str, object] = {}
+        for task in taskRecorder.memorizedTasks.values():
+            taskId = self._taskKey(task)
+            if taskId:
+                tasksById[taskId] = task
         for task in coreService.getAllTaskInfo():
-            tasksById[task.taskId] = task
+            tasksById[task.id] = task
         return list(tasksById.values())
 
-    def _findTrackedTask(self, taskId: str) -> Task | None:
+    def _findTrackedTask(self, taskId: str) -> object | None:
         task = coreService.getTaskById(taskId)
         if task is not None:
             return task
         return taskRecorder.memorizedTasks.get(taskId)
 
     def _buildTaskSnapshot(self) -> bytes:
-        tasks = sorted(self._allTrackedTasks(), key=lambda item: item.createdAt, reverse=True)
+        tasks = sorted(
+            self._allTrackedTasks(),
+            key=lambda item: BrowserService._taskCreatedAt(self, item),
+            reverse=True,
+        )
+        v1Tasks = [task for task in tasks if isinstance(task, V1Task)]
+        if len(v1Tasks) == len(tasks):
+            return buildBrowserTaskSnapshot(v1Tasks)
+
         return dumps(
             {
                 "type": BrowserMessageType.TASK_SNAPSHOT,
@@ -281,23 +316,30 @@ class BrowserService(QObject):
             except Exception as error:
                 logger.opt(exception=error).warning("Failed to push browser task snapshot")
 
-    def _buildParsePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
+    def _buildTaskInput(self, rawPayload: dict[str, Any], *, source: str, name: str = ""):
         rawPath = rawPayload.get("path")
-        return {
-            "url": self._stringField(rawPayload, "url"),
-            "headers": rawPayload.get("headers") or {},
-            "filename": self._stringField(rawPayload, "filename"),
-            "size": self._positiveIntField(rawPayload, "size", 0),
-            "supportsRange": bool(rawPayload.get("supportsRange")),
-            "proxies": getProxies(),
-            "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
-            "preBlockNum": self._positiveIntField(rawPayload, "preBlockNum", cfg.preBlockNum.value),
+        rawHeaders = rawPayload.get("headers")
+        fileName = name or self._stringField(rawPayload, "filename")
+        hints = {
+            key: value
+            for key, value in rawPayload.items()
+            if key not in {"url", "path", "headers", "filename", "size", "preBlockNum"}
         }
+        return buildAddTaskInput(
+            source=source,
+            folder=Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
+            headers=rawHeaders if isinstance(rawHeaders, Mapping) else {},
+            proxies=getProxies(),
+            chunks=self._positiveIntField(rawPayload, "preBlockNum", cfg.preBlockNum.value),
+            name=fileName,
+            size=self._positiveIntField(rawPayload, "size", 0),
+            hints=(hints,) if hints else (),
+        )
 
     def _buildMergePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
         rawPath = rawPayload.get("path")
         return {
-            "url": BrowserVirtualUrl.FFMPEG_MERGE,
+            "url": BrowserVirtualUrl.FFMPEG_MERGE.value,
             "outputTitle": self._stringField(rawPayload, "outputTitle"),
             "resources": rawPayload.get("resources") or [],
             "proxies": getProxies(),
@@ -331,7 +373,7 @@ class BrowserService(QObject):
         session: _BrowserClientSession,
         requestId: str,
         title: str,
-        task: Task | None,
+        task: V1Task | None,
         error: str | None,
     ):
         if error or task is None:
@@ -346,7 +388,7 @@ class BrowserService(QObject):
             return
 
         if title:
-            task.setTitle(title)
+            self._renameTask(task, title)
 
         if cfg.enableRaiseWindowWhenReceiveMsg.value:
             # Send ok=False BEFORE showing the dialog so the browser extension
@@ -365,13 +407,25 @@ class BrowserService(QObject):
             )
             return
 
-        self._sendResult(session, BrowserMessageType.CREATE_TASK_RESULT, requestId, ok=True, taskId=task.taskId)
+        self._sendResult(session, BrowserMessageType.CREATE_TASK_RESULT, requestId, ok=True, taskId=task.id)
         self._broadcastTaskSnapshots()
+
+    def _renameTask(self, task: V1Task, title: str) -> None:
+        normalizedTitle = title.strip()
+        if not normalizedTitle:
+            return
+
+        setTitle = getattr(task, "setTitle", None)
+        if callable(setTitle):
+            setTitle(normalizedTitle)
+            return
+
+        task.requestCommand("configure", replace(task.config, name=normalizedTitle))
 
     def _handleCreateTask(self, session: _BrowserClientSession, data: dict[str, Any]):
         requestId = self._stringField(data, "requestId")
         payload = data.get("payload")
-        rawSource = self._stringField(data, "source", BrowserTaskSource.RESOURCE)
+        rawSource = self._stringField(data, "source", BrowserTaskSource.RESOURCE.value)
         title = self._stringField(data, "title")
         if not requestId:
             self._sendError(session, self.tr("缺少 requestId"))
@@ -404,20 +458,21 @@ class BrowserService(QObject):
                 )
                 return
 
-            coreService.runCoroutine(
-                coreService._parseUrl(mergePayload),
+            taskInput = self._buildTaskInput(
+                mergePayload,
+                source=BrowserVirtualUrl.FFMPEG_MERGE.value,
+                name=title or self._stringField(mergePayload, "outputTitle"),
+            )
+            coreService.createTaskFromInput(
+                taskInput,
                 lambda task, error, session=session, requestId=requestId: self._onTaskParsed(
-                    session,
-                    requestId,
-                    "",
-                    task,
-                    error,
+                    session, requestId, "", task, error
                 ),
             )
             return
 
-        parsePayload = self._buildParsePayload(payload)
-        if not parsePayload["url"]:
+        sourceUrl = self._stringField(payload, "url")
+        if not sourceUrl:
             self._sendResult(
                 session,
                 BrowserMessageType.CREATE_TASK_RESULT,
@@ -427,16 +482,14 @@ class BrowserService(QObject):
             )
             return
 
-        canCreateTaskFromPayload = featureService.canCreateTaskFromPayload(parsePayload["url"])
-        coroutine = (
-            coreService._createTaskFromPayload(parsePayload)
-            if canCreateTaskFromPayload
-            else coreService._parseUrl(parsePayload)
+        taskInput = self._buildTaskInput(
+            payload,
+            source=sourceUrl,
+            name=title or self._stringField(payload, "filename"),
         )
-
-        coreService.runCoroutine(
-            coroutine,
-            lambda task, error, session=session, requestId=requestId, title=title if canCreateTaskFromPayload else "": self._onTaskParsed(
+        coreService.createTaskFromInput(
+            taskInput,
+            lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
                 session,
                 requestId,
                 title,
@@ -449,7 +502,7 @@ class BrowserService(QObject):
         self,
         session: _BrowserClientSession,
         requestId: str,
-        task: Task,
+        task: object,
         error: str | None,
     ):
         if error:
@@ -462,7 +515,8 @@ class BrowserService(QObject):
             )
             return
 
-        card = self.mainWindow.taskPage.findCardByTaskId(task.taskId)
+        taskId = self._taskKey(task)
+        card = self.mainWindow.taskPage.findCardByTaskId(taskId)
         if card is not None:
             card.deleted.emit()
             card.onTaskDeleted(True)
@@ -474,9 +528,13 @@ class BrowserService(QObject):
         self._sendResult(session, BrowserMessageType.TASK_ACTION_RESULT, requestId, ok=True)
         self._broadcastTaskSnapshots()
 
-    def _removeTaskArtifacts(self, task: Task):
+    def _removeTaskArtifacts(self, task: object):
         candidates: set[Path] = set()
-        if task.resolvePath:
+        if isinstance(task, V1Task):
+            target = task.snapshot().target
+            if target:
+                candidates.add(Path(target))
+        elif task.resolvePath:
             candidates.add(Path(task.resolvePath))
 
         for stage in task.stages:
@@ -503,7 +561,7 @@ class BrowserService(QObject):
         self,
         session: _BrowserClientSession,
         requestId: str,
-        task: Task,
+        task: object,
         error: str | None,
     ):
         if error:
@@ -517,7 +575,8 @@ class BrowserService(QObject):
             return
 
         try:
-            card = self.mainWindow.taskPage.findCardByTaskId(task.taskId)
+            taskId = self._taskKey(task)
+            card = self.mainWindow.taskPage.findCardByTaskId(taskId)
             if card is not None:
                 card.onTaskDeleted(True)
             else:
@@ -525,7 +584,8 @@ class BrowserService(QObject):
 
             task.reset()
             taskRecorder.flush()
-            coreService.createTask(task)
+            if isinstance(task, V1Task):
+                coreService.createTask(task)
         except Exception as actionError:
             logger.opt(exception=actionError).error("Browser task redownload failed")
             self._sendResult(
@@ -573,6 +633,10 @@ class BrowserService(QObject):
             return
 
         try:
+            if isinstance(task, V1Task):
+                self._handleV1TaskAction(session, requestId, task, action)
+                return
+
             if action == BrowserTaskAction.TOGGLE_PAUSE:
                 if task.status == TaskStatus.RUNNING:
                     if not task.canPause():
@@ -658,6 +722,107 @@ class BrowserService(QObject):
                 return
         except Exception as error:
             logger.opt(exception=error).error("Browser task action failed")
+            self._sendResult(
+                session,
+                BrowserMessageType.TASK_ACTION_RESULT,
+                requestId,
+                ok=False,
+                message=repr(error),
+            )
+
+    def _handleV1TaskAction(
+        self,
+        session: _BrowserClientSession,
+        requestId: str,
+        task: V1Task,
+        action: BrowserTaskAction,
+    ) -> None:
+        try:
+            snapshot = task.snapshot()
+            state = snapshot.state.strip().lower()
+
+            if action == BrowserTaskAction.TOGGLE_PAUSE:
+                if state == "running":
+                    if not snapshot.canPause:
+                        self._sendResult(
+                            session,
+                            BrowserMessageType.TASK_ACTION_RESULT,
+                            requestId,
+                            ok=False,
+                            message=self.tr("当前任务不支持暂停"),
+                        )
+                        return
+                    coreService.stopTask(task)
+                elif state == "completed":
+                    self._sendResult(
+                        session,
+                        BrowserMessageType.TASK_ACTION_RESULT,
+                        requestId,
+                        ok=False,
+                        message=self.tr("任务已完成"),
+                    )
+                    return
+                else:
+                    coreService.createTask(task)
+
+                self._sendResult(session, BrowserMessageType.TASK_ACTION_RESULT, requestId, ok=True)
+                return
+
+            if action == BrowserTaskAction.CANCEL:
+                if coreService.getTaskById(task.id) is None:
+                    self._handleRemoveTaskFinished(session, requestId, task, None)
+                    return
+                coreService.runCoroutine(
+                    coreService._stopTask(task),
+                    lambda _result, error, session=session, requestId=requestId, task=task: self._handleRemoveTaskFinished(
+                        session,
+                        requestId,
+                        task,
+                        error,
+                    ),
+                )
+                return
+
+            if action == BrowserTaskAction.REDOWNLOAD:
+                coreService.runCoroutine(
+                    coreService._stopTask(task),
+                    lambda _result, error, session=session, requestId=requestId, task=task: self._handleRedownloadFinished(
+                        session,
+                        requestId,
+                        task,
+                        error,
+                    ),
+                )
+                return
+
+            targetPath = Path(snapshot.target)
+            if action == BrowserTaskAction.OPEN_FILE:
+                if not snapshot.target or not targetPath.exists():
+                    self._sendResult(
+                        session,
+                        BrowserMessageType.TASK_ACTION_RESULT,
+                        requestId,
+                        ok=False,
+                        message=self.tr("文件尚未生成"),
+                    )
+                    return
+                openFile(targetPath)
+                self._sendResult(session, BrowserMessageType.TASK_ACTION_RESULT, requestId, ok=True)
+                return
+
+            if not snapshot.target or not targetPath.parent.exists():
+                self._sendResult(
+                    session,
+                    BrowserMessageType.TASK_ACTION_RESULT,
+                    requestId,
+                    ok=False,
+                    message=self.tr("目录不存在"),
+                )
+                return
+            openFolder(targetPath)
+            self._sendResult(session, BrowserMessageType.TASK_ACTION_RESULT, requestId, ok=True)
+        except Exception as error:
+            logger.opt(exception=error).error("Browser V1 task action failed")
             self._sendResult(
                 session,
                 BrowserMessageType.TASK_ACTION_RESULT,

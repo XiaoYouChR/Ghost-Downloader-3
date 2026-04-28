@@ -16,6 +16,7 @@ from typing import final
 
 from PySide6.QtCore import QObject
 from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget
 from loguru import logger
 
@@ -301,7 +302,43 @@ class AddTaskDialogSession(QObject):
 
         self._lineStates = nextStates
         self._dropRemovedOverrides(currentSources)
+        self._syncResultCards()
         self.resultsChanged.emit()
+
+    def addParsedTasks(self, tasks: list[Task]) -> list[str]:
+        """Attach already-created tasks to the preview flow."""
+
+        if not tasks:
+            return []
+
+        stateBySource = {state.source: state for state in self._lineStates}
+        newSources: list[str] = []
+
+        for task in tasks:
+            source = task.config.source
+            state = stateBySource.get(source)
+            if state is not None:
+                self._clearState(state, cancelRequest=True)
+                try:
+                    self._setCreatedTask(state, task)
+                except Exception as error:
+                    logger.opt(exception=error).error("无法创建解析结果卡片 {}", source)
+                    self._failState(state, self.tr("解析结果处理失败"))
+                continue
+
+            newSources.append(source)
+            state = _LineState(source=source)
+            try:
+                self._setCreatedTask(state, task)
+            except Exception as error:
+                logger.opt(exception=error).error("无法创建解析结果卡片 {}", source)
+                self._failState(state, self.tr("解析结果处理失败"))
+            self._lineStates.append(state)
+            stateBySource[source] = state
+
+        self._syncResultCards()
+        self.resultsChanged.emit()
+        return newSources
 
     def clear(self) -> None:
         for state in self._lineStates:
@@ -310,6 +347,7 @@ class AddTaskDialogSession(QObject):
         self._acceptedInputs.clear()
         self._lineStates.clear()
         self._sourceOverrides.clear()
+        self._clearResultParent()
         self.resultsChanged.emit()
         self.parsingBusyChanged.emit(bool(self._activeRequests))
 
@@ -342,6 +380,7 @@ class AddTaskDialogSession(QObject):
 
         self._lineStates.clear()
         self._sourceOverrides.clear()
+        self._clearResultParent()
         self.resultsChanged.emit()
         return confirmedTasks
 
@@ -411,8 +450,55 @@ class AddTaskDialogSession(QObject):
             self._cancelRequest(state)
 
         state.requestId = ""
+        self._removeResultCard(state)
         state.task = None
         state.resultCard = None
+
+    def _removeResultCard(self, state: _LineState) -> None:
+        resultCard = state.resultCard
+        if resultCard is None:
+            return
+
+        layout = getattr(self._resultCardParent, "scrollLayout", None)
+        if layout is not None and hasattr(layout, "removeWidget"):
+            _ = layout.removeWidget(resultCard)
+
+        deleteLater = getattr(resultCard, "deleteLater", None)
+        if callable(deleteLater):
+            _ = deleteLater()
+
+        state.resultCard = None
+        updateGeometry = getattr(self._resultCardParent, "updateGeometry", None)
+        if callable(updateGeometry):
+            _ = updateGeometry()
+
+    def _clearResultParent(self) -> None:
+        clearResults = getattr(self._resultCardParent, "clearResults", None)
+        if callable(clearResults):
+            _ = clearResults()
+
+    def _syncResultCards(self) -> None:
+        layout = getattr(self._resultCardParent, "scrollLayout", None)
+        if layout is None:
+            return
+
+        visibleIndex = 0
+        for state in self._lineStates:
+            resultCard = state.resultCard
+            if resultCard is None:
+                continue
+
+            if layout.indexOf(resultCard) != visibleIndex:
+                _ = layout.insertWidget(
+                    visibleIndex,
+                    resultCard,
+                    alignment=Qt.AlignmentFlag.AlignTop,
+                )
+            visibleIndex += 1
+
+        updateGeometry = getattr(self._resultCardParent, "updateGeometry", None)
+        if callable(updateGeometry):
+            _ = updateGeometry()
 
     def _failState(self, state: _LineState, errorMessage: str) -> None:
         state.task = None
@@ -450,6 +536,7 @@ class AddTaskDialogSession(QObject):
             except Exception as callbackError:
                 logger.opt(exception=callbackError).error("无法创建解析结果卡片 {}", state.source)
                 self._failState(state, self.tr("解析结果处理失败"))
+            self._syncResultCards()
             self.resultsChanged.emit()
             return
 

@@ -400,10 +400,9 @@ class HostFeatureService(DefaultFeatureService):
     """
     V1-backed host service exposed through the historical service module.
 
-    The remaining CoreService, BrowserService and add-task dialog paths still
-    call a few legacy helper names. Keeping those wrappers here lets the main
-    window load packs, settings and cards through V1 now, while the callers
-    move to direct TaskInput usage in the next migration task.
+    The main window, CoreService, BrowserService and add-task dialog now call
+    the V1 service surface directly. A few legacy helper names remain here only
+    for the final V0 removal task.
     """
 
     def loadFeatures(self, mainWindow: "MainWindow") -> None:

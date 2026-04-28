@@ -457,3 +457,21 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #46，目标范围仅限把主窗口、Pack 服务初始化入口、设置页注入、卡片创建和 Pack 加载切换到新版 `FeatureService`；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是宿主从新版 `FeatureService` 读取 Pack，设置页注入、TaskCard/ResultCard 创建和 Pack 加载都走新版服务，并有主窗口与新版服务入口测试覆盖；依赖顺序上本任务位于新版 API、默认 UI、FeatureService 分发、持久化和所有现有 Pack V1 改写之后，下一轮 #47 才切换 `CoreService`、`BrowserService` 和添加任务流程到直接 `TaskInput` 入口；主要风险是旧 Core/AddTask/Browser 仍会在 #47 前调用少量历史方法，因此本轮只在服务边界提供短期兼容包装，不把旧 payload 作为最终接口扩展。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 切换 CoreService、BrowserService 与添加任务流程到新版入口
+### 已完成内容:
+- 已将 `CoreService` 切换为接收新版 `TaskInput` 并通过新版 `FeatureService.createTask()` 创建任务，调度队列、暂停、恢复和任务完成回调均面向新版 `Task`。
+- 已将 `BrowserService` 的任务创建、任务快照、任务操作、重命名和媒体合并入口切换到新版 `TaskInput`、`TaskSnapshot` 与任务命令链路，同时为历史快照保留只读兼容投影。
+- 已将添加任务对话框与 `AddTaskDialogSession` 历史导入切换到新版 session、`FeatureServiceTaskRunner` 和 `coreService.createTaskFromInput()`，不再从宿主流程创建旧 payload。
+- 已将主窗口剪贴板入口、发布资源下载入口和 `jack_yao` 资源下载入口切换到新版任务创建链路。
+- 已补充任务创建、浏览器入口切换和历史添加任务 session 导入测试。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_feature_pack_core_v1.py`，结果为 5 个测试通过。
+- 通过: `uv run python tests\feature_pack\test_feature_pack_browser_v1.py`，结果为 8 个测试通过。
+- 通过: `uv run python tests\feature_pack\test_feature_pack_add_task_v1.py`，结果为 4 个测试通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py app/services/core_service.py app/services/browser_service.py app/services/feature_service.py app/feature_pack/internal/add_task.py app/view/components/add_task_dialog.py app/view/components/add_task_dialog_session.py app/view/windows/main_window.py features/jack_yao/pack.py tests/feature_pack/test_feature_pack_core_v1.py tests/feature_pack/test_feature_pack_browser_v1.py tests/feature_pack/test_feature_pack_add_task_v1.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`，输出 `automation contract validation passed`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { Write-Error "Failed: $($test.FullName)"; exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #47，目标范围仅限切换 `CoreService`、`BrowserService` 和添加任务流程到 V1 `TaskInput` / `FeatureService` / `TaskSnapshot` 入口；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是任务创建、浏览器入口和调度全面走新版接口，并有任务创建和浏览器入口切换测试覆盖；依赖顺序上本任务位于新版 API、默认 UI、FeatureService、持久化、Browser/Core/AddTask 内部 V1 模块、所有现有 Pack V1 改写以及 #46 主窗口入口切换之后，下一轮 #48 才删除 `app.bases` V0 和旧 payload 流程；主要风险是浏览器扩展仍有旧快照基线和本地历史任务，实际 V1 任务需要输出 `TaskSnapshot` 字段，同时保留旧基线只读 fallback，避免本轮把历史记录恢复风险和最终 V0 删除混在一起。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

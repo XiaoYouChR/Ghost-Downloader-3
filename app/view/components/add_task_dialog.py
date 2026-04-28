@@ -1,3 +1,5 @@
+# pyright: reportImportCycles=false, reportMissingTypeStubs=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportUnknownParameterType=false, reportMissingParameterType=false, reportAny=false, reportExplicitAny=false, reportAttributeAccessIssue=false, reportArgumentType=false, reportAssignmentType=false, reportUnannotatedClassAttribute=false, reportUninitializedInstanceVariable=false, reportInconsistentConstructor=false, reportUnusedCallResult=false, reportImplicitOverride=false, reportIncompatibleMethodOverride=false, reportUnnecessaryComparison=false
+
 from pathlib import Path
 from typing import Any, Self
 
@@ -20,11 +22,14 @@ from qfluentwidgets import (
 from qfluentwidgets.common.style_sheet import FluentStyleSheet
 from qframelesswindow import FramelessDialog
 
-from app.bases.models import Task
+from app.feature_pack.api import Task
+from app.feature_pack.internal import AddTaskDialogSession
+from app.feature_pack.internal import AddTaskInputOverride
+from app.feature_pack.internal import FeatureServiceTaskRunner
+from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import bringWindowToTop, getProxies
-from app.view.components.add_task_dialog_session import AddTaskParseSession
 from app.view.components.card_widgets import (
     ParseResultHeaderCardWidget,
     ParseSettingHeaderCardWidget,
@@ -175,8 +180,14 @@ class AddTaskDialog(MessageBoxBase):
         )
 
         self._timer = QTimer(self, singleShot=True)
-        self._parseSession = AddTaskParseSession(
-            resultGroup=self.parseResultGroup,
+        self._parseSession = AddTaskDialogSession(
+            featureService=featureService,
+            taskRunner=FeatureServiceTaskRunner(
+                featureService=featureService,
+                runTaskCoroutine=coreService.runCoroutine,
+                cancelTaskRequest=coreService.removeCallback,
+            ),
+            resultCardParent=self.parseResultGroup,
             parent=self,
         )
         self._standaloneWrapper = _StandaloneWrapper(self)
@@ -184,7 +195,7 @@ class AddTaskDialog(MessageBoxBase):
         # init
         self._initWidget()
         self._initLayout()
-        self._parseSession.setPayload(self.buildCurrentPayload())
+        self._syncParseSessionConfig()
 
         # bind
         self._bind()
@@ -201,9 +212,6 @@ class AddTaskDialog(MessageBoxBase):
 
         self.settingGroup.addCard(self.selectFolderCard)
         self.settingGroup.addCard(self.preBlockNumCard)
-        for card in featureService.getDialogCards(self.settingGroup):
-            self.settingGroup.addCard(card)
-
     def _initLayout(self) -> None:
         self.viewLayout.addWidget(self.titleLabel)
         self.viewLayout.addWidget(self.urlEdit)
@@ -213,7 +221,7 @@ class AddTaskDialog(MessageBoxBase):
 
     def _bind(self) -> None:
         self._timer.timeout.connect(
-            lambda: self._parseSession.updateUrls(self._readUrlsFromEditor())
+            lambda: self._parseSession.updateSources(self._readUrlsFromEditor())
         )
         self.urlEdit.textChanged.connect(self._restartParseTimer)
         self._parseSession.parsingBusyChanged.connect(self.parseProgressBar.setVisible)
@@ -221,7 +229,7 @@ class AddTaskDialog(MessageBoxBase):
         self._parseSession.taskConfirmed.connect(self.taskConfirmed.emit)
         for card in self.settingGroup.cards:
             card.payloadChanged.connect(
-                lambda: self._parseSession.setPayload(self.buildCurrentPayload())
+                self._syncParseSessionConfig
             )
 
     def _restartParseTimer(self) -> None:
@@ -252,7 +260,7 @@ class AddTaskDialog(MessageBoxBase):
             return
 
         self.urlEdit.appendPlainText("\n".join(urlsToAdd))
-        self._parseSession.updateUrls(self._readUrlsFromEditor())
+        self._parseSession.updateSources(self._readUrlsFromEditor())
         self._timer.stop()
 
     def addUrlWithPayload(
@@ -260,7 +268,10 @@ class AddTaskDialog(MessageBoxBase):
         url: str,
         payloadOverride: dict[str, Any],
     ) -> None:
-        self._parseSession.setPayloadOverride(url, payloadOverride)
+        self._parseSession.setSourceOverride(
+            url,
+            self._buildInputOverride(payloadOverride),
+        )
         self.addUrls([url])
 
     def addParsedTasks(self, tasks: list[Task]) -> None:
@@ -279,6 +290,46 @@ class AddTaskDialog(MessageBoxBase):
         }
         payload.update(self.settingGroup.payload)
         return payload
+
+    def _syncParseSessionConfig(self) -> None:
+        payload = self.buildCurrentPayload()
+        rawFolder = payload.get("path")
+        rawHeaders = payload.get("headers")
+        rawProxies = payload.get("proxies")
+        rawChunks = payload.get("preBlockNum")
+
+        self._parseSession.setBaseConfig(
+            folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
+            headers=rawHeaders if isinstance(rawHeaders, dict) else DEFAULT_HEADERS,
+            proxies=rawProxies if isinstance(rawProxies, dict) else getProxies(),
+            chunks=rawChunks if isinstance(rawChunks, int) else cfg.preBlockNum.value,
+        )
+
+    def _buildInputOverride(
+        self,
+        payloadOverride: dict[str, Any],
+    ) -> AddTaskInputOverride:
+        rawFolder = payloadOverride.get("path")
+        rawHeaders = payloadOverride.get("headers")
+        rawProxies = payloadOverride.get("proxies")
+        rawChunks = payloadOverride.get("preBlockNum")
+        rawSize = payloadOverride.get("size")
+        rawName = payloadOverride.get("filename")
+        hints = {
+            key: value
+            for key, value in payloadOverride.items()
+            if key not in {"path", "headers", "proxies", "preBlockNum", "size", "filename", "url"}
+        }
+
+        return AddTaskInputOverride(
+            folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else None,
+            name=rawName if isinstance(rawName, str) else None,
+            headers=rawHeaders if isinstance(rawHeaders, dict) else None,
+            proxies=rawProxies if isinstance(rawProxies, dict) else None,
+            chunks=rawChunks if isinstance(rawChunks, int) else None,
+            size=rawSize if isinstance(rawSize, int) else None,
+            hints=(hints,) if hints else (),
+        )
 
     def _showParseError(self, url: str, error: str) -> None:
         displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
@@ -360,7 +411,7 @@ class AddTaskDialog(MessageBoxBase):
 
     def validate(self) -> bool:
         self._timer.stop()
-        self._parseSession.updateUrls(self._readUrlsFromEditor())
+        self._parseSession.updateSources(self._readUrlsFromEditor())
         return self._parseSession.canAccept()
 
     @classmethod

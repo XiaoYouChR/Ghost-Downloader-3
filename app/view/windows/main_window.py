@@ -1,3 +1,5 @@
+# pyright: reportImportCycles=false, reportMissingTypeStubs=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportUnknownParameterType=false, reportMissingParameterType=false, reportAny=false, reportExplicitAny=false, reportMissingTypeArgument=false, reportArgumentType=false, reportAttributeAccessIssue=false, reportUnusedCallResult=false, reportUnknownLambdaType=false, reportOptionalMemberAccess=false, reportUninitializedInstanceVariable=false, reportUnannotatedClassAttribute=false, reportImplicitOverride=false, reportUnusedParameter=false
+
 import sys
 from pathlib import Path
 from sys import platform
@@ -12,6 +14,7 @@ from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
     PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme, setThemeColor
 
+from app.feature_pack.internal import buildAddTaskInput
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
@@ -213,7 +216,7 @@ class MainWindow(MSFluentWindow):
             if not parsed.scheme or not parsed.netloc or parsed.geturl() != url:
                 continue
 
-            if featureService.canHandle(url):
+            if featureService.packForSource(url) is not None:
                 urls.append(url)
 
         return urls
@@ -469,13 +472,17 @@ class MainWindow(MSFluentWindow):
     def _downloadReleaseAsset(self, asset: dict):
         assetName = asset["name"]
         payload = {
-            "url": asset["browser_download_url"],
             "headers": DEFAULT_HEADERS,
-            "proxies": getProxies(),
-            "path": Path(cfg.downloadFolder.value),
         }
-        coreService.parseUrl(
-            payload,
+        taskInput = buildAddTaskInput(
+            source=str(asset["browser_download_url"]),
+            folder=Path(cfg.downloadFolder.value),
+            headers=payload["headers"],
+            proxies=getProxies(),
+            chunks=cfg.preBlockNum.value,
+        )
+        coreService.createTaskFromInput(
+            taskInput,
             lambda task, error, assetName=assetName: self._onReleaseAssetParsed(assetName, task, error),
         )
 

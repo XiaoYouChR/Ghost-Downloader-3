@@ -22,6 +22,7 @@ from qfluentwidgets import MaskDialogBase, \
 from app.feature_pack.api import FeaturePack
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskInput
+from app.feature_pack.internal import buildAddTaskInput
 from app.services.core_service import coreService
 from app.supports.config import cfg, DEFAULT_HEADERS
 from app.supports.utils import getProxies
@@ -345,13 +346,17 @@ class DownloadOptionDialog(MaskDialogBase):
     def startDownload(self):
         """开始下载任务"""
         payload = {
-            "url": self.listData[self.versionCard.comboBox.currentIndex()]["Url"],
             "headers": DEFAULT_HEADERS,
-            "proxies": getProxies(),
-            "path": Path(cfg.downloadFolder.value),
         }
-        coreService.parseUrl(
-            payload,
+        taskInput = buildAddTaskInput(
+            source=str(self.listData[self.versionCard.comboBox.currentIndex()]["Url"]),
+            folder=Path(cfg.downloadFolder.value),
+            headers=payload["headers"],
+            proxies=getProxies(),
+            chunks=cfg.preBlockNum.value,
+        )
+        coreService.createTaskFromInput(
+            taskInput,
             lambda task, error: self._onAssetParsed(task, error),
         )
         self.close()

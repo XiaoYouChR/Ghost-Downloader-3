@@ -1,4 +1,4 @@
-# pyright: reportImplicitOverride=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportAny=false, reportInconsistentConstructor=false, reportUnannotatedClassAttribute=false, reportUnusedCallResult=false
+# pyright: reportImplicitOverride=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportAny=false, reportInconsistentConstructor=false, reportUnannotatedClassAttribute=false, reportUnusedCallResult=false, reportPrivateUsage=false
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from typing import cast
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,6 +30,7 @@ from app.feature_pack.api import TaskSnapshot
 from app.feature_pack.api import TaskStage
 from app.feature_pack.internal import FeaturePackCoreService
 from app.feature_pack.internal.recorder import TaskRecorder
+from app.services.core_service import CoreService
 
 
 class _FakeWindow:
@@ -345,6 +348,28 @@ class FeaturePackCoreV1Tests(unittest.TestCase):
         self.assertEqual(createdTask.packId, "demo_pack")
         self.assertEqual(createdTask.config.source, "demo:video")
         self.assertEqual(createdTask.snapshot().target, str(Path("downloads") / "demo.bin"))
+
+    def testHostCoreServiceCreatesTaskFromTaskInputThroughV1FeatureService(self) -> None:
+        task = _DemoCoreTask(id="task-host", source="demo:host")
+        featureService = _RecordingFeatureService(createdTasks=[task])
+        taskInput = TaskInput(
+            config=TaskConfig(
+                source="demo:host",
+                folder=Path("downloads"),
+                name="host.bin",
+            )
+        )
+
+        with patch("app.services.core_service.featureService", featureService):
+            createdTask = asyncio.run(
+                CoreService._createTaskFromInput(
+                    cast(CoreService, object()),
+                    taskInput,
+                )
+            )
+
+        self.assertIs(createdTask, task)
+        self.assertEqual(featureService.createTaskInputs, [taskInput])
 
     def testCoreServiceCreateTaskSchedulesImmediatelyAndRecordsTask(self) -> None:
         recorder = self.createRecorder()

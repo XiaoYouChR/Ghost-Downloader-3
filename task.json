@@ -517,7 +517,7 @@
         "把 `BrowserService` 和添加任务流程切换到新版任务创建与编辑链路。",
         "补充任务创建和浏览器入口切换测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 48,

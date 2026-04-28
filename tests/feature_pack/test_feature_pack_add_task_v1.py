@@ -25,6 +25,7 @@ from app.feature_pack.api import TaskInput
 from app.feature_pack.internal import AddTaskDialogSession
 from app.feature_pack.internal import AddTaskInputOverride
 from app.feature_pack.internal import buildAddTaskInput
+from app.view.components.add_task_dialog_session import AddTaskParseSession
 
 
 class _FakeWindow:
@@ -239,6 +240,9 @@ class FeaturePackAddTaskV1Tests(unittest.TestCase):
         self.assertEqual(taskInput.config.chunks, 16)
         self.assertEqual(taskInput.size, 4096)
         self.assertEqual(taskInput.hints, ({"origin": "browser"},))
+
+    def testHistoricalAddTaskSessionImportPointsToV1Session(self) -> None:
+        self.assertIs(AddTaskParseSession, AddTaskDialogSession)
 
     def testAddTaskDialogSessionRestartsPendingRequestsAndAppliesConfigThroughFeatureService(self) -> None:
         service = self.loadService()

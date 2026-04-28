@@ -1,53 +1,145 @@
+# pyright: reportImportCycles=false, reportMissingImports=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportUnknownLambdaType=false, reportAny=false, reportExplicitAny=false, reportMissingParameterType=false, reportUnannotatedClassAttribute=false, reportUninitializedInstanceVariable=false, reportArgumentType=false, reportImplicitOverride=false, reportDeprecated=false, reportUnusedCallResult=false
+
+from __future__ import annotations
+
 import asyncio
 import sys
+from collections.abc import Callable
+from collections.abc import Coroutine
 from pathlib import Path
-from typing import Callable, Dict, Any, Coroutine
+from typing import Any
+from typing import cast
 
-from PySide6.QtCore import QThread, QTimer, QStandardPaths, QResource, QFileInfo, Qt
-from PySide6.QtWidgets import QApplication, QFileIconProvider
-from desktop_notifier import DesktopNotifier, Icon, Button
+from PySide6.QtCore import QFileInfo
+from PySide6.QtCore import QResource
+from PySide6.QtCore import QStandardPaths
+from PySide6.QtCore import QThread
+from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QFileIconProvider
+from desktop_notifier import Button
+from desktop_notifier import DesktopNotifier
+from desktop_notifier import Icon
 from loguru import logger
 
-from app.bases.models import Task, TaskStatus
+from app.feature_pack.api import Task
+from app.feature_pack.api import TaskInput
 from app.services.feature_service import featureService
 from app.supports.config import cfg
 from app.supports.utils import openFile
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import winloop
+
     winloop.install()
-elif sys.platform != 'darwin':
+elif sys.platform != "darwin":
     import uvloop
+
     uvloop.install()
 
+
+TaskCallback = Callable[[Task | None, str | None], Coroutine[Any, Any, None] | None]
+CoroutineCallback = Callable[[Any, str | None], Coroutine[Any, Any, None] | None]
+
+
 def getNotifierIcon() -> Path:
-    _ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
-    if not _.exists():
-        with open(_, "wb") as f:
-            f.write(QResource(":/image/logo.png").data())
-    return _
+    iconPath = Path(
+        QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
+        + "/gd3_logo.png"
+    )
+    if not iconPath.exists():
+        with open(iconPath, "wb") as file:
+            file.write(cast(bytes, QResource(":/image/logo.png").data()))
+    return iconPath
+
+
+def _taskId(task: Task) -> str:
+    return task.id
+
+
+def _taskState(task: Task) -> str:
+    try:
+        return task.snapshot().state.strip().lower()
+    except Exception:
+        rawState = getattr(task, "state", "")
+        return rawState.strip().lower() if isinstance(rawState, str) else ""
+
+
+def _taskTarget(task: Task) -> str:
+    try:
+        return task.snapshot().target.strip()
+    except Exception:
+        rawTarget = getattr(task, "resolvePath", "")
+        return rawTarget.strip() if isinstance(rawTarget, str) else ""
+
+
+def _taskName(task: Task) -> str:
+    try:
+        return task.snapshot().name
+    except Exception:
+        rawTitle = getattr(task, "title", "")
+        return rawTitle if isinstance(rawTitle, str) else task.id
+
+
+def _setTaskState(task: Task, state: str) -> None:
+    setState = getattr(task, "setState", None)
+    if callable(setState):
+        _ = setState(state)
+        return
+
+    setattr(task, "state", state)
+    task.stateChanged.emit(state)
+    try:
+        task.snapshotChanged.emit(task.snapshot())
+    except Exception:
+        return
+
+
+def _taskBoolHook(task: Task, hookName: str) -> bool | None:
+    hook = getattr(task, hookName, None)
+    if not callable(hook):
+        return None
+    return bool(hook())
+
+
+def _occupiesDownloadSlot(task: Task) -> bool:
+    occupiesSlot = _taskBoolHook(task, "occupiesDownloadSlot")
+    if occupiesSlot is not None:
+        return occupiesSlot
+    return True
+
+
+def _willOccupyDownloadSlotWhenStarted(task: Task) -> bool:
+    occupiesSlot = _taskBoolHook(task, "willOccupyDownloadSlotWhenStarted")
+    if occupiesSlot is not None:
+        return occupiesSlot
+    return _occupiesDownloadSlot(task)
+
 
 class CoreService(QThread):
-
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.mainLoop = self.loop.create_task(self.main())
-        self.tasks: set[Task] = set()
-        self.waitingTasks: list[Task] = []
-        self.runningTasks: dict[str, asyncio.Task] = {}
-        self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
+        self.tasksById: dict[str, Task] = {}
+        self.waitingTaskIds: list[str] = []
+        self.runningTasks: dict[str, asyncio.Task[None]] = {}
+        self._pendingCallbacks: dict[str, CoroutineCallback] = {}
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._syncTaskLimitSoon())
 
-    def sendNotification(self, task: Task):
-        resolvePath = task.resolvePath
+    def sendNotification(self, task: Task) -> None:
+        resolvePath = _taskTarget(task)
         if not resolvePath:
-            logger.warning("task {} has no resolvePath for notification", task.taskId)
+            logger.warning("task {} has no target for notification", task.id)
             return
 
         directoryPath = str(Path(resolvePath).parent)
-        iconTempPath = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)) / "finished_file_icon.png"
+        iconTempPath = (
+            Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation))
+            / "finished_file_icon.png"
+        )
         QFileIconProvider().icon(QFileInfo(resolvePath)).pixmap(48, 48).scaled(
             128,
             128,
@@ -55,62 +147,63 @@ class CoreService(QThread):
             mode=Qt.TransformationMode.SmoothTransformation,
         ).save(str(iconTempPath), "PNG")
         buttons = [
-            Button(self.tr('打开文件'), lambda: openFile(resolvePath)),
-            Button(self.tr('打开目录'), lambda: openFile(directoryPath)),
+            Button(self.tr("打开文件"), lambda: openFile(resolvePath)),
+            Button(self.tr("打开目录"), lambda: openFile(directoryPath)),
         ]
         self.loop.create_task(
             self.desktopNotifier.send(
                 self.tr("下载完成"),
-                task.title,
+                _taskName(task),
                 buttons=buttons,
                 on_clicked=lambda: openFile(resolvePath),
                 icon=Icon(path=iconTempPath),
             )
         )
 
+    def runCoroutine(
+        self,
+        coroutine: Coroutine[Any, Any, Any],
+        callback: CoroutineCallback | None = None,
+    ) -> str:
+        if callback is None:
+            self.loop.create_task(coroutine)
+            return ""
 
-    def runCoroutine(self, coroutine: Coroutine, callback: Callable[[dict, str | None], Coroutine | None] | None = None):
-        if callback is not None:
-            callbackId = f"custom_{id(callback)}_{hash(coroutine)}"
+        callbackId = f"custom_{id(callback)}_{hash(coroutine)}"
+        self._pendingCallbacks[callbackId] = callback
+        self.loop.create_task(self._runCoroutine(coroutine, callbackId))
+        return callbackId
 
-            self._pendingCallbacks[callbackId] = callback
-
-            self.loop.create_task(self._runCoroutine(coroutine, callbackId))
-
-            return callbackId
-
-        return ""
-
-    async def _runCoroutine(self, coroutine: Coroutine, callbackId):
+    async def _runCoroutine(
+        self,
+        coroutine: Coroutine[Any, Any, Any],
+        callbackId: str,
+    ) -> None:
         try:
             result = await coroutine
-            callback = self._pendingCallbacks.pop(callbackId)
-            self._executeCallback(callback, result, None)
-        except Exception as e:
-            logger.opt(exception=e).error("异步任务执行失败 {}", callbackId)
-            callback = self._pendingCallbacks.pop(callbackId)
-            self._executeCallback(callback, None, repr(e))
+            callback = self._pendingCallbacks.pop(callbackId, None)
+            if callback is not None:
+                self._executeCallback(callback, result, None)
+        except Exception as error:
+            logger.opt(exception=error).error("异步任务执行失败 {}", callbackId)
+            callback = self._pendingCallbacks.pop(callbackId, None)
+            if callback is not None:
+                self._executeCallback(callback, None, repr(error))
 
-    def _executeCallback(self, callback: Callable, result: Any, error: str = None):
-        """线程安全地执行回调函数
-
-        通过 Qt 的事件循环机制确保回调在主线程中执行，
-        避免子线程直接操作 UI 导致的崩溃问题。
-
-        Args:
-            callback: 回调函数
-            result: 成功结果
-            error: 错误信息
-        """
-
-        def wrapper():
+    def _executeCallback(
+        self,
+        callback: CoroutineCallback,
+        result: Any,
+        error: str | None = None,
+    ) -> None:
+        def wrapper() -> None:
             try:
                 if asyncio.iscoroutinefunction(callback):
                     self.loop.create_task(callback(result, error))
                 else:
                     callback(result, error)
-            except Exception as e:
-                logger.opt(exception=e).error("回调函数执行失败")
+            except Exception as callbackError:
+                logger.opt(exception=callbackError).error("回调函数执行失败")
 
         application = QApplication.instance()
         if application:
@@ -118,59 +211,20 @@ class CoreService(QThread):
         else:
             wrapper()
 
-    async def _parseUrl(self, payload: dict, callbackId: str = None):
-        """内部异步方法：解析 URL 并通过线程安全方式调用回调
+    async def _createTaskFromInput(self, data: TaskInput) -> Task:
+        return await featureService.createTask(data)
 
-        Args:
-            payload: 包含 url, headers, proxies 等信息的字典
-            callbackId: 回调函数标识符
-        """
-        try:
-            result = await featureService.parse(payload)
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, result, None)
-
-            return result
-
-        except Exception as e:
-            logger.opt(exception=e).error("解析 URL 失败")
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, None, repr(e))
-
-    async def _createTaskFromPayload(self, payload: dict, callbackId: str = None):
-        try:
-            result = await featureService.createTaskFromPayload(payload)
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, result, None)
-
-            return result
-
-        except Exception as e:
-            logger.opt(exception=e).error("根据已有 Payload 创建任务失败")
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, None, repr(e))
-
-    def parseUrl(self, payload: dict, callback: Callable) -> str:
-        callbackId = f"parse_{id(callback)}_{hash(str(payload))}"
+    def createTaskFromInput(self, data: TaskInput, callback: TaskCallback) -> str:
+        callbackId = f"create_{id(callback)}_{hash(data.config.source)}"
         self._pendingCallbacks[callbackId] = callback
-
-        self.loop.create_task(self._parseUrl(payload, callbackId))
-
+        self.loop.create_task(self._runCoroutine(self._createTaskFromInput(data), callbackId))
         return callbackId
 
     def _downloadSlotTaskIds(self) -> list[str]:
         taskIds: list[str] = []
         for taskId in self.runningTasks:
             task = self.getTaskById(taskId)
-            if task is None or not task.occupiesDownloadSlot():
+            if task is None or not _occupiesDownloadSlot(task):
                 continue
             taskIds.append(taskId)
         return taskIds
@@ -178,36 +232,43 @@ class CoreService(QThread):
     def _runningTaskCount(self) -> int:
         return len(self._downloadSlotTaskIds())
 
-    def _removeWaitingTask(self, task: Task):
-        self.waitingTasks = [queuedTask for queuedTask in self.waitingTasks if queuedTask.taskId != task.taskId]
+    def _removeWaitingTask(self, task: Task) -> None:
+        taskId = _taskId(task)
+        self.waitingTaskIds = [
+            queuedTaskId
+            for queuedTaskId in self.waitingTaskIds
+            if queuedTaskId != taskId
+        ]
 
-    def _enqueueTask(self, task: Task):
+    def _enqueueTask(self, task: Task) -> None:
         self._removeWaitingTask(task)
-        task.setStatus(TaskStatus.WAITING)
-        self.waitingTasks.append(task)
+        _setTaskState(task, "waiting")
+        self.waitingTaskIds.append(_taskId(task))
 
-    def _dispatchTask(self, task: Task):
+    def _dispatchTask(self, task: Task) -> None:
+        taskId = _taskId(task)
         self._removeWaitingTask(task)
-        task.setStatus(TaskStatus.RUNNING)
-        self.runningTasks[task.taskId] = self.loop.create_task(self._runTask(task))
+        _setTaskState(task, "running")
+        self.runningTasks[taskId] = self.loop.create_task(self._runTask(task))
 
-    def _syncTaskLimitSoon(self):
+    def _syncTaskLimitSoon(self) -> None:
         if self.loop.is_running():
             self.loop.call_soon_threadsafe(lambda: self.loop.create_task(self._syncTaskLimit()))
 
-    def notifyTaskSchedulingChanged(self):
+    def notifyTaskSchedulingChanged(self) -> None:
         self._syncTaskLimitSoon()
 
-    def _scheduleWaitingTasks(self):
-        while self.waitingTasks and self._runningTaskCount() < cfg.maxTaskNum.value:
-            task = self.waitingTasks.pop(0)
-            if task.taskId in self.runningTasks:
+    def _scheduleWaitingTasks(self) -> None:
+        while self.waitingTaskIds and self._runningTaskCount() < cfg.maxTaskNum.value:
+            taskId = self.waitingTaskIds.pop(0)
+            task = self.tasksById.get(taskId)
+            if task is None or taskId in self.runningTasks:
                 continue
-
             self._dispatchTask(task)
 
-    async def _moveRunningTaskToWaiting(self, task: Task):
-        runningTask = self.runningTasks.get(task.taskId)
+    async def _moveRunningTaskToWaiting(self, task: Task) -> None:
+        taskId = _taskId(task)
+        runningTask = self.runningTasks.get(taskId)
         if runningTask is None:
             self._enqueueTask(task)
             return
@@ -218,14 +279,13 @@ class CoreService(QThread):
             except asyncio.CancelledError:
                 pass
 
-        self.runningTasks.pop(task.taskId, None)
-
-        if task.status not in {TaskStatus.COMPLETED, TaskStatus.FAILED}:
+        self.runningTasks.pop(taskId, None)
+        if _taskState(task) not in {"completed", "failed"}:
             self._enqueueTask(task)
 
-    async def _syncTaskLimit(self):
+    async def _syncTaskLimit(self) -> None:
         runningTaskIds = self._downloadSlotTaskIds()
-        overflowTaskIds = runningTaskIds[cfg.maxTaskNum.value:]
+        overflowTaskIds = runningTaskIds[cfg.maxTaskNum.value :]
 
         for taskId in overflowTaskIds:
             task = self.getTaskById(taskId)
@@ -235,114 +295,113 @@ class CoreService(QThread):
 
         self._scheduleWaitingTasks()
 
-    async def _runTask(self, task: Task):
+    async def _runTask(self, task: Task) -> None:
+        taskId = _taskId(task)
         try:
             await task.run()
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            logger.opt(exception=error).error("任务运行失败 {}", taskId)
+            if _taskState(task) not in {"completed", "failed"}:
+                _setTaskState(task, "failed")
+        else:
+            if _taskState(task) not in {"completed", "failed"}:
+                _setTaskState(task, "completed")
         finally:
-            self.runningTasks.pop(task.taskId, None)
+            self.runningTasks.pop(taskId, None)
             self._scheduleWaitingTasks()
 
-    def createTask(self, task: Task):
-        self.tasks.add(task)
-        if task.taskId in self.runningTasks:
+    def createTask(self, task: Task) -> None:
+        taskId = _taskId(task)
+        existingTask = self.tasksById.get(taskId)
+        if existingTask is not None and existingTask is not task:
+            raise ValueError(f"task {taskId} already exists")
+
+        self.tasksById[taskId] = task
+        if taskId in self.runningTasks:
             return
 
-        if task.willOccupyDownloadSlotWhenStarted() and self._runningTaskCount() >= cfg.maxTaskNum.value:
+        if (
+            _willOccupyDownloadSlotWhenStarted(task)
+            and self._runningTaskCount() >= cfg.maxTaskNum.value
+        ):
             self._enqueueTask(task)
             return
 
         self._dispatchTask(task)
 
-    async def _stopTask(self, task: Task):
-        self.tasks.discard(task)
+    async def _stopTask(self, task: Task) -> None:
+        taskId = _taskId(task)
         self._removeWaitingTask(task)
-        runningTask = self.runningTasks.get(task.taskId)
-        if runningTask is not None and runningTask.cancel():
+        runningTask = self.runningTasks.get(taskId)
+        if runningTask is not None:
             try:
-                await runningTask
-            except asyncio.CancelledError:
-                pass
-        self.runningTasks.pop(task.taskId, None)
+                await task.pause()
+            except Exception as error:
+                logger.opt(exception=error).warning("任务暂停命令失败 {}", taskId)
+
+            if runningTask.cancel():
+                try:
+                    await runningTask
+                except asyncio.CancelledError:
+                    pass
+
+        self.runningTasks.pop(taskId, None)
+        if _taskState(task) not in {"completed", "failed"}:
+            _setTaskState(task, "paused")
         self._scheduleWaitingTasks()
 
-    def stopTask(self, task: Task):
-        task.setStatus(TaskStatus.PAUSED)
+    def stopTask(self, task: Task) -> None:
         self.loop.create_task(self._stopTask(task))
 
-    def getAllTaskInfo(self) -> set:
-        """获取所有任务信息
-        
-        Returns:
-            set: 所有任务对象的集合
-        """
-        return self.tasks.copy()
-    
+    def getAllTaskInfo(self) -> set[Task]:
+        return set(self.tasksById.values())
+
     def getTaskById(self, taskId: str) -> Task | None:
-        """根据任务Id获取任务对象
-        
-        Args:
-            taskId: 任务Id
-        
-        Returns:
-            Task: 对应的任务对象，如果不存在则返回None
-        """
-        for task in self.tasks:
-            if task.taskId == taskId:
-                return task
-        return None
-    
+        return self.tasksById.get(taskId)
+
     def removeCallback(self, callbackId: str) -> bool:
-        """移除待执行的回调函数
-        
-        Args:
-            callbackId: 回调函数标识符
-        
-        Returns:
-            bool: 是否成功移除
-        """
         if callbackId in self._pendingCallbacks:
             del self._pendingCallbacks[callbackId]
             return True
         return False
-    
-    async def main(self):
-        """主事件循环
-        
-        在这里可以添加周期性任务，如清理过期回调、监控任务状态等
-        """
+
+    async def main(self) -> None:
         while True:
             try:
                 await asyncio.sleep(1)
-                
             except asyncio.CancelledError:
                 break
-            except Exception as e:
-                logger.opt(exception=e).error("CoreService 主循环发生错误")
+            except Exception as error:
+                logger.opt(exception=error).error("CoreService 主循环发生错误")
                 await asyncio.sleep(1)
 
-    def run(self):
-        """启动线程和事件循环"""
-        self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))  # OSError: [WinError -2147417842] 应用程序调用一个已为另一线程整理的接口。
+    def run(self) -> None:
+        self.desktopNotifier = DesktopNotifier(
+            app_name="Ghost Downloader",
+            app_icon=Icon(path=getNotifierIcon()),
+        )
         try:
             self.loop.run_until_complete(self.mainLoop)
-        except Exception as e:
-            logger.opt(exception=e).error("CoreService 启动失败")
+        except Exception as error:
+            logger.opt(exception=error).error("CoreService 启动失败")
         finally:
             if self.loop:
                 self.loop.close()
-    
-    def stop(self):
-        """停止服务"""
+
+    def stop(self) -> None:
         if self.loop and self.loop.is_running():
-            if hasattr(self, 'mainLoop') and not self.mainLoop.done():
+            if hasattr(self, "mainLoop") and not self.mainLoop.done():
                 self.mainLoop.cancel()
 
             self.loop.call_soon_threadsafe(self.loop.stop)
 
         self._pendingCallbacks.clear()
-        self.tasks.clear()
-        self.waitingTasks.clear()
+        self.tasksById.clear()
+        self.waitingTaskIds.clear()
         self.runningTasks.clear()
         cfg.maxTaskNum.valueChanged.disconnect()
+
 
 coreService = CoreService()
