@@ -1,4 +1,4 @@
-# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportAny=false, reportExplicitAny=false, reportImplicitOverride=false, reportAttributeAccessIssue=false, reportCallIssue=false, reportUnusedCallResult=false, reportUnnecessaryCast=false, reportUnannotatedClassAttribute=false
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false, reportAny=false, reportExplicitAny=false, reportImplicitOverride=false, reportAttributeAccessIssue=false, reportCallIssue=false, reportUnusedCallResult=false, reportUnnecessaryCast=false, reportUnannotatedClassAttribute=false, reportMissingTypeStubs=false
 
 from __future__ import annotations
 
@@ -28,12 +28,16 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtWidgets import QWidget
+from qfluentwidgets import SettingCard
+from qfluentwidgets import SettingCardGroup
 
 from app.feature_pack.api import DefaultFeatureService
 from app.feature_pack.api import DefaultResultCard
 from app.feature_pack.api import DefaultTaskCard
 from app.feature_pack.api import MultiFileTask
+from app.feature_pack.api import SettingSection
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskConfig
 from app.feature_pack.api import TaskInput
@@ -45,6 +49,15 @@ from app.feature_pack.internal.recorder import TaskRecorder
 class _FakeWindow:
     def __init__(self) -> None:
         self.installed: list[str] = []
+
+
+class _FakeSettingPage:
+    container: QWidget
+    vBoxLayout: QVBoxLayout
+
+    def __init__(self) -> None:
+        self.container = QWidget()
+        self.vBoxLayout = QVBoxLayout(self.container)
 
 
 class _FakeResponse:
@@ -330,6 +343,9 @@ class BiliPackV1Tests(unittest.TestCase):
 
             QTest.mouseClick(taskCard.editButton, Qt.MouseButton.LeftButton)
 
+        dialogMock.assert_called_once()
+        self.assertIs(dialogMock.call_args.kwargs["task"], task)
+        self.assertEqual(dialogMock.call_args.kwargs["mode"], "running")
         self.assertEqual(task.selectedIds, {"page-1", "page-3"})
         self.assertEqual(task.selectedCount, 2)
         self.assertEqual(task.config, updatedConfig)
@@ -339,6 +355,92 @@ class BiliPackV1Tests(unittest.TestCase):
         self.assertTrue(str(getattr(task.stages[8], "resolvePath")).endswith("Renamed Video - P3 End.mp4"))
         self.assertEqual(cast(Any, task.stages[0]).proxies, {"https": "socks5://127.0.0.1:1080"})
         self.assertEqual(cast(Any, task.stages[0]).blockNum, 16)
+
+        resultConfig = TaskConfig(
+            source=task.config.source,
+            folder=self.workspace / "result-archive",
+            name="Result Edited Video",
+            headers=task.config.headers,
+            proxies=task.config.proxies,
+            chunks=4,
+        )
+
+        resultCard = cast(DefaultResultCard, resultCard)
+        with patch("app.feature_pack.api.service.TaskConfigDialog") as dialogMock:
+            dialog = dialogMock.return_value
+            dialog.exec.return_value = QDialog.DialogCode.Accepted
+            dialog.selectedIds.return_value = {"page-2"}
+            dialog.config.return_value = resultConfig
+
+            QTest.mouseClick(resultCard.editButton, Qt.MouseButton.LeftButton)
+
+        dialogMock.assert_called_once()
+        self.assertIs(dialogMock.call_args.kwargs["task"], task)
+        self.assertEqual(dialogMock.call_args.kwargs["mode"], "before")
+        self.assertEqual(task.selectedIds, {"page-2"})
+        self.assertEqual(task.config, resultConfig)
+        self.assertEqual(task.snapshot().target, str(self.workspace / "result-archive" / "Result Edited Video"))
+
+    def testBiliPackInstallsSettingsThroughSettingSection(self) -> None:
+        service = self.createService()
+        pack = service.pack("bili_pack")
+        self.assertIsNotNone(pack)
+        if pack is None:
+            raise AssertionError("bili_pack should load through the V1 service")
+
+        section = pack.settingSection()
+        self.assertIsInstance(section, SettingSection)
+        section = cast(SettingSection, section)
+        self.assertEqual(section.id, "bili_pack")
+        self.assertEqual(section.title, "哔哩哔哩视频下载")
+        self.assertEqual(
+            [(item.key, item.kind) for item in section.items],
+            [
+                ("defaultQuality", "custom"),
+                ("alternativeQuality", "custom"),
+                ("parseHDR", "custom"),
+                ("parseDolby", "custom"),
+                ("login", "custom"),
+            ],
+        )
+
+        packModule = self.packModule()
+        config = cast(Any, packModule.bilibiliConfig)
+        previousCookie = str(config.userCookie.value)
+        config.userCookie.value = ""
+        self.addCleanup(lambda: setattr(config.userCookie, "value", previousCookie))
+
+        settingPage = _FakeSettingPage()
+        self.showWidget(settingPage.container)
+        service.installSettings(settingPage)
+
+        self.assertEqual(settingPage.vBoxLayout.count(), 1)
+        group = cast(
+            SettingCardGroup,
+            settingPage.container.findChild(SettingCardGroup, "featurePackSection:bili_pack"),
+        )
+        self.assertIsInstance(group, SettingCardGroup)
+        self.assertEqual(group.titleLabel.text(), "哔哩哔哩视频下载")
+
+        cards = {
+            key: cast(SettingCard, group.findChild(SettingCard, f"settingCard:{key}"))
+            for key in (
+                "defaultQuality",
+                "alternativeQuality",
+                "parseHDR",
+                "parseDolby",
+                "login",
+            )
+        }
+        for key, card in cards.items():
+            self.assertIsInstance(card, SettingCard, key)
+
+        self.assertIs(cards["defaultQuality"], config.defaultQualityCard)
+        self.assertIs(cards["alternativeQuality"], config.alternativeQualityCard)
+        self.assertIs(cards["parseHDR"], config.parseHDRCard)
+        self.assertIs(cards["parseDolby"], config.parseDolbyCard)
+        self.assertIs(cards["login"], config.loginCard)
+        self.assertEqual(type(cards["login"]).__name__, "BilibiliLoginSettingCard")
 
     def testBiliTaskRecorderRestoresEpisodesAndBrowserProjection(self) -> None:
         task = self.createBiliTask()

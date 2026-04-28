@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import niquests
 
 from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import SettingSection
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskConfig
 from app.feature_pack.api import TaskInput
@@ -430,6 +431,9 @@ class BilibiliPack(FeaturePack):
 
     def owns(self, task: Task) -> bool:
         return isinstance(task, BilibiliTask) and task.packId == self.manifest.id
+
+    def settingSection(self) -> SettingSection:
+        return bilibiliConfig.settingSection()
 
     def canHandle(self, url: str) -> bool:
         return self.accepts(url)

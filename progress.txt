@@ -365,3 +365,20 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #41，目标范围仅限改写 `bili_pack` 的核心工作流、`BilibiliTask`、主要下载/合并 Stage 和分集选择；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 Bili 任务使用 V1 `FeaturePack/TaskInput/TaskConfig/MultiFileTask/TaskStage` 语义，分集选择通过 `MultiFileTask.select()` 与默认选择对话框流程完成，分集选择和工作流有测试覆盖，并通过静态检查和全部测试脚本；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、浏览器快照、Core/AddTask、`http_pack`、`ffmpeg_pack`、`ftp_pack` 与 `bittorrent_pack` 迁移之后，直接复用 HTTP 下载、FFmpeg 合并和多文件选择路径；主要风险是 Bilibili 分集、音视频下载阶段与合并阶段之间必须保持稳定映射，恢复时不能依赖 V0 类名或匿名 payload，并且分集选择不应绕过默认多文件选择流程。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme 以及既有基线日志相关警告，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 改写 bili_pack 的设置与卡片
+### 已完成内容:
+- 已让 `bili_pack` 通过 `BilibiliPack.settingSection()` 返回 `SettingSection`，设置页入口进入新版宿主 `DefaultSettingsInstaller.install()` 路径。
+- 已为新版设置注入器补充 `custom` 设置项支持，使 Bilibili 的清晰度、HDR、杜比视界和账号登录卡片继续使用 Pack 自有配置项与自定义登录卡。
+- 已将 Bilibili 设置卡创建收敛为可复用工厂，旧 `loadSettingCards()` 仍复用同一批卡片创建逻辑，避免设置 UI 行为分叉。
+- 已验证 Bilibili 的 TaskCard、ResultCard 均回落到新版默认卡片，并且运行中编辑与创建前编辑都通过宿主 `editTask()` / `TaskConfigDialog` 流程提交分集选择和配置变更。
+- 已扩展 `tests/feature_pack/test_bili_pack_v1.py`，覆盖 `SettingSection` 安装、Bilibili 自定义设置卡、默认 TaskCard、默认 ResultCard 和编辑入口模式。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_bili_pack_v1.py`。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py features/bili_pack/config.py features/bili_pack/pack.py tests/feature_pack/test_bili_pack_v1.py` 失败，原因是本轮首次把遗留 `features/bili_pack/config.py` 纳入静态检查后暴露既有 qfluentwidgets/旧配置 UI 类型噪声；补充与迁移文件一致的 pyright 文件级抑制后再次运行通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py features/bili_pack/config.py features/bili_pack/pack.py tests/feature_pack/test_bili_pack_v1.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #42，目标范围仅限改写 `bili_pack` 的设置注入、TaskCard、ResultCard 和编辑入口；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 Bili 设置页通过 `SettingSection` 进入新版宿主 UI，卡片层通过默认 `DefaultTaskCard/DefaultResultCard` 和宿主 `editTask()` 流程完成配置与分集选择，并有设置与卡片测试覆盖；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、默认设置注入器、默认卡片、`bili_pack` 工作流与分集选择之后，直接复用上一轮的 `BilibiliTask.editForm()` 与 `MultiFileTask.select()` 路径；主要风险是 Bilibili 设置存在自定义登录卡和真实配置项，不能用宿主临时 ConfigItem 替代，否则解析清晰度、HDR、杜比和 Cookie 会与实际 Pack 配置脱节。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

@@ -1,3 +1,5 @@
+# pyright: reportAny=false, reportExplicitAny=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportAttributeAccessIssue=false, reportImplicitOverride=false, reportCallIssue=false, reportUnusedCallResult=false, reportArgumentType=false, reportUnannotatedClassAttribute=false, reportUninitializedInstanceVariable=false, reportMissingTypeStubs=false, reportMissingTypeArgument=false, reportMissingParameterType=false, reportUnnecessaryIsInstance=false, reportUnreachable=false, reportPrivateUsage=false, reportImplicitStringConcatenation=false, reportIncompatibleMethodOverride=false, reportUnknownLambdaType=false
+
 import asyncio
 from io import BytesIO
 from typing import TYPE_CHECKING
@@ -31,6 +33,8 @@ from qfluentwidgets import (
 from qrcode.image.pure import PyPNGImage
 
 from app.bases.models import PackConfig
+from app.feature_pack.api.settings import SettingItem
+from app.feature_pack.api.settings import SettingSection
 from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
@@ -781,53 +785,112 @@ class BilibiliConfig(PackConfig):
     parseDolby = ConfigItem("Download", "ParseDolby", False, BoolValidator())
     userCookie = ConfigItem("Download", "UserCookie", "", CookieValidator())
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.parseBilibiliGroup = SettingCardGroup(self.tr("哔哩哔哩视频下载"), settingPage.container)
-
+    def _createDefaultQualityCard(self, group: SettingCardGroup) -> SettingCard:
         self.defaultQualityCard = ComboBoxSettingCard(
             self.defaultQuality,
             FluentIcon.VIDEO,
             self.tr("默认清晰度"),
             self.tr("下载视频时默认的清晰度"),
             ["8K", "4K", "1080P60", "1080P+", "1080P", "720P60", "720P", "480P", "360P"],
-            self.parseBilibiliGroup,
+            group,
         )
+        return self.defaultQualityCard
 
+    def _createAlternativeQualityCard(self, group: SettingCardGroup) -> SettingCard:
         self.alternativeQualityCard = ComboBoxSettingCard(
             self.alternativeQuality,
             FluentIcon.VIDEO,
             self.tr("备选清晰度"),
             self.tr("下载视频时备选的清晰度"),
             [self.tr("可以下载的最高画质"), self.tr("可以下载的最低画质")],
-            self.parseBilibiliGroup,
+            group,
         )
+        return self.alternativeQualityCard
 
+    def _createParseHDRCard(self, group: SettingCardGroup) -> SettingCard:
         self.parseHDRCard = SwitchSettingCard(
             FluentIcon.VIDEO,
             self.tr("HDR"),
             self.tr("下载 HDR 视频"),
             self.parseHDR,
-            self.parseBilibiliGroup,
+            group,
         )
+        return self.parseHDRCard
 
+    def _createParseDolbyCard(self, group: SettingCardGroup) -> SettingCard:
         self.parseDolbyCard = SwitchSettingCard(
             FluentIcon.VIDEO,
             self.tr("杜比视界"),
             self.tr("下载杜比视界视频"),
             self.parseDolby,
-            self.parseBilibiliGroup,
+            group,
         )
+        return self.parseDolbyCard
 
+    def _createLoginCard(self, group: SettingCardGroup) -> SettingCard:
         self.loginCard = BilibiliLoginSettingCard(
             self.userCookie,
-            self.parseBilibiliGroup,
+            group,
+        )
+        return self.loginCard
+
+    def _createSettingCards(self, group: SettingCardGroup) -> tuple[SettingCard, ...]:
+        return (
+            self._createDefaultQualityCard(group),
+            self._createAlternativeQualityCard(group),
+            self._createParseHDRCard(group),
+            self._createParseDolbyCard(group),
+            self._createLoginCard(group),
         )
 
-        self.parseBilibiliGroup.addSettingCard(self.defaultQualityCard)
-        self.parseBilibiliGroup.addSettingCard(self.alternativeQualityCard)
-        self.parseBilibiliGroup.addSettingCard(self.parseHDRCard)
-        self.parseBilibiliGroup.addSettingCard(self.parseDolbyCard)
-        self.parseBilibiliGroup.addSettingCard(self.loginCard)
+    def settingSection(self) -> SettingSection:
+        return SettingSection(
+            id="bili_pack",
+            title=self.tr("哔哩哔哩视频下载"),
+            items=(
+                SettingItem(
+                    key="defaultQuality",
+                    label=self.tr("默认清晰度"),
+                    kind="custom",
+                    note=self.tr("下载视频时默认的清晰度"),
+                    extra={"cardFactory": self._createDefaultQualityCard},
+                ),
+                SettingItem(
+                    key="alternativeQuality",
+                    label=self.tr("备选清晰度"),
+                    kind="custom",
+                    note=self.tr("下载视频时备选的清晰度"),
+                    extra={"cardFactory": self._createAlternativeQualityCard},
+                ),
+                SettingItem(
+                    key="parseHDR",
+                    label=self.tr("HDR"),
+                    kind="custom",
+                    note=self.tr("下载 HDR 视频"),
+                    extra={"cardFactory": self._createParseHDRCard},
+                ),
+                SettingItem(
+                    key="parseDolby",
+                    label=self.tr("杜比视界"),
+                    kind="custom",
+                    note=self.tr("下载杜比视界视频"),
+                    extra={"cardFactory": self._createParseDolbyCard},
+                ),
+                SettingItem(
+                    key="login",
+                    label=self.tr("账号登录"),
+                    kind="custom",
+                    note=self.tr("管理 Bilibili 账号登录状态"),
+                    extra={"cardFactory": self._createLoginCard},
+                ),
+            ),
+        )
+
+    def loadSettingCards(self, settingPage: "SettingPage"):
+        self.parseBilibiliGroup = SettingCardGroup(self.tr("哔哩哔哩视频下载"), settingPage.container)
+
+        for card in self._createSettingCards(self.parseBilibiliGroup):
+            self.parseBilibiliGroup.addSettingCard(card)
 
         settingPage.vBoxLayout.addWidget(self.parseBilibiliGroup)
 

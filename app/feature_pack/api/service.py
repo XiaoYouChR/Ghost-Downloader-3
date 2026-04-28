@@ -411,7 +411,7 @@ class DefaultSettingsInstaller(SettingsInstaller):
     """
 
     _SUPPORTED_KINDS: frozenset[str] = frozenset(
-        {"toggle", "choice", "text", "action", "primaryAction"}
+        {"toggle", "choice", "text", "action", "primaryAction", "custom"}
     )
 
     def __init__(self) -> None:
@@ -461,7 +461,21 @@ class DefaultSettingsInstaller(SettingsInstaller):
             return _SettingTextCard(item=item, group=group)
         if item.kind == "action":
             return _SettingActionCard(item=item, group=group)
+        if item.kind == "custom":
+            return self._createCustomCard(item=item, group=group)
         return _SettingPrimaryActionCard(item=item, group=group)
+
+    def _createCustomCard(self, *, item: SettingItem, group: SettingCardGroup) -> SettingCard:
+        cardFactory = item.extra.get("cardFactory")
+        if not callable(cardFactory):
+            raise ValueError(f"custom setting '{item.key}' requires a cardFactory")
+
+        card = cardFactory(group)
+        if not isinstance(card, SettingCard):
+            raise TypeError(f"custom setting '{item.key}' must return SettingCard")
+
+        card.setObjectName(f"settingCard:{item.key}")
+        return card
 
 
 @final

@@ -462,7 +462,7 @@
         "把其 TaskCard、ResultCard 和编辑入口改写到新版卡片流程。",
         "补充设置与卡片测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 43,
