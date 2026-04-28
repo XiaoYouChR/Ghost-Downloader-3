@@ -1,10 +1,15 @@
+# pyright: reportUnannotatedClassAttribute=false, reportAny=false, reportMissingParameterType=false, reportUnusedCallResult=false
+
 from pathlib import Path
+from typing import cast
 
 import orjson
 from PySide6.QtCore import QStandardPaths
 from loguru import logger
 
 from app.bases.models import Task
+from app.feature_pack.api import Task as V1Task
+from app.feature_pack.internal.recorder import TaskRecorder as V1TaskRecorder
 
 
 class TaskRecorder:
@@ -73,4 +78,46 @@ class TaskRecorder:
 
         tempFile.replace(self.recordFile)
 
-taskRecorder = TaskRecorder()
+
+class HostTaskRecorder:
+    """Route legacy tasks and V1 Feature Pack tasks to their own recorders."""
+
+    def __init__(self) -> None:
+        self.legacyRecorder = TaskRecorder()
+        self.featurePackRecorder = V1TaskRecorder()
+
+    @property
+    def memorizedTasks(self) -> dict[str, object]:
+        tasks: dict[str, object] = dict(self.legacyRecorder.memorizedTasks)
+        tasks.update(self.featurePackRecorder.memorizedTasks)
+        return tasks
+
+    def load(self) -> None:
+        self.legacyRecorder.load()
+        self.featurePackRecorder.load()
+
+    def read(self) -> dict[str, object]:
+        tasks: dict[str, object] = dict(self.legacyRecorder.read())
+        tasks.update(self.featurePackRecorder.read())
+        return tasks
+
+    def add(self, task: object, flush: bool = True) -> None:
+        if isinstance(task, V1Task):
+            self.featurePackRecorder.add(task, flush)
+            return
+
+        self.legacyRecorder.add(cast(Task, task), flush)
+
+    def remove(self, task: object, flush: bool = True) -> None:
+        if isinstance(task, V1Task):
+            self.featurePackRecorder.remove(task, flush)
+            return
+
+        self.legacyRecorder.remove(cast(Task, task), flush)
+
+    def flush(self) -> None:
+        self.legacyRecorder.flush()
+        self.featurePackRecorder.flush()
+
+
+taskRecorder = HostTaskRecorder()

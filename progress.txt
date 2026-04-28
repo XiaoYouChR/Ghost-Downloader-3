@@ -436,3 +436,24 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #45，目标范围仅限把 `jack_yao` 改写到新版 UI-only Pack 路径；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 `jack_yao` 使用 V1 `FeaturePack` 接口但不被默认当作下载器，只保留主窗口扩展和 UI 注入能力，并有 UI-only Pack 加载测试覆盖；依赖顺序上本任务位于新版 API、默认服务加载、设置/卡片分发以及各下载类 Pack 改写之后，后续 #46 会把主窗口与 FeatureService 切换到新版入口；主要风险是 `ResourceInterface` 初始化会触发远端资源加载，测试因此替换 `coreService.runCoroutine`，只验证宿主注入边界而不触发真实网络。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 切换 main window 与 FeatureService 到新版入口
+### 已完成内容:
+- 已将程序入口 `Ghost-Downloader-3.py` 从旧 `loadFeatures()` 显式切换为新版 `featureService.loadPacks(mainWindow)` 与 `featureService.installSettings(mainWindow.settingPage)`。
+- 已让历史 `app.services.feature_service.featureService` 单例改为 V1-backed `HostFeatureService`，Pack 加载、设置页注入、source/task 路由、TaskCard/ResultCard 创建均复用新版 `DefaultFeatureService`；旧 `canHandle/parse/createTaskFromPayload/getDialogCards/loadFeatures` 仅作为 #47 前的兼容入口保留。
+- 已让默认 V1 `DefaultTaskCard/DefaultResultCard` 补齐当前 `TaskPage` 和添加任务预览仍需要的选择、完成、删除、恢复、暂停、重下、上下文菜单和 `getTask()` 兼容行为，使主窗口卡片创建可以直接走新版服务。
+- 已把历史 `app.supports.recorder.taskRecorder` 改为 `HostTaskRecorder`，对 V1 `Task` 路由到新版 Feature Pack recorder，对遗留任务继续路由到旧 recorder，避免主窗口添加新版任务时再写旧 `serialize()` 记录。
+- 已新增 `tests/feature_pack/test_main_window_feature_service_v1_entry.py`，覆盖历史服务单例已接入 V1、`loadFeatures()` 兼容入口会走 V1 Pack 加载和设置注入，以及 `MainWindow.addTask()` 通过服务入口创建卡片。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_main_window_feature_service_v1_entry.py`，结果为 3 个测试通过。
+- 通过: `uv run python tests\feature_pack\test_feature_service_v1_dispatch.py`。
+- 通过: `uv run python tests\feature_pack\test_feature_ui_baseline.py`。
+- 通过: `uv run python tests\feature_pack\test_task_persistence_baseline.py`。
+- 通过: `uv run python tests\feature_pack\test_feature_pack_task_recorder_v1.py`。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py app/services/feature_service.py app/supports/recorder.py app/feature_pack/ui/cards.py Ghost-Downloader-3.py tests/feature_pack/test_main_window_feature_service_v1_entry.py` 失败，原因是本轮首次把遗留入口脚本和旧服务模块纳入静态检查后暴露既有类型噪声，且 `DefaultFeatureService` 原先标记为 `@final` 不允许宿主兼容适配器继承；移除该 `@final` 并补充文件级 pyright 抑制后再次运行通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py app/services/feature_service.py app/supports/recorder.py app/feature_pack/ui/cards.py Ghost-Downloader-3.py tests/feature_pack/test_main_window_feature_service_v1_entry.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`，输出 `automation contract validation passed`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { Write-Error "Failed: $($test.FullName)"; exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #46，目标范围仅限把主窗口、Pack 服务初始化入口、设置页注入、卡片创建和 Pack 加载切换到新版 `FeatureService`；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是宿主从新版 `FeatureService` 读取 Pack，设置页注入、TaskCard/ResultCard 创建和 Pack 加载都走新版服务，并有主窗口与新版服务入口测试覆盖；依赖顺序上本任务位于新版 API、默认 UI、FeatureService 分发、持久化和所有现有 Pack V1 改写之后，下一轮 #47 才切换 `CoreService`、`BrowserService` 和添加任务流程到直接 `TaskInput` 入口；主要风险是旧 Core/AddTask/Browser 仍会在 #47 前调用少量历史方法，因此本轮只在服务边界提供短期兼容包装，不把旧 payload 作为最终接口扩展。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

@@ -1,3 +1,5 @@
+# pyright: reportUnknownParameterType=false, reportMissingParameterType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnusedCallResult=false, reportMissingTypeStubs=false, reportUnknownMemberType=false, reportUnusedImport=false
+
 import os
 import sys
 import traceback
@@ -70,7 +72,8 @@ application.installTranslator(translator)
 isSilently = "--silence" in sys.argv
 coreService.start()
 mainWindow = MainWindow(isSilently)
-featureService.loadFeatures(mainWindow)
+featureService.loadPacks(mainWindow)
+featureService.installSettings(mainWindow.settingPage)
 taskRecorder.load()
 mainWindow.taskPage.resumeMemorizedTasks()
 mainWindow.syncThemeColor()

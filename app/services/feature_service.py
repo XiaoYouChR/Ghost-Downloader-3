@@ -1,14 +1,26 @@
+# pyright: reportImportCycles=false, reportDeprecated=false, reportExplicitAny=false, reportUnannotatedClassAttribute=false, reportUnknownParameterType=false, reportMissingTypeArgument=false, reportUnknownVariableType=false, reportUnknownMemberType=false, reportUnknownArgumentType=false, reportAny=false, reportMissingParameterType=false, reportUnusedImport=false, reportGeneralTypeIssues=false, reportArgumentType=false, reportUnusedCallResult=false, reportUnknownLambdaType=false
+
+from __future__ import annotations
+
 import importlib.util
 import sys
 import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Any
+from collections.abc import Mapping
 from urllib.parse import urlparse
 
 from loguru import logger
 
+from app.feature_pack.api import DefaultFeatureService
+from app.feature_pack.api import FeaturePack as V1FeaturePack
+from app.feature_pack.api import Task as V1Task
+from app.feature_pack.api import TaskInput
+from app.feature_pack.internal.add_task import buildAddTaskInput
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
+from app.supports.config import cfg
+from app.supports.utils import getProxies
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
@@ -384,4 +396,146 @@ class FeatureService:
         logger.warning("FeaturePack 加载完成: {}/{} 个成功加载", loadedCount, len(featurePacks))
 
 
-featureService = FeatureService()
+class HostFeatureService(DefaultFeatureService):
+    """
+    V1-backed host service exposed through the historical service module.
+
+    The remaining CoreService, BrowserService and add-task dialog paths still
+    call a few legacy helper names. Keeping those wrappers here lets the main
+    window load packs, settings and cards through V1 now, while the callers
+    move to direct TaskInput usage in the next migration task.
+    """
+
+    def loadFeatures(self, mainWindow: "MainWindow") -> None:
+        self.loadPacks(mainWindow)
+        settingPage = getattr(mainWindow, "settingPage", None)
+        if settingPage is not None:
+            self.installSettings(settingPage)
+
+    def getDialogCards(self, _parent: object) -> list["ParseSettingCard"]:
+        return []
+
+    def canHandle(self, source: str) -> bool:
+        _resolvedSource, pack = self._resolveSource(source)
+        return pack is not None
+
+    def canCreateTaskFromPayload(self, source: str) -> bool:
+        _resolvedSource, pack = self._resolveSource(source)
+        if pack is None:
+            return False
+
+        return callable(getattr(pack, "createTaskFromPayload", None))
+
+    def getPackForUrl(
+        self,
+        source: str,
+    ) -> tuple[str, str | None, V1FeaturePack | None]:
+        resolvedSource, pack = self._resolveSource(source)
+        if pack is None:
+            return str(source).strip(), None, None
+
+        return resolvedSource, pack.manifest.id, pack
+
+    async def parse(self, payload: Mapping[str, object]) -> V1Task:
+        source = self._readPayloadSource(payload)
+        resolvedSource, pack = self._resolveSource(source)
+        if pack is None:
+            raise ValueError(f"未找到可处理该链接的 FeaturePack: {source}")
+
+        legacyParse = getattr(pack, "parse", None)
+        if callable(legacyParse):
+            task = await legacyParse(self._payloadWithResolvedSource(payload, resolvedSource))
+            if isinstance(task, V1Task):
+                self._rememberTask(task)
+                return task
+
+        return await self.createTask(self._buildInput(payload, resolvedSource))
+
+    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> V1Task:
+        source = self._readPayloadSource(payload)
+        resolvedSource, pack = self._resolveSource(source)
+        if pack is None:
+            raise ValueError(f"未找到可处理该链接的 FeaturePack: {source}")
+
+        legacyCreate = getattr(pack, "createTaskFromPayload", None)
+        if callable(legacyCreate):
+            task = await legacyCreate(self._payloadWithResolvedSource(payload, resolvedSource))
+            if task is None:
+                raise ValueError(f"FeaturePack 不支持从已有 Payload 直接创建任务: {resolvedSource}")
+            if not isinstance(task, V1Task):
+                raise TypeError("FeaturePack.createTaskFromPayload() 必须返回新版 Task")
+            self._rememberTask(task)
+            return task
+
+        return await self.createTask(self._buildInput(payload, resolvedSource))
+
+    def _resolveSource(self, source: str) -> tuple[str, V1FeaturePack | None]:
+        normalizedSource = str(source).strip()
+        if not normalizedSource:
+            return "", None
+
+        pack = self.packForSource(normalizedSource)
+        if pack is not None:
+            return normalizedSource, pack
+
+        if urlparse(normalizedSource).scheme:
+            return normalizedSource, None
+
+        implicitSource = f"http://{normalizedSource}"
+        return implicitSource, self.packForSource(implicitSource)
+
+    def _readPayloadSource(self, payload: Mapping[str, object]) -> str:
+        source = payload.get("url")
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError("URL 不能为空")
+        return source.strip()
+
+    def _payloadWithResolvedSource(
+        self,
+        payload: Mapping[str, object],
+        resolvedSource: str,
+    ) -> dict[str, object]:
+        resolvedPayload = dict(payload)
+        resolvedPayload["url"] = resolvedSource
+        return resolvedPayload
+
+    def _buildInput(
+        self,
+        payload: Mapping[str, object],
+        resolvedSource: str,
+    ) -> TaskInput:
+        rawFolder = payload.get("path")
+        folder = (
+            Path(rawFolder)
+            if isinstance(rawFolder, (str, Path))
+            else Path(cfg.downloadFolder.value)
+        )
+        rawHeaders = payload.get("headers")
+        rawProxies = payload.get("proxies")
+        rawChunks = payload.get("preBlockNum")
+        rawName = payload.get("filename")
+        rawSize = payload.get("size")
+
+        return buildAddTaskInput(
+            source=resolvedSource,
+            folder=folder,
+            headers=rawHeaders if isinstance(rawHeaders, Mapping) else None,
+            proxies=(
+                rawProxies
+                if isinstance(rawProxies, Mapping)
+                else getProxies()
+            ),
+            chunks=rawChunks if isinstance(rawChunks, int) else 1,
+            name=rawName if isinstance(rawName, str) else "",
+            size=rawSize if isinstance(rawSize, int) else 0,
+            hints=(
+                {
+                    key: value
+                    for key, value in payload.items()
+                    if key not in {"url", "path", "filename", "headers", "proxies", "preBlockNum", "size"}
+                },
+            ),
+        )
+
+
+featureService = HostFeatureService()

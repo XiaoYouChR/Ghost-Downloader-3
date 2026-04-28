@@ -478,7 +478,6 @@ class DefaultSettingsInstaller(SettingsInstaller):
         return card
 
 
-@final
 class DefaultFeatureService(FeatureService):
     """Default host service implementation for pack discovery and loading."""
 
