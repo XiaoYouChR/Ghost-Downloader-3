@@ -63,7 +63,7 @@ async def fetchWebTrackers(sourceUrl: str) -> list[str]:
         )
         try:
             response.raise_for_status()
-            trackers = parseTrackerText(response.text)
+            trackers = parseTrackerText(response.text or "")
         finally:
             response.close()
     finally:

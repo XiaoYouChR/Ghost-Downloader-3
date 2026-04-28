@@ -11,6 +11,7 @@ AGENTS_FILE = ROOT / "AGENTS.md"
 RUNNER_FILE = ROOT / "run_automation.ps1"
 TASK_FILE = ROOT / "task.json"
 PROGRESS_FILE = ROOT / "progress.txt"
+PYRIGHT_FILE = ROOT / "pyrightconfig.json"
 
 
 class TaskRecord(TypedDict):
@@ -184,16 +185,52 @@ def validate_runner_contract() -> None:
         require(token in runner_text, f"run_automation.ps1 must mention '{token}'")
 
 
+def validate_pyright_contract() -> None:
+    config = load_json_object(PYRIGHT_FILE)
+    raw_include = config.get("include")
+    if not isinstance(raw_include, list):
+        raise AssertionError("pyrightconfig.json must define include")
+    includeItems = cast(list[object], raw_include)
+    include = {item for item in includeItems if isinstance(item, str)}
+    for required_path in {"app", "features", "examples", "tests"}:
+        require(
+            required_path in include,
+            f"pyrightconfig.json must include '{required_path}'",
+        )
+
+    raw_exclude = config.get("exclude")
+    if not isinstance(raw_exclude, list):
+        raise AssertionError("pyrightconfig.json must define exclude")
+    excludeItems = cast(list[object], raw_exclude)
+    exclude = {item for item in excludeItems if isinstance(item, str)}
+    require(
+        "app/assets/resources.py" in exclude,
+        "pyrightconfig.json must exclude generated Qt resources",
+    )
+
+    for diagnostic in {
+        "reportImportCycles",
+        "reportIncompatibleMethodOverride",
+        "reportMissingImports",
+    }:
+        require(
+            config.get(diagnostic) == "warning",
+            f"pyrightconfig.json must keep '{diagnostic}' at warning severity",
+        )
+
+
 def main() -> None:
     require(AGENTS_FILE.exists(), "AGENTS.md is missing")
     require(RUNNER_FILE.exists(), "run_automation.ps1 is missing")
     require(TASK_FILE.exists(), "task.json is missing")
     require(PROGRESS_FILE.exists(), "progress.txt is missing")
+    require(PYRIGHT_FILE.exists(), "pyrightconfig.json is missing")
 
     task_document = load_task_document()
     validate_progress_log(task_document)
     validate_agent_contract()
     validate_runner_contract()
+    validate_pyright_contract()
 
     print("automation contract validation passed")
 

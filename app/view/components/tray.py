@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter
-from PySide6.QtWidgets import QApplication, QMenu, QHBoxLayout, QSystemTrayIcon, QProxyStyle, QStyle, QStyleFactory
+from PySide6.QtWidgets import QApplication, QMenu, QHBoxLayout, QSystemTrayIcon, QProxyStyle, QStyle, QStyleFactory, QStyleOption, QWidget
 from qfluentwidgets import RoundMenu, FluentStyleSheet, isDarkTheme, Action, FluentIcon
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qfluentwidgets.components.widgets.menu import MenuActionListWidget
@@ -28,7 +28,12 @@ class CustomMenuStyle(QProxyStyle):
         super().__init__()
         self.iconSize = iconSize
 
-    def pixelMetric(self, metric, option, widget):
+    def pixelMetric(
+        self,
+        metric: QStyle.PixelMetric,
+        option: QStyleOption | None = None,
+        widget: QWidget | None = None,
+    ) -> int:
         if metric == QStyle.PixelMetric.PM_SmallIconSize:
             return self.iconSize
 
@@ -140,7 +145,7 @@ class AcrylicMenu(RoundMenu):
 
 class SystemTrayIcon(QSystemTrayIcon):
 
-    def __init__(self, parent: "MainWindow" = None):
+    def __init__(self, parent: "MainWindow"):
         super().__init__(parent=parent)
         self.setIcon(parent.windowIcon())
         self.setToolTip('Ghost Downloader 🥰')

@@ -2,6 +2,7 @@ import sys
 from asyncio import sleep
 from enum import Enum
 from re import compile
+from typing import cast
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale, QOperatingSystemVersion
 from orjson import dumps, loads
@@ -123,28 +124,28 @@ class LanguageSerializer(ConfigSerializer):
 class HeadersValidator(ConfigValidator):
     """Headers 验证器"""
 
-    def validate(self, value: dict) -> bool:
+    def validate(self, value: object) -> bool:
         """验证 Headers 是否为非空字典类型"""
         return isinstance(value, dict) and len(value) > 0
 
-    def correct(self, value) -> dict:
+    def correct(self, value: object) -> dict[str, str]:
         """如果验证失败，返回默认的 Headers"""
-        return value if self.validate(value) else DEFAULT_HEADERS
+        return cast(dict[str, str], value) if self.validate(value) else DEFAULT_HEADERS
 
 
 class HeadersSerializer(ConfigSerializer):
     """Headers 序列化器"""
 
-    def serialize(self, value: dict) -> str:
+    def serialize(self, value: dict[str, str]) -> str:
         """将字典序列化为 JSON 字符串"""
         return dumps(value).decode("utf-8")
 
-    def deserialize(self, value: str) -> dict:
+    def deserialize(self, value: str) -> dict[str, str]:
         """将 JSON 字符串反序列化为字典，如果失败则返回默认值"""
         try:
             result = loads(value)
             return (
-                result
+                cast(dict[str, str], result)
                 if isinstance(result, dict) and len(result) > 0
                 else DEFAULT_HEADERS
             )

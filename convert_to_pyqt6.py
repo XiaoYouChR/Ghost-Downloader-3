@@ -254,7 +254,12 @@ def process_directory(
             continue
 
         changed_files += 1
-        destination = file_path if in_place else output_dir / relative_path
+        if in_place:
+            destination = file_path
+        else:
+            if output_dir is None:
+                raise ValueError("output_dir is required when not converting in place")
+            destination = output_dir / relative_path
         print(f"[change] {relative_path}")
 
         if dry_run:

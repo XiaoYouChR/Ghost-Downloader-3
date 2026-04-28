@@ -550,7 +550,7 @@
         "根据实际落地结果回写两份迁移文档，删去已经失效的草案表述。",
         "复查 `AGENTS.md`、`task.json`、`progress.txt` 与自动化测试，确保 Codex 后续只沿着收口后的标准运行。"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

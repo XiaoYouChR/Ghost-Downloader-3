@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt, QResource, QCoreApplication, QUrl
 from PySide6.QtGui import QDesktopServices
@@ -376,7 +376,7 @@ class SettingPage(ScrollArea):
         )
         if fileResolve:
             with open(fileResolve, "wb") as f:
-                f.write(QResource(":/res/chrome_extension.crx").data())
+                f.write(cast(bytes, QResource(":/res/chrome_extension.crx").data()))
 
     def _onInstallExtensionGuidanceClicked(self):
         """install extension guidance card clicked slot"""

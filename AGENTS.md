@@ -85,6 +85,11 @@ uv run basedpyright tests/test_automation_contracts.py
 uv run python tests/test_automation_contracts.py
 ```
 
+For full-repository acceptance rounds, run `uv run basedpyright --level error`.
+The repository-level `pyrightconfig.json` defines the whole-repo include scope
+and keeps known Qt/qfluentwidgets/platform typing noise at warning severity, so
+error-level validation remains focused on actionable failures.
+
 If the round changes Python files, extend the static type check to include the touched Python paths in the same command.
 
 If the task adds task-specific validation, run that as well and record it.

@@ -1,0 +1,22 @@
+{
+  "pythonVersion": "3.11",
+  "include": [
+    "app",
+    "features",
+    "examples",
+    "tests",
+    "Ghost-Downloader-3.py",
+    "convert_to_pyqt6.py",
+    "sync_i18n_res.py"
+  ],
+  "exclude": [
+    "app/assets/resources.py"
+  ],
+  "reportAssignmentType": "warning",
+  "reportGeneralTypeIssues": "warning",
+  "reportImportCycles": "warning",
+  "reportIncompatibleMethodOverride": "warning",
+  "reportIncompatibleVariableOverride": "warning",
+  "reportMissingImports": "warning",
+  "reportPossiblyUnboundVariable": "warning"
+}

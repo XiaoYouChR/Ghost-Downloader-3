@@ -168,7 +168,7 @@ class _BrowserServiceHarness(BrowserService):
     def _broadcastTaskSnapshots(self) -> None:
         self.broadcasts += 1
 
-    def _allTrackedTasks(self) -> list[object]:
+    def _allTrackedTasks(self) -> list[Task]:
         return list(self._tasks)
 
 

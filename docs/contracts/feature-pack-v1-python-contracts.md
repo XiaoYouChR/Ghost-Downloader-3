@@ -1,12 +1,14 @@
-# Feature Pack V1 Python 契约草案
+# Feature Pack V1 Python 契约
 
-状态: Draft v3  
-日期: 2026-04-13  
-来源: 基于现有 [feature-pack-interface-standard.md](/C:/Users/XiaoYouChR/PycharmProjects/Ghost-Downloader-3/docs/standards/feature-pack-interface-standard.md) 的代码契约化整理
+状态: Accepted / V1 收口
+日期: 2026-04-28
+来源: 基于 [feature-pack-interface-standard.md](../standards/feature-pack-interface-standard.md) 的代码契约化整理
 
 ## 1. 文档目标
 
-这份文档直接用 Python 契约表达后续 Feature Pack V1 应实现的核心类型和接口。
+这份文档直接用 Python 契约表达 Ghost Downloader 当前 Feature Pack V1 的核心类型和接口。
+
+截至 2026-04-28，本文档描述的是已落地的 V1 契约。旧 `app.bases` V0 接口、旧 payload 修改链路和迁移期的 Pack 加载流程已经从仓库移除。
 
 目标只有四个：
 
@@ -838,17 +840,20 @@ TaskCard / ResultCard
 - Task 仍然是工作流总控
 - Stage 仍然保留是否立刻应用变更的自由
 
-## 19. 推荐目录草案
+## 19. 当前目录结构
 
 ```text
 app/
   feature_pack/
     api/
       __init__.py
+      cards.py
       pack.py
       config.py
       input.py
       form.py
+      manifest.py
+      runtime.py
       settings.py
       task.py
       stage.py
@@ -860,11 +865,11 @@ app/
       cards.py
 ```
 
-这里故意不再引入任何额外的 Python 元数据文件名。
+这里故意不再引入任何额外的 Python 元数据文件名。服务发现只读取每个 Pack 目录下的 `manifest.toml`。
 
 ## 20. 最小社区开发体验
 
-契约落地后，一个社区 Pack 理想上只需要写：
+一个社区 Pack 理想上只需要写：
 
 - `manifest.toml`
 - `pack.py`
@@ -895,9 +900,9 @@ Ghost Downloader 应该主动提供：
 
 它用一个 `pack.py` 展示 `FeaturePack`、`TaskStage`、`TaskForm` 和 `SettingSection` 的最小组合；对应 authoring 契约测试位于 `tests/feature_pack/test_community_sample_pack.py`。
 
-## 21. 结论
+## 21. 收口结论
 
-这次收紧后的核心契约只有这些：
+V1 收紧后的核心契约只有这些：
 
 1. `manifest.toml`
 2. `Manifest`
@@ -914,9 +919,12 @@ Ghost Downloader 应该主动提供：
 13. `MultiFileSelectDialog`
 14. `FeaturePack`
 15. `FeatureService`
+16. `FeaturePackSettings`
+17. `TaskStatus`
+18. `SpecialFileSize`
 
 V1 不再保留额外的 patch 配置类型。  
 普通配置编辑统一通过“提交一份新的 `TaskConfig`”完成。  
 多项选择统一通过 `MultiFileSelectDialog + MultiFileTask.select()` 完成。  
 设置页扩展统一通过 `SettingSection` 和宿主注入完成。  
-这比继续让每个 Pack 直接操作 `SettingPage` 内部结构更简单，也更符合 Ghost Downloader 作为 GUI 宿主应提供的默认能力。
+运行时状态枚举与特殊文件大小哨兵位于 `app.feature_pack.api.runtime`，Pack 持久化设置基类位于 `app.feature_pack.api.settings`。这比继续让每个 Pack 直接操作旧基类或 `SettingPage` 内部结构更简单，也更符合 Ghost Downloader 作为 GUI 宿主应提供的默认能力。

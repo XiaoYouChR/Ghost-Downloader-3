@@ -36,8 +36,8 @@ class SpinBoxSettingCard(SettingCard):
         icon,
         title,
         content=None,
-        suffix: str = None,
-        configItem: RangeConfigItem = None,
+        suffix: str = "",
+        configItem: RangeConfigItem | None = None,
         parent=None,
         singleStep: int = 50,
         division: float = 1,
@@ -51,7 +51,7 @@ class SpinBoxSettingCard(SettingCard):
         self.spinBox.setObjectName("spinBox")
         self.spinBox.setSingleStep(singleStep)
         self.spinBox.setMinimumWidth(180)
-        self.spinBox.setSuffix(suffix)
+        self.spinBox.setSuffix(suffix or "")
         if blockWheelEvent:
             self.spinBox.installEventFilter(self)
 
@@ -62,7 +62,8 @@ class SpinBoxSettingCard(SettingCard):
         self.hBoxLayout.addWidget(self.spinBox)
         self.hBoxLayout.addSpacing(24)
 
-        self.spinBox.setValue(self.configItem.value * division)
+        if self.configItem is not None:
+            self.spinBox.setValue(self.configItem.value * division)
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Type.Wheel:
@@ -148,8 +149,10 @@ class ProxySettingCard(ExpandGroupSettingCard):
             self.__onRadioButtonClicked(self.customRadioButton)
             self._applyProxyUrl(configValue)
 
-            self.choiceLabel.setText(self.buttonGroup.checkedButton().text())
-            self.choiceLabel.adjustSize()
+            checkedButton = self.buttonGroup.checkedButton()
+            if checkedButton is not None:
+                self.choiceLabel.setText(checkedButton.text())
+                self.choiceLabel.adjustSize()
 
     def _applyProxyUrl(self, proxyUrl: str | None):
         if not proxyUrl:
