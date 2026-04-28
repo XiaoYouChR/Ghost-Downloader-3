@@ -1,3 +1,5 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
+
 import shutil
 from pathlib import Path
 
@@ -6,7 +8,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ImageLabel, LineEdit, StrongBodyLabel
 
-from app.bases.models import TaskStatus
+from app.feature_pack.api import TaskStatus
 from app.supports.utils import getReadableSize, getReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
 

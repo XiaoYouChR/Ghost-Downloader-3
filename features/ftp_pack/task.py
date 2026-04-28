@@ -24,8 +24,8 @@ from uuid import uuid4
 import aioftp
 from loguru import logger
 
-from app.bases.models import SpecialFileSize
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import SpecialFileSize
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import MultiFileTask
 from app.feature_pack.api import StageSnapshot
@@ -87,8 +87,8 @@ def _parsePositiveSize(value: object) -> int:
     return size if size > 0 else SpecialFileSize.UNKNOWN
 
 
-def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+def _normalizeState(value: str | TaskStatus | object) -> str:
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -97,13 +97,13 @@ def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
     return "waiting"
 
 
-def _legacyStatus(value: str | LegacyTaskStatus | object) -> LegacyTaskStatus:
+def _legacyStatus(value: str | TaskStatus | object) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(value)]
 
 
@@ -494,7 +494,7 @@ class FtpTaskStage(TaskStage):
         kind: str = _FTP_STAGE_KIND,
         version: int = _FTP_STAGE_VERSION,
         name: str = _DEFAULT_STAGE_NAME,
-        state: str | LegacyTaskStatus = "waiting",
+        state: str | TaskStatus = "waiting",
         progress: float = 0.0,
         doneBytes: int = 0,
         speed: int = 0,
@@ -531,11 +531,11 @@ class FtpTaskStage(TaskStage):
         self.doneBytes = max(0, int(value))
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.setStatus(value, emitSignals=False)
 
     def canPause(self) -> bool:
@@ -566,7 +566,7 @@ class FtpTaskStage(TaskStage):
 
     def setStatus(
         self,
-        status: LegacyTaskStatus | str,
+        status: TaskStatus | str,
         *,
         emitSignals: bool = True,
         notifyTask: bool | None = None,
@@ -857,11 +857,11 @@ class FtpTask(MultiFileTask):
         return self.config.folder
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.state = _normalizeState(value)
 
     @property
@@ -960,9 +960,6 @@ class FtpTask(MultiFileTask):
     def fileByIndex(self, index: int) -> FtpTaskFile:
         return self._filesByIndex[index]
 
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
-
     def syncOutput(self) -> None:
         self.target = str(self.root)
         for stage in self.stages:
@@ -1025,31 +1022,6 @@ class FtpTask(MultiFileTask):
         self._syncFileProgress()
         self.syncStatusFromStages()
 
-    def applyPayloadToTask(self, payload: dict[str, Any]) -> None:
-        updates: dict[str, object] = {}
-
-        rawFolder = payload.get("path")
-        if isinstance(rawFolder, (str, Path)):
-            updates["folder"] = Path(rawFolder)
-
-        if "proxies" in payload:
-            rawProxies = payload.get("proxies")
-            if rawProxies is None:
-                updates["proxies"] = None
-            elif isinstance(rawProxies, Mapping):
-                updates["proxies"] = _copyProxies(cast(Mapping[str, str], rawProxies))
-
-        rawChunks = payload.get("preBlockNum")
-        if isinstance(rawChunks, int) and not isinstance(rawChunks, bool):
-            updates["chunks"] = _normalizeChunks(rawChunks)
-
-        rawName = payload.get("filename")
-        if isinstance(rawName, str) and rawName.strip():
-            updates["name"] = sanitizeFilename(rawName, fallback=self.config.name)
-
-        if updates:
-            self.configure(replace(self.config, **updates))
-
     def editForm(self, _mode: str) -> TaskForm | None:
         return TaskForm(
             title="编辑 FTP 下载任务",
@@ -1087,7 +1059,7 @@ class FtpTask(MultiFileTask):
             ),
         )
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         self._syncFileProgress()
         selectedStages = self.selectedStages
         if not selectedStages:
@@ -1124,7 +1096,7 @@ class FtpTask(MultiFileTask):
         self.stateChanged.emit(normalizedState)
         self.snapshotChanged.emit(self.snapshot())
 
-    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
         normalizedStatus = _normalizeState(status)
         for stage in self.selectedStages:
             if stage.state == "completed":
@@ -1838,32 +1810,6 @@ def _relativeRemotePath(remotePath: PurePosixPath, rootPath: PurePosixPath) -> s
         return remotePath.name
 
 
-def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
-    rawSource = payload.get("url")
-    if not isinstance(rawSource, str):
-        return None
-
-    source = rawSource.strip()
-    if not source:
-        return None
-
-    rawFolder = payload.get("path")
-    rawProxies = payload.get("proxies")
-    rawChunks = payload.get("preBlockNum")
-    rawName = payload.get("filename")
-    return TaskConfig(
-        source=source,
-        folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
-        name=rawName if isinstance(rawName, str) else "",
-        proxies=(
-            _copyProxies(cast(Mapping[str, str], rawProxies))
-            if isinstance(rawProxies, Mapping)
-            else getProxies()
-        ),
-        chunks=_normalizeChunks(rawChunks),
-    )
-
-
 async def buildFtpTask(data: TaskInput) -> FtpTask:
     inputConfig = _normalizeInputConfig(data.config)
     connectionInfo = _connectionInfoFromSource(inputConfig.source)
@@ -1928,13 +1874,6 @@ async def buildFtpTask(data: TaskInput) -> FtpTask:
         await _closeClient(client)
 
 
-async def parse(payload: Mapping[str, object]) -> FtpTask:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        raise ValueError("FTP 任务缺少有效的 url")
-    return await buildFtpTask(TaskInput(config=config, hints=(dict(payload),)))
-
-
 __all__ = [
     "FTP_CHUNK_SIZE",
     "FTP_CONNECTION_TIMEOUT",
@@ -1951,7 +1890,6 @@ __all__ = [
     "FtpTaskStage",
     "FtpWorker",
     "_buildClientKwargs",
-    "_buildTaskConfigFromPayload",
     "_connectionAttempts",
     "_connectionInfoFromSource",
     "_displayTitleForSource",
@@ -1959,5 +1897,4 @@ __all__ = [
     "_probeRangeSupport",
     "_relativeRemotePath",
     "buildFtpTask",
-    "parse",
 ]

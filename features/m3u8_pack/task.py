@@ -21,8 +21,7 @@ from uuid import uuid4
 import niquests
 from loguru import logger
 
-from app.bases.interfaces import Worker
-from app.bases.models import TaskStatus
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import SingleFileTask
 from app.feature_pack.api import StageSnapshot
@@ -803,9 +802,6 @@ class M3U8Task(SingleFileTask):
             fallbackName=self.filename or "stream",
         ).name
 
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
-
     def syncOutput(self) -> None:
         self.target = _normalizePath(self.path)
         tempDir = self.tempDir
@@ -823,35 +819,6 @@ class M3U8Task(SingleFileTask):
         self.threadCount = _normalizeThreadCount(normalizedConfig.chunks)
         super().configure(normalizedConfig)
         self.syncStatusFromStages()
-
-    def applyPayloadToTask(self, payload: Mapping[str, object]) -> None:
-        updates: dict[str, object] = {}
-        rawSource = payload.get("url")
-        if isinstance(rawSource, str) and rawSource.strip():
-            updates["source"] = rawSource.strip()
-
-        rawFolder = payload.get("path")
-        if isinstance(rawFolder, (str, Path)):
-            updates["folder"] = Path(rawFolder)
-
-        rawName = payload.get("filename") or payload.get("title")
-        if isinstance(rawName, str) and rawName.strip():
-            updates["name"] = rawName.strip()
-
-        rawHeaders = payload.get("headers")
-        if isinstance(rawHeaders, Mapping):
-            updates["headers"] = _copyHeaders(rawHeaders, useDefaults=True)
-
-        if "proxies" in payload:
-            rawProxies = payload.get("proxies")
-            updates["proxies"] = _copyProxies(rawProxies) if isinstance(rawProxies, Mapping) else None
-
-        rawChunks = payload.get("preBlockNum") or payload.get("threadCount")
-        if isinstance(rawChunks, int) and not isinstance(rawChunks, bool):
-            updates["chunks"] = _normalizeThreadCount(rawChunks)
-
-        if updates:
-            self.configure(replace(self.config, **updates))
 
     def editForm(self, _mode: str) -> TaskForm | None:
         return TaskForm(
@@ -1130,7 +1097,7 @@ class M3U8Task(SingleFileTask):
         return hash(self.id)
 
 
-class M3U8Worker(Worker):
+class M3U8Worker:
     def __init__(self, stage: M3U8TaskStage):
         super().__init__(stage)
         self.stage = stage
@@ -1338,35 +1305,6 @@ class M3U8Worker(Worker):
             raise
 
 
-def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
-    rawSource = payload.get("url")
-    if not isinstance(rawSource, str):
-        return None
-
-    source = rawSource.strip()
-    if not source:
-        return None
-
-    rawFolder = payload.get("path")
-    rawName = payload.get("filename") or payload.get("title")
-    rawHeaders = payload.get("headers")
-    rawProxies = payload.get("proxies")
-    rawChunks = payload.get("preBlockNum") or payload.get("threadCount")
-
-    return TaskConfig(
-        source=source,
-        folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
-        name=rawName if isinstance(rawName, str) else "",
-        headers=_copyHeaders(rawHeaders if isinstance(rawHeaders, Mapping) else None, useDefaults=True),
-        proxies=(
-            _copyProxies(rawProxies)
-            if isinstance(rawProxies, Mapping)
-            else getProxies()
-        ),
-        chunks=_normalizeThreadCount(rawChunks if isinstance(rawChunks, int) else None),
-    )
-
-
 async def buildM3U8Task(data: TaskInput) -> M3U8Task:
     url = str(data.config.source).strip()
     headers = _copyHeaders(data.config.headers, useDefaults=True)
@@ -1431,13 +1369,6 @@ async def buildM3U8Task(data: TaskInput) -> M3U8Task:
         isLive=isLive,
     )
     return task
-
-
-async def parse(payload: Mapping[str, object]) -> M3U8Task:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        raise ValueError("M3U8 任务缺少有效的 url")
-    return await buildM3U8Task(TaskInput(config=config, hints=(dict(payload),)))
 
 
 class M3U8InstallDownloadStage(HttpTaskStage):
@@ -1641,9 +1572,6 @@ class M3U8InstallTask(Task):
                 ),
             ),
         )
-
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
 
     def syncOutput(self) -> None:
         self.target = _normalizePath(self.installFolder)

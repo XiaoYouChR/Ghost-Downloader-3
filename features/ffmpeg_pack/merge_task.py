@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import SingleFileTask
 from app.feature_pack.api import StageSnapshot
@@ -65,8 +65,8 @@ def _normalizePath(path: Path | str) -> str:
     return str(Path(path)).replace("\\", "/")
 
 
-def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+def _normalizeState(value: str | TaskStatus | object) -> str:
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -75,13 +75,13 @@ def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
     return "waiting"
 
 
-def _legacyStatus(value: str) -> LegacyTaskStatus:
+def _legacyStatus(value: str) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(value)]
 
 
@@ -244,7 +244,7 @@ class FFmpegStage(TaskStage):
         kind: str = _FFMPEG_MERGE_STAGE_KIND,
         version: int = _FFMPEG_MERGE_STAGE_VERSION,
         name: str = "合并音视频",
-        state: str | LegacyTaskStatus = "waiting",
+        state: str | TaskStatus = "waiting",
         progress: float = 0.0,
         doneBytes: int = 0,
         speed: int = 0,
@@ -280,11 +280,11 @@ class FFmpegStage(TaskStage):
         self.doneBytes = max(0, int(value))
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.setStatus(value, emitSignals=False)
 
     def bindTask(self, task: object) -> None:
@@ -310,7 +310,7 @@ class FFmpegStage(TaskStage):
 
     def setStatus(
         self,
-        status: LegacyTaskStatus | str,
+        status: TaskStatus | str,
         *,
         emitSignals: bool = True,
         notifyTask: bool = True,
@@ -702,7 +702,7 @@ class FFmpegMergeTask(SingleFileTask):
         return self.filename
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @property
@@ -757,9 +757,6 @@ class FFmpegMergeTask(SingleFileTask):
     def setTitle(self, title: str) -> None:
         self.rename(_mergeOutputTitle(title))
 
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
-
     def syncOutput(self) -> None:
         self.target = _normalizePath(self.path)
         videoStage = self.videoStage()
@@ -786,33 +783,7 @@ class FFmpegMergeTask(SingleFileTask):
         mergeStage.audioPath = _normalizePath(audioPath)
         mergeStage.resolvePath = self.target
 
-    def applyPayloadToTask(self, payload: Mapping[str, object]) -> None:
-        updates: dict[str, object] = {}
-
-        rawFolder = payload.get("path")
-        if isinstance(rawFolder, (str, Path)):
-            updates["folder"] = Path(rawFolder)
-
-        rawName = payload.get("outputTitle")
-        if not isinstance(rawName, str) or not rawName.strip():
-            rawName = payload.get("filename")
-        if isinstance(rawName, str) and rawName.strip():
-            updates["name"] = _mergeOutputTitle(rawName)
-
-        rawProxies = payload.get("proxies")
-        if isinstance(rawProxies, Mapping):
-            updates["proxies"] = _copyProxies(rawProxies)
-
-        rawChunks = payload.get("preBlockNum")
-        if isinstance(rawChunks, int) and rawChunks > 0:
-            updates["chunks"] = _normalizeChunks(rawChunks)
-
-        if not updates:
-            return
-
-        self.configure(replace(self.config, **updates))
-
-    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
         normalizedStatus = _normalizeState(status)
         if not self.stages:
             self.state = normalizedStatus
@@ -863,7 +834,7 @@ class FFmpegMergeTask(SingleFileTask):
             ),
         )
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         stageSnapshots = tuple(stage.snapshot() for stage in self.stages)
         if not stageSnapshots:
             return self.status

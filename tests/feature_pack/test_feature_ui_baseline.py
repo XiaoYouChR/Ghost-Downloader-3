@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 from unittest.mock import patch
 
 _ = os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -20,13 +20,13 @@ if str(ROOT) not in sys.path:
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, FluentIcon, SettingCardGroup
+from PySide6.QtWidgets import QApplication, QWidget
+from qfluentwidgets import BodyLabel, FluentIcon
 
-from app.bases.models import PackConfig, TaskStatus
-from app.services.feature_service import FeatureService
+from app.feature_pack.api import TaskStatus
 from app.supports.utils import getReadableSize
-from app.view.components.cards import ParseSettingCard, UniversalResultCard, UniversalTaskCard
+from app.view.components.card_widgets import AddTaskSettingsHeaderCardWidget
+from app.view.components.cards import AddTaskSettingCard, UniversalResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 from features.http_pack.task import HttpTask, HttpTaskStage
 
@@ -103,50 +103,18 @@ class TestFileSelectDialog(FileSelectDialog):
         return file.relativePath
 
 
-class DummyDialogCard(ParseSettingCard):
-    def __init__(self, title: str, payloadValue: str, parent=None):
-        self._payloadValue = payloadValue
+class DummyInputCard(AddTaskSettingCard):
+    def __init__(self, title: str, inputValue: str, parent=None):
+        self._inputValue = inputValue
         super().__init__(FluentIcon.TAG, title, parent)
 
     def initCustomWidget(self):
-        self.markerLabel = BodyLabel(self._payloadValue, self)
+        self.markerLabel = BodyLabel(self._inputValue, self)
         self.addWidget(self.markerLabel)
 
     @property
-    def payload(self) -> dict[str, Any]:
-        return {"value": self._payloadValue}
-
-
-class DefaultDialogPackConfig(PackConfig):
-    def loadSettingCards(self, settingPage) -> None:
-        return None
-
-
-class RecordingPackConfig(PackConfig):
-    def __init__(self, *, sectionTitle: str, dialogCardTitle: str):
-        self.sectionTitle = sectionTitle
-        self.dialogCardTitle = dialogCardTitle
-        self.loadedSettingPage = None
-        self.loadedGroup = None
-
-    def loadSettingCards(self, settingPage) -> None:
-        self.loadedSettingPage = settingPage
-        self.loadedGroup = SettingCardGroup(self.sectionTitle, settingPage.container)
-        settingPage.vBoxLayout.addWidget(self.loadedGroup)
-
-    def getDialogCards(self, parent: QWidget):
-        return [DummyDialogCard(self.dialogCardTitle, self.sectionTitle, parent)]
-
-
-class DummyPack:
-    def __init__(self, config: PackConfig | None):
-        self.config = config
-
-
-class FakeSettingPage:
-    def __init__(self):
-        self.container = QWidget()
-        self.vBoxLayout = QVBoxLayout(self.container)
+    def inputOptions(self) -> dict[str, object]:
+        return {"value": self._inputValue}
 
 
 class FeatureUiBaselineTests(unittest.TestCase):
@@ -282,42 +250,15 @@ class FeatureUiBaselineTests(unittest.TestCase):
             dialog.tr("已选择 {0}/{1} 个文件，共 {2}").format(1, 3, getReadableSize(20)),
         )
 
-    def testPackConfigDefaultGetDialogCardsRemainsEmpty(self) -> None:
-        config = DefaultDialogPackConfig()
-        parent = QWidget()
-        self.showWidget(parent)
+    def testAddTaskSettingsHeaderCardCollectsInputOptions(self) -> None:
+        parent = self.createDialogParent()
+        group = AddTaskSettingsHeaderCardWidget(parent)
+        self.showWidget(group)
 
-        self.assertEqual(list(config.getDialogCards(parent)), [])
+        group.addCard(DummyInputCard("基础设置", "base", group))
+        group.addCard(DummyInputCard("扩展设置", "advanced", group))
 
-    def testFeatureServiceKeepsCurrentSettingAndDialogInjectionPaths(self) -> None:
-        service = FeatureService()
-        firstConfig = RecordingPackConfig(sectionTitle="基础设置", dialogCardTitle="主卡片")
-        secondConfig = RecordingPackConfig(sectionTitle="扩展设置", dialogCardTitle="副卡片")
-        settingPage = FakeSettingPage()
-        mainWindow = type("FakeMainWindow", (), {"settingPage": settingPage})()
-        parent = QWidget()
-        self.showWidget(settingPage.container)
-        self.showWidget(parent)
-
-        service._loadPackConfig(cast(Any, DummyPack(firstConfig)), cast(Any, mainWindow))
-
-        self.assertIs(firstConfig.loadedSettingPage, settingPage)
-        self.assertEqual(settingPage.vBoxLayout.count(), 1)
-        loadedGroupItem = settingPage.vBoxLayout.itemAt(0)
-        self.assertIsNotNone(loadedGroupItem)
-        loadedGroup = cast(QWidget, loadedGroupItem.widget())
-        self.assertIs(loadedGroup, firstConfig.loadedGroup)
-
-        service.sortedPacksCache = [
-            ("alpha", cast(Any, DummyPack(firstConfig))),
-            ("beta", cast(Any, DummyPack(secondConfig))),
-            ("empty", cast(Any, DummyPack(None))),
-        ]
-
-        cards = service.getDialogCards(parent)
-
-        self.assertEqual([card.titleLabel.text() for card in cards], ["主卡片", "副卡片"])
-        self.assertEqual([card.payload["value"] for card in cards], ["基础设置", "扩展设置"])
+        self.assertEqual(group.inputOptions, {"value": "advanced"})
 
 
 if __name__ == "__main__":

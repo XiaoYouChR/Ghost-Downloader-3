@@ -1,3 +1,5 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
+
 from enum import IntEnum
 from sys import platform
 
@@ -10,7 +12,7 @@ from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton
     CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
     DropDownToolButton
 
-from app.bases.models import TaskStatus
+from app.feature_pack.api import TaskStatus
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg

@@ -28,7 +28,7 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
-from app.bases.models import PackConfig
+from app.feature_pack.api import FeaturePackSettings
 from app.feature_pack.api.settings import SettingItem
 from app.feature_pack.api.settings import SettingSection
 from app.services.core_service import coreService
@@ -196,7 +196,7 @@ class M3U8RuntimeCard(SettingCard):
         mainWindow.addTask(result)
 
 
-class M3U8Config(PackConfig):
+class M3U8Config(FeaturePackSettings):
     installFolder = ConfigItem(
         "M3U8",
         "InstallFolder",
@@ -474,13 +474,6 @@ class M3U8Config(PackConfig):
                 ),
             ),
         )
-
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.m3u8Group = SettingCardGroup(self.tr("流媒体下载"), settingPage.container)
-        for card in self._createSettingCards(self.m3u8Group):
-            self.m3u8Group.addSettingCard(card)
-
-        settingPage.vBoxLayout.addWidget(self.m3u8Group)
 
 
 m3u8Config = M3U8Config()

@@ -1,3 +1,5 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportCallIssue=false, reportOptionalMemberAccess=false
+
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +11,9 @@ from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget, ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
     TransparentToolButton, ProgressBar, IndeterminateProgressBar, LineEdit, RoundMenu, Action
 
-from app.bases.models import Task, TaskStatus, SpecialFileSize
+from app.feature_pack.api import SpecialFileSize
+from app.feature_pack.api import Task
+from app.feature_pack.api import TaskStatus
 from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, getReadableSize, getReadableTime, openFolder
@@ -45,8 +49,8 @@ class ResultCard(QWidget):
         painter.drawLine(self.rect().topLeft(), self.rect().topRight())
 
 
-class ParseSettingCard(QWidget):
-    payloadChanged = Signal()
+class AddTaskSettingCard(QWidget):
+    inputChanged = Signal()
 
     def __init__(self, icon, title: str, parent=None):
         super().__init__(parent=parent)
@@ -91,7 +95,7 @@ class ParseSettingCard(QWidget):
         painter.drawLine(self.rect().topLeft(), self.rect().topRight())
 
     @property
-    def payload(self) -> dict[str, Any]:
+    def inputOptions(self) -> dict[str, Any]:
         raise NotImplementedError
 
 class TaskCard(CardWidget):

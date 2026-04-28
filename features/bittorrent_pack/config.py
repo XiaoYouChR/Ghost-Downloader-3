@@ -1,3 +1,5 @@
+# pyright: reportIncompatibleMethodOverride=false, reportUninitializedInstanceVariable=false
+
 from typing import TYPE_CHECKING
 
 from qfluentwidgets import (
@@ -24,7 +26,9 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
-from app.bases.models import PackConfig
+from app.feature_pack.api import FeaturePackSettings
+from app.feature_pack.api import SettingItem
+from app.feature_pack.api import SettingSection
 from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.view.components.editors import AutoSizingEdit
@@ -184,7 +188,7 @@ class WebTrackerCard(SettingCard):
         )
 
 
-class BitTorrentConfig(PackConfig):
+class BitTorrentConfig(FeaturePackSettings):
     listenPort = RangeConfigItem("BitTorrent", "ListenPort", 0, RangeValidator(0, 65535))
     metadataTimeout = RangeConfigItem("BitTorrent", "MetadataTimeout", 30, RangeValidator(5, 300))
     connectionsLimit = RangeConfigItem("BitTorrent", "ConnectionsLimit", 500, RangeValidator(20, 2000))
@@ -224,15 +228,15 @@ class BitTorrentConfig(PackConfig):
         OptionsValidator(["sparse", "allocate"]),
     )
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.bittorrentGroup = SettingCardGroup(self.tr("BitTorrent 下载"), settingPage.container)
+    def _createSettingCards(self, group: SettingCardGroup) -> tuple[SettingCard, ...]:
+
         self.listenPortCard = SpinBoxSettingCard(
             FluentIcon.GLOBE,
             self.tr("监听端口"),
             self.tr("0 表示交给系统自动分配可用端口"),
             "",
             self.listenPort,
-            self.bittorrentGroup,
+            group,
             1,
         )
         self.metadataTimeoutCard = SpinBoxSettingCard(
@@ -241,7 +245,7 @@ class BitTorrentConfig(PackConfig):
             self.tr("解析 magnet 链接时等待元数据的最长时间"),
             " s",
             self.metadataTimeout,
-            self.bittorrentGroup,
+            group,
             5,
         )
         self.connectionsLimitCard = RangeSettingCard(
@@ -249,7 +253,7 @@ class BitTorrentConfig(PackConfig):
             FluentIcon.PEOPLE,
             self.tr("连接数上限"),
             self.tr("单个 BT 任务对应 session 的最大连接数"),
-            self.bittorrentGroup,
+            group,
         )
         self.downloadRateLimitCard = SpinBoxSettingCard(
             FluentIcon.DOWNLOAD,
@@ -257,7 +261,7 @@ class BitTorrentConfig(PackConfig):
             self.tr("0 表示不限速，单位为 session 级别的 KB/s"),
             " KB/s",
             self.downloadRateLimit,
-            self.bittorrentGroup,
+            group,
             256,
             1 / 1024,
         )
@@ -267,7 +271,7 @@ class BitTorrentConfig(PackConfig):
             self.tr("0 表示不限速，单位为 session 级别的 KB/s"),
             " KB/s",
             self.uploadRateLimit,
-            self.bittorrentGroup,
+            group,
             64,
             1 / 1024,
         )
@@ -277,7 +281,7 @@ class BitTorrentConfig(PackConfig):
             self.tr("下载完成后继续做种；0 表示不按分享率自动暂停，100% 表示分享率 1.0"),
             " %",
             self.seedRatioLimitPercent,
-            self.bittorrentGroup,
+            group,
             50,
         )
         self.seedTimeLimitCard = SpinBoxSettingCard(
@@ -286,7 +290,7 @@ class BitTorrentConfig(PackConfig):
             self.tr("下载完成后继续做种；0 表示不按做种时长自动暂停"),
             " min",
             self.seedTimeLimitMinutes,
-            self.bittorrentGroup,
+            group,
             10,
         )
         self.storageModeCard = ComboBoxSettingCard(
@@ -295,67 +299,67 @@ class BitTorrentConfig(PackConfig):
             self.tr("文件分配模式"),
             self.tr("稀疏分配更省磁盘写入，预分配更容易提前暴露空间不足"),
             texts=[self.tr("稀疏分配"), self.tr("预分配")],
-            parent=self.bittorrentGroup,
+            parent=group,
         )
         self.saveMagnetTorrentFileCard = SwitchSettingCard(
             FluentIcon.SAVE,
             self.tr("保存 Magnet 种子文件"),
             self.tr("下载 magnet 链接时，在下载目录额外保存解析得到的 .torrent 文件"),
             self.saveMagnetTorrentFile,
-            self.bittorrentGroup,
+            group,
         )
         self.sequentialDownloadCard = SwitchSettingCard(
             FluentIcon.LIBRARY,
             self.tr("顺序下载"),
             self.tr("按文件顺序下载内容，适合边下边看但通常会影响整体效率"),
             self.sequentialDownload,
-            self.bittorrentGroup,
+            group,
         )
         self.enableDHTCard = SwitchSettingCard(
             FluentIcon.GLOBE,
             self.tr("启用 DHT"),
             self.tr("允许通过 DHT 网络发现 peers"),
             self.enableDHT,
-            self.bittorrentGroup,
+            group,
         )
         self.enableLSDCard = SwitchSettingCard(
             FluentIcon.HOME,
             self.tr("启用 LSD"),
             self.tr("在局域网中广播并发现同一 torrent 的 peers"),
             self.enableLSD,
-            self.bittorrentGroup,
+            group,
         )
         self.enableUPnPCard = SwitchSettingCard(
             FluentIcon.GLOBE,
             self.tr("启用 UPnP"),
             self.tr("允许自动尝试映射路由器端口"),
             self.enableUPnP,
-            self.bittorrentGroup,
+            group,
         )
         self.enableNATPMPCard = SwitchSettingCard(
             FluentIcon.GLOBE,
             self.tr("启用 NAT-PMP"),
             self.tr("允许自动尝试通过 NAT-PMP 映射端口"),
             self.enableNATPMP,
-            self.bittorrentGroup,
+            group,
         )
         self.enableWebTrackersCard = SwitchSettingCard(
             FluentIcon.LINK,
             self.tr("启用 Web Tracker"),
             self.tr("把配置好的额外 Trackers 合并到新建 BT 任务中"),
             self.enableWebTrackers,
-            self.bittorrentGroup,
+            group,
         )
         self.autoRefreshWebTrackersCard = SwitchSettingCard(
             FluentIcon.SYNC,
             self.tr("新建任务时刷新 Web Tracker"),
             self.tr("创建新的 BT 任务时，先从源地址拉取最新 Tracker；失败时回退到缓存"),
             self.autoRefreshWebTrackers,
-            self.bittorrentGroup,
+            group,
         )
-        self.webTrackerCard = WebTrackerCard(self.bittorrentGroup)
+        self.webTrackerCard = WebTrackerCard(group)
 
-        for card in (
+        return (
             self.listenPortCard,
             self.metadataTimeoutCard,
             self.connectionsLimitCard,
@@ -373,10 +377,22 @@ class BitTorrentConfig(PackConfig):
             self.enableWebTrackersCard,
             self.autoRefreshWebTrackersCard,
             self.webTrackerCard,
-        ):
-            self.bittorrentGroup.addSettingCard(card)
+        )
 
-        settingPage.vBoxLayout.addWidget(self.bittorrentGroup)
+    def settingSection(self) -> SettingSection:
+        return SettingSection(
+            id="bittorrent_pack",
+            title=self.tr("BitTorrent 下载"),
+            items=(
+                SettingItem(
+                    key="settings",
+                    label=self.tr("BitTorrent 下载"),
+                    kind="customGroup",
+                    note=self.tr("BitTorrent 下载设置"),
+                    extra={"cardFactory": self._createSettingCards},
+                ),
+            ),
+        )
 
 
 bittorrentConfig = BitTorrentConfig()

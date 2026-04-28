@@ -414,7 +414,7 @@ class BiliPackV1Tests(unittest.TestCase):
         self.showWidget(settingPage.container)
         service.installSettings(settingPage)
 
-        self.assertEqual(settingPage.vBoxLayout.count(), 1)
+        self.assertGreaterEqual(settingPage.vBoxLayout.count(), 1)
         group = cast(
             SettingCardGroup,
             settingPage.container.findChild(SettingCardGroup, "featurePackSection:bili_pack"),

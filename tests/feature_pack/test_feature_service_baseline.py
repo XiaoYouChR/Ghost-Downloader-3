@@ -1,12 +1,8 @@
 from __future__ import annotations
-# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportUnknownLambdaType=false, reportImplicitOverride=false
 
 import sys
-import tempfile
-import textwrap
 import unittest
 from pathlib import Path
-from typing import cast
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,189 +10,49 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     _ = sys.path.insert(0, str(ROOT))
 
-from app.services.feature_service import FeatureService
-
-
-PackInfo = dict[str, object]
-
-
-def createFeatureService() -> FeatureService:
-    return FeatureService()
-
-
-def discoverFeaturePacks(service: FeatureService) -> list[PackInfo]:
-    return cast(list[PackInfo], service.discoverFeaturePacks())
-
-
-def sortFeaturePacks(service: FeatureService, featurePacks: list[PackInfo]) -> list[PackInfo]:
-    return cast(list[PackInfo], service._sortFeaturePacksByDependencies(featurePacks))
-
-
-def normalizePackNames(featurePacks: list[PackInfo]) -> list[str]:
-    return [cast(str, pack["name"]) for pack in featurePacks]
+from app.feature_pack.api import DefaultFeatureService
+from app.services.feature_service import HostFeatureService
+from app.services.feature_service import featureService
 
 
 class FeatureServiceBaselineTests(unittest.TestCase):
-    _temporaryDirectory: tempfile.TemporaryDirectory[str] | None = None
-    featuresPath: Path = ROOT
+    def testLegacyAppBasesModulesAreRemoved(self) -> None:
+        legacyDirectory = ROOT / "app" / "bases"
 
-    def setUp(self) -> None:
-        temporaryDirectory = tempfile.TemporaryDirectory()
-        self._temporaryDirectory = temporaryDirectory
-        self.addCleanup(temporaryDirectory.cleanup)
-        self.featuresPath = Path(temporaryDirectory.name)
+        self.assertFalse((legacyDirectory / "interfaces.py").exists())
+        self.assertFalse((legacyDirectory / "models.py").exists())
 
-    def writePack(
-        self,
-        *,
-        name: str,
-        manifestBody: str,
-        entryName: str = "pack.py",
-        createEntry: bool = True,
-    ) -> Path:
-        packDirectory = self.featuresPath / name
-        packDirectory.mkdir(parents=True, exist_ok=True)
-        manifestPath = packDirectory / "manifest.toml"
-        _ = manifestPath.write_text(
-            textwrap.dedent(manifestBody).strip() + "\n",
-            encoding="utf-8",
+    def testApplicationFeatureServiceExposesOnlyV1ServiceEntry(self) -> None:
+        self.assertIsInstance(featureService, HostFeatureService)
+        self.assertIsInstance(featureService, DefaultFeatureService)
+
+        legacyMethodNames = (
+            "discoverFeature" + "Packs",
+            "getDialog" + "Cards",
+            "can" + "Handle",
+            "canCreateTaskFrom" + "Payload",
+            "getPackForUrl",
+            "parse",
+            "createTaskFrom" + "Payload",
+            "load" + "Features",
+            "_loadPack" + "Config",
         )
-        if createEntry:
-            _ = (packDirectory / entryName).write_text(
-                "# baseline test entry\n",
-                encoding="utf-8",
-            )
-        return packDirectory
+        for methodName in legacyMethodNames:
+            self.assertFalse(hasattr(featureService, methodName), methodName)
 
-    def testDiscoverFeaturePacksMatchesCurrentRepositoryBaseline(self) -> None:
-        service = createFeatureService()
+    def testApplicationPythonFilesDoNotImportLegacyBasePackage(self) -> None:
+        forbiddenImport = "app." + "bases"
+        checkedRoots = (ROOT / "app", ROOT / "features")
+        matches: list[str] = []
 
-        discovered = discoverFeaturePacks(service)
-        discoveredByName = {
-            cast(str, pack["name"]): pack
-            for pack in discovered
-        }
+        for checkedRoot in checkedRoots:
+            for pythonFile in checkedRoot.rglob("*.py"):
+                relativePath = pythonFile.relative_to(ROOT)
+                text = pythonFile.read_text(encoding="utf-8")
+                if forbiddenImport in text:
+                    matches.append(str(relativePath))
 
-        self.assertEqual(
-            normalizePackNames(discovered),
-            [
-                "bili_pack",
-                "bittorrent_pack",
-                "extract_pack",
-                "ffmpeg_pack",
-                "ftp_pack",
-                "github_pack",
-                "http_pack",
-                "jack_yao",
-                "m3u8_pack",
-            ],
-        )
-        self.assertEqual(
-            cast(tuple[str, ...], discoveredByName["bili_pack"]["dependencies"]),
-            ("http_pack", "ffmpeg_pack"),
-        )
-        self.assertEqual(
-            cast(tuple[str, ...], discoveredByName["extract_pack"]["dependencies"]),
-            (),
-        )
-        self.assertEqual(
-            cast(tuple[str, ...], discoveredByName["ftp_pack"]["dependencies"]),
-            (),
-        )
-        self.assertEqual(
-            Path(cast(str, discoveredByName["http_pack"]["manifestPath"])).name,
-            "manifest.toml",
-        )
-        self.assertEqual(
-            Path(cast(str, discoveredByName["github_pack"]["path"])).name,
-            "pack.py",
-        )
-
-    def testDiscoverFeaturePacksKeepsLegacyDefaultEntryAndDependenciesBehavior(self) -> None:
-        # 当前 loader 仍允许只写一个极简 [pack] 节，并把缺失字段补成默认值。
-        _ = self.writePack(
-            name="legacy_pack",
-            manifestBody="""
-            [pack]
-            """,
-        )
-
-        service = createFeatureService()
-        service.featuresPath = self.featuresPath
-
-        discovered = discoverFeaturePacks(service)
-
-        self.assertEqual(len(discovered), 1)
-        self.assertEqual(cast(str, discovered[0]["name"]), "legacy_pack")
-        self.assertEqual(Path(cast(str, discovered[0]["path"])).name, "pack.py")
-        self.assertEqual(cast(tuple[str, ...], discovered[0]["dependencies"]), ())
-
-    def testDiscoverFeaturePacksSkipsManifestsWithMissingRequiredParts(self) -> None:
-        _ = self.writePack(
-            name="valid_pack",
-            manifestBody="""
-            [pack]
-            entry = "pack.py"
-            dependencies = []
-            """,
-        )
-        _ = self.writePack(
-            name="missing_pack_section",
-            manifestBody="""
-            title = "legacy"
-            """,
-        )
-        _ = self.writePack(
-            name="missing_entry_file",
-            manifestBody="""
-            [pack]
-            entry = "missing.py"
-            """,
-            entryName="pack.py",
-            createEntry=False,
-        )
-
-        service = createFeatureService()
-        service.featuresPath = self.featuresPath
-
-        discovered = discoverFeaturePacks(service)
-
-        self.assertEqual(normalizePackNames(discovered), ["valid_pack"])
-
-    def testSortFeaturePacksByDependenciesMatchesCurrentRepositoryOrder(self) -> None:
-        service = createFeatureService()
-
-        discovered = discoverFeaturePacks(service)
-        ordered = sortFeaturePacks(service, discovered)
-
-        self.assertEqual(
-            normalizePackNames(ordered),
-            [
-                "http_pack",
-                "extract_pack",
-                "ffmpeg_pack",
-                "bili_pack",
-                "bittorrent_pack",
-                "ftp_pack",
-                "github_pack",
-                "jack_yao",
-                "m3u8_pack",
-            ],
-        )
-
-    def testSortFeaturePacksByDependenciesSkipsCyclesAfterLogging(self) -> None:
-        # 历史包袱: 当前排序器不会把循环依赖抛给调用方，而是记录错误后跳过坏分支。
-        featurePacks: list[PackInfo] = [
-            {"name": "alpha", "dependencies": ("beta",)},
-            {"name": "beta", "dependencies": ("alpha",)},
-            {"name": "healthy", "dependencies": ()},
-        ]
-
-        service = createFeatureService()
-
-        ordered = sortFeaturePacks(service, featurePacks)
-
-        self.assertEqual(normalizePackNames(ordered), ["healthy"])
+        self.assertEqual(matches, [])
 
 
 if __name__ == "__main__":

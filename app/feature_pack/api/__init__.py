@@ -6,6 +6,7 @@ from . import form
 from . import input
 from . import manifest
 from . import pack
+from . import runtime
 from . import service
 from . import settings
 from . import snapshot
@@ -26,6 +27,8 @@ from .manifest import Manifest
 from .manifest import loadManifest
 from .manifest import parseManifest
 from .pack import FeaturePack
+from .runtime import SpecialFileSize
+from .runtime import TaskStatus
 from .service import DefaultFeatureService
 from .service import DefaultSettingsInstaller
 from .service import DefaultTaskEditor
@@ -34,6 +37,7 @@ from .service import PackDiscoveryError
 from .service import PackLoadError
 from .service import SettingsInstaller
 from .service import TaskEditor
+from .settings import FeaturePackSettings
 from .settings import SettingItem
 from .settings import SettingSection
 from .snapshot import StageSnapshot
@@ -53,6 +57,7 @@ __all__ = [
     "input",
     "manifest",
     "pack",
+    "runtime",
     "service",
     "settings",
     "snapshot",
@@ -67,6 +72,7 @@ __all__ = [
     "DefaultTaskCard",
     "DefaultTaskEditor",
     "FeaturePack",
+    "FeaturePackSettings",
     "FeatureService",
     "FormChoice",
     "FormField",
@@ -79,6 +85,7 @@ __all__ = [
     "SettingItem",
     "SettingSection",
     "SingleFileTask",
+    "SpecialFileSize",
     "StageSnapshot",
     "SettingsInstaller",
     "TaskConfig",
@@ -88,6 +95,7 @@ __all__ = [
     "TaskForm",
     "TaskInput",
     "TaskSnapshot",
+    "TaskStatus",
     "Task",
     "TaskStage",
     "loadManifest",

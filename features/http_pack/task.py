@@ -20,8 +20,8 @@ from uuid import uuid4
 import niquests
 from loguru import logger
 
-from app.bases.models import SpecialFileSize
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import SpecialFileSize
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import SingleFileTask
 from app.feature_pack.api import StageSnapshot
@@ -74,8 +74,8 @@ def _normalizeFileSize(value: int | None) -> int:
     return normalized
 
 
-def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+def _normalizeState(value: str | TaskStatus | object) -> str:
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -84,13 +84,13 @@ def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
     return "waiting"
 
 
-def _legacyStatus(value: str) -> LegacyTaskStatus:
+def _legacyStatus(value: str) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(value)]
 
 
@@ -117,7 +117,7 @@ class HttpTaskStage(TaskStage):
         kind: str = _HTTP_STAGE_KIND,
         version: int = _HTTP_STAGE_VERSION,
         name: str = _DEFAULT_STAGE_NAME,
-        state: str | LegacyTaskStatus = "waiting",
+        state: str | TaskStatus = "waiting",
         progress: float = 0.0,
         doneBytes: int = 0,
         speed: int = 0,
@@ -153,11 +153,11 @@ class HttpTaskStage(TaskStage):
         self.doneBytes = max(0, int(value))
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.setStatus(value, emitSignals=False)
 
     def canPause(self) -> bool:
@@ -190,7 +190,7 @@ class HttpTaskStage(TaskStage):
 
     def setStatus(
         self,
-        status: LegacyTaskStatus | str,
+        status: TaskStatus | str,
         *,
         emitSignals: bool = True,
         notifyTask: bool | None = None,
@@ -470,7 +470,7 @@ class HttpTask(SingleFileTask):
         return self.filename
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @property
@@ -522,9 +522,6 @@ class HttpTask(SingleFileTask):
     def setTitle(self, title: str) -> None:
         self.rename(sanitizeFilename(title, fallback=self.filename or "download"))
 
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
-
     def syncOutput(self) -> None:
         self.target = str(self.path)
         for stage in self.stages:
@@ -534,48 +531,13 @@ class HttpTask(SingleFileTask):
             stage.fileSize = self.totalBytes
             stage.supportsRange = self.supportsRange
 
-    def applyPayloadToTask(self, payload: dict[str, Any]) -> None:
-        updates: dict[str, object] = {}
-
-        rawFolder = payload.get("path")
-        if isinstance(rawFolder, (str, Path)):
-            updates["folder"] = Path(rawFolder)
-
-        rawHeaders = payload.get("headers")
-        if isinstance(rawHeaders, Mapping):
-            updates["headers"] = _copyHeaders(rawHeaders, useDefaults=True)
-
-        if "proxies" in payload:
-            rawProxies = payload.get("proxies")
-            if rawProxies is None:
-                updates["proxies"] = None
-            elif isinstance(rawProxies, Mapping):
-                updates["proxies"] = _copyProxies(rawProxies)
-
-        rawChunks = payload.get("preBlockNum")
-        if isinstance(rawChunks, int) and not isinstance(rawChunks, bool):
-            updates["chunks"] = _normalizeChunks(rawChunks)
-
-        rawSource = payload.get("url")
-        if isinstance(rawSource, str) and rawSource.strip():
-            updates["source"] = rawSource.strip()
-
-        rawName = payload.get("filename")
-        if isinstance(rawName, str) and rawName.strip():
-            updates["name"] = sanitizeFilename(rawName, fallback=self.filename or "download")
-
-        if not updates:
-            return
-
-        self.configure(replace(self.config, **updates))
-
     def setState(self, state: str) -> None:
         normalizedState = _normalizeState(state)
         self.state = normalizedState
         self.stateChanged.emit(normalizedState)
         self.snapshotChanged.emit(self.snapshot())
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         if not self.stages:
             return self.status
 
@@ -606,7 +568,7 @@ class HttpTask(SingleFileTask):
         )
         return self.status
 
-    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
         if not self.stages:
             self.state = _normalizeState(status)
             return self.status
@@ -614,11 +576,11 @@ class HttpTask(SingleFileTask):
         for stage in self.stages:
             if not isinstance(stage, HttpTaskStage):
                 continue
-            if stage.status == LegacyTaskStatus.COMPLETED:
+            if stage.status == TaskStatus.COMPLETED:
                 continue
             if (
-                _legacyStatus(_normalizeState(status)) == LegacyTaskStatus.RUNNING
-                and stage.status == LegacyTaskStatus.FAILED
+                _legacyStatus(_normalizeState(status)) == TaskStatus.RUNNING
+                and stage.status == TaskStatus.FAILED
             ):
                 stage.reset(notifyTask=False)
             stage.setStatus(status, emitSignals=False, notifyTask=False)

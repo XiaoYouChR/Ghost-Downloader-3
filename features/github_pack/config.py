@@ -1,3 +1,5 @@
+# pyright: reportArgumentType=false, reportCallIssue=false, reportIncompatibleMethodOverride=false, reportReturnType=false, reportUninitializedInstanceVariable=false
+
 import asyncio
 from time import perf_counter
 from typing import TYPE_CHECKING
@@ -26,7 +28,9 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
-from app.bases.models import PackConfig
+from app.feature_pack.api import FeaturePackSettings
+from app.feature_pack.api import SettingItem
+from app.feature_pack.api import SettingSection
 from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.supports.utils import getProxies
@@ -277,7 +281,7 @@ class GitHubProxySiteCard(SettingCard):
         self._reloadItems()
 
 
-class GitHubConfig(PackConfig):
+class GitHubConfig(FeaturePackSettings):
     enabled = ConfigItem("GitHub", "Enabled", False, BoolValidator())
     proxySite = OptionsConfigItem(
         "GitHub",
@@ -292,28 +296,48 @@ class GitHubConfig(PackConfig):
         GitHubProxySiteValidator(),
     )
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.githubGroup = SettingCardGroup(self.tr("GitHub 加速"), settingPage.container)
+    def _createEnableCard(self, group: SettingCardGroup) -> SettingCard:
         self.enableCard = SwitchSettingCard(
             FluentIcon.LINK,
             self.tr("启用 GitHub 加速"),
             self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),
             self.enabled,
-            self.githubGroup,
+            group,
         )
         self.viewAgreementButton = HyperlinkButton(self.enableCard)
         self.viewAgreementButton.setText(self.tr("查看协议"))
-        self.proxySiteCard = GitHubProxySiteCard(self.githubGroup)
 
         self.enableCard.hBoxLayout.insertSpacing(5, 16)
         self.enableCard.hBoxLayout.insertWidget(5, self.viewAgreementButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.githubGroup.addSettingCard(self.enableCard)
-        self.githubGroup.addSettingCard(self.proxySiteCard)
-
-        settingPage.vBoxLayout.addWidget(self.githubGroup)
-
         self.enableCard.checkedChanged.connect(self._onEnabledChanged)
         self.viewAgreementButton.clicked.connect(self._showAgreement)
+        return self.enableCard
+
+    def _createProxySiteCard(self, group: SettingCardGroup) -> SettingCard:
+        self.proxySiteCard = GitHubProxySiteCard(group)
+        return self.proxySiteCard
+
+    def settingSection(self) -> SettingSection:
+        return SettingSection(
+            id="github_pack",
+            title=self.tr("GitHub 加速"),
+            items=(
+                SettingItem(
+                    key="enabled",
+                    label=self.tr("启用 GitHub 加速"),
+                    kind="custom",
+                    note=self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),
+                    extra={"cardFactory": self._createEnableCard},
+                ),
+                SettingItem(
+                    key="proxySite",
+                    label=self.tr("代理站"),
+                    kind="custom",
+                    note=self.tr("选择 GitHub 反向代理站，延迟仅供参考"),
+                    extra={"cardFactory": self._createProxySiteCard},
+                ),
+            ),
+        )
 
     def _showAgreementDialog(self, parent, requireAcceptance: bool) -> bool:
         dialog = GitHubAgreementDialog(parent, requireAcceptance=requireAcceptance)

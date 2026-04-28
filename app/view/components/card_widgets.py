@@ -1,3 +1,5 @@
+# pyright: reportOptionalMemberAccess=false
+
 from typing import Any
 
 from PySide6.QtCore import Qt, QSize
@@ -5,8 +7,8 @@ from PySide6.QtGui import QFont, QColor, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from qfluentwidgets import ScrollArea, setFont, isDarkTheme
 
-from app.bases.models import Task
-from app.view.components.cards import ResultCard, ParseSettingCard
+from app.feature_pack.api import Task
+from app.view.components.cards import AddTaskSettingCard, ResultCard
 
 
 class HeaderCardWidgetBase(QWidget):
@@ -67,8 +69,8 @@ class HeaderCardWidgetBase(QWidget):
         self.headerLabel.setText("    " + title)
 
 
-class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
-    """解析结果标题栏组件"""
+class TaskPreviewHeaderCardWidget(HeaderCardWidgetBase):
+    """任务预览标题栏组件"""
     defaultCardHeight = 35
     minimumVisibleCards = 5
 
@@ -138,20 +140,20 @@ class ParseResultHeaderCardWidget(HeaderCardWidgetBase):
         return results
 
 
-class ParseSettingHeaderCardWidget(HeaderCardWidgetBase):
-    """解析设置标题栏组件"""
+class AddTaskSettingsHeaderCardWidget(HeaderCardWidgetBase):
+    """添加任务设置标题栏组件"""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle(self.tr("下载设置"))
-        self.cards: list[ParseSettingCard] = []
+        self.cards: list[AddTaskSettingCard] = []
 
-    def addCard(self, card: ParseSettingCard):
-        if not isinstance(card, ParseSettingCard):
-            raise TypeError("card must be GroupSettingCard")
+    def addCard(self, card: AddTaskSettingCard):
+        if not isinstance(card, AddTaskSettingCard):
+            raise TypeError("card must be AddTaskSettingCard")
 
         self.cards.append(card)
         self.scrollLayout.addWidget(card)
 
     @property
-    def payload(self) -> dict[str, Any]:
-        return {k: v for card in self.cards for k, v in card.payload.items()}
+    def inputOptions(self) -> dict[str, Any]:
+        return {k: v for card in self.cards for k, v in card.inputOptions.items()}

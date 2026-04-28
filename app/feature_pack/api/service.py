@@ -411,7 +411,7 @@ class DefaultSettingsInstaller(SettingsInstaller):
     """
 
     _SUPPORTED_KINDS: frozenset[str] = frozenset(
-        {"toggle", "choice", "text", "action", "primaryAction", "custom"}
+        {"toggle", "choice", "text", "action", "primaryAction", "custom", "customGroup"}
     )
 
     def __init__(self) -> None:
@@ -436,7 +436,8 @@ class DefaultSettingsInstaller(SettingsInstaller):
         group = SettingCardGroup(section.title, settingPage.container)
         group.setObjectName(f"featurePackSection:{section.id}")
         for item in section.items:
-            group.addSettingCard(self._createCard(item=item, group=group))
+            for card in self._createCards(item=item, group=group):
+                group.addSettingCard(card)
 
         settingPage.vBoxLayout.addWidget(group)
         installedSections[section.id] = InstalledSettingSection(section=section, group=group)
@@ -448,6 +449,16 @@ class DefaultSettingsInstaller(SettingsInstaller):
         if not isinstance(container, QWidget) or not isinstance(layout, QVBoxLayout):
             raise TypeError("SettingsInstaller requires a page with container and vBoxLayout")
         return cast(SettingPageHost, page)
+
+    def _createCards(
+        self,
+        *,
+        item: SettingItem,
+        group: SettingCardGroup,
+    ) -> tuple[SettingCard, ...]:
+        if item.kind == "customGroup":
+            return self._createCustomCards(item=item, group=group)
+        return (self._createCard(item=item, group=group),)
 
     def _createCard(self, *, item: SettingItem, group: SettingCardGroup) -> SettingCard:
         if item.kind not in self._SUPPORTED_KINDS:
@@ -476,6 +487,31 @@ class DefaultSettingsInstaller(SettingsInstaller):
 
         card.setObjectName(f"settingCard:{item.key}")
         return card
+
+    def _createCustomCards(
+        self,
+        *,
+        item: SettingItem,
+        group: SettingCardGroup,
+    ) -> tuple[SettingCard, ...]:
+        cardFactory = item.extra.get("cardFactory")
+        if not callable(cardFactory):
+            raise ValueError(f"customGroup setting '{item.key}' requires a cardFactory")
+
+        result = cardFactory(group)
+        if isinstance(result, SettingCard):
+            result.setObjectName(f"settingCard:{item.key}")
+            return (result,)
+        if not isinstance(result, tuple):
+            raise TypeError(f"customGroup setting '{item.key}' must return tuple[SettingCard, ...]")
+
+        cards: list[SettingCard] = []
+        for index, card in enumerate(result):
+            if not isinstance(card, SettingCard):
+                raise TypeError(f"customGroup setting '{item.key}' must return SettingCard items")
+            card.setObjectName(f"settingCard:{item.key}:{index}")
+            cards.append(card)
+        return tuple(cards)
 
 
 class DefaultFeatureService(FeatureService):

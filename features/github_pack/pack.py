@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import replace
-from typing import cast
 from urllib.parse import urlparse
 
 from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import SettingSection
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskInput
 
@@ -54,49 +53,15 @@ def _isSupportedGitHubUrl(source: str) -> bool:
     )
 
 
-def _payloadSize(payload: Mapping[str, object]) -> int:
-    size = payload.get("size")
-    if isinstance(size, bool) or not isinstance(size, int):
-        return 0
-    return size
-
-
-def _taskInputFromPayload(payload: Mapping[str, object]) -> TaskInput:
-    source = str(payload.get("url") or "").strip()
-    if not source:
-        raise ValueError("GitHub 任务缺少有效的 url")
-
-    from .task import buildHttpTaskConfigFromPayload
-
-    config = buildHttpTaskConfigFromPayload(payload)
-    if config is None:
-        raise ValueError("GitHub 任务缺少有效的 url")
-
-    return TaskInput(
-        config=config,
-        size=_payloadSize(payload),
-        hints=(dict(payload),),
-    )
-
-
-async def parse(payload: Mapping[str, object]) -> GitHubDownloadTask:
-    pack = GitHubPack()
-    task = await pack.createTask(_taskInputFromPayload(payload))
-    if task is None:
-        raise ValueError("GitHub Pack 未创建任务")
-    return cast(GitHubDownloadTask, task)
-
-
 class GitHubPack(FeaturePack):
     priority = 90
-    config = githubConfig
 
     def __init__(self) -> None:
         self._httpPack = HttpPack()
 
     def accepts(self, source: str) -> bool:
         return (
-            self.config.enabled.value
+            githubConfig.enabled.value
             and bool(getSelectedProxySite())
             and _isSupportedGitHubUrl(source)
         )
@@ -123,17 +88,8 @@ class GitHubPack(FeaturePack):
     def owns(self, task: Task) -> bool:
         return isinstance(task, GitHubDownloadTask) and task.packId == self.manifest.id
 
-    def canHandle(self, url: str) -> bool:
-        return self.accepts(url)
-
-    def canHandleTask(self, task: object) -> bool:
-        return isinstance(task, GitHubDownloadTask) and getattr(task, "packId", "") == "github_pack"
-
-    async def parse(self, payload: Mapping[str, object]) -> GitHubDownloadTask:
-        return await parse(payload)
-
-    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> GitHubDownloadTask | None:
-        return await parse(payload)
+    def settingSection(self) -> SettingSection:
+        return githubConfig.settingSection()
 
     def createTaskCard(self, task: Task, parent=None):
         return self._httpPack.createTaskCard(task, parent)
@@ -145,5 +101,4 @@ class GitHubPack(FeaturePack):
 __all__ = [
     "GitHubPack",
     "_isSupportedGitHubUrl",
-    "parse",
 ]

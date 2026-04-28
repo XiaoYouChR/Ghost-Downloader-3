@@ -1,3 +1,5 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
+
 import shutil
 from pathlib import Path
 
@@ -19,7 +21,7 @@ from qfluentwidgets import (
     ToolButton,
 )
 
-from app.bases.models import TaskStatus
+from app.feature_pack.api import TaskStatus
 from app.supports.utils import getReadableSize, getReadableTime, openFile, openFolder
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog

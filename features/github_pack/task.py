@@ -10,7 +10,7 @@ from typing import Any
 from typing import cast
 from uuid import uuid4
 
-from app.bases.models import SpecialFileSize
+from app.feature_pack.api import SpecialFileSize
 from app.feature_pack.api import FormField
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskConfig
@@ -50,7 +50,6 @@ _httpTaskModule = _importPackModule("http_pack", "task")
 HttpPack = _httpPackModule.HttpPack
 HttpTask = _httpTaskModule.HttpTask
 HttpTaskStage = _httpTaskModule.HttpTaskStage
-buildHttpTaskConfigFromPayload = _httpPackModule._buildTaskConfigFromPayload
 
 
 def buildProxyUrl(source: str) -> str:
@@ -263,6 +262,5 @@ __all__ = [
     "HttpPack",
     "HttpTask",
     "HttpTaskStage",
-    "buildHttpTaskConfigFromPayload",
     "buildProxyUrl",
 ]

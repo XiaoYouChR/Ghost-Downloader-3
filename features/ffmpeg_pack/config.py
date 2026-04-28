@@ -17,7 +17,9 @@ from qfluentwidgets import (
     ToolButton, PrimaryPushButton, InfoBar, ToolTipFilter
 )
 
-from app.bases.models import PackConfig
+from app.feature_pack.api import FeaturePackSettings
+from app.feature_pack.api import SettingItem
+from app.feature_pack.api import SettingSection
 from app.services.core_service import coreService
 from app.supports.config import cfg
 
@@ -173,21 +175,41 @@ class FFmpegRuntimeCard(SettingCard):
         mainWindow.addTask(result)
 
 
-class FFmpegConfig(PackConfig):
+class FFmpegConfig(FeaturePackSettings):
     installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg", FolderValidator())
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.ffmpegGroup = SettingCardGroup(self.tr("FFmpeg"), settingPage.container)
-        self.installFolderCard = FFmpegInstallFolderCard(self.ffmpegGroup)
-        self.runtimeCard = FFmpegRuntimeCard(self.ffmpegGroup)
+    def _createInstallFolderCard(self, group: SettingCardGroup) -> SettingCard:
+        self.installFolderCard = FFmpegInstallFolderCard(group)
+        return self.installFolderCard
+
+    def _createRuntimeCard(self, group: SettingCardGroup) -> SettingCard:
+        self.runtimeCard = FFmpegRuntimeCard(group)
 
         self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
-
-        self.ffmpegGroup.addSettingCard(self.installFolderCard)
-        self.ffmpegGroup.addSettingCard(self.runtimeCard)
-        settingPage.vBoxLayout.addWidget(self.ffmpegGroup)
-
         self.runtimeCard.refreshStatus()
+        return self.runtimeCard
+
+    def settingSection(self) -> SettingSection:
+        return SettingSection(
+            id="ffmpeg_pack",
+            title=self.tr("FFmpeg"),
+            items=(
+                SettingItem(
+                    key="installFolder",
+                    label=self.tr("FFmpeg 安装目录"),
+                    kind="custom",
+                    note=self.tr("选择 FFmpeg 安装目录"),
+                    extra={"cardFactory": self._createInstallFolderCard},
+                ),
+                SettingItem(
+                    key="runtime",
+                    label=self.tr("当前 FFmpeg"),
+                    kind="custom",
+                    note=self.tr("检测或一键安装 FFmpeg"),
+                    extra={"cardFactory": self._createRuntimeCard},
+                ),
+            ),
+        )
 
 
 ffmpegConfig = FFmpegConfig()

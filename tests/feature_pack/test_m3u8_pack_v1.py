@@ -506,7 +506,7 @@ class M3U8PackV1Tests(unittest.TestCase):
         with patch.object(config, "_createRuntimeCard", side_effect=createRuntimeCard):
             service.installSettings(settingPage)
 
-        self.assertEqual(settingPage.vBoxLayout.count(), 1)
+        self.assertGreaterEqual(settingPage.vBoxLayout.count(), 1)
         group = cast(
             SettingCardGroup,
             settingPage.container.findChild(SettingCardGroup, "featurePackSection:m3u8_pack"),

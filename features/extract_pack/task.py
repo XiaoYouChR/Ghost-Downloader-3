@@ -14,7 +14,7 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FeaturePack
 from app.feature_pack.api import StageSnapshot
 from app.feature_pack.api import Task
@@ -50,8 +50,8 @@ def _safeJoin(root: Path, relative: str) -> Path:
     return target
 
 
-def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+def _normalizeState(value: str | TaskStatus | object) -> str:
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -60,13 +60,13 @@ def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
     return "waiting"
 
 
-def _legacyStatus(value: str) -> LegacyTaskStatus:
+def _legacyStatus(value: str) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(value)]
 
 
@@ -145,7 +145,7 @@ class ExtractStage(TaskStage):
         kind: str = _EXTRACT_STAGE_KIND,
         version: int = _EXTRACT_STAGE_VERSION,
         name: str = _DEFAULT_STAGE_NAME,
-        state: str | LegacyTaskStatus = "waiting",
+        state: str | TaskStatus = "waiting",
         progress: float = 0.0,
         doneBytes: int = 0,
         speed: int = 0,
@@ -178,11 +178,11 @@ class ExtractStage(TaskStage):
         self.doneBytes = max(0, int(value))
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.setStatus(value, emitSignals=False)
 
     @property
@@ -221,7 +221,7 @@ class ExtractStage(TaskStage):
 
     def setStatus(
         self,
-        status: LegacyTaskStatus | str,
+        status: TaskStatus | str,
         *,
         emitSignals: bool = True,
         notifyTask: bool = True,
@@ -486,7 +486,7 @@ class ExtractTask(Task):
         stage.archivePath = str(self.archivePath)
         stage.installFolder = self.target
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         stage = self.extractStage()
         snapshot = stage.snapshot()
         self.state = snapshot.state
@@ -833,63 +833,6 @@ class ExtractWorker:
             _notifyAttachedTask(getattr(self.stage, "_task", None))
 
 
-def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
-    rawArchivePath = payload.get("archivePath")
-    if not isinstance(rawArchivePath, (str, Path)):
-        return None
-    archivePath = str(rawArchivePath).strip()
-    if not archivePath:
-        return None
-
-    rawInstallFolder = payload.get("installFolder")
-    if not isinstance(rawInstallFolder, (str, Path)):
-        return None
-
-    installFolder = Path(rawInstallFolder)
-    rawName = payload.get("name")
-    name = str(rawName).strip() if isinstance(rawName, str) else ""
-    if not name:
-        archiveName = Path(archivePath).name
-        suffix = _archiveSuffix(archiveName)
-        if suffix and archiveName.lower().endswith(suffix):
-            name = archiveName[: -len(suffix)] or archiveName
-        else:
-            name = archiveName or "extract"
-
-    return TaskConfig(
-        source=archivePath,
-        folder=installFolder,
-        name=name,
-    )
-
-
-def _createTaskFromPayload(payload: Mapping[str, object]) -> ExtractTask | None:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        return None
-
-    stage = ExtractStage(
-        stageIndex=1,
-        archivePath=str(config.source),
-        installFolder=str(config.folder),
-        executableNames=_normalizeExecutableNames(payload.get("executableNames")),
-        cleanupArchive=bool(payload.get("cleanupArchive", True)),
-    )
-    task = ExtractTask(config=config, stage=stage)
-    rawTotalBytes = payload.get("size")
-    if isinstance(rawTotalBytes, int) and not isinstance(rawTotalBytes, bool):
-        task.archiveSize = max(0, rawTotalBytes)
-        task.totalBytes = max(0, rawTotalBytes)
-    return task
-
-
-async def parse(payload: Mapping[str, object]) -> ExtractTask:
-    task = _createTaskFromPayload(payload)
-    if task is None:
-        raise ValueError("extract task 缺少 archivePath 或 installFolder")
-    return task
-
-
 class ExtractPack(FeaturePack):
     def accepts(self, source: str) -> bool:
         return _supportsArchiveSource(source)
@@ -915,23 +858,10 @@ class ExtractPack(FeaturePack):
     def owns(self, task: Task) -> bool:
         return isinstance(task, ExtractTask) and task.packId == self.manifest.id
 
-    def canHandle(self, url: str) -> bool:
-        return self.accepts(url)
-
-    def canHandleTask(self, task: object) -> bool:
-        return isinstance(task, ExtractTask) and getattr(task, "packId", "") == _EXTRACT_PACK_ID
-
-    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> ExtractTask | None:
-        return _createTaskFromPayload(payload)
-
-    async def parse(self, payload: Mapping[str, object]) -> ExtractTask:
-        return await parse(payload)
-
 
 __all__ = [
     "ExtractPack",
     "ExtractStage",
     "ExtractTask",
     "ExtractWorker",
-    "parse",
 ]

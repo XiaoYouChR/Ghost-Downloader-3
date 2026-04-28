@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import MultiFileTask
 from app.feature_pack.api import Task
@@ -88,8 +88,8 @@ def _normalizeChunks(value: int | None) -> int:
     return max(1, int(value))
 
 
-def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+def _normalizeState(value: str | TaskStatus | object) -> str:
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -98,13 +98,13 @@ def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
     return "waiting"
 
 
-def _legacyStatus(value: str | LegacyTaskStatus | object) -> LegacyTaskStatus:
+def _legacyStatus(value: str | TaskStatus | object) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(value)]
 
 
@@ -298,7 +298,7 @@ class BilibiliDownloadStage(HttpTaskStage):
 
     def setStatus(
         self,
-        status: LegacyTaskStatus | str,
+        status: TaskStatus | str,
         *,
         emitSignals: bool = True,
         notifyTask: bool | None = None,
@@ -499,11 +499,11 @@ class BilibiliTask(MultiFileTask):
         return self.config.chunks
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.state = _normalizeState(value)
 
     @property
@@ -649,9 +649,6 @@ class BilibiliTask(MultiFileTask):
     def outputPathForFile(self, file: BilibiliEpisodeFile) -> Path:
         return self.root / self._outputFileName(file)
 
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
-
     def syncOutput(self) -> None:
         self.target = str(self.root)
         self._rebuildFileIndexes()
@@ -756,35 +753,6 @@ class BilibiliTask(MultiFileTask):
         self._syncFileProgress()
         self.syncStatusFromStages()
 
-    def applyPayloadToTask(self, payload: dict[str, Any]) -> None:
-        updates: dict[str, object] = {}
-
-        rawFolder = payload.get("path")
-        if isinstance(rawFolder, (str, Path)):
-            updates["folder"] = Path(rawFolder)
-
-        rawName = payload.get("filename")
-        if isinstance(rawName, str) and rawName.strip():
-            updates["name"] = _baseName(rawName, fallback=self.config.name)
-
-        rawHeaders = payload.get("headers")
-        if isinstance(rawHeaders, Mapping):
-            updates["headers"] = _copyHeaders(rawHeaders, useDefaults=True)
-
-        if "proxies" in payload:
-            rawProxies = payload.get("proxies")
-            if rawProxies is None:
-                updates["proxies"] = None
-            elif isinstance(rawProxies, Mapping):
-                updates["proxies"] = _copyProxies(rawProxies)
-
-        rawChunks = payload.get("preBlockNum")
-        if isinstance(rawChunks, int) and not isinstance(rawChunks, bool):
-            updates["chunks"] = _normalizeChunks(rawChunks)
-
-        if updates:
-            self.configure(replace(self.config, **updates))
-
     def editForm(self, _mode: str) -> TaskForm | None:
         return TaskForm(
             title="编辑 Bilibili 下载任务",
@@ -822,7 +790,7 @@ class BilibiliTask(MultiFileTask):
             ),
         )
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         self._syncFileProgress()
         selectedStages = self.selectedStages
         if not selectedStages:
@@ -866,7 +834,7 @@ class BilibiliTask(MultiFileTask):
         self.stateChanged.emit(normalizedState)
         self.snapshotChanged.emit(self.snapshot())
 
-    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
         normalizedStatus = _normalizeState(status)
         for stage in self.selectedStages:
             currentSetter = getattr(stage, "setStatus", None)

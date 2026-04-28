@@ -303,19 +303,19 @@ class MainWindow(MSFluentWindow):
             self,
             triggeredByUser: bool = False,
             urls: list[str] | None = None,
-            payloadOverrides: dict[str, dict[str, Any]] | None = None,
+            inputOverrides: dict[str, dict[str, Any]] | None = None,
     ):
         dialog = self._getAddTaskDialog()
 
         if urls:
             pendingUrls: list[str] = []
             for url in urls:
-                payloadOverride = payloadOverrides.get(url) if payloadOverrides else None
-                if payloadOverride is None:
+                inputOverride = inputOverrides.get(url) if inputOverrides else None
+                if inputOverride is None:
                     pendingUrls.append(url)
                     continue
 
-                dialog.addUrlWithPayload(url, payloadOverride)
+                dialog.addUrlWithInputOverride(url, inputOverride)
 
             if pendingUrls:
                 dialog.addUrls(pendingUrls)
@@ -471,13 +471,13 @@ class MainWindow(MSFluentWindow):
 
     def _downloadReleaseAsset(self, asset: dict):
         assetName = asset["name"]
-        payload = {
+        inputOptions = {
             "headers": DEFAULT_HEADERS,
         }
         taskInput = buildAddTaskInput(
             source=str(asset["browser_download_url"]),
             folder=Path(cfg.downloadFolder.value),
-            headers=payload["headers"],
+            headers=inputOptions["headers"],
             proxies=getProxies(),
             chunks=cfg.preBlockNum.value,
         )

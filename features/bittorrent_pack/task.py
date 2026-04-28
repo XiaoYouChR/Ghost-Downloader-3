@@ -22,7 +22,7 @@ import libtorrent as lt
 import niquests
 from loguru import logger
 
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import MultiFileTask
 from app.feature_pack.api import StageSnapshot
@@ -45,7 +45,6 @@ _BITTORRENT_STAGE_KIND = "bittorrent_download"
 _BITTORRENT_TASK_VERSION = 1
 _BITTORRENT_STAGE_VERSION = 1
 _DEFAULT_STAGE_NAME = "BitTorrent 下载"
-TaskStatus = LegacyTaskStatus
 
 
 def _storageMode(mode: str) -> int:
@@ -287,8 +286,8 @@ def _copyProxies(
     return {str(key): str(value) for key, value in proxies.items()}
 
 
-def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+def _normalizeState(value: str | TaskStatus | object) -> str:
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -297,13 +296,13 @@ def _normalizeState(value: str | LegacyTaskStatus | object) -> str:
     return "waiting"
 
 
-def _legacyStatus(value: str | LegacyTaskStatus | object) -> LegacyTaskStatus:
+def _legacyStatus(value: str | TaskStatus | object) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(value)]
 
 
@@ -329,34 +328,6 @@ def _normalizeConfig(config: TaskConfig) -> TaskConfig:
         headers=_copyHeaders(config.headers),
         proxies=_copyProxies(config.proxies),
         chunks=max(1, int(config.chunks)),
-    )
-
-
-def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
-    rawSource = payload.get("url")
-    if not isinstance(rawSource, str):
-        return None
-
-    source = rawSource.strip()
-    if not source:
-        return None
-
-    rawFolder = payload.get("path")
-    rawName = payload.get("filename")
-    rawHeaders = payload.get("headers")
-    rawProxies = payload.get("proxies")
-    rawChunks = payload.get("preBlockNum")
-    return TaskConfig(
-        source=source,
-        folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
-        name=rawName if isinstance(rawName, str) else "",
-        headers=_copyHeaders(rawHeaders if isinstance(rawHeaders, Mapping) else None),
-        proxies=(
-            _copyProxies(cast(Mapping[str, str], rawProxies))
-            if isinstance(rawProxies, Mapping)
-            else getProxies()
-        ),
-        chunks=rawChunks if isinstance(rawChunks, int) and not isinstance(rawChunks, bool) else 1,
     )
 
 
@@ -510,7 +481,7 @@ class BitTorrentTaskStage(TaskStage):
         kind: str = _BITTORRENT_STAGE_KIND,
         version: int = _BITTORRENT_STAGE_VERSION,
         name: str = _DEFAULT_STAGE_NAME,
-        state: str | LegacyTaskStatus = "waiting",
+        state: str | TaskStatus = "waiting",
         progress: float = 0.0,
         doneBytes: int = 0,
         speed: int = 0,
@@ -549,11 +520,11 @@ class BitTorrentTaskStage(TaskStage):
         self.doneBytes = max(0, int(value))
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.setStatus(value, emitSignals=False)
 
     async def pause(self) -> None:
@@ -582,7 +553,7 @@ class BitTorrentTaskStage(TaskStage):
 
     def setStatus(
         self,
-        status: LegacyTaskStatus | str,
+        status: TaskStatus | str,
         *,
         emitSignals: bool = True,
         notifyTask: bool | None = None,
@@ -881,11 +852,11 @@ class BitTorrentTask(MultiFileTask):
         return None if self.config.proxies is None else dict(self.config.proxies)
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @status.setter
-    def status(self, value: LegacyTaskStatus | str) -> None:
+    def status(self, value: TaskStatus | str) -> None:
         self.state = _normalizeState(value)
 
     @property
@@ -941,9 +912,6 @@ class BitTorrentTask(MultiFileTask):
         self.files = torrentFiles
         self._filesByIndex = {file.index: file for file in torrentFiles}
         self._filesById = {file.id: file for file in torrentFiles}
-
-    def syncStagePaths(self) -> None:
-        self.syncOutput()
 
     def syncOutput(self) -> None:
         self.target = str(self.root)
@@ -1043,23 +1011,6 @@ class BitTorrentTask(MultiFileTask):
         super().configure(normalizedConfig)
         self.syncStatusFromStages()
 
-    def applyPayloadToTask(self, payload: dict[str, Any]) -> None:
-        updates: dict[str, object] = {}
-        rawFolder = payload.get("path")
-        if isinstance(rawFolder, (str, Path)):
-            updates["folder"] = Path(rawFolder)
-        rawName = payload.get("filename")
-        if isinstance(rawName, str) and rawName.strip():
-            updates["name"] = sanitizeFilename(rawName, fallback=self.config.name)
-        if "proxies" in payload:
-            rawProxies = payload.get("proxies")
-            if rawProxies is None:
-                updates["proxies"] = None
-            elif isinstance(rawProxies, Mapping):
-                updates["proxies"] = _copyProxies(cast(Mapping[str, str], rawProxies))
-        if updates:
-            self.configure(replace(self.config, **updates))
-
     def editForm(self, _mode: str) -> TaskForm | None:
         return TaskForm(
             title="编辑 BitTorrent 下载任务",
@@ -1090,7 +1041,7 @@ class BitTorrentTask(MultiFileTask):
             ),
         )
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         self._recalculateSelection()
         if not self.stages:
             self.state = "waiting"
@@ -1119,7 +1070,7 @@ class BitTorrentTask(MultiFileTask):
         self.stateChanged.emit(normalizedState)
         self.snapshotChanged.emit(self.snapshot())
 
-    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
         normalizedStatus = _normalizeState(status)
         if self.stages:
             self.stage.setStatus(normalizedStatus, emitSignals=False, notifyTask=False)
@@ -1885,22 +1836,13 @@ async def buildBitTorrentTask(data: TaskInput) -> BitTorrentTask:
     )
 
 
-async def parse(payload: Mapping[str, object]) -> BitTorrentTask:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        raise ValueError("BitTorrent 任务缺少有效的 url")
-    return await buildBitTorrentTask(TaskInput(config=config, hints=(dict(payload),)))
-
-
 __all__ = [
     "BITTORRENT_USER_AGENT",
     "BitTorrentFile",
     "BitTorrentTask",
     "BitTorrentTaskStage",
     "BitTorrentWorker",
-    "_buildTaskConfigFromPayload",
     "buildBitTorrentTask",
     "buildTaskFromTorrentInfo",
-    "parse",
     "resolveLocalTorrentPath",
 ]

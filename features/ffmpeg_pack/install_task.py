@@ -15,7 +15,7 @@ from uuid import uuid4
 
 import niquests
 from PySide6.QtCore import QStandardPaths
-from app.bases.models import TaskStatus as LegacyTaskStatus
+from app.feature_pack.api import TaskStatus
 
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskConfig
@@ -79,7 +79,7 @@ def _defaultInstallFolder() -> Path:
 
 
 def _normalizeState(value: object) -> str:
-    if isinstance(value, LegacyTaskStatus):
+    if isinstance(value, TaskStatus):
         return value.name.lower()
     if isinstance(value, str):
         normalized = value.strip().lower()
@@ -106,13 +106,13 @@ def _copyProxies(proxies: Mapping[str, str] | None) -> dict[str, str] | None:
     return {str(key): str(value) for key, value in proxies.items()}
 
 
-def _legacyStatus(state: str) -> LegacyTaskStatus:
+def _legacyStatus(state: str) -> TaskStatus:
     return {
-        "waiting": LegacyTaskStatus.WAITING,
-        "running": LegacyTaskStatus.RUNNING,
-        "paused": LegacyTaskStatus.PAUSED,
-        "completed": LegacyTaskStatus.COMPLETED,
-        "failed": LegacyTaskStatus.FAILED,
+        "waiting": TaskStatus.WAITING,
+        "running": TaskStatus.RUNNING,
+        "paused": TaskStatus.PAUSED,
+        "completed": TaskStatus.COMPLETED,
+        "failed": TaskStatus.FAILED,
     }[_normalizeState(state)]
 
 
@@ -323,7 +323,7 @@ class FFmpegInstallTask(Task):
         return self.id
 
     @property
-    def status(self) -> LegacyTaskStatus:
+    def status(self) -> TaskStatus:
         return _legacyStatus(self.state)
 
     @property
@@ -394,7 +394,7 @@ class FFmpegInstallTask(Task):
             self.ffprobePath or _normalizePath(self.installFolder / "bin" / ffprobeName),
         )
 
-    def syncStatusFromStages(self) -> LegacyTaskStatus:
+    def syncStatusFromStages(self) -> TaskStatus:
         stageSnapshots = tuple(stage.snapshot() for stage in self.stages)
         if not stageSnapshots:
             return self.status
@@ -416,7 +416,7 @@ class FFmpegInstallTask(Task):
         self.totalBytes = max(self.totalBytes, self.archiveSize, self.doneBytes)
         return self.status
 
-    def setStatus(self, status: LegacyTaskStatus | str) -> LegacyTaskStatus:
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
         normalizedStatus = _normalizeState(status)
         if not self.stages:
             self.state = normalizedStatus

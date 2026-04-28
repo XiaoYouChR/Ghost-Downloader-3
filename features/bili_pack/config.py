@@ -32,7 +32,7 @@ from qfluentwidgets import (
 )
 from qrcode.image.pure import PyPNGImage
 
-from app.bases.models import PackConfig
+from app.feature_pack.api import FeaturePackSettings
 from app.feature_pack.api.settings import SettingItem
 from app.feature_pack.api.settings import SettingSection
 from app.services.core_service import coreService
@@ -773,7 +773,7 @@ class CookieValidator(ConfigValidator):
         return value if self.validate(value) else ""
 
 
-class BilibiliConfig(PackConfig):
+class BilibiliConfig(FeaturePackSettings):
     defaultQuality = OptionsConfigItem(
         "Download",
         "DefaultQuality",
@@ -885,14 +885,6 @@ class BilibiliConfig(PackConfig):
                 ),
             ),
         )
-
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.parseBilibiliGroup = SettingCardGroup(self.tr("哔哩哔哩视频下载"), settingPage.container)
-
-        for card in self._createSettingCards(self.parseBilibiliGroup):
-            self.parseBilibiliGroup.addSettingCard(card)
-
-        settingPage.vBoxLayout.addWidget(self.parseBilibiliGroup)
 
 
 bilibiliConfig = BilibiliConfig()

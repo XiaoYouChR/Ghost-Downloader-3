@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from urllib.parse import urlparse
 
 from loguru import logger
 
 from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import SettingSection
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskInput
 from app.services.core_service import coreService
@@ -16,9 +16,7 @@ from .config import bittorrentConfig
 from .config import getCachedWebTrackers
 from .config import refreshConfiguredWebTrackers
 from .task import BitTorrentTask
-from .task import _buildTaskConfigFromPayload
 from .task import buildBitTorrentTask
-from .task import parse
 from .task import resolveLocalTorrentPath
 
 
@@ -37,7 +35,6 @@ def _isTorrentUrl(source: str) -> bool:
 
 class BitTorrentPack(FeaturePack):
     priority: int = 85
-    config: object = bittorrentConfig
 
     def accepts(self, source: str) -> bool:
         return _isTorrentUrl(source)
@@ -51,20 +48,8 @@ class BitTorrentPack(FeaturePack):
     def owns(self, task: Task) -> bool:
         return isinstance(task, BitTorrentTask) and task.packId == self.manifest.id
 
-    def canHandle(self, url: str) -> bool:
-        return self.accepts(url)
-
-    def canHandleTask(self, task: object) -> bool:
-        return isinstance(task, BitTorrentTask) and getattr(task, "packId", "") == "bittorrent_pack"
-
-    async def parse(self, payload: Mapping[str, object]) -> BitTorrentTask:
-        return await parse(payload)
-
-    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> BitTorrentTask | None:
-        config = _buildTaskConfigFromPayload(payload)
-        if config is None:
-            return None
-        return await buildBitTorrentTask(TaskInput(config=config, hints=(dict(payload),)))
+    def settingSection(self) -> SettingSection:
+        return bittorrentConfig.settingSection()
 
     def install(self, window: object) -> None:
         self.load(window)
@@ -101,4 +86,4 @@ class BitTorrentPack(FeaturePack):
             webTrackerCard.refreshContent()
 
 
-__all__ = ["BitTorrentPack", "parse"]
+__all__ = ["BitTorrentPack"]

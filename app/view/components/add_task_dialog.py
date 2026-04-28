@@ -31,14 +31,14 @@ from app.services.feature_service import featureService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import bringWindowToTop, getProxies
 from app.view.components.card_widgets import (
-    ParseResultHeaderCardWidget,
-    ParseSettingHeaderCardWidget,
+    AddTaskSettingsHeaderCardWidget,
+    TaskPreviewHeaderCardWidget,
 )
-from app.view.components.cards import ParseSettingCard
+from app.view.components.cards import AddTaskSettingCard
 from app.view.components.editors import AutoSizingEdit
 
 
-class SelectFolderCard(ParseSettingCard):
+class DownloadFolderCard(AddTaskSettingCard):
     def initCustomWidget(self) -> None:
         self.pathEdit = LineEdit(self)
         self.selectFolderAction = Action(FluentIcon.FOLDER, self.tr("选择文件夹"), self)
@@ -70,7 +70,7 @@ class SelectFolderCard(ParseSettingCard):
             return
 
         self.pathEdit.setText(selectedPath)
-        self.payloadChanged.emit()
+        self.inputChanged.emit()
 
     def _currentBrowsePath(self) -> Path:
         path = Path(self.pathEdit.text())
@@ -79,11 +79,11 @@ class SelectFolderCard(ParseSettingCard):
         return path.parent
 
     @property
-    def payload(self) -> dict[str, Any]:
+    def inputOptions(self) -> dict[str, Any]:
         return {"path": Path(self.pathEdit.text())}
 
 
-class PreBlockNumCard(ParseSettingCard):
+class ParallelChunksCard(AddTaskSettingCard):
     def initCustomWidget(self) -> None:
         self.slider = Slider(Qt.Orientation.Horizontal, self)
         self.valueLabel = BodyLabel(self)
@@ -111,10 +111,10 @@ class PreBlockNumCard(ParseSettingCard):
     def _onValueChanged(self, value: int) -> None:
         self.valueLabel.setNum(value)
         self.valueLabel.adjustSize()
-        self.payloadChanged.emit()
+        self.inputChanged.emit()
 
     @property
-    def payload(self) -> dict[str, Any]:
+    def inputOptions(self) -> dict[str, Any]:
         return {"preBlockNum": self.slider.value()}
 
 
@@ -166,14 +166,14 @@ class AddTaskDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel(self.tr("添加任务"), self)
         self.urlEdit = AutoSizingEdit(self)
         self.parseProgressBar = IndeterminateProgressBar(self)
-        self.parseResultGroup = ParseResultHeaderCardWidget(self)
-        self.settingGroup = ParseSettingHeaderCardWidget(self)
-        self.selectFolderCard = SelectFolderCard(
+        self.parseResultGroup = TaskPreviewHeaderCardWidget(self)
+        self.settingGroup = AddTaskSettingsHeaderCardWidget(self)
+        self.selectFolderCard = DownloadFolderCard(
             FluentIcon.DOWNLOAD,
             self.tr("选择下载路径"),
             self,
         )
-        self.preBlockNumCard = PreBlockNumCard(
+        self.preBlockNumCard = ParallelChunksCard(
             FluentIcon.CLOUD,
             self.tr("预分配线程数"),
             self,
@@ -228,7 +228,7 @@ class AddTaskDialog(MessageBoxBase):
         self._parseSession.parseErrorOccurred.connect(self._showParseError)
         self._parseSession.taskConfirmed.connect(self.taskConfirmed.emit)
         for card in self.settingGroup.cards:
-            card.payloadChanged.connect(
+            card.inputChanged.connect(
                 self._syncParseSessionConfig
             )
 
@@ -263,14 +263,14 @@ class AddTaskDialog(MessageBoxBase):
         self._parseSession.updateSources(self._readUrlsFromEditor())
         self._timer.stop()
 
-    def addUrlWithPayload(
+    def addUrlWithInputOverride(
         self,
         url: str,
-        payloadOverride: dict[str, Any],
+        inputOverride: dict[str, Any],
     ) -> None:
         self._parseSession.setSourceOverride(
             url,
-            self._buildInputOverride(payloadOverride),
+            self._buildInputOverride(inputOverride),
         )
         self.addUrls([url])
 
@@ -283,20 +283,20 @@ class AddTaskDialog(MessageBoxBase):
             self.urlEdit.appendPlainText("\n".join(newUrls))
         self._timer.stop()
 
-    def buildCurrentPayload(self) -> dict[str, Any]:
-        payload = {
+    def buildCurrentInputOptions(self) -> dict[str, Any]:
+        inputOptions = {
             "headers": DEFAULT_HEADERS.copy(),
             "proxies": getProxies(),
         }
-        payload.update(self.settingGroup.payload)
-        return payload
+        inputOptions.update(self.settingGroup.inputOptions)
+        return inputOptions
 
     def _syncParseSessionConfig(self) -> None:
-        payload = self.buildCurrentPayload()
-        rawFolder = payload.get("path")
-        rawHeaders = payload.get("headers")
-        rawProxies = payload.get("proxies")
-        rawChunks = payload.get("preBlockNum")
+        inputOptions = self.buildCurrentInputOptions()
+        rawFolder = inputOptions.get("path")
+        rawHeaders = inputOptions.get("headers")
+        rawProxies = inputOptions.get("proxies")
+        rawChunks = inputOptions.get("preBlockNum")
 
         self._parseSession.setBaseConfig(
             folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
@@ -307,17 +307,17 @@ class AddTaskDialog(MessageBoxBase):
 
     def _buildInputOverride(
         self,
-        payloadOverride: dict[str, Any],
+        inputOverride: dict[str, Any],
     ) -> AddTaskInputOverride:
-        rawFolder = payloadOverride.get("path")
-        rawHeaders = payloadOverride.get("headers")
-        rawProxies = payloadOverride.get("proxies")
-        rawChunks = payloadOverride.get("preBlockNum")
-        rawSize = payloadOverride.get("size")
-        rawName = payloadOverride.get("filename")
+        rawFolder = inputOverride.get("path")
+        rawHeaders = inputOverride.get("headers")
+        rawProxies = inputOverride.get("proxies")
+        rawChunks = inputOverride.get("preBlockNum")
+        rawSize = inputOverride.get("size")
+        rawName = inputOverride.get("filename")
         hints = {
             key: value
-            for key, value in payloadOverride.items()
+            for key, value in inputOverride.items()
             if key not in {"path", "headers", "proxies", "preBlockNum", "size", "filename", "url"}
         }
 

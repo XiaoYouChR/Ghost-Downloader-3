@@ -20,6 +20,7 @@ from app.feature_pack.api import EditMode
 from app.feature_pack.api import DefaultSettingsInstaller
 from app.feature_pack.api import FieldKind
 from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import FeaturePackSettings
 from app.feature_pack.api import FeatureService
 from app.feature_pack.api import FormChoice
 from app.feature_pack.api import FormField
@@ -37,11 +38,13 @@ from app.feature_pack.api import PackDiscoveryError
 from app.feature_pack.api import PackLoadError
 from app.feature_pack.api import pack
 from app.feature_pack.api import parseManifest
+from app.feature_pack.api import runtime
 from app.feature_pack.api import service
 from app.feature_pack.api import SettingItem
 from app.feature_pack.api import SettingSection
 from app.feature_pack.api import settings
 from app.feature_pack.api import SingleFileTask
+from app.feature_pack.api import SpecialFileSize
 from app.feature_pack.api import StageSnapshot
 from app.feature_pack.api import SettingsInstaller
 from app.feature_pack.api import snapshot
@@ -56,6 +59,7 @@ from app.feature_pack.api import TaskInput
 from app.feature_pack.api import TaskSnapshot
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskStage
+from app.feature_pack.api import TaskStatus
 from app.feature_pack.api import testing
 
 
@@ -66,6 +70,7 @@ EXPECTED_EXPORTS = [
     "input",
     "manifest",
     "pack",
+    "runtime",
     "service",
     "settings",
     "snapshot",
@@ -80,6 +85,7 @@ EXPECTED_EXPORTS = [
     "DefaultTaskCard",
     "DefaultTaskEditor",
     "FeaturePack",
+    "FeaturePackSettings",
     "FeatureService",
     "FormChoice",
     "FormField",
@@ -92,6 +98,7 @@ EXPECTED_EXPORTS = [
     "SettingItem",
     "SettingSection",
     "SingleFileTask",
+    "SpecialFileSize",
     "StageSnapshot",
     "SettingsInstaller",
     "TaskConfig",
@@ -101,6 +108,7 @@ EXPECTED_EXPORTS = [
     "TaskForm",
     "TaskInput",
     "TaskSnapshot",
+    "TaskStatus",
     "Task",
     "TaskStage",
     "loadManifest",
@@ -120,6 +128,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.input, input)
         self.assertIs(apiPackage.manifest, manifest)
         self.assertIs(apiPackage.pack, pack)
+        self.assertIs(apiPackage.runtime, runtime)
         self.assertIs(apiPackage.service, service)
         self.assertIs(apiPackage.settings, settings)
         self.assertIs(apiPackage.snapshot, snapshot)
@@ -134,6 +143,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.DefaultTaskEditor, DefaultTaskEditor)
         self.assertIs(apiPackage.FieldKind, FieldKind)
         self.assertIs(apiPackage.FeaturePack, FeaturePack)
+        self.assertIs(apiPackage.FeaturePackSettings, FeaturePackSettings)
         self.assertIs(apiPackage.FeatureService, FeatureService)
         self.assertIs(apiPackage.FormChoice, FormChoice)
         self.assertIs(apiPackage.FormField, FormField)
@@ -146,6 +156,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.SettingItem, SettingItem)
         self.assertIs(apiPackage.SettingSection, SettingSection)
         self.assertIs(apiPackage.SingleFileTask, SingleFileTask)
+        self.assertIs(apiPackage.SpecialFileSize, SpecialFileSize)
         self.assertIs(apiPackage.StageSnapshot, StageSnapshot)
         self.assertIs(apiPackage.SettingsInstaller, SettingsInstaller)
         self.assertIs(apiPackage.TaskConfig, TaskConfig)
@@ -155,6 +166,7 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(apiPackage.TaskForm, TaskForm)
         self.assertIs(apiPackage.TaskInput, TaskInput)
         self.assertIs(apiPackage.TaskSnapshot, TaskSnapshot)
+        self.assertIs(apiPackage.TaskStatus, TaskStatus)
         self.assertIs(apiPackage.Task, Task)
         self.assertIs(apiPackage.TaskStage, TaskStage)
         self.assertIs(apiPackage.loadManifest, loadManifest)
@@ -183,6 +195,9 @@ class FeaturePackApiBootstrapTests(unittest.TestCase):
         self.assertIs(service.TaskEditor, TaskEditor)
         self.assertIs(settings.SettingItem, SettingItem)
         self.assertIs(settings.SettingSection, SettingSection)
+        self.assertIs(settings.FeaturePackSettings, FeaturePackSettings)
+        self.assertIs(runtime.SpecialFileSize, SpecialFileSize)
+        self.assertIs(runtime.TaskStatus, TaskStatus)
         self.assertIs(snapshot.StageSnapshot, StageSnapshot)
         self.assertIs(snapshot.TaskSnapshot, TaskSnapshot)
         self.assertIs(stage.TaskStage, TaskStage)

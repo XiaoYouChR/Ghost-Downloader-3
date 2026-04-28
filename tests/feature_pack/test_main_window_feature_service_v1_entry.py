@@ -235,12 +235,13 @@ class FeatureServiceV1EntryTests(unittest.TestCase):
         self.assertIsInstance(featureService, HostFeatureService)
         self.assertIsInstance(featureService, DefaultFeatureService)
 
-    def testLoadFeaturesUsesV1PackLoadingAndSettingsInjection(self) -> None:
+    def testLoadPacksAndInstallSettingsUseV1Entry(self) -> None:
         self.writePack()
         service = HostFeatureService(featuresPath=self.featuresPath)
         window = _FakeWindow()
 
-        service.loadFeatures(cast(object, window))
+        service.loadPacks(cast(object, window))
+        service.installSettings(window.settingPage)
 
         self.assertEqual(window.installed, ["demo_pack"])
         self.assertIsNotNone(service.pack("demo_pack"))

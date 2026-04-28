@@ -14,14 +14,13 @@ from urllib.parse import urlparse
 import niquests
 from loguru import logger
 
-from app.bases.models import SpecialFileSize
+from app.feature_pack.api import SpecialFileSize
 from app.feature_pack.api import FeaturePack
 from app.feature_pack.api import Task
 from app.feature_pack.api import TaskConfig
 from app.feature_pack.api import TaskInput
 from app.supports.config import DEFAULT_HEADERS
 from app.supports.config import cfg
-from app.supports.utils import getProxies
 from app.supports.utils import sanitizeFilename
 from app.supports.utils import splitRequestHeadersAndCookies
 
@@ -72,59 +71,6 @@ def _normalizeConfig(config: TaskConfig) -> TaskConfig:
         headers=_copyHeaders(config.headers, useDefaults=True),
         proxies=_copyProxies(config.proxies),
         chunks=_normalizeChunks(config.chunks),
-    )
-
-
-def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
-    rawSource = payload.get("url")
-    if not isinstance(rawSource, str):
-        return None
-
-    source = rawSource.strip()
-    if not source:
-        return None
-
-    rawFolder = payload.get("path")
-    folder = Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value)
-    rawName = payload.get("filename")
-    name = rawName if isinstance(rawName, str) else ""
-    rawHeaders = payload.get("headers")
-    rawProxies = payload.get("proxies")
-    rawChunks = payload.get("preBlockNum")
-
-    return TaskConfig(
-        source=source,
-        folder=folder,
-        name=name,
-        headers=_copyHeaders(
-            rawHeaders if isinstance(rawHeaders, Mapping) else None,
-            useDefaults=True,
-        ),
-        proxies=(
-            _copyProxies(rawProxies)
-            if isinstance(rawProxies, Mapping)
-            else getProxies()
-        ),
-        chunks=_normalizeChunks(rawChunks if isinstance(rawChunks, int) else None),
-    )
-
-
-def _createTaskFromPayload(payload: Mapping[str, object]) -> HttpTask | None:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        return None
-
-    normalizedConfig = _normalizeConfig(config)
-    if not normalizedConfig.name:
-        return None
-    if urlparse(normalizedConfig.source).scheme.lower() not in {"http", "https"}:
-        return None
-
-    rawSupportsRange = payload.get("supportsRange")
-    return HttpTask(
-        config=normalizedConfig,
-        totalBytes=_normalizeSize(payload.get("size") if isinstance(payload.get("size"), int) else None),
-        supportsRange=bool(rawSupportsRange) if isinstance(rawSupportsRange, bool) else False,
     )
 
 
@@ -357,22 +303,6 @@ async def _buildTask(
     )
 
 
-async def parse(payload: Mapping[str, object]) -> HttpTask:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        raise ValueError("HTTP 任务缺少有效的 url")
-
-    return await _buildTask(
-        config,
-        preferredSize=_normalizeSize(payload.get("size") if isinstance(payload.get("size"), int) else None),
-        preferredSupportsRange=(
-            bool(payload.get("supportsRange"))
-            if isinstance(payload.get("supportsRange"), bool)
-            else None
-        ),
-    )
-
-
 class HttpPack(FeaturePack):
     def accepts(self, source: str) -> bool:
         return urlparse(source).scheme.lower() in {"http", "https"}
@@ -390,26 +320,12 @@ class HttpPack(FeaturePack):
     def owns(self, task: Task) -> bool:
         return isinstance(task, HttpTask) and task.packId == self.manifest.id
 
-    def canHandle(self, url: str) -> bool:
-        return self.accepts(url)
-
-    def canHandleTask(self, task: object) -> bool:
-        return isinstance(task, HttpTask) and getattr(task, "packId", "") == "http_pack"
-
-    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> HttpTask | None:
-        return _createTaskFromPayload(payload)
-
-    async def parse(self, payload: Mapping[str, object]) -> HttpTask:
-        return await parse(payload)
-
 
 __all__ = [
     "HttpPack",
     "_buildRangeProbeHeaders",
-    "_createTaskFromPayload",
     "_extractFileName",
     "_parseContentRangeTotal",
     "_parsePositiveContentLength",
     "_probeDownloadInfo",
-    "parse",
 ]

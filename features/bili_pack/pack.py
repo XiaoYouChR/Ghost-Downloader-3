@@ -230,34 +230,6 @@ async def _getFileSizeWithClient(
         await response.close()
 
 
-def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
-    rawSource = payload.get("url")
-    if not isinstance(rawSource, str):
-        return None
-
-    source = rawSource.strip()
-    if not source:
-        return None
-
-    rawFolder = payload.get("path")
-    rawName = payload.get("filename")
-    rawHeaders = payload.get("headers")
-    rawProxies = payload.get("proxies")
-    rawChunks = payload.get("preBlockNum")
-    return TaskConfig(
-        source=source,
-        folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
-        name=rawName if isinstance(rawName, str) else "",
-        headers=_copyHeaders(rawHeaders if isinstance(rawHeaders, Mapping) else None),
-        proxies=(
-            _copyProxies(rawProxies)
-            if isinstance(rawProxies, Mapping)
-            else getProxies()
-        ),
-        chunks=_normalizeChunks(rawChunks),
-    )
-
-
 def _selectedPageNumbers(
     requestedPages: list[int] | None,
     *,
@@ -405,17 +377,8 @@ async def buildBilibiliTask(data: TaskInput) -> BilibiliTask:
         await client.close()
 
 
-async def parse(payload: Mapping[str, object]) -> BilibiliTask:
-    config = _buildTaskConfigFromPayload(payload)
-    if config is None:
-        raise ValueError("Bilibili 任务缺少有效的 url")
-    return await buildBilibiliTask(TaskInput(config=config, hints=(dict(payload),)))
-
-
 class BilibiliPack(FeaturePack):
     priority = 50
-    taskType = BilibiliTask
-    config = bilibiliConfig
 
     def accepts(self, source: str) -> bool:
         try:
@@ -435,21 +398,6 @@ class BilibiliPack(FeaturePack):
     def settingSection(self) -> SettingSection:
         return bilibiliConfig.settingSection()
 
-    def canHandle(self, url: str) -> bool:
-        return self.accepts(url)
-
-    def canHandleTask(self, task: object) -> bool:
-        return isinstance(task, BilibiliTask) and getattr(task, "packId", "") == "bili_pack"
-
-    async def parse(self, payload: Mapping[str, object]) -> BilibiliTask:
-        return await parse(payload)
-
-    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> BilibiliTask | None:
-        config = _buildTaskConfigFromPayload(payload)
-        if config is None:
-            return None
-        return await buildBilibiliTask(TaskInput(config=config, hints=(dict(payload),)))
-
     def createTaskCard(self, task: Task, parent: object | None = None):
         _ = task
         _ = parent
@@ -463,7 +411,5 @@ class BilibiliPack(FeaturePack):
 
 __all__ = [
     "BilibiliPack",
-    "_buildTaskConfigFromPayload",
     "buildBilibiliTask",
-    "parse",
 ]

@@ -1,10 +1,13 @@
+import os
 import re
 import sys
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
+from typing import Protocol
+from typing import cast
 
 from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from urllib.request import getproxies
@@ -15,8 +18,11 @@ from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg
 
-if TYPE_CHECKING:
-    from app.bases.models import Task
+class TaskTarget(Protocol):
+    resolvePath: str
+
+    def setTitle(self, title: str) -> None:
+        ...
 
 
 _PROXY_PROTOCOLS = ("http", "https", "ftp")
@@ -168,15 +174,16 @@ def splitRequestHeadersAndCookies(headers: dict[str, str] | None) -> tuple[dict[
     if not cookieItems:
         return requestHeaders, None
 
-    return requestHeaders, cookiejar_from_dict(cookieItems)
+    return requestHeaders, cast(RequestsCookieJar, cookiejar_from_dict(cookieItems))
 
 
-def getReadableSize(size: int):
+def getReadableSize(size: int | float) -> str:
+    readableSize = float(size)
     for unit in ['B', 'KB', 'MB', 'GB']:
-        if size < 1024.0:
-            return f"{size:.2f} {unit}"
-        size /= 1024.0
-    return f"{size:.2f} TB"
+        if readableSize < 1024.0:
+            return f"{readableSize:.2f} {unit}"
+        readableSize /= 1024.0
+    return f"{readableSize:.2f} TB"
 
 def getReadableTime(seconds: int) -> str:
     if seconds < 60:
@@ -189,7 +196,7 @@ def getReadableTime(seconds: int) -> str:
 
 
 def ensureUniqueTaskTarget(
-    task: "Task",
+    task: TaskTarget,
 ) -> bool:
     target = Path(task.resolvePath.strip())
     if not target.name:
@@ -211,7 +218,9 @@ def ensureUniqueTaskTarget(
 
 
 def retry(
-    retries: int = 3, delay: float = 0.1, handleFunction: Callable = lambda e: None
+    retries: int = 3,
+    delay: float = 0.1,
+    handleFunction: Callable[[Exception], object] = lambda e: None,
 ):
     """
     是装饰器。函数执行失败时，重试

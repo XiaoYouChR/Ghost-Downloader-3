@@ -528,7 +528,7 @@
         "删除旧 `payload` 修改链路、旧 `ParseSettingCard` 流程和遗留命名。",
         "补充删除旧代码后的回归测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 49,
