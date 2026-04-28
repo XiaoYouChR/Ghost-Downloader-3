@@ -1,0 +1,10 @@
+[pack]
+id = "community_sample_pack"
+name = "Community Sample Pack"
+version = "1.0.0"
+api = 1
+entry = "pack.py"
+dependencies = []
+schemes = ["sample"]
+tasks = ["sample_echo"]
+stages = ["sample_write"]

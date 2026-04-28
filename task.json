@@ -539,7 +539,7 @@
         "为样板 Pack 编写加载和契约测试。",
         "让迁移文档直接引用样板 Pack 的代码路径。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 50,

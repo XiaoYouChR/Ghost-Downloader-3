@@ -888,6 +888,13 @@ Ghost Downloader 应该主动提供：
 - 默认 SettingPage 注入入口
 - 稳定的 `FeatureService` 调用入口
 
+仓库内的最小可运行样板 Pack 位于：
+
+- `examples/community_sample_pack/manifest.toml`
+- `examples/community_sample_pack/pack.py`
+
+它用一个 `pack.py` 展示 `FeaturePack`、`TaskStage`、`TaskForm` 和 `SettingSection` 的最小组合；对应 authoring 契约测试位于 `tests/feature_pack/test_community_sample_pack.py`。
+
 ## 21. 结论
 
 这次收紧后的核心契约只有这些：

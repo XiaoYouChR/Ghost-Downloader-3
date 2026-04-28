@@ -494,3 +494,19 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #48，目标范围仅限删除 `app.bases` V0 接口、旧 payload 修改/创建流程、旧 `ParseSettingCard` 流程和遗留命名；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是仓库不再有旧 V0 接口与调用点，添加任务和浏览器创建路径都使用 V1 `TaskInput/TaskConfig/FeaturePack`，并有删除旧代码后的回归测试；依赖顺序上本任务位于 #46/#47 新版入口正式接管之后，后续 #49 才提供社区样板 Pack；主要风险是 `TaskStatus`、`SpecialFileSize` 和设置配置基类原先被迁移后 Pack 共享使用，删除 `app.bases` 前必须提供 V1 落点，同时浏览器扩展协议里的外部 `payload` 字段仍是消息协议字段，不等同于已删除的 V0 payload 修改链路。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 提供社区样板 Pack 与 authoring 测试
+### 已完成内容:
+- 已新增 `examples/community_sample_pack/manifest.toml` 和 `examples/community_sample_pack/pack.py`，提供可通过新版 `DefaultFeatureService` 加载的最小社区样板 Pack。
+- 样板 Pack 已覆盖 `FeaturePack`、`SingleFileTask`、`TaskStage`、`TaskForm`、`SettingSection` 的最小组合，支持 `sample://...` 来源创建任务并写出一个示例文件。
+- 已新增 `tests/feature_pack/test_community_sample_pack.py`，覆盖样板 Pack 的加载、source 路由、任务创建、`TaskStage` 契约、`TaskForm`、`SettingSection` 和实际运行输出。
+- 已在 `docs/standards/feature-pack-interface-standard.md` 与 `docs/contracts/feature-pack-v1-python-contracts.md` 中直接引用样板 Pack 与 authoring 测试的代码路径。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_community_sample_pack.py`，结果为 4 个测试通过。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py examples/community_sample_pack/pack.py tests/feature_pack/test_community_sample_pack.py` 失败，原因是新样板首次纳入静态检查后暴露 Qt 基类构造签名、override 标记和 loader 绑定 `manifest` 的 pyright 噪声；补充文件级 pyright 约束和未使用返回值处理后再次运行通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py examples/community_sample_pack/pack.py tests/feature_pack/test_community_sample_pack.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`，输出 `automation contract validation passed`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { Write-Host "RUN $($test.FullName)"; uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { Write-Error "Failed: $($test.FullName)"; exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #49，目标范围仅限提供社区样板 Pack 与 authoring 测试；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是新增最小示例 Pack，覆盖 `manifest.toml`、`FeaturePack`、`TaskStage`、`TaskForm`、`SettingSection` 的最小组合，并有加载和契约测试，迁移文档直接引用样板代码路径；依赖顺序上本任务位于新版接口落地、现有 Pack 改写和 V0 删除之后，后续 #50 才执行全量验收与文档收口；主要风险是样板若放入生产 `features/` 会改变默认运行时 Pack 集合，因此本轮将其放在 `examples/community_sample_pack`，通过测试显式指定 `featuresPath=ROOT / "examples"` 验证真实加载能力。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

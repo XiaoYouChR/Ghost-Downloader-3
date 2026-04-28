@@ -808,6 +808,15 @@ V1 应把这项能力正式收进宿主 API，而不是继续把它留在“Pack
 - 默认卡片外壳
 - 契约测试样板
 
+### 16.3 仓库内可运行样板
+
+当前仓库提供一个最小社区样板 Pack，路径为：
+
+- `examples/community_sample_pack/manifest.toml`
+- `examples/community_sample_pack/pack.py`
+
+这个样板只依赖 `app.feature_pack.api` 和标准库，覆盖 `FeaturePack`、`SingleFileTask`、`TaskStage`、`TaskForm`、`SettingSection` 的最小组合，并由 `tests/feature_pack/test_community_sample_pack.py` 验证加载、创建任务和运行输出。
+
 ## 17. 分阶段迁移计划
 
 ### Phase 0: 统一语言，冻结漂移
