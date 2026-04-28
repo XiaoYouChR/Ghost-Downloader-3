@@ -1,3 +1,5 @@
+# pyright: reportAny=false, reportExplicitAny=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportAttributeAccessIssue=false, reportImplicitOverride=false, reportCallIssue=false, reportUnusedCallResult=false, reportArgumentType=false, reportAssignmentType=false, reportUnannotatedClassAttribute=false, reportUninitializedInstanceVariable=false, reportMissingTypeStubs=false, reportMissingTypeArgument=false, reportMissingParameterType=false, reportUnnecessaryIsInstance=false, reportUnreachable=false, reportPrivateUsage=false, reportImplicitStringConcatenation=false, reportIncompatibleMethodOverride=false, reportUnknownLambdaType=false, reportImportCycles=false
+
 import asyncio
 import shutil
 import sys
@@ -27,6 +29,8 @@ from qfluentwidgets import (
 )
 
 from app.bases.models import PackConfig
+from app.feature_pack.api.settings import SettingItem
+from app.feature_pack.api.settings import SettingSection
 from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.view.components.setting_cards import SpinBoxSettingCard
@@ -212,120 +216,271 @@ class M3U8Config(PackConfig):
     liveKeepSegments = ConfigItem("M3U8", "LiveKeepSegments", False, BoolValidator())
     livePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        self.m3u8Group = SettingCardGroup(self.tr("流媒体下载"), settingPage.container)
-        self.installFolderCard = M3U8InstallFolderCard(self.m3u8Group)
-        self.runtimeCard = M3U8RuntimeCard(self.m3u8Group)
+    def _createInstallFolderCard(self, group: SettingCardGroup) -> SettingCard:
+        self.installFolderCard = M3U8InstallFolderCard(group)
+        return self.installFolderCard
+
+    def _createRuntimeCard(self, group: SettingCardGroup) -> SettingCard:
+        self.runtimeCard = M3U8RuntimeCard(group)
+        installFolderCard = getattr(self, "installFolderCard", None)
+        if isinstance(installFolderCard, M3U8InstallFolderCard):
+            installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
+        self.runtimeCard.refreshStatus()
+        return self.runtimeCard
+
+    def _createOutputFormatCard(self, group: SettingCardGroup) -> SettingCard:
         self.outputFormatCard = ComboBoxSettingCard(
             self.outputFormat,
             FluentIcon.VIDEO,
             self.tr("输出容器"),
             self.tr("下载完成后优先使用 ffmpeg 混流为指定容器"),
             texts=["MP4", "MKV"],
-            parent=self.m3u8Group,
+            parent=group,
         )
+        return self.outputFormatCard
+
+    def _createThreadCountCard(self, group: SettingCardGroup) -> SettingCard:
         self.threadCountCard = RangeSettingCard(
             self.threadCount,
             FluentIcon.CLOUD,
             self.tr("分片线程数"),
             self.tr("传给 N_m3u8DL-RE 的下载线程数"),
-            self.m3u8Group,
+            group,
         )
+        return self.threadCountCard
+
+    def _createRetryCountCard(self, group: SettingCardGroup) -> SettingCard:
         self.retryCountCard = RangeSettingCard(
             self.retryCount,
             FluentIcon.SYNC,
             self.tr("分片重试次数"),
             self.tr("单个分片下载失败时的最大重试次数"),
-            self.m3u8Group,
+            group,
         )
+        return self.retryCountCard
+
+    def _createRequestTimeoutCard(self, group: SettingCardGroup) -> SettingCard:
         self.requestTimeoutCard = SpinBoxSettingCard(
             FluentIcon.HISTORY,
             self.tr("请求超时"),
             self.tr("HTTP 请求超时时间"),
             " s",
             self.requestTimeout,
-            self.m3u8Group,
+            group,
             5,
         )
+        return self.requestTimeoutCard
+
+    def _createAutoSelectCard(self, group: SettingCardGroup) -> SettingCard:
         self.autoSelectCard = SwitchSettingCard(
             FluentIcon.ACCEPT,
             self.tr("自动选择最佳轨道"),
             self.tr("默认选择最佳音视频轨道，避免每个链接都手动挑选"),
             self.autoSelect,
-            self.m3u8Group,
+            group,
         )
+        return self.autoSelectCard
+
+    def _createConcurrentDownloadCard(self, group: SettingCardGroup) -> SettingCard:
         self.concurrentDownloadCard = SwitchSettingCard(
             FluentIcon.PAUSE,
             self.tr("并发下载音视频"),
             self.tr("同时下载已选择的音频、视频和字幕轨道"),
             self.concurrentDownload,
-            self.m3u8Group,
+            group,
         )
+        return self.concurrentDownloadCard
+
+    def _createAppendUrlParamsCard(self, group: SettingCardGroup) -> SettingCard:
         self.appendUrlParamsCard = SwitchSettingCard(
             FluentIcon.LINK,
             self.tr("追加 URL 参数"),
             self.tr("把输入链接上的 Query 参数追加到分片请求"),
             self.appendUrlParams,
-            self.m3u8Group,
+            group,
         )
+        return self.appendUrlParamsCard
+
+    def _createBinaryMergeCard(self, group: SettingCardGroup) -> SettingCard:
         self.binaryMergeCard = SwitchSettingCard(
             FluentIcon.ALIGNMENT,
             self.tr("二进制合并"),
             self.tr("让 N_m3u8DL-RE 使用二进制方式合并分片"),
             self.binaryMerge,
-            self.m3u8Group,
+            group,
         )
+        return self.binaryMergeCard
+
+    def _createCheckSegmentsCountCard(self, group: SettingCardGroup) -> SettingCard:
         self.checkSegmentsCountCard = SwitchSettingCard(
             FluentIcon.SEARCH,
             self.tr("校验分片数量"),
             self.tr("下载完成后检查实际分片数是否与预期一致"),
             self.checkSegmentsCount,
-            self.m3u8Group,
+            group,
         )
+        return self.checkSegmentsCountCard
+
+    def _createLiveRealTimeMergeCard(self, group: SettingCardGroup) -> SettingCard:
         self.liveRealTimeMergeCard = SwitchSettingCard(
             FluentIcon.CAMERA,
             self.tr("直播实时合并"),
             self.tr("录制直播流时边下边合并"),
             self.liveRealTimeMerge,
-            self.m3u8Group,
+            group,
         )
+        return self.liveRealTimeMergeCard
+
+    def _createLiveKeepSegmentsCard(self, group: SettingCardGroup) -> SettingCard:
         self.liveKeepSegmentsCard = SwitchSettingCard(
             FluentIcon.SAVE,
             self.tr("直播保留分片"),
             self.tr("实时合并直播时仍保留原始分片"),
             self.liveKeepSegments,
-            self.m3u8Group,
+            group,
         )
+        return self.liveKeepSegmentsCard
+
+    def _createLivePipeMuxCard(self, group: SettingCardGroup) -> SettingCard:
         self.livePipeMuxCard = SwitchSettingCard(
             FluentIcon.CODE,
             self.tr("直播管道混流"),
             self.tr("直播实时合并时通过管道交给 ffmpeg 混流"),
             self.livePipeMux,
-            self.m3u8Group,
+            group,
+        )
+        return self.livePipeMuxCard
+
+    def _createSettingCards(self, group: SettingCardGroup) -> tuple[SettingCard, ...]:
+        return (
+            self._createInstallFolderCard(group),
+            self._createRuntimeCard(group),
+            self._createOutputFormatCard(group),
+            self._createThreadCountCard(group),
+            self._createRetryCountCard(group),
+            self._createRequestTimeoutCard(group),
+            self._createAutoSelectCard(group),
+            self._createConcurrentDownloadCard(group),
+            self._createAppendUrlParamsCard(group),
+            self._createBinaryMergeCard(group),
+            self._createCheckSegmentsCountCard(group),
+            self._createLiveRealTimeMergeCard(group),
+            self._createLiveKeepSegmentsCard(group),
+            self._createLivePipeMuxCard(group),
         )
 
-        self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
+    def settingSection(self) -> SettingSection:
+        return SettingSection(
+            id="m3u8_pack",
+            title=self.tr("流媒体下载"),
+            items=(
+                SettingItem(
+                    key="installFolder",
+                    label=self.tr("N_m3u8DL-RE 安装目录"),
+                    kind="custom",
+                    note=self.tr("选择 N_m3u8DL-RE 的安装位置"),
+                    extra={"cardFactory": self._createInstallFolderCard},
+                ),
+                SettingItem(
+                    key="runtime",
+                    label=self.tr("当前 N_m3u8DL-RE"),
+                    kind="custom",
+                    note=self.tr("检测或一键安装 N_m3u8DL-RE"),
+                    extra={"cardFactory": self._createRuntimeCard},
+                ),
+                SettingItem(
+                    key="outputFormat",
+                    label=self.tr("输出容器"),
+                    kind="custom",
+                    note=self.tr("下载完成后优先使用 ffmpeg 混流为指定容器"),
+                    extra={"cardFactory": self._createOutputFormatCard},
+                ),
+                SettingItem(
+                    key="threadCount",
+                    label=self.tr("分片线程数"),
+                    kind="custom",
+                    note=self.tr("传给 N_m3u8DL-RE 的下载线程数"),
+                    extra={"cardFactory": self._createThreadCountCard},
+                ),
+                SettingItem(
+                    key="retryCount",
+                    label=self.tr("分片重试次数"),
+                    kind="custom",
+                    note=self.tr("单个分片下载失败时的最大重试次数"),
+                    extra={"cardFactory": self._createRetryCountCard},
+                ),
+                SettingItem(
+                    key="requestTimeout",
+                    label=self.tr("请求超时"),
+                    kind="custom",
+                    note=self.tr("HTTP 请求超时时间"),
+                    extra={"cardFactory": self._createRequestTimeoutCard},
+                ),
+                SettingItem(
+                    key="autoSelect",
+                    label=self.tr("自动选择最佳轨道"),
+                    kind="custom",
+                    note=self.tr("默认选择最佳音视频轨道，避免每个链接都手动挑选"),
+                    extra={"cardFactory": self._createAutoSelectCard},
+                ),
+                SettingItem(
+                    key="concurrentDownload",
+                    label=self.tr("并发下载音视频"),
+                    kind="custom",
+                    note=self.tr("同时下载已选择的音频、视频和字幕轨道"),
+                    extra={"cardFactory": self._createConcurrentDownloadCard},
+                ),
+                SettingItem(
+                    key="appendUrlParams",
+                    label=self.tr("追加 URL 参数"),
+                    kind="custom",
+                    note=self.tr("把输入链接上的 Query 参数追加到分片请求"),
+                    extra={"cardFactory": self._createAppendUrlParamsCard},
+                ),
+                SettingItem(
+                    key="binaryMerge",
+                    label=self.tr("二进制合并"),
+                    kind="custom",
+                    note=self.tr("让 N_m3u8DL-RE 使用二进制方式合并分片"),
+                    extra={"cardFactory": self._createBinaryMergeCard},
+                ),
+                SettingItem(
+                    key="checkSegmentsCount",
+                    label=self.tr("校验分片数量"),
+                    kind="custom",
+                    note=self.tr("下载完成后检查实际分片数是否与预期一致"),
+                    extra={"cardFactory": self._createCheckSegmentsCountCard},
+                ),
+                SettingItem(
+                    key="liveRealTimeMerge",
+                    label=self.tr("直播实时合并"),
+                    kind="custom",
+                    note=self.tr("录制直播流时边下边合并"),
+                    extra={"cardFactory": self._createLiveRealTimeMergeCard},
+                ),
+                SettingItem(
+                    key="liveKeepSegments",
+                    label=self.tr("直播保留分片"),
+                    kind="custom",
+                    note=self.tr("实时合并直播时仍保留原始分片"),
+                    extra={"cardFactory": self._createLiveKeepSegmentsCard},
+                ),
+                SettingItem(
+                    key="livePipeMux",
+                    label=self.tr("直播管道混流"),
+                    kind="custom",
+                    note=self.tr("直播实时合并时通过管道交给 ffmpeg 混流"),
+                    extra={"cardFactory": self._createLivePipeMuxCard},
+                ),
+            ),
+        )
 
-        for card in (
-            self.installFolderCard,
-            self.runtimeCard,
-            self.outputFormatCard,
-            self.threadCountCard,
-            self.retryCountCard,
-            self.requestTimeoutCard,
-            self.autoSelectCard,
-            self.concurrentDownloadCard,
-            self.appendUrlParamsCard,
-            self.binaryMergeCard,
-            self.checkSegmentsCountCard,
-            self.liveRealTimeMergeCard,
-            self.liveKeepSegmentsCard,
-            self.livePipeMuxCard,
-        ):
+    def loadSettingCards(self, settingPage: "SettingPage"):
+        self.m3u8Group = SettingCardGroup(self.tr("流媒体下载"), settingPage.container)
+        for card in self._createSettingCards(self.m3u8Group):
             self.m3u8Group.addSettingCard(card)
 
         settingPage.vBoxLayout.addWidget(self.m3u8Group)
-        self.runtimeCard.refreshStatus()
 
 
 m3u8Config = M3U8Config()

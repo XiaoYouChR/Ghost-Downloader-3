@@ -399,3 +399,24 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #43，目标范围仅限改写 `m3u8_pack` 的下载工作流、`M3U8Task` 和主下载 Stage；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是流媒体下载核心路径使用 V1 `FeaturePack/TaskInput/TaskConfig/SingleFileTask/TaskStage` 语义，输出同步走 `syncOutput()`，并有下载工作流测试覆盖；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、Core/AddTask、`http_pack`、`ffmpeg_pack` 和 `bili_pack` 迁移之后，仍把安装任务、设置注入和附属 UI 留给后续任务 #44；主要风险是 M3U8 与泛 HTTP 路由重叠、N_m3u8DL-RE 输出文件可能修正实际扩展名、以及下载进度只能从外部进程文本解析，测试因此使用假的 manifest 响应和下载 Worker 覆盖核心工作流而不触发真实网络和外部进程。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 改写 m3u8_pack 的安装与设置
+### 已完成内容:
+- 已将 `M3U8InstallTask` 从 V0 `LegacyTask` 改为新版 `Task`，使用 `m3u8_pack/m3u8_install@1` 稳定任务身份、`TaskConfig` 和 `TaskSnapshot`。
+- 已新增 `M3U8InstallDownloadStage` 与 `M3U8InstallExtractStage`，安装下载与解压阶段使用 `http_download@1`、`extract_archive@1` 阶段身份并注册到 `m3u8_install` 任务下。
+- 已让 `createInstallTask()` 直接组装新版安装任务和阶段，不再通过旧 `coreService._parseUrl()` 借出旧安装流程。
+- 已为 `M3U8Pack` 增加 `gd3+m3u8://install` 新版安装入口，并让 `accepts/createTask/owns/parse/createTaskFromPayload` 都能识别下载任务和安装任务。
+- 已把 `m3u8_pack` 设置页改为 `SettingSection` + `custom` 设置项声明，旧 `loadSettingCards()` 复用同一批设置卡工厂，避免新旧设置 UI 行为分叉。
+- 已验证 M3U8 下载任务和安装任务都回落到新版默认卡片，并通过宿主 `editTask()` / `TaskConfigDialog` 入口修改配置。
+- 已扩展 `tests/feature_pack/test_m3u8_pack_v1.py`，覆盖安装任务创建、安装运行与恢复、设置注入、默认 TaskCard/ResultCard 编辑入口和 M3U8 manifest scheme。
+### 测试验证:
+- 初次运行 `uv run python tests\feature_pack\test_m3u8_pack_v1.py` 失败，原因是安装解压后的可执行文件路径断言仍按旧嵌套目录预期；修正为实际安装根目录后再次运行通过。
+- 初次运行 `uv run python -m unittest -v tests.feature_pack.test_m3u8_pack_v1.M3U8PackV1Tests.testM3U8PackInstallsSettingsThroughSettingSection` 在 offscreen 环境创建真实运行时设置卡时触发 Qt access violation；测试改为替换 runtime card factory，只验证宿主设置注入边界后通过。
+- 通过: `uv run python tests\feature_pack\test_m3u8_pack_v1.py`。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py features/m3u8_pack/task.py features/m3u8_pack/pack.py features/m3u8_pack/config.py tests/feature_pack/test_m3u8_pack_v1.py tests/feature_pack/test_repository_manifests.py` 失败，原因是本轮首次把 `features/m3u8_pack/config.py` 纳入静态检查后暴露既有 qfluentwidgets/旧配置 UI 类型噪声，以及新增安装阶段快照返回注解缺失；补充文件级抑制和返回类型后再次运行通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py features/m3u8_pack/task.py features/m3u8_pack/pack.py features/m3u8_pack/config.py tests/feature_pack/test_m3u8_pack_v1.py tests/feature_pack/test_repository_manifests.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { Write-Error "Failed: $($test.FullName)"; exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #44，目标范围仅限改写 `m3u8_pack` 的安装任务、设置注入和附属 UI；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 `M3U8InstallTask` 和相关安装 Stage 使用 V1 `Task/TaskStage/TaskConfig/TaskSnapshot` 语义，设置页通过 `SettingSection` 进入新版宿主 UI，编辑入口通过默认卡片和宿主 `editTask()` 完成，并有安装与设置测试覆盖；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、`http_pack`、`extract_pack`、`ffmpeg_pack` 和上一轮 `m3u8_pack` 下载工作流之后；主要风险是安装阶段必须复用 HTTP 下载与解压能力但不能沿用 V0 任务身份，设置页存在真实运行时检测和一键安装按钮，测试需要避开 offscreen 环境下真实 runtime card 的 Qt 崩溃点而仍验证宿主注入契约。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

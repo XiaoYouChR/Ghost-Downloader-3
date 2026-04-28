@@ -8,8 +8,9 @@ import platform
 import re
 import sys
 from collections.abc import Mapping
+from collections.abc import Sequence
 from contextlib import suppress
-from dataclasses import dataclass, field, replace
+from dataclasses import replace
 from email.message import Message
 from pathlib import Path
 from time import time_ns
@@ -21,17 +22,16 @@ import niquests
 from loguru import logger
 
 from app.bases.interfaces import Worker
-from app.bases.models import Task as LegacyTask
 from app.bases.models import TaskStatus
 from app.feature_pack.api import FormField
 from app.feature_pack.api import SingleFileTask
 from app.feature_pack.api import StageSnapshot
+from app.feature_pack.api import Task
 from app.feature_pack.api import TaskConfig
 from app.feature_pack.api import TaskForm
 from app.feature_pack.api import TaskInput
 from app.feature_pack.api import TaskSnapshot
 from app.feature_pack.api import TaskStage
-from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
 from .config import m3u8Config, resolveM3U8DownloaderExecutable
@@ -65,9 +65,15 @@ _M3U8DL_RELEASE_HEADERS = {
 _M3U8_PACK_ID = "m3u8_pack"
 _M3U8_TASK_KIND = "m3u8_download"
 _M3U8_STAGE_KIND = "m3u8_download"
+_M3U8_INSTALL_TASK_KIND = "m3u8_install"
+_M3U8_INSTALL_DOWNLOAD_STAGE_KIND = "http_download"
+_M3U8_INSTALL_EXTRACT_STAGE_KIND = "extract_archive"
 _M3U8_TASK_VERSION = 1
 _M3U8_STAGE_VERSION = 1
+_M3U8_INSTALL_TASK_VERSION = 1
+_M3U8_INSTALL_STAGE_VERSION = 1
 _DEFAULT_STAGE_NAME = "M3U8 下载"
+M3U8_INSTALL_URL = "gd3+m3u8://install"
 
 
 def _importPackModule(packId: str, moduleName: str) -> Any:
@@ -219,6 +225,18 @@ def _normalizeThreadCount(value: int | None) -> int:
     if value is None or isinstance(value, bool):
         return max(1, int(m3u8Config.threadCount.value))
     return max(1, int(value))
+
+
+def _normalizeInstallChunks(value: int | None) -> int:
+    if value is None or isinstance(value, bool):
+        return max(1, int(cfg.preBlockNum.value))
+    return max(1, int(value))
+
+
+def _copyInstallHeaders(headers: Mapping[str, object] | None) -> dict[str, str]:
+    if headers:
+        return {str(key): str(value) for key, value in headers.items()}
+    return _M3U8DL_RELEASE_HEADERS.copy()
 
 
 def _normalizeState(value: str | TaskStatus | object) -> str:
@@ -1422,113 +1440,484 @@ async def parse(payload: Mapping[str, object]) -> M3U8Task:
     return await buildM3U8Task(TaskInput(config=config, hints=(dict(payload),)))
 
 
-@dataclass(kw_only=True)
-class M3U8InstallTask(LegacyTask):
-    url: str
-    assetName: str
-    headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
-    proxies: dict | None = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
-    installFolder: str
-    archiveSize: int = field(default=0)
-    archivePath: str = field(default="")
-    executablePath: str = field(default="")
+class M3U8InstallDownloadStage(HttpTaskStage):
+    recordTaskPackId = _M3U8_PACK_ID
+    recordTaskKind = _M3U8_INSTALL_TASK_KIND
+    recordTaskVersion = _M3U8_INSTALL_TASK_VERSION
+    recordKind = _M3U8_INSTALL_DOWNLOAD_STAGE_KIND
+    recordVersion = _M3U8_INSTALL_STAGE_VERSION
+
+    async def run(self) -> None:
+        await super().run()
+
+    def reset(self) -> None:
+        super().reset()
+
+    def snapshot(self) -> StageSnapshot:
+        return super().snapshot()
+
+
+class M3U8InstallExtractStage(ExtractStage):
+    recordTaskPackId = _M3U8_PACK_ID
+    recordTaskKind = _M3U8_INSTALL_TASK_KIND
+    recordTaskVersion = _M3U8_INSTALL_TASK_VERSION
+    recordKind = _M3U8_INSTALL_EXTRACT_STAGE_KIND
+    recordVersion = _M3U8_INSTALL_STAGE_VERSION
+
+    def configure(self, config: TaskConfig) -> None:
+        self.installFolder = _normalizePath(Path(config.folder))
+
+    async def run(self) -> None:
+        await super().run()
+
+    def reset(self) -> None:
+        super().reset()
+
+    def snapshot(self) -> StageSnapshot:
+        return super().snapshot()
+
+
+class M3U8InstallTask(Task):
+    recordPackId = _M3U8_PACK_ID
+    recordKind = _M3U8_INSTALL_TASK_KIND
+    recordVersion = _M3U8_INSTALL_TASK_VERSION
+
+    def __init__(
+        self,
+        *,
+        id: str | None = None,
+        config: TaskConfig,
+        title: str,
+        assetName: str,
+        archiveSize: int,
+        stages: list[TaskStage] | None = None,
+        executablePath: str = "",
+        createdAt: int | None = None,
+        state: str | TaskStatus = "waiting",
+        progress: float = 0.0,
+        doneBytes: int = 0,
+        totalBytes: int | None = None,
+        target: str = "",
+    ) -> None:
+        self.title = str(title).strip() or "N_m3u8DL-RE 安装"
+        self.assetName = str(assetName).strip() or Path(config.name).name or "N_m3u8DL-RE.zip"
+        self.archiveSize = max(0, int(archiveSize))
+        self.executablePath = str(executablePath).strip()
+        self.createdAt = int(time_ns()) if createdAt is None else int(createdAt)
+        self.state = _normalizeState(state)
+        self.progress = max(0.0, min(float(progress), 100.0))
+        self.doneBytes = max(0, int(doneBytes))
+        self.totalBytes = max(
+            self.archiveSize,
+            int(totalBytes) if isinstance(totalBytes, int) and not isinstance(totalBytes, bool) else self.archiveSize,
+        )
+        self.target = str(target).strip()
+        normalizedConfig = self._normalizeConfig(config, assetName=self.assetName)
+        resolvedStages = stages or self._buildStages(normalizedConfig)
+
+        super().__init__(
+            id=id or f"m3u8-install-task-{uuid4().hex}",
+            packId=_M3U8_PACK_ID,
+            kind=_M3U8_INSTALL_TASK_KIND,
+            version=_M3U8_INSTALL_TASK_VERSION,
+            config=normalizedConfig,
+            stages=resolvedStages,
+        )
+        self.syncOutput()
+        self.syncStatusFromStages()
+
+    @staticmethod
+    def _normalizeConfig(config: TaskConfig, *, assetName: str) -> TaskConfig:
+        return TaskConfig(
+            source=str(config.source).strip(),
+            folder=Path(config.folder),
+            name=str(config.name).strip() or assetName,
+            headers=_copyInstallHeaders(config.headers),
+            proxies=_copyProxies(config.proxies),
+            chunks=_normalizeInstallChunks(config.chunks),
+        )
+
+    def _buildStages(self, config: TaskConfig) -> list[TaskStage]:
+        return [
+            M3U8InstallDownloadStage(
+                id=f"m3u8-install-download-{uuid4().hex}",
+                stageIndex=1,
+                url=config.source,
+                fileSize=self.archiveSize,
+                headers=config.headers,
+                proxies=config.proxies,
+                resolvePath="",
+                blockNum=config.chunks,
+                supportsRange=True,
+                kind=_M3U8_INSTALL_DOWNLOAD_STAGE_KIND,
+                version=_M3U8_INSTALL_STAGE_VERSION,
+                name="下载 N_m3u8DL-RE",
+            ),
+            M3U8InstallExtractStage(
+                id=f"m3u8-install-extract-{uuid4().hex}",
+                stageIndex=2,
+                archivePath="",
+                installFolder=_normalizePath(config.folder),
+                executableNames=[_executableName("N_m3u8DL-RE")],
+                cleanupArchive=True,
+                kind=_M3U8_INSTALL_EXTRACT_STAGE_KIND,
+                version=_M3U8_INSTALL_STAGE_VERSION,
+                name="解压 N_m3u8DL-RE",
+            ),
+        ]
+
+    @property
+    def taskId(self) -> str:
+        return self.id
+
+    @property
+    def status(self) -> TaskStatus:
+        return _legacyStatus(self.state)
+
+    @property
+    def installFolder(self) -> Path:
+        return Path(self.config.folder)
+
+    @property
+    def archivePath(self) -> str:
+        return _normalizePath(self.installFolder / self.assetName)
+
+    @property
+    def fileSize(self) -> int:
+        return self.totalBytes
+
+    @fileSize.setter
+    def fileSize(self, value: int) -> None:
+        self.totalBytes = max(0, int(value))
 
     @property
     def resolvePath(self) -> str:
-        return self.executablePath or self.archivePath or _normalizePath(Path(self.installFolder) / self.title)
+        return self.executablePath or self.archivePath
 
-    def __post_init__(self):
-        super().__post_init__()
-        self.syncStagePaths()
+    def downloadStage(self) -> M3U8InstallDownloadStage:
+        stage = self.stages[0]
+        if not isinstance(stage, M3U8InstallDownloadStage):
+            raise TypeError(
+                f"Unexpected M3U8 install download stage type: {type(stage).__name__}"
+            )
+        return stage
 
-    def syncStagePaths(self):
-        installDir = Path(self.installFolder)
-        self.path = installDir
-        self.archivePath = _normalizePath(installDir / self.assetName)
-        if not self.executablePath:
-            self.executablePath = _normalizePath(installDir / _executableName("N_m3u8DL-RE"))
+    def extractStage(self) -> M3U8InstallExtractStage:
+        stage = self.stages[1]
+        if not isinstance(stage, M3U8InstallExtractStage):
+            raise TypeError(
+                f"Unexpected M3U8 install extract stage type: {type(stage).__name__}"
+            )
+        return stage
+
+    def configure(self, config: TaskConfig) -> None:
+        normalizedConfig = self._normalizeConfig(config, assetName=self.assetName)
+        self.assetName = normalizedConfig.name
+        super().configure(normalizedConfig)
+        self.syncStatusFromStages()
+
+    def editForm(self, _mode: str) -> TaskForm | None:
+        return TaskForm(
+            title="编辑 N_m3u8DL-RE 安装任务",
+            fields=(
+                FormField(
+                    key="folder",
+                    label="安装目录",
+                    kind="folder",
+                    placeholder="选择安装目录",
+                ),
+                FormField(
+                    key="proxies",
+                    label="代理",
+                    kind="proxy",
+                    placeholder="https: http://127.0.0.1:7890",
+                ),
+                FormField(
+                    key="chunks",
+                    label="下载线程数",
+                    kind="int",
+                    min=1,
+                    max=64,
+                ),
+            ),
+        )
+
+    def syncStagePaths(self) -> None:
+        self.syncOutput()
+
+    def syncOutput(self) -> None:
+        self.target = _normalizePath(self.installFolder)
+        downloadStage = self.downloadStage()
+        extractStage = self.extractStage()
+
+        downloadStage.resolvePath = self.archivePath
+        downloadStage.fileSize = self.archiveSize
+        extractStage.archivePath = self.archivePath
+        extractStage.installFolder = self.target
+
+        self._syncResolvedExecutable()
+
+    def _syncResolvedExecutable(self) -> None:
+        executableName = _executableName("N_m3u8DL-RE")
+        extractedExecutable = self.extractStage().extractedExecutables.get(executableName)
+        if extractedExecutable:
+            self.executablePath = extractedExecutable
+            return
+
+        self.executablePath = _normalizePath(self.installFolder / executableName)
+
+    def syncStatusFromStages(self) -> TaskStatus:
+        stageSnapshots = tuple(stage.snapshot() for stage in self.stages)
+        if not stageSnapshots:
+            return self.status
+
+        normalizedStates = [snapshot.state for snapshot in stageSnapshots]
+        if any(state == "failed" for state in normalizedStates):
+            self.state = "failed"
+        elif all(state == "completed" for state in normalizedStates):
+            self.state = "completed"
+        elif any(state == "running" for state in normalizedStates):
+            self.state = "running"
+        elif all(state == "paused" for state in normalizedStates):
+            self.state = "paused"
+        else:
+            self.state = "waiting"
+
+        self.progress = self._projectProgress(stageSnapshots)
+        self.doneBytes = self._projectDoneBytes(stageSnapshots)
+        self.totalBytes = max(self.totalBytes, self.archiveSize, self.doneBytes)
+        return self.status
+
+    def setStatus(self, status: TaskStatus | str) -> TaskStatus:
+        normalizedStatus = _normalizeState(status)
+        if not self.stages:
+            self.state = normalizedStatus
+            return self.status
 
         for stage in self.stages:
-            if isinstance(stage, HttpTaskStage):
-                stage.resolvePath = self.archivePath
-            elif isinstance(stage, ExtractStage):
-                stage.archivePath = self.archivePath
-                stage.installFolder = _normalizePath(installDir)
+            currentSetter = getattr(stage, "setStatus", None)
+            if callable(currentSetter):
+                currentSetter(normalizedStatus, emitSignals=False, notifyTask=False)
+                continue
+            if normalizedStatus == "paused":
+                stage.reset()
+        return self.syncStatusFromStages()
 
-    async def run(self):
-        currentStage = None
+    def occupiesDownloadSlot(self) -> bool:
+        return self.state == "running"
+
+    def willOccupyDownloadSlotWhenStarted(self) -> bool:
+        return True
+
+    def _projectProgress(self, stageSnapshots: Sequence[object]) -> float:
+        if not stageSnapshots:
+            return self.progress
+
+        currentIndex = min(self.currentStageIndex, len(stageSnapshots) - 1)
+        currentSnapshot = stageSnapshots[currentIndex]
+        if not hasattr(currentSnapshot, "progress") or not hasattr(currentSnapshot, "state"):
+            return self.progress
+
+        currentProgress = max(0.0, min(float(getattr(currentSnapshot, "progress", 0.0)), 100.0))
+        currentState = _normalizeState(getattr(currentSnapshot, "state", "waiting"))
+        if currentState == "completed":
+            completedStages = currentIndex + 1
+            currentProgress = 0.0
+        else:
+            completedStages = currentIndex
+        return ((completedStages + currentProgress / 100.0) / len(stageSnapshots)) * 100.0
+
+    def _projectDoneBytes(self, stageSnapshots: Sequence[object]) -> int:
+        if not stageSnapshots:
+            return self.doneBytes
+
+        currentIndex = min(self.currentStageIndex, len(stageSnapshots) - 1)
+        currentSnapshot = stageSnapshots[currentIndex]
+        return max(0, int(getattr(currentSnapshot, "doneBytes", 0)))
+
+    async def run(self) -> None:
+        currentStage: TaskStage | None = None
         try:
-            for stage in self.iterRunnableStages():
-                currentStage = stage
-                if isinstance(stage, HttpTaskStage):
-                    await HttpWorker(stage).run()
+            for stage in self.iterStages():
+                self.currentStageIndex = self.stages.index(stage)
+                stageState = _normalizeState(getattr(stage, "state", "waiting"))
+                if stageState == "completed":
                     continue
 
-                if isinstance(stage, ExtractStage):
+                currentStage = stage
+                self.state = "running"
+                if isinstance(stage, M3U8InstallDownloadStage):
+                    await HttpWorker(stage).run()
+                    self.syncStatusFromStages()
+                    continue
+                if isinstance(stage, M3U8InstallExtractStage):
                     await ExtractWorker(stage).run()
-                    self.executablePath = stage.extractedExecutables[_executableName("N_m3u8DL-RE")]
+                    self._syncResolvedExecutable()
+                    self.syncStatusFromStages()
                     continue
 
                 raise TypeError(f"不支持的 M3U8InstallTaskStage: {type(stage).__name__}")
         except asyncio.CancelledError:
-            logger.info(f"{self.title} 停止安装")
+            logger.info("{} 停止安装", self.title)
+            self.syncStatusFromStages()
             raise
-        except Exception as e:
-            if currentStage is not None and not currentStage.error:
-                currentStage.setError(e)
-            logger.opt(exception=e).error("{} 安装失败", self.title)
+        except Exception as error:
+            setError = getattr(currentStage, "setError", None)
+            if currentStage is not None and callable(setError) and not getattr(currentStage, "error", ""):
+                setError(error)
+            self.syncStatusFromStages()
+            logger.opt(exception=error).error("{} 安装失败", self.title)
             raise
+        finally:
+            self._syncResolvedExecutable()
+            self.syncStatusFromStages()
 
-    def __hash__(self):
-        return hash(self.taskId)
+    def reset(self) -> None:
+        self.state = "waiting"
+        self.progress = 0.0
+        self.doneBytes = 0
+        self.currentStageIndex = 0
+        self.totalBytes = max(self.totalBytes, self.archiveSize)
+        for stage in self.stages:
+            stage.reset()
+        self._syncResolvedExecutable()
+        self.syncStatusFromStages()
+
+    def snapshot(self) -> TaskSnapshot:
+        return TaskSnapshot(
+            id=self.id,
+            packId=self.packId,
+            kind=self.kind,
+            name=self.title,
+            state=self.state,
+            progress=self.progress,
+            doneBytes=self.doneBytes,
+            totalBytes=self.totalBytes,
+            canPause=self.canPause(),
+            target=self.target,
+            stages=tuple(stage.snapshot() for stage in self.stages),
+        )
+
+    def persistenceState(self) -> dict[str, object]:
+        state = super().persistenceState()
+        state.update(
+            {
+                "title": self.title,
+                "assetName": self.assetName,
+                "archiveSize": self.archiveSize,
+                "executablePath": self.executablePath,
+                "createdAt": self.createdAt,
+                "state": self.state,
+                "progress": self.progress,
+                "doneBytes": self.doneBytes,
+                "totalBytes": self.totalBytes,
+                "target": self.target,
+            }
+        )
+        return state
+
+    def restorePersistentState(self, state: Mapping[str, object]) -> None:
+        super().restorePersistentState(state)
+        rawTitle = state.get("title")
+        rawAssetName = state.get("assetName")
+        rawArchiveSize = state.get("archiveSize")
+        rawExecutablePath = state.get("executablePath")
+        rawCreatedAt = state.get("createdAt")
+        rawState = state.get("state")
+        rawProgress = state.get("progress")
+        rawDoneBytes = state.get("doneBytes")
+        rawTotalBytes = state.get("totalBytes")
+        rawTarget = state.get("target")
+
+        if isinstance(rawTitle, str) and rawTitle.strip():
+            self.title = rawTitle
+        if isinstance(rawAssetName, str) and rawAssetName.strip():
+            self.assetName = rawAssetName
+        if isinstance(rawArchiveSize, int) and not isinstance(rawArchiveSize, bool):
+            self.archiveSize = max(0, rawArchiveSize)
+        if isinstance(rawExecutablePath, str):
+            self.executablePath = rawExecutablePath
+        if isinstance(rawCreatedAt, int) and not isinstance(rawCreatedAt, bool):
+            self.createdAt = rawCreatedAt
+        if isinstance(rawState, str):
+            self.state = _normalizeState(rawState)
+        if isinstance(rawProgress, (int, float)) and not isinstance(rawProgress, bool):
+            self.progress = max(0.0, min(float(rawProgress), 100.0))
+        if isinstance(rawDoneBytes, int) and not isinstance(rawDoneBytes, bool):
+            self.doneBytes = max(0, rawDoneBytes)
+        if isinstance(rawTotalBytes, int) and not isinstance(rawTotalBytes, bool):
+            self.totalBytes = max(self.archiveSize, rawTotalBytes)
+        if isinstance(rawTarget, str) and rawTarget.strip():
+            self.target = rawTarget
+        self.syncOutput()
+        self.syncStatusFromStages()
+
+    @classmethod
+    def createPersistentTask(
+        cls,
+        *,
+        id: str,
+        packId: str,
+        kind: str,
+        version: int,
+        config: TaskConfig,
+        stages: list[TaskStage],
+        state: Mapping[str, object],
+    ) -> M3U8InstallTask:
+        _ = packId
+        _ = kind
+        _ = version
+        rawTitle = state.get("title")
+        rawAssetName = state.get("assetName")
+        rawArchiveSize = state.get("archiveSize")
+        rawExecutablePath = state.get("executablePath")
+        rawCreatedAt = state.get("createdAt")
+        rawTaskState = state.get("state")
+        rawProgress = state.get("progress")
+        rawDoneBytes = state.get("doneBytes")
+        rawTotalBytes = state.get("totalBytes")
+        rawTarget = state.get("target")
+
+        return cls(
+            id=id,
+            config=config,
+            title=rawTitle if isinstance(rawTitle, str) else "N_m3u8DL-RE 安装",
+            assetName=rawAssetName if isinstance(rawAssetName, str) else config.name,
+            archiveSize=rawArchiveSize if isinstance(rawArchiveSize, int) else 0,
+            stages=stages,
+            executablePath=rawExecutablePath if isinstance(rawExecutablePath, str) else "",
+            createdAt=rawCreatedAt if isinstance(rawCreatedAt, int) else None,
+            state=rawTaskState if isinstance(rawTaskState, str) else "waiting",
+            progress=float(rawProgress) if isinstance(rawProgress, (int, float)) else 0.0,
+            doneBytes=rawDoneBytes if isinstance(rawDoneBytes, int) else 0,
+            totalBytes=rawTotalBytes if isinstance(rawTotalBytes, int) else None,
+            target=rawTarget if isinstance(rawTarget, str) else "",
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 
-async def createInstallTask() -> M3U8InstallTask:
+async def createInstallTask(
+    *,
+    installFolder: Path | str | None = None,
+    proxies: Mapping[str, object] | None = None,
+    chunks: int | None = None,
+) -> M3U8InstallTask:
     assetInfo = await _requestReleaseAsset()
     _, archLabel = _detectRuntimeTarget()
-    installFolder = m3u8Config.installFolder.value
-    downloadTask = await coreService._parseUrl(
-        {
-            "url": assetInfo["url"],
-            "headers": DEFAULT_HEADERS.copy(),
-            "proxies": getProxies(),
-            "path": Path(installFolder),
-        }
+    resolvedInstallFolder = Path(installFolder) if installFolder is not None else Path(m3u8Config.installFolder.value)
+    config = TaskConfig(
+        source=str(assetInfo["url"]),
+        folder=resolvedInstallFolder,
+        name=str(assetInfo["name"]),
+        headers=_M3U8DL_RELEASE_HEADERS.copy(),
+        proxies=_copyProxies(proxies) if proxies is not None else getProxies(),
+        chunks=_normalizeInstallChunks(chunks),
     )
-
-    if not downloadTask.stages:
-        raise RuntimeError("解析 N_m3u8DL-RE 安装包链接后未获取到下载阶段")
-
-    downloadStage = downloadTask.stages[0]
-    if not isinstance(downloadStage, HttpTaskStage):
-        raise TypeError(f"解析出的下载阶段类型无效: {type(downloadStage).__name__}")
-
-    archiveSize = downloadTask.fileSize if downloadTask.fileSize > 0 else assetInfo["size"]
-    assetName = downloadTask.title or str(assetInfo["name"])
-
-    task = M3U8InstallTask(
+    return M3U8InstallTask(
         title=f"N_m3u8DL-RE 安装 ({archLabel})",
-        url=downloadTask.url,
-        assetName=assetName,
-        fileSize=archiveSize,
-        headers=downloadTask.headers.copy(),
-        proxies=downloadTask.proxies,
-        blockNum=downloadTask.blockNum,
-        installFolder=installFolder,
-        archiveSize=archiveSize,
+        assetName=str(assetInfo["name"]),
+        archiveSize=int(assetInfo["size"]),
+        config=config,
     )
-
-    downloadStage.stageIndex = 1
-    task.addStage(downloadStage)
-    task.addStage(
-        ExtractStage(
-            stageIndex=2,
-            archivePath="",
-            installFolder="",
-            executableNames=[_executableName("N_m3u8DL-RE")],
-        )
-    )
-    task.syncStagePaths()
-    setattr(task, "_featurePackName", "m3u8_pack")
-    return task

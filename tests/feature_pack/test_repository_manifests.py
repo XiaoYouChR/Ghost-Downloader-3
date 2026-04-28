@@ -75,7 +75,7 @@ EXPECTED_MANIFESTS: dict[str, dict[str, object]] = {
     "m3u8_pack": {
         "name": "M3U8 Pack",
         "dependencies": ("http_pack", "extract_pack", "ffmpeg_pack"),
-        "schemes": ("http", "https"),
+        "schemes": ("http", "https", "gd3+m3u8"),
         "tasks": ("m3u8_download", "m3u8_install"),
         "stages": ("m3u8_download", "http_download", "extract_archive"),
     },
