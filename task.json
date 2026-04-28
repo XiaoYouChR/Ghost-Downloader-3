@@ -429,7 +429,7 @@
         "让文件选择、路径同步和配置修改全部进入 `MultiFileTask` 与默认对话框流程。",
         "补充 FTP 多文件任务测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 40,

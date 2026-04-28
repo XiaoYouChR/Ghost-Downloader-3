@@ -315,3 +315,19 @@
 ### 备注:
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #38，目标范围仅限把 `github_pack` 改写为基于新版接口和 `http_pack` 单文件下载能力的轻量组合 Pack；关键约束是每轮只处理这一项任务、保持 `task.json` 为唯一任务状态、验证通过后才能写 `passes=true`，且 `progress.txt` 必须先记录中文证据；验收标准是 Pack 与任务入口使用 V1 `FeaturePack/TaskInput/TaskConfig/Task` 语义，GitHub 解析和卡片路径有测试覆盖，并通过静态检查与测试脚本；依赖顺序上本任务位于已完成的新版 API、默认 UI、服务路由、`http_pack` 和 `ffmpeg_pack` 改写之后，直接依赖 `http_pack`；主要风险是 GitHub URL 与泛 HTTP URL 路由重叠、代理 URL 不应污染用户可编辑的原始 source、以及复用 HTTP Stage 时必须使用 `github_pack` 自己的持久化身份。
 ---
+## 2026-04-28 - 任务: 改写 ftp_pack 到新版接口
+### 已完成内容:
+- 已将 `ftp_pack` 入口改为新版 `FeaturePack.accepts/createTask/owns`，并保留 `canHandle/parse/createTaskFromPayload` 兼容入口。
+- 已将 `FtpTask` 改为基于 `MultiFileTask` 与 `TaskConfig` 的多文件任务，文件条目使用稳定 `TaskFile.id`，选择、统计、快照和持久化都进入新版模型。
+- 已将 `FtpTaskStage` 改为新版 `TaskStage`，用稳定阶段身份记录 FTP 下载状态，并通过 `configure(TaskConfig)` 接收代理与分块数。
+- 已让 FTP 任务编辑使用默认卡片、默认 `TaskConfigDialog` 和默认 `MultiFileSelectDialog` 流程，路径同步由 `syncOutput()` 统一下发到阶段输出路径。
+- 新增 `tests/feature_pack/test_ftp_pack_v1.py` 覆盖 FTP 多文件创建、默认编辑/选择、路径同步和 V1 recorder 恢复；同时把旧持久化基线中的 FTP 样例改成测试内本地旧模型，避免生产 `ftp_pack` 继续依赖 V0。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_ftp_pack_v1.py`。
+- 通过: `uv run python tests\feature_pack\test_task_persistence_baseline.py`。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py features/ftp_pack/task.py features/ftp_pack/pack.py tests/feature_pack/test_ftp_pack_v1.py tests/feature_pack/test_task_persistence_baseline.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #39，目标范围仅限把 `ftp_pack` 改写为新版 `MultiFileTask` 代表实现；关键约束是每轮只处理这一项任务、验证通过后先写入中文 `progress.txt` 证据再更新 `task.json`、不把旧 Feature Pack 接口作为目标、文件选择/路径同步/配置修改必须通过 `MultiFileTask`、`TaskConfig`、`configure()` 和默认对话框流程完成；验收标准是 `FtpTask`、相关 Stage 和 Pack 入口进入 V1 `FeaturePack/TaskInput/TaskConfig/TaskStage` 语义，FTP 多文件创建、选择、路径同步、默认卡片编辑和持久化恢复都有测试覆盖，并通过静态检查与全部测试脚本；依赖顺序上本任务位于新版 API、默认 UI、服务路由、持久化、Core/AddTask 流程以及 `http_pack/github_pack` 改写之后，后续 `bittorrent_pack` 和 `bili_pack` 的多文件迁移会复用该路径；主要风险是 FTP 远端 source 变更需要重新列目录，当前默认编辑表单因此不暴露 source 字段，避免在同步配置时猜测远端文件列表。
+---

@@ -1,5 +1,5 @@
 from __future__ import annotations
-# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportUnknownLambdaType=false, reportImplicitOverride=false, reportExplicitAny=false
+# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportUnknownLambdaType=false, reportImplicitOverride=false, reportExplicitAny=false, reportAny=false, reportUnannotatedClassAttribute=false, reportUninitializedInstanceVariable=false, reportUnusedCallResult=false
 
 import sys
 import tempfile
@@ -21,7 +21,6 @@ if str(ROOT) not in sys.path:
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.services.browser_service import BrowserMessageType, BrowserService
 from app.supports.recorder import TaskRecorder
-from features.ftp_pack.task import FtpConnectionInfo, FtpRemoteFile, FtpTask, FtpTaskStage
 
 
 @dataclass(kw_only=True)
@@ -61,6 +60,166 @@ class HttpTask(Task):
 
 HttpTask.__module__ = "features.http_pack.task"
 HttpTaskStage.__module__ = "features.http_pack.task"
+
+
+@dataclass(kw_only=True)
+class FtpConnectionInfo:
+    host: str
+    scheme: str = "ftp"
+    port: int = 21
+    username: str = "anonymous"
+    password: str = "anon@"
+    sourcePath: str = "/"
+    portSpecified: bool = False
+
+
+@dataclass(kw_only=True)
+class FtpRemoteFile:
+    index: int
+    remotePath: str
+    relativePath: str
+    size: int
+    selected: bool = True
+    downloadedBytes: int = 0
+    completed: bool = False
+
+
+@dataclass(kw_only=True)
+class FtpTaskStage(TaskStage):
+    fileIndex: int
+    remotePath: str
+    fileSize: int
+    resolvePath: str
+    supportsRange: bool = True
+    accelerated: bool = False
+
+    def setStatus(self, status: TaskStatus, notifyTask: bool = True) -> None:
+        if status == TaskStatus.COMPLETED:
+            self.receivedBytes = self.fileSize
+        super().setStatus(status, notifyTask=notifyTask)
+
+
+@dataclass(kw_only=True)
+class FtpTask(Task):
+    connectionInfo: FtpConnectionInfo | dict[str, Any]
+    sourceType: str = "file"
+    files: list[FtpRemoteFile | dict[str, Any]] = field(default_factory=list)
+    proxies: dict[str, str] | None = None
+    blockNum: int = 1
+
+    def __post_init__(self) -> None:
+        if isinstance(self.connectionInfo, dict):
+            self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
+        self.files = [
+            item if isinstance(item, FtpRemoteFile) else FtpRemoteFile(**item)
+            for item in self.files
+        ]
+        self._filesByIndex = {
+            file.index: file
+            for file in cast(list[FtpRemoteFile], self.files)
+        }
+        super().__post_init__()
+        self._recalculateSelection()
+        self._syncFileProgress()
+        self.syncStagePaths()
+
+    @property
+    def totalFileCount(self) -> int:
+        return len(self.files)
+
+    @property
+    def selectedFileCount(self) -> int:
+        return sum(1 for file in self.files if cast(FtpRemoteFile, file).selected)
+
+    @property
+    def isDirectorySource(self) -> bool:
+        return self.sourceType == "dir"
+
+    @property
+    def resolvePath(self) -> str:
+        return str(Path(self.path) / self.title)
+
+    @property
+    def selectedStages(self) -> list[FtpTaskStage]:
+        return [
+            cast(FtpTaskStage, stage)
+            for stage in self.stages
+            if self.fileByIndex(cast(FtpTaskStage, stage).fileIndex).selected
+        ]
+
+    def fileByIndex(self, index: int) -> FtpRemoteFile:
+        return self._filesByIndex[index]
+
+    def syncStagePaths(self) -> None:
+        rootPath = Path(self.path) / self.title
+        if not self.isDirectorySource:
+            resolvePath = str(rootPath)
+            for stage in self.stages:
+                cast(FtpTaskStage, stage).resolvePath = resolvePath
+            return
+
+        for stage in self.stages:
+            ftpStage = cast(FtpTaskStage, stage)
+            file = self.fileByIndex(ftpStage.fileIndex)
+            ftpStage.resolvePath = str(rootPath / Path(file.relativePath))
+
+    def _recalculateSelection(self) -> None:
+        self.fileSize = sum(
+            file.size
+            for file in cast(list[FtpRemoteFile], self.files)
+            if file.selected
+        )
+
+    def _syncFileProgress(self) -> None:
+        stageByFileIndex = {
+            cast(FtpTaskStage, stage).fileIndex: cast(FtpTaskStage, stage)
+            for stage in self.stages
+        }
+        for file in cast(list[FtpRemoteFile], self.files):
+            stage = stageByFileIndex[file.index]
+            file.downloadedBytes = max(0, int(stage.receivedBytes))
+            file.completed = stage.status == TaskStatus.COMPLETED
+
+    def updateSelectedFiles(self, selectedIndexes: set[int]) -> None:
+        if not selectedIndexes:
+            raise ValueError("至少需要选择一个文件")
+        for file in cast(list[FtpRemoteFile], self.files):
+            file.selected = file.index in selectedIndexes
+        self._recalculateSelection()
+        self._syncFileProgress()
+        self.syncStatusFromStages()
+
+    def syncStatusFromStages(self) -> TaskStatus:
+        self._syncFileProgress()
+        selectedStages = self.selectedStages
+        if not selectedStages:
+            self.status = TaskStatus.WAITING
+            return self.status
+        stageStatus = [stage.status for stage in selectedStages]
+        activeStatuses = {
+            status for status in stageStatus if status != TaskStatus.COMPLETED
+        }
+        if TaskStatus.FAILED in activeStatuses:
+            self.status = TaskStatus.FAILED
+        elif not activeStatuses:
+            self.status = TaskStatus.COMPLETED
+        elif TaskStatus.RUNNING in activeStatuses:
+            self.status = TaskStatus.RUNNING
+        elif activeStatuses == {TaskStatus.PAUSED}:
+            self.status = TaskStatus.PAUSED
+        else:
+            self.status = TaskStatus.WAITING
+        return self.status
+
+    def stagesForExecution(self) -> list[FtpTaskStage]:
+        return self.selectedStages
+
+    async def run(self) -> None:
+        raise NotImplementedError
+
+
+FtpTask.__module__ = "features.ftp_pack.task"
+FtpTaskStage.__module__ = "features.ftp_pack.task"
 
 
 class BrowserSnapshotHarness:
