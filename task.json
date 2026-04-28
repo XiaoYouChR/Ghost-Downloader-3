@@ -473,7 +473,7 @@
         "让下载任务使用新版 `SingleFileTask`、`TaskConfig` 和 `syncOutput()`。",
         "补充流媒体下载工作流测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 44,

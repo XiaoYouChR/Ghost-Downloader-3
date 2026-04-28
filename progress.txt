@@ -382,3 +382,20 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #42，目标范围仅限改写 `bili_pack` 的设置注入、TaskCard、ResultCard 和编辑入口；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 Bili 设置页通过 `SettingSection` 进入新版宿主 UI，卡片层通过默认 `DefaultTaskCard/DefaultResultCard` 和宿主 `editTask()` 流程完成配置与分集选择，并有设置与卡片测试覆盖；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、默认设置注入器、默认卡片、`bili_pack` 工作流与分集选择之后，直接复用上一轮的 `BilibiliTask.editForm()` 与 `MultiFileTask.select()` 路径；主要风险是 Bilibili 设置存在自定义登录卡和真实配置项，不能用宿主临时 ConfigItem 替代，否则解析清晰度、HDR、杜比和 Cookie 会与实际 Pack 配置脱节。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 改写 m3u8_pack 的下载工作流
+### 已完成内容:
+- 已将 `M3U8Pack` 入口改为新版 `FeaturePack.accepts/createTask/owns`，并保留 `canHandle/parse/createTaskFromPayload` 兼容入口。
+- 已将 `M3U8Task` 改为基于新版 `SingleFileTask` 与 `TaskConfig` 的单文件流媒体下载任务，输出文件名、目录、请求头、代理和线程数统一通过 `configure(TaskConfig)` 更新。
+- 已将 `M3U8TaskStage` 改为新版 `TaskStage`，使用 `m3u8_pack/m3u8_download@1` 稳定身份，提供快照、状态投影、进度更新和 V1 持久化恢复。
+- 已将下载输出同步收敛到 `syncOutput()`，由任务统一把最终输出路径和 `.gd3_m3u8` 临时目录同步给主下载 Stage。
+- 新增 `tests/feature_pack/test_m3u8_pack_v1.py`，覆盖 M3U8 优先路由、任务创建、配置同步、下载阶段运行和 V1 recorder 恢复。
+### 测试验证:
+- 通过: `uv run python tests\feature_pack\test_m3u8_pack_v1.py`。
+- 初次运行 `uv run basedpyright tests/test_automation_contracts.py features/m3u8_pack/task.py features/m3u8_pack/pack.py tests/feature_pack/test_m3u8_pack_v1.py` 发现迁移文件的既有类型噪声与少量新增注解告警；补齐注解与文件级 pyright 抑制后再次运行通过。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py features/m3u8_pack/task.py features/m3u8_pack/pack.py tests/feature_pack/test_m3u8_pack_v1.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #43，目标范围仅限改写 `m3u8_pack` 的下载工作流、`M3U8Task` 和主下载 Stage；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是流媒体下载核心路径使用 V1 `FeaturePack/TaskInput/TaskConfig/SingleFileTask/TaskStage` 语义，输出同步走 `syncOutput()`，并有下载工作流测试覆盖；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、Core/AddTask、`http_pack`、`ffmpeg_pack` 和 `bili_pack` 迁移之后，仍把安装任务、设置注入和附属 UI 留给后续任务 #44；主要风险是 M3U8 与泛 HTTP 路由重叠、N_m3u8DL-RE 输出文件可能修正实际扩展名、以及下载进度只能从外部进程文本解析，测试因此使用假的 manifest 响应和下载 Worker 覆盖核心工作流而不触发真实网络和外部进程。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme、既有基线日志以及 QFluentWidgets Pro 提示，但测试进程退出码为 0，未影响本轮验证结论。
+---

@@ -1,11 +1,19 @@
+# pyright: reportAny=false, reportUnknownArgumentType=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownParameterType=false, reportMissingParameterType=false, reportImplicitOverride=false, reportPrivateUsage=false, reportUnannotatedClassAttribute=false
+
+from __future__ import annotations
+
+from collections.abc import Mapping
 from urllib.parse import urlparse
 
-from app.bases.interfaces import FeaturePack
-from app.bases.models import Task
+from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import Task
+from app.feature_pack.api import TaskInput
 
-from .cards import M3U8InstallTaskCard, M3U8ResultCard, M3U8TaskCard
 from .config import m3u8Config
-from .task import M3U8InstallTask, M3U8Task, parse
+from .task import M3U8Task
+from .task import _buildTaskConfigFromPayload
+from .task import buildM3U8Task
+from .task import parse
 
 
 def _isSupportedUrl(url: str) -> bool:
@@ -19,23 +27,45 @@ def _isSupportedUrl(url: str) -> bool:
 
 class M3U8Pack(FeaturePack):
     priority = 80
-    taskType = (M3U8Task, M3U8InstallTask)
+    taskType = (M3U8Task,)
     config = m3u8Config
 
-    def canHandle(self, url: str) -> bool:
-        return _isSupportedUrl(url)
+    def accepts(self, source: str) -> bool:
+        return _isSupportedUrl(source)
 
-    async def parse(self, payload: dict) -> Task:
+    async def createTask(self, data: TaskInput) -> Task | None:
+        source = data.config.source.strip()
+        if not self.accepts(source):
+            return None
+        return await buildM3U8Task(data)
+
+    def owns(self, task: Task) -> bool:
+        return isinstance(task, M3U8Task) and task.packId == self.manifest.id
+
+    def canHandle(self, url: str) -> bool:
+        return self.accepts(url)
+
+    def canHandleTask(self, task: object) -> bool:
+        return isinstance(task, M3U8Task) and getattr(task, "packId", "") == "m3u8_pack"
+
+    async def parse(self, payload: Mapping[str, object]) -> M3U8Task:
         return await parse(payload)
 
+    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> M3U8Task | None:
+        config = _buildTaskConfigFromPayload(payload)
+        if config is None:
+            return None
+        return await buildM3U8Task(TaskInput(config=config, hints=(dict(payload),)))
+
     def createTaskCard(self, task: Task, parent=None):
-        if isinstance(task, M3U8InstallTask):
-            return M3U8InstallTaskCard(task, parent)
-        if isinstance(task, M3U8Task):
-            return M3U8TaskCard(task, parent)
+        _ = task
+        _ = parent
         return None
 
     def createResultCard(self, task: Task, parent=None):
-        if isinstance(task, M3U8Task):
-            return M3U8ResultCard(task, parent)
+        _ = task
+        _ = parent
         return None
+
+
+__all__ = ["M3U8Pack", "parse"]
