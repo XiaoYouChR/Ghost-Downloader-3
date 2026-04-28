@@ -451,7 +451,7 @@
         "让分集选择进入 `MultiFileTask` 与默认选择对话框流程。",
         "补充分集选择与工作流测试。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 42,

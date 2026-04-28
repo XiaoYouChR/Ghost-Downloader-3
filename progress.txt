@@ -347,3 +347,21 @@
 - 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #40，目标范围仅限把 `bittorrent_pack` 改写为新版多文件任务实现，覆盖 `BitTorrentTask`、相关 Stage、Pack 入口、种子文件选择、恢复和浏览器快照投影；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得把 `task.json` 中本任务标记为通过，且 `progress.txt` 必须记录中文证据；验收标准是 BitTorrent 入口使用 V1 `FeaturePack/TaskInput/TaskConfig/MultiFileTask/TaskStage` 语义，文件选择进入 `MultiFileTask.select()` 和默认多文件选择流程，任务恢复与 `TaskSnapshot` 投影可被测试覆盖，并通过静态检查与 `tests/` 下 Python 测试脚本；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、浏览器快照、Core/AddTask、`http_pack/github_pack/ftp_pack` 迁移之后，直接复用前一轮 FTP 多文件路径；主要风险是 BitTorrent 种子元信息、选中文件索引和下载引擎配置之间存在映射关系，恢复时必须保持稳定文件 id，不应再依赖 V0 类名或匿名 payload 猜测状态。
 - 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件和 Windows theme 相关警告，但测试进程退出码为 0，未影响本轮验证结论。
 ---
+## 2026-04-28 - 任务: 改写 bili_pack 的工作流与分集选择
+### 已完成内容:
+- 已将 `bili_pack` 入口改为新版 `FeaturePack.accepts/createTask/owns`，并保留 `canHandle/parse/createTaskFromPayload` 兼容入口。
+- 已将 `BilibiliTask` 改为基于 `MultiFileTask` 与 `TaskConfig` 的分集任务，分集条目使用稳定 `TaskFile.id`，选择、统计、快照、路径同步和持久化进入新版模型。
+- 已新增 `BilibiliDownloadStage` 与 `BilibiliMergeStage`，使用 `bili_pack/bilibili_download@1` 稳定任务身份，并为 HTTP 下载与 FFmpeg 合并阶段注册 Bili 自有持久化身份。
+- 已让分集选择进入默认 `TaskConfigDialog` 与 `MultiFileSelectDialog` 流程，默认卡片可通过 `files` 字段选择分集，并通过 `configure(TaskConfig)` 同步输出目录、名称、代理和分块数。
+- 新增 `tests/feature_pack/test_bili_pack_v1.py`，覆盖 Bilibili 多分集创建、默认编辑分集选择、阶段路径同步、V1 recorder 恢复和浏览器快照摘要。
+### 测试验证:
+- 初次运行 `uv run python tests\feature_pack\test_bili_pack_v1.py` 失败，原因是测试临时 Pack 工作区缺少 `ffmpeg_pack` 的 `extract_pack` 依赖；补齐夹具后继续验证。
+- 第二次运行 `uv run python tests\feature_pack\test_bili_pack_v1.py` 失败，原因是测试 patch 目标指向了未被服务使用的模块名，且 Bili 阶段子类需要显式覆盖继承的抽象方法；修正后再次运行通过。
+- 通过: `uv run python tests\feature_pack\test_bili_pack_v1.py`。
+- 通过: `uv run basedpyright tests/test_automation_contracts.py features/bili_pack/task.py features/bili_pack/pack.py tests/feature_pack/test_bili_pack_v1.py`，结果为 `0 errors, 0 warnings, 0 notes`。
+- 通过: `uv run python tests\test_automation_contracts.py`。
+- 通过: `$tests = Get-ChildItem tests -Recurse -Filter 'test_*.py' | Sort-Object FullName; foreach ($test in $tests) { uv run python $test.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }`，已执行 `tests/` 下全部 `test_*.py` 脚本。
+### 备注:
+- 对齐摘要: 当前任务是 `task.json` 中第一个 `passes = false` 的任务 #41，目标范围仅限改写 `bili_pack` 的核心工作流、`BilibiliTask`、主要下载/合并 Stage 和分集选择；关键约束是每轮只处理这一项任务、完成全部列出的 steps，验证通过前不得更新 `task.json`，且必须先在 `progress.txt` 写入中文证据；验收标准是 Bili 任务使用 V1 `FeaturePack/TaskInput/TaskConfig/MultiFileTask/TaskStage` 语义，分集选择通过 `MultiFileTask.select()` 与默认选择对话框流程完成，分集选择和工作流有测试覆盖，并通过静态检查和全部测试脚本；依赖顺序上本任务位于已完成的新版 API、默认 UI、FeatureService、持久化、浏览器快照、Core/AddTask、`http_pack`、`ffmpeg_pack`、`ftp_pack` 与 `bittorrent_pack` 迁移之后，直接复用 HTTP 下载、FFmpeg 合并和多文件选择路径；主要风险是 Bilibili 分集、音视频下载阶段与合并阶段之间必须保持稳定映射，恢复时不能依赖 V0 类名或匿名 payload，并且分集选择不应绕过默认多文件选择流程。
+- 运行全量测试时 Qt 输出了缺失字体目录、offscreen 插件、Windows theme 以及既有基线日志相关警告，但测试进程退出码为 0，未影响本轮验证结论。
+---

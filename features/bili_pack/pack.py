@@ -1,24 +1,48 @@
+# pyright: reportAny=false, reportExplicitAny=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownParameterType=false, reportAttributeAccessIssue=false, reportImplicitOverride=false, reportCallIssue=false, reportUnusedCallResult=false, reportArgumentType=false, reportUnannotatedClassAttribute=false
+
+from __future__ import annotations
+
 import re
+from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
-from typing import TYPE_CHECKING
-from urllib.parse import parse_qs, urlparse
+from typing import cast
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
 
 import niquests
 
-from app.bases.interfaces import FeaturePack
-from app.bases.models import Task
+from app.feature_pack.api import FeaturePack
+from app.feature_pack.api import Task
+from app.feature_pack.api import TaskConfig
+from app.feature_pack.api import TaskInput
 from app.supports.config import cfg
-from app.supports.utils import getProxies, sanitizeFilename
-from app.view.components.cards import UniversalTaskCard, UniversalResultCard
-from .config import bilibiliConfig
-from .task import BilibiliTask
+from app.supports.utils import getProxies
+from app.supports.utils import sanitizeFilename
 
-if TYPE_CHECKING:
-    from features.ffmpeg_pack.task import FFmpegStage
-    from features.http_pack.task import HttpTaskStage
-else:
-    from ffmpeg_pack.task import FFmpegStage
-    from http_pack.task import HttpTaskStage
+from .config import bilibiliConfig
+from .task import BilibiliEpisodeFile
+from .task import BilibiliTask
+from .task import createBilibiliTask
+
+
+def _copyHeaders(headers: Mapping[str, object] | None) -> dict[str, str]:
+    if not isinstance(headers, Mapping):
+        return {}
+    return {str(key): str(value) for key, value in headers.items()}
+
+
+def _copyProxies(proxies: Mapping[str, object] | None) -> dict[str, str] | None:
+    if proxies is None:
+        return None
+    return {str(key): str(value) for key, value in proxies.items()}
+
+
+def _normalizeChunks(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        return max(1, int(cfg.preBlockNum.value))
+    return max(1, int(value))
+
 
 def _normalizeBilibiliReferer(referer: str) -> str:
     parsedUrl = urlparse(referer)
@@ -43,7 +67,7 @@ def _buildBilibiliHeaders(referer: str) -> dict[str, str]:
 
     userCookie = bilibiliConfig.userCookie.value
     if userCookie:
-        headers["cookie"] = userCookie
+        headers["cookie"] = str(userCookie)
 
     return headers
 
@@ -105,24 +129,23 @@ def _resolveRequestedFnval(videoQuality: int) -> int:
     return fnval
 
 
-def _pickOutputTitle(videoTitle: str, page: dict, pageNumber: int, totalPages: int) -> str:
-    if totalPages <= 1:
-        return videoTitle
-
-    pagePart = str(page.get("part", "")).strip()
-    suffix = f"P{pageNumber}"
-    if pagePart and pagePart != videoTitle:
-        return f"{videoTitle} - {suffix} {pagePart}"
-    return f"{videoTitle} - {suffix}"
-
-
-def _pickVideoStream(pageData: dict, requestedQuality: int) -> dict:
-    dash = pageData.get("dash") or {}
-    videoOptions = dash.get("video") or []
+def _pickVideoStream(pageData: Mapping[str, object], requestedQuality: int) -> Mapping[str, object]:
+    dash = pageData.get("dash") if isinstance(pageData.get("dash"), Mapping) else {}
+    rawVideoOptions = dash.get("video") if isinstance(dash, Mapping) else None
+    videoOptions = [
+        cast(Mapping[str, object], option)
+        for option in rawVideoOptions
+        if isinstance(option, Mapping)
+    ] if isinstance(rawVideoOptions, list) else []
     if not videoOptions:
         raise ValueError("Bilibili 返回结果中不存在 DASH 视频流")
 
-    acceptQuality = list(pageData.get("accept_quality") or [])
+    rawAcceptQuality = pageData.get("accept_quality")
+    acceptQuality = [
+        quality
+        for quality in rawAcceptQuality
+        if isinstance(quality, int) and not isinstance(quality, bool)
+    ] if isinstance(rawAcceptQuality, list) else []
     quality = requestedQuality
     if acceptQuality and quality not in acceptQuality:
         if bilibiliConfig.alternativeQuality.value == "max":
@@ -143,9 +166,14 @@ def _pickVideoStream(pageData: dict, requestedQuality: int) -> dict:
     raise ValueError("未找到可用的视频流")
 
 
-def _pickAudioStream(pageData: dict) -> dict:
-    dash = pageData.get("dash") or {}
-    audioOptions = dash.get("audio") or []
+def _pickAudioStream(pageData: Mapping[str, object]) -> Mapping[str, object]:
+    dash = pageData.get("dash") if isinstance(pageData.get("dash"), Mapping) else {}
+    rawAudioOptions = dash.get("audio") if isinstance(dash, Mapping) else None
+    audioOptions = [
+        cast(Mapping[str, object], option)
+        for option in rawAudioOptions
+        if isinstance(option, Mapping)
+    ] if isinstance(rawAudioOptions, list) else []
     if not audioOptions:
         raise ValueError("Bilibili 返回结果中不存在 DASH 音频流")
 
@@ -156,7 +184,7 @@ def _pickAudioStream(pageData: dict) -> dict:
     raise ValueError("未找到可用的音频流")
 
 
-def _getStreamUrl(stream: dict) -> str:
+def _getStreamUrl(stream: Mapping[str, object]) -> str:
     url = stream.get("baseUrl") or stream.get("base_url")
     if isinstance(url, str) and url:
         return url
@@ -170,8 +198,13 @@ def _getStreamUrl(stream: dict) -> str:
     return ""
 
 
-async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client: "niquests.AsyncSession") -> int:
-    requestHeaders = headers.copy()
+async def _getFileSizeWithClient(
+    url: str,
+    headers: Mapping[str, str],
+    proxies: Mapping[str, str] | None,
+    client: niquests.AsyncSession,
+) -> int:
+    requestHeaders = dict(headers)
     requestHeaders["range"] = "bytes=0-0"
 
     response = await client.get(
@@ -184,10 +217,10 @@ async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client:
     )
     try:
         response.raise_for_status()
-        head = {k.lower(): v for k, v in response.headers.items()}
+        responseHeaders = {str(key).lower(): str(value) for key, value in response.headers.items()}
 
-        if response.status_code == 206 and "content-range" in head:
-            _left, _char, right = head["content-range"].rpartition("/")
+        if response.status_code == 206 and "content-range" in responseHeaders:
+            _left, _char, right = responseHeaders["content-range"].rpartition("/")
             if right != "*":
                 return int(right)
 
@@ -196,69 +229,121 @@ async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client:
         await response.close()
 
 
-async def parse(payload: dict) -> BilibiliTask:
-    url: str = payload["url"]
-    proxies: dict = payload.get('proxies', getProxies())
-    blockNum: int = payload.get('preBlockNum', cfg.preBlockNum.value)
-    path: Path = payload.get('path', Path(cfg.downloadFolder.value))
+def _buildTaskConfigFromPayload(payload: Mapping[str, object]) -> TaskConfig | None:
+    rawSource = payload.get("url")
+    if not isinstance(rawSource, str):
+        return None
 
-    headers = _buildBilibiliHeaders(url)
+    source = rawSource.strip()
+    if not source:
+        return None
+
+    rawFolder = payload.get("path")
+    rawName = payload.get("filename")
+    rawHeaders = payload.get("headers")
+    rawProxies = payload.get("proxies")
+    rawChunks = payload.get("preBlockNum")
+    return TaskConfig(
+        source=source,
+        folder=Path(rawFolder) if isinstance(rawFolder, (str, Path)) else Path(cfg.downloadFolder.value),
+        name=rawName if isinstance(rawName, str) else "",
+        headers=_copyHeaders(rawHeaders if isinstance(rawHeaders, Mapping) else None),
+        proxies=(
+            _copyProxies(rawProxies)
+            if isinstance(rawProxies, Mapping)
+            else getProxies()
+        ),
+        chunks=_normalizeChunks(rawChunks),
+    )
+
+
+def _selectedPageNumbers(
+    requestedPages: list[int] | None,
+    *,
+    pageCount: int,
+) -> set[int]:
+    if requestedPages is None:
+        return set(range(1, pageCount + 1))
+
+    selectedPages = {
+        pageNumber
+        for pageNumber in requestedPages
+        if 1 <= pageNumber <= pageCount
+    }
+    if not selectedPages:
+        raise ValueError("未找到有效的分P编号")
+    return selectedPages
+
+
+def _pageOutputName(videoTitle: str, pageNumber: int, part: str, totalPages: int) -> str:
+    baseTitle = sanitizeFilename(videoTitle, fallback="bilibili_video")
+    if totalPages <= 1:
+        return f"{baseTitle}.mp4"
+
+    sanitizedPart = sanitizeFilename(part, fallback="").strip() if part.strip() else ""
+    if sanitizedPart and sanitizedPart != baseTitle:
+        return f"{baseTitle} - P{pageNumber} {sanitizedPart}.mp4"
+    return f"{baseTitle} - P{pageNumber}.mp4"
+
+
+async def buildBilibiliTask(data: TaskInput) -> BilibiliTask:
+    source = str(data.config.source).strip()
+    videoId, requestedPages = _parseVideoIdAndPages(source)
+    proxies = _copyProxies(data.config.proxies) if data.config.proxies is not None else getProxies()
+    headers = _buildBilibiliHeaders(source)
+    headers.update(_copyHeaders(data.config.headers))
+
     client = niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True)
     client.trust_env = False
 
     try:
-        videoId, selectedPages = _parseVideoIdAndPages(url)
-
-        response = await client.get(_buildViewApiUrl(videoId), proxies=proxies, allow_redirects=True)
+        response = await client.get(
+            _buildViewApiUrl(videoId),
+            proxies=proxies,
+            allow_redirects=True,
+        )
         try:
             response.raise_for_status()
             videoPayload = response.json()
         finally:
             response.close()
 
+        if not isinstance(videoPayload, Mapping):
+            raise ValueError("获取 Bilibili 视频信息失败")
         if videoPayload.get("code") not in {None, 0}:
-            raise ValueError(videoPayload.get("message") or "获取 Bilibili 视频信息失败")
+            raise ValueError(str(videoPayload.get("message") or "获取 Bilibili 视频信息失败"))
 
-        viewData = videoPayload.get("data") or {}
-        pages = list(viewData.get("pages") or [])
+        viewData = videoPayload.get("data") if isinstance(videoPayload.get("data"), Mapping) else {}
+        rawPages = viewData.get("pages") if isinstance(viewData, Mapping) else None
+        pages = [
+            cast(Mapping[str, object], page)
+            for page in rawPages
+            if isinstance(page, Mapping)
+        ] if isinstance(rawPages, list) else []
         if not pages:
             raise ValueError("未获取到视频分P信息")
 
-        if selectedPages is None:
-            selectedPages = list(range(1, len(pages) + 1))
-        selectedPages = [page for page in dict.fromkeys(selectedPages) if 1 <= page <= len(pages)]
-        if not selectedPages:
-            raise ValueError("未找到有效的分P编号")
-
-        videoTitle = str(viewData.get("title", "")).strip() or "bilibili_video"
-        requestedQuality = bilibiliConfig.defaultQuality.value
-        pageParts: list[str] = []
-        totalSize = 0
-
-        if len(selectedPages) == 1:
-            title = f"{sanitizeFilename(_pickOutputTitle(videoTitle, pages[selectedPages[0] - 1], selectedPages[0], len(pages)), fallback='bilibili_video')}.mp4"
-        else:
-            title = f"{sanitizeFilename(videoTitle, fallback='bilibili_video')}.mp4"
-
-        task = BilibiliTask(
-            title=title,
-            url=url,
-            fileSize=0,
-            headers=headers,
-            proxies=proxies,
-            blockNum=blockNum,
-            path=path,
-            selectedPages=selectedPages.copy(),
-            totalPages=len(pages),
+        selectedPages = _selectedPageNumbers(requestedPages, pageCount=len(pages))
+        videoTitle = sanitizeFilename(
+            str(viewData.get("title", "")).strip() if isinstance(viewData, Mapping) else "",
+            fallback="bilibili_video",
         )
+        requestedQuality = int(bilibiliConfig.defaultQuality.value)
+        episodes: list[BilibiliEpisodeFile] = []
 
-        for index, pageNumber in enumerate(selectedPages):
-            page = pages[pageNumber - 1]
-            pageParts.append(str(page.get("part", "")).strip())
-            cid = int(page["cid"])
+        for pageIndex, page in enumerate(pages, start=1):
+            part = str(page.get("part", "")).strip()
+            rawCid = page.get("cid")
+            if isinstance(rawCid, bool) or not isinstance(rawCid, int):
+                raise ValueError(f"P{pageIndex} 缺少有效 cid")
 
             playResponse = await client.get(
-                _buildPlayApiUrl(videoId, cid, _resolveRequestedFnval(requestedQuality), requestedQuality),
+                _buildPlayApiUrl(
+                    videoId,
+                    rawCid,
+                    _resolveRequestedFnval(requestedQuality),
+                    requestedQuality,
+                ),
                 proxies=proxies,
                 allow_redirects=True,
             )
@@ -268,12 +353,14 @@ async def parse(payload: dict) -> BilibiliTask:
             finally:
                 playResponse.close()
 
+            if not isinstance(playPayload, Mapping):
+                raise ValueError("获取 Bilibili 音视频流失败")
             if playPayload.get("code") not in {None, 0}:
-                raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
+                raise ValueError(str(playPayload.get("message") or "获取 Bilibili 音视频流失败"))
 
-            pageData = playPayload.get("data") or {}
-            videoStream = _pickVideoStream(pageData, requestedQuality)
-            audioStream = _pickAudioStream(pageData)
+            pageData = playPayload.get("data") if isinstance(playPayload.get("data"), Mapping) else {}
+            videoStream = _pickVideoStream(cast(Mapping[str, object], pageData), requestedQuality)
+            audioStream = _pickAudioStream(cast(Mapping[str, object], pageData))
             videoUrl = _getStreamUrl(videoStream)
             audioUrl = _getStreamUrl(audioStream)
             if not videoUrl or not audioUrl:
@@ -281,40 +368,47 @@ async def parse(payload: dict) -> BilibiliTask:
 
             videoSize = await _getFileSizeWithClient(videoUrl, headers, proxies, client)
             audioSize = await _getFileSizeWithClient(audioUrl, headers, proxies, client)
-            totalSize += videoSize + audioSize
+            episodeName = _pageOutputName(videoTitle, pageIndex, part, len(pages))
+            episodes.append(
+                BilibiliEpisodeFile(
+                    id=f"page-{pageIndex}",
+                    pageNumber=pageIndex,
+                    path=episodeName,
+                    size=videoSize + audioSize,
+                    selected=pageIndex in selectedPages,
+                    note=f"P{pageIndex}" if not part else f"P{pageIndex} · {part}",
+                    part=part,
+                    cid=rawCid,
+                    videoUrl=videoUrl,
+                    audioUrl=audioUrl,
+                    videoSize=videoSize,
+                    audioSize=audioSize,
+                )
+            )
 
-            stageIndex = index * 3
-            task.addStage(HttpTaskStage(
-                stageIndex=stageIndex + 1,
-                url=videoUrl,
-                fileSize=videoSize,
-                headers=headers.copy(),
-                proxies=proxies,
-                resolvePath="",
-                blockNum=blockNum,
-            ))
-            task.addStage(HttpTaskStage(
-                stageIndex=stageIndex + 2,
-                url=audioUrl,
-                fileSize=audioSize,
-                headers=headers.copy(),
-                proxies=proxies,
-                resolvePath="",
-                blockNum=blockNum,
-            ))
-            task.addStage(FFmpegStage(
-                stageIndex=stageIndex + 3,
-                videoPath="",
-                audioPath="",
-                resolvePath="",
-            ))
-
-        task.pageParts = pageParts
-        task.fileSize = totalSize
-        task.syncStagePaths()
-        return task
+        baseConfig = replace(
+            data.config,
+            source=source,
+            folder=Path(data.config.folder),
+            name=data.config.name or videoTitle,
+            headers=headers,
+            proxies=proxies,
+            chunks=_normalizeChunks(data.config.chunks),
+        )
+        return createBilibiliTask(
+            config=baseConfig,
+            episodes=episodes,
+            fallbackName=videoTitle,
+        )
     finally:
         await client.close()
+
+
+async def parse(payload: Mapping[str, object]) -> BilibiliTask:
+    config = _buildTaskConfigFromPayload(payload)
+    if config is None:
+        raise ValueError("Bilibili 任务缺少有效的 url")
+    return await buildBilibiliTask(TaskInput(config=config, hints=(dict(payload),)))
 
 
 class BilibiliPack(FeaturePack):
@@ -322,19 +416,50 @@ class BilibiliPack(FeaturePack):
     taskType = BilibiliTask
     config = bilibiliConfig
 
-    def canHandle(self, url: str) -> bool:
-        hostname = (urlparse(url).hostname or "").lower()
-        return hostname == "bilibili.com" or hostname.endswith(".bilibili.com")
+    def accepts(self, source: str) -> bool:
+        try:
+            _parseVideoIdAndPages(source)
+        except Exception:
+            return False
+        return True
 
-    async def parse(self, payload: dict) -> BilibiliTask:
+    async def createTask(self, data: TaskInput) -> Task | None:
+        if not self.accepts(data.config.source):
+            return None
+        return await buildBilibiliTask(data)
+
+    def owns(self, task: Task) -> bool:
+        return isinstance(task, BilibiliTask) and task.packId == self.manifest.id
+
+    def canHandle(self, url: str) -> bool:
+        return self.accepts(url)
+
+    def canHandleTask(self, task: object) -> bool:
+        return isinstance(task, BilibiliTask) and getattr(task, "packId", "") == "bili_pack"
+
+    async def parse(self, payload: Mapping[str, object]) -> BilibiliTask:
         return await parse(payload)
 
-    def createTaskCard(self, task: Task, parent=None):
-        if isinstance(task, BilibiliTask):
-            return UniversalTaskCard(task, parent)
+    async def createTaskFromPayload(self, payload: Mapping[str, object]) -> BilibiliTask | None:
+        config = _buildTaskConfigFromPayload(payload)
+        if config is None:
+            return None
+        return await buildBilibiliTask(TaskInput(config=config, hints=(dict(payload),)))
+
+    def createTaskCard(self, task: Task, parent: object | None = None):
+        _ = task
+        _ = parent
         return None
 
-    def createResultCard(self, task: Task, parent=None):
-        if isinstance(task, BilibiliTask):
-            return UniversalResultCard(task, parent)
+    def createResultCard(self, task: Task, parent: object | None = None):
+        _ = task
+        _ = parent
         return None
+
+
+__all__ = [
+    "BilibiliPack",
+    "_buildTaskConfigFromPayload",
+    "buildBilibiliTask",
+    "parse",
+]
