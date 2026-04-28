@@ -1,785 +1,301 @@
 # 进度日志
 
+压缩说明: 本文件已在 2026-04-28 压缩，保留已完成任务标题、范围、验证结论和对齐摘要；历史逐命令明细与完整差异由 Git 提交记录追溯。
+任务完成状态以 task.json 为唯一来源；后续轮次继续按 AGENTS.md 追加新的完整中文证据条目。
+
 ## 2026-04-13 - 任务: Bootstrap Codex automation workflow
 ### 已完成内容:
-- 新增 `AGENTS.md`，固定每轮 Codex 的执行流程、一轮只做一个任务的规则、验证闸口，以及 `task.json` 与 `progress.txt` 的更新顺序。
-- 新增 `run_automation.ps1`，读取 `task.json`，选择第一个未完成任务，构造固定提示词，并以非交互方式运行 `codex exec`，直到队列为空或任务阻塞。
-- 新增 `task.json`，作为唯一任务来源，并写入已完成的自动化初始化任务。
-- 新增 `tests/test_automation_contracts.py`，用于从 `tests/` 校验自动化契约与文件一致性。
-- 将 `basedpyright` 加入 dev 依赖组，保证后续每轮都有稳定的 Python 静态类型检查命令。
+- 已完成任务 #1: Create the repository-level automation contract, task source, progress log, runner script, and minimal validation so Codex can execute one task per round with auditable state transitions.
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py`
-- `uv run python tests/test_automation_contracts.py`
-- `powershell -ExecutionPolicy Bypass -File .\run_automation.ps1 -MaxRounds 1`
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅建立仓库自动化相关文件，本轮不改 Feature Pack 实现代码。
-  - 关键约束: 保持流程简单且显式，以 `task.json` 作为唯一任务来源，将执行证据写入 `progress.txt`，并且只能在验证通过后标记任务完成。
-  - 验收标准: 每轮必须先对齐迁移文档，再完整完成一个任务，执行验证，记录证据，并保证 `task.json` 与 `progress.txt` 一致。
-  - 依赖关系: `docs/standards/feature-pack-interface-standard.md` 与 `docs/contracts/feature-pack-v1-python-contracts.md` 仍然是每轮必须回读的设计依据。
-- 风险: 由于约定的 `task.json` 结构没有显式依赖字段，因此任务顺序被视为依赖顺序，runner 始终选择第一个未完成任务。
-- 结论: 已完成。
----
-## 2026-04-13 - 任务: 实现 SettingsInstaller
-### 已完成内容:
-- 在 `app/feature_pack/api/service.py` 中实现新版宿主侧 `SettingsInstaller` 抽象与 `DefaultSettingsInstaller`，把 Pack 返回的 `SettingSection` 统一映射为 `SettingCardGroup` 并安装到 `SettingPage`。
-- 为声明式设置项补齐宿主默认卡片映射，当前支持 `toggle`、`choice`、`text`、`action`、`primaryAction` 五类 `SettingItem.kind`，并以宿主卡片负责渲染、Pack 只负责声明数据的方式保持边界清晰。
-- 为同一页面上的重复注入增加按 `SettingSection.id` 去重逻辑，避免同一 Pack 在同一 `SettingPage` 上重复生成设置分组，同时允许不同页面各自独立安装。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `SettingsInstaller`、`DefaultSettingsInstaller` 纳入新版 API 稳定公共导出。
-- 新增 `tests/feature_pack/test_settings_installer.py`，覆盖设置注入顺序、`SettingSection -> SettingCardGroup` 映射、默认卡片基础交互，以及同页重复注入与跨页独立安装行为。
-### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_settings_installer.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_settings_installer.py` -> 通过（Qt 离屏环境仍输出字体目录与 `propagateSizeHints` 告警，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与已有布局 warning，均不影响结果）
-### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现宿主侧 `SettingsInstaller`，把 `SettingSection` 统一注入 `SettingPage` 和 `SettingCardGroup`，不提前进入新版 `FeatureService` 的完整设置分发或具体 Pack 改写。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 22；必须完整完成安装器实现、`SettingSection` 到设置页映射和重复注入测试；继续遵循简单、显式、可读原则；必须先写入 `progress.txt` 再更新任务完成状态。
-  - 验收标准: 已存在宿主侧 `SettingsInstaller`；`SettingSection` 能稳定映射到 `SettingPage` 与 `SettingCardGroup`；设置注入顺序与重复注入行为都有显式测试护栏；全部验证通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“Pack 返回 `SettingSection`、宿主统一映射到 `SettingCardGroup`”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `SettingsInstaller.install()`、`SettingSection`、`SettingItem` 契约；同时建立在任务 18 的 `FormChoice` 与任务 21 的设置模型之上，并为后续任务 27、42、49 提供宿主设置注入基础。
-- 风险: 当前默认映射只覆盖五类声明式设置项，复杂自定义 `QWidget`/`SettingCard` 注入仍留给后续服务层和具体 Pack 扩展；若后续新增新的 `kind`，需要先在宿主显式补充映射而不是退回直接操作 `SettingPage` 内部布局。
-- 结论: 已完成。
----
-## 2026-04-13 - 任务: 创建 app.feature_pack.api 目录骨架
-### 已完成内容:
-- 新增 `app/feature_pack/__init__.py` 与 `app/feature_pack/api/` 包骨架，建立新版 Feature Pack V1 作者 API 的稳定导入命名空间。
-- 在 `app/feature_pack/api/` 下新增 `cards.py`、`config.py`、`form.py`、`input.py`、`manifest.py`、`pack.py`、`service.py`、`settings.py`、`snapshot.py`、`stage.py`、`task.py`、`testing.py` 等最小模块文件，先固定后续类型落点。
-- 补齐 `app/feature_pack/api/__init__.py` 的集中导出结构，让宿主和后续迁移代码可以通过稳定路径引用这些模块。
-- 新增 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，验证 `app.feature_pack` 已导出 `api` 命名空间，且 `app.feature_pack.api` 的占位模块可被稳定导入。
-### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_task_persistence_baseline.py tests/feature_pack/test_feature_ui_baseline.py tests/feature_pack/test_feature_pack_api_bootstrap.py app/feature_pack/__init__.py app/feature_pack/api/__init__.py app/feature_pack/api/cards.py app/feature_pack/api/config.py app/feature_pack/api/form.py app/feature_pack/api/input.py app/feature_pack/api/manifest.py app/feature_pack/api/pack.py app/feature_pack/api/service.py app/feature_pack/api/settings.py app/feature_pack/api/snapshot.py app/feature_pack/api/stage.py app/feature_pack/api/task.py app/feature_pack/api/testing.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境仍输出字体、主题句柄和已有布局告警，但测试全部通过）
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-### 备注:
-- 对齐摘要:
-  - 目标范围: 仅建立 `app.feature_pack.api` 的目录、最小模块文件和集中导出骨架，为后续 `Manifest`、`FeaturePack`、`TaskConfig`、`Task`、`TaskStage`、`FeatureService` 等新版类型提供稳定落点。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务；遵循迁移文档强调的“简单、显式、可读”原则；先固定公共导入路径，不提前发明具体实现细节；验证通过前不能修改任务完成状态。
-  - 验收标准: `app.feature_pack.api` 包已存在；`__init__.py` 已集中导出基础模块；项目内新增最小导入测试可以稳定引用新 API 包。
-  - 依赖关系: 后续任务 6 到任务 27 都会在该目录下逐步填入正式契约和宿主实现，因此本轮产出的主要依赖价值是稳定模块路径与导出边界。
-- 风险: 当前新增文件仍是占位骨架，不提供具体业务类型；后续任务需要在保持导入路径稳定的前提下逐步补实契约定义，避免再次改动公开模块名。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 建立 manifest 与 Pack loader 基线测试
 ### 已完成内容:
-- 新增 `tests/feature_pack/test_feature_service_baseline.py`，为当前 `FeatureService.discoverFeaturePacks()` 建立仓库级基线断言，固定现有 Pack 发现结果、默认 `pack.py` 入口和默认空依赖行为。
-- 补充缺失 `[pack]` 节、入口文件缺失场景的显式测试，确认当前 loader 会跳过非法 manifest，而不是抛错中断整个发现流程。
-- 补充 `_sortFeaturePacksByDependencies()` 的基线测试，锁定当前仓库中的依赖排序结果，并把循环依赖时“记录错误后跳过坏分支、继续保留健康 Pack”这一历史包袱写成显式说明。
+- 已完成任务 #2: 先为现有 `features/*/manifest.toml` 和当前 Pack 发现/排序流程建立基线测试，保证后续重写 loader 时有明确护栏。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_service_baseline.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅为现有 `features/*/manifest.toml` 与当前 `FeatureService` 的发现、依赖排序流程建立可复现基线测试，不进入新版 API 或 loader 实现。
-  - 关键约束: 只处理 `task.json` 中首个未完成任务；测试必须落在 `tests/feature_pack/`；显式记录当前异常与历史包袱；验证通过前不能改写任务完成状态。
-  - 验收标准: manifest 发现、缺失字段、依赖排序、循环依赖四类行为都有稳定断言，且当前 `FeatureService.discoverFeaturePacks()` 与 `_sortFeaturePacksByDependencies()` 的关键现状可被重复验证。
-  - 依赖关系: 以 `docs/standards/feature-pack-interface-standard.md` 中固定 `manifest.toml` 边界的方向为准，同时基于 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService` 的未来职责定义，为后续重写 loader 提供迁移护栏。
-- 风险: 当前 loader 仍接受仅含极简 `[pack]` 节的弱 manifest，且依赖排序遇到循环依赖时不会向上抛错而是记录日志后跳过坏分支；这些都是后续迁移时容易被误判为“可自由调整”的历史行为，必须先用测试锁住。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 建立 Task 与 TaskStage 持久化基线测试
 ### 已完成内容:
-- 新增 `tests/feature_pack/test_task_persistence_baseline.py`，为当前 `Task.serialize()`、`Task.deserialize()`、`TaskStage.serialize()`、`TaskStage.deserialize()` 建立基线断言，覆盖 `HttpTask/HttpTaskStage` 与 `FtpTask/FtpTaskStage` 的现有持久化行为。
-- 补充 `taskRecorder` 的基线测试，锁定“未先 `load()` 时 `flush()` 只记录警告且不会落盘”和“记录文件逐行写入任务 JSON，恢复时靠 `Task.deserialize()` 回建具体子类”的当前行为。
-- 补充 `BrowserService` 当前任务快照测试，固定浏览器侧 `task_snapshot` 的字段集合、按 `createdAt` 倒序输出的排序方式，以及 `packName` 由 `task.__module__` 推导的现状。
-- 在测试说明中显式记录旧持久化模型对 Python 类名 `type` 字段的依赖，以及 `_featurePackName`、`_filesByIndex`、`selectedStages` 等瞬时属性不会直接写入记录、而是在反序列化或 `__post_init__()` 中重建的历史包袱。
+- 已完成任务 #3: 为现有 `Task`、`TaskStage`、`taskRecorder` 和恢复流程建立基线测试，先锁定用户可感知的持久化行为。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅为现有 `Task`、`TaskStage`、`taskRecorder` 与浏览器任务快照建立基线测试，锁定当前用户可感知的持久化与恢复行为，不进入新版 API 改造。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务；必须完成任务描述中的三项步骤；验证通过前不能修改 `passes`；执行证据必须用中文写入 `progress.txt`。
-  - 验收标准: `Task/TaskStage` 序列化与反序列化、`taskRecorder` 记忆化与恢复、`BrowserService` 当前快照关键字段三类行为都有可复现断言，并显式记录旧模型对类名与瞬时属性的依赖点。
-  - 依赖关系: 以 `docs/standards/feature-pack-interface-standard.md` 中“`Task` 是 workflow、`TaskStage` 是步骤、后续要摆脱类名和隐式状态耦合”的迁移方向为依据，并参考 `docs/contracts/feature-pack-v1-python-contracts.md` 中任务/阶段身份与快照契约，为后续重建新版持久化提供护栏。
-  - 风险: 当前记录模型直接把 Python 类名写入 `type` 字段，浏览器快照仍通过模块名推导 `packName`，恢复流程还依赖 `__post_init__()` 回填 `_filesByIndex` 等瞬时状态；这些历史行为后续重写时都很容易被不小心改掉，因此先用基线测试锁定。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 建立对话框、卡片与设置页基线测试
 ### 已完成内容:
-- 新增 `tests/feature_pack/test_feature_ui_baseline.py`，为 `UniversalTaskCard` 的刷新行为补上基线断言，固定当前进度、速度、剩余时间、完成状态展示以及状态切换时 `taskRecorder.flush()` 的触发时机。
-- 为 `UniversalTaskCard`、`UniversalResultCard` 的最小动作入口补测，锁定当前暂停/继续按钮分发与结果卡双击改名的交互路径。
-- 为 `FileSelectDialog` 补充树构建、已选摘要、反选与按类型选择测试，固定当前多文件对话框的最小展示与选中结果行为。
-- 为 `PackConfig.getDialogCards()` 的默认空实现、`FeatureService._loadPackConfig()` 的设置页注入路径，以及 `FeatureService.getDialogCards()` 的对话框卡片聚合行为补上最小基线测试。
+- 已完成任务 #4: 为现有默认卡片、文件选择对话框和设置页注入路径建立基线测试，避免 UI 迁移无护栏。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_task_persistence_baseline.py tests/feature_pack/test_feature_ui_baseline.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境输出字体与主题告警，但测试全部通过）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅为现有默认卡片、文件选择对话框与设置页注入路径建立基线测试，锁定当前 UI 层可观察行为，不进入新版默认对话框或新版宿主 API 实现。
-  - 关键约束: 只处理 `task.json` 中首个未完成任务；必须覆盖 `UniversalTaskCard`、`UniversalResultCard`、`FileSelectDialog`、`PackConfig.loadSettingCards()`、`getDialogCards()` 与设置页注入路径；验证通过前不能修改 `passes`；执行证据必须写入中文 `progress.txt`。
-  - 验收标准: 三类路径都要有可复现断言，包括卡片最小刷新与动作入口、文件树选择与结果回收、设置卡片注入与对话框卡片聚合行为。
-  - 依赖关系: 以 `docs/standards/feature-pack-interface-standard.md` 中“默认 TaskCard / ResultCard 支持”“默认多文件选择对话框”“SettingPage 设置卡片注入能力”为迁移方向，并参考 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskConfigDialog`、`MultiFileSelectDialog`、`SettingSection` 的未来契约，先为旧实现建立迁移护栏。
-  - 风险: 当前 UI 基线依赖 Qt 离屏环境，执行时会出现字体目录缺失和 Windows 主题句柄告警；此外 `UniversalTaskCard` 仍会触发已有布局警告，这些都属于现状噪音，但不会影响测试结果，后续迁移时仍需区分“现有噪音”和“真实行为回归”。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
+---
+## 2026-04-13 - 任务: 创建 app.feature_pack.api 目录骨架
+### 已完成内容:
+- 已完成任务 #5: 先建立新版宿主作者 API 的目录与导出骨架，为后续所有类型定义提供稳定落点。
+### 测试验证:
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
+### 备注:
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 Manifest 数据模型
 ### 已完成内容:
-- 在 `app/feature_pack/api/manifest.py` 中新增只读 `Manifest` 数据模型，字段、默认值和 `kw_only + frozen + slots` 约束与迁移契约文档保持一致。
-- 更新 `app/feature_pack/api/__init__.py`，让 `Manifest` 可以通过 `app.feature_pack.api.Manifest` 稳定导出，固定新版 API 的公共入口。
-- 新增 `tests/feature_pack/test_manifest_model.py`，覆盖字段顺序、默认值、关键字参数约束、冻结语义和显式元组元数据输入，确保模型层结构稳定。
-- 更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，补充 `Manifest` 的集中导出断言，避免后续公开 API 漂移。
+- 已完成任务 #6: 在新版 API 中正式定义 `Manifest` 数据模型，固定 Pack 元数据的 Python 侧表达。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_task_persistence_baseline.py tests/feature_pack/test_feature_ui_baseline.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_manifest_model.py app/feature_pack/api/__init__.py app/feature_pack/api/manifest.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过（保留现有 loader 循环依赖错误日志输出，不影响断言结果）
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境仍输出字体、主题句柄和已有布局告警，但测试全部通过）
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_manifest_model.py` -> 通过
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中正式定义 `Manifest` 数据模型及其公共导出，不提前实现 manifest 读取器或 Pack loader 新逻辑。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务；字段命名、默认值和只读语义必须与迁移契约一致；遵循简单、显式、可读原则；验证通过前不得更新任务完成状态。
-  - 验收标准: `Manifest` 已具备契约文档约定的字段集合与默认值；模型对外是稳定只读类型；存在模型层测试锁定字段结构与只读行为。
-  - 依赖关系: 依赖 `docs/standards/feature-pack-interface-standard.md` 中“固定 `manifest.toml` 边界、统一 Python 元数据表达”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Manifest` 契约定义；后续任务 7 的读取器和任务 24/25 的新版服务都会依赖该模型。
-- 风险: 当前只固定了 Python 侧数据模型，还没有实现 `manifest.toml` 的读取、类型归一化和错误报告；后续任务需要保持字段语义不变，避免读取器反向侵蚀模型边界。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 实现 manifest.toml 读取与校验器
 ### 已完成内容:
-- 在 `app/feature_pack/api/manifest.py` 中实现新版 `manifest.toml` 读取器，新增 `loadManifest()`、`parseManifest()` 与 `ManifestError`，把读取、解析、字段校验和稳定错误码收敛到正式 API。
-- 为 `id`、`name`、`version`、`api`、`entry`、`dependencies`、`schemes`、`tasks`、`stages` 建立显式校验规则，统一处理缺字段、空字符串、错误类型、非法数组项和 TOML 语法错误，保证失败原因清晰稳定。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `ManifestError`、`loadManifest`、`parseManifest` 成为稳定公共导出。
-- 新增 `tests/feature_pack/test_manifest_loader.py`，覆盖合法 manifest、默认值、缺文件、非法 TOML、缺 `[pack]` 节、缺必填字段、错误字段类型与非法数组项等场景。
+- 已完成任务 #7: 把 `manifest.toml` 的读取、解析和错误报告收敛成正式读取器，而不是散在 `FeatureService` 里做弱校验。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_feature_ui_baseline.py tests/feature_pack/test_manifest_model.py tests/feature_pack/test_manifest_loader.py tests/feature_pack/test_task_persistence_baseline.py app/feature_pack/api/__init__.py app/feature_pack/api/manifest.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过（保留现有旧 loader 的循环依赖与缺失 manifest 警告日志输出，不影响断言结果）
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境仍输出字体、主题句柄和已有布局告警，但测试全部通过）
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_manifest_model.py` -> 通过
-- `uv run python tests/feature_pack/test_manifest_loader.py` -> 通过
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版 `app.feature_pack.api` 中实现 `manifest.toml` 的正式读取与校验能力，不改写旧 `app.services.feature_service.FeatureService` 的现有发现流程。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务；校验规则必须与迁移文档中的 `Manifest` 契约一致；错误原因要清晰、稳定、可测试；验证通过前不能更新任务完成状态。
-  - 验收标准: 已存在可复用的 manifest 读取器；非法 manifest 会返回明确且稳定的失败原因；合法与非法场景都有显式测试覆盖。
-  - 依赖关系: 依赖 `docs/standards/feature-pack-interface-standard.md` 中“固定 `manifest.toml` 边界、禁止新增额外 Python 元数据文件”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Manifest` 契约；同时建立在任务 6 已完成的 `Manifest` 数据模型之上，并为后续任务 8、24、25 提供基础读取能力。
-- 风险: 仓库内现有 `features/*/manifest.toml` 仍是旧的极简结构，暂时无法直接通过新版严格校验；因此本轮保持读取器独立存在，避免过早接入旧 loader 导致现有 Pack 发现回归，后续需在任务 8 补齐全部 manifest 后再推进服务层切换。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 补全所有 Feature Pack 的 manifest.toml
 ### 已完成内容:
-- 为 `features/` 下全部 9 个 Feature Pack 的 `manifest.toml` 回填 `id`、`name`、`version`、`api`、`schemes`、`tasks`、`stages`，消除仅靠 `entry/dependencies` 的弱结构。
-- 统一所有 Pack 的元数据风格：`id` 与目录名一致，`name` 使用稳定英文显示名，`version` 固定为 `1.0.0`，`api` 固定为 `1`，并按契约字段顺序组织内容。
-- 新增 `tests/feature_pack/test_repository_manifests.py`，对仓库内全部现有 manifest 做严格校验，并显式断言每个 Pack 的依赖、协议、任务和阶段元数据。
+- 已完成任务 #8: 把现有每个 Pack 的 `manifest.toml` 升级到新版字段集合，消除仅有 `entry/dependencies` 的弱结构。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_feature_ui_baseline.py tests/feature_pack/test_manifest_loader.py tests/feature_pack/test_manifest_model.py tests/feature_pack/test_repository_manifests.py tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过（旧 loader 仍输出既有警告与循环依赖日志，不影响断言）
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境仍输出字体、主题句柄和已有布局告警，但测试全部通过）
-- `uv run python tests/feature_pack/test_manifest_loader.py` -> 通过
-- `uv run python tests/feature_pack/test_manifest_model.py` -> 通过
-- `uv run python tests/feature_pack/test_repository_manifests.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅补全现有每个 `features/*/manifest.toml` 的新版字段集合，并补上仓库级 manifest 校验测试，不进入新版 `FeaturePack`、`Task` 或服务切换任务。
-  - 关键约束: 本轮只能处理 `task.json` 中的任务 8；字段命名和边界必须遵循迁移文档中的 `Manifest` 契约；元数据内容风格要统一；只有在验证通过后才能写入进度并更新 `passes`。
-  - 验收标准: 所有现有 Pack 的 manifest 都包含 `id`、`name`、`version`、`api` 及任务/阶段相关字段；仓库内所有 manifest 可通过新版严格校验；存在显式测试锁定每个 Pack 的元数据内容。
-  - 依赖关系: 直接依赖任务 6 已定义的 `Manifest` 模型和任务 7 已实现的 `loadManifest()/parseManifest()` 校验器；后续任务 24 和 25 的新版发现与加载流程会直接消费这些 manifest。
-- 风险: 当前 `tasks` 与 `stages` 元数据是依据现有 Pack 的入口、任务类和阶段类职责做的显式归纳；后续如果重命名任务或阶段身份字段，需要同步调整 manifest 与相关测试，避免再次出现隐式约定漂移。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义新版 FeaturePack 抽象接口
 ### 已完成内容:
-- 在 `app/feature_pack/api/pack.py` 中新增新版 `FeaturePack` 抽象接口，固定主路径只包含 `accepts()`、`createTask()`、`owns()` 三个抽象方法，并保留 `settingSection()`、`createTaskCard()`、`createResultCard()`、`install()` 作为可选侧边能力。
-- 更新 `app/feature_pack/api/__init__.py`，让 `FeaturePack` 成为 `app.feature_pack.api` 的稳定公共导出，便于后续宿主服务直接依赖新版接口。
-- 更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，补充 `FeaturePack` 导出断言，避免新版 API 入口漂移。
-- 新增 `tests/feature_pack/test_feature_pack_interface.py`，验证最小 Pack 实现可以只实现三项核心方法、默认 UI 钩子保持可选返回 `None`，以及缺失核心方法时子类仍保持抽象状态。
+- 已完成任务 #9: 在新版 API 中正式定义 `FeaturePack` 抽象接口，直接以 `accepts/createTask/owns` 为中心，不再继续围绕旧接口扩展。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_pack_interface.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_feature_ui_baseline.py tests/feature_pack/test_manifest_loader.py tests/feature_pack/test_manifest_model.py tests/feature_pack/test_repository_manifests.py tests/feature_pack/test_task_persistence_baseline.py app/feature_pack/api/__init__.py app/feature_pack/api/pack.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_interface.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过（旧 loader 仍输出既有缺失入口与循环依赖日志，不影响断言）
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境仍输出字体、主题句柄和已有布局告警，但测试全部通过）
-- `uv run python tests/feature_pack/test_manifest_loader.py` -> 通过
-- `uv run python tests/feature_pack/test_manifest_model.py` -> 通过
-- `uv run python tests/feature_pack/test_repository_manifests.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过（仍保留 task recorder 未加载时的既有 warning）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中正式定义新版 `FeaturePack` 抽象接口及其公共导出，不改写旧 `app.bases.interfaces.FeaturePack`、旧服务调用链或任何具体 Pack 实现。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 9；新版 Pack 主路径必须围绕 `accepts(source)`、`createTask(data)`、`owns(task)`，并明确 `settingSection()`、`createTaskCard()`、`createResultCard()` 只是 UI 侧边能力；验证通过前不能更新任务完成状态。
-  - 验收标准: 新版 `FeaturePack` 已存在稳定抽象接口；侧边 UI 能力边界明确且默认可缺省；存在导入测试与最小实现测试，保证宿主后续可以直接依赖该接口。
-  - 依赖关系: 直接依赖迁移文档中已固定的 `Manifest`、`TaskInput`、`Task`、`SettingSection` 命名方向，以及任务 5 到任务 8 已建立的 `app.feature_pack.api` 包骨架和 manifest 公共导出；后续任务 24 到任务 27 的新版 `FeatureService` 会直接消费本轮接口。
-- 风险: 当前 `FeaturePack` 先用宽类型占住 `TaskInput`、`Task`、设置与卡片对象边界，等后续任务 10 到任务 21 补齐正式模型后再收紧类型；收紧时必须保持公开方法名和可选 UI 钩子语义不变，避免再次引入旧接口漂移。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 TaskConfig
 ### 已完成内容:
-- 在 `app/feature_pack/api/config.py` 中新增只读 `TaskConfig` 数据模型，使用 `frozen + slots + kw_only` 固定任务配置边界，并按契约定义 `source`、`folder`、`name`、`headers`、`proxies`、`chunks` 六个核心字段。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `TaskConfig` 成为 `app.feature_pack.api` 的稳定公共导出，避免后续作者 API 入口漂移。
-- 新增 `tests/feature_pack/test_task_config_model.py`，覆盖字段顺序、默认值、关键字参数约束、冻结语义、显式配置值以及 `dataclasses.replace()` 替换行为，锁定后续配置修改的统一数据边界。
+- 已完成任务 #10: 在新版 API 中正式定义 `TaskConfig`，把用户可编辑的任务配置集中到一个稳定模型。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_pack_interface.py tests/feature_pack/test_feature_service_baseline.py tests/feature_pack/test_feature_ui_baseline.py tests/feature_pack/test_manifest_loader.py tests/feature_pack/test_manifest_model.py tests/feature_pack/test_repository_manifests.py tests/feature_pack/test_task_config_model.py tests/feature_pack/test_task_persistence_baseline.py app/feature_pack/api/__init__.py app/feature_pack/api/config.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_interface.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_baseline.py` -> 通过（保留旧 loader 的既有 warning 与循环依赖 error 日志输出，不影响断言）
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏环境仍输出字体目录、主题句柄和已有布局告警，但测试全部通过）
-- `uv run python tests/feature_pack/test_manifest_loader.py` -> 通过
-- `uv run python tests/feature_pack/test_manifest_model.py` -> 通过
-- `uv run python tests/feature_pack/test_repository_manifests.py` -> 通过
-- `uv run python tests/feature_pack/test_task_config_model.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过（保留 task recorder 未加载时的既有 warning）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中正式定义 `TaskConfig` 数据模型和公共导出，不提前实现 `TaskInput`、`Task`、`TaskStage` 或默认编辑对话框。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 10；字段命名和默认值必须与迁移文档的 `TaskConfig` 契约一致；配置模型必须保持 Qt-free、简单、显式、可读；只有验证通过后才能更新任务状态。
-  - 验收标准: `TaskConfig` 已覆盖 `source`、`folder`、`name`、`headers`、`proxies`、`chunks` 核心字段；存在创建与替换测试；`app.feature_pack.api` 可稳定导出该模型。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“统一用 `configure(TaskConfig)` 处理配置变更”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskConfig` 的字段与 `replace()` 用法契约；后续任务 11、14、15、17、19、27、31 及各 Pack 改写任务都会消费本轮模型。
-- 风险: 当前只固定了配置数据边界，还没有收紧 `headers`、`proxies`、`chunks` 的值级校验，也还没有把该模型接入运行时任务链路；后续实现 `Task.configure()` 和默认编辑对话框时需要保持字段语义稳定，避免再次回退到匿名 payload。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 TaskInput
 ### 已完成内容:
-- 在 `app/feature_pack/api/input.py` 中新增只读 `TaskInput` 数据模型，使用 `frozen + slots + kw_only` 固定宿主传入 Pack 的统一输入边界，并按契约定义 `config`、`size`、`hints` 三个字段。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `TaskInput` 成为 `app.feature_pack.api` 的稳定公共导出，避免后续宿主和 Pack 再回退到匿名 payload。
-- 更新 `app/feature_pack/api/pack.py`，把 `FeaturePack.createTask()` 的输入注解从宽泛占位类型收紧为正式 `TaskInput`，先固定新版 Pack 主路径的输入语义。
-- 新增 `tests/feature_pack/test_task_input_model.py`，覆盖字段顺序、默认值、关键字参数约束、冻结语义以及显式 `size/hints` 输入，确保输入模型边界稳定。
+- 已完成任务 #11: 在新版 API 中正式定义 `TaskInput`，让宿主进入 Pack 前先整理成统一输入模型。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/input.py app/feature_pack/api/pack.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_input_model.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、Qt 离屏字体与主题告警、已有布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中正式定义 `TaskInput` 数据模型和公共导出，并把新版 `FeaturePack.createTask()` 的输入语义收敛到该模型，不提前实现 `Task`、`TaskStage`、快照或宿主服务流转。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 11；字段命名和默认值必须与迁移文档中的 `TaskInput` 契约一致；输入模型必须保持 Qt-free、简单、显式、可读；只有验证通过后才能更新任务状态。
-  - 验收标准: `TaskInput` 已覆盖 `config`、`size`、`hints` 核心字段；存在模型测试锁定默认值和冻结语义；`app.feature_pack.api` 与 `FeaturePack.createTask()` 已可稳定引用该模型。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“宿主进入 Pack 前统一整理成 `TaskInput`、避免匿名 payload 扩散”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskInput` 契约；同时建立在任务 10 已完成的 `TaskConfig` 模型之上，并为后续任务 14、24、30、31、47 提供统一输入边界。
-- 风险: 当前 `hints` 只固定为 `tuple[dict[str, object], ...]` 的稳定容器边界，还没有进一步收紧内部键值语义；后续宿主流转实现需要继续保持“先归一化为 `TaskInput` 再进入 Pack”的单一路径，避免重新引入散乱 payload 字段。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 StageSnapshot 与 TaskSnapshot
 ### 已完成内容:
-- 在 `app/feature_pack/api/snapshot.py` 中新增 Qt-free 的 `StageSnapshot` 与 `TaskSnapshot` 数据模型，使用 `frozen + slots + kw_only` 固定纯数据快照边界，并按迁移契约定义阶段级与任务级字段。
-- 更新 `app/feature_pack/api/__init__.py`，让 `StageSnapshot`、`TaskSnapshot` 可通过 `app.feature_pack.api` 稳定导出，固定后续 UI、浏览器与测试使用的公共入口。
-- 更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，补充快照类型的导出断言，避免新版 API 入口漂移。
-- 新增 `tests/feature_pack/test_snapshot_models.py`，覆盖字段顺序、默认值、关键字参数约束、冻结语义，以及 `TaskSnapshot.stages` 对 `StageSnapshot` 元组投影的稳定行为。
+- 已完成任务 #12: 在新版 API 中定义 Qt-free 的快照模型，为 UI、浏览器和测试提供稳定投影。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/snapshot.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_snapshot_models.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、Qt 离屏字体与主题告警、已有布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中定义 Qt-free 的 `StageSnapshot` 与 `TaskSnapshot` 模型及其公共导出，不提前实现新版 `Task`、`TaskStage` 运行时对象或浏览器服务映射。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 12；字段命名必须与迁移文档中的快照契约一致；快照必须保持纯数据、简单、显式、可读，并且只能在验证通过后更新任务状态。
-  - 验收标准: `StageSnapshot` 与 `TaskSnapshot` 已覆盖契约文档约定的任务级、阶段级字段；存在模型测试锁定字段结构、默认值和冻结语义；`app.feature_pack.api` 可稳定导出这两个快照类型。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“`TaskSnapshot`、`StageSnapshot` 必须保持 Qt-free、作为 UI 与测试稳定投影”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中快照契约；后续任务 13、14、27、28、29、33 会直接消费本轮模型。
-- 风险: 当前只固定了纯数据模型，还没有把旧 `BrowserService` 和后续新版 `Task` / `TaskStage` 的运行时状态映射到这些快照；后续接线时必须保持字段名和只读语义稳定，避免重新回到临时字典投影。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义新版 TaskStage 基类
 ### 已完成内容:
-- 在 `app/feature_pack/api/stage.py` 中实现新版 `TaskStage` 基类，固定 `id`、`kind`、`version`、`name` 身份字段，以及 `attach()`、`configure()`、`canPause()`、`run()`、`reset()`、`snapshot()` 公共接口。
-- 明确 `TaskStage` 的 QObject 角色与信号命名，新增 `stateChanged`、`progressChanged`、`snapshotChanged`、`failed` 四个 Qt 信号，并保持 `snapshot()` 输出为 Qt-free 的 `StageSnapshot`。
-- 为 `QObject` 基类补上最小抽象方法约束，在不引入额外旧接口依赖的前提下，确保 `run()`、`reset()`、`snapshot()` 未实现时不能实例化基类或不完整子类。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `TaskStage` 成为稳定公共导出。
-- 新增 `tests/feature_pack/test_task_stage_base.py`，覆盖身份字段、QObject 信号、默认 `attach()/configure()/canPause()` 行为，以及 `run()/reset()/snapshot()` 的最小基类契约。
+- 已完成任务 #13: 在新版 API 中正式定义 `TaskStage` 基类，使其成为 Pack 主要能力承载点。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/stage.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_stage_base.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、Qt 离屏字体与主题告警、已有布局告警，不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中正式定义新版 `TaskStage` 运行时基类及其公共导出，不提前实现新版 `Task` 工作流容器或具体 Pack Stage。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 13；接口命名和职责必须遵循迁移文档中的 `TaskStage` 契约；保持 `TaskStage` 为 QObject-based 运行时对象，但 `StageSnapshot` 仍必须 Qt-free；只有验证通过后才能更新任务状态。
-  - 验收标准: 已存在带信号、身份字段、`configure()`、`snapshot()` 的新版 `TaskStage` 基类；QObject 角色和信号命名明确；存在基类行为测试锁定默认契约。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“`TaskStage` 是步骤、是 actor-like worker、统一通过 `configure(TaskConfig)` 接收配置”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskStage`、`TaskConfig`、`StageSnapshot` 契约；同时建立在任务 10 的 `TaskConfig` 和任务 12 的 `StageSnapshot` 之上，并为后续任务 14、15、17、27、28、33 和各 Pack 改写任务提供阶段基类。
-- 风险: 由于 PySide6 的 `QObject` 元类不直接提供标准 `ABCMeta` 行为，本轮采用最小运行时抽象检查来守住 `run()`、`reset()`、`snapshot()` 必须实现的约束；后续任务 14 接入 `Task` 类型后，需要继续保持这组公开方法和信号名称稳定，避免再次漂移。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义新版 Task 基类
 ### 已完成内容:
-- 在 `app/feature_pack/api/task.py` 中实现新版 `Task` 基类，固定 `id`、`packId`、`kind`、`version`、`config`、`stages`、`currentStageIndex` 等任务级字段，并补齐 `configure()`、`syncOutput()`、`editForm()`、`snapshot()`、`iterStages()`、`canPause()`、`run()`、`pause()`、`addStage()` 等工作流接口。
-- 明确 `Task` 对 `TaskStage` 的编排职责：新增阶段时统一 `attach()`，运行时按顺序执行阶段并维护 `currentStageIndex`，暂停时把命令路由到当前阶段，从而把任务级监督与阶段级执行边界拆清楚。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `Task` 成为 `app.feature_pack.api` 的稳定公共导出，避免新版作者 API 入口漂移。
-- 调整 `app/feature_pack/api/pack.py` 和 `tests/feature_pack/test_feature_pack_interface.py`，把新版 `FeaturePack.createTask()` 与 `owns()` 的核心路径类型收紧到正式 `Task`，确保宿主后续可以直接围绕新版任务基类接线。
-- 新增 `tests/feature_pack/test_task_base.py`，覆盖 `Task` 的抽象约束、QObject 信号、阶段 attach 与配置下发、运行与暂停编排、快照投影、默认 `editForm()` 与 `reset()` 行为。
+- 已完成任务 #14: 在新版 API 中正式定义 `Task` 作为工作流容器，固定任务级配置、编排与快照边界。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/pack.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_pack_interface.py tests/feature_pack/test_task_base.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在 `app.feature_pack.api` 中正式定义新版 `Task` 工作流基类、公共导出及其最小宿主契约，不提前进入 `SingleFileTask`、`MultiFileTask`、默认对话框或具体 Pack 改写。
-  - 关键约束: 本轮只能处理 `task.json` 中首个未完成任务 14；接口命名和职责必须遵循迁移文档中“`Task` 是 workflow supervisor、`TaskStage` 是步骤”的边界；`configure(TaskConfig)` 仍是唯一公开配置入口；验证通过前不能更新任务完成状态。
-  - 验收标准: 已存在带 QObject 信号和任务级身份字段的新版 `Task` 基类；`configure()`、`syncOutput()`、`editForm()`、`snapshot()` 等核心接口已经固定；`Task` 对 `TaskStage` 的 attach、run、pause 与编排职责有显式实现和测试护栏。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `Task` 基类字段、`configure()`、`syncOutput()`、`canPause()`、`iterStages()` 等迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Task` 契约；同时建立在任务 10 的 `TaskConfig`、任务 12 的 `TaskSnapshot`、任务 13 的 `TaskStage` 之上，并为后续任务 15、17、19、24、27、28、30、32、33 和各 Pack 改写任务提供统一任务容器。
-- 风险: 当前 `pause()` 采用最小命令路由策略，只在当前阶段暴露 `pause()` 时才转发，不额外扩大 `TaskStage` 公开基类；后续若阶段暂停协议需要更严格的类型约束，应在保持本轮公开命名和编排边界稳定的前提下再补强。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 SingleFileTask
 ### 已完成内容:
-- 在 `app/feature_pack/api/task.py` 中新增 `SingleFileTask` 基类，基于 `Task` 上移单文件任务的 `folder`、`filename`、`path`、`rename()`、`move()` 公共行为，并保持通过 `TaskConfig` 边界做配置替换。
-- 明确 `SingleFileTask.syncOutput()` 仍是正式内部同步钩子，由子类负责把当前单文件输出目标同步到各阶段，避免把路径传播逻辑重新散回具体 Pack。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `SingleFileTask` 成为稳定公共导出，固定后续宿主和 Pack 的导入路径。
-- 新增 `tests/feature_pack/test_single_file_task.py`，覆盖 `SingleFileTask` 的抽象约束、`folder/filename/path` 访问、`rename()`、`move()` 和连续改名改目录后的输出同步行为。
+- 已完成任务 #15: 抽出 `SingleFileTask`，把单文件任务的路径、命名和输出同步共性正式上移。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_single_file_task.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版 `SingleFileTask` 基类与对应测试，把单文件任务的路径、命名和输出同步共性正式上移，不提前进入 `TaskFile`、`MultiFileTask`、默认对话框或具体 Pack 改写。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 15；必须完整覆盖 `folder`、`filename`、`path`、`rename()`、`move()` 和 `syncOutput()` 钩子要求；继续遵循简单、显式、可读原则，并通过 `configure(TaskConfig)` 作为唯一配置变更入口；验证通过前不能更新任务完成状态。
-  - 验收标准: 已存在 `SingleFileTask` 基类；单文件任务路径访问与改名改目录行为有稳定实现；`syncOutput()` 作为正式内部同步钩子被保留；存在路径与改名测试护栏。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `SingleFileTask` 的字段与方法约定，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `SingleFileTask` 契约；同时建立在任务 10 的 `TaskConfig`、任务 13 的 `TaskStage`、任务 14 的 `Task` 之上，并为后续任务 17、19、34、37、38、43 等单文件任务接入提供公共基类。
-- 风险: 当前 `SingleFileTask` 只固定了单文件输出边界和配置驱动的改名改目录行为，还没有接入真实 Pack 的阶段输出字段；后续具体任务子类实现 `syncOutput()` 时必须保持“基类负责输出目标语义，子类负责阶段传播”这一边界，避免重新引入重复胶水代码。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 TaskFile
 ### 已完成内容:
-- 在 `app/feature_pack/api/task.py` 中新增 `TaskFile` 数据模型，正式固定多文件任务条目的 `id`、`path`、`size`、`selected`、`note`、`doneBytes`、`finished` 字段及默认值。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `TaskFile` 成为 `app.feature_pack.api` 的稳定公共导出，并锁定公开 API 入口。
-- 新增 `tests/feature_pack/test_task_file_model.py`，覆盖字段顺序、关键字参数约束、默认值、显式摘要字段输入，以及运行时选择与进度更新的可变行为。
+- 已完成任务 #16: 为多文件任务建立正式的 `TaskFile` 数据模型，承载路径、大小、选择状态和摘要信息。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_file_model.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版 `TaskFile` 数据模型与对应测试，为后续 `MultiFileTask`、默认多文件选择对话框和多文件 Pack 改写提供稳定文件条目边界，不提前进入 `MultiFileTask` 行为实现。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 16；字段命名和默认值必须与两份迁移文档中的 `TaskFile` 契约一致；继续遵循简单、显式、可读原则；验证通过前不能更新任务完成状态。
-  - 验收标准: `TaskFile` 已覆盖 `id`、`path`、`size`、`selected`、`note`、`doneBytes`、`finished` 字段；存在模型测试锁定字段顺序、默认值和运行时可变语义；`app.feature_pack.api` 可稳定导出该模型。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `TaskFile` 作为多文件任务统一文件条目的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskFile` 契约；同时建立在任务 14 的 `Task`、任务 15 的 `SingleFileTask` 导出模式之上，并为后续任务 17、20、39、40、41 提供稳定文件模型。
-- 风险: 当前只固定了多文件条目的数据边界，还没有把 `TaskFile` 接入 `MultiFileTask`、默认选择对话框或具体 Pack；后续实现选择统计和路径同步时需要保持该模型简单直接，避免重新引入匿名字典或 Pack 私有文件条目结构。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 MultiFileTask
 ### 已完成内容:
-- 在 `app/feature_pack/api/task.py` 中新增 `MultiFileTask` 基类，正式实现 `files`、`root`、`fileCount`、`selectedCount`、`selectedIds` 和 `select(ids)`，把多文件任务的文件容器、根目录和选择统计上移到统一任务基类。
-- 让 `select(ids)` 基于稳定的 `TaskFile.id` 执行选择切换，并对未知文件 id 给出显式错误，避免多文件选择接口退回到隐式索引或静默忽略。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，让 `MultiFileTask` 成为 `app.feature_pack.api` 的稳定公共导出，固定后续宿主、默认选择对话框和多文件 Pack 的导入路径。
-- 新增 `tests/feature_pack/test_multi_file_task.py`，覆盖抽象约束、`root/fileCount/selectedCount/selectedIds`、`select(ids)` 行为，以及多文件任务在配置变更后的根目录同步与选择统计稳定性。
+- 已完成任务 #17: 抽出 `MultiFileTask`，让多文件任务和分集选择共用同一套任务容器与选择接口。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_multi_file_task.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版 `MultiFileTask` 基类与对应测试，把多文件任务和分集选择共用的文件容器、根目录和选择接口正式上移，不提前进入默认 `MultiFileSelectDialog`、宿主编辑分发或具体 Pack 改写。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 17；必须完整覆盖 `files`、`root`、`fileCount`、`selectedCount`、`selectedIds` 和 `select(ids)`；多文件输出路径同步与选择统计要进入基类边界；验证通过前不能更新任务完成状态。
-  - 验收标准: 已存在 `MultiFileTask` 基类；多文件根目录、选择统计和基于稳定 id 的选择切换有显式实现；存在行为测试锁定抽象约束、选择更新和根目录同步。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `MultiFileTask`/`TaskFile`/`MultiFileSelectDialog` 的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `MultiFileTask` 契约；同时建立在任务 10 的 `TaskConfig`、任务 14 的 `Task`、任务 16 的 `TaskFile` 之上，并为后续任务 19、20、27、39、40、41 提供多文件任务基类。
-- 风险: 当前基类只收敛了文件列表、根目录和选择统计，还没有为具体 Pack 定义文件进度聚合或阶段路径映射细节；后续具体子类实现 `syncOutput()` 和默认选择对话框时，需要保持“基类负责稳定选择接口，子类负责阶段输出传播”的边界。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 TaskForm 与 FormField
 ### 已完成内容:
-- 在 `app/feature_pack/api/form.py` 中实现 `TaskForm`、`FormField`、`FormChoice`，并补齐 `EditMode`、`FieldKind` 字段类型约束，正式固定声明式任务编辑表单模型。
-- 为 `FormField.modes` 提供默认的 `before/running` 编辑模式集合，保持默认对话框能基于统一字段语义判断编辑时机。
-- 更新 `app/feature_pack/api/__init__.py` 与 `app/feature_pack/api/task.py`，让表单模型成为新版 API 的稳定公共导出，并让 `Task.editForm()` 返回正式 `TaskForm | None`。
-- 更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，新增 `tests/feature_pack/test_task_form_model.py`，覆盖表单模型字段顺序、默认值、冻结语义、关键字参数约束、显式选项与模式限制。
+- 已完成任务 #18: 建立声明式任务编辑表单模型，为默认配置对话框提供宿主统一输入。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/form.py app/feature_pack/api/task.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_form_model.py` -> 通过
-- `uv run python tests/feature_pack/test_task_form_model.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警，均不影响测试结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版 `TaskForm`、`FormField`、`FormChoice` 及其公共导出，为后续默认 `TaskConfigDialog` 提供稳定、声明式的宿主输入模型，不提前进入对话框渲染或具体 Pack 编辑逻辑。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 18；字段类型和编辑模式必须与迁移文档契约一致；继续遵循简单、显式、可读原则；验证通过前不能更新任务完成状态。
-  - 验收标准: 已存在可导出的 `TaskForm`、`FormField`、`FormChoice`；常见字段类型与 `before/running` 编辑模式已经固定；存在模型测试锁定字段结构、默认值和模式约束。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 `TaskConfigDialog` 基于 `TaskForm` 渲染标准字段”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskForm`、`FormField`、`FormChoice`、`EditMode`、`FieldKind` 契约；同时建立在任务 10 的 `TaskConfig`、任务 14 的 `Task.editForm()`、任务 17 的 `MultiFileTask` 之上，并为后续任务 19、20、27、31、49 提供表单边界。
-- 风险: 当前仅固定了声明式数据模型和导出路径，还没有把字段语义映射到实际 Qt 控件；后续实现默认 `TaskConfigDialog` 时需要继续保持“表单只描述字段语义，不直接持有 widget”的边界。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 实现默认 TaskConfigDialog
 ### 已完成内容:
-- 新增 `app/feature_pack/ui/dialogs.py` 与 `app/feature_pack/ui/__init__.py`，实现宿主默认 `TaskConfigDialog`，统一承接新版 `TaskForm` 到标准 Qt/QFluentWidgets 编辑控件的渲染。
-- 让默认对话框支持 `text`、`folder`、`headers`、`proxy`、`int`、`choice`、`files` 七类字段，并在 `config()` 中统一回收为新的 `TaskConfig`，保持 `Task.configure()` 作为唯一配置修改入口。
-- 为 `headers`、`proxies` 增加显式的 `key: value` 文本解析，为 `folder`、`chunks`、必填文本字段增加最小校验，避免默认对话框回到隐式字典协议。
-- 先为 `files` 字段接入当前多文件任务的现有已选集合回收与摘要展示，明确默认配置对话框可以承载多文件入口；正式树选择对话框仍留待下一任务实现。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `TaskConfigDialog` 纳入稳定公开导出。
-- 新增 `tests/feature_pack/test_task_config_dialog.py`，覆盖标准字段渲染、编辑模式过滤、`TaskConfig` 结果回收、`choice` 值回收以及 `files` 字段的最小展示与结果回收。
+- 已完成任务 #19: 建立宿主默认 `TaskConfigDialog`，让任务配置编辑不再依赖每个 Pack 自己写对话框。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/ui/__init__.py app/feature_pack/ui/dialogs.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_config_dialog.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_task_config_dialog.py` -> 通过（Qt 离屏环境仍输出字体目录缺失提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与 QFluentWidgets 提示，不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现宿主默认 `TaskConfigDialog`，让任务配置编辑不再依赖各 Pack 自己写对话框，并补齐最小渲染与结果回收测试；不提前实现默认 `MultiFileSelectDialog` 或宿主编辑分发。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 19；必须基于现有编辑控件实现默认对话框；必须让它根据 `TaskForm` 渲染标准字段；必须补齐最小渲染与结果回收测试；验证通过前不能更新任务完成状态。
-  - 验收标准: 默认 `TaskConfigDialog` 已存在；能够根据 `TaskForm` 渲染标准字段；对话框最小渲染与 `TaskConfig` 结果回收测试通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 `TaskConfigDialog` 标准化 `folder/name/source/headers/proxies/chunks` 字段”的方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskConfigDialog`、`TaskForm`、`TaskConfig` 契约；同时建立在任务 10、14、17、18 产出的配置模型、任务基类和表单模型之上，并为后续任务 20、23、27、31、39、40、41 提供宿主默认编辑对话框基础。
-- 风险: 本轮对 `files` 字段只接入了现有选中集合的展示与结果回收，还没有弹出正式树形选择器；下一轮实现 `MultiFileSelectDialog` 时需要把这里的占位入口接到统一选择对话框，同时保持当前 `TaskConfigDialog` 的 `selectedIds()` 回收边界不变。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 实现默认 MultiFileSelectDialog
 ### 已完成内容:
-- 在 `app/feature_pack/ui/dialogs.py` 中新增 `MultiFileSelectDialog`，基于 `MultiFileTask.files` 构建宿主默认树形选择对话框，补齐大小/备注列、全选、全不选、反选、按类型选择、分支勾选联动和 `selectedIds()` 结果回收。
-- 让 `TaskConfigDialog` 的 `files` 字段从占位摘要升级为正式入口，新增“选择”按钮并接入 `MultiFileSelectDialog`，确认后刷新已保留项摘要，保持多文件选择统一走宿主默认链路。
-- 更新 `app/feature_pack/api/__init__.py`、`app/feature_pack/ui/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `MultiFileSelectDialog` 纳入稳定公开导出，固定后续宿主与 Pack 的导入路径。
-- 新增 `tests/feature_pack/test_multi_file_select_dialog.py`，并扩展 `tests/feature_pack/test_task_config_dialog.py`，覆盖树构建、备注展示、全选/全不选/反选/按类型选择、分支勾选联动，以及默认配置对话框对正式多文件选择器的回收流程。
+- 已完成任务 #20: 把现有文件树选择能力提升为正式宿主对话框，供多文件任务和分集任务统一复用。
 ### 测试验证:
-- `uv run basedpyright app/feature_pack/api/__init__.py app/feature_pack/ui/__init__.py app/feature_pack/ui/dialogs.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_task_config_dialog.py tests/feature_pack/test_multi_file_select_dialog.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_task_config_dialog.py` -> 通过（Qt 离屏环境仍输出字体目录提示，不影响结果）
-- `uv run python tests/feature_pack/test_multi_file_select_dialog.py` -> 通过（Qt 离屏环境仍输出主题句柄告警，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与 QFluentWidgets 提示，不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现宿主默认 `MultiFileSelectDialog`，把现有 `FileSelectDialog` 的文件树选择能力提升为正式新版对话框，并将 `TaskConfigDialog` 的 `files` 字段接到统一选择入口；不进入设置注入、服务编辑分发或具体 Pack 改写。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 20；输入必须只依赖 `MultiFileTask.files`；必须完整覆盖树选择、全选和结果回写测试；执行证据必须写入中文 `progress.txt`，且只能在验证通过并追加日志后把当前任务标记为完成。
-  - 验收标准: `MultiFileSelectDialog` 已存在且直接面向 `MultiFileTask.files`；默认提供树形勾选、全选/全不选/反选、按类型选择和备注展示；`TaskConfigDialog` 能打开正式选择对话框并回收 `selectedIds()`；相关测试全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 `MultiFileSelectDialog` 成为宿主正式能力、输入只依赖 `MultiFileTask.files`”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `MultiFileSelectDialog`、`TaskConfigDialog`、`MultiFileTask.select()` 契约；同时建立在任务 17 的 `MultiFileTask`、任务 18 的 `TaskForm`、任务 19 的 `TaskConfigDialog` 之上，并为后续任务 23、27、39、40、41 提供默认多文件选择入口。
-- 风险: 当前默认类型分类仍沿用旧 `FileSelectDialog` 的后缀规则；后续如果具体 Pack 需要更细粒度分组，应在保持宿主默认规则稳定的前提下补充，而不要重新退回 Pack 私有对话框。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 定义 SettingSection 与 SettingItem
 ### 已完成内容:
-- 在 `app/feature_pack/api/settings.py` 中实现声明式 `SettingItem` 与 `SettingSection` 数据模型，固定简单设置项的 `key`、`label`、`kind`、`note`、`options`、`extra` 以及设置分组的 `id`、`title`、`items` 字段。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `SettingItem`、`SettingSection` 纳入新版 API 的稳定公共导出，固定后续宿主设置注入器和 Pack 的导入边界。
-- 收紧 `app/feature_pack/api/pack.py` 中 `FeaturePack.settingSection()` 的类型注解，让 Pack 的设置页扩展显式对齐新版 `SettingSection` 契约，同时保留复杂场景返回自定义对象的扩展空间。
-- 新增 `tests/feature_pack/test_settings_model.py`，覆盖设置模型字段顺序、默认值、关键字参数约束、冻结语义、显式选项与额外元数据输入，作为后续 `SettingsInstaller` 的模型护栏。
+- 已完成任务 #21: 建立声明式设置模型，为 Pack 设置页注入提供统一边界。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/pack.py app/feature_pack/api/settings.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_pack_interface.py tests/feature_pack/test_settings_model.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_settings_model.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与已有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版声明式设置模型 `SettingSection` 与 `SettingItem`，补齐公共导出与模型测试，为后续宿主设置注入器提供稳定数据边界；不提前进入 `SettingsInstaller`、SettingPage 映射或具体 Pack 设置改写。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 21；字段命名和最小字段集合必须与两份迁移文档契约一致；继续遵循简单、显式、可读原则；验证通过并追加 `progress.txt` 记录前不能修改 `passes`。
-  - 验收标准: `SettingSection` 与 `SettingItem` 已存在；简单设置项字段集合已固定；存在模型测试锁定字段结构、默认值与冻结语义；公共 API 导出稳定可用。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“Pack 返回 `SettingSection`，宿主统一映射到 SettingPage 和 SettingCardGroup”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `SettingSection`、`SettingItem`、`FormChoice` 的契约；同时建立在任务 18 的表单选项模型之上，并为后续任务 22、27、42、49 提供设置模型边界。
-- 风险: 当前只固定了声明式模型和 `FeaturePack.settingSection()` 的公开类型边界，还没有定义 `kind` 到宿主具体设置卡片的映射规则；后续实现 `SettingsInstaller` 时必须保持宿主负责渲染、Pack 只负责声明数据，避免再次退回直接操作 SettingPage 内部布局。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
+---
+## 2026-04-13 - 任务: 实现 SettingsInstaller
+### 已完成内容:
+- 已完成任务 #22: 在宿主侧实现设置注入器，让 Pack 设置统一进入 SettingPage，而不是各 Pack 自己操作页面布局。
+### 测试验证:
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
+### 备注:
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 改造默认 TaskCard 与 ResultCard 的编辑入口
 ### 已完成内容:
-- 在 `app/feature_pack/ui/cards.py` 中新增新版默认 `DefaultTaskCard` 与 `DefaultResultCard`，为默认卡片补齐统一编辑按钮、双击触发点和基于 `TaskSnapshot` 的最小展示刷新。
-- 在 `app/feature_pack/api/service.py` 中新增 `TaskEditor` 抽象与 `DefaultTaskEditor`，让卡片统一通过宿主 `editTask()` 流程打开 `TaskConfigDialog`，并在多文件任务场景下先调用 `task.select(ids)` 再调用 `task.configure(config)`。
-- 更新 `app/feature_pack/api/cards.py`、`app/feature_pack/ui/__init__.py`、`app/feature_pack/api/__init__.py`，把默认卡片和默认任务编辑器纳入新版稳定公共导出，固定后续宿主与 Pack 的导入路径。
-- 新增 `tests/feature_pack/test_default_task_cards.py`，并更新 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，覆盖默认 TaskCard/ResultCard 编辑入口、宿主 `editTask()` 调用链，以及默认编辑器对 `MultiFileTask.select()` 与 `Task.configure()` 的顺序约束。
+- 已完成任务 #23: 让默认卡片不再自己持有复杂编辑逻辑，而是统一通过宿主 `editTask()` 入口修改任务配置。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/cards.py app/feature_pack/api/service.py app/feature_pack/ui/__init__.py app/feature_pack/ui/cards.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_default_task_cards.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_default_task_cards.py` -> 通过（Qt 离屏环境仍输出字体目录缺失提示与 QFluentWidgets 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅改造新版默认 TaskCard / ResultCard 的编辑入口与宿主默认任务编辑链路，让默认卡片不再自己持有复杂编辑逻辑，不提前进入新版 `FeatureService` 的完整路由、加载与分发实现。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 23；默认卡片必须统一通过宿主 `editTask()` 修改任务；卡片层不能直接改任务内部字段；必须补齐默认卡片编辑入口测试；验证通过前先追加 `progress.txt` 再更新 `task.json`。
-  - 验收标准: 默认 TaskCard 与 ResultCard 已具备统一编辑动作入口；默认卡片调用的是宿主 `editTask()` 而不是直接改任务内部字段；默认编辑器能按契约在多文件任务上先 `select(ids)` 再 `configure(config)`；相关测试全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中默认卡片支持、`TaskCard -> Task -> TaskStage` 命令边界，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中“默认卡片只调用 `editTask()`”“先 `task.select(ids)` 再 `task.configure(config)`”的契约；同时建立在任务 14、17、18、19、20、22 的新版任务模型、表单、默认对话框和设置安装器基础上，并为后续任务 27、31、39、40、41、42 提供默认 UI 编辑入口。
-- 风险: 当前默认卡片仍只覆盖宿主新版默认 UI 路径，尚未接入新版 `FeatureService.createTaskCard()` / `createResultCard()` 分发；后续任务 27 需要在不破坏当前卡片编辑边界的前提下，把这些默认组件接入新版服务。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的 manifest 发现与依赖排序
 ### 已完成内容:
-- 在 `app/feature_pack/api/service.py` 中正式定义新版 `FeatureService` 抽象接口，并新增 `DefaultFeatureService`、`DiscoveredPack`、`PackDiscoveryError`，把新版服务的 manifest 发现与依赖排序能力落到新版模块。
-- 实现 `DefaultFeatureService.discoverPacks()`，统一扫描 `features/*/manifest.toml`，复用新版 `loadManifest()` 做严格校验，并显式检查入口文件是否存在，返回按依赖排序后的 `Manifest` 列表。
-- 实现新版 Pack 依赖排序逻辑，显式处理缺失依赖、循环依赖和重复 `packId`，避免继续沿用旧 loader“记录日志后跳过坏分支”的隐式行为。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `FeatureService`、`DefaultFeatureService`、`PackDiscoveryError` 纳入新版稳定公共导出。
-- 新增 `tests/feature_pack/test_feature_service_v1_discovery.py`，覆盖新版服务抽象面、仓库现有 manifest 发现顺序、缺失 manifest 跳过、入口缺失、缺失依赖、循环依赖、重复 `packId` 以及发现结果缓存。
+- 已完成任务 #24: 在新版模块中实现 `FeatureService` 的发现和依赖排序能力，为最终切换做准备。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_v1_discovery.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_v1_discovery.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版模块中实现 `FeatureService` 的 manifest 发现与依赖排序能力，为后续任务 25 的 Pack 加载和任务 26/27 的路由与分发提供稳定宿主入口，不提前实现实例化、路由、卡片分发或设置分发。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 24；必须继续以 `manifest.toml` 为唯一静态元数据边界，遵循简单、显式、可读原则；发现逻辑要直接复用新版 `Manifest` 读取契约，且只能在验证通过并写入 `progress.txt` 后再更新任务完成状态。
-  - 验收标准: 新版 `FeatureService` 已能发现 `features/` 下的 manifest，能按依赖顺序输出结果，并且发现和排序行为都有显式测试护栏；全部验证通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“固定 `manifest.toml`、由 `FeatureService` 负责发现和依赖排序”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.discoverPacks()` / `loadPacks()` 契约；同时建立在任务 6 到任务 9 的 `Manifest`、读取器和 `FeaturePack` 抽象，以及任务 22/23 已存在的设置安装器与任务编辑器基础上，并为后续任务 25、26、27、46、47 提供新版服务骨架。
-- 风险: 本轮只完成发现与排序，`loadPacks()`、`packForSource()`、`packForTask()`、`createTask()` 等入口仍显式保留为后续任务实现；同时新版排序现在对缺失依赖、循环依赖和重复 `packId` 采用 fail-fast，而不是旧服务的“跳过坏分支”行为，后续切换宿主入口时需要明确这是有意的 V1 收紧。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的 Pack 加载与实例管理
 ### 已完成内容:
-- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.loadPacks()` 与 `pack()`，新增 `LoadedPack`、`PackLoadError`，把 Pack 模块加载、类发现、实例化、安装和实例缓存收敛到新版宿主服务。
-- 为加载流程固定模块命名、依赖顺序加载、失败时模块树回滚和成功后实例缓存，避免旧 loader 的隐式 `sys.modules` 污染和弱实例管理。
-- 固定新版 Pack 加载失败的稳定错误报告方式，显式区分 `module-spec-failed`、`module-load-failed`、`missing-pack-class`、`multiple-pack-classes`、`invalid-pack-manifest`、`manifest-mismatch`、`pack-init-failed`、`pack-install-failed` 等失败码。
-- 更新 `app/feature_pack/api/__init__.py` 与 `tests/feature_pack/test_feature_pack_api_bootstrap.py`，把 `PackLoadError` 纳入新版 API 的稳定公共导出。
-- 新增 `tests/feature_pack/test_feature_service_v1_loading.py`，覆盖依赖顺序加载、实例缓存、相对模块导入、缺少新版 `FeaturePack` 子类、manifest 不匹配、入口导入失败、实例化失败和安装失败回滚等场景。
+- 已完成任务 #25: 在新版模块中实现 `FeatureService` 的 Pack 加载与实例管理，为最终切换准备新版加载器。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_v1_discovery.py tests/feature_pack/test_feature_service_v1_loading.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `uv run python tests/feature_pack/test_feature_service_v1_discovery.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `uv run python tests/feature_pack/test_feature_service_v1_loading.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版模块中实现 `FeatureService` 的 Pack 模块加载、实例化、实例缓存和失败报告，为后续任务 26、27 的路由与分发提供可复用加载器；不提前实现 source 路由、task 路由、任务创建、设置分发或卡片分发。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 25；必须继续遵守简单、显式、可读原则；新版加载器必须面向 V1 `FeaturePack` 契约而不是继续扩展旧接口；必须先写入 `progress.txt` 再更新 `task.json`。
-  - 验收标准: 新版 `FeatureService` 已能按发现顺序加载 Pack 模块并缓存实例；Pack 加载失败时存在稳定、可断言的错误报告；加载与失败场景测试全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“FeatureService 负责发现、加载和宿主注册 Pack”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.loadPacks()`、`FeatureService.pack()` 与 `FeaturePack.install()` 契约；同时建立在任务 6 到任务 9 的 `Manifest`、读取器和新版 `FeaturePack`，以及任务 24 的 manifest 发现与依赖排序基础之上，并为后续任务 26、27、46、47 提供新版加载器。
-- 风险: 当前仓库中的生产 Pack 仍大多停留在旧接口，尚未迁到新版 `FeaturePack`，因此新版加载器目前主要通过合成测试 Pack 验证，真正接管宿主入口仍依赖后续 Pack 迁移任务完成；另外 `loadPacks()` 目前只负责加载、安装和实例缓存，路由、任务创建与 UI 分发仍待后续任务补齐。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的 source 与 task 路由
 ### 已完成内容:
-- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.packForSource()` 与 `packForTask()`，让服务在已加载 Pack 顺序上执行路由，不再保留占位异常。
-- 新增内部 `_routeLoadedPack()` 路由辅助方法，把按顺序匹配、首个命中即返回、单个 Pack 谓词异常时跳过继续匹配的行为收敛到一处，保持 source 路由与 task 路由都完全基于新版 `accepts()` / `owns()` 语义。
-- 新增 `tests/feature_pack/test_feature_service_v1_routing.py`，覆盖 `packForSource()` 与 `packForTask()` 的命中、未命中、依赖顺序优先、未加载前返回 `None`，以及 `accepts()` / `owns()` 抛错时的隔离行为。
+- 已完成任务 #26: 在新版模块中实现按 source 和 task 进行 Pack 路由的逻辑，为最终宿主切换提供新版路由能力。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py tests/feature_pack/test_feature_service_v1_routing.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_service_v1_routing.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版模块中实现 `FeatureService` 的 `packForSource()` 与 `packForTask()` 路由，为后续任务创建、卡片分发和宿主切换提供新版 Pack 定位能力，不提前实现 `createTask()`、设置分发或卡片分发。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 26；路由必须完全依赖新版 `FeaturePack.accepts()` 与 `FeaturePack.owns()` 语义；继续遵循简单、显式、可读原则；必须在验证通过并追加 `progress.txt` 后才能更新任务完成状态。
-  - 验收标准: 新版 `FeatureService` 已实现 `packForSource()` 与 `packForTask()`；路由行为有显式测试覆盖命中、未命中、顺序和异常隔离；全部验证通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“Pack 主路径只保留 `accepts(source)`、`createTask(data)`、`owns(task)`”与“FeatureService 负责来源识别和任务归属路由”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.packForSource()`、`FeatureService.packForTask()` 契约；同时建立在任务 9 的新版 `FeaturePack` 抽象、任务 14 的新版 `Task` 基类、任务 24 的发现排序和任务 25 的加载缓存基础之上，并为后续任务 27、30、31、46、47 提供路由入口。
-- 风险: 当前路由只面向已加载 Pack 进行顺序匹配，异常采用显式跳过策略但暂未沉淀稳定错误报告；后续宿主切换或补齐服务分发时，如果需要观测路由失败原因，应在不破坏当前 `accepts()` / `owns()` 单一语义边界的前提下补充日志或诊断能力。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 FeatureService 的卡片、设置与编辑分发
 ### 已完成内容:
-- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.installSettings()`、`editTask()`、`createTaskCard()`、`createResultCard()`，把 UI 分发入口正式接回新版服务。
-- 让服务统一复用已注入的 `SettingsInstaller` 与 `TaskEditor`，设置注入按已加载 Pack 的依赖顺序分发，任务编辑统一委托默认编辑链路，不再保留占位异常。
-- 为卡片创建补上“Pack 自定义优先、宿主默认回退”的分发逻辑：Pack 返回自定义卡片时直接使用；未提供卡片时回退到 `DefaultTaskCard` 与 `DefaultResultCard`，并继续通过宿主 `editTask()` 入口处理编辑动作。
-- 新增 `tests/feature_pack/test_feature_service_v1_dispatch.py`，覆盖自定义卡片分发、默认卡片回退、设置注入顺序和编辑委托行为，给新版服务 UI 分发路径加上显式护栏。
+- 已完成任务 #27: 在新版模块中实现卡片创建、设置注入和任务编辑分发，让宿主后续能完整使用新版服务。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/__init__.py app/feature_pack/api/service.py tests/feature_pack/test_feature_pack_api_bootstrap.py tests/feature_pack/test_feature_service_v1_dispatch.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_api_bootstrap.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `uv run python tests/feature_pack/test_feature_service_v1_dispatch.py` -> 通过（Qt 离屏字体目录提示与 QFluentWidgets Pro 提示仍存在，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets 提示、旧 loader 循环依赖日志、task recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版模块中补齐 `FeatureService` 的卡片创建、设置注入和任务编辑分发，让宿主后续能完整接入新版默认 UI 能力；不提前进入任务 28 之后的持久化、浏览器快照、调度或 Pack 改写。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 27；必须完整实现 `createTaskCard()`、`createResultCard()`、`installSettings()`、`editTask()`；服务层必须统一接入默认对话框与设置安装器；继续遵循简单、显式、可读原则；必须先写入 `progress.txt` 再更新 `task.json`。
-  - 验收标准: 新版 `FeatureService` 已能分发自定义或默认卡片、按加载顺序安装 Pack 设置、并统一委托任务编辑；相关分发测试和必需验证全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“默认 TaskCard / ResultCard 支持”“SettingPage 设置卡片注入能力”“默认 UI 统一由宿主提供”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `FeatureService.installSettings()`、`editTask()`、`createTaskCard()`、`createResultCard()` 与统一编辑流转契约；同时建立在任务 19、20、22、23、24、25、26 已完成的默认对话框、设置安装器、默认卡片、发现加载和路由能力之上，并为后续任务 30、31、42、46、47 提供新版 UI 分发入口。
-- 风险: 当前 `createTaskCard()` 与 `createResultCard()` 在 Pack 未提供自定义卡片时直接回退到宿主默认卡片，这符合 V1 的默认 UI 方向；但生产 Pack 仍未迁到新版 `FeaturePack`，因此真正切换宿主入口前还需要后续 Pack 改写任务逐步接入新版卡片与设置接口。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 taskRecorder 持久化
 ### 已完成内容:
-- 在 `app/feature_pack/internal/recorder.py` 中新增新版 `TaskRecorder`、`TaskRecordError` 与 `taskRecorder`，把任务记录文件写入、读取、序列化与恢复收敛到新版模块，不再依赖旧 `app.bases.models.Task/TaskStage` 的类名反射。
-- 在 `app/feature_pack/api/task.py` 与 `app/feature_pack/api/stage.py` 中补充基于稳定身份字段的持久化注册与恢复钩子，让新版 `Task` / `TaskStage` 使用 `packId`、`kind`、`version` 和阶段身份组合完成恢复，而不是把 Python 类名写入记录文件。
-- 为 `Task` 基类补充默认 `currentStageIndex` 持久化，为 `MultiFileTask` 基类补充文件选择与文件状态持久化，统一记录文件中的任务与阶段身份表达以及多文件任务的选择状态。
-- 新增 `tests/feature_pack/test_feature_pack_task_recorder_v1.py`，覆盖单文件任务序列化身份字段、多文件任务文件选择状态恢复、记录文件往返恢复，以及未知任务身份时报错等场景。
+- 已完成任务 #28: 在新版模型下重建任务持久化与恢复逻辑，使任务记录不再依赖旧 V0 模型。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/stage.py app/feature_pack/api/task.py app/feature_pack/internal/__init__.py app/feature_pack/internal/recorder.py app/feature_pack/api/testing.py tests/feature_pack/test_feature_pack_task_recorder_v1.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_task_recorder_v1.py` -> 通过（保留 QFluentWidgets Pro 提示与 recorder 未 load 时的 warning，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版模块中重建 `taskRecorder` 的任务记录与恢复逻辑，让它面向新版 `Task`、`TaskStage` 和稳定身份字段工作，不提前切换旧宿主入口、浏览器快照或 CoreService 调度。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 28；必须完成 `taskRecorder` 使用新版任务模型序列化与恢复、统一记录文件中的任务与阶段身份表达、并补齐持久化与恢复测试；继续遵循简单、显式、可读原则；验证通过并写入 `progress.txt` 之前不能修改 `passes`。
-  - 验收标准: 新版 `taskRecorder` 已能基于 `packId/kind/version` 与阶段身份恢复任务；记录文件不再依赖 Python 类名 type id；单文件与多文件任务的持久化与恢复都有显式测试护栏；全部验证通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“`Task` 是 workflow、`TaskStage` 是步骤”“新代码禁止把 Python 类名当作持久化 type id”“任务身份与阶段身份应成为正式字段”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中新版 `Task`、`TaskStage`、`TaskConfig`、`MultiFileTask` 契约；同时建立在任务 10、13、14、17、24、25、26、27 已完成的新版配置模型、任务/阶段基类、新版服务和 UI 分发基础上，并为后续任务 29、30、31、46、47 提供新版恢复底座。
-- 风险: 当前新版 recorder 只在新版模块内提供，还未切换旧 `app.supports.recorder` 与旧宿主调用点；真正接管运行入口仍需后续 BrowserService、CoreService 和主窗口切换任务配合完成。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 BrowserService 快照与任务操作映射
 ### 已完成内容:
-- 在 `app/feature_pack/internal/browser.py` 中新增新版浏览器桥接层，提供 `buildBrowserTaskSummary()`、`buildBrowserTaskSnapshot()`、`BrowserTaskActionMapper`，把浏览器任务快照和动作分发收敛到新版模块。
-- 让浏览器任务快照直接基于 `Task.snapshot()` 返回的 `TaskSnapshot` 投影生成，统一使用 `id`、`packId`、`kind`、`name`、`state`、`progress`、`doneBytes`、`totalBytes`、`target` 等稳定字段，并补齐浏览器侧需要的 `speed`、`folder`、`canOpenFile`、`canOpenFolder`、`fileExt` 派生信息。
-- 重建浏览器任务操作到新版 `Task` 接口和宿主生命周期回调的边界：`toggle_pause` 走 `Task.pause()`，`redownload` 走 `Task.reset()` + 显式启动回调，`cancel` 走显式取消回调，打开文件/目录统一从 `TaskSnapshot.target` 推导，不再依赖旧 `Task` 的 `status`、`resolvePath` 等 V0 字段。
-- 更新 `app/feature_pack/internal/__init__.py` 导出新版浏览器桥接类型，便于后续 BrowserService 切换任务直接接入。
-- 新增 `tests/feature_pack/test_feature_pack_browser_v1.py`，覆盖浏览器快照字段生成、文件/目录目标推导、`toggle_pause`/`cancel`/`redownload`/`open_file`/`open_folder` 映射与异步宿主回调边界。
+- 已完成任务 #29: 在新版模型下重建浏览器扩展的快照与任务操作映射，使浏览器入口面向稳定的任务投影。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/internal/__init__.py app/feature_pack/internal/browser.py tests/feature_pack/test_feature_pack_browser_v1.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_browser_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版 `app.feature_pack` 模块中实现浏览器任务快照和任务动作映射，不提前切换旧 `app/services/browser_service.py` 的 WebSocket 入口、旧浏览器创建任务链路，且不进入后续任务 30 的新版 `CoreService.createTask()` 调度。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 29；浏览器任务快照必须基于 `TaskSnapshot` 输出，不能继续直接依赖旧 `Task` 的 `status`、`resolvePath`、`taskId`、模块名推导等 V0 细节；任务动作必须明确落在新版 `Task.snapshot()`、`Task.pause()`、`Task.reset()` 和显式宿主回调边界上；验证通过并追加 `progress.txt` 之前不能更新 `passes`。
-  - 验收标准: 新版浏览器桥接层已能基于 `TaskSnapshot` 生成稳定任务快照；`toggle_pause`、`cancel`、`redownload`、`open_file`、`open_folder` 已映射到新版 `Task` 接口与宿主回调；浏览器快照与操作测试全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `Task` / `TaskStage` 工作流边界、Actor 风格消息流与 Qt-free `TaskSnapshot` 的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskSnapshot`、`Task`、`FeatureService` 的契约；同时建立在任务 12、14、17、19、20、27、28 已完成的快照模型、任务基类、默认 UI 分发和新版 `taskRecorder` 基础之上，并为后续任务 30、31、47 的新版调度、浏览器入口切换和添加任务流程切换提供浏览器侧桥接层。
-- 风险: 本轮只新增新版内部浏览器桥接层，还没有切换旧 `app/services/browser_service.py` 的实际入口，因此浏览器 WebSocket 协议和扩展端字段切换仍要在后续任务 47 完成；此外，当前新版浏览器快照显式只依赖 `TaskSnapshot` 与派生路径信息，不再内建旧 `createdAt` 排序语义，后续接线时需要由宿主决定最终任务列表顺序。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 CoreService 的 createTask 调度入口
 ### 已完成内容:
-- 在 `app/feature_pack/api/service.py` 中实现新版 `DefaultFeatureService.createTask()`，让宿主可以基于 `TaskInput.config.source` 走 `packForSource()` 路由并调用对应 Pack 的 `createTask()`，不再保留占位异常。
-- 新增 `app/feature_pack/internal/core.py`，实现 `FeaturePackCoreService`，把 `TaskInput -> FeatureService.createTask() -> Task` 创建链路、任务登记、运行队列、下载槽计数、等待队列提升、暂停/移除和限流重排收敛到新版内部调度层。
-- 让新版调度器继续兼容旧下载槽语义：默认任务占用下载槽，但允许任务通过 `occupiesDownloadSlot()` / `willOccupyDownloadSlotWhenStarted()` 钩子显式声明“不占槽”，从而把运行队列逻辑对接到新版 `Task` 模型。
-- 把新版调度器接入新版 `taskRecorder`，让新建任务和生命周期切换可以同步刷新记录文件，为后续切换旧 `CoreService`、`BrowserService` 和添加任务流程预留内部入口。
-- 更新 `app/feature_pack/internal/__init__.py` 导出 `FeaturePackCoreService`，并新增 `tests/feature_pack/test_feature_pack_core_v1.py`，覆盖新版 `FeatureService.createTask()` 路由、立即调度、下载槽排队、暂停后提升等待任务，以及“不占下载槽任务不受并发上限阻塞”等场景。
+- 已完成任务 #30: 让 `CoreService` 的新版实现面向 `TaskInput`、新版 `FeatureService` 和新版 `Task` 调度。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py app/feature_pack/internal/__init__.py app/feature_pack/internal/core.py tests/feature_pack/test_feature_pack_core_v1.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_core_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版 `app.feature_pack` 模块中补齐 `CoreService` 的任务创建与调度入口，实现新版内部 `createTask()`、运行队列、下载槽限流和任务生命周期管理，不提前切换旧 `app/services/core_service.py`、旧主窗口或旧浏览器入口。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 30；必须继续基于两份迁移文档、`TaskInput`、新版 `FeatureService` 和新版 `Task` 模型实现，不回退到旧 payload 协议或旧 `Task`/`TaskStage` V0 接口；必须先追加 `progress.txt` 再更新任务完成状态。
-  - 验收标准: 新版模块已提供 `createTask()` 调度入口；运行队列和下载槽逻辑已能驱动新版任务模型；存在显式 CoreService 调度测试覆盖任务创建、排队、限流和生命周期行为；全部验证通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `FeaturePack.createTask(data)`、`Task` 工作流职责、显式状态边界和“简单优于复杂”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskInput`、`FeatureService.createTask()` 与新版 `Task` 契约；同时建立在任务 24-29 已完成的新版 Pack 路由、UI 分发、`taskRecorder` 和浏览器桥接层之上，并为后续任务 31、47 的添加任务流程和宿主入口切换提供内部调度基础。
-- 风险: 当前新版调度器仍只存在于 `app.feature_pack.internal`，旧 `app/services/core_service.py`、旧主窗口加任务路径和旧浏览器入口还没有切换到这条链路；此外，下载槽是否占用默认回退为“占用”，后续具体 Pack 在迁移时如果存在非占槽阶段，仍需显式提供对应钩子。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 在新版模块中实现 AddTaskDialogSession 的 TaskInput 流转
 ### 已完成内容:
-- 在 `app/feature_pack/internal/add_task.py` 中新增新版 `AddTaskDialogSession`、`AddTaskInputOverride`、`FeatureServiceTaskRunner`、`buildAddTaskConfig()` 与 `buildAddTaskInput()`，把添加任务会话里的基础下载设置、单链接覆盖设置、`TaskConfig` 构造和 `TaskInput` 构造收敛到新版模块。
-- 让新版添加任务会话在预创建任务时统一走 `FeatureService.createTask()`，在结果展示时统一走 `FeatureService.createResultCard()`，在下载设置变更时统一走 `FeatureService.configureTask()`，不再依赖旧 `payload` 和 `Task.applyPayloadToTask()`。
-- 在 `app/feature_pack/api/service.py` 中补齐新版 `DefaultFeatureService.configureTask()` 与任务记忆能力，让通过新版服务创建、编辑或展示过的任务都能通过稳定的 `taskId` 回到统一配置入口。
-- 更新 `app/feature_pack/internal/__init__.py` 导出新版添加任务会话相关类型，便于后续任务 47 切换旧 `AddTaskDialog` 与宿主入口时直接接入。
-- 新增 `tests/feature_pack/test_feature_pack_add_task_v1.py`，覆盖添加任务流程中的 `TaskInput` 构造、待创建请求重启、配置更新回灌到预创建任务，以及“先确认、后完成创建”时的 `taskConfirmed` 行为。
+- 已完成任务 #31: 把添加任务对话框和解析会话重写到 `TaskInput` / `TaskConfig` 流程上，为最终宿主切换做准备。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/service.py app/feature_pack/internal/__init__.py app/feature_pack/internal/add_task.py tests/feature_pack/test_feature_pack_add_task_v1.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_pack_add_task_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `uv run python tests/feature_pack/test_feature_service_v1_dispatch.py` -> 通过（Qt 离屏字体目录提示仍存在，不影响结果）
-- `uv run python tests/feature_pack/test_feature_pack_core_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅在新版 `app.feature_pack` 模块中重建添加任务对话框会话的 `TaskConfig` / `TaskInput` 流转、结果卡片生成和配置回写，不提前切换旧 `app/view/components/add_task_dialog.py`、旧 `AddTaskParseSession` 或主窗口入口。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 31；必须把添加任务流程中的配置构造、任务预创建和配置修改统一收敛到新版服务入口；继续遵循简单、显式、可读原则；必须先写入 `progress.txt` 再更新任务完成状态。
-  - 验收标准: 新版模块已提供可复用的 `AddTaskDialogSession` 与 `TaskInput` 构造能力；解析结果、配置修改和任务创建都明确走新版 `FeatureService` 入口；存在显式测试覆盖添加任务流程关键路径；全部验证通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中“`parse(payload)` 迁到 `createTask(data)`”“`TaskConfig` 是唯一配置模型”“`configure(config)` 是唯一公开配置入口”的迁移方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `TaskInput`、`TaskConfig`、`FeatureService.createTask()`、`FeatureService.configureTask()`、`FeatureService.editTask()` 契约；同时建立在任务 10、11、19、23、27、30 已完成的配置模型、输入模型、默认对话框、默认结果卡片、新版 UI 分发和新版 CoreService 创建入口之上，并为后续任务 47 的添加任务流程切换提供内部会话层。
-- 风险: 当前新版添加任务会话仍只存在于 `app.feature_pack.internal`，旧 `AddTaskDialog` 和旧 `AddTaskParseSession` 还没有切换到这条链路；此外，`DefaultFeatureService.configureTask()` 目前依赖服务已记住的任务实例，真正接管宿主入口后仍需保证添加任务、恢复任务和浏览器入口都通过新版服务注册任务。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 实现 TaskCard -> Task -> TaskStage 命令链
 ### 已完成内容:
-- 在 `app/feature_pack/api/task.py` 中为新版 `Task` 增加 `commandRequested`、`stageCommandForwarded`、`requestCommand()`、`dispatchCommand()`、`dispatchToStage()`、`dispatchToStages()`，把卡片发起的任务命令和任务到阶段的转发边界显式收敛到工作流监督者上。
-- 在 `app/feature_pack/api/stage.py` 中为新版 `TaskStage` 增加 `commandRequested`、`requestCommand()`、`dispatchCommand()` 与 `dispatchCustomCommand()`，统一让阶段通过显式命令入口接收 `configure`、`pause`、`reset` 等消息，而不是继续依赖 UI 或外部对象直接改阶段状态。
-- 在 `app/feature_pack/api/service.py` 中把默认编辑流和 `configureTask()` 改成调用 `task.requestCommand(...)`，其中多文件选择先走 `select` 命令，再走 `configure` 命令，保持 `TaskCard -> Task -> TaskStage` 的命令链一致性。
-- 在 `app/feature_pack/ui/cards.py` 中给默认 `DefaultTaskCard` 增加 `commandRequested` 与 `requestTaskCommand()`，让默认卡片的命令入口明确只打到 `Task`，不直接触碰 `TaskStage`。
-- 新增 `tests/feature_pack/test_task_command_chain.py`，并扩展 `tests/feature_pack/test_task_base.py`、`tests/feature_pack/test_task_stage_base.py`，覆盖卡片到任务、任务到阶段的命令分发、命令信号暴露和命令链顺序。
+- 已完成任务 #32: 把用户命令链明确落到 `TaskCard -> Task -> TaskStage`，避免 UI 继续直接修改工作流内部状态。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/stage.py app/feature_pack/api/task.py app/feature_pack/api/service.py app/feature_pack/ui/cards.py tests/feature_pack/test_task_stage_base.py tests/feature_pack/test_task_base.py tests/feature_pack/test_default_task_cards.py tests/feature_pack/test_task_command_chain.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_task_stage_base.py` -> 通过
-- `uv run python tests/feature_pack/test_task_base.py` -> 通过
-- `uv run python tests/feature_pack/test_default_task_cards.py` -> 通过（Qt 离屏字体目录告警与 QFluentWidgets Pro 提示不影响结果）
-- `uv run python tests/feature_pack/test_task_command_chain.py` -> 通过（Qt 离屏字体目录告警与 QFluentWidgets Pro 提示不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版 `TaskCard -> Task -> TaskStage` 命令链，明确卡片命令先进入 `Task`，再由 `Task` 分发到当前或全部 `TaskStage`；不提前进入任务 33 的事件投影链，也不切换旧宿主入口或具体生产 Pack。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 32；命令边界必须显式、简单、可读，不能让 UI 继续直接改阶段内部状态；要统一使用 Qt 信号或等价消息机制表达命令边界；验证通过前不能更新 `passes`。
-  - 验收标准: 已存在卡片到任务、任务到阶段的命令分发路径；默认宿主编辑链路也经由 `Task` 命令边界；命令链测试和基础回归测试全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `TaskCard --command--> Task --command--> TaskStage`、Actor 风格单一写者边界和 queued connection 方向，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Task` / `TaskStage` 的 `configure(config)`、默认卡片编辑流和统一宿主编辑入口契约；同时建立在任务 13、14、19、20、23、27、31 已完成的新版任务/阶段基类、默认对话框、默认卡片、服务分发和添加任务流转之上，并为后续任务 33 的事件投影链提供对称的命令入口基础。
-- 风险: 当前命令链先在新版 API、默认卡片和默认编辑服务中落地，旧 `app.view.components.cards` 与旧宿主控制流尚未切换；此外，当前基类对通用命令只内建 `configure`、`pause`、`reset`、多文件 `select`，后续具体 Pack 若引入自定义命令，仍需通过 `dispatchCustomCommand()` 显式声明，而不是回退到直接修改对象状态。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-13 - 任务: 实现 TaskStage -> Task -> TaskCard 事件投影链
 ### 已完成内容:
-- 在 `app/feature_pack/api/task.py` 中新增 `stageEventProjected`、阶段快照缓存和 `stageSnapshots()`，并在 `addStage()` 时把 `TaskStage.stateChanged/progressChanged/snapshotChanged/failed` 显式接入 `Task`，使阶段事件先汇总到任务，再由任务统一向 UI 投影。
-- 为阶段到任务的四条信号链补齐 `@Slot` 处理器，并统一使用 `Qt.ConnectionType.QueuedConnection` 连接，明确跨线程路径必须通过任务事件循环排队投递，而不是直接跨线程触碰任务或卡片状态。
-- 在任务侧加入默认投影逻辑：根据阶段快照缓存推导任务级 `state/progress/doneBytes`，并在阶段事件到达后统一触发 `Task.stateChanged`、`Task.progressChanged`、`Task.snapshotChanged`，让默认 `TaskCard` 继续只依赖任务投影而不直接观察 `TaskStage`。
-- 更新 `tests/feature_pack/test_task_base.py`，把新版 `stageEventProjected` 信号纳入基类元对象断言，并让测试任务快照走 `stageSnapshots()` 缓存路径。
-- 新增 `tests/feature_pack/test_task_event_projection.py`，覆盖 `TaskStage -> Task -> TaskCard` 事件链、阶段失败投影，以及把阶段移动到 `QThread` 后仍通过 queued connection 投递回任务线程和默认卡片刷新的跨线程场景。
+- 已完成任务 #33: 把阶段事件先汇总到任务，再投影给卡片和 UI，符合 Actor 风格的状态所有权边界。
 ### 测试验证:
-- `uv run basedpyright tests/test_automation_contracts.py app/feature_pack/api/task.py tests/feature_pack/test_task_base.py tests/feature_pack/test_task_event_projection.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_task_base.py` -> 通过
-- `uv run python tests/feature_pack/test_task_event_projection.py` -> 通过（Qt 离屏环境仍输出字体目录告警，不影响结果）
-- `uv run python tests/feature_pack/test_default_task_cards.py` -> 通过（Qt 离屏环境仍输出字体目录告警，不影响结果）
-- `uv run python tests/feature_pack/test_task_command_chain.py` -> 通过（Qt 离屏环境仍输出字体目录告警，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅实现新版 `TaskStage -> Task -> TaskCard` 事件投影链，让阶段事件先汇总到 `Task`，再由 `Task` 向默认卡片和 UI 投影；不提前改写具体生产 Pack，也不继续扩展任务 32 之外的命令分发边界。
-  - 关键约束: 本轮只处理 `task.json` 中首个未完成任务 33；继续遵循简单、显式、可读原则；跨线程路径必须使用 queued connection，避免 UI 或其他对象直接越过 `Task` 观察或修改 `TaskStage` 内部状态；必须先写入 `progress.txt` 再更新任务完成状态。
-  - 验收标准: 已建立阶段到任务、任务到卡片的事件投影路径；跨线程 queued connection 约束有明确实现与测试护栏；事件链和跨线程测试全部通过。
-  - 依赖关系: 直接依赖 `docs/standards/feature-pack-interface-standard.md` 中 `TaskStage --event--> Task`、`Task --snapshot/event--> TaskCard` 与 queued connection 约束，以及 `docs/contracts/feature-pack-v1-python-contracts.md` 中 `Task` / `TaskStage` 的信号边界和 Qt-free 快照契约；同时建立在任务 12、13、14、19、23、27、32 已完成的快照模型、任务/阶段基类、默认卡片、服务分发和命令链基础之上。
-- 风险: 当前事件投影链已经在新版基础设施层收口，但旧宿主入口和具体生产 Pack 还没有切换到这套链路；此外，本轮只统一了阶段事件的 queued connection 约束，跨线程命令投递仍由后续新版入口接线时继续收口。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-14 - 任务: 改写 http_pack 到新版接口
 ### 已完成内容:
-- 将 `features/http_pack/pack.py` 改写到新版 `FeaturePack` 路径，使用 `accepts()` / `createTask()` / `owns()`、`TaskInput` 和 `TaskConfig` 创建 HTTP 下载任务，并保留模块级 `parse(payload)` 与 `createTaskFromPayload(payload)` 兼容入口。
-- 将 `features/http_pack/task.py` 改写为基于 `SingleFileTask` / `TaskStage` 的 `HttpTask` / `HttpTaskStage`，统一输出同步、配置下发、下载信息刷新、持久化状态和默认编辑表单，同时补上旧 UI 读取所需的状态汇总兼容层。
-- 新增 `tests/feature_pack/test_http_pack_v1.py`，覆盖 `http_pack` 在新版服务下的创建、默认卡片回退、默认编辑流程和新版 `taskRecorder` 恢复。
-- 调整 `tests/feature_pack/test_task_persistence_baseline.py`，把依赖旧 V0 dataclass 序列化的 `HttpTask` / `HttpTaskStage` 基线替换为本地旧模型桩，避免旧持久化基线反向约束新版 `http_pack`。
+- 已完成任务 #34: 把 `http_pack` 改写为新版 `FeaturePack`、`SingleFileTask`、`TaskConfig` 和默认编辑流程的首个生产落点。
 ### 测试验证:
-- `uv run basedpyright --level error tests/test_automation_contracts.py features/http_pack/task.py features/http_pack/pack.py tests/feature_pack/test_http_pack_v1.py tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_http_pack_v1.py` -> 通过
-- `uv run python tests/feature_pack/test_task_persistence_baseline.py` -> 通过
-- `uv run python tests/feature_pack/test_feature_ui_baseline.py` -> 通过（Qt 离屏字体目录、Windows 主题句柄和已有布局告警仍存在，但不影响结果）
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { Write-Host ("RUN " + $_.FullName); uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅处理 `task.json` 中首个未完成任务 34，把 `http_pack` 的 Pack、Task、Stage 迁到新版 `FeaturePack`、`SingleFileTask`、`TaskConfig` 和默认编辑流程，不进入后续其他 Pack 的改写。
-  - 关键约束: 必须完整完成任务 34 的三个步骤；继续遵循简单、显式、可读原则；创建、编辑、恢复和卡片路径都要落到新版宿主接口；验证通过并记录 `progress.txt` 之前不能修改 `task.json` 的完成状态。
-  - 验收标准: `http_pack` 已能通过 `TaskInput` 创建新版 `HttpTask`，通过默认 `TaskConfigDialog` / `DefaultTaskCard` 走统一编辑链，通过新版 `taskRecorder` 恢复任务，并有显式测试覆盖创建、编辑、恢复与卡片回退。
-  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskConfig`、`SingleFileTask`、默认 `TaskConfigDialog`、默认卡片和稳定持久化身份字段的契约；实现建立在任务 9-33 已完成的新版 API、服务分发、默认 UI、任务记录与事件链基础之上。
-- 风险: 当前旧 V0 `Task` / `TaskStage` 持久化基线与新版 `HttpTask` 已不是同一模型，因此旧基线测试改为本地旧模型桩；仓库中其他生产 Pack 仍引用旧接口，后续任务需要继续逐个迁移，不能假设本轮已经完成全仓切换。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-14 - 任务: 改写 extract_pack 到新版接口
 ### 已完成内容:
-- 将 `features/extract_pack/task.py` 改写为新版能力型 Pack 实现，补齐基于新版 `Task` / `TaskStage` 的 `ExtractTask`、`ExtractStage`、`ExtractWorker`、`TaskInput` 创建入口和持久化恢复能力，并保留旧 `parse(payload)` / `createTaskFromPayload(payload)` 兼容入口。
-- 将 `features/extract_pack/pack.py` 收敛到新版 `FeaturePack` 入口，保持 `accepts()` / `createTask()` / `owns()` 为主路径，同时修正兼容 `parse()` 的返回类型，使其与新版 `ExtractPack` 基类签名一致。
-- 新增 `tests/feature_pack/test_extract_pack_v1.py`，覆盖新版 `extract_pack` 的任务创建、ZIP/TAR.GZ 解压、危险路径防护以及新版 `TaskRecorder` 恢复。
+- 已完成任务 #35: 把 `extract_pack` 改写为新版能力型 Pack，为其他 Pack 提供正式的解压工作流组件。
 ### 测试验证:
-- `uv run basedpyright --level error tests/test_automation_contracts.py features/extract_pack/task.py features/extract_pack/pack.py tests/feature_pack/test_extract_pack_v1.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_extract_pack_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅处理 `task.json` 中首个未完成任务 35，把 `extract_pack` 改写为新版 `FeaturePack`、新版任务/阶段模型和正式解压工作流组件，不提前进入 `ffmpeg_pack`、`m3u8_pack` 等后续依赖 Pack 的改写。
-  - 关键约束: 必须完整完成任务 35 的三个步骤；继续遵循简单、显式、可读原则；解压任务、阶段、持久化和能力测试都要落到新版宿主接口；验证通过并记录 `progress.txt` 之前不能修改 `task.json` 的完成状态。
-  - 验收标准: `extract_pack` 已通过 `TaskInput` 创建新版 `ExtractTask`；解压阶段已进入新版 `TaskStage` / `TaskRecorder` 持久化身份体系；存在显式测试覆盖创建、解压、恢复和安全防护；全部验证通过。
-  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskInput`、`TaskConfig`、`Task` / `TaskStage`、稳定持久化身份字段和“能力型 Pack 复用工作流组件”的契约；同时建立在任务 9-34 已完成的新版 API、服务分发、任务记录和 `http_pack` 改写基础之上，并为后续 `ffmpeg_pack`、`m3u8_pack` 的安装任务复用解压阶段提供正式组件。
-- 风险: 当前 `extract_pack` 仍保留了旧 `parse(payload)` / `createTaskFromPayload(payload)` 兼容入口，供尚未迁移的旧调用方复用；后续依赖 Pack 切换到新版宿主入口后，仍需逐步清理这些历史兼容层。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-14 - 任务: 改写 ffmpeg_pack 的安装任务
 ### 已完成内容:
-- 新增 `features/ffmpeg_pack/install_task.py`，将 FFmpeg 安装流程拆到新版 `FFmpegInstallTask`、`FFmpegInstallDownloadStage`、`FFmpegInstallExtractStage` 与 `createWindowsInstallTask()`，复用新版 `http_pack` 下载阶段、`extract_pack` 解压阶段以及新版持久化身份字段。
-- 更新 `features/ffmpeg_pack/pack.py`，让 `ffmpeg_pack` 通过新版 `accepts()` / `createTask()` / `owns()` 接入 `gd3+ffmpeg://install` 安装入口，同时保留合并任务的兼容解析路径，不提前改写任务 37 的合并工作流。
-- 调整 `features/ffmpeg_pack/config.py` 的安装按钮入口，运行时设置卡片现在直接调用新版安装任务创建函数。
-- 新增 `tests/feature_pack/test_ffmpeg_install_pack_v1.py`，覆盖安装任务创建、安装执行、任务恢复与稳定任务/阶段身份断言。
+- 已完成任务 #36: 先单独改写 `ffmpeg_pack` 的安装任务，使运行时依赖安装路径先落到新版接口。
 ### 测试验证:
-- `uv run basedpyright --level error tests/test_automation_contracts.py features/ffmpeg_pack/pack.py features/ffmpeg_pack/config.py features/ffmpeg_pack/install_task.py tests/feature_pack/test_ffmpeg_install_pack_v1.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_ffmpeg_install_pack_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、Qt 离屏字体/主题告警、旧 loader 循环依赖日志与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅处理 `task.json` 中首个未完成任务 36，把 `ffmpeg_pack` 的安装任务迁到新版 `FeaturePack`、`Task`、`TaskStage`、稳定身份字段和快照输出，不提前进入任务 37 的 FFmpeg 合并工作流改写。
-  - 关键约束: 必须完整完成 FFmpeg 安装相关 Task 与 Stage 改写、新版身份字段与快照输出、安装任务测试三项步骤；继续遵循简单、显式、可读原则；验证通过前不能更新 `passes`。
-  - 验收标准: `ffmpeg_pack` 已能通过新版入口创建安装任务；安装工作流使用新版任务/阶段身份与 `TaskSnapshot` / `StageSnapshot`；存在显式测试覆盖创建、执行、恢复与持久化身份；全部验证通过。
-  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskConfig`、`Task` / `TaskStage`、稳定持久化身份与快照模型的契约；同时建立在任务 28、34、35 已完成的新版 `TaskRecorder`、`http_pack` 下载阶段和 `extract_pack` 解压阶段基础之上，并为任务 37 的 FFmpeg 合并工作流迁移提供安装依赖基础。
-- 风险: 当前 `ffmpeg_pack` 的合并任务仍保留旧实现并继续位于 `features/ffmpeg_pack/task.py`；后续任务 37 需要继续清理同模块中的旧 V0 合并路径，不能把本轮的安装任务迁移误判为整个 `ffmpeg_pack` 已完成切换。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---
 ## 2026-04-14 - 任务: 改写 ffmpeg_pack 的合并任务
 ### 已完成内容:
-- 新增 `features/ffmpeg_pack/merge_task.py`，将 FFmpeg 合并流程拆到新版 `FFmpegMergeTask`、`FFmpegMergeDownloadStage`、`FFmpegStage` 与 `createBrowserMergeTask()`，复用新版 `http_pack` 下载阶段并补齐新版持久化身份、快照、状态汇总和输出同步逻辑。
-- 将 `features/ffmpeg_pack/task.py` 改为兼容导出层，继续向旧调用方暴露 `FFmpegStage`、`FFmpegWorker`、`FFmpegMergeTask` 和 `createBrowserMergeTask()`，同时把真实实现收口到新版合并模块，避免继续保留旧 V0 合并任务实现。
-- 新增 `tests/feature_pack/test_ffmpeg_merge_pack_v1.py`，覆盖新版 `ffmpeg_pack` 合并任务创建、配置修改后输出路径同步且不覆盖源资源 URL/请求头、执行完成后清理临时文件，以及新版 `TaskRecorder` 恢复与稳定任务/阶段身份断言。
+- 已完成任务 #37: 再单独改写 `ffmpeg_pack` 的合并任务，使媒体合并工作流落到新版 `SingleFileTask` 和 Stage 模型上。
 ### 测试验证:
-- `uv run basedpyright --level error tests/test_automation_contracts.py features/ffmpeg_pack/merge_task.py features/ffmpeg_pack/task.py tests/feature_pack/test_ffmpeg_merge_pack_v1.py` -> 通过
-- `uv run python tests/test_automation_contracts.py` -> 通过
-- `uv run python tests/feature_pack/test_ffmpeg_merge_pack_v1.py` -> 通过（保留 QFluentWidgets Pro 提示，不影响结果）
-- `Get-ChildItem -Recurse tests -Filter *.py | Sort-Object FullName | ForEach-Object { uv run python $_.FullName; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }` -> 通过（保留 QFluentWidgets Pro 提示、旧 loader 循环依赖日志、旧/新版 recorder warning、Qt 离屏字体/主题/布局告警与既有布局 warning，均不影响结果）
+- 通过: 当轮已执行 `uv run basedpyright ...`、`uv run python tests/test_automation_contracts.py` 与相关 `uv run python tests/...` 验证；精确命令明细已压缩，必要时查对应提交。
 ### 备注:
-- 对齐摘要:
-  - 目标范围: 仅处理 `task.json` 中首个未完成任务 37，把 `ffmpeg_pack` 的合并任务迁到新版 `SingleFileTask` 和 Stage 模型，不提前进入任务 38 及后续 Pack 改写。
-  - 关键约束: 必须完整完成 FFmpeg 合并相关 Task 与 Stage 改写、新版配置与输出同步逻辑、合并任务测试三项步骤；继续遵循简单、显式、可读原则；验证通过并记录 `progress.txt` 之前不能更新 `passes`。
-  - 验收标准: `ffmpeg_pack` 已能通过新版入口创建合并任务；合并工作流使用新版 `TaskConfig`、`SingleFileTask`、稳定任务/阶段身份与 `TaskSnapshot` / `StageSnapshot`；存在显式测试覆盖创建、配置同步、执行、恢复与持久化身份；全部验证通过。
-  - 依赖关系: 直接依赖两份迁移文档中关于 `FeaturePack`、`TaskConfig`、`SingleFileTask`、`Task` / `TaskStage`、稳定持久化身份和快照模型的契约；同时建立在任务 28、34、35、36 已完成的新版 `TaskRecorder`、`http_pack` 下载阶段、`extract_pack` 能力层和 FFmpeg 安装任务基础之上。
-- 风险: 当前仓库中仍有 `bili_pack` 等旧调用方通过 `features.ffmpeg_pack.task` / `ffmpeg_pack.task` 读取 FFmpeg 合并相关类型，因此本轮保留了兼容导出层；后续相关 Pack 迁移完成后，仍需要继续评估这些历史兼容入口是否可以收口。
-- 结论: 已完成。
+- 对齐摘要: 范围、约束、验收和依赖均来自两份 Feature Pack V1 迁移文档与 `task.json`；本压缩版仅保留继续推进所需的审计信息。
 ---

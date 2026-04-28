@@ -2,7 +2,7 @@ param(
     [string]$TaskFile = "task.json",
     [string]$AgentFile = "AGENTS.md",
     [string]$ProgressFile = "progress.txt",
-    [string]$Model = "gpt-5.4",
+    [string]$Model = "gpt-5.5",
     [string]$ReasoningEffort = "xhigh",
     [int]$MaxRounds = 0,
     [bool]$Search = $true,

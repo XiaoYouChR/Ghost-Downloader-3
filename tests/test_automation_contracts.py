@@ -172,7 +172,7 @@ def validate_runner_contract() -> None:
         "task.json",
         "progress.txt",
         "--output-last-message",
-        "gpt-5.4",
+        "gpt-5.5",
         "model_reasoning_effort",
         "xhigh",
         "--search",
