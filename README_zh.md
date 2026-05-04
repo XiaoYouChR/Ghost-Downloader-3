@@ -109,7 +109,7 @@
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>13713 words</b></sub>
+        <sub><b>14117 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
@@ -123,7 +123,7 @@
           <br />
           <sub><b>i0ntempest</b></sub></a>
         <br />
-        <sub><b>947 words</b></sub>
+        <sub><b>953 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />
