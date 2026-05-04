@@ -751,7 +751,7 @@ class BitTorrentWorker(Worker):
 
 async def _fetchTorrentBytes(payload: dict) -> bytes:
     url = str(payload["url"]).strip()
-    headers = payload.get("headers", DEFAULT_HEADERS)
+    headers = payload.get("headers") or DEFAULT_HEADERS
     proxies = payload.get("proxies", getProxies())
     requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers if isinstance(headers, dict) else DEFAULT_HEADERS)
 

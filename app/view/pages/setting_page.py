@@ -14,7 +14,7 @@ from app.services.browser_service import BrowserService
 from app.supports.config import cfg, EDGE_ADDONS_URL, CHROME_ADDONS_URL, FIREFOX_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
 from app.supports.utils import openAppLogFolder
-from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
+from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard, UserAgentSettingCard
 
 if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
@@ -116,6 +116,8 @@ class SettingPage(ScrollArea):
             cfg.proxyServer, self.generalDownloadGroup
         )
         self.generalDownloadGroup.addSettingCard(self.proxyServerCard)
+        self.userAgentCard = UserAgentSettingCard(cfg.userAgent, self.generalDownloadGroup)
+        self.generalDownloadGroup.addSettingCard(self.userAgentCard)
         # Browser
         self.browserExtensionCard = SwitchSettingCard(
             FluentIcon.CONNECT,
