@@ -2,7 +2,7 @@
 name = "ghost-downloader-3"
 version = "3.8"
 description = "ghost-downloader-3"
-requires-python = ">=3.11"
+requires-python = "==3.13"
 dependencies = [
     "desktop-notifier>=6.2.0",
     "libtorrent>=2.0.11",
@@ -22,3 +22,19 @@ dependencies = [
 dev = [
     "types-libtorrent>=2.0.11.20250816",
 ]
+
+[tool.setuptools]
+py-modules = []
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tool.pixi.pypi-dependencies]
+ghost-downloader-3 = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+
+[tool.pixi.tasks]

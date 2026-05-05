@@ -1,1 +1,2 @@
-app/assets/resources.py linguist-generated
+app/assets/resources.py linguist-generated# SCM syntax highlighting & preventing 3-way merges
+pixi.lock merge=binary linguist-language=YAML linguist-generated=true -diff

@@ -1,3 +1,4 @@
+import os
 import asyncio
 import shutil
 import sys
@@ -109,7 +110,11 @@ class FFmpegInstallFolderCard(SettingCard):
             self._updatePath(folder)
 
     def _restoreDefault(self):
-        self._updatePath(f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg")
+        configLocation = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
+        # check if portable
+        if os.path.exists(f"./data/UserConfig.json"):
+            configLocation = "./data"
+        self._updatePath(f"{configLocation}/FFmpeg")
 
 
 class FFmpegRuntimeCard(SettingCard):
@@ -172,7 +177,11 @@ class FFmpegRuntimeCard(SettingCard):
 
 
 class FFmpegConfig(PackConfig):
-    installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg", FolderValidator())
+    configLocation = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
+    # check if portable
+    if os.path.exists(f"./data/UserConfig.json"):
+        configLocation = "./data"
+    installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{configLocation}/FFmpeg", FolderValidator())
 
     def loadSettingCards(self, settingPage: "SettingPage"):
         self.ffmpegGroup = SettingCardGroup(self.tr("FFmpeg"), settingPage.container)

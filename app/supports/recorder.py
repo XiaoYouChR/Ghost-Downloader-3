@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import orjson
+import os
 from PySide6.QtCore import QStandardPaths
 from loguru import logger
 
@@ -11,7 +12,11 @@ class TaskRecorder:
 
     def __init__(self):
         appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
-        self.recordFile = Path(f"{appLocalDataLocation}/GhostDownloader/Memory.log")
+        configLocation = f"{appLocalDataLocation}/GhostDownloader"
+        # check if portable
+        if os.path.exists(f"./data/UserConfig.json"):
+            configLocation = "./data"
+        self.recordFile = Path(f"{configLocation}/Memory.log")
         if not self.recordFile.exists():
             self.recordFile.parent.mkdir(parents=True, exist_ok=True)
             self.recordFile.touch()

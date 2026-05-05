@@ -8,7 +8,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QApplication
 from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, SwitchSettingCard, PushSettingCard, \
     HyperlinkButton, ComboBoxSettingCard, HyperlinkCard, PrimaryPushSettingCard, InfoBar, FlyoutView, Flyout, \
-    InfoBarPosition, ToolButton, ToolTipFilter
+    InfoBarPosition, ToolButton, ToolTipFilter, qconfig
 
 from app.services.browser_service import BrowserService
 from app.supports.config import cfg, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
@@ -274,6 +274,14 @@ class SettingPage(ScrollArea):
             parent=self.softwareGroup,
         )
         self.softwareGroup.addSettingCard(self.clipboardListenerCard)
+        self.portableCard = PrimaryPushSettingCard(
+            self.tr("便携化"),
+            FluentIcon.PENCIL_INK,
+            self.tr("便携化"),
+            self.tr("取消便携化只要删除程序目录的data文件夹即可"),
+            self.softwareGroup,
+        )
+        self.softwareGroup.addSettingCard(self.portableCard)
         # Application
         self.authorCard = HyperlinkCard(
             AUTHOR_URL,
@@ -326,6 +334,7 @@ class SettingPage(ScrollArea):
         self.feedbackCard.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
         )
+        self.portableCard.clicked.connect(self._exportPortableSetting)
         self.openLogButton.clicked.connect(openAppLogFolder)
 
     def _showRestartTooltip(self):
@@ -488,3 +497,12 @@ class SettingPage(ScrollArea):
                 duration=1000,
                 parent=self.parent(),
             )
+
+    def _exportPortableSetting(self):
+        """Export portable settings"""
+        if os.path.exists("./data"):
+            pass
+        else:
+            os.makedirs("./data")
+        cfg.file = Path("./data/UserConfig.json")
+        cfg.save()

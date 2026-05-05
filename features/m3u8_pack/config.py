@@ -1,3 +1,4 @@
+import os
 import asyncio
 import shutil
 import sys
@@ -129,7 +130,11 @@ class M3U8InstallFolderCard(SettingCard):
             self._updatePath(folder)
 
     def _restoreDefault(self):
-        defaultPath = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/M3U8DL"
+        configLocation = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
+        # check if portable
+        if os.path.exists(f"./data/UserConfig.json"):
+            configLocation = "./data"
+        defaultPath = f"{configLocation}/M3U8DL"
         self._updatePath(defaultPath)
 
 
@@ -193,10 +198,14 @@ class M3U8RuntimeCard(SettingCard):
 
 
 class M3U8Config(PackConfig):
+    configLocation = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
+    # check if portable
+    if os.path.exists(f"./data/UserConfig.json"):
+        configLocation = "./data"
     installFolder = ConfigItem(
         "M3U8",
         "InstallFolder",
-        f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/M3U8DL",
+        f"{configLocation}/M3U8DL",
         FolderValidator(),
     )
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))
