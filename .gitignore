@@ -36,10 +36,4 @@ browser_extension/firefox/
 
 # 忽略 uv 锁文件
 uv.lock
-# pixi environments
-.pixi/*
-pixi.lock
-!.pixi/config.toml
 
-
-ghost_downloader_3.egg-info/*
