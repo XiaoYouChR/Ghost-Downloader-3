@@ -4,7 +4,7 @@ import traceback
 from time import localtime, strftime, time
 
 from loguru import logger
-from app.supports.portbale import dataPath
+from app.supports.portable import dataPath
 
 # import orjson
 # sys.modules['json'] = orjson

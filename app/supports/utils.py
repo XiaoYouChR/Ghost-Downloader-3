@@ -14,7 +14,7 @@ from loguru import logger
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg
-from app.supports.portbale import dataPath
+from app.supports.portable import dataPath
 
 if TYPE_CHECKING:
     from app.bases.models import Task

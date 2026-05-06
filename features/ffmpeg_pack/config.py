@@ -18,7 +18,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
-from app.supports.portbale import dataPath
+from app.supports.portable import dataPath
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage

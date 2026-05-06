@@ -4,7 +4,7 @@ import orjson
 from loguru import logger
 
 from app.bases.models import Task
-from app.supports.portbale import dataPath
+from app.supports.portable import dataPath
 
 
 class TaskRecorder:
