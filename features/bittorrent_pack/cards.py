@@ -138,30 +138,30 @@ class BTTaskCard(UniversalTaskCard):
 
     def _metaText(self) -> str:
         parts: list[str] = []
-        if self.task.stage.stateText and self.task.stage.stateText not in {"下载中", "做种中"}:
-            parts.append(self.task.stage.stateText)
+        if self.task.stateText and self.task.stateText not in {"下载中", "做种中"}:
+            parts.append(self.task.stateText)
         if self.task.isSeeding and self.task.shareRatioPercent > 0:
             parts.append(self.tr("分享率 {0:.2f}%").format(self.task.shareRatioPercent))
         if self.task.isSeeding and self.task.seedingTimeSeconds > 0:
             parts.append(self.tr("做种 {0}").format(getReadableTime(self.task.seedingTimeSeconds)))
-        if self.task.stage.peerCount or self.task.stage.seedCount:
+        if self.task.peerCount or self.task.seedCount:
             parts.append(
                 self.tr("Peers {0} / Seeds {1}").format(
-                    self.task.stage.peerCount,
-                    self.task.stage.seedCount,
+                    self.task.peerCount,
+                    self.task.seedCount,
                 )
             )
         return " · ".join(parts)
 
     def _refreshInfoLayout(self):
         if self.task.status == TaskStatus.RUNNING:
-            self.speedLabel.setText(f"{getReadableSize(self.task.stage.downloadRate)}/s")
-            self.uploadRateLabel.setText(f"{getReadableSize(self.task.stage.uploadRate)}/s")
+            self.speedLabel.setText(f"{getReadableSize(self.task.downloadRate)}/s")
+            self.uploadRateLabel.setText(f"{getReadableSize(self.task.uploadRate)}/s")
             if self.task.isSeeding:
                 self.leftTimeLabel.hide()
-            elif self.task.fileSize > 0 and self.task.stage.downloadRate > 0:
+            elif self.task.fileSize > 0 and self.task.downloadRate > 0:
                 remainingBytes = self.task.fileSize - self.task.stage.receivedBytes
-                self.leftTimeLabel.setText(getReadableTime(int(remainingBytes / self.task.stage.downloadRate)))
+                self.leftTimeLabel.setText(getReadableTime(int(remainingBytes / self.task.downloadRate)))
                 self.leftTimeLabel.show()
             else:
                 self.leftTimeLabel.setText("--")
