@@ -6,11 +6,9 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ImageLabel, LineEdit, StrongBodyLabel
 
-from app.bases.models import TaskStatus
+from app.bases.models import Task, TaskStatus
 from app.supports.utils import getReadableSize, getReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
-
-from .task import M3U8InstallTask, M3U8Task
 
 
 def _removeFile(path: Path):
@@ -77,11 +75,11 @@ class M3U8TaskCard(UniversalTaskCard):
 
         task = self.task
         _removeFile(Path(task.outputFolder))
-        shutil.rmtree(Path(task.tempDir), ignore_errors=True)
+        shutil.rmtree(Path(task.metadata.get('tempDir', '')), ignore_errors=True)
 
         outputDirectory = Path(task.path)
         if outputDirectory.exists():
-            prefix = f"{task.saveName}."
+            prefix = f"{task.title}."
             for candidate in outputDirectory.iterdir():
                 if candidate.name == Path(task.outputFolder).name:
                     continue
@@ -94,15 +92,16 @@ class M3U8InstallTaskCard(UniversalTaskCard):
         if not completely:
             return
 
-        if isinstance(self.task, M3U8InstallTask):
-            shutil.rmtree(self.task.installFolder, ignore_errors=True)
+        installFolder = self.task.metadata.get("installFolder")
+        if installFolder:
+            shutil.rmtree(installFolder, ignore_errors=True)
             return
 
         super().onTaskDeleted(completely)
 
 
 class M3U8ResultCard(ResultCard):
-    def __init__(self, task: M3U8Task, parent: QWidget = None):
+    def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
         self.task = task
         self.iconLabel = ImageLabel(self)
@@ -133,8 +132,8 @@ class M3U8ResultCard(ResultCard):
         self.mainLayout.addWidget(self.metaLabel)
 
     def _metaText(self) -> str:
-        manifestText = "DASH" if self.task.manifestType == "mpd" else "HLS"
-        modeText = self.tr("直播") if self.task.isLive else self.tr("点播")
+        manifestText = "DASH" if self.task.metadata.get('manifestType', 'm3u8') == "mpd" else "HLS"
+        modeText = self.tr("直播") if self.task.metadata.get('isLive', False) else self.tr("点播")
         return f"{manifestText} · {modeText}"
 
     def _refreshIcon(self):
@@ -167,5 +166,5 @@ class M3U8ResultCard(ResultCard):
         self.filenameEdit.hide()
         self.filenameLabel.show()
 
-    def getTask(self) -> M3U8Task:
+    def getTask(self) -> Task:
         return self.task

@@ -286,8 +286,8 @@ class BTStage(TaskStage):
         self.downloadRate = 0
         self.uploadRate = 0
 
-    def reset(self, notifyTask: bool = True):
-        super().reset(notifyTask=notifyTask)
+    def reset(self, sync: bool = True):
+        super().reset(sync=sync)
         self.stateText = ""
         self.peerCount = 0
         self.seedCount = 0
@@ -295,7 +295,7 @@ class BTStage(TaskStage):
         self.uploadRate = 0
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BTTask(Task):
     sourceType: str
     torrentData: str

@@ -24,7 +24,7 @@ from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 from app.view.components.labels import IconBodyLabel
 
-from .task import BitTorrentFile, BitTorrentTask
+from .task import BTFile, BTTask
 
 
 def _removePath(path: Path):
@@ -36,7 +36,7 @@ def _removePath(path: Path):
     path.unlink(missing_ok=True)
 
 
-def _openFileSelection(task: BitTorrentTask, parent) -> set[int] | None:
+def _openFileSelection(task: BTTask, parent) -> set[int] | None:
     dialog = TorrentFileSelectDialog(task, parent)
     try:
         if not dialog.exec():
@@ -49,19 +49,19 @@ def _openFileSelection(task: BitTorrentTask, parent) -> set[int] | None:
 
 
 class TorrentFileSelectDialog(FileSelectDialog):
-    def __init__(self, task: BitTorrentTask, parent=None):
+    def __init__(self, task: BTTask, parent=None):
         super().__init__(task, parent)
-        self.task: BitTorrentTask = task
+        self.task: BTTask = task
 
-    def _fileDisplayPath(self, file: BitTorrentFile) -> str:
+    def _fileDisplayPath(self, file: BTFile) -> str:
         return self.task.mappedRelativePath(file)
 
-    def _fileTypePath(self, file: BitTorrentFile) -> str:
+    def _fileTypePath(self, file: BTFile) -> str:
         return file.path
 
 
 class BitTorrentResultCard(ResultCard):
-    def __init__(self, task: BitTorrentTask, parent: QWidget = None):
+    def __init__(self, task: BTTask, parent: QWidget = None):
         super().__init__(task, parent)
         self.task = task
 
@@ -118,14 +118,14 @@ class BitTorrentResultCard(ResultCard):
         if _openFileSelection(self.task, self.window()) is not None:
             self._refreshSummary()
 
-    def getTask(self) -> BitTorrentTask:
+    def getTask(self) -> BTTask:
         return self.task
 
 
-class BitTorrentTaskCard(UniversalTaskCard):
-    def __init__(self, task: BitTorrentTask, parent=None):
+class BTTaskCard(UniversalTaskCard):
+    def __init__(self, task: BTTask, parent=None):
         super().__init__(task, parent)
-        self.task: BitTorrentTask = task
+        self.task: BTTask = task
         self.speedLabel.setIcon(FluentIcon.DOWNLOAD)
         self.uploadRateLabel = IconBodyLabel("", FluentIcon.SHARE, self)
         self.infoLayout.insertWidget(self.infoLayout.indexOf(self.leftTimeLabel), self.uploadRateLabel)
