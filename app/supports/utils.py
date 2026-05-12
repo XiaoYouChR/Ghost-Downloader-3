@@ -191,7 +191,7 @@ def getReadableTime(seconds: int) -> str:
 def ensureUniqueTaskTarget(
     task: "Task",
 ) -> bool:
-    target = Path(task.resolvePath.strip())
+    target = Path(task.outputFolder.strip())
     if not target.name:
         return False
 

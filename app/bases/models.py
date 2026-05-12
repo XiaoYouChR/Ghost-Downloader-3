@@ -295,6 +295,13 @@ class Task:
         self.fileSize = sum(f.size for f in self.files if f.selected)
         self.updateStatus()
 
+    def applySettings(self, payload: dict):
+        path = payload.get("path")
+        if isinstance(path, (str, Path)):
+            self.path = Path(path)
+            for stage in self.stages:
+                stage.updateOutputFile(self.path, self.title)
+
     async def run(self):
         currentStage = None
         try:

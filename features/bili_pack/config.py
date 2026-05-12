@@ -781,7 +781,7 @@ class BilibiliConfig(PackConfig):
     parseDolby = ConfigItem("Download", "ParseDolby", False, BoolValidator())
     userCookie = ConfigItem("Download", "UserCookie", "", CookieValidator())
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
+    def setupSettings(self, settingPage: "SettingPage"):
         self.parseBilibiliGroup = SettingCardGroup(self.tr("哔哩哔哩视频下载"), settingPage.container)
 
         self.defaultQualityCard = ComboBoxSettingCard(

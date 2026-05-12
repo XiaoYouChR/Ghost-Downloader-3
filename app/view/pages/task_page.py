@@ -165,7 +165,7 @@ class TaskPage(ScrollArea):
     def resumeMemorizedTasks(self):
         for task in taskRecorder.memorizedTasks.values():
             try:
-                card = featureService.createTaskCard(task, self)
+                card = featureService.taskCard(task, self)
             except Exception as e:
                 logger.opt(exception=e).error("无法恢复任务卡片 {}", task.taskId)
                 continue

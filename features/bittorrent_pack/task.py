@@ -277,7 +277,7 @@ class BTFile:
 
 @dataclass
 class BTStage(TaskStage):
-    resolvePath: str
+    outputFile: str
 
     def __post_init__(self):
         self.stateText = ""
@@ -332,10 +332,6 @@ class BTTask(Task):
         self.syncStagePaths()
 
     @property
-    def resolvePath(self) -> str:
-        return str(self.path / self.title)
-
-    @property
     def stage(self) -> BTStage:
         return self.stages[0]
 
@@ -346,23 +342,23 @@ class BTTask(Task):
         return self.path / f"{self.title}.torrent"
 
     @property
-    def selectedFileCount(self) -> int:
+    def countSelected(self) -> int:
         return sum(1 for file in self.files if file.selected)
 
     @property
-    def totalFileCount(self) -> int:
+    def countAll(self) -> int:
         return len(self.files)
 
     @property
-    def isSingleFileTorrent(self) -> bool:
+    def isSingleFile(self) -> bool:
         return len(self.files) == 1
 
     @property
-    def hasUnselectedFiles(self) -> bool:
-        return self.selectedFileCount < self.totalFileCount
+    def hasUnselected(self) -> bool:
+        return self.countSelected < self.countAll
 
     def syncStagePaths(self):
-        self.stage.resolvePath = self.resolvePath
+        self.stage.outputFile = self.outputFolder
 
     def mappedRelativePath(self, file: BTFile) -> str:
         if self.isSingleFileTorrent:
@@ -427,8 +423,8 @@ class BTTask(Task):
             file.downloadedBytes = downloaded
             file.completed = file.size > 0 and downloaded >= file.size
 
-    def applyPayloadToTask(self, payload: dict[str, Any]):
-        super().applyPayloadToTask(payload)
+    def applySettings(self, payload: dict[str, Any]):
+        super().applySettings(payload)
         if "proxies" in payload:
             self.proxies = payload.get("proxies")
         self.syncStagePaths()
@@ -444,15 +440,13 @@ class BTTask(Task):
             file.completed = False
         return result
 
-    def occupiesDownloadSlot(self) -> bool:
-        return self.status == TaskStatus.RUNNING and not self.isSeeding
-
-    def willOccupyDownloadSlotWhenStarted(self) -> bool:
+    @property
+    def usesSlot(self) -> bool:
         return not self.isSeeding
 
     async def run(self):
         try:
-            for stage in self.iterRunnableStages():
+            for stage in self.pendingStages():
                 await BTWorker(stage).run()
         except asyncio.CancelledError:
             logger.info(f"{self.title} 停止下载")
@@ -913,7 +907,7 @@ def buildTaskFromTorrentInfo(
         url=sourceUrl,
         fileSize=sum(entry.size for entry in entries),
         path=Path(payload.get("path", cfg.downloadFolder.value)),
-        stages=[BTStage(stageIndex=1, resolvePath="")],
+        stages=[BTStage(stageIndex=1, outputFile="")],
         sourceType=sourceType,
         torrentData=_encodeBytes(torrentBytes),
         trackers=trackers or _extractTrackers(ti),

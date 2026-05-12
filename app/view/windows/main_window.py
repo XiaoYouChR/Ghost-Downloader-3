@@ -346,7 +346,7 @@ class MainWindow(MSFluentWindow):
             if ensureUniqueTaskTarget(task):
                 logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
 
-            card = featureService.createTaskCard(task, self)
+            card = featureService.taskCard(task, self)
             taskRecorder.add(task, False)
             self.taskPage.addCard(card)
             card.resumeTask()

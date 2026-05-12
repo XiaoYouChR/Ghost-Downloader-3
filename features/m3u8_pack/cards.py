@@ -76,14 +76,14 @@ class M3U8TaskCard(UniversalTaskCard):
             return
 
         task = self.task
-        _removeFile(Path(task.resolvePath))
+        _removeFile(Path(task.outputFolder))
         shutil.rmtree(Path(task.tempDir), ignore_errors=True)
 
         outputDirectory = Path(task.path)
         if outputDirectory.exists():
             prefix = f"{task.saveName}."
             for candidate in outputDirectory.iterdir():
-                if candidate.name == Path(task.resolvePath).name:
+                if candidate.name == Path(task.outputFolder).name:
                     continue
                 if candidate.is_file() and candidate.name.startswith(prefix):
                     _removeFile(candidate)
@@ -138,7 +138,7 @@ class M3U8ResultCard(ResultCard):
         return f"{manifestText} · {modeText}"
 
     def _refreshIcon(self):
-        icon = QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
+        icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         self.iconLabel.setImage(icon.pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
 

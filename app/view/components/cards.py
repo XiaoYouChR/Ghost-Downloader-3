@@ -192,7 +192,7 @@ class TaskCard(CardWidget):
         if e.button() != Qt.MouseButton.LeftButton:
             return
 
-        openFile(self.task.resolvePath)
+        openFile(self.task.outputFolder)
 
     def contextMenuEvent(self, e):
         menu = self.createContextMenu()
@@ -274,14 +274,14 @@ class UniversalTaskCard(TaskCard):
         self._renderTaskState()
 
     def _refreshIconLabel(self):
-        self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(self.task.resolvePath)).pixmap(48, 48))
+        self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(self.task.outputFolder)).pixmap(48, 48))
         self.iconLabel.setFixedSize(48, 48)
 
     def connectSignalToSlot(self):
         self.toggleRunningStatusButton.clicked.connect(self.toggleRunningStatus)
         self.verifyHashButton.clicked.connect(self._onVerifyHashButtonClicked)
-        self.openFileButton.clicked.connect(lambda: openFile(self.task.resolvePath))
-        self.openFolderButton.clicked.connect(lambda: openFolder(self.task.resolvePath))
+        self.openFileButton.clicked.connect(lambda: openFile(self.task.outputFolder))
+        self.openFolderButton.clicked.connect(lambda: openFolder(self.task.outputFolder))
         self.cancelButton.clicked.connect(self._onDeleteButtonClicked)
 
     def toggleRunningStatus(self):
@@ -398,8 +398,8 @@ class UniversalTaskCard(TaskCard):
             return
 
         candidates: set[Path] = set()
-        if self.task.resolvePath:
-            candidates.add(Path(self.task.resolvePath))
+        if self.task.outputFolder:
+            candidates.add(Path(self.task.outputFolder))
         for stage in self.task.stages:
             resolvePath = getattr(stage, "resolvePath", None)
             if resolvePath:
@@ -430,11 +430,11 @@ class UniversalTaskCard(TaskCard):
         self.showStatusInfo(message)
 
     def _onVerifyHashButtonClicked(self):
-        if not Path(self.task.resolvePath).is_file():
+        if not Path(self.task.outputFolder).is_file():
             self.showStatusInfo(self.tr("文件不存在，无法校验"))
             return
 
-        w = FileHashDialog(self.task.resolvePath, self.window(), deleteOnClose=False)
+        w = FileHashDialog(self.task.outputFolder, self.window(), deleteOnClose=False)
         w.hashReady.connect(self._onFileHashReady)
         w.hashFailed.connect(self._onFileHashFailed)
         w.exec()
@@ -569,7 +569,7 @@ class UniversalResultCard(ResultCard):
         return super().eventFilter(obj, event)
 
     def resetFileIcon(self):
-        icon = QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
+        icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         self.iconLabel.setImage(icon.pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
 

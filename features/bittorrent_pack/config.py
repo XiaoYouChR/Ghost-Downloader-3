@@ -224,7 +224,7 @@ class BitTorrentConfig(PackConfig):
         OptionsValidator(["sparse", "allocate"]),
     )
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
+    def setupSettings(self, settingPage: "SettingPage"):
         self.bittorrentGroup = SettingCardGroup(self.tr("BitTorrent 下载"), settingPage.container)
         self.listenPortCard = SpinBoxSettingCard(
             FluentIcon.GLOBE,

@@ -80,7 +80,7 @@ class FtpResultCard(ResultCard):
         icon = (
             QFileIconProvider().icon(QFileIconProvider.IconType.Folder)
             if self.task.isDirectorySource
-            else QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
+            else QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         )
         self.iconLabel.setIcon(icon)
         self.iconLabel.setFixedSize(20, 20)
@@ -180,7 +180,7 @@ class FtpTaskCard(UniversalTaskCard):
         if self.task.isDirectorySource:
             icon = QFileIconProvider().icon(QFileIconProvider.IconType.Folder)
         else:
-            icon = QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
+            icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         self.iconLabel.setPixmap(icon.pixmap(48, 48))
         self.iconLabel.setFixedSize(48, 48)
 
@@ -193,10 +193,10 @@ class FtpTaskCard(UniversalTaskCard):
         return receivedBytes, speed
 
     def _openPrimaryTarget(self):
-        openFile(self.task.resolvePath)
+        openFile(self.task.outputFolder)
 
     def _openTaskFolder(self):
-        target = Path(self.task.resolvePath)
+        target = Path(self.task.outputFolder)
         if target.exists():
             openFolder(str(target))
             return
@@ -263,7 +263,7 @@ class FtpTaskCard(UniversalTaskCard):
             not self.task.isDirectorySource
             and self.task.selectedFileCount == 1
             and self.task.status == TaskStatus.COMPLETED
-            and Path(self.task.resolvePath).is_file()
+            and Path(self.task.outputFolder).is_file()
         )
         self.selectFilesButton.setVisible(self.task.totalFileCount > 1)
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
@@ -273,11 +273,11 @@ class FtpTaskCard(UniversalTaskCard):
             return
 
         if self.task.isDirectorySource:
-            _removePath(Path(self.task.resolvePath))
+            _removePath(Path(self.task.outputFolder))
             return
 
         for stage in self.task.stages:
-            resolvePath = stage.resolvePath.strip()
+            resolvePath = stage.outputFile.strip()
             if not resolvePath:
                 continue
             target = Path(resolvePath)

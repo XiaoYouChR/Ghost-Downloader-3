@@ -201,7 +201,7 @@ class AddTaskDialog(MessageBoxBase):
 
         self.settingGroup.addCard(self.selectFolderCard)
         self.settingGroup.addCard(self.preBlockNumCard)
-        for card in featureService.getDialogCards(self.settingGroup):
+        for card in featureService.dialogCards(self.settingGroup):
             self.settingGroup.addCard(card)
 
     def _initLayout(self) -> None:
