@@ -127,14 +127,14 @@ class FtpTaskStage(TaskStage):
     fileIndex: int
     remotePath: str
     fileSize: int
-    resolvePath: str
+    outputFile: str
     supportsRange: bool = field(default=True)
     accelerated: bool = field(default=False)
 
-    def setStatus(self, status: TaskStatus, notifyTask: bool = True):
+    def setStatus(self, status: TaskStatus, sync: bool = True):
         if status == TaskStatus.COMPLETED:
             self.receivedBytes = self.fileSize
-        super().setStatus(status, notifyTask=notifyTask)
+        super().setStatus(status, sync=sync)
 
 
 @dataclass(kw_only=True)
@@ -263,8 +263,8 @@ class FtpTask(Task):
             if stage.status == TaskStatus.COMPLETED:
                 continue
             if status == TaskStatus.RUNNING and stage.status == TaskStatus.FAILED:
-                stage.reset(notifyTask=False)
-            stage.setStatus(status, notifyTask=False)
+                stage.reset(sync=False)
+            stage.setStatus(status, sync=False)
 
         return self.updateStatus()
 
@@ -273,7 +273,7 @@ class FtpTask(Task):
             file.downloadedBytes = 0
             file.completed = False
         for stage in self.stages:
-            stage.reset(notifyTask=False)
+            stage.reset(sync=False)
         return self.updateStatus()
 
     def reopenForAdditionalFiles(self) -> bool:
@@ -287,7 +287,7 @@ class FtpTask(Task):
             return False
 
         for stage in pendingSelectedStages:
-            stage.setStatus(TaskStatus.PAUSED, notifyTask=False)
+            stage.setStatus(TaskStatus.PAUSED, sync=False)
 
         self._syncFileProgress()
         self.updateStatus()

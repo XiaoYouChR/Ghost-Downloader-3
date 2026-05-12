@@ -6,7 +6,7 @@ from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.services.core_service import coreService
 
-from .cards import BitTorrentResultCard, BitTorrentTaskCard
+from .cards import BitTorrentResultCard, BTTaskCard
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .task import BTTask, parse, resolveLocalTorrentPath
 
@@ -48,7 +48,7 @@ class BitTorrentPack(FeaturePack):
         raise NotImplementedError("Use resolve() for BitTorrent tasks")
 
     def taskCard(self, task, parent=None):
-        return BitTorrentTaskCard(task, parent)
+        return BTTaskCard(task, parent)
 
     def resultCard(self, task, parent=None):
         return BitTorrentResultCard(task, parent)
