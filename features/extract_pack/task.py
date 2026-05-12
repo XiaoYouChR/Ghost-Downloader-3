@@ -9,7 +9,7 @@ from pathlib import Path
 from time import perf_counter
 
 from app.bases.interfaces import Worker
-from app.bases.models import TaskStage, TaskStatus
+from app.bases.models import Task, TaskStage, TaskStatus
 
 
 def _normalizePath(path: Path | str) -> str:
@@ -30,13 +30,23 @@ def _safeJoin(root: Path, relative: str) -> Path:
     return target
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ExtractStage(TaskStage):
+    workerType: type = field(init=False, repr=False)
+    canPause: bool = field(init=False, default=False)
+
     archivePath: str
     installFolder: str
-    executableNames: list[str]
+    executableNames: list[str] = field(default_factory=list)
     extractedExecutables: dict[str, str] = field(default_factory=dict)
-    cleanupArchive: bool = field(default=True)
+    cleanupArchive: bool = True
+
+    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        pass
+
+    def onCompleted(self, task: Task):
+        if self.extractedExecutables:
+            task.metadata["extractedExecutables"] = self.extractedExecutables
 
 
 class ExtractWorker(Worker):
@@ -54,11 +64,8 @@ class ExtractWorker(Worker):
                 path.unlink()
 
     def _updateTaskFileSize(self, extractedSize: int):
-        task = getattr(self.stage, "_task", None)
-        if task is None:
-            return
-
-        archiveSize = int(getattr(task, "archiveSize", 0) or 0)
+        task = self.stage.task
+        archiveSize = int(task.metadata.get("archiveSize", 0))
         task.fileSize = max(archiveSize + extractedSize, archiveSize)
 
     def _resolveExtractedRoot(self, tempDir: Path) -> Path:
@@ -119,12 +126,7 @@ class ExtractWorker(Worker):
 
                 with archive.open(info, "r") as source:
                     extractedBytes, speedBytes, speedTime = await self._writeExtractedFile(
-                        source,
-                        targetPath,
-                        extractedBytes,
-                        speedBytes,
-                        speedTime,
-                        totalSize,
+                        source, targetPath, extractedBytes, speedBytes, speedTime, totalSize,
                     )
 
     async def _extractTar(self, archivePath: Path, tempDir: Path, totalSize: int):
@@ -144,12 +146,7 @@ class ExtractWorker(Worker):
 
                 with source:
                     extractedBytes, speedBytes, speedTime = await self._writeExtractedFile(
-                        source,
-                        targetPath,
-                        extractedBytes,
-                        speedBytes,
-                        speedTime,
-                        totalSize,
+                        source, targetPath, extractedBytes, speedBytes, speedTime, totalSize,
                     )
 
     async def _extractArchive(self, archivePath: Path, tempDir: Path, totalSize: int):
@@ -157,11 +154,9 @@ class ExtractWorker(Worker):
         if suffix == ".zip":
             await self._extractZip(archivePath, tempDir, totalSize)
             return
-
         if suffix == ".tar.gz":
             await self._extractTar(archivePath, tempDir, totalSize)
             return
-
         raise RuntimeError(f"不支持的压缩包格式: {archivePath.name}")
 
     def _archiveExtractSize(self, archivePath: Path) -> int:
@@ -169,11 +164,9 @@ class ExtractWorker(Worker):
         if suffix == ".zip":
             with zipfile.ZipFile(archivePath) as archive:
                 return sum(info.file_size for info in archive.infolist() if not info.is_dir())
-
         if suffix == ".tar.gz":
             with tarfile.open(archivePath, "r:*") as archive:
                 return sum(member.size for member in archive.getmembers() if member.isfile())
-
         raise RuntimeError(f"不支持的压缩包格式: {archivePath.name}")
 
     def _installExtractedFiles(self, extractedRoot: Path, installDir: Path, archiveName: str, tempDirName: str) -> dict[str, str]:
@@ -204,7 +197,6 @@ class ExtractWorker(Worker):
     async def run(self):
         archivePath = Path(self.stage.archivePath)
         if not archivePath.is_file():
-            self.stage.setStatus(TaskStatus.FAILED)
             raise FileNotFoundError(f"未找到安装包: {archivePath}")
 
         installDir = Path(self.stage.installFolder)
@@ -226,10 +218,7 @@ class ExtractWorker(Worker):
 
             extractedRoot = self._resolveExtractedRoot(tempDir)
             self.stage.extractedExecutables = self._installExtractedFiles(
-                extractedRoot,
-                installDir,
-                archivePath.name,
-                tempDir.name,
+                extractedRoot, installDir, archivePath.name, tempDir.name,
             )
 
             if self.stage.cleanupArchive and archivePath.exists():
@@ -245,3 +234,6 @@ class ExtractWorker(Worker):
         finally:
             if tempDir.exists():
                 shutil.rmtree(tempDir, ignore_errors=True)
+
+
+ExtractStage.workerType = ExtractWorker

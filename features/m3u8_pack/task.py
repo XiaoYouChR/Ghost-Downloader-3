@@ -14,33 +14,23 @@ from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
-from app.services.core_service import coreService
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
 from .config import m3u8Config, resolveM3U8DownloaderExecutable
 
 if TYPE_CHECKING:
     from features.ffmpeg_pack.config import resolveFFmpegExecutables
-    from features.http_pack.task import HttpTaskStage, HttpWorker
-    from features.extract_pack.task import ExtractStage, ExtractWorker
+    from features.http_pack.task import HttpTaskStage
+    from features.extract_pack.task import ExtractStage
 else:
-    from extract_pack.task import ExtractStage, ExtractWorker
+    from extract_pack.task import ExtractStage
     from ffmpeg_pack.config import resolveFFmpegExecutables
-    from http_pack.task import HttpTaskStage, HttpWorker
+    from http_pack.task import HttpTaskStage
 
 
 _KNOWN_SUFFIXES = {
-    ".m3u8",
-    ".m3u",
-    ".mpd",
-    ".mp4",
-    ".mkv",
-    ".ts",
-    ".webm",
-    ".m4a",
-    ".m4v",
-    ".vtt",
-    ".srt",
+    ".m3u8", ".m3u", ".mpd", ".mp4", ".mkv",
+    ".ts", ".webm", ".m4a", ".m4v", ".vtt", ".srt",
 }
 _VOD_PROGRESS_PATTERN = re.compile(
     r"(\d+)/(\d+)\s+(\d+\.\d+)%\s+(\d+\.\d+)(KB|MB|GB|B)/(\d+\.\d+)(KB|MB|GB|B)\s+(\d+\.\d+)(GBps|MBps|KBps|Bps)\s+(.+)"
@@ -127,14 +117,8 @@ def _deriveDefaultTitle(url: str, headers: dict[str, str], extension: str) -> st
 
 def _bytesFromUnit(value: str, unit: str) -> int:
     scale = {
-        "B": 1,
-        "KB": 1024,
-        "MB": 1024 ** 2,
-        "GB": 1024 ** 3,
-        "Bps": 1,
-        "KBps": 1024,
-        "MBps": 1024 ** 2,
-        "GBps": 1024 ** 3,
+        "B": 1, "KB": 1024, "MB": 1024 ** 2, "GB": 1024 ** 3,
+        "Bps": 1, "KBps": 1024, "MBps": 1024 ** 2, "GBps": 1024 ** 3,
     }
     return int(float(value) * scale[unit])
 
@@ -227,136 +211,61 @@ async def _requestReleaseAsset() -> dict[str, Any]:
     }
 
 
-@dataclass
+@dataclass(kw_only=True)
 class M3U8TaskStage(TaskStage):
-    resolvePath: str
-    tempDir: str
-    lastMessage: str = field(default="")
+    workerType: type = field(init=False, repr=False)
+    canPause: bool = field(init=False, default=False)
 
+    outputFile: str = ""
+    tempDir: str = ""
+    lastMessage: str = ""
 
-@dataclass
-class M3U8Task(Task):
-    headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
-    proxies: dict | None = field(default_factory=getProxies)
-    threadCount: int = field(default_factory=lambda: m3u8Config.threadCount.value)
-    retryCount: int = field(default_factory=lambda: m3u8Config.retryCount.value)
-    requestTimeout: int = field(default_factory=lambda: m3u8Config.requestTimeout.value)
-    autoSelect: bool = field(default_factory=lambda: m3u8Config.autoSelect.value)
-    concurrentDownload: bool = field(default_factory=lambda: m3u8Config.concurrentDownload.value)
-    appendUrlParams: bool = field(default_factory=lambda: m3u8Config.appendUrlParams.value)
-    binaryMerge: bool = field(default_factory=lambda: m3u8Config.binaryMerge.value)
-    checkSegmentsCount: bool = field(default_factory=lambda: m3u8Config.checkSegmentsCount.value)
-    outputFormat: str = field(default_factory=lambda: m3u8Config.outputFormat.value)
-    liveRealTimeMerge: bool = field(default_factory=lambda: m3u8Config.liveRealTimeMerge.value)
-    liveKeepSegments: bool = field(default_factory=lambda: m3u8Config.liveKeepSegments.value)
-    livePipeMux: bool = field(default_factory=lambda: m3u8Config.livePipeMux.value)
-    manifestType: str = field(default="m3u8")
-    isLive: bool = field(default=False)
-    actualExtension: str = field(default="")
-
-    def __post_init__(self):
-        self.title = self._normalizeTitle(self.title)
-        super().__post_init__()
-        self.syncStagePaths()
-
-    @property
-    def outputExtension(self) -> str:
-        if self.actualExtension:
-            return self.actualExtension
-        if self.liveRealTimeMerge:
-            return "ts"
-        return self.outputFormat
-
-    @property
-    def saveName(self) -> str:
-        suffix = f".{self.outputExtension.lower()}"
-        if self.title.lower().endswith(suffix):
-            return self.title[:-len(suffix)]
-        return _stripKnownSuffix(self.title)
-
-    @property
-    def tempDir(self) -> str:
-        return _normalizePath(Path(self.path) / ".gd3_m3u8" / self.taskId)
-
-    def _normalizeTitle(self, title: str) -> str:
-        name = sanitizeFilename(title, fallback="stream")
-        suffix = f".{self.outputExtension.lower()}"
-        if name.lower().endswith(suffix):
-            return name
-        name = _stripKnownSuffix(name)
-        return f"{name}.{self.outputExtension}"
-
-    def setTitle(self, title: str):
-        self.title = self._normalizeTitle(title)
-        self.syncStagePaths()
-
-    def syncStagePaths(self):
-        resolvePath = _normalizePath(Path(self.path) / self.title)
-        tempDir = self.tempDir
-        for stage in self.stages:
-            if isinstance(stage, M3U8TaskStage):
-                stage.resolvePath = resolvePath
-                stage.tempDir = tempDir
-
-    def applyPayloadToTask(self, payload: dict[str, Any]):
-        super().applyPayloadToTask(payload)
-
-        headers = payload.get("headers")
-        if isinstance(headers, dict):
-            self.headers = headers.copy()
-
-        if "proxies" in payload:
-            proxies = payload.get("proxies")
+    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        meta = self.task.metadata
+        outputExtension = meta.get("actualExtension") or (
+            "ts" if meta.get("liveRealTimeMerge") else meta.get("outputFormat", "mp4")
+        )
+        suffix = f".{outputExtension.lower()}"
+        if taskTitle.lower().endswith(suffix):
+            saveName = taskTitle[:-len(suffix)]
         else:
-            proxies = self.proxies
-        if isinstance(proxies, dict) or proxies is None:
-            self.proxies = proxies
+            saveName = _stripKnownSuffix(taskTitle)
 
-        self.syncStagePaths()
-
-    async def run(self):
-        currentStage = None
-        try:
-            for stage in self.iterRunnableStages():
-                currentStage = stage
-                if isinstance(stage, M3U8TaskStage):
-                    await M3U8Worker(stage).run()
-                    continue
-
-                raise TypeError(f"不支持的 M3U8TaskStage: {type(stage).__name__}")
-        except asyncio.CancelledError:
-            logger.info(f"{self.title} 停止下载")
-            raise
-        except Exception as e:
-            if currentStage is not None and not currentStage.error:
-                currentStage.setError(e)
-            logger.opt(exception=e).error("{} 下载失败", self.title)
-            raise
-
-    def __hash__(self):
-        return hash(self.taskId)
+        self.outputFile = _normalizePath(taskPath / taskTitle)
+        self.tempDir = _normalizePath(taskPath / ".gd3_m3u8" / self.task.taskId)
 
 
 class M3U8Worker(Worker):
     def __init__(self, stage: M3U8TaskStage):
         super().__init__(stage)
         self.stage = stage
-        self.task: M3U8Task = getattr(stage, "_task")
+        self.task = stage.task
 
     def _buildArguments(self, downloaderPath: str) -> list[str]:
+        meta = self.task.metadata
+        outputExtension = meta.get("actualExtension") or (
+            "ts" if meta.get("liveRealTimeMerge") else meta.get("outputFormat", "mp4")
+        )
+        suffix = f".{outputExtension.lower()}"
+        title = self.task.title
+        if title.lower().endswith(suffix):
+            saveName = title[:-len(suffix)]
+        else:
+            saveName = _stripKnownSuffix(title)
+
         args = [
             self.task.url,
             f"--save-dir={self.task.path}",
-            f"--save-name={self.task.saveName}",
+            f"--save-name={saveName}",
             f"--tmp-dir={self.stage.tempDir}",
-            f"--thread-count={self.task.threadCount}",
-            f"--download-retry-count={self.task.retryCount}",
-            f"--http-request-timeout={self.task.requestTimeout}",
-            f"--auto-select={_boolText(self.task.autoSelect)}",
-            f"--concurrent-download={_boolText(self.task.concurrentDownload)}",
-            f"--append-url-params={_boolText(self.task.appendUrlParams)}",
-            f"--binary-merge={_boolText(self.task.binaryMerge)}",
-            f"--check-segments-count={_boolText(self.task.checkSegmentsCount)}",
+            f"--thread-count={meta.get('threadCount', 16)}",
+            f"--download-retry-count={meta.get('retryCount', 3)}",
+            f"--http-request-timeout={meta.get('requestTimeout', 10)}",
+            f"--auto-select={_boolText(meta.get('autoSelect', True))}",
+            f"--concurrent-download={_boolText(meta.get('concurrentDownload', True))}",
+            f"--append-url-params={_boolText(meta.get('appendUrlParams', False))}",
+            f"--binary-merge={_boolText(meta.get('binaryMerge', False))}",
+            f"--check-segments-count={_boolText(meta.get('checkSegmentsCount', True))}",
             "--del-after-done=true",
             "--write-meta-json=false",
             "--no-log=true",
@@ -364,7 +273,8 @@ class M3U8Worker(Worker):
             "--disable-update-check=true",
         ]
 
-        proxyUrl = _pickProxy(self.task.proxies)
+        proxies = meta.get("proxies")
+        proxyUrl = _pickProxy(proxies)
         args.append("--use-system-proxy=false")
         if proxyUrl:
             args.append(f"--custom-proxy={proxyUrl}")
@@ -373,17 +283,19 @@ class M3U8Worker(Worker):
         if ffmpegPath:
             args.append(f"--ffmpeg-binary-path={ffmpegPath}")
 
-        if self.task.liveRealTimeMerge:
+        if meta.get("liveRealTimeMerge"):
             args.append("--live-real-time-merge=true")
-            args.append(f"--live-keep-segments={_boolText(self.task.liveKeepSegments)}")
-            args.append(f"--live-pipe-mux={_boolText(self.task.livePipeMux)}")
+            args.append(f"--live-keep-segments={_boolText(meta.get('liveKeepSegments', False))}")
+            args.append(f"--live-pipe-mux={_boolText(meta.get('livePipeMux', False))}")
         else:
-            muxOption = f"format={self.task.outputFormat}:muxer=ffmpeg"
+            outputFormat = meta.get("outputFormat", "mp4")
+            muxOption = f"format={outputFormat}:muxer=ffmpeg"
             if ffmpegPath:
                 muxOption += f":bin_path={ffmpegPath}"
             args.append(f"--mux-after-done={muxOption}")
 
-        for name, value in self.task.headers.items():
+        headers = meta.get("headers", {})
+        for name, value in headers.items():
             if value is None:
                 continue
             text = str(value).strip()
@@ -439,17 +351,27 @@ class M3U8Worker(Worker):
             self._handleOutputLine(buffer)
 
     def _resolveFinalOutput(self) -> Path | None:
-        target = Path(self.stage.resolvePath)
+        target = Path(self.stage.outputFile)
         if target.is_file():
             return target
 
-        outputDir = Path(self.task.path)
+        outputDir = self.task.path
         if not outputDir.is_dir():
             return None
 
+        meta = self.task.metadata
+        outputExtension = meta.get("actualExtension") or (
+            "ts" if meta.get("liveRealTimeMerge") else meta.get("outputFormat", "mp4")
+        )
+        suffix = f".{outputExtension.lower()}"
+        title = self.task.title
+        if title.lower().endswith(suffix):
+            saveName = title[:-len(suffix)]
+        else:
+            saveName = _stripKnownSuffix(title)
+
         candidates: list[Path] = []
-        expectedSuffix = f".{self.task.outputExtension.lower()}"
-        prefix = self.task.saveName.lower()
+        prefix = saveName.lower()
         ignoredSuffixes = {".json", ".txt", ".log", ".tmp", ".ghd"}
 
         for candidate in outputDir.iterdir():
@@ -464,6 +386,7 @@ class M3U8Worker(Worker):
         if not candidates:
             return None
 
+        expectedSuffix = f".{outputExtension}"
         candidates.sort(
             key=lambda path: (
                 path.suffix.lower() != expectedSuffix,
@@ -477,7 +400,7 @@ class M3U8Worker(Worker):
         if candidate is None:
             return
 
-        self.task.actualExtension = candidate.suffix.lstrip(".")
+        self.task.metadata["actualExtension"] = candidate.suffix.lstrip(".")
         self.task.fileSize = max(self.task.fileSize, candidate.stat().st_size)
         if candidate.name != self.task.title:
             self.task.setTitle(candidate.name)
@@ -496,10 +419,9 @@ class M3U8Worker(Worker):
     async def run(self):
         downloaderPath = resolveM3U8DownloaderExecutable()
         if not downloaderPath:
-            self.stage.setStatus(TaskStatus.FAILED)
             raise RuntimeError("未找到可用的 N_m3u8DL-RE，请先在设置中安装或配置运行时")
 
-        Path(self.task.path).mkdir(parents=True, exist_ok=True)
+        self.task.path.mkdir(parents=True, exist_ok=True)
         Path(self.stage.tempDir).mkdir(parents=True, exist_ok=True)
 
         process = None
@@ -540,181 +462,53 @@ class M3U8Worker(Worker):
             raise
 
 
-async def parse(payload: dict) -> M3U8Task:
-    url = str(payload["url"]).strip()
-    headers = payload.get("headers", DEFAULT_HEADERS)
-    proxies = payload.get("proxies", getProxies())
-    path = Path(payload.get("path", cfg.downloadFolder.value))
-    requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers if isinstance(headers, dict) else DEFAULT_HEADERS)
-
-    client = niquests.AsyncSession(timeout=30, happy_eyeballs=True)
-    client.trust_env = False
-
-    try:
-        response = await client.get(
-            url,
-            headers=requestHeaders,
-            cookies=requestCookies,
-            proxies=proxies,
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
-        try:
-            response.raise_for_status()
-            body = response.text
-            loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
-            manifestType = _deriveManifestType(str(response.url), loweredHeaders, body)
-            isLive = _detectLive(manifestType, body)
-            title = _deriveDefaultTitle(
-                str(response.url),
-                loweredHeaders,
-                "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value,
-            )
-        finally:
-            response.close()
-    finally:
-        await client.close()
-
-    task = M3U8Task(
-        title=title,
-        url=url,
-        fileSize=1,
-        headers=headers.copy() if isinstance(headers, dict) else DEFAULT_HEADERS.copy(),
-        proxies=proxies,
-        path=path,
-        threadCount=m3u8Config.threadCount.value,
-        retryCount=m3u8Config.retryCount.value,
-        requestTimeout=m3u8Config.requestTimeout.value,
-        autoSelect=m3u8Config.autoSelect.value,
-        concurrentDownload=m3u8Config.concurrentDownload.value,
-        appendUrlParams=m3u8Config.appendUrlParams.value,
-        binaryMerge=m3u8Config.binaryMerge.value,
-        checkSegmentsCount=m3u8Config.checkSegmentsCount.value,
-        outputFormat=m3u8Config.outputFormat.value,
-        liveRealTimeMerge=m3u8Config.liveRealTimeMerge.value,
-        liveKeepSegments=m3u8Config.liveKeepSegments.value,
-        livePipeMux=m3u8Config.livePipeMux.value,
-        manifestType=manifestType,
-        isLive=isLive,
-    )
-    task.addStage(
-        M3U8TaskStage(
-            stageIndex=1,
-            resolvePath="",
-            tempDir="",
-        )
-    )
-    task.syncStagePaths()
-    return task
+M3U8TaskStage.workerType = M3U8Worker
 
 
-@dataclass(kw_only=True)
-class M3U8InstallTask(Task):
-    url: str
-    assetName: str
-    headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
-    proxies: dict | None = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
-    installFolder: str
-    archiveSize: int = field(default=0)
-    archivePath: str = field(default="")
-    executablePath: str = field(default="")
+async def createInstallTask() -> Task:
+    from app.services.feature_service import featureService
 
-    @property
-    def resolvePath(self) -> str:
-        return self.executablePath or self.archivePath or _normalizePath(Path(self.installFolder) / self.title)
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.syncStagePaths()
-
-    def syncStagePaths(self):
-        installDir = Path(self.installFolder)
-        self.path = installDir
-        self.archivePath = _normalizePath(installDir / self.assetName)
-        if not self.executablePath:
-            self.executablePath = _normalizePath(installDir / _executableName("N_m3u8DL-RE"))
-
-        for stage in self.stages:
-            if isinstance(stage, HttpTaskStage):
-                stage.resolvePath = self.archivePath
-            elif isinstance(stage, ExtractStage):
-                stage.archivePath = self.archivePath
-                stage.installFolder = _normalizePath(installDir)
-
-    async def run(self):
-        currentStage = None
-        try:
-            for stage in self.iterRunnableStages():
-                currentStage = stage
-                if isinstance(stage, HttpTaskStage):
-                    await HttpWorker(stage).run()
-                    continue
-
-                if isinstance(stage, ExtractStage):
-                    await ExtractWorker(stage).run()
-                    self.executablePath = stage.extractedExecutables[_executableName("N_m3u8DL-RE")]
-                    continue
-
-                raise TypeError(f"不支持的 M3U8InstallTaskStage: {type(stage).__name__}")
-        except asyncio.CancelledError:
-            logger.info(f"{self.title} 停止安装")
-            raise
-        except Exception as e:
-            if currentStage is not None and not currentStage.error:
-                currentStage.setError(e)
-            logger.opt(exception=e).error("{} 安装失败", self.title)
-            raise
-
-    def __hash__(self):
-        return hash(self.taskId)
-
-
-async def createInstallTask() -> M3U8InstallTask:
     assetInfo = await _requestReleaseAsset()
     _, archLabel = _detectRuntimeTarget()
     installFolder = m3u8Config.installFolder.value
-    downloadTask = await coreService._parseUrl(
-        {
-            "url": assetInfo["url"],
-            "headers": DEFAULT_HEADERS.copy(),
-            "proxies": getProxies(),
-            "path": Path(installFolder),
-        }
-    )
+
+    downloadPayload = {
+        "url": assetInfo["url"],
+        "headers": DEFAULT_HEADERS.copy(),
+        "proxies": getProxies(),
+        "path": Path(installFolder),
+    }
+    downloadTask = await featureService.resolve(downloadPayload)
 
     if not downloadTask.stages:
         raise RuntimeError("解析 N_m3u8DL-RE 安装包链接后未获取到下载阶段")
 
-    downloadStage = downloadTask.stages[0]
-    if not isinstance(downloadStage, HttpTaskStage):
-        raise TypeError(f"解析出的下载阶段类型无效: {type(downloadStage).__name__}")
-
+    downloadStage: HttpTaskStage = downloadTask.stages[0]
     archiveSize = downloadTask.fileSize if downloadTask.fileSize > 0 else assetInfo["size"]
     assetName = downloadTask.title or str(assetInfo["name"])
-
-    task = M3U8InstallTask(
-        title=f"N_m3u8DL-RE 安装 ({archLabel})",
-        url=downloadTask.url,
-        assetName=assetName,
-        fileSize=archiveSize,
-        headers=downloadTask.headers.copy(),
-        proxies=downloadTask.proxies,
-        blockNum=downloadTask.blockNum,
-        installFolder=installFolder,
-        archiveSize=archiveSize,
-    )
+    archivePath = _normalizePath(Path(installFolder) / assetName)
 
     downloadStage.stageIndex = 1
-    task.addStage(downloadStage)
-    task.addStage(
-        ExtractStage(
-            stageIndex=2,
-            archivePath="",
-            installFolder="",
-            executableNames=[_executableName("N_m3u8DL-RE")],
-        )
+    downloadStage.outputFile = archivePath
+
+    task = Task(
+        title=f"N_m3u8DL-RE 安装 ({archLabel})",
+        url=assetInfo["url"],
+        packId="m3u8",
+        fileSize=archiveSize,
+        path=Path(installFolder),
+        usesSlot=False,
+        metadata={
+            "archiveSize": archiveSize,
+            "installFolder": installFolder,
+            "assetName": assetName,
+        },
     )
-    task.syncStagePaths()
-    setattr(task, "_featurePackName", "m3u8_pack")
+    task.addStage(downloadStage)
+    task.addStage(ExtractStage(
+        stageIndex=2,
+        archivePath=archivePath,
+        installFolder=_normalizePath(Path(installFolder)),
+        executableNames=[_executableName("N_m3u8DL-RE")],
+    ))
     return task

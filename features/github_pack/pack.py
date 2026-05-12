@@ -3,15 +3,12 @@ from urllib.parse import urlparse
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-from app.view.components.cards import UniversalResultCard, UniversalTaskCard
 from .config import githubConfig, getSelectedProxySite
 
 if TYPE_CHECKING:
-    from features.http_pack.task import HttpTask
-    from features.http_pack.pack import parse as parseHttp
+    from features.http_pack.pack import HttpPack
 else:
-    from http_pack.task import HttpTask
-    from http_pack.pack import parse as parseHttp
+    from http_pack.pack import HttpPack
 
 
 _SUPPORTED_GITHUB_HOSTS = {
@@ -55,35 +52,28 @@ def _buildProxyUrl(url: str) -> str:
     return f"{proxySite.rstrip('/')}/{url.lstrip('/')}"
 
 
-async def parse(payload: dict) -> HttpTask:
-    originalUrl = str(payload["url"]).strip()
-    proxiedPayload = payload.copy()
-    proxiedPayload["url"] = _buildProxyUrl(originalUrl)
-
-    task = await parseHttp(proxiedPayload)
-    task.url = originalUrl
-    return task
-
-
 class GitHubPack(FeaturePack):
+    packId = "github"
     priority = 90
     config = githubConfig
 
-    def canHandle(self, url: str) -> bool:
+    def matches(self, url: str) -> bool:
         return self.config.enabled.value and bool(getSelectedProxySite()) and _isSupportedGitHubUrl(url)
 
-    def canHandleTask(self, task: Task) -> bool:
-        return _isSupportedGitHubUrl(task.url)
+    async def resolve(self, payload: dict) -> dict:
+        originalUrl = str(payload["url"]).strip()
+        proxiedPayload = payload.copy()
+        proxiedPayload["url"] = _buildProxyUrl(originalUrl)
 
-    async def parse(self, payload: dict) -> Task:
-        return await parse(payload)
+        httpPack = HttpPack()
+        resolvedPayload = await httpPack.resolve(proxiedPayload)
+        resolvedPayload["originalUrl"] = originalUrl
+        return resolvedPayload
 
-    def createTaskCard(self, task: Task, parent=None):
-        if isinstance(task, HttpTask):
-            return UniversalTaskCard(task, parent)
-        return None
-
-    def createResultCard(self, task: Task, parent=None):
-        if isinstance(task, HttpTask):
-            return UniversalResultCard(task, parent)
-        return None
+    def build(self, payload: dict) -> Task:
+        originalUrl = payload.pop("originalUrl", payload["url"])
+        httpPack = HttpPack()
+        task = httpPack.build(payload)
+        task.url = originalUrl
+        task.packId = self.packId
+        return task

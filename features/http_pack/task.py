@@ -5,108 +5,37 @@ from contextlib import suppress
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
-from typing import Any
 
 import niquests
 from loguru import logger
 
 from app.bases.interfaces import Worker
-from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
-from app.supports.config import DEFAULT_HEADERS, cfg
+from app.bases.models import TaskStage, TaskStatus, SpecialFileSize
+from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import getProxies, splitRequestHeadersAndCookies
+from app.supports.utils import splitRequestHeadersAndCookies
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HttpTaskStage(TaskStage):
+    workerType: type = field(init=False, repr=False)
+    canPause: bool = field(init=False, default=True)
+
     url: str
     fileSize: int
     headers: dict
     proxies: dict
-    resolvePath: str
+    outputFile: str
     blockNum: int
-    supportsRange: bool = field(default=True)
-    accelerated: bool = field(default=False)
+    supportsRange: bool = True
+    accelerated: bool = False
 
+    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        self.outputFile = str(taskPath / taskTitle)
 
-@dataclass
-class HttpTask(Task):
-    headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
-    proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
-    supportsRange: bool = field(default=True)
+    def __post_init__(self):
+        self.canPause = self.supportsRange
 
-    def syncStagePaths(self):
-        resolvePath = str(self.path / self.title)
-        for stage in self.stages:
-            if isinstance(stage, HttpTaskStage):
-                stage.resolvePath = resolvePath
-                stage.supportsRange = self.supportsRange
-
-    def canPause(self) -> bool:
-        return self.supportsRange
-
-    def reset(self) -> TaskStatus:
-        self._refreshDownloadInfoOnNextRun = True
-        return super().reset()
-
-    async def run(self):
-        currentStage = None
-        try:
-            for stage in self.iterRunnableStages():
-                currentStage = stage
-                if getattr(self, "_refreshDownloadInfoOnNextRun", False):
-                    from .pack import _probeDownloadInfo
-
-                    fileSize, supportsRange, _, _ = await _probeDownloadInfo(
-                        stage.url,
-                        stage.headers,
-                        stage.proxies,
-                    )
-                    self.fileSize = fileSize
-                    self.supportsRange = supportsRange
-                    stage.fileSize = fileSize
-                    stage.supportsRange = supportsRange
-                    self._refreshDownloadInfoOnNextRun = False
-
-                await HttpWorker(stage).run()
-        except CancelledError:
-            logger.info(f"{self.title} 停止下载")
-            raise
-        except Exception as e:
-            if currentStage is not None and not currentStage.error:
-                currentStage.setError(e)
-            logger.opt(exception=e).error("{} 下载失败", self.title)
-
-    def __hash__(self):
-        return hash(self.taskId)
-    
-    def applyPayloadToTask(self, payload: dict[str, Any]):
-        super().applyPayloadToTask(payload)
-        # TODO 更新 Headers 有时需要根据单独任务进行更新
-        # headers = payload.get("headers")
-        # if isinstance(headers, dict):
-        #     self.headers = headers
-
-        proxies = payload.get("proxies")
-        if isinstance(proxies, dict):
-            self.proxies = proxies
-
-        blockNum = payload.get("preBlockNum")
-        if isinstance(blockNum, int):
-            self.blockNum = blockNum
-
-        self.syncStagePaths()
-        for stage in self.stages:
-            if not isinstance(stage, HttpTaskStage):
-                continue
-
-            # if isinstance(headers, dict):
-            #     stage.headers = headers
-            if isinstance(proxies, dict):
-                stage.proxies = proxies
-            if isinstance(blockNum, int):
-                stage.blockNum = blockNum
 
 @dataclass
 class HttpSubworker:
@@ -127,7 +56,7 @@ class HttpWorker(Worker):
         if self.stage.fileSize <= 0:
             return
 
-        slowestSubworker = max(self.subworkers, key=lambda subworker: subworker.end - subworker.progress + 1)
+        slowestSubworker = max(self.subworkers, key=lambda sw: sw.end - sw.progress + 1)
         remainingBytes = slowestSubworker.end - slowestSubworker.progress + 1
         if remainingBytes < cfg.maxReassignSize.value * 1048576:
             return
@@ -146,7 +75,7 @@ class HttpWorker(Worker):
         return requestHeaders
 
     async def handleSubworker(self, subworker: HttpSubworker):
-        if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
+        if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 try:
                     res = await self.client.get(
@@ -166,7 +95,6 @@ class HttpWorker(Worker):
                         async for chunk in await res.iter_raw(chunk_size=65536):
                             if not chunk:
                                 continue
-
                             await cfg.checkSpeedLimitation()
                             pwrite(self.fileHandle, chunk, subworker.progress)
                             chunkSize = len(chunk)
@@ -178,12 +106,11 @@ class HttpWorker(Worker):
                     return
                 except Exception as e:
                     logger.opt(exception=e).error(
-                        "{} 的未知大小分片 {} 连接中断，5 秒后重试",
-                        self.stage.resolvePath,
-                        subworker,
+                        "{} 的未知大小分片连接中断，5 秒后重试", self.stage.outputFile,
                     )
                     await asyncio.sleep(5)
-        elif subworker.end == SpecialFileSize.NOT_SUPPORTED:  # 不支持断点续传
+
+        elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
             while True:
                 try:
                     ftruncate(self.fileHandle, 0)
@@ -208,7 +135,6 @@ class HttpWorker(Worker):
                         async for chunk in await res.iter_content(chunk_size=65536):
                             if not chunk:
                                 continue
-
                             await cfg.checkSpeedLimitation()
                             pwrite(self.fileHandle, chunk, subworker.progress)
                             chunkSize = len(chunk)
@@ -221,11 +147,11 @@ class HttpWorker(Worker):
                     return
                 except Exception as e:
                     logger.opt(exception=e).error(
-                        "{} 不支持断点续传，已从头开始重试",
-                        self.stage.resolvePath,
+                        "{} 不支持断点续传，已从头开始重试", self.stage.outputFile,
                     )
                     await asyncio.sleep(5)
-        else:  # 正常下载
+
+        else:
             while subworker.progress <= subworker.end:
                 try:
                     res = await self.client.get(
@@ -249,15 +175,12 @@ class HttpWorker(Worker):
                             if len(chunk) > remainingBytes:
                                 chunk = chunk[:remainingBytes]
                             await cfg.checkSpeedLimitation()
-                            offset = subworker.progress
-                            pwrite(self.fileHandle, chunk, offset)
+                            pwrite(self.fileHandle, chunk, subworker.progress)
                             chunkSize = len(chunk)
                             subworker.progress += chunkSize
                             cfg.globalSpeed += chunkSize
                             if subworker.progress > subworker.end:
                                 break
-                    except Exception as e:
-                        raise e
                     finally:
                         await res.close()
 
@@ -266,9 +189,7 @@ class HttpWorker(Worker):
 
                 except Exception as e:
                     logger.opt(exception=e).error(
-                        "{} 的分片 {} 连接中断，5 秒后重试",
-                        self.stage.resolvePath,
-                        subworker,
+                        "{} 的分片连接中断，5 秒后重试", self.stage.outputFile,
                     )
                     await asyncio.sleep(5)
 
@@ -305,37 +226,37 @@ class HttpWorker(Worker):
                 return
 
             currentWorkers = len(self.subworkers)
-            workerIncreaseRatio = ((currentWorkers - self.accelInitialWorkers) / self.accelInitialWorkers)
-            speedIncreaseRatio = ((avgSpeed - self.accelInitialSpeed) / self.accelInitialSpeed)
+            workerIncreaseRatio = (currentWorkers - self.accelInitialWorkers) / self.accelInitialWorkers
+            speedIncreaseRatio = (avgSpeed - self.accelInitialSpeed) / self.accelInitialSpeed
 
             if speedIncreaseRatio < 0.8 * workerIncreaseRatio:
                 self.stage.accelerated = True
                 logger.info(
-                    f"自动加速已禁用，subworker 增加比: {workerIncreaseRatio:.2%}, "
-                    f"速度提升比: {speedIncreaseRatio:.2%}"
+                    "自动加速已禁用，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
+                    workerIncreaseRatio, speedIncreaseRatio,
                 )
             else:
                 self.accelCheckTime = 0
                 logger.info(
-                    f"继续自动加速，subworker 增加比: {workerIncreaseRatio:.2%}, "
-                    f"速度提升比: {speedIncreaseRatio:.2%}"
+                    "继续自动加速，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
+                    workerIncreaseRatio, speedIncreaseRatio,
                 )
 
     async def supervisor(self):
         recordFileHandle = None
         if self.stage.supportsRange:
-            recordFileHandle = open(Path(self.stage.resolvePath + ".ghd"), "wb")
+            recordFileHandle = open(Path(self.stage.outputFile + ".ghd"), "wb")
         try:
-            self.stage.receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
+            self.stage.receivedBytes = sum(sw.progress - sw.start for sw in self.subworkers)
             while True:
                 if recordFileHandle is not None:
-                    data = tuple(val for subworker in self.subworkers for val in (subworker.start, subworker.progress, subworker.end))
+                    data = tuple(val for sw in self.subworkers for val in (sw.start, sw.progress, sw.end))
                     recordFileHandle.seek(0)
                     recordFileHandle.write(pack("<" + "Q" * len(data), *data))
                     recordFileHandle.flush()
                     recordFileHandle.truncate()
 
-                receivedBytes = sum(subworker.progress - subworker.start for subworker in self.subworkers)
+                receivedBytes = sum(sw.progress - sw.start for sw in self.subworkers)
                 self.stage.speed = receivedBytes - self.stage.receivedBytes
                 self.stage.receivedBytes = receivedBytes
                 if self.stage.fileSize > 0:
@@ -344,34 +265,29 @@ class HttpWorker(Worker):
                     self.stage.progress = 0
 
                 self.checkIfAutoAcceleration()
-
                 await asyncio.sleep(1)
         except CancelledError:
-            logger.info(f"{self.stage.resolvePath} 停止下载")
-        except Exception as e:
-            logger.opt(exception=e).error("{} 的监控协程异常退出", self.stage.resolvePath)
+            pass
         finally:
             if recordFileHandle is not None:
                 recordFileHandle.close()
 
     def restoreProgress(self) -> bool:
-        recordFile = Path(self.stage.resolvePath + ".ghd")
+        recordFile = Path(self.stage.outputFile + ".ghd")
         if recordFile.exists():
             try:
                 with open(recordFile, "rb") as f:
                     while True:
-                        data = f.read(24)  # 每个 worker 有 3 个 64 位的无符号整数，共 24 字节
-                        if not data: break
-
-                        start, process, end = unpack("<QQQ", data)
-                        self.subworkers.append(HttpSubworker(start, process, end))
+                        data = f.read(24)
+                        if not data:
+                            break
+                        start, progress, end = unpack("<QQQ", data)
+                        self.subworkers.append(HttpSubworker(start, progress, end))
                 return True
-
             except Exception as e:
-                logger.opt(exception=e).error("恢复下载分片失败 {}", self.stage.resolvePath)
+                logger.opt(exception=e).error("恢复下载分片失败 {}", self.stage.outputFile)
                 self.subworkers.clear()
                 return False
-
         return False
 
     def generateSubworkers(self):
@@ -383,17 +299,17 @@ class HttpWorker(Worker):
             self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.UNKNOWN))
             return
 
-        step = self.stage.fileSize // self.stage.blockNum  # 每块大小
+        step = self.stage.fileSize // self.stage.blockNum
         start = 0
         for i in range(self.stage.blockNum - 1):
             end = start + step - 1
             self.subworkers.append(HttpSubworker(start, start, end))
             start = end + 1
 
-        self.subworkers.append(HttpSubworker(start, start, self.stage.fileSize - 1)) # Http 请求是以 0 开头的
+        self.subworkers.append(HttpSubworker(start, start, self.stage.fileSize - 1))
 
     def _cleanupRecordFile(self):
-        target = Path(self.stage.resolvePath + ".ghd")
+        target = Path(self.stage.outputFile + ".ghd")
         try:
             if target.is_file() or target.is_symlink():
                 target.unlink()
@@ -401,13 +317,12 @@ class HttpWorker(Worker):
             logger.opt(exception=e).error("failed to cleanup temporary file {}", target)
 
     async def run(self):
-        # prepare async components
         self.taskGroup = TaskGroup()
         self.subworkers: list[HttpSubworker] = []
         self.client = niquests.AsyncSession(happy_eyeballs=True, pool_maxsize=256)
         self.client.trust_env = False
         shouldCleanupRecordFile = False
-        Path(self.stage.resolvePath).parent.mkdir(parents=True, exist_ok=True)
+        Path(self.stage.outputFile).parent.mkdir(parents=True, exist_ok=True)
 
         restored = False
         if self.stage.supportsRange:
@@ -416,21 +331,21 @@ class HttpWorker(Worker):
             self._cleanupRecordFile()
 
         if not restored:
-            logger.info("正在为 {} 生成下载分片", self.stage.resolvePath)
+            logger.info("正在为 {} 生成下载分片", self.stage.outputFile)
             self.generateSubworkers()
         else:
-            logger.info("从进度文件恢复下载分片 {}", self.stage.resolvePath)
+            logger.info("从进度文件恢复下载分片 {}", self.stage.outputFile)
 
         openMode = os.O_RDWR | os.O_CREAT
         if not self.stage.supportsRange:
             openMode |= os.O_TRUNC
-        self.fileHandle = os.open(self.stage.resolvePath, openMode, 0o666)
+        self.fileHandle = os.open(self.stage.outputFile, openMode, 0o666)
 
         if not restored and self.stage.fileSize > 0:
             try:
                 ftruncate(self.fileHandle, self.stage.fileSize)
             except Exception as e:
-                logger.opt(exception=e).error("{} 预分配文件大小失败", self.stage.resolvePath)
+                logger.opt(exception=e).error("{} 预分配文件大小失败", self.stage.outputFile)
 
         supervisor = asyncio.create_task(self.supervisor())
 
@@ -441,13 +356,13 @@ class HttpWorker(Worker):
 
             self.stage.setStatus(TaskStatus.COMPLETED)
             shouldCleanupRecordFile = True
-            logger.info(f"{self.stage.resolvePath} 下载完成")
+            logger.info("{} 下载完成", self.stage.outputFile)
         except CancelledError:
             self.stage.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
             self.stage.setError(e)
-            logger.opt(exception=e).error("{} 下载阶段失败", self.stage.resolvePath)
+            raise
         finally:
             if not supervisor.done():
                 supervisor.cancel()
@@ -457,3 +372,6 @@ class HttpWorker(Worker):
             await self.client.close()
             if shouldCleanupRecordFile:
                 self._cleanupRecordFile()
+
+
+HttpTaskStage.workerType = HttpWorker

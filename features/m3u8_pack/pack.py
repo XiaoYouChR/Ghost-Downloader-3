@@ -1,41 +1,126 @@
+from pathlib import Path
 from urllib.parse import urlparse
+
+import niquests
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-
-from .cards import M3U8InstallTaskCard, M3U8ResultCard, M3U8TaskCard
+from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.utils import getProxies, splitRequestHeadersAndCookies
 from .config import m3u8Config
-from .task import M3U8InstallTask, M3U8Task, parse
+from .task import (
+    M3U8TaskStage,
+    _deriveDefaultTitle,
+    _deriveManifestType,
+    _detectLive,
+    _normalizePath,
+    _stripKnownSuffix,
+)
 
 
 def _isSupportedUrl(url: str) -> bool:
     parsedUrl = urlparse(url)
     if parsedUrl.scheme.lower() not in {"http", "https"}:
         return False
-
     loweredUrl = url.lower()
     return any(marker in loweredUrl for marker in (".m3u8", ".m3u", ".mpd"))
 
 
 class M3U8Pack(FeaturePack):
+    packId = "m3u8"
     priority = 80
-    taskType = (M3U8Task, M3U8InstallTask)
     config = m3u8Config
 
-    def canHandle(self, url: str) -> bool:
+    def matches(self, url: str) -> bool:
         return _isSupportedUrl(url)
 
-    async def parse(self, payload: dict) -> Task:
-        return await parse(payload)
+    async def resolve(self, payload: dict) -> dict:
+        url = str(payload["url"]).strip()
+        headers = payload.get("headers", DEFAULT_HEADERS)
+        proxies = payload.get("proxies", getProxies())
+        requestHeaders, requestCookies = splitRequestHeadersAndCookies(
+            headers if isinstance(headers, dict) else DEFAULT_HEADERS
+        )
 
-    def createTaskCard(self, task: Task, parent=None):
-        if isinstance(task, M3U8InstallTask):
-            return M3U8InstallTaskCard(task, parent)
-        if isinstance(task, M3U8Task):
-            return M3U8TaskCard(task, parent)
-        return None
+        client = niquests.AsyncSession(timeout=30, happy_eyeballs=True)
+        client.trust_env = False
 
-    def createResultCard(self, task: Task, parent=None):
-        if isinstance(task, M3U8Task):
-            return M3U8ResultCard(task, parent)
-        return None
+        try:
+            response = await client.get(
+                url,
+                headers=requestHeaders,
+                cookies=requestCookies,
+                proxies=proxies,
+                verify=cfg.SSLVerify.value,
+                allow_redirects=True,
+            )
+            try:
+                response.raise_for_status()
+                body = response.text
+                loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
+                manifestType = _deriveManifestType(str(response.url), loweredHeaders, body)
+                isLive = _detectLive(manifestType, body)
+                extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
+                title = _deriveDefaultTitle(str(response.url), loweredHeaders, extension)
+            finally:
+                response.close()
+        finally:
+            await client.close()
+
+        return {
+            **payload,
+            "title": title,
+            "headers": headers.copy() if isinstance(headers, dict) else DEFAULT_HEADERS.copy(),
+            "proxies": proxies,
+            "manifestType": manifestType,
+            "isLive": isLive,
+        }
+
+    def build(self, payload: dict) -> Task:
+        url: str = payload["url"]
+        title: str = payload["title"]
+        headers: dict = payload.get("headers", DEFAULT_HEADERS)
+        proxies = payload.get("proxies", getProxies())
+        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
+        manifestType: str = payload.get("manifestType", "m3u8")
+        isLive: bool = payload.get("isLive", False)
+
+        metadata = {
+            "headers": headers,
+            "proxies": proxies,
+            "threadCount": m3u8Config.threadCount.value,
+            "retryCount": m3u8Config.retryCount.value,
+            "requestTimeout": m3u8Config.requestTimeout.value,
+            "autoSelect": m3u8Config.autoSelect.value,
+            "concurrentDownload": m3u8Config.concurrentDownload.value,
+            "appendUrlParams": m3u8Config.appendUrlParams.value,
+            "binaryMerge": m3u8Config.binaryMerge.value,
+            "checkSegmentsCount": m3u8Config.checkSegmentsCount.value,
+            "outputFormat": m3u8Config.outputFormat.value,
+            "liveRealTimeMerge": m3u8Config.liveRealTimeMerge.value,
+            "liveKeepSegments": m3u8Config.liveKeepSegments.value,
+            "livePipeMux": m3u8Config.livePipeMux.value,
+            "manifestType": manifestType,
+            "isLive": isLive,
+            "actualExtension": "",
+        }
+
+        task = Task(
+            title=title,
+            url=url,
+            packId=self.packId,
+            fileSize=1,
+            path=path,
+            metadata=metadata,
+        )
+
+        taskId = task.taskId
+        outputFile = _normalizePath(path / title)
+        tempDir = _normalizePath(path / ".gd3_m3u8" / taskId)
+
+        task.addStage(M3U8TaskStage(
+            stageIndex=1,
+            outputFile=outputFile,
+            tempDir=tempDir,
+        ))
+        return task
