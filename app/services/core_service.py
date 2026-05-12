@@ -41,21 +41,21 @@ class CoreService(QThread):
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._syncTaskLimitSoon())
 
     def sendNotification(self, task: Task):
-        resolvePath = task.resolvePath
-        if not resolvePath:
-            logger.warning("task {} has no resolvePath for notification", task.taskId)
+        outputFolder = task.outputFolder
+        if not outputFolder:
+            logger.warning("task {} has no outputFolder for notification", task.taskId)
             return
 
-        directoryPath = str(Path(resolvePath).parent)
+        directoryPath = str(Path(outputFolder).parent)
         iconTempPath = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)) / "finished_file_icon.png"
-        QFileIconProvider().icon(QFileInfo(resolvePath)).pixmap(48, 48).scaled(
+        QFileIconProvider().icon(QFileInfo(outputFolder)).pixmap(48, 48).scaled(
             128,
             128,
             aspectMode=Qt.AspectRatioMode.KeepAspectRatio,
             mode=Qt.TransformationMode.SmoothTransformation,
         ).save(str(iconTempPath), "PNG")
         buttons = [
-            Button(self.tr('打开文件'), lambda: openFile(resolvePath)),
+            Button(self.tr('打开文件'), lambda: openFile(outputFolder)),
             Button(self.tr('打开目录'), lambda: openFile(directoryPath)),
         ]
         self.loop.create_task(
@@ -63,7 +63,7 @@ class CoreService(QThread):
                 self.tr("下载完成"),
                 task.title,
                 buttons=buttons,
-                on_clicked=lambda: openFile(resolvePath),
+                on_clicked=lambda: openFile(outputFolder),
                 icon=Icon(path=iconTempPath),
             )
         )
@@ -119,14 +119,8 @@ class CoreService(QThread):
             wrapper()
 
     async def _parseUrl(self, payload: dict, callbackId: str = None):
-        """内部异步方法：解析 URL 并通过线程安全方式调用回调
-
-        Args:
-            payload: 包含 url, headers, proxies 等信息的字典
-            callbackId: 回调函数标识符
-        """
         try:
-            result = await featureService.parse(payload)
+            result = await featureService.resolve(payload)
 
             if callbackId and callbackId in self._pendingCallbacks:
                 callback = self._pendingCallbacks.pop(callbackId)
@@ -143,7 +137,7 @@ class CoreService(QThread):
 
     async def _createTaskFromPayload(self, payload: dict, callbackId: str = None):
         try:
-            result = await featureService.createTaskFromPayload(payload)
+            result = featureService.build(payload)
 
             if callbackId and callbackId in self._pendingCallbacks:
                 callback = self._pendingCallbacks.pop(callbackId)
@@ -170,7 +164,7 @@ class CoreService(QThread):
         taskIds: list[str] = []
         for taskId in self.runningTasks:
             task = self.getTaskById(taskId)
-            if task is None or not task.occupiesDownloadSlot():
+            if task is None or not task.usesSlot:
                 continue
             taskIds.append(taskId)
         return taskIds
@@ -247,7 +241,7 @@ class CoreService(QThread):
         if task.taskId in self.runningTasks:
             return
 
-        if task.willOccupyDownloadSlotWhenStarted() and self._runningTaskCount() >= cfg.maxTaskNum.value:
+        if task.usesSlot and self._runningTaskCount() >= cfg.maxTaskNum.value:
             self._enqueueTask(task)
             return
 

@@ -51,7 +51,7 @@ class AddTaskParseSession(QObject):
             if state.task is None:
                 continue
             try:
-                state.task.applyPayloadToTask(self._buildPayload(state.url))
+                state.task.applySettings(self._buildPayload(state.url))
             except Exception as error:
                 logger.opt(exception=error).error("同步解析结果设置失败 {}", state.url)
 
@@ -96,7 +96,7 @@ class AddTaskParseSession(QObject):
                     continue
                 self._clearState(state, cancelRequest=True)
                 try:
-                    task.applyPayloadToTask(self._buildPayload(url))
+                    task.applySettings(self._buildPayload(url))
                 except Exception as error:
                     logger.opt(exception=error).error("同步解析结果设置失败 {}", url)
                     self._failState(state, self.tr("解析结果处理失败"))
@@ -107,7 +107,7 @@ class AddTaskParseSession(QObject):
             newUrlLines.append(url)
             state = _LineParseState(url=url)
             try:
-                task.applyPayloadToTask(self._buildPayload(url))
+                task.applySettings(self._buildPayload(url))
             except Exception as error:
                 logger.opt(exception=error).error("同步解析结果设置失败 {}", url)
                 self._failState(state, self.tr("解析结果处理失败"))
@@ -134,7 +134,7 @@ class AddTaskParseSession(QObject):
         for state in self._lineStates:
             if state.task is not None:
                 try:
-                    state.task.applyPayloadToTask(self._buildPayload(state.url))
+                    state.task.applySettings(self._buildPayload(state.url))
                     confirmedTasks.append(state.task)
                 except Exception as error:
                     logger.opt(exception=error).error("同步已确认任务设置失败 {}", state.url)
@@ -186,7 +186,7 @@ class AddTaskParseSession(QObject):
     def _setParsedTask(self, state: _LineParseState, task: Task) -> None:
         try:
             state.task = task
-            state.resultCard = featureService.createResultCard(task, self._resultGroup)
+            state.resultCard = featureService.resultCard(task, self._resultGroup)
         except Exception as error:
             logger.opt(exception=error).error("无法创建解析结果卡片 {}", state.url)
             self._failState(state, self.tr("解析结果处理失败"))
@@ -267,7 +267,7 @@ class AddTaskParseSession(QObject):
                 return
 
             try:
-                resultTask.applyPayloadToTask(self._buildPayload(state.url))
+                resultTask.applySettings(self._buildPayload(state.url))
                 self._setParsedTask(state, resultTask)
                 self._syncResultCards()
             except Exception as error:
@@ -285,7 +285,7 @@ class AddTaskParseSession(QObject):
             return
 
         try:
-            resultTask.applyPayloadToTask(acceptedPayload)
+            resultTask.applySettings(acceptedPayload)
             self.taskConfirmed.emit(resultTask)
         except Exception as error:
             logger.opt(exception=error).error(

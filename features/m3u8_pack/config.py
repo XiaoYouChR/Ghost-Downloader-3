@@ -212,7 +212,7 @@ class M3U8Config(PackConfig):
     liveKeepSegments = ConfigItem("M3U8", "LiveKeepSegments", False, BoolValidator())
     livePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
+    def setupSettings(self, settingPage: "SettingPage"):
         self.m3u8Group = SettingCardGroup(self.tr("流媒体下载"), settingPage.container)
         self.installFolderCard = M3U8InstallFolderCard(self.m3u8Group)
         self.runtimeCard = M3U8RuntimeCard(self.m3u8Group)

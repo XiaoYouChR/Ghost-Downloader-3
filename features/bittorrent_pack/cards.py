@@ -197,14 +197,14 @@ class BitTorrentTaskCard(UniversalTaskCard):
         self.verifyHashButton.setVisible(
             self.task.isSingleFileTorrent
             and self.task.status == TaskStatus.COMPLETED
-            and Path(self.task.resolvePath).is_file()
+            and Path(self.task.outputFolder).is_file()
         )
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.COMPLETED or self.task.hasUnselectedFiles)
 
     def onTaskDeleted(self, completely: bool = False):
         if not completely:
             return
-        _removePath(Path(self.task.resolvePath))
+        _removePath(Path(self.task.outputFolder))
         if self.task.magnetTorrentPath is not None:
             _removePath(self.task.magnetTorrentPath)
 

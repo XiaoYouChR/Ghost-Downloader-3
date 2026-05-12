@@ -253,7 +253,7 @@ class BrowserService(QObject):
         return value if isinstance(value, int) and value > 0 else default
 
     def _serializeTask(self, task: Task) -> dict[str, Any]:
-        resolvePath = Path(task.resolvePath)
+        resolvePath = Path(task.outputFolder)
         parentPath = resolvePath.parent
         stages = task.stages
         progress = (
@@ -465,16 +465,16 @@ class BrowserService(QObject):
             )
             return
 
-        canCreateTaskFromPayload = featureService.canCreateTaskFromPayload(parsePayload["url"])
+        hasFilename = bool(parsePayload.get("filename"))
         coroutine = (
             coreService._createTaskFromPayload(parsePayload)
-            if canCreateTaskFromPayload
+            if hasFilename
             else coreService._parseUrl(parsePayload)
         )
 
         coreService.runCoroutine(
             coroutine,
-            lambda task, error, session=session, requestId=requestId, title=title if canCreateTaskFromPayload else "": self._onTaskParsed(
+            lambda task, error, session=session, requestId=requestId, title=title if hasFilename else "": self._onTaskParsed(
                 session,
                 requestId,
                 title,
@@ -514,16 +514,13 @@ class BrowserService(QObject):
 
     def _removeTaskArtifacts(self, task: Task):
         candidates: set[Path] = set()
-        if task.resolvePath:
-            candidates.add(Path(task.resolvePath))
+        if task.outputFolder:
+            candidates.add(Path(task.outputFolder))
 
         for stage in task.stages:
-            try:
-                resolvePath = stage.resolvePath
-            except AttributeError:
-                continue
-            if resolvePath:
-                candidates.add(Path(resolvePath))
+            outputFile = getattr(stage, "outputFile", "")
+            if outputFile:
+                candidates.add(Path(outputFile))
 
         for target in candidates:
             for path in (target, Path(str(target) + ".ghd")):
@@ -666,7 +663,7 @@ class BrowserService(QObject):
                 return
 
             if action == BrowserTaskAction.OPEN_FILE:
-                path = Path(task.resolvePath)
+                path = Path(task.outputFolder)
                 if not path.exists():
                     self._sendResult(
                         session,
@@ -681,7 +678,7 @@ class BrowserService(QObject):
                 return
 
             if action == BrowserTaskAction.OPEN_FOLDER:
-                path = Path(task.resolvePath)
+                path = Path(task.outputFolder)
                 if not path.parent.exists():
                     self._sendResult(
                         session,

@@ -292,7 +292,7 @@ class GitHubConfig(PackConfig):
         GitHubProxySiteValidator(),
     )
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
+    def setupSettings(self, settingPage: "SettingPage"):
         self.githubGroup = SettingCardGroup(self.tr("GitHub 加速"), settingPage.container)
         self.enableCard = SwitchSettingCard(
             FluentIcon.LINK,

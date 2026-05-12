@@ -242,6 +242,10 @@ class FeatureService:
             return f"http://{url}"
         return url
 
+    def canHandle(self, url: str) -> bool:
+        normalizedUrl = self.normalizeUrl(url)
+        return self.matchPack(normalizedUrl) is not None
+
     def matchPack(self, url: str) -> tuple[str, FeaturePack] | None:
         for packName, packInstance in self.sortedPacksCache:
             try:
