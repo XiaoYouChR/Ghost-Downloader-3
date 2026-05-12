@@ -106,9 +106,9 @@ class FtpConnectionInfo:
     sourcePath: str = "/"
     portSpecified: bool = False
 
-# 选了不一定下载, 故拆成 FtpRemoteFile 和 FtpTaskStage.
+# 选了不一定下载, 故拆成 FtpFile 和 FtpStage.
 @dataclass
-class FtpRemoteFile:
+class FtpFile:
     index: int
     remotePath: str
     relativePath: str
@@ -123,7 +123,7 @@ class FtpRemoteFile:
 
 
 @dataclass(kw_only=True)
-class FtpTaskStage(TaskStage):
+class FtpStage(TaskStage):
     fileIndex: int
     remotePath: str
     fileSize: int
@@ -141,7 +141,7 @@ class FtpTaskStage(TaskStage):
 class FtpTask(Task):
     connectionInfo: FtpConnectionInfo | dict[str, Any]
     sourceType: str = field(default="file")
-    files: list[FtpRemoteFile | dict[str, Any]] = field(default_factory=list)
+    files: list[FtpFile | dict[str, Any]] = field(default_factory=list)
     proxies: dict | None = field(default_factory=getProxies)
     blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
 
@@ -149,42 +149,42 @@ class FtpTask(Task):
         if isinstance(self.connectionInfo, dict):
             self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
         self.files = [
-            item if isinstance(item, FtpRemoteFile) else FtpRemoteFile(**item)
+            item if isinstance(item, FtpFile) else FtpFile(**item)
             for item in self.files
         ]
         self._filesByIndex = {file.index: file for file in self.files}
         self.title = sanitizeFilename(self.title, fallback="ftp_download")
         super().__post_init__()
         self._recalculateSelection()
-        self._syncFileProgress()
+        self._syncFiles()
         self.syncStagePaths()
 
     @property
-    def totalFileCount(self) -> int:
+    def countAll(self) -> int:
         return len(self.files)
 
     @property
-    def selectedFileCount(self) -> int:
+    def countSelected(self) -> int:
         return sum(1 for file in self.files if file.selected)
 
     @property
-    def isDirectorySource(self) -> bool:
+    def isDirectory(self) -> bool:
         return self.sourceType == "dir"
 
     @property
-    def selectedStages(self) -> list["FtpTaskStage"]:
+    def selectedStages(self) -> list["FtpStage"]:
         return [
             stage
             for stage in self.stages
             if self.fileByIndex(stage.fileIndex).selected
         ]
 
-    def fileByIndex(self, index: int) -> FtpRemoteFile:
+    def fileByIndex(self, index: int) -> FtpFile:
         return self._filesByIndex[index]
 
     def syncStagePaths(self):
         rootPath = Path(self.path) / self.title
-        if not self.isDirectorySource:
+        if not self.isDirectory:
             resolvePath = str(rootPath)
             for stage in self.stages:
                 stage.outputFile = resolvePath
@@ -203,7 +203,7 @@ class FtpTask(Task):
     def _recalculateSelection(self):
         self.fileSize = sum(file.size for file in self.files if file.selected)
 
-    def _syncFileProgress(self):
+    def _syncFiles(self):
         stageByFileIndex = {stage.fileIndex: stage for stage in self.stages}
 
         for file in self.files:
@@ -213,7 +213,7 @@ class FtpTask(Task):
             if file.completed and file.size > 0:
                 file.downloadedBytes = max(file.downloadedBytes, file.size)
 
-    def updateSelectedFiles(self, selectedIndexes: set[int]):
+    def setSelection(self, selectedIndexes: set[int]):
         if not selectedIndexes:
             raise ValueError("至少需要选择一个文件")
 
@@ -228,11 +228,11 @@ class FtpTask(Task):
             return
 
         self._recalculateSelection()
-        self._syncFileProgress()
+        self._syncFiles()
         self.updateStatus()
 
     def updateStatus(self) -> TaskStatus:
-        self._syncFileProgress()
+        self._syncFiles()
         selectedStages = self.selectedStages
         if not selectedStages:
             self.status = TaskStatus.WAITING
@@ -276,7 +276,7 @@ class FtpTask(Task):
             stage.reset(sync=False)
         return self.updateStatus()
 
-    def reopenForAdditionalFiles(self) -> bool:
+    def reopen(self) -> bool:
         if self.status != TaskStatus.COMPLETED:
             return False
 
@@ -289,7 +289,7 @@ class FtpTask(Task):
         for stage in pendingSelectedStages:
             stage.setStatus(TaskStatus.PAUSED, sync=False)
 
-        self._syncFileProgress()
+        self._syncFiles()
         self.updateStatus()
         return True
 
@@ -336,7 +336,7 @@ class FtpSubworker:
 
 
 class FtpWorker(Worker):
-    def __init__(self, stage: FtpTaskStage):
+    def __init__(self, stage: FtpStage):
         super().__init__(stage)
         self.stage = stage
         self.task: FtpTask = stage._task
@@ -857,12 +857,12 @@ async def parse(payload: dict) -> FtpTask:
             raise ValueError("当前 FTP 路径既不是普通文件，也不是目录")
 
         supportsRange = await _probeRangeSupport(client)
-        files: list[FtpRemoteFile] = []
-        stages: list[FtpTaskStage] = []
+        files: list[FtpFile] = []
+        stages: list[FtpStage] = []
 
         if sourceType == "file":
             files.append(
-                FtpRemoteFile(
+                FtpFile(
                     index=0,
                     remotePath=str(sourcePath),
                     relativePath=sourcePath.name or "ftp_file",
@@ -876,7 +876,7 @@ async def parse(payload: dict) -> FtpTask:
                 if info["type"] != "file":
                     continue
                 files.append(
-                    FtpRemoteFile(
+                    FtpFile(
                         index=index,
                         remotePath=str(remotePath),
                         relativePath=_relativeRemotePath(remotePath, sourcePath),
@@ -890,7 +890,7 @@ async def parse(payload: dict) -> FtpTask:
 
         for file in files:
             stages.append(
-                FtpTaskStage(
+                FtpStage(
                     stageIndex=len(stages) + 1,
                     fileIndex=file.index,
                     remotePath=file.remotePath,
