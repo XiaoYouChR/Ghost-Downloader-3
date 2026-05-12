@@ -262,7 +262,7 @@ async def _resolveAdditionalTrackers() -> list[str]:
 
 
 @dataclass
-class BitTorrentFile:
+class BTFile:
     index: int
     path: str
     size: int
@@ -276,7 +276,7 @@ class BitTorrentFile:
 
 
 @dataclass
-class BitTorrentTaskStage(TaskStage):
+class BTStage(TaskStage):
     resolvePath: str
 
     def __post_init__(self):
@@ -296,12 +296,12 @@ class BitTorrentTaskStage(TaskStage):
 
 
 @dataclass
-class BitTorrentTask(Task):
+class BTTask(Task):
     sourceType: str
     torrentData: str
     resumeData: str = field(default="")
     trackers: list[str] = field(default_factory=list)
-    files: list[BitTorrentFile] = field(default_factory=list)
+    files: list[BTFile] = field(default_factory=list)
     proxies: dict | None = field(default_factory=getProxies)
     listenPort: int = field(default_factory=lambda: bittorrentConfig.listenPort.value)
     connectionsLimit: int = field(default_factory=lambda: bittorrentConfig.connectionsLimit.value)
@@ -322,7 +322,7 @@ class BitTorrentTask(Task):
 
     def __post_init__(self):
         self.files = [
-            item if isinstance(item, BitTorrentFile) else BitTorrentFile(**item)
+            item if isinstance(item, BTFile) else BTFile(**item)
             for item in self.files
         ]
         self.fileSelectionVersion = 0
@@ -336,7 +336,7 @@ class BitTorrentTask(Task):
         return str(self.path / self.title)
 
     @property
-    def stage(self) -> BitTorrentTaskStage:
+    def stage(self) -> BTStage:
         return self.stages[0]
 
     @property
@@ -364,7 +364,7 @@ class BitTorrentTask(Task):
     def syncStagePaths(self):
         self.stage.resolvePath = self.resolvePath
 
-    def mappedRelativePath(self, file: BitTorrentFile) -> str:
+    def mappedRelativePath(self, file: BTFile) -> str:
         if self.isSingleFileTorrent:
             return self.title.replace("\\", "/")
 
@@ -453,7 +453,7 @@ class BitTorrentTask(Task):
     async def run(self):
         try:
             for stage in self.iterRunnableStages():
-                await BitTorrentWorker(stage).run()
+                await BTWorker(stage).run()
         except asyncio.CancelledError:
             logger.info(f"{self.title} 停止下载")
             raise
@@ -467,11 +467,11 @@ class BitTorrentTask(Task):
         return hash(self.taskId)
 
 
-class BitTorrentWorker(Worker):
-    def __init__(self, stage: BitTorrentTaskStage):
+class BTWorker(Worker):
+    def __init__(self, stage: BTStage):
         super().__init__(stage)
         self.stage = stage
-        self.task: BitTorrentTask = stage._task
+        self.task: BTTask = stage._task
         self.session: lt.session | None = None
         self.handle: lt.torrent_handle | None = None
         self._appliedSelectionVersion = -1
@@ -889,14 +889,14 @@ def buildTaskFromTorrentInfo(
     sourceUrl: str,
     torrentBytes: bytes,
     trackers: list[str],
-) -> BitTorrentTask:
+) -> BTTask:
     files = ti.files()
-    entries: list[BitTorrentFile] = []
+    entries: list[BTFile] = []
     for index in range(ti.num_files()):
         if _isPadFile(files, index):
             continue
         entries.append(
-            BitTorrentFile(
+            BTFile(
                 index=index,
                 path=files.file_path(index),
                 size=int(files.file_size(index)),
@@ -908,12 +908,12 @@ def buildTaskFromTorrentInfo(
 
     rootName = sanitizeFilename(PurePosixPath(entries[0].path).parts[0], fallback="torrent")
     title = sanitizeFilename(Path(entries[0].path).name, fallback="torrent") if len(entries) == 1 else rootName
-    task = BitTorrentTask(
+    task = BTTask(
         title=title,
         url=sourceUrl,
         fileSize=sum(entry.size for entry in entries),
         path=Path(payload.get("path", cfg.downloadFolder.value)),
-        stages=[BitTorrentTaskStage(stageIndex=1, resolvePath="")],
+        stages=[BTStage(stageIndex=1, resolvePath="")],
         sourceType=sourceType,
         torrentData=_encodeBytes(torrentBytes),
         trackers=trackers or _extractTrackers(ti),
@@ -936,7 +936,7 @@ def buildTaskFromTorrentInfo(
     return task
 
 
-async def parse(payload: dict) -> BitTorrentTask:
+async def parse(payload: dict) -> BTTask:
     url = str(payload["url"]).strip()
     localTorrentPath = resolveLocalTorrentPath(url)
     if localTorrentPath is not None:

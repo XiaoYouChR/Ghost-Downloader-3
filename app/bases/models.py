@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import asdict, dataclass, field, fields as dataclass_fields, is_dataclass
 from enum import auto, IntEnum
 from pathlib import Path
@@ -5,6 +6,7 @@ from time import time_ns
 from typing import ClassVar, Dict, Type, Any, TYPE_CHECKING, Iterable
 from uuid import uuid4
 
+from loguru import logger
 from PySide6.QtCore import QCoreApplication
 from orjson import loads, dumps
 from qfluentwidgets import SettingCard
@@ -13,8 +15,10 @@ from app.supports.config import cfg, ConfigItem
 from app.supports.utils import sanitizeFilename
 
 if TYPE_CHECKING:
+    from app.bases.interfaces import Worker
     from app.view.pages.setting_page import SettingPage
     from PySide6.QtWidgets import QWidget
+
 
 def _toSerializable(obj: Any) -> Any:
     if isinstance(obj, TaskStatus):
@@ -39,10 +43,6 @@ def _filterDataclassKwargs(cls: type, obj: dict[str, Any]) -> dict[str, Any]:
 
 
 class TaskStatus(IntEnum):
-    """
-    Enumeration for the lifecycle status of an individual TaskStage.
-    """
-
     WAITING = auto()
     RUNNING = auto()
     PAUSED = auto()
@@ -51,10 +51,20 @@ class TaskStatus(IntEnum):
 
 
 @dataclass(kw_only=True)
-class TaskStage:
-    """Represents a single, executable stage within a parent Task."""
+class TaskFile:
+    index: int
+    relativePath: str
+    size: int = 0
+    selected: bool = True
+    downloadedBytes: int = 0
+    completed: bool = False
 
+
+@dataclass(kw_only=True)
+class TaskStage:
     _registry: ClassVar[Dict[str, Type["TaskStage"]]] = {}
+    workerType: ClassVar[Type["Worker"]]
+    canPause: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -63,15 +73,19 @@ class TaskStage:
     stageIndex: int
     stageId: str = field(default_factory=lambda: f"stg_{uuid4().hex}")
     status: TaskStatus = TaskStatus.WAITING
-    progress: float = 0   # 0 ~ 100
-    receivedBytes: int = field(default=0)
-    speed: int = field(default=1)   # division cannot be 0
-    error: str = field(default="")
+    progress: float = 0
+    receivedBytes: int = 0
+    speed: int = 0
+    error: str = ""
 
-    def bindTask(self, task: "Task"):
+    def _bindTask(self, task: "Task"):
         self._task = task
 
-    def setStatus(self, status: TaskStatus, notifyTask: bool = True):
+    @property
+    def task(self) -> "Task":
+        return self._task
+
+    def setStatus(self, status: TaskStatus, sync: bool = True):
         self.status = status
         if status == TaskStatus.COMPLETED:
             self.progress = 100
@@ -83,23 +97,33 @@ class TaskStage:
         elif status == TaskStatus.FAILED:
             self.speed = 0
 
-        if notifyTask and hasattr(self, "_task"):
-            self._task.syncStatusFromStages()
+        if sync and hasattr(self, "_task"):
+            self._task.updateStatus()
 
-    def setError(self, error: Any, notifyTask: bool = True):
+    def setError(self, error: Any, sync: bool = True):
         message = repr(error).strip() if error is not None else ""
         self.error = message
-        self.setStatus(TaskStatus.FAILED, notifyTask=notifyTask)
+        self.setStatus(TaskStatus.FAILED, sync=sync)
 
-    def reset(self, notifyTask: bool = True):
+    def reset(self, sync: bool = True):
         self.status = TaskStatus.WAITING
         self.progress = 0
         self.receivedBytes = 0
         self.speed = 0
         self.error = ""
 
-        if notifyTask and hasattr(self, "_task"):
-            self._task.syncStatusFromStages()
+        if sync and hasattr(self, "_task"):
+            self._task.updateStatus()
+
+    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        pass
+
+    def onCompleted(self, task: "Task"):
+        pass
+
+    @classmethod
+    def fromFile(cls, file: TaskFile, task: "Task") -> "TaskStage":
+        raise NotImplementedError
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
@@ -130,52 +154,75 @@ class TaskStage:
 
 @dataclass(kw_only=True)
 class Task:
-    """Represents a logical, user-facing task, which is a collection of stages."""
-
     title: str
     url: str
+    packId: str
     taskId: str = field(default_factory=lambda: f"tsk_{uuid4().hex}")
     status: TaskStatus = TaskStatus.WAITING
     stages: list[TaskStage] = field(default_factory=list)
     createdAt: int = field(default_factory=lambda: int(time_ns()))
     path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
-    fileSize: int
+    fileSize: int = 0
+    metadata: dict = field(default_factory=dict)
+    files: list[TaskFile] | None = None
+    usesSlot: bool = True
+    stageType: Type[TaskStage] | None = field(default=None, repr=False)
 
     @property
-    def resolvePath(self) -> str:
+    def outputFolder(self) -> str:
         return str(self.path / self.title)
+
+    @property
+    def canPause(self) -> bool:
+        for stage in self.stages:
+            if stage.status == TaskStatus.RUNNING:
+                return stage.canPause
+        return True
+
+    @property
+    def lastError(self) -> str:
+        for stage in reversed(self.stages):
+            if stage.status == TaskStatus.FAILED and stage.error:
+                return stage.error
+        for stage in reversed(self.stages):
+            if stage.error:
+                return stage.error
+        return ""
 
     def setTitle(self, title: str):
         self.title = sanitizeFilename(title, fallback=self.title or "download")
-        self.syncStagePaths()
-
-    def syncStagePaths(self):
-        raise NotImplementedError
+        for stage in self.stages:
+            stage.updateOutputFile(self.path, self.title)
 
     def __post_init__(self):
         self.title = sanitizeFilename(self.title, fallback="download")
         for stage in self.stages:
-            stage.bindTask(self)
-        self.syncStagePaths()
-        self.syncStatusFromStages()
+            stage._bindTask(self)
+        for stage in self.stages:
+            stage.updateOutputFile(self.path, self.title)
+        self.updateStatus()
 
     def addStage(self, stage: TaskStage):
-        stage.bindTask(self)
+        stage._bindTask(self)
         self.stages.append(stage)
-        self.syncStatusFromStages()
+        self.updateStatus()
 
-    def syncStatusFromStages(self) -> TaskStatus:
+    def removeStage(self, stage: TaskStage):
+        self.stages.remove(stage)
+        self.updateStatus()
+
+    def updateStatus(self) -> TaskStatus:
         if not self.stages:
             return self.status
 
-        stageStatus = [stage.status for stage in self.stages]
-        if any(status == TaskStatus.FAILED for status in stageStatus):
+        statuses = [stage.status for stage in self.stages]
+        if any(s == TaskStatus.FAILED for s in statuses):
             self.status = TaskStatus.FAILED
-        elif all(status == TaskStatus.COMPLETED for status in stageStatus):
+        elif all(s == TaskStatus.COMPLETED for s in statuses):
             self.status = TaskStatus.COMPLETED
-        elif any(status == TaskStatus.RUNNING for status in stageStatus):
+        elif any(s == TaskStatus.RUNNING for s in statuses):
             self.status = TaskStatus.RUNNING
-        elif all(status == TaskStatus.PAUSED for status in stageStatus):
+        elif all(s == TaskStatus.PAUSED for s in statuses):
             self.status = TaskStatus.PAUSED
         else:
             self.status = TaskStatus.WAITING
@@ -191,10 +238,10 @@ class Task:
             if stage.status == TaskStatus.COMPLETED:
                 continue
             if status == TaskStatus.RUNNING and stage.status == TaskStatus.FAILED:
-                stage.reset(notifyTask=False)
-            stage.setStatus(status, notifyTask=False)
+                stage.reset(sync=False)
+            stage.setStatus(status, sync=False)
 
-        return self.syncStatusFromStages()
+        return self.updateStatus()
 
     def reset(self) -> TaskStatus:
         if not self.stages:
@@ -202,53 +249,77 @@ class Task:
             return self.status
 
         for stage in self.stages:
-            stage.reset(notifyTask=False)
+            stage.reset(sync=False)
 
-        return self.syncStatusFromStages()
+        return self.updateStatus()
 
-    def stagesForExecution(self) -> Iterable[TaskStage]:
-        return self.stages
-
-    def iterRunnableStages(self) -> Iterable[TaskStage]:
+    def pendingStages(self) -> Iterable[TaskStage]:
         self.stages.sort(key=lambda stage: stage.stageIndex)
-        for stage in self.stagesForExecution():
+        for stage in self.stages:
             if self.status != TaskStatus.RUNNING:
                 break
             if stage.status == TaskStatus.COMPLETED:
                 continue
-            self.onStageStarted(stage)
+            self._onStageStarted(stage)
             yield stage
 
-    def onStageStarted(self, stage: TaskStage):
+    def _onStageStarted(self, stage: TaskStage):
         from app.supports.recorder import taskRecorder
-
         taskRecorder.flush()
 
-    @property
-    def lastError(self) -> str:
-        for stage in reversed(self.stages):
-            if stage.status == TaskStatus.FAILED and stage.error:
-                return stage.error
+    def updateSelectedFiles(self, selectedIndexes: list[int]):
+        if self.files is None or self.stageType is None:
+            return
 
-        for stage in reversed(self.stages):
-            if stage.error:
-                return stage.error
+        selectedSet = set(selectedIndexes)
 
-        return ""
+        for file in self.files:
+            file.selected = file.index in selectedSet
+
+        stagesToRemove = [
+            stage for stage in self.stages
+            if hasattr(stage, "fileIndex") and stage.fileIndex not in selectedSet
+        ]
+        for stage in stagesToRemove:
+            self.stages.remove(stage)
+
+        existingFileIndexes = {
+            stage.fileIndex for stage in self.stages
+            if hasattr(stage, "fileIndex")
+        }
+        for file in self.files:
+            if file.selected and file.index not in existingFileIndexes:
+                newStage = self.stageType.fromFile(file, self)
+                self.addStage(newStage)
+
+        self.fileSize = sum(f.size for f in self.files if f.selected)
+        self.updateStatus()
+
+    async def run(self):
+        currentStage = None
+        try:
+            for stage in self.pendingStages():
+                currentStage = stage
+                worker = stage.workerType(stage)
+                await worker.run()
+                stage.onCompleted(self)
+        except asyncio.CancelledError:
+            logger.info("{} stopped", self.title)
+            raise
+        except Exception as e:
+            if currentStage is not None and not currentStage.error:
+                currentStage.setError(e)
+            logger.opt(exception=e).error("{} failed", self.title)
+            raise
 
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
-        if type(self).__name__ != "Task":
-            obj["type"] = type(self).__name__
+        obj.pop("stageType", None)
         if "stages" in obj:
             obj["stages"] = [loads(stage.serialize()) for stage in self.stages]
+        if "files" in obj and self.files is not None:
+            obj["files"] = [_toSerializable(f) for f in self.files]
         return dumps(obj)
-
-    _registry: ClassVar[Dict[str, Type["Task"]]] = {}
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        Task._registry[cls.__name__] = cls
 
     @classmethod
     def deserialize(cls, data: Any) -> "Task":
@@ -257,48 +328,29 @@ class Task:
         else:
             obj = data
 
-        targetCls: Type[Task] = cls
-        if "type" in obj and isinstance(obj["type"], str):
-            targetCls = Task._registry.get(obj["type"], cls)
-            obj.pop("type", None)
+        obj.pop("type", None)
 
         if "status" in obj and isinstance(obj["status"], str):
             obj["status"] = TaskStatus[obj["status"]]
         if "path" in obj and isinstance(obj["path"], str):
             obj["path"] = Path(obj["path"])
 
-        rawStages = obj.get("stages", [])
-        stages: list = []
-        for raw in rawStages:
-            stages.append(TaskStage.deserialize(raw))
+        rawStages = obj.pop("stages", [])
+        stages = [TaskStage.deserialize(raw) for raw in rawStages]
         obj["stages"] = stages
 
-        return targetCls(**_filterDataclassKwargs(targetCls, obj))
+        rawFiles = obj.pop("files", None)
+        if rawFiles is not None:
+            obj["files"] = [TaskFile(**_filterDataclassKwargs(TaskFile, f)) for f in rawFiles]
 
-    def applyPayloadToTask(self, payload: dict[str, Any]):
-        path = payload.get("path")
-        if isinstance(path, (str, Path)):
-            self.path = Path(path)
-
-    def canPause(self) -> bool:
-        return True
-
-    def occupiesDownloadSlot(self) -> bool:
-        return self.status == TaskStatus.RUNNING
-
-    def willOccupyDownloadSlotWhenStarted(self) -> bool:
-        return True
-
-    async def run(self):
-        self.stages.sort(key=lambda stage: stage.stageIndex)
-        raise NotImplementedError
+        return cls(**_filterDataclassKwargs(cls, obj))
 
     def __hash__(self):
         return hash(self.taskId)
 
+
 class PackConfig:
     def __init_subclass__(cls, **kwargs):
-        """将子类的所有 ConfigItem 成员添加到 cfg 中，并使用 cfg.load 重新加载配置文件"""
         super().__init_subclass__(**kwargs)
 
         for attr_name, attr_value in cls.__dict__.items():
@@ -307,12 +359,10 @@ class PackConfig:
 
         cfg.load()
 
-    def loadSettingCards(self, settingPage: "SettingPage"):
-        """加载设置界面上的设置卡片，子类可重写此方法以添加自定义的设置卡片"""
+    def setupSettings(self, settingPage: "SettingPage"):
         raise NotImplementedError
 
-    def getDialogCards(self, parent: "QWidget") -> Iterable["SettingCard"]:
-        """在解析时往解析窗口加入设置卡片"""
+    def dialogCards(self, parent: "QWidget") -> Iterable["SettingCard"]:
         return []
 
     def tr(self, text: str) -> str:

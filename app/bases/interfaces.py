@@ -13,36 +13,31 @@ class Worker:
     def __init__(self, stage: TaskStage):
         self.stage = stage
 
-
-class FeaturePack:
-    priority: int = 0
-    taskType: type["Task"] | tuple[type["Task"], ...] | None = None
-    config: "PackConfig | None" = None
-
-    def canHandle(self, url: str) -> bool:
-        return False
-
-    async def parse(self, payload: dict) -> "Task":
+    async def run(self):
         raise NotImplementedError
 
-    async def createTaskFromPayload(self, payload: dict) -> "Task | None":
-        return None
 
-    def canHandleTask(self, task: "Task") -> bool:
-        if self.taskType is not None and isinstance(task, self.taskType):
-            return True
+class FeaturePack:
+    packId: str
+    priority: int = 0
+    config: "PackConfig | None" = None
 
-        taskUrl = getattr(task, "url", None)
-        if isinstance(taskUrl, str):
-            return self.canHandle(taskUrl)
-
+    def matches(self, url: str) -> bool:
         return False
 
-    def createTaskCard(self, task: "Task", parent=None) -> "TaskCard | None":
-        return None
+    async def resolve(self, payload: dict) -> dict:
+        return payload
 
-    def createResultCard(self, task: "Task", parent=None) -> "ResultCard | None":
-        return None
+    def build(self, payload: dict) -> "Task":
+        raise NotImplementedError
 
-    def load(self, mainWindow: "MainWindow"):
+    def taskCard(self, task: "Task", parent=None) -> "TaskCard | None":
+        from app.view.components.cards import TaskCard
+        return TaskCard(task, parent)
+
+    def resultCard(self, task: "Task", parent=None) -> "ResultCard | None":
+        from app.view.components.cards import ResultCard
+        return ResultCard(task, parent)
+
+    def setup(self, mainWindow: "MainWindow"):
         pass

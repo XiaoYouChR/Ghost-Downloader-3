@@ -12,20 +12,17 @@ from app.bases.models import Task
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
-
     from app.view.windows.main_window import MainWindow
 
 
 class FeatureService:
-    """从 features 文件夹加载 features pack, 当 CoreService 询问时, 返回对应动态加载的函数"""
-
     def __init__(self):
         self.loadedPacks: Dict[str, Any] = {}
         self.featuresPath = Path(__file__).parent.parent.parent / "features"
         self.sortedPacksCache: list[tuple[str, FeaturePack]] = []
+        self._packById: Dict[str, FeaturePack] = {}
 
     def discoverFeaturePacks(self) -> list:
-        """发现 features 文件夹中的所有 feature packs"""
         featurePacks = []
 
         if not self.featuresPath.exists():
@@ -139,6 +136,11 @@ class FeatureService:
         ]
         self.sortedPacksCache.sort(key=lambda item: (item[1].priority, item[0]))
 
+        self._packById = {
+            pack.packId: pack
+            for _, pack in self.sortedPacksCache
+        }
+
     def _loadPackConfig(self, packInstance: FeaturePack, mainWindow: "MainWindow"):
         packConfig = packInstance.config
         if packConfig is None:
@@ -148,9 +150,9 @@ class FeatureService:
         if settingPage is None:
             return
 
-        packConfig.loadSettingCards(settingPage)
+        packConfig.setupSettings(settingPage)
 
-    def getDialogCards(self, parent) -> list["ParseSettingCard"]:
+    def dialogCards(self, parent) -> list["ParseSettingCard"]:
         cards = []
         for packName, packInstance in self.sortedPacksCache:
             packConfig = packInstance.config
@@ -158,7 +160,7 @@ class FeatureService:
                 continue
 
             try:
-                cards.extend(packConfig.getDialogCards(parent))
+                cards.extend(packConfig.dialogCards(parent))
             except Exception as e:
                 logger.opt(exception=e).error("获取 FeaturePack 对话框设置项失败 {}", packName)
         return cards
@@ -169,7 +171,6 @@ class FeatureService:
         mainWindow: "MainWindow",
         refreshCache: bool = True,
     ):
-        """加载单个 feature pack"""
         try:
             packageName = packInfo["name"]
             moduleName = packageName
@@ -213,7 +214,7 @@ class FeatureService:
 
             packInstance = featurePackClass()
             self._loadPackConfig(packInstance, mainWindow)
-            packInstance.load(mainWindow)
+            packInstance.setup(mainWindow)
 
             self.loadedPacks[packInfo["name"]] = {
                 "instance": packInstance,
@@ -233,123 +234,76 @@ class FeatureService:
             logger.opt(exception=e).error("加载 FeaturePack 失败 {}", packInfo["name"])
             return False
 
-    def _matchPackForUrl(self, url: str) -> tuple[str, FeaturePack] | tuple[None, None]:
-        for packName, packInstance in self.sortedPacksCache:
-            try:
-                if packInstance.canHandle(url):
-                    return packName, packInstance
-            except Exception as e:
-                logger.opt(exception=e).error("FeaturePack.canHandle 失败 {}", packName)
-        return None, None
-
-    def getPackForUrl(
-        self,
-        url: str,
-    ) -> tuple[str, str | None, FeaturePack | None]:
-        url = str(url).strip()
+    def normalizeUrl(self, url: str) -> str:
+        url = url.strip()
         if not url:
-            return "", None, None
+            return url
+        if not urlparse(url).scheme:
+            return f"http://{url}"
+        return url
 
-        packName, packInstance = self._matchPackForUrl(url)
-        if packInstance is not None:
-            return url, packName, packInstance
-
-        if urlparse(url).scheme:
-            return url, None, None
-
-        implicitUrl = f"http://{url}"
-        packName, packInstance = self._matchPackForUrl(implicitUrl)
-        if packInstance is None:
-            return url, None, None
-
-        return implicitUrl, packName, packInstance
-
-    def canHandle(self, url: str) -> bool:
-        _, _, packInstance = self.getPackForUrl(url)
-        return packInstance is not None
-
-    def canCreateTaskFromPayload(self, url: str) -> bool:
-        _, _, packInstance = self.getPackForUrl(url)
-        if packInstance is None:
-            return False
-
-        return type(packInstance).createTaskFromPayload is not FeaturePack.createTaskFromPayload
-
-    def getPackForTask(self, task: Task) -> tuple[str, FeaturePack] | tuple[None, None]:
-        cachedPackName = getattr(task, "_featurePackName", None)
-        if (
-            isinstance(cachedPackName, str)
-            and cachedPackName in self.loadedPacks
-            and isinstance(self.loadedPacks[cachedPackName]["instance"], FeaturePack)
-        ):
-            return cachedPackName, self.loadedPacks[cachedPackName]["instance"]
-
+    def matchPack(self, url: str) -> tuple[str, FeaturePack] | None:
         for packName, packInstance in self.sortedPacksCache:
             try:
-                if packInstance.canHandleTask(task):
+                if packInstance.matches(url):
                     return packName, packInstance
             except Exception as e:
-                logger.opt(exception=e).error("FeaturePack.canHandleTask 失败 {}", packName)
-        return None, None
+                logger.opt(exception=e).error("FeaturePack.matches 失败 {}", packName)
+        return None
 
-    async def parse(self, payload: dict) -> Task:
+    def packOf(self, task: Task) -> FeaturePack | None:
+        return self._packById.get(task.packId)
+
+    async def resolve(self, payload: dict) -> Task:
         url = str(payload.get("url", "")).strip()
         if not url:
             raise ValueError("URL 不能为空")
 
-        resolvedUrl, packName, packInstance = self.getPackForUrl(url)
-        if packInstance is None:
+        normalizedUrl = self.normalizeUrl(url)
+        result = self.matchPack(normalizedUrl)
+        if result is None:
             raise ValueError(f"未找到可处理该链接的 FeaturePack: {url}")
 
-        if payload.get("url") != resolvedUrl:
+        packName, packInstance = result
+
+        if payload.get("url") != normalizedUrl:
             payload = payload.copy()
-            payload["url"] = resolvedUrl
+            payload["url"] = normalizedUrl
 
-        task = await packInstance.parse(payload)
-        setattr(task, "_featurePackName", packName)
-        return task
+        resolvedPayload = await packInstance.resolve(payload)
+        return packInstance.build(resolvedPayload)
 
-    async def createTaskFromPayload(self, payload: dict) -> Task:
+    def build(self, payload: dict) -> Task:
         url = str(payload.get("url", "")).strip()
         if not url:
             raise ValueError("URL 不能为空")
 
-        resolvedUrl, packName, packInstance = self.getPackForUrl(url)
-        if packInstance is None:
+        normalizedUrl = self.normalizeUrl(url)
+        result = self.matchPack(normalizedUrl)
+        if result is None:
             raise ValueError(f"未找到可处理该链接的 FeaturePack: {url}")
 
-        if payload.get("url") != resolvedUrl:
+        packName, packInstance = result
+
+        if payload.get("url") != normalizedUrl:
             payload = payload.copy()
-            payload["url"] = resolvedUrl
+            payload["url"] = normalizedUrl
 
-        task = await packInstance.createTaskFromPayload(payload)
-        if task is None:
-            raise ValueError(f"FeaturePack 不支持从已有 Payload 直接创建任务: {resolvedUrl}")
-        setattr(task, "_featurePackName", packName)
-        return task
+        return packInstance.build(payload)
 
-    def createTaskCard(self, task: Task, parent=None):
-        packName, packInstance = self.getPackForTask(task)
+    def taskCard(self, task: Task, parent=None):
+        packInstance = self.packOf(task)
         if packInstance is None:
-            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.taskId}")
+            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.packId}")
+        return packInstance.taskCard(task, parent)
 
-        card = packInstance.createTaskCard(task, parent)
-        if card is None:
-            raise ValueError(f"FeaturePack 未提供 TaskCard: {packName}")
-        return card
-
-    def createResultCard(self, task: Task, parent=None):
-        packName, packInstance = self.getPackForTask(task)
+    def resultCard(self, task: Task, parent=None):
+        packInstance = self.packOf(task)
         if packInstance is None:
-            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.taskId}")
-
-        card = packInstance.createResultCard(task, parent)
-        if card is None:
-            raise ValueError(f"FeaturePack 未提供 ResultCard: {packName}")
-        return card
+            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.packId}")
+        return packInstance.resultCard(task, parent)
 
     def loadFeatures(self, mainWindow: "MainWindow"):
-        """从 ./features 文件夹自动发现并加载所有 feature packs"""
         logger.info("开始加载 FeaturePacks")
         self.sortedPacksCache = []
 
