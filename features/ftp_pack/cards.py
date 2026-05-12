@@ -42,7 +42,7 @@ def _openFileSelection(task: FtpTask, parent) -> set[int] | None:
         if not dialog.exec():
             return None
         selectedIndexes = dialog.selectedIndexes()
-        task.updateSelectedFiles(selectedIndexes)
+        task.setSelection(selectedIndexes)
         return selectedIndexes
     finally:
         dialog.deleteLater()
@@ -79,7 +79,7 @@ class FtpResultCard(ResultCard):
         self.setFixedHeight(50)
         icon = (
             QFileIconProvider().icon(QFileIconProvider.IconType.Folder)
-            if self.task.isDirectorySource
+            if self.task.isDirectory
             else QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         )
         self.iconLabel.setIcon(icon)
@@ -89,7 +89,7 @@ class FtpResultCard(ResultCard):
         self.titleEdit.setText(self.task.title)
         self.titleEdit.editingFinished.connect(self._onEditingFinished)
         self.titleEdit.hide()
-        self.selectFilesButton.setVisible(self.task.totalFileCount > 1)
+        self.selectFilesButton.setVisible(self.task.countAll > 1)
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
     def _initLayout(self):
@@ -133,18 +133,18 @@ class FtpResultCard(ResultCard):
         self.titleLabel.setFocus()
 
     def _sourceText(self) -> str:
-        sourceType = self.tr("FTP 目录") if self.task.isDirectorySource else self.tr("FTP 文件")
+        sourceType = self.tr("FTP 目录") if self.task.isDirectory else self.tr("FTP 文件")
         return self.tr("{0} · {1}").format(
             sourceType,
             self.task.connectionInfo.host,
         )
 
     def _refreshSummary(self):
-        if self.task.totalFileCount > 1 or self.task.isDirectorySource:
+        if self.task.countAll > 1 or self.task.isDirectory:
             self.summaryLabel.setText(
                 self.tr("{0}/{1} 个文件 · {2}").format(
-                    self.task.selectedFileCount,
-                    self.task.totalFileCount,
+                    self.task.countSelected,
+                    self.task.countAll,
                     getReadableSize(self.task.fileSize),
                 )
             )
@@ -177,7 +177,7 @@ class FtpTaskCard(UniversalTaskCard):
         self._refreshIconLabel()
 
     def _refreshIconLabel(self):
-        if self.task.isDirectorySource:
+        if self.task.isDirectory:
             icon = QFileIconProvider().icon(QFileIconProvider.IconType.Folder)
         else:
             icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
@@ -207,10 +207,10 @@ class FtpTaskCard(UniversalTaskCard):
             return super().statusInfoText()
 
         if self.task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED}:
-            if self.task.totalFileCount > 1 or self.task.isDirectorySource:
+            if self.task.countAll > 1 or self.task.isDirectory:
                 return self.tr("{0}/{1} 个文件").format(
-                    self.task.selectedFileCount,
-                    self.task.totalFileCount,
+                    self.task.countSelected,
+                    self.task.countAll,
                 )
 
         return super().statusInfoText()
@@ -249,7 +249,7 @@ class FtpTaskCard(UniversalTaskCard):
         if (
             self.task.status == TaskStatus.COMPLETED
             and selectedIndexes - previousSelected
-            and self.task.reopenForAdditionalFiles()
+            and self.task.reopen()
         ):
             self.resumeTask()
             return
@@ -260,19 +260,19 @@ class FtpTaskCard(UniversalTaskCard):
     def refresh(self):
         super().refresh()
         self.verifyHashButton.setVisible(
-            not self.task.isDirectorySource
-            and self.task.selectedFileCount == 1
+            not self.task.isDirectory
+            and self.task.countSelected == 1
             and self.task.status == TaskStatus.COMPLETED
             and Path(self.task.outputFolder).is_file()
         )
-        self.selectFilesButton.setVisible(self.task.totalFileCount > 1)
+        self.selectFilesButton.setVisible(self.task.countAll > 1)
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
 
     def onTaskDeleted(self, completely: bool = False):
         if not completely:
             return
 
-        if self.task.isDirectorySource:
+        if self.task.isDirectory:
             _removePath(Path(self.task.outputFolder))
             return
 

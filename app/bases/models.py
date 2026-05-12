@@ -267,7 +267,7 @@ class Task:
         from app.supports.recorder import taskRecorder
         taskRecorder.flush()
 
-    def updateSelectedFiles(self, selectedIndexes: list[int]):
+    def setSelection(self, selectedIndexes: list[int]):
         if self.files is None or self.stageType is None:
             return
 

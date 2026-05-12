@@ -42,7 +42,7 @@ def _openFileSelection(task: BTTask, parent) -> set[int] | None:
         if not dialog.exec():
             return None
         selectedIndexes = dialog.selectedIndexes()
-        task.updateSelectedFiles(selectedIndexes)
+        task.setSelection(selectedIndexes)
         return selectedIndexes
     finally:
         dialog.deleteLater()
@@ -54,7 +54,7 @@ class TorrentFileSelectDialog(FileSelectDialog):
         self.task: BTTask = task
 
     def _fileDisplayPath(self, file: BTFile) -> str:
-        return self.task.mappedRelativePath(file)
+        return self.task.mapPath(file)
 
     def _fileTypePath(self, file: BTFile) -> str:
         return file.path
@@ -80,7 +80,7 @@ class BitTorrentResultCard(ResultCard):
     def _initWidget(self):
         self.setFixedHeight(45)
         self.iconLabel.setFixedSize(20, 20)
-        icon = QFileIconProvider.IconType.File if self.task.isSingleFileTorrent else QFileIconProvider.IconType.Folder
+        icon = QFileIconProvider.IconType.File if self.task.isSingleFile else QFileIconProvider.IconType.Folder
         self.iconLabel.setIcon(QFileIconProvider().icon(icon))
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
@@ -108,8 +108,8 @@ class BitTorrentResultCard(ResultCard):
     def _refreshSummary(self):
         self.summaryLabel.setText(
             self.tr("{0}/{1} 个文件 · {2}").format(
-                self.task.selectedFileCount,
-                self.task.totalFileCount,
+                self.task.countSelected,
+                self.task.countAll,
                 getReadableSize(self.task.fileSize),
             )
         )
@@ -187,7 +187,7 @@ class BTTaskCard(UniversalTaskCard):
             return
 
         self._refreshInfoLayout()
-        if self.task.status == TaskStatus.COMPLETED and selectedIndexes - previousSelected and self.task.reopenForAdditionalFiles():
+        if self.task.status == TaskStatus.COMPLETED and selectedIndexes - previousSelected and self.task.reopen():
             self.resumeTask()
 
     def refresh(self):
@@ -195,11 +195,11 @@ class BTTaskCard(UniversalTaskCard):
         self._refreshInfoLayout()
         self.progressBar.setVisible(self.task.status != TaskStatus.COMPLETED and not self.task.isSeeding)
         self.verifyHashButton.setVisible(
-            self.task.isSingleFileTorrent
+            self.task.isSingleFile
             and self.task.status == TaskStatus.COMPLETED
             and Path(self.task.outputFolder).is_file()
         )
-        self.selectFilesButton.setEnabled(self.task.status != TaskStatus.COMPLETED or self.task.hasUnselectedFiles)
+        self.selectFilesButton.setEnabled(self.task.status != TaskStatus.COMPLETED or self.task.hasUnselected)
 
     def onTaskDeleted(self, completely: bool = False):
         if not completely:

@@ -360,21 +360,21 @@ class BTTask(Task):
     def syncStagePaths(self):
         self.stage.outputFile = self.outputFolder
 
-    def mappedRelativePath(self, file: BTFile) -> str:
-        if self.isSingleFileTorrent:
+    def mapPath(self, file: BTFile) -> str:
+        if self.isSingleFile:
             return self.title.replace("\\", "/")
 
         parts = list(PurePosixPath(file.path).parts)
         parts[0] = self.title
         return str(PurePosixPath(*parts))
 
-    def filePriorities(self) -> list[int]:
+    def priorities(self) -> list[int]:
         return [file.priority if file.selected else 0 for file in self.files]
 
     def _recalculateSelection(self):
         self.fileSize = sum(file.size for file in self.files if file.selected)
 
-    def updateSelectedFiles(self, selectedIndexes: set[int]):
+    def setSelection(self, selectedIndexes: set[int]):
         if not selectedIndexes:
             raise ValueError("至少需要选择一个文件")
 
@@ -396,7 +396,7 @@ class BTTask(Task):
         self.fileSelectionVersion += 1
         self._recalculateSelection()
 
-    def reopenForAdditionalFiles(self) -> bool:
+    def reopen(self) -> bool:
         if self.stage.status != TaskStatus.COMPLETED:
             return False
 
@@ -413,7 +413,7 @@ class BTTask(Task):
             self.stage.progress = 0
         return True
 
-    def updateFileProgress(self, progresses: list[int]):
+    def setProgress(self, progresses: list[int]):
         for file in self.files:
             if not file.selected:
                 file.downloadedBytes = 0
@@ -475,7 +475,7 @@ class BTWorker(Worker):
     def _applyTaskParams(self, params: lt.add_torrent_params):
         params.save_path = str(self.task.path)
         params.storage_mode = _storageMode(self.task.storageMode)
-        params.file_priorities = self.task.filePriorities()
+        params.file_priorities = self.task.priorities()
         params.download_limit = self.task.downloadRateLimit
         params.upload_limit = self.task.uploadRateLimit
         params.max_connections = self.task.connectionsLimit
@@ -507,7 +507,7 @@ class BTWorker(Worker):
             return
 
         for file in self.task.files:
-            mappedPath = self.task.mappedRelativePath(file)
+            mappedPath = self.task.mapPath(file)
             if mappedPath == file.path:
                 continue
             self.handle.rename_file(file.index, mappedPath)
@@ -515,7 +515,7 @@ class BTWorker(Worker):
     def _applyFileSelection(self):
         if self.handle is None or self._appliedSelectionVersion == self.task.fileSelectionVersion:
             return
-        self.handle.prioritize_files(self.task.filePriorities())
+        self.handle.prioritize_files(self.task.priorities())
         self.handle.set_sequential_download(self.task.sequentialDownload)
         self.handle.set_max_connections(self.task.connectionsLimit)
         self.handle.set_download_limit(self.task.downloadRateLimit)
@@ -585,7 +585,7 @@ class BTWorker(Worker):
             progresses = list(self.handle.file_progress())
         except Exception:
             return
-        self.task.updateFileProgress(progresses)
+        self.task.setProgress(progresses)
 
     def _seedPauseReason(self) -> str:
         if not self.task.isSeeding:
@@ -875,7 +875,7 @@ async def _resolveMagnetMetadata(payload: dict) -> tuple[lt.torrent_info, list[s
     )
 
 
-def buildTaskFromTorrentInfo(
+def buildTask(
     ti: lt.torrent_info,
     *,
     payload: dict,
@@ -939,7 +939,7 @@ async def parse(payload: dict) -> BTTask:
             _resolveAdditionalTrackers(),
         )
         ti = lt.torrent_info(torrentBytes)
-        return buildTaskFromTorrentInfo(
+        return buildTask(
             ti,
             payload=payload,
             sourceType="torrent",
@@ -952,7 +952,7 @@ async def parse(payload: dict) -> BTTask:
 
     if parsedUrl.scheme.lower() == "magnet":
         ti, trackers, torrentBytes = await _resolveMagnetMetadata(payload)
-        return buildTaskFromTorrentInfo(
+        return buildTask(
             ti,
             payload=payload,
             sourceType="magnet",
@@ -966,7 +966,7 @@ async def parse(payload: dict) -> BTTask:
         _resolveAdditionalTrackers(),
     )
     ti = lt.torrent_info(torrentBytes)
-    return buildTaskFromTorrentInfo(
+    return buildTask(
         ti,
         payload=payload,
         sourceType="torrent",
