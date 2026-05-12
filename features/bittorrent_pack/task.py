@@ -404,6 +404,7 @@ class BTTask(Task):
             return False
 
         self.isSeeding = False
+        self._updateSlot()
         self.stage.stateText = "已添加新的下载文件"
         self.stage.setStatus(TaskStatus.PAUSED)
         self.stage.receivedBytes = sum(file.downloadedBytes for file in self.files if file.selected)
@@ -435,14 +436,14 @@ class BTTask(Task):
         self.shareRatioPercent = 0
         self.seedingTimeSeconds = 0
         self.isSeeding = False
+        self._updateSlot()
         for file in self.files:
             file.downloadedBytes = 0
             file.completed = False
         return result
 
-    @property
-    def usesSlot(self) -> bool:
-        return not self.isSeeding
+    def _updateSlot(self):
+        self.usesSlot = not self.isSeeding
 
     async def run(self):
         try:
@@ -545,6 +546,7 @@ class BTWorker(Worker):
         self.stage.peerCount = int(status.num_peers)
         self.stage.seedCount = int(status.num_seeds)
         self.task.isSeeding = isSeeding
+        self.task._updateSlot()
         self.stage.downloadRate = int(status.download_rate)
         self.stage.uploadRate = int(status.upload_rate)
         self.task.shareRatioPercent = _shareRatioPercent(status)

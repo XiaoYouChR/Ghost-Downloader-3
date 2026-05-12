@@ -39,6 +39,10 @@ def _toSerializable(obj: Any) -> Any:
 
 def _filterDataclassKwargs(cls: type, obj: dict[str, Any]) -> dict[str, Any]:
     allowed = {field.name for field in dataclass_fields(cls) if field.init}
+    for klass in cls.__mro__:
+        for name, val in vars(klass).items():
+            if isinstance(val, property):
+                allowed.discard(name)
     return {key: value for key, value in obj.items() if key in allowed}
 
 
@@ -322,11 +326,35 @@ class Task:
     def serialize(self) -> bytes:
         obj = _toSerializable(self)
         obj.pop("stageType", None)
+        if type(self).__name__ != "Task":
+            obj["type"] = type(self).__name__
         if "stages" in obj:
             obj["stages"] = [loads(stage.serialize()) for stage in self.stages]
         if "files" in obj and self.files is not None:
             obj["files"] = [_toSerializable(f) for f in self.files]
         return dumps(obj)
+
+    _registry: ClassVar[Dict[str, Type["Task"]]] = {}
+
+    _TYPE_TO_PACK_ID: ClassVar[Dict[str, str]] = {
+        "HttpTask": "http",
+        "BilibiliTask": "bili",
+        "M3U8Task": "m3u8",
+        "M3U8InstallTask": "m3u8",
+        "FFmpegMergeTask": "ffmpeg",
+        "FFmpegInstallTask": "ffmpeg",
+        "BitTorrentTask": "bt",
+        "BTTask": "bt",
+        "FtpTask": "ftp",
+    }
+
+    _TYPE_ALIASES: ClassVar[Dict[str, str]] = {
+        "BitTorrentTask": "BTTask",
+    }
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Task._registry[cls.__name__] = cls
 
     @classmethod
     def deserialize(cls, data: Any) -> "Task":
@@ -335,7 +363,15 @@ class Task:
         else:
             obj = data
 
-        obj.pop("type", None)
+        typeName = obj.pop("type", None)
+
+        targetCls = cls
+        if isinstance(typeName, str):
+            resolvedName = Task._TYPE_ALIASES.get(typeName, typeName)
+            targetCls = Task._registry.get(resolvedName, cls)
+
+        if "packId" not in obj and isinstance(typeName, str):
+            obj["packId"] = Task._TYPE_TO_PACK_ID.get(typeName, "http")
 
         if "status" in obj and isinstance(obj["status"], str):
             obj["status"] = TaskStatus[obj["status"]]
@@ -350,7 +386,7 @@ class Task:
         if rawFiles is not None:
             obj["files"] = [TaskFile(**_filterDataclassKwargs(TaskFile, f)) for f in rawFiles]
 
-        return cls(**_filterDataclassKwargs(cls, obj))
+        return targetCls(**_filterDataclassKwargs(targetCls, obj))
 
     def __hash__(self):
         return hash(self.taskId)
