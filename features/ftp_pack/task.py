@@ -27,11 +27,8 @@ FTP_RETRY_DELAY = 5
 FTP_DEFAULT_PORT = 21
 FTPS_DEFAULT_PORT = 990
 
-def _parsePositiveSize(value: Any) -> int:
-    try:
-        size = int(value)
-    except (TypeError, ValueError):
-        return SpecialFileSize.UNKNOWN
+def _parseSize(value) -> int:
+    size = int(value or 0)
     return size if size > 0 else SpecialFileSize.UNKNOWN
 
 
@@ -106,7 +103,6 @@ class FtpConnectionInfo:
     sourcePath: str = "/"
     portSpecified: bool = False
 
-# 选了不一定下载, 故拆成 FtpFile 和 FtpStage.
 @dataclass
 class FtpFile:
     index: int
@@ -185,9 +181,9 @@ class FtpTask(Task):
     def syncStagePaths(self):
         rootPath = Path(self.path) / self.title
         if not self.isDirectory:
-            resolvePath = str(rootPath)
+            outputFile = str(rootPath)
             for stage in self.stages:
-                stage.outputFile = resolvePath
+                stage.outputFile = outputFile
             return
 
         for stage in self.stages:
@@ -296,18 +292,23 @@ class FtpTask(Task):
     def applySettings(self, payload: dict[str, Any]):
         super().applySettings(payload)
         if "proxies" in payload:
-            self.proxies = payload.get("proxies")
-        blockNum = payload.get("preBlockNum")
-        if isinstance(blockNum, int):
-            self.blockNum = blockNum
+            self.proxies = payload["proxies"]
+        if "preBlockNum" in payload:
+            self.blockNum = payload["preBlockNum"]
         self.syncStagePaths()
 
     def canPause(self) -> bool:
         selectedStages = self.selectedStages
         return bool(selectedStages) and all(stage.supportsRange for stage in selectedStages)
 
-    def stagesForExecution(self):
-        return self.selectedStages
+    def pendingStages(self):
+        self.stages.sort(key=lambda stage: stage.stageIndex)
+        for stage in self.selectedStages:
+            if self.status != TaskStatus.RUNNING:
+                break
+            if stage.status == TaskStatus.COMPLETED:
+                continue
+            yield stage
 
     async def run(self):
         currentStage = None
@@ -323,9 +324,6 @@ class FtpTask(Task):
                 currentStage.setError(e)
             logger.opt(exception=e).error("{} 下载失败", self.title)
             raise
-
-    def __hash__(self):
-        return hash(self.taskId)
 
 
 @dataclass
@@ -866,7 +864,7 @@ async def parse(payload: dict) -> FtpTask:
                     index=0,
                     remotePath=str(sourcePath),
                     relativePath=sourcePath.name or "ftp_file",
-                    size=_parsePositiveSize(sourceInfo.get("size")),
+                    size=_parseSize(sourceInfo.get("size")),
                 )
             )
         else:
@@ -880,7 +878,7 @@ async def parse(payload: dict) -> FtpTask:
                         index=index,
                         remotePath=str(remotePath),
                         relativePath=_relativeRemotePath(remotePath, sourcePath),
-                        size=_parsePositiveSize(info.get("size")),
+                        size=_parseSize(info.get("size")),
                     )
                 )
                 index += 1
