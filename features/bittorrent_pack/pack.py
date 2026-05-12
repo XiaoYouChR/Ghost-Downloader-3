@@ -8,7 +8,7 @@ from app.services.core_service import coreService
 
 from .cards import BitTorrentResultCard, BTTaskCard
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
-from .task import BTTask, parse, resolveLocalTorrentPath
+from .task import BTTask, resolve as _btResolve, resolveLocalTorrentPath
 
 
 def _isTorrentUrl(url: str) -> bool:
@@ -42,10 +42,10 @@ class BitTorrentPack(FeaturePack):
         return _isTorrentUrl(url)
 
     async def resolve(self, payload: dict) -> dict:
-        return payload
+        return {"_task": await _btResolve(payload)}
 
     def build(self, payload: dict) -> Task:
-        raise NotImplementedError("Use resolve() for BitTorrent tasks")
+        return payload["_task"]
 
     def taskCard(self, task, parent=None):
         return BTTaskCard(task, parent)
