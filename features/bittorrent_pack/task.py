@@ -23,15 +23,6 @@ from .trackers import mergeTrackers
 BITTORRENT_USER_AGENT = f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}"
 
 
-def _storageMode(mode: str) -> int:
-    if mode == "allocate":
-        return lt.storage_mode_t.storage_mode_allocate
-    return lt.storage_mode_t.storage_mode_sparse
-
-def _normalizeTorrentPath(path: str) -> str:
-    return str(PurePosixPath(str(path).replace("\\", "/")))
-
-
 def resolveLocalTorrentPath(source: str) -> Path | None:
     text = str(source).strip()
     if not text:
@@ -49,13 +40,6 @@ def resolveLocalTorrentPath(source: str) -> Path | None:
     path = Path(text).expanduser()
     return path if path.suffix.lower() == ".torrent" else None
 
-
-def _encodeBytes(data: bytes) -> str:
-    return b64encode(data).decode("ascii")
-
-
-def _decodeBytes(data: str) -> bytes:
-    return b64decode(data.encode("ascii"))
 
 
 def _proxyTypeForScheme(scheme: str) -> int:
@@ -186,10 +170,6 @@ def _createSession(
     return session
 
 
-def _torrentBytesFromInfo(ti: lt.torrent_info) -> bytes:
-    return lt.bencode(lt.create_torrent(ti).generate())
-
-
 def _extractTrackers(ti: lt.torrent_info) -> list[str]:
     trackers: list[str] = []
     for tracker in list(ti.trackers()):
@@ -199,15 +179,7 @@ def _extractTrackers(ti: lt.torrent_info) -> list[str]:
     return trackers
 
 
-def _isPadFile(files: lt.file_storage, index: int) -> bool:
-    return bool(files.file_flags(index) & lt.file_storage.flag_pad_file)
-
-
-def _metadataTempPath() -> Path:
-    return Path(gettempdir()) / "ghost_downloader_bt_metadata"
-
-
-def _forceMetadataPeerDiscovery(handle: lt.torrent_handle, *, enableDHT: bool):
+def _forcePeerDiscovery(handle: lt.torrent_handle, *, enableDHT: bool):
     try:
         handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
     except Exception:
@@ -231,24 +203,8 @@ def _addTrackersToHandle(handle: lt.torrent_handle, trackers: list[str], knownTr
     return added
 
 
-def _shareRatioPercent(status: lt.torrent_status) -> float:
-    downloaded = int(status.all_time_download or status.total_wanted_done or status.total_done)
-    if downloaded == 0:
-        return 0.0
-    return status.all_time_upload / downloaded * 100
 
-
-def _durationSeconds(value: int | float | timedelta) -> int:
-    if isinstance(value, timedelta):
-        return int(value.total_seconds())
-    return int(value)
-
-
-def _seedingSeconds(status: lt.torrent_status) -> int:
-    return _durationSeconds(status.seeding_duration or status.seeding_time)
-
-
-async def _resolveAdditionalTrackers() -> list[str]:
+async def _fetchTrackers() -> list[str]:
     if not bittorrentConfig.enableWebTrackers.value:
         return []
 
@@ -272,7 +228,7 @@ class BTFile:
     completed: bool = False
 
     def __post_init__(self):
-        self.path = _normalizeTorrentPath(self.path)
+        self.path = str(PurePosixPath(str(self.path).replace("\\", "/")))
 
 
 @dataclass
@@ -473,9 +429,9 @@ class BTWorker(Worker):
         self._seedingTimeBaseSeconds = self.task.seedingTimeSeconds
         self._sessionSeedingStartSeconds: int | None = None
 
-    def _applyTaskParams(self, params: lt.add_torrent_params):
+    def _applyParams(self, params: lt.add_torrent_params):
         params.save_path = str(self.task.path)
-        params.storage_mode = _storageMode(self.task.storageMode)
+        params.storage_mode = lt.storage_mode_t.storage_mode_allocate if self.task.storageMode == "allocate" else lt.storage_mode_t.storage_mode_sparse
         params.file_priorities = self.task.priorities()
         params.download_limit = self.task.downloadRateLimit
         params.upload_limit = self.task.uploadRateLimit
@@ -483,19 +439,19 @@ class BTWorker(Worker):
         if self.task.trackers:
             params.trackers = self.task.trackers.copy()
 
-    def _buildAddTorrentParams(self) -> lt.add_torrent_params:
+    def _buildParams(self) -> lt.add_torrent_params:
         if self.task.resumeData:
             try:
-                params = lt.read_resume_data(_decodeBytes(self.task.resumeData))
+                params = lt.read_resume_data(b64decode(self.task.resumeData.encode("ascii")))
             except Exception as e:
                 logger.opt(exception=e).warning("读取 BitTorrent resume 数据失败，改用种子元数据 {}", self.task.title)
             else:
-                self._applyTaskParams(params)
+                self._applyParams(params)
                 return params
 
         params = lt.add_torrent_params()
-        params.ti = lt.torrent_info(_decodeBytes(self.task.torrentData))
-        self._applyTaskParams(params)
+        params.ti = lt.torrent_info(b64decode(self.task.torrentData.encode("ascii")))
+        self._applyParams(params)
         if self.task.sequentialDownload:
             params.flags = int(params.flags) | int(lt.torrent_flags.sequential_download)
         else:
@@ -503,7 +459,7 @@ class BTWorker(Worker):
         params.flags = int(params.flags) | int(lt.torrent_flags.update_subscribe)
         return params
 
-    def _applyRenameMapping(self):
+    def _renameFiles(self):
         if self.handle is None:
             return
 
@@ -513,7 +469,7 @@ class BTWorker(Worker):
                 continue
             self.handle.rename_file(file.index, mappedPath)
 
-    def _applyFileSelection(self):
+    def _syncSelection(self):
         if self.handle is None or self._appliedSelectionVersion == self.task.fileSelectionVersion:
             return
         self.handle.prioritize_files(self.task.priorities())
@@ -536,12 +492,12 @@ class BTWorker(Worker):
         }
         return mapping.get(status.state.name, status.state.name)
 
-    def _syncFromStatus(self, status: lt.torrent_status):
+    def _syncStatus(self, status: lt.torrent_status):
         wasSeeding = self.task.isSeeding
         totalWanted = int(status.total_wanted)
         totalWantedDone = int(status.total_wanted_done)
         isSeeding = bool(status.is_seeding)
-        sessionSeedingSeconds = _seedingSeconds(status)
+        sessionSeedingSeconds = int((status.seeding_duration or status.seeding_time).total_seconds() if isinstance(status.seeding_duration or status.seeding_time, timedelta) else int(status.seeding_duration or status.seeding_time))
         self.stage.stateText = self._stateText(status)
         self.stage.peerCount = int(status.num_peers)
         self.stage.seedCount = int(status.num_seeds)
@@ -549,7 +505,8 @@ class BTWorker(Worker):
         self.task._updateSlot()
         self.stage.downloadRate = int(status.download_rate)
         self.stage.uploadRate = int(status.upload_rate)
-        self.task.shareRatioPercent = _shareRatioPercent(status)
+        downloaded = int(status.all_time_download or status.total_wanted_done or status.total_done)
+        self.task.shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0
         if isSeeding:
             if not wasSeeding:
                 self._seedingTimeBaseSeconds = self.task.seedingTimeSeconds
@@ -580,7 +537,7 @@ class BTWorker(Worker):
 
             coreService.notifyTaskSchedulingChanged()
 
-    def _syncFileProgress(self):
+    def _syncFiles(self):
         if self.handle is None:
             return
         try:
@@ -589,7 +546,7 @@ class BTWorker(Worker):
             return
         self.task.setProgress(progresses)
 
-    def _seedPauseReason(self) -> str:
+    def _seedStopReason(self) -> str:
         if not self.task.isSeeding:
             return ""
 
@@ -606,7 +563,7 @@ class BTWorker(Worker):
 
         return ""
 
-    def _handleAlerts(self, alerts: list[lt.alert], *, raiseOnError: bool = True):
+    def _processAlerts(self, alerts: list[lt.alert], *, raiseOnError: bool = True):
         for alert in alerts:
             if isinstance(alert, lt.file_completed_alert):
                 for file in self.task.files:
@@ -635,7 +592,7 @@ class BTWorker(Worker):
             ):
                 raise RuntimeError(alert.message())
 
-    async def _saveResumeData(self) -> str:
+    async def _saveResume(self) -> str:
         if self.handle is None or self.session is None:
             return ""
 
@@ -652,17 +609,17 @@ class BTWorker(Worker):
             alerts = list(self.session.pop_alerts())
             for alert in alerts:
                 if isinstance(alert, lt.save_resume_data_alert):
-                    return _encodeBytes(lt.write_resume_data_buf(alert.params))
+                    return b64encode(lt.write_resume_data_buf(alert.params)).decode("ascii")
                 if isinstance(alert, lt.save_resume_data_failed_alert):
                     logger.warning("保存 BitTorrent resume 数据失败 {}: {}", self.task.title, alert.message())
                     return ""
-            self._handleAlerts(alerts, raiseOnError=False)
+            self._processAlerts(alerts, raiseOnError=False)
             await asyncio.sleep(0.1)
 
         logger.warning("等待 BitTorrent resume 数据超时 {}", self.task.title)
         return ""
 
-    async def _shutdownSession(self):
+    async def _shutdown(self):
         if self.handle is None or self.session is None:
             return
         try:
@@ -670,13 +627,13 @@ class BTWorker(Worker):
         except Exception:
             pass
 
-    def _saveMagnetTorrentFile(self):
+    def _saveMagnetFile(self):
         torrentPath = self.task.magnetTorrentPath
         if torrentPath is None:
             return
 
         try:
-            torrentPath.write_bytes(_decodeBytes(self.task.torrentData))
+            torrentPath.write_bytes(b64decode(self.task.torrentData.encode("ascii")))
         except Exception as e:
             logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", self.task.title)
 
@@ -686,7 +643,7 @@ class BTWorker(Worker):
             raise RuntimeError("至少需要选择一个文件")
 
         Path(self.task.path).mkdir(parents=True, exist_ok=True)
-        self._saveMagnetTorrentFile()
+        self._saveMagnetFile()
 
         self.session = _createSession(
             listenPort=self.task.listenPort,
@@ -701,26 +658,26 @@ class BTWorker(Worker):
         )
 
         try:
-            params = self._buildAddTorrentParams()
+            params = self._buildParams()
             self.handle = self.session.add_torrent(params)
-            self._applyRenameMapping()
-            self._applyFileSelection()
+            self._renameFiles()
+            self._syncSelection()
             self.session.resume()
             self.handle.resume()
 
             while True:
                 alerts = list(self.session.pop_alerts())
-                self._handleAlerts(alerts)
-                self._applyFileSelection()
+                self._processAlerts(alerts)
+                self._syncSelection()
 
                 status = self.handle.status()
-                self._syncFromStatus(status)
-                self._syncFileProgress()
+                self._syncStatus(status)
+                self._syncFiles()
 
-                pauseReason = self._seedPauseReason()
+                pauseReason = self._seedStopReason()
                 if pauseReason:
                     logger.info("{} 自动暂停做种: {}", self.task.title, pauseReason)
-                    self.task.resumeData = await self._saveResumeData()
+                    self.task.resumeData = await self._saveResume()
                     self.task.isSeeding = False
                     self.stage.stateText = "已自动暂停做种"
                     self.stage.setStatus(TaskStatus.COMPLETED)
@@ -730,22 +687,22 @@ class BTWorker(Worker):
 
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
-            self.task.resumeData = await asyncio.shield(self._saveResumeData())
+            self.task.resumeData = await asyncio.shield(self._saveResume())
             wasSeeding = self.task.isSeeding
             self.stage.stateText = "已暂停做种" if wasSeeding else "已暂停下载"
             self.stage.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
-            self.task.resumeData = await self._saveResumeData()
+            self.task.resumeData = await self._saveResume()
             self.stage.setError(e)
             raise
         finally:
-            await self._shutdownSession()
+            await self._shutdown()
             self.handle = None
             self.session = None
 
 
-async def _fetchTorrentBytes(payload: dict) -> bytes:
+async def _fetchTorrent(payload: dict) -> bytes:
     url = str(payload["url"]).strip()
     headers = payload.get("headers", DEFAULT_HEADERS)
     proxies = payload.get("proxies", getProxies())
@@ -772,14 +729,14 @@ async def _fetchTorrentBytes(payload: dict) -> bytes:
         await client.close()
 
 
-def _readLocalTorrentBytes(source: str) -> bytes:
+def _readLocalTorrent(source: str) -> bytes:
     torrentPath = resolveLocalTorrentPath(source)
     if torrentPath is None:
         raise ValueError("不是有效的本地 .torrent 文件路径")
     return torrentPath.resolve().read_bytes()
 
 
-def _resolveMagnetMetadataBlocking(
+def _resolveMagnetSync(
     url: str,
     *,
     proxies: dict | None,
@@ -814,16 +771,16 @@ def _resolveMagnetMetadataBlocking(
 
     params = lt.parse_magnet_uri(url)
     params.trackers = mergeTrackers(params.trackers.copy(), webTrackers)
-    _metadataTempPath().mkdir(parents=True, exist_ok=True)
-    params.save_path = str(_metadataTempPath())
-    params.storage_mode = _storageMode("sparse")
+    Path(gettempdir()) / "ghost_downloader_bt_metadata".mkdir(parents=True, exist_ok=True)
+    params.save_path = str(Path(gettempdir()) / "ghost_downloader_bt_metadata")
+    params.storage_mode = lt.storage_mode_t.storage_mode_sparse
     params.flags = int(params.flags) | int(lt.torrent_flags.default_dont_download)
     params.flags = int(params.flags) | int(lt.torrent_flags.update_subscribe)
 
     handle = session.add_torrent(params)
     session.resume()
     handle.resume()
-    _forceMetadataPeerDiscovery(handle, enableDHT=enableDHT)
+    _forcePeerDiscovery(handle, enableDHT=enableDHT)
 
     try:
         deadline = time.monotonic() + metadataTimeout
@@ -833,7 +790,7 @@ def _resolveMagnetMetadataBlocking(
                 if isinstance(alert, lt.metadata_received_alert):
                     ti = handle.torrent_file()
                     if ti is not None and ti.is_valid():
-                        return ti, params.trackers.copy(), _torrentBytesFromInfo(ti)
+                        return ti, params.trackers.copy(), lt.bencode(lt.create_torrent(ti).generate())
                 if isinstance(alert, lt.metadata_failed_alert):
                     raise RuntimeError(alert.message())
                 if isinstance(alert, (lt.torrent_error_alert, lt.file_error_alert)):
@@ -843,7 +800,7 @@ def _resolveMagnetMetadataBlocking(
             if status.has_metadata:
                 ti = handle.torrent_file()
                 if ti is not None and ti.is_valid():
-                    return ti, params.trackers.copy(), _torrentBytesFromInfo(ti)
+                    return ti, params.trackers.copy(), lt.bencode(lt.create_torrent(ti).generate())
 
             time.sleep(0.2)
 
@@ -855,13 +812,13 @@ def _resolveMagnetMetadataBlocking(
             pass
 
 
-async def _resolveMagnetMetadata(payload: dict) -> tuple[lt.torrent_info, list[str], bytes]:
+async def _resolveMagnet(payload: dict) -> tuple[lt.torrent_info, list[str], bytes]:
     url = str(payload["url"]).strip()
     proxies = payload.get("proxies", getProxies())
     enableDHT = bittorrentConfig.enableDHT.value
-    webTrackers = await _resolveAdditionalTrackers()
+    webTrackers = await _fetchTrackers()
     return await asyncio.to_thread(
-        _resolveMagnetMetadataBlocking,
+        _resolveMagnetSync,
         url,
         proxies=proxies,
         enableDHT=enableDHT,
@@ -889,7 +846,7 @@ def buildTask(
     files = ti.files()
     entries: list[BTFile] = []
     for index in range(ti.num_files()):
-        if _isPadFile(files, index):
+        if bool(files.file_flags(index) & lt.file_storage.flag_pad_file):
             continue
         entries.append(
             BTFile(
@@ -911,7 +868,7 @@ def buildTask(
         path=Path(payload.get("path", cfg.downloadFolder.value)),
         stages=[BTStage(stageIndex=1, outputFile="")],
         sourceType=sourceType,
-        torrentData=_encodeBytes(torrentBytes),
+        torrentData=b64encode(torrentBytes).decode("ascii"),
         trackers=trackers or _extractTrackers(ti),
         files=entries,
         proxies=payload.get("proxies", getProxies()),
@@ -937,8 +894,8 @@ async def parse(payload: dict) -> BTTask:
     localTorrentPath = resolveLocalTorrentPath(url)
     if localTorrentPath is not None:
         torrentBytes, webTrackers = await asyncio.gather(
-            asyncio.to_thread(_readLocalTorrentBytes, url),
-            _resolveAdditionalTrackers(),
+            asyncio.to_thread(_readLocalTorrent, url),
+            _fetchTrackers(),
         )
         ti = lt.torrent_info(torrentBytes)
         return buildTask(
@@ -953,7 +910,7 @@ async def parse(payload: dict) -> BTTask:
     parsedUrl = urlparse(url)
 
     if parsedUrl.scheme.lower() == "magnet":
-        ti, trackers, torrentBytes = await _resolveMagnetMetadata(payload)
+        ti, trackers, torrentBytes = await _resolveMagnet(payload)
         return buildTask(
             ti,
             payload=payload,
@@ -964,8 +921,8 @@ async def parse(payload: dict) -> BTTask:
         )
 
     torrentBytes, webTrackers = await asyncio.gather(
-        _fetchTorrentBytes(payload),
-        _resolveAdditionalTrackers(),
+        _fetchTorrent(payload),
+        _fetchTrackers(),
     )
     ti = lt.torrent_info(torrentBytes)
     return buildTask(
