@@ -328,7 +328,7 @@ class DownloadOptionDialog(MaskDialogBase):
             "path": Path(cfg.downloadFolder.value),
         }
         coreService.runCoroutine(
-            coreService._resolve(payload),
+            coreService._parse(payload),
             lambda task, error: self._onAssetParsed(task, error),
         )
         self.close()

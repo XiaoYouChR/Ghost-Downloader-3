@@ -399,7 +399,7 @@ async def createInstallTask() -> Task:
         "proxies": getProxies(),
         "path": Path(installFolder),
     }
-    downloadTask = await featureService.resolve(downloadPayload)
+    downloadTask = await featureService.parse(downloadPayload)
 
     if not downloadTask.stages:
         raise RuntimeError("解析 N_m3u8DL-RE 安装包链接后未获取到下载阶段")

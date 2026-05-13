@@ -148,9 +148,7 @@ async def createMergeTask(payload: dict[str, Any], title: str = "") -> Task:
 
         if resourcePayload["filename"]:
             resourcePayload["fileSize"] = resourcePayload.pop("size") or SpecialFileSize.UNKNOWN
-            resourceTask = featureService.build(resourcePayload)
-        else:
-            resourceTask = await featureService.resolve(resourcePayload)
+        resourceTask = await featureService.parse(resourcePayload)
 
         if not resourceTask.stages:
             raise RuntimeError("解析在线合并源文件失败")
@@ -218,7 +216,7 @@ async def createInstallTask() -> Task:
         "proxies": getProxies(),
         "path": Path(installFolder),
     }
-    downloadTask = await featureService.resolve(downloadPayload)
+    downloadTask = await featureService.parse(downloadPayload)
 
     if not downloadTask.stages:
         raise RuntimeError("解析 FFmpeg 下载链接后未获取到下载阶段")
@@ -261,8 +259,5 @@ class FFmpegPack(FeaturePack):
     def matches(self, url: str) -> bool:
         return str(url).strip() == FFMPEG_MERGE_URL
 
-    async def resolve(self, payload: dict) -> dict:
-        return {"_task": await createMergeTask(payload)}
-
-    def build(self, payload: dict) -> Task:
-        return payload["_task"]
+    async def parse(self, payload: dict) -> Task:
+        return await createMergeTask(payload)

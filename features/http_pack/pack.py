@@ -180,32 +180,20 @@ class HttpPack(FeaturePack):
     def matches(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"http", "https"}
 
-    async def resolve(self, payload: dict) -> dict:
+    async def parse(self, payload: dict) -> Task:
         url: str = payload["url"]
-        headers: dict = payload.get("headers", DEFAULT_HEADERS)
-        proxies: dict = payload.get("proxies", getProxies())
-
-        fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
-        fileName = _fileName(finalUrl, head)
-
-        return {
-            **payload,
-            "filename": fileName,
-            "fileSize": fileSize,
-            "supportsRange": supportsRange,
-            "finalUrl": finalUrl,
-            "responseHeaders": head,
-        }
-
-    def build(self, payload: dict) -> Task:
-        url: str = payload["url"]
-        fileName: str = payload["filename"]
-        fileSize: int = payload.get("fileSize", SpecialFileSize.UNKNOWN)
-        supportsRange: bool = payload.get("supportsRange", False)
         headers: dict = payload.get("headers", DEFAULT_HEADERS)
         proxies: dict = payload.get("proxies", getProxies())
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
+
+        fileName = payload.get("filename") or ""
+        fileSize = payload.get("fileSize", SpecialFileSize.UNKNOWN)
+        supportsRange = payload.get("supportsRange", False)
+
+        if not fileName:
+            fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
+            fileName = _fileName(finalUrl, head)
 
         task = Task(
             title=fileName,

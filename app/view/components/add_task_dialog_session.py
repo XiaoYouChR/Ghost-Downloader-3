@@ -171,7 +171,7 @@ class AddTaskParseSession(QObject):
 
         try:
             callbackId = coreService.runCoroutine(
-                coreService._resolve(self._buildPayload(state.url)),
+                coreService._parse(self._buildPayload(state.url)),
                 callback,
             )
         except Exception as error:

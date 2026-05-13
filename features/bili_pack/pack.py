@@ -195,7 +195,7 @@ class BilibiliPack(FeaturePack):
         hostname = (urlparse(url).hostname or "").lower()
         return hostname == "bilibili.com" or hostname.endswith(".bilibili.com")
 
-    async def resolve(self, payload: dict) -> dict:
+    async def parse(self, payload: dict) -> Task:
         url: str = payload["url"]
         proxies: dict = payload.get("proxies", getProxies())
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
@@ -283,86 +283,61 @@ class BilibiliPack(FeaturePack):
                     "audioSize": audioSize,
                 })
 
-            return {
-                **payload,
-                "title": title,
-                "baseTitle": baseTitle,
-                "headers": headers,
-                "proxies": proxies,
-                "blockNum": blockNum,
-                "path": path,
-                "selectedPages": selectedPages,
-                "resolvedPages": resolvedPages,
-                "totalSize": totalSize,
-            }
+            task = Task(
+                title=title,
+                url=url,
+                packId=self.packId,
+                fileSize=totalSize,
+                path=path,
+                metadata={
+                    "headers": headers,
+                    "proxies": proxies,
+                    "blockNum": blockNum,
+                    "selectedPages": selectedPages,
+                    "baseTitle": baseTitle,
+                },
+            )
+
+            for index, pageInfo in enumerate(resolvedPages):
+                pageSuffix = _buildPageSuffix(
+                    pageInfo["pageNumber"],
+                    pageInfo["pagePart"],
+                    baseTitle,
+                    len(selectedPages),
+                )
+                stageBase = index * 3
+
+                task.addStage(BilibiliVideoStage(
+                    stageIndex=stageBase + 1,
+                    url=pageInfo["videoUrl"],
+                    fileSize=pageInfo["videoSize"],
+                    headers=headers.copy(),
+                    proxies=proxies,
+                    outputFile="",
+                    blockNum=blockNum,
+                    pageIndex=index,
+                    pageSuffix=pageSuffix,
+                ))
+                task.addStage(BilibiliAudioStage(
+                    stageIndex=stageBase + 2,
+                    url=pageInfo["audioUrl"],
+                    fileSize=pageInfo["audioSize"],
+                    headers=headers.copy(),
+                    proxies=proxies,
+                    outputFile="",
+                    blockNum=blockNum,
+                    pageIndex=index,
+                    pageSuffix=pageSuffix,
+                ))
+                task.addStage(BilibiliMergeStage(
+                    stageIndex=stageBase + 3,
+                    videoPath="",
+                    audioPath="",
+                    outputFile="",
+                    pageIndex=index,
+                    pageSuffix=pageSuffix,
+                ))
+
+            return task
         finally:
             await client.close()
-
-    def build(self, payload: dict) -> Task:
-        title: str = payload["title"]
-        url: str = payload["url"]
-        baseTitle: str = payload["baseTitle"]
-        headers: dict = payload["headers"]
-        proxies: dict = payload["proxies"]
-        blockNum: int = payload["blockNum"]
-        path: Path = payload["path"]
-        selectedPages: list[int] = payload["selectedPages"]
-        resolvedPages: list[dict] = payload["resolvedPages"]
-        totalSize: int = payload["totalSize"]
-
-        task = Task(
-            title=title,
-            url=url,
-            packId=self.packId,
-            fileSize=totalSize,
-            path=path,
-            metadata={
-                "headers": headers,
-                "proxies": proxies,
-                "blockNum": blockNum,
-                "selectedPages": selectedPages,
-                "baseTitle": baseTitle,
-            },
-        )
-
-        for index, pageInfo in enumerate(resolvedPages):
-            pageSuffix = _buildPageSuffix(
-                pageInfo["pageNumber"],
-                pageInfo["pagePart"],
-                baseTitle,
-                len(selectedPages),
-            )
-            stageBase = index * 3
-
-            task.addStage(BilibiliVideoStage(
-                stageIndex=stageBase + 1,
-                url=pageInfo["videoUrl"],
-                fileSize=pageInfo["videoSize"],
-                headers=headers.copy(),
-                proxies=proxies,
-                outputFile="",
-                blockNum=blockNum,
-                pageIndex=index,
-                pageSuffix=pageSuffix,
-            ))
-            task.addStage(BilibiliAudioStage(
-                stageIndex=stageBase + 2,
-                url=pageInfo["audioUrl"],
-                fileSize=pageInfo["audioSize"],
-                headers=headers.copy(),
-                proxies=proxies,
-                outputFile="",
-                blockNum=blockNum,
-                pageIndex=index,
-                pageSuffix=pageSuffix,
-            ))
-            task.addStage(BilibiliMergeStage(
-                stageIndex=stageBase + 3,
-                videoPath="",
-                audioPath="",
-                outputFile="",
-                pageIndex=index,
-                pageSuffix=pageSuffix,
-            ))
-
-        return task

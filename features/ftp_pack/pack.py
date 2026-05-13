@@ -14,11 +14,8 @@ class FtpPack(FeaturePack):
     def matches(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"ftp", "ftps"}
 
-    async def resolve(self, payload: dict) -> dict:
-        return {"_task": await _ftpResolve(payload)}
-
-    def build(self, payload: dict) -> Task:
-        return payload["_task"]
+    async def parse(self, payload: dict) -> Task:
+        return await _ftpResolve(payload)
 
     def taskCard(self, task, parent=None):
         return FtpTaskCard(task, parent)

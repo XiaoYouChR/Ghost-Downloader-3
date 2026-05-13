@@ -23,10 +23,11 @@ class M3U8Pack(FeaturePack):
         loweredUrl = url.lower()
         return ".m3u8" in loweredUrl or ".m3u" in loweredUrl or ".mpd" in loweredUrl
 
-    async def resolve(self, payload: dict) -> dict:
+    async def parse(self, payload: dict) -> Task:
         url = str(payload["url"]).strip()
         headers = payload.get("headers", DEFAULT_HEADERS)
         proxies = payload.get("proxies", getProxies())
+        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
         requestHeaders, requestCookies = splitCookies(
             headers if isinstance(headers, dict) else DEFAULT_HEADERS
         )
@@ -56,27 +57,12 @@ class M3U8Pack(FeaturePack):
         finally:
             await client.close()
 
-        return {
-            **payload,
-            "title": title,
-            "headers": headers.copy() if isinstance(headers, dict) else DEFAULT_HEADERS.copy(),
-            "proxies": proxies,
-            "manifestType": manifestType,
-            "isLive": isLive,
-        }
+        if isinstance(headers, dict):
+            headers = headers.copy()
+        else:
+            headers = DEFAULT_HEADERS.copy()
 
-    def build(self, payload: dict) -> Task:
-        url: str = payload["url"]
-        title: str = payload["title"]
-        headers: dict = payload.get("headers", DEFAULT_HEADERS)
-        proxies = payload.get("proxies", getProxies())
-        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
-        manifestType: str = payload.get("manifestType", "m3u8")
-        isLive: bool = payload.get("isLive", False)
-
-        outputExtension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
         saveName = _stem(title)
-
         metadata = {
             "headers": headers,
             "proxies": proxies,
@@ -96,7 +82,7 @@ class M3U8Pack(FeaturePack):
             "isLive": isLive,
             "actualExtension": "",
             "saveName": saveName,
-            "outputExtension": outputExtension,
+            "outputExtension": extension,
         }
 
         task = Task(

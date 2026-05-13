@@ -25,10 +25,7 @@ class FeaturePack:
     def matches(self, url: str) -> bool:
         return False
 
-    async def resolve(self, payload: dict) -> dict:
-        return payload
-
-    def build(self, payload: dict) -> "Task":
+    async def parse(self, payload: dict) -> "Task":
         raise NotImplementedError
 
     def taskCard(self, task: "Task", parent=None) -> "TaskCard | None":

@@ -70,7 +70,7 @@ application.installTranslator(translator)
 isSilently = "--silence" in sys.argv
 coreService.start()
 mainWindow = MainWindow(isSilently)
-featureService.loadFeatures(mainWindow)
+featureService.load(mainWindow)
 taskRecorder.load()
 mainWindow.taskPage.resumeMemorizedTasks()
 mainWindow.syncThemeColor()

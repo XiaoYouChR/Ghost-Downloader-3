@@ -118,11 +118,8 @@ class CoreService(QThread):
         else:
             wrapper()
 
-    async def _resolve(self, payload: dict):
-        return await featureService.resolve(payload)
-
-    async def _build(self, payload: dict):
-        return featureService.build(payload)
+    async def _parse(self, payload: dict):
+        return await featureService.parse(payload)
 
     def _slotTaskIds(self) -> list[str]:
         taskIds: list[str] = []

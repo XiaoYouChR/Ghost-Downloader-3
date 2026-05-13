@@ -434,7 +434,7 @@ class BrowserService(QObject):
                 return
 
             coreService.runCoroutine(
-                coreService._resolve(mergePayload),
+                coreService._parse(mergePayload),
                 lambda task, error, session=session, requestId=requestId: self._onTaskParsed(
                     session,
                     requestId,
@@ -456,16 +456,9 @@ class BrowserService(QObject):
             )
             return
 
-        hasFilename = bool(parsePayload.get("filename"))
-        coroutine = (
-            coreService._build(parsePayload)
-            if hasFilename
-            else coreService._resolve(parsePayload)
-        )
-
         coreService.runCoroutine(
-            coroutine,
-            lambda task, error, session=session, requestId=requestId, title=title if hasFilename else "": self._onTaskParsed(
+            coreService._parse(parsePayload),
+            lambda task, error, session=session, requestId=requestId, title=title: self._onTaskParsed(
                 session,
                 requestId,
                 title,
