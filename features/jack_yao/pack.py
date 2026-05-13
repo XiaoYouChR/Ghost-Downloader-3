@@ -30,8 +30,9 @@ if TYPE_CHECKING:
 
 
 class JackYaoPack(FeaturePack):
+    packId = "jack_yao"
 
-    def load(self, mainWindow:"MainWindow"):
+    def setup(self, mainWindow:"MainWindow"):
         mainWindow.resourceInterface = ResourceInterface()
         mainWindow.addSubInterface(mainWindow.resourceInterface, FluentIcon.CLOUD_DOWNLOAD, "资源下载")
 

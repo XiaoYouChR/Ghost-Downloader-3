@@ -37,7 +37,7 @@ class CoreService(QThread):
         self.tasks: set[Task] = set()
         self.waitingTasks: list[Task] = []
         self.runningTasks: dict[str, asyncio.Task] = {}
-        self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
+        self._pendingCallbacks: Dict[str, Callable[[Any, str | None], Coroutine | None]] = {}
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._rebalanceSoon())
 
     def sendNotification(self, task: Task):
