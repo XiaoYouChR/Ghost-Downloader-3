@@ -92,6 +92,7 @@ async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str
             logger.info("偏移 Range 探测返回 200, content-length: {}",
                         responseHeaders.get("content-length", ""))
             if fileSize in {SpecialFileSize.UNKNOWN, 1}:
+                # bytes=0- 和 bytes=0-0 哪个更好存疑
                 fallbackStatus, fallbackHeaders, _ = await _sendProbe(
                     client,
                     url,
@@ -131,7 +132,7 @@ def _fileName(url: str, headers: dict) -> str:
 
         if "filename*" in paramDict:
             val = paramDict["filename*"]
-            if "'" in val:
+            if "'" in val:  # charset'lang'encoded_text
                 parts = val.split("'", 2)
                 if len(parts) == 3:
                     encoding, _, encodedText = parts

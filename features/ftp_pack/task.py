@@ -79,6 +79,7 @@ class FtpConnectionInfo:
     sourcePath: str = "/"
     portSpecified: bool = False
 
+# 选了不一定下载, 故拆成 FtpFile 和 FtpStage
 @dataclass
 class FtpFile:
     index: int
