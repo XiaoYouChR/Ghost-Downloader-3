@@ -110,7 +110,7 @@ class FtpStage(TaskStage):
         super().setStatus(status, sync=sync)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, eq=False)
 class FtpTask(Task):
     packId: str = field(default="ftp")
     connectionInfo: FtpConnectionInfo | dict[str, Any]

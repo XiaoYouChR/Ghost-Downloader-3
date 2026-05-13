@@ -143,7 +143,7 @@ class BTFile:
         self.path = str(PurePosixPath(str(self.path).replace("\\", "/")))
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, eq=False)
 class BTTask(Task):
     packId: str = field(default="bt")
     sourceType: str
