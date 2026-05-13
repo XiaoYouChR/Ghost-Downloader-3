@@ -20,7 +20,7 @@ from qfluentwidgets import (
 )
 
 from app.bases.models import TaskStatus
-from app.supports.utils import getReadableSize, getReadableTime, openFile, openFolder
+from app.supports.utils import toReadableSize, toReadableTime, openFile, openFolder
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 
@@ -145,12 +145,12 @@ class FtpResultCard(ResultCard):
                 self.tr("{0}/{1} 个文件 · {2}").format(
                     self.task.countSelected,
                     self.task.countAll,
-                    getReadableSize(self.task.fileSize),
+                    toReadableSize(self.task.fileSize),
                 )
             )
             return
 
-        self.summaryLabel.setText(getReadableSize(self.task.fileSize))
+        self.summaryLabel.setText(toReadableSize(self.task.fileSize))
 
     def _onSelectFilesClicked(self):
         if _openFileSelection(self.task, self.window()) is not None:
@@ -222,16 +222,16 @@ class FtpTaskCard(UniversalTaskCard):
         if self.task.fileSize > 0:
             self.progressBar.setValue(receivedBytes / self.task.fileSize * 100)
             self.progressLabel.setText(
-                f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}"
+                f"{toReadableSize(receivedBytes)}/{toReadableSize(self.task.fileSize)}"
             )
         else:
-            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
+            self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/--")
 
         if self.task.status == TaskStatus.RUNNING:
-            self.speedLabel.setText(f"{getReadableSize(speed)}/s")
+            self.speedLabel.setText(f"{toReadableSize(speed)}/s")
             if self.task.fileSize > 0 and speed > 0:
                 remaining = max(0, self.task.fileSize - receivedBytes)
-                self.leftTimeLabel.setText(getReadableTime(int(remaining / speed)))
+                self.leftTimeLabel.setText(toReadableTime(int(remaining / speed)))
             elif self.task.fileSize > 0:
                 self.leftTimeLabel.setText("--")
 

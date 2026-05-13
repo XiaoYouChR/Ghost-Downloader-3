@@ -12,7 +12,7 @@ from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
 from app.bases.models import Task, TaskStatus, SpecialFileSize
 from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
-from app.supports.utils import openFile, getReadableSize, getReadableTime, openFolder
+from app.supports.utils import openFile, toReadableSize, toReadableTime, openFolder
 from app.supports.config import GD3_COPY_MIME_TYPE
 from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
 from app.view.components.labels import IconBodyLabel
@@ -336,9 +336,9 @@ class UniversalTaskCard(TaskCard):
         self.progressBar.setValue(progress)
 
         if self.task.fileSize > 0:
-            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}")
+            self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/{toReadableSize(self.task.fileSize)}")
         else:
-            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
+            self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/--")
 
         if self.task.status == TaskStatus.RUNNING:
             self.progressBar.setError(False)
@@ -347,12 +347,12 @@ class UniversalTaskCard(TaskCard):
                 self.speedLabel.show()
                 self.leftTimeLabel.show()
                 self.progressLabel.show()
-            self.speedLabel.setText(f"{getReadableSize(speed)}/s")
+            self.speedLabel.setText(f"{toReadableSize(speed)}/s")
             if self.task.fileSize > 0:
-                self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}")
-                self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)) if speed != 0 else "--m--s")
+                self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/{toReadableSize(self.task.fileSize)}")
+                self.leftTimeLabel.setText(toReadableTime(int((self.task.fileSize - receivedBytes) / speed)) if speed != 0 else "--m--s")
             else:
-                self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/--")
+                self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/--")
                 self.leftTimeLabel.setText("--")
         elif self.task.status == TaskStatus.COMPLETED:
             if self.task.fileSize > 0:
@@ -531,7 +531,7 @@ class UniversalResultCard(ResultCard):
         self.iconLabel = ImageLabel(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.filenameEdit = LineEdit(self)
-        self.sizeLabel = BodyLabel(getReadableSize(self.task.fileSize), self)
+        self.sizeLabel = BodyLabel(toReadableSize(self.task.fileSize), self)
         self.mainLayout = QHBoxLayout(self)
 
         self.initWidget()

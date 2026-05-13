@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ImageLabel, LineEdit, StrongBodyLabel
 
 from app.bases.models import Task, TaskStatus
-from app.supports.utils import getReadableSize, getReadableTime
+from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
 
 
@@ -35,9 +35,9 @@ class M3U8TaskCard(UniversalTaskCard):
         self.progressBar.setValue(progress)
 
         if self.task.fileSize > 1:
-            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}")
+            self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/{toReadableSize(self.task.fileSize)}")
         else:
-            self.progressLabel.setText(self.tr("{0} / {1:.2f}%").format(getReadableSize(receivedBytes), progress))
+            self.progressLabel.setText(self.tr("{0} / {1:.2f}%").format(toReadableSize(receivedBytes), progress))
 
         if self.task.status == TaskStatus.RUNNING:
             self.progressBar.setError(False)
@@ -46,9 +46,9 @@ class M3U8TaskCard(UniversalTaskCard):
                 self.speedLabel.show()
                 self.leftTimeLabel.show()
                 self.progressLabel.show()
-            self.speedLabel.setText(f"{getReadableSize(speed)}/s")
+            self.speedLabel.setText(f"{toReadableSize(speed)}/s")
             if self.task.fileSize > 1 and speed > 0:
-                self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)))
+                self.leftTimeLabel.setText(toReadableTime(int((self.task.fileSize - receivedBytes) / speed)))
             else:
                 self.leftTimeLabel.setText("--")
         elif self.task.status == TaskStatus.COMPLETED:

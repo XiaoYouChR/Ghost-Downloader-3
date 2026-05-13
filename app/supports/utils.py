@@ -78,7 +78,7 @@ def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> s
     return candidate
 
 
-sanitizeFilename = toSafeFilename
+
 
 
 def openFolder(path):
@@ -182,7 +182,7 @@ def toReadableSize(size: int):
     return f"{size:.2f} TB"
 
 
-getReadableSize = toReadableSize
+
 
 
 def toReadableTime(seconds: int) -> str:
@@ -195,7 +195,7 @@ def toReadableTime(seconds: int) -> str:
         return f"{int(seconds // 3600)}h{int(remainingSeconds // 60)}m{remainingSeconds % 60}s"
 
 
-getReadableTime = toReadableTime
+
 
 
 def toPosixPath(path) -> str:

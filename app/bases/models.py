@@ -12,7 +12,7 @@ from orjson import loads, dumps
 from qfluentwidgets import SettingCard
 
 from app.supports.config import cfg, ConfigItem
-from app.supports.utils import sanitizeFilename
+from app.supports.utils import toSafeFilename
 
 if TYPE_CHECKING:
     from app.bases.interfaces import Worker
@@ -194,12 +194,12 @@ class Task:
         return ""
 
     def setTitle(self, title: str):
-        self.title = sanitizeFilename(title, fallback=self.title or "download")
+        self.title = toSafeFilename(title, fallback=self.title or "download")
         for stage in self.stages:
             stage.updateOutputFile(self.path, self.title)
 
     def __post_init__(self):
-        self.title = sanitizeFilename(self.title, fallback="download")
+        self.title = toSafeFilename(self.title, fallback="download")
         for stage in self.stages:
             stage._bindTask(self)
         for stage in self.stages:

@@ -15,7 +15,7 @@ from loguru import logger
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
-from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
+from app.supports.utils import getProxies, toSafeFilename, splitRequestHeadersAndCookies
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .trackers import mergeTrackers
 
@@ -180,7 +180,7 @@ class BTTask(Task):
             for item in self.files
         ]
         self.fileSelectionVersion = 0
-        self.title = sanitizeFilename(self.title, fallback="torrent")
+        self.title = toSafeFilename(self.title, fallback="torrent")
         super().__post_init__()
         self.fileSize = sum(file.size for file in self.files if file.selected)
 
@@ -737,8 +737,8 @@ def _buildTask(
     if not entries:
         raise ValueError("该种子中没有可下载的普通文件")
 
-    rootName = sanitizeFilename(PurePosixPath(entries[0].path).parts[0], fallback="torrent")
-    title = sanitizeFilename(Path(entries[0].path).name, fallback="torrent") if len(entries) == 1 else rootName
+    rootName = toSafeFilename(PurePosixPath(entries[0].path).parts[0], fallback="torrent")
+    title = toSafeFilename(Path(entries[0].path).name, fallback="torrent") if len(entries) == 1 else rootName
 
     return BTTask(
         title=title,

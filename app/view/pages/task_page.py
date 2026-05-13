@@ -15,7 +15,7 @@ from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
-from app.supports.utils import getReadableSize, openFile
+from app.supports.utils import toReadableSize, openFile
 from app.view.components.cards import TaskCard
 from app.view.components.dialogs import DeleteTaskDialog, PlanTaskDialog
 from app.view.components.labels import IconBodyLabel
@@ -179,7 +179,7 @@ class TaskPage(ScrollArea):
         for card in self.cards:
             card.refresh()
 
-        self.speedBadge.setText(f"{getReadableSize(cfg.globalSpeed)}/s")
+        self.speedBadge.setText(f"{toReadableSize(cfg.globalSpeed)}/s")
         cfg.resetGlobalSpeed()
 
         if self.filterMode != FilterMode.ALL:
