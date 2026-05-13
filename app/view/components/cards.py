@@ -293,7 +293,7 @@ class UniversalTaskCard(TaskCard):
     def refreshToggleButton(self):
         if self.task.status == TaskStatus.RUNNING:
             self.toggleRunningStatusButton.setIcon(FluentIcon.PAUSE)
-            self.toggleRunningStatusButton.setEnabled(self.task.canPause())
+            self.toggleRunningStatusButton.setEnabled(self.task.canPause)
         elif self.task.status == TaskStatus.COMPLETED:
             self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)
             self.toggleRunningStatusButton.setEnabled(False)
@@ -486,7 +486,7 @@ class UniversalTaskCard(TaskCard):
         self.toggleRunningStatusButton.setEnabled(True)
 
     def pauseTask(self):
-        if not self.task.canPause():
+        if not self.task.canPause:
             return
 
         self.toggleRunningStatusButton.setIcon(FluentIcon.PLAY)

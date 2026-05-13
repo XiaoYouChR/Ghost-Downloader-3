@@ -1,5 +1,5 @@
 import asyncio
-from dataclasses import asdict, dataclass, field, fields as dataclass_fields, is_dataclass
+from dataclasses import dataclass, field, fields as dataclass_fields, is_dataclass
 from enum import auto, IntEnum
 from pathlib import Path
 from time import time_ns
@@ -27,8 +27,11 @@ def _toSerializable(obj: Any) -> Any:
         return str(obj)
     if is_dataclass(obj):
         result: dict[str, Any] = {}
-        for key, value in asdict(obj).items():
-            result[key] = _toSerializable(value)
+        for f in dataclass_fields(obj):
+            if not f.repr:
+                continue
+            value = getattr(obj, f.name)
+            result[f.name] = _toSerializable(value)
         return result
     if isinstance(obj, list):
         return [_toSerializable(item) for item in obj]
