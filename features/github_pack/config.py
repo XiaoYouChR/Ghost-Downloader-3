@@ -89,7 +89,7 @@ class GitHubProxySiteValidator(ConfigValidator):
         return site if self.validate(site) else ""
 
 
-def getSelectedProxySite() -> str:
+def selectedProxySite() -> str:
     if githubConfig.proxySite.value == GITHUB_CUSTOM_PROXY_SITE:
         return githubConfig.customProxySite.value
     return githubConfig.proxySite.value
