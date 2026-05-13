@@ -37,7 +37,7 @@ class FFmpegWorker(Worker):
             return 0.0
         return duration if duration > 0 else 0.0
 
-    async def _probeDuration(self, ffprobe: str, path: str) -> float:
+    async def _getDuration(self, ffprobe: str, path: str) -> float:
         process = await asyncio.create_subprocess_exec(
             ffprobe,
             "-v", "error",
@@ -92,7 +92,7 @@ class FFmpegWorker(Worker):
             self.stage.progress = 0
             self.stage.speed = 0
             self.stage.receivedBytes = 0
-            totalDuration = await self._probeDuration(ffprobe, self.stage.videoPath)
+            totalDuration = await self._getDuration(ffprobe, self.stage.videoPath)
             process = await asyncio.create_subprocess_exec(
                 ffmpeg,
                 "-y", "-v", "error", "-nostats", "-progress", "pipe:1",

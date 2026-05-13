@@ -152,11 +152,11 @@ class FFmpegRuntimeCard(SettingCard):
         if sys.platform != "win32":
             return
 
-        from .task import createWindowsInstallTask
+        from .task import createInstallTask
 
         self.installButton.setEnabled(False)
         self.installButton.setText(self.tr("准备中..."))
-        coreService.runCoroutine(createWindowsInstallTask(), self._onInstallTaskCreated)
+        coreService.runCoroutine(createInstallTask(), self._onInstallTaskCreated)
 
     def _onInstallTaskCreated(self, result, error: str | None):
         self.installButton.setEnabled(True)
