@@ -213,7 +213,7 @@ class MainWindow(MSFluentWindow):
             if not parsed.scheme or not parsed.netloc or parsed.geturl() != url:
                 continue
 
-            if featureService.canHandle(url):
+            if featureService.matches(url):
                 urls.append(url)
 
         return urls
