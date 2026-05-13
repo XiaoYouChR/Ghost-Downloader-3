@@ -38,7 +38,7 @@ class CoreService(QThread):
         self.waitingTasks: list[Task] = []
         self.runningTasks: dict[str, asyncio.Task] = {}
         self._pendingCallbacks: Dict[str, Callable[[dict, str | None], Coroutine | None]] = {}
-        cfg.maxTaskNum.valueChanged.connect(lambda _: self._syncTaskLimitSoon())
+        cfg.maxTaskNum.valueChanged.connect(lambda _: self._rebalanceSoon())
 
     def sendNotification(self, task: Task):
         outputFolder = task.outputFolder
@@ -118,59 +118,20 @@ class CoreService(QThread):
         else:
             wrapper()
 
-    async def _parseUrl(self, payload: dict, callbackId: str = None):
-        try:
-            result = await featureService.resolve(payload)
+    async def _resolve(self, payload: dict):
+        return await featureService.resolve(payload)
 
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, result, None)
+    async def _build(self, payload: dict):
+        return featureService.build(payload)
 
-            return result
-
-        except Exception as e:
-            logger.opt(exception=e).error("解析 URL 失败")
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, None, repr(e))
-
-    async def _createTaskFromPayload(self, payload: dict, callbackId: str = None):
-        try:
-            result = featureService.build(payload)
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, result, None)
-
-            return result
-
-        except Exception as e:
-            logger.opt(exception=e).error("根据已有 Payload 创建任务失败")
-
-            if callbackId and callbackId in self._pendingCallbacks:
-                callback = self._pendingCallbacks.pop(callbackId)
-                self._executeCallback(callback, None, repr(e))
-
-    def parseUrl(self, payload: dict, callback: Callable) -> str:
-        callbackId = f"parse_{id(callback)}_{hash(str(payload))}"
-        self._pendingCallbacks[callbackId] = callback
-
-        self.loop.create_task(self._parseUrl(payload, callbackId))
-
-        return callbackId
-
-    def _downloadSlotTaskIds(self) -> list[str]:
+    def _slotTaskIds(self) -> list[str]:
         taskIds: list[str] = []
         for taskId in self.runningTasks:
-            task = self.getTaskById(taskId)
+            task = self.task(taskId)
             if task is None or not task.usesSlot:
                 continue
             taskIds.append(taskId)
         return taskIds
-
-    def _runningTaskCount(self) -> int:
-        return len(self._downloadSlotTaskIds())
 
     def _removeWaitingTask(self, task: Task):
         self.waitingTasks = [queuedTask for queuedTask in self.waitingTasks if queuedTask.taskId != task.taskId]
@@ -185,22 +146,22 @@ class CoreService(QThread):
         task.setStatus(TaskStatus.RUNNING)
         self.runningTasks[task.taskId] = self.loop.create_task(self._runTask(task))
 
-    def _syncTaskLimitSoon(self):
+    def _rebalanceSoon(self):
         if self.loop.is_running():
-            self.loop.call_soon_threadsafe(lambda: self.loop.create_task(self._syncTaskLimit()))
+            self.loop.call_soon_threadsafe(lambda: self.loop.create_task(self._rebalance()))
 
-    def notifyTaskSchedulingChanged(self):
-        self._syncTaskLimitSoon()
+    def rebalance(self):
+        self._rebalanceSoon()
 
     def _scheduleWaitingTasks(self):
-        while self.waitingTasks and self._runningTaskCount() < cfg.maxTaskNum.value:
+        while self.waitingTasks and len(self._slotTaskIds()) < cfg.maxTaskNum.value:
             task = self.waitingTasks.pop(0)
             if task.taskId in self.runningTasks:
                 continue
 
             self._dispatchTask(task)
 
-    async def _moveRunningTaskToWaiting(self, task: Task):
+    async def _requeueTask(self, task: Task):
         runningTask = self.runningTasks.get(task.taskId)
         if runningTask is None:
             self._enqueueTask(task)
@@ -217,15 +178,15 @@ class CoreService(QThread):
         if task.status not in {TaskStatus.COMPLETED, TaskStatus.FAILED}:
             self._enqueueTask(task)
 
-    async def _syncTaskLimit(self):
-        runningTaskIds = self._downloadSlotTaskIds()
+    async def _rebalance(self):
+        runningTaskIds = self._slotTaskIds()
         overflowTaskIds = runningTaskIds[cfg.maxTaskNum.value:]
 
         for taskId in overflowTaskIds:
-            task = self.getTaskById(taskId)
+            task = self.task(taskId)
             if task is None:
                 continue
-            await self._moveRunningTaskToWaiting(task)
+            await self._requeueTask(task)
 
         self._scheduleWaitingTasks()
 
@@ -241,7 +202,7 @@ class CoreService(QThread):
         if task.taskId in self.runningTasks:
             return
 
-        if task.usesSlot and self._runningTaskCount() >= cfg.maxTaskNum.value:
+        if task.usesSlot and len(self._slotTaskIds()) >= cfg.maxTaskNum.value:
             self._enqueueTask(task)
             return
 
@@ -263,20 +224,12 @@ class CoreService(QThread):
         task.setStatus(TaskStatus.PAUSED)
         self.loop.create_task(self._stopTask(task))
 
-    def getAllTaskInfo(self) -> set:
-        """获取所有任务信息
-        
-        Returns:
-            set: 所有任务对象的集合
-        """
-        return self.tasks.copy()
-    
-    def getTaskById(self, taskId: str) -> Task | None:
+    def task(self, taskId: str) -> Task | None:
         """根据任务Id获取任务对象
-        
+
         Args:
             taskId: 任务Id
-        
+
         Returns:
             Task: 对应的任务对象，如果不存在则返回None
         """
@@ -284,13 +237,13 @@ class CoreService(QThread):
             if task.taskId == taskId:
                 return task
         return None
-    
-    def removeCallback(self, callbackId: str) -> bool:
+
+    def cancelCallback(self, callbackId: str) -> bool:
         """移除待执行的回调函数
-        
+
         Args:
             callbackId: 回调函数标识符
-        
+
         Returns:
             bool: 是否成功移除
         """
@@ -298,16 +251,16 @@ class CoreService(QThread):
             del self._pendingCallbacks[callbackId]
             return True
         return False
-    
+
     async def main(self):
         """主事件循环
-        
+
         在这里可以添加周期性任务，如清理过期回调、监控任务状态等
         """
         while True:
             try:
                 await asyncio.sleep(1)
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -324,7 +277,7 @@ class CoreService(QThread):
         finally:
             if self.loop:
                 self.loop.close()
-    
+
     def stop(self):
         """停止服务"""
         if self.loop and self.loop.is_running():

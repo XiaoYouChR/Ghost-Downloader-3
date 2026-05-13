@@ -416,7 +416,7 @@ class BTWorker(Worker):
 
         if wasSeeding != self.task.isSeeding:
             from app.services.core_service import coreService
-            coreService.notifyTaskSchedulingChanged()
+            coreService.rebalance()
 
     def _updateFiles(self):
         if self.handle is None:

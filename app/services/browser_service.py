@@ -273,12 +273,12 @@ class BrowserService(QObject):
         tasksById: dict[str, Task] = {
             task.taskId: task for task in taskRecorder.memorizedTasks.values()
         }
-        for task in coreService.getAllTaskInfo():
+        for task in coreService.tasks:
             tasksById[task.taskId] = task
         return list(tasksById.values())
 
     def _findTask(self, taskId: str) -> Task | None:
-        task = coreService.getTaskById(taskId)
+        task = coreService.task(taskId)
         if task is not None:
             return task
         return taskRecorder.memorizedTasks.get(taskId)
@@ -434,7 +434,7 @@ class BrowserService(QObject):
                 return
 
             coreService.runCoroutine(
-                coreService._parseUrl(mergePayload),
+                coreService._resolve(mergePayload),
                 lambda task, error, session=session, requestId=requestId: self._onTaskParsed(
                     session,
                     requestId,
@@ -458,9 +458,9 @@ class BrowserService(QObject):
 
         hasFilename = bool(parsePayload.get("filename"))
         coroutine = (
-            coreService._createTaskFromPayload(parsePayload)
+            coreService._build(parsePayload)
             if hasFilename
-            else coreService._parseUrl(parsePayload)
+            else coreService._resolve(parsePayload)
         )
 
         coreService.runCoroutine(
@@ -627,7 +627,7 @@ class BrowserService(QObject):
                 return
 
             if action == BrowserTaskAction.CANCEL:
-                if coreService.getTaskById(task.taskId) is None:
+                if coreService.task(task.taskId) is None:
                     self._onTaskRemoved(session, requestId, task, None)
                     return
                 coreService.runCoroutine(

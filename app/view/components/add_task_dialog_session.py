@@ -170,8 +170,8 @@ class AddTaskParseSession(QObject):
             self._onParseFinished(callbackId, resultTask, error)
 
         try:
-            callbackId = coreService.parseUrl(
-                self._buildPayload(state.url),
+            callbackId = coreService.runCoroutine(
+                coreService._resolve(self._buildPayload(state.url)),
                 callback,
             )
         except Exception as error:
@@ -203,7 +203,7 @@ class AddTaskParseSession(QObject):
     def _clearState(self, state: _LineParseState, cancelRequest: bool) -> None:
         if cancelRequest and state.callbackId:
             self._activeParses.pop(state.callbackId, None)
-            coreService.removeCallback(state.callbackId)
+            coreService.cancelCallback(state.callbackId)
             self.parsingBusyChanged.emit(bool(self._activeParses))
 
         state.callbackId = ""
