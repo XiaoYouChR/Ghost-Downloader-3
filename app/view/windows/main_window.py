@@ -218,13 +218,23 @@ class MainWindow(MSFluentWindow):
 
         return urls
 
+    def _isWayland(self) -> bool:
+        return QApplication.platformName() == "wayland"
+
     def _onClipboardDataChanged(self):
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
         if mimeData.hasFormat(GD3_COPY_MIME_TYPE):
             return
 
-        urls = self._extractClipboardUrls(clipboard.text())
+        currentText = clipboard.text()
+
+        if self._isWayland():
+            if hasattr(self, '_lastClipboardText') and self._lastClipboardText == currentText:
+                return
+            self._lastClipboardText = currentText
+
+        urls = self._extractClipboardUrls(currentText)
         if not urls:
             return
 
