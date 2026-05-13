@@ -15,7 +15,7 @@ from loguru import logger
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, VERSION, cfg
-from app.supports.utils import getProxies, toSafeFilename, splitRequestHeadersAndCookies
+from app.supports.utils import getProxies, toSafeFilename, splitCookies
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
 from .trackers import mergeTrackers
 
@@ -40,7 +40,7 @@ _STATE_TEXT_MAP = {
 }
 
 
-def resolveLocalTorrentPath(source: str) -> Path | None:
+def loadLocalTorrent(source: str) -> Path | None:
     text = str(source).strip()
     if not text:
         return None
@@ -587,7 +587,7 @@ class BTWorker(Worker):
 
 
 async def _loadFromFile(source: str, webTrackers: list[str]) -> tuple[bytes, lt.torrent_info, list[str]]:
-    torrentPath = resolveLocalTorrentPath(source)
+    torrentPath = loadLocalTorrent(source)
     if torrentPath is None:
         raise ValueError("不是有效的本地 .torrent 文件路径")
     torrentBytes = await asyncio.to_thread(lambda: torrentPath.resolve().read_bytes())
@@ -599,7 +599,7 @@ async def _loadFromUrl(payload: dict, webTrackers: list[str]) -> tuple[bytes, lt
     url = str(payload["url"]).strip()
     headers = payload.get("headers", DEFAULT_HEADERS)
     proxies = payload.get("proxies", getProxies())
-    requestHeaders, requestCookies = splitRequestHeadersAndCookies(
+    requestHeaders, requestCookies = splitCookies(
         headers if isinstance(headers, dict) else DEFAULT_HEADERS
     )
 
@@ -758,7 +758,7 @@ async def resolve(payload: dict) -> BTTask:
     url = str(payload["url"]).strip()
     webTrackers = await _fetchTrackers()
 
-    localTorrentPath = resolveLocalTorrentPath(url)
+    localTorrentPath = loadLocalTorrent(url)
     if localTorrentPath is not None:
         torrentBytes, ti, trackers = await _loadFromFile(url, webTrackers)
         return _buildTask(

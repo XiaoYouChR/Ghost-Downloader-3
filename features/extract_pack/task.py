@@ -9,11 +9,10 @@ from pathlib import Path
 from time import perf_counter
 
 from app.bases.interfaces import Worker
+from app.supports.utils import toPosixPath
 from app.bases.models import Task, TaskStage, TaskStatus
 
 
-def _normalizePath(path: Path | str) -> str:
-    return str(Path(path)).replace("\\", "/")
 
 
 def _archiveSuffix(name: str) -> str:
@@ -190,7 +189,7 @@ class ExtractWorker(Worker):
             if sys.platform != "win32":
                 executablePath.chmod(executablePath.stat().st_mode | 0o755)
 
-            executables[name] = _normalizePath(executablePath)
+            executables[name] = toPosixPath(executablePath)
 
         return executables
 

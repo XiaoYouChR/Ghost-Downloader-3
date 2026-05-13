@@ -7,7 +7,7 @@ from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import TaskStage, TaskStatus
-from .config import resolveFFmpegExecutables
+from .config import ffmpegPaths
 
 
 @dataclass(kw_only=True)
@@ -79,7 +79,7 @@ class FFmpegWorker(Worker):
                 self.stage.progress = 100
 
     async def run(self):
-        ffmpeg, ffprobe = resolveFFmpegExecutables()
+        ffmpeg, ffprobe = ffmpegPaths()
         if not ffmpeg or not ffprobe:
             raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
 

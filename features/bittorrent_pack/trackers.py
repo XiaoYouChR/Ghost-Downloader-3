@@ -9,7 +9,7 @@ from app.supports.utils import getProxies
 _TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
 
 
-def normalizeTrackerSource(source: str) -> str:
+def toTrackers(source: str) -> str:
     value = str(source or "").strip()
     if not value:
         return ""
@@ -47,7 +47,7 @@ def mergeTrackers(*trackerGroups: list[str]) -> list[str]:
 
 
 async def fetchWebTrackers(sourceUrl: str) -> list[str]:
-    normalizedSource = normalizeTrackerSource(sourceUrl)
+    normalizedSource = toTrackers(sourceUrl)
     if not normalizedSource:
         raise ValueError("Web Tracker 源地址无效")
 

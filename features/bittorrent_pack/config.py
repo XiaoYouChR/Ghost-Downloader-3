@@ -29,7 +29,7 @@ from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.setting_cards import SpinBoxSettingCard
-from .trackers import fetchWebTrackers, formatTrackers, normalizeTrackerSource, parseTrackerText
+from .trackers import fetchWebTrackers, formatTrackers, toTrackers, parseTrackerText
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
@@ -40,10 +40,10 @@ DEFAULT_WEB_TRACKER_SOURCE = "https://cf.trackerslist.com/best.txt"
 
 class WebTrackerSourceValidator(ConfigValidator):
     def validate(self, value) -> bool:
-        return bool(normalizeTrackerSource(str(value or "")))
+        return bool(toTrackers(str(value or "")))
 
     def correct(self, value) -> str:
-        source = normalizeTrackerSource(str(value or ""))
+        source = toTrackers(str(value or ""))
         return source or DEFAULT_WEB_TRACKER_SOURCE
 
 
@@ -64,7 +64,7 @@ def saveCachedWebTrackers(trackers: list[str]):
 
 
 async def refreshConfiguredWebTrackers(sourceUrl: str | None = None) -> list[str]:
-    source = normalizeTrackerSource(sourceUrl or bittorrentConfig.webTrackerSource.value)
+    source = toTrackers(sourceUrl or bittorrentConfig.webTrackerSource.value)
     if not source:
         raise ValueError("Web Tracker 源地址无效")
     trackers = await fetchWebTrackers(source)
@@ -97,7 +97,7 @@ class WebTrackerDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.refreshButton, 0)
 
     def _onRefreshClicked(self):
-        source = normalizeTrackerSource(self.sourceEdit.text())
+        source = toTrackers(self.sourceEdit.text())
         if not source:
             InfoBar.error(self.tr("源地址无效"), self.tr("请输入有效的 HTTP/HTTPS 地址"), parent=self)
             return
@@ -120,7 +120,7 @@ class WebTrackerDialog(MessageBoxBase):
         )
 
     def validate(self) -> bool:
-        source = normalizeTrackerSource(self.sourceEdit.text())
+        source = toTrackers(self.sourceEdit.text())
         if not source:
             InfoBar.error(self.tr("源地址无效"), self.tr("请输入有效的 HTTP/HTTPS 地址"), parent=self)
             return False
