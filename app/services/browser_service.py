@@ -262,7 +262,7 @@ class BrowserService(QObject):
             "createdAt": task.createdAt,
             "resolvePath": str(resolvePath),
             "parentPath": str(parentPath),
-            "canPause": bool(task.canPause()),
+            "canPause": bool(task.canPause),
             "canOpenFile": resolvePath.exists(),
             "canOpenFolder": parentPath.exists(),
             "fileExt": resolvePath.suffix.lstrip(".").lower(),
@@ -594,7 +594,7 @@ class BrowserService(QObject):
         try:
             if action == BrowserTaskAction.TOGGLE_PAUSE:
                 if task.status == TaskStatus.RUNNING:
-                    if not task.canPause():
+                    if not task.canPause:
                         self._sendResult(
                             session,
                             BrowserMessageType.TASK_ACTION_RESULT,

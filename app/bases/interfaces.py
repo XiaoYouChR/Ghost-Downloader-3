@@ -29,8 +29,8 @@ class FeaturePack:
         raise NotImplementedError
 
     def taskCard(self, task: "Task", parent=None) -> "TaskCard | None":
-        from app.view.components.cards import TaskCard
-        return TaskCard(task, parent)
+        from app.view.components.cards import UniversalTaskCard
+        return UniversalTaskCard(task, parent)
 
     def resultCard(self, task: "Task", parent=None) -> "ResultCard | None":
         from app.view.components.cards import ResultCard
