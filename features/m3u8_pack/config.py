@@ -55,19 +55,19 @@ def downloaderPath() -> str:
 
 
 async def queryM3U8Runtime() -> dict[str, str]:
-    downloaderPath = downloaderPath()
+    execPath = downloaderPath()
     ffmpegPath, _ = ffmpegPaths()
     runtimeInfo = {
-        "downloaderPath": downloaderPath,
+        "downloaderPath": execPath,
         "version": "",
         "installPath": "",
         "ffmpegPath": ffmpegPath,
     }
-    if not downloaderPath:
+    if not execPath:
         return runtimeInfo
 
     process = await asyncio.create_subprocess_exec(
-        downloaderPath,
+        execPath,
         "--version",
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
@@ -80,7 +80,7 @@ async def queryM3U8Runtime() -> dict[str, str]:
     output = stdout.decode("utf-8", errors="ignore") or stderr.decode("utf-8", errors="ignore")
     lines = [line.strip() for line in output.splitlines() if line.strip()]
     runtimeInfo["version"] = lines[0] if lines else ""
-    runtimeInfo["installPath"] = toPosixPath(Path(downloaderPath).parent)
+    runtimeInfo["installPath"] = toPosixPath(Path(execPath).parent)
     return runtimeInfo
 
 
