@@ -51,23 +51,16 @@ async def fetchWebTrackers(sourceUrl: str) -> list[str]:
     if not normalizedSource:
         raise ValueError("Web Tracker 源地址无效")
 
-    client = niquests.AsyncSession(headers=DEFAULT_HEADERS.copy(), timeout=30, happy_eyeballs=True)
-    client.trust_env = False
-
-    try:
+    async with niquests.AsyncSession(headers=DEFAULT_HEADERS.copy(), timeout=30, happy_eyeballs=True) as client:
+        client.trust_env = False
         response = await client.get(
             normalizedSource,
             proxies=getProxies(),
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            trackers = parseTrackerText(response.text)
-        finally:
-            response.close()
-    finally:
-        await client.close()
+        response.raise_for_status()
+        trackers = parseTrackerText(response.text)
 
     if not trackers:
         raise ValueError("Web Tracker 源没有返回有效的 Tracker")

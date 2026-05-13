@@ -352,22 +352,16 @@ async def createInstallTask() -> Task:
     else:
         raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
 
-    client = niquests.AsyncSession(headers=_M3U8DL_RELEASE_HEADERS, timeout=30, happy_eyeballs=True)
-    client.trust_env = False
-    try:
+    async with niquests.AsyncSession(headers=_M3U8DL_RELEASE_HEADERS, timeout=30, happy_eyeballs=True) as client:
+        client.trust_env = False
         response = await client.get(
             _M3U8DL_RELEASE_API,
             proxies=getProxies(),
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            response.close()
-    finally:
-        await client.close()
+        response.raise_for_status()
+        payload = response.json()
 
     assets = payload.get("assets")
     if not isinstance(assets, list):

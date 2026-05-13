@@ -146,34 +146,31 @@ async def measureProxyLatencies() -> dict[str, int]:
     if customSite and customSite not in sites:
         sites.append(customSite)
 
-    session = niquests.AsyncSession(happy_eyeballs=True)
-    session.trust_env = False
+    async with niquests.AsyncSession(happy_eyeballs=True) as session:
+        session.trust_env = False
 
-    async def measureSiteLatency(site: str) -> tuple[str, int]:
-        startedAt = perf_counter()
-        try:
-            response = await session.get(
-                f"{site.rstrip('/')}/{GITHUB_PROBE_TARGET}",
-                timeout=15,
-                proxies=getProxies(),
-                verify=cfg.SSLVerify.value,
-                allow_redirects=True,
-                stream=True,
-            )
+        async def measureSiteLatency(site: str) -> tuple[str, int]:
+            startedAt = perf_counter()
             try:
-                response.raise_for_status()
-            finally:
-                await response.close()
+                response = await session.get(
+                    f"{site.rstrip('/')}/{GITHUB_PROBE_TARGET}",
+                    timeout=15,
+                    proxies=getProxies(),
+                    verify=cfg.SSLVerify.value,
+                    allow_redirects=True,
+                    stream=True,
+                )
+                try:
+                    response.raise_for_status()
+                finally:
+                    await response.close()
 
-            return site, max(1, int((perf_counter() - startedAt) * 1000))
-        except Exception as e:
-            logger.opt(exception=e).error("{} 测速失败", site)
-            return site, -1
+                return site, max(1, int((perf_counter() - startedAt) * 1000))
+            except Exception as e:
+                logger.opt(exception=e).error("{} 测速失败", site)
+                return site, -1
 
-    try:
         results = await asyncio.gather(*(measureSiteLatency(site) for site in sites))
-    finally:
-        await session.close()
 
     return dict(results)
 

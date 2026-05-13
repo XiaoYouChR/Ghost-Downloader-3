@@ -603,9 +603,8 @@ async def _loadFromUrl(payload: dict, webTrackers: list[str]) -> tuple[bytes, lt
         headers if isinstance(headers, dict) else DEFAULT_HEADERS
     )
 
-    client = niquests.AsyncSession(timeout=30, happy_eyeballs=True)
-    client.trust_env = False
-    try:
+    async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
+        client.trust_env = False
         response = await client.get(
             url,
             headers=requestHeaders,
@@ -614,13 +613,8 @@ async def _loadFromUrl(payload: dict, webTrackers: list[str]) -> tuple[bytes, lt
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            torrentBytes = bytes(response.content)
-        finally:
-            await response.close()
-    finally:
-        await client.close()
+        response.raise_for_status()
+        torrentBytes = bytes(response.content)
 
     ti = lt.torrent_info(torrentBytes)
     return torrentBytes, ti, mergeTrackers(_extractTrackers(ti), webTrackers)
