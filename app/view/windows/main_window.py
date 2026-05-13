@@ -305,17 +305,7 @@ class MainWindow(MSFluentWindow):
         dialog = self._getAddTaskDialog()
 
         if urls:
-            pendingUrls: list[str] = []
-            for url in urls:
-                payloadOverride = payloadOverrides.get(url) if payloadOverrides else None
-                if payloadOverride is None:
-                    pendingUrls.append(url)
-                    continue
-
-                dialog.addUrlWithPayload(url, payloadOverride)
-
-            if pendingUrls:
-                dialog.addUrls(pendingUrls)
+            dialog.addUrls(urls, overrides=payloadOverrides)
 
         if dialog.isVisible() and not dialog.isStandaloneMode:
             dialog.raise_()
