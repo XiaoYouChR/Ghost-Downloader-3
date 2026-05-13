@@ -232,11 +232,13 @@ class MainWindow(MSFluentWindow):
         if self._isWayland():
             if hasattr(self, '_lastClipboardText') and self._lastClipboardText == currentText:
                 return
-            self._lastClipboardText = currentText
 
         urls = self._extractClipboardUrls(currentText)
         if not urls:
             return
+
+        if self._isWayland():
+            self._lastClipboardText = currentText
 
         bringWindowToTop(self)
         self.showAddTaskDialog(urls=urls)
