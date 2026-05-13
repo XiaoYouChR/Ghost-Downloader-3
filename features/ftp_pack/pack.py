@@ -4,7 +4,7 @@ from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 
 from .cards import FtpResultCard, FtpTaskCard
-from .task import FtpTask, parse
+from .task import FtpTask, resolve as _ftpResolve
 
 
 class FtpPack(FeaturePack):
@@ -15,10 +15,10 @@ class FtpPack(FeaturePack):
         return urlparse(url).scheme.lower() in {"ftp", "ftps"}
 
     async def resolve(self, payload: dict) -> dict:
-        return payload
+        return {"_task": await _ftpResolve(payload)}
 
     def build(self, payload: dict) -> Task:
-        raise NotImplementedError("Use resolve() for FTP tasks")
+        return payload["_task"]
 
     def taskCard(self, task, parent=None):
         return FtpTaskCard(task, parent)

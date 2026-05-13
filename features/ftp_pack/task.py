@@ -32,24 +32,20 @@ def _parseSize(value) -> int:
     return size if size > 0 else SpecialFileSize.UNKNOWN
 
 
-def _pickProxyUrl(proxies: dict | None) -> str:
-    if not isinstance(proxies, dict):
-        return ""
-    for key in ("ftp", "https", "http"):
-        value = str(proxies.get(key) or "").strip()
-        if value:
-            return value
-    return ""
-
-
-def _buildClientKwargs(proxies: dict | None) -> dict[str, Any]:
+def _buildClientArgs(proxies: dict | None) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "connection_timeout": FTP_CONNECTION_TIMEOUT,
         "socket_timeout": FTP_SOCKET_TIMEOUT,
         "path_timeout": FTP_PATH_TIMEOUT,
     }
 
-    proxyUrl = _pickProxyUrl(proxies)
+    proxyUrl = ""
+    if isinstance(proxies, dict):
+        for key in ("ftp", "https", "http"):
+            value = str(proxies.get(key) or "").strip()
+            if value:
+                proxyUrl = value
+                break
     if not proxyUrl:
         return kwargs
 
@@ -71,26 +67,6 @@ def _buildClientKwargs(proxies: dict | None) -> dict[str, Any]:
     if parsedProxy.password:
         kwargs["password"] = unquote(parsedProxy.password)
     return kwargs
-
-
-def _connectionAttempts(connectionInfo: "FtpConnectionInfo") -> list[tuple[int, str]]:
-    scheme = connectionInfo.scheme.lower()
-    if scheme != "ftps":
-        return [(connectionInfo.port, "plain")]
-
-    if not connectionInfo.portSpecified:
-        return [
-            (FTP_DEFAULT_PORT, "explicit"),
-            (FTPS_DEFAULT_PORT, "implicit"),
-        ]
-
-    if connectionInfo.port == FTPS_DEFAULT_PORT:
-        return [(connectionInfo.port, "implicit")]
-
-    return [
-        (connectionInfo.port, "explicit"),
-        (connectionInfo.port, "implicit"),
-    ]
 
 
 @dataclass
@@ -153,7 +129,7 @@ class FtpTask(Task):
         super().__post_init__()
         self._recalculateSelection()
         self._syncFiles()
-        self.syncStagePaths()
+        self.updateStagePaths()
 
     @property
     def countAll(self) -> int:
@@ -178,7 +154,7 @@ class FtpTask(Task):
     def fileByIndex(self, index: int) -> FtpFile:
         return self._filesByIndex[index]
 
-    def syncStagePaths(self):
+    def updateStagePaths(self):
         rootPath = Path(self.path) / self.title
         if not self.isDirectory:
             outputFile = str(rootPath)
@@ -194,7 +170,7 @@ class FtpTask(Task):
 
     def setTitle(self, title: str):
         self.title = sanitizeFilename(title, fallback=self.title or "ftp_download")
-        self.syncStagePaths()
+        self.updateStagePaths()
 
     def _recalculateSelection(self):
         self.fileSize = sum(file.size for file in self.files if file.selected)
@@ -295,7 +271,7 @@ class FtpTask(Task):
             self.proxies = payload["proxies"]
         if "preBlockNum" in payload:
             self.blockNum = payload["preBlockNum"]
-        self.syncStagePaths()
+        self.updateStagePaths()
 
     def canPause(self) -> bool:
         selectedStages = self.selectedStages
@@ -343,9 +319,6 @@ class FtpWorker(Worker):
         self.subworkerTasks: set[asyncio.Task] = set()
         self._stopping = False
 
-    async def _connectClient(self) -> aioftp.Client:
-        return await _openClient(self.task.connectionInfo, self.task.proxies)
-
     def _closeTransfer(self, client: aioftp.Client | None, stream):
         with suppress(Exception):
             if stream is not None:
@@ -353,7 +326,7 @@ class FtpWorker(Worker):
         if client is not None:
             client.close()
 
-    def _spawnSubworker(self, subworker: FtpSubworker):
+    def _startSubworker(self, subworker: FtpSubworker):
         if self._stopping:
             return
 
@@ -361,7 +334,7 @@ class FtpWorker(Worker):
         self.subworkerTasks.add(task)
         task.add_done_callback(self.subworkerTasks.discard)
 
-    async def _cancelSubworkers(self):
+    async def _stopSubworkers(self):
         if self._stopping:
             return
 
@@ -385,22 +358,6 @@ class FtpWorker(Worker):
                 self.stage.outputFile,
                 len(pending),
             )
-
-    async def _waitForSubworkers(self):
-        while self.subworkerTasks:
-            currentTasks = tuple(self.subworkerTasks)
-            done, _ = await asyncio.wait(
-                currentTasks,
-                return_when=asyncio.FIRST_EXCEPTION,
-            )
-
-            for finishedTask in done:
-                if finishedTask.cancelled():
-                    raise CancelledError
-
-                exception = finishedTask.exception()
-                if exception is not None:
-                    raise exception
 
     def reassignSubworker(self):
         if self._stopping or self.task.status != TaskStatus.RUNNING or self.stage.fileSize <= 0:
@@ -426,13 +383,13 @@ class FtpWorker(Worker):
             self.subworkers.index(slowestSubworker) + 1,
             newSubworker,
         )
-        self._spawnSubworker(newSubworker)
+        self._startSubworker(newSubworker)
 
-    async def _transferRange(self, subworker: FtpSubworker):
+    async def _downloadRange(self, subworker: FtpSubworker):
         client = None
         stream = None
         try:
-            client = await self._connectClient()
+            client = await _openClient(self.task.connectionInfo, self.task.proxies)
             stream = await client.download_stream(
                 PurePosixPath(self.stage.remotePath),
                 offset=subworker.progress,
@@ -453,11 +410,11 @@ class FtpWorker(Worker):
         finally:
             self._closeTransfer(client, stream)
 
-    async def _transferUnknown(self, subworker: FtpSubworker):
+    async def _downloadUnknown(self, subworker: FtpSubworker):
         client = None
         stream = None
         try:
-            client = await self._connectClient()
+            client = await _openClient(self.task.connectionInfo, self.task.proxies)
             stream = await client.download_stream(
                 PurePosixPath(self.stage.remotePath),
                 offset=subworker.progress,
@@ -476,11 +433,11 @@ class FtpWorker(Worker):
         finally:
             self._closeTransfer(client, stream)
 
-    async def _transferWholeFile(self, subworker: FtpSubworker):
+    async def _downloadWholeFile(self, subworker: FtpSubworker):
         client = None
         stream = None
         try:
-            client = await self._connectClient()
+            client = await _openClient(self.task.connectionInfo, self.task.proxies)
             stream = await client.download_stream(PurePosixPath(self.stage.remotePath))
 
             ftruncate(self.fileHandle, 0)
@@ -504,7 +461,7 @@ class FtpWorker(Worker):
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 try:
-                    await self._transferUnknown(subworker)
+                    await self._downloadUnknown(subworker)
                     return
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
@@ -518,7 +475,7 @@ class FtpWorker(Worker):
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
             while True:
                 try:
-                    await self._transferWholeFile(subworker)
+                    await self._downloadWholeFile(subworker)
                     return
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
@@ -531,7 +488,7 @@ class FtpWorker(Worker):
         else:
             while subworker.progress <= subworker.end:
                 try:
-                    await self._transferRange(subworker)
+                    await self._downloadRange(subworker)
                     break
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
@@ -548,7 +505,7 @@ class FtpWorker(Worker):
 
             self.reassignSubworker()
 
-    def checkIfAutoAcceleration(self):
+    def _trySpeedUp(self):
         if self.stage.accelerated or not cfg.autoSpeedUp.value:
             return
 
@@ -638,7 +595,7 @@ class FtpWorker(Worker):
                 else:
                     self.stage.progress = 0
 
-                self.checkIfAutoAcceleration()
+                self._trySpeedUp()
                 await asyncio.sleep(1)
         except CancelledError:
             logger.info(f"{self.stage.outputFile} 停止下载")
@@ -651,7 +608,7 @@ class FtpWorker(Worker):
             if recordFileHandle is not None:
                 recordFileHandle.close()
 
-    def restoreProgress(self) -> bool:
+    def _restoreProgress(self) -> bool:
         recordFile = Path(self.stage.outputFile + ".ghd")
         if not recordFile.exists():
             return False
@@ -670,7 +627,7 @@ class FtpWorker(Worker):
             self.subworkers.clear()
             return False
 
-    def generateSubworkers(self):
+    def _generateSubworkers(self):
         if not self.stage.supportsRange:
             self.subworkers.append(FtpSubworker(0, 0, SpecialFileSize.NOT_SUPPORTED))
             return
@@ -709,13 +666,13 @@ class FtpWorker(Worker):
 
         restored = False
         if self.stage.supportsRange:
-            restored = self.restoreProgress()
+            restored = self._restoreProgress()
         else:
             self._cleanupRecordFile()
 
         if not restored:
             logger.info("正在为 {} 生成 FTP 下载分片", self.stage.outputFile)
-            self.generateSubworkers()
+            self._generateSubworkers()
         else:
             logger.info("从进度文件恢复 FTP 下载分片 {}", self.stage.outputFile)
 
@@ -734,19 +691,30 @@ class FtpWorker(Worker):
 
         try:
             for subworker in self.subworkers:
-                self._spawnSubworker(subworker)
+                self._startSubworker(subworker)
 
-            await self._waitForSubworkers()
+            while self.subworkerTasks:
+                currentTasks = tuple(self.subworkerTasks)
+                done, _ = await asyncio.wait(
+                    currentTasks,
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
+                for finishedTask in done:
+                    if finishedTask.cancelled():
+                        raise CancelledError
+                    exception = finishedTask.exception()
+                    if exception is not None:
+                        raise exception
 
             self.stage.setStatus(TaskStatus.COMPLETED)
             shouldCleanupRecordFile = True
             logger.info("{} 下载完成", self.stage.outputFile)
         except CancelledError:
-            await self._cancelSubworkers()
+            await self._stopSubworkers()
             self.stage.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
-            await self._cancelSubworkers()
+            await self._stopSubworkers()
             self.stage.setError(e)
             logger.opt(exception=e).error("{} 下载阶段失败", self.stage.outputFile)
             raise
@@ -762,12 +730,21 @@ class FtpWorker(Worker):
 
 
 async def _openClient(connectionInfo: FtpConnectionInfo, proxies: dict | None) -> aioftp.Client:
+    scheme = connectionInfo.scheme.lower()
+    if scheme != "ftps":
+        attempts = [(connectionInfo.port, "plain")]
+    elif not connectionInfo.portSpecified:
+        attempts = [(FTP_DEFAULT_PORT, "explicit"), (FTPS_DEFAULT_PORT, "implicit")]
+    elif connectionInfo.port == FTPS_DEFAULT_PORT:
+        attempts = [(connectionInfo.port, "implicit")]
+    else:
+        attempts = [(connectionInfo.port, "explicit"), (connectionInfo.port, "implicit")]
+
     lastError: Exception | None = None
-    attempts = _connectionAttempts(connectionInfo)
 
     for index, (port, mode) in enumerate(attempts):
         client = aioftp.Client(
-            **_buildClientKwargs(proxies),
+            **_buildClientArgs(proxies),
             ssl=ssl.create_default_context() if mode == "implicit" else None,
         )
         try:
@@ -792,22 +769,8 @@ async def _openClient(connectionInfo: FtpConnectionInfo, proxies: dict | None) -
     raise lastError or RuntimeError("无法建立 FTP 连接")
 
 
-async def _closeClient(client: aioftp.Client | None):
-    if client is None:
-        return
-    try:
-        await client.quit()
-    except Exception:
-        client.close()
 
-
-def _displayTitleForSource(path: PurePosixPath, host: str) -> str:
-    if path.name:
-        return sanitizeFilename(path.name, fallback="ftp_download")
-    return sanitizeFilename(host, fallback="ftp_download")
-
-
-async def _probeRangeSupport(client: aioftp.Client) -> bool:
+async def _supportsRange(client: aioftp.Client) -> bool:
     try:
         await client.command("TYPE I", "200")
         await client.command("REST 1", "350")
@@ -817,14 +780,7 @@ async def _probeRangeSupport(client: aioftp.Client) -> bool:
         return False
 
 
-def _relativeRemotePath(remotePath: PurePosixPath, rootPath: PurePosixPath) -> str:
-    try:
-        return str(remotePath.relative_to(rootPath))
-    except ValueError:
-        return remotePath.name
-
-
-async def parse(payload: dict) -> FtpTask:
+async def resolve(payload: dict) -> FtpTask:
     url = str(payload["url"]).strip()
     parsedUrl = urlparse(url)
     scheme = parsedUrl.scheme.lower()
@@ -854,7 +810,7 @@ async def parse(payload: dict) -> FtpTask:
         if sourceType not in {"file", "dir"}:
             raise ValueError("当前 FTP 路径既不是普通文件，也不是目录")
 
-        supportsRange = await _probeRangeSupport(client)
+        supportsRange = await _supportsRange(client)
         files: list[FtpFile] = []
         stages: list[FtpStage] = []
 
@@ -877,7 +833,7 @@ async def parse(payload: dict) -> FtpTask:
                     FtpFile(
                         index=index,
                         remotePath=str(remotePath),
-                        relativePath=_relativeRemotePath(remotePath, sourcePath),
+                        relativePath=(str(remotePath.relative_to(sourcePath)) if sourcePath in remotePath.parents else remotePath.name),
                         size=_parseSize(info.get("size")),
                     )
                 )
@@ -899,7 +855,7 @@ async def parse(payload: dict) -> FtpTask:
             )
 
         task = FtpTask(
-            title=_displayTitleForSource(sourcePath, connectionInfo.host),
+            title=sanitizeFilename(sourcePath.name, fallback="ftp_download") if sourcePath.name else sanitizeFilename(connectionInfo.host, fallback="ftp_download"),
             url=url,
             fileSize=sum(file.size for file in files),
             path=path,
@@ -912,4 +868,8 @@ async def parse(payload: dict) -> FtpTask:
         )
         return task
     finally:
-        await _closeClient(client)
+        if client is not None:
+            try:
+                await client.quit()
+            except Exception:
+                client.close()
