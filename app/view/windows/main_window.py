@@ -20,7 +20,7 @@ from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDB
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
-from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, ensureUniqueTaskTarget, openAppLogFolder
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, deduplicateFilename, openAppLogFolder
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
@@ -343,7 +343,7 @@ class MainWindow(MSFluentWindow):
     def addTask(self, task) -> bool:
         try:
             originalTitle = task.title
-            if ensureUniqueTaskTarget(task):
+            if deduplicateFilename(task):
                 logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
 
             card = featureService.taskCard(task, self)
