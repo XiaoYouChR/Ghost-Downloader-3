@@ -524,7 +524,7 @@ class FileSelectDialog(MessageBoxBase):
         self.summaryLabel.setText(
             self.tr("已选择 {0}/{1} 个文件，共 {2}").format(
                 len(selectedFiles),
-                self.task.totalFileCount,
+                len(self.task.files),
                 toReadableSize(sum(file.size for file in selectedFiles)),
             )
         )
