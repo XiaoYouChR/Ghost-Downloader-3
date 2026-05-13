@@ -149,7 +149,7 @@ class FFmpegRuntimeCard(SettingCard):
         if sys.platform != "win32":
             return
 
-        from .task import createInstallTask
+        from .pack import createInstallTask
 
         self.installButton.setEnabled(False)
         self.installButton.setText(self.tr("准备中..."))
