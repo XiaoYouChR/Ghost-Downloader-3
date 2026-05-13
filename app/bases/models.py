@@ -152,6 +152,8 @@ class TaskStage:
             obj["status"] = TaskStatus[obj["status"]]
         if "path" in obj and isinstance(obj["path"], str):
             obj["path"] = Path(obj["path"])
+        if "resolvePath" in obj and "outputFile" not in obj:
+            obj["outputFile"] = obj.pop("resolvePath")
 
         return stageCls(**_filterDataclassKwargs(stageCls, obj))
 
