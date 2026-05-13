@@ -189,7 +189,7 @@ def toBytes(value: str, unit: str) -> int:
     return int(float(value) * _SCALE[unit])
 
 
-def ensureUniqueTaskTarget(
+def deduplicateFilename(
     task: "Task",
 ) -> bool:
     target = Path(task.outputFolder.strip())
