@@ -7,7 +7,7 @@ from qfluentwidgets import MessageBoxBase, SubtitleLabel, CaptionLabel, ToolButt
     PrimaryToolButton, TableWidget
 
 from app.supports.config import AUTHOR_URL
-from app.supports.utils import getLocalTimeFromGithubApiTime, getReadableSize
+from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
 
 
 class ReleaseInfoDialog(MessageBoxBase):
@@ -110,7 +110,7 @@ class ReleaseInfoDialog(MessageBoxBase):
             nameItem = QTableWidgetItem(asset["name"])
             nameItem.setData(Qt.ItemDataRole.UserRole, asset)
             self.tableView.setItem(row, 0, nameItem)
-            self.tableView.setItem(row, 1, QTableWidgetItem(getReadableSize(asset["size"])))
+            self.tableView.setItem(row, 1, QTableWidgetItem(toReadableSize(asset["size"])))
             self.tableView.setItem(row, 2, QTableWidgetItem(str(asset["download_count"])))
 
     def selectedAsset(self) -> dict[str, Any] | None:

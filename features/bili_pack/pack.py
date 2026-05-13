@@ -8,7 +8,7 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import cfg
-from app.supports.utils import getProxies, sanitizeFilename
+from app.supports.utils import getProxies, toSafeFilename
 from .config import bilibiliConfig
 from .task import BilibiliVideoStage, BilibiliAudioStage, BilibiliMergeStage
 
@@ -233,7 +233,7 @@ class BilibiliPack(FeaturePack):
             requestedQuality = bilibiliConfig.defaultQuality.value
             totalSize = 0
 
-            baseTitle = sanitizeFilename(videoTitle, fallback="bilibili_video")
+            baseTitle = toSafeFilename(videoTitle, fallback="bilibili_video")
             if len(selectedPages) == 1:
                 page = pages[selectedPages[0] - 1]
                 pagePart = str(page.get("part", "")).strip()

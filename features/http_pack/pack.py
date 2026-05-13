@@ -11,7 +11,7 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, DEFAULT_HEADERS
-from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
+from app.supports.utils import getProxies, toSafeFilename, splitRequestHeadersAndCookies
 from .task import HttpTaskStage
 
 
@@ -176,7 +176,7 @@ def _extractFileName(url: str, headers: dict) -> str:
             standardExt = guess_extension(contentType) or ""
             fileName = f"{fileName}.{standardExt}"
 
-    return sanitizeFilename(fileName, fallback=f"file_{int(time_ns())}")
+    return toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
 
 
 class HttpPack(FeaturePack):

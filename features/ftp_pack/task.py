@@ -16,7 +16,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import SpecialFileSize, Task, TaskStage, TaskStatus
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import getProxies, sanitizeFilename
+from app.supports.utils import getProxies, toSafeFilename
 
 
 FTP_CONNECTION_TIMEOUT = 15
@@ -125,7 +125,7 @@ class FtpTask(Task):
             for item in self.files
         ]
         self._filesByIndex = {file.index: file for file in self.files}
-        self.title = sanitizeFilename(self.title, fallback="ftp_download")
+        self.title = toSafeFilename(self.title, fallback="ftp_download")
         super().__post_init__()
         self._recalculateSelection()
         self._syncFiles()
@@ -169,7 +169,7 @@ class FtpTask(Task):
             )
 
     def setTitle(self, title: str):
-        self.title = sanitizeFilename(title, fallback=self.title or "ftp_download")
+        self.title = toSafeFilename(title, fallback=self.title or "ftp_download")
         self.updateStagePaths()
 
     def _recalculateSelection(self):
@@ -855,7 +855,7 @@ async def resolve(payload: dict) -> FtpTask:
             )
 
         task = FtpTask(
-            title=sanitizeFilename(sourcePath.name, fallback="ftp_download") if sourcePath.name else sanitizeFilename(connectionInfo.host, fallback="ftp_download"),
+            title=toSafeFilename(sourcePath.name, fallback="ftp_download") if sourcePath.name else toSafeFilename(connectionInfo.host, fallback="ftp_download"),
             url=url,
             fileSize=sum(file.size for file in files),
             path=path,

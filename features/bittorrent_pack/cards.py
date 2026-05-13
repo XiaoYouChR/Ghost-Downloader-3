@@ -19,7 +19,7 @@ from qfluentwidgets import (
 )
 
 from app.bases.models import TaskStatus
-from app.supports.utils import getReadableSize, getReadableTime
+from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 from app.view.components.labels import IconBodyLabel
@@ -110,7 +110,7 @@ class BitTorrentResultCard(ResultCard):
             self.tr("{0}/{1} 个文件 · {2}").format(
                 self.task.countSelected,
                 self.task.countAll,
-                getReadableSize(self.task.fileSize),
+                toReadableSize(self.task.fileSize),
             )
         )
 
@@ -143,7 +143,7 @@ class BTTaskCard(UniversalTaskCard):
         if self.task.isSeeding and self.task.shareRatioPercent > 0:
             parts.append(self.tr("分享率 {0:.2f}%").format(self.task.shareRatioPercent))
         if self.task.isSeeding and self.task.seedingTimeSeconds > 0:
-            parts.append(self.tr("做种 {0}").format(getReadableTime(self.task.seedingTimeSeconds)))
+            parts.append(self.tr("做种 {0}").format(toReadableTime(self.task.seedingTimeSeconds)))
         if self.task.peerCount or self.task.seedCount:
             parts.append(
                 self.tr("Peers {0} / Seeds {1}").format(
@@ -155,13 +155,13 @@ class BTTaskCard(UniversalTaskCard):
 
     def _refreshInfoLayout(self):
         if self.task.status == TaskStatus.RUNNING:
-            self.speedLabel.setText(f"{getReadableSize(self.task.downloadRate)}/s")
-            self.uploadRateLabel.setText(f"{getReadableSize(self.task.uploadRate)}/s")
+            self.speedLabel.setText(f"{toReadableSize(self.task.downloadRate)}/s")
+            self.uploadRateLabel.setText(f"{toReadableSize(self.task.uploadRate)}/s")
             if self.task.isSeeding:
                 self.leftTimeLabel.hide()
             elif self.task.fileSize > 0 and self.task.downloadRate > 0:
                 remainingBytes = self.task.fileSize - self.task.stage.receivedBytes
-                self.leftTimeLabel.setText(getReadableTime(int(remainingBytes / self.task.downloadRate)))
+                self.leftTimeLabel.setText(toReadableTime(int(remainingBytes / self.task.downloadRate)))
                 self.leftTimeLabel.show()
             else:
                 self.leftTimeLabel.setText("--")

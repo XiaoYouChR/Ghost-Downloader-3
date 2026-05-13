@@ -33,7 +33,7 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
-from app.supports.utils import getReadableSize
+from app.supports.utils import toReadableSize
 from app.view.components.tree_view import AutoSizingTreeView
 
 
@@ -443,7 +443,7 @@ class FileSelectDialog(MessageBoxBase):
             item.setCheckable(True)
             item.setCheckState(Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
             item.setIcon(provider.icon(QFileInfo(name)))
-            sizeItem = QStandardItem(getReadableSize(file.size))
+            sizeItem = QStandardItem(toReadableSize(file.size))
             sizeItem.setEditable(False)
             parent.appendRow([item, sizeItem])
             self._fileItems[file.index] = item
@@ -525,7 +525,7 @@ class FileSelectDialog(MessageBoxBase):
             self.tr("已选择 {0}/{1} 个文件，共 {2}").format(
                 len(selectedFiles),
                 self.task.totalFileCount,
-                getReadableSize(sum(file.size for file in selectedFiles)),
+                toReadableSize(sum(file.size for file in selectedFiles)),
             )
         )
 
