@@ -327,8 +327,8 @@ class DownloadOptionDialog(MaskDialogBase):
             "proxies": getProxies(),
             "path": Path(cfg.downloadFolder.value),
         }
-        coreService.parseUrl(
-            payload,
+        coreService.runCoroutine(
+            coreService._resolve(payload),
             lambda task, error: self._onAssetParsed(task, error),
         )
         self.close()
