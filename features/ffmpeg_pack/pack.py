@@ -11,7 +11,7 @@ from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, sanitizeFilename
-from .config import ffmpegConfig, resolveFFmpegExecutables
+from .config import _executableName, ffmpegConfig, resolveFFmpegExecutables
 from .task import FFmpegStage
 
 if TYPE_CHECKING:
@@ -30,13 +30,6 @@ _FFMPEG_HEADERS = {
     "user-agent": DEFAULT_HEADERS["user-agent"],
 }
 
-
-def _executableName(name: str) -> str:
-    return f"{name}.exe" if sys.platform == "win32" else name
-
-
-def _normalizePath(path: Path | str) -> str:
-    return str(Path(path)).replace("\\", "/")
 
 
 def _resourceExtension(name: str, url: str) -> str:
@@ -233,7 +226,7 @@ async def createInstallTask() -> Task:
     downloadStage: HttpTaskStage = downloadTask.stages[0]
     archiveSize = downloadTask.fileSize if downloadTask.fileSize > 0 else assetInfo["size"]
     assetName = downloadTask.title or str(assetInfo["name"])
-    archivePath = _normalizePath(Path(installFolder) / assetName)
+    archivePath = str(Path(installFolder) / assetName).replace("\\", "/")
 
     downloadStage.stageIndex = 1
     downloadStage.outputFile = archivePath
@@ -255,7 +248,7 @@ async def createInstallTask() -> Task:
     task.addStage(ExtractStage(
         stageIndex=2,
         archivePath=archivePath,
-        installFolder=_normalizePath(Path(installFolder)),
+        installFolder=str(Path(installFolder)).replace("\\", "/"),
         executableNames=[_executableName("ffmpeg"), _executableName("ffprobe")],
     ))
     return task
@@ -269,7 +262,7 @@ class FFmpegPack(FeaturePack):
         return str(url).strip() == FFMPEG_MERGE_URL
 
     async def resolve(self, payload: dict) -> dict:
-        return payload
+        return {"_task": await createMergeTask(payload)}
 
     def build(self, payload: dict) -> Task:
-        raise NotImplementedError("Use createMergeTask() for FFmpeg merge tasks")
+        return payload["_task"]
