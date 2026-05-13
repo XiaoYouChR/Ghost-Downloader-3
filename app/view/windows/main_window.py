@@ -475,7 +475,7 @@ class MainWindow(MSFluentWindow):
             "path": Path(cfg.downloadFolder.value),
         }
         coreService.runCoroutine(
-            coreService._resolve(payload),
+            coreService._parse(payload),
             lambda task, error, assetName=assetName: self._onReleaseAssetParsed(assetName, task, error),
         )
 

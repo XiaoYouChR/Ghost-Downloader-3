@@ -41,11 +41,8 @@ class BitTorrentPack(FeaturePack):
     def matches(self, url: str) -> bool:
         return _isTorrentUrl(url)
 
-    async def resolve(self, payload: dict) -> dict:
-        return {"_task": await _btResolve(payload)}
-
-    def build(self, payload: dict) -> Task:
-        return payload["_task"]
+    async def parse(self, payload: dict) -> Task:
+        return await _btResolve(payload)
 
     def taskCard(self, task, parent=None):
         return BTTaskCard(task, parent)

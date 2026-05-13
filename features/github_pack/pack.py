@@ -55,20 +55,13 @@ class GitHubPack(FeaturePack):
     def matches(self, url: str) -> bool:
         return self.config.enabled.value and bool(selectedProxySite()) and _isSupportedGitHubUrl(url)
 
-    async def resolve(self, payload: dict) -> dict:
+    async def parse(self, payload: dict) -> Task:
         originalUrl = str(payload["url"]).strip()
         proxiedPayload = payload.copy()
         proxiedPayload["url"] = f"{selectedProxySite().rstrip('/')}/{originalUrl.lstrip('/')}"
 
         httpPack = HttpPack()
-        resolvedPayload = await httpPack.resolve(proxiedPayload)
-        resolvedPayload["originalUrl"] = originalUrl
-        return resolvedPayload
-
-    def build(self, payload: dict) -> Task:
-        originalUrl = payload.pop("originalUrl", payload["url"])
-        httpPack = HttpPack()
-        task = httpPack.build(payload)
+        task = await httpPack.parse(proxiedPayload)
         task.url = originalUrl
         task.packId = self.packId
         return task
