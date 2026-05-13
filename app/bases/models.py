@@ -161,7 +161,7 @@ class TaskStage:
         return stageCls(**_filterDataclassKwargs(stageCls, obj))
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, eq=False)
 class Task:
     title: str
     url: str
