@@ -37,12 +37,12 @@ if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
 
 try:
-    from ffmpeg_pack.config import resolveFFmpegExecutables
+    from ffmpeg_pack.config import ffmpegPaths
 except ImportError:
-    from features.ffmpeg_pack.config import resolveFFmpegExecutables
+    from features.ffmpeg_pack.config import ffmpegPaths
 
 
-def resolveDownloaderPath() -> str:
+def downloaderPath() -> str:
     installFolder = Path(m3u8Config.installFolder.value)
     candidate = installFolder / toExecutable("N_m3u8DL-RE")
     if candidate.is_file():
@@ -55,8 +55,8 @@ def resolveDownloaderPath() -> str:
 
 
 async def queryM3U8Runtime() -> dict[str, str]:
-    downloaderPath = resolveDownloaderPath()
-    ffmpegPath, _ = resolveFFmpegExecutables()
+    downloaderPath = downloaderPath()
+    ffmpegPath, _ = ffmpegPaths()
     runtimeInfo = {
         "downloaderPath": downloaderPath,
         "version": "",

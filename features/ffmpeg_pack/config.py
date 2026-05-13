@@ -32,7 +32,7 @@ def _guessInstallRoot(ffmpegPath: str) -> str:
     return toPosixPath(path.parent)
 
 
-def _resolveExecutable(name: str) -> str:
+def _findExecutable(name: str) -> str:
     installFolder = Path(ffmpegConfig.installFolder.value)
     for candidate in (installFolder / "bin" / toExecutable(name), installFolder / toExecutable(name)):
         if candidate.is_file():
@@ -42,12 +42,12 @@ def _resolveExecutable(name: str) -> str:
     return toPosixPath(found) if found else ""
 
 
-def resolveFFmpegExecutables() -> tuple[str, str]:
-    return _resolveExecutable("ffmpeg"), _resolveExecutable("ffprobe")
+def ffmpegPaths() -> tuple[str, str]:
+    return _findExecutable("ffmpeg"), _findExecutable("ffprobe")
 
 
 async def queryFFmpegRuntime() -> dict[str, str]:
-    ffmpegPath, ffprobePath = resolveFFmpegExecutables()
+    ffmpegPath, ffprobePath = ffmpegPaths()
     runtimeInfo = {
         "ffmpegPath": ffmpegPath,
         "ffprobePath": ffprobePath,

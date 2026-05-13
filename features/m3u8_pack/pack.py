@@ -6,7 +6,7 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies, splitRequestHeadersAndCookies, toPosixPath
+from app.supports.utils import getProxies, splitCookies, toPosixPath
 from .config import m3u8Config
 from .task import M3U8TaskStage, _isLive, _manifestType, _stem, _title
 
@@ -27,7 +27,7 @@ class M3U8Pack(FeaturePack):
         url = str(payload["url"]).strip()
         headers = payload.get("headers", DEFAULT_HEADERS)
         proxies = payload.get("proxies", getProxies())
-        requestHeaders, requestCookies = splitRequestHeadersAndCookies(
+        requestHeaders, requestCookies = splitCookies(
             headers if isinstance(headers, dict) else DEFAULT_HEADERS
         )
 

@@ -11,11 +11,11 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, DEFAULT_HEADERS
-from app.supports.utils import getProxies, toSafeFilename, splitRequestHeadersAndCookies
+from app.supports.utils import getProxies, toSafeFilename, splitCookies
 from .task import HttpTaskStage
 
 
-def _parsePositiveContentLength(headers: dict[str, str]) -> int:
+def _contentLength(headers: dict[str, str]) -> int:
     value = headers.get("content-length", "").strip()
     if not value:
         return SpecialFileSize.UNKNOWN
@@ -28,7 +28,7 @@ def _parsePositiveContentLength(headers: dict[str, str]) -> int:
     return length if length > 0 else SpecialFileSize.UNKNOWN
 
 
-def _parseContentRangeTotal(headers: dict[str, str]) -> int:
+def _rangeSize(headers: dict[str, str]) -> int:
     contentRange = headers.get("content-range", "").strip()
     if not contentRange or "/" not in contentRange:
         return SpecialFileSize.UNKNOWN
@@ -45,15 +45,9 @@ def _parseContentRangeTotal(headers: dict[str, str]) -> int:
     return size if size > 0 else SpecialFileSize.UNKNOWN
 
 
-def _buildRangeProbeHeaders(headers: dict, rangeValue: str) -> dict:
-    requestHeaders = headers.copy()
-    requestHeaders["range"] = rangeValue
-    requestHeaders["accept-encoding"] = "identity"
-    return requestHeaders
 
-
-async def _requestProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
-    requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers)
+async def _sendProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
+    requestHeaders, requestCookies = splitCookies(headers)
     response = await client.get(
         url,
         headers=requestHeaders,
@@ -72,19 +66,19 @@ async def _requestProbe(client: niquests.AsyncSession, url: str, headers: dict, 
         await response.close()
 
 
-async def _probeDownloadInfo(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
+async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
     client = niquests.AsyncSession(happy_eyeballs=True)
     client.trust_env = False
 
     try:
-        statusCode, responseHeaders, finalUrl = await _requestProbe(
+        statusCode, responseHeaders, finalUrl = await _sendProbe(
             client,
             url,
-            _buildRangeProbeHeaders(headers, "bytes=1-1"),
+            {**headers, "range": "bytes=1-1", "accept-encoding": "identity"},
             proxies,
         )
 
-        fileSize = _parseContentRangeTotal(responseHeaders)
+        fileSize = _rangeSize(responseHeaders)
         supportsRange = statusCode == 206 and "content-range" in responseHeaders
 
         if supportsRange:
@@ -92,28 +86,28 @@ async def _probeDownloadInfo(url: str, headers: dict, proxies: dict) -> tuple[in
                         responseHeaders.get("content-range", ""), fileSize)
             return fileSize, True, finalUrl, responseHeaders
 
-        fileSize = _parsePositiveContentLength(responseHeaders)
+        fileSize = _contentLength(responseHeaders)
 
         if statusCode == 200:
             logger.info("偏移 Range 探测返回 200, content-length: {}",
                         responseHeaders.get("content-length", ""))
             if fileSize in {SpecialFileSize.UNKNOWN, 1}:
-                fallbackStatus, fallbackHeaders, _ = await _requestProbe(
+                fallbackStatus, fallbackHeaders, _ = await _sendProbe(
                     client,
                     url,
-                    _buildRangeProbeHeaders(headers, "bytes=0-0"),
+                    {**headers, "range": "bytes=0-0", "accept-encoding": "identity"},
                     proxies,
                 )
-                fallbackSize = _parseContentRangeTotal(fallbackHeaders)
+                fallbackSize = _rangeSize(fallbackHeaders)
                 if fallbackStatus == 206 and "content-range" in fallbackHeaders:
                     logger.info("回退 Range 探测成功, content-range: {}, fileSize: {}",
                                 fallbackHeaders.get("content-range", ""), fallbackSize)
                     return fallbackSize, True, finalUrl, fallbackHeaders
 
                 if fileSize == SpecialFileSize.UNKNOWN:
-                    fileSize = _parsePositiveContentLength(fallbackHeaders)
+                    fileSize = _contentLength(fallbackHeaders)
                     if fileSize == SpecialFileSize.UNKNOWN and fallbackStatus == 416:
-                        fileSize = _parseContentRangeTotal(fallbackHeaders)
+                        fileSize = _rangeSize(fallbackHeaders)
 
         if fileSize == SpecialFileSize.UNKNOWN:
             logger.info("文件大小未知，按不支持断点续传处理")
@@ -125,7 +119,7 @@ async def _probeDownloadInfo(url: str, headers: dict, proxies: dict) -> tuple[in
         await client.close()
 
 
-def _extractFileName(url: str, headers: dict) -> str:
+def _fileName(url: str, headers: dict) -> str:
     fileName = ""
 
     cd = headers.get("content-disposition", "")
@@ -191,8 +185,8 @@ class HttpPack(FeaturePack):
         headers: dict = payload.get("headers", DEFAULT_HEADERS)
         proxies: dict = payload.get("proxies", getProxies())
 
-        fileSize, supportsRange, finalUrl, head = await _probeDownloadInfo(url, headers, proxies)
-        fileName = _extractFileName(finalUrl, head)
+        fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
+        fileName = _fileName(finalUrl, head)
 
         return {
             **payload,

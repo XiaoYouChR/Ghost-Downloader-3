@@ -13,7 +13,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import splitRequestHeadersAndCookies
+from app.supports.utils import splitCookies
 
 
 @dataclass(kw_only=True)
@@ -50,7 +50,7 @@ class HttpWorker(Worker):
         self.stage = stage
         self.speedHistory = []
         self.accelCheckTime = 0
-        self.requestHeaders, self.requestCookies = splitRequestHeadersAndCookies(stage.headers)
+        self.requestHeaders, self.requestCookies = splitCookies(stage.headers)
 
     def reassignSubworker(self):
         if self.stage.fileSize <= 0:

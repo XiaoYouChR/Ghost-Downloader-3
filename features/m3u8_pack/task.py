@@ -16,15 +16,15 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, toBytes, toExecutable, toPosixPath, toSafeFilename
-from .config import m3u8Config, resolveDownloaderPath
+from .config import m3u8Config, downloaderPath
 
 if TYPE_CHECKING:
-    from features.ffmpeg_pack.config import resolveFFmpegExecutables
+    from features.ffmpeg_pack.config import ffmpegPaths
     from features.http_pack.task import HttpTaskStage
     from features.extract_pack.task import ExtractStage
 else:
     from extract_pack.task import ExtractStage
-    from ffmpeg_pack.config import resolveFFmpegExecutables
+    from ffmpeg_pack.config import ffmpegPaths
     from http_pack.task import HttpTaskStage
 
 
@@ -160,7 +160,7 @@ class M3U8Worker(Worker):
         if proxyUrl:
             args.append(f"--custom-proxy={proxyUrl}")
 
-        ffmpegPath, _ = resolveFFmpegExecutables()
+        ffmpegPath, _ = ffmpegPaths()
         if ffmpegPath:
             args.append(f"--ffmpeg-binary-path={ffmpegPath}")
 
@@ -275,8 +275,8 @@ class M3U8Worker(Worker):
             self.task.setTitle(found.name)
 
     async def run(self):
-        downloaderPath = resolveDownloaderPath()
-        if not downloaderPath:
+        execPath = downloaderPath()
+        if not execPath:
             raise RuntimeError("未找到可用的 N_m3u8DL-RE，请先在设置中安装或配置运行时")
 
         self.task.path.mkdir(parents=True, exist_ok=True)
@@ -285,11 +285,11 @@ class M3U8Worker(Worker):
         process = None
         supervisorTask = None
         try:
-            args = self._buildArgs(downloaderPath)
+            args = self._buildArgs(execPath)
             process = await asyncio.create_subprocess_exec(
-                downloaderPath,
+                execPath,
                 *args,
-                cwd=str(Path(downloaderPath).parent),
+                cwd=str(Path(execPath).parent),
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
