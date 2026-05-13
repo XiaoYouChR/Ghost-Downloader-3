@@ -6,24 +6,9 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies, splitRequestHeadersAndCookies
+from app.supports.utils import getProxies, splitRequestHeadersAndCookies, toPosixPath
 from .config import m3u8Config
-from .task import (
-    M3U8TaskStage,
-    _deriveDefaultTitle,
-    _deriveManifestType,
-    _detectLive,
-    _normalizePath,
-    _stripKnownSuffix,
-)
-
-
-def _isSupportedUrl(url: str) -> bool:
-    parsedUrl = urlparse(url)
-    if parsedUrl.scheme.lower() not in {"http", "https"}:
-        return False
-    loweredUrl = url.lower()
-    return any(marker in loweredUrl for marker in (".m3u8", ".m3u", ".mpd"))
+from .task import M3U8TaskStage, _isLive, _manifestType, _stem, _title
 
 
 class M3U8Pack(FeaturePack):
@@ -32,7 +17,11 @@ class M3U8Pack(FeaturePack):
     config = m3u8Config
 
     def matches(self, url: str) -> bool:
-        return _isSupportedUrl(url)
+        parsedUrl = urlparse(url)
+        if parsedUrl.scheme.lower() not in {"http", "https"}:
+            return False
+        loweredUrl = url.lower()
+        return ".m3u8" in loweredUrl or ".m3u" in loweredUrl or ".mpd" in loweredUrl
 
     async def resolve(self, payload: dict) -> dict:
         url = str(payload["url"]).strip()
@@ -58,10 +47,10 @@ class M3U8Pack(FeaturePack):
                 response.raise_for_status()
                 body = response.text
                 loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
-                manifestType = _deriveManifestType(str(response.url), loweredHeaders, body)
-                isLive = _detectLive(manifestType, body)
+                manifestType = _manifestType(str(response.url), loweredHeaders, body)
+                isLive = _isLive(manifestType, body)
                 extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
-                title = _deriveDefaultTitle(str(response.url), loweredHeaders, extension)
+                title = _title(str(response.url), loweredHeaders, extension)
             finally:
                 response.close()
         finally:
@@ -85,6 +74,9 @@ class M3U8Pack(FeaturePack):
         manifestType: str = payload.get("manifestType", "m3u8")
         isLive: bool = payload.get("isLive", False)
 
+        outputExtension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
+        saveName = _stem(title)
+
         metadata = {
             "headers": headers,
             "proxies": proxies,
@@ -103,6 +95,8 @@ class M3U8Pack(FeaturePack):
             "manifestType": manifestType,
             "isLive": isLive,
             "actualExtension": "",
+            "saveName": saveName,
+            "outputExtension": outputExtension,
         }
 
         task = Task(
@@ -115,8 +109,8 @@ class M3U8Pack(FeaturePack):
         )
 
         taskId = task.taskId
-        outputFile = _normalizePath(path / title)
-        tempDir = _normalizePath(path / ".gd3_m3u8" / taskId)
+        outputFile = toPosixPath(path / title)
+        tempDir = toPosixPath(path / ".gd3_m3u8" / taskId)
 
         task.addStage(M3U8TaskStage(
             stageIndex=1,

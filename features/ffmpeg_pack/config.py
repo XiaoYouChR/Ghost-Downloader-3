@@ -18,31 +18,28 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.supports.utils import toExecutable, toPosixPath
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
     from app.view.windows.main_window import MainWindow
 
 
-def _executableName(name: str) -> str:
-    return f"{name}.exe" if sys.platform == "win32" else name
-
-
 def _guessInstallRoot(ffmpegPath: str) -> str:
     path = Path(ffmpegPath)
     if path.parent.name.lower() == "bin":
-        return str(path.parent.parent).replace("\\", "/")
-    return str(path.parent).replace("\\", "/")
+        return toPosixPath(path.parent.parent)
+    return toPosixPath(path.parent)
 
 
 def _resolveExecutable(name: str) -> str:
     installFolder = Path(ffmpegConfig.installFolder.value)
-    for candidate in (installFolder / "bin" / _executableName(name), installFolder / _executableName(name)):
+    for candidate in (installFolder / "bin" / toExecutable(name), installFolder / toExecutable(name)):
         if candidate.is_file():
-            return str(candidate).replace("\\", "/")
+            return toPosixPath(candidate)
 
     found = shutil.which(name)
-    return str(found).replace("\\", "/") if found else ""
+    return toPosixPath(found) if found else ""
 
 
 def resolveFFmpegExecutables() -> tuple[str, str]:

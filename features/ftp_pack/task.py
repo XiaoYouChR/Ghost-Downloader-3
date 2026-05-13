@@ -32,7 +32,7 @@ def _parseSize(value) -> int:
     return size if size > 0 else SpecialFileSize.UNKNOWN
 
 
-def _buildClientArgs(proxies: dict | None) -> dict[str, Any]:
+def _buildArgs(proxies: dict | None) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "connection_timeout": FTP_CONNECTION_TIMEOUT,
         "socket_timeout": FTP_SOCKET_TIMEOUT,
@@ -744,7 +744,7 @@ async def _openClient(connectionInfo: FtpConnectionInfo, proxies: dict | None) -
 
     for index, (port, mode) in enumerate(attempts):
         client = aioftp.Client(
-            **_buildClientArgs(proxies),
+            **_buildArgs(proxies),
             ssl=ssl.create_default_context() if mode == "implicit" else None,
         )
         try:

@@ -10,8 +10,8 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies, sanitizeFilename
-from .config import _executableName, ffmpegConfig, resolveFFmpegExecutables
+from app.supports.utils import getProxies, toExecutable, toPosixPath, toSafeFilename
+from .config import ffmpegConfig, resolveFFmpegExecutables
 from .task import FFmpegStage
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ def _resourceExtension(name: str, url: str) -> str:
 
 
 def _mergeOutputTitle(title: str) -> str:
-    baseTitle = sanitizeFilename(title, fallback="merged-media")
+    baseTitle = toSafeFilename(title, fallback="merged-media")
     if baseTitle.lower().endswith(".mp4"):
         return baseTitle
     return f"{baseTitle}.mp4"
@@ -226,7 +226,7 @@ async def createInstallTask() -> Task:
     downloadStage: HttpTaskStage = downloadTask.stages[0]
     archiveSize = downloadTask.fileSize if downloadTask.fileSize > 0 else assetInfo["size"]
     assetName = downloadTask.title or str(assetInfo["name"])
-    archivePath = str(Path(installFolder) / assetName).replace("\\", "/")
+    archivePath = toPosixPath(Path(installFolder) / assetName)
 
     downloadStage.stageIndex = 1
     downloadStage.outputFile = archivePath
@@ -248,8 +248,8 @@ async def createInstallTask() -> Task:
     task.addStage(ExtractStage(
         stageIndex=2,
         archivePath=archivePath,
-        installFolder=str(Path(installFolder)).replace("\\", "/"),
-        executableNames=[_executableName("ffmpeg"), _executableName("ffprobe")],
+        installFolder=toPosixPath(Path(installFolder)),
+        executableNames=[toExecutable("ffmpeg"), toExecutable("ffprobe")],
     ))
     return task
 

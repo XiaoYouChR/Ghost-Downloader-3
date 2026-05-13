@@ -321,7 +321,7 @@ class BTWorker(Worker):
         self._seedingTimeBaseSeconds = self.task.seedingTimeSeconds
         self._sessionSeedingStartSeconds: int | None = None
 
-    def _buildParams(self) -> lt.add_torrent_params:
+    def _buildArgs(self) -> lt.add_torrent_params:
         if self.task.resumeData:
             try:
                 params = lt.read_resume_data(b64decode(self.task.resumeData.encode("ascii")))
@@ -539,7 +539,7 @@ class BTWorker(Worker):
         )
 
         try:
-            params = self._buildParams()
+            params = self._buildArgs()
             self.handle = self.session.add_torrent(params)
             self._mapFiles()
             self._updateSettings()
