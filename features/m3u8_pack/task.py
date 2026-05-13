@@ -77,7 +77,6 @@ def _isLive(manifestType: str, body: str) -> bool:
 def _title(url: str, headers: dict[str, str], extension: str) -> str:
     candidates: list[str] = []
 
-    # Content-Disposition filename 解析
     cd = headers.get("content-disposition", "")
     if cd:
         msg = Message()
@@ -331,7 +330,6 @@ M3U8TaskStage.workerType = M3U8Worker
 async def createInstallTask() -> Task:
     from app.services.feature_service import featureService
 
-    # 检测当前平台
     machine = platform.machine().lower()
     if sys.platform == "win32":
         if machine in {"amd64", "x86_64"}:
@@ -354,7 +352,6 @@ async def createInstallTask() -> Task:
     else:
         raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
 
-    # 请求 GitHub Release
     client = niquests.AsyncSession(headers=_M3U8DL_RELEASE_HEADERS, timeout=30, happy_eyeballs=True)
     client.trust_env = False
     try:
@@ -376,7 +373,6 @@ async def createInstallTask() -> Task:
     if not isinstance(assets, list):
         raise RuntimeError("GitHub Release 返回了无效的 assets 数据")
 
-    # 匹配当前平台的 asset
     asset = None
     for item in assets:
         if target in str(item.get("name") or ""):
@@ -391,7 +387,6 @@ async def createInstallTask() -> Task:
     if not downloadUrl or not assetName or size <= 0:
         raise RuntimeError("GitHub Release 返回了不完整的安装包信息")
 
-    # 构建安装任务
     installFolder = m3u8Config.installFolder.value
     downloadPayload = {
         "url": downloadUrl,

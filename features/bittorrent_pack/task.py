@@ -341,7 +341,7 @@ class BTWorker(Worker):
                 flags &= ~int(lt.torrent_flags.sequential_download)
             params.flags = flags | int(lt.torrent_flags.update_subscribe)
 
-        # ⚠️ 即使从 resume 恢复也要覆盖参数，确保用户修改的设置生效（路径、文件选择、限速等）
+        # 即使从 resume 恢复也要覆盖参数，确保用户修改的设置生效
         params.save_path = str(self.task.path)
         params.storage_mode = lt.storage_mode_t.storage_mode_allocate if self.task.storageMode == "allocate" else lt.storage_mode_t.storage_mode_sparse
         params.file_priorities = self.task.priorities()

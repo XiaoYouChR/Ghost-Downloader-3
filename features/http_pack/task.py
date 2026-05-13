@@ -75,7 +75,7 @@ class HttpWorker(Worker):
         return requestHeaders
 
     async def handleSubworker(self, subworker: HttpSubworker):
-        if subworker.end == SpecialFileSize.UNKNOWN:
+        if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
             while True:
                 try:
                     res = await self.client.get(
@@ -110,7 +110,7 @@ class HttpWorker(Worker):
                     )
                     await asyncio.sleep(5)
 
-        elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
+        elif subworker.end == SpecialFileSize.NOT_SUPPORTED:  # 不支持断点续传
             while True:
                 try:
                     ftruncate(self.fileHandle, 0)
@@ -151,7 +151,7 @@ class HttpWorker(Worker):
                     )
                     await asyncio.sleep(5)
 
-        else:
+        else:  # 正常下载
             while subworker.progress <= subworker.end:
                 try:
                     res = await self.client.get(
@@ -278,7 +278,7 @@ class HttpWorker(Worker):
             try:
                 with open(recordFile, "rb") as f:
                     while True:
-                        data = f.read(24)
+                        data = f.read(24)  # 每个 subworker 3 个 uint64, 共 24 字节
                         if not data:
                             break
                         start, progress, end = unpack("<QQQ", data)
