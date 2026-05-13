@@ -91,19 +91,14 @@ class BrowserService(QObject):
         self._snapshotTimer.timeout.connect(self._broadcastTaskSnapshots)
         self._snapshotTimer.start()
 
-        self._ensurePairToken()
-        cfg.enableBrowserExtension.valueChanged.connect(self._syncEnabled)
-        self._syncEnabled(cfg.enableBrowserExtension.value)
-
-    def _ensurePairToken(self):
-        if cfg.browserExtensionPairToken.value:
-            return
-
-        cfg.set(cfg.browserExtensionPairToken, token_urlsafe(16))
+        self.pairToken  # ensure token exists
+        cfg.enableBrowserExtension.valueChanged.connect(self._setEnabled)
+        self._setEnabled(cfg.enableBrowserExtension.value)
 
     @property
     def pairToken(self) -> str:
-        self._ensurePairToken()
+        if not cfg.browserExtensionPairToken.value:
+            cfg.set(cfg.browserExtensionPairToken, token_urlsafe(16))
         return str(cfg.browserExtensionPairToken.value)
 
     def regeneratePairToken(self) -> str:
@@ -126,13 +121,10 @@ class BrowserService(QObject):
 
         return cls._instance
 
-    def _sessionKey(self, socket: "QWebSocket") -> int:
-        return id(socket)
-
-    def _getSession(self, socket: "QWebSocket | None") -> _BrowserClientSession | None:
+    def _session(self, socket: "QWebSocket | None") -> _BrowserClientSession | None:
         if socket is None:
             return None
-        return self._clientSessions.get(self._sessionKey(socket))
+        return self._clientSessions.get(id(socket))
 
     def _closeAllClients(self):
         for session in list(self._clientSessions.values()):
@@ -140,7 +132,7 @@ class BrowserService(QObject):
         self._clientSessions.clear()
 
     @Slot(bool)
-    def _syncEnabled(self, enabled: bool):
+    def _setEnabled(self, enabled: bool):
         if enabled:
             if self.server.isListening():
                 return
@@ -169,9 +161,9 @@ class BrowserService(QObject):
             return
 
         session = _BrowserClientSession(socket=socket)
-        self._clientSessions[self._sessionKey(socket)] = session
+        self._clientSessions[id(socket)] = session
 
-        socket.textMessageReceived.connect(self._onReceiveMessage)
+        socket.textMessageReceived.connect(self._onMessage)
         socket.disconnected.connect(self._onClientDisconnected)
         logger.debug("Browser client connected: {}:{}", socket.peerAddress().toString(), socket.peerPort())
 
@@ -181,7 +173,7 @@ class BrowserService(QObject):
         if socket is None:
             return
 
-        self._clientSessions.pop(self._sessionKey(socket), None)
+        self._clientSessions.pop(id(socket), None)
         logger.debug("Browser client disconnected: {}:{}", socket.peerAddress().toString(), socket.peerPort())
 
     def _send(self, session: _BrowserClientSession, payload: dict[str, Any]):
@@ -252,7 +244,7 @@ class BrowserService(QObject):
         value = data.get(key)
         return value if isinstance(value, int) and value > 0 else default
 
-    def _serializeTask(self, task: Task) -> dict[str, Any]:
+    def _serialize(self, task: Task) -> dict[str, Any]:
         resolvePath = Path(task.outputFolder)
         parentPath = resolvePath.parent
         stages = task.stages
@@ -278,7 +270,7 @@ class BrowserService(QObject):
             "packName": packName,
         }
 
-    def _allTrackedTasks(self) -> list[Task]:
+    def _allTasks(self) -> list[Task]:
         tasksById: dict[str, Task] = {
             task.taskId: task for task in taskRecorder.memorizedTasks.values()
         }
@@ -286,18 +278,18 @@ class BrowserService(QObject):
             tasksById[task.taskId] = task
         return list(tasksById.values())
 
-    def _findTrackedTask(self, taskId: str) -> Task | None:
+    def _findTask(self, taskId: str) -> Task | None:
         task = coreService.getTaskById(taskId)
         if task is not None:
             return task
         return taskRecorder.memorizedTasks.get(taskId)
 
-    def _buildTaskSnapshot(self) -> bytes:
-        tasks = sorted(self._allTrackedTasks(), key=lambda item: item.createdAt, reverse=True)
+    def _taskSnapshot(self) -> bytes:
+        tasks = sorted(self._allTasks(), key=lambda item: item.createdAt, reverse=True)
         return dumps(
             {
                 "type": BrowserMessageType.TASK_SNAPSHOT,
-                "tasks": [self._serializeTask(task) for task in tasks],
+                "tasks": [self._serialize(task) for task in tasks],
             }
         )
 
@@ -306,7 +298,7 @@ class BrowserService(QObject):
         if not self._clientSessions:
             return
 
-        snapshot = self._buildTaskSnapshot()
+        snapshot = self._taskSnapshot()
         for session in list(self._clientSessions.values()):
             if not session.authenticated or not session.subscribedTasks:
                 continue
@@ -319,7 +311,7 @@ class BrowserService(QObject):
             except Exception as error:
                 logger.opt(exception=error).warning("Failed to push browser task snapshot")
 
-    def _buildParsePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
+    def _toResolvePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
         rawPath = rawPayload.get("path")
         return {
             "url": self._stringField(rawPayload, "url"),
@@ -332,7 +324,7 @@ class BrowserService(QObject):
             "preBlockNum": self._positiveIntField(rawPayload, "preBlockNum", cfg.preBlockNum.value),
         }
 
-    def _buildMergePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
+    def _mergePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
         rawPath = rawPayload.get("path")
         return {
             "url": BrowserVirtualUrl.FFMPEG_MERGE,
@@ -430,7 +422,7 @@ class BrowserService(QObject):
             source = BrowserTaskSource.RESOURCE
 
         if source == BrowserTaskSource.RESOURCE_MERGE:
-            mergePayload = self._buildMergePayload(payload)
+            mergePayload = self._mergePayload(payload)
             mergePayload["outputTitle"] = title
             if len(mergePayload["resources"]) != 2:
                 self._sendResult(
@@ -454,7 +446,7 @@ class BrowserService(QObject):
             )
             return
 
-        parsePayload = self._buildParsePayload(payload)
+        parsePayload = self._toResolvePayload(payload)
         if not parsePayload["url"]:
             self._sendResult(
                 session,
@@ -596,7 +588,7 @@ class BrowserService(QObject):
             )
             return
 
-        task = self._findTrackedTask(taskId)
+        task = self._findTask(taskId)
         if task is None:
             self._sendResult(
                 session,
@@ -702,9 +694,9 @@ class BrowserService(QObject):
             )
 
     @Slot(str)
-    def _onReceiveMessage(self, message: str):
+    def _onMessage(self, message: str):
         socket: "QWebSocket" = self.sender()
-        session = self._getSession(socket)
+        session = self._session(socket)
         if session is None:
             return
 
