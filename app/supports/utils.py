@@ -31,7 +31,7 @@ _WINDOWS_RESERVED_FILENAMES = {
 }
 
 
-def _normalizeFilenameCandidate(value: str) -> str:
+def _cleanFilenameRaw(value: str) -> str:
     candidate = str(value or "")
     lastSeparator = max(candidate.rfind("/"), candidate.rfind("\\"))
     if lastSeparator >= 0:
@@ -50,12 +50,12 @@ def _normalizeFilenameCandidate(value: str) -> str:
     return candidate
 
 
-def sanitizeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:
+def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:
     normalizedFallback = ""
-    candidate = _normalizeFilenameCandidate(name)
+    candidate = _cleanFilenameRaw(name)
 
     if not candidate:
-        normalizedFallback = _normalizeFilenameCandidate(fallback) or "file"
+        normalizedFallback = _cleanFilenameRaw(fallback) or "file"
         candidate = normalizedFallback
 
     if maxLength > 0 and len(candidate) > maxLength:
@@ -72,10 +72,13 @@ def sanitizeFilename(name: str, fallback: str = "file", maxLength: int = 200) ->
         candidate = candidate.rstrip(". ")
         if candidate in {"", ".", ".."}:
             if not normalizedFallback:
-                normalizedFallback = _normalizeFilenameCandidate(fallback) or "file"
+                normalizedFallback = _cleanFilenameRaw(fallback) or "file"
             candidate = normalizedFallback
 
     return candidate
+
+
+sanitizeFilename = toSafeFilename
 
 
 def openFolder(path):
@@ -171,14 +174,18 @@ def splitRequestHeadersAndCookies(headers: dict[str, str] | None) -> tuple[dict[
     return requestHeaders, cookiejar_from_dict(cookieItems)
 
 
-def getReadableSize(size: int):
+def toReadableSize(size: int):
     for unit in ['B', 'KB', 'MB', 'GB']:
         if size < 1024.0:
             return f"{size:.2f} {unit}"
         size /= 1024.0
     return f"{size:.2f} TB"
 
-def getReadableTime(seconds: int) -> str:
+
+getReadableSize = toReadableSize
+
+
+def toReadableTime(seconds: int) -> str:
     if seconds < 60:
         return f"{seconds}s"
     elif seconds < 3600:
@@ -186,6 +193,23 @@ def getReadableTime(seconds: int) -> str:
     else:
         remainingSeconds = seconds % 3600
         return f"{int(seconds // 3600)}h{int(remainingSeconds // 60)}m{remainingSeconds % 60}s"
+
+
+getReadableTime = toReadableTime
+
+
+def toPosixPath(path) -> str:
+    return str(Path(path)).replace("\\", "/")
+
+
+def toExecutable(name: str) -> str:
+    return f"{name}.exe" if sys.platform == "win32" else name
+
+
+def toBytes(value: str, unit: str) -> int:
+    _SCALE = {"B": 1, "KB": 1024, "MB": 1024 ** 2, "GB": 1024 ** 3,
+              "Bps": 1, "KBps": 1024, "MBps": 1024 ** 2, "GBps": 1024 ** 3}
+    return int(float(value) * _SCALE[unit])
 
 
 def ensureUniqueTaskTarget(

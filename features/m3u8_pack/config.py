@@ -29,6 +29,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.supports.utils import toExecutable, toPosixPath
 from app.view.components.setting_cards import SpinBoxSettingCard
 
 if TYPE_CHECKING:
@@ -41,36 +42,20 @@ except ImportError:
     from features.ffmpeg_pack.config import resolveFFmpegExecutables
 
 
-def _normalizePath(path: Path | str) -> str:
-    return str(Path(path)).replace("\\", "/")
-
-
-def _executableName(name: str) -> str:
-    return f"{name}.exe" if sys.platform == "win32" else name
-
-
-def _guessInstallRoot(downloaderPath: str) -> str:
-    return _normalizePath(Path(downloaderPath).parent)
-
-
-def _resolveExecutable() -> str:
+def resolveDownloaderPath() -> str:
     installFolder = Path(m3u8Config.installFolder.value)
-    candidate = installFolder / _executableName("N_m3u8DL-RE")
+    candidate = installFolder / toExecutable("N_m3u8DL-RE")
     if candidate.is_file():
-        return _normalizePath(candidate)
+        return toPosixPath(candidate)
 
     found = shutil.which("N_m3u8DL-RE")
     if not found and sys.platform == "win32":
         found = shutil.which("N_m3u8DL-RE.exe")
-    return _normalizePath(found) if found else ""
-
-
-def resolveM3U8DownloaderExecutable() -> str:
-    return _resolveExecutable()
+    return toPosixPath(found) if found else ""
 
 
 async def queryM3U8Runtime() -> dict[str, str]:
-    downloaderPath = resolveM3U8DownloaderExecutable()
+    downloaderPath = resolveDownloaderPath()
     ffmpegPath, _ = resolveFFmpegExecutables()
     runtimeInfo = {
         "downloaderPath": downloaderPath,
@@ -95,7 +80,7 @@ async def queryM3U8Runtime() -> dict[str, str]:
     output = stdout.decode("utf-8", errors="ignore") or stderr.decode("utf-8", errors="ignore")
     lines = [line.strip() for line in output.splitlines() if line.strip()]
     runtimeInfo["version"] = lines[0] if lines else ""
-    runtimeInfo["installPath"] = _guessInstallRoot(downloaderPath)
+    runtimeInfo["installPath"] = toPosixPath(Path(downloaderPath).parent)
     return runtimeInfo
 
 
