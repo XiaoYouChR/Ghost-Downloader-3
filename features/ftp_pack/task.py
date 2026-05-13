@@ -111,6 +111,7 @@ class FtpStage(TaskStage):
 
 @dataclass(kw_only=True)
 class FtpTask(Task):
+    packId: str = field(default="ftp")
     connectionInfo: FtpConnectionInfo | dict[str, Any]
     sourceType: str = field(default="file")
     files: list[FtpFile | dict[str, Any]] = field(default_factory=list)
