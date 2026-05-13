@@ -32,10 +32,8 @@ class M3U8Pack(FeaturePack):
             headers if isinstance(headers, dict) else DEFAULT_HEADERS
         )
 
-        client = niquests.AsyncSession(timeout=30, happy_eyeballs=True)
-        client.trust_env = False
-
-        try:
+        async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
+            client.trust_env = False
             response = await client.get(
                 url,
                 headers=requestHeaders,
@@ -44,18 +42,13 @@ class M3U8Pack(FeaturePack):
                 verify=cfg.SSLVerify.value,
                 allow_redirects=True,
             )
-            try:
-                response.raise_for_status()
-                body = response.text
-                loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
-                manifestType = _manifestType(str(response.url), loweredHeaders, body)
-                isLive = _isLive(manifestType, body)
-                extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
-                title = _title(str(response.url), loweredHeaders, extension)
-            finally:
-                response.close()
-        finally:
-            await client.close()
+            response.raise_for_status()
+            body = response.text
+            loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
+            manifestType = _manifestType(str(response.url), loweredHeaders, body)
+            isLive = _isLive(manifestType, body)
+            extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
+            title = _title(str(response.url), loweredHeaders, extension)
 
         if isinstance(headers, dict):
             headers = headers.copy()

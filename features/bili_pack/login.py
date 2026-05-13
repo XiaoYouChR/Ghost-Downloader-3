@@ -74,25 +74,20 @@ def _extractCookie(response, successUrl: str) -> str:
 
 
 async def requestQrCode() -> dict[str, str]:
-    client = niquests.AsyncSession(
+    async with niquests.AsyncSession(
         headers=_headers(),
         timeout=30,
         happy_eyeballs=True,
-    )
-    client.trust_env = False
-
-    try:
+    ) as client:
+        client.trust_env = False
         response = await client.get(
             _QR_GENERATE_API,
             proxies=getProxies(),
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            response.close()
+        response.raise_for_status()
+        payload = response.json()
 
         if payload.get("code") not in {None, 0}:
             raise ValueError(payload.get("message") or "获取二维码失败")
@@ -107,8 +102,6 @@ async def requestQrCode() -> dict[str, str]:
             "url": loginUrl,
             "qrcode_key": qrCodeKey,
         }
-    finally:
-        await client.close()
 
 
 async def pollQrLogin(
@@ -118,14 +111,13 @@ async def pollQrLogin(
 ) -> dict[str, str | int]:
     from app.services.core_service import coreService
 
-    client = niquests.AsyncSession(
+    async with niquests.AsyncSession(
         headers=_headers(),
         timeout=30,
         happy_eyeballs=True,
-    )
-    client.trust_env = False
+    ) as client:
+        client.trust_env = False
 
-    try:
         while True:
             if shouldStop is not None and shouldStop():
                 return {"code": -1, "message": "cancelled", "url": "", "cookie": ""}
@@ -137,13 +129,10 @@ async def pollQrLogin(
                 verify=cfg.SSLVerify.value,
                 allow_redirects=True,
             )
-            try:
-                response.raise_for_status()
-                payload = response.json()
-                data = payload.get("data") or {}
-                cookieString = _extractCookie(response, str(data.get("url") or "")) if data.get("code") == 0 else ""
-            finally:
-                response.close()
+            response.raise_for_status()
+            payload = response.json()
+            data = payload.get("data") or {}
+            cookieString = _extractCookie(response, str(data.get("url") or "")) if data.get("code") == 0 else ""
 
             if payload.get("code") not in {None, 0}:
                 raise ValueError(payload.get("message") or "轮询扫码状态失败")
@@ -163,8 +152,6 @@ async def pollQrLogin(
                 continue
 
             return result
-    finally:
-        await client.close()
 
 
 async def fetchLoginInfo(cookie: str) -> dict[str, str | bool]:
@@ -177,25 +164,20 @@ async def fetchLoginInfo(cookie: str) -> dict[str, str | bool]:
             "vip": "未开通",
         }
 
-    client = niquests.AsyncSession(
+    async with niquests.AsyncSession(
         headers=_headers(cookie),
         timeout=30,
         happy_eyeballs=True,
-    )
-    client.trust_env = False
-
-    try:
+    ) as client:
+        client.trust_env = False
         response = await client.get(
             _LOGIN_INFO_API,
             proxies=getProxies(),
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            response.close()
+        response.raise_for_status()
+        payload = response.json()
 
         data = payload.get("data") or {}
         if payload.get("code") == -101 or not data.get("isLogin"):
@@ -229,8 +211,6 @@ async def fetchLoginInfo(cookie: str) -> dict[str, str | bool]:
             "mid": str(data.get("mid") or "-"),
             "vip": vipText,
         }
-    finally:
-        await client.close()
 
 
 async def logout(cookie: str) -> dict[str, str | bool]:
@@ -250,14 +230,12 @@ async def logout(cookie: str) -> dict[str, str | bool]:
             "message": f"Cookie 缺少 {', '.join(missingCookies)}，已清除本地登录状态",
         }
 
-    client = niquests.AsyncSession(
+    async with niquests.AsyncSession(
         headers=_headers(cookie, origin=True),
         timeout=30,
         happy_eyeballs=True,
-    )
-    client.trust_env = False
-
-    try:
+    ) as client:
+        client.trust_env = False
         response = await client.post(
             _LOGOUT_API,
             data={
@@ -268,19 +246,16 @@ async def logout(cookie: str) -> dict[str, str | bool]:
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            contentType = str(response.headers.get("content-type") or "").lower()
-            if "application/json" not in contentType:
-                return {
-                    "remote_logout": False,
-                    "clear_local": True,
-                    "message": "当前 Cookie 可能已失效，已清除本地登录状态",
-                }
+        response.raise_for_status()
+        contentType = str(response.headers.get("content-type") or "").lower()
+        if "application/json" not in contentType:
+            return {
+                "remote_logout": False,
+                "clear_local": True,
+                "message": "当前 Cookie 可能已失效，已清除本地登录状态",
+            }
 
-            payload = response.json()
-        finally:
-            response.close()
+        payload = response.json()
 
         if payload.get("code") == 0 and payload.get("status") is True:
             return {
@@ -290,5 +265,3 @@ async def logout(cookie: str) -> dict[str, str | bool]:
             }
 
         raise ValueError(payload.get("message") or "退出登录失败")
-    finally:
-        await client.close()

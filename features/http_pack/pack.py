@@ -67,10 +67,9 @@ async def _sendProbe(client: niquests.AsyncSession, url: str, headers: dict, pro
 
 
 async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
-    client = niquests.AsyncSession(happy_eyeballs=True)
-    client.trust_env = False
+    async with niquests.AsyncSession(happy_eyeballs=True) as client:
+        client.trust_env = False
 
-    try:
         statusCode, responseHeaders, finalUrl = await _sendProbe(
             client,
             url,
@@ -116,8 +115,6 @@ async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str
             logger.info("文件大小已知但未探测到 Range 支持, fileSize: {}", fileSize)
 
         return fileSize, False, finalUrl, responseHeaders
-    finally:
-        await client.close()
 
 
 def _fileName(url: str, headers: dict) -> str:

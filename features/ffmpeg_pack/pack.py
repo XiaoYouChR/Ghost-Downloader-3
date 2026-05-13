@@ -82,23 +82,16 @@ def _selectReleaseAsset(assets: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 async def _requestLatestReleaseAsset() -> dict[str, Any]:
-    client = niquests.AsyncSession(headers=_FFMPEG_HEADERS, timeout=30, happy_eyeballs=True)
-    client.trust_env = False
-
-    try:
+    async with niquests.AsyncSession(headers=_FFMPEG_HEADERS, timeout=30, happy_eyeballs=True) as client:
+        client.trust_env = False
         response = await client.get(
             _FFMPEG_RELEASE_API,
             proxies=getProxies(),
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            response.close()
-    finally:
-        await client.close()
+        response.raise_for_status()
+        payload = response.json()
 
     assets = payload.get("assets")
     if not isinstance(assets, list):

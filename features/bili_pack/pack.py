@@ -202,18 +202,14 @@ class BilibiliPack(FeaturePack):
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
 
         headers = _buildBilibiliHeaders(url)
-        client = niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True)
-        client.trust_env = False
+        async with niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True) as client:
+            client.trust_env = False
 
-        try:
             videoId, selectedPages = _parseVideoIdAndPages(url)
 
             response = await client.get(_buildViewApiUrl(videoId), proxies=proxies, allow_redirects=True)
-            try:
-                response.raise_for_status()
-                videoPayload = response.json()
-            finally:
-                response.close()
+            response.raise_for_status()
+            videoPayload = response.json()
 
             if videoPayload.get("code") not in {None, 0}:
                 raise ValueError(videoPayload.get("message") or "获取 Bilibili 视频信息失败")
@@ -253,11 +249,8 @@ class BilibiliPack(FeaturePack):
                     proxies=proxies,
                     allow_redirects=True,
                 )
-                try:
-                    playResponse.raise_for_status()
-                    playPayload = playResponse.json()
-                finally:
-                    playResponse.close()
+                playResponse.raise_for_status()
+                playPayload = playResponse.json()
 
                 if playPayload.get("code") not in {None, 0}:
                     raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
@@ -339,5 +332,3 @@ class BilibiliPack(FeaturePack):
                 ))
 
             return task
-        finally:
-            await client.close()
