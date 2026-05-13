@@ -316,7 +316,7 @@ class BrowserService(QObject):
             "url": _str(rawPayload, "url"),
             "headers": rawPayload.get("headers") or {},
             "filename": _str(rawPayload, "filename"),
-            "size": _int(rawPayload, "size", 0),
+            "fileSize": _int(rawPayload, "size", 0),
             "supportsRange": bool(rawPayload.get("supportsRange")),
             "proxies": getProxies(),
             "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),

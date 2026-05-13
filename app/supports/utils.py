@@ -18,6 +18,7 @@ from app.supports.config import cfg
 
 if TYPE_CHECKING:
     from app.bases.models import Task
+    from os import PathLike
 
 
 _PROXY_PROTOCOLS = ("http", "https", "ftp")
@@ -262,7 +263,7 @@ def retry(
     return decorator
 
 
-def openFile(fileResolve: "str | bytes | os.PathLike[str]"):
+def openFile(fileResolve: "str | bytes | PathLike[str]"):
     """
     打开文件
 

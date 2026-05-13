@@ -188,7 +188,7 @@ class HttpPack(FeaturePack):
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
 
         fileName = payload.get("filename") or ""
-        fileSize = payload.get("fileSize", SpecialFileSize.UNKNOWN)
+        fileSize = payload.get("fileSize") or SpecialFileSize.UNKNOWN
         supportsRange = payload.get("supportsRange", False)
 
         if not fileName:
