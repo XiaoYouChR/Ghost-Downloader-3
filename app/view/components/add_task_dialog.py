@@ -184,7 +184,7 @@ class AddTaskDialog(MessageBoxBase):
         # init
         self._initWidget()
         self._initLayout()
-        self._parseSession.setPayload(self.buildCurrentPayload())
+        self._parseSession.setPayload(self._settingsPayload())
 
         # bind
         self._bind()
@@ -213,32 +213,40 @@ class AddTaskDialog(MessageBoxBase):
 
     def _bind(self) -> None:
         self._timer.timeout.connect(
-            lambda: self._parseSession.updateUrls(self._readUrlsFromEditor())
+            lambda: self._parseSession.updateUrls(self._urls())
         )
         self.urlEdit.textChanged.connect(self._restartParseTimer)
         self._parseSession.parsingBusyChanged.connect(self.parseProgressBar.setVisible)
-        self._parseSession.parseErrorOccurred.connect(self._showParseError)
+        self._parseSession.parseErrorOccurred.connect(self._onParseError)
         self._parseSession.taskConfirmed.connect(self.taskConfirmed.emit)
         for card in self.settingGroup.cards:
             card.payloadChanged.connect(
-                lambda: self._parseSession.setPayload(self.buildCurrentPayload())
+                lambda: self._parseSession.setPayload(self._settingsPayload())
             )
 
     def _restartParseTimer(self) -> None:
         self._timer.stop()
         self._timer.start(1000)
 
-    def _readUrlsFromEditor(self) -> list[str]:
+    def _urls(self) -> list[str]:
         text = self.urlEdit.toPlainText()
         if not text:
             return []
         return [line.strip() for line in text.splitlines() if line.strip()]
 
-    def addUrls(self, urls: list[str]) -> None:
+    def addUrls(
+        self,
+        urls: list[str],
+        overrides: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
         if not urls:
             return
 
-        existingUrls = set(self._readUrlsFromEditor())
+        if overrides:
+            for url, override in overrides.items():
+                self._parseSession.setPayloadOverride(url, override)
+
+        existingUrls = set(self._urls())
         urlsToAdd: list[str] = []
 
         for url in urls:
@@ -252,16 +260,8 @@ class AddTaskDialog(MessageBoxBase):
             return
 
         self.urlEdit.appendPlainText("\n".join(urlsToAdd))
-        self._parseSession.updateUrls(self._readUrlsFromEditor())
+        self._parseSession.updateUrls(self._urls())
         self._timer.stop()
-
-    def addUrlWithPayload(
-        self,
-        url: str,
-        payloadOverride: dict[str, Any],
-    ) -> None:
-        self._parseSession.setPayloadOverride(url, payloadOverride)
-        self.addUrls([url])
 
     def addParsedTasks(self, tasks: list[Task]) -> None:
         if not tasks:
@@ -272,7 +272,7 @@ class AddTaskDialog(MessageBoxBase):
             self.urlEdit.appendPlainText("\n".join(newUrls))
         self._timer.stop()
 
-    def buildCurrentPayload(self) -> dict[str, Any]:
+    def _settingsPayload(self) -> dict[str, Any]:
         payload = {
             "headers": DEFAULT_HEADERS.copy(),
             "proxies": getProxies(),
@@ -280,7 +280,7 @@ class AddTaskDialog(MessageBoxBase):
         payload.update(self.settingGroup.payload)
         return payload
 
-    def _showParseError(self, url: str, error: str) -> None:
+    def _onParseError(self, url: str, error: str) -> None:
         displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
         content = self.tr("{0}\n{1}").format(displayUrl, error)
 
@@ -296,6 +296,21 @@ class AddTaskDialog(MessageBoxBase):
     def isStandaloneMode(self) -> bool:
         return self.widget.parentWidget() is self._standaloneWrapper
 
+    def _toStandalone(self) -> None:
+        self._hBoxLayout.removeWidget(self.widget)
+        self._standaloneWrapper.setContent(self.widget)
+        self.widget.setStyleSheet("#centerWidget { border: none; border-radius: 0; }")
+        self.widget.show()
+        self.titleLabel.hide()
+
+    def _toMask(self) -> None:
+        self._standaloneWrapper.hide()
+        self._standaloneWrapper.takeContent(self.widget)
+        self.widget.setStyleSheet("")
+        self._hBoxLayout.addWidget(self.widget, 1, Qt.AlignmentFlag.AlignCenter)
+        self.widget.show()
+        self.titleLabel.show()
+
     def showStandalone(self) -> None:
         if self.isStandaloneMode and self._standaloneWrapper.isVisible():
             bringWindowToTop(self._standaloneWrapper)
@@ -307,22 +322,13 @@ class AddTaskDialog(MessageBoxBase):
             QDialog.done(self, QDialog.DialogCode.Rejected)
 
         if not self.isStandaloneMode:
-            self._hBoxLayout.removeWidget(self.widget)
-            self._standaloneWrapper.setContent(self.widget)
-            self.widget.setStyleSheet("#centerWidget { border: none; border-radius: 0; }")
-            self.widget.show()
-            self.titleLabel.hide()
+            self._toStandalone()
 
         bringWindowToTop(self._standaloneWrapper)
 
     def showMask(self) -> int:
         if self.isStandaloneMode:
-            self._standaloneWrapper.hide()
-            self._standaloneWrapper.takeContent(self.widget)
-            self.widget.setStyleSheet("")
-            self._hBoxLayout.addWidget(self.widget, 1, Qt.AlignmentFlag.AlignCenter)
-            self.widget.show()
-            self.titleLabel.show()
+            self._toMask()
 
         parent = self.parentWidget()
         if parent is not None:
@@ -348,19 +354,14 @@ class AddTaskDialog(MessageBoxBase):
             self.taskConfirmed.emit(task)
 
         if self.isStandaloneMode:
-            self._standaloneWrapper.hide()
-            self._standaloneWrapper.takeContent(self.widget)
-            self.widget.setStyleSheet("")
-            self._hBoxLayout.addWidget(self.widget, 1, Qt.AlignmentFlag.AlignCenter)
-            self.widget.show()
-            self.titleLabel.show()
+            self._toMask()
             return
 
         super().done(code)
 
     def validate(self) -> bool:
         self._timer.stop()
-        self._parseSession.updateUrls(self._readUrlsFromEditor())
+        self._parseSession.updateUrls(self._urls())
         return self._parseSession.canAccept()
 
     @classmethod

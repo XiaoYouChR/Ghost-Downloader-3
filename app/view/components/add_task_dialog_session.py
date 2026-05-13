@@ -74,12 +74,17 @@ class AddTaskParseSession(QObject):
 
             for url in currentUrls[newStart:newEnd]:
                 state = _LineParseState(url=url)
-                self._startParse(state)
+                self._submitParse(state)
                 nextStates.append(state)
 
         self._lineStates = nextStates
-        self._dropRemovedPayloadOverrides(currentUrls)
-        self._syncResultCards()
+        activeUrls = set(currentUrls)
+        self._payloadOverrides = {
+            url: payload
+            for url, payload in self._payloadOverrides.items()
+            if url in activeUrls
+        }
+        self._updateResultCards()
 
     def addParsedTasks(self, tasks: list[Task]) -> list[str]:
         if not tasks:
@@ -118,14 +123,14 @@ class AddTaskParseSession(QObject):
             self._lineStates.append(state)
             stateByUrl[url] = state
 
-        self._syncResultCards()
+        self._updateResultCards()
         return newUrlLines
 
     def clear(self) -> None:
         for state in self._lineStates:
             self._clearState(state, cancelRequest=True)
 
-        self._resetSessionState()
+        self._reset()
         self.parsingBusyChanged.emit(bool(self._activeParses))
 
     def accept(self) -> list[Task]:
@@ -154,7 +159,7 @@ class AddTaskParseSession(QObject):
                 cancelRequest=state.callbackId not in self._acceptedPayloads,
             )
 
-        self._resetSessionState()
+        self._reset()
         return confirmedTasks
 
     def _buildPayload(self, url: str) -> dict[str, Any]:
@@ -163,7 +168,7 @@ class AddTaskParseSession(QObject):
         payload["url"] = url
         return payload
 
-    def _startParse(self, state: _LineParseState) -> None:
+    def _submitParse(self, state: _LineParseState) -> None:
         callbackId = ""
 
         def callback(resultTask: Task | None, error: str | None = None) -> None:
@@ -210,7 +215,7 @@ class AddTaskParseSession(QObject):
         self._removeResultCard(state)
         state.task = None
 
-    def _syncResultCards(self) -> None:
+    def _updateResultCards(self) -> None:
         visibleIndex = 0
 
         for state in self._lineStates:
@@ -236,15 +241,7 @@ class AddTaskParseSession(QObject):
         self._removeResultCard(state)
         self.parseErrorOccurred.emit(state.url, errorMessage)
 
-    def _dropRemovedPayloadOverrides(self, urls: list[str]) -> None:
-        activeUrls = set(urls)
-        self._payloadOverrides = {
-            url: payload
-            for url, payload in self._payloadOverrides.items()
-            if url in activeUrls
-        }
-
-    def _resetSessionState(self) -> None:
+    def _reset(self) -> None:
         self._lineStates.clear()
         self._payloadOverrides.clear()
         self._resultGroup.clearResults()
@@ -269,7 +266,7 @@ class AddTaskParseSession(QObject):
             try:
                 resultTask.applySettings(self._buildPayload(state.url))
                 self._setParsedTask(state, resultTask)
-                self._syncResultCards()
+                self._updateResultCards()
             except Exception as error:
                 logger.opt(exception=error).error("无法创建解析结果卡片 {}", state.url)
                 self._failState(state, self.tr("解析结果处理失败"))
