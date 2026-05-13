@@ -19,7 +19,7 @@ from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDB
     isLessThanWin10
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
-from app.supports.update import fetchLatestRelease, hasNewerRelease, releaseVersion, selectCurrentPlatformAsset
+from app.supports.update import bestAsset, fetchRelease, isOutdated, toVersion
 from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, deduplicateFilename, openAppLogFolder
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
@@ -384,7 +384,7 @@ class MainWindow(MSFluentWindow):
             )
 
         coreService.runCoroutine(
-            fetchLatestRelease(),
+            fetchRelease(),
             lambda releaseData, error, manual=manual: self._onLatestReleaseLoaded(releaseData, error, manual),
         )
 
@@ -401,8 +401,8 @@ class MainWindow(MSFluentWindow):
                 )
             return
 
-        latestVersion = releaseVersion(releaseData)
-        if not hasNewerRelease(releaseData):
+        latestVersion = toVersion(releaseData)
+        if not isOutdated(releaseData):
             if manual:
                 InfoBar.success(
                     self.tr("当前已是最新版本"),
@@ -417,7 +417,7 @@ class MainWindow(MSFluentWindow):
             self._showReleaseDialog(releaseData)
             return
 
-        version = releaseVersion(releaseData)
+        version = toVersion(releaseData)
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
             title=self.tr('检测到新版本'),
@@ -442,7 +442,7 @@ class MainWindow(MSFluentWindow):
         infoBar.show()
 
     def _downloadMatchedReleaseAsset(self, releaseData: dict):
-        asset = selectCurrentPlatformAsset(releaseData)
+        asset = bestAsset(releaseData)
         if asset is None:
             InfoBar.warning(
                 self.tr("未找到适配的安装包"),
