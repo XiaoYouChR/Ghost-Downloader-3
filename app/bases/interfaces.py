@@ -33,8 +33,8 @@ class FeaturePack:
         return UniversalTaskCard(task, parent)
 
     def resultCard(self, task: "Task", parent=None) -> "ResultCard | None":
-        from app.view.components.cards import ResultCard
-        return ResultCard(task, parent)
+        from app.view.components.cards import UniversalResultCard
+        return UniversalResultCard(task, parent)
 
     def setup(self, mainWindow: "MainWindow"):
         pass
