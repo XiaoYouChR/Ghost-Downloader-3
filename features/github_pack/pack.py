@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-from .config import githubConfig, getSelectedProxySite
+from .config import githubConfig, selectedProxySite
 
 if TYPE_CHECKING:
     from features.http_pack.pack import HttpPack
@@ -47,23 +47,18 @@ def _isSupportedGitHubUrl(url: str) -> bool:
     )
 
 
-def _buildProxyUrl(url: str) -> str:
-    proxySite = getSelectedProxySite()
-    return f"{proxySite.rstrip('/')}/{url.lstrip('/')}"
-
-
 class GitHubPack(FeaturePack):
     packId = "github"
     priority = 90
     config = githubConfig
 
     def matches(self, url: str) -> bool:
-        return self.config.enabled.value and bool(getSelectedProxySite()) and _isSupportedGitHubUrl(url)
+        return self.config.enabled.value and bool(selectedProxySite()) and _isSupportedGitHubUrl(url)
 
     async def resolve(self, payload: dict) -> dict:
         originalUrl = str(payload["url"]).strip()
         proxiedPayload = payload.copy()
-        proxiedPayload["url"] = _buildProxyUrl(originalUrl)
+        proxiedPayload["url"] = f"{selectedProxySite().rstrip('/')}/{originalUrl.lstrip('/')}"
 
         httpPack = HttpPack()
         resolvedPayload = await httpPack.resolve(proxiedPayload)
