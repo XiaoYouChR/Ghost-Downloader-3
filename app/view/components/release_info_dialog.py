@@ -59,9 +59,35 @@ class ReleaseInfoDialog(MessageBoxBase):
 
         self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
 
+    def _preprocess_markdown_alerts(self, text: str) -> str:
+        """也是用上预处理 Markdown了，为了兼容GitHub Alerts语法转换，为Qt支持的格式"""
+        if not text:
+            return text
+            
+        # 字符串末尾写两个空格是为了强制换行
+        alerts = {
+            "[!NOTE]": "**ℹ️ 提示 (NOTE)**  ",
+            "[!TIP]": "**💡 技巧 (TIP)**  ",
+            "[!IMPORTANT]": "**✨ 重要 (IMPORTANT)**  ",
+            "[!WARNING]": "**⚠️ 警告 (WARNING)**  ",
+            "[!CAUTION]": "**🚨 危险 (CAUTION)**  "
+        }
+        
+        # 遍历！替换！
+        for gh_tag, qt_tag in alerts.items():
+            text = text.replace(gh_tag, qt_tag)
+            
+        return text
+
+
+
     def _initContentComponents(self):
         """初始化内容组件"""
         description = self.releaseData.get("body", self.tr("暂无更新说明"))
+        
+        # 依旧兼容Github警告块
+        description = self._preprocess_markdown_alerts(description)
+        
         self.descriptionEdit.setObjectName(u"descriptionEdit")
 
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
