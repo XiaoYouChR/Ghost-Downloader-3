@@ -27,11 +27,9 @@ const useStyles = makeStyles({
 
 export function App({
   themePreference,
-  resolvedThemePreference,
   onThemePreferenceChange,
 }: {
   themePreference: ThemePreference;
-  resolvedThemePreference: Exclude<ThemePreference, "system">;
   onThemePreferenceChange: (nextPreference: ThemePreference) => void;
 }) {
   const styles = useStyles();
@@ -91,8 +89,6 @@ export function App({
 
         {currentView === "settings" ? (
           <SettingsPage
-            connectionState={bridge.connectionState}
-            connectionMessage={bridge.connectionMessage}
             desktopVersion={bridge.desktopVersion}
             token={bridge.token}
             serverUrl={bridge.serverUrl}
@@ -105,7 +101,6 @@ export function App({
             onRefreshConnection={bridge.refreshConnection}
             onRequestPairing={bridge.requestPairing}
             themePreference={themePreference}
-            resolvedThemePreference={resolvedThemePreference}
             onThemePreferenceChange={onThemePreferenceChange}
           />
         ) : null}

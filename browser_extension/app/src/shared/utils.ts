@@ -177,9 +177,9 @@ export function connectionLabel(state: DesktopConnectionState, fallback: string)
     case "connected":
       return "已连接";
     case "connecting":
-      return "正在连接";
+      return "连接中";
     case "authenticating":
-      return "正在校验";
+      return "校验中";
     case "missing_token":
       return "待配对";
     case "unauthorized":

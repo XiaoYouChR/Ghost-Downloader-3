@@ -17,9 +17,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { DEFAULT_SERVER_URL, EXTENSION_VERSION, HELP_CONTENT } from "../../shared/constants";
-import type { DesktopConnectionState, ThemePreference } from "../../shared/types";
-import { connectionLabel } from "../../shared/utils";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
+import type { ThemePreference } from "../../shared/types";
 
 const useStyles = makeStyles({
   root: {
@@ -74,8 +72,6 @@ const useStyles = makeStyles({
 });
 
 export function SettingsPage({
-  connectionState,
-  connectionMessage,
   desktopVersion,
   token,
   serverUrl,
@@ -88,11 +84,8 @@ export function SettingsPage({
   onRefreshConnection,
   onRequestPairing,
   themePreference,
-  resolvedThemePreference,
   onThemePreferenceChange,
 }: {
-  connectionState: DesktopConnectionState;
-  connectionMessage: string;
   desktopVersion: string;
   token: string;
   serverUrl: string;
@@ -105,7 +98,6 @@ export function SettingsPage({
   onRefreshConnection: () => Promise<boolean>;
   onRequestPairing: () => Promise<boolean>;
   themePreference: ThemePreference;
-  resolvedThemePreference: Exclude<ThemePreference, "system">;
   onThemePreferenceChange: (nextPreference: ThemePreference) => void;
 }) {
   const styles = useStyles();
@@ -172,17 +164,14 @@ export function SettingsPage({
       <Card appearance="filled-alternative" className={styles.card}>
         <div className={styles.header}>
           <Body1Strong>连接配置</Body1Strong>
-          <div className={styles.inputRow}>
-            <ConnectionStatusBadge state={connectionState} message={connectionMessage} />
-            <Button
-              appearance="primary"
-              disabled={requestingPairing || savingToken || savingServerUrl}
-              icon={<PlugConnectedRegular />}
-              onClick={() => void onRequestPairing()}
-            >
-              自动配对
-            </Button>
-          </div>
+          <Button
+            appearance="primary"
+            disabled={requestingPairing || savingToken || savingServerUrl}
+            icon={<PlugConnectedRegular />}
+            onClick={() => void onRequestPairing()}
+          >
+            自动配对
+          </Button>
         </div>
 
         <Field label="本地服务地址">
@@ -238,9 +227,6 @@ export function SettingsPage({
       <Card appearance="filled-alternative" className={styles.statusCard}>
         <Body1Strong>服务状态</Body1Strong>
         <MessageBar intent="info">
-          <MessageBarBody>{`连接状态：${connectionLabel(connectionState, connectionMessage)}`}</MessageBarBody>
-        </MessageBar>
-        <MessageBar intent="info">
           <MessageBarBody>{`扩展版本：${EXTENSION_VERSION}`}</MessageBarBody>
         </MessageBar>
         <MessageBar intent="info">
@@ -260,13 +246,6 @@ export function SettingsPage({
             <option value="dark">深色</option>
           </Select>
         </Field>
-        {/* <MessageBar intent="info">
-          <MessageBarBody>
-            {themePreference === "system"
-              ? `当前正在跟随系统，实际使用${resolvedThemePreference === "dark" ? "深色" : "浅色"}主题`
-              : `当前正在使用${themePreference === "dark" ? "深色" : "浅色"}主题`}
-          </MessageBarBody>
-        </MessageBar> */}
       </Card>
 
       <section className={styles.helpSection}>

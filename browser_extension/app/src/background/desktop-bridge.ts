@@ -26,7 +26,7 @@ type PairingResponse = {
 };
 
 const PAIRING_TIMEOUT_MS = 60000;
-const MISSING_PAIRING_MESSAGE = "请在扩展设置页自动配对桌面端";
+const MISSING_PAIRING_MESSAGE = "待配对";
 
 export type DesktopBridgeSnapshot = {
   connectionState: DesktopConnectionState;
@@ -149,7 +149,7 @@ export function createDesktopBridge() {
       desktopSocket = null;
     }
 
-    setConnectionState("connecting", "正在连接 Ghost Downloader");
+    setConnectionState("connecting", "连接中");
     const socket = new WebSocket(serverUrl);
     desktopSocket = socket;
 
@@ -157,7 +157,7 @@ export function createDesktopBridge() {
       if (desktopSocket !== socket) {
         return;
       }
-      setConnectionState("authenticating", "正在校验配对令牌");
+      setConnectionState("authenticating", "校验中");
       socket.send(
         JSON.stringify({
           type: "hello",
@@ -181,7 +181,7 @@ export function createDesktopBridge() {
         return;
       }
       desktopSocket = null;
-      rejectPendingRequests("与 Ghost Downloader 的连接已断开");
+      rejectPendingRequests("连接断开");
       if (connectionState !== "unauthorized" && connectionState !== "missing_token") {
         desktopVersion = "";
         setConnectionState("disconnected", "未连接");
@@ -195,14 +195,14 @@ export function createDesktopBridge() {
       }
       if (connectionState !== "unauthorized") {
         desktopVersion = "";
-        setConnectionState("disconnected", "无法连接到 Ghost Downloader");
+        setConnectionState("disconnected", "连接失败");
       }
     });
   }
 
   async function requestPairing(): Promise<void> {
     clearReconnectTimer();
-    setConnectionState("connecting", "正在请求桌面端确认配对");
+    setConnectionState("connecting", "配对中");
 
     try {
       const token = await new Promise<string>((resolve, reject) => {
@@ -221,7 +221,7 @@ export function createDesktopBridge() {
         };
 
         timeoutId = self.setTimeout(() => {
-          finish(() => reject(new Error("等待桌面端确认配对超时")));
+          finish(() => reject(new Error("配对超时")));
         }, PAIRING_TIMEOUT_MS);
 
         socket.addEventListener("open", () => {
@@ -248,13 +248,13 @@ export function createDesktopBridge() {
           }
 
           if (!response.ok) {
-            finish(() => reject(new Error(response.message || "桌面端已拒绝配对请求")));
+            finish(() => reject(new Error(response.message || "已拒绝配对")));
             return;
           }
 
           const token = String(response.token ?? "").trim();
           if (!token) {
-            finish(() => reject(new Error("桌面端未返回配对令牌")));
+            finish(() => reject(new Error("未返回令牌")));
             return;
           }
 
@@ -262,11 +262,11 @@ export function createDesktopBridge() {
         });
 
         socket.addEventListener("close", () => {
-          finish(() => reject(new Error("配对连接已断开")));
+          finish(() => reject(new Error("配对断开")));
         });
 
         socket.addEventListener("error", () => {
-          finish(() => reject(new Error("无法连接到 Ghost Downloader")));
+          finish(() => reject(new Error("连接失败")));
         });
       });
       await setToken(token);
@@ -279,7 +279,7 @@ export function createDesktopBridge() {
 
   async function sendRequest<T extends DesktopRequestResult>(payload: Record<string, unknown>): Promise<T> {
     if (!isReady() || !desktopSocket) {
-      throw new Error("Ghost Downloader 未连接");
+      throw new Error("未连接");
     }
 
     const requestId = String(payload.requestId ?? nextRequestId());
@@ -288,7 +288,7 @@ export function createDesktopBridge() {
     return new Promise<T>((resolve, reject) => {
       const timeoutId = self.setTimeout(() => {
         pendingRequests.delete(requestId);
-        reject(new Error("等待 Ghost Downloader 响应超时"));
+        reject(new Error("响应超时"));
       }, 12000);
 
       pendingRequests.set(requestId, {

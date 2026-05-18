@@ -306,7 +306,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     void desktopBridge.requestPairing().catch(() => {
       // The bridge snapshot carries the user-facing pairing failure message.
     });
-    sendResponse({ ok: true, message: "配对请求已发送，请在桌面端确认" });
+    sendResponse({ ok: true, message: "请确认配对" });
     return true;
   }
 

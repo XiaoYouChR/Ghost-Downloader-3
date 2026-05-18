@@ -60,7 +60,7 @@ function createEmptyMediaState(): MediaPlaybackState {
 function createEmptyPayload(): PopupStatePayload {
   return {
     connectionState: "missing_token",
-    connectionMessage: "请在扩展设置页自动配对桌面端",
+    connectionMessage: "待配对",
     desktopVersion: "",
     token: "",
     serverUrl: "",
@@ -304,7 +304,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
         setFlash(
-          next.connectionState === "connected" ? "服务地址已保存并重新连接" : next.connectionMessage,
+          next.connectionState === "connected" ? "地址已保存" : next.connectionMessage,
           next.connectionState === "connected" ? "success" : "neutral",
         );
         return true;
