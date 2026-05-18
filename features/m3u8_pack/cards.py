@@ -126,9 +126,8 @@ class M3U8ResultCard(ResultCard):
         self.mainLayout.setContentsMargins(10, 2, 10, 2)
         self.mainLayout.setSpacing(12)
         self.mainLayout.addWidget(self.iconLabel)
-        self.mainLayout.addWidget(self.filenameLabel)
-        self.mainLayout.addWidget(self.filenameEdit)
-        self.mainLayout.addStretch()
+        self.mainLayout.addWidget(self.filenameLabel, 1)
+        self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.metaLabel)
 
     def _metaText(self) -> str:
