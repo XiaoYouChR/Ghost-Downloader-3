@@ -28,11 +28,11 @@ class FeaturePack:
     async def parse(self, payload: dict) -> "Task":
         raise NotImplementedError
 
-    def taskCard(self, task: "Task", parent=None) -> "TaskCard | None":
+    def taskCard(self, task: "Task", parent=None) -> "TaskCard":
         from app.view.components.cards import UniversalTaskCard
         return UniversalTaskCard(task, parent)
 
-    def resultCard(self, task: "Task", parent=None) -> "ResultCard | None":
+    def resultCard(self, task: "Task", parent=None) -> "ResultCard":
         from app.view.components.cards import UniversalResultCard
         return UniversalResultCard(task, parent)
 

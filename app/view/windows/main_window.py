@@ -19,7 +19,7 @@ from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDB
     isLessThanWin10, toQFluentTheme
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
-from app.supports.update import bestAsset, fetchRelease, isOutdated, toVersion
+from app.supports.update import checkUpdate, UpdateState
 from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, deduplicateFilename, openAppLogFolder
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
@@ -68,10 +68,9 @@ class MainWindow(MSFluentWindow):
         self.tray.show()
 
         self.connectSignalToSlot()
-        self._syncClipboardListener()
-        if platform == 'win32':
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
-        self.syncThemeColor()
+        self._updateClipboardListener()
+        self._toggleTheme(cfg.customThemeMode.value, triggeredByUser=True)
+        self.updateThemeColor()
 
         if cfg.checkUpdateAtStartUp.value:
             self.checkForUpdates()
@@ -79,13 +78,13 @@ class MainWindow(MSFluentWindow):
     def connectSignalToSlot(self):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
         signalBus.catchException.connect(self._onExceptionCaught)
-        cfg.enableClipboardListener.valueChanged.connect(self._syncClipboardListener)
+        cfg.enableClipboardListener.valueChanged.connect(self._updateClipboardListener)
         cfg.customThemeMode.valueChanged.connect(
             lambda value: self._toggleTheme(value, triggeredByUser=True)
         )
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         if platform == 'win32':
-            cfg.backgroundEffect.valueChanged.connect(self._applyBackgroundEffectByCfg)
+            cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffect)
 
     def _onSystemColorSchemeChanged(self, colorScheme: Qt.ColorScheme):
         if cfg.customThemeMode.value != 'System':
@@ -108,7 +107,7 @@ class MainWindow(MSFluentWindow):
         return QColor(0, 0, 0, 0)
 
     @staticmethod
-    def syncThemeColor():
+    def updateThemeColor():
         palette = QApplication.palette()
 
         for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
@@ -119,7 +118,7 @@ class MainWindow(MSFluentWindow):
             setThemeColor(color, save=False)
             return
 
-    def _applyBackgroundEffectByCfg(self, value: "Literal['Acrylic', 'Mica', 'MicaBlur', 'MicaAlt', 'Aero', 'None']"):
+    def _setBackgroundEffect(self, value: "Literal['Acrylic', 'Mica', 'MicaBlur', 'MicaAlt', 'Aero', 'None']"):
         if platform == 'win32':
             self.windowEffect.removeBackgroundEffect(self.winId())
 
@@ -170,19 +169,19 @@ class MainWindow(MSFluentWindow):
 
         self._pendingBackgroundEffectRefresh = False
         if platform == 'win32':
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+            self._setBackgroundEffect(cfg.backgroundEffect.value)
 
     def changeEvent(self, event):
         super().changeEvent(event)
 
         if event.type() == QEvent.Type.PaletteChange:
-            self.syncThemeColor()
+            self.updateThemeColor()
 
         if self._pendingBackgroundEffectRefresh and event.type() == QEvent.Type.ThemeChange:
             self._pendingBackgroundEffectRefresh = False
-            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
+            self._setBackgroundEffect(cfg.backgroundEffect.value)
 
-    def _syncClipboardListener(self):
+    def _updateClipboardListener(self):
         if self.clipboard is None:
             self.clipboard = QApplication.clipboard()
             if not cfg.enableClipboardListener.value:
@@ -193,34 +192,27 @@ class MainWindow(MSFluentWindow):
         else:
             self.clipboard.dataChanged.disconnect(self._onClipboardDataChanged)
 
-    def _extractClipboardUrls(self, text: str) -> list[str]:
-        urls = []
-        for rawLine in text.splitlines():
-            url = rawLine.strip()
-            if not url:
-                continue
-
-            try:
-                parsed = urlparse(url)
-            except ValueError as error:
-                logger.warning("跳过无效剪贴板链接 {}: {}", url, error)
-                continue
-
-            if not parsed.scheme or not parsed.netloc or parsed.geturl() != url:
-                continue
-
-            if featureService.matches(url):
-                urls.append(url)
-
-        return urls
-
     def _onClipboardDataChanged(self):
         clipboard = QApplication.clipboard()
         mimeData = clipboard.mimeData()
         if mimeData.hasFormat(GD3_COPY_MIME_TYPE):
             return
 
-        urls = self._extractClipboardUrls(clipboard.text())
+        urls = []
+        for rawLine in clipboard.text().splitlines():
+            url = rawLine.strip()
+            if not url:
+                continue
+            try:
+                parsed = urlparse(url)
+            except ValueError as error:
+                logger.warning("跳过无效剪贴板链接 {}: {}", url, error)
+                continue
+            if not parsed.scheme or not parsed.netloc or parsed.geturl() != url:
+                continue
+            if featureService.matches(url):
+                urls.append(url)
+
         if not urls:
             return
 
@@ -234,17 +226,10 @@ class MainWindow(MSFluentWindow):
             self.tr("程序发生异常"),
             self.tr("点击“确定”后将复制错误信息并打开反馈页面。\n点击“文档”图标以打开程序日志。\n{0}").format(message),
             showYesButton=True,
-            yesSlot=lambda: self._copyExceptionAndOpenFeedback(message),
+            yesSlot=lambda: (QApplication.clipboard().setText(message), QDesktopServices.openUrl(QUrl(FEEDBACK_URL))),
             actionIcon=FluentIcon.DOCUMENT,
             actionSlot=openAppLogFolder,
         )
-
-    def _copyExceptionAndOpenFeedback(self, message: str):
-        QApplication.clipboard().setText(message)
-        QDesktopServices.openUrl(QUrl(FEEDBACK_URL))
-
-    def _getAddTaskDialog(self) -> AddTaskDialog:
-        return AddTaskDialog.initialize(self)
 
     def _restoreGeometry(self):
         self.resize(960, 540)
@@ -253,7 +238,6 @@ class MainWindow(MSFluentWindow):
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
     def initWindow(self):
-        # Center the window
         cfgGeometry: QRect = cfg.geometry.value
         x, y, w, h = cfgGeometry.x(), cfgGeometry.y(), cfgGeometry.width(), cfgGeometry.height()
         if x == 0 and y == 0 and w == 0 and h == 0:
@@ -265,11 +249,9 @@ class MainWindow(MSFluentWindow):
                 logger.opt(exception=e).error("Failed to restore geometry")
                 cfg.set(cfg.geometry, QRect(0, 0, 0, 0))
                 self._restoreGeometry()
-        # Init Window
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
         self.setMinimumSize(960, 540)
-        # Init TitleBar
         if sys.platform == 'darwin':
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
 
@@ -298,7 +280,7 @@ class MainWindow(MSFluentWindow):
             urls: list[str] | None = None,
             payloadOverrides: dict[str, dict[str, Any]] | None = None,
     ):
-        dialog = self._getAddTaskDialog()
+        dialog = AddTaskDialog.initialize(self)
 
         if urls:
             dialog.addUrls(urls, overrides=payloadOverrides)
@@ -311,14 +293,10 @@ class MainWindow(MSFluentWindow):
         dialog.showMask()
 
     def showAddTaskDialogWithParsedTasks(self, tasks):
-        """Show AddTaskDialog with pre-parsed tasks (called by BrowserService).
-
-        macOS: mask mode (standalone cannot avoid raising MainWindow).
-        Other platforms: standalone mode.
-        """
-        dialog = self._getAddTaskDialog()
+        dialog = AddTaskDialog.initialize(self)
         dialog.addParsedTasks(tasks)
 
+        # macOS standalone 模式会强制唤起 MainWindow，只能用 mask
         if sys.platform == "darwin":
             bringWindowToTop(self)
             if not dialog.isVisible():
@@ -356,7 +334,6 @@ class MainWindow(MSFluentWindow):
         self.hide()
 
     def nativeEvent(self, eventType, message):
-        # 处理窗口重复打开事件
         if eventType == "windows_generic_MSG":
             from ctypes.wintypes import MSG
             msg = MSG.from_address(message.__int__())
@@ -368,7 +345,6 @@ class MainWindow(MSFluentWindow):
 
         return super().nativeEvent(eventType, message)
 
-    # 检查更新
     def checkForUpdates(self, manual: bool = False):
         if manual:
             InfoBar.info(
@@ -378,13 +354,12 @@ class MainWindow(MSFluentWindow):
                 position=InfoBarPosition.BOTTOM_RIGHT,
                 parent=self,
             )
-
         coreService.runCoroutine(
-            fetchRelease(),
-            lambda releaseData, error, manual=manual: self._onLatestReleaseLoaded(releaseData, error, manual),
+            checkUpdate(),
+            lambda state, error: self._onUpdateChecked(state, error, manual),
         )
 
-    def _onLatestReleaseLoaded(self, releaseData: dict, error: str | None, manual: bool):
+    def _onUpdateChecked(self, state: UpdateState, error: str | None, manual: bool):
         if error:
             logger.warning("检查更新失败: {}", error)
             if manual:
@@ -397,12 +372,11 @@ class MainWindow(MSFluentWindow):
                 )
             return
 
-        latestVersion = toVersion(releaseData)
-        if not isOutdated(releaseData):
+        if not state.outdated:
             if manual:
                 InfoBar.success(
                     self.tr("当前已是最新版本"),
-                    self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, latestVersion),
+                    self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, state.latestVersion),
                     duration=3000,
                     position=InfoBarPosition.BOTTOM_RIGHT,
                     parent=self,
@@ -410,36 +384,34 @@ class MainWindow(MSFluentWindow):
             return
 
         if manual:
-            self._showReleaseDialog(releaseData)
+            self._showReleaseDialog(state.releaseData)
             return
 
-        version = toVersion(releaseData)
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
             title=self.tr('检测到新版本'),
-            content=self.tr("最新版本: {0}").format(version),
+            content=self.tr("最新版本: {0}").format(state.latestVersion),
             orient=Qt.Orientation.Horizontal,
             isClosable=True,
             duration=-1,
             position=InfoBarPosition.BOTTOM_RIGHT,
-            parent=self
+            parent=self,
         )
         infoBar.widgetLayout.addSpacing(10)
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr('立即下载'))
-        downloadButton.clicked.connect(lambda: self._downloadMatchedReleaseAsset(releaseData))
+        downloadButton.clicked.connect(lambda: self._downloadBestInstaller(state))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr('查看版本详细'))
-        detailButton.clicked.connect(lambda: self._showReleaseDialog(releaseData))
+        detailButton.clicked.connect(lambda: self._showReleaseDialog(state.releaseData))
         infoBar.addWidget(detailButton)
-
         sponsorButton = PushButton(FluentIcon.HEART, self.tr('请作者喝咖啡'))
         sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
         infoBar.addWidget(sponsorButton)
         infoBar.show()
 
-    def _downloadMatchedReleaseAsset(self, releaseData: dict):
-        asset = bestAsset(releaseData)
-        if asset is None:
+    def _downloadBestInstaller(self, state: UpdateState):
+        installer = state.installer
+        if installer is None:
             InfoBar.warning(
                 self.tr("未找到适配的安装包"),
                 self.tr("已打开版本详情，请手动选择要下载的文件"),
@@ -447,30 +419,29 @@ class MainWindow(MSFluentWindow):
                 position=InfoBarPosition.BOTTOM_RIGHT,
                 parent=self,
             )
-            self._showReleaseDialog(releaseData)
+            self._showReleaseDialog(state.releaseData)
             return
+        self._downloadInstaller(installer)
 
-        self._downloadReleaseAsset(asset)
-
-    def _downloadReleaseAsset(self, asset: dict):
-        assetName = asset["name"]
+    def _downloadInstaller(self, installer: dict[str, Any]):
+        installerName = installer["name"]
         payload = {
-            "url": asset["browser_download_url"],
+            "url": installer["browser_download_url"],
             "headers": DEFAULT_HEADERS,
             "proxies": getProxies(),
             "path": Path(cfg.downloadFolder.value),
         }
         coreService.runCoroutine(
             coreService._parse(payload),
-            lambda task, error, assetName=assetName: self._onReleaseAssetParsed(assetName, task, error),
+            lambda task, error: self._onInstallerParsed(installerName, task, error),
         )
 
-    def _onReleaseAssetParsed(self, assetName: str, task, error: str | None):
+    def _onInstallerParsed(self, installerName: str, task, error: str | None):
         if error:
-            logger.warning("创建更新下载任务失败 {}: {}", assetName, error)
+            logger.warning("创建更新下载任务失败 {}: {}", installerName, error)
             InfoBar.error(
                 self.tr("创建下载任务失败"),
-                assetName,
+                installerName,
                 duration=3000,
                 position=InfoBarPosition.BOTTOM_RIGHT,
                 parent=self,
@@ -480,7 +451,7 @@ class MainWindow(MSFluentWindow):
         if self.addTask(task):
             InfoBar.success(
                 self.tr("已添加下载任务"),
-                assetName,
+                installerName,
                 duration=2000,
                 position=InfoBarPosition.BOTTOM_RIGHT,
                 parent=self,
@@ -489,7 +460,7 @@ class MainWindow(MSFluentWindow):
     def _showReleaseDialog(self, releaseData: dict):
         dialog = ReleaseInfoDialog(releaseData, self, False)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            self._downloadReleaseAsset(dialog.selectedAsset())
+            self._downloadInstaller(dialog.selectedAsset())
         dialog.deleteLater()
 
 if isWin10():

@@ -69,7 +69,7 @@ class CoreService(QThread):
         )
 
 
-    def runCoroutine(self, coroutine: Coroutine, callback: Callable[[dict, str | None], Coroutine | None] | None = None):
+    def runCoroutine(self, coroutine: Coroutine, callback: Callable[[Any, str | None], Coroutine | None] | None = None):
         if callback is not None:
             callbackId = f"custom_{id(callback)}_{hash(coroutine)}"
 

@@ -74,7 +74,7 @@ mainWindow = MainWindow(isSilently)
 featureService.load(mainWindow)
 taskRecorder.load()
 mainWindow.taskPage.resumeMemorizedTasks()
-mainWindow.syncThemeColor()
+mainWindow.updateThemeColor()
 
 if not isSilently:
     mainWindow.splashScreen.finish()

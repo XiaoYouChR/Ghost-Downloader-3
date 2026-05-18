@@ -1,5 +1,6 @@
 import platform
 import sys
+from dataclasses import dataclass
 from typing import Any
 
 import niquests
@@ -53,8 +54,8 @@ def _archKeywords() -> list[str]:
     return [machine] if machine else []
 
 
-def _assetScore(assetName: str) -> int:
-    lowerName = assetName.lower()
+def _installerScore(installerName: str) -> int:
+    lowerName = installerName.lower()
     platformKeywords = _platformKeywords()
     archKeywords = _archKeywords()
 
@@ -94,13 +95,21 @@ def _assetScore(assetName: str) -> int:
     return score
 
 
-def bestAsset(releaseData: dict[str, Any]) -> dict[str, Any] | None:
+def bestInstaller(releaseData: dict[str, Any]) -> dict[str, Any] | None:
     best, bestScore = None, -1
-    for asset in releaseData.get("assets", []):
-        score = _assetScore(str(asset.get("name") or "").strip())
+    for installer in releaseData.get("assets", []):
+        score = _installerScore(str(installer.get("name") or "").strip())
         if score > bestScore:
-            best, bestScore = asset, score
+            best, bestScore = installer, score
     return best
+
+
+@dataclass
+class UpdateState:
+    outdated: bool
+    latestVersion: str
+    releaseData: dict[str, Any]
+    installer: dict[str, Any] | None
 
 
 async def fetchRelease() -> dict[str, Any]:
@@ -118,3 +127,13 @@ async def fetchRelease() -> dict[str, Any]:
         )
         response.raise_for_status()
         return response.json()
+
+
+async def checkUpdate() -> UpdateState:
+    data = await fetchRelease()
+    return UpdateState(
+        outdated=isOutdated(data),
+        latestVersion=toVersion(data),
+        releaseData=data,
+        installer=bestInstaller(data),
+    )
