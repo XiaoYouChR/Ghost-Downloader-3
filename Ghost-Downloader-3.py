@@ -29,9 +29,9 @@ appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLo
 logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
 sys.excepthook = exceptionHook
 
-from qfluentwidgets import qconfig
+from qfluentwidgets import qconfig, setTheme
 from app.supports.application import SingletonApplication
-from app.supports.config import VERSION, cfg
+from app.supports.config import VERSION, cfg, toQFluentTheme
 from app.supports.signal_bus import signalBus as exceptionSignalBus
 
 logger.info(
@@ -47,6 +47,8 @@ if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 application = SingletonApplication(sys.argv, "gd3")
+# Prime qfluentwidgets before widgets are constructed; its own default is light.
+setTheme(toQFluentTheme(cfg.customThemeMode.value), save=False)
 
 # --- Start Program ---
 import warnings
