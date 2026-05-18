@@ -9,7 +9,7 @@ from PySide6.QtNetwork import QHostAddress
 from PySide6.QtWebSockets import QWebSocketServer
 from loguru import logger
 from orjson import dumps, loads
-from qfluentwidgets import MessageBox
+from qfluentwidgets import InfoBar, InfoBarPosition, MessageBox
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
@@ -230,16 +230,33 @@ class BrowserService(QObject):
         requestId = _str(data, "requestId")
 
         if int(data.get("protocolVersion") or 0) != self.PROTOCOL_VERSION:
-            result = {"ok": False, "message": self.tr("协议版本不匹配")}
-        elif not self._showPairRequestDialog(session, data):
-            result = {"ok": False, "message": self.tr("已拒绝配对请求")}
-        else:
-            result = {"ok": True, "message": self.tr("配对成功"), "token": self.pairToken}
+            self._send(session, {
+                "type": BrowserMessageType.PAIR_RESULT,
+                "requestId": requestId,
+                "ok": False,
+                "message": self.tr("协议版本不匹配"),
+            })
+            return
+
+        approved = self._showPairRequestDialog(session, data)
+
+        if self._session(session.socket) is None:
+            if approved:
+                InfoBar.error(
+                    self.tr("配对失败"),
+                    self.tr("浏览器扩展配对请求已超时，请重新在扩展中发起配对"),
+                    duration=3000,
+                    position=InfoBarPosition.BOTTOM_RIGHT,
+                    parent=self.mainWindow,
+                )
+            return
 
         self._send(session, {
             "type": BrowserMessageType.PAIR_RESULT,
             "requestId": requestId,
-            **result,
+            "ok": approved,
+            "message": self.tr("配对成功") if approved else self.tr("已拒绝配对请求"),
+            **({"token": self.pairToken} if approved else {}),
         })
 
     def _serialize(self, task: Task) -> dict[str, Any]:
