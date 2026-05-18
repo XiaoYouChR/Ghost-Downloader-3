@@ -116,16 +116,20 @@ if platform == "win32":
             handle = fd
 
         returned = wintypes.DWORD(0)
-        DeviceIoControl(
-            handle,
-            FSCTL_SET_SPARSE,
-            None,
-            0,
-            None,
-            0,
-            byref(returned),
-            None,
-        )
+        try:
+            DeviceIoControl(
+                handle,
+                FSCTL_SET_SPARSE,
+                None,
+                0,
+                None,
+                0,
+                byref(returned),
+                None,
+            )
+        except OSError:
+            from loguru import logger
+            logger.debug("文件系统不支持稀疏文件，使用常规预分配")
 
         newPos = c_longlong()
         SetFilePointerEx(handle, size, byref(newPos), FILE_BEGIN)
