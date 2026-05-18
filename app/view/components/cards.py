@@ -509,8 +509,7 @@ class UniversalTaskCard(TaskCard):
         self.infoLayout.addStretch()
         self.infoVBoxLayout.addLayout(self.infoLayout)
         self.infoVBoxLayout.setContentsMargins(2, 8, 2, 8)
-        self.hBoxLayout.addLayout(self.infoVBoxLayout)
-        self.hBoxLayout.addStretch()
+        self.hBoxLayout.addLayout(self.infoVBoxLayout, 1)
         self.hBoxLayout.addWidget(self.toggleRunningStatusButton)
         self.hBoxLayout.addWidget(self.verifyHashButton)
         self.hBoxLayout.addWidget(self.openFileButton)
@@ -554,9 +553,8 @@ class UniversalResultCard(ResultCard):
         self.mainLayout.setContentsMargins(10, 2, 10, 2)
         self.mainLayout.setSpacing(12)
         self.mainLayout.addWidget(self.iconLabel)
-        self.mainLayout.addWidget(self.filenameLabel)
-        self.mainLayout.addWidget(self.filenameEdit)
-        self.mainLayout.addStretch()
+        self.mainLayout.addWidget(self.filenameLabel, 1)
+        self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.sizeLabel)
 
     def eventFilter(self, obj, event: QEvent):
