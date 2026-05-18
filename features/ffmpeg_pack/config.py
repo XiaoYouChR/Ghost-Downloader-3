@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QStandardPaths, Qt, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFileDialog
 from qfluentwidgets import (
     ConfigItem,
@@ -18,6 +18,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import toExecutable, toPosixPath
 
 if TYPE_CHECKING:
@@ -106,7 +107,7 @@ class FFmpegInstallFolderCard(SettingCard):
             self._updatePath(folder)
 
     def _restoreDefault(self):
-        self._updatePath(f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg")
+        self._updatePath(f"{APP_DATA_DIR}/FFmpeg")
 
 
 class FFmpegRuntimeCard(SettingCard):
@@ -169,7 +170,7 @@ class FFmpegRuntimeCard(SettingCard):
 
 
 class FFmpegConfig(PackConfig):
-    installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/FFmpeg", FolderValidator())
+    installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{APP_DATA_DIR}/FFmpeg", FolderValidator())
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.ffmpegGroup = SettingCardGroup(self.tr("FFmpeg"), settingPage.container)
