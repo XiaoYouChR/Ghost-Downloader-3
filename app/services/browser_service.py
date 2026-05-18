@@ -13,7 +13,6 @@ from qfluentwidgets import MessageBox
 
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
-from app.services.feature_service import featureService
 from app.supports.config import VERSION, cfg
 from app.supports.recorder import taskRecorder
 from app.supports.utils import bringWindowToTop, getProxies, openFile, openFolder

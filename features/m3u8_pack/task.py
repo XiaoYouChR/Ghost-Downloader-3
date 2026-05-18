@@ -6,11 +6,10 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from email.message import Message
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, unquote, urlparse
 
 import niquests
-from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
@@ -127,7 +126,7 @@ class M3U8Worker(Worker):
         self.stage = stage
         self.task = stage.task
 
-    def _buildArgs(self, downloaderPath: str) -> list[str]:
+    def _buildArgs(self) -> list[str]:
         meta = self.task.metadata
         saveName = meta.get("saveName", _stem(self.task.title))
 
@@ -284,7 +283,7 @@ class M3U8Worker(Worker):
         process = None
         supervisorTask = None
         try:
-            args = self._buildArgs(execPath)
+            args = self._buildArgs()
             process = await asyncio.create_subprocess_exec(
                 execPath,
                 *args,

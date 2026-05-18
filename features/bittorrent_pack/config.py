@@ -12,7 +12,6 @@ from qfluentwidgets import (
     MessageBoxBase,
     OptionsConfigItem,
     OptionsValidator,
-    PlainTextEdit,
     PrimaryPushButton,
     RangeConfigItem,
     RangeSettingCard,

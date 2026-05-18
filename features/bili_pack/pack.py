@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlparse
 
 import niquests

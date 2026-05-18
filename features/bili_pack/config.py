@@ -91,7 +91,6 @@ class ScanLoginDialog(MessageBoxBase):
         self._loginUrl = ""
         self._generation = 0
         self._generating = False
-        self._polling = False
         self._closed = False
 
         self.setClosableOnMaskClicked(True)
@@ -161,7 +160,6 @@ class ScanLoginDialog(MessageBoxBase):
 
         self._generation += 1
         self._generating = True
-        self._polling = False
         self.cookie = ""
         self._qrCodeKey = ""
         self._loginUrl = ""
@@ -200,7 +198,6 @@ class ScanLoginDialog(MessageBoxBase):
 
         self.openBrowserButton.setEnabled(True)
         self.statusLabel.setText(self.tr("等待扫码并在手机端确认登录"))
-        self._polling = True
         generation = self._generation
         coreService.runCoroutine(
             pollQrLogin(
@@ -229,8 +226,6 @@ class ScanLoginDialog(MessageBoxBase):
     def _onLoginPolled(self, generation: int, result: dict | None, error: str | None):
         if self._closed or generation != self._generation:
             return
-
-        self._polling = False
 
         if error:
             self.statusLabel.setText(self.tr('轮询扫码状态失败，请点击"刷新二维码"重试'))

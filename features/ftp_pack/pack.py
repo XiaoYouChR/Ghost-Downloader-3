@@ -4,7 +4,7 @@ from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 
 from .cards import FtpResultCard, FtpTaskCard
-from .task import FtpTask, resolve as _ftpResolve
+from .task import resolve as _ftpResolve
 
 
 class FtpPack(FeaturePack):

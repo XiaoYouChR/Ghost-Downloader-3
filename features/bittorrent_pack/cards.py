@@ -1,7 +1,7 @@
 import shutil
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
-from PySide6.QtCore import Qt, QFileInfo
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,

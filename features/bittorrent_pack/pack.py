@@ -8,7 +8,7 @@ from app.services.core_service import coreService
 
 from .cards import BitTorrentResultCard, BTTaskCard
 from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
-from .task import BTTask, resolve as _btResolve, loadLocalTorrent
+from .task import resolve as _btResolve, loadLocalTorrent
 
 
 def _isTorrentUrl(url: str) -> bool:

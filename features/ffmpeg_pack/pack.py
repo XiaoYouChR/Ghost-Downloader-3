@@ -5,7 +5,6 @@ from typing import Any, TYPE_CHECKING
 from urllib.parse import urlparse
 
 import niquests
-from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
