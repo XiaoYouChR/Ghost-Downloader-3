@@ -261,7 +261,6 @@ class BrowserService(QObject):
 
     def _serialize(self, task: Task) -> dict[str, Any]:
         outputFolder = Path(task.outputFolder)
-        parentPath = outputFolder.parent
         stages = task.stages
         progress = (
             100.0 if task.status == TaskStatus.COMPLETED else 0.0
@@ -276,11 +275,9 @@ class BrowserService(QObject):
             "fileSize": int(task.fileSize),
             "speed": sum(stage.speed for stage in stages),
             "createdAt": task.createdAt,
-            "resolvePath": str(outputFolder),
-            "parentPath": str(parentPath),
             "canPause": bool(task.canPause),
             "canOpenFile": outputFolder.exists(),
-            "canOpenFolder": parentPath.exists(),
+            "canOpenFolder": outputFolder.parent.exists(),
             "fileExt": outputFolder.suffix.lstrip(".").lower(),
             "packName": packName,
         }
@@ -325,30 +322,6 @@ class BrowserService(QObject):
                 session.socket.sendTextMessage(snapshot.decode("utf-8"))
             except Exception as error:
                 logger.opt(exception=error).warning("Failed to push browser task snapshot")
-
-    def _toResolvePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
-        rawPath = rawPayload.get("path")
-        return {
-            "url": _str(rawPayload, "url"),
-            "headers": rawPayload.get("headers") or {},
-            "filename": _str(rawPayload, "filename"),
-            "fileSize": _int(rawPayload, "size", 0),
-            "supportsRange": bool(rawPayload.get("supportsRange")),
-            "proxies": getProxies(),
-            "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
-            "preBlockNum": _int(rawPayload, "preBlockNum", cfg.preBlockNum.value),
-        }
-
-    def _mergePayload(self, rawPayload: dict[str, Any]) -> dict[str, Any]:
-        rawPath = rawPayload.get("path")
-        return {
-            "url": BrowserVirtualUrl.FFMPEG_MERGE,
-            "outputTitle": _str(rawPayload, "outputTitle"),
-            "resources": rawPayload.get("resources") or [],
-            "proxies": getProxies(),
-            "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
-            "preBlockNum": _int(rawPayload, "preBlockNum", cfg.preBlockNum.value),
-        }
 
     def _sendResult(
         self,
@@ -437,9 +410,8 @@ class BrowserService(QObject):
             source = BrowserTaskSource.RESOURCE
 
         if source == BrowserTaskSource.RESOURCE_MERGE:
-            mergePayload = self._mergePayload(payload)
-            mergePayload["outputTitle"] = title
-            if len(mergePayload["resources"]) != 2:
+            rawResources = payload.get("resources") or []
+            if len(rawResources) != 2:
                 self._sendResult(
                     session,
                     BrowserMessageType.CREATE_TASK_RESULT,
@@ -449,8 +421,23 @@ class BrowserService(QObject):
                 )
                 return
 
+            resources = []
+            for item in rawResources:
+                resource = dict(item)
+                resource["fileSize"] = _int(resource, "size", 0)
+                resource.pop("size", None)
+                resources.append(resource)
+
+            rawPath = payload.get("path")
             coreService.runCoroutine(
-                coreService._parse(mergePayload),
+                coreService._parse({
+                    "url": BrowserVirtualUrl.FFMPEG_MERGE,
+                    "outputTitle": title,
+                    "resources": resources,
+                    "proxies": getProxies(),
+                    "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
+                    "preBlockNum": _int(payload, "preBlockNum", cfg.preBlockNum.value),
+                }),
                 lambda task, error, session=session, requestId=requestId: self._onTaskParsed(
                     session,
                     requestId,
@@ -461,7 +448,17 @@ class BrowserService(QObject):
             )
             return
 
-        parsePayload = self._toResolvePayload(payload)
+        rawPath = payload.get("path")
+        parsePayload = {
+            "url": _str(payload, "url"),
+            "headers": payload.get("headers") or {},
+            "filename": _str(payload, "filename"),
+            "fileSize": _int(payload, "size", 0),
+            "supportsRange": bool(payload.get("supportsRange")),
+            "proxies": getProxies(),
+            "path": Path(rawPath) if rawPath else Path(cfg.downloadFolder.value),
+            "preBlockNum": _int(payload, "preBlockNum", cfg.preBlockNum.value),
+        }
         if not parsePayload["url"]:
             self._sendResult(
                 session,

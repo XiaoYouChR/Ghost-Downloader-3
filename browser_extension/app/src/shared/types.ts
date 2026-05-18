@@ -31,8 +31,6 @@ export interface GenericTaskSummary {
   fileSize: number;
   speed: number;
   createdAt: number;
-  resolvePath: string;
-  parentPath: string;
   canPause: boolean;
   canOpenFile: boolean;
   canOpenFolder: boolean;

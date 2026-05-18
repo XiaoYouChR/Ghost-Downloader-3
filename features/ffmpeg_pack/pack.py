@@ -110,7 +110,7 @@ async def _requestLatestReleaseAsset() -> dict[str, Any]:
     }
 
 
-async def createMergeTask(payload: dict[str, Any], title: str = "") -> Task:
+async def createMergeTask(payload: dict[str, Any]) -> Task:
     ffmpeg, ffprobe = ffmpegPaths()
     if not ffmpeg or not ffprobe:
         raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
@@ -131,15 +131,13 @@ async def createMergeTask(payload: dict[str, Any], title: str = "") -> Task:
             "url": url,
             "filename": str(item.get("filename") or "").strip(),
             "headers": item.get("headers") or {},
-            "size": item.get("size") or 0,
+            "fileSize": item.get("fileSize") or SpecialFileSize.UNKNOWN,
             "supportsRange": bool(item.get("supportsRange")),
             "proxies": payload.get("proxies", getProxies()),
             "path": Path(payload.get("path", cfg.downloadFolder.value)),
             "preBlockNum": payload.get("preBlockNum", cfg.preBlockNum.value),
         }
 
-        if resourcePayload["filename"]:
-            resourcePayload["fileSize"] = resourcePayload.pop("size") or SpecialFileSize.UNKNOWN
         resourceTask = await featureService.parse(resourcePayload)
 
         if not resourceTask.stages:
@@ -148,8 +146,7 @@ async def createMergeTask(payload: dict[str, Any], title: str = "") -> Task:
         parsedResources.append((item, resourceTask))
 
     outputTitle = _mergeOutputTitle(
-        title
-        or str(payload.get("outputTitle") or "").strip()
+        str(payload.get("outputTitle") or "").strip()
         or str(parsedResources[0][0].get("pageTitle") or "").strip()
         or "merged-media"
     )
