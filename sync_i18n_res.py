@@ -9,9 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent
 I18N_DIR = ROOT_DIR / "app" / "assets" / "i18n"
 RESOURCES_QRC = ROOT_DIR / "app" / "assets" / "resources.qrc"
 RESOURCES_PY = ROOT_DIR / "app" / "assets" / "resources.py"
-SOURCE_LANGUAGE = "zh_CN"
-RUNTIME_LANGUAGES = ["en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU"]
-SYNC_LANGUAGES = [SOURCE_LANGUAGE, *RUNTIME_LANGUAGES]
+RUNTIME_LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU"]
 EXCLUDED_FILES = {
     Path("app/assets/resources.py"),
 }
@@ -59,15 +57,15 @@ def update_ts_files(py_files: list[str]) -> None:
     lupdate = resolve_tool("pyside6-lupdate")
     I18N_DIR.mkdir(parents=True, exist_ok=True)
 
-    for language in SYNC_LANGUAGES:
-        ts_path = I18N_DIR / f"gd3.{language}.ts"
+    for localeName in RUNTIME_LANGUAGES:
+        ts_path = I18N_DIR / f"gd3.{localeName}.ts"
         run_command([
             lupdate,
             "-no-ui-lines",
             "-source-language",
-            SOURCE_LANGUAGE,
+            "zh_CN",
             "-target-language",
-            language,
+            localeName,
             *py_files,
             "-ts",
             ts_path.as_posix(),
@@ -77,9 +75,9 @@ def update_ts_files(py_files: list[str]) -> None:
 def build_qm_files() -> None:
     lrelease = resolve_tool("pyside6-lrelease")
 
-    for language in RUNTIME_LANGUAGES:
-        ts_path = I18N_DIR / f"gd3.{language}.ts"
-        qm_path = I18N_DIR / f"gd3.{language}.qm"
+    for localeName in RUNTIME_LANGUAGES:
+        ts_path = I18N_DIR / f"gd3.{localeName}.ts"
+        qm_path = I18N_DIR / f"gd3.{localeName}.qm"
         run_command([
             lrelease,
             ts_path.as_posix(),
