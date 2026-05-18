@@ -243,8 +243,8 @@ class BrowserService(QObject):
         })
 
     def _serialize(self, task: Task) -> dict[str, Any]:
-        resolvePath = Path(task.outputFolder)
-        parentPath = resolvePath.parent
+        outputFolder = Path(task.outputFolder)
+        parentPath = outputFolder.parent
         stages = task.stages
         progress = (
             100.0 if task.status == TaskStatus.COMPLETED else 0.0
@@ -259,12 +259,12 @@ class BrowserService(QObject):
             "fileSize": int(task.fileSize),
             "speed": sum(stage.speed for stage in stages),
             "createdAt": task.createdAt,
-            "resolvePath": str(resolvePath),
+            "resolvePath": str(outputFolder),
             "parentPath": str(parentPath),
             "canPause": bool(task.canPause),
-            "canOpenFile": resolvePath.exists(),
+            "canOpenFile": outputFolder.exists(),
             "canOpenFolder": parentPath.exists(),
-            "fileExt": resolvePath.suffix.lstrip(".").lower(),
+            "fileExt": outputFolder.suffix.lstrip(".").lower(),
             "packName": packName,
         }
 

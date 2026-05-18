@@ -1,5 +1,6 @@
 import re
 from email.message import Message
+from email.utils import collapse_rfc2231_value
 from mimetypes import guess_extension
 from pathlib import Path
 from time import time_ns
@@ -123,20 +124,12 @@ def _fileName(url: str, headers: dict) -> str:
     cd = headers.get("content-disposition", "")
     if cd:
         msg = Message()
-        msg['Content-Disposition'] = cd
-        params = msg.get_params(header='Content-Disposition')
-        paramDict = {k.lower(): v for k, v in params if isinstance(v, str)}
-
-        if "filename*" in paramDict:
-            val = paramDict["filename*"]
-            if "'" in val:  # charset'lang'encoded_text
-                parts = val.split("'", 2)
-                if len(parts) == 3:
-                    encoding, _, encodedText = parts
-                    fileName = unquote(encodedText, encoding=encoding or "utf-8")
-
-        if not fileName and "filename" in paramDict:
-            fileName = paramDict["filename"].strip("\"' ")
+        msg["Content-Disposition"] = cd
+        params = msg.get_params(header="Content-Disposition")
+        paramDict = {k.lower(): v for k, v in params}
+        fileName = collapse_rfc2231_value(
+            paramDict.get("filename") or paramDict.get("filename*") or ""
+        ).strip("\"' ")
 
     if not fileName and "content-location" in headers:
         cl = headers["content-location"]
@@ -157,16 +150,14 @@ def _fileName(url: str, headers: dict) -> str:
             cleanPath = path.split(";")[0]
             fileName = unquote(cleanPath.split("/")[-1])
 
+    contentType = headers.get("content-type", "").split(";", 1)[0].lower().strip()
+    standardExt = guess_extension(contentType) if contentType else ""
+    standardExt = standardExt or ""
+
     if not fileName:
-        contentType = headers.get("content-type", "").split(";")[0].lower().strip()
-        standardExt = guess_extension(contentType) or ""
-        timestamp = int(time_ns())
-        fileName = f"file_{timestamp}.{standardExt}"
-    else:
-        if "." not in fileName:
-            contentType = headers.get("content-type", "").split(";")[0].lower().strip()
-            standardExt = guess_extension(contentType) or ""
-            fileName = f"{fileName}.{standardExt}"
+        fileName = f"file_{int(time_ns())}{standardExt}"
+    elif "." not in fileName and standardExt:
+        fileName = f"{fileName}{standardExt}"
 
     return toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
 
@@ -185,13 +176,15 @@ class HttpPack(FeaturePack):
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
 
-        fileName = payload.get("filename") or ""
+        fileName = str(payload.get("filename") or "").strip()
         fileSize = payload.get("fileSize") or SpecialFileSize.UNKNOWN
         supportsRange = payload.get("supportsRange", False)
 
         if not fileName:
             fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
             fileName = _fileName(finalUrl, head)
+        else:
+            fileName = toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
 
         task = Task(
             title=fileName,

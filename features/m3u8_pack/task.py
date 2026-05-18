@@ -5,6 +5,7 @@ import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from email.message import Message
+from email.utils import collapse_rfc2231_value
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, unquote, urlparse
@@ -81,12 +82,12 @@ def _title(url: str, headers: dict[str, str], extension: str) -> str:
         msg = Message()
         msg["Content-Disposition"] = cd
         params = msg.get_params(header="Content-Disposition")
-        paramDict = {key.lower(): value for key, value in params if isinstance(value, str)}
-        if "filename*" in paramDict and "'" in paramDict["filename*"]:
-            encoding, _, encodedText = paramDict["filename*"].split("'", 2)
-            candidates.append(unquote(encodedText, encoding=encoding or "utf-8"))
-        elif "filename" in paramDict:
-            candidates.append(paramDict["filename"].strip("\"' "))
+        paramDict = {key.lower(): value for key, value in params}
+        fileName = collapse_rfc2231_value(
+            paramDict.get("filename") or paramDict.get("filename*") or ""
+        ).strip("\"' ")
+        if fileName:
+            candidates.append(fileName)
 
     parsedUrl = urlparse(url)
     query = parse_qs(parsedUrl.query)

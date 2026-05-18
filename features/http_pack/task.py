@@ -299,9 +299,10 @@ class HttpWorker(Worker):
             self.subworkers.append(HttpSubworker(0, 0, SpecialFileSize.UNKNOWN))
             return
 
-        step = self.stage.fileSize // self.stage.blockNum
+        blockNum = min(self.stage.blockNum, self.stage.fileSize)
+        step = self.stage.fileSize // blockNum
         start = 0
-        for i in range(self.stage.blockNum - 1):
+        for _ in range(blockNum - 1):
             end = start + step - 1
             self.subworkers.append(HttpSubworker(start, start, end))
             start = end + 1

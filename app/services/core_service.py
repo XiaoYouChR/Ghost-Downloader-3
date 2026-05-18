@@ -84,12 +84,15 @@ class CoreService(QThread):
     async def _runCoroutine(self, coroutine: Coroutine, callbackId):
         try:
             result = await coroutine
-            callback = self._pendingCallbacks.pop(callbackId)
-            self._executeCallback(callback, result, None)
+            error = None
         except Exception as e:
             logger.opt(exception=e).error("异步任务执行失败 {}", callbackId)
-            callback = self._pendingCallbacks.pop(callbackId)
-            self._executeCallback(callback, None, repr(e))
+            result = None
+            error = repr(e)
+
+        callback = self._pendingCallbacks.pop(callbackId, None)
+        if callback is not None:
+            self._executeCallback(callback, result, error)
 
     def _executeCallback(self, callback: Callable, result: Any, error: str = None):
         """线程安全地执行回调函数

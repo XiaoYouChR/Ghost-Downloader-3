@@ -277,9 +277,9 @@ class FtpTaskCard(UniversalTaskCard):
             return
 
         for stage in self.task.stages:
-            resolvePath = stage.outputFile.strip()
-            if not resolvePath:
+            outputFile = stage.outputFile.strip()
+            if not outputFile:
                 continue
-            target = Path(resolvePath)
+            target = Path(outputFile)
             _removePath(target)
             _removePath(Path(str(target) + ".ghd"))

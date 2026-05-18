@@ -70,6 +70,10 @@ class TaskFile:
 @dataclass(kw_only=True)
 class TaskStage:
     _registry: ClassVar[Dict[str, Type["TaskStage"]]] = {}
+    _TYPE_ALIASES: ClassVar[Dict[str, str]] = {
+        "FtpTaskStage": "FtpStage",
+        "BitTorrentTaskStage": "TaskStage",
+    }
     workerType: ClassVar[Type["Worker"]]
     canPause: ClassVar[bool] = True
 
@@ -146,7 +150,8 @@ class TaskStage:
             obj = data
 
         if "type" in obj and isinstance(obj["type"], str):
-            stageCls = TaskStage._registry.get(obj["type"], cls)
+            typeName = TaskStage._TYPE_ALIASES.get(obj["type"], obj["type"])
+            stageCls = TaskStage._registry.get(typeName, cls)
             obj.pop("type", None)
         else:
             stageCls = cls
@@ -386,8 +391,10 @@ class Task:
         obj["stages"] = stages
 
         rawFiles = obj.pop("files", None)
-        if rawFiles is not None:
+        if rawFiles is not None and targetCls is cls:
             obj["files"] = [TaskFile(**_filterDataclassKwargs(TaskFile, f)) for f in rawFiles]
+        elif rawFiles is not None:
+            obj["files"] = rawFiles
 
         return targetCls(**_filterDataclassKwargs(targetCls, obj))
 

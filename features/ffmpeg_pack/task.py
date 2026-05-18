@@ -83,8 +83,8 @@ class FFmpegWorker(Worker):
         if not ffmpeg or not ffprobe:
             raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
 
-        outputPath = Path(self.stage.outputFile)
-        outputPath.parent.mkdir(parents=True, exist_ok=True)
+        outputFile = Path(self.stage.outputFile)
+        outputFile.parent.mkdir(parents=True, exist_ok=True)
 
         process = None
         progressTask = None

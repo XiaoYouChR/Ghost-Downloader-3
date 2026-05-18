@@ -401,9 +401,9 @@ class UniversalTaskCard(TaskCard):
         if self.task.outputFolder:
             candidates.add(Path(self.task.outputFolder))
         for stage in self.task.stages:
-            resolvePath = getattr(stage, "resolvePath", None)
-            if resolvePath:
-                candidates.add(Path(resolvePath))
+            outputFile = getattr(stage, "outputFile", None)
+            if outputFile:
+                candidates.add(Path(outputFile))
 
         for target in candidates:
             if not target:

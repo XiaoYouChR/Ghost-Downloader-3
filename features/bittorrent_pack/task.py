@@ -183,6 +183,7 @@ class BTTask(Task):
         self.title = toSafeFilename(self.title, fallback="torrent")
         super().__post_init__()
         self.fileSize = sum(file.size for file in self.files if file.selected)
+        self._updateSlot()
 
     @property
     def stage(self) -> TaskStage:
