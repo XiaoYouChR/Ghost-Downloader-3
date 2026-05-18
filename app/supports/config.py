@@ -17,6 +17,7 @@ from qfluentwidgets import (
     ConfigValidator,
     ConfigSerializer,
     FolderListValidator,
+    Theme,
 )
 
 DEFAULT_HEADERS = {
@@ -150,6 +151,13 @@ class HeadersSerializer(ConfigSerializer):
             )
         except (ValueError, TypeError):
             return DEFAULT_HEADERS
+
+
+def toQFluentTheme(value: str) -> Theme:
+    return {
+        "Dark": Theme.DARK,
+        "Light": Theme.LIGHT,
+    }.get(value, Theme.AUTO)
 
 
 class Config(QConfig):

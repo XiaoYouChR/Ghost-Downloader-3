@@ -10,13 +10,13 @@ from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
-    PushButton, PrimaryPushButton, setTheme, Theme, isDarkTheme, setThemeColor
+    PushButton, PrimaryPushButton, setTheme, isDarkTheme, setThemeColor
 
 from app.services.browser_service import BrowserService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE, isWin10, \
-    isLessThanWin10
+    isLessThanWin10, toQFluentTheme
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
 from app.supports.update import bestAsset, fetchRelease, isOutdated, toVersion
@@ -69,7 +69,8 @@ class MainWindow(MSFluentWindow):
 
         self.connectSignalToSlot()
         self._syncClipboardListener()
-        self._toggleTheme(cfg.customThemeMode.value, triggeredByUser=True)
+        if platform == 'win32':
+            self._applyBackgroundEffectByCfg(cfg.backgroundEffect.value)
         self.syncThemeColor()
 
         if cfg.checkUpdateAtStartUp.value:
@@ -155,12 +156,7 @@ class MainWindow(MSFluentWindow):
         value: "Literal['System', 'Dark', 'Light']",
         triggeredByUser: bool = False,
     ):
-        if value == 'Dark':
-            setTheme(Theme.DARK, save=False)
-        elif value == 'Light':
-            setTheme(Theme.LIGHT, save=False)
-        else:
-            setTheme(Theme.AUTO, save=False)
+        setTheme(toQFluentTheme(value), save=False)
 
         IconBodyLabel.clearCache()
 
