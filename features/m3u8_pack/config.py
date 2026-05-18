@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QStandardPaths, Qt, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFileDialog
 from qfluentwidgets import (
     BoolValidator,
@@ -29,6 +29,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import toExecutable, toPosixPath
 from app.view.components.setting_cards import SpinBoxSettingCard
 
@@ -114,7 +115,7 @@ class M3U8InstallFolderCard(SettingCard):
             self._updatePath(folder)
 
     def _restoreDefault(self):
-        defaultPath = f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/M3U8DL"
+        defaultPath = f"{APP_DATA_DIR}/M3U8DL"
         self._updatePath(defaultPath)
 
 
@@ -181,7 +182,7 @@ class M3U8Config(PackConfig):
     installFolder = ConfigItem(
         "M3U8",
         "InstallFolder",
-        f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader/M3U8DL",
+        f"{APP_DATA_DIR}/M3U8DL",
         FolderValidator(),
     )
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))

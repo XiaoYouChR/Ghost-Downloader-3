@@ -9,12 +9,13 @@ from typing import TYPE_CHECKING, Callable
 from http.cookiejar import CookieJar
 from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from urllib.request import getproxies
-from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
+from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg
+from app.supports.paths import APP_DATA_DIR
 
 if TYPE_CHECKING:
     from app.bases.models import Task
@@ -102,8 +103,7 @@ def openFolder(path):
 
 
 def openAppLogFolder():
-    appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
-    openFolder(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log")
+    openFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
 
 
 def getProxies():
