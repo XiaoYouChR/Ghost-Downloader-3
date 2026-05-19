@@ -753,10 +753,12 @@ async def resolve(payload: dict) -> BTTask:
     url = str(payload["url"]).strip()
     webTrackers = await _fetchTrackers()
 
+    # Fixes https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/448
     localTorrentPath = loadLocalTorrent(url)
     if localTorrentPath is not None:
         torrentBytes, ti, trackers = await _loadFromFile(url, webTrackers)
-        return _buildTask(
+        return await asyncio.to_thread(
+            _buildTask,
             ti,
             payload=payload,
             sourceType="torrent",
@@ -768,7 +770,8 @@ async def resolve(payload: dict) -> BTTask:
     parsedUrl = urlparse(url)
     if parsedUrl.scheme.lower() == "magnet":
         torrentBytes, ti, trackers = await _loadFromMagnet(payload, webTrackers)
-        return _buildTask(
+        return await asyncio.to_thread(
+            _buildTask,
             ti,
             payload=payload,
             sourceType="magnet",
@@ -778,7 +781,8 @@ async def resolve(payload: dict) -> BTTask:
         )
 
     torrentBytes, ti, trackers = await _loadFromUrl(payload, webTrackers)
-    return _buildTask(
+    return await asyncio.to_thread(
+        _buildTask,
         ti,
         payload=payload,
         sourceType="torrent",
