@@ -11,11 +11,11 @@ from qfluentwidgets import (
     FluentIcon,
     FolderValidator,
     SettingCard,
-    SettingCardGroup,
     ToolButton, PrimaryPushButton, InfoBar, ToolTipFilter
 )
 
 from app.bases.models import PackConfig
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.supports.paths import APP_DATA_DIR
@@ -173,7 +173,7 @@ class FFmpegConfig(PackConfig):
     installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{APP_DATA_DIR}/FFmpeg", FolderValidator())
 
     def setupSettings(self, settingPage: "SettingPage"):
-        self.ffmpegGroup = SettingCardGroup(self.tr("FFmpeg"), settingPage.container)
+        self.ffmpegGroup = CollapsibleSettingCardGroup(self.tr("FFmpeg"), "ffmpeg", settingPage.container)
         self.installFolderCard = FFmpegInstallFolderCard(self.ffmpegGroup)
         self.runtimeCard = FFmpegRuntimeCard(self.ffmpegGroup)
 
@@ -181,7 +181,7 @@ class FFmpegConfig(PackConfig):
 
         self.ffmpegGroup.addSettingCard(self.installFolderCard)
         self.ffmpegGroup.addSettingCard(self.runtimeCard)
-        settingPage.vBoxLayout.addWidget(self.ffmpegGroup)
+        settingPage.addSettingGroup(self.ffmpegGroup)
 
         self.runtimeCard.refreshStatus()
 

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Qt, QResource, QCoreApplication, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QApplication
-from qfluentwidgets import SettingCardGroup, RangeSettingCard, FluentIcon, SwitchSettingCard, PushSettingCard, \
+from qfluentwidgets import RangeSettingCard, FluentIcon, SwitchSettingCard, PushSettingCard, \
     HyperlinkButton, ComboBoxSettingCard, HyperlinkCard, PrimaryPushSettingCard, InfoBar, FlyoutView, Flyout, \
     InfoBarPosition, ToolButton, ToolTipFilter
 
@@ -14,6 +14,7 @@ from app.services.browser_service import BrowserService
 from app.supports.config import cfg, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
 from app.supports.utils import openAppLogFolder
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
 
 if TYPE_CHECKING:
@@ -30,19 +31,44 @@ class SettingPage(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Initialize
         self.container = QWidget()
         self.vBoxLayout = QVBoxLayout(self.container)
-        self.generalDownloadGroup = SettingCardGroup(self.tr("综合下载设置"), self.container)
-        self.browserGroup = SettingCardGroup(self.tr("浏览器扩展"), self.container)
-        self.personalGroup = SettingCardGroup(self.tr("个性化"), self.container)
-        self.softwareGroup = SettingCardGroup(self.tr("应用"), self.container)
-        self.aboutGroup = SettingCardGroup(self.tr("关于"), self.container)
+        # stretch 永远是 vBoxLayout 的最后一个 item，吸收多余高度让 group 顶部对齐
+        self.vBoxLayout.addStretch(1)
+        self.generalDownloadGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
+        self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
+        self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
+        self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
+        self.aboutGroup = CollapsibleSettingCardGroup(self.tr("关于"), "about", self.container)
 
         self.initWidget()
         self.initCards()
         self.initLayout()
         self.connectSignalToSlot()
+
+    def addSettingGroup(self, group: CollapsibleSettingCardGroup):
+        self.vBoxLayout.insertWidget(self.vBoxLayout.count() - 1, group)
+
+    def showEvent(self, event):
+        self._restoreOrder()
+        super().showEvent(event)
+
+    def _restoreOrder(self):
+        groups = []
+        for i in range(self.vBoxLayout.count()):
+            w = self.vBoxLayout.itemAt(i).widget()
+            if w:
+                groups.append(w)
+
+        keyToWidget = {g.objectName(): g for g in groups}
+        order = [k for k in cfg.settingGroupOrder.value if k in keyToWidget]
+        order += [k for k in keyToWidget if k not in order]
+
+        for idx, key in enumerate(order):
+            self.vBoxLayout.insertWidget(idx, keyToWidget[key])
+
+        for g in groups:
+            g.updateArrows()
 
     def initWidget(self):
         self.setWidget(self.container)
@@ -307,11 +333,11 @@ class SettingPage(ScrollArea):
         self.aboutGroup.addSettingCard(self.aboutCard)
 
     def initLayout(self):
-        self.vBoxLayout.addWidget(self.generalDownloadGroup)
-        self.vBoxLayout.addWidget(self.browserGroup)
-        self.vBoxLayout.addWidget(self.personalGroup)
-        self.vBoxLayout.addWidget(self.softwareGroup)
-        self.vBoxLayout.addWidget(self.aboutGroup)
+        self.addSettingGroup(self.generalDownloadGroup)
+        self.addSettingGroup(self.browserGroup)
+        self.addSettingGroup(self.personalGroup)
+        self.addSettingGroup(self.softwareGroup)
+        self.addSettingGroup(self.aboutGroup)
 
     def connectSignalToSlot(self):
         cfg.appRestartSig.connect(self._showRestartTooltip)

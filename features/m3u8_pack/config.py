@@ -20,7 +20,6 @@ from qfluentwidgets import (
     RangeSettingCard,
     RangeValidator,
     SettingCard,
-    SettingCardGroup,
     SwitchSettingCard,
     ToolButton,
     ToolTipFilter,
@@ -31,6 +30,7 @@ from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import toExecutable, toPosixPath
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import SpinBoxSettingCard
 
 if TYPE_CHECKING:
@@ -199,7 +199,7 @@ class M3U8Config(PackConfig):
     livePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
 
     def setupSettings(self, settingPage: "SettingPage"):
-        self.m3u8Group = SettingCardGroup(self.tr("流媒体下载"), settingPage.container)
+        self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
         self.installFolderCard = M3U8InstallFolderCard(self.m3u8Group)
         self.runtimeCard = M3U8RuntimeCard(self.m3u8Group)
         self.outputFormatCard = ComboBoxSettingCard(
@@ -310,7 +310,7 @@ class M3U8Config(PackConfig):
         ):
             self.m3u8Group.addSettingCard(card)
 
-        settingPage.vBoxLayout.addWidget(self.m3u8Group)
+        settingPage.addSettingGroup(self.m3u8Group)
         self.runtimeCard.refreshStatus()
 
 

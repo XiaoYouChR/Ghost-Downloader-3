@@ -176,7 +176,7 @@ class ProxySettingCard(ExpandGroupSettingCard):
 
         self.radioLayout.setSpacing(19)
         self.radioLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.radioLayout.setContentsMargins(48, 18, 0, 18)
+        self.radioLayout.setContentsMargins(48, 5, 0, 18)
 
         self.buttonGroup.addButton(self.offRadioButton)
         self.buttonGroup.addButton(self.defaultRadioButton)
@@ -187,7 +187,7 @@ class ProxySettingCard(ExpandGroupSettingCard):
         self.radioLayout.addWidget(self.customRadioButton)
         self.radioLayout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
 
-        self.customProxyLayout.setContentsMargins(48, 18, 44, 18)
+        self.customProxyLayout.setContentsMargins(48, 5, 44, 10)
         self.customProxyLayout.addWidget(
             self.customLabel, 0, Qt.AlignmentFlag.AlignLeft
         )
@@ -209,7 +209,7 @@ class ProxySettingCard(ExpandGroupSettingCard):
             QHBoxLayout.SizeConstraint.SetMinimumSize
         )
 
-        self.credentialsLayout.setContentsMargins(48, 18, 44, 18)
+        self.credentialsLayout.setContentsMargins(48, 5, 44, 18)
         self.credentialsLayout.addWidget(
             self.credentialsLabel, 0, Qt.AlignmentFlag.AlignLeft
         )

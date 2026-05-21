@@ -19,7 +19,6 @@ from qfluentwidgets import (
     OptionsValidator,
     PlainTextEdit,
     SettingCard,
-    SettingCardGroup,
     SubtitleLabel,
     SwitchSettingCard,
     ToolButton,
@@ -28,6 +27,7 @@ from qfluentwidgets import (
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.supports.config import cfg
 from app.supports.utils import getProxies
 
@@ -290,7 +290,7 @@ class GitHubConfig(PackConfig):
     )
 
     def setupSettings(self, settingPage: "SettingPage"):
-        self.githubGroup = SettingCardGroup(self.tr("GitHub 加速"), settingPage.container)
+        self.githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", settingPage.container)
         self.enableCard = SwitchSettingCard(
             FluentIcon.LINK,
             self.tr("启用 GitHub 加速"),
@@ -307,7 +307,7 @@ class GitHubConfig(PackConfig):
         self.githubGroup.addSettingCard(self.enableCard)
         self.githubGroup.addSettingCard(self.proxySiteCard)
 
-        settingPage.vBoxLayout.addWidget(self.githubGroup)
+        settingPage.addSettingGroup(self.githubGroup)
 
         self.enableCard.checkedChanged.connect(self._onEnabledChanged)
         self.viewAgreementButton.clicked.connect(self._showAgreement)

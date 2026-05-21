@@ -14,7 +14,6 @@ from qfluentwidgets import (
     OptionsValidator,
     BoolValidator,
     ConfigItem,
-    SettingCardGroup,
     ComboBoxSettingCard,
     SettingCard,
     FluentIcon,
@@ -28,6 +27,7 @@ from qfluentwidgets import (
 from qrcode.image.pure import PyPNGImage
 
 from app.bases.models import PackConfig
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.services.core_service import coreService
 from app.supports.config import cfg
 from .login import (
@@ -432,7 +432,7 @@ class BilibiliConfig(PackConfig):
     userCookie = ConfigItem("Download", "UserCookie", "", CookieValidator())
 
     def setupSettings(self, settingPage: "SettingPage"):
-        self.parseBilibiliGroup = SettingCardGroup(self.tr("哔哩哔哩视频下载"), settingPage.container)
+        self.parseBilibiliGroup = CollapsibleSettingCardGroup(self.tr("哔哩哔哩视频下载"), "bili", settingPage.container)
 
         self.defaultQualityCard = ComboBoxSettingCard(
             self.defaultQuality,
@@ -479,7 +479,7 @@ class BilibiliConfig(PackConfig):
         self.parseBilibiliGroup.addSettingCard(self.parseDolbyCard)
         self.parseBilibiliGroup.addSettingCard(self.loginCard)
 
-        settingPage.vBoxLayout.addWidget(self.parseBilibiliGroup)
+        settingPage.addSettingGroup(self.parseBilibiliGroup)
 
 
 bilibiliConfig = BilibiliConfig()

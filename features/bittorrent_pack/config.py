@@ -17,7 +17,6 @@ from qfluentwidgets import (
     RangeSettingCard,
     RangeValidator,
     SettingCard,
-    SettingCardGroup,
     SwitchSettingCard,
     ToolButton,
     ToolTipFilter,
@@ -26,6 +25,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.setting_cards import SpinBoxSettingCard
 from .trackers import fetchWebTrackers, formatTrackers, toTrackers, parseTrackerText
@@ -224,7 +224,7 @@ class BitTorrentConfig(PackConfig):
     )
 
     def setupSettings(self, settingPage: "SettingPage"):
-        self.bittorrentGroup = SettingCardGroup(self.tr("BitTorrent 下载"), settingPage.container)
+        self.bittorrentGroup = CollapsibleSettingCardGroup(self.tr("BitTorrent 下载"), "bittorrent", settingPage.container)
         self.listenPortCard = SpinBoxSettingCard(
             FluentIcon.GLOBE,
             self.tr("监听端口"),
@@ -375,7 +375,7 @@ class BitTorrentConfig(PackConfig):
         ):
             self.bittorrentGroup.addSettingCard(card)
 
-        settingPage.vBoxLayout.addWidget(self.bittorrentGroup)
+        settingPage.addSettingGroup(self.bittorrentGroup)
 
 
 bittorrentConfig = BitTorrentConfig()

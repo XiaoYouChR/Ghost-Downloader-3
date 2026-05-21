@@ -121,6 +121,18 @@ class LanguageSerializer(ConfigSerializer):
         return Language(QLocale(value)) if value != "Auto" else Language.AUTO
 
 
+class StringListValidator(ConfigValidator):
+    """字符串列表验证器"""
+
+    def validate(self, value) -> bool:
+        return isinstance(value, list) and all(isinstance(i, str) for i in value)
+
+    def correct(self, value) -> list:
+        if not isinstance(value, list):
+            return []
+        return [i for i in value if isinstance(i, str)]
+
+
 class HeadersValidator(ConfigValidator):
     """Headers 验证器"""
 
@@ -246,6 +258,14 @@ class Config(QConfig):
         GeometryValidator(),
         GeometrySerializer(),
     )  # 由于 QScreen 必须在 QApplication 初始化之后调用, 所以由 MainWindow 处理特殊情况
+
+    # 设置页 UI 状态
+    collapsedSettingGroups = ConfigItem(
+        "UI", "CollapsedSettingGroups", [], StringListValidator()
+    )
+    settingGroupOrder = ConfigItem(
+        "UI", "SettingGroupOrder", [], StringListValidator()
+    )
 
     # 网络设置
     # headers = ConfigItem(
