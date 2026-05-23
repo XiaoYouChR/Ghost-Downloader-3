@@ -9,6 +9,7 @@ from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
+from app.supports.paths import executableDir
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 class FeatureService:
     def __init__(self):
         self._packs: dict[str, FeaturePack] = {}
-        self._featuresPath = Path(__file__).parent.parent.parent / "features"
+        self._featuresPath = executableDir / "features"
 
     def _sortedPacks(self) -> list[tuple[str, FeaturePack]]:
         items = list(self._packs.items())
