@@ -60,7 +60,6 @@ class FtpFileSelectDialog(FileSelectDialog):
 class FtpResultCard(ResultCard):
     def __init__(self, task: FtpTask, parent: QWidget = None):
         super().__init__(task, parent)
-        self.task = task
 
         self.mainLayout = QHBoxLayout(self)
         self.textLayout = QVBoxLayout()
@@ -74,6 +73,7 @@ class FtpResultCard(ResultCard):
         self._initWidget()
         self._initLayout()
         self._refreshSummary()
+        self._renderCategoryButton()
 
     def _initWidget(self):
         self.setFixedHeight(50)
@@ -104,6 +104,7 @@ class FtpResultCard(ResultCard):
         self.mainLayout.addLayout(self.textLayout, 1)
         self.mainLayout.addWidget(self.summaryLabel)
         self.mainLayout.addSpacing(12)
+        self.mainLayout.addWidget(self.categoryButton)
         self.mainLayout.addWidget(self.selectFilesButton)
 
     def eventFilter(self, obj, event: QEvent):

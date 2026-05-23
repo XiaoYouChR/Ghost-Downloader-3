@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QObject, Qt, Signal
 from loguru import logger
 
 from app.bases.models import Task
+from app.services.category_service import categoryService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.view.components.card_widgets import ParseResultHeaderCardWidget
@@ -38,22 +40,12 @@ class AddTaskParseSession(QObject):
         self._acceptedPayloads: dict[str, dict[str, Any]] = {}
         self._payloadOverrides: dict[str, dict[str, Any]] = {}
 
-    def setPayloadOverride(
-        self,
-        url: str,
-        payloadOverride: dict[str, Any],
-    ) -> None:
-        self._payloadOverrides[url] = payloadOverride
-
     def setPayload(self, payload: dict[str, Any]) -> None:
         self._payload = payload
         for state in self._lineStates:
             if state.task is None:
                 continue
-            try:
-                state.task.applySettings(self._buildPayload(state.url))
-            except Exception as error:
-                logger.opt(exception=error).error("同步解析结果设置失败 {}", state.url)
+            state.task.applySettings(self._buildPayload(state.url))
 
     def canAccept(self) -> bool:
         return any(state.callbackId or state.task is not None for state in self._lineStates)
@@ -100,28 +92,14 @@ class AddTaskParseSession(QObject):
                 if state.task is not None:
                     continue
                 self._clearState(state, cancelRequest=True)
-                try:
-                    task.applySettings(self._buildPayload(url))
-                except Exception as error:
-                    logger.opt(exception=error).error("同步解析结果设置失败 {}", url)
-                    self._failState(state, self.tr("解析结果处理失败"))
-                    continue
-                self._setParsedTask(state, task)
-                continue
-
-            newUrlLines.append(url)
-            state = _LineParseState(url=url)
-            try:
-                task.applySettings(self._buildPayload(url))
-            except Exception as error:
-                logger.opt(exception=error).error("同步解析结果设置失败 {}", url)
-                self._failState(state, self.tr("解析结果处理失败"))
+            else:
+                newUrlLines.append(url)
+                state = _LineParseState(url=url)
                 self._lineStates.append(state)
                 stateByUrl[url] = state
-                continue
+
+            task.applySettings(self._buildPayload(url))
             self._setParsedTask(state, task)
-            self._lineStates.append(state)
-            stateByUrl[url] = state
 
         self._updateResultCards()
         return newUrlLines
@@ -138,11 +116,8 @@ class AddTaskParseSession(QObject):
 
         for state in self._lineStates:
             if state.task is not None:
-                try:
-                    state.task.applySettings(self._buildPayload(state.url))
-                    confirmedTasks.append(state.task)
-                except Exception as error:
-                    logger.opt(exception=error).error("同步已确认任务设置失败 {}", state.url)
+                state.task.applySettings(self._buildPayload(state.url))
+                confirmedTasks.append(state.task)
                 continue
 
             if not state.callbackId:
@@ -166,6 +141,11 @@ class AddTaskParseSession(QObject):
         payload = self._payload.copy()
         payload.update(self._payloadOverrides.get(url, {}))
         payload["url"] = url
+        cid = payload.get("category")
+        if cid:
+            folder = categoryService.folderOf(cid)
+            if folder:
+                payload["path"] = Path(folder)
         return payload
 
     def _submitParse(self, state: _LineParseState) -> None:
@@ -189,12 +169,14 @@ class AddTaskParseSession(QObject):
         self.parsingBusyChanged.emit(True)
 
     def _setParsedTask(self, state: _LineParseState, task: Task) -> None:
-        try:
-            state.task = task
-            state.resultCard = featureService.resultCard(task, self._resultGroup)
-        except Exception as error:
-            logger.opt(exception=error).error("无法创建解析结果卡片 {}", state.url)
-            self._failState(state, self.tr("解析结果处理失败"))
+        state.task = task
+        state.resultCard = featureService.resultCard(task, self._resultGroup)
+        state.resultCard.categoryPicked.connect(
+            lambda categoryId, u=state.url: self._onCategoryPicked(u, categoryId)
+        )
+
+    def _onCategoryPicked(self, url: str, categoryId: str) -> None:
+        self._payloadOverrides[url] = {"category": categoryId}
 
     def _removeResultCard(self, state: _LineParseState) -> None:
         if state.resultCard is None:
@@ -263,13 +245,9 @@ class AddTaskParseSession(QObject):
                     logger.warning("解析任务失败 {}: {}", state.url, error)
                 return
 
-            try:
-                resultTask.applySettings(self._buildPayload(state.url))
-                self._setParsedTask(state, resultTask)
-                self._updateResultCards()
-            except Exception as error:
-                logger.opt(exception=error).error("无法创建解析结果卡片 {}", state.url)
-                self._failState(state, self.tr("解析结果处理失败"))
+            resultTask.applySettings(self._buildPayload(state.url))
+            self._setParsedTask(state, resultTask)
+            self._updateResultCards()
             return
 
         acceptedPayload = self._acceptedPayloads.pop(callbackId, None)
@@ -281,10 +259,5 @@ class AddTaskParseSession(QObject):
                 logger.warning("后台确认任务解析失败: {}", error)
             return
 
-        try:
-            resultTask.applySettings(acceptedPayload)
-            self.taskConfirmed.emit(resultTask)
-        except Exception as error:
-            logger.opt(exception=error).error(
-                "无法创建任务卡片 {}", getattr(resultTask, "title", "Unknown")
-            )
+        resultTask.applySettings(acceptedPayload)
+        self.taskConfirmed.emit(resultTask)

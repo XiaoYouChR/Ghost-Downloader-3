@@ -63,7 +63,6 @@ class TorrentFileSelectDialog(FileSelectDialog):
 class BitTorrentResultCard(ResultCard):
     def __init__(self, task: BTTask, parent: QWidget = None):
         super().__init__(task, parent)
-        self.task = task
 
         self.mainLayout = QHBoxLayout(self)
         self.textLayout = QVBoxLayout()
@@ -76,6 +75,7 @@ class BitTorrentResultCard(ResultCard):
         self._initWidget()
         self._initLayout()
         self._refreshSummary()
+        self._renderCategoryButton()
 
     def _initWidget(self):
         self.setFixedHeight(45)
@@ -96,6 +96,7 @@ class BitTorrentResultCard(ResultCard):
         self.mainLayout.addStretch(1)
         self.mainLayout.addWidget(self.summaryLabel)
         self.mainLayout.addSpacing(12)
+        self.mainLayout.addWidget(self.categoryButton)
         self.mainLayout.addWidget(self.selectFilesButton)
 
     def _sourceText(self) -> str:

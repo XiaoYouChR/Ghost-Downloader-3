@@ -73,6 +73,9 @@ class SelectFolderCard(ParseSettingCard):
             return path.absolute()
         return path.parent
 
+    def reset(self) -> None:
+        self.pathEdit.setText(cfg.downloadFolder.value)
+
     @property
     def payload(self) -> dict[str, Any]:
         return {"path": Path(self.pathEdit.text())}
@@ -234,17 +237,9 @@ class AddTaskDialog(MessageBoxBase):
             return []
         return [line.strip() for line in text.splitlines() if line.strip()]
 
-    def addUrls(
-        self,
-        urls: list[str],
-        overrides: dict[str, dict[str, Any]] | None = None,
-    ) -> None:
+    def addUrls(self, urls: list[str]) -> None:
         if not urls:
             return
-
-        if overrides:
-            for url, override in overrides.items():
-                self._parseSession.setPayloadOverride(url, override)
 
         existingUrls = set(self._urls())
         urlsToAdd: list[str] = []
@@ -345,10 +340,12 @@ class AddTaskDialog(MessageBoxBase):
             self._parseSession.clear()
             self.urlEdit.clear()
             self._timer.stop()
+            self.selectFolderCard.reset()
         elif code == QDialog.DialogCode.Accepted:
             confirmedTasks = self._parseSession.accept()
             self.urlEdit.clear()
             self._timer.stop()
+            self.selectFolderCard.reset()
 
         for task in confirmedTasks:
             self.taskConfirmed.emit(task)

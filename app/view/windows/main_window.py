@@ -278,12 +278,11 @@ class MainWindow(MSFluentWindow):
             self,
             triggeredByUser: bool = False,
             urls: list[str] | None = None,
-            payloadOverrides: dict[str, dict[str, Any]] | None = None,
     ):
         dialog = AddTaskDialog.initialize(self)
 
         if urls:
-            dialog.addUrls(urls, overrides=payloadOverrides)
+            dialog.addUrls(urls)
 
         if dialog.isVisible() and not dialog.isStandaloneMode:
             dialog.raise_()

@@ -7,27 +7,85 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayo
 from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
     themeColor, IconWidget, ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
-    TransparentToolButton, ProgressBar, IndeterminateProgressBar, LineEdit, RoundMenu, Action
+    TransparentToolButton, ProgressBar, IndeterminateProgressBar, LineEdit, \
+    RoundMenu, Action, ToolTipFilter
 
 from app.bases.models import Task, TaskStatus, SpecialFileSize
+from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.services.core_service import coreService
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, toReadableSize, toReadableTime, openFolder
-from app.supports.config import GD3_COPY_MIME_TYPE
+from app.supports.config import cfg, GD3_COPY_MIME_TYPE
 from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
-from app.view.components.labels import IconBodyLabel
+from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 
 
 class ResultCard(QWidget):
     """显示下载链接解析结果的卡片组件"""
 
+    categoryPicked = Signal(str)
+
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(parent)
-        # self.task = task
+        self.task = task
         self.borderRadius = 5
 
+        self.categoryButton = TransparentToolButton(self)
+        self.categoryMenu = RoundMenu(parent=self.categoryButton)
+
+        self._initCategoryButton()
+
+    def _initCategoryButton(self):
+        self.categoryButton.setFixedSize(28, 28)
+        self.categoryButton.installEventFilter(ToolTipFilter(self.categoryButton))
+        self.categoryButton.clicked.connect(self._showCategoryMenu)
+        cfg.enableCategory.valueChanged.connect(self._renderCategoryButton)
+        categoryService.categoriesChanged.connect(self._refreshCategoryMenu)
+        self._refreshCategoryMenu()
+
+    def _showCategoryMenu(self):
+        bottomLeft = self.categoryButton.mapToGlobal(
+            self.categoryButton.rect().bottomLeft()
+        )
+        self.categoryMenu.exec(bottomLeft)
+
+    def _refreshCategoryMenu(self):
+        self.categoryMenu.clear()
+        uncategorized = Action(FluentIcon.MORE, self.tr("未分类"), self)
+        uncategorized.triggered.connect(
+            lambda: self._onCategoryPicked(UNCATEGORIZED_ID)
+        )
+        self.categoryMenu.addAction(uncategorized)
+        self.categoryMenu.addSeparator()
+        for category in categoryService.categories():
+            cid = category.categoryId
+            action = Action(category.fluentIcon(), category.name, self)
+            action.triggered.connect(
+                lambda checked=False, c=cid: self._onCategoryPicked(c)
+            )
+            self.categoryMenu.addAction(action)
+        self._renderCategoryButton()
+
+    def _renderCategoryButton(self):
+        if not cfg.enableCategory.value:
+            self.categoryButton.hide()
+            return
+        category = categoryService.categoryById(self.task.category)
+        if category is None:
+            self.categoryButton.setIcon(FluentIcon.MORE)
+            self.categoryButton.setToolTip(self.tr("未分类"))
+        else:
+            self.categoryButton.setIcon(category.fluentIcon())
+            self.categoryButton.setToolTip(category.name)
+        self.categoryButton.show()
+
+    def _onCategoryPicked(self, categoryId: str):
+        self.task.category = categoryId
+        self._renderCategoryButton()
+        self.categoryPicked.emit(categoryId)
+
     def getTask(self) -> Task:
-        raise NotImplementedError
+        return self.task
 
     @property
     def backgroundColor(self):
@@ -100,6 +158,7 @@ class TaskCard(CardWidget):
     deleted = Signal()
     finished = Signal()
     selectionChanged = Signal(bool, bool)
+    categoryChanged = Signal()
 
     def __init__(self, task: Task, parent=None):
         super().__init__(parent)
@@ -169,7 +228,38 @@ class TaskCard(CardWidget):
         redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         redownloadAction.triggered.connect(self.redownloadTask)
         menu.addAction(redownloadAction)
+
+        if cfg.enableCategory.value:
+            moveMenu = RoundMenu(self.tr("移动到分类"), self)
+            moveMenu.setIcon(FluentIcon.TAG)
+
+            uncategorizedAction = Action(FluentIcon.MORE, self.tr("未分类"), self)
+            uncategorizedAction.triggered.connect(
+                lambda: self.setTaskCategory(UNCATEGORIZED_ID)
+            )
+            moveMenu.addAction(uncategorizedAction)
+            moveMenu.addSeparator()
+            for category in categoryService.categories():
+                categoryId = category.categoryId
+                action = Action(category.fluentIcon(), category.name, self)
+                action.triggered.connect(
+                    lambda checked=False, cid=categoryId: self.setTaskCategory(cid)
+                )
+                moveMenu.addAction(action)
+            menu.addMenu(moveMenu)
+
         return menu
+
+    def setTaskCategory(self, categoryId: str):
+        if self.task.category == categoryId:
+            return
+        self.task.category = categoryId
+        taskRecorder.flush()
+        self._onCategoryUpdated()
+        self.categoryChanged.emit()
+
+    def _onCategoryUpdated(self):
+        pass
 
     def _copyTaskUrl(self):
         clipboard = QApplication.clipboard()
@@ -248,7 +338,7 @@ class UniversalTaskCard(TaskCard):
         self.hBoxLayout = QHBoxLayout(self)
         self.iconLabel = ImageLabel(self)
         self.infoVBoxLayout = QVBoxLayout(self)
-        self.filenameLabel = StrongBodyLabel(self.task.title, self)
+        self.filenameLabel = IconStrongBodyLabel(self.task.title, self)
         self.infoLayout = QHBoxLayout(self)
         self.speedLabel = IconBodyLabel("", FluentIcon.SPEED_HIGH, self)
         self.leftTimeLabel = IconBodyLabel("", FluentIcon.STOP_WATCH, self)
@@ -271,7 +361,27 @@ class UniversalTaskCard(TaskCard):
         self.initLayout()
         self.connectSignalToSlot()
         self._refreshIconLabel()
+        self._renderCategoryIcon()
         self._renderTaskState()
+
+        cfg.enableCategory.valueChanged.connect(self._renderCategoryIcon)
+        categoryService.categoriesChanged.connect(self._renderCategoryIcon)
+
+    def _renderCategoryIcon(self):
+        if not cfg.enableCategory.value or not self.task.category:
+            self.filenameLabel.setIcon(None)
+            return
+
+        category = categoryService.categoryById(self.task.category)
+        if category is None:
+            self.filenameLabel.setIcon(None)
+            return
+
+        self.filenameLabel.setIcon(category.fluentIcon())
+        self.filenameLabel.setToolTip(category.name)
+
+    def _onCategoryUpdated(self):
+        self._renderCategoryIcon()
 
     def _refreshIconLabel(self):
         self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(self.task.outputFolder)).pixmap(48, 48))
@@ -526,7 +636,6 @@ class UniversalTaskCard(TaskCard):
 class UniversalResultCard(ResultCard):
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
-        self.task = task
         self.iconLabel = ImageLabel(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.filenameEdit = LineEdit(self)
@@ -535,6 +644,7 @@ class UniversalResultCard(ResultCard):
 
         self.initWidget()
         self.initLayout()
+        self._renderCategoryButton()
 
     def initWidget(self):
         """初始化组件属性"""
@@ -556,6 +666,7 @@ class UniversalResultCard(ResultCard):
         self.mainLayout.addWidget(self.filenameLabel, 1)
         self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.sizeLabel)
+        self.mainLayout.addWidget(self.categoryButton)
 
     def eventFilter(self, obj, event: QEvent):
         """事件过滤器，处理双击事件"""

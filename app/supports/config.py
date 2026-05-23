@@ -133,6 +133,35 @@ class StringListValidator(ConfigValidator):
         return [i for i in value if isinstance(i, str)]
 
 
+class CategoryListValidator(ConfigValidator):
+    """下载分类规则列表验证器"""
+
+    def validate(self, value) -> bool:
+        if not isinstance(value, list):
+            return False
+        return all(
+            isinstance(item, dict) and isinstance(item.get("name"), str)
+            for item in value
+        )
+
+    def correct(self, value) -> list:
+        return value if self.validate(value) else []
+
+
+class CategoryListSerializer(ConfigSerializer):
+    """下载分类规则列表序列化器"""
+
+    def serialize(self, value: list) -> str:
+        return dumps(value).decode("utf-8")
+
+    def deserialize(self, value: str) -> list:
+        try:
+            result = loads(value)
+            return result if isinstance(result, list) else []
+        except (ValueError, TypeError):
+            return []
+
+
 class HeadersValidator(ConfigValidator):
     """Headers 验证器"""
 
@@ -201,6 +230,18 @@ class Config(QConfig):
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 3, RangeValidator(1, 100)
+    )
+
+    # 下载分类
+    enableCategory = ConfigItem(
+        "Category", "EnableCategory", False, BoolValidator()
+    )
+    categoryRules = ConfigItem(
+        "Category",
+        "CategoryRules",
+        [],
+        CategoryListValidator(),
+        CategoryListSerializer(),
     )
 
     # 浏览器插件设置
@@ -300,10 +341,5 @@ EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downl
 GD3_COPY_MIME_TYPE = "application/x-gd3-copy"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 # BASE_EFFICIENCY_THRESHOLD = 0.8  # 判断阈值
-
-# TODO 自定义附件捕捉类型
-attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img iso lzh m4a m4v mkv mov mp3 mp4 mpa mpe
-                                 mpeg mpg msi msu ogg ogv pdf plj pps ppt qt ra rar rm rmvb sea sit sitx tar tif tiff
-                                 wav wma wmv z zip esd wim msp apk apks apkm cab msp pkg"""
 
 cfg = Config()

@@ -14,6 +14,7 @@ from app.services.browser_service import BrowserService
 from app.supports.config import cfg, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
     VERSION, FEEDBACK_URL
 from app.supports.utils import openAppLogFolder
+from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
 
@@ -36,6 +37,7 @@ class SettingPage(ScrollArea):
         # stretch 永远是 vBoxLayout 的最后一个 item，吸收多余高度让 group 顶部对齐
         self.vBoxLayout.addStretch(1)
         self.generalDownloadGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
+        self.categoryGroup = CollapsibleSettingCardGroup(self.tr("下载分类"), "category", self.container)
         self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
         self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
         self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
@@ -142,6 +144,17 @@ class SettingPage(ScrollArea):
             cfg.proxyServer, self.generalDownloadGroup
         )
         self.generalDownloadGroup.addSettingCard(self.proxyServerCard)
+        # Category
+        self.enableCategoryCard = SwitchSettingCard(
+            FluentIcon.TAG,
+            self.tr("启用下载分类"),
+            self.tr("根据扩展名将下载任务归类，便于筛选与分发到指定文件夹"),
+            cfg.enableCategory,
+            self.categoryGroup,
+        )
+        self.categoryGroup.addSettingCard(self.enableCategoryCard)
+        self.categoryRulesCard = CategoryRulesCard(self.categoryGroup)
+        self.categoryGroup.addSettingCard(self.categoryRulesCard)
         # Browser
         self.browserExtensionCard = SwitchSettingCard(
             FluentIcon.CONNECT,
@@ -334,6 +347,7 @@ class SettingPage(ScrollArea):
 
     def initLayout(self):
         self.addSettingGroup(self.generalDownloadGroup)
+        self.addSettingGroup(self.categoryGroup)
         self.addSettingGroup(self.browserGroup)
         self.addSettingGroup(self.personalGroup)
         self.addSettingGroup(self.softwareGroup)

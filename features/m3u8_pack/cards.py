@@ -103,7 +103,6 @@ class M3U8InstallTaskCard(UniversalTaskCard):
 class M3U8ResultCard(ResultCard):
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
-        self.task = task
         self.iconLabel = ImageLabel(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.filenameEdit = LineEdit(self)
@@ -112,6 +111,7 @@ class M3U8ResultCard(ResultCard):
 
         self._initWidget()
         self._initLayout()
+        self._renderCategoryButton()
 
     def _initWidget(self):
         self.setFixedHeight(35)
@@ -129,6 +129,7 @@ class M3U8ResultCard(ResultCard):
         self.mainLayout.addWidget(self.filenameLabel, 1)
         self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.metaLabel)
+        self.mainLayout.addWidget(self.categoryButton)
 
     def _metaText(self) -> str:
         manifestText = "DASH" if self.task.metadata.get('manifestType', 'm3u8') == "mpd" else "HLS"

@@ -40,7 +40,7 @@ def _toSerializable(obj: Any) -> Any:
     return obj
 
 
-def _filterDataclassKwargs(cls: type, obj: dict[str, Any]) -> dict[str, Any]:
+def _filterProperty(cls: type, obj: dict[str, Any]) -> dict[str, Any]:
     allowed = {field.name for field in dataclass_fields(cls) if field.init}
     for klass in cls.__mro__:
         for name, val in vars(klass).items():
@@ -163,7 +163,7 @@ class TaskStage:
         if "resolvePath" in obj and "outputFile" not in obj:
             obj["outputFile"] = obj.pop("resolvePath")
 
-        return stageCls(**_filterDataclassKwargs(stageCls, obj))
+        return stageCls(**_filterProperty(stageCls, obj))
 
 
 @dataclass(kw_only=True, eq=False)
@@ -179,6 +179,7 @@ class Task:
     fileSize: int = 0
     metadata: dict = field(default_factory=dict)
     files: list[TaskFile] | None = None
+    category: str = ""
     usesSlot: bool = True
     stageType: Type[TaskStage] | None = field(default=None, repr=False)
 
@@ -215,6 +216,11 @@ class Task:
         for stage in self.stages:
             stage.updateOutputFile(self.path, self.title)
         self.updateStatus()
+
+        if not self.category:
+            from app.services.category_service import categoryService
+
+            self.category = categoryService.categoryOf(self)
 
     def addStage(self, stage: TaskStage):
         stage._bindTask(self)
@@ -314,6 +320,9 @@ class Task:
             for stage in self.stages:
                 stage.updateOutputFile(self.path, self.title)
 
+        if "category" in payload:
+            self.category = payload["category"]
+
     async def run(self):
         currentStage = None
         try:
@@ -392,11 +401,11 @@ class Task:
 
         rawFiles = obj.pop("files", None)
         if rawFiles is not None and targetCls is cls:
-            obj["files"] = [TaskFile(**_filterDataclassKwargs(TaskFile, f)) for f in rawFiles]
+            obj["files"] = [TaskFile(**_filterProperty(TaskFile, f)) for f in rawFiles]
         elif rawFiles is not None:
             obj["files"] = rawFiles
 
-        return targetCls(**_filterDataclassKwargs(targetCls, obj))
+        return targetCls(**_filterProperty(targetCls, obj))
 
     def __hash__(self):
         return hash(self.taskId)

@@ -2,15 +2,16 @@ from enum import IntEnum
 from sys import platform
 
 from PySide6.QtCore import Qt, QSize, QTimer, Slot
-from PySide6.QtGui import QPainter, QColor, QActionGroup
+from PySide6.QtGui import QPainter, QColor, QActionGroup, QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect, QDialog
 from loguru import logger
 from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton, \
     SearchLineEdit, ToolButton, ToggleToolButton, ToolTipFilter, Action, \
     CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
-    DropDownToolButton
+    DropDownToolButton, RoundMenu
 
 from app.bases.models import TaskStatus
+from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg
@@ -28,6 +29,7 @@ class TaskCommandBarView(CommandBarView):
         # self.openAction = Action(FluentIcon.FOLDER, self.tr("打开文件夹"), self)
         self.redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
+        self.moveCategoryAction = Action(FluentIcon.TAG, self.tr("移动到分类"), self)
         self.selectAllAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("全选"), self)
         self.invertSelectAction = Action(FluentIcon.CUT, self.tr("反选"), self)
         self.cancelAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("取消全选"), self)
@@ -37,12 +39,18 @@ class TaskCommandBarView(CommandBarView):
         # self.addAction(self.openAction)
         self.addAction(self.redownloadAction)
         self.addAction(self.deleteAction)
+        self.addAction(self.moveCategoryAction)
         self.addSeparator()
         self.addAction(self.selectAllAction)
         self.addAction(self.invertSelectAction)
         self.addAction(self.cancelAction)
         self.resizeToSuitableWidth()
         self.setShadowEffect()
+
+        self.moveCategoryAction.setVisible(cfg.enableCategory.value)
+        cfg.enableCategory.valueChanged.connect(
+            lambda value: self.moveCategoryAction.setVisible(bool(value))
+        )
 
     def setShadowEffect(self, blurRadius=35, offset=(0, 8)):
         """ add shadow to dialog """
@@ -117,6 +125,7 @@ class TaskPage(ScrollArea):
         self.isSelectionMode = False
         self.searchKeyword = ""
         self.filterMode: FilterMode = FilterMode.ALL
+        self.categoryFilterId: str | None = None
         self.sortField: SortField = SortField.TIME
         self.sortReverse = True
         self.planAction: int | None = None
@@ -148,6 +157,9 @@ class TaskPage(ScrollArea):
         self.noFilterAction = Action(FluentIcon.FILTER, self.tr('全部任务'), self, checkable=True)
         self.activeFilterAction = Action(FluentIcon.DOWNLOAD, self.tr('活动任务'), self, checkable=True)
         self.completedFilterAction = Action(FluentIcon.TRAIN, self.tr('完成任务'), self, checkable=True)
+        self.categoryFilterButton = DropDownToolButton(FluentIcon.TAG, self)
+        self.categoryFilterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.categoryFilterActionGroup = QActionGroup(self)
         self.searchLineEdit = SearchLineEdit(self)
         # other widgets
         self.commandView = TaskCommandBarView(self)
@@ -182,13 +194,14 @@ class TaskPage(ScrollArea):
         self.speedBadge.setText(f"{toReadableSize(cfg.globalSpeed)}/s")
         cfg.resetGlobalSpeed()
 
-        if self.filterMode != FilterMode.ALL:
+        if self.filterMode != FilterMode.ALL or self.categoryFilterId is not None:
             self.refreshCardVisibility()
 
     def addCard(self, card: TaskCard):
         card.deleted.connect(lambda: self.removeCard(card))
         card.finished.connect(self._onCardFinished)
         card.selectionChanged.connect(lambda checked, extend, card=card: self._onCardSelectionChanged(card, checked, extend))
+        card.categoryChanged.connect(self.refreshCardVisibility)
         self.cards.append(card)
         self.viewLayout.addWidget(card)
         self.sortCards()
@@ -284,6 +297,12 @@ class TaskPage(ScrollArea):
         self.filterMenu.addAction(self.completedFilterAction)
         self.filterButton.setMenu(self.filterMenu)
 
+        self.categoryFilterButton.setMenu(self.categoryFilterMenu)
+        self.categoryFilterButton.setToolTip(self.tr("按分类筛选"))
+        self.categoryFilterButton.installEventFilter(ToolTipFilter(self.categoryFilterButton))
+        self.categoryFilterButton.setVisible(cfg.enableCategory.value)
+        self._rebuildCategoryFilterMenu()
+
         self.selectButton.setToolTip(self.tr("选择任务"))
         self.selectButton.installEventFilter(ToolTipFilter(self.selectButton))
         self.planButton.setToolTip(self.tr("计划任务"))
@@ -320,6 +339,7 @@ class TaskPage(ScrollArea):
         self.toolBarLayout.addStretch(1)
         self.toolBarLayout.addWidget(self.sortButton)
         self.toolBarLayout.addWidget(self.filterButton)
+        self.toolBarLayout.addWidget(self.categoryFilterButton)
         self.toolBarLayout.addWidget(self.searchLineEdit)
         self.searchLineEdit.setMinimumWidth(200)
         self.searchLineEdit.setMaximumWidth(300)
@@ -345,6 +365,9 @@ class TaskPage(ScrollArea):
         self.searchLineEdit.clearSignal.connect(lambda: self._onSearchTextChanged(""))
         self.rateLimitButton.clicked.connect(self._onRateLimitButtonClicked)
         self.planButton.clicked.connect(self._onPlanButtonClicked)
+        self.commandView.moveCategoryAction.triggered.connect(self._onMoveCategoryActionTriggered)
+        cfg.enableCategory.valueChanged.connect(self._onEnableCategoryChanged)
+        categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
 
     def _onRateLimitButtonClicked(self):
         checked = self.rateLimitButton.isChecked()
@@ -406,14 +429,21 @@ class TaskPage(ScrollArea):
 
         return True
 
+    def _matchCategory(self, card: TaskCard) -> bool:
+        if not cfg.enableCategory.value or self.categoryFilterId is None:
+            return True
+        return card.task.category == self.categoryFilterId
+
     def _matchCard(self, card: TaskCard) -> bool:
-        return self._matchSearch(card) and self._matchFilter(card)
+        return self._matchSearch(card) and self._matchFilter(card) and self._matchCategory(card)
 
     def _getEmptyTextForFilter(self) -> str:
-        if self.searchKeyword and self.filterMode != FilterMode.ALL:
+        if self.searchKeyword and (self.filterMode != FilterMode.ALL or self.categoryFilterId is not None):
             return self.tr("没有匹配筛选条件的任务")
         if self.searchKeyword:
             return self.tr("没有匹配的任务")
+        if self.categoryFilterId is not None:
+            return self.tr("该分类下暂无任务")
         if self.filterMode == FilterMode.ACTIVE:
             return self.tr("暂无活动任务")
         if self.filterMode == FilterMode.COMPLETE:
@@ -451,6 +481,94 @@ class TaskPage(ScrollArea):
 
         self.filterMode = mode
         self.refreshCardVisibility()
+
+    def setCategoryFilter(self, categoryId: str | None):
+        if self.categoryFilterId == categoryId:
+            return
+        self.categoryFilterId = categoryId
+        self.refreshCardVisibility()
+
+    def _rebuildCategoryFilterMenu(self):
+        self.categoryFilterMenu.clear()
+        self.categoryFilterMenu.view.clear()
+        for action in self.categoryFilterActionGroup.actions():
+            self.categoryFilterActionGroup.removeAction(action)
+            action.deleteLater()
+
+        allAction = Action(FluentIcon.FILTER, self.tr("全部分类"), self, checkable=True)
+        allAction.triggered.connect(lambda: self.setCategoryFilter(None))
+        self.categoryFilterActionGroup.addAction(allAction)
+        self.categoryFilterMenu.addAction(allAction)
+        self.categoryFilterMenu.addSeparator()
+
+        uncategorizedAction = Action(FluentIcon.MORE, self.tr("未分类"), self, checkable=True)
+        uncategorizedAction.triggered.connect(lambda: self.setCategoryFilter(UNCATEGORIZED_ID))
+        self.categoryFilterActionGroup.addAction(uncategorizedAction)
+        self.categoryFilterMenu.addAction(uncategorizedAction)
+
+        validIds = {UNCATEGORIZED_ID}
+        for category in categoryService.categories():
+            cid = category.categoryId
+            validIds.add(cid)
+            action = Action(category.fluentIcon(), category.name, self, checkable=True)
+            action.triggered.connect(
+                lambda checked=False, c=cid: self.setCategoryFilter(c)
+            )
+            self.categoryFilterActionGroup.addAction(action)
+            self.categoryFilterMenu.addAction(action)
+
+        if self.categoryFilterId is not None and self.categoryFilterId not in validIds:
+            self.categoryFilterId = None
+            self.refreshCardVisibility()
+
+        for action in self.categoryFilterActionGroup.actions():
+            action.setChecked(False)
+        if self.categoryFilterId is None:
+            allAction.setChecked(True)
+        elif self.categoryFilterId == UNCATEGORIZED_ID:
+            uncategorizedAction.setChecked(True)
+        else:
+            for action in self.categoryFilterActionGroup.actions():
+                if action.text() and action is not allAction and action is not uncategorizedAction:
+                    category = next(
+                        (c for c in categoryService.categories() if c.name == action.text()),
+                        None,
+                    )
+                    if category and category.categoryId == self.categoryFilterId:
+                        action.setChecked(True)
+                        break
+
+    def _onEnableCategoryChanged(self, value: bool):
+        self.categoryFilterButton.setVisible(bool(value))
+        if not value and self.categoryFilterId is not None:
+            self.categoryFilterId = None
+        self.refreshCardVisibility()
+
+    def _onMoveCategoryActionTriggered(self):
+        checkedCards = [card for card in self.cards if card.isChecked()]
+        if not checkedCards:
+            return
+
+        popup = RoundMenu(parent=self)
+        uncategorizedAction = Action(FluentIcon.MORE, self.tr("未分类"), self)
+        uncategorizedAction.triggered.connect(
+            lambda: self._applyCategoryToSelected(checkedCards, UNCATEGORIZED_ID)
+        )
+        popup.addAction(uncategorizedAction)
+        popup.addSeparator()
+        for category in categoryService.categories():
+            cid = category.categoryId
+            action = Action(category.fluentIcon(), category.name, self)
+            action.triggered.connect(
+                lambda checked=False, c=cid: self._applyCategoryToSelected(checkedCards, c)
+            )
+            popup.addAction(action)
+
+        popup.exec(QCursor.pos())
+
+    def _applyCategoryToSelected(self, cards: list[TaskCard], categoryId: str):
+        for card in cards:
+            card.setTaskCategory(categoryId)
 
     def setSortField(self, field: SortField):
         if self.sortField == field:
