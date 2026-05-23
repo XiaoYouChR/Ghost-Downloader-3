@@ -234,8 +234,7 @@ class MainWindow(MSFluentWindow):
     def _restoreGeometry(self):
         self.resize(960, 540)
         desktop = QApplication.primaryScreen().availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        self.move(desktop.center() - self.rect().center())
 
     def initWindow(self):
         cfgGeometry: QRect = cfg.geometry.value
