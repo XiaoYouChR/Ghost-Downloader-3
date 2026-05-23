@@ -13,6 +13,7 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
     PushButton, PrimaryPushButton, setTheme, isDarkTheme, setThemeColor
 
 from app.services.browser_service import BrowserService
+from app.services.category_service import categoryService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE, isWin10, \
@@ -304,6 +305,17 @@ class MainWindow(MSFluentWindow):
 
     def addTask(self, task) -> bool:
         try:
+            if (
+                cfg.enableCategory.value
+                and task.category
+                and task.path == Path(cfg.downloadFolder.value)
+            ):
+                folder = categoryService.folderOf(task.category)
+                if folder:
+                    task.path = Path(folder)
+                    for stage in task.stages:
+                        stage.updateOutputFile(task.path, task.title)
+
             originalTitle = task.title
             if deduplicateFilename(task):
                 logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
