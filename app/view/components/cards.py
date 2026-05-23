@@ -378,7 +378,6 @@ class UniversalTaskCard(TaskCard):
             return
 
         self.filenameLabel.setIcon(category.fluentIcon())
-        self.filenameLabel.setToolTip(category.name)
 
     def _onCategoryUpdated(self):
         self._renderCategoryIcon()
