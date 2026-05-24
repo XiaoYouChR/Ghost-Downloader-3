@@ -12,7 +12,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     FluentIcon,
     SettingCard,
@@ -127,6 +127,13 @@ class CollapsibleSettingCardGroup(QWidget):
     def addSettingCard(self, card: QWidget) -> None:
         self.cardLayout.addWidget(card)
         card.installEventFilter(self._cardPaintSuppressor)
+        for w in (card, *card.findChildren(SettingCard)):
+            if hasattr(w, "hBoxLayout") and hasattr(w, "vBoxLayout"):
+                w.hBoxLayout.setStretchFactor(w.vBoxLayout, 1)
+            for name in ("titleLabel", "contentLabel"):
+                if label := getattr(w, name, None):
+                    label.setMinimumWidth(0)
+                    label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         # ExpandSettingCard 内部有 HeaderSettingCard / ExpandBorderWidget /
         # GroupSeparator 各自画背景或分隔线，吞掉 QScrollArea 自己的 paintEvent 不够
         if isinstance(card, ExpandSettingCard):

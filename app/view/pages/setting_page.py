@@ -34,6 +34,7 @@ class SettingPage(ScrollArea):
         super().__init__(parent)
         self.container = QWidget()
         self.vBoxLayout = QVBoxLayout(self.container)
+        self.vBoxLayout.setContentsMargins(4, 0, 4, 0)
         # stretch 永远是 vBoxLayout 的最后一个 item，吸收多余高度让 group 顶部对齐
         self.vBoxLayout.addStretch(1)
         self.generalDownloadGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
