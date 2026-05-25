@@ -6,13 +6,14 @@ from PySide6.QtCore import (
     QEvent,
     QObject,
     QPropertyAnimation,
+    QRect,
     QRectF,
     QSize,
     Qt,
     Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     FluentIcon,
     SettingCard,
@@ -36,6 +37,45 @@ _QWIDGETSIZE_MAX: Final[int] = (1 << 24) - 1
 _BUTTON_SIZE: Final[QSize] = QSize(26, 26)
 _ICON_SIZE: Final[QSize] = QSize(12, 12)
 _BORDER_RADIUS: Final[int] = 5
+
+
+class _LabelElideFilter(QObject):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() != QEvent.Type.Paint or not isinstance(obj, QLabel):
+            return False
+
+        metrics = obj.fontMetrics()
+        rect = obj.contentsRect()
+        lines = obj.text().splitlines() or [""]
+        lineHeight = metrics.lineSpacing()
+        top = rect.y() + max(0, (rect.height() - lineHeight * len(lines)) // 2)
+
+        with QPainter(obj) as painter:
+            painter.setFont(obj.font())
+            painter.setPen(obj.palette().color(obj.foregroundRole()))
+            for i, line in enumerate(lines):
+                text = metrics.elidedText(line, Qt.TextElideMode.ElideRight, rect.width())
+                painter.drawText(
+                    QRect(rect.x(), top + i * lineHeight, rect.width(), lineHeight),
+                    obj.alignment(),
+                    text,
+                )
+        return True
+
+
+def _prepareSettingCard(card: SettingCard, labelFilter: QObject) -> None:
+    for name in ("titleLabel", "contentLabel"):
+        label = getattr(card, name, None)
+        if isinstance(label, QLabel):
+            label.setWordWrap(False)
+            label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+            card.vBoxLayout.setAlignment(label, Qt.AlignmentFlag.AlignVCenter)
+            label.installEventFilter(labelFilter)
+
+    for i in range(card.hBoxLayout.count()):
+        card.hBoxLayout.setStretch(i, 0)
+        if card.hBoxLayout.itemAt(i).layout() is card.vBoxLayout:
+            card.hBoxLayout.setStretch(i, 1)
 
 
 class _CardPaintSuppressor(QObject):
@@ -64,6 +104,7 @@ class CollapsibleSettingCardGroup(QWidget):
         self.expandButton = TransparentToolButton(FluentIcon.CHEVRON_DOWN_MED, self)
         self.cardContainer = QWidget(self)
         self._cardPaintSuppressor = _CardPaintSuppressor(self)
+        self._labelElideFilter = _LabelElideFilter(self)
         self._collapseAnim = QPropertyAnimation(
             self.cardContainer, QByteArray(b"maximumHeight"), self
         )
@@ -127,12 +168,16 @@ class CollapsibleSettingCardGroup(QWidget):
     def addSettingCard(self, card: QWidget) -> None:
         self.cardLayout.addWidget(card)
         card.installEventFilter(self._cardPaintSuppressor)
+        if isinstance(card, SettingCard):
+            _prepareSettingCard(card, self._labelElideFilter)
         # ExpandSettingCard 内部有 HeaderSettingCard / ExpandBorderWidget /
         # GroupSeparator 各自画背景或分隔线，吞掉 QScrollArea 自己的 paintEvent 不够
         if isinstance(card, ExpandSettingCard):
             for sub in card.findChildren(QWidget):
                 if isinstance(sub, (SettingCard, ExpandBorderWidget, GroupSeparator)):
                     sub.installEventFilter(self._cardPaintSuppressor)
+                    if isinstance(sub, SettingCard):
+                        _prepareSettingCard(sub, self._labelElideFilter)
 
     def addSettingCards(self, cards: list[QWidget]) -> None:
         for card in cards:
