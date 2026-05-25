@@ -45,6 +45,26 @@ _DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
         ],
     },
     {
+        "categoryId": "cat_image",
+        "name": "图片",
+        "icon": "PHOTO",
+        "folder": "{default}/Images",
+        "extensions": [
+            "jpg", "jpeg", "png", "gif", "bmp", "webp", "avif",
+            "svg", "tif", "tiff", "ico", "heic", "heif",
+        ],
+    },
+    {
+        "categoryId": "cat_subtitle",
+        "name": "字幕",
+        "icon": "CHAT",
+        "folder": "{default}/Subtitles",
+        "extensions": [
+            "srt", "ass", "ssa", "sub", "sup", "idx", "vtt",
+            "lrc", "smi", "psb",
+        ],
+    },
+    {
         "categoryId": "cat_document",
         "name": "文档",
         "icon": "DOCUMENT",
@@ -52,7 +72,7 @@ _DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
         "extensions": [
             "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
             "txt", "epub", "mobi", "azw3", "rtf", "odt", "ods",
-            "odp", "md", "tif", "tiff",
+            "odp", "md", "csv", "nfo", "chm",
         ],
     },
     {
@@ -62,8 +82,9 @@ _DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
         "folder": "{default}/Archives",
         "extensions": [
             "zip", "rar", "7z", "tar", "gz", "gzip", "bz2",
-            "xz", "tgz", "tbz2", "ace", "arj", "cab", "lzh",
-            "sea", "sit", "sitx", "z",
+            "xz", "tgz", "tbz2", "zst", "ace", "arj", "cab", "lzh",
+            "sea", "sit", "sitx", "z", "001",
+            "tar.gz", "tar.bz2", "tar.xz", "tar.zst",
         ],
     },
     {
@@ -74,7 +95,7 @@ _DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
         "extensions": [
             "exe", "msi", "msu", "msp", "apk", "apks", "apkm",
             "dmg", "pkg", "deb", "rpm", "appimage", "iso", "img",
-            "esd", "wim", "bin",
+            "esd", "wim", "bin", "jar", "bat", "sh", "com",
         ],
     },
     {
@@ -148,12 +169,20 @@ class CategoryService(QObject):
         return None
 
     def matchByName(self, filename: str) -> str:
-        suffix = Path(filename).suffix.lstrip(".").lower()
-        if not suffix:
+        suffixes = [s.lstrip(".").lower() for s in Path(filename).suffixes]
+        if not suffixes:
             return UNCATEGORIZED_ID
-        for category in self._categories:
-            if suffix in category.extensions:
-                return category.categoryId
+
+        # 先尝试最后两个后缀拼接（如 tar.gz），再 fallback 到单后缀
+        candidates: list[str] = []
+        if len(suffixes) >= 2:
+            candidates.append(".".join(suffixes[-2:]))
+        candidates.append(suffixes[-1])
+
+        for candidate in candidates:
+            for category in self._categories:
+                if candidate in category.extensions:
+                    return category.categoryId
         return UNCATEGORIZED_ID
 
     def categoryOf(self, task: "Task") -> str:

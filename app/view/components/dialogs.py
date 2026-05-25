@@ -33,6 +33,7 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
+from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.supports.utils import toReadableSize
 from app.view.components.tree_view import AutoSizingTreeView
 
@@ -298,58 +299,6 @@ class FileHashDialog(MessageBoxBase):
 
 
 class FileSelectDialog(MessageBoxBase):
-    _FILE_TYPE_RULES = (
-        ("video", "视频", FluentIcon.VIDEO, {
-            ".avi", ".flv", ".m2ts", ".m4v", ".mkv", ".mov", ".mp4", ".mpeg", ".mpg", ".rmvb", ".ts", ".webm", ".wmv",
-        }),
-        ("audio", "音频", FluentIcon.MUSIC, {
-            ".aac", ".ape", ".flac", ".m4a", ".mp3", ".ogg", ".opus", ".wav", ".wma",
-        }),
-        ("image", "图片", FluentIcon.PHOTO, {
-            ".avif", ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".tif", ".tiff", ".webp",
-        }),
-        ("subtitle", "字幕", FluentIcon.CHAT, {
-            ".ass", ".idx", ".lrc", ".psb", ".smi", ".srt", ".ssa", ".sub", ".sup", ".vtt",
-        }),
-        ("document", "文档", FluentIcon.DOCUMENT, {
-            ".chm", ".csv", ".doc", ".docx", ".epub", ".md", ".nfo", ".odt", ".pdf", ".ppt", ".pptx", ".rtf",
-            ".txt", ".xls", ".xlsx",
-        }),
-        ("archive", "压缩包", FluentIcon.ZIP_FOLDER, {
-            ".001", ".7z", ".bz2", ".cab", ".gz", ".iso", ".rar", ".tar", ".tbz2", ".tgz", ".xz", ".zip", ".zst",
-            ".tar.bz2", ".tar.gz", ".tar.xz", ".tar.zst",
-        }),
-        ("application", "程序", FluentIcon.APPLICATION, {
-            ".apk", ".appimage", ".bat", ".com", ".deb", ".dmg", ".exe", ".iso", ".jar", ".msi", ".pkg", ".rpm", ".sh",
-        }),
-    )
-    _FILE_TYPE_META: dict[str, tuple[str, "FluentIcon"]] = {
-        key: (label, icon)
-        for key, label, icon, _ in _FILE_TYPE_RULES
-    }
-    _FILE_TYPE_SUFFIXES: dict[str, set[str]] = {
-        key: suffixes
-        for key, _, _, suffixes in _FILE_TYPE_RULES
-    }
-
-    @classmethod
-    def _fileSuffix(cls, path: str) -> str:
-        suffixes = [s.lower() for s in PurePosixPath(path).suffixes]
-        if not suffixes:
-            return ""
-        if len(suffixes) > 1:
-            combined = "".join(suffixes[-2:])
-            if combined in cls._FILE_TYPE_SUFFIXES["archive"]:
-                return combined
-        return suffixes[-1]
-
-    @classmethod
-    def _fileType(cls, path: str) -> str:
-        suffix = cls._fileSuffix(path)
-        for key, _, _, suffixes in cls._FILE_TYPE_RULES:
-            if suffix in suffixes:
-                return key
-        return "other"
 
     def __init__(self, task, parent=None):
         super().__init__(parent=parent)
@@ -456,10 +405,29 @@ class FileSelectDialog(MessageBoxBase):
         self.treeView.resizeColumnToContents(0)
 
     def _initTypeMenu(self):
-        for typeKey, count in self._availableFileTypes().items():
-            label, icon = self._FILE_TYPE_META.get(typeKey, (self.tr("其他"), FluentIcon.FOLDER))
-            action = Action(icon, self.tr("仅选{0} ({1})").format(self.tr(label), count), self)
-            action.triggered.connect(lambda _, key=typeKey: self._selectOnlyFileType(key))
+        categoryCounts = self._availableCategories()
+        for categoryId, count in categoryCounts.items():
+            if categoryId == UNCATEGORIZED_ID:
+                continue
+            category = categoryService.categoryById(categoryId)
+            if category is None:
+                continue
+            action = Action(
+                category.fluentIcon(),
+                self.tr("仅选{0} ({1})").format(category.name, count),
+                self,
+            )
+            action.triggered.connect(lambda _, cid=categoryId: self._selectOnlyCategory(cid))
+            self.selectByTypeMenu.addAction(action)
+
+        uncategorizedCount = categoryCounts.get(UNCATEGORIZED_ID, 0)
+        if uncategorizedCount > 0:
+            action = Action(
+                FluentIcon.HELP,
+                self.tr("仅选{0} ({1})").format(self.tr("其他"), uncategorizedCount),
+                self,
+            )
+            action.triggered.connect(lambda _: self._selectOnlyCategory(UNCATEGORIZED_ID))
             self.selectByTypeMenu.addAction(action)
 
         self.selectByTypeButton.setMenu(self.selectByTypeMenu)
@@ -495,11 +463,11 @@ class FileSelectDialog(MessageBoxBase):
             child.setCheckState(state)
             self._setChildrenCheckState(child, state)
 
-    def _availableFileTypes(self) -> dict[str, int]:
+    def _availableCategories(self) -> dict[str, int]:
         counts: dict[str, int] = {}
         for file in self.task.files:
-            typeKey = self._fileType(self._fileTypePath(file))
-            counts[typeKey] = counts.get(typeKey, 0) + 1
+            categoryId = categoryService.matchByName(self._fileTypePath(file))
+            counts[categoryId] = counts.get(categoryId, 0) + 1
         return counts
 
     def _collectSelectedIndexes(self) -> set[int]:
@@ -561,9 +529,10 @@ class FileSelectDialog(MessageBoxBase):
         })
         self.treeView.viewport().update()
 
-    def _selectOnlyFileType(self, typeKey: str):
+    def _selectOnlyCategory(self, categoryId: str):
         self._setSelectedIndexes({
-            file.index for file in self.task.files if self._fileType(self._fileTypePath(file)) == typeKey
+            file.index for file in self.task.files
+            if categoryService.matchByName(self._fileTypePath(file)) == categoryId
         })
         self.treeView.viewport().update()
 
