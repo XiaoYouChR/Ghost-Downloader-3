@@ -38,7 +38,7 @@ def build_args() -> list[str]:
         return [
             nuitka_command,
             '--standalone',  # Following all imports is the default for standalone mode and need not be specified.
-            '--windows-console-mode=disable',
+            '--windows-console-mode=attach',
             '--plugin-enable=pyside6',
             *build_include_args(),
             '--assume-yes-for-downloads',
