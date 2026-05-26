@@ -12,7 +12,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     FluentIcon,
     SettingCard,
@@ -38,20 +38,33 @@ _ICON_SIZE: Final[QSize] = QSize(12, 12)
 _BORDER_RADIUS: Final[int] = 5
 
 
-class _CardPaintSuppressor(QObject):
-    """吞掉 watched widget 的 paintEvent。
+class _LabelElideFilter(QObject):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() != QEvent.Type.Paint or not isinstance(obj, QLabel):
+            return False
+        metrics = obj.fontMetrics()
+        rect = obj.contentsRect()
+        # elidedText 是单行的
+        text = "\n".join(
+            metrics.elidedText(line, Qt.TextElideMode.ElideRight, rect.width())
+            for line in obj.text().splitlines() or [""]
+        )
+        with QPainter(obj) as painter:
+            painter.setFont(obj.font())
+            painter.setPen(obj.palette().color(obj.foregroundRole()))
+            painter.drawText(rect, obj.alignment(), text)
+        return True
 
-    子控件（icon/label/switch）有自己的 paintEvent 不受影响，结果是
-    widget 自身背景消失但子内容照常显示。配合外层 group 的 paintEvent
-    画整体卡片背景，把 qfluentwidgets SettingCard 的圆角背景"压平"。
-    """
+
+class _CardPaintFilter(QObject):
+    """压平 qfluentwidgets SettingCard 自带的圆角背景"""
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         return event.type() == QEvent.Type.Paint
 
 
 class CollapsibleSettingCardGroup(QWidget):
-    orderChanged = Signal()  # sibling 顺序变化
+    orderChanged = Signal()
 
     def __init__(self, title: str, key: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -63,7 +76,8 @@ class CollapsibleSettingCardGroup(QWidget):
         self.moveDownButton = TransparentToolButton(FluentIcon.DOWN, self)
         self.expandButton = TransparentToolButton(FluentIcon.CHEVRON_DOWN_MED, self)
         self.cardContainer = QWidget(self)
-        self._cardPaintSuppressor = _CardPaintSuppressor(self)
+        self._cardPaintFilter = _CardPaintFilter(self)
+        self._labelElideFilter = _LabelElideFilter(self)
         self._collapseAnim = QPropertyAnimation(
             self.cardContainer, QByteArray(b"maximumHeight"), self
         )
@@ -91,8 +105,7 @@ class CollapsibleSettingCardGroup(QWidget):
         self._collapseAnim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         FluentStyleSheet.SETTING_CARD_GROUP.apply(self)
-        # WA_Hover 基于"光标是否在 widget 几何内（含子孙）"判定，
-        # 子控件抢不抢事件都不影响 HoverEnter/HoverLeave 的派发
+        # WA_Hover 派发不被子控件 accept 截断
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
 
         self._setCollapsed(
@@ -126,13 +139,22 @@ class CollapsibleSettingCardGroup(QWidget):
 
     def addSettingCard(self, card: QWidget) -> None:
         self.cardLayout.addWidget(card)
-        card.installEventFilter(self._cardPaintSuppressor)
-        # ExpandSettingCard 内部有 HeaderSettingCard / ExpandBorderWidget /
-        # GroupSeparator 各自画背景或分隔线，吞掉 QScrollArea 自己的 paintEvent 不够
+        # ExpandSettingCard 内部子控件也自绘背景
+        targets: list[QWidget] = [card]
         if isinstance(card, ExpandSettingCard):
-            for sub in card.findChildren(QWidget):
-                if isinstance(sub, (SettingCard, ExpandBorderWidget, GroupSeparator)):
-                    sub.installEventFilter(self._cardPaintSuppressor)
+            targets += card.findChildren(SettingCard)
+            targets += card.findChildren(ExpandBorderWidget)
+            targets += card.findChildren(GroupSeparator)
+        for w in targets:
+            w.installEventFilter(self._cardPaintFilter)
+            if isinstance(w, SettingCard):
+                for label in (w.titleLabel, w.contentLabel):
+                    label.setWordWrap(False)
+                    label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+                    w.vBoxLayout.setAlignment(label, Qt.AlignmentFlag.AlignVCenter)
+                    label.installEventFilter(self._labelElideFilter)
+                # 压住 SettingCard 自带的 addStretch
+                w.hBoxLayout.setStretchFactor(w.vBoxLayout, 1 << 16)
 
     def addSettingCards(self, cards: list[QWidget]) -> None:
         for card in cards:
@@ -145,10 +167,9 @@ class CollapsibleSettingCardGroup(QWidget):
         self.moveDownButton.setEnabled(idx < len(siblings) - 1)
 
     def mousePressEvent(self, event: "QMouseEvent") -> None:
-        # 子按钮 accept 事件不冒泡所以不会误触
         if (
-                event.button() == Qt.MouseButton.LeftButton
-                and event.position().y() < self.cardContainer.geometry().top()
+            event.button() == Qt.MouseButton.LeftButton
+            and event.position().y() < self.cardContainer.geometry().top()
         ):
             self._onExpandButtonClicked()
         super().mousePressEvent(event)
@@ -181,7 +202,7 @@ class CollapsibleSettingCardGroup(QWidget):
         self._collapseAnim.start()
 
     def _onCollapseAnimFinished(self) -> None:
-        # 展开动画结束后解除 maxHeight 上限，让 cardContainer 能跟随子卡片自由生长
+        # 不解除上限 cardContainer 后续不会跟随子卡生长
         if not self._collapsed:
             self.cardContainer.setMaximumHeight(_QWIDGETSIZE_MAX)
 
@@ -189,7 +210,7 @@ class CollapsibleSettingCardGroup(QWidget):
         siblings = self._children()
         target = siblings[siblings.index(self) + delta]
 
-        # insertWidget 对同 layout 已有子项语义是"移动到该索引"，邻居被挤一格正好换位
+        # insertWidget 对已存在子项是"移动"语义
         layout = self.parentWidget().layout()
         layout.insertWidget(layout.indexOf(target), self)
 
@@ -208,8 +229,7 @@ class CollapsibleSettingCardGroup(QWidget):
         return result
 
     def _saveOrder(self) -> None:
-        # 保留 stored 中的 stale key——它们对应尚未加载（如未启用的 feature pack）
-        # 的 group，下次启动时仍要恢复顺序，移除会丢失这部分信息
+        # stale key 对应未加载的 group（如未启用的 feature pack），留着下次恢复
         currentKeys = [s.objectName() for s in self._children()]
         stored = list(cfg.settingGroupOrder.value)
         stale = [k for k in stored if k not in currentKeys]
