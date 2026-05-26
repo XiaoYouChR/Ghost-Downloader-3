@@ -2,16 +2,16 @@ import re
 import sys
 from datetime import datetime
 from functools import wraps
+from http.cookiejar import CookieJar
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Callable
-
-from http.cookiejar import CookieJar
-from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from urllib.request import getproxies
+
 from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
+from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg
@@ -81,6 +81,9 @@ def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> s
     return candidate
 
 
+
+
+
 def openFolder(path):
     path = Path(path)
     if path.exists():
@@ -146,12 +149,18 @@ def splitCookies(headers: dict[str, str] | None) -> tuple[dict[str, str], "Reque
     return requestHeaders, cookiejar_from_dict(cookieItems)
 
 
+
+
+
 def toReadableSize(size: int):
     for unit in ['B', 'KB', 'MB', 'GB']:
         if size < 1024.0:
             return f"{size:.2f} {unit}"
         size /= 1024.0
     return f"{size:.2f} TB"
+
+
+
 
 
 def toReadableTime(seconds: int) -> str:
@@ -162,6 +171,9 @@ def toReadableTime(seconds: int) -> str:
     else:
         remainingSeconds = seconds % 3600
         return f"{int(seconds // 3600)}h{int(remainingSeconds // 60)}m{remainingSeconds % 60}s"
+
+
+
 
 
 def toPosixPath(path) -> str:
@@ -188,8 +200,8 @@ def deduplicateFilename(
     if not target.exists() and not Path(f"{target}.ghd").exists():
         return False
 
-    suffixes = "".join(target.suffixes)
-    stem = target.name[:-len(suffixes)] if suffixes else target.name
+    suffixes = "".join(target.suffixes)   # .tar.gz
+    stem = target.name[:-len(suffixes)] if suffixes else target.name    # stem 不会去除所有的后缀
 
     index = 1
     while True:
@@ -211,6 +223,7 @@ def retry(
     :param handleFunction: 处理函数，用来处理异常
     :return:
     """
+    # 校验重试的参数，参数值不正确时使用默认参数
     if retries < 1 or delay <= 0:
         retries = 3
         delay = 1
@@ -218,10 +231,11 @@ def retry(
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            for i in range(retries + 1):
+            for i in range(retries + 1):  # 第一次正常执行不算重试次数，所以 retries+1
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
+                    # 检查重试次数
                     if i == retries:
                         logger.opt(exception=e).error(
                             '"{}()" 执行失败，已重试 {} 次',
@@ -283,34 +297,42 @@ def bringWindowToTop(window) -> None:
 
     if sys.platform == "win32":
         try:
-            import ctypes
-            hwnd = int(window.winId())
-            user32 = ctypes.windll.user32
-            kernel32 = ctypes.windll.kernel32
-
-            if user32.IsIconic(hwnd):
-                user32.ShowWindow(hwnd, 9)  # SW_RESTORE
-
-            fore_hwnd = user32.GetForegroundWindow()
-            fore_thread = user32.GetWindowThreadProcessId(fore_hwnd, None) if fore_hwnd else 0
-            curr_thread = kernel32.GetCurrentThreadId()
-
-            if fore_thread and fore_thread != curr_thread:
-                user32.AttachThreadInput(curr_thread, fore_thread, True)
-                user32.BringWindowToTop(hwnd)
-                user32.SetForegroundWindow(hwnd)
-                # 修复：SetWindowPos 移到 DetachThreadInput 之前，确保在授权有效期内执行
-                user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040)  # 先置顶
-                user32.SetWindowPos(hwnd, -2, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040)  # 再取消置顶
-                user32.AttachThreadInput(curr_thread, fore_thread, False)
-            else:
-                # fore_thread 为 0 或与当前线程相同，说明当前已有焦点，直接操作即可
-                logger.debug("bringWindowToTop: skipping AttachThreadInput (same thread or no foreground window)")
-                user32.BringWindowToTop(hwnd)
-                user32.SetForegroundWindow(hwnd)
-
+            _bringWindowToTopOnWindows(int(window.winId()))
         except Exception as e:
-            logger.opt(exception=e).warning("Failed to bring window to top on Win32")
+            logger.opt(exception=e).warning("Failed to bring window to top on Windows")
+
+
+def _bringWindowToTopOnWindows(hwnd: int) -> None:
+    import win32api
+    import win32con
+    import win32gui
+    import win32process
+
+    if win32gui.IsIconic(hwnd):
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+    foregroundHwnd = win32gui.GetForegroundWindow()
+    foregroundThreadId = (
+        win32process.GetWindowThreadProcessId(foregroundHwnd)[0]
+        if foregroundHwnd
+        else 0
+    )
+    currentThreadId = win32api.GetCurrentThreadId()
+    attached = False
+
+    try:
+        if foregroundThreadId and foregroundThreadId != currentThreadId:
+            win32process.AttachThreadInput(currentThreadId, foregroundThreadId, True)
+            attached = True
+
+        win32gui.BringWindowToTop(hwnd)
+        win32gui.SetForegroundWindow(hwnd)
+        flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, flags)
+        win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, flags)
+    finally:
+        if attached:
+            win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
 
 
 def showMessageBox(
