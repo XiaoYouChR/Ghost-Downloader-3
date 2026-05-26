@@ -307,6 +307,9 @@ class BTWorker(Worker):
             self._updateSettings()
             self.session.resume()
             self.handle.resume()
+            self.handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
+            if self.task.enableDHT:
+                self.handle.force_dht_announce()
 
             while True:
                 alerts = list(self.session.pop_alerts())
