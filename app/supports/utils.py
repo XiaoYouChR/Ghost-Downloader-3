@@ -295,6 +295,45 @@ def bringWindowToTop(window) -> None:
     window.raise_()
     window.activateWindow()
 
+    if sys.platform == "win32":
+        try:
+            _bringWindowToTopOnWindows(int(window.winId()))
+        except Exception as e:
+            logger.opt(exception=e).warning("Failed to bring window to top on Windows")
+
+
+def _bringWindowToTopOnWindows(hwnd: int) -> None:
+    import win32api
+    import win32con
+    import win32gui
+    import win32process
+
+    if win32gui.IsIconic(hwnd):
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+    foregroundHwnd = win32gui.GetForegroundWindow()
+    foregroundThreadId = (
+        win32process.GetWindowThreadProcessId(foregroundHwnd)[0]
+        if foregroundHwnd
+        else 0
+    )
+    currentThreadId = win32api.GetCurrentThreadId()
+    attached = False
+
+    try:
+        if foregroundThreadId and foregroundThreadId != currentThreadId:
+            win32process.AttachThreadInput(currentThreadId, foregroundThreadId, True)
+            attached = True
+
+        win32gui.BringWindowToTop(hwnd)
+        win32gui.SetForegroundWindow(hwnd)
+        flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, flags)
+        win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, flags)
+    finally:
+        if attached:
+            win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
+
 
 def showMessageBox(
     self,
