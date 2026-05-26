@@ -305,7 +305,7 @@ class FileSelectDialog(MessageBoxBase):
         self.task = task
         self._fileItems: dict[int, QStandardItem] = {}
 
-        self.widget.setMinimumSize(720, 520)
+        self.widget.setMinimumWidth(720)
         self.titleLabel = SubtitleLabel(self.tr("选择下载文件"), self.widget)
         self.summaryLabel = BodyLabel("", self.widget)
         self.treeView = AutoSizingTreeView(self.widget)
