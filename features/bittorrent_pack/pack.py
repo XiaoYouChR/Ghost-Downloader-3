@@ -7,8 +7,9 @@ from app.bases.models import Task
 from app.services.core_service import coreService
 
 from .cards import BitTorrentResultCard, BTTaskCard
-from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
-from .task import resolve as _btResolve, loadLocalTorrent
+from .config import bittorrentConfig
+from .loaders import loadLocalTorrent, resolve as _btResolve
+from .web_tracker.service import webTrackerService
 
 
 def _isTorrentUrl(url: str) -> bool:
@@ -30,13 +31,10 @@ class BitTorrentPack(FeaturePack):
     config = bittorrentConfig
 
     def setup(self, mainWindow):
-        if getCachedWebTrackers():
+        if webTrackerService.mergedTrackers():
             return
 
-        coreService.runCoroutine(
-            refreshConfiguredWebTrackers(),
-            self._onTrackersLoaded,
-        )
+        coreService.runCoroutine(webTrackerService.refresh(), self._onTrackersLoaded)
 
     def matches(self, url: str) -> bool:
         return _isTorrentUrl(url)
@@ -55,5 +53,10 @@ class BitTorrentPack(FeaturePack):
             logger.warning("初始化 Web Tracker 失败: {}", error)
             return
 
-        logger.info("已自动初始化 {} 条 Web Tracker", len(result or []))
-        bittorrentConfig.webTrackerCard.refreshContent()
+        success, total = result
+        logger.info(
+            "已自动初始化 {} 条 Web Tracker (成功 {}/{} 个源)",
+            len(webTrackerService.mergedTrackers()),
+            success,
+            total,
+        )

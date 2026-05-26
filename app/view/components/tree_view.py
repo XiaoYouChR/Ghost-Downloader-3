@@ -40,7 +40,7 @@ class AutoSizingTreeView(TreeView):
                 return h
         return self.fontMetrics().height() + 4
 
-    def _viewChromeHeight(self) -> int:
+    def _viewFrameHeight(self) -> int:
         margins = self.contentsMargins()
         viewportMargins = self.viewportMargins()
         header = self.header()
@@ -55,7 +55,7 @@ class AutoSizingTreeView(TreeView):
         )
 
     def _sizeHintForRowCount(self, rowCount: int) -> QSize:
-        height = self._viewChromeHeight() + self._rowHeight() * rowCount
+        height = self._viewFrameHeight() + self._rowHeight() * rowCount
         return QSize(super().sizeHint().width(), height)
 
     def minimumSizeHint(self) -> QSize:
