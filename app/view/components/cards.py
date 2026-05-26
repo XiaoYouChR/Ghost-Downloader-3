@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent, QMimeData
+from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent
 from PySide6.QtGui import QColor, QPainter, QPen, QMouseEvent
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayout, QApplication
 from loguru import logger
@@ -13,7 +13,7 @@ from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
 from app.bases.models import Task, TaskStatus, SpecialFileSize
 from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.services.core_service import coreService
-from app.supports.config import cfg, GD3_COPY_MIME_TYPE
+from app.supports.config import cfg
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, toReadableSize, toReadableTime, openFolder
 from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
@@ -223,7 +223,7 @@ class TaskCard(CardWidget):
     def createContextMenu(self) -> RoundMenu | None:
         menu = RoundMenu(parent=self)
         copyUrlAction = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
-        copyUrlAction.triggered.connect(self._copyTaskUrl)
+        copyUrlAction.triggered.connect(lambda: QApplication.clipboard().setText(self.task.url))
         menu.addAction(copyUrlAction)
         redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         redownloadAction.triggered.connect(self.redownloadTask)
@@ -260,13 +260,6 @@ class TaskCard(CardWidget):
 
     def _onCategoryUpdated(self):
         pass
-
-    def _copyTaskUrl(self):
-        clipboard = QApplication.clipboard()
-        mimeData = QMimeData()
-        mimeData.setText(self.task.url)
-        mimeData.setData(GD3_COPY_MIME_TYPE, b"1")
-        clipboard.setMimeData(mimeData)
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
