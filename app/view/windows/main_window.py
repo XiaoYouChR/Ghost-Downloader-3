@@ -16,7 +16,7 @@ from app.services.browser_service import BrowserService
 from app.services.category_service import categoryService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
-from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, GD3_COPY_MIME_TYPE, isWin10, \
+from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, isWin10, \
     isLessThanWin10, toQFluentTheme
 from app.supports.recorder import taskRecorder
 from app.supports.signal_bus import signalBus
@@ -65,6 +65,9 @@ class MainWindow(MSFluentWindow):
         self.initPagesAndNavigation()
 
         self.clipboard: "QClipboard | None" = None
+        # Fixes https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/442
+        if QApplication.platformName() == "wayland":
+            self._lastClipboardUrls: tuple[str, ...] = ()
         if sys.platform == "darwin":
             self._windowCloseShortcut = QShortcut(QKeySequence.StandardKey.Close, self)
             self._windowCloseShortcut.setContext(Qt.ShortcutContext.WindowShortcut)
@@ -198,13 +201,12 @@ class MainWindow(MSFluentWindow):
         else:
             self.clipboard.dataChanged.disconnect(self._onClipboardDataChanged)
 
-    def _onClipboardDataChanged(self):
+    def _onClipboardDataChanged(self) -> None:
         clipboard = QApplication.clipboard()
-        mimeData = clipboard.mimeData()
-        if mimeData.hasFormat(GD3_COPY_MIME_TYPE):
+        if clipboard.ownsClipboard():
             return
 
-        urls = []
+        urls: list[str] = []
         for rawLine in clipboard.text().splitlines():
             url = rawLine.strip()
             if not url:
@@ -221,6 +223,12 @@ class MainWindow(MSFluentWindow):
 
         if not urls:
             return
+
+        if QApplication.platformName() == "wayland":
+            clipboardUrls = tuple(urls)
+            if clipboardUrls == self._lastClipboardUrls:
+                return
+            self._lastClipboardUrls = clipboardUrls
 
         bringWindowToTop(self)
         self.showAddTaskDialog(urls=urls)
