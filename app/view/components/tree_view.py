@@ -1,17 +1,23 @@
-from PySide6.QtCore import QModelIndex, QSize
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QSize
 from PySide6.QtWidgets import QSizePolicy
 from qfluentwidgets import TreeView
 
 
 class AutoSizingTreeView(TreeView):
-    def __init__(self, parent=None, minimumVisibleRows: int = 5):
+    def __init__(
+        self,
+        parent=None,
+        minimumVisibleRows: int = 5,
+        maximumVisibleRows: int | None = None,
+    ) -> None:
         super().__init__(parent)
         self._minimumVisibleRows = minimumVisibleRows
+        self._maximumVisibleRows = maximumVisibleRows
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.expanded.connect(self.updateGeometry)
         self.collapsed.connect(self.updateGeometry)
 
-    def setModel(self, model):
+    def setModel(self, model: QAbstractItemModel | None) -> None:
         super().setModel(model)
         if model is not None:
             model.rowsInserted.connect(self.updateGeometry)
@@ -19,7 +25,10 @@ class AutoSizingTreeView(TreeView):
             model.modelReset.connect(self.updateGeometry)
 
     def _visibleRowCount(self) -> int:
-        return self._countVisibleRows(QModelIndex())
+        rowCount = self._countVisibleRows(QModelIndex())
+        if self._maximumVisibleRows is None:
+            return rowCount
+        return min(rowCount, self._maximumVisibleRows)
 
     def _countVisibleRows(self, parent: QModelIndex) -> int:
         model = self.model()
@@ -59,7 +68,9 @@ class AutoSizingTreeView(TreeView):
         return QSize(super().sizeHint().width(), height)
 
     def minimumSizeHint(self) -> QSize:
-        return self._sizeHintForRowCount(min(self._minimumVisibleRows, self._visibleRowCount()))
+        return self._sizeHintForRowCount(
+            min(self._minimumVisibleRows, self._visibleRowCount())
+        )
 
     def maximumSizeHint(self) -> QSize:
         return self._sizeHintForRowCount(self._visibleRowCount())

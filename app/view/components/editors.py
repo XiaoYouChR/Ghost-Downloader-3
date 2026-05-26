@@ -15,9 +15,15 @@ from qfluentwidgets.common.icon import isDarkTheme
 
 
 class AutoSizingEdit(PlainTextEdit):
-    def __init__(self, parent=None, minimumVisibleLines: int = 5):
+    def __init__(
+        self,
+        parent=None,
+        minimumVisibleLines: int = 5,
+        maximumVisibleLines: int | None = None,
+    ) -> None:
         super().__init__(parent)
         self._minimumVisibleLines = minimumVisibleLines
+        self._maximumVisibleLines = maximumVisibleLines
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.document().blockCountChanged.connect(self.updateGeometry)
 
@@ -42,11 +48,19 @@ class AutoSizingEdit(PlainTextEdit):
         height = self._editorChromeHeight() + self._lineHeight() * lineCount
         return QSize(size.width(), height)
 
+    def _visibleLineCount(self) -> int:
+        lineCount = self.document().blockCount()
+        if self._maximumVisibleLines is None:
+            return lineCount
+        return min(lineCount, self._maximumVisibleLines)
+
     def minimumSizeHint(self) -> QSize:
-        return self._sizeHintForLineCount(min(self._minimumVisibleLines, self.document().blockCount()))
+        return self._sizeHintForLineCount(
+            min(self._minimumVisibleLines, self.document().blockCount())
+        )
 
     def maximumSizeHint(self) -> QSize:
-        return self._sizeHintForLineCount(self.document().blockCount())
+        return self._sizeHintForLineCount(self._visibleLineCount())
 
     def sizeHint(self) -> QSize:
         return self.maximumSizeHint().expandedTo(self.minimumSizeHint())
