@@ -26,6 +26,7 @@ from app.services.category_service import (
     Category,
     categoryService,
 )
+from app.view.components.editors import TokenLineEdit
 
 _CATEGORY_ICON_CHOICES: list[str] = [
     "DOCUMENT", "MUSIC", "VIDEO", "ZIP_FOLDER", "APPLICATION",
@@ -49,7 +50,7 @@ class CategoryEditDialog(MessageBoxBase):
         self.iconLabel = BodyLabel(self.tr("图标"), self)
         self.iconCombo = ComboBox(self)
         self.extensionsLabel = BodyLabel(self.tr("扩展名"), self)
-        self.extensionsEdit = LineEdit(self)
+        self.extensionsEdit = TokenLineEdit(self)
         self.folderLabel = BodyLabel(self.tr("下载文件夹"), self)
         self.folderRow = QWidget(self)
         self.folderRowLayout = QHBoxLayout(self.folderRow)
@@ -69,7 +70,7 @@ class CategoryEditDialog(MessageBoxBase):
 
         self.nameEdit.setPlaceholderText(self.tr("分类名称"))
         self.extensionsEdit.setPlaceholderText(
-            self.tr("以逗号或空格分隔，例如 mp4 mkv avi")
+            self.tr("添加扩展名...")
         )
         self.folderEdit.setPlaceholderText(
             self.tr("可选，留空则使用默认下载路径；可用 {default} 代表默认下载文件夹")
@@ -117,7 +118,7 @@ class CategoryEditDialog(MessageBoxBase):
             return
 
         self.nameEdit.setText(self._category.name)
-        self.extensionsEdit.setText(" ".join(self._category.extensions))
+        self.extensionsEdit.setTokens(self._category.extensions)
         self.folderEdit.setText(self._category.folder or "")
         index = self.iconCombo.findData(self._category.icon)
         self.iconCombo.setCurrentIndex(index if index >= 0 else 0)
@@ -133,7 +134,7 @@ class CategoryEditDialog(MessageBoxBase):
     def category(self) -> Category:
         name = self.nameEdit.text().strip() or self.tr("未命名分类")
         extensions: list[str] = []
-        for token in self.extensionsEdit.text().replace(",", " ").split():
+        for token in self.extensionsEdit.tokens():
             normalized = token.strip().lstrip(".").lower()
             if normalized and normalized not in extensions:
                 extensions.append(normalized)
