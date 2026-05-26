@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 import darkdetect
 from PySide6.QtCore import QRect, QPropertyAnimation, Qt, QUrl, QEvent, QTimer
-from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette
+from PySide6.QtGui import QDesktopServices, QIcon, QColor, QPalette, QKeySequence, QShortcut
 from PySide6.QtWidgets import QApplication, QGraphicsOpacityEffect, QDialog
 from loguru import logger
 from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationItemPosition, InfoBar, InfoBarPosition, \
@@ -65,6 +65,9 @@ class MainWindow(MSFluentWindow):
         self.initPagesAndNavigation()
 
         self.clipboard: "QClipboard | None" = None
+        if sys.platform == "darwin":
+            self._windowCloseShortcut = QShortcut(QKeySequence.StandardKey.Close, self)
+            self._windowCloseShortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         self.tray = SystemTrayIcon(self)
         self.tray.show()
 
@@ -84,6 +87,8 @@ class MainWindow(MSFluentWindow):
             lambda value: self._toggleTheme(value, triggeredByUser=True)
         )
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
+        if sys.platform == "darwin":
+            self._windowCloseShortcut.activated.connect(self.close)
         if platform == 'win32':
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffect)
 
