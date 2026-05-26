@@ -1,5 +1,6 @@
 import asyncio
 from base64 import b64decode, b64encode
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -285,7 +286,10 @@ class BTWorker(Worker):
             self.stage.setStatus(TaskStatus.FAILED)
             raise RuntimeError("至少需要选择一个文件")
 
-        self.task.path.mkdir(parents=True, exist_ok=True)
+        target = Path(self.task.outputFolder)
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.touch() if self.task.isSingleFile else target.mkdir()
         self._saveMagnetFile()
 
         self.session = createSession(
