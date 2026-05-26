@@ -17,7 +17,6 @@ from app.bases.models import PackConfig
 from app.supports.config import StringListValidator
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import SpinBoxSettingCard
-
 from .web_tracker.schema import (
     DEFAULT_WEB_TRACKER_SOURCE,
     SourceCacheSerializer,

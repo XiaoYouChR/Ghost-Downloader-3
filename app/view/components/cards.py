@@ -13,9 +13,9 @@ from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
 from app.bases.models import Task, TaskStatus, SpecialFileSize
 from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.services.core_service import coreService
+from app.supports.config import cfg, GD3_COPY_MIME_TYPE
 from app.supports.recorder import taskRecorder
 from app.supports.utils import openFile, toReadableSize, toReadableTime, openFolder
-from app.supports.config import cfg, GD3_COPY_MIME_TYPE
 from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 

@@ -1,23 +1,19 @@
 import {
-  Body1Strong,
-  Button,
-  Card,
-  Field,
-  Input,
-  MessageBar,
-  MessageBarBody,
-  Select,
-  makeStyles,
+    Body1Strong,
+    Button,
+    Card,
+    Field,
+    Input,
+    makeStyles,
+    MessageBar,
+    MessageBarBody,
+    Select,
 } from "@fluentui/react-components";
-import {
-  ArrowClockwiseRegular,
-  ClipboardPasteRegular,
-  PlugConnectedRegular,
-} from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
+import {ArrowClockwiseRegular, ClipboardPasteRegular, PlugConnectedRegular,} from "@fluentui/react-icons";
+import {useEffect, useState} from "react";
 
-import { DEFAULT_SERVER_URL, EXTENSION_VERSION, HELP_CONTENT } from "../../shared/constants";
-import type { ThemePreference } from "../../shared/types";
+import {DEFAULT_SERVER_URL, EXTENSION_VERSION, HELP_CONTENT} from "../../shared/constants";
+import type {ThemePreference} from "../../shared/types";
 
 const useStyles = makeStyles({
   root: {

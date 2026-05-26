@@ -3,9 +3,9 @@ from time import perf_counter
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from loguru import logger
 import niquests
 from PySide6.QtCore import Qt
+from loguru import logger
 from qfluentwidgets import (
     BoolValidator,
     ComboBox,
@@ -27,9 +27,9 @@ from qfluentwidgets import (
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.supports.config import cfg
 from app.supports.utils import getProxies
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage

@@ -1,15 +1,10 @@
-import type {
-  CapturedResource,
-  DesktopConnectionState,
-  GenericTaskSummary,
-  ResourceFilter,
-} from "./types";
+import type {CapturedResource, DesktopConnectionState, GenericTaskSummary, ResourceFilter,} from "./types";
 import {
-  CAT_CATCH_AUDIO_EXTENSIONS,
-  CAT_CATCH_VIDEO_EXTENSIONS,
-  isCatCatchM3u8,
-  isCatCatchMedia,
-  isCatCatchMpd,
+    CAT_CATCH_AUDIO_EXTENSIONS,
+    CAT_CATCH_VIDEO_EXTENSIONS,
+    isCatCatchM3u8,
+    isCatCatchMedia,
+    isCatCatchMpd,
 } from "./cat-catch";
 
 const ACTIVE_STATUSES = new Set(["running", "waiting", "paused", "failed"]);

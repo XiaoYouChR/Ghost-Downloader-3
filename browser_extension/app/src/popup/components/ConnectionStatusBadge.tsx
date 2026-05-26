@@ -1,13 +1,9 @@
-import { Badge, Spinner } from "@fluentui/react-components";
-import {
-  CheckmarkCircleRegular,
-  PlugDisconnectedRegular,
-  WarningRegular,
-} from "@fluentui/react-icons";
+import {Badge, Spinner} from "@fluentui/react-components";
+import {CheckmarkCircleRegular, PlugDisconnectedRegular, WarningRegular,} from "@fluentui/react-icons";
 
-import type { DesktopConnectionState } from "../../shared/types";
-import { connectionLabel, connectionTone } from "../../shared/utils";
-import { toneToBadgeColor } from "../lib/fluent";
+import type {DesktopConnectionState} from "../../shared/types";
+import {connectionLabel, connectionTone} from "../../shared/utils";
+import {toneToBadgeColor} from "../lib/fluent";
 
 export function ConnectionStatusBadge({
   state,

@@ -9,10 +9,8 @@ from pathlib import Path
 from time import perf_counter
 
 from app.bases.interfaces import Worker
-from app.supports.utils import toPosixPath
 from app.bases.models import Task, TaskStage, TaskStatus
-
-
+from app.supports.utils import toPosixPath
 
 
 def _archiveSuffix(name: str) -> str:

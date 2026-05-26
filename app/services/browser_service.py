@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
 from secrets import token_urlsafe
+from typing import TYPE_CHECKING, Any, Self
 
 from PySide6.QtCore import QObject, QTimer, Slot, Qt
 from PySide6.QtNetwork import QHostAddress

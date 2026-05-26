@@ -1,9 +1,9 @@
-import { access, cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import {access, cp, mkdir, readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import {fileURLToPath} from "node:url";
 
-import { build as esbuild } from "esbuild";
-import { build as viteBuild } from "vite";
+import {build as esbuild} from "esbuild";
+import {build as viteBuild} from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");

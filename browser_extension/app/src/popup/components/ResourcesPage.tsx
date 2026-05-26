@@ -1,12 +1,12 @@
-import { Badge, Button, Caption1, Card, Tab, TabList, makeStyles } from "@fluentui/react-components";
-import type { SelectTabData } from "@fluentui/react-components";
-import { TabDesktopRegular, WindowMultipleRegular } from "@fluentui/react-icons";
-import { useEffect, useMemo, useState } from "react";
+import type {SelectTabData} from "@fluentui/react-components";
+import {Badge, Button, Caption1, Card, makeStyles, Tab, TabList} from "@fluentui/react-components";
+import {TabDesktopRegular, WindowMultipleRegular} from "@fluentui/react-icons";
+import {useEffect, useMemo, useState} from "react";
 
-import type { CapturedResource, ResourceCollectionState, ResourceFilter, ResourceScope } from "../../shared/types";
-import { canUseOnlineMergeSelection, filterResources } from "../../shared/utils";
-import { EmptyState } from "./EmptyState";
-import { ResourceCard } from "./ResourceCard";
+import type {CapturedResource, ResourceCollectionState, ResourceFilter, ResourceScope} from "../../shared/types";
+import {canUseOnlineMergeSelection, filterResources} from "../../shared/utils";
+import {EmptyState} from "./EmptyState";
+import {ResourceCard} from "./ResourceCard";
 
 const useStyles = makeStyles({
   root: {

@@ -2,19 +2,17 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
-    CaptionLabel,
     FluentIcon,
     InfoBar,
     LineEdit,
     MessageBoxBase,
-    TransparentToolButton, PrimaryToolButton, SubtitleLabel, PrimaryPushButton,
+    TransparentToolButton, SubtitleLabel, PrimaryPushButton,
 )
 
 from app.view.components.editors import AutoSizingEdit
-
-from ..trackers import parseTrackerText, toTrackers
 from .schema import DEFAULT_WEB_TRACKER_SOURCE
 from .service import webTrackerService
+from ..trackers import parseTrackerText, toTrackers
 
 
 class WebTrackerSourceCard(QWidget):

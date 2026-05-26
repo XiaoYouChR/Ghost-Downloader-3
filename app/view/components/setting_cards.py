@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from PySide6.QtCore import Qt, Signal, Slot, QEvent
 from PySide6.QtWidgets import (
     QWidget,
@@ -22,7 +24,6 @@ from qfluentwidgets import (
     EditableComboBox,
     ToolButton,
 )
-from urllib.parse import urlsplit
 
 from app.supports.config import cfg
 from app.supports.utils import getProxies

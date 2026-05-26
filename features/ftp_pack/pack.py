@@ -2,7 +2,6 @@ from urllib.parse import urlparse
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-
 from .cards import FtpResultCard, FtpTaskCard
 from .task import resolve as _ftpResolve
 

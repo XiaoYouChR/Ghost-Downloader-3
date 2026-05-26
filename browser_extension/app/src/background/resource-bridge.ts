@@ -1,32 +1,26 @@
-import type { CapturedResource, DesktopRequestResult, PopupStatePayload } from "../shared/types";
+import type {CapturedResource, DesktopRequestResult, PopupStatePayload} from "../shared/types";
 import {
-  canUseOnlineMerge,
-  canUseOnlineMergeSelection,
-  describeResource,
-  domainFromUrl,
-  fileExtension,
-  filenameFromUrl,
-  mimeFromUrl,
-  sortResourcesForOnlineMerge,
+    canUseOnlineMerge,
+    canUseOnlineMergeSelection,
+    describeResource,
+    domainFromUrl,
+    fileExtension,
+    filenameFromUrl,
+    mimeFromUrl,
+    sortResourcesForOnlineMerge,
 } from "../shared/utils";
-import { isCatCatchMedia } from "../shared/cat-catch";
+import {isCatCatchMedia} from "../shared/cat-catch";
 import {
-  BRIDGE_HEADER_SNAPSHOTS_KEY,
-  BRIDGE_LAST_ACTIVE_TAB_KEY,
-  BRIDGE_PERSIST_DEBOUNCE_MS,
-  BRIDGE_RESOURCE_CACHE_KEY,
-  HEADER_EXPIRATION_MS,
-  HEADER_SNAPSHOT_LIMIT,
-  RESOURCE_LIMIT,
+    BRIDGE_HEADER_SNAPSHOTS_KEY,
+    BRIDGE_LAST_ACTIVE_TAB_KEY,
+    BRIDGE_PERSIST_DEBOUNCE_MS,
+    BRIDGE_RESOURCE_CACHE_KEY,
+    HEADER_EXPIRATION_MS,
+    HEADER_SNAPSHOT_LIMIT,
+    RESOURCE_LIMIT,
 } from "./constants";
-import {
-  bridgeStorageGet,
-  bridgeStorageSet,
-  getTab,
-  openActionPopup,
-  queryTabs,
-} from "./chrome-helpers";
-import { pickSiteMediaResources } from "./media-download-adapters";
+import {bridgeStorageGet, bridgeStorageSet, getTab, openActionPopup, queryTabs,} from "./chrome-helpers";
+import {pickSiteMediaResources} from "./media-download-adapters";
 
 type BridgeHeaderSnapshot = {
   url: string;

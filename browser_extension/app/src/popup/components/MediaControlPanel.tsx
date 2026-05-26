@@ -1,30 +1,30 @@
 import {
-  Body1Strong,
-  Button,
-  Card,
-  Divider,
-  Field,
-  MessageBar,
-  MessageBarBody,
-  Select,
-  Slider,
-  makeStyles,
+    Body1Strong,
+    Button,
+    Card,
+    Divider,
+    Field,
+    makeStyles,
+    MessageBar,
+    MessageBarBody,
+    Select,
+    Slider,
 } from "@fluentui/react-components";
 import {
-  ArrowClockwiseRegular,
-  CameraRegular,
-  FullScreenMaximizeRegular,
-  PauseRegular,
-  PictureInPictureRegular,
-  PlayRegular,
-  Speaker2Regular,
-  SpeakerMuteRegular,
+    ArrowClockwiseRegular,
+    CameraRegular,
+    FullScreenMaximizeRegular,
+    PauseRegular,
+    PictureInPictureRegular,
+    PlayRegular,
+    Speaker2Regular,
+    SpeakerMuteRegular,
 } from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 
-import { PLAYBACK_RATE_OPTIONS } from "../../shared/constants";
-import type { MediaItemOption, MediaPlaybackState } from "../../shared/types";
-import { formatShortTime } from "../../shared/utils";
+import {PLAYBACK_RATE_OPTIONS} from "../../shared/constants";
+import type {MediaItemOption, MediaPlaybackState} from "../../shared/types";
+import {formatShortTime} from "../../shared/utils";
 
 const useStyles = makeStyles({
   root: {

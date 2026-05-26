@@ -23,7 +23,6 @@ from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 from app.view.components.labels import IconBodyLabel
-
 from .task import BTFile, BTTask
 
 

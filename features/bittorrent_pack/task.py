@@ -7,7 +7,6 @@ from loguru import logger
 
 from app.bases.models import Task, TaskStage, TaskStatus
 from app.supports.utils import getProxies, toSafeFilename
-
 from .config import bittorrentConfig
 
 

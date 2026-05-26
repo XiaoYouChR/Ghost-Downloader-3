@@ -1,8 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-from app.bases.models import TaskStage, TaskStatus
 
 if TYPE_CHECKING:
     from features.ffmpeg_pack.task import FFmpegStage

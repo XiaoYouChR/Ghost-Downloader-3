@@ -23,7 +23,6 @@ from app.bases.models import TaskStatus
 from app.supports.utils import toReadableSize, toReadableTime, openFile, openFolder
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
-
 from .task import FtpTask
 
 

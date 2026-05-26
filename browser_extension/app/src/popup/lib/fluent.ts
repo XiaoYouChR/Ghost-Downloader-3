@@ -1,15 +1,15 @@
-import type { ComponentType } from "react";
-import type { BadgeProps, MessageBarProps } from "@fluentui/react-components";
+import type {ComponentType} from "react";
+import type {BadgeProps, MessageBarProps} from "@fluentui/react-components";
 import {
-  ArrowClockwiseRegular,
-  CheckmarkCircleRegular,
-  ClockRegular,
-  DismissCircleRegular,
-  PauseCircleRegular,
-  PlayCircleRegular,
+    ArrowClockwiseRegular,
+    CheckmarkCircleRegular,
+    ClockRegular,
+    DismissCircleRegular,
+    PauseCircleRegular,
+    PlayCircleRegular,
 } from "@fluentui/react-icons";
 
-import type { AccentTone } from "../../shared/utils";
+import type {AccentTone} from "../../shared/utils";
 
 export function toneToBadgeColor(tone: AccentTone): NonNullable<BadgeProps["color"]> {
   switch (tone) {

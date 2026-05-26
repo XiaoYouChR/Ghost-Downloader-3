@@ -10,9 +10,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import TaskStage, TaskStatus
 from app.services.core_service import coreService
 from app.supports.config import VERSION
-
 from .task import BTTask
-
 
 BITTORRENT_USER_AGENT = f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}"
 

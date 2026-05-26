@@ -1,9 +1,9 @@
-import { ArrowDownloadRegular } from "@fluentui/react-icons";
-import { makeStyles } from "@fluentui/react-components";
+import {ArrowDownloadRegular} from "@fluentui/react-icons";
+import {makeStyles} from "@fluentui/react-components";
 
-import type { GenericTaskSummary, TaskAction } from "../../shared/types";
-import { EmptyState } from "./EmptyState";
-import { TaskCard } from "./TaskCard";
+import type {GenericTaskSummary, TaskAction} from "../../shared/types";
+import {EmptyState} from "./EmptyState";
+import {TaskCard} from "./TaskCard";
 
 const useStyles = makeStyles({
   empty: {

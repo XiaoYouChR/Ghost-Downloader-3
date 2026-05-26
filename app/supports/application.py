@@ -1,5 +1,5 @@
-from signal import signal, SIGINT
 import sys
+from signal import signal, SIGINT
 
 from PySide6.QtCore import QSharedMemory, QEvent
 from PySide6.QtWidgets import QApplication

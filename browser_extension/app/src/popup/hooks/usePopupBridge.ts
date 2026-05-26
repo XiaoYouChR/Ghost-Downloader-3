@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import type {Dispatch, SetStateAction} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 
-import { ADVANCED_FEATURES } from "../../shared/constants";
+import {ADVANCED_FEATURES} from "../../shared/constants";
 import type {
-  AdvancedFeatureKey,
-  DesktopRequestResult,
-  FeatureStateMap,
-  MediaPlaybackState,
-  PopupStatePayload,
-  TaskAction,
-  PopupView,
+    AdvancedFeatureKey,
+    DesktopRequestResult,
+    FeatureStateMap,
+    MediaPlaybackState,
+    PopupStatePayload,
+    PopupView,
+    TaskAction,
 } from "../../shared/types";
-import { sortTasks } from "../../shared/utils";
+import {sortTasks} from "../../shared/utils";
 
 const REFRESH_INTERVAL_MS = 1000;
 const FLASH_TIMEOUT_MS = 2800;

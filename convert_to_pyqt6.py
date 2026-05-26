@@ -6,7 +6,6 @@ import re
 import shutil
 from pathlib import Path
 
-
 SCRIPT_NAME = Path(__file__).name
 DEFAULT_BACKUP_DIR = ".convert_to_pyqt6_backup"
 DIRECTORY_EXCLUDES = {

@@ -27,9 +27,9 @@ from qfluentwidgets import (
 from qrcode.image.pure import PyPNGImage
 
 from app.bases.models import PackConfig
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.services.core_service import coreService
 from app.supports.config import cfg
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from .login import (
     _QR_UNSCANNED,
     _QR_SCANNED,

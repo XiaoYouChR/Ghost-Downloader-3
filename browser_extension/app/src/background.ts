@@ -1,30 +1,24 @@
 import type {
-  AdvancedFeatureKey,
-  DesktopRequestResult,
-  GenericTaskSummary,
-  PopupStatePayload,
-  PopupView,
+    AdvancedFeatureKey,
+    DesktopRequestResult,
+    GenericTaskSummary,
+    PopupStatePayload,
+    PopupView,
 } from "./shared/types";
-import { createDesktopBridge } from "./background/desktop-bridge";
-import { createFeatureBridge } from "./background/feature-bridge";
-import { createMediaBridge } from "./background/media-bridge";
-import { createResourceBridge } from "./background/resource-bridge";
+import {createDesktopBridge} from "./background/desktop-bridge";
+import {createFeatureBridge} from "./background/feature-bridge";
+import {createMediaBridge} from "./background/media-bridge";
+import {createResourceBridge} from "./background/resource-bridge";
+import {INTERCEPT_DOWNLOADS_KEY, MEDIA_DOWNLOAD_OVERLAY_KEY,} from "./background/constants";
 import {
-  INTERCEPT_DOWNLOADS_KEY,
-  MEDIA_DOWNLOAD_OVERLAY_KEY,
-} from "./background/constants";
-import {
-  cancelDownload,
-  eraseDownloadFromHistory,
-  getTab,
-  localStorageGet,
-  openActionPopup,
-  queryTabs,
+    cancelDownload,
+    eraseDownloadFromHistory,
+    getTab,
+    localStorageGet,
+    openActionPopup,
+    queryTabs,
 } from "./background/chrome-helpers";
-import {
-  getOnSendHeadersExtraInfoSpec,
-  supportsDownloadDeterminingFilename,
-} from "./shared/browser";
+import {getOnSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
 
 const desktopBridge = createDesktopBridge();
 const resourceBridge = createResourceBridge({

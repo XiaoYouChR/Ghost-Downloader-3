@@ -3,7 +3,6 @@ import asyncio
 from PySide6.QtCore import QObject, Signal
 
 from app.supports.config import cfg
-
 from ..config import bittorrentConfig
 from ..trackers import (
     fetchWebTrackers,

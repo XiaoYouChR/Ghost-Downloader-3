@@ -1,6 +1,6 @@
-import type { AdvancedFeatureKey } from "./types";
-import { getInstallDirectory, isFirefoxExtension } from "./browser";
-import { CAT_CATCH_SCRIPT_FEATURES } from "./cat-catch";
+import type {AdvancedFeatureKey} from "./types";
+import {getInstallDirectory, isFirefoxExtension} from "./browser";
+import {CAT_CATCH_SCRIPT_FEATURES} from "./cat-catch";
 
 export const DEFAULT_SERVER_URL = "ws://127.0.0.1:14370";
 export const EXTENSION_VERSION = chrome.runtime.getManifest().version;

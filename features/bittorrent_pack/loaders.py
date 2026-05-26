@@ -14,7 +14,6 @@ from loguru import logger
 from app.bases.models import TaskStage
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, splitCookies, toSafeFilename
-
 from .config import bittorrentConfig
 from .task import BTFile, BTTask
 from .trackers import mergeTrackers

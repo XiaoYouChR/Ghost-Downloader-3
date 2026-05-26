@@ -1,25 +1,19 @@
 import {
-  Avatar,
-  Badge,
-  Body1Strong,
-  Button,
-  Caption1,
-  Card,
-  Checkbox,
-  Link,
-  makeStyles,
+    Avatar,
+    Badge,
+    Body1Strong,
+    Button,
+    Caption1,
+    Card,
+    Checkbox,
+    Link,
+    makeStyles,
 } from "@fluentui/react-components";
-import { ArrowDownloadRegular, CheckmarkCircleRegular } from "@fluentui/react-icons";
+import {ArrowDownloadRegular, CheckmarkCircleRegular} from "@fluentui/react-icons";
 
-import type { CapturedResource } from "../../shared/types";
-import {
-  describeResource,
-  domainFromUrl,
-  formatBytes,
-  formatCapturedAt,
-  shorten,
-} from "../../shared/utils";
-import { visualIcon } from "../lib/presenters";
+import type {CapturedResource} from "../../shared/types";
+import {describeResource, domainFromUrl, formatBytes, formatCapturedAt, shorten,} from "../../shared/utils";
+import {visualIcon} from "../lib/presenters";
 
 const useStyles = makeStyles({
   root: {

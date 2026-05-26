@@ -1,5 +1,5 @@
-import { Avatar, Body1Strong, Card, Caption1, makeStyles } from "@fluentui/react-components";
-import type { ReactNode } from "react";
+import {Avatar, Body1Strong, Caption1, Card, makeStyles} from "@fluentui/react-components";
+import type {ReactNode} from "react";
 
 const useStyles = makeStyles({
   root: {

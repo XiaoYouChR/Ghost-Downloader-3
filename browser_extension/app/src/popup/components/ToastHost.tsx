@@ -1,6 +1,6 @@
-import { MessageBar, MessageBarBody, makeStyles } from "@fluentui/react-components";
+import {makeStyles, MessageBar, MessageBarBody} from "@fluentui/react-components";
 
-import { flashToneToIntent } from "../lib/fluent";
+import {flashToneToIntent} from "../lib/fluent";
 
 type FlashTone = "neutral" | "success" | "error";
 

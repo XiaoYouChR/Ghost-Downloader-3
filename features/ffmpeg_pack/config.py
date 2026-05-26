@@ -15,11 +15,11 @@ from qfluentwidgets import (
 )
 
 from app.bases.models import PackConfig
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.services.core_service import coreService
 from app.supports.config import cfg
 from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import toExecutable, toPosixPath
+from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage

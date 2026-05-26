@@ -6,7 +6,6 @@ import niquests
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
 
-
 _QR_GENERATE_API = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
 _QR_POLL_API = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll"
 _LOGIN_INFO_API = "https://api.bilibili.com/x/web-interface/nav"

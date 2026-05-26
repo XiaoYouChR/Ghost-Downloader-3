@@ -1,14 +1,9 @@
-import { Button, Divider, Switch, Tab, TabList, makeStyles } from "@fluentui/react-components";
-import type { SwitchOnChangeData, SelectTabData } from "@fluentui/react-components";
-import {
-  ArrowDownloadRegular,
-  GlobeRegular,
-  SettingsRegular,
-  WrenchRegular,
-} from "@fluentui/react-icons";
+import type {SelectTabData, SwitchOnChangeData} from "@fluentui/react-components";
+import {Button, Divider, makeStyles, Switch, Tab, TabList} from "@fluentui/react-components";
+import {ArrowDownloadRegular, GlobeRegular, SettingsRegular, WrenchRegular,} from "@fluentui/react-icons";
 
-import type { DesktopConnectionState, PopupView } from "../../shared/types";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
+import type {DesktopConnectionState, PopupView} from "../../shared/types";
+import {ConnectionStatusBadge} from "./ConnectionStatusBadge";
 
 const useStyles = makeStyles({
   root: {

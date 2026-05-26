@@ -1,9 +1,9 @@
-import { Avatar, Badge, Body1Strong, Caption1, Card, Switch, makeStyles } from "@fluentui/react-components";
-import type { SwitchOnChangeData } from "@fluentui/react-components";
-import { ArrowClockwiseRegular } from "@fluentui/react-icons";
+import type {SwitchOnChangeData} from "@fluentui/react-components";
+import {Avatar, Badge, Body1Strong, Caption1, Card, makeStyles, Switch} from "@fluentui/react-components";
+import {ArrowClockwiseRegular} from "@fluentui/react-icons";
 
-import type { AdvancedFeatureKey } from "../../shared/types";
-import { featureIcon } from "../lib/presenters";
+import type {AdvancedFeatureKey} from "../../shared/types";
+import {featureIcon} from "../lib/presenters";
 
 const useStyles = makeStyles({
   root: {

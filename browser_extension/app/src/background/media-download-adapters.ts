@@ -1,5 +1,5 @@
-import type { CapturedResource } from "../shared/types";
-import { describeResource, mimeFromUrl } from "../shared/utils";
+import type {CapturedResource} from "../shared/types";
+import {describeResource, mimeFromUrl} from "../shared/utils";
 
 export type PageMediaPayload = {
   url: string;

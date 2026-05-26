@@ -1,14 +1,14 @@
-import { makeStyles } from "@fluentui/react-components";
-import { useState } from "react";
+import {makeStyles} from "@fluentui/react-components";
+import {useState} from "react";
 
-import type { PopupView, ThemePreference } from "../shared/types";
-import { AdvancedPage } from "./components/AdvancedPage";
-import { DownloadsPage } from "./components/DownloadsPage";
-import { Header } from "./components/Header";
-import { ResourcesPage } from "./components/ResourcesPage";
-import { SettingsPage } from "./components/SettingsPage";
-import { ToastHost } from "./components/ToastHost";
-import { usePopupBridge } from "./hooks/usePopupBridge";
+import type {PopupView, ThemePreference} from "../shared/types";
+import {AdvancedPage} from "./components/AdvancedPage";
+import {DownloadsPage} from "./components/DownloadsPage";
+import {Header} from "./components/Header";
+import {ResourcesPage} from "./components/ResourcesPage";
+import {SettingsPage} from "./components/SettingsPage";
+import {ToastHost} from "./components/ToastHost";
+import {usePopupBridge} from "./hooks/usePopupBridge";
 
 const useStyles = makeStyles({
   root: {

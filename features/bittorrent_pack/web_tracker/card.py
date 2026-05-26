@@ -8,7 +8,6 @@ from qfluentwidgets import (
 )
 
 from app.services.core_service import coreService
-
 from .dialog import WebTrackerDialog
 from .service import webTrackerService
 

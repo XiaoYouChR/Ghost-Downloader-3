@@ -1,14 +1,9 @@
-import { Body1Strong, MessageBar, MessageBarBody, MessageBarTitle, makeStyles } from "@fluentui/react-components";
+import {Body1Strong, makeStyles, MessageBar, MessageBarBody, MessageBarTitle} from "@fluentui/react-components";
 
-import { ADVANCED_FEATURES } from "../../shared/constants";
-import type {
-  AdvancedFeatureKey,
-  FeatureStateMap,
-  MediaItemOption,
-  MediaPlaybackState,
-} from "../../shared/types";
-import { FeatureToggleCard } from "./FeatureToggleCard";
-import { MediaControlPanel } from "./MediaControlPanel";
+import {ADVANCED_FEATURES} from "../../shared/constants";
+import type {AdvancedFeatureKey, FeatureStateMap, MediaItemOption, MediaPlaybackState,} from "../../shared/types";
+import {FeatureToggleCard} from "./FeatureToggleCard";
+import {MediaControlPanel} from "./MediaControlPanel";
 
 const useStyles = makeStyles({
   root: {

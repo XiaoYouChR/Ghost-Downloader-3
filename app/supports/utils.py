@@ -2,16 +2,16 @@ import re
 import sys
 from datetime import datetime
 from functools import wraps
+from http.cookiejar import CookieJar
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Callable
-
-from http.cookiejar import CookieJar
-from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from urllib.request import getproxies
+
 from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
+from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg

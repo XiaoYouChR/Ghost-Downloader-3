@@ -1,15 +1,7 @@
-import type { AdvancedFeatureKey, FeatureStateMap } from "../shared/types";
-import { CAT_CATCH_SCRIPT_FEATURES, MOBILE_USER_AGENT } from "../shared/cat-catch";
-import {
-  FEATURE_KEYS,
-  FEATURE_TAB_STATE_KEY,
-  MAIN_FRAME_ID,
-} from "./constants";
-import {
-  localStorageGet,
-  localStorageSet,
-  reloadTab,
-} from "./chrome-helpers";
+import type {AdvancedFeatureKey, FeatureStateMap} from "../shared/types";
+import {CAT_CATCH_SCRIPT_FEATURES, MOBILE_USER_AGENT} from "../shared/cat-catch";
+import {FEATURE_KEYS, FEATURE_TAB_STATE_KEY, MAIN_FRAME_ID,} from "./constants";
+import {localStorageGet, localStorageSet, reloadTab,} from "./chrome-helpers";
 
 type ScriptFeatureKey = keyof typeof CAT_CATCH_SCRIPT_FEATURES;
 const SCRIPT_FEATURE_KEYS = Object.keys(CAT_CATCH_SCRIPT_FEATURES) as ScriptFeatureKey[];

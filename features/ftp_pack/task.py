@@ -18,7 +18,6 @@ from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import getProxies, toSafeFilename
 
-
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
 FTP_PATH_TIMEOUT = 30

@@ -5,7 +5,6 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.services.core_service import coreService
-
 from .cards import BitTorrentResultCard, BTTaskCard
 from .config import bittorrentConfig
 from .loaders import loadLocalTorrent, resolve as _btResolve

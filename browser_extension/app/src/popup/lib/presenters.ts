@@ -1,22 +1,22 @@
-import type { ComponentType } from "react";
+import type {ComponentType} from "react";
 import {
-  DataUsageRegular,
-  DocumentArrowDownRegular,
-  DocumentPdfRegular,
-  DocumentTableRegular,
-  DocumentTextRegular,
-  FolderZipRegular,
-  GlobeVideoRegular,
-  ImageRegular,
-  MusicNote2Regular,
-  PhoneRegular,
-  SearchRegular,
-  StorageRegular,
-  TabDesktopRegular,
-  VideoClipRegular,
+    DataUsageRegular,
+    DocumentArrowDownRegular,
+    DocumentPdfRegular,
+    DocumentTableRegular,
+    DocumentTextRegular,
+    FolderZipRegular,
+    GlobeVideoRegular,
+    ImageRegular,
+    MusicNote2Regular,
+    PhoneRegular,
+    SearchRegular,
+    StorageRegular,
+    TabDesktopRegular,
+    VideoClipRegular,
 } from "@fluentui/react-icons";
-import type { AdvancedFeatureKey } from "../../shared/types";
-import type { VisualKind } from "../../shared/utils";
+import type {AdvancedFeatureKey} from "../../shared/types";
+import type {VisualKind} from "../../shared/utils";
 
 const VISUAL_ICON_MAP: Record<VisualKind, ComponentType> = {
   download: DocumentArrowDownRegular,

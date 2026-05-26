@@ -1,4 +1,4 @@
-import { ADVANCED_FEATURES } from "../shared/constants";
+import {ADVANCED_FEATURES} from "../shared/constants";
 
 export const PROTOCOL_VERSION = 1;
 export const RECONNECT_ALARM = "gd3-reconnect";

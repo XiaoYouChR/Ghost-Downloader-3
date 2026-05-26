@@ -1,16 +1,7 @@
-import { DEFAULT_SERVER_URL } from "../shared/constants";
-import type {
-  DesktopConnectionState,
-  DesktopRequestResult,
-  GenericTaskSummary,
-} from "../shared/types";
-import {
-  PAIR_TOKEN_KEY,
-  PROTOCOL_VERSION,
-  RECONNECT_ALARM,
-  SERVER_URL_KEY,
-} from "./constants";
-import { localStorageGet, localStorageSet } from "./chrome-helpers";
+import {DEFAULT_SERVER_URL} from "../shared/constants";
+import type {DesktopConnectionState, DesktopRequestResult, GenericTaskSummary,} from "../shared/types";
+import {PAIR_TOKEN_KEY, PROTOCOL_VERSION, RECONNECT_ALARM, SERVER_URL_KEY,} from "./constants";
+import {localStorageGet, localStorageSet} from "./chrome-helpers";
 
 type PendingRequest = {
   resolve: (value: any) => void;

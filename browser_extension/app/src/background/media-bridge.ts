@@ -1,10 +1,7 @@
-import { filenameFromUrl, shorten } from "../shared/utils";
-import type { MediaItemOption, MediaPlaybackState } from "../shared/types";
-import { MAIN_FRAME_ID } from "./constants";
-import {
-  sendMessageToTab,
-  type TabMessageResult,
-} from "./chrome-helpers";
+import {filenameFromUrl, shorten} from "../shared/utils";
+import type {MediaItemOption, MediaPlaybackState} from "../shared/types";
+import {MAIN_FRAME_ID} from "./constants";
+import {sendMessageToTab, type TabMessageResult,} from "./chrome-helpers";
 
 type RawMediaState = {
   count: number;

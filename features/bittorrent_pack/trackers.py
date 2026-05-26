@@ -7,7 +7,6 @@ import niquests
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies
 
-
 _TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
 
 

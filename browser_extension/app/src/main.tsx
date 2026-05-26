@@ -1,9 +1,9 @@
-import { FluentProvider } from "@fluentui/react-components";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import {FluentProvider} from "@fluentui/react-components";
+import {StrictMode} from "react";
+import {createRoot} from "react-dom/client";
 
-import { App } from "./popup/App";
-import { useThemePreference } from "./popup/hooks/useThemePreference";
+import {App} from "./popup/App";
+import {useThemePreference} from "./popup/hooks/useThemePreference";
 import "./index.css";
 
 function PopupRoot() {
