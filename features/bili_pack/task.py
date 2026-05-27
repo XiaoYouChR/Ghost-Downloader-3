@@ -40,6 +40,6 @@ class BilibiliMergeStage(FFmpegStage):
     def updateOutputFile(self, taskPath: Path, taskTitle: str):
         baseTitle = taskTitle[:-4] if taskTitle.lower().endswith(".mp4") else taskTitle
         stem = f"{baseTitle}{self.pageSuffix}" if self.pageSuffix else baseTitle
-        self.outputFile = str(taskPath / f"{stem}.mp4")
-        self.videoPath = str(taskPath / f"{stem}.video.m4s")
-        self.audioPath = str(taskPath / f"{stem}.audio.m4s")
+        self.outputFile = taskPath / f"{stem}.mp4"
+        self.videoPath = taskPath / f"{stem}.video.m4s"
+        self.audioPath = taskPath / f"{stem}.audio.m4s"

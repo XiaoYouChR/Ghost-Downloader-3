@@ -129,9 +129,6 @@ class TaskStage:
     def updateOutputFile(self, taskPath: Path, taskTitle: str):
         pass
 
-    def onCompleted(self, task: "Task"):
-        pass
-
     @classmethod
     def fromFile(cls, file: TaskFile, task: "Task") -> "TaskStage":
         raise NotImplementedError
@@ -330,7 +327,6 @@ class Task:
                 currentStage = stage
                 worker = stage.workerType(stage)
                 await worker.run()
-                stage.onCompleted(self)
         except asyncio.CancelledError:
             logger.info("{} stopped", self.title)
             raise

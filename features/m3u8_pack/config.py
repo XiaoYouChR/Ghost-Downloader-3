@@ -1,11 +1,8 @@
 import asyncio
-import shutil
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtCore import Qt
 from qfluentwidgets import (
     BoolValidator,
     ComboBoxSettingCard,
@@ -22,16 +19,14 @@ from qfluentwidgets import (
     SettingCard,
     SwitchSettingCard,
     ToolButton,
-    ToolTipFilter,
 )
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
-from app.supports.config import cfg
 from app.supports.paths import APP_DATA_DIR
-from app.supports.utils import toExecutable, toPosixPath
+from app.supports.utils import findExecutable, toPosixPath
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-from app.view.components.setting_cards import SpinBoxSettingCard
+from app.view.components.setting_cards import InstallFolderCard, SpinBoxSettingCard
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
@@ -44,18 +39,10 @@ except ImportError:
 
 
 def downloaderPath() -> str:
-    installFolder = Path(m3u8Config.installFolder.value)
-    candidate = installFolder / toExecutable("N_m3u8DL-RE")
-    if candidate.is_file():
-        return toPosixPath(candidate)
-
-    found = shutil.which("N_m3u8DL-RE")
-    if not found and sys.platform == "win32":
-        found = shutil.which("N_m3u8DL-RE.exe")
-    return toPosixPath(found) if found else ""
+    return findExecutable(Path(m3u8Config.installFolder.value), "N_m3u8DL-RE")
 
 
-async def queryM3U8Runtime() -> dict[str, str]:
+async def probeM3U8Runtime() -> dict[str, str]:
     execPath = downloaderPath()
     ffmpegPath, _ = ffmpegPaths()
     runtimeInfo = {
@@ -85,56 +72,29 @@ async def queryM3U8Runtime() -> dict[str, str]:
     return runtimeInfo
 
 
-class M3U8InstallFolderCard(SettingCard):
-    pathChanged = Signal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(FluentIcon.FOLDER, self.tr("N_m3u8DL-RE 安装目录"), m3u8Config.installFolder.value, parent)
-        self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
-        self.restoreDefaultButton = ToolButton(FluentIcon.CANCEL, self)
-        self.hBoxLayout.addWidget(self.chooseFolderButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.restoreDefaultButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
-
-        self.chooseFolderButton.clicked.connect(self._chooseFolder)
-        self.restoreDefaultButton.clicked.connect(self._restoreDefault)
-        self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
-        self.chooseFolderButton.installEventFilter(ToolTipFilter(self.chooseFolderButton))
-        self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
-        self.restoreDefaultButton.installEventFilter(ToolTipFilter(self.restoreDefaultButton))
-
-    def _updatePath(self, path: str):
-        cfg.set(m3u8Config.installFolder, path)
-        self.setContent(m3u8Config.installFolder.value)
-        self.pathChanged.emit(m3u8Config.installFolder.value)
-
-    def _chooseFolder(self):
-        folder = QFileDialog.getExistingDirectory(self.window(), self.tr("选择 N_m3u8DL-RE 安装目录"))
-        if folder:
-            self._updatePath(folder)
-
-    def _restoreDefault(self):
-        defaultPath = f"{APP_DATA_DIR}/M3U8DL"
-        self._updatePath(defaultPath)
-
-
 class M3U8RuntimeCard(SettingCard):
     def __init__(self, parent=None):
         super().__init__(FluentIcon.INFO, self.tr("当前 N_m3u8DL-RE"), self.tr("正在检测运行时..."), parent)
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+
+        self._initLayout()
+        self._bind()
+
+    def _initLayout(self):
         self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(16)
+
+    def _bind(self):
         self.installButton.clicked.connect(self._onInstallClicked)
         self.refreshButton.clicked.connect(self.refreshStatus)
 
     def refreshStatus(self):
         self.refreshButton.setEnabled(False)
         self.setContent(self.tr("正在检测运行时..."))
-        coreService.runCoroutine(queryM3U8Runtime(), self._onRuntimeLoaded)
+        coreService.runCoroutine(probeM3U8Runtime(), self._onRuntimeLoaded)
 
     def _onRuntimeLoaded(self, result, error: str | None):
         self.refreshButton.setEnabled(True)
@@ -143,16 +103,16 @@ class M3U8RuntimeCard(SettingCard):
             return
 
         runtimeInfo = result or {}
-        downloaderPath = str(runtimeInfo.get("downloaderPath") or "").strip()
-        version = str(runtimeInfo.get("version") or "").strip()
-        installPath = str(runtimeInfo.get("installPath") or "").strip()
-        ffmpegPath = str(runtimeInfo.get("ffmpegPath") or "").strip()
+        executablePath = runtimeInfo.get("downloaderPath", "")
+        version = runtimeInfo.get("version", "")
+        installPath = runtimeInfo.get("installPath", "")
+        ffmpegPath = runtimeInfo.get("ffmpegPath", "")
 
-        if downloaderPath:
+        if executablePath:
             ffmpegText = ffmpegPath if ffmpegPath else self.tr("未检测到，部分流可能无法自动混流")
             content = self.tr("版本: {0}\n安装路径: {1}\nFFmpeg: {2}").format(
                 version or self.tr("未知"),
-                installPath or downloaderPath,
+                installPath or executablePath,
                 ffmpegText,
             )
         else:
@@ -160,7 +120,7 @@ class M3U8RuntimeCard(SettingCard):
         self.setContent(content)
 
     def _onInstallClicked(self):
-        from .task import createInstallTask
+        from .pack import createInstallTask
 
         self.installButton.setEnabled(False)
         self.installButton.setText(self.tr("准备中..."))
@@ -200,7 +160,13 @@ class M3U8Config(PackConfig):
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
-        self.installFolderCard = M3U8InstallFolderCard(self.m3u8Group)
+        self.installFolderCard = InstallFolderCard(
+            m3u8Config.installFolder,
+            f"{APP_DATA_DIR}/M3U8DL",
+            self.tr("N_m3u8DL-RE 安装目录"),
+            self.tr("选择 N_m3u8DL-RE 安装目录"),
+            self.m3u8Group,
+        )
         self.runtimeCard = M3U8RuntimeCard(self.m3u8Group)
         self.outputFormatCard = ComboBoxSettingCard(
             self.outputFormat,

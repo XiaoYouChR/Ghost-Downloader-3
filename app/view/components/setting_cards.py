@@ -23,6 +23,7 @@ from qfluentwidgets import (
     LineEdit,
     EditableComboBox,
     ToolButton,
+    ToolTipFilter,
 )
 
 from app.supports.config import cfg
@@ -292,6 +293,52 @@ class ProxySettingCard(ExpandGroupSettingCard):
             else:
                 self.defaultRadioButton.click()
                 self.defaultRadioButton.setChecked(True)
+
+
+class InstallFolderCard(SettingCard):
+    pathChanged = Signal(str)
+
+    def __init__(self, configItem: ConfigItem, defaultPath: str,
+                 title: str, browseTitle: str, parent=None):
+        super().__init__(FluentIcon.FOLDER, title, configItem.value, parent)
+        self.configItem = configItem
+        self.defaultPath = defaultPath
+        self.browseTitle = browseTitle
+        self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
+        self.restoreDefaultButton = ToolButton(FluentIcon.CANCEL, self)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self):
+        self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
+        self.chooseFolderButton.installEventFilter(ToolTipFilter(self.chooseFolderButton))
+        self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
+        self.restoreDefaultButton.installEventFilter(ToolTipFilter(self.restoreDefaultButton))
+
+    def _initLayout(self):
+        self.hBoxLayout.addWidget(self.chooseFolderButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.restoreDefaultButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+
+    def _bind(self):
+        self.chooseFolderButton.clicked.connect(self._chooseFolder)
+        self.restoreDefaultButton.clicked.connect(self._restoreDefault)
+
+    def _updatePath(self, path: str):
+        cfg.set(self.configItem, path)
+        self.setContent(self.configItem.value)
+        self.pathChanged.emit(self.configItem.value)
+
+    def _chooseFolder(self):
+        folder = QFileDialog.getExistingDirectory(self.window(), self.browseTitle)
+        if folder:
+            self._updatePath(folder)
+
+    def _restoreDefault(self):
+        self._updatePath(self.defaultPath)
 
 
 class SelectFolderSettingCard(SettingCard):
