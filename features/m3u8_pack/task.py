@@ -164,10 +164,11 @@ class M3U8Worker(Worker):
 
     def _updateOutput(self):
         target = Path(self.stage.outputFile)
-        if target.is_file():
+        if target.is_file() and target.stat().st_size > 0:
             self.stage.actualExtension = target.suffix.lstrip(".")
             self.stage.task.fileSize = max(self.stage.task.fileSize, target.stat().st_size)
             return
+        target.unlink(missing_ok=True)
 
         outputDir = self.stage.task.path
         if not outputDir.is_dir():
@@ -206,7 +207,7 @@ class M3U8Worker(Worker):
 
         self.stage.task.path.mkdir(parents=True, exist_ok=True)
         Path(self.stage.tempDir).mkdir(parents=True, exist_ok=True)
-        # 占位以便后续同名任务被 deduplicateFilename 检测到——N_m3u8DL-RE 要跑一段时间才落盘
+        # 占位以便后续同名任务被 deduplicateFilename 检测到——_updateOutput 会清掉这个 0 字节文件
         Path(self.stage.outputFile).touch(exist_ok=True)
 
         process = None
