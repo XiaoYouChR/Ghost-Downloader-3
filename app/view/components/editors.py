@@ -1,3 +1,5 @@
+from typing import Final
+
 from PySide6.QtCore import QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QKeyEvent, QPainter, QPainterPath
 from PySide6.QtWidgets import (
@@ -7,7 +9,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QWidget,
 )
-from qfluentwidgets import FlowLayout, PlainTextEdit, TransparentToolButton
+from qfluentwidgets import EditableComboBox, FlowLayout, PlainTextEdit, TransparentToolButton
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets.common.color import autoFallbackThemeColor
 from qfluentwidgets.common.font import setFont
@@ -64,6 +66,24 @@ class AutoSizingEdit(PlainTextEdit):
 
     def sizeHint(self) -> QSize:
         return self.maximumSizeHint().expandedTo(self.minimumSizeHint())
+
+
+_COMBO_CHROME: Final[int] = 60
+
+
+class AutoSizingComboBox(EditableComboBox):
+    """qfluentwidgets EditableComboBox 基类 sizeHint 固定 157，
+    跟不上 currentText——这里改成跟随文本宽度
+    """
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.currentTextChanged.connect(self.updateGeometry)
+
+    def sizeHint(self) -> QSize:
+        textWidth = self.fontMetrics().horizontalAdvance(self.currentText())
+        return QSize(textWidth + _COMBO_CHROME, super().sizeHint().height())
 
 
 class _TokenWidget(QWidget):

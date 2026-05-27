@@ -1,6 +1,7 @@
+from typing import Final
 from urllib.parse import urlsplit
 
-from PySide6.QtCore import Qt, Signal, Slot, QEvent
+from PySide6.QtCore import Qt, Signal, QEvent
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -21,13 +22,13 @@ from qfluentwidgets import (
     RadioButton,
     ComboBox,
     LineEdit,
-    EditableComboBox,
     ToolButton,
     ToolTipFilter,
 )
 
 from app.supports.config import cfg
 from app.supports.utils import getProxies
+from app.view.components.editors import AutoSizingComboBox
 
 
 class SpinBoxSettingCard(SettingCard):
@@ -341,133 +342,80 @@ class InstallFolderCard(SettingCard):
         self._updatePath(self.defaultPath)
 
 
+_MAX_HISTORY: Final[int] = 7
+
+
 class SelectFolderSettingCard(SettingCard):
-    """下载路径设置卡片组件，集成历史路径管理"""
+    pathChanged = Signal(str)
 
-    pathChanged = Signal(str)  # 路径修改信号
-
-    def __init__(self, defaultPath: str, memoryConfigItem: ConfigItem, parent=None):
+    def __init__(
+        self,
+        initialPath: str,
+        historyConfig: ConfigItem,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(
             FluentIcon.DOWNLOAD, self.tr("下载路径"), cfg.downloadFolder.value, parent
         )
-        self.memoryItem: ConfigItem = memoryConfigItem  # 历史记录配置项
-        self.defaultPath = defaultPath
+        self._initialPath = initialPath
+        self._historyConfig = historyConfig
+        self._history: list[str] = list(
+            dict.fromkeys(p for p in historyConfig.value if p)
+        )
+        if self._history != historyConfig.value:
+            cfg.set(historyConfig, self._history)
 
-        # 历史路径管理
-        self.memoryPaths = self.memoryItem.value  # 历史记录列表
-        self._comboBoxItems = set()  # 缓存组合框当前显示的路径集合
-
-        # UI组件
-        self.editableComboBox = EditableComboBox(self)
-        # self.editableComboBox.setMinimumWidth(250)
-        # TODO editableComboBox 若 Editable, 会导致重大 Bug, 通过 SizeHint 优化 editableComboBox
-        self.editableComboBox.setReadOnly(True)
+        self.pathComboBox = AutoSizingComboBox(self)
         self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
-        self.restoreDefaultButton = ToolButton(
-            FluentIcon.CANCEL, self
-        )  # 恢复默认路径按钮
+        self.restoreDefaultButton = ToolButton(FluentIcon.CANCEL, self)
 
-        # 初始化组合框
-        self._refreshComboBoxItems()
-        self.editableComboBox.currentTextChanged.connect(self._onComboBoxTextChanged)
+        self._initWidget()
+        self._initLayout()
+        self._bind()
 
-        # 连接信号
-        self.chooseFolderButton.clicked.connect(self._chooseFolder)
-        self.restoreDefaultButton.clicked.connect(self._restoreDefault)
-
-        # 设置按钮提示
+    def _initWidget(self) -> None:
+        # ReadOnly 避免编辑中间态触发 currentTextChanged 把变体写入历史
+        self.pathComboBox.setReadOnly(True)
         self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
         self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
+        # initialPath 可能也存在于 history（用户曾把当前路径加入过），用 dict 去重
+        items = list(dict.fromkeys(p for p in [self._initialPath, *self._history] if p))
+        self.pathComboBox.addItems(items)
+        self.pathComboBox.setCurrentText(cfg.downloadFolder.value)
 
-        # 布局设置
-        self.hBoxLayout.addWidget(self.editableComboBox, 2)
+    def _initLayout(self) -> None:
+        self.hBoxLayout.addWidget(self.pathComboBox)
         self.hBoxLayout.addSpacing(5)
-        self.hBoxLayout.addWidget(
-            self.chooseFolderButton
-        )
+        self.hBoxLayout.addWidget(self.chooseFolderButton)
         self.hBoxLayout.addSpacing(5)
-        self.hBoxLayout.addWidget(
-            self.restoreDefaultButton
-        )
+        self.hBoxLayout.addWidget(self.restoreDefaultButton)
         self.hBoxLayout.addSpacing(16)
 
-    def _onComboBoxTextChanged(self, text):
-        """处理组合框文本改变事件"""
-        self._updatePath(text)
+    def _bind(self) -> None:
+        # textActivated 只在用户主动选中时触发，setCurrentText 等程序操作不触发——无递归隐患
+        self.pathComboBox.textActivated.connect(self._setPath)
+        self.chooseFolderButton.clicked.connect(self._onChooseFolderClicked)
+        self.restoreDefaultButton.clicked.connect(self._onRestoreDefaultClicked)
 
-    def _refreshComboBoxItems(self):
-        """刷新组合框中的路径列表"""
-        newPaths = set()
-        for path in [self.defaultPath] + self.memoryPaths:
-            if path:  # 忽略空路径
-                newPaths.add(path)
-
-        # 计算需要添加/移除的项
-        toRemoveItems = self._comboBoxItems - newPaths
-        toAddItems = newPaths - self._comboBoxItems
-
-        if not (toRemoveItems or toAddItems):
-            return
-
-        # 执行增删操作
-        for path in toRemoveItems:
-            idx = self.editableComboBox.findText(path)
-            if idx >= 0:
-                self.editableComboBox.removeItem(idx)
-        for path in toAddItems:
-            self.editableComboBox.addItem(path)
-
-        self._comboBoxItems = newPaths
-
-    def _syncMemoryPathsFromConfig(self):
-        """从配置文件同步历史路径"""
-        currentValue = self.memoryItem.value
-        if currentValue != self.memoryPaths:
-            self.memoryPaths = currentValue
-            self._refreshComboBoxItems()
-
-    def _chooseFolder(self):
-        """打开文件夹选择对话框"""
+    def _onChooseFolderClicked(self) -> None:
         folder = QFileDialog.getExistingDirectory(None, self.tr("选择文件夹"))
         if folder:
-            self._updatePath(folder)
+            self._setPath(folder)
 
-    def _append(self, path: str):
-        """添加新路径到历史记录"""
-        self.memoryPaths.append(path)
-        # 限制历史记录数量不超过7条
-        if len(self.memoryPaths) > 7:
-            self.memoryPaths.pop(0)
-        # 更新UI并保存配置
-        self._refreshComboBoxItems()
-        cfg.set(self.memoryItem, self.memoryPaths)
+    def _onRestoreDefaultClicked(self) -> None:
+        self._setPath(self._initialPath)
 
-    def _isPathExists(self, path) -> bool:
-        """检查路径是否已存在"""
-        return path in self.memoryPaths
-
-    def _restoreDefault(self):
-        """恢复默认路径"""
-        self._updatePath(self.defaultPath)
-
-    @Slot(str)
-    def _updatePath(self, path: str):
-        """更新当前路径"""
-        if path and not self._isPathExists(path):
-            self._append(path)
-
-        self.setContent(path)  # 更新卡片显示
-        self.editableComboBox.blockSignals(True)  # 阻止信号以避免递归
-        self.editableComboBox.setCurrentText(path)
-        self.editableComboBox.blockSignals(False)
-        self.pathChanged.emit(path)  # 发出修改信号
-
-    def focusInEvent(self, e):
-        """获取焦点时同步配置并刷新列表"""
-        self._syncMemoryPathsFromConfig()
-        return super().focusInEvent(e)
-
-    def __del__(self):
-        """析构时清理重复历史记录并保存"""
-        uniquePaths = list(dict.fromkeys(self.memoryItem.value))
-        cfg.set(self.memoryItem, uniquePaths)
+    def _setPath(self, path: str) -> None:
+        if not path:
+            return
+        if path not in self._history:
+            self._history.append(path)
+            if len(self._history) > _MAX_HISTORY:
+                evicted = self._history.pop(0)
+                self.pathComboBox.removeItem(self.pathComboBox.findText(evicted))
+            cfg.set(self._historyConfig, self._history)
+            if self.pathComboBox.findText(path) == -1:
+                self.pathComboBox.addItem(path)
+        self.pathComboBox.setCurrentText(path)
+        self.setContent(path)
+        self.pathChanged.emit(path)
