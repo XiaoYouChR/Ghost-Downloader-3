@@ -493,6 +493,8 @@ class UniversalTaskCard(TaskCard):
 
     def onTaskFinished(self):
         super().onTaskFinished()
+        # M3U8 等 pack 在 _updateOutput 时才知道真实文件名，会调用 task.setTitle 改写 title
+        self.filenameLabel.setText(self.task.title)
         self._refreshIconLabel()
 
     def onTaskDeleted(self, completely: bool = False):
