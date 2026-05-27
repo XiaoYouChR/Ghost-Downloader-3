@@ -15,7 +15,7 @@ from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg
-from app.supports.recorder import taskRecorder
+from app.services.task_service import taskService
 from app.supports.utils import toReadableSize, openFile
 from app.view.components.cards import TaskCard
 from app.view.components.dialogs import DeleteTaskDialog, PlanTaskDialog
@@ -175,7 +175,7 @@ class TaskPage(ScrollArea):
         self.refreshTimer.start()
 
     def resumeMemorizedTasks(self):
-        for task in taskRecorder.memorizedTasks.values():
+        for task in taskService.tasks.values():
             try:
                 card = featureService.taskCard(task, self)
             except Exception as e:
@@ -253,7 +253,7 @@ class TaskPage(ScrollArea):
             logger.opt(exception=e).error("计划任务执行失败")
 
     def removeCard(self, card: TaskCard):
-        taskRecorder.remove(card.task)
+        taskService.remove(card.task)
         if card not in self.cards:
             return
 

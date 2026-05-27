@@ -18,7 +18,7 @@ from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg, DEFAULT_HEADERS, AUTHOR_URL, VERSION, FEEDBACK_URL, isWin10, \
     isLessThanWin10, toQFluentTheme
-from app.supports.recorder import taskRecorder
+from app.services.task_service import taskService
 from app.supports.signal_bus import signalBus
 from app.supports.update import checkUpdate, UpdateState
 from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, deduplicateFilename, openAppLogFolder
@@ -334,10 +334,9 @@ class MainWindow(MSFluentWindow):
                 logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
 
             card = featureService.taskCard(task, self)
-            taskRecorder.add(task, False)
+            taskService.add(task)
             self.taskPage.addCard(card)
             card.resumeTask()
-            taskRecorder.flush()
             return True
         except Exception as e:
             logger.opt(exception=e).error("无法创建任务卡片 {}", task.title)

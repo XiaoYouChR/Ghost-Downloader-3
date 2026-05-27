@@ -271,15 +271,12 @@ class Task:
         return self.updateStatus()
 
     def pendingStages(self) -> Iterable[TaskStage]:
-        from app.supports.recorder import taskRecorder
-
         self.stages.sort(key=lambda stage: stage.stageIndex)
         for stage in self.stages:
             if self.status != TaskStatus.RUNNING:
                 break
             if stage.status == TaskStatus.COMPLETED:
                 continue
-            taskRecorder.flush()
             yield stage
 
     def setSelection(self, selectedIndexes: list[int]):

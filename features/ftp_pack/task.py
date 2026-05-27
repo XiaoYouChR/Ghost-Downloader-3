@@ -278,15 +278,12 @@ class FtpTask(Task):
         return bool(selectedStages) and all(stage.supportsRange for stage in selectedStages)
 
     def pendingStages(self):
-        from app.supports.recorder import taskRecorder
-
         self.stages.sort(key=lambda stage: stage.stageIndex)
         for stage in self.selectedStages:
             if self.status != TaskStatus.RUNNING:
                 break
             if stage.status == TaskStatus.COMPLETED:
                 continue
-            taskRecorder.flush()
             yield stage
 
     async def run(self):

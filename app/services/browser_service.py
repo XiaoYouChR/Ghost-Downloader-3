@@ -14,7 +14,7 @@ from qfluentwidgets import InfoBar, InfoBarPosition, MessageBox
 from app.bases.models import Task, TaskStatus
 from app.services.core_service import coreService
 from app.supports.config import VERSION, cfg
-from app.supports.recorder import taskRecorder
+from app.services.task_service import taskService
 from app.supports.utils import bringWindowToTop, getProxies, openFile, openFolder
 
 if TYPE_CHECKING:
@@ -284,7 +284,7 @@ class BrowserService(QObject):
 
     def _allTasks(self) -> list[Task]:
         tasksById: dict[str, Task] = {
-            task.taskId: task for task in taskRecorder.memorizedTasks.values()
+            task.taskId: task for task in taskService.tasks.values()
         }
         for task in coreService.tasks:
             tasksById[task.taskId] = task
@@ -294,7 +294,7 @@ class BrowserService(QObject):
         task = coreService.task(taskId)
         if task is not None:
             return task
-        return taskRecorder.memorizedTasks.get(taskId)
+        return taskService.tasks.get(taskId)
 
     def _taskSnapshot(self) -> bytes:
         tasks = sorted(self._allTasks(), key=lambda item: item.createdAt, reverse=True)
@@ -502,8 +502,7 @@ class BrowserService(QObject):
             card.deleted.emit()
             card.onTaskDeleted(True)
         else:
-            taskRecorder.remove(task)
-            taskRecorder.flush()
+            taskService.remove(task)
             self._removeTaskArtifacts(task)
 
         self._sendResult(session, BrowserMessageType.TASK_ACTION_RESULT, requestId, ok=True)
@@ -556,7 +555,7 @@ class BrowserService(QObject):
                 self._removeTaskArtifacts(task)
 
             task.reset()
-            taskRecorder.flush()
+            taskService.scheduleFlush()
             coreService.createTask(task)
         except Exception as actionError:
             logger.opt(exception=actionError).error("Browser task redownload failed")

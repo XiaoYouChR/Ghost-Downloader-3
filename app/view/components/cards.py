@@ -14,7 +14,7 @@ from app.bases.models import Task, TaskStatus, SpecialFileSize
 from app.services.category_service import UNCATEGORIZED_ID, categoryService
 from app.services.core_service import coreService
 from app.supports.config import cfg
-from app.supports.recorder import taskRecorder
+from app.services.task_service import taskService
 from app.supports.utils import openFile, toReadableSize, toReadableTime, openFolder
 from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
@@ -254,7 +254,7 @@ class TaskCard(CardWidget):
         if self.task.category == categoryId:
             return
         self.task.category = categoryId
-        taskRecorder.flush()
+        taskService.scheduleFlush()
         self._onCategoryUpdated()
         self.categoryChanged.emit()
 
@@ -488,7 +488,7 @@ class UniversalTaskCard(TaskCard):
         self._renderTaskState()
 
         if self.task.status != self.cardStatus:
-            taskRecorder.flush()
+            taskService.scheduleFlush()
             self.cardStatus = self.task.status
 
     def onTaskFinished(self):
@@ -572,7 +572,7 @@ class UniversalTaskCard(TaskCard):
             self.cardStatus = self.task.status
             self._refreshIconLabel()
             self._renderTaskState()
-            taskRecorder.flush()
+            taskService.scheduleFlush()
             self.resumeTask()
             self.progressBar.show()
         except Exception as e:
@@ -586,7 +586,7 @@ class UniversalTaskCard(TaskCard):
         coreService.createTask(self.task)
         self.cardStatus = self.task.status
         self._renderTaskState()
-        taskRecorder.flush()
+        taskService.scheduleFlush()
         self.toggleRunningStatusButton.setEnabled(True)
 
     def pauseTask(self):
@@ -598,7 +598,7 @@ class UniversalTaskCard(TaskCard):
         coreService.stopTask(self.task)
         self.cardStatus = self.task.status
         self._renderTaskState()
-        taskRecorder.flush()
+        taskService.scheduleFlush()
         self.toggleRunningStatusButton.setEnabled(True)
 
     def initLayout(self):
