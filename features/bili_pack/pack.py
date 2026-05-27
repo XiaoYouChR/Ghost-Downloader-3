@@ -323,9 +323,6 @@ class BilibiliPack(FeaturePack):
                 ))
                 task.addStage(BilibiliMergeStage(
                     stageIndex=stageBase + 3,
-                    videoPath="",
-                    audioPath="",
-                    outputFile="",
                     pageIndex=index,
                     pageSuffix=pageSuffix,
                 ))

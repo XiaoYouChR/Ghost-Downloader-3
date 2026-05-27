@@ -1,4 +1,5 @@
 import re
+import shutil
 import sys
 from datetime import datetime
 from functools import wraps
@@ -182,6 +183,17 @@ def toPosixPath(path) -> str:
 
 def toExecutable(name: str) -> str:
     return f"{name}.exe" if sys.platform == "win32" else name
+
+
+def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
+    exe = toExecutable(name)
+    candidates = [installFolder / sub / exe for sub in subdirs]
+    candidates.append(installFolder / exe)
+    for candidate in candidates:
+        if candidate.is_file():
+            return toPosixPath(candidate)
+    found = shutil.which(name)
+    return toPosixPath(found) if found else ""
 
 
 def toBytes(value: str, unit: str) -> int:

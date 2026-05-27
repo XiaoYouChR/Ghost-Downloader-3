@@ -9,14 +9,7 @@ from qfluentwidgets import BodyLabel, ImageLabel, LineEdit, StrongBodyLabel
 from app.bases.models import Task, TaskStatus
 from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
-
-
-def _removeFile(path: Path):
-    try:
-        if path.is_file() or path.is_symlink():
-            path.unlink()
-    except FileNotFoundError:
-        pass
+from .task import M3U8TaskStage
 
 
 class M3U8TaskCard(UniversalTaskCard):
@@ -74,8 +67,10 @@ class M3U8TaskCard(UniversalTaskCard):
             return
 
         task = self.task
-        _removeFile(Path(task.outputFolder))
-        shutil.rmtree(Path(task.metadata.get('tempDir', '')), ignore_errors=True)
+        Path(task.outputFolder).unlink(missing_ok=True)
+        for stage in task.stages:
+            if isinstance(stage, M3U8TaskStage) and stage.tempDir:
+                shutil.rmtree(Path(stage.tempDir), ignore_errors=True)
 
         outputDirectory = Path(task.path)
         if outputDirectory.exists():
@@ -84,7 +79,7 @@ class M3U8TaskCard(UniversalTaskCard):
                 if candidate.name == Path(task.outputFolder).name:
                     continue
                 if candidate.is_file() and candidate.name.startswith(prefix):
-                    _removeFile(candidate)
+                    candidate.unlink(missing_ok=True)
 
 
 class M3U8InstallTaskCard(UniversalTaskCard):

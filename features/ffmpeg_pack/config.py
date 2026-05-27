@@ -4,50 +4,53 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QApplication
 from qfluentwidgets import (
     ConfigItem,
     FluentIcon,
     FolderValidator,
+    InfoBar,
+    InfoBarPosition,
+    PrimaryPushButton,
     SettingCard,
-    ToolButton, PrimaryPushButton, InfoBar, ToolTipFilter
+    ToolButton,
 )
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
-from app.supports.config import cfg
 from app.supports.paths import APP_DATA_DIR
-from app.supports.utils import toExecutable, toPosixPath
+from app.supports.utils import findExecutable, toPosixPath
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+from app.view.components.setting_cards import InstallFolderCard
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
     from app.view.windows.main_window import MainWindow
 
 
-def _guessInstallRoot(ffmpegPath: str) -> str:
-    path = Path(ffmpegPath)
-    if path.parent.name.lower() == "bin":
-        return toPosixPath(path.parent.parent)
-    return toPosixPath(path.parent)
-
-
-def _findExecutable(name: str) -> str:
-    installFolder = Path(ffmpegConfig.installFolder.value)
-    for candidate in (installFolder / "bin" / toExecutable(name), installFolder / toExecutable(name)):
-        if candidate.is_file():
-            return toPosixPath(candidate)
-
-    found = shutil.which(name)
-    return toPosixPath(found) if found else ""
+def _linuxInstallCommand() -> str:
+    """检测可用包管理器；都没命中时 fallback 到 apt 命令文本（让用户自行替换）。"""
+    candidates = (
+        ("apt", "sudo apt install ffmpeg"),
+        ("dnf", "sudo dnf install ffmpeg"),
+        ("pacman", "sudo pacman -S ffmpeg"),
+        ("zypper", "sudo zypper install ffmpeg"),
+        ("apk", "sudo apk add ffmpeg"),
+    )
+    return next((cmd for pm, cmd in candidates if shutil.which(pm)), candidates[0][1])
 
 
 def ffmpegPaths() -> tuple[str, str]:
-    return _findExecutable("ffmpeg"), _findExecutable("ffprobe")
+    installFolder = Path(ffmpegConfig.installFolder.value)
+    return (
+        findExecutable(installFolder, "ffmpeg", "bin"),
+        findExecutable(installFolder, "ffprobe", "bin"),
+    )
 
 
-async def queryFFmpegRuntime() -> dict[str, str]:
+async def probeFFmpegRuntime() -> dict[str, str]:
     ffmpegPath, ffprobePath = ffmpegPaths()
     runtimeInfo = {
         "ffmpegPath": ffmpegPath,
@@ -69,64 +72,52 @@ async def queryFFmpegRuntime() -> dict[str, str]:
     if process.returncode != 0:
         return runtimeInfo
 
-    firstLine = stdout.decode("utf-8", errors="ignore").splitlines()
-    versionLine = firstLine[0].strip() if firstLine else ""
+    lines = stdout.decode("utf-8", errors="ignore").splitlines()
+    versionLine = lines[0].strip() if lines else ""
     version = versionLine.removeprefix("ffmpeg version ").split(" Copyright", 1)[0].strip()
     runtimeInfo["version"] = version or versionLine
-    runtimeInfo["installPath"] = _guessInstallRoot(ffmpegPath)
+    binPath = Path(ffmpegPath)
+    installRoot = binPath.parent.parent if binPath.parent.name.lower() == "bin" else binPath.parent
+    runtimeInfo["installPath"] = toPosixPath(installRoot)
     return runtimeInfo
-
-
-class FFmpegInstallFolderCard(SettingCard):
-    pathChanged = Signal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(FluentIcon.FOLDER, self.tr("FFmpeg 安装目录"), ffmpegConfig.installFolder.value, parent)
-        self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
-        self.restoreDefaultButton = ToolButton(FluentIcon.CANCEL, self)
-        self.hBoxLayout.addWidget(self.chooseFolderButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.restoreDefaultButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
-
-        self.chooseFolderButton.clicked.connect(self._chooseFolder)
-        self.restoreDefaultButton.clicked.connect(self._restoreDefault)
-        self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
-        self.chooseFolderButton.installEventFilter(ToolTipFilter(self.chooseFolderButton))
-        self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
-        self.restoreDefaultButton.installEventFilter(ToolTipFilter(self.restoreDefaultButton))
-
-    def _updatePath(self, path: str):
-        cfg.set(ffmpegConfig.installFolder, path)
-        self.setContent(ffmpegConfig.installFolder.value)
-        self.pathChanged.emit(ffmpegConfig.installFolder.value)
-
-    def _chooseFolder(self):
-        folder = QFileDialog.getExistingDirectory(self.window(), self.tr("选择 FFmpeg 安装目录"))
-        if folder:
-            self._updatePath(folder)
-
-    def _restoreDefault(self):
-        self._updatePath(f"{APP_DATA_DIR}/FFmpeg")
 
 
 class FFmpegRuntimeCard(SettingCard):
     def __init__(self, parent=None):
         super().__init__(FluentIcon.INFO, self.tr("当前 FFmpeg"), self.tr("正在检测 FFmpeg 运行时..."), parent)
-        self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
+        self.installButton = PrimaryPushButton(self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self):
+        if sys.platform == "win32":
+            self.installButton.setText(self.tr("一键安装"))
+            self._installAction = self._downloadFFmpeg
+        elif sys.platform == "darwin" and not shutil.which("brew"):
+            self.installButton.setText(self.tr("打开 brew.sh"))
+            self._installAction = lambda: QDesktopServices.openUrl(QUrl("https://brew.sh"))
+        else:
+            command = "brew install ffmpeg" if sys.platform == "darwin" else _linuxInstallCommand()
+            self.installButton.setText(self.tr("复制安装命令"))
+            self._installAction = lambda: self._copyCommand(command)
+
+    def _initLayout(self):
         self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(16)
-        self.installButton.setVisible(sys.platform == "win32")
-        self.installButton.clicked.connect(self._onInstallClicked)
+
+    def _bind(self):
+        self.installButton.clicked.connect(self._installAction)
         self.refreshButton.clicked.connect(self.refreshStatus)
 
     def refreshStatus(self):
         self.refreshButton.setEnabled(False)
         self.setContent(self.tr("正在检测 FFmpeg 运行时..."))
-        coreService.runCoroutine(queryFFmpegRuntime(), self._onRuntimeLoaded)
+        coreService.runCoroutine(probeFFmpegRuntime(), self._onRuntimeLoaded)
 
     def _onRuntimeLoaded(self, result, error: str | None):
         self.refreshButton.setEnabled(True)
@@ -135,37 +126,36 @@ class FFmpegRuntimeCard(SettingCard):
             return
 
         runtimeInfo = result or {}
-        ffmpegPath = str(runtimeInfo.get("ffmpegPath") or "").strip()
-        ffprobePath = str(runtimeInfo.get("ffprobePath") or "").strip()
-        version = str(runtimeInfo.get("version") or "").strip()
-        installPath = str(runtimeInfo.get("installPath") or "").strip()
-
+        ffmpegPath = runtimeInfo.get("ffmpegPath", "")
+        ffprobePath = runtimeInfo.get("ffprobePath", "")
         if ffmpegPath and ffprobePath:
-            content = self.tr("版本: {0}\n安装路径: {1}").format(version or self.tr("未知"), installPath or ffmpegPath)
+            version = runtimeInfo.get("version", "")
+            installPath = runtimeInfo.get("installPath", "")
+            self.setContent(self.tr("版本: {0}\n安装路径: {1}").format(version or self.tr("未知"), installPath or ffmpegPath))
         else:
-            content = self.tr("未检测到可用的 ffmpeg 和 ffprobe")
-        self.setContent(content)
+            self.setContent(self.tr("未检测到可用的 ffmpeg 和 ffprobe"))
 
-    def _onInstallClicked(self):
-        if sys.platform != "win32":
-            return
-
+    def _downloadFFmpeg(self):
         from .pack import createInstallTask
-
         self.installButton.setEnabled(False)
         self.installButton.setText(self.tr("准备中..."))
         coreService.runCoroutine(createInstallTask(), self._onInstallTaskCreated)
+
+    def _copyCommand(self, command: str):
+        QApplication.clipboard().setText(command)
+        InfoBar.success(
+            self.tr("已复制安装命令"), command,
+            duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window(),
+        )
 
     def _onInstallTaskCreated(self, result, error: str | None):
         self.installButton.setEnabled(True)
         self.installButton.setText(self.tr("一键安装"))
 
         mainWindow: "MainWindow" = self.window()
-
         if error or result is None:
             InfoBar.error(self.tr("安装 FFmpeg 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
             return
-
         mainWindow.addTask(result)
 
 
@@ -174,7 +164,13 @@ class FFmpegConfig(PackConfig):
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.ffmpegGroup = CollapsibleSettingCardGroup(self.tr("FFmpeg"), "ffmpeg", settingPage.container)
-        self.installFolderCard = FFmpegInstallFolderCard(self.ffmpegGroup)
+        self.installFolderCard = InstallFolderCard(
+            ffmpegConfig.installFolder,
+            f"{APP_DATA_DIR}/FFmpeg",
+            self.tr("FFmpeg 安装目录"),
+            self.tr("选择 FFmpeg 安装目录"),
+            self.ffmpegGroup,
+        )
         self.runtimeCard = FFmpegRuntimeCard(self.ffmpegGroup)
 
         self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
