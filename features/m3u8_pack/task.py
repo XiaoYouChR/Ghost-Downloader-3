@@ -32,7 +32,7 @@ def _toBool(value: bool) -> str:
 @dataclass(kw_only=True)
 class M3U8TaskStage(TaskStage):
     workerType: type = field(init=False, repr=False)
-    canPause: bool = field(init=False, default=False)
+    canPause: bool = field(init=False, default=True)
 
     outputFile: str = ""
     tempDir: str = ""
