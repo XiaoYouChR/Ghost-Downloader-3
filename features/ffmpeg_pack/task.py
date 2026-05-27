@@ -2,12 +2,33 @@ import asyncio
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import TaskStage, TaskStatus
 from .config import ffmpegPaths
+
+if TYPE_CHECKING:
+    from features.http_pack.task import HttpTaskStage
+else:
+    from http_pack.task import HttpTaskStage
+
+
+def _baseTitle(taskTitle: str) -> str:
+    return taskTitle[:-4] if taskTitle.lower().endswith(".mp4") else taskTitle
+
+
+@dataclass(kw_only=True)
+class FFmpegResourceStage(HttpTaskStage):
+    # role ∈ {"video", "audio"}：合并任务里两路源各自的角色，落盘文件名带这个中缀
+    role: str = "video"
+    extension: str = ""
+
+    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        suffix = f".{self.extension}" if self.extension else ""
+        self.outputFile = str(taskPath / f"{_baseTitle(taskTitle)}.{self.role}{suffix}")
 
 
 def _parseDuration(value: str) -> float:
@@ -46,7 +67,17 @@ class FFmpegStage(TaskStage):
     videoPath: Path = field(default_factory=Path)
     audioPath: Path = field(default_factory=Path)
     outputFile: Path = field(default_factory=Path)
+    videoExtension: str = ""
+    audioExtension: str = ""
     cleanupSource: bool = True
+
+    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        baseTitle = _baseTitle(taskTitle)
+        videoSuffix = f".{self.videoExtension}" if self.videoExtension else ""
+        audioSuffix = f".{self.audioExtension}" if self.audioExtension else ""
+        self.outputFile = taskPath / f"{baseTitle}.mp4"
+        self.videoPath = taskPath / f"{baseTitle}.video{videoSuffix}"
+        self.audioPath = taskPath / f"{baseTitle}.audio{audioSuffix}"
 
 
 class FFmpegWorker(Worker):

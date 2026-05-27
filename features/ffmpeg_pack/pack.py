@@ -12,7 +12,7 @@ from app.bases.models import Task, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, toExecutable, toSafeFilename
 from .config import ffmpegConfig, ffmpegPaths
-from .task import FFmpegStage
+from .task import FFmpegResourceStage, FFmpegStage
 
 if TYPE_CHECKING:
     from features.disk_pack.pack import buildToolInstallTask
@@ -143,20 +143,18 @@ async def createMergeTask(payload: dict[str, Any]) -> Task:
     baseTitle = toSafeFilename(rawTitle, fallback="merged-media")
     outputTitle = baseTitle if baseTitle.lower().endswith(".mp4") else f"{baseTitle}.mp4"
 
-    videoStage: HttpTaskStage = videoTask.stages[0]
-    audioStage: HttpTaskStage = audioTask.stages[0]
-    videoExt = _resourceExtension(videoTask.title, videoStage.url)
-    audioExt = _resourceExtension(audioTask.title, audioStage.url)
+    videoSource: HttpTaskStage = videoTask.stages[0]
+    audioSource: HttpTaskStage = audioTask.stages[0]
+    videoExt = _resourceExtension(videoTask.title, videoSource.url)
+    audioExt = _resourceExtension(audioTask.title, audioSource.url)
 
-    finalPath = path / outputTitle
-    stem = finalPath.stem
-    videoPath = finalPath.with_name(f"{stem}.video.{videoExt}" if videoExt else f"{stem}.video")
-    audioPath = finalPath.with_name(f"{stem}.audio.{audioExt}" if audioExt else f"{stem}.audio")
-
-    videoStage.stageIndex = 1
-    videoStage.outputFile = str(videoPath)
-    audioStage.stageIndex = 2
-    audioStage.outputFile = str(audioPath)
+    videoStage = _toResourceStage(videoSource, role="video", extension=videoExt, stageIndex=1)
+    audioStage = _toResourceStage(audioSource, role="audio", extension=audioExt, stageIndex=2)
+    mergeStage = FFmpegStage(
+        stageIndex=3,
+        videoExtension=videoExt,
+        audioExtension=audioExt,
+    )
 
     task = Task(
         title=outputTitle,
@@ -171,13 +169,28 @@ async def createMergeTask(payload: dict[str, Any]) -> Task:
     )
     task.addStage(videoStage)
     task.addStage(audioStage)
-    task.addStage(FFmpegStage(
-        stageIndex=3,
-        videoPath=videoPath,
-        audioPath=audioPath,
-        outputFile=finalPath,
-    ))
+    task.addStage(mergeStage)
+    # 触发新 stage 按 path/title 重算自身的输出路径
+    for stage in task.stages:
+        stage.updateOutputFile(task.path, task.title)
     return task
+
+
+def _toResourceStage(
+    httpStage: "HttpTaskStage", *, role: str, extension: str, stageIndex: int,
+) -> FFmpegResourceStage:
+    return FFmpegResourceStage(
+        stageIndex=stageIndex,
+        url=httpStage.url,
+        fileSize=httpStage.fileSize,
+        headers=httpStage.headers,
+        proxies=httpStage.proxies,
+        outputFile=httpStage.outputFile,
+        blockNum=httpStage.blockNum,
+        supportsRange=httpStage.supportsRange,
+        role=role,
+        extension=extension,
+    )
 
 
 async def createInstallTask() -> Task:
