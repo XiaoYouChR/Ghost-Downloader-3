@@ -59,8 +59,11 @@ class M3U8TaskStage(TaskStage):
     lastMessage: str = ""
 
     def updateOutputFile(self, taskPath: Path, taskTitle: str):
+        # saveName 跟随 title 重算——否则 dedup/category 改了 title 后，N_m3u8DL-RE
+        # 还在用旧 saveName 输出，_updateOutput 找不到真正产物只能命中 .m3u8 残留
         self.outputFile = toPosixPath(taskPath / taskTitle)
         self.tempDir = toPosixPath(taskPath / ".gd3_m3u8" / self.task.taskId)
+        self.saveName = Path(taskTitle).stem
 
 
 class M3U8Worker(Worker):
@@ -203,6 +206,8 @@ class M3U8Worker(Worker):
 
         self.stage.task.path.mkdir(parents=True, exist_ok=True)
         Path(self.stage.tempDir).mkdir(parents=True, exist_ok=True)
+        # 占位以便后续同名任务被 deduplicateFilename 检测到——N_m3u8DL-RE 要跑一段时间才落盘
+        Path(self.stage.outputFile).touch(exist_ok=True)
 
         process = None
         supervisorTask = None

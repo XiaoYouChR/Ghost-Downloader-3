@@ -139,7 +139,6 @@ class M3U8Pack(FeaturePack):
 
         stage = M3U8TaskStage(
             stageIndex=1,
-            saveName=_stem(title),
             headers=headers,
             proxies=proxies if isinstance(proxies, dict) else {},
             threadCount=m3u8Config.threadCount.value,
