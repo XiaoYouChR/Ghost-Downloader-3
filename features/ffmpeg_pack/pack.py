@@ -15,9 +15,11 @@ from .config import ffmpegConfig, ffmpegPaths
 from .task import FFmpegResourceStage, FFmpegStage
 
 if TYPE_CHECKING:
+    from features.disk_pack.cards import InstallTaskCard
     from features.disk_pack.pack import buildToolInstallTask
     from features.http_pack.task import HttpTaskStage
 else:
+    from disk_pack.cards import InstallTaskCard
     from disk_pack.pack import buildToolInstallTask
     from http_pack.task import HttpTaskStage
 
@@ -217,3 +219,9 @@ class FFmpegPack(FeaturePack):
 
     async def parse(self, payload: dict) -> Task:
         return await createMergeTask(payload)
+
+    def taskCard(self, task, parent=None):
+        # installFolder 在 buildToolInstallTask 时写入 metadata，区分 FFmpeg 安装任务和合并任务
+        if "installFolder" in task.metadata:
+            return InstallTaskCard(task, parent)
+        return super().taskCard(task, parent)

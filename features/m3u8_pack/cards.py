@@ -82,19 +82,6 @@ class M3U8TaskCard(UniversalTaskCard):
                     candidate.unlink(missing_ok=True)
 
 
-class M3U8InstallTaskCard(UniversalTaskCard):
-    def onTaskDeleted(self, completely: bool = False):
-        if not completely:
-            return
-
-        installFolder = self.task.metadata.get("installFolder")
-        if installFolder:
-            shutil.rmtree(installFolder, ignore_errors=True)
-            return
-
-        super().onTaskDeleted(completely)
-
-
 class M3U8ResultCard(ResultCard):
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
