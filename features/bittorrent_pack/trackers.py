@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 import libtorrent as lt
 import niquests
 
-from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import getProxies
 
 _TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
@@ -46,7 +46,7 @@ async def fetchWebTrackers(sourceUrl: str) -> list[str]:
     if not normalizedSource:
         raise ValueError("Web Tracker 源地址无效")
 
-    async with niquests.AsyncSession(headers=DEFAULT_HEADERS.copy(), timeout=30, happy_eyeballs=True) as client:
+    async with niquests.AsyncSession(headers=defaultHeaders(), timeout=30, happy_eyeballs=True) as client:
         client.trust_env = False
         response = await client.get(
             normalizedSource,

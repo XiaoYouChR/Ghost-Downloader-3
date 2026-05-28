@@ -22,18 +22,22 @@ from qframelesswindow import FramelessDialog
 
 from app.bases.models import Task
 from app.services.feature_service import featureService
-from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import bringWindowToTop, getProxies
+from app.supports.config import cfg
+from app.supports.utils import bringWindowToTop
 from app.view.components.add_task_dialog_session import AddTaskParseSession
 from app.view.components.card_widgets import (
     ParseResultHeaderCardWidget,
     ParseSettingHeaderCardWidget,
 )
-from app.view.components.cards import ParseSettingCard
+from app.view.components.cards import ParseSettingCard, ResultCard
 from app.view.components.editors import AutoSizingEdit
 
 
 class SelectFolderCard(ParseSettingCard):
+    def __init__(self, icon, title: str, parent=None, *, initial: Path | None = None) -> None:
+        self._initial = str(initial) if initial is not None else cfg.downloadFolder.value
+        super().__init__(icon, title, parent)
+
     def initCustomWidget(self) -> None:
         self.pathEdit = LineEdit(self)
         self.selectFolderAction = Action(FluentIcon.FOLDER, self.tr("选择文件夹"), self)
@@ -46,7 +50,7 @@ class SelectFolderCard(ParseSettingCard):
 
     def _initWidget(self) -> None:
         self.pathEdit.setReadOnly(True)
-        self.pathEdit.setText(cfg.downloadFolder.value)
+        self.pathEdit.setText(self._initial)
 
     def _initLayout(self) -> None:
         self.hBoxLayout.addWidget(self.pathEdit, stretch=3)
@@ -74,7 +78,7 @@ class SelectFolderCard(ParseSettingCard):
         return path.parent
 
     def reset(self) -> None:
-        self.pathEdit.setText(cfg.downloadFolder.value)
+        self.pathEdit.setText(self._initial)
 
     @property
     def payload(self) -> dict[str, Any]:
@@ -178,18 +182,13 @@ class AddTaskDialog(MessageBoxBase):
         )
 
         self._timer = QTimer(self, singleShot=True)
-        self._parseSession = AddTaskParseSession(
-            resultGroup=self.parseResultGroup,
-            parent=self,
-        )
+        self._parseSession = AddTaskParseSession(parent=self)
         self._standaloneWrapper = _StandaloneWrapper(self)
+        self._resultCards: dict[str, ResultCard] = {}
 
-        # init
         self._initWidget()
         self._initLayout()
         self._parseSession.setPayload(self._settingsPayload())
-
-        # bind
         self._bind()
 
     def _initWidget(self) -> None:
@@ -219,13 +218,79 @@ class AddTaskDialog(MessageBoxBase):
             lambda: self._parseSession.updateUrls(self._urls())
         )
         self.urlEdit.textChanged.connect(self._restartParseTimer)
+
         self._parseSession.parsingBusyChanged.connect(self.parseProgressBar.setVisible)
-        self._parseSession.parseErrorOccurred.connect(self._onParseError)
+        self._parseSession.parseSucceeded.connect(self._onParseSucceeded)
+        self._parseSession.parseFailed.connect(self._onParseError)
+        self._parseSession.lineRemoved.connect(self._onLineRemoved)
+        self._parseSession.linesReordered.connect(self._onLinesReordered)
+        self._parseSession.cleared.connect(self._onSessionCleared)
         self._parseSession.taskConfirmed.connect(self.taskConfirmed.emit)
+
         for card in self.settingGroup.cards:
             card.payloadChanged.connect(
                 lambda: self._parseSession.setPayload(self._settingsPayload())
             )
+
+    def _onParseSucceeded(self, url: str, task: Task) -> None:
+        card = featureService.resultCard(task, self.parseResultGroup)
+        card.categoryPicked.connect(
+            lambda categoryId: self._parseSession.setUrlCategoryOverride(url, categoryId)
+        )
+        card.editRequested.connect(
+            lambda: self._onResultCardEditRequested(url)
+        )
+        self.parseResultGroup.scrollLayout.addWidget(card, alignment=Qt.AlignmentFlag.AlignTop)
+        self._resultCards[url] = card
+
+    def _onLineRemoved(self, url: str) -> None:
+        card = self._resultCards.pop(url, None)
+        if card is None:
+            return
+        self.parseResultGroup.scrollLayout.removeWidget(card)
+        card.deleteLater()
+        self.parseResultGroup.updateGeometry()
+
+    def _onLinesReordered(self) -> None:
+        for i, url in enumerate(self._parseSession.urls()):
+            card = self._resultCards.get(url)
+            if card is None:
+                continue
+            if self.parseResultGroup.scrollLayout.indexOf(card) != i:
+                self.parseResultGroup.scrollLayout.insertWidget(
+                    i, card, alignment=Qt.AlignmentFlag.AlignTop,
+                )
+        self.parseResultGroup.updateGeometry()
+
+    def _onSessionCleared(self) -> None:
+        self._resultCards.clear()
+        self.parseResultGroup.clearResults()
+
+    def _onResultCardEditRequested(self, url: str) -> None:
+        from app.view.components.edit_task_dialog import EditTaskDialog
+
+        task = self._parseSession.taskByUrl(url)
+        if task is None:
+            return
+
+        dialog = EditTaskDialog(task, context="result", parent=self.window())
+        dialog.urlReplaced.connect(self._onUrlReplaced)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def _onUrlReplaced(self, oldUrl: str, newUrl: str) -> None:
+        self._replaceUrlInTextarea(oldUrl, newUrl)
+        self._parseSession.replaceUrl(oldUrl, newUrl)
+        # setPlainText 会触发 textChanged → timer; session 这边已经在重 parse 了, 关掉避免跑两遍
+        self._timer.stop()
+
+    def _replaceUrlInTextarea(self, oldUrl: str, newUrl: str) -> None:
+        lines = self.urlEdit.toPlainText().splitlines()
+        for i, line in enumerate(lines):
+            if line.strip() == oldUrl:
+                lines[i] = newUrl
+                break
+        self.urlEdit.setPlainText("\n".join(lines))
 
     def _restartParseTimer(self) -> None:
         self._timer.stop()
@@ -268,12 +333,9 @@ class AddTaskDialog(MessageBoxBase):
         self._timer.stop()
 
     def _settingsPayload(self) -> dict[str, Any]:
-        payload = {
-            "headers": DEFAULT_HEADERS.copy(),
-            "proxies": getProxies(),
-        }
-        payload.update(self.settingGroup.payload)
-        return payload
+        # 故意只回 cards 里的字段, 不混 defaultHeaders/getProxies — 否则浏览器插件已 parse
+        # 出来带自定义 headers 的 task, 一进 setPayload → applySettings 就被默认值覆盖了
+        return dict(self.settingGroup.payload)
 
     def _onParseError(self, url: str, error: str) -> None:
         displayUrl = url if len(url) <= 48 else f"{url[:45]}..."

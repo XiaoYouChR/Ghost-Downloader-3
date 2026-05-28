@@ -9,21 +9,17 @@ from time import perf_counter
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
-from app.supports.utils import removePath, toPosixPath
+from app.supports.utils import removePath
 
 
 @dataclass(kw_only=True, eq=False)
 class InstallTask(Task):
-    """A task that downloads + extracts + installs a tool into a folder.
-
-    Cleanup wipes the entire installFolder (recorded in metadata by the
-    install worker) rather than just removing the downloaded archive.
-    """
+    installFolder: str = ""
 
     def cleanup(self):
-        installFolder = self.metadata.get("installFolder")
-        if installFolder:
-            removePath(Path(installFolder))
+        # 装好的工具产物散在 installFolder 各处, 不能只删 archive — 整个目录端掉
+        if self.installFolder:
+            removePath(Path(self.installFolder))
             return
         super().cleanup()
 
@@ -151,7 +147,6 @@ class InstallStage(TaskStage):
     archivePath: str = ""
     cleanup: bool = True
     executableNames: list[str] = field(default_factory=list)
-    extractedExecutables: dict[str, str] = field(default_factory=dict)
 
 
 def _executablePath(root: Path, name: str) -> Path:
@@ -201,9 +196,6 @@ class InstallWorker(Worker):
             if sys.platform != "win32":
                 for path in executables.values():
                     path.chmod(path.stat().st_mode | 0o755)
-
-            self.stage.extractedExecutables = {name: toPosixPath(p) for name, p in executables.items()}
-            self.stage.task.metadata["extractedExecutables"] = self.stage.extractedExecutables
 
             if self.stage.cleanup and archive is not None and archive.exists():
                 archive.unlink()

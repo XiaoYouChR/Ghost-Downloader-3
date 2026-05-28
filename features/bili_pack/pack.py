@@ -281,13 +281,6 @@ class BilibiliPack(FeaturePack):
                 packId=self.packId,
                 fileSize=totalSize,
                 path=path,
-                metadata={
-                    "headers": headers,
-                    "proxies": proxies,
-                    "blockNum": blockNum,
-                    "selectedPages": selectedPages,
-                    "baseTitle": baseTitle,
-                },
             )
 
             for index, pageInfo in enumerate(resolvedPages):
@@ -305,7 +298,6 @@ class BilibiliPack(FeaturePack):
                     fileSize=pageInfo["videoSize"],
                     headers=headers.copy(),
                     proxies=proxies,
-                    outputFile="",
                     blockNum=blockNum,
                     pageIndex=index,
                     pageSuffix=pageSuffix,
@@ -316,7 +308,6 @@ class BilibiliPack(FeaturePack):
                     fileSize=pageInfo["audioSize"],
                     headers=headers.copy(),
                     proxies=proxies,
-                    outputFile="",
                     blockNum=blockNum,
                     pageIndex=index,
                     pageSuffix=pageSuffix,

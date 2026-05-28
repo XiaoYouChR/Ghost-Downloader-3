@@ -20,7 +20,7 @@ from qfluentwidgets import (
     Theme,
 )
 
-DEFAULT_HEADERS = {
+_BASE_HEADERS = {
     "accept-encoding": "deflate, br, gzip",
     "accept-language": "zh-CN,zh;q=0.9",
     "cookie": "down_ip=1",
@@ -29,8 +29,30 @@ DEFAULT_HEADERS = {
     "sec-fetch-site": "none",
     "sec-fetch-user": "?1",
     "upgrade-insecure-requests": "1",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
 }
+
+DEFAULT_USER_AGENT_PRESETS: list[dict[str, str]] = [
+    {
+        "name": "Chrome (Windows)",
+        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+    },
+    {
+        "name": "Edge (Windows)",
+        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
+    },
+    {
+        "name": "Firefox (Windows)",
+        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+    },
+    {
+        "name": "Safari (macOS)",
+        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+    },
+    {
+        "name": "Chrome (Android)",
+        "value": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    },
+]
 
 
 def isGreaterEqualWin10():
@@ -162,36 +184,36 @@ class CategoryListSerializer(ConfigSerializer):
             return []
 
 
-class HeadersValidator(ConfigValidator):
-    """Headers 验证器"""
+class UserAgentListValidator(ConfigValidator):
+    """User-Agent 预设列表验证器"""
 
-    def validate(self, value: dict) -> bool:
-        """验证 Headers 是否为非空字典类型"""
-        return isinstance(value, dict) and len(value) > 0
+    def validate(self, value) -> bool:
+        if not isinstance(value, list):
+            return False
+        return all(
+            isinstance(item, dict)
+            and isinstance(item.get("name"), str)
+            and isinstance(item.get("value"), str)
+            and item["value"]
+            for item in value
+        )
 
-    def correct(self, value) -> dict:
-        """如果验证失败，返回默认的 Headers"""
-        return value if self.validate(value) else DEFAULT_HEADERS
+    def correct(self, value) -> list:
+        return value if self.validate(value) else list(DEFAULT_USER_AGENT_PRESETS)
 
 
-class HeadersSerializer(ConfigSerializer):
-    """Headers 序列化器"""
+class UserAgentListSerializer(ConfigSerializer):
+    """User-Agent 预设列表序列化器"""
 
-    def serialize(self, value: dict) -> str:
-        """将字典序列化为 JSON 字符串"""
+    def serialize(self, value: list) -> str:
         return dumps(value).decode("utf-8")
 
-    def deserialize(self, value: str) -> dict:
-        """将 JSON 字符串反序列化为字典，如果失败则返回默认值"""
+    def deserialize(self, value: str) -> list:
         try:
             result = loads(value)
-            return (
-                result
-                if isinstance(result, dict) and len(result) > 0
-                else DEFAULT_HEADERS
-            )
+            return result if isinstance(result, list) else list(DEFAULT_USER_AGENT_PRESETS)
         except (ValueError, TypeError):
-            return DEFAULT_HEADERS
+            return list(DEFAULT_USER_AGENT_PRESETS)
 
 
 def toQFluentTheme(value: str) -> Theme:
@@ -309,13 +331,18 @@ class Config(QConfig):
     )
 
     # 网络设置
-    # headers = ConfigItem(
-    #     "Network",
-    #     "Headers",
-    #     DEFAULT_HEADERS,
-    #     HeadersValidator(),
-    #     HeadersSerializer(),
-    # )
+    userAgents = ConfigItem(
+        "Network",
+        "UserAgents",
+        list(DEFAULT_USER_AGENT_PRESETS),
+        UserAgentListValidator(),
+        UserAgentListSerializer(),
+    )
+    activeUserAgent = ConfigItem(
+        "Network",
+        "ActiveUserAgent",
+        DEFAULT_USER_AGENT_PRESETS[0]["value"],
+    )
 
     # 全局变量
     globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
@@ -342,3 +369,15 @@ EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downl
 # BASE_EFFICIENCY_THRESHOLD = 0.8  # 判断阈值
 
 cfg = Config()
+
+
+def activeUserAgent() -> str:
+    value = cfg.activeUserAgent.value
+    if value:
+        return value
+    presets = cfg.userAgents.value
+    return presets[0]["value"] if presets else DEFAULT_USER_AGENT_PRESETS[0]["value"]
+
+
+def defaultHeaders() -> dict[str, str]:
+    return {**_BASE_HEADERS, "user-agent": activeUserAgent()}

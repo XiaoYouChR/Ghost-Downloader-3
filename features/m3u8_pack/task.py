@@ -3,7 +3,9 @@ import re
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import ClassVar, TYPE_CHECKING
+
+from typing import Literal
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
@@ -11,6 +13,7 @@ from app.supports.utils import removePath, toBytes, toPosixPath
 from .config import downloaderPath
 
 if TYPE_CHECKING:
+    from app.view.components.cards import ParseSettingCard
     from features.ffmpeg_pack.config import ffmpegPaths
 else:
     from ffmpeg_pack.config import ffmpegPaths
@@ -34,10 +37,8 @@ class M3U8TaskStage(TaskStage):
     workerType: type = field(init=False, repr=False)
     canPause: bool = field(init=False, default=True)
 
-    outputFile: str = ""
-    tempDir: str = ""
-    saveName: str = ""
     actualExtension: str = ""
+    lastMessage: str = ""
 
     headers: dict[str, str] = field(default_factory=dict)
     proxies: dict[str, str] = field(default_factory=dict)
@@ -56,23 +57,59 @@ class M3U8TaskStage(TaskStage):
     liveKeepSegments: bool = False
     livePipeMux: bool = False
 
-    lastMessage: str = ""
+    @property
+    def outputFile(self) -> str:
+        return toPosixPath(Path(self.task.path) / self.task.title)
 
-    def updateOutputFile(self, taskPath: Path, taskTitle: str):
-        # saveName 跟随 title 重算——否则 dedup/category 改了 title 后，N_m3u8DL-RE
-        # 还在用旧 saveName 输出，_updateOutput 找不到真正产物只能命中 .m3u8 残留
-        self.outputFile = toPosixPath(taskPath / taskTitle)
-        self.tempDir = toPosixPath(taskPath / ".gd3_m3u8" / self.task.taskId)
-        self.saveName = Path(taskTitle).stem
+    @property
+    def tempDir(self) -> str:
+        return toPosixPath(Path(self.task.path) / ".gd3_m3u8" / self.task.taskId)
+
+    @property
+    def saveName(self) -> str:
+        return Path(self.task.title).stem
 
     def cleanup(self):
-        if self.tempDir:
-            removePath(Path(self.tempDir))
+        removePath(Path(self.tempDir))
 
 
 @dataclass(kw_only=True, eq=False)
 class M3U8Task(Task):
     packId: str = "m3u8"
+    supportsEdit: ClassVar[bool] = True
+
+    manifestType: Literal["m3u8", "mpd"] = "m3u8"
+    isLive: bool = False
+
+    @property
+    def stage(self) -> "M3U8TaskStage":
+        return self.stages[0]
+
+    @property
+    def headers(self) -> dict:
+        return self.stage.headers
+
+    @property
+    def proxies(self) -> dict | None:
+        return self.stage.proxies
+
+    def editorCards(self, parent) -> list["ParseSettingCard"]:
+        from app.view.components.add_task_dialog import SelectFolderCard
+        from app.view.components.edit_task_cards import HeadersEditCard, ProxiesEditCard
+        from qfluentwidgets import FluentIcon
+
+        return [
+            HeadersEditCard(FluentIcon.GLOBE, parent.tr("请求标头"), parent, initial=self.headers),
+            ProxiesEditCard(FluentIcon.CERTIFICATE, parent.tr("代理服务器"), parent, initial=self.proxies),
+            SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
+        ]
+
+    def applySettings(self, payload):
+        super().applySettings(payload)
+        if "headers" in payload:
+            self.stage.headers = payload["headers"]
+        if "proxies" in payload:
+            self.stage.proxies = payload["proxies"]
 
     def cleanup(self):
         super().cleanup()

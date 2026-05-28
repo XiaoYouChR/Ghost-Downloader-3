@@ -12,7 +12,7 @@ import niquests
 from loguru import logger
 
 from app.bases.models import TaskStage
-from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import getProxies, splitCookies, toSafeFilename
 from .config import bittorrentConfig
 from .task import BTFile, BTTask
@@ -49,10 +49,10 @@ async def _loadFromFile(source: str) -> tuple[bytes, lt.torrent_info]:
 
 async def _loadFromUrl(payload: dict) -> tuple[bytes, lt.torrent_info]:
     url = str(payload["url"]).strip()
-    headers = payload.get("headers", DEFAULT_HEADERS)
+    headers = payload.get("headers") or defaultHeaders()
     proxies = payload.get("proxies", getProxies())
     requestHeaders, requestCookies = splitCookies(
-        headers if isinstance(headers, dict) else DEFAULT_HEADERS
+        headers if isinstance(headers, dict) else defaultHeaders()
     )
 
     async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:

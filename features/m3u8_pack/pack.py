@@ -10,7 +10,7 @@ import niquests
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.config import activeUserAgent, cfg, defaultHeaders
 from app.supports.utils import getProxies, splitCookies, toExecutable, toSafeFilename
 from app.view.components.cards import UniversalTaskCard
 from .cards import M3U8ResultCard, M3U8TaskCard
@@ -27,7 +27,7 @@ _M3U8DL_RELEASE_TAG = "v0.5.1-beta"
 _M3U8DL_RELEASE_API = f"https://api.github.com/repos/nilaoda/N_m3u8DL-RE/releases/tags/{_M3U8DL_RELEASE_TAG}"
 _M3U8DL_RELEASE_HEADERS = {
     "accept": "application/vnd.github+json",
-    "user-agent": DEFAULT_HEADERS["user-agent"],
+    "user-agent": activeUserAgent(),
 }
 _KNOWN_SUFFIXES = {
     ".m3u8", ".m3u", ".mpd", ".mp4", ".mkv",
@@ -97,8 +97,8 @@ class M3U8Pack(FeaturePack):
         return ".m3u" in loweredUrl or ".mpd" in loweredUrl
 
     def taskCard(self, task, parent=None):
-        # installFolder 在 buildToolInstallTask 时写入 metadata，区分 N_m3u8DL-RE 安装任务和普通下载
-        if "installFolder" in task.metadata:
+        from disk_pack.task import InstallTask
+        if isinstance(task, InstallTask):
             return UniversalTaskCard(task, parent)
         return M3U8TaskCard(task, parent)
 
@@ -107,8 +107,8 @@ class M3U8Pack(FeaturePack):
 
     async def parse(self, payload: dict) -> Task:
         url = payload["url"].strip()
-        rawHeaders = payload.get("headers", DEFAULT_HEADERS)
-        headers = rawHeaders.copy() if isinstance(rawHeaders, dict) else DEFAULT_HEADERS.copy()
+        rawHeaders = payload.get("headers")
+        headers = rawHeaders.copy() if isinstance(rawHeaders, dict) and rawHeaders else defaultHeaders()
         proxies = payload.get("proxies", getProxies())
         path = Path(payload.get("path", cfg.downloadFolder.value))
         requestHeaders, requestCookies = splitCookies(headers)
@@ -139,13 +139,10 @@ class M3U8Pack(FeaturePack):
         task = M3U8Task(
             title=title,
             url=url,
-            packId=self.packId,
             fileSize=1,
             path=path,
-            metadata={
-                "manifestType": manifestType,
-                "isLive": isLive,
-            },
+            manifestType=manifestType,
+            isLive=isLive,
         )
 
         stage = M3U8TaskStage(
@@ -166,7 +163,6 @@ class M3U8Pack(FeaturePack):
             livePipeMux=m3u8Config.livePipeMux.value,
         )
         task.addStage(stage)
-        stage.updateOutputFile(path, title)
         return task
 
 

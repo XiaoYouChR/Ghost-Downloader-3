@@ -11,9 +11,9 @@ from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
-from app.supports.config import cfg, DEFAULT_HEADERS
+from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import getProxies, toSafeFilename, splitCookies
-from .task import HttpTaskStage
+from .task import HttpTask, HttpTaskStage
 
 
 def _contentLength(headers: dict[str, str]) -> int:
@@ -171,7 +171,7 @@ class HttpPack(FeaturePack):
 
     async def parse(self, payload: dict) -> Task:
         url: str = payload["url"]
-        headers: dict = payload.get("headers", DEFAULT_HEADERS)
+        headers: dict = payload.get("headers", defaultHeaders())
         proxies: dict = payload.get("proxies", getProxies())
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
@@ -186,18 +186,11 @@ class HttpPack(FeaturePack):
         else:
             fileName = toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
 
-        task = Task(
+        task = HttpTask(
             title=fileName,
             url=url,
-            packId=self.packId,
             fileSize=fileSize,
             path=path,
-            metadata={
-                "headers": headers,
-                "proxies": proxies,
-                "blockNum": blockNum,
-                "supportsRange": supportsRange,
-            },
         )
         stage = HttpTaskStage(
             stageIndex=1,
@@ -205,7 +198,6 @@ class HttpPack(FeaturePack):
             fileSize=fileSize,
             headers=headers,
             proxies=proxies,
-            outputFile=str(path / fileName),
             blockNum=blockNum,
             supportsRange=supportsRange,
         )
