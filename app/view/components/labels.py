@@ -20,8 +20,7 @@ class IconLabelBase:
 
     def setIcon(self, icon: "FluentIconBase | None") -> None:
         self.icon = icon
-        leftMargin = self.iconSize + 4 if icon is not None else 0
-        self.setContentsMargins(leftMargin, 0, 0, 2)
+        self.setIndent(self.iconSize + 4 if icon is not None else 0)
         self.update()
 
     def paintEvent(self, event) -> None:
