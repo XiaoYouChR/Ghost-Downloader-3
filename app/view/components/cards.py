@@ -24,6 +24,7 @@ class ResultCard(QWidget):
     """显示下载链接解析结果的卡片组件"""
 
     categoryPicked = Signal(str)
+    editRequested = Signal()
 
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(parent)
@@ -32,8 +33,17 @@ class ResultCard(QWidget):
 
         self.categoryButton = TransparentToolButton(self)
         self.categoryMenu = RoundMenu(parent=self.categoryButton)
+        self.editButton = TransparentToolButton(FluentIcon.EDIT, self)
 
         self._initCategoryButton()
+        self._initEditButton()
+
+    def _initEditButton(self):
+        self.editButton.setFixedSize(28, 28)
+        self.editButton.setToolTip(self.tr("编辑任务参数"))
+        self.editButton.installEventFilter(ToolTipFilter(self.editButton))
+        self.editButton.clicked.connect(self.editRequested.emit)
+        self.editButton.setVisible(self.task.supportsEdit)
 
     def _initCategoryButton(self):
         self.categoryButton.setFixedSize(28, 28)
@@ -222,6 +232,17 @@ class TaskCard(CardWidget):
         copyUrlAction = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
         copyUrlAction.triggered.connect(lambda: QApplication.clipboard().setText(self.task.url))
         menu.addAction(copyUrlAction)
+
+        canEdit = (
+            self.task.supportsEdit
+            and self.task.status != TaskStatus.COMPLETED
+            and (self.task.status != TaskStatus.RUNNING or self.task.canPause)
+        )
+        if canEdit:
+            editAction = Action(FluentIcon.EDIT, self.tr("编辑任务参数..."), self)
+            editAction.triggered.connect(self._onEditTaskClicked)
+            menu.addAction(editAction)
+
         redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         redownloadAction.triggered.connect(self.redownloadTask)
         menu.addAction(redownloadAction)
@@ -290,6 +311,14 @@ class TaskCard(CardWidget):
             self.removeTask(w.deleteFileCheckBox.isChecked())
 
         w.deleteLater()
+
+    def _onEditTaskClicked(self):
+        from app.view.components.edit_task_dialog import EditTaskDialog
+
+        dialog = EditTaskDialog(self.task, context="task", parent=self.window())
+        dialog.exec()
+        dialog.deleteLater()
+        self.refresh()
 
 
     def paintEvent(self, e):
@@ -605,6 +634,7 @@ class UniversalResultCard(ResultCard):
         self.mainLayout.addWidget(self.filenameLabel, 1)
         self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.sizeLabel)
+        self.mainLayout.addWidget(self.editButton)
         self.mainLayout.addWidget(self.categoryButton)
 
     def eventFilter(self, obj, event: QEvent):

@@ -3,15 +3,12 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
 from app.bases.models import Task
 from app.services.category_service import categoryService
 from app.services.core_service import coreService
-from app.services.feature_service import featureService
-from app.view.components.card_widgets import ParseResultHeaderCardWidget
-from app.view.components.cards import ResultCard
 
 
 @dataclass
@@ -19,26 +16,39 @@ class _LineParseState:
     url: str
     callbackId: str = ""
     task: Task | None = None
-    resultCard: ResultCard | None = None
 
 
 class AddTaskParseSession(QObject):
-    parsingBusyChanged = Signal(bool)
-    parseErrorOccurred = Signal(str, str)
-    taskConfirmed = Signal(object)
+    # 纯 state + 异步 parse 编排, 不持 widget 引用; ResultCard 生命周期由 AddTaskDialog
+    # 通过下面这一组信号驱动
 
-    def __init__(
-        self,
-        resultGroup: ParseResultHeaderCardWidget,
-        parent: QObject | None = None,
-    ) -> None:
+    parsingBusyChanged = Signal(bool)
+    parseSucceeded = Signal(str, object)    # (url, task)
+    parseFailed = Signal(str, str)          # (url, errorMessage)
+    lineRemoved = Signal(str)               # (url)
+    linesReordered = Signal()
+    cleared = Signal()
+    taskConfirmed = Signal(object)          # 用户已 accept 但 parse 这时才回来的 task
+
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self._resultGroup = resultGroup
         self._payload: dict[str, Any] = {}
         self._lineStates: list[_LineParseState] = []
         self._activeParses: dict[str, _LineParseState] = {}
         self._acceptedPayloads: dict[str, dict[str, Any]] = {}
         self._payloadOverrides: dict[str, dict[str, Any]] = {}
+
+    def urls(self) -> list[str]:
+        return [state.url for state in self._lineStates]
+
+    def taskByUrl(self, url: str) -> Task | None:
+        for state in self._lineStates:
+            if state.url == url:
+                return state.task
+        return None
+
+    def canAccept(self) -> bool:
+        return any(state.callbackId or state.task is not None for state in self._lineStates)
 
     def setPayload(self, payload: dict[str, Any]) -> None:
         self._payload = payload
@@ -47,8 +57,8 @@ class AddTaskParseSession(QObject):
                 continue
             state.task.applySettings(self._buildPayload(state.url))
 
-    def canAccept(self) -> bool:
-        return any(state.callbackId or state.task is not None for state in self._lineStates)
+    def setUrlCategoryOverride(self, url: str, categoryId: str) -> None:
+        self._payloadOverrides[url] = {"category": categoryId}
 
     def updateUrls(self, currentUrls: list[str]) -> None:
         previousStates = self._lineStates
@@ -62,7 +72,7 @@ class AddTaskParseSession(QObject):
                 continue
 
             for state in previousStates[oldStart:oldEnd]:
-                self._clearState(state, cancelRequest=True)
+                self._dropState(state, cancelRequest=True)
 
             for url in currentUrls[newStart:newEnd]:
                 state = _LineParseState(url=url)
@@ -72,11 +82,9 @@ class AddTaskParseSession(QObject):
         self._lineStates = nextStates
         activeUrls = set(currentUrls)
         self._payloadOverrides = {
-            url: payload
-            for url, payload in self._payloadOverrides.items()
-            if url in activeUrls
+            url: payload for url, payload in self._payloadOverrides.items() if url in activeUrls
         }
-        self._updateResultCards()
+        self.linesReordered.emit()
 
     def addParsedTasks(self, tasks: list[Task]) -> list[str]:
         if not tasks:
@@ -91,7 +99,7 @@ class AddTaskParseSession(QObject):
             if state is not None:
                 if state.task is not None:
                     continue
-                self._clearState(state, cancelRequest=True)
+                self._dropState(state, cancelRequest=True)
             else:
                 newUrlLines.append(url)
                 state = _LineParseState(url=url)
@@ -99,16 +107,18 @@ class AddTaskParseSession(QObject):
                 stateByUrl[url] = state
 
             task.applySettings(self._buildPayload(url))
-            self._setParsedTask(state, task)
+            state.task = task
+            self.parseSucceeded.emit(url, task)
 
-        self._updateResultCards()
+        self.linesReordered.emit()
         return newUrlLines
 
     def clear(self) -> None:
         for state in self._lineStates:
-            self._clearState(state, cancelRequest=True)
-
-        self._reset()
+            self._dropState(state, cancelRequest=True, silent=True)
+        self._lineStates.clear()
+        self._payloadOverrides.clear()
+        self.cleared.emit()
         self.parsingBusyChanged.emit(bool(self._activeParses))
 
     def accept(self) -> list[Task]:
@@ -129,13 +139,23 @@ class AddTaskParseSession(QObject):
         self.parsingBusyChanged.emit(bool(self._activeParses))
 
         for state in self._lineStates:
-            self._clearState(
-                state,
-                cancelRequest=state.callbackId not in self._acceptedPayloads,
-            )
+            if state.callbackId and state.callbackId not in self._acceptedPayloads:
+                coreService.cancelCallback(state.callbackId)
 
-        self._reset()
+        self._lineStates.clear()
+        self._payloadOverrides.clear()
+        self.cleared.emit()
         return confirmedTasks
+
+    def replaceUrl(self, oldUrl: str, newUrl: str) -> None:
+        for state in self._lineStates:
+            if state.url == oldUrl:
+                self._dropState(state, cancelRequest=True)
+                state.url = newUrl
+                self._submitParse(state)
+                self._payloadOverrides.pop(oldUrl, None)
+                break
+        self.linesReordered.emit()
 
     def _buildPayload(self, url: str) -> dict[str, Any]:
         payload = self._payload.copy()
@@ -161,72 +181,25 @@ class AddTaskParseSession(QObject):
             )
         except Exception as error:
             logger.opt(exception=error).error("提交解析请求失败 {}", state.url)
-            self.parseErrorOccurred.emit(state.url, str(error))
+            self.parseFailed.emit(state.url, str(error))
             return
 
         state.callbackId = callbackId
         self._activeParses[callbackId] = state
         self.parsingBusyChanged.emit(True)
 
-    def _setParsedTask(self, state: _LineParseState, task: Task) -> None:
-        state.task = task
-        state.resultCard = featureService.resultCard(task, self._resultGroup)
-        state.resultCard.categoryPicked.connect(
-            lambda categoryId, u=state.url: self._onCategoryPicked(u, categoryId)
-        )
-
-    def _onCategoryPicked(self, url: str, categoryId: str) -> None:
-        self._payloadOverrides[url] = {"category": categoryId}
-
-    def _removeResultCard(self, state: _LineParseState) -> None:
-        if state.resultCard is None:
-            return
-
-        self._resultGroup.scrollLayout.removeWidget(state.resultCard)
-        self._resultGroup.updateGeometry()
-        state.resultCard.deleteLater()
-        state.resultCard = None
-
-    def _clearState(self, state: _LineParseState, cancelRequest: bool) -> None:
+    def _dropState(self, state: _LineParseState, cancelRequest: bool, silent: bool = False) -> None:
+        # silent: clear/accept 走批量 cleared 信号, 每条不再单独发 lineRemoved
         if cancelRequest and state.callbackId:
             self._activeParses.pop(state.callbackId, None)
             coreService.cancelCallback(state.callbackId)
             self.parsingBusyChanged.emit(bool(self._activeParses))
 
+        hadTask = state.task is not None
         state.callbackId = ""
-        self._removeResultCard(state)
         state.task = None
-
-    def _updateResultCards(self) -> None:
-        visibleIndex = 0
-
-        for state in self._lineStates:
-            if state.resultCard is None:
-                continue
-
-            if self._resultGroup.scrollLayout.indexOf(state.resultCard) != visibleIndex:
-                self._resultGroup.scrollLayout.insertWidget(
-                    visibleIndex,
-                    state.resultCard,
-                    alignment=Qt.AlignmentFlag.AlignTop,
-                )
-            visibleIndex += 1
-
-        self._resultGroup.updateGeometry()
-
-    def _failState(
-        self,
-        state: _LineParseState,
-        errorMessage: str,
-    ) -> None:
-        state.task = None
-        self._removeResultCard(state)
-        self.parseErrorOccurred.emit(state.url, errorMessage)
-
-    def _reset(self) -> None:
-        self._lineStates.clear()
-        self._payloadOverrides.clear()
-        self._resultGroup.clearResults()
+        if hadTask and not silent:
+            self.lineRemoved.emit(state.url)
 
     def _onParseFinished(
         self,
@@ -240,16 +213,19 @@ class AddTaskParseSession(QObject):
             state.callbackId = ""
 
             if error or resultTask is None:
-                self._failState(state, error or self.tr("解析失败"))
+                state.task = None
+                self.parseFailed.emit(state.url, error or self.tr("解析失败"))
                 if error:
                     logger.warning("解析任务失败 {}: {}", state.url, error)
                 return
 
             resultTask.applySettings(self._buildPayload(state.url))
-            self._setParsedTask(state, resultTask)
-            self._updateResultCards()
+            state.task = resultTask
+            self.parseSucceeded.emit(state.url, resultTask)
+            self.linesReordered.emit()
             return
 
+        # 用户点 OK 时 parse 还没回, callbackId 已搬到 _acceptedPayloads; 这时才到
         acceptedPayload = self._acceptedPayloads.pop(callbackId, None)
         if acceptedPayload is None:
             return

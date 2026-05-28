@@ -3,7 +3,7 @@ from urllib.parse import parse_qsl, urlparse
 
 import niquests
 
-from app.supports.config import DEFAULT_HEADERS, cfg
+from app.supports.config import activeUserAgent, cfg
 from app.supports.utils import getProxies
 
 _QR_GENERATE_API = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
@@ -49,8 +49,8 @@ def _toCookie(raw: str) -> str:
 def _headers(cookie: str = "", origin: bool = False) -> dict[str, str]:
     headers = {
         "accept": "application/json, text/plain, */*",
-        "accept-language": DEFAULT_HEADERS["accept-language"],
-        "user-agent": DEFAULT_HEADERS["user-agent"],
+        "accept-language": "zh-CN,zh;q=0.9",
+        "user-agent": activeUserAgent(),
     }
     if cookie:
         headers["cookie"] = cookie

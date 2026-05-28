@@ -5,15 +5,80 @@ from contextlib import suppress
 from dataclasses import field, dataclass
 from pathlib import Path
 from struct import unpack, pack
+from typing import ClassVar, TYPE_CHECKING
 
 import niquests
 from loguru import logger
 
 from app.bases.interfaces import Worker
-from app.bases.models import TaskStage, TaskStatus, SpecialFileSize
+from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
 from app.supports.utils import splitCookies
+
+if TYPE_CHECKING:
+    from app.view.components.cards import ParseSettingCard
+
+
+@dataclass(kw_only=True, eq=False)
+class HttpTask(Task):
+    packId: str = "http"
+    supportsEdit: ClassVar[bool] = True
+
+    @property
+    def stage(self) -> "HttpTaskStage":
+        return self.stages[0]
+
+    @property
+    def headers(self) -> dict:
+        return self.stage.headers
+
+    @property
+    def proxies(self) -> dict | None:
+        return self.stage.proxies
+
+    @property
+    def blockNum(self) -> int:
+        return self.stage.blockNum
+
+    def editorCards(self, parent) -> list["ParseSettingCard"]:
+        from app.view.components.add_task_dialog import SelectFolderCard
+        from app.view.components.edit_task_cards import (
+            HeadersEditCard,
+            ProxiesEditCard,
+            UrlEditCard,
+        )
+        from qfluentwidgets import FluentIcon
+
+        return [
+            UrlEditCard(FluentIcon.LINK, parent.tr("下载链接"), parent, initial=self.url),
+            HeadersEditCard(FluentIcon.GLOBE, parent.tr("请求标头"), parent, initial=self.headers),
+            ProxiesEditCard(FluentIcon.CERTIFICATE, parent.tr("代理服务器"), parent, initial=self.proxies),
+            SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
+        ]
+
+    def applySettings(self, payload):
+        super().applySettings(payload)
+        if "url" in payload:
+            self.url = payload["url"]
+            self.stage.url = payload["url"]
+        if "headers" in payload:
+            self.stage.headers = payload["headers"]
+        if "proxies" in payload:
+            self.stage.proxies = payload["proxies"]
+
+    def tryKeepProgress(self, newTask: Task) -> bool:
+        if not isinstance(newTask, HttpTask):
+            return False
+        if self.fileSize <= 0 or self.fileSize != newTask.fileSize:
+            return False
+        oldStage, newStage = self.stage, newTask.stage
+        oldStage.url = newStage.url
+        oldStage.headers = newStage.headers
+        oldStage.proxies = newStage.proxies
+        oldStage.supportsRange = newStage.supportsRange
+        self.url = newTask.url
+        return True
 
 
 @dataclass(kw_only=True)
@@ -25,13 +90,18 @@ class HttpTaskStage(TaskStage):
     fileSize: int
     headers: dict
     proxies: dict
-    outputFile: str
     blockNum: int
     supportsRange: bool = True
     accelerated: bool = False
+    outputFileOverride: str = ""
 
-    def updateOutputFile(self, taskPath: Path, taskTitle: str):
-        self.outputFile = str(taskPath / taskTitle)
+    @property
+    def outputFile(self) -> str:
+        return self.outputFileOverride or str(Path(self.task.path) / self.task.title)
+
+    @outputFile.setter
+    def outputFile(self, value: str):
+        self.outputFileOverride = value
 
     def __post_init__(self):
         self.canPause = self.supportsRange

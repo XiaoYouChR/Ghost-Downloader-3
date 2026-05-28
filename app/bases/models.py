@@ -82,10 +82,6 @@ class TaskFile:
 @dataclass(kw_only=True)
 class TaskStage:
     _registry: ClassVar[Dict[str, Type["TaskStage"]]] = {}
-    _TYPE_ALIASES: ClassVar[Dict[str, str]] = {
-        "FtpTaskStage": "FtpStage",
-        "BitTorrentTaskStage": "TaskStage",
-    }
     workerType: ClassVar[Type["Worker"]]
     canPause: ClassVar[bool] = True
 
@@ -138,9 +134,6 @@ class TaskStage:
         if sync and hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def updateOutputFile(self, taskPath: Path, taskTitle: str):
-        pass
-
     def cleanup(self):
         """Remove per-stage temporary artifacts. Subclasses override."""
         pass
@@ -159,19 +152,13 @@ class TaskStage:
         else:
             obj = data
 
-        if "type" in obj and isinstance(obj["type"], str):
-            typeName = TaskStage._TYPE_ALIASES.get(obj["type"], obj["type"])
-            stageCls = TaskStage._registry.get(typeName, cls)
-            obj.pop("type", None)
-        else:
-            stageCls = cls
+        typeName = obj.pop("type", None)
+        stageCls = TaskStage._registry.get(typeName, cls) if isinstance(typeName, str) else cls
 
         if "status" in obj and isinstance(obj["status"], str):
             obj["status"] = TaskStatus[obj["status"]]
         if "path" in obj and isinstance(obj["path"], str):
             obj["path"] = Path(obj["path"])
-        if "resolvePath" in obj and "outputFile" not in obj:
-            obj["outputFile"] = obj.pop("resolvePath")
 
         return stageCls(**_filterProperty(stageCls, obj))
 
@@ -179,20 +166,7 @@ class TaskStage:
 @dataclass(kw_only=True, eq=False)
 class Task:
     _registry: ClassVar[Dict[str, Type["Task"]]] = {}
-    _TYPE_TO_PACK_ID: ClassVar[Dict[str, str]] = {
-        "HttpTask": "http",
-        "BilibiliTask": "bili",
-        "M3U8Task": "m3u8",
-        "M3U8InstallTask": "m3u8",
-        "FFmpegMergeTask": "ffmpeg",
-        "FFmpegInstallTask": "ffmpeg",
-        "BitTorrentTask": "bt",
-        "BTTask": "bt",
-        "FtpTask": "ftp",
-    }
-    _TYPE_ALIASES: ClassVar[Dict[str, str]] = {
-        "BitTorrentTask": "BTTask",
-    }
+    supportsEdit: ClassVar[bool] = False
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -207,7 +181,6 @@ class Task:
     createdAt: int = field(default_factory=lambda: int(time_ns()))
     path: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
     fileSize: int = 0
-    metadata: dict = field(default_factory=dict)
     files: list[TaskFile] | None = None
     category: str = ""
     usesSlot: bool = True
@@ -238,8 +211,6 @@ class Task:
         self.title = toSafeFilename(self.title, fallback="download")
         for stage in self.stages:
             stage._bindTask(self)
-        for stage in self.stages:
-            stage.updateOutputFile(self.path, self.title)
         self.updateStatus()
 
         if not self.category:
@@ -249,8 +220,6 @@ class Task:
 
     def setTitle(self, title: str):
         self.title = toSafeFilename(title, fallback=self.title or "download")
-        for stage in self.stages:
-            stage.updateOutputFile(self.path, self.title)
 
     def currentSnapshot(self) -> tuple[float, int, int]:
         if not self.stages:
@@ -360,11 +329,28 @@ class Task:
         path = payload.get("path")
         if isinstance(path, (str, Path)):
             self.path = Path(path)
-            for stage in self.stages:
-                stage.updateOutputFile(self.path, self.title)
 
         if "category" in payload:
             self.category = payload["category"]
+
+    def editorCards(self, parent):
+        return []
+
+    def tryKeepProgress(self, newTask: "Task") -> bool:
+        # 子类默认不支持热替换 → 调用方走 replaceWith; HttpTask 在 fileSize / stage
+        # 数一致时能把新 url/headers 灌进旧 stage 保住进度, 此时返回 True
+        return False
+
+    def replaceWith(self, newTask: "Task") -> None:
+        # taskId / path / category 留, 其余 (url / title / fileSize / stages) 全换
+        self.cleanup()
+        self.url = newTask.url
+        self.title = newTask.title
+        self.fileSize = newTask.fileSize
+        self.stages = newTask.stages
+        for stage in self.stages:
+            stage._bindTask(self)
+        self.updateStatus()
 
     def cleanup(self):
         for stage in self.stages:
@@ -409,14 +395,7 @@ class Task:
             obj = data
 
         typeName = obj.pop("type", None)
-
-        targetCls = cls
-        if isinstance(typeName, str):
-            resolvedName = Task._TYPE_ALIASES.get(typeName, typeName)
-            targetCls = Task._registry.get(resolvedName, cls)
-
-        if "packId" not in obj and isinstance(typeName, str):
-            obj["packId"] = Task._TYPE_TO_PACK_ID.get(typeName, "http")
+        targetCls = Task._registry.get(typeName, cls) if isinstance(typeName, str) else cls
 
         if "status" in obj and isinstance(obj["status"], str):
             obj["status"] = TaskStatus[obj["status"]]

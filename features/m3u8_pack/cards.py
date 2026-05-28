@@ -79,11 +79,12 @@ class M3U8ResultCard(ResultCard):
         self.mainLayout.addWidget(self.filenameLabel, 1)
         self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.metaLabel)
+        self.mainLayout.addWidget(self.editButton)
         self.mainLayout.addWidget(self.categoryButton)
 
     def _metaText(self) -> str:
-        manifestText = "DASH" if self.task.metadata.get('manifestType', 'm3u8') == "mpd" else "HLS"
-        modeText = self.tr("直播") if self.task.metadata.get('isLive', False) else self.tr("点播")
+        manifestText = "DASH" if self.task.manifestType == "mpd" else "HLS"
+        modeText = self.tr("直播") if self.task.isLive else self.tr("点播")
         return f"{manifestText} · {modeText}"
 
     def _refreshIcon(self):

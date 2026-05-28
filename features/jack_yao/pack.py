@@ -17,7 +17,7 @@ from qfluentwidgets import MaskDialogBase, \
 
 from app.bases.interfaces import FeaturePack
 from app.services.core_service import coreService
-from app.supports.config import cfg, DEFAULT_HEADERS
+from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import getProxies
 
 if sys.platform != "darwin":
@@ -319,7 +319,7 @@ class DownloadOptionDialog(MaskDialogBase):
         """开始下载任务"""
         payload = {
             "url": self.listData[self.versionCard.comboBox.currentIndex()]["Url"],
-            "headers": DEFAULT_HEADERS,
+            "headers": defaultHeaders(),
             "proxies": getProxies(),
             "path": Path(cfg.downloadFolder.value),
         }

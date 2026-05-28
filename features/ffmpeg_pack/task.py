@@ -26,9 +26,10 @@ class FFmpegResourceStage(HttpTaskStage):
     role: str = "video"
     extension: str = ""
 
-    def updateOutputFile(self, taskPath: Path, taskTitle: str):
+    @property
+    def outputFile(self) -> str:
         suffix = f".{self.extension}" if self.extension else ""
-        self.outputFile = str(taskPath / f"{_baseTitle(taskTitle)}.{self.role}{suffix}")
+        return str(Path(self.task.path) / f"{_baseTitle(self.task.title)}.{self.role}{suffix}")
 
 
 def _parseDuration(value: str) -> float:
@@ -64,20 +65,23 @@ class FFmpegStage(TaskStage):
     workerType: type = field(init=False, repr=False)
     canPause: bool = field(init=False, default=False)
 
-    videoPath: Path = field(default_factory=Path)
-    audioPath: Path = field(default_factory=Path)
-    outputFile: Path = field(default_factory=Path)
     videoExtension: str = ""
     audioExtension: str = ""
     cleanupSource: bool = True
 
-    def updateOutputFile(self, taskPath: Path, taskTitle: str):
-        baseTitle = _baseTitle(taskTitle)
-        videoSuffix = f".{self.videoExtension}" if self.videoExtension else ""
-        audioSuffix = f".{self.audioExtension}" if self.audioExtension else ""
-        self.outputFile = taskPath / f"{baseTitle}.mp4"
-        self.videoPath = taskPath / f"{baseTitle}.video{videoSuffix}"
-        self.audioPath = taskPath / f"{baseTitle}.audio{audioSuffix}"
+    @property
+    def outputFile(self) -> Path:
+        return Path(self.task.path) / f"{_baseTitle(self.task.title)}.mp4"
+
+    @property
+    def videoPath(self) -> Path:
+        suffix = f".{self.videoExtension}" if self.videoExtension else ""
+        return Path(self.task.path) / f"{_baseTitle(self.task.title)}.video{suffix}"
+
+    @property
+    def audioPath(self) -> Path:
+        suffix = f".{self.audioExtension}" if self.audioExtension else ""
+        return Path(self.task.path) / f"{_baseTitle(self.task.title)}.audio{suffix}"
 
 
 class FFmpegWorker(Worker):

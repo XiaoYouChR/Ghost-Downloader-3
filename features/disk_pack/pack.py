@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from app.bases.interfaces import FeaturePack
-from app.supports.config import DEFAULT_HEADERS
+from app.supports.config import defaultHeaders
 from app.supports.utils import getProxies, toPosixPath
 from .task import ExtractStage, InstallStage, InstallTask
 
@@ -25,7 +25,7 @@ async def buildToolInstallTask(
 
     downloadPayload = {
         "url": downloadUrl,
-        "headers": (headers or DEFAULT_HEADERS).copy(),
+        "headers": (headers or defaultHeaders()).copy(),
         "proxies": getProxies(),
         "path": installFolder,
     }
@@ -48,10 +48,7 @@ async def buildToolInstallTask(
         fileSize=archiveSize,
         path=installFolder,
         usesSlot=False,
-        metadata={
-            "installFolder": str(installFolder),
-            "assetName": assetName,
-        },
+        installFolder=str(installFolder),
     )
     extractDir = toPosixPath(installFolder / ".extracting")
     task.addStage(downloadStage)
