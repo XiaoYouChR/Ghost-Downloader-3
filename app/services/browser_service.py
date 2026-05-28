@@ -497,38 +497,16 @@ class BrowserService(QObject):
             )
             return
 
-        card = self.mainWindow.taskPage.findCardByTaskId(task.taskId)
-        if card is not None:
-            card.deleted.emit()
-            card.onTaskDeleted(True)
-        else:
-            taskService.remove(task)
-            self._removeTaskArtifacts(task)
+        try:
+            task.cleanup()
+        except Exception as cleanupError:
+            logger.opt(exception=cleanupError).error(
+                "failed to delete task resources {}", task.taskId
+            )
+        taskService.remove(task)
 
         self._sendResult(session, BrowserMessageType.TASK_ACTION_RESULT, requestId, ok=True)
         self._broadcastTaskSnapshots()
-
-    def _removeTaskArtifacts(self, task: Task):
-        candidates: set[Path] = set()
-        if task.outputFolder:
-            candidates.add(Path(task.outputFolder))
-
-        for stage in task.stages:
-            outputFile = getattr(stage, "outputFile", "")
-            if outputFile:
-                candidates.add(Path(outputFile))
-
-        for target in candidates:
-            for path in (target, Path(str(target) + ".ghd")):
-                try:
-                    if path.is_file() or path.is_symlink():
-                        path.unlink()
-                except FileNotFoundError:
-                    continue
-                except PermissionError:
-                    logger.warning("skip removing busy file {}", path)
-                except Exception as error:
-                    logger.opt(exception=error).error("failed to remove task file {}", path)
 
     def _onTaskRedownloaded(
         self,
@@ -548,12 +526,7 @@ class BrowserService(QObject):
             return
 
         try:
-            card = self.mainWindow.taskPage.findCardByTaskId(task.taskId)
-            if card is not None:
-                card.onTaskDeleted(True)
-            else:
-                self._removeTaskArtifacts(task)
-
+            task.cleanup()
             task.reset()
             taskService.scheduleFlush()
             coreService.createTask(task)

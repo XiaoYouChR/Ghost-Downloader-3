@@ -1,6 +1,3 @@
-import shutil
-from pathlib import Path
-
 from PySide6.QtCore import QEvent, QFileInfo, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
@@ -9,22 +6,11 @@ from qfluentwidgets import BodyLabel, ImageLabel, LineEdit, StrongBodyLabel
 from app.bases.models import Task, TaskStatus
 from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
-from .task import M3U8TaskStage
 
 
 class M3U8TaskCard(UniversalTaskCard):
     def _renderTaskState(self):
-        division = max(1, len(self.task.stages))
-        progress = 0.0
-        speed = 0
-        receivedBytes = 0
-
-        for stage in self.task.stages:
-            progress += stage.progress
-            speed += stage.speed
-            receivedBytes += stage.receivedBytes
-
-        progress /= division
+        progress, speed, receivedBytes = self.task.currentSnapshot()
         self.progressBar.setValue(progress)
 
         if self.task.fileSize > 1:
@@ -62,24 +48,6 @@ class M3U8TaskCard(UniversalTaskCard):
 
         self.refreshToggleButton()
 
-    def onTaskDeleted(self, completely: bool = False):
-        if not completely:
-            return
-
-        task = self.task
-        Path(task.outputFolder).unlink(missing_ok=True)
-        for stage in task.stages:
-            if isinstance(stage, M3U8TaskStage) and stage.tempDir:
-                shutil.rmtree(Path(stage.tempDir), ignore_errors=True)
-
-        outputDirectory = Path(task.path)
-        if outputDirectory.exists():
-            prefix = f"{task.title}."
-            for candidate in outputDirectory.iterdir():
-                if candidate.name == Path(task.outputFolder).name:
-                    continue
-                if candidate.is_file() and candidate.name.startswith(prefix):
-                    candidate.unlink(missing_ok=True)
 
 
 class M3U8ResultCard(ResultCard):

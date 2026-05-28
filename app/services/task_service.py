@@ -10,6 +10,11 @@ from app.supports.paths import APP_DATA_DIR
 
 class TaskService(QObject):
 
+    taskAdded = Signal(object)
+    taskRemoved = Signal(str)
+
+    # Queued internal trigger: cross-thread emit hops to GUI event loop,
+    # so scheduleFlush() is safe from any thread without a mutex.
     _flushRequested = Signal()
 
     def __init__(self):
@@ -27,9 +32,6 @@ class TaskService(QObject):
         self._flushTimer.setInterval(200)
         self._flushTimer.timeout.connect(self._flush)
 
-        # AutoConnection: same-thread emit → direct call (GUI thread);
-        # cross-thread emit (worker → GUI) → queued to GUI event loop.
-        # This is what makes scheduleFlush() thread-safe without a mutex.
         self._flushRequested.connect(self._onFlushRequested)
 
     def load(self):
@@ -58,12 +60,15 @@ class TaskService(QObject):
             raise ValueError(f"task {task.taskId} already exists")
         self.tasks[task.taskId] = task
         self.scheduleFlush()
+        self.taskAdded.emit(task)
 
     def remove(self, task: Task):
         if task.taskId not in self.tasks:
             return
-        del self.tasks[task.taskId]
+        taskId = task.taskId
+        del self.tasks[taskId]
         self.scheduleFlush()
+        self.taskRemoved.emit(taskId)
 
     def scheduleFlush(self):
         """Coalesce bursts via 200ms debounce. Safe from any thread."""

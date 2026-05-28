@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -24,15 +23,6 @@ from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 from app.view.components.labels import IconBodyLabel
 from .task import BTFile, BTTask
-
-
-def _removePath(path: Path):
-    if not path.exists():
-        return
-    if path.is_dir():
-        shutil.rmtree(path, ignore_errors=True)
-        return
-    path.unlink(missing_ok=True)
 
 
 def _openFileSelection(task: BTTask, parent) -> set[int] | None:
@@ -202,13 +192,6 @@ class BTTaskCard(UniversalTaskCard):
             and Path(self.task.outputFolder).is_file()
         )
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.COMPLETED or self.task.hasUnselected)
-
-    def onTaskDeleted(self, completely: bool = False):
-        if not completely:
-            return
-        _removePath(Path(self.task.outputFolder))
-        if self.task.magnetTorrentPath is not None:
-            _removePath(self.task.magnetTorrentPath)
 
     def onTaskFinished(self):
         super().onTaskFinished()

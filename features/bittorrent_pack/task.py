@@ -6,7 +6,7 @@ from typing import Any
 from loguru import logger
 
 from app.bases.models import Task, TaskStage, TaskStatus
-from app.supports.utils import getProxies, toSafeFilename
+from app.supports.utils import getProxies, removePath, toSafeFilename
 from .config import bittorrentConfig
 
 
@@ -121,6 +121,11 @@ class BTTask(Task):
 
         self.fileSelectionVersion += 1
         self.fileSize = sum(file.size for file in self.files if file.selected)
+
+    def cleanup(self):
+        super().cleanup()
+        if self.magnetTorrentPath is not None:
+            removePath(self.magnetTorrentPath)
 
     def reopen(self) -> bool:
         if self.stage.status != TaskStatus.COMPLETED:

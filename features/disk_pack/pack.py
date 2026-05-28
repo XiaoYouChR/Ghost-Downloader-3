@@ -1,10 +1,9 @@
 from pathlib import Path
 
 from app.bases.interfaces import FeaturePack
-from app.bases.models import Task
 from app.supports.config import DEFAULT_HEADERS
 from app.supports.utils import getProxies, toPosixPath
-from .task import ExtractStage, InstallStage
+from .task import ExtractStage, InstallStage, InstallTask
 
 
 class DiskPack(FeaturePack):
@@ -21,7 +20,7 @@ async def buildToolInstallTask(
     installFolder: Path,
     executableNames: list[str],
     headers: dict[str, str] | None = None,
-) -> Task:
+) -> InstallTask:
     from app.services.feature_service import featureService
 
     downloadPayload = {
@@ -42,7 +41,7 @@ async def buildToolInstallTask(
     downloadStage.stageIndex = 1
     downloadStage.outputFile = archivePath
 
-    task = Task(
+    task = InstallTask(
         title=title,
         url=downloadTask.url,
         packId=packId,

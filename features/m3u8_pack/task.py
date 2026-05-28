@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.bases.interfaces import Worker
-from app.bases.models import TaskStage, TaskStatus
-from app.supports.utils import toBytes, toPosixPath
+from app.bases.models import Task, TaskStage, TaskStatus
+from app.supports.utils import removePath, toBytes, toPosixPath
 from .config import downloaderPath
 
 if TYPE_CHECKING:
@@ -64,6 +64,30 @@ class M3U8TaskStage(TaskStage):
         self.outputFile = toPosixPath(taskPath / taskTitle)
         self.tempDir = toPosixPath(taskPath / ".gd3_m3u8" / self.task.taskId)
         self.saveName = Path(taskTitle).stem
+
+    def cleanup(self):
+        if self.tempDir:
+            removePath(Path(self.tempDir))
+
+
+@dataclass(kw_only=True, eq=False)
+class M3U8Task(Task):
+    packId: str = "m3u8"
+
+    def cleanup(self):
+        super().cleanup()
+        # N_m3u8DL-RE 在 task.path 留下同前缀的中间产物（.m3u8、.ts、log 等），
+        # 用前缀匹配兜底删除；输出文件本身在 super().cleanup() 里已经处理。
+        outputDirectory = Path(self.path)
+        if not outputDirectory.exists():
+            return
+        prefix = f"{self.title}."
+        outputName = Path(self.outputFolder).name
+        for candidate in outputDirectory.iterdir():
+            if candidate.name == outputName:
+                continue
+            if candidate.is_file() and candidate.name.startswith(prefix):
+                candidate.unlink(missing_ok=True)
 
 
 class M3U8Worker(Worker):

@@ -196,6 +196,20 @@ def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
     return toPosixPath(found) if found else ""
 
 
+def removePath(path: Path):
+    try:
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.is_file() or path.is_symlink():
+            path.unlink(missing_ok=True)
+    except FileNotFoundError:
+        return
+    except PermissionError:
+        logger.warning("skip removing busy {}", path)
+    except Exception as e:
+        logger.opt(exception=e).error("failed to remove {}", path)
+
+
 def toBytes(value: str, unit: str) -> int:
     _SCALE = {"B": 1, "KB": 1024, "MB": 1024 ** 2, "GB": 1024 ** 3,
               "Bps": 1, "KBps": 1024, "MBps": 1024 ** 2, "GBps": 1024 ** 3}

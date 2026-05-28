@@ -333,10 +333,8 @@ class MainWindow(MSFluentWindow):
             if deduplicateFilename(task):
                 logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
 
-            card = featureService.taskCard(task, self)
             taskService.add(task)
-            self.taskPage.addCard(card)
-            card.resumeTask()
+            coreService.createTask(task)
             return True
         except Exception as e:
             logger.opt(exception=e).error("无法创建任务卡片 {}", task.title)

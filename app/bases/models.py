@@ -12,7 +12,8 @@ from orjson import loads, dumps
 from qfluentwidgets import SettingCard
 
 from app.supports.config import cfg, ConfigItem
-from app.supports.utils import toSafeFilename
+from app.supports.utils import removePath, toSafeFilename
+
 
 if TYPE_CHECKING:
     from app.bases.interfaces import Worker
@@ -20,19 +21,38 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
 
 
+class TaskStatus(IntEnum):
+    WAITING = auto()
+    RUNNING = auto()
+    PAUSED = auto()
+    COMPLETED = auto()
+    FAILED = auto()
+
+
+class SpecialFileSize(IntEnum):
+    NOT_SUPPORTED = -1
+    UNKNOWN = 0
+
+
 def _toSerializable(obj: Any) -> Any:
     if isinstance(obj, TaskStatus):
         return obj.name
     if isinstance(obj, Path):
         return str(obj)
-    if is_dataclass(obj):
-        result: dict[str, Any] = {}
-        for f in dataclass_fields(obj):
-            if not f.repr:
-                continue
-            value = getattr(obj, f.name)
-            result[f.name] = _toSerializable(value)
+    if isinstance(obj, (TaskStage, Task)):
+        result = {
+            f.name: _toSerializable(getattr(obj, f.name))
+            for f in dataclass_fields(obj) if f.repr
+        }
+        baseName = "TaskStage" if isinstance(obj, TaskStage) else "Task"
+        if type(obj).__name__ != baseName:
+            result["type"] = type(obj).__name__
         return result
+    if is_dataclass(obj):
+        return {
+            f.name: _toSerializable(getattr(obj, f.name))
+            for f in dataclass_fields(obj) if f.repr
+        }
     if isinstance(obj, list):
         return [_toSerializable(item) for item in obj]
     if isinstance(obj, dict):
@@ -47,14 +67,6 @@ def _filterProperty(cls: type, obj: dict[str, Any]) -> dict[str, Any]:
             if isinstance(val, property):
                 allowed.discard(name)
     return {key: value for key, value in obj.items() if key in allowed}
-
-
-class TaskStatus(IntEnum):
-    WAITING = auto()
-    RUNNING = auto()
-    PAUSED = auto()
-    COMPLETED = auto()
-    FAILED = auto()
 
 
 @dataclass(kw_only=True)
@@ -129,15 +141,16 @@ class TaskStage:
     def updateOutputFile(self, taskPath: Path, taskTitle: str):
         pass
 
+    def cleanup(self):
+        """Remove per-stage temporary artifacts. Subclasses override."""
+        pass
+
     @classmethod
     def fromFile(cls, file: TaskFile, task: "Task") -> "TaskStage":
         raise NotImplementedError
 
     def serialize(self) -> bytes:
-        obj = _toSerializable(self)
-        if type(self).__name__ != "TaskStage":
-            obj["type"] = type(self).__name__
-        return dumps(obj)
+        return dumps(_toSerializable(self))
 
     @classmethod
     def deserialize(cls, data: Any) -> "TaskStage":
@@ -165,6 +178,26 @@ class TaskStage:
 
 @dataclass(kw_only=True, eq=False)
 class Task:
+    _registry: ClassVar[Dict[str, Type["Task"]]] = {}
+    _TYPE_TO_PACK_ID: ClassVar[Dict[str, str]] = {
+        "HttpTask": "http",
+        "BilibiliTask": "bili",
+        "M3U8Task": "m3u8",
+        "M3U8InstallTask": "m3u8",
+        "FFmpegMergeTask": "ffmpeg",
+        "FFmpegInstallTask": "ffmpeg",
+        "BitTorrentTask": "bt",
+        "BTTask": "bt",
+        "FtpTask": "ftp",
+    }
+    _TYPE_ALIASES: ClassVar[Dict[str, str]] = {
+        "BitTorrentTask": "BTTask",
+    }
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        Task._registry[cls.__name__] = cls
+
     title: str
     url: str
     packId: str
@@ -201,11 +234,6 @@ class Task:
                 return stage.error
         return ""
 
-    def setTitle(self, title: str):
-        self.title = toSafeFilename(title, fallback=self.title or "download")
-        for stage in self.stages:
-            stage.updateOutputFile(self.path, self.title)
-
     def __post_init__(self):
         self.title = toSafeFilename(self.title, fallback="download")
         for stage in self.stages:
@@ -218,6 +246,25 @@ class Task:
             from app.services.category_service import categoryService
 
             self.category = categoryService.categoryOf(self)
+
+    def setTitle(self, title: str):
+        self.title = toSafeFilename(title, fallback=self.title or "download")
+        for stage in self.stages:
+            stage.updateOutputFile(self.path, self.title)
+
+    def currentSnapshot(self) -> tuple[float, int, int]:
+        if not self.stages:
+            return 0.0, 0, 0
+
+        progress = 0.0
+        speed = 0
+        receivedBytes = 0
+        for stage in self.stages:
+            progress += stage.progress
+            speed += stage.speed
+            receivedBytes += stage.receivedBytes
+
+        return progress / len(self.stages), speed, receivedBytes
 
     def addStage(self, stage: TaskStage):
         stage._bindTask(self)
@@ -290,14 +337,16 @@ class Task:
 
         stagesToRemove = [
             stage for stage in self.stages
-            if hasattr(stage, "fileIndex") and stage.fileIndex not in selectedSet
+            if (fileIndex := getattr(stage, "fileIndex", None)) is not None
+            and fileIndex not in selectedSet
         ]
         for stage in stagesToRemove:
             self.stages.remove(stage)
 
         existingFileIndexes = {
-            stage.fileIndex for stage in self.stages
-            if hasattr(stage, "fileIndex")
+            fileIndex
+            for stage in self.stages
+            if (fileIndex := getattr(stage, "fileIndex", None)) is not None
         }
         for file in self.files:
             if file.selected and file.index not in existingFileIndexes:
@@ -317,6 +366,22 @@ class Task:
         if "category" in payload:
             self.category = payload["category"]
 
+    def cleanup(self):
+        for stage in self.stages:
+            stage.cleanup()
+
+        targets: set[Path] = set()
+        if self.outputFolder:
+            targets.add(Path(self.outputFolder))
+        for stage in self.stages:
+            outputFile = getattr(stage, "outputFile", None)
+            if outputFile:
+                targets.add(Path(outputFile))
+
+        for target in targets:
+            removePath(target)
+            removePath(Path(str(target) + ".ghd"))
+
     async def run(self):
         currentStage = None
         try:
@@ -334,37 +399,7 @@ class Task:
             raise
 
     def serialize(self) -> bytes:
-        obj = _toSerializable(self)
-        obj.pop("stageType", None)
-        if type(self).__name__ != "Task":
-            obj["type"] = type(self).__name__
-        if "stages" in obj:
-            obj["stages"] = [loads(stage.serialize()) for stage in self.stages]
-        if "files" in obj and self.files is not None:
-            obj["files"] = [_toSerializable(f) for f in self.files]
-        return dumps(obj)
-
-    _registry: ClassVar[Dict[str, Type["Task"]]] = {}
-
-    _TYPE_TO_PACK_ID: ClassVar[Dict[str, str]] = {
-        "HttpTask": "http",
-        "BilibiliTask": "bili",
-        "M3U8Task": "m3u8",
-        "M3U8InstallTask": "m3u8",
-        "FFmpegMergeTask": "ffmpeg",
-        "FFmpegInstallTask": "ffmpeg",
-        "BitTorrentTask": "bt",
-        "BTTask": "bt",
-        "FtpTask": "ftp",
-    }
-
-    _TYPE_ALIASES: ClassVar[Dict[str, str]] = {
-        "BitTorrentTask": "BTTask",
-    }
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        Task._registry[cls.__name__] = cls
+        return dumps(_toSerializable(self))
 
     @classmethod
     def deserialize(cls, data: Any) -> "Task":
@@ -389,8 +424,7 @@ class Task:
             obj["path"] = Path(obj["path"])
 
         rawStages = obj.pop("stages", [])
-        stages = [TaskStage.deserialize(raw) for raw in rawStages]
-        obj["stages"] = stages
+        obj["stages"] = [TaskStage.deserialize(raw) for raw in rawStages]
 
         rawFiles = obj.pop("files", None)
         if rawFiles is not None and targetCls is cls:
@@ -422,8 +456,3 @@ class PackConfig:
 
     def tr(self, text: str) -> str:
         return QCoreApplication.translate(self.__class__.__name__, text)
-
-
-class SpecialFileSize(IntEnum):
-    NOT_SUPPORTED = -1
-    UNKNOWN = 0

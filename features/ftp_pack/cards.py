@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QFileInfo, Qt
@@ -24,15 +23,6 @@ from app.supports.utils import toReadableSize, toReadableTime, openFile, openFol
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
 from .task import FtpTask
-
-
-def _removePath(path: Path):
-    if not path.exists():
-        return
-    if path.is_dir():
-        shutil.rmtree(path, ignore_errors=True)
-        return
-    path.unlink(missing_ok=True)
 
 
 def _openFileSelection(task: FtpTask, parent) -> set[int] | None:
@@ -267,18 +257,3 @@ class FtpTaskCard(UniversalTaskCard):
         self.selectFilesButton.setVisible(self.task.countAll > 1)
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
 
-    def onTaskDeleted(self, completely: bool = False):
-        if not completely:
-            return
-
-        if self.task.isDirectory:
-            _removePath(Path(self.task.outputFolder))
-            return
-
-        for stage in self.task.stages:
-            outputFile = stage.outputFile.strip()
-            if not outputFile:
-                continue
-            target = Path(outputFile)
-            _removePath(target)
-            _removePath(Path(str(target) + ".ghd"))

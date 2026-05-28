@@ -12,14 +12,13 @@ from app.bases.models import Task, SpecialFileSize
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, toExecutable, toSafeFilename
 from .config import ffmpegConfig, ffmpegPaths
+from app.view.components.cards import UniversalTaskCard
 from .task import FFmpegResourceStage, FFmpegStage
 
 if TYPE_CHECKING:
-    from features.disk_pack.cards import InstallTaskCard
     from features.disk_pack.pack import buildToolInstallTask
     from features.http_pack.task import HttpTaskStage
 else:
-    from disk_pack.cards import InstallTaskCard
     from disk_pack.pack import buildToolInstallTask
     from http_pack.task import HttpTaskStage
 
@@ -223,5 +222,5 @@ class FFmpegPack(FeaturePack):
     def taskCard(self, task, parent=None):
         # installFolder 在 buildToolInstallTask 时写入 metadata，区分 FFmpeg 安装任务和合并任务
         if "installFolder" in task.metadata:
-            return InstallTaskCard(task, parent)
+            return UniversalTaskCard(task, parent)
         return super().taskCard(task, parent)

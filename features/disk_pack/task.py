@@ -8,8 +8,24 @@ from pathlib import Path
 from time import perf_counter
 
 from app.bases.interfaces import Worker
-from app.bases.models import TaskStage, TaskStatus
-from app.supports.utils import toPosixPath
+from app.bases.models import Task, TaskStage, TaskStatus
+from app.supports.utils import removePath, toPosixPath
+
+
+@dataclass(kw_only=True, eq=False)
+class InstallTask(Task):
+    """A task that downloads + extracts + installs a tool into a folder.
+
+    Cleanup wipes the entire installFolder (recorded in metadata by the
+    install worker) rather than just removing the downloaded archive.
+    """
+
+    def cleanup(self):
+        installFolder = self.metadata.get("installFolder")
+        if installFolder:
+            removePath(Path(installFolder))
+            return
+        super().cleanup()
 
 
 _CHUNK_SIZE = 1 << 20

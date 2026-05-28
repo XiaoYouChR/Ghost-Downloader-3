@@ -12,15 +12,14 @@ from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import DEFAULT_HEADERS, cfg
 from app.supports.utils import getProxies, splitCookies, toExecutable, toSafeFilename
+from app.view.components.cards import UniversalTaskCard
 from .cards import M3U8ResultCard, M3U8TaskCard
 from .config import m3u8Config
-from .task import M3U8TaskStage
+from .task import M3U8Task, M3U8TaskStage
 
 if TYPE_CHECKING:
-    from features.disk_pack.cards import InstallTaskCard
     from features.disk_pack.pack import buildToolInstallTask
 else:
-    from disk_pack.cards import InstallTaskCard
     from disk_pack.pack import buildToolInstallTask
 
 
@@ -100,7 +99,7 @@ class M3U8Pack(FeaturePack):
     def taskCard(self, task, parent=None):
         # installFolder 在 buildToolInstallTask 时写入 metadata，区分 N_m3u8DL-RE 安装任务和普通下载
         if "installFolder" in task.metadata:
-            return InstallTaskCard(task, parent)
+            return UniversalTaskCard(task, parent)
         return M3U8TaskCard(task, parent)
 
     def resultCard(self, task, parent=None):
@@ -137,7 +136,7 @@ class M3U8Pack(FeaturePack):
         extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
         title = _title(response.url, loweredHeaders, extension)
 
-        task = Task(
+        task = M3U8Task(
             title=title,
             url=url,
             packId=self.packId,

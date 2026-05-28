@@ -16,7 +16,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import SpecialFileSize, Task, TaskStage, TaskStatus
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import getProxies, toSafeFilename
+from app.supports.utils import getProxies, removePath, toSafeFilename
 
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
@@ -151,6 +151,39 @@ class FtpTask(Task):
             for stage in self.stages
             if self.fileByIndex(stage.fileIndex).selected
         ]
+
+    def currentSnapshot(self) -> tuple[float, int, int]:
+        selectedStages = self.selectedStages
+        if not selectedStages:
+            return 0.0, 0, 0
+
+        receivedBytes = 0
+        speed = 0
+        progressSum = 0.0
+        for stage in selectedStages:
+            receivedBytes += stage.receivedBytes
+            speed += stage.speed
+            progressSum += stage.progress
+
+        if self.fileSize > 0:
+            progress = receivedBytes / self.fileSize * 100
+        else:
+            progress = progressSum / len(selectedStages)
+
+        return progress, speed, receivedBytes
+
+    def cleanup(self):
+        if self.isDirectory:
+            removePath(Path(self.outputFolder))
+            return
+
+        for stage in self.stages:
+            outputFile = getattr(stage, "outputFile", "").strip()
+            if not outputFile:
+                continue
+            target = Path(outputFile)
+            removePath(target)
+            removePath(Path(str(target) + ".ghd"))
 
     def fileByIndex(self, index: int) -> FtpFile:
         return self._filesByIndex[index]
