@@ -20,6 +20,8 @@ PLATFORM_INCLUDE_PACKAGES = {
 }
 INCLUDE_MODULES = [
     "app.supports.sysio",
+    "app.view.components.edit_task_cards",
+    "app.view.components.edit_task_dialog"
 ]
 
 
