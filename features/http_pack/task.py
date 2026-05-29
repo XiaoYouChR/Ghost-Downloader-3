@@ -395,6 +395,12 @@ class HttpWorker(Worker):
         shouldCleanupRecordFile = False
         Path(self.stage.outputFile).parent.mkdir(parents=True, exist_ok=True)
 
+        # 故意提前占位——HTTP 阶段只落 .video/.audio 中间产物, .mp4 要等 merge
+        # 完才有, 这段窗口期同名任务过 deduplicateFilename 看不到就会撞名
+        finalOutput = Path(self.stage.task.outputFolder)
+        if finalOutput != Path(self.stage.outputFile):
+            finalOutput.touch(exist_ok=True)
+
         restored = False
         if self.stage.supportsRange:
             restored = self.restoreProgress()
