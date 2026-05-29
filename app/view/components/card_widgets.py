@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from qfluentwidgets import ScrollArea, setFont, isDarkTheme
 
 from app.bases.models import Task
-from app.view.components.cards import ResultCard, ParseSettingCard
+from app.view.components.cards import ResultCard
 
 
 class HeaderCardWidgetBase(QWidget):
@@ -143,11 +143,14 @@ class ParseSettingHeaderCardWidget(HeaderCardWidgetBase):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setTitle(self.tr("下载设置"))
-        self.cards: list[ParseSettingCard] = []
+        self.cards: list[QWidget] = []
 
-    def addCard(self, card: ParseSettingCard):
-        if not isinstance(card, ParseSettingCard):
-            raise TypeError("card must be GroupSettingCard")
+    def addCard(self, card: QWidget):
+        # 接受任何提供 payload + payloadChanged 协议的 widget — ParseSettingCard
+        # 是常用基类, 但 EditTaskDialog 的纵向 card (HeadersEditCard/ProxiesEditCard)
+        # 用自定义布局, 不继承 ParseSettingCard。
+        if not hasattr(card, "payload") or not hasattr(card, "payloadChanged"):
+            raise TypeError("card must expose payload property and payloadChanged signal")
 
         self.cards.append(card)
         self.scrollLayout.addWidget(card)

@@ -11,6 +11,9 @@
 > [!IMPORTANT]
 > Welcome to join the Ghost Downloader user group: [756042420](https://qm.qq.com/q/gPk6FR1Hby)
 
+> [!TIP]
+> If you'd like to help translate Ghost Downloader, welcome to join the Crowdin project: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
+
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -18,9 +21,7 @@
 
 <a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-<h3>
-    AI-powered next-generation cross-platform multithreaded downloader
-</h3>
+### AI-powered next-generation cross-platform multithreaded downloader
 
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -29,11 +30,7 @@
 [![Downloads][downloads-shield]][release-url]
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 
-<h4>
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Report Bug</a>
-·    
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml">Request Feature</a>
-</h4>
+##### [Report Bug](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -50,6 +47,9 @@
 |  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
 | 🪟 **Windows** |     `7 SP1+`     | `x86_64`/`arm64` |     ✅      |
 |  🍎 **macOS**  |     `13.0+`      | `x86_64`/`arm64` |     ✅      |
+
+> [!WARNING]
+> Qt `6.6+` no longer supports CPUs without the `AVX` instruction set.
 
 > [!TIP]
 > **Arch Linux AUR support**: Community-maintained packages `ghost-downloader-bin` and `ghost-downloader-git` are now available (Maintainer: [@zxp19821005](https://github.com/zxp19821005))
@@ -108,7 +108,14 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>13713 words</b></sub>
+        <sub><b>14249 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
+          <br />
+          <sub><b>i0ntempest</b></sub></a>
+        <br />
+        <sub><b>1920 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
@@ -116,13 +123,6 @@ Thanks to all contributors who have participated in this project!
           <sub><b>ReM2812</b></sub></a>
         <br />
         <sub><b>1010 words</b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
-          <br />
-          <sub><b>i0ntempest</b></sub></a>
-        <br />
-        <sub><b>947 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />

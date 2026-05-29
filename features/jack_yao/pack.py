@@ -17,7 +17,7 @@ from qfluentwidgets import MaskDialogBase, \
 
 from app.bases.interfaces import FeaturePack
 from app.services.core_service import coreService
-from app.supports.config import cfg, DEFAULT_HEADERS
+from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import getProxies
 
 if sys.platform != "darwin":
@@ -30,26 +30,22 @@ if TYPE_CHECKING:
 
 
 class JackYaoPack(FeaturePack):
+    packId = "jack_yao"
 
-    def load(self, mainWindow:"MainWindow"):
+    def setup(self, mainWindow:"MainWindow"):
         mainWindow.resourceInterface = ResourceInterface()
         mainWindow.addSubInterface(mainWindow.resourceInterface, FluentIcon.CLOUD_DOWNLOAD, "资源下载")
 
 
 async def run():
-    # with open("./Content.json", "r", encoding="utf-8") as f:
-    #     self.json = json.loads(f.read())["OS"]
-    #     f.close()
-    _ = getProxies()
-    client = niquests.AsyncSession(happy_eyeballs=True)
-    client.trust_env = False
-    result = await client.get(
-        url="https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc",
-        headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-        proxies=_, allow_redirects=True)
-    await client.close()
-    return loads(result.text)["OS"]
+    async with niquests.AsyncSession(happy_eyeballs=True) as client:
+        client.trust_env = False
+        result = await client.get(
+            url="https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
+            proxies=getProxies(), allow_redirects=True)
+        return loads(result.text)["OS"]
 
 
 class LoadingStatusWidget(QWidget):
@@ -323,12 +319,12 @@ class DownloadOptionDialog(MaskDialogBase):
         """开始下载任务"""
         payload = {
             "url": self.listData[self.versionCard.comboBox.currentIndex()]["Url"],
-            "headers": DEFAULT_HEADERS,
+            "headers": defaultHeaders(),
             "proxies": getProxies(),
             "path": Path(cfg.downloadFolder.value),
         }
-        coreService.parseUrl(
-            payload,
+        coreService.runCoroutine(
+            coreService._parse(payload),
             lambda task, error: self._onAssetParsed(task, error),
         )
         self.close()

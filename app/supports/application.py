@@ -1,5 +1,5 @@
-from signal import signal, SIGINT
 import sys
+from signal import signal, SIGINT
 
 from PySide6.QtCore import QSharedMemory, QEvent
 from PySide6.QtWidgets import QApplication
@@ -39,7 +39,6 @@ class SingletonApplication(QApplication):
                 import win32gui
 
                 hWnd = win32gui.FindWindow(None, "Ghost Downloader")
-                win32gui.ShowWindow(hWnd, 1)
 
                 # 发送自定义信息唤醒窗口
                 # WM_CUSTOM = win32con.WM_USER + 1

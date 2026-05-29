@@ -1,45 +1,22 @@
-import shutil
-from pathlib import Path
-
 from PySide6.QtCore import QEvent, QFileInfo, Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ImageLabel, LineEdit, StrongBodyLabel
 
-from app.bases.models import TaskStatus
-from app.supports.utils import getReadableSize, getReadableTime
+from app.bases.models import Task, TaskStatus
+from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ResultCard, UniversalTaskCard
-
-from .task import M3U8InstallTask, M3U8Task
-
-
-def _removeFile(path: Path):
-    try:
-        if path.is_file() or path.is_symlink():
-            path.unlink()
-    except FileNotFoundError:
-        pass
 
 
 class M3U8TaskCard(UniversalTaskCard):
     def _renderTaskState(self):
-        division = max(1, len(self.task.stages))
-        progress = 0.0
-        speed = 0
-        receivedBytes = 0
-
-        for stage in self.task.stages:
-            progress += stage.progress
-            speed += stage.speed
-            receivedBytes += stage.receivedBytes
-
-        progress /= division
+        progress, speed, receivedBytes = self.task.currentSnapshot()
         self.progressBar.setValue(progress)
 
         if self.task.fileSize > 1:
-            self.progressLabel.setText(f"{getReadableSize(receivedBytes)}/{getReadableSize(self.task.fileSize)}")
+            self.progressLabel.setText(f"{toReadableSize(receivedBytes)}/{toReadableSize(self.task.fileSize)}")
         else:
-            self.progressLabel.setText(self.tr("{0} / {1:.2f}%").format(getReadableSize(receivedBytes), progress))
+            self.progressLabel.setText(self.tr("{0} / {1:.2f}%").format(toReadableSize(receivedBytes), progress))
 
         if self.task.status == TaskStatus.RUNNING:
             self.progressBar.setError(False)
@@ -48,9 +25,9 @@ class M3U8TaskCard(UniversalTaskCard):
                 self.speedLabel.show()
                 self.leftTimeLabel.show()
                 self.progressLabel.show()
-            self.speedLabel.setText(f"{getReadableSize(speed)}/s")
+            self.speedLabel.setText(f"{toReadableSize(speed)}/s")
             if self.task.fileSize > 1 and speed > 0:
-                self.leftTimeLabel.setText(getReadableTime(int((self.task.fileSize - receivedBytes) / speed)))
+                self.leftTimeLabel.setText(toReadableTime(int((self.task.fileSize - receivedBytes) / speed)))
             else:
                 self.leftTimeLabel.setText("--")
         elif self.task.status == TaskStatus.COMPLETED:
@@ -71,40 +48,11 @@ class M3U8TaskCard(UniversalTaskCard):
 
         self.refreshToggleButton()
 
-    def onTaskDeleted(self, completely: bool = False):
-        if not completely:
-            return
-
-        task = self.task
-        _removeFile(Path(task.resolvePath))
-        shutil.rmtree(Path(task.tempDir), ignore_errors=True)
-
-        outputDirectory = Path(task.path)
-        if outputDirectory.exists():
-            prefix = f"{task.saveName}."
-            for candidate in outputDirectory.iterdir():
-                if candidate.name == Path(task.resolvePath).name:
-                    continue
-                if candidate.is_file() and candidate.name.startswith(prefix):
-                    _removeFile(candidate)
-
-
-class M3U8InstallTaskCard(UniversalTaskCard):
-    def onTaskDeleted(self, completely: bool = False):
-        if not completely:
-            return
-
-        if isinstance(self.task, M3U8InstallTask):
-            shutil.rmtree(self.task.installFolder, ignore_errors=True)
-            return
-
-        super().onTaskDeleted(completely)
 
 
 class M3U8ResultCard(ResultCard):
-    def __init__(self, task: M3U8Task, parent: QWidget = None):
+    def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
-        self.task = task
         self.iconLabel = ImageLabel(self)
         self.filenameLabel = StrongBodyLabel(self.task.title, self)
         self.filenameEdit = LineEdit(self)
@@ -113,6 +61,7 @@ class M3U8ResultCard(ResultCard):
 
         self._initWidget()
         self._initLayout()
+        self._renderCategoryButton()
 
     def _initWidget(self):
         self.setFixedHeight(35)
@@ -127,10 +76,11 @@ class M3U8ResultCard(ResultCard):
         self.mainLayout.setContentsMargins(10, 2, 10, 2)
         self.mainLayout.setSpacing(12)
         self.mainLayout.addWidget(self.iconLabel)
-        self.mainLayout.addWidget(self.filenameLabel)
-        self.mainLayout.addWidget(self.filenameEdit)
-        self.mainLayout.addStretch()
+        self.mainLayout.addWidget(self.filenameLabel, 1)
+        self.mainLayout.addWidget(self.filenameEdit, 1)
         self.mainLayout.addWidget(self.metaLabel)
+        self.mainLayout.addWidget(self.editButton)
+        self.mainLayout.addWidget(self.categoryButton)
 
     def _metaText(self) -> str:
         manifestText = "DASH" if self.task.manifestType == "mpd" else "HLS"
@@ -138,7 +88,7 @@ class M3U8ResultCard(ResultCard):
         return f"{manifestText} · {modeText}"
 
     def _refreshIcon(self):
-        icon = QFileIconProvider().icon(QFileInfo(self.task.resolvePath))
+        icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         self.iconLabel.setImage(icon.pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
 
@@ -167,5 +117,5 @@ class M3U8ResultCard(ResultCard):
         self.filenameEdit.hide()
         self.filenameLabel.show()
 
-    def getTask(self) -> M3U8Task:
+    def getTask(self) -> Task:
         return self.task

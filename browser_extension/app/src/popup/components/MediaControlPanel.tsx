@@ -1,30 +1,30 @@
 import {
-  Body1Strong,
-  Button,
-  Card,
-  Divider,
-  Field,
-  MessageBar,
-  MessageBarBody,
-  Select,
-  Slider,
-  makeStyles,
+    Body1Strong,
+    Button,
+    Card,
+    Divider,
+    Field,
+    makeStyles,
+    MessageBar,
+    MessageBarBody,
+    Select,
+    Slider,
 } from "@fluentui/react-components";
 import {
-  ArrowClockwiseRegular,
-  CameraRegular,
-  FullScreenMaximizeRegular,
-  PauseRegular,
-  PictureInPictureRegular,
-  PlayRegular,
-  Speaker2Regular,
-  SpeakerMuteRegular,
+    ArrowClockwiseRegular,
+    CameraRegular,
+    FullScreenMaximizeRegular,
+    PauseRegular,
+    PictureInPictureRegular,
+    PlayRegular,
+    Speaker2Regular,
+    SpeakerMuteRegular,
 } from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 
-import { PLAYBACK_RATE_OPTIONS } from "../../shared/constants";
-import type { MediaItemOption, MediaPlaybackState, MediaTabOption } from "../../shared/types";
-import { formatShortTime } from "../../shared/utils";
+import {PLAYBACK_RATE_OPTIONS} from "../../shared/constants";
+import type {MediaItemOption, MediaPlaybackState} from "../../shared/types";
+import {formatDuration} from "../../shared/utils";
 
 const useStyles = makeStyles({
   root: {
@@ -102,29 +102,21 @@ function panelMessage(playbackState: MediaPlaybackState) {
     return playbackState.message;
   }
   if (playbackState.available) {
-    return playbackState.stale ? "当前显示的是上一次读取到的媒体状态" : "当前媒体状态已连接";
+    return "当前媒体状态已连接";
   }
   return "当前未检测到可控制媒体";
 }
 
 export function MediaControlPanel({
-  mediaTabs,
   mediaItems,
-  selectedTabId,
-  selectedIndex,
   playbackState,
   busy,
-  onChangeTab,
   onChangeMedia,
   onAction,
 }: {
-  mediaTabs: MediaTabOption[];
   mediaItems: MediaItemOption[];
-  selectedTabId: number | null;
-  selectedIndex: number;
   playbackState: MediaPlaybackState;
   busy?: boolean;
-  onChangeTab: (tabId: number) => void;
   onChangeMedia: (index: number) => void;
   onAction: (action: string, value?: number | boolean) => void;
 }) {
@@ -169,39 +161,18 @@ export function MediaControlPanel({
     onAction("set_volume", volumeDraft / 100);
   }
 
-  const messageIntent =
-    playbackState.available && !playbackState.stale
-      ? "success"
-      : playbackState.available
-        ? "warning"
-        : "info";
+  const messageIntent = playbackState.available ? "success" : "info";
 
   return (
     <section className={styles.root}>
       <Body1Strong>媒体控制</Body1Strong>
 
       <Card appearance="filled-alternative" className={styles.card}>
-        <Field className={styles.selectField} label="选择页面">
-          <Select
-            className={styles.selectControl}
-            disabled={busy || mediaTabs.length === 0}
-            value={selectedTabId !== null ? String(selectedTabId) : ""}
-            onChange={(_event, data) => onChangeTab(Number(data.value))}
-          >
-            <option value="">请选择页面</option>
-            {mediaTabs.map((item) => (
-              <option key={item.tabId} value={String(item.tabId)}>
-                {item.domain ? `${item.title} · ${item.domain}` : item.title}
-              </option>
-            ))}
-          </Select>
-        </Field>
-
         <Field className={styles.selectField} label="选择媒体">
           <Select
             className={styles.selectControl}
             disabled={busy || mediaItems.length === 0}
-            value={selectedIndex >= 0 ? String(selectedIndex) : ""}
+            value={playbackState.mediaIndex >= 0 ? String(playbackState.mediaIndex) : ""}
             onChange={(_event, data) => onChangeMedia(Number(data.value))}
           >
             <option value="">请选择媒体</option>
@@ -233,8 +204,8 @@ export function MediaControlPanel({
             onTouchEnd={() => commitSeek()}
           />
           <div className={styles.sliderMeta}>
-            <span>{formatShortTime(displayCurrentTime)}</span>
-            <span>{formatShortTime(playbackState.duration)}</span>
+            <span>{formatDuration(displayCurrentTime)}</span>
+            <span>{formatDuration(playbackState.duration)}</span>
           </div>
         </div>
 

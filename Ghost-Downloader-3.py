@@ -4,7 +4,8 @@ import traceback
 from time import localtime, strftime, time
 
 from loguru import logger
-from PySide6.QtCore import QStandardPaths
+
+from app.supports.paths import APP_DATA_DIR
 
 # import orjson
 # sys.modules['json'] = orjson
@@ -25,13 +26,12 @@ def exceptionHook(exceptionType, value, tb):
     if "__compiled__" not in globals():
         sys.__excepthook__(*exceptionInfo)
 
-appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
-logger.add(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log", rotation="512 KB", enqueue=True)
+logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", enqueue=True)
 sys.excepthook = exceptionHook
 
-from qfluentwidgets import qconfig
+from qfluentwidgets import qconfig, setTheme
 from app.supports.application import SingletonApplication
-from app.supports.config import VERSION, cfg
+from app.supports.config import VERSION, cfg, toQFluentTheme
 from app.supports.signal_bus import signalBus as exceptionSignalBus
 
 logger.info(
@@ -40,20 +40,22 @@ logger.info(
     strftime("%Y-%m-%d %H:%M:%S", localtime(time())),
 )
 
-qconfig.load(f"{appLocalDataLocation}/GhostDownloader/UserConfig.json", cfg)
+qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
 if cfg.get(cfg.dpiScale) != 0:
     os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
     os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
 
 application = SingletonApplication(sys.argv, "gd3")
+# Prime qfluentwidgets before widgets are constructed; its own default is light.
+setTheme(toQFluentTheme(cfg.customThemeMode.value), save=False)
 
 # --- Start Program ---
 import warnings
 from PySide6.QtCore import QTranslator
 
 from app.view.windows.main_window import MainWindow
-from app.supports.recorder import taskRecorder
+from app.services.task_service import taskService
 # noinspection PyUnresolvedReferences
 import app.assets.resources
 from app.services.core_service import coreService
@@ -70,15 +72,15 @@ application.installTranslator(translator)
 isSilently = "--silence" in sys.argv
 coreService.start()
 mainWindow = MainWindow(isSilently)
-featureService.loadFeatures(mainWindow)
-taskRecorder.load()
+featureService.load(mainWindow)
+taskService.load()
 mainWindow.taskPage.resumeMemorizedTasks()
-mainWindow.syncThemeColor()
+mainWindow.updateThemeColor()
 
 if not isSilently:
     mainWindow.splashScreen.finish()
 
 application.aboutToQuit.connect(coreService.stop)
-application.aboutToQuit.connect(taskRecorder.flush)
+application.aboutToQuit.connect(taskService.flushNow)
 
 sys.exit(application.exec())

@@ -3,15 +3,16 @@ from urllib.parse import urlparse
 from loguru import logger
 
 from app.bases.interfaces import FeaturePack
+from app.bases.models import Task
 from app.services.core_service import coreService
-
-from .cards import BitTorrentResultCard, BitTorrentTaskCard
-from .config import bittorrentConfig, getCachedWebTrackers, refreshConfiguredWebTrackers
-from .task import BitTorrentTask, parse, resolveLocalTorrentPath
+from .cards import BitTorrentResultCard, BTTaskCard
+from .config import bittorrentConfig
+from .loaders import loadLocalTorrent, resolve as _btResolve
+from .web_tracker.service import webTrackerService
 
 
 def _isTorrentUrl(url: str) -> bool:
-    if resolveLocalTorrentPath(url) is not None:
+    if loadLocalTorrent(url) is not None:
         return True
 
     parsedUrl = urlparse(url)
@@ -24,35 +25,37 @@ def _isTorrentUrl(url: str) -> bool:
 
 
 class BitTorrentPack(FeaturePack):
+    packId = "bt"
     priority = 85
-    taskType = BitTorrentTask
     config = bittorrentConfig
 
-    def load(self, mainWindow):
-        if getCachedWebTrackers():
+    def setup(self, mainWindow):
+        if webTrackerService.mergedTrackers():
             return
 
-        coreService.runCoroutine(
-            refreshConfiguredWebTrackers(),
-            self._onDefaultWebTrackersLoaded,
-        )
+        coreService.runCoroutine(webTrackerService.refresh(), self._onTrackersLoaded)
 
-    def canHandle(self, url: str) -> bool:
+    def matches(self, url: str) -> bool:
         return _isTorrentUrl(url)
 
-    async def parse(self, payload: dict) -> BitTorrentTask:
-        return await parse(payload)
+    async def parse(self, payload: dict) -> Task:
+        return await _btResolve(payload)
 
-    def createTaskCard(self, task: BitTorrentTask, parent=None):
-        return BitTorrentTaskCard(task, parent)
+    def taskCard(self, task, parent=None):
+        return BTTaskCard(task, parent)
 
-    def createResultCard(self, task: BitTorrentTask, parent=None):
+    def resultCard(self, task, parent=None):
         return BitTorrentResultCard(task, parent)
 
-    def _onDefaultWebTrackersLoaded(self, result, error: str | None):
+    def _onTrackersLoaded(self, result, error: str | None):
         if error:
             logger.warning("初始化 Web Tracker 失败: {}", error)
             return
 
-        logger.info("已自动初始化 {} 条 Web Tracker", len(result or []))
-        bittorrentConfig.webTrackerCard.refreshContent()
+        success, total = result
+        logger.info(
+            "已自动初始化 {} 条 Web Tracker (成功 {}/{} 个源)",
+            len(webTrackerService.mergedTrackers()),
+            success,
+            total,
+        )

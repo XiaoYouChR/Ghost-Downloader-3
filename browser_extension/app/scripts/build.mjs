@@ -1,14 +1,15 @@
-import { access, cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import {access, cp, mkdir, readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import {fileURLToPath} from "node:url";
 
-import { build as esbuild } from "esbuild";
-import { build as viteBuild } from "vite";
+import {build as esbuild} from "esbuild";
+import {build as viteBuild} from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
 const upstreamDir = path.resolve(appRoot, "../upstream");
 const catchScriptDir = path.resolve(upstreamDir, "catch-script");
+const upstreamContentScript = path.resolve(upstreamDir, "js/content-script.js");
 const firefoxAddonId = "ghostdownloader@github.com";
 const manifestTemplate = JSON.parse(
   await readFile(path.resolve(appRoot, "public/manifest.json"), "utf8"),
@@ -37,6 +38,9 @@ function createManifest(target) {
       gecko: {
         id: firefoxAddonId,
         strict_min_version: "113.0",
+        data_collection_permissions: {
+          required: ["browsingActivity", "websiteContent"],
+        },
       },
     };
     delete manifest.minimum_chrome_version;
@@ -54,9 +58,10 @@ function createManifest(target) {
 
 try {
   await access(catchScriptDir);
+  await access(upstreamContentScript);
 } catch {
   throw new Error(
-    "Missing browser_extension/upstream/catch-script. Run `git submodule update --init --recursive browser_extension/upstream` first.",
+    "Missing browser_extension/upstream files. Run `git submodule update --init --recursive browser_extension/upstream` first.",
   );
 }
 
@@ -93,6 +98,7 @@ for (const [target, config] of Object.entries(buildTargets)) {
 
   await mkdir(config.outDir, { recursive: true });
   await cp(catchScriptDir, path.resolve(config.outDir, "catch-script"), { recursive: true });
+  await cp(upstreamContentScript, path.resolve(config.outDir, "cat-catch-content-script.js"));
   await writeFile(
     path.resolve(config.outDir, "manifest.json"),
     `${JSON.stringify(createManifest(target), null, 2)}\n`,

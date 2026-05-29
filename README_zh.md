@@ -11,6 +11,9 @@
 > [!IMPORTANT]
 > 欢迎加入 Ghost Downloader 用户交流群 [756042420](https://qm.qq.com/q/gPk6FR1Hby)
 
+> [!TIP]
+> 如果你想为 Ghost Downloader 贡献翻译，欢迎前往 Crowdin 项目页: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
+
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -18,10 +21,9 @@
 
 <a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-<h3>
-    AI 赋能的新一代跨平台多线程下载器
-</h3>
+### AI 赋能的新一代跨平台多线程下载器
 
+[![AtomGit Stars][atomgit-stars-shield]][atomgit-stars-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
@@ -29,11 +31,7 @@
 [![Downloads][downloads-shield]][release-url]
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 
-<h4>
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml">Bug 报告</a>
-·    
-  <a href="https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml">功能需求</a>
-</h4>
+##### [Bug 报告](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [功能需求](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -50,6 +48,9 @@
 |  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
 | 🪟 **Windows** |   `7 SP1+`    | `x86_64`/`arm64` | ✅  |
 |  🍎 **macOS**  |    `13.0+`    | `x86_64`/`arm64` | ✅  |
+
+> [!WARNING]
+> 由于 Qt `6.6+` 已经不再支持 `不支持 AVX 指令集的 CPU`
 
 > [!TIP]  
 > **Arch Linux AUR 支持**：现已可通过社区维护的软件包 `ghost-downloader-bin` 和 `ghost-downloader-git` 进行安装（维护者：[@zxp19821005](https://github.com/zxp19821005)）
@@ -108,7 +109,14 @@
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
-        <sub><b>13713 words</b></sub>
+        <sub><b>14249 words</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
+          <br />
+          <sub><b>i0ntempest</b></sub></a>
+        <br />
+        <sub><b>1920 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
@@ -116,13 +124,6 @@
           <sub><b>ReM2812</b></sub></a>
         <br />
         <sub><b>1010 words</b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/i0ntempest"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17636930/medium/f6bf4e67c7b87221f2e7e04345f8c6b2.jpeg" />
-          <br />
-          <sub><b>i0ntempest</b></sub></a>
-        <br />
-        <sub><b>947 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/Dima88888"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16304162/medium/706302f8224fffaf9d81f8cc4168ed24_default.png" />
@@ -196,6 +197,8 @@ Copyright © 2025 XiaoYouChR.
 [forks-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/network/members
 [stars-shield]: https://img.shields.io/github/stars/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [stars-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/stargazers
+[atomgit-stars-shield]: https://img.shields.io/badge/dynamic/xml?style=for-the-badge&label=AtomGit%20Stars&color=red&url=https%3A%2F%2Fgitcode.com%2FXiaoYouChR%2FGhost-Downloader-3%2Fstar%2Fbadge.svg&query=string%28%2F%2F*%5Blocal-name%28%29%3D%22span%22%20and%20contains%28%40class%2C%22star-num%22%29%5D%29
+[atomgit-stars-url]: https://gitcode.com/XiaoYouChR/Ghost-Downloader-3
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
 [product-screenshot]: app/assets/screenshot.png

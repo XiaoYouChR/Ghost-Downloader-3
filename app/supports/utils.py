@@ -1,22 +1,26 @@
 import re
+import shutil
 import sys
 from datetime import datetime
 from functools import wraps
+from http.cookiejar import CookieJar
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Callable
+from urllib.request import getproxies
 
-from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
-from niquests.utils import getproxies
-from PySide6.QtCore import QUrl, Qt, QProcess, QStandardPaths
+from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
+from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg
+from app.supports.paths import APP_DATA_DIR
 
 if TYPE_CHECKING:
     from app.bases.models import Task
+    from os import PathLike
 
 
 _PROXY_PROTOCOLS = ("http", "https", "ftp")
@@ -31,7 +35,7 @@ _WINDOWS_RESERVED_FILENAMES = {
 }
 
 
-def _normalizeFilenameCandidate(value: str) -> str:
+def _sanitize(value: str) -> str:
     candidate = str(value or "")
     lastSeparator = max(candidate.rfind("/"), candidate.rfind("\\"))
     if lastSeparator >= 0:
@@ -50,12 +54,12 @@ def _normalizeFilenameCandidate(value: str) -> str:
     return candidate
 
 
-def sanitizeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:
+def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:
     normalizedFallback = ""
-    candidate = _normalizeFilenameCandidate(name)
+    candidate = _sanitize(name)
 
     if not candidate:
-        normalizedFallback = _normalizeFilenameCandidate(fallback) or "file"
+        normalizedFallback = _sanitize(fallback) or "file"
         candidate = normalizedFallback
 
     if maxLength > 0 and len(candidate) > maxLength:
@@ -72,10 +76,13 @@ def sanitizeFilename(name: str, fallback: str = "file", maxLength: int = 200) ->
         candidate = candidate.rstrip(". ")
         if candidate in {"", ".", ".."}:
             if not normalizedFallback:
-                normalizedFallback = _normalizeFilenameCandidate(fallback) or "file"
+                normalizedFallback = _sanitize(fallback) or "file"
             candidate = normalizedFallback
 
     return candidate
+
+
+
 
 
 def openFolder(path):
@@ -97,8 +104,7 @@ def openFolder(path):
 
 
 def openAppLogFolder():
-    appLocalDataLocation = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)
-    openFolder(f"{appLocalDataLocation}/GhostDownloader/GhostDownloader.log")
+    openFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
 
 
 def getProxies():
@@ -115,11 +121,13 @@ def getProxies():
     return {protocol: proxyServer for protocol in _PROXY_PROTOCOLS}
 
 
-def _parseCookieHeader(cookieHeader: str) -> dict[str, str]:
-    cookies: dict[str, str] = {}
-    if not isinstance(cookieHeader, str):
-        return cookies
+def splitCookies(headers: dict[str, str] | None) -> tuple[dict[str, str], "RequestsCookieJar | CookieJar | None"]:
+    requestHeaders = dict(headers or {})
+    cookieHeader = str(requestHeaders.pop("cookie", "") or "").strip()
+    if not cookieHeader:
+        return requestHeaders, None
 
+    cookieItems: dict[str, str] = {}
     for part in cookieHeader.replace("\r", ";").replace("\n", ";").split(";"):
         part = part.strip()
         if not part or "=" not in part:
@@ -127,43 +135,14 @@ def _parseCookieHeader(cookieHeader: str) -> dict[str, str]:
 
         name, value = part.split("=", 1)
         name = name.strip()
-        value = value.strip()
-        if name and value:
-            cookies[name] = value
+        value = str(value or "").strip()
+        if not name or not value:
+            continue
+        if any(ord(c) < 32 or ord(c) == 127 for c in value):
+            continue
 
-    return cookies
-
-
-def _encodeCookieTransportValue(value: str) -> str:
-    text = str(value or "").strip()
-    if not text:
-        return ""
-
-    if any(ord(char) < 32 or ord(char) == 127 for char in text):
-        return ""
-
-    if all(ord(char) <= 255 for char in text):
-        return text
-
-    return text.encode("utf-8").decode("latin-1")
-
-
-def splitRequestHeadersAndCookies(headers: dict[str, str] | None) -> tuple[dict[str, str], RequestsCookieJar | None]:
-    requestHeaders = dict(headers or {})
-    cookieHeader = str(requestHeaders.pop("cookie", "") or "").strip()
-    if not cookieHeader:
-        return requestHeaders, None
-
-    parsedCookies = _parseCookieHeader(cookieHeader)
-    if not parsedCookies:
-        return requestHeaders, None
-
-    cookieItems: dict[str, str] = {}
-    for name, value in parsedCookies.items():
-        normalizedName = str(name or "").strip()
-        normalizedValue = _encodeCookieTransportValue(value)
-        if normalizedName and normalizedValue:
-            cookieItems[normalizedName] = normalizedValue
+        encodedValue = value if all(ord(c) <= 255 for c in value) else value.encode("utf-8").decode("latin-1")
+        cookieItems[name] = encodedValue
 
     if not cookieItems:
         return requestHeaders, None
@@ -171,14 +150,21 @@ def splitRequestHeadersAndCookies(headers: dict[str, str] | None) -> tuple[dict[
     return requestHeaders, cookiejar_from_dict(cookieItems)
 
 
-def getReadableSize(size: int):
+
+
+
+def toReadableSize(size: int):
     for unit in ['B', 'KB', 'MB', 'GB']:
         if size < 1024.0:
             return f"{size:.2f} {unit}"
         size /= 1024.0
     return f"{size:.2f} TB"
 
-def getReadableTime(seconds: int) -> str:
+
+
+
+
+def toReadableTime(seconds: int) -> str:
     if seconds < 60:
         return f"{seconds}s"
     elif seconds < 3600:
@@ -188,10 +174,52 @@ def getReadableTime(seconds: int) -> str:
         return f"{int(seconds // 3600)}h{int(remainingSeconds // 60)}m{remainingSeconds % 60}s"
 
 
-def ensureUniqueTaskTarget(
+
+
+
+def toPosixPath(path) -> str:
+    return str(Path(path)).replace("\\", "/")
+
+
+def toExecutable(name: str) -> str:
+    return f"{name}.exe" if sys.platform == "win32" else name
+
+
+def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
+    exe = toExecutable(name)
+    candidates = [installFolder / sub / exe for sub in subdirs]
+    candidates.append(installFolder / exe)
+    for candidate in candidates:
+        if candidate.is_file():
+            return toPosixPath(candidate)
+    found = shutil.which(name)
+    return toPosixPath(found) if found else ""
+
+
+def removePath(path: Path):
+    try:
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path, ignore_errors=True)
+        elif path.is_file() or path.is_symlink():
+            path.unlink(missing_ok=True)
+    except FileNotFoundError:
+        return
+    except PermissionError:
+        logger.warning("skip removing busy {}", path)
+    except Exception as e:
+        logger.opt(exception=e).error("failed to remove {}", path)
+
+
+def toBytes(value: str, unit: str) -> int:
+    _SCALE = {"B": 1, "KB": 1024, "MB": 1024 ** 2, "GB": 1024 ** 3,
+              "Bps": 1, "KBps": 1024, "MBps": 1024 ** 2, "GBps": 1024 ** 3}
+    return int(float(value) * _SCALE[unit])
+
+
+def deduplicateFilename(
     task: "Task",
 ) -> bool:
-    target = Path(task.resolvePath.strip())
+    target = Path(task.outputFolder.strip())
     if not target.name:
         return False
 
@@ -261,7 +289,7 @@ def retry(
     return decorator
 
 
-def openFile(fileResolve: "str | bytes | os.PathLike[str]"):
+def openFile(fileResolve: "str | bytes | PathLike[str]"):
     """
     打开文件
 
@@ -285,13 +313,52 @@ def getLocalTimeFromGithubApiTime(gmtTimeStr: str) -> str:
     return localTime.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def bringWindowToTop(window):
+def bringWindowToTop(window) -> None:
     window.show()
-    if window.isMinimized():
-        window.showNormal()
-    # 激活窗口，使其显示在最前面
-    window.activateWindow()
+    window.setWindowState(
+        (window.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive
+    )
     window.raise_()
+    window.activateWindow()
+
+    if sys.platform == "win32":
+        try:
+            _bringWindowToTopOnWindows(int(window.winId()))
+        except Exception as e:
+            logger.opt(exception=e).warning("Failed to bring window to top on Windows")
+
+
+def _bringWindowToTopOnWindows(hwnd: int) -> None:
+    import win32api
+    import win32con
+    import win32gui
+    import win32process
+
+    if win32gui.IsIconic(hwnd):
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+    foregroundHwnd = win32gui.GetForegroundWindow()
+    foregroundThreadId = (
+        win32process.GetWindowThreadProcessId(foregroundHwnd)[0]
+        if foregroundHwnd
+        else 0
+    )
+    currentThreadId = win32api.GetCurrentThreadId()
+    attached = False
+
+    try:
+        if foregroundThreadId and foregroundThreadId != currentThreadId:
+            win32process.AttachThreadInput(currentThreadId, foregroundThreadId, True)
+            attached = True
+
+        win32gui.BringWindowToTop(hwnd)
+        win32gui.SetForegroundWindow(hwnd)
+        flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, flags)
+        win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, flags)
+    finally:
+        if attached:
+            win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
 
 
 def showMessageBox(

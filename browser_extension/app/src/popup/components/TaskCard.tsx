@@ -1,32 +1,17 @@
+import {Avatar, Badge, Body1Strong, Button, Caption1, Card, makeStyles, ProgressBar,} from "@fluentui/react-components";
 import {
-  Avatar,
-  Badge,
-  Body1Strong,
-  Button,
-  Caption1,
-  Card,
-  makeStyles,
-  ProgressBar,
-} from "@fluentui/react-components";
-import {
-  ArrowClockwiseRegular,
-  DismissRegular,
-  FolderOpenRegular,
-  OpenRegular,
-  PauseRegular,
-  PlayRegular,
+    ArrowClockwiseRegular,
+    DismissRegular,
+    FolderOpenRegular,
+    OpenRegular,
+    PauseRegular,
+    PlayRegular,
 } from "@fluentui/react-icons";
 
-import type { GenericTaskSummary, TaskAction } from "../../shared/types";
-import {
-  formatBytes,
-  formatTaskMetric,
-  formatTaskStatus,
-  taskActionLabel,
-  taskVisual,
-} from "../../shared/utils";
-import { taskStatusToBadgeColor, taskStatusToBadgeIcon } from "../lib/fluent";
-import { visualIcon } from "../lib/presenters";
+import type {GenericTaskSummary, TaskAction} from "../../shared/types";
+import {formatBytes, formatTaskMetric, formatTaskStatus, taskActionLabel, taskVisual,} from "../../shared/utils";
+import {taskStatusToBadgeColor, taskStatusToBadgeIcon} from "../lib/fluent";
+import {visualIcon} from "../lib/presenters";
 
 const useStyles = makeStyles({
   root: {

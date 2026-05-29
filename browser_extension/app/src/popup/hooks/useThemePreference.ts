@@ -1,7 +1,7 @@
-import { webDarkTheme, webLightTheme } from "@fluentui/react-components";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {webDarkTheme, webLightTheme} from "@fluentui/react-components";
+import {useCallback, useEffect, useMemo, useState} from "react";
 
-import type { ThemePreference } from "../../shared/types";
+import type {ThemePreference} from "../../shared/types";
 
 const THEME_PREFERENCE_STORAGE_KEY = "gd4bThemePreference";
 const DARK_MODE_QUERY = "(prefers-color-scheme: dark)";
@@ -63,7 +63,6 @@ export function useThemePreference() {
 
   return {
     themePreference,
-    resolvedThemePreference,
     setThemePreference,
     theme,
   };

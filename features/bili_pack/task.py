@@ -1,115 +1,58 @@
-import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
-
-from loguru import logger
-
-from app.bases.models import Task, TaskStatus
-from app.supports.config import DEFAULT_HEADERS, cfg
-from app.supports.utils import getProxies
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from features.ffmpeg_pack.task import FFmpegStage, FFmpegWorker
-    from features.http_pack.task import HttpTaskStage, HttpWorker
+    from features.ffmpeg_pack.task import FFmpegStage
+    from features.http_pack.task import HttpTaskStage
 else:
-    from ffmpeg_pack.task import FFmpegStage, FFmpegWorker
-    from http_pack.task import HttpTaskStage, HttpWorker
+    from ffmpeg_pack.task import FFmpegStage
+    from http_pack.task import HttpTaskStage
 
 
-@dataclass
-class BilibiliTask(Task):
-    headers: dict = field(default_factory=DEFAULT_HEADERS.copy)
-    proxies: dict = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
-    selectedPages: list[int] = field(default_factory=list)
-    pageParts: list[str] = field(default_factory=list)
-    totalPages: int = field(default=1)
+def _bilibiliStem(taskTitle: str, pageSuffix: str) -> str:
+    baseTitle = taskTitle[:-4] if taskTitle.lower().endswith(".mp4") else taskTitle
+    return f"{baseTitle}{pageSuffix}" if pageSuffix else baseTitle
 
-    def __post_init__(self):
-        super().__post_init__()
-        self.syncStagePaths()
+
+@dataclass(kw_only=True)
+class BilibiliVideoStage(HttpTaskStage):
+    pageIndex: int = 0
+    pageSuffix: str = ""
 
     @property
-    def resolvePath(self) -> str:
-        if not self.selectedPages:
-            return str(self.path / self.title)
+    def outputFile(self) -> str:
+        stem = _bilibiliStem(self.task.title, self.pageSuffix)
+        return str(Path(self.task.path) / f"{stem}.video.m4s")
 
-        return str(self.path / self._buildOutputFileName(0))
 
-    def _baseTitle(self) -> str:
-        return self.title[:-4] if self.title.lower().endswith(".mp4") else self.title
+@dataclass(kw_only=True)
+class BilibiliAudioStage(HttpTaskStage):
+    pageIndex: int = 0
+    pageSuffix: str = ""
 
-    def _buildOutputFileName(self, index: int) -> str:
-        baseTitle = self._baseTitle()
-        if len(self.selectedPages) <= 1:
-            return f"{baseTitle}.mp4"
+    @property
+    def outputFile(self) -> str:
+        stem = _bilibiliStem(self.task.title, self.pageSuffix)
+        return str(Path(self.task.path) / f"{stem}.audio.m4s")
 
-        pageNumber = self.selectedPages[index]
-        pagePart = self.pageParts[index] if index < len(self.pageParts) else ""
-        suffix = f"P{pageNumber}"
-        if pagePart and pagePart != baseTitle:
-            return f"{baseTitle} - {suffix} {pagePart}.mp4"
-        return f"{baseTitle} - {suffix}.mp4"
 
-    def syncStagePaths(self):
-        for index in range(len(self.selectedPages)):
-            stages = self.stages[index * 3:(index + 1) * 3]
-            if len(stages) != 3:
-                continue
+@dataclass(kw_only=True)
+class BilibiliMergeStage(FFmpegStage):
+    pageIndex: int = 0
+    pageSuffix: str = ""
 
-            videoStage, audioStage, mergeStage = stages
-            finalPath = Path(self.path / self._buildOutputFileName(index))
-            videoPath = finalPath.with_name(f"{finalPath.stem}.video.m4s")
-            audioPath = finalPath.with_name(f"{finalPath.stem}.audio.m4s")
+    @property
+    def outputFile(self) -> Path:
+        stem = _bilibiliStem(self.task.title, self.pageSuffix)
+        return Path(self.task.path) / f"{stem}.mp4"
 
-            videoStage.resolvePath = str(videoPath)
-            audioStage.resolvePath = str(audioPath)
-            mergeStage.videoPath = str(videoPath)
-            mergeStage.audioPath = str(audioPath)
-            mergeStage.resolvePath = str(finalPath)
+    @property
+    def videoPath(self) -> Path:
+        stem = _bilibiliStem(self.task.title, self.pageSuffix)
+        return Path(self.task.path) / f"{stem}.video.m4s"
 
-    def applyPayloadToTask(self, payload: dict[str, Any]):
-        super().applyPayloadToTask(payload)
-
-        proxies = payload.get("proxies")
-        if isinstance(proxies, dict):
-            self.proxies = proxies
-
-        blockNum = payload.get("preBlockNum")
-        if isinstance(blockNum, int):
-            self.blockNum = blockNum
-
-        self.syncStagePaths()
-        for stage in self.stages:
-            if isinstance(stage, HttpTaskStage):
-                if isinstance(proxies, dict):
-                    stage.proxies = proxies
-                if isinstance(blockNum, int):
-                    stage.blockNum = blockNum
-
-    async def run(self):
-        currentStage = None
-        try:
-            for stage in self.iterRunnableStages():
-                currentStage = stage
-                if isinstance(stage, HttpTaskStage):
-                    await HttpWorker(stage).run()
-                    continue
-
-                if isinstance(stage, FFmpegStage):
-                    await FFmpegWorker(stage).run()
-                    continue
-
-                raise TypeError(f"不支持的 BilibiliTaskStage: {type(stage).__name__}")
-        except asyncio.CancelledError:
-            logger.info(f"{self.title} 停止下载")
-            raise
-        except Exception as e:
-            if currentStage is not None and not currentStage.error:
-                currentStage.setError(e)
-            logger.opt(exception=e).error("{} 下载失败", self.title)
-            raise
-
-    def __hash__(self):
-        return hash(self.taskId)
+    @property
+    def audioPath(self) -> Path:
+        stem = _bilibiliStem(self.task.title, self.pageSuffix)
+        return Path(self.task.path) / f"{stem}.audio.m4s"

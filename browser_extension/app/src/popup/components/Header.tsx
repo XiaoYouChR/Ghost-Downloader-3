@@ -1,14 +1,9 @@
-import { Button, Divider, Switch, Tab, TabList, makeStyles } from "@fluentui/react-components";
-import type { SwitchOnChangeData, SelectTabData } from "@fluentui/react-components";
-import {
-  ArrowDownloadRegular,
-  GlobeRegular,
-  SettingsRegular,
-  WrenchRegular,
-} from "@fluentui/react-icons";
+import type {SelectTabData, SwitchOnChangeData} from "@fluentui/react-components";
+import {Button, Divider, makeStyles, Switch, Tab, TabList} from "@fluentui/react-components";
+import {ArrowDownloadRegular, GlobeRegular, SettingsRegular, WrenchRegular,} from "@fluentui/react-icons";
 
-import type { DesktopConnectionState, PopupView } from "../../shared/types";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
+import type {DesktopConnectionState, PopupView} from "../../shared/types";
+import {ConnectionStatusBadge} from "./ConnectionStatusBadge";
 
 const useStyles = makeStyles({
   root: {
@@ -36,6 +31,12 @@ const useStyles = makeStyles({
     paddingLeft: "16px",
     paddingRight: "16px",
   },
+  switches: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    whiteSpace: "nowrap",
+  },
   divider: {
     width: "100%",
     marginTop: "8px",
@@ -56,17 +57,23 @@ export function Header({
   currentView,
   connectionState,
   connectionMessage,
+  mediaDownloadOverlayEnabled,
+  mediaDownloadOverlayBusy,
   interceptEnabled,
   interceptBusy,
   onViewChange,
+  onMediaDownloadOverlayToggle,
   onInterceptToggle,
 }: {
   currentView: PopupView;
   connectionState: DesktopConnectionState;
   connectionMessage: string;
+  mediaDownloadOverlayEnabled: boolean;
+  mediaDownloadOverlayBusy?: boolean;
   interceptEnabled: boolean;
   interceptBusy?: boolean;
   onViewChange: (view: PopupView) => void;
+  onMediaDownloadOverlayToggle: (enabled: boolean) => void;
   onInterceptToggle: (enabled: boolean) => void;
 }) {
   const styles = useStyles();
@@ -98,13 +105,22 @@ export function Header({
       <div className={styles.bottomRow}>
         <ConnectionStatusBadge state={connectionState} message={connectionMessage} />
 
-        <Switch
-          checked={interceptEnabled}
-          disabled={interceptBusy}
-          label="拦截下载"
-          labelPosition="before"
-          onChange={(_event, data: SwitchOnChangeData) => onInterceptToggle(Boolean(data.checked))}
-        />
+        <div className={styles.switches}>
+          <Switch
+            checked={mediaDownloadOverlayEnabled}
+            disabled={mediaDownloadOverlayBusy}
+            label="下载此媒体"
+            labelPosition="before"
+            onChange={(_event, data: SwitchOnChangeData) => onMediaDownloadOverlayToggle(Boolean(data.checked))}
+          />
+          <Switch
+            checked={interceptEnabled}
+            disabled={interceptBusy}
+            label="拦截下载"
+            labelPosition="before"
+            onChange={(_event, data: SwitchOnChangeData) => onInterceptToggle(Boolean(data.checked))}
+          />
+        </div>
       </div>
       <Divider className={styles.divider} />
     </header>

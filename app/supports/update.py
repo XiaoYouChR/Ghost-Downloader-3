@@ -1,17 +1,18 @@
 import platform
 import sys
+from dataclasses import dataclass
 from typing import Any
 
 import niquests
 from PySide6.QtCore import QVersionNumber
 
-from app.supports.config import DEFAULT_HEADERS, VERSION, cfg, isLessThanWin10
+from app.supports.config import VERSION, activeUserAgent, cfg, isLessThanWin10
 from app.supports.utils import getProxies
 
 RELEASE_API_URL = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 RELEASE_HEADERS = {
     "accept": "application/vnd.github+json",
-    "user-agent": DEFAULT_HEADERS["user-agent"],
+    "user-agent": activeUserAgent(),
 }
 
 
@@ -19,7 +20,7 @@ def _toVersionNumber(version: str) -> QVersionNumber:
     return QVersionNumber.fromString(str(version or "").strip().lstrip("vV"))
 
 
-def releaseVersion(releaseData: dict[str, Any]) -> str:
+def toVersion(releaseData: dict[str, Any]) -> str:
     for key in ("tag_name", "name"):
         value = str(releaseData.get(key) or "").strip()
         if value:
@@ -27,12 +28,12 @@ def releaseVersion(releaseData: dict[str, Any]) -> str:
     return "Unknown"
 
 
-def hasNewerRelease(releaseData: dict[str, Any]) -> bool:
-    return _toVersionNumber(VERSION) < _toVersionNumber(releaseVersion(releaseData))
+def isOutdated(releaseData: dict[str, Any]) -> bool:
+    return _toVersionNumber(VERSION) < _toVersionNumber(toVersion(releaseData))
 
 
 
-def _platformTokens() -> list[str]:
+def _platformKeywords() -> list[str]:
     if sys.platform == "win32":
         if isLessThanWin10():
             return ["windows7", "windows"]
@@ -42,7 +43,7 @@ def _platformTokens() -> list[str]:
     return ["linux"]
 
 
-def _archTokens() -> list[str]:
+def _archKeywords() -> list[str]:
     machine = platform.machine().lower()
     if machine in {"amd64", "x86_64"}:
         return ["x86_64", "amd64", "x64"]
@@ -53,17 +54,17 @@ def _archTokens() -> list[str]:
     return [machine] if machine else []
 
 
-def _platformAssetScore(assetName: str) -> int:
-    lowerName = assetName.lower()
-    platformTokens = _platformTokens()
-    archTokens = _archTokens()
+def _installerScore(installerName: str) -> int:
+    lowerName = installerName.lower()
+    platformKeywords = _platformKeywords()
+    archKeywords = _archKeywords()
 
     platformScore = 0
-    for index, token in enumerate(platformTokens):
-        if token in lowerName:
+    for index, keyword in enumerate(platformKeywords):
+        if keyword in lowerName:
             platformScore = max(platformScore, 40 - index * 10)
 
-    if platformScore == 0 or not any(token in lowerName for token in archTokens):
+    if platformScore == 0 or not any(keyword in lowerName for keyword in archKeywords):
         return -1
 
     score = platformScore + 20
@@ -94,44 +95,45 @@ def _platformAssetScore(assetName: str) -> int:
     return score
 
 
-def selectCurrentPlatformAsset(releaseData: dict[str, Any]) -> dict[str, Any] | None:
-    candidates: list[tuple[int, int, dict[str, Any]]] = []
-    for asset in releaseData.get("assets", []):
-        assetName = str(asset.get("name") or "").strip()
-        score = _platformAssetScore(assetName)
-        if score < 0:
-            continue
-
-        downloadCount = int(asset.get("download_count") or 0)
-        candidates.append((score, downloadCount, asset))
-
-    if not candidates:
-        return None
-
-    return max(candidates, key=lambda item: (item[0], item[1]))[2]
+def bestInstaller(releaseData: dict[str, Any]) -> dict[str, Any] | None:
+    best, bestScore = None, -1
+    for installer in releaseData.get("assets", []):
+        score = _installerScore(str(installer.get("name") or "").strip())
+        if score > bestScore:
+            best, bestScore = installer, score
+    return best
 
 
-async def fetchLatestRelease() -> dict[str, Any]:
-    session = niquests.AsyncSession(
+@dataclass
+class UpdateState:
+    outdated: bool
+    latestVersion: str
+    releaseData: dict[str, Any]
+    installer: dict[str, Any] | None
+
+
+async def fetchRelease() -> dict[str, Any]:
+    async with niquests.AsyncSession(
         headers=RELEASE_HEADERS,
         timeout=30,
         happy_eyeballs=True,
-    )
-    session.trust_env = False
-
-    try:
+    ) as session:
+        session.trust_env = False
         response = await session.get(
             RELEASE_API_URL,
             proxies=getProxies(),
             verify=cfg.SSLVerify.value,
             allow_redirects=True,
         )
-        try:
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            response.close()
-    finally:
-        await session.close()
+        response.raise_for_status()
+        return response.json()
 
-    return payload
+
+async def checkUpdate() -> UpdateState:
+    data = await fetchRelease()
+    return UpdateState(
+        outdated=isOutdated(data),
+        latestVersion=toVersion(data),
+        releaseData=data,
+        installer=bestInstaller(data),
+    )

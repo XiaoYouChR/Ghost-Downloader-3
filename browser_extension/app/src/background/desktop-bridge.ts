@@ -1,22 +1,23 @@
-import { DEFAULT_SERVER_URL } from "../shared/constants";
-import type {
-  DesktopConnectionState,
-  DesktopRequestResult,
-  GenericTaskSummary,
-} from "../shared/types";
-import {
-  PAIR_TOKEN_KEY,
-  PROTOCOL_VERSION,
-  RECONNECT_ALARM,
-  SERVER_URL_KEY,
-} from "./constants";
-import { localStorageGet, localStorageSet } from "./chrome-helpers";
+import {DEFAULT_SERVER_URL} from "../shared/constants";
+import type {DesktopConnectionState, DesktopRequestResult, GenericTaskSummary,} from "../shared/types";
+import {PAIR_TOKEN_KEY, PROTOCOL_VERSION, RECONNECT_ALARM, SERVER_URL_KEY,} from "./constants";
+import {loadFromLocalStorage, localStorageSet} from "./chrome-helpers";
 
 type PendingRequest = {
   resolve: (value: any) => void;
   reject: (reason?: unknown) => void;
   timeoutId: number;
 };
+
+type PairingResponse = {
+  type?: string;
+  ok?: boolean;
+  token?: string;
+  message?: string;
+};
+
+const PAIRING_TIMEOUT_MS = 60000;
+const MISSING_PAIRING_MESSAGE = "待配对";
 
 export type DesktopBridgeSnapshot = {
   connectionState: DesktopConnectionState;
@@ -32,7 +33,7 @@ export function createDesktopBridge() {
   let reconnectTimer: number | null = null;
 
   let connectionState: DesktopConnectionState = "missing_token";
-  let connectionMessage = "请先在扩展设置里填写配对令牌";
+  let connectionMessage = MISSING_PAIRING_MESSAGE;
   let desktopVersion = "";
   let pairToken = "";
   let serverUrl = DEFAULT_SERVER_URL;
@@ -78,7 +79,7 @@ export function createDesktopBridge() {
     }, 2500);
   }
 
-  function handleDesktopMessage(rawData: string) {
+  function onDesktopMessage(rawData: string) {
     let message: Record<string, any>;
     try {
       message = JSON.parse(rawData) as Record<string, any>;
@@ -125,7 +126,7 @@ export function createDesktopBridge() {
     if (!pairToken) {
       desktopVersion = "";
       taskSnapshot = [];
-      setConnectionState("missing_token", "请先在扩展设置里填写配对令牌");
+      setConnectionState("missing_token", MISSING_PAIRING_MESSAGE);
       return;
     }
 
@@ -139,7 +140,7 @@ export function createDesktopBridge() {
       desktopSocket = null;
     }
 
-    setConnectionState("connecting", "正在连接 Ghost Downloader");
+    setConnectionState("connecting", "连接中");
     const socket = new WebSocket(serverUrl);
     desktopSocket = socket;
 
@@ -147,7 +148,7 @@ export function createDesktopBridge() {
       if (desktopSocket !== socket) {
         return;
       }
-      setConnectionState("authenticating", "正在校验配对令牌");
+      setConnectionState("authenticating", "校验中");
       socket.send(
         JSON.stringify({
           type: "hello",
@@ -163,7 +164,7 @@ export function createDesktopBridge() {
       if (desktopSocket !== socket) {
         return;
       }
-      handleDesktopMessage(String(event.data ?? ""));
+      onDesktopMessage(String(event.data ?? ""));
     });
 
     socket.addEventListener("close", () => {
@@ -171,7 +172,7 @@ export function createDesktopBridge() {
         return;
       }
       desktopSocket = null;
-      rejectPendingRequests("与 Ghost Downloader 的连接已断开");
+      rejectPendingRequests("连接断开");
       if (connectionState !== "unauthorized" && connectionState !== "missing_token") {
         desktopVersion = "";
         setConnectionState("disconnected", "未连接");
@@ -185,14 +186,91 @@ export function createDesktopBridge() {
       }
       if (connectionState !== "unauthorized") {
         desktopVersion = "";
-        setConnectionState("disconnected", "无法连接到 Ghost Downloader");
+        setConnectionState("disconnected", "连接失败");
       }
     });
   }
 
+  async function requestPairing(): Promise<void> {
+    clearReconnectTimer();
+    setConnectionState("connecting", "配对中");
+
+    try {
+      const token = await new Promise<string>((resolve, reject) => {
+        const socket = new WebSocket(serverUrl);
+        let settled = false;
+        let timeoutId = 0;
+
+        const finish = (done: () => void) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          self.clearTimeout(timeoutId);
+          socket.close();
+          done();
+        };
+
+        timeoutId = self.setTimeout(() => {
+          finish(() => reject(new Error("配对超时")));
+        }, PAIRING_TIMEOUT_MS);
+
+        socket.addEventListener("open", () => {
+          socket.send(
+            JSON.stringify({
+              type: "pair_request",
+              requestId: nextRequestId(),
+              protocolVersion: PROTOCOL_VERSION,
+              extensionVersion: chrome.runtime.getManifest().version,
+              clientKind: "browser_extension",
+            }),
+          );
+        });
+
+        socket.addEventListener("message", (event) => {
+          let response: PairingResponse;
+          try {
+            response = JSON.parse(String(event.data ?? "")) as PairingResponse;
+          } catch {
+            return;
+          }
+          if (response.type !== "pair_result") {
+            return;
+          }
+
+          if (!response.ok) {
+            finish(() => reject(new Error(response.message || "已拒绝配对")));
+            return;
+          }
+
+          const token = String(response.token ?? "").trim();
+          if (!token) {
+            finish(() => reject(new Error("未返回令牌")));
+            return;
+          }
+
+          finish(() => resolve(token));
+        });
+
+        socket.addEventListener("close", () => {
+          finish(() => reject(new Error("配对断开")));
+        });
+
+        socket.addEventListener("error", () => {
+          finish(() => reject(new Error("连接失败")));
+        });
+      });
+      await setToken(token);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "自动配对失败";
+      setConnectionState(pairToken ? "disconnected" : "missing_token", message);
+      throw error;
+    }
+  }
+
   async function sendRequest<T extends DesktopRequestResult>(payload: Record<string, unknown>): Promise<T> {
     if (!isReady() || !desktopSocket) {
-      throw new Error("Ghost Downloader 未连接");
+      throw new Error("未连接");
     }
 
     const requestId = String(payload.requestId ?? nextRequestId());
@@ -201,7 +279,7 @@ export function createDesktopBridge() {
     return new Promise<T>((resolve, reject) => {
       const timeoutId = self.setTimeout(() => {
         pendingRequests.delete(requestId);
-        reject(new Error("等待 Ghost Downloader 响应超时"));
+        reject(new Error("响应超时"));
       }, 12000);
 
       pendingRequests.set(requestId, {
@@ -215,7 +293,7 @@ export function createDesktopBridge() {
   }
 
   async function loadPersistentState() {
-    const localState = await localStorageGet<{
+    const localState = await loadFromLocalStorage<{
       [PAIR_TOKEN_KEY]: string;
       [SERVER_URL_KEY]: string;
     }>({
@@ -241,7 +319,7 @@ export function createDesktopBridge() {
       desktopSocket.close();
       desktopSocket = null;
     }
-    setConnectionState("missing_token", "请先在扩展设置里填写配对令牌");
+    setConnectionState("missing_token", MISSING_PAIRING_MESSAGE);
   }
 
   async function setServerUrl(nextServerUrl: string) {
@@ -250,7 +328,7 @@ export function createDesktopBridge() {
     await connect(true);
   }
 
-  function syncLocalStorageChanges(changes: { [key: string]: chrome.storage.StorageChange }) {
+  function onLocalStorageChanged(changes: { [key: string]: chrome.storage.StorageChange }) {
     if (changes[PAIR_TOKEN_KEY]) {
       pairToken = String(changes[PAIR_TOKEN_KEY].newValue ?? "").trim();
     }
@@ -274,7 +352,7 @@ export function createDesktopBridge() {
     chrome.alarms.create(RECONNECT_ALARM, { periodInMinutes: 1 });
   }
 
-  function handleReconnectAlarm(alarm: chrome.alarms.Alarm) {
+  function onReconnectAlarm(alarm: chrome.alarms.Alarm) {
     if (alarm.name !== RECONNECT_ALARM || connectionState === "connected") {
       return;
     }
@@ -285,12 +363,13 @@ export function createDesktopBridge() {
     buildSnapshot,
     connect,
     ensureReconnectAlarm,
-    handleReconnectAlarm,
+    onReconnectAlarm,
     isReady,
     loadPersistentState,
+    requestPairing,
     sendRequest,
     setServerUrl,
     setToken,
-    syncLocalStorageChanges,
+    onLocalStorageChanged,
   };
 }

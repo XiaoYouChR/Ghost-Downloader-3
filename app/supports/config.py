@@ -17,9 +17,10 @@ from qfluentwidgets import (
     ConfigValidator,
     ConfigSerializer,
     FolderListValidator,
+    Theme,
 )
 
-DEFAULT_HEADERS = {
+_BASE_HEADERS = {
     "accept-encoding": "deflate, br, gzip",
     "accept-language": "zh-CN,zh;q=0.9",
     "cookie": "down_ip=1",
@@ -28,8 +29,30 @@ DEFAULT_HEADERS = {
     "sec-fetch-site": "none",
     "sec-fetch-user": "?1",
     "upgrade-insecure-requests": "1",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
 }
+
+DEFAULT_USER_AGENT_PRESETS: list[dict[str, str]] = [
+    {
+        "name": "Chrome (Windows)",
+        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+    },
+    {
+        "name": "Edge (Windows)",
+        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
+    },
+    {
+        "name": "Firefox (Windows)",
+        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+    },
+    {
+        "name": "Safari (macOS)",
+        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+    },
+    {
+        "name": "Chrome (Android)",
+        "value": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
+    },
+]
 
 
 def isGreaterEqualWin10():
@@ -120,36 +143,84 @@ class LanguageSerializer(ConfigSerializer):
         return Language(QLocale(value)) if value != "Auto" else Language.AUTO
 
 
-class HeadersValidator(ConfigValidator):
-    """Headers 验证器"""
+class StringListValidator(ConfigValidator):
+    """字符串列表验证器"""
 
-    def validate(self, value: dict) -> bool:
-        """验证 Headers 是否为非空字典类型"""
-        return isinstance(value, dict) and len(value) > 0
+    def validate(self, value) -> bool:
+        return isinstance(value, list) and all(isinstance(i, str) for i in value)
 
-    def correct(self, value) -> dict:
-        """如果验证失败，返回默认的 Headers"""
-        return value if self.validate(value) else DEFAULT_HEADERS
+    def correct(self, value) -> list:
+        if not isinstance(value, list):
+            return []
+        return [i for i in value if isinstance(i, str)]
 
 
-class HeadersSerializer(ConfigSerializer):
-    """Headers 序列化器"""
+class CategoryListValidator(ConfigValidator):
+    """下载分类规则列表验证器"""
 
-    def serialize(self, value: dict) -> str:
-        """将字典序列化为 JSON 字符串"""
+    def validate(self, value) -> bool:
+        if not isinstance(value, list):
+            return False
+        return all(
+            isinstance(item, dict) and isinstance(item.get("name"), str)
+            for item in value
+        )
+
+    def correct(self, value) -> list:
+        return value if self.validate(value) else []
+
+
+class CategoryListSerializer(ConfigSerializer):
+    """下载分类规则列表序列化器"""
+
+    def serialize(self, value: list) -> str:
         return dumps(value).decode("utf-8")
 
-    def deserialize(self, value: str) -> dict:
-        """将 JSON 字符串反序列化为字典，如果失败则返回默认值"""
+    def deserialize(self, value: str) -> list:
         try:
             result = loads(value)
-            return (
-                result
-                if isinstance(result, dict) and len(result) > 0
-                else DEFAULT_HEADERS
-            )
+            return result if isinstance(result, list) else []
         except (ValueError, TypeError):
-            return DEFAULT_HEADERS
+            return []
+
+
+class UserAgentListValidator(ConfigValidator):
+    """User-Agent 预设列表验证器"""
+
+    def validate(self, value) -> bool:
+        if not isinstance(value, list):
+            return False
+        return all(
+            isinstance(item, dict)
+            and isinstance(item.get("name"), str)
+            and isinstance(item.get("value"), str)
+            and item["value"]
+            for item in value
+        )
+
+    def correct(self, value) -> list:
+        return value if self.validate(value) else list(DEFAULT_USER_AGENT_PRESETS)
+
+
+class UserAgentListSerializer(ConfigSerializer):
+    """User-Agent 预设列表序列化器"""
+
+    def serialize(self, value: list) -> str:
+        return dumps(value).decode("utf-8")
+
+    def deserialize(self, value: str) -> list:
+        try:
+            result = loads(value)
+            return result if isinstance(result, list) else list(DEFAULT_USER_AGENT_PRESETS)
+        except (ValueError, TypeError):
+            return list(DEFAULT_USER_AGENT_PRESETS)
+
+
+def toQFluentTheme(value: str) -> Theme:
+    return {
+        "Dark": Theme.DARK,
+        "Light": Theme.LIGHT,
+    }.get(value, Theme.AUTO)
 
 
 class Config(QConfig):
@@ -181,6 +252,18 @@ class Config(QConfig):
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 3, RangeValidator(1, 100)
+    )
+
+    # 下载分类
+    enableCategory = ConfigItem(
+        "Category", "EnableCategory", False, BoolValidator()
+    )
+    categoryRules = ConfigItem(
+        "Category",
+        "CategoryRules",
+        [],
+        CategoryListValidator(),
+        CategoryListSerializer(),
     )
 
     # 浏览器插件设置
@@ -239,14 +322,27 @@ class Config(QConfig):
         GeometrySerializer(),
     )  # 由于 QScreen 必须在 QApplication 初始化之后调用, 所以由 MainWindow 处理特殊情况
 
+    # 设置页 UI 状态
+    collapsedSettingGroups = ConfigItem(
+        "UI", "CollapsedSettingGroups", [], StringListValidator()
+    )
+    settingGroupOrder = ConfigItem(
+        "UI", "SettingGroupOrder", [], StringListValidator()
+    )
+
     # 网络设置
-    # headers = ConfigItem(
-    #     "Network",
-    #     "Headers",
-    #     DEFAULT_HEADERS,
-    #     HeadersValidator(),
-    #     HeadersSerializer(),
-    # )
+    userAgents = ConfigItem(
+        "Network",
+        "UserAgents",
+        list(DEFAULT_USER_AGENT_PRESETS),
+        UserAgentListValidator(),
+        UserAgentListSerializer(),
+    )
+    activeUserAgent = ConfigItem(
+        "Network",
+        "ActiveUserAgent",
+        DEFAULT_USER_AGENT_PRESETS[0]["value"],
+    )
 
     # 全局变量
     globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
@@ -262,20 +358,26 @@ class Config(QConfig):
 
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
-VERSION = "3.8.2"
-LATEST_EXTENSION_VERSION = "1.2.1"
+VERSION = "3.10"
+LATEST_EXTENSION_VERSION = "1.3.0"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"
 FIREFOX_ADDONS_URL = "https://addons.mozilla.org/zh-CN/firefox/addon/ghost-downloader/"
 EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downloader-browser/odaohmfjjbompdkmfbambadnagplcmce"
-CHROME_ADDONS_URL = "https://chromewebstore.google.com/detail/ghost-downloader-browser/pinckpkeeajogfgajbicpnengimiblch"
-GD3_COPY_MIME_TYPE = "application/x-gd3-copy"
+# CHROME_ADDONS_URL = "https://chromewebstore.google.com/detail/ghost-downloader-browser/pinckpkeeajogfgajbicpnengimiblch"
 # RELEASE_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 # BASE_EFFICIENCY_THRESHOLD = 0.8  # 判断阈值
 
-# TODO 自定义附件捕捉类型
-attachmentTypes = """3gp 7z aac ace aif arj asf avi bin bz2 dmg exe gz gzip img iso lzh m4a m4v mkv mov mp3 mp4 mpa mpe
-                                 mpeg mpg msi msu ogg ogv pdf plj pps ppt qt ra rar rm rmvb sea sit sitx tar tif tiff
-                                 wav wma wmv z zip esd wim msp apk apks apkm cab msp pkg"""
-
 cfg = Config()
+
+
+def activeUserAgent() -> str:
+    value = cfg.activeUserAgent.value
+    if value:
+        return value
+    presets = cfg.userAgents.value
+    return presets[0]["value"] if presets else DEFAULT_USER_AGENT_PRESETS[0]["value"]
+
+
+def defaultHeaders() -> dict[str, str]:
+    return {**_BASE_HEADERS, "user-agent": activeUserAgent()}

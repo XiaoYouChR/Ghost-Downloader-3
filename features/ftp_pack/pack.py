@@ -2,23 +2,22 @@ from urllib.parse import urlparse
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
-
 from .cards import FtpResultCard, FtpTaskCard
-from .task import FtpTask, parse
+from .task import resolve as _ftpResolve
 
 
 class FtpPack(FeaturePack):
+    packId = "ftp"
     priority = 95
-    taskType = FtpTask
 
-    def canHandle(self, url: str) -> bool:
+    def matches(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"ftp", "ftps"}
 
     async def parse(self, payload: dict) -> Task:
-        return await parse(payload)
+        return await _ftpResolve(payload)
 
-    def createTaskCard(self, task: Task, parent=None):
+    def taskCard(self, task, parent=None):
         return FtpTaskCard(task, parent)
 
-    def createResultCard(self, task: Task, parent=None):
+    def resultCard(self, task, parent=None):
         return FtpResultCard(task, parent)

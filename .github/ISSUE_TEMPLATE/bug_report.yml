@@ -1,9 +1,9 @@
 name: Bug 报告
-description: 提交 Bug 以帮助我们提高应用体验
+description: 如果你在使用过程中遇到了问题，请按照下面的模板提交一个 Bug 报告，我们会尽快调查并修复这个问题。
 title: "[Bug] 我的标题"
 assignees: XiaoYouChR
 labels:
-  - "bug"
+  - "🐛Bug"
 body:
 - type: markdown
   attributes:
@@ -18,13 +18,14 @@ body:
   attributes:
      label: Bug 描述
      description: 请简短的描述你遇到的问题
+
 - type: textarea
   id: repro-steps
   validations:
     required: true
   attributes:
      label: 复现问题的步骤
-     render: plain text
+     render: markdown
      description: 请提供复现问题的步骤，如果不能，请写明原因
      placeholder: |
         干净清晰的复现步骤有助于开发者更快定位问题所在，你所遇到的问题也会获得更高的优先级.
@@ -35,31 +36,22 @@ body:
         3. 点击 '....'
         4. 滚动至 '....'
         5. 发现问题
+
 - type: textarea
   id: expected-behavior
   validations:
-    required: true
+    required: false
   attributes:
      label: 预期行为
      description: 简要描述你希望看到什么样的结果
+     render: markdown
+
 - type: textarea
   id: screenshots
   attributes:
      label: 截图
      description: 如果可以，提交截图更有助于我们分析问题
-- type: checkboxes
-  id: environment-package-source
-  attributes:
-     label: 应用来源
-     description: 你是从哪里下载的 Ghost Downloader 呢？
-     options:
-       - label: Github
-       - label: 其它
-- type: input
-  id: environment-package-other-source
-  attributes:
-     label: 其它来源
-     description: 如果你是从其它地方下载的 Ghost Downloader ，请注明来源
+
 - type: checkboxes
   id: environment-app-target-version
   attributes:
@@ -71,46 +63,30 @@ body:
        - label: Windows 11 22H2 (Build 22621)
        - label: Windows 11 23H2 (Build 22631)
        - label: Windows 11 24H2 (Build 26100)
-       - label: 其它 (需注明)
+       - label: Windows 11 25H2 (Build 26200)
+       - label: 其它 (macOS 或 Linux, 请在下方备注系统版本)
+
 - type: input
   id: environment-app-target-other-version
   attributes:
      label: 其它系统版本
      description: 如果你是在特别的系统版本中运行应用，请注明系统版本
-#- type: checkboxes
-#  id: environment-app-target-architecture
-#  attributes:
-#     label: 系统架构
-#     description: 选择你当前运行 Ghost Downloader 的系统架构
-#     options:
-#       - label: x86_64
-#       - label: ARM64
-- type: dropdown
+
+- type: input
   id: form-factor
   attributes:
-     multiple: true
-     label: 运行设备
-     description: 选择你当前运行 Ghost Downloader 的设备类型
-     options:
-       - 桌面/台式机
-       - 桌面/平板或笔记本
-       - ARM64 设备
+      label: 处理器型号
+      description: 处理器架构和指令集信息有助于我们分析问题
+
 - type: textarea
   id: log-info
   attributes:
      label: 日志记录
-     description: 请 粘贴报错时自动复制的报错内容 或者 将软件根目录的“Ghost Downloader 运行日志.log”以附件的形式上传
+     description: 请`粘贴报错时自动复制的报错内容`或者打开软件后依次点击`设置->关于->提供反馈->查看日志`后上传`GhostDownloader.log`文件
+
 - type: textarea
   id: additional-context
   attributes:
      label: 备注
-     description: 添加你认为有必要的信息
-
-- type: dropdown
-  id: contribution
-  attributes:
-     label: 人人为我，我为人人
-     description:  Ghost Downloader 变得更好，我们所有参与者都将受益，如果可以的话，你是否愿意帮忙解决这个问题？
-     options:
-       - 是的，我希望我的代码出现在 Ghost Downloader 中
-       - 我更擅长发现问题
+     description: 添加你认为必要的其他信息, 比如是否愿意提交 Pull Request 来修复这个问题
+     render: markdown

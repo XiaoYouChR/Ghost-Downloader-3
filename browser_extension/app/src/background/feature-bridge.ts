@@ -1,63 +1,11 @@
-import type { AdvancedFeatureKey, FeatureStateMap } from "../shared/types";
-import {
-  FEATURE_KEYS,
-  FEATURE_TAB_STATE_KEY,
-  MAIN_FRAME_ID,
-} from "./constants";
-import {
-  localStorageGet,
-  localStorageSet,
-  reloadTab,
-} from "./chrome-helpers";
+import type {AdvancedFeatureKey, FeatureStateMap} from "../shared/types";
+import {CAT_CATCH_SCRIPT_FEATURES, MOBILE_USER_AGENT} from "../shared/cat-catch";
+import {FEATURE_KEYS, FEATURE_TAB_STATE_KEY, MAIN_FRAME_ID,} from "./constants";
+import {loadFromLocalStorage, localStorageSet, reloadTab,} from "./chrome-helpers";
 
-type ScriptDefinition = {
-  script: string;
-  refresh: boolean;
-  allFrames: boolean;
-  world: "MAIN" | "ISOLATED";
-  injectI18n: boolean;
-};
-
-const MOBILE_USER_AGENT =
-  "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1";
-
-const SCRIPT_FEATURES: Record<Exclude<AdvancedFeatureKey, "mobileUserAgent">, ScriptDefinition> = {
-  recorder: {
-    script: "recorder.js",
-    refresh: false,
-    allFrames: true,
-    world: "MAIN",
-    injectI18n: true,
-  },
-  webrtc: {
-    script: "webrtc.js",
-    refresh: true,
-    allFrames: true,
-    world: "MAIN",
-    injectI18n: true,
-  },
-  recorder2: {
-    script: "recorder2.js",
-    refresh: false,
-    allFrames: false,
-    world: "ISOLATED",
-    injectI18n: true,
-  },
-  search: {
-    script: "search.js",
-    refresh: true,
-    allFrames: true,
-    world: "MAIN",
-    injectI18n: false,
-  },
-  catch: {
-    script: "catch.js",
-    refresh: true,
-    allFrames: true,
-    world: "MAIN",
-    injectI18n: true,
-  },
-};
+type ScriptFeatureKey = keyof typeof CAT_CATCH_SCRIPT_FEATURES;
+const SCRIPT_FEATURE_KEYS = Object.keys(CAT_CATCH_SCRIPT_FEATURES) as ScriptFeatureKey[];
+const FLUENT_PANEL_FEATURES = new Set<ScriptFeatureKey>(["recorder", "webrtc", "catch"]);
 
 export function createFeatureBridge() {
   const featureTabs = Object.fromEntries(
@@ -71,15 +19,10 @@ export function createFeatureBridge() {
     }, {} as FeatureStateMap);
   }
 
-  function featureStoragePayload(): Record<AdvancedFeatureKey, number[]> {
-    return FEATURE_KEYS.reduce((state, key) => {
-      state[key] = Array.from(featureTabs[key]);
-      return state;
-    }, {} as Record<AdvancedFeatureKey, number[]>);
-  }
-
   async function persistFeatureTabs(): Promise<void> {
-    await localStorageSet({ [FEATURE_TAB_STATE_KEY]: featureStoragePayload() });
+    await localStorageSet({
+      [FEATURE_TAB_STATE_KEY]: Object.fromEntries(FEATURE_KEYS.map((key) => [key, Array.from(featureTabs[key])])),
+    });
   }
 
   async function updateSessionRules(tabId: number, enabled: boolean): Promise<void> {
@@ -123,97 +66,77 @@ export function createFeatureBridge() {
     });
   }
 
-  async function executeScriptFiles(tabId: number, definition: ScriptDefinition, frameIds?: number[]): Promise<void> {
-    const files = definition.injectI18n
-      ? ["catch-script/i18n.js", `catch-script/${definition.script}`]
-      : [`catch-script/${definition.script}`];
+  async function executeScriptFiles(
+    tabId: number,
+    key: ScriptFeatureKey,
+    frameIds?: number[],
+  ): Promise<void> {
+    const feature = CAT_CATCH_SCRIPT_FEATURES[key];
+    const usesFluentPanel = FLUENT_PANEL_FEATURES.has(key);
+    const target = feature.allFrames
+      ? frameIds
+        ? { tabId, frameIds }
+        : { tabId, allFrames: true }
+      : { tabId, frameIds: frameIds ?? [MAIN_FRAME_ID] };
+    const world = feature.world as chrome.scripting.ExecutionWorld;
+    const files = [
+      ...(feature.i18n ? ["catch-script/i18n.js"] : []),
+      ...(usesFluentPanel ? ["catch-script/fluent-ui.js"] : []),
+      `catch-script/${feature.script}`,
+    ];
+    if (usesFluentPanel) {
+      await chrome.scripting.executeScript({
+        args: [chrome.runtime.getURL("icon48.png")],
+        func: (iconUrl: string) => {
+          Reflect.set(window, "CatCatchFluentUIIcon", iconUrl);
+        },
+        injectImmediately: true,
+        target,
+        world,
+      });
+    }
     await chrome.scripting.executeScript({
-      target: definition.allFrames
-        ? frameIds
-          ? { tabId, frameIds }
-          : { tabId, allFrames: true }
-        : { tabId, frameIds: frameIds ?? [MAIN_FRAME_ID] },
       files,
       injectImmediately: true,
-      world: definition.world as chrome.scripting.ExecutionWorld,
+      target,
+      world,
     });
-  }
-
-  async function applyMobileUserAgent(tabId: number): Promise<void> {
-    await chrome.scripting.executeScript({
-      target: { tabId, allFrames: true },
-      injectImmediately: true,
-      world: "MAIN",
-      args: [MOBILE_USER_AGENT],
-      func: (userAgent: string) => {
-        Object.defineProperty(navigator, "userAgent", {
-          value: userAgent,
-          writable: false,
-        });
-      },
-    });
-  }
-
-  function featureKeyFromScript(scriptName: string): AdvancedFeatureKey | null {
-    switch (scriptName) {
-      case "recorder.js":
-        return "recorder";
-      case "webrtc.js":
-        return "webrtc";
-      case "recorder2.js":
-        return "recorder2";
-      case "search.js":
-        return "search";
-      case "catch.js":
-        return "catch";
-      default:
-        return null;
-    }
   }
 
   async function setFeatureEnabled(key: AdvancedFeatureKey, tabId: number, enabled: boolean): Promise<string> {
     if (key === "mobileUserAgent") {
       if (enabled) {
         featureTabs.mobileUserAgent.add(tabId);
-        await updateSessionRules(tabId, true);
-        await persistFeatureTabs();
-        await reloadTab(tabId);
-        return "已启用模拟手机，将在刷新后生效";
+      } else {
+        featureTabs.mobileUserAgent.delete(tabId);
       }
-      featureTabs.mobileUserAgent.delete(tabId);
-      await updateSessionRules(tabId, false);
+      await updateSessionRules(tabId, enabled);
       await persistFeatureTabs();
       await reloadTab(tabId);
-      return "已关闭模拟手机";
+      return enabled ? "已启用模拟手机，将在刷新后生效" : "已关闭模拟手机";
     }
 
-    const definition = SCRIPT_FEATURES[key];
-    if (!definition) {
-      return "";
-    }
-
+    const scriptKey = key as ScriptFeatureKey;
     if (enabled) {
-      featureTabs[key].add(tabId);
-      await persistFeatureTabs();
-      if (definition.refresh) {
-        await reloadTab(tabId);
-        return "功能已开启，页面刷新后生效";
-      }
-      await executeScriptFiles(tabId, definition);
-      return "功能已开启";
+      featureTabs[scriptKey].add(tabId);
+    } else {
+      featureTabs[scriptKey].delete(tabId);
     }
-
-    featureTabs[key].delete(tabId);
     await persistFeatureTabs();
-    if (definition.refresh) {
+
+    if (CAT_CATCH_SCRIPT_FEATURES[scriptKey].reloadRequired) {
       await reloadTab(tabId);
-      return "功能已关闭";
+      return enabled ? "功能已开启，页面刷新后生效" : "功能已关闭";
     }
-    return "功能后台状态已关闭，页面中的面板可在网页内自行关闭";
+    if (!enabled) {
+      return "功能后台状态已关闭，页面中的面板可在网页内自行关闭";
+    }
+    await executeScriptFiles(tabId, scriptKey);
+    return "功能已开启";
   }
 
   async function loadPersistentState() {
-    const localState = await localStorageGet<{
+    const localState = await loadFromLocalStorage<{
       [FEATURE_TAB_STATE_KEY]: Partial<Record<AdvancedFeatureKey, number[]>>;
     }>({
       [FEATURE_TAB_STATE_KEY]: {},
@@ -239,19 +162,19 @@ export function createFeatureBridge() {
     return setFeatureEnabled(key, tabId, enabled);
   }
 
-  async function handleBridgeScriptCommand(payload: Record<string, any>, sender: chrome.runtime.MessageSender) {
+  async function onBridgeScriptCommand(payload: Record<string, any>, sender: chrome.runtime.MessageSender) {
     if (payload.Message !== "script" || typeof payload.script !== "string") {
       return;
     }
     const tabId = sender.tab?.id;
-    const key = featureKeyFromScript(String(payload.script));
-    if (!tabId || !key || !featureTabs[key].has(tabId)) {
+    const scriptKey = payload.script.replace(/\.js$/i, "") as ScriptFeatureKey;
+    if (!tabId || !SCRIPT_FEATURE_KEYS.includes(scriptKey) || !featureTabs[scriptKey].has(tabId)) {
       return;
     }
-    await setFeatureEnabled(key, tabId, false);
+    await setFeatureEnabled(scriptKey, tabId, false);
   }
 
-  function handleTabRemoved(tabId: number) {
+  function onTabRemoved(tabId: number) {
     for (const key of FEATURE_KEYS) {
       featureTabs[key].delete(tabId);
     }
@@ -261,42 +184,48 @@ export function createFeatureBridge() {
     void persistFeatureTabs();
   }
 
-  function handleNavigationCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails) {
+  function onNavigationCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails) {
     if (details.tabId <= 0 || !/^https?:/i.test(details.url)) {
       return;
     }
 
-    for (const key of FEATURE_KEYS) {
-      if (key === "mobileUserAgent") {
-        continue;
-      }
-      if (!featureTabs[key].has(details.tabId)) {
-        continue;
-      }
-      const definition = SCRIPT_FEATURES[key as Exclude<AdvancedFeatureKey, "mobileUserAgent">];
-      if (!definition) {
-        continue;
-      }
-      if (!definition.allFrames && details.frameId !== MAIN_FRAME_ID) {
-        continue;
-      }
-      void executeScriptFiles(details.tabId, definition, definition.allFrames ? [details.frameId] : [MAIN_FRAME_ID]).catch(() => {
+    if (featureTabs.mobileUserAgent.has(details.tabId)) {
+      void chrome.scripting.executeScript({
+        args: [MOBILE_USER_AGENT],
+        target: { tabId: details.tabId, frameIds: [details.frameId] },
+        func: (userAgent: string) => {
+          Object.defineProperty(navigator, "userAgent", { value: userAgent, writable: false });
+        },
+        injectImmediately: true,
+        world: "MAIN",
+      }).catch(() => {
         // Ignore injection failures.
       });
     }
 
-    if (details.frameId === MAIN_FRAME_ID && featureTabs.mobileUserAgent.has(details.tabId)) {
-      void applyMobileUserAgent(details.tabId).catch(() => {
-        // Ignore UA override failures.
+    for (const key of SCRIPT_FEATURE_KEYS) {
+      if (!featureTabs[key].has(details.tabId)) {
+        continue;
+      }
+      const feature = CAT_CATCH_SCRIPT_FEATURES[key];
+      if (!feature.allFrames && details.frameId !== MAIN_FRAME_ID) {
+        continue;
+      }
+      void executeScriptFiles(
+        details.tabId,
+        key,
+        feature.allFrames ? [details.frameId] : [MAIN_FRAME_ID],
+      ).catch(() => {
+        // Ignore injection failures.
       });
     }
   }
 
   return {
     createFeatureStateMap,
-    handleBridgeScriptCommand,
-    handleNavigationCommitted,
-    handleTabRemoved,
+    onBridgeScriptCommand,
+    onNavigationCommitted,
+    onTabRemoved,
     loadPersistentState,
     toggleFeature,
   };

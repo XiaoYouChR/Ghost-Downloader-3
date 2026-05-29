@@ -1,0 +1,51 @@
+name: Feature request (EN)
+description: Suggest an idea or improvement for the project
+title: "[Feature] My title"
+labels:
+  - "✨Enhancement"
+assignees: XiaoYouChR
+body:
+- type: markdown
+  attributes:
+    value: |
+      ## Before you start
+      🚨 Please fill out the form below as completely as possible. If key details are missing, the issue may be closed before investigation. 🚨
+
+- type: textarea
+  id: problem-description
+  validations:
+    required: true
+  attributes:
+    label: Problem description
+    description: Describe the problem you want to solve or the scenario where this feature would be useful
+    placeholder: |
+      Please describe the problem you encountered, or link to an existing issue.
+      Start with the user story and briefly explain the scenario where this feature is needed.
+      Explain what difficulties the current app causes without this feature, and what value it would create for users once added.
+
+- type: textarea
+  id: solution-description
+  validations:
+    required: true
+  attributes:
+    label: Proposed solution
+    description: Describe the solution you expect for this problem
+    placeholder: |
+      Describe your expected solution as clearly as possible.
+      Explain how it would solve the problem you are facing so developers can better align the implementation with your expectations.
+
+- type: textarea
+  id: alternatives
+  attributes:
+    label: Alternatives
+    description: There may be more than one way to solve the problem. You might have a fallback option as well
+    placeholder: |
+      If the preferred solution is difficult to implement, have you considered any alternative approaches?
+      Is there a minimum acceptable implementation that would still help?
+
+- type: textarea
+  id: additional-info
+  attributes:
+    label: Additional information
+    description: Add any extra notes you think are useful, sketches that show your idea, and whether you would be willing to submit a pull request for this feature
+    render: markdown

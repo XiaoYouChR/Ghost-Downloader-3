@@ -103,12 +103,9 @@ class ReleaseInfoDialog(MessageBoxBase):
         if hasattr(self.descriptionEdit, "setMarkdown"):
             self.descriptionEdit.setMarkdown(description)
         else:
-            # 如果开发者的 AutoSizingEdit 继承自纯 QPlainTextEdit (不支持setMarkdown)
-            # 暂时降级为纯文本，或者你可以反馈给开发者让 AutoSizingEdit 继承自 QTextEdit
+            # 降级处理
             self.descriptionEdit.setPlainText(description)
             
-        # 如果 AutoSizingEdit 继承自 QTextEdit，请将下面这行删掉或注释，
-        # 因为 QTextEdit 采用 setWordWrapMode 而不是 setLineWrapMode
         if hasattr(self.descriptionEdit, "setLineWrapMode"):
             self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
 

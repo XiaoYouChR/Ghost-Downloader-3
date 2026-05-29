@@ -2,39 +2,40 @@ import importlib.util
 import sys
 import tomllib
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
+from app.supports.paths import executableDir
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
-
     from app.view.windows.main_window import MainWindow
 
 
 class FeatureService:
-    """从 features 文件夹加载 features pack, 当 CoreService 询问时, 返回对应动态加载的函数"""
-
     def __init__(self):
-        self.loadedPacks: Dict[str, Any] = {}
-        self.featuresPath = Path(__file__).parent.parent.parent / "features"
-        self.sortedPacksCache: list[tuple[str, FeaturePack]] = []
+        self._packs: dict[str, FeaturePack] = {}
+        self._featuresPath = executableDir / "features"
 
-    def discoverFeaturePacks(self) -> list:
-        """发现 features 文件夹中的所有 feature packs"""
+    def _sortedPacks(self) -> list[tuple[str, FeaturePack]]:
+        items = list(self._packs.items())
+        items.sort(key=lambda item: (item[1].priority, item[0]))
+        return items
+
+    def _discover(self) -> list[dict]:
         featurePacks = []
 
-        if not self.featuresPath.exists():
-            logger.warning("features 文件夹不存在: {}", self.featuresPath)
+        if not self._featuresPath.exists():
+            logger.warning("features 文件夹不存在: {}", self._featuresPath)
             return featurePacks
 
-        for item in self.featuresPath.iterdir():
+        for item in self._featuresPath.iterdir():
             if item.is_dir() and not item.name.startswith("."):
-                manifest = self._loadPackManifest(item)
+                manifest = self._manifest(item)
                 if manifest is None:
                     continue
 
@@ -44,14 +45,13 @@ class FeatureService:
                         "path": str(item / manifest["entry"]),
                         "directory": str(item),
                         "dependencies": manifest["dependencies"],
-                        "manifestPath": str(item / "manifest.toml"),
                     }
                 )
 
         featurePacks.sort(key=lambda pack: pack["name"])
         return featurePacks
 
-    def _loadPackManifest(self, packDirectory: Path) -> dict[str, Any] | None:
+    def _manifest(self, packDirectory: Path) -> dict[str, Any] | None:
         manifestPath = packDirectory / "manifest.toml"
         if not manifestPath.exists():
             logger.warning("FeaturePack 缺少 manifest.toml: {}", packDirectory)
@@ -91,7 +91,7 @@ class FeatureService:
             "dependencies": tuple(dependencies),
         }
 
-    def _sortFeaturePacksByDependencies(self, featurePacks: list[dict]) -> list[dict]:
+    def _loadOrder(self, featurePacks: list[dict]) -> list[dict]:
         packInfoByName = {pack["name"]: pack for pack in featurePacks}
         visiting: list[str] = []
         visited: set[str] = set()
@@ -131,45 +131,7 @@ class FeatureService:
 
         return [pack for pack in ordered if pack["name"] not in skipped]
 
-    def _refreshSortedPacksCache(self):
-        self.sortedPacksCache = [
-            (name, info["instance"])
-            for name, info in self.loadedPacks.items()
-            if isinstance(info.get("instance"), FeaturePack)
-        ]
-        self.sortedPacksCache.sort(key=lambda item: (item[1].priority, item[0]))
-
-    def _loadPackConfig(self, packInstance: FeaturePack, mainWindow: "MainWindow"):
-        packConfig = packInstance.config
-        if packConfig is None:
-            return
-
-        settingPage = getattr(mainWindow, "settingPage", None)
-        if settingPage is None:
-            return
-
-        packConfig.loadSettingCards(settingPage)
-
-    def getDialogCards(self, parent) -> list["ParseSettingCard"]:
-        cards = []
-        for packName, packInstance in self.sortedPacksCache:
-            packConfig = packInstance.config
-            if packConfig is None:
-                continue
-
-            try:
-                cards.extend(packConfig.getDialogCards(parent))
-            except Exception as e:
-                logger.opt(exception=e).error("获取 FeaturePack 对话框设置项失败 {}", packName)
-        return cards
-
-    def loadFeaturePack(
-        self,
-        packInfo: dict,
-        mainWindow: "MainWindow",
-        refreshCache: bool = True,
-    ):
-        """加载单个 feature pack"""
+    def _loadPack(self, packInfo: dict, mainWindow: "MainWindow"):
         try:
             packageName = packInfo["name"]
             moduleName = packageName
@@ -212,16 +174,15 @@ class FeatureService:
                 return False
 
             packInstance = featurePackClass()
-            self._loadPackConfig(packInstance, mainWindow)
-            packInstance.load(mainWindow)
 
-            self.loadedPacks[packInfo["name"]] = {
-                "instance": packInstance,
-                "module": module,
-                "class": featurePackClass,
-            }
-            if refreshCache:
-                self._refreshSortedPacksCache()
+            packConfig = packInstance.config
+            if packConfig is not None:
+                settingPage = getattr(mainWindow, "settingPage", None)
+                if settingPage is not None:
+                    packConfig.setupSettings(settingPage)
+
+            packInstance.setup(mainWindow)
+            self._packs[packInfo["name"]] = packInstance
 
             logger.success("成功加载 FeaturePack: {}", packInfo["name"])
             return True
@@ -233,127 +194,80 @@ class FeatureService:
             logger.opt(exception=e).error("加载 FeaturePack 失败 {}", packInfo["name"])
             return False
 
-    def _matchPackForUrl(self, url: str) -> tuple[str, FeaturePack] | tuple[None, None]:
-        for packName, packInstance in self.sortedPacksCache:
-            try:
-                if packInstance.canHandle(url):
-                    return packName, packInstance
-            except Exception as e:
-                logger.opt(exception=e).error("FeaturePack.canHandle 失败 {}", packName)
-        return None, None
-
-    def getPackForUrl(
-        self,
-        url: str,
-    ) -> tuple[str, str | None, FeaturePack | None]:
-        url = str(url).strip()
+    def _toUrl(self, url: str) -> str:
+        url = url.strip()
         if not url:
-            return "", None, None
+            return url
+        if not urlparse(url).scheme:
+            return f"http://{url}"
+        return url
 
-        packName, packInstance = self._matchPackForUrl(url)
-        if packInstance is not None:
-            return url, packName, packInstance
+    def matches(self, url: str) -> bool:
+        normalizedUrl = self._toUrl(url)
+        return self.matchPack(normalizedUrl) is not None
 
-        if urlparse(url).scheme:
-            return url, None, None
-
-        implicitUrl = f"http://{url}"
-        packName, packInstance = self._matchPackForUrl(implicitUrl)
-        if packInstance is None:
-            return url, None, None
-
-        return implicitUrl, packName, packInstance
-
-    def canHandle(self, url: str) -> bool:
-        _, _, packInstance = self.getPackForUrl(url)
-        return packInstance is not None
-
-    def canCreateTaskFromPayload(self, url: str) -> bool:
-        _, _, packInstance = self.getPackForUrl(url)
-        if packInstance is None:
-            return False
-
-        return type(packInstance).createTaskFromPayload is not FeaturePack.createTaskFromPayload
-
-    def getPackForTask(self, task: Task) -> tuple[str, FeaturePack] | tuple[None, None]:
-        cachedPackName = getattr(task, "_featurePackName", None)
-        if (
-            isinstance(cachedPackName, str)
-            and cachedPackName in self.loadedPacks
-            and isinstance(self.loadedPacks[cachedPackName]["instance"], FeaturePack)
-        ):
-            return cachedPackName, self.loadedPacks[cachedPackName]["instance"]
-
-        for packName, packInstance in self.sortedPacksCache:
+    def matchPack(self, url: str) -> tuple[str, FeaturePack] | None:
+        for packName, packInstance in self._sortedPacks():
             try:
-                if packInstance.canHandleTask(task):
+                if packInstance.matches(url):
                     return packName, packInstance
             except Exception as e:
-                logger.opt(exception=e).error("FeaturePack.canHandleTask 失败 {}", packName)
-        return None, None
+                logger.opt(exception=e).error("FeaturePack.matches 失败 {}", packName)
+        return None
+
+    def packOf(self, task: Task) -> FeaturePack | None:
+        for pack in self._packs.values():
+            if pack.packId == task.packId:
+                return pack
+        return None
 
     async def parse(self, payload: dict) -> Task:
         url = str(payload.get("url", "")).strip()
         if not url:
             raise ValueError("URL 不能为空")
 
-        resolvedUrl, packName, packInstance = self.getPackForUrl(url)
-        if packInstance is None:
+        normalizedUrl = self._toUrl(url)
+        result = self.matchPack(normalizedUrl)
+        if result is None:
             raise ValueError(f"未找到可处理该链接的 FeaturePack: {url}")
 
-        if payload.get("url") != resolvedUrl:
+        packName, packInstance = result
+
+        if payload.get("url") != normalizedUrl:
             payload = payload.copy()
-            payload["url"] = resolvedUrl
+            payload["url"] = normalizedUrl
 
-        task = await packInstance.parse(payload)
-        setattr(task, "_featurePackName", packName)
-        return task
+        return await packInstance.parse(payload)
 
-    async def createTaskFromPayload(self, payload: dict) -> Task:
-        url = str(payload.get("url", "")).strip()
-        if not url:
-            raise ValueError("URL 不能为空")
-
-        resolvedUrl, packName, packInstance = self.getPackForUrl(url)
+    def taskCard(self, task: Task, parent=None):
+        packInstance = self.packOf(task)
         if packInstance is None:
-            raise ValueError(f"未找到可处理该链接的 FeaturePack: {url}")
+            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.packId}")
+        return packInstance.taskCard(task, parent)
 
-        if payload.get("url") != resolvedUrl:
-            payload = payload.copy()
-            payload["url"] = resolvedUrl
-
-        task = await packInstance.createTaskFromPayload(payload)
-        if task is None:
-            raise ValueError(f"FeaturePack 不支持从已有 Payload 直接创建任务: {resolvedUrl}")
-        setattr(task, "_featurePackName", packName)
-        return task
-
-    def createTaskCard(self, task: Task, parent=None):
-        packName, packInstance = self.getPackForTask(task)
+    def resultCard(self, task: Task, parent=None):
+        packInstance = self.packOf(task)
         if packInstance is None:
-            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.taskId}")
+            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.packId}")
+        return packInstance.resultCard(task, parent)
 
-        card = packInstance.createTaskCard(task, parent)
-        if card is None:
-            raise ValueError(f"FeaturePack 未提供 TaskCard: {packName}")
-        return card
+    def dialogCards(self, parent) -> list["ParseSettingCard"]:
+        cards = []
+        for packName, packInstance in self._sortedPacks():
+            packConfig = packInstance.config
+            if packConfig is None:
+                continue
 
-    def createResultCard(self, task: Task, parent=None):
-        packName, packInstance = self.getPackForTask(task)
-        if packInstance is None:
-            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.taskId}")
+            try:
+                cards.extend(packConfig.dialogCards(parent))
+            except Exception as e:
+                logger.opt(exception=e).error("获取 FeaturePack 对话框设置项失败 {}", packName)
+        return cards
 
-        card = packInstance.createResultCard(task, parent)
-        if card is None:
-            raise ValueError(f"FeaturePack 未提供 ResultCard: {packName}")
-        return card
-
-    def loadFeatures(self, mainWindow: "MainWindow"):
-        """从 ./features 文件夹自动发现并加载所有 feature packs"""
+    def load(self, mainWindow: "MainWindow"):
         logger.info("开始加载 FeaturePacks")
-        self.sortedPacksCache = []
 
-        featurePacks = self.discoverFeaturePacks()
+        featurePacks = self._discover()
 
         if not featurePacks:
             logger.warning("未发现任何 FeaturePack")
@@ -365,7 +279,7 @@ class FeatureService:
             [pack["name"] for pack in featurePacks],
         )
 
-        featurePacks = self._sortFeaturePacksByDependencies(featurePacks)
+        featurePacks = self._loadOrder(featurePacks)
         logger.info(
             "FeaturePack 加载顺序: {}",
             [pack["name"] for pack in featurePacks],
@@ -373,9 +287,8 @@ class FeatureService:
 
         loadedCount = 0
         for packInfo in featurePacks:
-            if self.loadFeaturePack(packInfo, mainWindow, refreshCache=False):
+            if self._loadPack(packInfo, mainWindow):
                 loadedCount += 1
-        self._refreshSortedPacksCache()
 
         if loadedCount == len(featurePacks):
             logger.success("FeaturePack 加载完成: {}/{} 个成功加载", loadedCount, len(featurePacks))

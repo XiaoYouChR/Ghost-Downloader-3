@@ -1,5 +1,6 @@
 import re
 from email.message import Message
+from email.utils import collapse_rfc2231_value
 from mimetypes import guess_extension
 from pathlib import Path
 from time import time_ns
@@ -10,56 +11,12 @@ from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
-from app.supports.config import cfg, DEFAULT_HEADERS
-from app.supports.utils import getProxies, sanitizeFilename, splitRequestHeadersAndCookies
-from app.view.components.cards import UniversalTaskCard, UniversalResultCard
+from app.supports.config import cfg, defaultHeaders
+from app.supports.utils import getProxies, toSafeFilename, splitCookies
 from .task import HttpTask, HttpTaskStage
 
 
-def _createTaskFromPayload(payload: dict) -> HttpTask | None:
-    fileName = sanitizeFilename(str(payload.get("filename") or "").strip(), fallback="")
-    if not fileName:
-        return None
-
-    url = str(payload.get("url") or "").strip()
-    if not url.startswith(("http://", "https://")):
-        return None
-
-    rawSize = payload.get("size")
-    fileSize = rawSize if isinstance(rawSize, int) and rawSize > 0 else SpecialFileSize.UNKNOWN
-    headers = payload.get("headers", DEFAULT_HEADERS)
-    proxies = payload.get("proxies", getProxies())
-    blockNum = payload.get("preBlockNum", cfg.preBlockNum.value)
-    path = payload.get("path", Path(cfg.downloadFolder.value))
-    supportsRange = bool(payload.get("supportsRange"))
-    resolvePath = str(path / fileName)
-
-    task = HttpTask(
-        title=fileName,
-        url=url,
-        fileSize=fileSize,
-        headers=headers,
-        proxies=proxies,
-        blockNum=blockNum,
-        supportsRange=supportsRange,
-        path=path,
-    )
-    task.addStage(
-        HttpTaskStage(
-            stageIndex=1,
-            url=url,
-            fileSize=fileSize,
-            headers=headers,
-            proxies=proxies,
-            resolvePath=resolvePath,
-            blockNum=blockNum,
-            supportsRange=supportsRange,
-        )
-    )
-    return task
-
-
-def _parsePositiveContentLength(headers: dict[str, str]) -> int:
+def _contentLength(headers: dict[str, str]) -> int:
     value = headers.get("content-length", "").strip()
     if not value:
         return SpecialFileSize.UNKNOWN
@@ -72,7 +29,7 @@ def _parsePositiveContentLength(headers: dict[str, str]) -> int:
     return length if length > 0 else SpecialFileSize.UNKNOWN
 
 
-def _parseContentRangeTotal(headers: dict[str, str]) -> int:
+def _rangeSize(headers: dict[str, str]) -> int:
     contentRange = headers.get("content-range", "").strip()
     if not contentRange or "/" not in contentRange:
         return SpecialFileSize.UNKNOWN
@@ -89,15 +46,9 @@ def _parseContentRangeTotal(headers: dict[str, str]) -> int:
     return size if size > 0 else SpecialFileSize.UNKNOWN
 
 
-def _buildRangeProbeHeaders(headers: dict, rangeValue: str) -> dict:
-    requestHeaders = headers.copy()
-    requestHeaders["range"] = rangeValue
-    requestHeaders["accept-encoding"] = "identity"
-    return requestHeaders
 
-
-async def _requestProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
-    requestHeaders, requestCookies = splitRequestHeadersAndCookies(headers)
+async def _sendProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
+    requestHeaders, requestCookies = splitCookies(headers)
     response = await client.get(
         url,
         headers=requestHeaders,
@@ -116,100 +67,74 @@ async def _requestProbe(client: niquests.AsyncSession, url: str, headers: dict, 
         await response.close()
 
 
-async def _probeDownloadInfo(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
-    client = niquests.AsyncSession(happy_eyeballs=True)
-    client.trust_env = False
+async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
+    async with niquests.AsyncSession(happy_eyeballs=True) as client:
+        client.trust_env = False
 
-    try:
-        statusCode, responseHeaders, finalUrl = await _requestProbe(
+        statusCode, responseHeaders, finalUrl = await _sendProbe(
             client,
             url,
-            _buildRangeProbeHeaders(headers, "bytes=1-1"),
+            {**headers, "range": "bytes=1-1", "accept-encoding": "identity"},
             proxies,
         )
 
-        fileSize = _parseContentRangeTotal(responseHeaders)
+        fileSize = _rangeSize(responseHeaders)
         supportsRange = statusCode == 206 and "content-range" in responseHeaders
 
         if supportsRange:
-            if fileSize == SpecialFileSize.UNKNOWN:
-                logger.info(f"偏移 Range 探测成功, content-range: {responseHeaders.get('content-range', '')}, fileSize: unknown")
-            else:
-                logger.info(
-                    f"偏移 Range 探测成功, content-range: {responseHeaders.get('content-range', '')}, fileSize: {fileSize}"
-                )
+            logger.info("偏移 Range 探测成功, content-range: {}, fileSize: {}",
+                        responseHeaders.get("content-range", ""), fileSize)
             return fileSize, True, finalUrl, responseHeaders
 
-        fileSize = _parsePositiveContentLength(responseHeaders)
+        fileSize = _contentLength(responseHeaders)
 
         if statusCode == 200:
-            logger.info(
-                f"偏移 Range 探测返回 200, content-length: {responseHeaders.get('content-length', '')}"
-            )
+            logger.info("偏移 Range 探测返回 200, content-length: {}",
+                        responseHeaders.get("content-length", ""))
             if fileSize in {SpecialFileSize.UNKNOWN, 1}:
-                fallbackStatus, fallbackHeaders, _, = await _requestProbe(
+                # bytes=0- 和 bytes=0-0 哪个更好存疑
+                fallbackStatus, fallbackHeaders, _ = await _sendProbe(
                     client,
                     url,
-                    _buildRangeProbeHeaders(headers, "bytes=0-0"),  # bytes=0- 和 bytes=0-0 哪个更好存疑
+                    {**headers, "range": "bytes=0-0", "accept-encoding": "identity"},
                     proxies,
                 )
-                fallbackSize = _parseContentRangeTotal(fallbackHeaders)
+                fallbackSize = _rangeSize(fallbackHeaders)
                 if fallbackStatus == 206 and "content-range" in fallbackHeaders:
-                    if fallbackSize == SpecialFileSize.UNKNOWN:
-                        logger.info(f"回退 Range 探测成功, content-range: {fallbackHeaders.get('content-range', '')}, fileSize: unknown")
-                    else:
-                        logger.info(
-                            f"回退 Range 探测成功, content-range: {fallbackHeaders.get('content-range', '')}, fileSize: {fallbackSize}"
-                        )
+                    logger.info("回退 Range 探测成功, content-range: {}, fileSize: {}",
+                                fallbackHeaders.get("content-range", ""), fallbackSize)
                     return fallbackSize, True, finalUrl, fallbackHeaders
 
                 if fileSize == SpecialFileSize.UNKNOWN:
-                    fileSize = _parsePositiveContentLength(fallbackHeaders)
+                    fileSize = _contentLength(fallbackHeaders)
                     if fileSize == SpecialFileSize.UNKNOWN and fallbackStatus == 416:
-                        fileSize = _parseContentRangeTotal(fallbackHeaders)
+                        fileSize = _rangeSize(fallbackHeaders)
 
         if fileSize == SpecialFileSize.UNKNOWN:
             logger.info("文件大小未知，按不支持断点续传处理")
         else:
-            logger.info(f"文件大小已知但未探测到 Range 支持, fileSize: {fileSize}")
+            logger.info("文件大小已知但未探测到 Range 支持, fileSize: {}", fileSize)
 
         return fileSize, False, finalUrl, responseHeaders
-    finally:
-        await client.close()
 
 
-def _extractFileName(url: str, headers: dict) -> str:
-
+def _fileName(url: str, headers: dict) -> str:
     fileName = ""
 
-    # Content-Disposition (RFC 6266/5987)
     cd = headers.get("content-disposition", "")
     if cd:
         msg = Message()
-        msg['Content-Disposition'] = cd
-        params = msg.get_params(header='Content-Disposition')
-        paramDict = {k.lower(): v for k, v in params if isinstance(v, str)}
+        msg["Content-Disposition"] = cd
+        params = msg.get_params(header="Content-Disposition")
+        paramDict = {k.lower(): v for k, v in params}
+        fileName = collapse_rfc2231_value(
+            paramDict.get("filename") or paramDict.get("filename*") or ""
+        ).strip("\"' ")
 
-        if "filename*" in paramDict:
-            val = paramDict["filename*"]  # charset'lang'encoded_text
-            if "'" in val:
-                parts = val.split("'", 2)
-                if len(parts) == 3:
-                    encoding, _, encodedText = parts
-                    fileName = unquote(encodedText, encoding=encoding or "utf-8")
-                    logger.info(f"方案 A 获取文件名: {fileName}")
-
-        if not fileName and "filename" in paramDict:
-            fileName = paramDict["filename"].strip("\"' ")
-            logger.info(f"方案 B 获取文件名: {fileName}")
-
-    # Content-Location (RFC 7231)
     if not fileName and "content-location" in headers:
         cl = headers["content-location"]
         fileName = unquote(urlparse(cl).path.split("/")[-1])
-        logger.info(f"方案 C 获取文件名: {fileName}")
 
-    # OSS/S3 覆盖响应头
     if not fileName:
         parsedUrl = urlparse(url)
         queryParams = parse_qs(parsedUrl.query)
@@ -218,88 +143,63 @@ def _extractFileName(url: str, headers: dict) -> str:
             match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', rcd, re.IGNORECASE)
             if match:
                 fileName = unquote(match.group(1)).strip("\"' ")
-                logger.info(f"方案 D 获取文件名: {fileName}")
 
-    # URL 路径解析
     if not fileName:
         path = urlparse(url).path
         if path and "/" in path:
-            # 移除路径中的参数 (如 ;jsessionid=...)
             cleanPath = path.split(";")[0]
             fileName = unquote(cleanPath.split("/")[-1])
-            logger.info(f"方案 E 获取文件名: {fileName}")
 
-    # 兜底处理
+    contentType = headers.get("content-type", "").split(";", 1)[0].lower().strip()
+    standardExt = guess_extension(contentType) if contentType else ""
+    standardExt = standardExt or ""
+
     if not fileName:
-        contentType = headers.get("content-type", "").split(";")[0].lower().strip()
-        standardExt = guess_extension(contentType) or ""
-        timestamp = int(time_ns())
-        fileName = f"file_{timestamp}.{standardExt}"
-        logger.info(f"方案 F 获取文件名: {fileName}")
-    else:
-        if "." not in fileName:
-            contentType = headers.get("content-type", "").split(";")[0].lower().strip()
-            standardExt = guess_extension(contentType) or ""
-            fileName = f"{fileName}.{standardExt}"
+        fileName = f"file_{int(time_ns())}{standardExt}"
+    elif "." not in fileName and standardExt:
+        fileName = f"{fileName}{standardExt}"
 
-    return sanitizeFilename(fileName, fallback=f"file_{int(time_ns())}")
-
-async def parse(payload: dict) -> HttpTask:
-    url: str = payload['url']
-    headers: dict = payload.get('headers', DEFAULT_HEADERS)
-    proxies: dict = payload.get('proxies', getProxies())
-    blockNum: int = payload.get('preBlockNum', cfg.preBlockNum.value)
-    path: Path = payload.get('path', Path(cfg.downloadFolder.value))
-    fileSize, supportsRange, finalUrl, head = await _probeDownloadInfo(url, headers, proxies)
-
-    # 获取文件名
-    fileName = _extractFileName(finalUrl, head)
-
-    resolvePath = str(path / fileName)
-
-    task = HttpTask(
-        title=fileName,
-        url=url,
-        fileSize=fileSize,
-        headers=headers,
-        proxies=proxies,
-        blockNum=blockNum,
-        supportsRange=supportsRange,
-        path=path
-    )
-    stage = HttpTaskStage(
-        stageIndex=1,
-        url=url,
-        fileSize=fileSize,
-        headers=headers,
-        proxies=proxies,
-        resolvePath=resolvePath,
-        blockNum=blockNum,
-        supportsRange=supportsRange,
-    )
-    task.addStage(stage)
-    return task
+    return toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
 
 
 class HttpPack(FeaturePack):
+    packId = "http"
     priority = 100
-    taskType = HttpTask
 
-    async def createTaskFromPayload(self, payload: dict) -> Task | None:
-        return _createTaskFromPayload(payload)
-
-    def canHandle(self, url: str) -> bool:
+    def matches(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"http", "https"}
 
     async def parse(self, payload: dict) -> Task:
-        return await parse(payload)
+        url: str = payload["url"]
+        headers: dict = payload.get("headers", defaultHeaders())
+        proxies: dict = payload.get("proxies", getProxies())
+        blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
+        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
 
-    def createTaskCard(self, task: Task, parent=None):
-        if isinstance(task, HttpTask):
-            return UniversalTaskCard(task, parent)
-        return None
+        fileName = str(payload.get("filename") or "").strip()
+        fileSize = payload.get("fileSize") or SpecialFileSize.UNKNOWN
+        supportsRange = payload.get("supportsRange", False)
 
-    def createResultCard(self, task: Task, parent=None):
-        if isinstance(task, HttpTask):
-            return UniversalResultCard(task, parent)
-        return None
+        if not fileName:
+            fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
+            fileName = _fileName(finalUrl, head)
+        else:
+            fileName = toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
+
+        task = HttpTask(
+            title=fileName,
+            url=url,
+            fileSize=fileSize,
+            path=path,
+        )
+        stage = HttpTaskStage(
+            stageIndex=1,
+            url=url,
+            fileSize=fileSize,
+            headers=headers,
+            proxies=proxies,
+            blockNum=blockNum,
+            supportsRange=supportsRange,
+        )
+        task.addStage(stage)
+        return task
