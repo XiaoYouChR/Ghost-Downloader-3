@@ -1,66 +1,74 @@
-from typing import Any, List, Dict
+from typing import Any
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QSizePolicy, QAbstractItemView, QHeaderView, QTableWidgetItem, QHBoxLayout
-from qfluentwidgets import MessageBoxBase, SubtitleLabel, CaptionLabel, ToolButton, FluentIcon, TextEdit, \
-    PrimaryToolButton, TableWidget
+from PySide6.QtGui import QDesktopServices, QStandardItem, QStandardItemModel
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QPlainTextEdit, QSizePolicy
+from qfluentwidgets import CaptionLabel, FluentIcon, MessageBoxBase, PrimaryToolButton, SubtitleLabel, ToolButton
 
 from app.supports.config import AUTHOR_URL
-from app.supports.utils import getLocalTimeFromGithubApiTime, getReadableSize
+from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
+from app.view.components.editors import AutoSizingEdit
+from app.view.components.tree_view import AutoSizingTreeView
+
+RELEASE_NOTES_COLUMNS = 76
+RELEASE_NOTES_VISIBLE_LINES = 16
+ASSET_VISIBLE_ROWS = 6
 
 
 class ReleaseInfoDialog(MessageBoxBase):
-    def __init__(self, releaseData: dict[str, Any], parent=None, deleteOnClose=True):
+    def __init__(self, releaseData: dict[str, Any], parent=None, deleteOnClose: bool = True) -> None:
         super().__init__(parent)
-        self.releaseData = releaseData
+        self._releaseData = releaseData
+
+        # instant widget
         self.versionLabel = SubtitleLabel(self)
         self.dateLabel = CaptionLabel(self)
-        self.prereleaseLabel = None
-        self.detailButton = None
+        self.prereleaseLabel = CaptionLabel(self.tr("⚠️ 预发布版本"), self)
+        self.detailButton = PrimaryToolButton(FluentIcon.LINK, self)
         self.sponsorButton = ToolButton(FluentIcon.HEART, self)
-        # content components
-        self.descriptionEdit = TextEdit(self)
-        self.tableView = TableWidget(self)
+        self.descriptionEdit = AutoSizingEdit(self, 5, RELEASE_NOTES_VISIBLE_LINES)
+        self.assetTreeView = AutoSizingTreeView(self, 1, ASSET_VISIBLE_ROWS)
+        self.assetModel = QStandardItemModel(self.assetTreeView)
 
-        if deleteOnClose:
+        # instant layout
+        self.titleLayout = QHBoxLayout()
+
+        self._deleteOnClose = deleteOnClose
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self.setDraggable(True)
+        self.setObjectName("ReleaseInfoDialog")
+
+        if self._deleteOnClose:
             self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 
-        self.initWidget()
-        self.initLayout()
+        self._initReleaseHeader()
+        self._initReleaseNotes()
+        self._initAssetTree()
 
-    def initWidget(self):
-        self.setDraggable(True)
-        self.widget.setMinimumSize(620, 620)
-
-        self._initTitleComponents()
-        self._initContentComponents()
-        self._initTableComponents()
-
-    def _initTitleComponents(self):
-        """初始化标题栏组件"""
-        versionName = self.releaseData.get("name", self.tr("Release"))
+    def _initReleaseHeader(self) -> None:
+        versionName = self._releaseData.get("name") or self.tr("Release")
         self.versionLabel.setText(versionName)
+        self.versionLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        publishedAt = self.releaseData.get("published_at", "")
+        publishedAt = self._releaseData.get("published_at", "")
         if publishedAt:
             publishDate = getLocalTimeFromGithubApiTime(publishedAt)
         else:
             publishDate = self.tr("Unknown")
         self.dateLabel.setText(self.tr("发布时间: ") + publishDate)
 
-        if self.releaseData.get("prerelease", False):
-            self.prereleaseLabel = CaptionLabel(self.tr("⚠️ 预发布版本"), self)
-
-        htmlUrl = self.releaseData.get("html_url", "")
-        if htmlUrl:
-            self.detailButton = PrimaryToolButton(FluentIcon.LINK, self)
-            self.detailButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(htmlUrl)))
-
-        self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
-
+        self.prereleaseLabel.setVisible(self._releaseData.get("prerelease", False))
+        self.detailButton.setVisible(bool(self._releaseData.get("html_url", "")))
+        self.detailButton.setToolTip(self.tr("打开发布页"))
+        self.sponsorButton.setToolTip(self.tr("赞助作者"))
+        
     def _preprocess_markdown_alerts(self, text: str) -> str:
-        """也是用上预处理 Markdown了，为了兼容GitHub Alerts语法转换，为Qt支持的格式"""
+        """兼容GitHub Alerts语法转换，为Qt支持的格式"""
         if not text:
             return text
             
@@ -73,97 +81,110 @@ class ReleaseInfoDialog(MessageBoxBase):
             "[!CAUTION]": "**🚨 危险 (CAUTION)**  "
         }
         
-        # 遍历！替换！
+        # 遍历替换
         for gh_tag, qt_tag in alerts.items():
             text = text.replace(gh_tag, qt_tag)
             
         return text
 
-
-
-    def _initContentComponents(self):
-        """初始化内容组件"""
-        description = self.releaseData.get("body", self.tr("暂无更新说明"))
+    def _initReleaseNotes(self) -> None:
+        description = self._releaseData.get("body") or self.tr("暂无更新说明")
         
-        # 依旧兼容Github警告块
+        # 应用 Markdown Alert 预处理
         description = self._preprocess_markdown_alerts(description)
         
-        self.descriptionEdit.setObjectName(u"descriptionEdit")
+        textWidth = self.fontMetrics().averageCharWidth() * RELEASE_NOTES_COLUMNS
 
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.descriptionEdit.setSizePolicy(sizePolicy)
-
+        self.descriptionEdit.setObjectName("descriptionEdit")
+        self.descriptionEdit.setMinimumWidth(textWidth)
         self.descriptionEdit.setReadOnly(True)
-        self.descriptionEdit.setMarkdown(description)
+        
+        # 判断基类控件是否支持 setMarkdown
+        if hasattr(self.descriptionEdit, "setMarkdown"):
+            self.descriptionEdit.setMarkdown(description)
+        else:
+            # 如果开发者的 AutoSizingEdit 继承自纯 QPlainTextEdit (不支持setMarkdown)
+            # 暂时降级为纯文本，或者你可以反馈给开发者让 AutoSizingEdit 继承自 QTextEdit
+            self.descriptionEdit.setPlainText(description)
+            
+        # 如果 AutoSizingEdit 继承自 QTextEdit，请将下面这行删掉或注释，
+        # 因为 QTextEdit 采用 setWordWrapMode 而不是 setLineWrapMode
+        if hasattr(self.descriptionEdit, "setLineWrapMode"):
+            self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
 
-    def _initTableComponents(self):
-        """初始化表格组件"""
-        assets = self.releaseData.get("assets", [])
-        if not assets:
-            return
+    def _initAssetTree(self) -> None:
+        self.assetTreeView.setObjectName("assetTreeView")
+        self.assetTreeView.setBorderVisible(True)
+        self.assetTreeView.setBorderRadius(8)
+        self.assetTreeView.setWordWrap(False)
+        self.assetTreeView.setRootIsDecorated(False)
+        self.assetTreeView.setUniformRowHeights(True)
+        self.assetTreeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.assetTreeView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.assetTreeView.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
-        self.tableView.setObjectName(u"tableView")
-        self.tableView.setFixedHeight(150)
-
-        tableSizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.tableView.setSizePolicy(tableSizePolicy)
-
-        self.tableView.setBorderVisible(True)
-        self.tableView.setBorderRadius(8)
-        self.tableView.setWordWrap(False)
-        self.tableView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.tableView.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tableView.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.tableView.setColumnCount(3)
-        self.tableView.verticalHeader().setVisible(False)
-        self.tableView.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-
-        # 填充表格数据
-        self._populateTableData(assets)
-
-        # 设置表头标签
-        self.tableView.setHorizontalHeaderLabels([
-            self.tr('文件名'),
-            self.tr('文件大小'),
-            self.tr('下载次数')
+        self.assetModel.setHorizontalHeaderLabels([
+            self.tr("文件名"),
+            self.tr("文件大小"),
+            self.tr("下载次数"),
         ])
+        self.assetTreeView.setModel(self.assetModel)
+        self.assetTreeView.header().setStretchLastSection(False)
+        self.assetTreeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.assetTreeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.assetTreeView.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
-    def _populateTableData(self, assets: List[Dict[str, Any]]):
-        """填充表格数据"""
-        self.tableView.setRowCount(len(assets))
+        assets = self._releaseData.get("assets", [])
+        for asset in assets:
+            self._appendAsset(asset)
 
-        for row, asset in enumerate(assets):
-            nameItem = QTableWidgetItem(asset["name"])
-            nameItem.setData(Qt.ItemDataRole.UserRole, asset)
-            self.tableView.setItem(row, 0, nameItem)
-            self.tableView.setItem(row, 1, QTableWidgetItem(getReadableSize(asset["size"])))
-            self.tableView.setItem(row, 2, QTableWidgetItem(str(asset["download_count"])))
+        self.assetTreeView.setVisible(bool(assets))
+
+    def _appendAsset(self, asset: dict[str, Any]) -> None:
+        nameItem = QStandardItem(asset["name"])
+        nameItem.setData(asset, Qt.ItemDataRole.UserRole)
+        sizeItem = QStandardItem(toReadableSize(asset["size"]))
+        downloadCountItem = QStandardItem(str(asset["download_count"]))
+
+        for item in (nameItem, sizeItem, downloadCountItem):
+            item.setEditable(False)
+
+        self.assetModel.appendRow([nameItem, sizeItem, downloadCountItem])
+
+    def _initLayout(self) -> None:
+        self.titleLayout.setContentsMargins(0, 0, 0, 0)
+        self.titleLayout.setSpacing(6)
+        self.titleLayout.addWidget(self.versionLabel)
+        self.titleLayout.addWidget(self.dateLabel)
+        self.titleLayout.addWidget(self.prereleaseLabel)
+        self.titleLayout.addStretch(1)
+        self.titleLayout.addWidget(self.detailButton)
+        self.titleLayout.addWidget(self.sponsorButton)
+
+        self.viewLayout.addLayout(self.titleLayout)
+        self.viewLayout.addSpacing(12)
+        self.viewLayout.addWidget(self.descriptionEdit)
+        self.viewLayout.addWidget(self.assetTreeView)
+
+    def _bind(self) -> None:
+        self.detailButton.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(self._releaseData.get("html_url", "")))
+        )
+        self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
 
     def selectedAsset(self) -> dict[str, Any] | None:
-        item = self.tableView.item(self.tableView.currentRow(), 0)
+        index = self.assetTreeView.currentIndex()
+        if not index.isValid():
+            return None
+
+        item = self.assetModel.itemFromIndex(index.siblingAtColumn(0))
         if item is None:
             return None
-        return item.data(Qt.ItemDataRole.UserRole)
+
+        asset = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(asset, dict):
+            return None
+        return asset
 
     def validate(self) -> bool:
         return self.selectedAsset() is not None
-
-    def initLayout(self):
-        """初始化布局"""
-        titleLayout = QHBoxLayout()
-        titleLayout.setContentsMargins(0, 0, 0, 0)
-        titleLayout.setSpacing(6)
-        titleLayout.addWidget(self.versionLabel)
-        titleLayout.addWidget(self.dateLabel)
-        if self.prereleaseLabel:
-            titleLayout.addWidget(self.prereleaseLabel)
-        titleLayout.addStretch()
-        if self.detailButton:
-            titleLayout.addWidget(self.detailButton)
-        titleLayout.addWidget(self.sponsorButton)
-
-        self.viewLayout.addLayout(titleLayout)
-        self.viewLayout.addSpacing(12)
-        self.viewLayout.addWidget(self.descriptionEdit)
-        if self.tableView:
-            self.viewLayout.addWidget(self.tableView)
