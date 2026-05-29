@@ -1,3 +1,5 @@
+import {startPageMediaController} from "./page-media/controller";
+
 (function installGhostDownloaderBridge() {
   window.addEventListener("message", (event) => {
     const payload = event.data;
@@ -10,4 +12,6 @@
       payload,
     });
   });
+
+  startPageMediaController();
 })();

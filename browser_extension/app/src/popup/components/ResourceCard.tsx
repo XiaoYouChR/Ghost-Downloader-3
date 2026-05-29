@@ -12,7 +12,7 @@ import {
 import {ArrowDownloadRegular, CheckmarkCircleRegular} from "@fluentui/react-icons";
 
 import type {CapturedResource} from "../../shared/types";
-import {describeResource, domainFromUrl, formatBytes, formatCapturedAt, shorten,} from "../../shared/utils";
+import {describeResource, domainFromUrl, formatBytes, formatCapturedAt, truncate,} from "../../shared/utils";
 import {visualIcon} from "../lib/presenters";
 
 const useStyles = makeStyles({
@@ -126,7 +126,7 @@ export function ResourceCard({
             rel="noreferrer"
             target="_blank"
           >
-            {shorten(resource.url, 68)}
+            {truncate(resource.url, 68)}
           </Link>
 
           {resource.sentToDesktopAt ? (

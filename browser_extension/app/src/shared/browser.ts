@@ -5,7 +5,7 @@ const EXTRA_HEADERS = "extraHeaders" as chrome.webRequest.OnSendHeadersOptions;
 
 let cachedBrowserTarget: ExtensionBrowserTarget | null = null;
 
-export function getExtensionBrowserTarget(): ExtensionBrowserTarget {
+export function extensionBrowserTarget(): ExtensionBrowserTarget {
   if (cachedBrowserTarget) {
     return cachedBrowserTarget;
   }
@@ -17,7 +17,7 @@ export function getExtensionBrowserTarget(): ExtensionBrowserTarget {
       return cachedBrowserTarget;
     }
   } catch {
-    // Fall through to the Chromium default when the runtime is not available.
+    // Runtime unavailable (e.g. test harness) — Chromium is the safe default.
   }
 
   cachedBrowserTarget = "chromium";
@@ -25,14 +25,14 @@ export function getExtensionBrowserTarget(): ExtensionBrowserTarget {
 }
 
 export function isFirefoxExtension(): boolean {
-  return getExtensionBrowserTarget() === "firefox";
+  return extensionBrowserTarget() === "firefox";
 }
 
-export function getInstallDirectory(): string {
+export function installDirectory(): string {
   return isFirefoxExtension() ? "browser_extension/firefox" : "browser_extension/chromium";
 }
 
-export function getOnSendHeadersExtraInfoSpec(): chrome.webRequest.OnSendHeadersOptions[] {
+export function onSendHeadersExtraInfoSpec(): chrome.webRequest.OnSendHeadersOptions[] {
   return isFirefoxExtension()
     ? [REQUEST_HEADERS]
     : [REQUEST_HEADERS, EXTRA_HEADERS];

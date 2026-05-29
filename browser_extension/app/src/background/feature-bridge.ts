@@ -1,7 +1,7 @@
 import type {AdvancedFeatureKey, FeatureStateMap} from "../shared/types";
 import {CAT_CATCH_SCRIPT_FEATURES, MOBILE_USER_AGENT} from "../shared/cat-catch";
 import {FEATURE_KEYS, FEATURE_TAB_STATE_KEY, MAIN_FRAME_ID,} from "./constants";
-import {localStorageGet, localStorageSet, reloadTab,} from "./chrome-helpers";
+import {loadFromLocalStorage, localStorageSet, reloadTab,} from "./chrome-helpers";
 
 type ScriptFeatureKey = keyof typeof CAT_CATCH_SCRIPT_FEATURES;
 const SCRIPT_FEATURE_KEYS = Object.keys(CAT_CATCH_SCRIPT_FEATURES) as ScriptFeatureKey[];
@@ -136,7 +136,7 @@ export function createFeatureBridge() {
   }
 
   async function loadPersistentState() {
-    const localState = await localStorageGet<{
+    const localState = await loadFromLocalStorage<{
       [FEATURE_TAB_STATE_KEY]: Partial<Record<AdvancedFeatureKey, number[]>>;
     }>({
       [FEATURE_TAB_STATE_KEY]: {},
@@ -162,7 +162,7 @@ export function createFeatureBridge() {
     return setFeatureEnabled(key, tabId, enabled);
   }
 
-  async function handleBridgeScriptCommand(payload: Record<string, any>, sender: chrome.runtime.MessageSender) {
+  async function onBridgeScriptCommand(payload: Record<string, any>, sender: chrome.runtime.MessageSender) {
     if (payload.Message !== "script" || typeof payload.script !== "string") {
       return;
     }
@@ -174,7 +174,7 @@ export function createFeatureBridge() {
     await setFeatureEnabled(scriptKey, tabId, false);
   }
 
-  function handleTabRemoved(tabId: number) {
+  function onTabRemoved(tabId: number) {
     for (const key of FEATURE_KEYS) {
       featureTabs[key].delete(tabId);
     }
@@ -184,7 +184,7 @@ export function createFeatureBridge() {
     void persistFeatureTabs();
   }
 
-  function handleNavigationCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails) {
+  function onNavigationCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails) {
     if (details.tabId <= 0 || !/^https?:/i.test(details.url)) {
       return;
     }
@@ -223,9 +223,9 @@ export function createFeatureBridge() {
 
   return {
     createFeatureStateMap,
-    handleBridgeScriptCommand,
-    handleNavigationCommitted,
-    handleTabRemoved,
+    onBridgeScriptCommand,
+    onNavigationCommitted,
+    onTabRemoved,
     loadPersistentState,
     toggleFeature,
   };

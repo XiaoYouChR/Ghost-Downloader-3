@@ -1,4 +1,4 @@
-import {filenameFromUrl, shorten} from "../shared/utils";
+import {filenameFromUrl, truncate} from "../shared/utils";
 import type {MediaItemOption, MediaPlaybackState} from "../shared/types";
 import {MAIN_FRAME_ID} from "./constants";
 import {sendMessageToTab, type TabMessageResult,} from "./chrome-helpers";
@@ -58,7 +58,7 @@ export function createMediaBridge() {
       const src = srcList[index] ?? `media-${index + 1}`;
       return {
         index,
-        label: shorten(filenameFromUrl(src) || src.split("/").pop() || src, 48),
+        label: truncate(filenameFromUrl(src) || src.split("/").pop() || src, 48),
       };
     });
   }
@@ -132,7 +132,7 @@ export function createMediaBridge() {
     mediaControlTarget = { tabId, index };
   }
 
-  function handleTabRemoved(tabId: number) {
+  function onTabRemoved(tabId: number) {
     if (mediaControlTarget.tabId === tabId) {
       mediaControlTarget = { tabId: 0, index: -1 };
     }
@@ -140,7 +140,7 @@ export function createMediaBridge() {
 
   return {
     buildPanelState,
-    handleTabRemoved,
+    onTabRemoved,
     setMediaIndex,
   };
 }

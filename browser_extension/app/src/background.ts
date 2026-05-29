@@ -13,12 +13,12 @@ import {INTERCEPT_DOWNLOADS_KEY, MEDIA_DOWNLOAD_OVERLAY_KEY,} from "./background
 import {
     cancelDownload,
     eraseDownloadFromHistory,
-    getTab,
-    localStorageGet,
+    findTab,
+    loadFromLocalStorage,
     openActionPopup,
     queryTabs,
 } from "./background/chrome-helpers";
-import {getOnSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
+import {onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
 
 const desktopBridge = createDesktopBridge();
 const resourceBridge = createResourceBridge({
@@ -34,7 +34,7 @@ async function injectMediaDownloadOverlay(tabId: number) {
   if (!mediaDownloadOverlayEnabled) {
     return;
   }
-  const tab = await getTab(tabId);
+  const tab = await findTab(tabId);
   if (!tab?.url || !/^https?:/i.test(tab.url)) {
     return;
   }
@@ -46,11 +46,11 @@ async function injectMediaDownloadOverlay(tabId: number) {
       target: { tabId, allFrames: true },
     });
   } catch {
-    // Ignore pages that do not allow extension injection.
+    // chrome:// and similar reject injection.
   }
 }
 
-async function syncMediaDownloadOverlay(enabled: boolean) {
+async function updateMediaDownloadOverlay(enabled: boolean) {
   mediaDownloadOverlayEnabled = enabled;
   await chrome.storage.local.set({ [MEDIA_DOWNLOAD_OVERLAY_KEY]: enabled });
 
@@ -84,7 +84,7 @@ async function buildPopupState(options: {
   currentView?: PopupView;
 } = {}): Promise<PopupStatePayload> {
   const resolvedTabId = await resourceBridge.resolveActiveTabId(options.preferredTabId ?? null);
-  const activeTab = resolvedTabId != null ? await getTab(resolvedTabId) : null;
+  const activeTab = resolvedTabId != null ? await findTab(resolvedTabId) : null;
   const desktopState = desktopBridge.buildSnapshot();
   const resourceState = resourceBridge.buildPopupStateData(resolvedTabId, activeTab);
 
@@ -111,7 +111,7 @@ async function buildPopupState(options: {
 }
 
 async function initialize() {
-  const localState = await localStorageGet<{
+  const localState = await loadFromLocalStorage<{
     [INTERCEPT_DOWNLOADS_KEY]: boolean;
     [MEDIA_DOWNLOAD_OVERLAY_KEY]: boolean;
   }>({
@@ -138,7 +138,7 @@ async function initialize() {
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  desktopBridge.handleReconnectAlarm(alarm);
+  desktopBridge.onReconnectAlarm(alarm);
 });
 
 chrome.runtime.onConnect.addListener((port) => {
@@ -151,7 +151,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") {
     return;
   }
-  desktopBridge.syncLocalStorageChanges(changes);
+  desktopBridge.onLocalStorageChanged(changes);
   if (changes[INTERCEPT_DOWNLOADS_KEY]) {
     interceptDownloads = Boolean(changes[INTERCEPT_DOWNLOADS_KEY].newValue ?? true);
   }
@@ -177,23 +177,23 @@ chrome.windows.onFocusChanged.addListener((windowId) => {
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  resourceBridge.handleTabRemoved(tabId);
-  mediaBridge.handleTabRemoved(tabId);
-  featureBridge.handleTabRemoved(tabId);
+  resourceBridge.onTabRemoved(tabId);
+  mediaBridge.onTabRemoved(tabId);
+  featureBridge.onTabRemoved(tabId);
 });
 
 chrome.webNavigation.onCommitted.addListener((details) => {
-  resourceBridge.handleNavigationCommitted(details);
-  featureBridge.handleNavigationCommitted(details);
+  resourceBridge.onNavigationCommitted(details);
+  featureBridge.onNavigationCommitted(details);
 });
 
 chrome.webRequest.onSendHeaders.addListener(
   (details) => {
-    resourceBridge.handleRequestHeaders(details);
+    resourceBridge.onRequestHeaders(details);
     void resourceBridge.captureRequestResource(details);
   },
   { urls: ["<all_urls>"] },
-  getOnSendHeadersExtraInfoSpec(),
+  onSendHeadersExtraInfoSpec(),
 );
 
 chrome.webRequest.onResponseStarted.addListener(
@@ -219,7 +219,7 @@ async function interceptBrowserDownload(
       await eraseDownloadFromHistory(downloadItem.id);
     }
   } catch {
-    // Ignore cancellation cleanup failures; the browser download may continue as fallback.
+    // Cleanup failed but the browser will still finish the download as fallback.
   }
 
   await resourceBridge.handoffBrowserDownload(downloadItem);
@@ -263,7 +263,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "bridge_page_command") {
-    void featureBridge.handleBridgeScriptCommand(message.payload, sender);
+    void featureBridge.onBridgeScriptCommand(message.payload, sender);
     sendResponse({ ok: true });
     return true;
   }
@@ -314,7 +314,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "popup_set_media_download_overlay") {
     return reply(sendResponse, (async () => {
-      await syncMediaDownloadOverlay(Boolean(message.enabled));
+      await updateMediaDownloadOverlay(Boolean(message.enabled));
       return buildPopupState({ currentView: message.view as PopupView | undefined });
     })());
   }
@@ -350,21 +350,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "page_download_media") {
-    return reply(sendResponse, (async () => {
-      const result = await resourceBridge.downloadPageMedia(sender, {
-        url: String(message.url ?? ""),
-        href: String(message.href ?? ""),
-        filename: String(message.filename ?? ""),
-        poster: String(message.poster ?? ""),
-        resourceUrls: Array.isArray(message.resourceUrls)
-          ? message.resourceUrls.map((url: unknown) => String(url ?? "")).filter(Boolean)
-          : [],
-      });
-      if (result.ok) {
-        await openActionPopup();
-      }
-      return result;
-    })());
+    return reply(sendResponse, resourceBridge.downloadPageMedia(sender, {
+      selection: message.selection,
+      href: String(message.href ?? ""),
+      title: String(message.title ?? ""),
+    }));
   }
 
   if (message.type === "page_media_overlay_state") {

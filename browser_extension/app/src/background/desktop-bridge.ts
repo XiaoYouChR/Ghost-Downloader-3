@@ -1,7 +1,7 @@
 import {DEFAULT_SERVER_URL} from "../shared/constants";
 import type {DesktopConnectionState, DesktopRequestResult, GenericTaskSummary,} from "../shared/types";
 import {PAIR_TOKEN_KEY, PROTOCOL_VERSION, RECONNECT_ALARM, SERVER_URL_KEY,} from "./constants";
-import {localStorageGet, localStorageSet} from "./chrome-helpers";
+import {loadFromLocalStorage, localStorageSet} from "./chrome-helpers";
 
 type PendingRequest = {
   resolve: (value: any) => void;
@@ -79,7 +79,7 @@ export function createDesktopBridge() {
     }, 2500);
   }
 
-  function handleDesktopMessage(rawData: string) {
+  function onDesktopMessage(rawData: string) {
     let message: Record<string, any>;
     try {
       message = JSON.parse(rawData) as Record<string, any>;
@@ -164,7 +164,7 @@ export function createDesktopBridge() {
       if (desktopSocket !== socket) {
         return;
       }
-      handleDesktopMessage(String(event.data ?? ""));
+      onDesktopMessage(String(event.data ?? ""));
     });
 
     socket.addEventListener("close", () => {
@@ -293,7 +293,7 @@ export function createDesktopBridge() {
   }
 
   async function loadPersistentState() {
-    const localState = await localStorageGet<{
+    const localState = await loadFromLocalStorage<{
       [PAIR_TOKEN_KEY]: string;
       [SERVER_URL_KEY]: string;
     }>({
@@ -328,7 +328,7 @@ export function createDesktopBridge() {
     await connect(true);
   }
 
-  function syncLocalStorageChanges(changes: { [key: string]: chrome.storage.StorageChange }) {
+  function onLocalStorageChanged(changes: { [key: string]: chrome.storage.StorageChange }) {
     if (changes[PAIR_TOKEN_KEY]) {
       pairToken = String(changes[PAIR_TOKEN_KEY].newValue ?? "").trim();
     }
@@ -352,7 +352,7 @@ export function createDesktopBridge() {
     chrome.alarms.create(RECONNECT_ALARM, { periodInMinutes: 1 });
   }
 
-  function handleReconnectAlarm(alarm: chrome.alarms.Alarm) {
+  function onReconnectAlarm(alarm: chrome.alarms.Alarm) {
     if (alarm.name !== RECONNECT_ALARM || connectionState === "connected") {
       return;
     }
@@ -363,13 +363,13 @@ export function createDesktopBridge() {
     buildSnapshot,
     connect,
     ensureReconnectAlarm,
-    handleReconnectAlarm,
+    onReconnectAlarm,
     isReady,
     loadPersistentState,
     requestPairing,
     sendRequest,
     setServerUrl,
     setToken,
-    syncLocalStorageChanges,
+    onLocalStorageChanged,
   };
 }

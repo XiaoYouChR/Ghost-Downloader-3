@@ -81,6 +81,8 @@
         return rect;
     }
 
+    // Digit slots: playing (1e9) beats readyState (1e6) beats viewport area, so the user's
+    // active video always wins over a paused full-screen poster.
     function mediaScore(media, rect) {
         const playing = !media.paused && !media.ended ? 1_000_000_000 : 0;
         return playing + media.readyState * 1_000_000 + rect.width * rect.height;
@@ -97,14 +99,6 @@
             }
         }
         return selected;
-    }
-
-    function recentMediaResourceUrls() {
-        return performance.getEntriesByType("resource")
-            .filter((entry) => /video|audio|mpegurl|mp4|m4s|mpd|m3u8|douyinvod|twimg/i.test(`${entry.name} ${entry.initiatorType}`))
-            .sort((left, right) => right.startTime - left.startTime)
-            .slice(0, 20)
-            .map((entry) => entry.name);
     }
 
     function updatePosition() {
@@ -167,35 +161,69 @@
         status.className = failed ? "status error" : "status";
         clearTimeout(resetTimer);
         if (text && !failed) {
+            // Matches TERMINAL_RESET_MS in controller.ts so toast fade and button re-enable line up.
             resetTimer = setTimeout(() => { status.textContent = ""; }, 1600);
         }
     }
 
+    let downloadInFlight = false;
     async function downloadMedia() {
+        // Double-click would otherwise re-fire within the toast window before the auto-reset.
+        if (downloadInFlight) { return; }
         const media = findActiveMedia()?.media;
         if (!media) {
             setStatus("未检测到媒体", true);
             return;
         }
 
+        const pageMedia = window.__gd3PageMedia;
+        if (!pageMedia?.resolveForElement) {
+            setStatus("扩展未就绪", true);
+            return;
+        }
+
+        downloadInFlight = true;
         button.disabled = true;
-        label.textContent = "正在发送";
+        label.textContent = "正在解析";
         setStatus("");
+
+        // Mirror controller state on the button so the user sees a "waiting" beat instead of staring at "正在解析".
+        const onState = (next) => {
+            if (next === "waiting") { label.textContent = "等待资源…"; }
+            else if (next === "resolving" || next === "dispatched") { label.textContent = "正在发送"; }
+        };
+
         try {
+            const resolution = await pageMedia.resolveForElement(media, {
+                poster: media.poster || "",
+                title: document.title,
+            }, onState);
+            if (!resolution || resolution.kind === "refused") {
+                // resolveForElement already moved the session to 'refused'; flipping to 'failed' would misreport why.
+                setStatus(resolution?.message || "未能定位媒体", true);
+                return;
+            }
+            if (resolution.kind !== "selection") {
+                setStatus("未能定位媒体", true);
+                return;
+            }
             const result = await chrome.runtime.sendMessage({
                 type: "page_download_media",
-                url: media.currentSrc || media.src || "",
+                selection: resolution.selection,
                 href: location.href,
-                filename: document.title,
-                poster: media.poster || "",
-                resourceUrls: recentMediaResourceUrls(),
+                title: document.title,
             });
-            setStatus(result?.ok ? "已发送" : result?.message || "发送失败", !result?.ok);
+            const ok = Boolean(result?.ok);
+            setStatus(ok ? "已发送" : result?.message || "发送失败", !ok);
+            pageMedia.markDispatchResult?.(media, ok, result?.message || "");
         } catch (error) {
-            setStatus(error instanceof Error ? error.message : "发送失败", true);
+            const message = error instanceof Error ? error.message : "发送失败";
+            setStatus(message, true);
+            pageMedia.markDispatchResult?.(media, false, message);
         } finally {
             label.textContent = "下载此媒体";
             button.disabled = false;
+            downloadInFlight = false;
             scheduleUpdate();
         }
     }

@@ -96,7 +96,7 @@ function updateBusyState<T>(
   });
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
+function errorMessageOr(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
@@ -283,7 +283,7 @@ export function usePopupBridge(activeView: PopupView) {
         );
         return true;
       } catch (error) {
-        setFlash(getErrorMessage(error, "保存配对令牌失败"), "error");
+        setFlash(errorMessageOr(error, "保存配对令牌失败"), "error");
         return false;
       } finally {
         if (mountedRef.current) {
@@ -309,7 +309,7 @@ export function usePopupBridge(activeView: PopupView) {
         );
         return true;
       } catch (error) {
-        setFlash(getErrorMessage(error, "保存服务地址失败"), "error");
+        setFlash(errorMessageOr(error, "保存服务地址失败"), "error");
         return false;
       } finally {
         if (mountedRef.current) {
@@ -330,7 +330,7 @@ export function usePopupBridge(activeView: PopupView) {
       setFlash(next.connectionMessage, next.connectionState === "connected" ? "success" : "neutral");
       return true;
     } catch (error) {
-      setFlash(getErrorMessage(error, "重新连接失败"), "error");
+      setFlash(errorMessageOr(error, "重新连接失败"), "error");
       return false;
     } finally {
       if (mountedRef.current) {
@@ -354,7 +354,7 @@ export function usePopupBridge(activeView: PopupView) {
       });
       return true;
     } catch (error) {
-      setFlash(getErrorMessage(error, "自动配对失败"), "error");
+      setFlash(errorMessageOr(error, "自动配对失败"), "error");
       return false;
     } finally {
       if (mountedRef.current) {
@@ -373,7 +373,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        setFlash(getErrorMessage(error, "更新拦截下载失败"), "error");
+        setFlash(errorMessageOr(error, "更新拦截下载失败"), "error");
       } finally {
         if (mountedRef.current) {
           setIsUpdatingIntercept(false);
@@ -393,7 +393,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        setFlash(getErrorMessage(error, "更新下载按钮失败"), "error");
+        setFlash(errorMessageOr(error, "更新下载按钮失败"), "error");
       } finally {
         if (mountedRef.current) {
           setIsUpdatingMediaDownloadOverlay(false);
@@ -415,7 +415,7 @@ export function usePopupBridge(activeView: PopupView) {
         await refreshState(activeViewRef.current);
         setFlash("任务操作已发送", "success");
       } catch (error) {
-        setFlash(getErrorMessage(error, "任务操作失败"), "error");
+        setFlash(errorMessageOr(error, "任务操作失败"), "error");
       } finally {
         updateBusyState(setBusyTaskIds, taskId, false);
       }
@@ -434,7 +434,7 @@ export function usePopupBridge(activeView: PopupView) {
         await refreshState(activeViewRef.current);
         setFlash(result.message || "资源处理成功", "success");
       } catch (error) {
-        setFlash(getErrorMessage(error, "发送资源失败"), "error");
+        setFlash(errorMessageOr(error, "发送资源失败"), "error");
       } finally {
         updateBusyState(setBusyResourceIds, resourceId, false);
       }
@@ -455,7 +455,7 @@ export function usePopupBridge(activeView: PopupView) {
         setFlash(result.message || "资源已发送到 Ghost Downloader", "success");
         return true;
       } catch (error) {
-        setFlash(getErrorMessage(error, "在线合并失败"), "error");
+        setFlash(errorMessageOr(error, "在线合并失败"), "error");
         return false;
       } finally {
         ids.forEach((resourceId) => updateBusyState(setBusyResourceIds, resourceId, false));
@@ -480,7 +480,7 @@ export function usePopupBridge(activeView: PopupView) {
         await refreshState(activeViewRef.current);
         setFlash(result.message || "功能状态已更新", "success");
       } catch (error) {
-        setFlash(getErrorMessage(error, "功能切换失败"), "error");
+        setFlash(errorMessageOr(error, "功能切换失败"), "error");
       } finally {
         setBusyFeature(feature, false);
       }
@@ -502,7 +502,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        setFlash(getErrorMessage(error, "切换媒体失败"), "error");
+        setFlash(errorMessageOr(error, "切换媒体失败"), "error");
       }
     },
     [applyPopupState, payload.mediaPlaybackState.tabId, setFlash],
@@ -570,7 +570,7 @@ export function usePopupBridge(activeView: PopupView) {
         await sendMediaMessage(tabId, mediaMessage);
         await refreshState("advanced");
       } catch (error) {
-        setFlash(getErrorMessage(error, "媒体控制失败"), "error");
+        setFlash(errorMessageOr(error, "媒体控制失败"), "error");
       } finally {
         if (mountedRef.current) {
           setIsUpdatingMedia(false);

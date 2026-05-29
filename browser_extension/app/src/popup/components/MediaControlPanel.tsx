@@ -24,7 +24,7 @@ import {useEffect, useState} from "react";
 
 import {PLAYBACK_RATE_OPTIONS} from "../../shared/constants";
 import type {MediaItemOption, MediaPlaybackState} from "../../shared/types";
-import {formatShortTime} from "../../shared/utils";
+import {formatDuration} from "../../shared/utils";
 
 const useStyles = makeStyles({
   root: {
@@ -204,8 +204,8 @@ export function MediaControlPanel({
             onTouchEnd={() => commitSeek()}
           />
           <div className={styles.sliderMeta}>
-            <span>{formatShortTime(displayCurrentTime)}</span>
-            <span>{formatShortTime(playbackState.duration)}</span>
+            <span>{formatDuration(displayCurrentTime)}</span>
+            <span>{formatDuration(playbackState.duration)}</span>
           </div>
         </div>
 

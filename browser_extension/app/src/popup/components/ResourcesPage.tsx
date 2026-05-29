@@ -157,7 +157,7 @@ export function ResourcesPage({
     setSelectedResourceIds(new Set());
   }
 
-  async function handleOnlineMerge() {
+  async function mergeSelected() {
     if (!selectedResources.length) {
       return;
     }
@@ -226,7 +226,7 @@ export function ResourcesPage({
                 appearance="primary"
                 disabled={!canMergeSelectedResources}
                 size="small"
-                onClick={() => void handleOnlineMerge()}
+                onClick={() => void mergeSelected()}
               >
                 合并音视频
               </Button>

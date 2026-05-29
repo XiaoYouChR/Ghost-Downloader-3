@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ghost Downloader Browser",
   "description": "Manage Ghost Downloader tasks and send browser resources to GD3.",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "permissions": [
     "alarms",
     "declarativeNetRequest",
@@ -32,6 +32,13 @@
     "128": "icon128.png"
   },
   "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["catch-script/mse-attribution.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
     {
       "matches": ["http://*/*", "https://*/*"],
       "js": ["cat-catch-content-script.js", "content-script.js"],

@@ -6,11 +6,11 @@ export type TabMessageResult<T> = {
   message?: string;
 };
 
-export function bridgeStorageArea() {
-  return chrome.storage.session ?? chrome.storage.local;
-}
+// Bridges store transient state here. Prefer session (cleared at browser close); Firefox
+// has no chrome.storage.session, so fall back to local.
+const bridgeStorage = chrome.storage.session ?? chrome.storage.local;
 
-export async function localStorageGet<T extends Record<string, unknown>>(defaults: T): Promise<T> {
+export async function loadFromLocalStorage<T extends Record<string, unknown>>(defaults: T): Promise<T> {
   const items = await chrome.storage.local.get(defaults);
   return items as T;
 }
@@ -19,20 +19,20 @@ export async function localStorageSet(values: Record<string, unknown>): Promise<
   await chrome.storage.local.set(values);
 }
 
-export async function bridgeStorageGet<T extends Record<string, unknown>>(defaults: T): Promise<T> {
-  const items = await bridgeStorageArea().get(defaults);
+export async function loadFromBridgeStorage<T extends Record<string, unknown>>(defaults: T): Promise<T> {
+  const items = await bridgeStorage.get(defaults);
   return items as T;
 }
 
 export async function bridgeStorageSet(values: Record<string, unknown>): Promise<void> {
-  await bridgeStorageArea().set(values);
+  await bridgeStorage.set(values);
 }
 
 export async function queryTabs(queryInfo: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab[]> {
   return chrome.tabs.query(queryInfo);
 }
 
-export async function getTab(tabId: number): Promise<chrome.tabs.Tab | null> {
+export async function findTab(tabId: number): Promise<chrome.tabs.Tab | null> {
   try {
     return await chrome.tabs.get(tabId);
   } catch {
@@ -45,7 +45,7 @@ export async function sendMessageToTab<T>(
   message: Record<string, unknown>,
   options?: chrome.tabs.MessageSendOptions,
 ): Promise<TabMessageResult<T>> {
-  const tab = await getTab(tabId);
+  const tab = await findTab(tabId);
   if (!tab?.id) {
     return {
       status: "no_receiver",
@@ -92,7 +92,7 @@ export async function createTab(createProperties: chrome.tabs.CreateProperties):
 }
 
 export async function activateTab(tabId: number): Promise<void> {
-  const tab = await getTab(tabId);
+  const tab = await findTab(tabId);
   if (!tab?.id) {
     return;
   }
@@ -143,6 +143,6 @@ export async function openActionPopup(): Promise<void> {
   try {
     await chrome.action.openPopup();
   } catch {
-    // Ignore popup open failures so they do not affect the primary action result.
+    // The action that called us already succeeded — popup open is best-effort.
   }
 }

@@ -66,10 +66,6 @@ export function sortTasks(tasks: GenericTaskSummary[]): GenericTaskSummary[] {
   });
 }
 
-function sortResources(resources: CapturedResource[]): CapturedResource[] {
-  return [...resources].sort((left, right) => right.capturedAt - left.capturedAt);
-}
-
 export function formatBytes(value: number): string {
   if (!Number.isFinite(value) || value <= 0) {
     return "0 B";
@@ -116,7 +112,7 @@ export function formatProgress(task: GenericTaskSummary): string {
   return `${formatBytes(task.receivedBytes)} / --`;
 }
 
-export function formatShortTime(value: number): string {
+export function formatDuration(value: number): string {
   if (!Number.isFinite(value) || value < 0) {
     return "00:00";
   }
@@ -140,11 +136,11 @@ export function formatCapturedAt(timestamp: number): string {
   return `${hours}:${minutes}`;
 }
 
-export function shorten(value: string, max = 44): string {
-  if (!value || value.length <= max) {
-    return value;
+export function truncate(text: string, max = 44): string {
+  if (!text || text.length <= max) {
+    return text;
   }
-  return `${value.slice(0, Math.max(0, max - 3))}...`;
+  return `${text.slice(0, Math.max(0, max - 3))}...`;
 }
 
 export function connectionTone(state: DesktopConnectionState): AccentTone {
@@ -211,18 +207,14 @@ export function filenameFromUrl(value: string): string {
 }
 
 export function fileExtension(name: string): string {
-  const trimmed = String(name || "").trim();
-  const dotIndex = trimmed.lastIndexOf(".");
-  if (dotIndex < 0) {
-    return "";
-  }
-  return trimmed.slice(dotIndex + 1).toLowerCase();
+  const dotIndex = name.lastIndexOf(".");
+  return dotIndex < 0 ? "" : name.slice(dotIndex + 1).toLowerCase();
 }
 
-function inferParserHint(rawUrl: string, mime: string, extension: string): ResourceParserHint {
-  const loweredUrl = String(rawUrl || "").toLowerCase();
-  const loweredMime = String(mime || "").toLowerCase();
-  const loweredExt = String(extension || "").toLowerCase();
+function parserHintOf(url: string, mime: string, extension: string): ResourceParserHint {
+  const loweredUrl = url.toLowerCase();
+  const loweredMime = mime.toLowerCase();
+  const loweredExt = extension.toLowerCase();
 
   if (isCatCatchM3u8(loweredExt, loweredMime) || loweredUrl.includes(".m3u8")) {
     return "m3u8";
@@ -239,9 +231,11 @@ function inferParserHint(rawUrl: string, mime: string, extension: string): Resou
   return "other";
 }
 
-function inferDashTrackKind(name: string, rawUrl: string): ResourceMediaKind {
-  const filename = String(name || filenameFromUrl(rawUrl) || "");
-  const lowered = `${filename} ${rawUrl}`.toLowerCase();
+// Fallback heuristic when no SourceBuffer mime is around: explicit /video/ or /audio/
+// markers, then Bilibili's 5-6 digit quality code (30000+ audio, 100000+ video).
+export function dashTrackRoleOf(filename: string, url: string): ResourceMediaKind {
+  const name = filename || filenameFromUrl(url);
+  const lowered = `${name} ${url}`.toLowerCase();
 
   if (/(^|[-_.\\/])(video)([-_.\\/]|$)/i.test(lowered)) {
     return "video";
@@ -265,10 +259,10 @@ function inferDashTrackKind(name: string, rawUrl: string): ResourceMediaKind {
   return "";
 }
 
-function inferResourceMediaKind(resource: CapturedResource, extension: string): ResourceMediaKind {
-  const mime = String(resource.mime || "").toLowerCase();
+function mediaKindOf(resource: CapturedResource, extension: string): ResourceMediaKind {
+  const mime = resource.mime.toLowerCase();
   if (extension === "m4s") {
-    const dashKind = inferDashTrackKind(resource.filename, resource.url);
+    const dashKind = dashTrackRoleOf(resource.filename, resource.url);
     if (dashKind) {
       return dashKind;
     }
@@ -290,11 +284,7 @@ function inferResourceMediaKind(resource: CapturedResource, extension: string): 
   return "";
 }
 
-function inferDeliveryTarget(url: string): ResourceDeliveryTarget {
-  return String(url || "").startsWith("blob:") ? "browser_download" : "gd3";
-}
-
-function inferVisualKind({
+function visualKindOf({
   extension,
   mime,
   parserHint,
@@ -303,8 +293,8 @@ function inferVisualKind({
   mime?: string;
   parserHint?: ResourceParserHint;
 }): VisualKind {
-  const loweredMime = String(mime || "").toLowerCase();
-  const loweredExtension = String(extension || "").toLowerCase();
+  const loweredMime = mime?.toLowerCase() ?? "";
+  const loweredExtension = extension.toLowerCase();
 
   if (parserHint === "m3u8" || parserHint === "mpd") {
     return "stream";
@@ -338,7 +328,7 @@ function inferVisualKind({
   return "download";
 }
 
-function resourceDerivedState(resource: CapturedResource): {
+function resourcePresentationParts(resource: CapturedResource): {
   extension: string;
   parserHint: ResourceParserHint;
   deliveryTarget: ResourceDeliveryTarget;
@@ -347,22 +337,22 @@ function resourceDerivedState(resource: CapturedResource): {
   const extension = fileExtension(resource.filename || filenameFromUrl(resource.url));
   return {
     extension,
-    parserHint: inferParserHint(resource.url, resource.mime, extension),
-    deliveryTarget: inferDeliveryTarget(resource.url),
-    mediaKind: inferResourceMediaKind(resource, extension),
+    parserHint: parserHintOf(resource.url, resource.mime, extension),
+    deliveryTarget: resource.url.startsWith("blob:") ? "browser_download" : "gd3",
+    mediaKind: mediaKindOf(resource, extension),
   };
 }
 
-function resourcePrimaryBadge(resource: CapturedResource, derived = resourceDerivedState(resource)): string {
-  if (derived.parserHint === "m3u8") {
+function resourcePrimaryBadge(resource: CapturedResource, parts = resourcePresentationParts(resource)): string {
+  if (parts.parserHint === "m3u8") {
     return "M3U8";
   }
-  if (derived.parserHint === "mpd") {
+  if (parts.parserHint === "mpd") {
     return "MPD";
   }
 
-  if (derived.extension) {
-    return derived.extension.slice(0, 6).toUpperCase();
+  if (parts.extension) {
+    return parts.extension.slice(0, 6).toUpperCase();
   }
   if (resource.mime.startsWith("audio/")) {
     return "音频";
@@ -374,20 +364,20 @@ function resourcePrimaryBadge(resource: CapturedResource, derived = resourceDeri
 }
 
 export function describeResource(resource: CapturedResource): ResourcePresentation {
-  const derived = resourceDerivedState(resource);
-  const mime = String(resource.mime || "").toLowerCase();
+  const parts = resourcePresentationParts(resource);
+  const mime = resource.mime.toLowerCase();
 
   let category: ResourceFilter = "all";
-  if (derived.parserHint === "m3u8" || derived.parserHint === "mpd") {
+  if (parts.parserHint === "m3u8" || parts.parserHint === "mpd") {
     category = "streaming";
-  } else if (derived.mediaKind === "audio") {
+  } else if (parts.mediaKind === "audio") {
     category = "audio";
-  } else if (derived.mediaKind === "video") {
+  } else if (parts.mediaKind === "video") {
     category = "video";
   }
 
-  const primaryBadge = resourcePrimaryBadge(resource, derived);
-  const needsDesktop = derived.deliveryTarget === "gd3";
+  const primaryBadge = resourcePrimaryBadge(resource, parts);
+  const needsDesktop = parts.deliveryTarget === "gd3";
   const statusText = resource.sentToDesktopAt
     ? needsDesktop
       ? "已发送到 Ghost Downloader"
@@ -397,33 +387,33 @@ export function describeResource(resource: CapturedResource): ResourcePresentati
       : "浏览器下载";
 
   const tags = [primaryBadge];
-  tags.push(derived.deliveryTarget === "browser_download" ? "浏览器下载" : "GD3");
-  if (!resource.sentToDesktopAt && (derived.parserHint === "m3u8" || derived.parserHint === "mpd")) {
+  tags.push(parts.deliveryTarget === "browser_download" ? "浏览器下载" : "GD3");
+  if (!resource.sentToDesktopAt && (parts.parserHint === "m3u8" || parts.parserHint === "mpd")) {
     tags.push("流媒体");
   }
   if (
     !resource.sentToDesktopAt
     && resource.requestHeaders
     && Object.keys(resource.requestHeaders).length > 0
-    && (derived.parserHint === "m3u8" || derived.parserHint === "mpd")
+    && (parts.parserHint === "m3u8" || parts.parserHint === "mpd")
   ) {
     tags.push("需请求头");
   }
-  if (!resource.sentToDesktopAt && (derived.parserHint === "download" || derived.parserHint === "media")) {
+  if (!resource.sentToDesktopAt && (parts.parserHint === "download" || parts.parserHint === "media")) {
     tags.push("可直接下载");
   }
   const visual: ResourcePresentation["visual"] = {
-    kind: inferVisualKind({
-      extension: derived.extension,
+    kind: visualKindOf({
+      extension: parts.extension,
       mime,
-      parserHint: derived.parserHint,
+      parserHint: parts.parserHint,
     }),
   };
 
   return {
-    extension: derived.extension,
-    parserHint: derived.parserHint,
-    deliveryTarget: derived.deliveryTarget,
+    extension: parts.extension,
+    parserHint: parts.parserHint,
+    deliveryTarget: parts.deliveryTarget,
     category,
     primaryBadge,
     statusText,
@@ -434,17 +424,28 @@ export function describeResource(resource: CapturedResource): ResourcePresentati
   };
 }
 
+// A DASH segment can't stand alone — either the path carries /media-(audio|video)-
+// (Douyin packagers) or it's .m4s (Bilibili/generic CMAF).
+export function isDashSegment(resource: CapturedResource): boolean {
+  const url = resource.url;
+  if (url.includes("/media-audio-") || url.includes("/media-video-")) {
+    return true;
+  }
+  const extension = fileExtension(resource.filename || filenameFromUrl(url));
+  return extension === "m4s";
+}
+
 export function canUseOnlineMerge(resource: CapturedResource): boolean {
-  const derived = resourceDerivedState(resource);
-  if (derived.deliveryTarget !== "gd3") {
+  const parts = resourcePresentationParts(resource);
+  if (parts.deliveryTarget !== "gd3") {
     return false;
   }
 
-  const mime = String(resource.mime || "").toLowerCase();
+  const mime = resource.mime.toLowerCase();
   return (
-    derived.parserHint === "m3u8"
-    || derived.parserHint === "mpd"
-    || isCatCatchMedia(derived.extension, mime)
+    parts.parserHint === "m3u8"
+    || parts.parserHint === "mpd"
+    || isCatCatchMedia(parts.extension, mime)
     || mime.endsWith("octet-stream")
   );
 }
@@ -471,7 +472,7 @@ export function sortResourcesForOnlineMerge(resources: CapturedResource[]): Capt
 }
 
 export function filterResources(resources: CapturedResource[], filter: ResourceFilter): CapturedResource[] {
-  const sorted = sortResources(resources);
+  const sorted = [...resources].sort((left, right) => right.capturedAt - left.capturedAt);
   if (filter === "all") {
     return sorted;
   }
@@ -491,7 +492,7 @@ export function taskActionLabel(task: GenericTaskSummary): string {
 export function taskVisual(task: GenericTaskSummary): { kind: VisualKind } {
   const extension = fileExtension(task.fileExt || task.title);
   return {
-    kind: inferVisualKind({
+    kind: visualKindOf({
       extension,
       parserHint:
         task.packName.includes("m3u8") || extension === "m3u8" || extension === "mpd"

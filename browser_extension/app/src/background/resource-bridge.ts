@@ -1,8 +1,6 @@
-import type {CapturedResource, DesktopRequestResult, PopupStatePayload} from "../shared/types";
+import type {CapturedResource, DesktopRequestResult, ResourceCollectionState} from "../shared/types";
 import {
-    canUseOnlineMerge,
     canUseOnlineMergeSelection,
-    describeResource,
     domainFromUrl,
     fileExtension,
     filenameFromUrl,
@@ -10,6 +8,7 @@ import {
     sortResourcesForOnlineMerge,
 } from "../shared/utils";
 import {isCatCatchMedia} from "../shared/cat-catch";
+import type {Selection} from "../page-media/types";
 import {
     BRIDGE_HEADER_SNAPSHOTS_KEY,
     BRIDGE_LAST_ACTIVE_TAB_KEY,
@@ -19,10 +18,9 @@ import {
     HEADER_SNAPSHOT_LIMIT,
     RESOURCE_LIMIT,
 } from "./constants";
-import {bridgeStorageGet, bridgeStorageSet, getTab, openActionPopup, queryTabs,} from "./chrome-helpers";
-import {pickSiteMediaResources} from "./media-download-adapters";
+import {bridgeStorageSet, findTab, loadFromBridgeStorage, openActionPopup, queryTabs,} from "./chrome-helpers";
 
-type BridgeHeaderSnapshot = {
+type HeaderSnapshot = {
   url: string;
   headers: Record<string, string>;
   capturedAt: number;
@@ -30,7 +28,8 @@ type BridgeHeaderSnapshot = {
   supportsRange: boolean;
 };
 
-type BridgeResourcePayload = {
+// From cat-catch's addMedia path — DOM-side discovery pushed up by capturePageResource.
+type CapturePayload = {
   url: string;
   href?: string;
   filename?: string;
@@ -39,6 +38,14 @@ type BridgeResourcePayload = {
   poster?: string;
   resourceUrls?: string[];
   requestHeaders?: Record<string, string>;
+};
+
+// From overlay click — strategy already disambiguated against the right <video>, so
+// background just augments with headers and dispatches.
+type ClickPayload = {
+  selection: Selection;
+  href: string;
+  title: string;
 };
 
 type NetworkResponseMeta = {
@@ -99,91 +106,89 @@ export function createResourceBridge(options: {
   sendDesktopRequest: DesktopRequestSender;
 }) {
   let bridgePersistTimer: number | null = null;
-  let bridgeStateReady = false;
+  let restoredFromStorage = false;
   let lastActiveTabId: number | null = null;
 
   const resourceCache = new Map<number, ResourceBucket>();
   const resourcesById = new Map<string, CapturedResource>();
-  const headerSnapshotsByUrl = new Map<string, BridgeHeaderSnapshot>();
+  const headerSnapshotsByUrl = new Map<string, HeaderSnapshot>();
 
-  function normalizeHeaders(headers: Record<string, string> | undefined): Record<string, string> {
+  // Lets resolveResourceForUrl wait when click races ahead of webRequest (SW restart).
+  const resourceCacheAwaiters = new Map<string, Set<(resource: CapturedResource) => void>>();
+  function notifyResourceCached(resource: CapturedResource): void {
+    const key = resource.id;
+    const set = resourceCacheAwaiters.get(key);
+    if (!set || set.size === 0) { return; }
+    resourceCacheAwaiters.delete(key);
+    for (const resolver of set) {
+      try { resolver(resource); } catch { /* swallow */ }
+    }
+  }
+  function awaitResourceCached(key: string, timeoutMs: number): Promise<CapturedResource | null> {
+    return new Promise((resolve) => {
+      let set = resourceCacheAwaiters.get(key);
+      if (!set) { set = new Set(); resourceCacheAwaiters.set(key, set); }
+      let settled = false;
+      const finish = (value: CapturedResource | null) => {
+        if (settled) { return; }
+        settled = true;
+        set?.delete(resolver);
+        if (set && set.size === 0) { resourceCacheAwaiters.delete(key); }
+        clearTimeout(timer);
+        resolve(value);
+      };
+      const resolver = (resource: CapturedResource) => finish(resource);
+      set.add(resolver);
+      const timer = setTimeout(() => finish(null), timeoutMs);
+    });
+  }
+
+  function selectAllowedHeaders(headers: Record<string, string> | undefined): Record<string, string> {
     const result: Record<string, string> = {};
     for (const [key, value] of Object.entries(headers ?? {})) {
-      const name = String(key || "").trim().toLowerCase();
-      if (!HEADER_WHITELIST.has(name)) {
-        continue;
-      }
-      const text = String(value ?? "").trim();
-      if (!text) {
-        continue;
-      }
+      const name = key.trim().toLowerCase();
+      if (!HEADER_WHITELIST.has(name)) { continue; }
+      const text = value.trim();
+      if (!text) { continue; }
       result[name] = text;
     }
     return result;
   }
 
-  function trimFilename(value: string): string {
-    const text = String(value || "").trim();
-    if (!text) {
-      return "";
-    }
-    const slashIndex = Math.max(text.lastIndexOf("/"), text.lastIndexOf("\\"));
-    return slashIndex >= 0 ? text.slice(slashIndex + 1) : text;
+  function basenameOf(path: string): string {
+    const trimmed = path.trim();
+    if (!trimmed) { return ""; }
+    const slashIndex = Math.max(trimmed.lastIndexOf("/"), trimmed.lastIndexOf("\\"));
+    return slashIndex >= 0 ? trimmed.slice(slashIndex + 1) : trimmed;
   }
 
-  function isCapturableUrl(rawUrl: string): boolean {
-    return /^https?:/i.test(rawUrl);
+  function isCapturableUrl(url: string): boolean {
+    return /^https?:/i.test(url);
   }
 
   function sortResources(resources: Iterable<CapturedResource>): CapturedResource[] {
     return [...resources].sort((left, right) => right.capturedAt - left.capturedAt);
   }
 
-  function normalizeUrl(value: string, allowBlob = false): string {
-    const text = String(value || "").trim();
-    if (!text) {
-      return "";
-    }
-
-    if (allowBlob && text.startsWith("blob:")) {
-      return text;
-    }
-
+  function urlWithoutHash(value: string, allowBlob = false): string {
+    if (!value) { return ""; }
+    if (allowBlob && value.startsWith("blob:")) { return value; }
     try {
-      const url = new URL(text);
+      const url = new URL(value);
       url.hash = "";
       return url.toString();
     } catch {
-      return text.split("#", 1)[0] ?? text;
+      return value.split("#", 1)[0] ?? value;
     }
   }
 
-  function normalizeCapturedResource(resource: CapturedResource): CapturedResource {
-    return {
-      id: String(resource.id ?? ""),
-      tabId: Number(resource.tabId),
-      url: String(resource.url ?? ""),
-      pageTitle: String(resource.pageTitle ?? ""),
-      pageUrl: String(resource.pageUrl ?? ""),
-      filename: String(resource.filename ?? ""),
-      mime: String(resource.mime ?? "").toLowerCase(),
-      size: Number(resource.size ?? 0),
-      supportsRange: Boolean(resource.supportsRange),
-      referer: String(resource.referer ?? ""),
-      requestHeaders: normalizeHeaders(resource.requestHeaders),
-      capturedAt: Number(resource.capturedAt ?? Date.now()),
-      sentToDesktopAt: resource.sentToDesktopAt ? Number(resource.sentToDesktopAt) : undefined,
-    };
+  // Schema round-trips through JSON cleanly; only the header whitelist needs re-running.
+  function resourceFromStorage(resource: CapturedResource): CapturedResource {
+    return { ...resource, requestHeaders: selectAllowedHeaders(resource.requestHeaders) };
   }
 
-  function normalizeBridgeHeaderSnapshot(snapshot: BridgeHeaderSnapshot): BridgeHeaderSnapshot {
-    return {
-      url: String(snapshot.url ?? ""),
-      headers: normalizeHeaders(snapshot.headers),
-      capturedAt: Number(snapshot.capturedAt ?? Date.now()),
-      tabId: Number.isInteger(snapshot.tabId) ? Number(snapshot.tabId) : null,
-      supportsRange: Boolean(snapshot.supportsRange),
-    };
+  function headerSnapshotFromStorage(snapshot: HeaderSnapshot): HeaderSnapshot {
+    return { ...snapshot, headers: selectAllowedHeaders(snapshot.headers) };
   }
 
   function responseMeta(headers: chrome.webRequest.HttpHeader[] | undefined): NetworkResponseMeta {
@@ -191,8 +196,8 @@ export function createResourceBridge(options: {
     let contentLengthSize = 0;
     let contentRangeSize = 0;
     for (const header of headers ?? []) {
-      const name = String(header.name ?? "").toLowerCase();
-      const value = String(header.value ?? "").trim();
+      const name = (header.name ?? "").toLowerCase();
+      const value = (header.value ?? "").trim();
       if (name === "content-length") {
         const size = Number.parseInt(value, 10);
         contentLengthSize = Number.isFinite(size) && size > 0 ? size : contentLengthSize;
@@ -202,9 +207,9 @@ export function createResourceBridge(options: {
         const match = /filename\*\s*=\s*UTF-8''([^;]+)|filename\s*=\s*"?([^";]+)"?/i.exec(value);
         const filename = match?.[1] ?? match?.[2] ?? "";
         try {
-          meta.filename = trimFilename(decodeURIComponent(filename));
+          meta.filename = basenameOf(decodeURIComponent(filename));
         } catch {
-          meta.filename = trimFilename(filename);
+          meta.filename = basenameOf(filename);
         }
       } else if (name === "accept-ranges") {
         meta.supportsRange = value.toLowerCase().includes("bytes");
@@ -233,9 +238,9 @@ export function createResourceBridge(options: {
     return details.type === "media" || isCatCatchMedia(fileExtension(filenameFromUrl(details.url)), mimeFromUrl(details.url));
   }
 
-  function urlsLikelySamePage(left: string, right: string): boolean {
-    const normalizedLeft = normalizeUrl(left);
-    const normalizedRight = normalizeUrl(right);
+  function urlsSharePathPrefix(left: string, right: string): boolean {
+    const normalizedLeft = urlWithoutHash(left);
+    const normalizedRight = urlWithoutHash(right);
     if (!normalizedLeft || !normalizedRight) {
       return false;
     }
@@ -243,13 +248,13 @@ export function createResourceBridge(options: {
   }
 
   async function resolveTabIdFromPageUrl(pageUrl: string): Promise<number | null> {
-    const normalizedPageUrl = normalizeUrl(pageUrl);
+    const normalizedPageUrl = urlWithoutHash(pageUrl);
     if (!normalizedPageUrl) {
       return null;
     }
 
     const tabs = await queryTabs({});
-    const exactMatch = tabs.find((tab) => tab.id && tab.url && urlsLikelySamePage(tab.url, normalizedPageUrl));
+    const exactMatch = tabs.find((tab) => tab.id && tab.url && urlsSharePathPrefix(tab.url, normalizedPageUrl));
     if (exactMatch?.id) {
       return exactMatch.id;
     }
@@ -358,7 +363,7 @@ export function createResourceBridge(options: {
 
   async function resolveActiveTabId(preferredTabId: number | null = null): Promise<number | null> {
     if (preferredTabId != null) {
-      const preferredTab = await getTab(preferredTabId);
+      const preferredTab = await findTab(preferredTabId);
       if (preferredTab?.id) {
         await setLastActiveTab(preferredTab.id);
         return preferredTab.id;
@@ -371,7 +376,7 @@ export function createResourceBridge(options: {
     }
 
     if (lastActiveTabId != null) {
-      const current = await getTab(lastActiveTabId);
+      const current = await findTab(lastActiveTabId);
       if (current?.id) {
         return current.id;
       }
@@ -407,7 +412,7 @@ export function createResourceBridge(options: {
     return MIME_EXTENSIONS[type] ?? "";
   }
 
-  function resolveBridgeFilename(payload: BridgeResourcePayload): string {
+  function resolveBridgeFilename(payload: CapturePayload): string {
     const ext = payload.ext?.trim() || extensionFromMime(payload.mime);
     const explicit = cleanFilename(payload.filename);
     if (explicit) {
@@ -503,9 +508,10 @@ export function createResourceBridge(options: {
           size: resource.size > 0 ? resource.size : existing.size,
           supportsRange: resource.supportsRange || existing.supportsRange,
           referer: resource.referer || existing.referer,
+          // Fresh cookies/auth/sec-* override stale ones (per-key, like every field above).
           requestHeaders: {
-            ...resource.requestHeaders,
             ...existing.requestHeaders,
+            ...resource.requestHeaders,
           },
           capturedAt: Math.max(existing.capturedAt, resource.capturedAt),
           sentToDesktopAt: existing.sentToDesktopAt ?? resource.sentToDesktopAt,
@@ -514,7 +520,8 @@ export function createResourceBridge(options: {
 
     bucket.set(merged.id, merged);
     resourcesById.set(merged.id, merged);
-    const mergedUrl = normalizeUrl(merged.url, true);
+    notifyResourceCached(merged);
+    const mergedUrl = urlWithoutHash(merged.url, true);
     if (mergedUrl && (merged.size > 0 || merged.mime || merged.supportsRange)) {
       for (const resource of resourcesById.values()) {
         if (resource.id === merged.id || !resource.id.endsWith(`:${mergedUrl}`)) {
@@ -530,8 +537,8 @@ export function createResourceBridge(options: {
     scheduleBridgeStatePersist();
   }
 
-  function findResourceByUrl(rawUrl: string, tabId?: number): CapturedResource | null {
-    const resourceIdSuffix = `:${normalizeUrl(rawUrl, true)}`;
+  function findResourceByUrl(url: string, tabId?: number): CapturedResource | null {
+    const resourceIdSuffix = `:${urlWithoutHash(url, true)}`;
     let matched: CapturedResource | null = null;
     const resources = tabId == null ? resourcesById.values() : (resourceCache.get(tabId)?.values() ?? []);
     for (const resource of resources) {
@@ -580,7 +587,7 @@ export function createResourceBridge(options: {
     scheduleBridgeStatePersist();
   }
 
-  function resolveHeaderSnapshot(url: string): BridgeHeaderSnapshot | null {
+  function resolveHeaderSnapshot(url: string): HeaderSnapshot | null {
     pruneHeaderSnapshots();
     return headerSnapshotsByUrl.get(url) ?? null;
   }
@@ -596,28 +603,13 @@ export function createResourceBridge(options: {
     return sortResources(result);
   }
 
-  function canSendOneClickResource(resource: CapturedResource): boolean {
-    const hint = describeResource(resource).parserHint;
-    return hint === "m3u8" || hint === "mpd" || resource.size > 0 || resource.supportsRange;
-  }
-
-  function recentAudioVideoPair(resources: CapturedResource[]): CapturedResource[] {
-    const recentResources = resources.filter((resource) => Date.now() - resource.capturedAt <= 120000);
-    const video = recentResources.find((resource) => describeResource(resource).category === "video");
-    const audio = recentResources.find((resource) => describeResource(resource).category === "audio");
-    if (!video || !audio || Math.abs(video.capturedAt - audio.capturedAt) > 30000) {
-      return [];
-    }
-    return canUseOnlineMergeSelection([video, audio]) ? [video, audio] : [];
-  }
-
-  function deriveMergeOutputTitle(resources: CapturedResource[]): string {
+  function mergeOutputTitle(resources: CapturedResource[]): string {
     const pageTitle = (resources[0]?.pageTitle ?? "").trim();
     if (pageTitle) {
       return pageTitle;
     }
 
-    const firstFileName = trimFilename(resources[0]?.filename || filenameFromUrl(resources[0]?.url || ""));
+    const firstFileName = basenameOf(resources[0]?.filename || filenameFromUrl(resources[0]?.url || ""));
     if (firstFileName) {
       const extension = fileExtension(firstFileName);
       return extension ? firstFileName.slice(0, -(extension.length + 1)) : firstFileName;
@@ -652,9 +644,9 @@ export function createResourceBridge(options: {
   }
 
   async function loadPersistentState() {
-    const bridgeState = await bridgeStorageGet<{
+    const bridgeState = await loadFromBridgeStorage<{
       [BRIDGE_RESOURCE_CACHE_KEY]: Record<string, CapturedResource[]>;
-      [BRIDGE_HEADER_SNAPSHOTS_KEY]: BridgeHeaderSnapshot[];
+      [BRIDGE_HEADER_SNAPSHOTS_KEY]: HeaderSnapshot[];
       [BRIDGE_LAST_ACTIVE_TAB_KEY]: number;
     }>({
       [BRIDGE_RESOURCE_CACHE_KEY]: {},
@@ -670,7 +662,7 @@ export function createResourceBridge(options: {
         continue;
       }
       const bucket = new Map<string, CapturedResource>();
-      for (const resource of sortResources(resources.map(normalizeCapturedResource)).slice(0, RESOURCE_LIMIT)) {
+      for (const resource of sortResources(resources.map(resourceFromStorage)).slice(0, RESOURCE_LIMIT)) {
         bucket.set(resource.id, resource);
         resourcesById.set(resource.id, resource);
       }
@@ -679,7 +671,7 @@ export function createResourceBridge(options: {
 
     headerSnapshotsByUrl.clear();
     for (const snapshot of bridgeState[BRIDGE_HEADER_SNAPSHOTS_KEY] ?? []) {
-      const normalized = normalizeBridgeHeaderSnapshot(snapshot);
+      const normalized = headerSnapshotFromStorage(snapshot);
       if (!normalized.url) {
         continue;
       }
@@ -688,37 +680,64 @@ export function createResourceBridge(options: {
     pruneHeaderSnapshots();
 
     lastActiveTabId = Number(bridgeState[BRIDGE_LAST_ACTIVE_TAB_KEY] ?? 0) || null;
-    bridgeStateReady = true;
+    restoredFromStorage = true;
   }
 
-  async function capturePageResource(sender: chrome.runtime.MessageSender, payload: BridgeResourcePayload) {
+  function cacheResourceFor(
+    url: string,
+    tabId: number,
+    tab: chrome.tabs.Tab | null,
+    pageUrl: string,
+    parts: {
+      filename: string;
+      mime: string;
+      size: number;
+      supportsRange: boolean;
+      extraHeaders?: Record<string, string>;
+    },
+  ) {
+    const headerSnapshot = resolveHeaderSnapshot(url);
+    const headers = {
+      ...(headerSnapshot?.headers ?? {}),
+      ...(parts.extraHeaders ?? {}),
+    };
+    const referer = headers.referer || pageUrl || tab?.url || "";
+    if (referer) { headers.referer = referer; }
+
+    cacheResource({
+      id: `${tabId}:${urlWithoutHash(url, true)}`,
+      tabId,
+      url,
+      pageTitle: tab?.title ?? "",
+      pageUrl: pageUrl || tab?.url || "",
+      filename: parts.filename,
+      mime: parts.mime,
+      size: parts.size,
+      supportsRange: parts.supportsRange || Boolean(headerSnapshot?.supportsRange),
+      referer,
+      requestHeaders: headers,
+      capturedAt: Date.now(),
+    });
+  }
+
+  // Cross-origin opaque requests get the literal string "null" here.
+  function initiatorOf(details: { initiator?: string }): string {
+    return details.initiator && details.initiator !== "null" ? details.initiator : "";
+  }
+
+  async function capturePageResource(sender: chrome.runtime.MessageSender, payload: CapturePayload) {
     const tabId = await resolveBridgeResourceTabId(sender, payload.href);
     if (!tabId || !/^(https?:|blob:)/i.test(payload.url)) {
       return;
     }
 
-    const tab = await getTab(tabId);
-    const headerSnapshot = resolveHeaderSnapshot(payload.url);
-    const headers = {
-      ...(headerSnapshot?.headers ?? {}),
-      ...normalizeHeaders(payload.requestHeaders),
-    };
-    const filename = resolveBridgeFilename(payload);
-    const mime = payload.mime?.toLowerCase() || mimeFromUrl(payload.url);
-
-    cacheResource({
-      id: `${tabId}:${normalizeUrl(payload.url, true)}`,
-      tabId,
-      url: payload.url,
-      pageTitle: tab?.title ?? "",
-      pageUrl: payload.href ?? tab?.url ?? "",
-      filename,
-      mime,
+    const tab = await findTab(tabId);
+    cacheResourceFor(payload.url, tabId, tab, payload.href ?? tab?.url ?? "", {
+      filename: resolveBridgeFilename(payload),
+      mime: payload.mime?.toLowerCase() || mimeFromUrl(payload.url),
       size: 0,
-      supportsRange: Boolean(headerSnapshot?.supportsRange),
-      referer: headers.referer ?? payload.href ?? tab?.url ?? "",
-      requestHeaders: headers,
-      capturedAt: Date.now(),
+      supportsRange: false,
+      extraHeaders: selectAllowedHeaders(payload.requestHeaders),
     });
   }
 
@@ -739,27 +758,12 @@ export function createResourceBridge(options: {
       return;
     }
 
-    const tab = await getTab(tabId);
-    const headerSnapshot = resolveHeaderSnapshot(details.url);
-    const headers = { ...(headerSnapshot?.headers ?? {}) };
-    const referer = headers.referer || (details.initiator && details.initiator !== "null" ? details.initiator : tab?.url) || "";
-    if (referer) {
-      headers.referer = referer;
-    }
-
-    cacheResource({
-      id: `${tabId}:${normalizeUrl(details.url, true)}`,
-      tabId,
-      url: details.url,
-      pageTitle: tab?.title ?? "",
-      pageUrl: details.initiator && details.initiator !== "null" ? details.initiator : tab?.url ?? "",
-      filename: meta.filename || trimFilename(filenameFromUrl(details.url)) || "resource",
+    const tab = await findTab(tabId);
+    cacheResourceFor(details.url, tabId, tab, initiatorOf(details), {
+      filename: meta.filename || basenameOf(filenameFromUrl(details.url)) || "resource",
       mime: meta.mime,
       size: meta.size,
-      supportsRange: responseSupportsRange || Boolean(headerSnapshot?.supportsRange),
-      referer,
-      requestHeaders: headers,
-      capturedAt: Date.now(),
+      supportsRange: responseSupportsRange,
     });
   }
 
@@ -773,44 +777,25 @@ export function createResourceBridge(options: {
       return;
     }
 
-    const tab = await getTab(tabId);
-    const headerSnapshot = resolveHeaderSnapshot(details.url);
-    const headers = { ...(headerSnapshot?.headers ?? {}) };
-    const referer = headers.referer || (details.initiator && details.initiator !== "null" ? details.initiator : tab?.url) || "";
-    if (referer) {
-      headers.referer = referer;
-    }
-
-    cacheResource({
-      id: `${tabId}:${normalizeUrl(details.url, true)}`,
-      tabId,
-      url: details.url,
-      pageTitle: tab?.title ?? "",
-      pageUrl: details.initiator && details.initiator !== "null" ? details.initiator : tab?.url ?? "",
-      filename: trimFilename(filenameFromUrl(details.url)) || "resource",
+    const tab = await findTab(tabId);
+    cacheResourceFor(details.url, tabId, tab, initiatorOf(details), {
+      filename: basenameOf(filenameFromUrl(details.url)) || "resource",
       mime: mimeFromUrl(details.url),
       size: 0,
-      supportsRange: Boolean(headerSnapshot?.supportsRange),
-      referer,
-      requestHeaders: headers,
-      capturedAt: Date.now(),
+      supportsRange: false,
     });
   }
 
   async function handoffBrowserDownload(downloadItem: chrome.downloads.DownloadItem) {
     const finalUrl = downloadItem.finalUrl || downloadItem.url;
-    const matchedResource =
-      findResourceByUrl(finalUrl)
-      ?? (downloadItem.url !== finalUrl ? findResourceByUrl(downloadItem.url) : null);
+    const matchedResource = findResourceByUrl(finalUrl) ?? findResourceByUrl(downloadItem.url);
     const resolvedFilename =
-      trimFilename(downloadItem.filename)
-      || trimFilename(matchedResource?.filename ?? "")
-      || trimFilename(filenameFromUrl(finalUrl))
+      basenameOf(downloadItem.filename)
+      || basenameOf(matchedResource?.filename ?? "")
+      || basenameOf(filenameFromUrl(finalUrl))
       || "resource";
 
-    const headerSnapshot =
-      resolveHeaderSnapshot(finalUrl)
-      ?? (downloadItem.url !== finalUrl ? resolveHeaderSnapshot(downloadItem.url) : null);
+    const headerSnapshot = resolveHeaderSnapshot(finalUrl) ?? resolveHeaderSnapshot(downloadItem.url);
     const headers = { ...(headerSnapshot?.headers ?? {}) };
     if (downloadItem.referrer && !headers.referer) {
       headers.referer = downloadItem.referrer;
@@ -840,7 +825,8 @@ export function createResourceBridge(options: {
         await openActionPopup();
       }
     } catch {
-      // Browser download has already been intercepted; ignore desktop handoff failures here.
+      // Browser download was already intercepted — the user already lost it from the
+      // browser's download tray, so a desktop handoff failure here is unrecoverable anyway.
     }
   }
 
@@ -882,107 +868,121 @@ export function createResourceBridge(options: {
       return { ok: false, message: "资源不存在" };
     }
 
-    try {
-      if (resource.url.startsWith("blob:")) {
+    if (resource.url.startsWith("blob:")) {
+      try {
         await downloadResourceViaBrowser(resource);
         markResourceSent(resource.id);
-        return {
-          ok: true,
-          message: "资源已交给浏览器下载",
-        };
+        return { ok: true, message: "资源已交给浏览器下载" };
+      } catch (error) {
+        return { ok: false, message: error instanceof Error ? error.message : "发送资源失败" };
       }
-
-      return await sendHttpResourceToDesktop(resource);
-    } catch (error) {
-      return {
-        ok: false,
-        message: error instanceof Error ? error.message : "发送资源失败",
-      };
     }
+
+    return sendHttpResourceToDesktop(resource);
   }
 
-  async function downloadPageMedia(sender: chrome.runtime.MessageSender, payload: BridgeResourcePayload): Promise<DesktopRequestResult> {
+  // Twitter / Bilibili CDNs 403 without Referer; cat-catch's addMedia path doesn't carry one.
+  function ensureReferer(resource: CapturedResource, fallback: string): void {
+    if (!fallback || resource.requestHeaders.referer || resource.referer) { return; }
+    resource.requestHeaders = { ...resource.requestHeaders, referer: fallback };
+    resource.referer = fallback;
+  }
+
+  // Strategy already proved this URL belongs to the active video, so we must dispatch
+  // something — desktop range-probes whatever metadata we can't fill in. The synthesized
+  // row goes into resourceCache so markResourceSent can find it and a later webRequest
+  // event can merge real size/headers into it.
+  async function resolveResourceForUrl(url: string, tabId: number, fallbackTitle: string, fallbackPageUrl: string): Promise<CapturedResource> {
+    const id = `${tabId}:${urlWithoutHash(url, true)}`;
+
+    const direct = resourceCache.get(tabId)?.get(id);
+    if (direct) {
+      ensureReferer(direct, fallbackPageUrl);
+      return direct;
+    }
+
+    const waited = await awaitResourceCached(id, 1500);
+    if (waited) {
+      ensureReferer(waited, fallbackPageUrl);
+      return waited;
+    }
+
+    const snapshot = resolveHeaderSnapshot(url);
+    const headers: Record<string, string> = { ...(snapshot?.headers ?? {}) };
+    const referer = headers.referer || fallbackPageUrl;
+    if (referer) { headers.referer = referer; }
+    const synthesized: CapturedResource = {
+      id,
+      tabId,
+      url,
+      pageTitle: fallbackTitle,
+      pageUrl: fallbackPageUrl,
+      filename: basenameOf(filenameFromUrl(url)) || "resource",
+      mime: mimeFromUrl(url),
+      size: 0,
+      supportsRange: Boolean(snapshot?.supportsRange),
+      referer,
+      requestHeaders: headers,
+      capturedAt: Date.now(),
+    };
+    cacheResource(synthesized);
+    console.warn(
+      "[GD3 Bridge] resolveResourceForUrl synthesized fallback (no webRequest row within 1500ms)",
+      { url: synthesized.url, hasSnapshot: Boolean(snapshot), hasReferer: Boolean(referer) },
+    );
+    return synthesized;
+  }
+
+  async function downloadPageMedia(sender: chrome.runtime.MessageSender, payload: ClickPayload): Promise<DesktopRequestResult> {
     const tabId = await resolveBridgeResourceTabId(sender, payload.href);
     if (!tabId) {
       return { ok: false, message: "当前没有可操作的标签页" };
     }
 
-    const downloadableResources = sortResources(resourceCache.get(tabId)?.values() ?? [])
-      .filter((resource) => /^https?:/i.test(resource.url) && canSendOneClickResource(resource));
-    const candidates = downloadableResources.filter(canUseOnlineMerge);
-    const siteSelection = pickSiteMediaResources(downloadableResources, payload);
-    if (siteSelection?.resources.length === 1) {
-      return sendResource(siteSelection.resources[0].id);
+    const selection = payload.selection;
+    if (!selection || typeof selection !== "object") {
+      return { ok: false, message: "无效的下载请求" };
     }
-    if (siteSelection?.resources.length === 2) {
-      return mergeResources(siteSelection.resources.map((resource) => resource.id));
-    }
-    if (siteSelection?.exclusive) {
-      await openActionPopup();
-      return {
-        ok: false,
-        message: siteSelection.message || "请在资源嗅探页选择当前媒体资源",
-      };
+    const fallbackPageUrl = payload.href || "";
+
+    if (selection.kind === "single" || selection.kind === "stream") {
+      if (!selection.url) {
+        return { ok: false, message: "无效的下载请求" };
+      }
+      const resource = await resolveResourceForUrl(selection.url, tabId, payload.title, fallbackPageUrl);
+      const result = await sendHttpResourceToDesktop(resource);
+      if (result.ok) { await openActionPopup(); }
+      return result;
     }
 
-    const exactResource = payload.url ? findResourceByUrl(payload.url, tabId) : null;
-    if (exactResource && canSendOneClickResource(exactResource)) {
-      return sendResource(exactResource.id);
+    if (selection.kind === "merge") {
+      if (!selection.video || !selection.audio) {
+        return { ok: false, message: "无效的合并请求" };
+      }
+      const [video, audio] = await Promise.all([
+        resolveResourceForUrl(selection.video, tabId, payload.title, fallbackPageUrl),
+        resolveResourceForUrl(selection.audio, tabId, payload.title, fallbackPageUrl),
+      ]);
+      const result = await dispatchMergeResources([video, audio]);
+      if (result.ok) { await openActionPopup(); }
+      return result;
     }
 
-    const streamResource = candidates.find((resource) => {
-      const hint = describeResource(resource).parserHint;
-      return hint === "m3u8" || hint === "mpd";
-    });
-    if (streamResource) {
-      return sendResource(streamResource.id);
-    }
-
-    const pair = recentAudioVideoPair(candidates);
-    if (pair.length === 2) {
-      return mergeResources(pair.map((resource) => resource.id));
-    }
-
-    if (candidates.length === 1) {
-      return sendResource(candidates[0].id);
-    }
-
-    await openActionPopup();
-    return {
-      ok: false,
-      message: candidates.length > 1 ? "找到多个媒体资源，请在资源嗅探页选择" : "尚未捕获到可下载媒体资源",
-    };
+    return { ok: false, message: "未知的下载请求类型" };
   }
 
-  async function mergeResources(resourceIds: string[]): Promise<DesktopRequestResult> {
-    const ids = [...new Set(resourceIds.filter(Boolean))];
-    const resources = ids
-      .map((resourceId) => resourcesById.get(resourceId) ?? null)
-      .filter((resource): resource is CapturedResource => resource != null);
-
+  async function dispatchMergeResources(resources: CapturedResource[]): Promise<DesktopRequestResult> {
     if (resources.length !== 2) {
-      return {
-        ok: false,
-        message: "在线合并暂时只支持选中 2 个资源",
-      };
+      return { ok: false, message: "在线合并暂时只支持选中 2 个资源" };
     }
-
-    if (!canUseOnlineMergeSelection(resources)) {
-      return {
-        ok: false,
-        message: "当前选中的资源不符合在线合并条件",
-      };
-    }
-
-    const orderedResources = sortResourcesForOnlineMerge(resources);
-
+    const ordered = sortResourcesForOnlineMerge(resources);
     try {
       const result = await options.sendDesktopRequest<DesktopRequestResult>({
         type: "create_task",
         source: "resource_merge",
-        title: deriveMergeOutputTitle(orderedResources),
+        title: mergeOutputTitle(ordered),
         payload: {
-          resources: orderedResources.map((resource) => ({
+          resources: ordered.map((resource) => ({
             url: resource.url,
             filename: filenameForDesktop(resource),
             mime: resource.mime,
@@ -993,31 +993,34 @@ export function createResourceBridge(options: {
           })),
         },
       });
-
       if (result.ok) {
-        orderedResources.forEach((resource) => markResourceSent(resource.id));
-        return {
-          ...result,
-          message: result.message || "在线合并任务已发送到 Ghost Downloader",
-        };
+        ordered.forEach((resource) => markResourceSent(resource.id));
+        return { ...result, message: result.message || "在线合并任务已发送到 Ghost Downloader" };
       }
       return result;
     } catch (error) {
-      return {
-        ok: false,
-        message: error instanceof Error ? error.message : "在线合并失败",
-      };
+      return { ok: false, message: error instanceof Error ? error.message : "在线合并失败" };
     }
   }
 
-  function buildPopupStateData(resolvedTabId: number | null, activeTab: chrome.tabs.Tab | null): Pick<
-    PopupStatePayload,
-    "resourceState" | "resourceStateMessage" | "currentResources" | "otherResources" | "activePageDomain"
-  > {
+  async function mergeResources(resourceIds: string[]): Promise<DesktopRequestResult> {
+    const ids = [...new Set(resourceIds.filter(Boolean))];
+    const resources = ids
+      .map((resourceId) => resourcesById.get(resourceId) ?? null)
+      .filter((resource): resource is CapturedResource => resource != null);
+
+    if (!canUseOnlineMergeSelection(resources)) {
+      return { ok: false, message: "当前选中的资源不符合在线合并条件" };
+    }
+
+    return dispatchMergeResources(resources);
+  }
+
+  function buildPopupStateData(resolvedTabId: number | null, activeTab: chrome.tabs.Tab | null) {
     const canCaptureCurrentTab = Boolean(activeTab?.url && isCapturableUrl(activeTab.url));
-    let resourceState: PopupStatePayload["resourceState"] = "ready";
+    let resourceState: ResourceCollectionState = "ready";
     let resourceStateMessage = "等待 cat-catch 捕获资源";
-    if (!bridgeStateReady) {
+    if (!restoredFromStorage) {
       resourceState = "restoring";
       resourceStateMessage = "正在恢复 cat-catch 已捕获的资源";
     } else if (!canCaptureCurrentTab) {
@@ -1034,7 +1037,7 @@ export function createResourceBridge(options: {
     };
   }
 
-  function handleTabRemoved(tabId: number) {
+  function onTabRemoved(tabId: number) {
     clearResourcesForTab(tabId);
     clearHeaderSnapshotsForTab(tabId);
     if (lastActiveTabId === tabId) {
@@ -1042,7 +1045,7 @@ export function createResourceBridge(options: {
     }
   }
 
-  function handleNavigationCommitted(details: chrome.webNavigation.WebNavigationTransitionCallbackDetails) {
+  function onNavigationCommitted(details: chrome.webNavigation.WebNavigationTransitionCallbackDetails) {
     if (details.tabId <= 0 || details.frameId !== 0) {
       return;
     }
@@ -1050,8 +1053,8 @@ export function createResourceBridge(options: {
     clearHeaderSnapshotsForTab(details.tabId);
   }
 
-  function handleRequestHeaders(details: chrome.webRequest.OnSendHeadersDetails) {
-    const headers = normalizeHeaders(Object.fromEntries((details.requestHeaders ?? []).map((header) => [header.name ?? "", header.value ?? ""])));
+  function onRequestHeaders(details: chrome.webRequest.OnSendHeadersDetails) {
+    const headers = selectAllowedHeaders(Object.fromEntries((details.requestHeaders ?? []).map((header) => [header.name ?? "", header.value ?? ""])));
     const supportsRange = (details.requestHeaders ?? []).some((header) => header.name?.toLowerCase() === "range" && String(header.value ?? "").toLowerCase().startsWith("bytes="));
     rememberHeaderSnapshot(details.url, headers, details.tabId > 0 ? details.tabId : lastActiveTabId, supportsRange);
   }
@@ -1063,9 +1066,9 @@ export function createResourceBridge(options: {
     captureRequestResource,
     downloadPageMedia,
     handoffBrowserDownload,
-    handleNavigationCommitted,
-    handleRequestHeaders,
-    handleTabRemoved,
+    onNavigationCommitted,
+    onRequestHeaders,
+    onTabRemoved,
     loadPersistentState,
     refreshActiveTabFromBrowser,
     resolveActiveTabId,

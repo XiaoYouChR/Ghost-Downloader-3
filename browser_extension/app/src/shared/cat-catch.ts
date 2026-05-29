@@ -69,17 +69,14 @@ export function isCatCatchMpd(extension: string, mime = ""): boolean {
   return extension === "mpd" || CAT_CATCH_MPD_TYPES.has(String(mime || "").toLowerCase());
 }
 
-function isCatCatchStream(extension: string, mime = ""): boolean {
-  return isCatCatchM3u8(extension, mime) || isCatCatchMpd(extension, mime);
-}
-
 export function isCatCatchMedia(extension: string, mime = ""): boolean {
-  const type = String(mime || "").toLowerCase();
+  const type = mime.toLowerCase();
   return (
     CAT_CATCH_MEDIA_EXTENSIONS.has(extension)
     || type.startsWith("video/")
     || type.startsWith("audio/")
-    || isCatCatchStream(extension, type)
+    || isCatCatchM3u8(extension, type)
+    || isCatCatchMpd(extension, type)
   );
 }
 
