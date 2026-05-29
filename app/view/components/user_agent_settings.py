@@ -57,22 +57,26 @@ class UserAgentSettingCard(SettingCard):
         cfg.activeUserAgent.valueChanged.connect(self._refreshComboBox)
 
     def _refreshComboBox(self) -> None:
-        # 不需要 blockSignals: clear() 触发的 currentIndexChanged(-1) 走 _onComboChanged
-        # 时 itemData 是 None 直接跳过; setCurrentIndex 之后即便回写 cfg 也是同值, 不会
-        # 再次触发 valueChanged 形成环
-        self.comboBox.clear()
-        active = cfg.activeUserAgent.value
-        activeIndex = 0
-        for i, preset in enumerate(cfg.userAgents.value):
-            name = preset.get("name", "")
-            value = preset.get("value", "")
-            if not name or not value:
-                continue
-            self.comboBox.addItem(name, userData=value)
-            if value == active:
-                activeIndex = i
-        if self.comboBox.count() > 0:
-            self.comboBox.setCurrentIndex(activeIndex)
+        # combo 同时是 cfg 的输入源 (user 选 → cfg.set) 和镜像 (cfg 外部改 → refresh),
+        # 不 blockSignals 就会出现 cfg.set → valueChanged → refresh → setCurrentIndex
+        # → currentIndexChanged → cfg.set 的回环, 直接栈溢出
+        self.comboBox.blockSignals(True)
+        try:
+            self.comboBox.clear()
+            active = cfg.activeUserAgent.value
+            activeIndex = 0
+            for i, preset in enumerate(cfg.userAgents.value):
+                name = preset.get("name", "")
+                value = preset.get("value", "")
+                if not name or not value:
+                    continue
+                self.comboBox.addItem(name, userData=value)
+                if value == active:
+                    activeIndex = i
+            if self.comboBox.count() > 0:
+                self.comboBox.setCurrentIndex(activeIndex)
+        finally:
+            self.comboBox.blockSignals(False)
 
     def _onComboChanged(self, index: int) -> None:
         value = self.comboBox.itemData(index)
