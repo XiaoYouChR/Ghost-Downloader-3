@@ -5,9 +5,6 @@
 > [!NOTE]
 > 由于学习原因, 近期本项目的开发速度有所放缓.
 
-> [!TIP]
-> 如果您想在 Windows 7 上使用 Ghost-Downloader-3，请下载 `v3.8.0-Windows7` 版本.
-
 > [!IMPORTANT]
 > 欢迎加入 Ghost Downloader 用户交流群 [756042420](https://qm.qq.com/q/gPk6FR1Hby)
 
