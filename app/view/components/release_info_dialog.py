@@ -67,15 +67,39 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.detailButton.setToolTip(self.tr("打开发布页"))
         self.sponsorButton.setToolTip(self.tr("赞助作者"))
 
+    def _preprocess_markdown_alerts(self, text: str) -> str:
+        """兼容 GitHub Alerts 语法转换为 Qt 支持的格式"""
+        if not text:
+            return text
+        
+        # 这是几个预设的代码块，我查了应该没有其他的语法了，如果还有可以在这里加
+        alerts = {
+            "[!NOTE]": "**ℹ️ 提示 (NOTE)**  ",
+            "[!TIP]": "**💡 技巧 (TIP)**  ",
+            "[!IMPORTANT]": "**✨ 重要 (IMPORTANT)**  ",
+            "[!WARNING]": "**⚠️ 警告 (WARNING)**  ",
+            "[!CAUTION]": "**🚨 危险 (CAUTION)**  "
+        }
+        
+        for gh_tag, qt_tag in alerts.items():
+            text = text.replace(gh_tag, qt_tag)
+            
+        return text
+
     def _initReleaseNotes(self) -> None:
         description = self._releaseData.get("body") or self.tr("暂无更新说明")
+        
+        # 预处理转换 Github 警告块
+        description = self._preprocess_markdown_alerts(description)
+        
         textWidth = self.fontMetrics().averageCharWidth() * RELEASE_NOTES_COLUMNS
 
         self.descriptionEdit.setObjectName("descriptionEdit")
         self.descriptionEdit.setMinimumWidth(textWidth)
         self.descriptionEdit.setReadOnly(True)
         self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        self.descriptionEdit.setPlainText(description)
+        # 将傻福AI重构错误的文本框重新改为富文本markdown
+        self.descriptionEdit.document().setMarkdown(description)
 
     def _initAssetTree(self) -> None:
         self.assetTreeView.setObjectName("assetTreeView")
