@@ -10,3 +10,9 @@ libtorrent-windows-dll>=0.0.3; sys_platform == 'win32'
 winloop>=0.6.0; sys_platform == 'win32'
 uvloop>=0.22.1; sys_platform != 'win32'
 aioftp[socks]>=0.27.2
+markdown-it-py>=4.2.0
+mdurl>=0.1.2
+pygments>=2.20.0
+emoji>=2.15.0
+linkify-it-py>=2.1.0
+uc-micro-py>=2.0.0

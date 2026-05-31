@@ -2,16 +2,16 @@ from typing import Any
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QPlainTextEdit, QSizePolicy
-from qfluentwidgets import CaptionLabel, FluentIcon, MessageBoxBase, PrimaryToolButton, SubtitleLabel, ToolButton
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QSizePolicy
+from qfluentwidgets import CaptionLabel, FluentIcon, MessageBoxBase, PrimaryToolButton, SubtitleLabel, ToolButton, isDarkTheme
 
 from app.supports.config import AUTHOR_URL
 from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
-from app.view.components.editors import AutoSizingEdit
 from app.view.components.tree_view import AutoSizingTreeView
 
-RELEASE_NOTES_COLUMNS = 76
-RELEASE_NOTES_VISIBLE_LINES = 16
+from pyqt_github_markdown import MarkdownWidget, DARK, LIGHT
+
+RELEASE_NOTES_COLUMNS = 100
 ASSET_VISIBLE_ROWS = 6
 
 
@@ -26,7 +26,11 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.prereleaseLabel = CaptionLabel(self.tr("⚠️ 预发布版本"), self)
         self.detailButton = PrimaryToolButton(FluentIcon.LINK, self)
         self.sponsorButton = ToolButton(FluentIcon.HEART, self)
-        self.descriptionEdit = AutoSizingEdit(self, 5, RELEASE_NOTES_VISIBLE_LINES)
+        
+        # 替换为新的MarkdownWidget渲染器
+        self.markdownWidget = MarkdownWidget(parent=self)
+        self.markdownWidget.setTheme(DARK if isDarkTheme() else LIGHT)
+        
         self.assetTreeView = AutoSizingTreeView(self, 1, ASSET_VISIBLE_ROWS)
         self.assetModel = QStandardItemModel(self.assetTreeView)
 
@@ -69,13 +73,46 @@ class ReleaseInfoDialog(MessageBoxBase):
 
     def _initReleaseNotes(self) -> None:
         description = self._releaseData.get("body") or self.tr("暂无更新说明")
+        
+        self.markdownWidget.setObjectName("markdownWidget")
+        
+        self.markdownWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
+        # 限制高度
+        self.markdownWidget.setMinimumHeight(100)
+        self.markdownWidget.setMaximumHeight(350) 
+        
+        # 恢复原来的弹窗宽度限制
         textWidth = self.fontMetrics().averageCharWidth() * RELEASE_NOTES_COLUMNS
+        self.widget.setMinimumWidth(textWidth)
+        
+        self.markdownWidget.setMarkdown(description)
 
-        self.descriptionEdit.setObjectName("descriptionEdit")
-        self.descriptionEdit.setMinimumWidth(textWidth)
-        self.descriptionEdit.setReadOnly(True)
-        self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        self.descriptionEdit.setPlainText(description)
+        # 自己重绘的滚动条
+        modern_scrollbar_qss = """
+        QScrollBar:vertical {
+            background: transparent;
+            width: 8px;
+            margin: 0px;
+        }
+        QScrollBar::handle:vertical {
+            background: rgba(128, 128, 128, 0.4);
+            border-radius: 4px;
+            min-height: 24px;
+        }
+        QScrollBar::handle:vertical:hover {
+            background: rgba(128, 128, 128, 0.7);
+        }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0px;
+        }
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
+        }
+        """
+        # 将圆角现代滚动条样式追加到现有的 markdownWidget 样式后面
+        current_style = self.markdownWidget.styleSheet()
+        self.markdownWidget.setStyleSheet(current_style + modern_scrollbar_qss)
 
     def _initAssetTree(self) -> None:
         self.assetTreeView.setObjectName("assetTreeView")
@@ -128,7 +165,8 @@ class ReleaseInfoDialog(MessageBoxBase):
 
         self.viewLayout.addLayout(self.titleLayout)
         self.viewLayout.addSpacing(12)
-        self.viewLayout.addWidget(self.descriptionEdit)
+        # 将新组件加入布局
+        self.viewLayout.addWidget(self.markdownWidget)
         self.viewLayout.addWidget(self.assetTreeView)
 
     def _bind(self) -> None:
@@ -136,6 +174,11 @@ class ReleaseInfoDialog(MessageBoxBase):
             lambda: QDesktopServices.openUrl(QUrl(self._releaseData.get("html_url", "")))
         )
         self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
+        
+        # 将渲染器内部的链接点击事件绑定到系统的浏览器打开
+        self.markdownWidget.linkClicked.connect(
+            lambda url: QDesktopServices.openUrl(QUrl(url))
+        )
 
     def selectedAsset(self) -> dict[str, Any] | None:
         index = self.assetTreeView.currentIndex()
