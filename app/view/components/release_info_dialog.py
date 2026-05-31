@@ -10,10 +10,7 @@ from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.tree_view import AutoSizingTreeView
 
-# 引入新建的 Markdown 渲染器
-from app.view.components.markdown_renderer import QtMarkdownRender
-
-RELEASE_NOTES_COLUMNS = 100
+RELEASE_NOTES_COLUMNS = 76
 RELEASE_NOTES_VISIBLE_LINES = 16
 ASSET_VISIBLE_ROWS = 6
 
@@ -72,19 +69,13 @@ class ReleaseInfoDialog(MessageBoxBase):
 
     def _initReleaseNotes(self) -> None:
         description = self._releaseData.get("body") or self.tr("暂无更新说明")
-        
-        # 使用我们外部引入的 QtMarkdownRender 进行渲染预处理
-        rendered_content = QtMarkdownRender.render(description)
-        
         textWidth = self.fontMetrics().averageCharWidth() * RELEASE_NOTES_COLUMNS
 
         self.descriptionEdit.setObjectName("descriptionEdit")
         self.descriptionEdit.setMinimumWidth(textWidth)
         self.descriptionEdit.setReadOnly(True)
         self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        
-        # 将处理后的内容交还给文本框渲染
-        self.descriptionEdit.document().setMarkdown(rendered_content)
+        self.descriptionEdit.setPlainText(description)
 
     def _initAssetTree(self) -> None:
         self.assetTreeView.setObjectName("assetTreeView")
