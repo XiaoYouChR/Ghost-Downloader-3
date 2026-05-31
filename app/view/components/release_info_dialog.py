@@ -10,6 +10,9 @@ from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.tree_view import AutoSizingTreeView
 
+# 引入新建的 Markdown 渲染器
+from app.view.components.markdown_renderer import QtMarkdownRender
+
 RELEASE_NOTES_COLUMNS = 100
 RELEASE_NOTES_VISIBLE_LINES = 16
 ASSET_VISIBLE_ROWS = 6
@@ -67,30 +70,11 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.detailButton.setToolTip(self.tr("打开发布页"))
         self.sponsorButton.setToolTip(self.tr("赞助作者"))
 
-    def _preprocess_markdown_alerts(self, text: str) -> str:
-        """兼容 GitHub Alerts 语法转换为 Qt 支持的格式"""
-        if not text:
-            return text
-        
-        # 这是几个预设的代码块，我查了应该没有其他的语法了，如果还有可以在这里加
-        alerts = {
-            "[!NOTE]": "**ℹ️ 提示 (NOTE)**  ",
-            "[!TIP]": "**💡 技巧 (TIP)**  ",
-            "[!IMPORTANT]": "**✨ 重要 (IMPORTANT)**  ",
-            "[!WARNING]": "**⚠️ 警告 (WARNING)**  ",
-            "[!CAUTION]": "**🚨 危险 (CAUTION)**  "
-        }
-        
-        for gh_tag, qt_tag in alerts.items():
-            text = text.replace(gh_tag, qt_tag)
-            
-        return text
-
     def _initReleaseNotes(self) -> None:
         description = self._releaseData.get("body") or self.tr("暂无更新说明")
         
-        # 预处理转换 Github 警告块
-        description = self._preprocess_markdown_alerts(description)
+        # 使用我们外部引入的 QtMarkdownRender 进行渲染预处理
+        rendered_content = QtMarkdownRender.render(description)
         
         textWidth = self.fontMetrics().averageCharWidth() * RELEASE_NOTES_COLUMNS
 
@@ -98,8 +82,9 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.descriptionEdit.setMinimumWidth(textWidth)
         self.descriptionEdit.setReadOnly(True)
         self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        # 将傻福AI重构错误的文本框重新改为富文本markdown
-        self.descriptionEdit.document().setMarkdown(description)
+        
+        # 将处理后的内容交还给文本框渲染
+        self.descriptionEdit.document().setMarkdown(rendered_content)
 
     def _initAssetTree(self) -> None:
         self.assetTreeView.setObjectName("assetTreeView")
