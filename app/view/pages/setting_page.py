@@ -65,7 +65,16 @@ class SettingPage(ScrollArea):
 
         keyToWidget = {g.objectName(): g for g in groups}
         order = [k for k in cfg.settingGroupOrder.value if k in keyToWidget]
-        order += [k for k in keyToWidget if k not in order]
+        
+        # 提取尚未记录在排序中的剩余板块
+        remaining = [k for k in keyToWidget if k not in order]
+        
+        # 确保新用户打开时about永远在未排序列表的最末尾（移除再添加😅）
+        if "about" in remaining:
+            remaining.remove("about")
+            remaining.append("about")
+            
+        order += remaining
 
         for idx, key in enumerate(order):
             self.vBoxLayout.insertWidget(idx, keyToWidget[key])
