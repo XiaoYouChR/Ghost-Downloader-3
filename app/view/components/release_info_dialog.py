@@ -10,7 +10,7 @@ from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.tree_view import AutoSizingTreeView
 
-RELEASE_NOTES_COLUMNS = 76
+RELEASE_NOTES_COLUMNS = 100
 RELEASE_NOTES_VISIBLE_LINES = 16
 ASSET_VISIBLE_ROWS = 6
 
