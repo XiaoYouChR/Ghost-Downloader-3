@@ -56,7 +56,7 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
-; 卸载时清掉运行时写入的 per-user 关联项; dontcreatekey 保证安装时不创建
+; Uninstall-time cleanup of the per-user assoc keys written at runtime; dontcreatekey writes nothing at install
 Root: HKCU; Subkey: "Software\Classes\GhostDownloader.torrent"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\GhostDownloader.m3u8"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\GhostDownloader.m3u"; Flags: dontcreatekey uninsdeletekey
