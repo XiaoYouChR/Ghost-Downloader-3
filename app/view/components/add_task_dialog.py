@@ -132,6 +132,9 @@ class _StandaloneWrapper(FramelessDialog):
         self._initLayout()
 
     def _initWidget(self) -> None:
+        # 禁止拖边缘 resize, 否则会突破最大尺寸
+        self.setResizeEnabled(False)
+
         titleBar = FluentTitleBar(self)
         self.setTitleBar(titleBar)
         self.titleBar.maxBtn.hide()
@@ -285,7 +288,9 @@ class AddTaskDialog(MessageBoxBase):
         if task is None:
             return
 
-        dialog = EditTaskDialog(task, context="result", parent=self.window())
+        # standalone 下 self.window() 是隐藏的 mainWindow, 改挂可见的 wrapper
+        parent = self._standaloneWrapper if self.isStandaloneMode else self.window()
+        dialog = EditTaskDialog(task, context="result", parent=parent)
         dialog.urlReplaced.connect(self._onUrlReplaced)
         dialog.exec()
         dialog.deleteLater()
@@ -385,15 +390,19 @@ class AddTaskDialog(MessageBoxBase):
         self._standaloneWrapper.setContent(self.widget)
         self.widget.setStyleSheet("#centerWidget { border: none; border-radius: 0; }")
         self.widget.show()
-        self.titleLabel.hide()
 
     def _toMask(self) -> None:
+        # 切回 mask 前关掉残留在 wrapper 上的 EditTaskDialog (done 跳过淡出动画)
+        from app.view.components.edit_task_dialog import EditTaskDialog
+
+        for editDialog in self._standaloneWrapper.findChildren(EditTaskDialog):
+            QDialog.done(editDialog, QDialog.DialogCode.Rejected)
+
         self._standaloneWrapper.hide()
         self._standaloneWrapper.takeContent(self.widget)
         self.widget.setStyleSheet("")
         self._hBoxLayout.addWidget(self.widget, 1, Qt.AlignmentFlag.AlignCenter)
         self.widget.show()
-        self.titleLabel.show()
 
     def showStandalone(self) -> None:
         if self.isStandaloneMode and self._standaloneWrapper.isVisible():
