@@ -3,7 +3,7 @@ from typing import Any, Self
 
 from PySide6.QtCore import QEvent, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QTextOption
-from PySide6.QtWidgets import QDialog, QFileDialog, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QFileDialog, QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     Action,
     BodyLabel,
@@ -14,6 +14,7 @@ from qfluentwidgets import (
     InfoBarPosition,
     LineEdit,
     MessageBoxBase,
+    PushButton,
     Slider,
     SubtitleLabel,
 )
@@ -180,6 +181,9 @@ class AddTaskDialog(MessageBoxBase):
             self.tr("预分配线程数"),
             self,
         )
+        self.importButton = PushButton(FluentIcon.FOLDER_ADD, self.tr("导入文件"), self)
+
+        self.headerLayout = QHBoxLayout()
 
         self._timer = QTimer(self, singleShot=True)
         self._parseSession = AddTaskParseSession(parent=self)
@@ -206,8 +210,14 @@ class AddTaskDialog(MessageBoxBase):
         for card in featureService.dialogCards(self.settingGroup):
             self.settingGroup.addCard(card)
 
+        self._importSources = featureService.importSources()
+        self.importButton.setVisible(bool(self._importSources))
+
     def _initLayout(self) -> None:
-        self.viewLayout.addWidget(self.titleLabel)
+        self.headerLayout.addWidget(self.titleLabel)
+        self.headerLayout.addStretch(1)
+        self.headerLayout.addWidget(self.importButton)
+        self.viewLayout.addLayout(self.headerLayout)
         self.viewLayout.addWidget(self.urlEdit)
         self.viewLayout.addWidget(self.parseProgressBar)
         self.viewLayout.addWidget(self.parseResultGroup)
@@ -226,6 +236,8 @@ class AddTaskDialog(MessageBoxBase):
         self._parseSession.linesReordered.connect(self._onLinesReordered)
         self._parseSession.cleared.connect(self._onSessionCleared)
         self._parseSession.taskConfirmed.connect(self.taskConfirmed.emit)
+
+        self.importButton.clicked.connect(self._onImportClicked)
 
         for card in self.settingGroup.cards:
             card.payloadChanged.connect(
@@ -301,6 +313,18 @@ class AddTaskDialog(MessageBoxBase):
         if not text:
             return []
         return [line.strip() for line in text.splitlines() if line.strip()]
+
+    def _onImportClicked(self) -> None:
+        allExtensions = [ext for source in self._importSources for ext in source.extensions]
+        nameFilters = [self.tr("所有可导入文件 ({0})").format(" ".join(allExtensions))]
+        nameFilters += [f"{source.label} ({' '.join(source.extensions)})" for source in self._importSources]
+
+        paths, _ = QFileDialog.getOpenFileNames(self, self.tr("导入文件"), "", ";;".join(nameFilters))
+        if not paths:
+            return
+
+        # 裸路径会被 featureService._toUrl 当成 http:// 处理而失效, 必须转成 file:// URI 才能命中本地文件解析
+        self.addUrls([Path(path).as_uri() for path in paths])
 
     def addUrls(self, urls: list[str]) -> None:
         if not urls:

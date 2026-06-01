@@ -1,3 +1,4 @@
+import asyncio
 import platform
 import sys
 from email.message import Message
@@ -5,10 +6,11 @@ from email.utils import collapse_rfc2231_value
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import parse_qs, unquote, urlparse
+from urllib.request import url2pathname
 
 import niquests
 
-from app.bases.interfaces import FeaturePack
+from app.bases.interfaces import FeaturePack, ImportSource
 from app.bases.models import Task
 from app.supports.config import activeUserAgent, cfg, defaultHeaders
 from app.supports.utils import getProxies, splitCookies, toExecutable, toSafeFilename
@@ -33,6 +35,7 @@ _KNOWN_SUFFIXES = {
     ".m3u8", ".m3u", ".mpd", ".mp4", ".mkv",
     ".ts", ".webm", ".m4a", ".m4v", ".vtt", ".srt",
 }
+_MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
 
 
 def _stem(name: str) -> str:
@@ -84,17 +87,40 @@ def _title(url: str, headers: dict[str, str], extension: str) -> str:
     return f"stream.{extension}"
 
 
+def loadLocalManifest(source: str) -> Path | None:
+    text = str(source).strip()
+    if not text:
+        return None
+
+    parsed = urlparse(text)
+    if parsed.scheme.lower() == "file":
+        location = f"//{parsed.netloc}{parsed.path}" if parsed.netloc else parsed.path
+        path = Path(url2pathname(unquote(location))).expanduser()
+        return path if path.suffix.lower() in _MANIFEST_SUFFIXES else None
+
+    if "://" in text:
+        return None
+
+    path = Path(text).expanduser()
+    return path if path.suffix.lower() in _MANIFEST_SUFFIXES else None
+
+
 class M3U8Pack(FeaturePack):
     packId = "m3u8"
     priority = 80
     config = m3u8Config
 
     def matches(self, url: str) -> bool:
+        if loadLocalManifest(url) is not None:
+            return True
         parsedUrl = urlparse(url)
         if parsedUrl.scheme.lower() not in {"http", "https"}:
             return False
         loweredUrl = url.lower()
         return ".m3u" in loweredUrl or ".mpd" in loweredUrl
+
+    def importSources(self):
+        return [ImportSource(label=self.tr("M3U8/MPD 清单"), extensions=("*.m3u8", "*.m3u", "*.mpd"))]
 
     def taskCard(self, task, parent=None):
         from disk_pack.task import InstallTask
@@ -111,30 +137,43 @@ class M3U8Pack(FeaturePack):
         headers = rawHeaders.copy() if isinstance(rawHeaders, dict) and rawHeaders else defaultHeaders()
         proxies = payload.get("proxies", getProxies())
         path = Path(payload.get("path", cfg.downloadFolder.value))
-        requestHeaders, requestCookies = splitCookies(headers)
 
-        async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
-            client.trust_env = False
-            response = await client.get(
-                url,
-                headers=requestHeaders,
-                cookies=requestCookies,
-                proxies=proxies,
-                verify=cfg.SSLVerify.value,
-                allow_redirects=True,
-            )
-            response.raise_for_status()
-            body = response.text
-            loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
+        localManifest = loadLocalManifest(url)
+        if localManifest is not None:
+            # N_m3u8DL-RE 的位置参数直接吃本地路径(_buildArgs 透传 task.url), 所以还原成 plain 路径而不留 file://
+            url = str(localManifest.resolve())
+            body = await asyncio.to_thread(localManifest.read_text, encoding="utf-8", errors="ignore")
+            # 工具按输入路径解析相对段 → 落到本地不存在的文件; 只有带绝对 URL 段的清单可下,
+            # 这里提前拦截纯相对清单, 避免下到一半才报错
+            if "http://" not in body and "https://" not in body:
+                raise ValueError("该本地清单只含相对段路径, 缺少 base URL 无法下载, 请改用原始在线链接")
+            manifestUrl = url
+            loweredHeaders = {}
+        else:
+            requestHeaders, requestCookies = splitCookies(headers)
+            async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
+                client.trust_env = False
+                response = await client.get(
+                    url,
+                    headers=requestHeaders,
+                    cookies=requestCookies,
+                    proxies=proxies,
+                    verify=cfg.SSLVerify.value,
+                    allow_redirects=True,
+                )
+                response.raise_for_status()
+                body = response.text
+                loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
+            manifestUrl = response.url
 
-        manifestType = _manifestType(response.url, loweredHeaders, body)
+        manifestType = _manifestType(manifestUrl, loweredHeaders, body)
         loweredBody = body.lower()
         if manifestType == "mpd":
             isLive = 'type="dynamic"' in loweredBody or "type='dynamic'" in loweredBody
         else:
             isLive = "#ext-x-endlist" not in loweredBody
         extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
-        title = _title(response.url, loweredHeaders, extension)
+        title = _title(manifestUrl, loweredHeaders, extension)
 
         task = M3U8Task(
             title=title,

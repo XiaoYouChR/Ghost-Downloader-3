@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from loguru import logger
 
-from app.bases.interfaces import FeaturePack
+from app.bases.interfaces import FeaturePack, ImportSource
 from app.bases.models import Task
 from app.services.core_service import coreService
 from .cards import BitTorrentResultCard, BTTaskCard
@@ -46,6 +46,9 @@ class BitTorrentPack(FeaturePack):
 
     def resultCard(self, task, parent=None):
         return BitTorrentResultCard(task, parent)
+
+    def importSources(self):
+        return [ImportSource(label=self.tr("种子文件"), extensions=("*.torrent",))]
 
     def _onTrackersLoaded(self, result, error: str | None):
         if error:
