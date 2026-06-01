@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from app.supports.config import VERSION, YEAR, AUTHOR
+from app.supports.config import VERSION, YEAR, AUTHOR, DESKTOP_ID
 
 FEATURES_ROOT = Path("features")
 FILE_ICONS_DIR = Path("app/assets/file_icons")
@@ -79,7 +79,7 @@ def build_args() -> list[str]:
             # '--show-progress',
             '--static-libpython=no',
             "--macos-create-app-bundle",
-            "--assume-yes-for-download",
+            "--assume-yes-for-downloads",
             "--macos-app-mode=gui",
             f"--macos-app-version={VERSION}",
             "--macos-app-icon=app/assets/logo.icns",
@@ -168,6 +168,8 @@ def patch_macos_app() -> None:
     with open(plistPath, "rb") as f:
         plist = plistlib.load(f)
     plist["CFBundleDocumentTypes"] = documentTypes
+    # LaunchServices 按 bundle id 注册文档类型, 固定成反向域名 id
+    plist["CFBundleIdentifier"] = DESKTOP_ID
     with open(plistPath, "wb") as f:
         plistlib.dump(plist, f)
 

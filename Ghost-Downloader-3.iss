@@ -55,5 +55,16 @@ Source: "dist/Ghost-Downloader-3.dist/*"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
+[Registry]
+; 卸载时清掉运行时写入的 per-user 关联项; dontcreatekey 保证安装时不创建
+Root: HKCU; Subkey: "Software\Classes\GhostDownloader.torrent"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\GhostDownloader.m3u8"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\GhostDownloader.m3u"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\GhostDownloader.mpd"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\.torrent\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.torrent"; Flags: dontcreatekey uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.m3u8\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.m3u8"; Flags: dontcreatekey uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.m3u\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.m3u"; Flags: dontcreatekey uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.mpd\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.mpd"; Flags: dontcreatekey uninsdeletevalue
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
