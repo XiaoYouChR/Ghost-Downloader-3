@@ -53,6 +53,7 @@ class CustomSplashScreen(SplashScreen):
 class MainWindow(MSFluentWindow):
     def __init__(self, isSilently = False):
         self._pendingBackgroundEffectRefresh = False
+        self._geometryApplied = False
         super().__init__(parent = None)
         self.setMicaEffectEnabled(False)    # 禁用 QFluentWidgets 管理的背景效果
         self.initWindow()
@@ -245,23 +246,26 @@ class MainWindow(MSFluentWindow):
             actionSlot=openAppLogFolder,
         )
 
-    def _restoreGeometry(self):
+    def showEvent(self, event):
+        # pre-show 的 setGeometry 不会被 Qt 持久 commit，故首次可见时才恢复
+        super().showEvent(event)
+        if not self._geometryApplied:
+            self._applyGeometry()
+            self._geometryApplied = True
+
+    def _applyGeometry(self):
+        saved = cfg.geometry.value
+        if saved.isValid() and QApplication.screenAt(saved.center()) is not None:
+            self.setGeometry(saved)
+        else:
+            self._resetGeometry()
+
+    def _resetGeometry(self):
         self.resize(960, 540)
         desktop = QApplication.primaryScreen().availableGeometry()
         self.move(desktop.center() - self.rect().center())
 
     def initWindow(self):
-        cfgGeometry: QRect = cfg.geometry.value
-        x, y, w, h = cfgGeometry.x(), cfgGeometry.y(), cfgGeometry.width(), cfgGeometry.height()
-        if x == 0 and y == 0 and w == 0 and h == 0:
-            self._restoreGeometry()
-        else:
-            try:
-                self.setGeometry(cfg.get(cfg.geometry))
-            except Exception as e:
-                logger.opt(exception=e).error("Failed to restore geometry")
-                cfg.set(cfg.geometry, QRect(0, 0, 0, 0))
-                self._restoreGeometry()
         self.setWindowIcon(QIcon(':/image/logo.png'))
         self.setWindowTitle('Ghost Downloader')
         self.setMinimumSize(960, 540)
