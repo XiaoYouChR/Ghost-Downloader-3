@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from PySide6.QtCore import QEvent, QPoint, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QTextOption
@@ -32,6 +32,9 @@ from app.view.components.card_widgets import (
 )
 from app.view.components.cards import ParseSettingCard, ResultCard
 from app.view.components.editors import AutoSizingEdit
+
+if TYPE_CHECKING:
+    from app.view.components.edit_task_dialog import EditTaskDialog
 
 
 class SelectFolderCard(ParseSettingCard):
@@ -192,6 +195,7 @@ class AddTaskDialog(MessageBoxBase):
         self._parseSession = AddTaskParseSession(parent=self)
         self._standaloneWrapper = _StandaloneWrapper(self)
         self._resultCards: dict[str, ResultCard] = {}
+        self._editDialog: "EditTaskDialog | None" = None
 
         self._initWidget()
         self._initLayout()
@@ -290,10 +294,11 @@ class AddTaskDialog(MessageBoxBase):
 
         # standalone 下 self.window() 是隐藏的 mainWindow, 改挂可见的 wrapper
         parent = self._standaloneWrapper if self.isStandaloneMode else self.window()
-        dialog = EditTaskDialog(task, context="result", parent=parent)
-        dialog.urlReplaced.connect(self._onUrlReplaced)
-        dialog.exec()
-        dialog.deleteLater()
+        self._editDialog = EditTaskDialog(task, context="result", parent=parent)
+        self._editDialog.urlReplaced.connect(self._onUrlReplaced)
+        self._editDialog.exec()
+        self._editDialog.deleteLater()
+        self._editDialog = None
 
     def _onUrlReplaced(self, oldUrl: str, newUrl: str) -> None:
         self._replaceUrlInTextarea(oldUrl, newUrl)
@@ -385,19 +390,20 @@ class AddTaskDialog(MessageBoxBase):
     def isStandaloneMode(self) -> bool:
         return self.widget.parentWidget() is self._standaloneWrapper
 
+    def _closeEditDialog(self) -> None:
+        # 切换 mask/standalone 会换走父窗口, 先关掉编辑对话框免得它残留 (done 跳过淡出动画)
+        if self._editDialog is not None:
+            QDialog.done(self._editDialog, QDialog.DialogCode.Rejected)
+
     def _toStandalone(self) -> None:
+        self._closeEditDialog()
         self._hBoxLayout.removeWidget(self.widget)
         self._standaloneWrapper.setContent(self.widget)
         self.widget.setStyleSheet("#centerWidget { border: none; border-radius: 0; }")
         self.widget.show()
 
     def _toMask(self) -> None:
-        # 切回 mask 前关掉残留在 wrapper 上的 EditTaskDialog (done 跳过淡出动画)
-        from app.view.components.edit_task_dialog import EditTaskDialog
-
-        for editDialog in self._standaloneWrapper.findChildren(EditTaskDialog):
-            QDialog.done(editDialog, QDialog.DialogCode.Rejected)
-
+        self._closeEditDialog()
         self._standaloneWrapper.hide()
         self._standaloneWrapper.takeContent(self.widget)
         self.widget.setStyleSheet("")
