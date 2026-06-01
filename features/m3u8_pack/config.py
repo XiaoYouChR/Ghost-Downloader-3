@@ -162,6 +162,16 @@ class M3U8Config(PackConfig):
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
+        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
+        if sys.platform != "darwin":
+            self.associateCard = SwitchSettingCard(
+                FluentIcon.LINK,
+                self.tr("关联 M3U8/MPD 文件"),
+                self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
+                self.associateFileTypes,
+                self.m3u8Group,
+            )
+            self.m3u8Group.addSettingCard(self.associateCard)
         self.installFolderCard = InstallFolderCard(
             m3u8Config.installFolder,
             f"{APP_DATA_DIR}/M3U8DL",
@@ -276,17 +286,6 @@ class M3U8Config(PackConfig):
             self.livePipeMuxCard,
         ):
             self.m3u8Group.addSettingCard(card)
-
-        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
-        if sys.platform != "darwin":
-            self.associateCard = SwitchSettingCard(
-                FluentIcon.LINK,
-                self.tr("关联 M3U8/MPD 文件"),
-                self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
-                self.associateFileTypes,
-                self.m3u8Group,
-            )
-            self.m3u8Group.addSettingCard(self.associateCard)
 
         settingPage.addSettingGroup(self.m3u8Group)
         self.runtimeCard.refreshStatus()
