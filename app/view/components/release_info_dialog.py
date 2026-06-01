@@ -2,15 +2,15 @@ from typing import Any
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QPlainTextEdit, QSizePolicy
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QSizePolicy
 from qfluentwidgets import CaptionLabel, FluentIcon, MessageBoxBase, PrimaryToolButton, SubtitleLabel, ToolButton
 
 from app.supports.config import AUTHOR_URL
 from app.supports.utils import getLocalTimeFromGithubApiTime, toReadableSize
-from app.view.components.editors import AutoSizingEdit
+from app.view.components.markdown_viewer import MarkdownViewer
 from app.view.components.tree_view import AutoSizingTreeView
 
-RELEASE_NOTES_COLUMNS = 76
+RELEASE_NOTES_COLUMNS = 100
 RELEASE_NOTES_VISIBLE_LINES = 16
 ASSET_VISIBLE_ROWS = 6
 
@@ -26,7 +26,7 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.prereleaseLabel = CaptionLabel(self.tr("⚠️ 预发布版本"), self)
         self.detailButton = PrimaryToolButton(FluentIcon.LINK, self)
         self.sponsorButton = ToolButton(FluentIcon.HEART, self)
-        self.descriptionEdit = AutoSizingEdit(self, 5, RELEASE_NOTES_VISIBLE_LINES)
+        self.descriptionEdit = MarkdownViewer(self, 5, RELEASE_NOTES_VISIBLE_LINES)
         self.assetTreeView = AutoSizingTreeView(self, 1, ASSET_VISIBLE_ROWS)
         self.assetModel = QStandardItemModel(self.assetTreeView)
 
@@ -73,9 +73,7 @@ class ReleaseInfoDialog(MessageBoxBase):
 
         self.descriptionEdit.setObjectName("descriptionEdit")
         self.descriptionEdit.setMinimumWidth(textWidth)
-        self.descriptionEdit.setReadOnly(True)
-        self.descriptionEdit.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        self.descriptionEdit.setPlainText(description)
+        self.descriptionEdit.setMarkdown(description)
 
     def _initAssetTree(self) -> None:
         self.assetTreeView.setObjectName("assetTreeView")
