@@ -10,8 +10,9 @@ from urllib.request import url2pathname
 
 import niquests
 
-from app.bases.interfaces import FeaturePack, ImportSource
+from app.bases.interfaces import FeaturePack, FileType
 from app.bases.models import Task
+from app.supports import file_association
 from app.supports.config import activeUserAgent, cfg, defaultHeaders
 from app.supports.utils import getProxies, splitCookies, toExecutable, toSafeFilename
 from app.view.components.cards import UniversalTaskCard
@@ -119,8 +120,21 @@ class M3U8Pack(FeaturePack):
         loweredUrl = url.lower()
         return ".m3u" in loweredUrl or ".mpd" in loweredUrl
 
-    def importSources(self):
-        return [ImportSource(label=self.tr("M3U8/MPD 清单"), extensions=("*.m3u8", "*.m3u", "*.mpd"))]
+    def fileTypes(self):
+        return [
+            FileType(
+                extensions=(".m3u8", ".m3u"),
+                displayName=self.tr("M3U8 播放列表"),
+                mimeType="application/vnd.apple.mpegurl",
+                icon="m3u8",
+            ),
+            FileType(
+                extensions=(".mpd",),
+                displayName=self.tr("DASH 清单"),
+                mimeType="application/dash+xml",
+                icon="m3u8",
+            ),
+        ]
 
     def taskCard(self, task, parent=None):
         from disk_pack.task import InstallTask
@@ -130,6 +144,17 @@ class M3U8Pack(FeaturePack):
 
     def resultCard(self, task, parent=None):
         return M3U8ResultCard(task, parent)
+
+    def setup(self, mainWindow):
+        if m3u8Config.associateFileTypes.value:
+            file_association.register(self.fileTypes())
+        m3u8Config.associateFileTypes.valueChanged.connect(self._onAssociationToggled)
+
+    def _onAssociationToggled(self, enabled: bool):
+        if enabled:
+            file_association.register(self.fileTypes())
+        else:
+            file_association.unregister(self.fileTypes())
 
     async def parse(self, payload: dict) -> Task:
         url = payload["url"].strip()

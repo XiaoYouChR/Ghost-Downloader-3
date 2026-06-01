@@ -13,9 +13,11 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class ImportSource:
-    label: str
+class FileType:
     extensions: tuple[str, ...]
+    displayName: str
+    mimeType: str
+    icon: str
 
 
 class Worker:
@@ -45,7 +47,7 @@ class FeaturePack:
         from app.view.components.cards import UniversalResultCard
         return UniversalResultCard(task, parent)
 
-    def importSources(self) -> list[ImportSource]:
+    def fileTypes(self) -> list[FileType]:
         return []
 
     def setup(self, mainWindow: "MainWindow"):

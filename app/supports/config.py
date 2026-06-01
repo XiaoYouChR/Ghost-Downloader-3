@@ -345,7 +345,10 @@ class Config(QConfig):
 
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
-VERSION = "3.10.1"
+VERSION = "3.10"
+# freedesktop 应用 id: D-Bus 总线名 + Linux .desktop/.service 文件名 (DBusActivatable 要求两者一致)
+DESKTOP_ID = "io.github.xiaoyouchr.GhostDownloader"
+DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")  # D-Bus 对象路径: app id 点换斜杠
 LATEST_EXTENSION_VERSION = "1.4.0"
 AUTHOR_URL = "https://space.bilibili.com/437313511"
 FEEDBACK_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3/issues"

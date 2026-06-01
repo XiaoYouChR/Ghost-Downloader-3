@@ -1,3 +1,4 @@
+import plistlib
 import shutil
 import subprocess
 import sys
@@ -6,6 +7,13 @@ from pathlib import Path
 from app.supports.config import VERSION, YEAR, AUTHOR
 
 FEATURES_ROOT = Path("features")
+FILE_ICONS_DIR = Path("app/assets/file_icons")
+# macOS 文件关联只能构建时烘进 Info.plist; 这份清单镜像各 pack 的 fileTypes(), 改 pack 时同步
+MACOS_DOCUMENT_TYPES = [
+    {"name": "种子文件", "extensions": ["torrent"], "icon": "torrent"},
+    {"name": "M3U8 播放列表", "extensions": ["m3u8", "m3u"], "icon": "m3u8"},
+    {"name": "DASH 清单", "extensions": ["mpd"], "icon": "m3u8"},
+]
 FEATURE_PACK_BLACKLIST = {"jack_yao"}
 COMMON_INCLUDE_PACKAGES = [
     "urllib3",
@@ -49,6 +57,8 @@ def build_args() -> list[str]:
             # '--show-memory' ,
             # '--show-progress' ,
             '--windows-icon-from-ico=app/assets/logo.ico',
+            # 注册表 DefaultIcon 指向磁盘上的 .ico, 所以图标必须作为实体文件随包发出 (不能只进 qrc)
+            '--include-data-dir=app/assets/file_icons=app/assets/file_icons',
             '--company-name=XiaoYouChR',
             '--product-name="Ghost Downloader"',
             f'--file-version={VERSION}',
@@ -84,6 +94,8 @@ def build_args() -> list[str]:
         '--plugin-enable=pyside6',
         *build_include_args(),
         '--include-qt-plugins=platforms',
+        # 文件关联的 D-Bus 激活接收器懒加载 QtDBus, 显式带上确保进包
+        '--include-module=PySide6.QtDBus',
         '--assume-yes-for-downloads',
         # '--show-memory',
         # '--show-progress',
@@ -134,6 +146,34 @@ def copy_feature_packs() -> None:
     print(f"Copied FeaturePacks to {target_root}: {[source.name for source in feature_pack_sources]}")
 
 
+def patch_macos_app() -> None:
+    appBundle = Path("dist") / "Ghost-Downloader-3.app"
+    plistPath = appBundle / "Contents" / "Info.plist"
+    resourcesDir = appBundle / "Contents" / "Resources"
+    resourcesDir.mkdir(parents=True, exist_ok=True)
+
+    documentTypes = []
+    for entry in MACOS_DOCUMENT_TYPES:
+        shutil.copy(FILE_ICONS_DIR / f"{entry['icon']}.icns", resourcesDir / f"{entry['icon']}.icns")
+        documentTypes.append(
+            {
+                "CFBundleTypeName": entry["name"],
+                "CFBundleTypeRole": "Viewer",
+                "CFBundleTypeExtensions": entry["extensions"],
+                "CFBundleTypeIconFile": f"{entry['icon']}.icns",
+                "LSHandlerRank": "Alternate",
+            }
+        )
+
+    with open(plistPath, "rb") as f:
+        plist = plistlib.load(f)
+    plist["CFBundleDocumentTypes"] = documentTypes
+    with open(plistPath, "wb") as f:
+        plistlib.dump(plist, f)
+
+    print(f"Patched Info.plist with {len(documentTypes)} document types")
+
+
 def main() -> int:
     args = build_args()
     command = ' '.join(args)
@@ -144,6 +184,9 @@ def main() -> int:
         return result.returncode
 
     copy_feature_packs()
+
+    if sys.platform == "darwin":
+        patch_macos_app()
 
     return 0
 

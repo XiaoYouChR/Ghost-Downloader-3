@@ -21,6 +21,7 @@ from app.supports.config import cfg, defaultHeaders, AUTHOR_URL, VERSION, FEEDBA
 from app.services.task_service import taskService
 from app.supports.signal_bus import signalBus
 from app.supports.update import checkUpdate, UpdateState
+from app.supports.file_open import fileUrisFromArgv
 from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, deduplicateFilename, openAppLogFolder
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
@@ -76,6 +77,8 @@ class MainWindow(MSFluentWindow):
         self.tray.show()
 
         self.connectSignalToSlot()
+        # argv 里的文件延到事件循环: 此时 featurePacks 已加载, 也不会在构造期卡死在模态框
+        QTimer.singleShot(0, lambda: signalBus.openFileRequested.emit(fileUrisFromArgv(sys.argv)))
         self._updateClipboardListener()
         self._toggleTheme(cfg.customThemeMode.value, triggeredByUser=True)
         self.updateThemeColor()
@@ -86,6 +89,7 @@ class MainWindow(MSFluentWindow):
     def connectSignalToSlot(self):
         signalBus.showMainWindow.connect(lambda: bringWindowToTop(self))
         signalBus.catchException.connect(self._onExceptionCaught)
+        signalBus.openFileRequested.connect(self.onOpenFileRequested)
         cfg.enableClipboardListener.valueChanged.connect(self._updateClipboardListener)
         cfg.customThemeMode.valueChanged.connect(
             lambda value: self._toggleTheme(value, triggeredByUser=True)
@@ -291,6 +295,12 @@ class MainWindow(MSFluentWindow):
         )
         self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"), position=NavigationItemPosition.BOTTOM)
 
+    def onOpenFileRequested(self, uris: list[str]):
+        if not uris:
+            return
+        bringWindowToTop(self)
+        self.showAddTaskDialog(urls=uris)
+
     def showAddTaskDialog(
             self,
             triggeredByUser: bool = False,
@@ -360,10 +370,17 @@ class MainWindow(MSFluentWindow):
             from ctypes.wintypes import MSG
             msg = MSG.from_address(message.__int__())
 
-            # WIN_USER = 1024
-            if msg.message == 1024 + 1:
+            if msg.message == 1024 + 1:  # WM_USER+1: 第二实例的唤醒请求
                 bringWindowToTop(self)
                 return True, 0
+            # Win11 不打 isWin10 的 acrylic 补丁, WM_COPYDATA 只能在基类这条路接收
+            if msg.message == 0x004A:
+                from app.supports.file_open import fileUrisFromCopyData
+                uris = fileUrisFromCopyData(msg.lParam)
+                if uris:
+                    signalBus.openFileRequested.emit(uris)
+                    bringWindowToTop(self)
+                    return True, 1
 
         return super().nativeEvent(eventType, message)
 
@@ -511,6 +528,13 @@ if isWin10():
             elif msg.message == 1024 + 1:
                 bringWindowToTop(self)
                 return True, 0
+            elif msg.message == 0x004A:  # WM_COPYDATA: 第二实例转发来的待打开 URI
+                from app.supports.file_open import fileUrisFromCopyData
+                uris = fileUrisFromCopyData(msg.lParam)
+                if uris:
+                    signalBus.openFileRequested.emit(uris)
+                    bringWindowToTop(self)
+                    return True, 1
 
         return FramelessWindow.nativeEvent(self, eventType, message)
 

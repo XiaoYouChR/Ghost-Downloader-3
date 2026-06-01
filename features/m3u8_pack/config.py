@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -157,6 +158,7 @@ class M3U8Config(PackConfig):
     liveRealTimeMerge = ConfigItem("M3U8", "LiveRealTimeMerge", False, BoolValidator())
     liveKeepSegments = ConfigItem("M3U8", "LiveKeepSegments", False, BoolValidator())
     livePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
+    associateFileTypes = ConfigItem("M3U8", "AssociateFileTypes", False, BoolValidator())
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
@@ -255,7 +257,6 @@ class M3U8Config(PackConfig):
             self.livePipeMux,
             self.m3u8Group,
         )
-
         self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
 
         for card in (
@@ -275,6 +276,17 @@ class M3U8Config(PackConfig):
             self.livePipeMuxCard,
         ):
             self.m3u8Group.addSettingCard(card)
+
+        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
+        if sys.platform != "darwin":
+            self.associateCard = SwitchSettingCard(
+                FluentIcon.LINK,
+                self.tr("关联 M3U8/MPD 文件"),
+                self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
+                self.associateFileTypes,
+                self.m3u8Group,
+            )
+            self.m3u8Group.addSettingCard(self.associateCard)
 
         settingPage.addSettingGroup(self.m3u8Group)
         self.runtimeCard.refreshStatus()

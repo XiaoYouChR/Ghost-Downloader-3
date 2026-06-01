@@ -12,7 +12,7 @@ from qfluentwidgets import RangeSettingCard, FluentIcon, SwitchSettingCard, Push
 
 from app.services.browser_service import BrowserService
 from app.supports.config import cfg, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL, AUTHOR_URL, AUTHOR, YEAR, \
-    VERSION, FEEDBACK_URL
+    VERSION, FEEDBACK_URL, DESKTOP_ID
 from app.supports.utils import openAppLogFolder
 from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -502,30 +502,26 @@ class SettingPage(ScrollArea):
                     f"/Users/{getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/com.xiaoyouchr.ghostdownloader.plist"
                 )
         elif sys.platform == "linux":
-            from getpass import getuser
+            autoStartDir = Path.home() / ".config/autostart"
+            desktopFile = autoStartDir / f"{DESKTOP_ID}.desktop"
+            legacyFile = autoStartDir / "gd3.desktop"  # 旧版固定名, 迁移时一并清掉
             if value:
-                autoStartPath = Path(f"/home/{getuser()}/.config/autostart/")
-                if not autoStartPath.exists():
-                    autoStartPath.mkdir(parents=True, exist_ok=True)
-
-                with open(
-                    f"/home/{getuser()}/.config/autostart/gd3.desktop",
-                    "w",
+                autoStartDir.mkdir(parents=True, exist_ok=True)
+                desktopFile.write_text(
+                    "[Desktop Entry]\n"
+                    "Type=Application\n"
+                    f"Version={VERSION}\n"
+                    "Name=Ghost Downloader 3\n"
+                    "Comment=A multi-threading downloader with QThread based on PySide6\n"
+                    f'Exec="{QCoreApplication.applicationFilePath()}" --silence\n'
+                    "StartupNotify=false\n"
+                    "Terminal=false\n",
                     encoding="utf-8",
-                ) as f:
-                    _ = f"""[Desktop Entry]
-                        Type=Application
-                        Version={VERSION}
-                        Name=Ghost Downloader 3
-                        Comment=A multi-threading downloader with QThread based on PySide6
-                        Exec="{QCoreApplication.applicationFilePath()}" --silence
-                        StartupNotify=false
-                        Terminal=false
-                        """
-                    f.write(_)
-                    f.flush()
+                )
+                legacyFile.unlink(missing_ok=True)
             else:
-                os.remove(f"/home/{getuser()}/.config/autostart/gd3.desktop")
+                desktopFile.unlink(missing_ok=True)
+                legacyFile.unlink(missing_ok=True)
 
         else:
             InfoBar.warning(

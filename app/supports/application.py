@@ -1,11 +1,13 @@
 import sys
+from pathlib import Path
 from signal import signal, SIGINT
 
 from PySide6.QtCore import QSharedMemory, QEvent
+from PySide6.QtGui import QFileOpenEvent
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.supports.config import cfg
+from app.supports.config import cfg, DESKTOP_ID, DESKTOP_OBJECT_PATH
 from app.supports.signal_bus import signalBus
 
 if sys.platform == "darwin":
@@ -22,30 +24,35 @@ class SingletonApplication(QApplication):
     def __init__(self, argv: list[str], key: str):
         super().__init__(argv)
         self.key = key
+        self._lockSingleInstance()
 
-        # cleanup (only needed for unix)
         try:
-            cleanupMemory = QSharedMemory(key)
+            signal(SIGINT, self._onInterrupt)
+        except Exception as e:
+            logger.warning(f"Failed to register SIGINT handler: {e}")
+
+        if sys.platform == "darwin":
+            self._setDockIconVisible(cfg.showDockIcon.value, activate=False)
+            cfg.showDockIcon.valueChanged.connect(lambda visible: self._setDockIconVisible(visible, activate=True))
+        if sys.platform == "linux":
+            self._listenOnDesktopBus()
+
+    def _lockSingleInstance(self) -> None:
+        # 清掉 unix 上崩溃残留的共享内存段
+        try:
+            cleanupMemory = QSharedMemory(self.key)
             if cleanupMemory.attach():
                 cleanupMemory.detach()
         except Exception as e:
             logger.warning(f"Failed to cleanup shared memory: {e}")
 
         self.memory = QSharedMemory()
-        self.memory.setKey(key)
+        self.memory.setKey(self.key)
 
-        if self.memory.attach():
-            if sys.platform == "win32":
-                import win32gui
-
-                hWnd = win32gui.FindWindow(None, "Ghost Downloader")
-
-                # 发送自定义信息唤醒窗口
-                # WM_CUSTOM = win32con.WM_USER + 1
-                # win32gui.SendMessage(hWnd, WM_CUSTOM, 0, 0)
-                win32gui.SendMessage(hWnd, 1024 + 1, 0, 0)
-                win32gui.SetForegroundWindow(hWnd)
-
+        if self.memory.attach():  # attach 成功即已有实例: 转交本次启动后自退
+            if sys.platform in ("win32", "linux"):
+                from app.supports.file_open import sendToRunningInstance
+                sendToRunningInstance()
             sys.exit(-1)
 
         if not self.memory.create(1):
@@ -60,14 +67,26 @@ class SingletonApplication(QApplication):
                 logger.opt(exception=e).error("Failed to recover from shared memory error")
                 raise RuntimeError(self.memory.errorString())
 
+    def _unlockSingleInstance(self) -> None:
         try:
-            signal(SIGINT, self._handleInterruptSignal)
+            if self.memory.isAttached():
+                self.memory.detach()
         except Exception as e:
-            logger.warning(f"Failed to register SIGINT handler: {e}")
+            logger.warning(f"Failed to cleanup shared memory: {e}")
 
-        if sys.platform == "darwin":
-            self._setDockIconVisible(cfg.showDockIcon.value, activate=False)
-            cfg.showDockIcon.valueChanged.connect(lambda visible: self._setDockIconVisible(visible, activate=True))
+    def exec(self):
+        try:
+            return super().exec()
+        finally:
+            self._unlockSingleInstance()
+
+    def quit(self):
+        self._unlockSingleInstance()
+        super().quit()
+
+    def _onInterrupt(self, _signum, _frame):
+        logger.error("KeyboardInterrupt, quitting application")
+        self.quit()
 
     def _setDockIconVisible(self, visible: bool, activate: bool = False):
         if sys.platform != "darwin":
@@ -83,32 +102,28 @@ class SingletonApplication(QApplication):
         if activate:
             app.activateIgnoringOtherApps_(True)
 
-    def _handleInterruptSignal(self, _signum, _frame):
-        logger.error("KeyboardInterrupt, quitting application")
-        self.quit()
+    def _listenOnDesktopBus(self) -> None:
+        from PySide6.QtDBus import QDBusConnection
+        from app.supports.file_open import DesktopBusReceiver
 
-    # exit: cleanup shared memory
-    def exec(self):
-        try:
-            return super().exec()
-        finally:
-            try:
-                if self.memory.isAttached():
-                    self.memory.detach()
-            except Exception as e:
-                logger.warning(f"Failed to cleanup shared memory on exit: {e}")
-
-    def quit(self):
-        try:
-            if self.memory.isAttached():
-                self.memory.detach()
-        except Exception as e:
-            logger.warning(f"Failed to cleanup shared memory on quit: {e}")
-        super().quit()
+        bus = QDBusConnection.sessionBus()
+        if not bus.registerService(DESKTOP_ID):
+            return
+        self._dbusObject = DesktopBusReceiver()
+        bus.registerObject(
+            DESKTOP_OBJECT_PATH,
+            self._dbusObject,
+            QDBusConnection.RegisterOption.ExportAllSlots,
+        )
 
     def event(self, e: QEvent) -> bool:
-        if sys.platform == "darwin":
-            if e.type() == QEvent.Type.ApplicationActivate:
-                signalBus.showMainWindow.emit()
+        if isinstance(e, QFileOpenEvent):
+            uri = e.url().toString() if not e.url().isEmpty() else Path(e.file()).as_uri()
+            if uri:
+                signalBus.openFileRequested.emit([uri])
+            return True
+
+        if sys.platform == "darwin" and e.type() == QEvent.Type.ApplicationActivate:
+            signalBus.showMainWindow.emit()
 
         return super().event(e)

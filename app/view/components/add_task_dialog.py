@@ -210,8 +210,8 @@ class AddTaskDialog(MessageBoxBase):
         for card in featureService.dialogCards(self.settingGroup):
             self.settingGroup.addCard(card)
 
-        self._importSources = featureService.importSources()
-        self.importButton.setVisible(bool(self._importSources))
+        self._fileTypes = featureService.fileTypes()
+        self.importButton.setVisible(bool(self._fileTypes))
 
     def _initLayout(self) -> None:
         self.headerLayout.addWidget(self.titleLabel)
@@ -315,9 +315,12 @@ class AddTaskDialog(MessageBoxBase):
         return [line.strip() for line in text.splitlines() if line.strip()]
 
     def _onImportClicked(self) -> None:
-        allExtensions = [ext for source in self._importSources for ext in source.extensions]
-        nameFilters = [self.tr("所有可导入文件 ({0})").format(" ".join(allExtensions))]
-        nameFilters += [f"{source.label} ({' '.join(source.extensions)})" for source in self._importSources]
+        globs = [f"*{ext}" for fileType in self._fileTypes for ext in fileType.extensions]
+        nameFilters = [self.tr("所有可导入文件 ({0})").format(" ".join(globs))]
+        nameFilters += [
+            "{0} ({1})".format(fileType.displayName, " ".join(f"*{ext}" for ext in fileType.extensions))
+            for fileType in self._fileTypes
+        ]
 
         paths, _ = QFileDialog.getOpenFileNames(self, self.tr("导入文件"), "", ";;".join(nameFilters))
         if not paths:

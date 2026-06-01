@@ -6,6 +6,7 @@ class SignalBus(QObject):
 
     catchException = Signal(str)
     showMainWindow = Signal()
+    openFileRequested = Signal(list)
 
 
 signalBus = SignalBus()

@@ -1,3 +1,4 @@
+import sys
 from typing import TYPE_CHECKING
 
 from qfluentwidgets import (
@@ -53,6 +54,7 @@ class BitTorrentConfig(PackConfig):
     saveMagnetTorrentFile = ConfigItem("BitTorrent", "SaveMagnetTorrentFile", False, BoolValidator())
     enableWebTrackers = ConfigItem("BitTorrent", "EnableWebTrackers", True, BoolValidator())
     autoRefreshWebTrackers = ConfigItem("BitTorrent", "AutoRefreshWebTrackers", True, BoolValidator())
+    associateFileTypes = ConfigItem("BitTorrent", "AssociateFileTypes", False, BoolValidator())
     webTrackerSources = ConfigItem(
         "BitTorrent",
         "WebTrackerSources",
@@ -227,6 +229,17 @@ class BitTorrentConfig(PackConfig):
             self.webTrackerCard,
         ):
             self.bittorrentGroup.addSettingCard(card)
+
+        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
+        if sys.platform != "darwin":
+            self.associateCard = SwitchSettingCard(
+                FluentIcon.LINK,
+                self.tr("关联 .torrent 文件"),
+                self.tr("把 .torrent 文件的打开方式设为 Ghost Downloader"),
+                self.associateFileTypes,
+                self.bittorrentGroup,
+            )
+            self.bittorrentGroup.addSettingCard(self.associateCard)
 
         settingPage.addSettingGroup(self.bittorrentGroup)
 

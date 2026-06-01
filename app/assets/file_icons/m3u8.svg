@@ -1,0 +1,46 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B6BEE6"/>
+      <stop offset="1" stop-color="#8E9BD0"/>
+    </linearGradient>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F2F4FB"/>
+    </linearGradient>
+    <linearGradient id="ghost" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DBE0F4"/>
+      <stop offset="1" stop-color="#C6CDEC"/>
+    </linearGradient>
+    <linearGradient id="glyph" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6E7AC6"/>
+      <stop offset="1" stop-color="#343B68"/>
+    </linearGradient>
+    <filter id="sh" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#4A5286" flood-opacity="0.22"/>
+    </filter>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3.5" flood-color="#2A2F52" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <!-- document page with folded top-right corner -->
+  <g filter="url(#sh)">
+    <path d="M58 40 a14 14 0 0 1 14 -14 h92 l40 40 v150
+             a14 14 0 0 1 -14 14 H72 a14 14 0 0 1 -14 -14 Z" fill="url(#page)"/>
+    <path d="M164 26 L204 66 L174 66 a10 10 0 0 1 -10 -10 Z" fill="url(#fold)"/>
+  </g>
+
+  <!-- faint ghost watermark -->
+  <g transform="translate(50 44) scale(6.5)" opacity="0.4">
+    <path d="M12 2C8.13 2 5 5.13 5 9V14C5 14.55 4.55 15 4 15H3V17H4.1C4.54 18.7 6.08 20 7.9 20C8.36 20 8.81 19.92 9.22 19.78C10.05 20.54 11.08 21 12.2 21C13.25 21 14.23 20.57 15 19.91C15.7 20.58 16.65 21 17.7 21C19.52 21 21 19.52 21 17.7V9C21 5.13 17.87 2 14 2H12Z" fill="url(#ghost)"/>
+    <circle cx="9" cy="9.5" r="1.35" fill="#8088BE"/>
+    <circle cx="15" cy="9.5" r="1.35" fill="#8088BE"/>
+  </g>
+
+  <!-- play glyph -->
+  <g filter="url(#glow)">
+    <path d="M120 148 L120 190 L160 169 Z"
+          fill="url(#glyph)" stroke="url(#glyph)" stroke-width="12" stroke-linejoin="round"/>
+  </g>
+</svg>
