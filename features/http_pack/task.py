@@ -94,6 +94,7 @@ class HttpTaskStage(TaskStage):
     supportsRange: bool = True
     accelerated: bool = False
     outputFileOverride: str = ""
+    subworkers: list = field(default_factory=list, repr=False)  # worker 运行时挂上引用供分段进度条读取, repr=False 不落盘
 
     @property
     def outputFile(self) -> str:
@@ -390,6 +391,7 @@ class HttpWorker(Worker):
     async def run(self):
         self.taskGroup = TaskGroup()
         self.subworkers: list[HttpSubworker] = []
+        self.stage.subworkers = self.subworkers
         self.client = niquests.AsyncSession(happy_eyeballs=True, pool_maxsize=256)
         self.client.trust_env = False
         shouldCleanupRecordFile = False

@@ -362,11 +362,7 @@ class UniversalTaskCard(TaskCard):
         self.openFileButton = ToolButton(FluentIcon.LINK, self)
         self.openFolderButton = ToolButton(FluentIcon.FOLDER, self)
         self.cancelButton = TransparentToolButton(FluentIcon.CLOSE, self)
-        if self.task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
-            self.progressBar = IndeterminateProgressBar(self)
-        else:
-            self.progressBar = ProgressBar(self)
-            self.progressBar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        self.progressBar = self.createProgressBar()
         self.infoLabel.hide()
 
         self.initLayout()
@@ -377,6 +373,13 @@ class UniversalTaskCard(TaskCard):
 
         cfg.enableCategory.valueChanged.connect(self._renderCategoryIcon)
         categoryService.categoriesChanged.connect(self._renderCategoryIcon)
+
+    def createProgressBar(self) -> QWidget:
+        if self.task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
+            return IndeterminateProgressBar(self)
+        bar = ProgressBar(self)
+        bar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
+        return bar
 
     def _renderCategoryIcon(self):
         if not cfg.enableCategory.value or not self.task.category:

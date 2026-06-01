@@ -169,6 +169,10 @@ class HttpPack(FeaturePack):
     def matches(self, url: str) -> bool:
         return urlparse(url).scheme.lower() in {"http", "https"}
 
+    def taskCard(self, task: Task, parent=None):
+        from .cards import HttpTaskCard
+        return HttpTaskCard(task, parent)
+
     async def parse(self, payload: dict) -> Task:
         url: str = payload["url"]
         headers: dict = payload.get("headers", defaultHeaders())
