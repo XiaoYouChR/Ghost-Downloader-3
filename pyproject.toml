@@ -1,6 +1,6 @@
 [project]
 name = "ghost-downloader-3"
-version = "3.8"
+version = "3.10"
 description = "ghost-downloader-3"
 requires-python = ">=3.11"
 dependencies = [
@@ -16,6 +16,12 @@ dependencies = [
     "uvloop>=0.22.1; sys_platform != 'win32'",
     "aioftp[socks]>=0.27.2",
     "pyside6-fluent-widgets>=1.11.1",
+    "markdown-it-py>=4.2.0",
+    "mdurl>=0.1.2",
+    "pygments>=2.20.0",
+    "emoji>=2.15.0",
+    "linkify-it-py>=2.1.0",
+    "uc-micro-py>=2.0.0",
 ]
 
 [dependency-groups]
