@@ -65,7 +65,13 @@ class SettingPage(ScrollArea):
 
         keyToWidget = {g.objectName(): g for g in groups}
         order = [k for k in cfg.settingGroupOrder.value if k in keyToWidget]
-        order += [k for k in keyToWidget if k not in order]
+        rest = [k for k in keyToWidget if k not in order]
+
+        aboutKey = self.aboutGroup.objectName()
+        if aboutKey in rest:
+            rest.remove(aboutKey)
+            rest.append(aboutKey)
+        order += rest
 
         for idx, key in enumerate(order):
             self.vBoxLayout.insertWidget(idx, keyToWidget[key])
