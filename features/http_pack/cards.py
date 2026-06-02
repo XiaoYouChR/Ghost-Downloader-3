@@ -111,6 +111,7 @@ class HttpTaskCard(UniversalTaskCard):
     """HTTP 任务卡片: 已知大小且支持续传时用分段进度条, 否则退回通用进度条"""
 
     def createProgressBar(self) -> QWidget:
-        if self.task.fileSize > 0 and self.task.stage.supportsRange:
-            return SegmentedProgressBar(self.task.stage, self)
+        stage = self.task.stages[0]
+        if isinstance(stage, HttpTaskStage) and self.task.fileSize > 0 and stage.supportsRange:
+            return SegmentedProgressBar(stage, self)
         return super().createProgressBar()
