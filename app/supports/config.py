@@ -345,7 +345,7 @@ class Config(QConfig):
 
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
-VERSION = "3.10.2"
+VERSION = "3.10.2.1"
 DESKTOP_ID = "io.github.xiaoyouchr.GhostDownloader"
 DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")
 LATEST_EXTENSION_VERSION = "1.4.0"
