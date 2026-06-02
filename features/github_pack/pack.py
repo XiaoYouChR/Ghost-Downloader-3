@@ -65,3 +65,7 @@ class GitHubPack(FeaturePack):
         task.url = originalUrl
         task.packId = self.packId
         return task
+
+    def taskCard(self, task: Task, parent=None):
+        from http_pack.cards import HttpTaskCard
+        return HttpTaskCard(task, parent)
