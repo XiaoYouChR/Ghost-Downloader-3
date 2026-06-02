@@ -28,8 +28,8 @@
     </filter>
   </defs>
 
-  <!-- document page with folded top-right corner -->
-  <g filter="url(#sh)">
+  <!-- document page with folded top-right corner; stroke keeps it visible on white -->
+  <g filter="url(#sh)" stroke="#7E8AC0" stroke-width="3" stroke-linejoin="round">
     <path d="M58 40 a14 14 0 0 1 14 -14 h92 l40 40 v150
              a14 14 0 0 1 -14 14 H72 a14 14 0 0 1 -14 -14 Z" fill="url(#page)"/>
     <path d="M164 26 L204 66 L174 66 a10 10 0 0 1 -10 -10 Z" fill="url(#fold)"/>
