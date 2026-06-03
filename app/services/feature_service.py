@@ -242,7 +242,10 @@ class FeatureService:
     def taskCard(self, task: Task, parent=None):
         packInstance = self.packOf(task)
         if packInstance is None:
-            raise ValueError(f"未找到 Task 对应的 FeaturePack: {task.packId}")
+            # 旧版本残留 packId 找不到 pack 时回落, 而不是 raise 把整张列表炸掉
+            logger.warning("未找到 Task 对应的 FeaturePack, 回落到 UniversalTaskCard: {}", task.packId)
+            from app.view.components.cards import UniversalTaskCard
+            return UniversalTaskCard(task, parent)
         return packInstance.taskCard(task, parent)
 
     def resultCard(self, task: Task, parent=None):

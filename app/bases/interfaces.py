@@ -29,7 +29,7 @@ class Worker:
 
 
 class FeaturePack:
-    packId: str
+    packId: str = ""
     priority: int = 0
     config: "PackConfig | None" = None
 
