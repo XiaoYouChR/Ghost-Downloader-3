@@ -10,8 +10,9 @@ from qfluentwidgets import (
     SubtitleLabel,
 )
 
-from app.bases.models import Task, TaskStatus
+from app.bases.models import Task
 from app.services.core_service import coreService
+from app.services.task_service import taskService
 from app.supports.utils import toReadableSize
 from app.view.components.card_widgets import ParseSettingHeaderCardWidget
 
@@ -20,18 +21,22 @@ EditContext = Literal["result", "task"]
 
 
 class EditTaskDialog(MessageBoxBase):
-    # context="result" 和 "task" 的差别只体现在 url 改动: result 流程让 textarea 重新接管
-    # (避免在 AddTaskDialog 内再开一条 parse 管线), task 流程才在 Dialog 内异步 re-parse
-
     urlReplaced = Signal(str, str)
 
-    def __init__(self, task: Task, context: EditContext, parent=None) -> None:
+    def __init__(
+        self,
+        task: Task,
+        context: EditContext,
+        parent=None,
+        *,
+        autoResume: bool = False,
+    ) -> None:
         super().__init__(parent)
 
         self._task = task
         self._context = context
         self._pendingParseId = ""
-        self._resumeOnAccept = False
+        self._resumeOnAccept = autoResume
 
         # instant widget
         self.titleLabel = SubtitleLabel(self.tr("编辑任务参数"), self)
@@ -56,15 +61,7 @@ class EditTaskDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.progressBar)
         self.viewLayout.addWidget(self.cardGroup)
 
-    def exec(self) -> int:
-        # RUNNING 任务进 Dialog 前自动 pause; accept 时 resume, cancel 时保持 pause
-        if self._task.status == TaskStatus.RUNNING and self._task.canPause:
-            self._resumeOnAccept = True
-            coreService.stopTask(self._task)
-        return super().exec()
-
     def accept(self) -> None:
-        # 拦截 MessageBoxBase 的同步 accept — URL 改了要等 re-parse 回来再决定关不关
         payload = dict(self.cardGroup.payload)
         if "url" in payload:
             payload["url"] = payload["url"].strip()
@@ -132,6 +129,8 @@ class EditTaskDialog(MessageBoxBase):
             card.setEnabled(not busy)
 
     def _closeAccepted(self) -> None:
+        taskService.scheduleFlush()
         if self._resumeOnAccept:
+            # 调用方需保证已 await _stopTask
             coreService.createTask(self._task)
         super().accept()

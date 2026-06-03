@@ -313,9 +313,21 @@ class TaskCard(CardWidget):
         w.deleteLater()
 
     def _onEditTaskClicked(self):
+        # 等 _stopTask 完成再开 Dialog, 否则 createTask 撞 runningTasks 旧 entry
+        if self.task.status == TaskStatus.RUNNING and self.task.canPause:
+            coreService.runCoroutine(
+                coreService._stopTask(self.task),
+                lambda *_: self._openEditTaskDialog(autoResume=True),
+            )
+        else:
+            self._openEditTaskDialog(autoResume=False)
+
+    def _openEditTaskDialog(self, autoResume: bool):
         from app.view.components.edit_task_dialog import EditTaskDialog
 
-        dialog = EditTaskDialog(self.task, context="task", parent=self.window())
+        dialog = EditTaskDialog(
+            self.task, context="task", autoResume=autoResume, parent=self.window()
+        )
         dialog.exec()
         dialog.deleteLater()
         self.refresh()
