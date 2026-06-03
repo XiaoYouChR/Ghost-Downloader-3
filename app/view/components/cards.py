@@ -212,6 +212,9 @@ class TaskCard(CardWidget):
         raise NotImplementedError
 
     def removeTask(self, deleteFile=False):
+        if coreService.task(self.task.taskId) is None:
+            self._onTaskStoppedForDeletion(deleteFile)
+            return
         coreService.runCoroutine(
             coreService._stopTask(self.task),
             lambda _result, error: self._onTaskStoppedForDeletion(deleteFile, error),
@@ -223,7 +226,11 @@ class TaskCard(CardWidget):
             return
 
         if deleteFile:
-            self.task.cleanup()
+            # InstallTask.cleanup 删整个 installFolder, 工具进程占用时会抛
+            try:
+                self.task.cleanup()
+            except Exception as e:
+                logger.opt(exception=e).error("failed to clean up task resources {}", self.task.taskId)
 
         taskService.remove(self.task)
 
