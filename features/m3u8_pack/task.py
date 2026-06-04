@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -26,6 +27,11 @@ _LIVE_PROGRESS_PATTERN = re.compile(
     r"(\d{2}m\d{2}s)/(\d{2}m\d{2}s)\s+\d+/\d+\s+(Recording|Waiting)\s+(\d+)%\s+(-|(\d+\.\d+)(GBps|MBps|KBps|Bps))"
 )
 _IGNORED_OUTPUT_SUFFIXES = {".json", ".txt", ".log", ".tmp", ".ghd"}
+_DECRYPTION_ENGINES = {
+    "FFmpeg": "FFMPEG",
+    "MP4Decrypt": "MP4DECRYPT",
+    "Shaka Packager": "SHAKA_PACKAGER",
+}
 
 
 def _toBool(value: bool) -> str:
@@ -35,10 +41,12 @@ def _toBool(value: bool) -> str:
 @dataclass(kw_only=True)
 class M3U8TaskStage(TaskStage):
     workerType: type = field(init=False, repr=False)
-    canPause: bool = field(init=False, default=True)
 
     actualExtension: str = ""
     lastMessage: str = ""
+    liveStatus: str = ""
+    liveElapsed: str = ""
+    liveTotal: str = ""
 
     headers: dict[str, str] = field(default_factory=dict)
     proxies: dict[str, str] = field(default_factory=dict)
@@ -51,11 +59,39 @@ class M3U8TaskStage(TaskStage):
     appendUrlParams: bool = False
     binaryMerge: bool = False
     checkSegmentsCount: bool = True
+    delAfterDone: bool = True
 
     outputFormat: str = "mp4"
-    liveRealTimeMerge: bool = False
+    customMuxAfterDone: str = ""
+    subtitleFormat: str = "SRT"
+    selectVideo: str = ""
+    selectAllAudioSubtitle: bool = True
+    maxSpeed: int = -1
+    speedUnit: str = "Mbps"
+    adKeyword: str = ""
+    noDateInfo: bool = False
+    keepImageSegments: bool = False
+
+    decryptionEngine: str = "FFmpeg"
+    decryptionBinaryPath: str = ""
+    mp4RealTimeDecryption: bool = True
+    decryptionKeys: list[str] = field(default_factory=list)
+    keyTextFile: str = ""
+
+    muxImports: list[str] = field(default_factory=list)
+
+    # 直播（real-time-merge 对直播恒开，不设字段）
     liveKeepSegments: bool = False
     livePipeMux: bool = False
+    liveFixVtt: bool = False
+    liveWaitTime: int = 0
+    liveTakeCount: int = 0
+    recordLimit: str = ""
+
+    @property
+    def canPause(self) -> bool:
+        # 直播无暂停语义——只有「停止并定案」
+        return not self.task.isLive
 
     @property
     def outputFile(self) -> str:
@@ -80,6 +116,8 @@ class M3U8Task(Task):
 
     manifestType: Literal["m3u8", "mpd"] = "m3u8"
     isLive: bool = False
+    # parse() 时枚举的可选视频流 [{"label","selectExpr"}]；只服务于轨道下拉, 不持久化
+    streams: list = field(default_factory=list, repr=False)
 
     @property
     def stage(self) -> "M3U8TaskStage":
@@ -94,15 +132,43 @@ class M3U8Task(Task):
         return self.stage.proxies
 
     def editorCards(self, parent) -> list["ParseSettingCard"]:
-        from app.view.components.add_task_dialog import SelectFolderCard
-        from app.view.components.edit_task_cards import HeadersEditCard, ProxiesEditCard
         from qfluentwidgets import FluentIcon
 
-        return [
+        from app.view.components.add_task_dialog import SelectFolderCard
+        from app.view.components.edit_task_cards import HeadersEditCard, ProxiesEditCard
+        from .cards import (
+            M3U8DecryptionEditCard,
+            M3U8MuxImportEditCard,
+            M3U8RecordLimitEditCard,
+            M3U8TrackEditCard,
+        )
+
+        cards: list["ParseSettingCard"] = [
             HeadersEditCard(FluentIcon.GLOBE, parent.tr("请求标头"), parent, initial=self.headers),
             ProxiesEditCard(FluentIcon.CERTIFICATE, parent.tr("代理服务器"), parent, initial=self.proxies),
+        ]
+        if len(self.streams) > 1:
+            cards.append(M3U8TrackEditCard(
+                FluentIcon.VIDEO, parent.tr("视频轨道"), parent,
+                streams=self.streams, initial=self.stage.selectVideo,
+            ))
+        if self.isLive:
+            cards.append(M3U8RecordLimitEditCard(
+                FluentIcon.STOP_WATCH, parent.tr("录制时长上限"), parent,
+                initial=self.stage.recordLimit,
+            ))
+        cards += [
+            M3U8DecryptionEditCard(
+                FluentIcon.VPN, parent.tr("解密密钥"), parent,
+                keys=self.stage.decryptionKeys, keyTextFile=self.stage.keyTextFile,
+            ),
+            M3U8MuxImportEditCard(
+                FluentIcon.MUSIC, parent.tr("导入音轨/字幕"), parent,
+                initial=self.stage.muxImports,
+            ),
             SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
         ]
+        return cards
 
     def applySettings(self, payload):
         super().applySettings(payload)
@@ -110,6 +176,16 @@ class M3U8Task(Task):
             self.stage.headers = payload["headers"]
         if "proxies" in payload:
             self.stage.proxies = payload["proxies"]
+        if "selectVideo" in payload:
+            self.stage.selectVideo = payload["selectVideo"]
+        if "recordLimit" in payload:
+            self.stage.recordLimit = payload["recordLimit"]
+        if "decryptionKeys" in payload:
+            self.stage.decryptionKeys = payload["decryptionKeys"]
+        if "keyTextFile" in payload:
+            self.stage.keyTextFile = payload["keyTextFile"]
+        if "muxImports" in payload:
+            self.stage.muxImports = payload["muxImports"]
 
     def cleanup(self):
         super().cleanup()
@@ -142,17 +218,35 @@ class M3U8Worker(Worker):
             f"--thread-count={stage.threadCount}",
             f"--download-retry-count={stage.retryCount}",
             f"--http-request-timeout={stage.requestTimeout}",
-            f"--auto-select={_toBool(stage.autoSelect)}",
             f"--concurrent-download={_toBool(stage.concurrentDownload)}",
             f"--append-url-params={_toBool(stage.appendUrlParams)}",
             f"--binary-merge={_toBool(stage.binaryMerge)}",
             f"--check-segments-count={_toBool(stage.checkSegmentsCount)}",
-            "--del-after-done=true",
+            f"--del-after-done={_toBool(stage.delAfterDone)}",
+            f"--sub-format={stage.subtitleFormat}",
             "--write-meta-json=false",
             "--no-log=true",
             "--no-ansi-color=true",
             "--disable-update-check=true",
         ]
+
+        # 拿全部音轨/字幕时需绕开 auto-select 对其的"仅最佳"——显式选视频(最佳或所选)+全部音字幕
+        if stage.selectAllAudioSubtitle:
+            args.append(f"--select-video={stage.selectVideo or 'best'}")
+            args.append("--select-audio=all")
+            args.append("--select-subtitle=all")
+        elif stage.selectVideo:
+            args.append(f"--select-video={stage.selectVideo}")
+            args.append(f"--auto-select={_toBool(stage.autoSelect)}")
+        else:
+            args.append(f"--auto-select={_toBool(stage.autoSelect)}")
+
+        if stage.maxSpeed > 0:
+            args.append(f"--max-speed={stage.maxSpeed}{stage.speedUnit}")
+        if stage.adKeyword:
+            args.append(f"--ad-keyword={stage.adKeyword}")
+        if stage.noDateInfo:
+            args.append("--no-date-info=true")
 
         proxyUrl = next((v for v in stage.proxies.values() if v), "")
         # N_m3u8DL-RE 的 .NET HttpClient 不识别 socks5h scheme，等价转为 socks5
@@ -166,15 +260,42 @@ class M3U8Worker(Worker):
         if ffmpegPath:
             args.append(f"--ffmpeg-binary-path={ffmpegPath}")
 
-        if stage.liveRealTimeMerge:
+        args.append(f"--decryption-engine={_DECRYPTION_ENGINES.get(stage.decryptionEngine, 'FFMPEG')}")
+        args.append(f"--mp4-real-time-decryption={_toBool(stage.mp4RealTimeDecryption)}")
+        if stage.decryptionBinaryPath:
+            args.append(f"--decryption-binary-path={toPosixPath(Path(stage.decryptionBinaryPath))}")
+        for key in stage.decryptionKeys:
+            text = key.strip()
+            if text:
+                args.append(f"--key={text}")
+        if stage.keyTextFile:
+            args.append(f"--key-text-file={toPosixPath(Path(stage.keyTextFile))}")
+
+        if stage.task.isLive:
+            # 直播恒开 real-time-merge：硬杀停止时文件已落盘可用
             args.append("--live-real-time-merge=true")
             args.append(f"--live-keep-segments={_toBool(stage.liveKeepSegments)}")
             args.append(f"--live-pipe-mux={_toBool(stage.livePipeMux)}")
+            if stage.liveFixVtt:
+                args.append("--live-fix-vtt-by-audio=true")
+            if stage.liveWaitTime > 0:
+                args.append(f"--live-wait-time={stage.liveWaitTime}")
+            if stage.liveTakeCount > 0:
+                args.append(f"--live-take-count={stage.liveTakeCount}")
+            if stage.recordLimit:
+                args.append(f"--live-record-limit={stage.recordLimit}")
+        elif stage.customMuxAfterDone:
+            args.append(f"--mux-after-done={stage.customMuxAfterDone}")
         else:
             muxOption = f"format={stage.outputFormat}:muxer=ffmpeg"
             if ffmpegPath:
                 muxOption += f":bin_path={ffmpegPath}"
             args.append(f"--mux-after-done={muxOption}")
+
+        for imp in stage.muxImports:
+            text = imp.strip()
+            if text:
+                args.append(f"--mux-import={text}")
 
         for name, value in stage.headers.items():
             text = value.strip()
@@ -203,6 +324,9 @@ class M3U8Worker(Worker):
 
         liveMatch = _LIVE_PROGRESS_PATTERN.search(text)
         if liveMatch:
+            self.stage.liveElapsed = liveMatch.group(1)
+            self.stage.liveTotal = liveMatch.group(2)
+            self.stage.liveStatus = liveMatch.group(3)
             self.stage.progress = float(liveMatch.group(4))
             self.stage.speed = 0 if liveMatch.group(5) == "-" else toBytes(liveMatch.group(6), liveMatch.group(7))
 
@@ -224,6 +348,8 @@ class M3U8Worker(Worker):
             self._parseOutputLine(buffer)
 
     def _updateOutput(self):
+        # 进程已结束, 占位旁标去重使命完成——清掉(暂停/失败不走这里, 旁标留作并发去重)
+        Path(f"{self.stage.outputFile}.ghd").unlink(missing_ok=True)
         target = Path(self.stage.outputFile)
         if target.is_file() and target.stat().st_size > 0:
             self.stage.actualExtension = target.suffix.lstrip(".")
@@ -235,7 +361,7 @@ class M3U8Worker(Worker):
         if not outputDir.is_dir():
             return
 
-        fallbackExtension = "ts" if self.stage.liveRealTimeMerge else self.stage.outputFormat
+        fallbackExtension = "ts" if self.stage.task.isLive else self.stage.outputFormat
         expectedSuffix = f".{self.stage.actualExtension or fallbackExtension}"
         prefix = self.stage.saveName.lower()
 
@@ -268,8 +394,13 @@ class M3U8Worker(Worker):
 
         self.stage.task.path.mkdir(parents=True, exist_ok=True)
         Path(self.stage.tempDir).mkdir(parents=True, exist_ok=True)
-        # 占位以便后续同名任务被 deduplicateFilename 检测到——_updateOutput 会清掉这个 0 字节文件
-        Path(self.stage.outputFile).touch(exist_ok=True)
+        # 用 .ghd 旁标占位, 让后续同名任务被 deduplicateFilename 检测到; 不占用产物名,
+        # 否则 N_m3u8DL-RE 发现同名已存在会把产物写成 <name>.copy.<ext>
+        Path(f"{self.stage.outputFile}.ghd").touch(exist_ok=True)
+
+        env = None
+        if self.stage.keepImageSegments:
+            env = {**os.environ, "RE_KEEP_IMAGE_SEGMENTS": "1"}
 
         process = None
         supervisorTask = None
@@ -279,6 +410,7 @@ class M3U8Worker(Worker):
                 execPath,
                 *args,
                 cwd=Path(execPath).parent,
+                env=env,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
@@ -295,7 +427,6 @@ class M3U8Worker(Worker):
             self._updateOutput()
             self.stage.setStatus(TaskStatus.COMPLETED)
         except asyncio.CancelledError:
-            self.stage.setStatus(TaskStatus.PAUSED)
             if process is not None and process.returncode is None:
                 process.terminate()
                 try:
@@ -307,6 +438,12 @@ class M3U8Worker(Worker):
                 supervisorTask.cancel()
                 with suppress(asyncio.CancelledError):
                     await supervisorTask
+            if self.stage.task.isLive:
+                # 直播无暂停语义：硬杀后 real-time-merge 的文件已落盘，收尾标完成
+                self._updateOutput()
+                self.stage.setStatus(TaskStatus.COMPLETED)
+            else:
+                self.stage.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
             self.stage.setError(e)

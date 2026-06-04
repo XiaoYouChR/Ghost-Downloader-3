@@ -77,6 +77,46 @@ class SpinBoxSettingCard(SettingCard):
             cfg.set(self.configItem, self.spinBox.value() / self.division)
 
 
+class LineEditSettingCard(SettingCard):
+    """绑定字符串 ConfigItem 的行编辑设置卡"""
+
+    def __init__(
+        self,
+        icon,
+        title,
+        content=None,
+        configItem: ConfigItem = None,
+        parent=None,
+        placeholder: str = "",
+    ):
+        super().__init__(icon, title, content, parent)
+        self.configItem = configItem
+
+        self.lineEdit = LineEdit(self)
+
+        self._initWidget(placeholder)
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self, placeholder: str):
+        self.lineEdit.setMinimumWidth(180)
+        self.lineEdit.setClearButtonEnabled(True)
+        self.lineEdit.setPlaceholderText(placeholder)
+        if self.configItem:
+            self.lineEdit.setText(self.configItem.value)
+
+    def _initLayout(self):
+        self.hBoxLayout.addWidget(self.lineEdit)
+        self.hBoxLayout.addSpacing(16)
+
+    def _bind(self):
+        self.lineEdit.editingFinished.connect(self._onEditingFinished)
+
+    def _onEditingFinished(self):
+        if self.configItem:
+            cfg.set(self.configItem, self.lineEdit.text())
+
+
 class ProxySettingCard(ExpandGroupSettingCard):
     """Custom proxyServer setting card"""
 
@@ -340,6 +380,49 @@ class InstallFolderCard(SettingCard):
 
     def _restoreDefault(self):
         self._updatePath(self.defaultPath)
+
+
+class SelectFileCard(SettingCard):
+    pathChanged = Signal(str)
+
+    def __init__(self, configItem: ConfigItem, icon, title: str, hint: str,
+                 browseTitle: str, parent=None):
+        super().__init__(icon, title, configItem.value or hint, parent)
+        self.configItem = configItem
+        self.hint = hint
+        self.browseTitle = browseTitle
+        self.chooseFileButton = ToolButton(FluentIcon.FOLDER, self)
+        self.clearButton = ToolButton(FluentIcon.CANCEL, self)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self):
+        self.chooseFileButton.setToolTip(self.tr("选择文件"))
+        self.chooseFileButton.installEventFilter(ToolTipFilter(self.chooseFileButton))
+        self.clearButton.setToolTip(self.tr("清除路径"))
+        self.clearButton.installEventFilter(ToolTipFilter(self.clearButton))
+
+    def _initLayout(self):
+        self.hBoxLayout.addWidget(self.chooseFileButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.clearButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+
+    def _bind(self):
+        self.chooseFileButton.clicked.connect(self._onChooseFile)
+        self.clearButton.clicked.connect(lambda: self._updatePath(""))
+
+    def _onChooseFile(self):
+        path, _ = QFileDialog.getOpenFileName(self.window(), self.browseTitle)
+        if path:
+            self._updatePath(path)
+
+    def _updatePath(self, path: str):
+        cfg.set(self.configItem, path)
+        self.setContent(path or self.hint)
+        self.pathChanged.emit(path)
 
 
 _MAX_HISTORY: Final[int] = 7
