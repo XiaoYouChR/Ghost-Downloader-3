@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Signal, QFileInfo, Qt, QEvent
-from PySide6.QtGui import QColor, QPainter, QPen, QMouseEvent
+from PySide6.QtCore import Signal, QFileInfo, Qt
+from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFileIconProvider, QVBoxLayout, QApplication
 from loguru import logger
 from qfluentwidgets import BodyLabel, isDarkTheme, CardWidget, CheckBox, \
-    themeColor, IconWidget, ImageLabel, StrongBodyLabel, FluentIcon, PrimaryToolButton, ToolButton, \
+    themeColor, IconWidget, ImageLabel, FluentIcon, PrimaryToolButton, ToolButton, \
     TransparentToolButton, ProgressBar, IndeterminateProgressBar, LineEdit, \
     RoundMenu, Action, ToolTipFilter
 
@@ -17,7 +17,7 @@ from app.supports.config import cfg
 from app.services.task_service import taskService
 from app.supports.utils import openFile, toReadableSize, toReadableTime, openFolder
 from app.view.components.dialogs import DeleteTaskDialog, FileHashDialog
-from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
+from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel, EditableLabel
 
 
 class ResultCard(QWidget):
@@ -627,7 +627,7 @@ class UniversalResultCard(ResultCard):
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
         self.iconLabel = ImageLabel(self)
-        self.filenameLabel = StrongBodyLabel(self.task.title, self)
+        self.filenameLabel = EditableLabel(self.task.title, self, onEdit=self._enterEditMode)
         self.filenameEdit = LineEdit(self)
         self.sizeLabel = BodyLabel(toReadableSize(self.task.fileSize), self)
         self.mainLayout = QHBoxLayout(self)
@@ -640,10 +640,6 @@ class UniversalResultCard(ResultCard):
         """初始化组件属性"""
         self.setFixedHeight(35)
         self.resetFileIcon()
-        # 设置文件名标签
-        self.filenameLabel.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.filenameLabel.installEventFilter(self)
-        # 设置编辑框
         self.filenameEdit.setText(self.task.title)
         self.filenameEdit.editingFinished.connect(self._onEditingFinished)
         self.filenameEdit.hide()
@@ -658,15 +654,6 @@ class UniversalResultCard(ResultCard):
         self.mainLayout.addWidget(self.sizeLabel)
         self.mainLayout.addWidget(self.editButton)
         self.mainLayout.addWidget(self.categoryButton)
-
-    def eventFilter(self, obj, event: QEvent):
-        """事件过滤器，处理双击事件"""
-        if obj is self.filenameLabel:
-            if event.type() == QEvent.Type.MouseButtonDblClick and isinstance(event, QMouseEvent):
-                if event.button() == Qt.MouseButton.LeftButton:
-                    self._enterEditMode()
-                    return True
-        return super().eventFilter(obj, event)
 
     def resetFileIcon(self):
         icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
