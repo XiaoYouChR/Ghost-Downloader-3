@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING, Literal
 from urllib.parse import parse_qs, unquote, urlparse
 from urllib.request import url2pathname
 
+import m3u8
 import niquests
+from loguru import logger
+from mpegdash.parser import MPEGDASHParser
 
 from app.bases.interfaces import FeaturePack, FileType
 from app.bases.models import Task
@@ -16,7 +19,7 @@ from app.supports import file_association
 from app.supports.config import activeUserAgent, cfg, defaultHeaders
 from app.supports.utils import getProxies, splitCookies, toExecutable, toSafeFilename
 from app.view.components.cards import UniversalTaskCard
-from .cards import M3U8ResultCard, M3U8TaskCard
+from .cards import M3U8LiveTaskCard, M3U8ResultCard, M3U8TaskCard
 from .config import m3u8Config
 from .task import M3U8Task, M3U8TaskStage
 
@@ -106,6 +109,111 @@ def loadLocalManifest(source: str) -> Path | None:
     return path if path.suffix.lower() in _MANIFEST_SUFFIXES else None
 
 
+def _toFrameRate(value) -> float | None:
+    if not value:
+        return None
+    text = str(value)
+    if "/" in text:
+        num, den = text.split("/")
+        return int(num) / int(den) if int(den) else None
+    return float(text)
+
+
+def _isVideoRepresentation(adaptationSet, representation) -> bool:
+    if (adaptationSet.content_type or "").lower() == "video":
+        return True
+    mimeType = (adaptationSet.mime_type or representation.mime_type or "").lower()
+    if mimeType.startswith("video"):
+        return True
+    return bool(representation.id and "video" in representation.id)
+
+
+def _streamEntry(width: int, height: int, codecs: str | None, frameRate: float | None) -> dict:
+    label = [f"{width}×{height}"]
+    if codecs:
+        label.append(codecs)
+    if frameRate:
+        label.append(f"{frameRate:.0f}fps")
+    selectExpr = [f'res="{width}*"']
+    if frameRate:
+        selectExpr.append(f'frame="{int(frameRate)}*"')
+    return {"label": " · ".join(label), "selectExpr": ":".join(selectExpr)}
+
+
+def _hlsStreams(body: str) -> list[dict]:
+    playlist = m3u8.loads(body)
+    streams = []
+    for variant in playlist.playlists:
+        resolution = variant.stream_info.resolution
+        if not resolution:
+            continue
+        width, height = resolution
+        streams.append(_streamEntry(width, height, variant.stream_info.codecs, variant.stream_info.frame_rate))
+    return streams
+
+
+def _mpdStreams(body: str) -> list[dict]:
+    mpd = MPEGDASHParser.parse(body)
+    if not mpd.periods:
+        return []
+    streams = []
+    for adaptationSet in mpd.periods[0].adaptation_sets:
+        for representation in adaptationSet.representations:
+            if not representation.width or not _isVideoRepresentation(adaptationSet, representation):
+                continue
+            streams.append(_streamEntry(
+                representation.width,
+                representation.height,
+                representation.codecs,
+                _toFrameRate(representation.frame_rate),
+            ))
+    return streams
+
+
+def resolveStreams(manifestType: str, body: str) -> list[dict]:
+    # 枚举失败不该阻断下载——auto-select 仍能工作, 仅轨道下拉缺项
+    try:
+        return _mpdStreams(body) if manifestType == "mpd" else _hlsStreams(body)
+    except Exception as e:
+        logger.warning("枚举可选视频流失败: {}", repr(e))
+        return []
+
+
+async def _resolveLive(manifestType: str, body: str, baseUrl: str, headers: dict, proxies) -> bool:
+    if manifestType == "mpd":
+        lowered = body.lower()
+        return 'type="dynamic"' in lowered or "type='dynamic'" in lowered
+
+    playlist = m3u8.loads(body, uri=baseUrl)
+    if playlist.segments:
+        return not playlist.is_endlist
+    if not playlist.playlists:
+        return "#ext-x-endlist" not in body.lower()
+
+    # master playlist 本身无 ENDLIST, 真伪直播只能看其变体 media playlist
+    variantUrl = playlist.playlists[0].absolute_uri or ""
+    if not variantUrl.lower().startswith(("http://", "https://")):
+        return False
+    try:
+        requestHeaders, requestCookies = splitCookies(headers)
+        async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
+            client.trust_env = False
+            response = await client.get(
+                variantUrl,
+                headers=requestHeaders,
+                cookies=requestCookies,
+                proxies=proxies,
+                verify=cfg.SSLVerify.value,
+                allow_redirects=True,
+            )
+            response.raise_for_status()
+            variantBody = response.text
+        return not m3u8.loads(variantBody, uri=variantUrl).is_endlist
+    except Exception as e:
+        logger.warning("取变体清单判活失败, 按点播处理: {}", repr(e))
+        return False
+
+
 class M3U8Pack(FeaturePack):
     packId = "m3u8"
     priority = 80
@@ -140,6 +248,8 @@ class M3U8Pack(FeaturePack):
         from disk_pack.task import InstallTask
         if isinstance(task, InstallTask):
             return UniversalTaskCard(task, parent)
+        if getattr(task, "isLive", False):
+            return M3U8LiveTaskCard(task, parent)
         return M3U8TaskCard(task, parent)
 
     def resultCard(self, task, parent=None):
@@ -192,13 +302,11 @@ class M3U8Pack(FeaturePack):
             manifestUrl = response.url
 
         manifestType = _manifestType(manifestUrl, loweredHeaders, body)
-        loweredBody = body.lower()
-        if manifestType == "mpd":
-            isLive = 'type="dynamic"' in loweredBody or "type='dynamic'" in loweredBody
-        else:
-            isLive = "#ext-x-endlist" not in loweredBody
-        extension = "ts" if m3u8Config.liveRealTimeMerge.value else m3u8Config.outputFormat.value
+        isLive = await _resolveLive(manifestType, body, manifestUrl, headers, proxies)
+        # 直播恒走 real-time-merge 直出 .ts；点播按输出容器
+        extension = "ts" if isLive else m3u8Config.outputFormat.value
         title = _title(manifestUrl, loweredHeaders, extension)
+        streams = resolveStreams(manifestType, body)
 
         task = M3U8Task(
             title=title,
@@ -207,6 +315,7 @@ class M3U8Pack(FeaturePack):
             path=path,
             manifestType=manifestType,
             isLive=isLive,
+            streams=streams,
         )
 
         stage = M3U8TaskStage(
@@ -221,10 +330,24 @@ class M3U8Pack(FeaturePack):
             appendUrlParams=m3u8Config.appendUrlParams.value,
             binaryMerge=m3u8Config.binaryMerge.value,
             checkSegmentsCount=m3u8Config.checkSegmentsCount.value,
+            delAfterDone=m3u8Config.delAfterDone.value,
             outputFormat=m3u8Config.outputFormat.value,
-            liveRealTimeMerge=m3u8Config.liveRealTimeMerge.value,
+            customMuxAfterDone=m3u8Config.customMuxAfterDone.value,
+            subtitleFormat=m3u8Config.subtitleFormat.value,
+            selectAllAudioSubtitle=m3u8Config.selectAllAudioSubtitle.value,
+            maxSpeed=m3u8Config.maxSpeed.value,
+            speedUnit=m3u8Config.speedUnit.value,
+            adKeyword=m3u8Config.adKeyword.value,
+            noDateInfo=m3u8Config.noDateInfo.value,
+            keepImageSegments=m3u8Config.keepImageSegments.value,
+            decryptionEngine=m3u8Config.decryptionEngine.value,
+            decryptionBinaryPath=m3u8Config.decryptionBinaryPath.value,
+            mp4RealTimeDecryption=m3u8Config.mp4RealTimeDecryption.value,
             liveKeepSegments=m3u8Config.liveKeepSegments.value,
             livePipeMux=m3u8Config.livePipeMux.value,
+            liveFixVtt=m3u8Config.liveFixVtt.value,
+            liveWaitTime=m3u8Config.liveWaitTime.value,
+            liveTakeCount=m3u8Config.liveTakeCount.value,
         )
         task.addStage(stage)
         return task

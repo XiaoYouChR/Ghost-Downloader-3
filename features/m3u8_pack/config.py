@@ -27,7 +27,7 @@ from app.services.core_service import coreService
 from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import findExecutable, toPosixPath
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-from app.view.components.setting_cards import InstallFolderCard, SpinBoxSettingCard
+from app.view.components.setting_cards import InstallFolderCard, LineEditSettingCard, SelectFileCard, SpinBoxSettingCard
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
@@ -146,6 +146,8 @@ class M3U8Config(PackConfig):
         f"{APP_DATA_DIR}/M3U8DL",
         FolderValidator(),
     )
+    associateFileTypes = ConfigItem("M3U8", "AssociateFileTypes", False, BoolValidator())
+
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))
     threadCount = RangeConfigItem("M3U8", "ThreadCount", 8, RangeValidator(1, 64))
     retryCount = RangeConfigItem("M3U8", "RetryCount", 3, RangeValidator(0, 20))
@@ -155,138 +157,180 @@ class M3U8Config(PackConfig):
     appendUrlParams = ConfigItem("M3U8", "AppendUrlParams", False, BoolValidator())
     binaryMerge = ConfigItem("M3U8", "BinaryMerge", False, BoolValidator())
     checkSegmentsCount = ConfigItem("M3U8", "CheckSegmentsCount", True, BoolValidator())
-    liveRealTimeMerge = ConfigItem("M3U8", "LiveRealTimeMerge", False, BoolValidator())
+
+    # 直播（real-time-merge 对直播恒开，不设开关）
     liveKeepSegments = ConfigItem("M3U8", "LiveKeepSegments", False, BoolValidator())
     livePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
-    associateFileTypes = ConfigItem("M3U8", "AssociateFileTypes", False, BoolValidator())
+    liveFixVtt = ConfigItem("M3U8", "LiveFixVtt", False, BoolValidator())
+    liveWaitTime = RangeConfigItem("M3U8", "LiveWaitTime", 0, RangeValidator(0, 100000))
+    liveTakeCount = RangeConfigItem("M3U8", "LiveTakeCount", 0, RangeValidator(0, 1000))
+
+    decryptionEngine = OptionsConfigItem(
+        "M3U8", "DecryptionEngine", "FFmpeg",
+        OptionsValidator(["FFmpeg", "MP4Decrypt", "Shaka Packager"]),
+    )
+    decryptionBinaryPath = ConfigItem("M3U8", "DecryptionBinaryPath", "")
+    mp4RealTimeDecryption = ConfigItem("M3U8", "MP4RealTimeDecryption", True, BoolValidator())
+
+    maxSpeed = RangeConfigItem("M3U8", "MaxSpeed", -1, RangeValidator(-1, 1000000))
+    speedUnit = OptionsConfigItem("M3U8", "SpeedUnit", "Mbps", OptionsValidator(["Mbps", "Kbps"]))
+    adKeyword = ConfigItem("M3U8", "AdKeyword", "")
+    subtitleFormat = OptionsConfigItem("M3U8", "SubtitleFormat", "SRT", OptionsValidator(["SRT", "VTT"]))
+    noDateInfo = ConfigItem("M3U8", "NoDateInfo", False, BoolValidator())
+    keepImageSegments = ConfigItem("M3U8", "KeepImageSegments", False, BoolValidator())
+    delAfterDone = ConfigItem("M3U8", "DelAfterDone", True, BoolValidator())
+    customMuxAfterDone = ConfigItem("M3U8", "CustomMuxAfterDone", "")
+    selectAllAudioSubtitle = ConfigItem("M3U8", "SelectAllAudioSubtitle", True, BoolValidator())
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
-        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
-        if sys.platform != "darwin":
-            self.associateCard = SwitchSettingCard(
-                FluentIcon.LINK,
-                self.tr("关联 M3U8/MPD 文件"),
-                self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
-                self.associateFileTypes,
-                self.m3u8Group,
-            )
-            self.m3u8Group.addSettingCard(self.associateCard)
         self.installFolderCard = InstallFolderCard(
-            m3u8Config.installFolder,
+            self.installFolder,
             f"{APP_DATA_DIR}/M3U8DL",
             self.tr("N_m3u8DL-RE 安装目录"),
             self.tr("选择 N_m3u8DL-RE 安装目录"),
             self.m3u8Group,
         )
         self.runtimeCard = M3U8RuntimeCard(self.m3u8Group)
-        self.outputFormatCard = ComboBoxSettingCard(
-            self.outputFormat,
-            FluentIcon.VIDEO,
-            self.tr("输出容器"),
-            self.tr("下载完成后优先使用 ffmpeg 混流为指定容器"),
-            texts=["MP4", "MKV"],
-            parent=self.m3u8Group,
-        )
-        self.threadCountCard = RangeSettingCard(
-            self.threadCount,
-            FluentIcon.CLOUD,
-            self.tr("分片线程数"),
-            self.tr("传给 N_m3u8DL-RE 的下载线程数"),
-            self.m3u8Group,
-        )
-        self.retryCountCard = RangeSettingCard(
-            self.retryCount,
-            FluentIcon.SYNC,
-            self.tr("分片重试次数"),
-            self.tr("单个分片下载失败时的最大重试次数"),
-            self.m3u8Group,
-        )
-        self.requestTimeoutCard = SpinBoxSettingCard(
-            FluentIcon.HISTORY,
-            self.tr("请求超时"),
-            self.tr("HTTP 请求超时时间"),
-            " s",
-            self.requestTimeout,
-            self.m3u8Group,
-            5,
-        )
-        self.autoSelectCard = SwitchSettingCard(
-            FluentIcon.ACCEPT,
-            self.tr("自动选择最佳轨道"),
-            self.tr("默认选择最佳音视频轨道，避免每个链接都手动挑选"),
-            self.autoSelect,
-            self.m3u8Group,
-        )
-        self.concurrentDownloadCard = SwitchSettingCard(
-            FluentIcon.PAUSE,
-            self.tr("并发下载音视频"),
-            self.tr("同时下载已选择的音频、视频和字幕轨道"),
-            self.concurrentDownload,
-            self.m3u8Group,
-        )
-        self.appendUrlParamsCard = SwitchSettingCard(
-            FluentIcon.LINK,
-            self.tr("追加 URL 参数"),
-            self.tr("把输入链接上的 Query 参数追加到分片请求"),
-            self.appendUrlParams,
-            self.m3u8Group,
-        )
-        self.binaryMergeCard = SwitchSettingCard(
-            FluentIcon.ALIGNMENT,
-            self.tr("二进制合并"),
-            self.tr("让 N_m3u8DL-RE 使用二进制方式合并分片"),
-            self.binaryMerge,
-            self.m3u8Group,
-        )
-        self.checkSegmentsCountCard = SwitchSettingCard(
-            FluentIcon.SEARCH,
-            self.tr("校验分片数量"),
-            self.tr("下载完成后检查实际分片数是否与预期一致"),
-            self.checkSegmentsCount,
-            self.m3u8Group,
-        )
-        self.liveRealTimeMergeCard = SwitchSettingCard(
-            FluentIcon.CAMERA,
-            self.tr("直播实时合并"),
-            self.tr("录制直播流时边下边合并"),
-            self.liveRealTimeMerge,
-            self.m3u8Group,
-        )
-        self.liveKeepSegmentsCard = SwitchSettingCard(
-            FluentIcon.SAVE,
-            self.tr("直播保留分片"),
-            self.tr("实时合并直播时仍保留原始分片"),
-            self.liveKeepSegments,
-            self.m3u8Group,
-        )
-        self.livePipeMuxCard = SwitchSettingCard(
-            FluentIcon.CODE,
-            self.tr("直播管道混流"),
-            self.tr("直播实时合并时通过管道交给 ffmpeg 混流"),
-            self.livePipeMux,
-            self.m3u8Group,
-        )
+
+        cards = [self.installFolderCard, self.runtimeCard]
+        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
+        if sys.platform != "darwin":
+            cards.append(SwitchSettingCard(
+                FluentIcon.LINK,
+                self.tr("关联 M3U8/MPD 文件"),
+                self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
+                self.associateFileTypes,
+                self.m3u8Group,
+            ))
+        cards += [
+            ComboBoxSettingCard(
+                self.outputFormat, FluentIcon.VIDEO, self.tr("输出容器"),
+                self.tr("点播下载完成后优先使用 ffmpeg 混流为指定容器"),
+                texts=["MP4", "MKV"], parent=self.m3u8Group,
+            ),
+            RangeSettingCard(
+                self.threadCount, FluentIcon.CLOUD, self.tr("分片线程数"),
+                self.tr("传给 N_m3u8DL-RE 的下载线程数"), self.m3u8Group,
+            ),
+            RangeSettingCard(
+                self.retryCount, FluentIcon.SYNC, self.tr("分片重试次数"),
+                self.tr("单个分片下载失败时的最大重试次数"), self.m3u8Group,
+            ),
+            SpinBoxSettingCard(
+                FluentIcon.HISTORY, self.tr("请求超时"), self.tr("HTTP 请求超时时间"),
+                " s", self.requestTimeout, self.m3u8Group, 5,
+            ),
+            SwitchSettingCard(
+                FluentIcon.ACCEPT, self.tr("自动选择最佳轨道"),
+                self.tr("默认选择最佳音视频轨道，避免每个链接都手动挑选"),
+                self.autoSelect, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.PAUSE, self.tr("并发下载音视频"),
+                self.tr("同时下载已选择的音频、视频和字幕轨道"),
+                self.concurrentDownload, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.LINK, self.tr("追加 URL 参数"),
+                self.tr("把输入链接上的 Query 参数追加到分片请求"),
+                self.appendUrlParams, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.ALIGNMENT, self.tr("二进制合并"),
+                self.tr("让 N_m3u8DL-RE 使用二进制方式合并分片"),
+                self.binaryMerge, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.SEARCH, self.tr("校验分片数量"),
+                self.tr("下载完成后检查实际分片数是否与预期一致"),
+                self.checkSegmentsCount, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.SAVE, self.tr("直播保留原始分片"),
+                self.tr("实时合并录制时仍保留下载的原始分片"),
+                self.liveKeepSegments, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.CODE, self.tr("直播管道混流"),
+                self.tr("录制时通过管道交给 ffmpeg 实时混流为封装容器"),
+                self.livePipeMux, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.FONT, self.tr("直播校正 VTT 字幕"),
+                self.tr("根据音频起始时间校正 VTT 字幕时间轴"),
+                self.liveFixVtt, self.m3u8Group,
+            ),
+            SpinBoxSettingCard(
+                FluentIcon.STOP_WATCH, self.tr("直播刷新等待时间"),
+                self.tr("两次拉取直播清单之间的等待秒数，0 为自动"),
+                " s", self.liveWaitTime, self.m3u8Group, 1,
+            ),
+            SpinBoxSettingCard(
+                FluentIcon.DOWNLOAD, self.tr("直播每次取片数"),
+                self.tr("每次刷新最多取走的分片数量，0 为自动"),
+                "", self.liveTakeCount, self.m3u8Group, 1,
+            ),
+            ComboBoxSettingCard(
+                self.decryptionEngine, FluentIcon.CERTIFICATE, self.tr("解密引擎"),
+                self.tr("调用的第三方解密程序"),
+                texts=["FFmpeg", "MP4Decrypt", "Shaka Packager"], parent=self.m3u8Group,
+            ),
+            SelectFileCard(
+                self.decryptionBinaryPath, FluentIcon.COMMAND_PROMPT, self.tr("解密引擎二进制路径"),
+                self.tr("MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg"),
+                self.tr("选择解密引擎可执行文件"), self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.FINGERPRINT, self.tr("MP4 实时解密"),
+                self.tr("下载 MP4 分片时实时解密"),
+                self.mp4RealTimeDecryption, self.m3u8Group,
+            ),
+            SpinBoxSettingCard(
+                FluentIcon.SPEED_HIGH, self.tr("限速"),
+                self.tr("最大下载速度，-1 为不限速"),
+                "", self.maxSpeed, self.m3u8Group, 1,
+            ),
+            ComboBoxSettingCard(
+                self.speedUnit, FluentIcon.TAG, self.tr("限速单位"),
+                self.tr("限速数值的单位"), texts=["Mbps", "Kbps"], parent=self.m3u8Group,
+            ),
+            LineEditSettingCard(
+                FluentIcon.REMOVE, self.tr("广告过滤"),
+                self.tr("匹配广告分片 URL 的正则表达式"),
+                self.adKeyword, self.m3u8Group, placeholder=self.tr("正则表达式"),
+            ),
+            ComboBoxSettingCard(
+                self.subtitleFormat, FluentIcon.DICTIONARY, self.tr("字幕格式"),
+                self.tr("字幕输出格式"), texts=["SRT", "VTT"], parent=self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.DATE_TIME, self.tr("不写入日期信息"),
+                self.tr("混流时不写入日期信息"), self.noDateInfo, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.PHOTO, self.tr("保留图形分片"),
+                self.tr("把图形字幕转图片后保留原始分片"),
+                self.keepImageSegments, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.DELETE, self.tr("完成后删除临时文件"),
+                self.tr("下载完成后删除分片临时目录"), self.delAfterDone, self.m3u8Group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.MUSIC, self.tr("下载全部音轨与字幕"),
+                self.tr("默认拉取全部音频与字幕轨道，而非仅最佳"),
+                self.selectAllAudioSubtitle, self.m3u8Group,
+            ),
+            LineEditSettingCard(
+                FluentIcon.VIDEO, self.tr("自定义混流参数"),
+                self.tr("自定义 --mux-after-done，留空则按输出容器自动混流"),
+                self.customMuxAfterDone, self.m3u8Group, placeholder="format=mp4",
+            ),
+        ]
+        self.m3u8Group.addSettingCards(cards)
+
         self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
-
-        for card in (
-            self.installFolderCard,
-            self.runtimeCard,
-            self.outputFormatCard,
-            self.threadCountCard,
-            self.retryCountCard,
-            self.requestTimeoutCard,
-            self.autoSelectCard,
-            self.concurrentDownloadCard,
-            self.appendUrlParamsCard,
-            self.binaryMergeCard,
-            self.checkSegmentsCountCard,
-            self.liveRealTimeMergeCard,
-            self.liveKeepSegmentsCard,
-            self.livePipeMuxCard,
-        ):
-            self.m3u8Group.addSettingCard(card)
-
         settingPage.addSettingGroup(self.m3u8Group)
         self.runtimeCard.refreshStatus()
 
