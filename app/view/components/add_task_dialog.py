@@ -39,8 +39,13 @@ if TYPE_CHECKING:
 
 class SelectFolderCard(ParseSettingCard):
     def __init__(self, icon, title: str, parent=None, *, initial: Path | None = None) -> None:
-        self._initial = str(initial) if initial is not None else cfg.downloadFolder.value
         super().__init__(icon, title, parent)
+        # super 在 initCustomWidget 里已建好 pathEdit
+        if initial is not None:
+            self.pathEdit.setText(str(initial))
+        else:
+            self.pathEdit.setText(cfg.downloadFolder.value)
+            cfg.downloadFolder.valueChanged.connect(self.pathEdit.setText)
 
     def initCustomWidget(self) -> None:
         self.pathEdit = LineEdit(self)
@@ -54,7 +59,6 @@ class SelectFolderCard(ParseSettingCard):
 
     def _initWidget(self) -> None:
         self.pathEdit.setReadOnly(True)
-        self.pathEdit.setText(self._initial)
 
     def _initLayout(self) -> None:
         self.hBoxLayout.addWidget(self.pathEdit, stretch=3)
@@ -82,7 +86,7 @@ class SelectFolderCard(ParseSettingCard):
         return path.parent
 
     def reset(self) -> None:
-        self.pathEdit.setText(self._initial)
+        self.pathEdit.setText(cfg.downloadFolder.value)
 
     @property
     def payload(self) -> dict[str, Any]:
