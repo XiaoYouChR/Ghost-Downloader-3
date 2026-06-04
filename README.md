@@ -112,7 +112,7 @@ Thanks to all contributors who have participated in this project!
           <br />
           <sub><b>i0ntempest</b></sub></a>
         <br />
-        <sub><b>1920 words</b></sub>
+        <sub><b>1988 words</b></sub>
       </td>
       <td align="center" valign="top">
         <a href="https://crowdin.com/profile/ReM2812"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17626502/medium/8d12a395a224c0f9d5546a8e5621186c.jpg" />
