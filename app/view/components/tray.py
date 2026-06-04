@@ -1,9 +1,10 @@
+from enum import Enum
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter
+from PySide6.QtCore import QTimer, Qt, QRectF
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QHBoxLayout, QSystemTrayIcon, QProxyStyle, QStyle, QStyleFactory
-from qfluentwidgets import RoundMenu, FluentStyleSheet, isDarkTheme, Action, FluentIcon
+from qfluentwidgets import RoundMenu, FluentStyleSheet, isDarkTheme, Action, FluentIcon, FluentIconBase, Theme, getIconColor
 from qfluentwidgets.common.screen import getCurrentScreenGeometry
 from qfluentwidgets.components.widgets.menu import MenuActionListWidget
 from qframelesswindow import WindowEffect
@@ -14,6 +15,30 @@ from app.supports.signal_bus import signalBus
 if TYPE_CHECKING:
     from PySide6.QtGui import QAction
     from app.view.windows.main_window import MainWindow
+
+
+class GhostIcon(FluentIconBase, Enum):
+    """幽灵剪影图标, 复用菜单栏模板 PNG, 跟随明暗主题着色"""
+
+    GHOST = "ghost"
+
+    def path(self, theme=Theme.AUTO) -> str:
+        return ":/image/logo_menubar_template.png"
+
+    def _toTintedPixmap(self, theme: Theme) -> QPixmap:
+        pixmap = QPixmap(self.path())
+        painter = QPainter(pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.fillRect(pixmap.rect(), QColor(getIconColor(theme)))  # 剪影染主题色, 镂空保持透明
+        painter.end()
+        return pixmap
+
+    def icon(self, theme=Theme.AUTO, color=None) -> QIcon:
+        return QIcon(self._toTintedPixmap(theme))
+
+    def render(self, painter, rect, theme=Theme.AUTO, indexes=None, **attributes) -> None:
+        painter.drawPixmap(QRectF(rect).toRect(), self._toTintedPixmap(theme))
+
 
 class CustomMenuStyle(QProxyStyle):
     """Custom menu style"""
@@ -147,7 +172,7 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self.menu = AcrylicMenu(parent=parent)
 
-        self.showAction = Action(QIcon(":/image/logo_withoutBackground.png"), self.tr('仪表盘'), self.menu)
+        self.showAction = Action(GhostIcon.GHOST, self.tr('仪表盘'), self.menu)
         self.showAction.triggered.connect(self._onShowActionTriggered)
         self.menu.addAction(self.showAction)
 

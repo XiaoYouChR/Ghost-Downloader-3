@@ -73,7 +73,11 @@ class MainWindow(MSFluentWindow):
         if sys.platform == "darwin":
             self._windowCloseShortcut = QShortcut(QKeySequence.StandardKey.Close, self)
             self._windowCloseShortcut.setContext(Qt.ShortcutContext.WindowShortcut)
-        self.tray = SystemTrayIcon(self)
+        if sys.platform == "darwin":
+            from app.view.components.mac_status_item import MacStatusItem
+            self.tray = MacStatusItem(self)
+        else:
+            self.tray = SystemTrayIcon(self)
         self.tray.show()
 
         self.connectSignalToSlot()

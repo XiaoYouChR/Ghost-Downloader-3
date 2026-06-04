@@ -9,4 +9,5 @@ libtorrent>=2.0.11
 libtorrent-windows-dll>=0.0.3; sys_platform == 'win32'
 winloop>=0.6.0; sys_platform == 'win32'
 uvloop>=0.22.1; sys_platform != 'win32'
+pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'
 aioftp[socks]>=0.27.2
