@@ -285,6 +285,8 @@ class Config(QConfig):
         "Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True
     )
     showDockIcon = ConfigItem("Personalization", "ShowDockIcon", True, BoolValidator())
+    showDockSpeed = ConfigItem("Personalization", "ShowDockSpeed", True, BoolValidator())
+    showMenuBarSpeed = ConfigItem("Personalization", "ShowMenuBarSpeed", True, BoolValidator())
     language = OptionsConfigItem(
         "Personalization",
         "Language",

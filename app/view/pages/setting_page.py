@@ -279,6 +279,27 @@ class SettingPage(ScrollArea):
                 parent=self.personalGroup,
             )
             self.personalGroup.addSettingCard(self.showDockIconCard)
+
+            self.showDockSpeedCard = SwitchSettingCard(
+                FluentIcon.SPEED_HIGH,
+                self.tr("在 Dock 图标上显示实时速度"),
+                self.tr("下载时在程序坞图标上叠加当前速度"),
+                configItem=cfg.showDockSpeed,
+                parent=self.personalGroup,
+            )
+            # Dock 隐藏时无 tile 可画, 此卡置灰
+            self.showDockSpeedCard.setEnabled(cfg.showDockIcon.value)
+            cfg.showDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
+            self.personalGroup.addSettingCard(self.showDockSpeedCard)
+
+            self.showMenuBarSpeedCard = SwitchSettingCard(
+                FluentIcon.SPEED_HIGH,
+                self.tr("在菜单栏显示实时速度"),
+                self.tr("下载时在菜单栏图标旁显示当前速度"),
+                configItem=cfg.showMenuBarSpeed,
+                parent=self.personalGroup,
+            )
+            self.personalGroup.addSettingCard(self.showMenuBarSpeedCard)
         self.languageCard = ComboBoxSettingCard(
             cfg.language,
             FluentIcon.LANGUAGE,

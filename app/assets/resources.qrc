@@ -1,8 +1,9 @@
 <RCC>
   <qresource prefix="image">
     <file>logo.png</file>
-    <file>logo_withoutBackground.png</file>
     <file>logo.ico</file>
+    <file>logo_macOS.png</file>
+    <file>logo_menubar_template.png</file>
   </qresource>
   <qresource prefix="res">
     <file>chrome_extension.crx</file>

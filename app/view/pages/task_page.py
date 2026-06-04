@@ -18,6 +18,7 @@ from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.services.task_service import taskService
 from app.supports.config import cfg
+from app.supports.signal_bus import signalBus
 from app.supports.utils import toReadableSize, openFile
 from app.view.components.cards import TaskCard
 from app.view.components.dialogs import DeleteTaskDialog, PlanTaskDialog
@@ -338,6 +339,7 @@ class TaskPage(ScrollArea):
             card.refresh()
 
         self.speedBadge.setText(f"{toReadableSize(cfg.globalSpeed)}/s")
+        signalBus.globalSpeedChanged.emit(cfg.globalSpeed)
         cfg.resetGlobalSpeed()
 
     @Slot()
