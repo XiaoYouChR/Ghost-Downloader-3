@@ -149,7 +149,12 @@ class M3U8RuntimeCard(SettingCard):
             return
 
         self._installTask = result
-        mainWindow.addTask(result)
+        if not mainWindow.addTask(result):
+            self._installTask = None
+            self.installButton.setEnabled(True)
+            self.installButton.setText(self.tr("一键安装"))
+            InfoBar.error(self.tr("安装 N_m3u8DL-RE 失败"), self.tr("无法创建下载任务"), duration=-1, parent=mainWindow)
+            return
         self._progressTimer.start()
 
     def _onInstallTaskRemoved(self, taskId: str):
@@ -166,14 +171,17 @@ class M3U8RuntimeCard(SettingCard):
             self._progressTimer.stop()
             return
 
-        progress, speed, receivedBytes = task.currentSnapshot()
+        progress, speed, _receivedBytes = task.currentSnapshot()
 
         if task.status == TaskStatus.COMPLETED:
             self._progressTimer.stop()
             self._installTask = None
             self.installButton.setEnabled(True)
             self.installButton.setText(self.tr("一键安装"))
-            taskService.remove(task)
+            coreService.runCoroutine(
+                coreService._stopTask(task),
+                lambda _result, _error, t=task: taskService.remove(t),
+            )
             self.refreshStatus()
             return
 
