@@ -274,6 +274,7 @@ class _AsyncPipeReader:
         self._pipe = pipe
         self._queue: "_asyncio.Queue[bytes | None]" = None
         self._started = False
+        self._buf = b""
 
     def _ensure_started(self):
         if self._started:
@@ -299,15 +300,24 @@ class _AsyncPipeReader:
         line = await self._queue.get()
         return line if line is not None else b""
 
-    async def read(self):
+    async def read(self, n: int = -1):
         self._ensure_started()
-        chunks = []
-        while True:
+        if n is None or n < 0:
+            chunks = [self._buf] if self._buf else []
+            self._buf = b""
+            while True:
+                chunk = await self._queue.get()
+                if chunk is None:
+                    break
+                chunks.append(chunk)
+            return b"".join(chunks)
+        while len(self._buf) < n:
             chunk = await self._queue.get()
             if chunk is None:
                 break
-            chunks.append(chunk)
-        return b"".join(chunks)
+            self._buf += chunk
+        data, self._buf = self._buf[:n], self._buf[n:]
+        return data
 
 
 def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
