@@ -42,7 +42,7 @@ class FeatureService:
                 featurePacks.append(
                     {
                         "name": item.name,
-                        "path": str(item / manifest["entry"]),
+                        "path": manifest["entryPath"],
                         "directory": str(item),
                         "dependencies": manifest["dependencies"],
                     }
@@ -50,6 +50,20 @@ class FeatureService:
 
         featurePacks.sort(key=lambda pack: pack["name"])
         return featurePacks
+
+    def _resolveEntry(self, packDirectory: Path, entry: str) -> Path | None:
+        """把 manifest 的 entry 解析到真实入口文件。
+
+        p4a 把 pack 的 .py 编成 .pyc 并剥源码, 按 .py 找会 FileNotFoundError → 回退同名 .pyc。桌面端 .py 始终在, 不触发。
+        """
+        packPath = packDirectory / entry
+        if packPath.exists():
+            return packPath
+        if entry.endswith(".py"):
+            pycPath = packDirectory / (entry[:-3] + ".pyc")
+            if pycPath.exists():
+                return pycPath
+        return None
 
     def _manifest(self, packDirectory: Path) -> dict[str, Any] | None:
         manifestPath = packDirectory / "manifest.toml"
@@ -73,9 +87,9 @@ class FeatureService:
             logger.warning("FeaturePack manifest 的 entry 无效: {}", manifestPath)
             return None
 
-        packPath = packDirectory / entry
-        if not packPath.exists():
-            logger.warning("FeaturePack 入口文件不存在: {}", packPath)
+        entryPath = self._resolveEntry(packDirectory, entry)
+        if entryPath is None:
+            logger.warning("FeaturePack 入口文件不存在: {}", packDirectory / entry)
             return None
 
         dependencies = packConfig.get("dependencies", [])
@@ -87,7 +101,7 @@ class FeatureService:
             return None
 
         return {
-            "entry": entry,
+            "entryPath": str(entryPath),
             "dependencies": tuple(dependencies),
         }
 
