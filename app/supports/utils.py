@@ -323,11 +323,14 @@ class _AsyncPipeReader:
                     break
                 chunks.append(chunk)
             return b"".join(chunks)
-        while len(self._read_buf) < n:
-            chunk = await self._queue.get()
-            if chunk is None:
-                break
-            self._read_buf += chunk
+        if len(self._read_buf) >= n:
+            data, self._read_buf = self._read_buf[:n], self._read_buf[n:]
+            return data
+        chunk = await self._queue.get()
+        if chunk is None:
+            data, self._read_buf = self._read_buf, b""
+            return data
+        self._read_buf += chunk
         data, self._read_buf = self._read_buf[:n], self._read_buf[n:]
         return data
 
