@@ -87,12 +87,15 @@ echo "[build] GD3_QT_MODULES=$GD3_QT_MODULES"
 
 # 修 p4a adaptive icon bug（写 mipmap-anydpi-v26/icon.xml 前没建目录）。/opt/p4a 已在镜像层修好，
 # 但增量构建复用缓存卷里旧 dist 的 build.py 是未修版，这里就地幂等补。
-find "$STAGE/.buildozer" -name "build.py" \( -path "*bootstrap_builds/qt/*" -o -path "*dists/*" \) 2>/dev/null | while read -r buildPy; do
-    if grep -q "mipmap-anydpi-v26/icon.xml" "$buildPy" && ! grep -q 'ensure_dir(join(res_dir, "mipmap-anydpi-v26"))' "$buildPy"; then
-        sed -i 's#^\( *\)with open(join(res_dir, .mipmap-anydpi-v26/icon.xml.), .w.) as fd:#\1ensure_dir(join(res_dir, "mipmap-anydpi-v26"))\n&#' "$buildPy"
-        echo "[build] 补 p4a adaptive icon mkdir: $buildPy"
-    fi
-done
+# 守卫 .buildozer 存在：CI 全新 runner 首跑时它还没生成，无守卫的 find 会非零退出（set -e+pipefail）而中断。
+if [ -d "$STAGE/.buildozer" ]; then
+    find "$STAGE/.buildozer" -name "build.py" \( -path "*bootstrap_builds/qt/*" -o -path "*dists/*" \) 2>/dev/null | while read -r buildPy; do
+        if grep -q "mipmap-anydpi-v26/icon.xml" "$buildPy" && ! grep -q 'ensure_dir(join(res_dir, "mipmap-anydpi-v26"))' "$buildPy"; then
+            sed -i 's#^\( *\)with open(join(res_dir, .mipmap-anydpi-v26/icon.xml.), .w.) as fd:#\1ensure_dir(join(res_dir, "mipmap-anydpi-v26"))\n&#' "$buildPy"
+            echo "[build] 补 p4a adaptive icon mkdir: $buildPy"
+        fi
+    done
+fi
 
 PYSIDE_WHL=$(ls "$WHEEL_DIR"/PySide6-*android_aarch64.whl)
 SHIBOKEN_WHL=$(ls "$WHEEL_DIR"/shiboken6-*android_aarch64.whl)
