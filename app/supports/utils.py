@@ -251,7 +251,9 @@ class _AsyncPopenWrapper:
         return self.returncode
 
     async def communicate(self, input=None):
-        return await _asyncio.to_thread(self._proc.communicate, input)
+        stdout, stderr = await _asyncio.to_thread(self._proc.communicate, input)
+        self.returncode = self._proc.returncode
+        return stdout, stderr
 
     def kill(self):
         self._proc.kill()
@@ -261,26 +263,44 @@ class _AsyncPopenWrapper:
 
 
 class _AsyncPipeReader:
-    """Provides async readline() and read() over a blocking pipe."""
+    """Provides async readline() and read() over a blocking pipe.
+
+    The reader thread is started lazily on the first read call, so that
+    communicate() on the underlying Popen can read the pipe directly
+    without racing with a background thread.
+    """
 
     def __init__(self, pipe):
-        self._queue = _asyncio.Queue()
-        self._loop = _asyncio.get_running_loop()
-        self._thread = threading.Thread(target=self._read_loop, args=(pipe,), daemon=True)
-        self._thread.start()
+        self._pipe = pipe
+        self._queue: "_asyncio.Queue[bytes | None]" = None
+        self._started = False
 
-    def _read_loop(self, pipe):
+    def _ensure_started(self):
+        if self._started:
+            return
+        self._started = True
+        self._queue = _asyncio.Queue()
+        loop = _asyncio.get_running_loop()
+        threading.Thread(
+            target=self._read_loop, args=(self._pipe, loop, self._queue),
+            daemon=True,
+        ).start()
+
+    @staticmethod
+    def _read_loop(pipe, loop, queue):
         try:
             for line in pipe:
-                self._loop.call_soon_threadsafe(self._queue.put_nowait, line)
+                loop.call_soon_threadsafe(queue.put_nowait, line)
         finally:
-            self._loop.call_soon_threadsafe(self._queue.put_nowait, None)
+            loop.call_soon_threadsafe(queue.put_nowait, None)
 
     async def readline(self):
+        self._ensure_started()
         line = await self._queue.get()
         return line if line is not None else b""
 
     async def read(self):
+        self._ensure_started()
         chunks = []
         while True:
             chunk = await self._queue.get()
