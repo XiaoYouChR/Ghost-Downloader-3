@@ -3,7 +3,6 @@ import re
 import shutil
 import subprocess
 import sys
-import threading
 from datetime import datetime
 from functools import wraps
 from http.cookiejar import CookieJar
@@ -247,9 +246,13 @@ class _AsyncPopenWrapper:
 
     async def wait(self):
         if self.stderr is not None:
-            self.stderr._ensure_started()
+            drain = _asyncio.create_task(self.stderr._drain())
         await _asyncio.to_thread(self._proc.wait)
         self.returncode = self._proc.returncode
+        if self.stderr is not None:
+            drain.cancel()
+            with _asyncio.suppress(_asyncio.CancelledError):
+                await drain
         return self.returncode
 
     async def communicate(self, input=None):
@@ -267,70 +270,57 @@ class _AsyncPopenWrapper:
 class _AsyncPipeReader:
     """Provides async readline() and read() over a blocking pipe.
 
-    A daemon thread reads fixed-size chunks from the pipe and feeds them
-    into an asyncio.Queue.  readline() splits on newlines internally so
-    that carriage-return progress output (e.g. from N_m3u8DL-RE) is
-    delivered immediately instead of waiting for a newline or EOF.
+    Each call dispatches a blocking pipe.read() to a thread via
+    asyncio.to_thread so data is delivered as soon as it arrives,
+    matching the responsiveness of the original winloop transport.
     """
 
     def __init__(self, pipe):
         self._pipe = pipe
-        self._queue: "_asyncio.Queue[bytes | None]" = None
-        self._started = False
         self._read_buf = b""
 
-    def _ensure_started(self):
-        if self._started:
-            return
-        self._started = True
-        self._queue = _asyncio.Queue()
-        loop = _asyncio.get_running_loop()
-        threading.Thread(
-            target=self._read_loop, args=(self._pipe, loop, self._queue),
-            daemon=True,
-        ).start()
+    async def _read_chunk(self):
+        chunk = await _asyncio.to_thread(self._pipe.read, 8192)
+        if not chunk:
+            raise EOFError
+        return chunk
 
-    @staticmethod
-    def _read_loop(pipe, loop, queue):
+    async def _drain(self):
+        """Continuously discard stderr to prevent pipe deadlock."""
         try:
             while True:
-                chunk = pipe.read(8192)
-                if not chunk:
-                    break
-                loop.call_soon_threadsafe(queue.put_nowait, chunk)
-        finally:
-            loop.call_soon_threadsafe(queue.put_nowait, None)
+                await _asyncio.to_thread(self._pipe.read, 8192)
+        except Exception:
+            pass
 
     async def readline(self):
-        self._ensure_started()
         while b"\n" not in self._read_buf:
-            chunk = await self._queue.get()
-            if chunk is None:
+            try:
+                self._read_buf += await self._read_chunk()
+            except EOFError:
                 line, self._read_buf = self._read_buf, b""
                 return line
-            self._read_buf += chunk
         line, self._read_buf = self._read_buf.split(b"\n", 1)
         return line + b"\n"
 
     async def read(self, n: int = -1):
-        self._ensure_started()
         if n is None or n < 0:
             chunks = [self._read_buf] if self._read_buf else []
             self._read_buf = b""
             while True:
-                chunk = await self._queue.get()
-                if chunk is None:
+                try:
+                    chunks.append(await self._read_chunk())
+                except EOFError:
                     break
-                chunks.append(chunk)
             return b"".join(chunks)
         if len(self._read_buf) >= n:
             data, self._read_buf = self._read_buf[:n], self._read_buf[n:]
             return data
-        chunk = await self._queue.get()
-        if chunk is None:
+        try:
+            self._read_buf += await self._read_chunk()
+        except EOFError:
             data, self._read_buf = self._read_buf, b""
             return data
-        self._read_buf += chunk
         data, self._read_buf = self._read_buf[:n], self._read_buf[n:]
         return data
 
