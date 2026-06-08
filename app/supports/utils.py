@@ -1,6 +1,9 @@
+import asyncio as _asyncio
 import re
 import shutil
+import subprocess
 import sys
+import threading
 from datetime import datetime
 from functools import wraps
 from http.cookiejar import CookieJar
@@ -183,6 +186,108 @@ def toPosixPath(path) -> str:
 
 def toExecutable(name: str) -> str:
     return f"{name}.exe" if sys.platform == "win32" else name
+
+
+def create_subprocess_exec(program, *args, stdin=None, stdout=None, stderr=None,
+                           cwd=None, env=None, **kwargs):
+    """Like asyncio.create_subprocess_exec but hides console window on Windows.
+
+    On Windows, winloop's subprocess_exec rejects startupinfo/creationflags, so we
+    use subprocess.Popen with a reader thread to provide async-compatible I/O.
+    """
+    if sys.platform == "win32":
+        return _create_subprocess_win32(
+            program, *args,
+            stdin=stdin, stdout=stdout, stderr=stderr,
+            cwd=cwd, env=env,
+        )
+    return _asyncio.create_subprocess_exec(
+        program, *args,
+        stdin=stdin, stdout=stdout, stderr=stderr,
+        cwd=cwd, env=env, **kwargs,
+    )
+
+
+async def _create_subprocess_win32(program, *args, stdin=None, stdout=None, stderr=None,
+                                   cwd=None, env=None):
+    popen_args = [program, *args]
+
+    _stdin = subprocess.DEVNULL if stdin == _asyncio.subprocess.DEVNULL else stdin
+    _stdout = subprocess.PIPE if stdout == _asyncio.subprocess.PIPE else stdout
+    _stderr = subprocess.PIPE if stderr == _asyncio.subprocess.PIPE else stderr
+    if stderr == _asyncio.subprocess.STDOUT:
+        _stderr = subprocess.STDOUT
+
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = subprocess.SW_HIDE
+
+    proc = subprocess.Popen(
+        popen_args,
+        stdin=_stdin,
+        stdout=_stdout,
+        stderr=_stderr,
+        cwd=str(cwd) if cwd is not None else None,
+        env=env,
+        startupinfo=si,
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
+
+    return _AsyncPopenWrapper(proc)
+
+
+class _AsyncPopenWrapper:
+    """Wraps subprocess.Popen with async-compatible stdout / stderr / wait."""
+
+    def __init__(self, proc):
+        self._proc = proc
+        self.returncode = None
+        self.stdout = _AsyncPipeReader(proc.stdout) if proc.stdout is not None else None
+        self.stderr = _AsyncPipeReader(proc.stderr) if proc.stderr is not None else None
+
+    async def wait(self):
+        await _asyncio.to_thread(self._proc.wait)
+        self.returncode = self._proc.returncode
+        return self.returncode
+
+    async def communicate(self, input=None):
+        return await _asyncio.to_thread(self._proc.communicate, input)
+
+    def kill(self):
+        self._proc.kill()
+
+    def terminate(self):
+        self._proc.terminate()
+
+
+class _AsyncPipeReader:
+    """Provides async readline() and read() over a blocking pipe."""
+
+    def __init__(self, pipe):
+        self._queue = _asyncio.Queue()
+        self._loop = _asyncio.get_running_loop()
+        self._thread = threading.Thread(target=self._read_loop, args=(pipe,), daemon=True)
+        self._thread.start()
+
+    def _read_loop(self, pipe):
+        try:
+            for line in pipe:
+                self._loop.call_soon_threadsafe(self._queue.put_nowait, line)
+        finally:
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, None)
+
+    async def readline(self):
+        line = await self._queue.get()
+        return line if line is not None else b""
+
+    async def read(self):
+        chunks = []
+        while True:
+            chunk = await self._queue.get()
+            if chunk is None:
+                break
+            chunks.append(chunk)
+        return b"".join(chunks)
 
 
 def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
