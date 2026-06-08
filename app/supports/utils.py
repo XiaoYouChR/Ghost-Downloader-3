@@ -280,7 +280,7 @@ class _AsyncPipeReader:
         self._read_buf = b""
 
     async def _read_chunk(self):
-        chunk = await _asyncio.to_thread(self._pipe.read, 8192)
+        chunk = await _asyncio.to_thread(self._pipe.read1, 4096)
         if not chunk:
             raise EOFError
         return chunk
@@ -289,7 +289,7 @@ class _AsyncPipeReader:
         """Continuously discard stderr to prevent pipe deadlock."""
         try:
             while True:
-                await _asyncio.to_thread(self._pipe.read, 8192)
+                await _asyncio.to_thread(self._pipe.read1, 4096)
         except Exception:
             pass
 
