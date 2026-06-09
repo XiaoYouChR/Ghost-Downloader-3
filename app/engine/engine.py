@@ -10,10 +10,15 @@ class Engine:
     """后台本体：收 command、解析建任务、真起下载、回发 event。没有 gui attach 时不发事件（省内存）。
     downloads 是与下载子系统的边界（默认真接 coreService+http pack，测试注入 fake 离线验证）。"""
 
-    def __init__(self, link: MemoryLink, downloads) -> None:
+    def __init__(self, link: MemoryLink, downloads, store) -> None:
         self._link = link
         self._downloads = downloads
+        self._store = store
         self._tasks: dict[str, Task] = {}
+        for task in store.load():
+            if task.status not in (TaskStatus.COMPLETED, TaskStatus.FAILED):
+                task.setStatus(TaskStatus.PAUSED)  # 重启时未完成任务并未真在跑，显示为暂停
+            self._tasks[task.taskId] = task
         self._attached = False
         self._snapshots: dict[str, tuple] = {}
         # 进度泵：下载在后台推进，定时轮询有变化的任务推给 gui。只在 attach 期间转（省内存）
@@ -60,6 +65,7 @@ class Engine:
         if error or task is None:
             return  # 解析失败先静默，后续接错误事件
         self._tasks[task.taskId] = task
+        self._store.add(task)
         self._downloads.start(task)
         self._emit(Event("taskAdded", {"task": self._toWire(task)}))
 
@@ -82,6 +88,7 @@ class Engine:
             self._resume(task)
 
     def _remove(self, taskId: str) -> None:
+        self._store.remove(self._tasks[taskId])
         del self._tasks[taskId]
         self._snapshots.pop(taskId, None)
         self._emit(Event("taskRemoved", {"taskId": taskId}))
