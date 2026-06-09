@@ -10,24 +10,37 @@ from app.gui.task_list import TaskList
 from app.protocol.link import MemoryLink
 
 
-def _fakeParse(url: str) -> Task:
-    # 测试用：不走网络，直接从 URL 建 Task（替掉真 http 探测）。
-    title = urlparse(url).path.rsplit("/", 1)[-1] or url
-    return Task(title=title, url=url, packId="http")
+class FakeDownloads:
+    """测试用下载边界：不走网络、不起线程，同步建 Task 并记录 start/stop。"""
 
+    def __init__(self) -> None:
+        self.started: list[Task] = []
+        self.stopped: list[Task] = []
 
-def _runNow(parsed, callback) -> None:
-    # 测试用：同步立即回调，替掉 coreService 的异步调度。
-    callback(parsed, None)
+    def parse(self, url: str) -> Task:
+        title = urlparse(url).path.rsplit("/", 1)[-1] or url
+        return Task(title=title, url=url, packId="http")
+
+    def run(self, parsed, callback) -> None:
+        callback(parsed, None)
+
+    def start(self, task: Task) -> None:
+        self.started.append(task)
+
+    def stop(self, task: Task) -> None:
+        self.stopped.append(task)
 
 
 @pytest.fixture
 def spine(qapp):
-    # 接好一条 gui↔engine：link 连两端，gui attach 后即可收发；parse/run 注入离线 fake。
+    # 接好一条 gui↔engine：link 连两端，gui attach 后即可收发；下载边界注入离线 fake。
     link = MemoryLink()
-    engine = Engine(link, parse=_fakeParse, run=_runNow)
+    downloads = FakeDownloads()
+    engine = Engine(link, downloads)
     taskList = TaskList()
     backend = Backend(link, taskList)
     link.connect(engine.receive, backend.receive)
     backend.attach()
-    return SimpleNamespace(link=link, engine=engine, backend=backend, taskList=taskList)
+    return SimpleNamespace(
+        link=link, engine=engine, backend=backend, taskList=taskList, downloads=downloads
+    )

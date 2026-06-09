@@ -4,6 +4,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication
 from RinUI import RinUIWindow
 
+from app.engine.downloads import Downloads
 from app.engine.engine import Engine
 from app.gui.backend import Backend
 from app.gui.task_list import TaskFilter, TaskList
@@ -19,7 +20,7 @@ class MainWindow(RinUIWindow):
         super().__init__()
         self._link = MemoryLink()
         # 同进程的下载 engine（缝先行）；注意它与 RinUI 的 self.engine（QML 引擎）不是一回事
-        self._engine = Engine(self._link)
+        self._engine = Engine(self._link, Downloads())
         self._taskList = TaskList()
         self._taskFilter = TaskFilter(self._taskList)
         self._backend = Backend(self._link, self._taskList)

@@ -22,6 +22,23 @@ def test_pause_updatesStatusInGuiModel(spine):
     assert spine.taskList.data(index, TaskList.StatusRole) == "PAUSED"
 
 
+def test_addTask_startsDownload(spine):
+    # 加任务即交给下载边界真起（默认 coreService.createTask）。
+    spine.backend.addTask("https://example.com/movie.mp4")
+
+    assert len(spine.downloads.started) == 1
+
+
+def test_pause_stopsDownload(spine):
+    # 暂停即让下载边界真停（默认 coreService.stopTask）。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    taskId = spine.taskList.data(spine.taskList.index(0, 0), TaskList.IdRole)
+
+    spine.backend.pause(taskId)
+
+    assert len(spine.downloads.stopped) == 1
+
+
 def test_resume_setsTaskRunning(spine):
     # 暂停后再继续 → 状态回到 RUNNING（pause 的对偶，卡片按钮据此切换）。
     spine.backend.addTask("https://example.com/movie.mp4")
