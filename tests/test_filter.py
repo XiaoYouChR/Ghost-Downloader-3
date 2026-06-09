@@ -21,3 +21,16 @@ def test_filter_emptyKeywordShowsAll(spine):
     filter.keyword = ""
 
     assert filter.rowCount() == 2
+
+
+def test_filter_sortsNewestFirst(qapp):
+    # createdAt 大（新）的排前面。
+    taskList = TaskList()
+    taskList.reset([
+        {"taskId": "a", "title": "old", "status": "WAITING", "createdAt": 100},
+        {"taskId": "b", "title": "new", "status": "WAITING", "createdAt": 200},
+    ])
+    filter = TaskFilter(taskList)
+
+    assert filter.data(filter.index(0, 0), TaskList.TitleRole) == "new"
+    assert filter.data(filter.index(1, 0), TaskList.TitleRole) == "old"

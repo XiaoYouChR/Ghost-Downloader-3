@@ -44,6 +44,10 @@ class TaskItem:
         return str(Path(path) / self.title) if path else ""
 
     @property
+    def createdAt(self) -> int:
+        return self._task.get("createdAt", 0)
+
+    @property
     def progress(self) -> float:
         return self._task.get("progress", 0.0)
 
@@ -75,6 +79,7 @@ class TaskList(QAbstractListModel):
     ProgressTextRole = Qt.ItemDataRole.UserRole + 7
     CompletedRole = Qt.ItemDataRole.UserRole + 8
     OutputRole = Qt.ItemDataRole.UserRole + 9
+    CreatedRole = Qt.ItemDataRole.UserRole + 10
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -130,6 +135,8 @@ class TaskList(QAbstractListModel):
             return item.completed
         if role == TaskList.OutputRole:
             return item.output
+        if role == TaskList.CreatedRole:
+            return item.createdAt
         return None
 
     def roleNames(self) -> dict:
@@ -143,6 +150,7 @@ class TaskList(QAbstractListModel):
             TaskList.ProgressTextRole: b"progressText",
             TaskList.CompletedRole: b"completed",
             TaskList.OutputRole: b"output",
+            TaskList.CreatedRole: b"created",
         }
 
 
@@ -156,6 +164,8 @@ class TaskFilter(QSortFilterProxyModel):
         self.setSourceModel(source)
         self.setFilterRole(TaskList.TitleRole)
         self.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.setSortRole(TaskList.CreatedRole)
+        self.sort(0, Qt.SortOrder.DescendingOrder)  # 新任务排最前
         self._word = ""
 
     def _keyword(self) -> str:

@@ -44,26 +44,39 @@ FluentPage {
             }
         }
 
-        ListView {
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
-            spacing: 6
-            model: taskFilter
-            delegate: TaskCard {
-                width: ListView.view.width
-                taskId: model.taskId
-                fileName: model.title
-                status: model.status
-                running: model.running
-                progress: model.progress
-                speedText: model.speedText
-                progressText: model.progressText
-                completed: model.completed
-                output: model.output
-                onDeleteRequested: function(taskId) {
-                    taskPage.pendingDelete = taskId
-                    deleteDialog.open()
+
+            Text {
+                anchors.centerIn: parent
+                horizontalAlignment: Text.AlignHCenter
+                text: "还没有下载任务\n粘贴链接开始"
+                opacity: 0.6
+                visible: listView.count === 0
+            }
+
+            ListView {
+                id: listView
+                anchors.fill: parent
+                clip: true
+                spacing: 6
+                model: taskFilter
+                delegate: TaskCard {
+                    width: ListView.view.width
+                    taskId: model.taskId
+                    fileName: model.title
+                    status: model.status
+                    running: model.running
+                    progress: model.progress
+                    speedText: model.speedText
+                    progressText: model.progressText
+                    completed: model.completed
+                    output: model.output
+                    onDeleteRequested: function(taskId) {
+                        taskPage.pendingDelete = taskId
+                        deleteDialog.open()
+                    }
                 }
             }
         }
