@@ -1,0 +1,22 @@
+import QtQuick
+import RinUI
+
+// Ghost Downloader gui 壳：单导航项 → 下载任务页。后续按 IA 补「新建/设置」。
+FluentWindow {
+    id: window
+    width: 900
+    height: 600
+    minimumWidth: 720
+    minimumHeight: 480
+    title: "Ghost Downloader"
+
+    defaultPage: Qt.resolvedUrl("TaskPage.qml")
+
+    navigationItems: [
+        {
+            title: "下载任务",
+            page: Qt.resolvedUrl("TaskPage.qml"),
+            icon: "ic_fluent_arrow_download_20_regular"
+        }
+    ]
+}
