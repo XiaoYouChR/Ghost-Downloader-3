@@ -180,16 +180,11 @@ ARG GD3_GRADLE_CN=0
 RUN useradd -m -u 1000 builder \
     && mkdir -p /home/builder/.pyside6_android_deploy /home/builder/.buildozer /home/builder/.gradle /home/builder/stage \
     && if [ "$GD3_GRADLE_CN" = "1" ]; then cp /opt/gradle-init.gradle /home/builder/.gradle/init.gradle; fi \
-    && LIC=/home/builder/.buildozer/android/platform/android-sdk/licenses \
-    && mkdir -p "$LIC" \
-    && printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n' > "$LIC/android-sdk-license" \
-    && printf '\n84831b9409646a918e30573bab4c9c91346d8abd\n' > "$LIC/android-sdk-preview-license" \
-    && printf '\n601085b94cd77f0b54ff86406957099ebe79c4d6\n' > "$LIC/android-googletv-license" \
-    && printf '\n859f317696f67ef3d7f30a50a5560e7834b43903\n' > "$LIC/android-sdk-arm-dbt-license" \
-    && printf '\n33b6a2b64607f11b759f320ef9dff4ae5c47d97a\n' > "$LIC/google-gdk-license" \
-    && printf '\ne9acab5b5fbb560a72cfaecce8946896ff6aab9d\n' > "$LIC/mips-android-sysimage-license" \
     && chown -R builder:builder /home/builder \
     && chown builder:builder /opt/p4a
+# 不预建 android-sdk/licenses：那会让 buildozer 误判 SDK 已装(_install_android_sdk 只判目录是否存在)、
+# 跳过下载 cmdline-tools，全新 runner 上 tools/bin/sdkmanager 缺失即崩。改为让 buildozer 自下 SDK +
+# accept_sdk_license=True(下方 deploy 补丁注入)无人值守接受协议。本地卷已装满 SDK 不受影响。
 # /opt/p4a 顶层 chown 给 builder：p4a 用本地 source_dir 时 cwd=/opt/p4a，其 _finish_package
 # 末步在 cwd cp 出带版本号的 APK 副本。root 属主下 builder 写不进 -> "cp: Permission denied"
 # 让 buildozer 整体退非零，chown 后干净退 0。
@@ -204,10 +199,11 @@ RUN QTSTR=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/strings.tmpl.x
     && chown builder:builder "$QTSTR" \
     && echo "[patch] qt 状态栏沉浸 statusBarColor+windowLightStatusBar OK"
 
-# APK 版本号经 GD3_VERSION 注入（buildozer 默认 0.1）。单列末层，理由同上：改这里不触发重下。
+# APK 版本号经 GD3_VERSION 注入（buildozer 默认 0.1）+ 自动接受 SDK 协议（全新 runner 自下 SDK 时无人值守）。
+# 单列末层，理由同上：改这里不触发重下。
 RUN DEPLOY_BZ=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib/android/buildozer.py \
-    && sed -i '/self.set_value("app", "title",/a\        self.set_value("app", "version", __import__("os").environ.get("GD3_VERSION", "") or "0.1")' "$DEPLOY_BZ" \
-    && grep -q 'GD3_VERSION' "$DEPLOY_BZ" && echo "[patch] GD3_VERSION 版本号注入 OK"
+    && sed -i '/self.set_value("app", "title",/a\        self.set_value("app", "version", __import__("os").environ.get("GD3_VERSION", "") or "0.1")\n        self.set_value("app", "android.accept_sdk_license", "True")' "$DEPLOY_BZ" \
+    && grep -q 'GD3_VERSION' "$DEPLOY_BZ" && grep -q 'accept_sdk_license' "$DEPLOY_BZ" && echo "[patch] GD3_VERSION + accept_sdk_license 注入 OK"
 
 USER builder
 WORKDIR /work
