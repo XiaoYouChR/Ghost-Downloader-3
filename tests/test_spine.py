@@ -19,7 +19,7 @@ def test_pause_updatesStatusInGuiModel(spine):
 
     spine.backend.pause(taskId)
 
-    assert spine.taskList.data(index, TaskList.StatusRole) == "paused"
+    assert spine.taskList.data(index, TaskList.StatusRole) == "PAUSED"
 
 
 def test_remove_dropsTaskFromGuiModel(spine):
