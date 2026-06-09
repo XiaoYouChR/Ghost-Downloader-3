@@ -30,6 +30,10 @@ class TaskItem:
     def running(self) -> bool:
         return self.status == "RUNNING"
 
+    @property
+    def progress(self) -> float:
+        return self._task.get("progress", 0.0)
+
     def update(self, task: dict) -> None:
         self._task = task
 
@@ -41,6 +45,7 @@ class TaskList(QAbstractListModel):
     TitleRole = Qt.ItemDataRole.UserRole + 2
     StatusRole = Qt.ItemDataRole.UserRole + 3
     RunningRole = Qt.ItemDataRole.UserRole + 4
+    ProgressRole = Qt.ItemDataRole.UserRole + 5
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -86,6 +91,8 @@ class TaskList(QAbstractListModel):
             return item.status
         if role == TaskList.RunningRole:
             return item.running
+        if role == TaskList.ProgressRole:
+            return item.progress
         return None
 
     def roleNames(self) -> dict:
@@ -94,6 +101,7 @@ class TaskList(QAbstractListModel):
             TaskList.TitleRole: b"title",
             TaskList.StatusRole: b"status",
             TaskList.RunningRole: b"running",
+            TaskList.ProgressRole: b"progress",
         }
 
 

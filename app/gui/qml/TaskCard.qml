@@ -12,8 +12,9 @@ Frame {
     property string fileName
     property string status
     property bool running
+    property real progress
 
-    height: 60
+    height: 68
 
     RowLayout {
         anchors.fill: parent
@@ -26,6 +27,12 @@ Frame {
             spacing: 2
             Text { text: card.fileName; typography: Typography.BodyStrong }
             Text { text: card.status; typography: Typography.Caption }
+            ProgressBar {
+                Layout.fillWidth: true
+                from: 0
+                to: 100
+                value: card.progress
+            }
         }
 
         Button {

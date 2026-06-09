@@ -1,3 +1,4 @@
+from app.bases.models import TaskStatus
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
 
@@ -20,6 +21,19 @@ def test_pause_updatesStatusInGuiModel(spine):
     spine.backend.pause(taskId)
 
     assert spine.taskList.data(index, TaskList.StatusRole) == "PAUSED"
+
+
+def test_poll_pushesStatusChangeToGui(spine):
+    # 下载在后台推进时 worker 改 task 状态；poll 检测到变化就发 taskChanged，gui 实时反映。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+    spine.engine.poll()
+
+    spine.engine._tasks[taskId].setStatus(TaskStatus.COMPLETED)
+    spine.engine.poll()
+
+    assert spine.taskList.data(index, TaskList.StatusRole) == "COMPLETED"
 
 
 def test_addTask_startsDownload(spine):

@@ -1,4 +1,5 @@
 from orjson import loads
+from PySide6.QtCore import QTimer
 
 from app.bases.models import Task, TaskStatus
 from app.protocol.link import MemoryLink
@@ -14,12 +15,18 @@ class Engine:
         self._downloads = downloads
         self._tasks: dict[str, Task] = {}
         self._attached = False
+        self._snapshots: dict[str, tuple] = {}
+        # 进度泵：下载在后台推进，定时轮询有变化的任务推给 gui。只在 attach 期间转（省内存）
+        self._pump = QTimer()
+        self._pump.setInterval(500)
+        self._pump.timeout.connect(self.poll)
 
     def receive(self, command: Command) -> None:
         if command.name == "attach":
             self._attach()
         elif command.name == "detach":
             self._attached = False
+            self._pump.stop()
         elif command.name == "addTask":
             self._addTask(command.data["url"])
         elif command.name == "pause":
@@ -36,6 +43,15 @@ class Engine:
     def _attach(self) -> None:
         self._attached = True
         self._emit(Event("snapshot", {"tasks": [self._toWire(task) for task in self._tasks.values()]}))
+        self._pump.start()
+
+    def poll(self) -> None:
+        for task in self._tasks.values():
+            _, speed, received = task.currentSnapshot()
+            snapshot = (task.status, received, speed)
+            if self._snapshots.get(task.taskId) != snapshot:
+                self._snapshots[task.taskId] = snapshot
+                self._changed(task)
 
     def _addTask(self, url: str) -> None:
         self._downloads.run(self._downloads.parse(url), self._onParsed)
@@ -67,14 +83,23 @@ class Engine:
 
     def _remove(self, taskId: str) -> None:
         del self._tasks[taskId]
+        self._snapshots.pop(taskId, None)
         self._emit(Event("taskRemoved", {"taskId": taskId}))
 
     def _changed(self, task: Task) -> None:
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))
 
     def _toWire(self, task: Task) -> dict:
-        # engine→gui 的线缆格式：序列化后的 Task 字段（跨进程时 socket 上也是这一份）
-        return loads(task.serialize())
+        # engine→gui 的线缆格式：序列化字段 + 当前进度/速度（跨进程时 socket 上也是这一份）
+        data = loads(task.serialize())
+        progress, speed, received = task.currentSnapshot()
+        if task.status == TaskStatus.COMPLETED:
+            progress = 100.0
+        elif task.fileSize > 0:
+            progress = min(100.0, received / task.fileSize * 100)
+        data["progress"] = progress
+        data["speed"] = speed
+        return data
 
     def _emit(self, event: Event) -> None:
         # 没有 gui 在听就不发：gui 被杀后 engine 不白费力气算/发，省 CPU 与内存

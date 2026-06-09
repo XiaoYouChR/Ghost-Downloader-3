@@ -53,6 +53,7 @@ FluentPage {
                 fileName: model.title
                 status: model.status
                 running: model.running
+                progress: model.progress
             }
         }
     }
