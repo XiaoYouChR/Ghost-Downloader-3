@@ -38,8 +38,10 @@ class MainWindow(RinUIWindow):
 def main() -> int:
     app = QApplication(sys.argv)
     from app.services.core_service import coreService
+    from app.services.feature_service import featureService
 
     coreService.start()
+    featureService.load(None)  # 加载所有 pack 的 matches/parse（跳过 UI setup）
     window = MainWindow()
     code = app.exec()
     coreService.stop()

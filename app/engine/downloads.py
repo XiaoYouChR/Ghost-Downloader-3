@@ -1,14 +1,15 @@
 from app.bases.models import Task
 from app.services.core_service import coreService
-from features.http_pack.pack import HttpPack
+from app.services.feature_service import featureService
 
 
 class Downloads:
-    """engine 与真实下载子系统（coreService + http pack）的边界。
-    单独成模块，让 engine.py 不直接拖 coreService/网络依赖；测试注入 fake 替掉整块。"""
+    """engine 与真实下载子系统的边界：featureService 按 URL 匹配 pack 解析，coreService 跑。
+    单独成模块让 engine.py 不直接拖这些；测试注入 fake 替掉整块。
+    pack 的加载在 app 启动时做（featureService.load），这里只解析/调度。"""
 
     def parse(self, url: str):
-        return HttpPack().parse({"url": url})
+        return featureService.parse({"url": url})
 
     def run(self, parsed, callback) -> None:
         coreService.runCoroutine(parsed, callback)
