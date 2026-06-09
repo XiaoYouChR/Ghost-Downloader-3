@@ -115,6 +115,8 @@ application.installTranslator(translator)
 
 coreService.start()
 
+from app.supports.android_keepalive import keepAlive, requestIgnoreBatteryOptimizations
+
 mainWindow = MobileMainWindow()
 featureService.load(mainWindow)
 taskService.load()
@@ -122,6 +124,24 @@ mainWindow.taskPage.resumeMemorizedTasks()
 mainWindow.updateThemeColor()
 mainWindow.show()
 setupTouchScrolling(mainWindow)
+
+requestIgnoreBatteryOptimizations()  # 跳电池优化豁免, 逃 Doze 后台限制(已豁免则静默)
+# 浏览器扩展服务开启即须保活(随时接受扩展连接), 与下载各占一个保活理由, 引用计数互不踩
+cfg.enableBrowserExtension.valueChanged.connect(lambda enabled: keepAlive.setReason("browser", bool(enabled)))
+keepAlive.setReason("browser", cfg.enableBrowserExtension.value)
+
+# 保活/测速由每秒 globalSpeedChanged(主线程可靠)驱动; 不走 coreService 跨线程信号(asyncio→plain slot 投递不可靠)
+from app.supports.signal_bus import signalBus
+
+
+def _onGlobalSpeedChanged(speed: int) -> None:
+    downloading = bool(coreService.runningTasks)
+    keepAlive.setWakeLock(downloading)
+    keepAlive.setReason("download", downloading)
+    keepAlive.updateSpeed(speed)
+
+
+signalBus.globalSpeedChanged.connect(_onGlobalSpeedChanged)
 
 application.aboutToQuit.connect(coreService.stop)
 application.aboutToQuit.connect(taskService.flushNow)

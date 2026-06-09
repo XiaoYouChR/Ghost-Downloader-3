@@ -162,5 +162,14 @@ RUN DEPLOY_BZ=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib
     && sed -i '/self.set_value("app", "title",/a\        self.set_value("app", "version", __import__("os").environ.get("GD3_VERSION", "") or "0.1")\n        self.set_value("app", "android.accept_sdk_license", "True")\n        self.set_value("buildozer", "log_level", "1")' "$DEPLOY_BZ" \
     && grep -q 'GD3_VERSION' "$DEPLOY_BZ" && grep -q 'accept_sdk_license' "$DEPLOY_BZ" && grep -q 'log_level' "$DEPLOY_BZ" && echo "[patch] GD3_VERSION + accept_sdk_license + log_level=1 注入 OK"
 
+# 后台保活(P2): KeepAliveService.java 烧进共用 bootstrap src(p4a 组 dist 连同 PythonService 编译);
+# qt manifest 注册该 service(不带 android:process => 同进程托住主进程; dataSync)。改镜像 /opt/p4a 模板, 单列末层。
+COPY keepalive_service/KeepAliveService.java /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader/KeepAliveService.java
+RUN QTMAN=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/AndroidManifest.tmpl.xml \
+    && sed -i '/<\/application>/i\        <service android:name="org.ghostdownloader.KeepAliveService" android:exported="false" android:foregroundServiceType="dataSync" />' "$QTMAN" \
+    && grep -q 'KeepAliveService' "$QTMAN" \
+    && chown -R builder:builder /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader \
+    && echo "[patch] KeepAliveService 注入 OK"
+
 USER builder
 WORKDIR /work

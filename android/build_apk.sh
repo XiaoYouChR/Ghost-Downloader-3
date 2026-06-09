@@ -32,7 +32,7 @@ touch "$BUILD_MARKER"
 # jh2 有 recipe 交叉编译、gd3ffmpeg 走预置 jniLibs; 跳过 orjson(stdlib shim 兜)/desktop-notifier/uvloop 等。
 # deploy patch 把 GD3_EXTRA_REQ 追加到 requirements、GD3_EXTRA_PERM 到 permissions。
 export GD3_EXTRA_REQ="${GD3_EXTRA_REQ:-,pyjnius,niquests,urllib3-future,charset-normalizer,idna,h11,wassima,jh2,PySide6-Fluent-Widgets,PySideSix-Frameless-Window,darkdetect,loguru,qrcode,pypng,m3u8,mpegdash,aioftp,gd3ffmpeg}"
-export GD3_EXTRA_PERM="${GD3_EXTRA_PERM:-,MANAGE_EXTERNAL_STORAGE}"
+export GD3_EXTRA_PERM="${GD3_EXTRA_PERM:-,MANAGE_EXTERNAL_STORAGE,FOREGROUND_SERVICE,FOREGROUND_SERVICE_DATA_SYNC,REQUEST_IGNORE_BATTERY_OPTIMIZATIONS}"
 # 启动器图标改指仓库 logo.png(deploy 默认 PySide6 python logo)
 export GD3_ICON="${GD3_ICON:-$REPO/app/assets/logo.png}"
 # adaptive icon(消 API26+ 白边)+ presplash(冷启动图), 资源由 make_launch_assets.py 从 logo.png 派生
