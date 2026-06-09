@@ -10,9 +10,27 @@ class Backend:
         self._link = link
         self._taskList = taskList
 
+    def attach(self) -> None:
+        self._link.toEngine(Command("attach"))
+
+    def detach(self) -> None:
+        self._link.toEngine(Command("detach"))
+
     def addTask(self, url: str) -> None:
         self._link.toEngine(Command("addTask", {"url": url}))
 
+    def pause(self, taskId: str) -> None:
+        self._link.toEngine(Command("pause", {"taskId": taskId}))
+
+    def remove(self, taskId: str) -> None:
+        self._link.toEngine(Command("remove", {"taskId": taskId}))
+
     def receive(self, event: Event) -> None:
-        if event.name == "taskAdded":
+        if event.name == "snapshot":
+            self._taskList.reset(event.data["tasks"])
+        elif event.name == "taskAdded":
             self._taskList.add(TaskItem(event.data["task"]))
+        elif event.name == "taskChanged":
+            self._taskList.update(event.data["task"])
+        elif event.name == "taskRemoved":
+            self._taskList.remove(event.data["taskId"])
