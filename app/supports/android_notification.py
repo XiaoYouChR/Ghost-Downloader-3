@@ -1,5 +1,7 @@
 """Android 本地通知 —— NotificationManager 投递, 完成 toast 与常驻通知共用 postNotification。须主线程调。"""
 
+_CHANNEL = "gd3_downloads"
+
 
 def _reopenAppIntent(activity):
     from jnius import autoclass
@@ -42,3 +44,20 @@ def postNotification(channelId: str, channelName: str, notifId: int, title: str,
     builder.setOnlyAlertOnce(True)  # 每秒刷, 只首次提醒
     builder.setContentIntent(_reopenAppIntent(activity))
     manager.notify(notifId, builder.build())  # 同 notifId 再投即更新
+
+
+def notifyDownloadComplete(notifyKey: str, title: str, text: str) -> None:
+    postNotification(_CHANNEL, "下载", hash(notifyKey) & 0x7FFFFFFF, title, text,
+                     ongoing=False, lowImportance=False)
+
+
+def requestNotificationPermission() -> None:
+    from jnius import autoclass
+
+    if autoclass("android.os.Build$VERSION").SDK_INT < 33:  # POST_NOTIFICATIONS 仅 13+ 需运行时授权
+        return
+    PackageManager = autoclass("android.content.pm.PackageManager")
+    activity = autoclass("org.kivy.android.PythonActivity").mActivity
+    permission = "android.permission.POST_NOTIFICATIONS"
+    if activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED:
+        activity.requestPermissions([permission], 0)

@@ -118,6 +118,7 @@ application.installTranslator(translator)
 coreService.start()
 
 from app.supports.android_keepalive import keepAlive, requestIgnoreBatteryOptimizations
+from app.supports.android_notification import requestNotificationPermission
 
 mainWindow = MobileMainWindow()
 featureService.load(mainWindow)
@@ -127,6 +128,7 @@ mainWindow.updateThemeColor()
 mainWindow.show()
 setupTouchScrolling(mainWindow)
 
+requestNotificationPermission()  # Android 13+ 运行时弹 POST_NOTIFICATIONS, 否则通知被静默丢弃
 requestIgnoreBatteryOptimizations()  # 跳电池优化豁免, 逃 Doze 后台限制(已豁免则静默)
 # 浏览器扩展服务开启即须保活(随时接受扩展连接), 与下载各占一个保活理由, 引用计数互不踩
 cfg.enableBrowserExtension.valueChanged.connect(lambda enabled: keepAlive.setReason("browser", bool(enabled)))

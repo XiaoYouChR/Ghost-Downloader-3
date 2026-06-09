@@ -6,6 +6,7 @@ from qfluentwidgets import FluentIcon, PrimaryToolButton, ToolButton
 
 from app.bases.models import Task
 from app.services.feature_service import featureService
+from app.supports.android_notification import notifyDownloadComplete
 from app.view.components.cards import TaskCard
 from app.view.mobile.cards import MobileCardMixin, MobileFtpMixin
 from app.view.pages.task_page import TaskPage
@@ -94,6 +95,12 @@ class MobileTaskPage(TaskPage):
 
         self._cardClassCache[taskType] = mobileClass
         return mobileClass
+
+    def _onCardFinished(self):
+        super()._onCardFinished()  # 基类: 桌面通知(Android 静默)+ 筛选/计划刷新
+        sender = self.sender()
+        if isinstance(sender, TaskCard):
+            notifyDownloadComplete(sender.task.taskId, self.tr("下载完成"), sender.task.title)
 
     def _mountCard(self, task: Task) -> TaskCard:
         card = self._mobileCardClass(task)(task, self.container)
