@@ -35,8 +35,13 @@ class MainWindow(RinUIWindow):
 
 def main() -> int:
     app = QApplication(sys.argv)
+    from app.services.core_service import coreService
+
+    coreService.start()
     window = MainWindow()
-    return app.exec()
+    code = app.exec()
+    coreService.stop()
+    return code
 
 
 if __name__ == "__main__":

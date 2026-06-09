@@ -1,5 +1,3 @@
-from urllib.parse import urlparse
-
 from orjson import loads
 
 from app.bases.models import Task, TaskStatus
@@ -7,12 +5,28 @@ from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
 
 
-class Engine:
-    """后台本体：收 command、加任务、回发 event。没有 gui attach 时不发事件（省内存）。
-    持真 Task；事件回传 task.serialize() 的线缆字段（socket 上也是这一份）。"""
+def _httpParse(url: str):
+    # 默认 parse：交给 http pack 做真实探测建 Task（async 协程，含文件名/大小）。
+    from features.http_pack.pack import HttpPack
 
-    def __init__(self, link: MemoryLink) -> None:
+    return HttpPack().parse({"url": url})
+
+
+def _coreRun(parsed, callback) -> None:
+    # 默认 run：把 parse 协程丢给 coreService 的事件循环跑，完成后在 GUI 线程回调。
+    from app.services.core_service import coreService
+
+    coreService.runCoroutine(parsed, callback)
+
+
+class Engine:
+    """后台本体：收 command、解析建任务、回发 event。没有 gui attach 时不发事件（省内存）。
+    parse / run 可注入：默认接 http pack + coreService 真跑，测试注入同步 fake 离线验证。"""
+
+    def __init__(self, link: MemoryLink, parse=_httpParse, run=_coreRun) -> None:
         self._link = link
+        self._parse = parse
+        self._run = run
         self._tasks: dict[str, Task] = {}
         self._attached = False
 
@@ -39,8 +53,11 @@ class Engine:
         self._emit(Event("snapshot", {"tasks": [self._toWire(task) for task in self._tasks.values()]}))
 
     def _addTask(self, url: str) -> None:
-        title = urlparse(url).path.rsplit("/", 1)[-1] or url
-        task = Task(title=title, url=url, packId="http")
+        self._run(self._parse(url), self._onParsed)
+
+    def _onParsed(self, task: Task | None, error: str | None) -> None:
+        if error or task is None:
+            return  # 解析失败先静默，后续接错误事件
         self._tasks[task.taskId] = task
         self._emit(Event("taskAdded", {"task": self._toWire(task)}))
 
