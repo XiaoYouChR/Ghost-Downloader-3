@@ -24,7 +24,13 @@ class Engine:
         elif command.name == "addTask":
             self._addTask(command.data["url"])
         elif command.name == "pause":
-            self._pause(command.data["taskId"])
+            self._setStatus(self._tasks[command.data["taskId"]], TaskStatus.PAUSED)
+        elif command.name == "resume":
+            self._setStatus(self._tasks[command.data["taskId"]], TaskStatus.RUNNING)
+        elif command.name == "pauseAll":
+            self._setAll(TaskStatus.PAUSED)
+        elif command.name == "startAll":
+            self._setAll(TaskStatus.RUNNING)
         elif command.name == "remove":
             self._remove(command.data["taskId"])
 
@@ -38,10 +44,13 @@ class Engine:
         self._tasks[task.taskId] = task
         self._emit(Event("taskAdded", {"task": self._toWire(task)}))
 
-    def _pause(self, taskId: str) -> None:
-        task = self._tasks[taskId]
-        task.setStatus(TaskStatus.PAUSED)
+    def _setStatus(self, task: Task, status: TaskStatus) -> None:
+        task.setStatus(status)
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))
+
+    def _setAll(self, status: TaskStatus) -> None:
+        for task in self._tasks.values():
+            self._setStatus(task, status)
 
     def _remove(self, taskId: str) -> None:
         del self._tasks[taskId]

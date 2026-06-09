@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import RinUI
 
-// 下载任务页：顶部加链接，下面列出 taskList 里的任务卡。所有动作经 backend 发命令。
+// 下载任务页：工具栏（全部开始/暂停）、加链接、任务列表。所有动作经 backend 发命令。
 FluentPage {
     title: "下载任务"
 
@@ -11,6 +11,14 @@ FluentPage {
         anchors.fill: parent
         anchors.margins: 16
         spacing: 10
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Button { text: "全部开始"; onClicked: backend.startAll() }
+            Button { text: "全部暂停"; onClicked: backend.pauseAll() }
+            Item { Layout.fillWidth: true }
+        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -39,6 +47,7 @@ FluentPage {
                 taskId: model.taskId
                 fileName: model.title
                 status: model.status
+                running: model.running
             }
         }
     }
