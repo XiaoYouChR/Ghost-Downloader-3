@@ -59,6 +59,8 @@ FluentPage {
                 progress: model.progress
                 speedText: model.speedText
                 progressText: model.progressText
+                completed: model.completed
+                output: model.output
                 onDeleteRequested: function(taskId) {
                     taskPage.pendingDelete = taskId
                     deleteDialog.open()

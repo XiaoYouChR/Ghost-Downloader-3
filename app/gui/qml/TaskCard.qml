@@ -15,6 +15,8 @@ Frame {
     property real progress
     property string speedText
     property string progressText
+    property bool completed
+    property string output
 
     // 卡片不直接删，只发意图；由页面弹确认框（Q5：动作即意图）
     signal deleteRequested(string taskId)
@@ -52,8 +54,18 @@ Frame {
         }
         Button {
             text: "继续"
-            visible: !card.running
+            visible: !card.running && !card.completed
             onClicked: backend.resume(card.taskId)
+        }
+        Button {
+            text: "打开"
+            visible: card.completed
+            onClicked: backend.openFile(card.output)
+        }
+        Button {
+            text: "文件夹"
+            visible: card.completed
+            onClicked: backend.openFolder(card.output)
         }
         Button {
             text: "删除"

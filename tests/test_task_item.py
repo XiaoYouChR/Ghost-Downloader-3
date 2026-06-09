@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from app.gui.task_list import TaskItem
 
 
@@ -19,3 +21,13 @@ def test_progressText_showsReceivedOverTotal():
 def test_progressText_emptyWhenSizeUnknown():
     item = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "fileSize": 0})
     assert item.progressText == ""
+
+
+def test_completed_reflectsStatus():
+    assert TaskItem({"taskId": "x", "title": "t", "status": "COMPLETED"}).completed is True
+    assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).completed is False
+
+
+def test_output_joinsPathAndTitle():
+    item = TaskItem({"taskId": "x", "title": "movie.mp4", "status": "COMPLETED", "path": "/downloads"})
+    assert item.output == str(Path("/downloads") / "movie.mp4")

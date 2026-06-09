@@ -3,6 +3,7 @@ from PySide6.QtCore import QObject, Slot
 from app.gui.task_list import TaskItem, TaskList
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
+from app.supports import utils
 
 
 class Backend(QObject):
@@ -44,6 +45,15 @@ class Backend(QObject):
     @Slot(str)
     def remove(self, taskId: str) -> None:
         self._link.toEngine(Command("remove", {"taskId": taskId}))
+
+    @Slot(str)
+    def openFile(self, path: str) -> None:
+        # 打开下载好的文件是 gui 端的 OS 动作，不过缝
+        utils.openFile(path)
+
+    @Slot(str)
+    def openFolder(self, path: str) -> None:
+        utils.openFolder(path)
 
     def receive(self, event: Event) -> None:
         if event.name == "snapshot":

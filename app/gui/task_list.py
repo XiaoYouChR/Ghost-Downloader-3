@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import (
     Property,
     QAbstractListModel,
@@ -33,6 +35,15 @@ class TaskItem:
         return self.status == "RUNNING"
 
     @property
+    def completed(self) -> bool:
+        return self.status == "COMPLETED"
+
+    @property
+    def output(self) -> str:
+        path = self._task.get("path", "")
+        return str(Path(path) / self.title) if path else ""
+
+    @property
     def progress(self) -> float:
         return self._task.get("progress", 0.0)
 
@@ -62,6 +73,8 @@ class TaskList(QAbstractListModel):
     ProgressRole = Qt.ItemDataRole.UserRole + 5
     SpeedTextRole = Qt.ItemDataRole.UserRole + 6
     ProgressTextRole = Qt.ItemDataRole.UserRole + 7
+    CompletedRole = Qt.ItemDataRole.UserRole + 8
+    OutputRole = Qt.ItemDataRole.UserRole + 9
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -113,6 +126,10 @@ class TaskList(QAbstractListModel):
             return item.speedText
         if role == TaskList.ProgressTextRole:
             return item.progressText
+        if role == TaskList.CompletedRole:
+            return item.completed
+        if role == TaskList.OutputRole:
+            return item.output
         return None
 
     def roleNames(self) -> dict:
@@ -124,6 +141,8 @@ class TaskList(QAbstractListModel):
             TaskList.ProgressRole: b"progress",
             TaskList.SpeedTextRole: b"speedText",
             TaskList.ProgressTextRole: b"progressText",
+            TaskList.CompletedRole: b"completed",
+            TaskList.OutputRole: b"output",
         }
 
 
