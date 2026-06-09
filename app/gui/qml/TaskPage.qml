@@ -54,6 +54,8 @@ FluentPage {
                 status: model.status
                 running: model.running
                 progress: model.progress
+                speedText: model.speedText
+                progressText: model.progressText
             }
         }
     }

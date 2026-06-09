@@ -95,10 +95,12 @@ class Engine:
         progress, speed, received = task.currentSnapshot()
         if task.status == TaskStatus.COMPLETED:
             progress = 100.0
+            received = task.fileSize
         elif task.fileSize > 0:
             progress = min(100.0, received / task.fileSize * 100)
         data["progress"] = progress
         data["speed"] = speed
+        data["received"] = received
         return data
 
     def _emit(self, event: Event) -> None:

@@ -13,6 +13,8 @@ Frame {
     property string status
     property bool running
     property real progress
+    property string speedText
+    property string progressText
 
     height: 68
 
@@ -26,7 +28,12 @@ Frame {
             Layout.fillWidth: true
             spacing: 2
             Text { text: card.fileName; typography: Typography.BodyStrong }
-            Text { text: card.status; typography: Typography.Caption }
+            RowLayout {
+                spacing: 10
+                Text { text: card.status; typography: Typography.Caption }
+                Text { text: card.progressText; typography: Typography.Caption; visible: card.progressText !== "" }
+                Text { text: card.speedText; typography: Typography.Caption; visible: card.speedText !== "" }
+            }
             ProgressBar {
                 Layout.fillWidth: true
                 from: 0

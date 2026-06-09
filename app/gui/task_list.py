@@ -7,6 +7,8 @@ from PySide6.QtCore import (
     Signal,
 )
 
+from app.supports.utils import toReadableSize
+
 
 class TaskItem:
     """屏幕上的一个任务。持有 engine 同步来的字段；pack 之后子类化加字段。"""
@@ -34,6 +36,18 @@ class TaskItem:
     def progress(self) -> float:
         return self._task.get("progress", 0.0)
 
+    @property
+    def speedText(self) -> str:
+        speed = self._task.get("speed", 0)
+        return f"{toReadableSize(speed)}/s" if speed else ""
+
+    @property
+    def progressText(self) -> str:
+        fileSize = self._task.get("fileSize", 0)
+        if fileSize <= 0:
+            return ""
+        return f"{toReadableSize(self._task.get('received', 0))} / {toReadableSize(fileSize)}"
+
     def update(self, task: dict) -> None:
         self._task = task
 
@@ -46,6 +60,8 @@ class TaskList(QAbstractListModel):
     StatusRole = Qt.ItemDataRole.UserRole + 3
     RunningRole = Qt.ItemDataRole.UserRole + 4
     ProgressRole = Qt.ItemDataRole.UserRole + 5
+    SpeedTextRole = Qt.ItemDataRole.UserRole + 6
+    ProgressTextRole = Qt.ItemDataRole.UserRole + 7
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -93,6 +109,10 @@ class TaskList(QAbstractListModel):
             return item.running
         if role == TaskList.ProgressRole:
             return item.progress
+        if role == TaskList.SpeedTextRole:
+            return item.speedText
+        if role == TaskList.ProgressTextRole:
+            return item.progressText
         return None
 
     def roleNames(self) -> dict:
@@ -102,6 +122,8 @@ class TaskList(QAbstractListModel):
             TaskList.StatusRole: b"status",
             TaskList.RunningRole: b"running",
             TaskList.ProgressRole: b"progress",
+            TaskList.SpeedTextRole: b"speedText",
+            TaskList.ProgressTextRole: b"progressText",
         }
 
 
