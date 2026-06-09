@@ -37,3 +37,7 @@ browser_extension/firefox/
 # 忽略 uv 锁文件
 uv.lock
 .playwright-mcp
+
+# 忽略 RinUI 运行时主题/配置产物
+RinUI/
+config/
