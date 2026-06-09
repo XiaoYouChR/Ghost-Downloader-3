@@ -1,4 +1,11 @@
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
+from PySide6.QtCore import (
+    Property,
+    QAbstractListModel,
+    QModelIndex,
+    QSortFilterProxyModel,
+    Qt,
+    Signal,
+)
 
 
 class TaskItem:
@@ -88,3 +95,28 @@ class TaskList(QAbstractListModel):
             TaskList.StatusRole: b"status",
             TaskList.RunningRole: b"running",
         }
+
+
+class TaskFilter(QSortFilterProxyModel):
+    """按关键词筛任务标题，喂给 QML 的 ListView。子串匹配走内置过滤；TaskList 不动。"""
+
+    keywordChanged = Signal()
+
+    def __init__(self, source: TaskList, parent=None) -> None:
+        super().__init__(parent)
+        self.setSourceModel(source)
+        self.setFilterRole(TaskList.TitleRole)
+        self.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self._word = ""
+
+    def _keyword(self) -> str:
+        return self._word
+
+    def _setKeyword(self, keyword: str) -> None:
+        if keyword == self._word:
+            return
+        self._word = keyword
+        self.keywordChanged.emit()
+        self.setFilterFixedString(keyword)
+
+    keyword = Property(str, _keyword, _setKeyword, notify=keywordChanged)

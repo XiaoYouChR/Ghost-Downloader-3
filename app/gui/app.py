@@ -6,7 +6,7 @@ from RinUI import RinUIWindow
 
 from app.engine.engine import Engine
 from app.gui.backend import Backend
-from app.gui.task_list import TaskList
+from app.gui.task_list import TaskFilter, TaskList
 from app.protocol.link import MemoryLink
 
 QML_DIR = Path(__file__).parent / "qml"
@@ -21,12 +21,13 @@ class MainWindow(RinUIWindow):
         # 同进程的下载 engine（缝先行）；注意它与 RinUI 的 self.engine（QML 引擎）不是一回事
         self._engine = Engine(self._link)
         self._taskList = TaskList()
+        self._taskFilter = TaskFilter(self._taskList)
         self._backend = Backend(self._link, self._taskList)
         self._link.connect(self._engine.receive, self._backend.receive)
 
         context = self.engine.rootContext()
         context.setContextProperty("backend", self._backend)
-        context.setContextProperty("taskList", self._taskList)
+        context.setContextProperty("taskFilter", self._taskFilter)
 
         self.load(str(QML_DIR / "Main.qml"))
         self._backend.attach()

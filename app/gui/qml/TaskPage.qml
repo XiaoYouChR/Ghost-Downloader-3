@@ -18,6 +18,11 @@ FluentPage {
             Button { text: "全部开始"; onClicked: backend.startAll() }
             Button { text: "全部暂停"; onClicked: backend.pauseAll() }
             Item { Layout.fillWidth: true }
+            TextField {
+                Layout.preferredWidth: 200
+                placeholderText: "搜索任务"
+                onTextChanged: taskFilter.keyword = text
+            }
         }
 
         RowLayout {
@@ -41,7 +46,7 @@ FluentPage {
             Layout.fillHeight: true
             clip: true
             spacing: 6
-            model: taskList
+            model: taskFilter
             delegate: TaskCard {
                 width: ListView.view.width
                 taskId: model.taskId
