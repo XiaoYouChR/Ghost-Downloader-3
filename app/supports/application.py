@@ -7,6 +7,7 @@ from PySide6.QtGui import QFileOpenEvent, QPixmap, QPainter, QColor, QFontMetric
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
+from app.supports.android import IS_ANDROID
 from app.supports.config import cfg, DESKTOP_ID, DESKTOP_OBJECT_PATH
 from app.supports.signal_bus import signalBus
 from app.supports.utils import toReadableSize
@@ -71,10 +72,14 @@ class SingletonApplication(QApplication):
             cfg.showDockIcon.valueChanged.connect(self._onShowDockIconChanged)
             signalBus.globalSpeedChanged.connect(self._onGlobalSpeedChanged)
             cfg.showDockSpeed.valueChanged.connect(self._onShowDockSpeedChanged)
-        if sys.platform == "linux":
+        if sys.platform == "linux" and not IS_ANDROID:
             self._listenOnDesktopBus()
 
     def _lockSingleInstance(self) -> None:
+        # Android 由系统保证单实例(launcher 单 task), 且沙盒下 QSharedMemory 不可靠, 直接跳过。
+        if IS_ANDROID:
+            self.memory = None
+            return
         # 清掉 unix 上崩溃残留的共享内存段
         try:
             cleanupMemory = QSharedMemory(self.key)
@@ -105,6 +110,8 @@ class SingletonApplication(QApplication):
                 raise RuntimeError(self.memory.errorString())
 
     def _unlockSingleInstance(self) -> None:
+        if self.memory is None:
+            return
         try:
             if self.memory.isAttached():
                 self.memory.detach()

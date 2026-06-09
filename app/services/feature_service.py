@@ -42,7 +42,7 @@ class FeatureService:
                 featurePacks.append(
                     {
                         "name": item.name,
-                        "path": str(item / manifest["entry"]),
+                        "path": manifest["entryPath"],
                         "directory": str(item),
                         "dependencies": manifest["dependencies"],
                     }
@@ -73,9 +73,11 @@ class FeatureService:
             logger.warning("FeaturePack manifest 的 entry 无效: {}", manifestPath)
             return None
 
-        packPath = packDirectory / entry
-        if not packPath.exists():
-            logger.warning("FeaturePack 入口文件不存在: {}", packPath)
+        entryPath = packDirectory / entry
+        if not entryPath.exists() and entry.endswith(".py"):
+            entryPath = packDirectory / (entry[:-3] + ".pyc")  # p4a 剥 .py 源码留 .pyc
+        if not entryPath.exists():
+            logger.warning("FeaturePack 入口文件不存在: {}", packDirectory / entry)
             return None
 
         dependencies = packConfig.get("dependencies", [])
@@ -87,7 +89,7 @@ class FeatureService:
             return None
 
         return {
-            "entry": entry,
+            "entryPath": str(entryPath),
             "dependencies": tuple(dependencies),
         }
 
