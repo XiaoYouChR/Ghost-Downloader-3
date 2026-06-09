@@ -54,6 +54,10 @@ fi
 echo "[run] 构建镜像 $IMAGE ..."
 docker build "${BUILD_ARGS[@]}" -t "$IMAGE" "$HERE"
 
+# 容器内以 builder(uid 1000) 跑，但 CI runner 的 checkout 属主非 1000，builder 在挂载的 /work 下
+# mkdir dist 会 Permission denied。由宿主(/work 属主)先建好 dist 并放开写权限，容器再往里写产物。
+mkdir -p "$HERE/dist" && chmod 777 "$HERE/dist"
+
 echo "[run] 容器内构建 APK ..."
 docker run --rm "${NET_HOST[@]}" "${RUN_PROXY[@]}" "${SIGN_ARGS[@]}" \
     -v "$HERE":/work \
