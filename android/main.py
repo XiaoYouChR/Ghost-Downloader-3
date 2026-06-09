@@ -25,6 +25,8 @@ def _installOrjsonShim() -> None:
 _installOrjsonShim()
 
 import os
+
+# 切后台不挂起事件循环(否则 QWebSocketServer + 限速 QTimer 全停)由 manifest background_running=true 实现(见 Dockerfile)
 import traceback
 from pathlib import Path
 from time import localtime, strftime, time
@@ -97,7 +99,7 @@ from app.supports.android import nativeLibraryDir as _preloadNativeLibDir
 _preloadNativeLibDir()
 
 import warnings
-from PySide6.QtCore import QTranslator
+from PySide6.QtCore import Qt, QTranslator
 
 from app.view.mobile.window import MobileMainWindow
 from app.services.task_service import taskService
@@ -142,6 +144,18 @@ def _onGlobalSpeedChanged(speed: int) -> None:
 
 
 signalBus.globalSpeedChanged.connect(_onGlobalSpeedChanged)
+
+
+def _onApplicationStateChanged(state: Qt.ApplicationState) -> None:
+    # 主循环后台仍跑, 但挂起态绘制可能崩(eglSurface 敏感); 挂起禁重绘, 恢复再开
+    if state == Qt.ApplicationState.ApplicationSuspended:
+        mainWindow.setUpdatesEnabled(False)
+    elif state == Qt.ApplicationState.ApplicationActive:
+        mainWindow.setUpdatesEnabled(True)
+        mainWindow.update()
+
+
+application.applicationStateChanged.connect(_onApplicationStateChanged)
 
 application.aboutToQuit.connect(coreService.stop)
 application.aboutToQuit.connect(taskService.flushNow)
