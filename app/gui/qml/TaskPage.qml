@@ -5,7 +5,10 @@ import RinUI
 
 // 下载任务页：工具栏（全部开始/暂停）、加链接、任务列表。所有动作经 backend 发命令。
 FluentPage {
+    id: taskPage
     title: "下载任务"
+
+    property string pendingDelete: ""
 
     ColumnLayout {
         anchors.fill: parent
@@ -56,7 +59,26 @@ FluentPage {
                 progress: model.progress
                 speedText: model.speedText
                 progressText: model.progressText
+                onDeleteRequested: function(taskId) {
+                    taskPage.pendingDelete = taskId
+                    deleteDialog.open()
+                }
             }
+        }
+    }
+
+    Dialog {
+        id: deleteDialog
+        title: "删除任务"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        Text { text: "确定删除这个任务吗？" }
+        onAccepted: backend.remove(taskPage.pendingDelete)
+        Component.onCompleted: {
+            const ok = standardButton(Dialog.Ok)
+            if (ok) ok.text = "删除"
+            const cancel = standardButton(Dialog.Cancel)
+            if (cancel) cancel.text = "取消"
         }
     }
 

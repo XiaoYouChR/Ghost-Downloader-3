@@ -16,6 +16,9 @@ Frame {
     property string speedText
     property string progressText
 
+    // 卡片不直接删，只发意图；由页面弹确认框（Q5：动作即意图）
+    signal deleteRequested(string taskId)
+
     height: 68
 
     RowLayout {
@@ -54,7 +57,7 @@ Frame {
         }
         Button {
             text: "删除"
-            onClicked: backend.remove(card.taskId)
+            onClicked: card.deleteRequested(card.taskId)
         }
     }
 }
