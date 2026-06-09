@@ -75,6 +75,7 @@ application = SingletonApplication(sys.argv, "gd3")
 
 # 须在 MainWindow 构造前: 此后任何 Theme.AUTO 解析才会读到正确的系统深浅。
 from app.view.mobile.setup import (
+    setupAndroidMenuEmbedding,
     setupCollapsibleGroupTouch,
     setupFluentIconRendering,
     setupMobileDialogWidth,
@@ -89,6 +90,7 @@ setupFluentIconRendering()
 setupNativeDialogPaths()
 setupMobileDialogWidth()
 setupCollapsibleGroupTouch()
+setupAndroidMenuEmbedding()
 
 # 主线程预热 lru_cache: ffmpegPaths() 等在 coreService 后台线程被调, 而 jnius autoclass 后台取不到 classloader
 from app.supports.android import nativeLibraryDir as _preloadNativeLibDir

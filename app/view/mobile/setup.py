@@ -74,6 +74,67 @@ def setupFluentIconRendering() -> None:
     Icon.__init__ = toSvgRendererIconObject
 
 
+def setupAndroidMenuEmbedding() -> None:
+    # RoundMenu 默认 Qt.Popup 顶层窗口, 部分机型第二个顶层窗的 EGL surface 撞进程级单飞锁 → qFatal 闪退。
+    # 降为主窗子控件画进同一 surface; 子控件无 Popup 自动 grab, 另铺全窗透明遮罩接外部点击关菜单。
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QApplication, QWidget
+    from qfluentwidgets.components.widgets.menu import RoundMenu
+
+    class MenuDismissOverlay(QWidget):
+        def __init__(self, host: QWidget, menu: RoundMenu):
+            super().__init__(host)
+            self._menu = menu
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)  # 只接事件不遮画面
+            self.setGeometry(host.rect())
+
+        def mousePressEvent(self, event) -> None:
+            self._menu._hideMenu(False)  # 顶层菜单 → close(): 复位 ComboBox、发 closedSignal
+            for menu in self.parent().findChildren(RoundMenu):
+                if menu.isVisible():
+                    menu.hide()  # 顺带收掉仍开着的子菜单
+            event.accept()
+
+    def hostWindow(menu: RoundMenu) -> QWidget | None:
+        widget = menu.parent()  # 菜单建时 parent=触发控件(卡片/ComboBox), 由它定位承载主窗
+        while isinstance(widget, RoundMenu):
+            widget = widget.parent()
+        if widget is not None:
+            return widget.window()
+        active = QApplication.activeWindow()
+        return active if not isinstance(active, RoundMenu) else None
+
+    originalExec = RoundMenu.exec
+    originalHideEvent = RoundMenu.hideEvent
+
+    def execInWindow(self, pos, *args, **kwargs):
+        host = hostWindow(self)
+        if host is None:
+            return originalExec(self, pos, *args, **kwargs)  # 定位失败退回原行为, 别让弹不出
+
+        self.setParent(host, Qt.WindowType.Widget)  # 顶层 Popup 降为子控件: 画进主窗 surface, 不再单独建窗
+        if not self.isSubMenu:  # 子菜单的消失交给父菜单 hover 逻辑, 只顶层菜单铺遮罩
+            self._androidOverlay = MenuDismissOverlay(host, self)
+            self._androidOverlay.show()
+        self.raise_()
+        return originalExec(self, host.mapFromGlobal(pos), *args, **kwargs)
+
+    def hideEventInWindow(self, event) -> None:
+        overlay = self.__dict__.pop("_androidOverlay", None)
+        if overlay is not None:
+            overlay.deleteLater()
+        # WA_DeleteOnClose 菜单析构时 view.clearFocus 投焦点事件进销毁中的子树 → 段错误; 趁菜单尚存先把焦点挪回主窗
+        focused = QApplication.focusWidget()
+        if focused is not None and (focused is self or self.isAncestorOf(focused)):
+            host = self.parent()
+            if isinstance(host, QWidget):
+                host.setFocus(Qt.FocusReason.OtherFocusReason)
+        originalHideEvent(self, event)
+
+    RoundMenu.exec = execInWindow
+    RoundMenu.hideEvent = hideEventInWindow
+
+
 def setupNativeDialogPaths() -> None:
     """把 SAF 选择器返回的 content:// URI 转回真实路径 —— 本应用基于真实路径写公共目录(MANAGE_EXTERNAL_STORAGE)。"""
     from urllib.parse import unquote
