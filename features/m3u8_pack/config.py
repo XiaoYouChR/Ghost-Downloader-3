@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from qfluentwidgets import (
     BoolValidator,
     ComboBoxSettingCard,
@@ -22,11 +22,12 @@ from qfluentwidgets import (
     ToolButton,
 )
 
-from app.bases.models import PackConfig
+from app.bases.models import PackConfig, TaskStatus
 from app.services.core_service import coreService
+from app.services.task_service import taskService
 from app.supports.android import IS_ANDROID, nativeLibraryDir
 from app.supports.paths import APP_DATA_DIR
-from app.supports.utils import findExecutable, toPosixPath
+from app.supports.utils import findExecutable, toPosixPath, toReadableSize
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import InstallFolderCard, LineEditSettingCard, SelectFileCard, SpinBoxSettingCard
 
@@ -86,6 +87,10 @@ class M3U8RuntimeCard(SettingCard):
         super().__init__(FluentIcon.INFO, self.tr("当前 N_m3u8DL-RE"), self.tr("正在检测运行时..."), parent)
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+        self._installTask = None
+        self._progressTimer = QTimer(self, interval=1000)
+        self._progressTimer.timeout.connect(self._refreshInstallProgress)
+        taskService.taskRemoved.connect(self._onInstallTaskRemoved)
 
         self._initLayout()
         self._bind()
@@ -136,15 +141,60 @@ class M3U8RuntimeCard(SettingCard):
         coreService.runCoroutine(createInstallTask(), self._onInstallTaskCreated)
 
     def _onInstallTaskCreated(self, result, error: str | None):
-        self.installButton.setEnabled(True)
-        self.installButton.setText(self.tr("一键安装"))
-
         mainWindow: "MainWindow" = self.window()
         if error or result is None:
+            self.installButton.setEnabled(True)
+            self.installButton.setText(self.tr("一键安装"))
             InfoBar.error(self.tr("安装 N_m3u8DL-RE 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
             return
 
-        mainWindow.addTask(result)
+        self._installTask = result
+        if not mainWindow.addTask(result):
+            self._installTask = None
+            self.installButton.setEnabled(True)
+            self.installButton.setText(self.tr("一键安装"))
+            InfoBar.error(self.tr("安装 N_m3u8DL-RE 失败"), self.tr("无法创建下载任务"), duration=-1, parent=mainWindow)
+            return
+        self._progressTimer.start()
+
+    def _onInstallTaskRemoved(self, taskId: str):
+        if self._installTask is None or self._installTask.taskId != taskId:
+            return
+        self._progressTimer.stop()
+        self._installTask = None
+        self.installButton.setEnabled(True)
+        self.installButton.setText(self.tr("一键安装"))
+
+    def _refreshInstallProgress(self):
+        task = self._installTask
+        if task is None:
+            self._progressTimer.stop()
+            return
+
+        progress, speed, _receivedBytes = task.currentSnapshot()
+
+        if task.status == TaskStatus.COMPLETED:
+            self._progressTimer.stop()
+            self._installTask = None
+            self.installButton.setEnabled(True)
+            self.installButton.setText(self.tr("一键安装"))
+            coreService.runCoroutine(
+                coreService._stopTask(task),
+                lambda _result, _error, t=task: taskService.remove(t),
+            )
+            self.refreshStatus()
+            return
+
+        if task.status == TaskStatus.FAILED:
+            self._progressTimer.stop()
+            self._installTask = None
+            self.installButton.setEnabled(True)
+            self.installButton.setText(self.tr("一键安装"))
+            InfoBar.error(self.tr("安装 N_m3u8DL-RE 失败"), task.lastError, duration=-1, parent=self.window())
+            return
+
+        speedText = f"{toReadableSize(speed)}/s" if speed else ""
+        self.installButton.setText(f"{progress:.0f}% {speedText}")
 
 
 class M3U8Config(PackConfig):
