@@ -24,6 +24,14 @@ def test_pause_updatesStatusInGuiModel(spine):
     assert spine.taskList.data(index, TaskList.StatusRole) == "PAUSED"
 
 
+def test_config_event_updatesBackendProperties(spine):
+    # engine 下发 config → backend 属性更新 → 设置页绑定显示。
+    spine.backend.receive(Event("config", {"values": {"maxTaskNum": 8, "downloadFolder": "/dl"}}))
+
+    assert spine.backend.maxTaskNum == 8
+    assert spine.backend.downloadFolder == "/dl"
+
+
 def test_stats_updatesGlobalSpeedText(spine):
     # 进度泵汇总全局速度 → stats 事件 → backend 暴露给工具栏徽章。
     spine.backend.receive(Event("stats", {"globalSpeed": 2048}))

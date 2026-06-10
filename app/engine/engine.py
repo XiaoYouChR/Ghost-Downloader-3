@@ -4,6 +4,10 @@ from PySide6.QtCore import QTimer
 from app.bases.models import Task, TaskStatus
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
+from app.supports.config import cfg
+
+# 设置页目前直接读写真 cfg（同进程缝先行）；Config 存储是日后拆进程/headless 的目标
+_CONFIG_KEYS = ("maxTaskNum", "downloadFolder")
 
 
 class Engine:
@@ -49,10 +53,13 @@ class Engine:
             self._clearCompleted()
         elif command.name == "setSelection":
             self._setSelection(command.data["taskId"], command.data["indexes"])
+        elif command.name == "setConfig":
+            self._setConfig(command.data["key"], command.data["value"])
 
     def _attach(self) -> None:
         self._attached = True
         self._emit(Event("snapshot", {"tasks": [self._toWire(task) for task in self._tasks.values()]}))
+        self._emit(Event("config", {"values": {key: getattr(cfg, key).value for key in _CONFIG_KEYS}}))
         self._pump.start()
 
     def poll(self) -> None:
@@ -112,6 +119,10 @@ class Engine:
         task = self._tasks[taskId]
         task.setSelection(list(indexes))
         self._changed(task)
+
+    def _setConfig(self, key: str, value) -> None:
+        getattr(cfg, key).value = value
+        self._emit(Event("config", {"values": {key: getattr(cfg, key).value}}))
 
     def _changed(self, task: Task) -> None:
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))

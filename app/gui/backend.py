@@ -13,6 +13,7 @@ class Backend(QObject):
     globalSpeedChanged = Signal()
     filesModelChanged = Signal()
     filesRequested = Signal()
+    configChanged = Signal()
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -21,6 +22,21 @@ class Backend(QObject):
         self._globalSpeedText = ""
         self._filesModel: FileSelection | None = None
         self._editingTaskId = ""
+        self._config: dict = {}
+
+    def _maxTaskNum(self) -> int:
+        return self._config.get("maxTaskNum", 1)
+
+    maxTaskNum = Property(int, _maxTaskNum, notify=configChanged)
+
+    def _downloadFolder(self) -> str:
+        return self._config.get("downloadFolder", "")
+
+    downloadFolder = Property(str, _downloadFolder, notify=configChanged)
+
+    @Slot(str, "QVariant")
+    def setConfig(self, key: str, value) -> None:
+        self._link.toEngine(Command("setConfig", {"key": key, "value": value}))
 
     def _globalSpeed(self) -> str:
         return self._globalSpeedText
@@ -110,3 +126,6 @@ class Backend(QObject):
             speed = event.data["globalSpeed"]
             self._globalSpeedText = f"{utils.toReadableSize(speed)}/s" if speed else ""
             self.globalSpeedChanged.emit()
+        elif event.name == "config":
+            self._config.update(event.data["values"])
+            self.configChanged.emit()

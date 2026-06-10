@@ -17,6 +17,12 @@ FluentWindow {
             title: "下载任务",
             page: Qt.resolvedUrl("TaskPage.qml"),
             icon: "ic_fluent_arrow_download_20_regular"
+        },
+        {
+            title: "设置",
+            page: Qt.resolvedUrl("SettingsPage.qml"),
+            icon: "ic_fluent_settings_20_regular",
+            position: Position.Bottom
         }
     ]
 }
