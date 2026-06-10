@@ -54,6 +54,15 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "主题"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        RadioButton { text: "浅色"; checked: backend.themeMode === "Light"; onClicked: backend.setConfig("customThemeMode", "Light") }
+        RadioButton { text: "深色"; checked: backend.themeMode === "Dark"; onClicked: backend.setConfig("customThemeMode", "Dark") }
+        RadioButton { text: "跟随系统"; checked: backend.themeMode === "System"; onClicked: backend.setConfig("customThemeMode", "System") }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "下载目录"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Text { text: backend.downloadFolder; opacity: 0.7 }

@@ -71,6 +71,11 @@ class Backend(QObject):
 
     sslVerify = Property(bool, _sslVerify, notify=configChanged)
 
+    def _themeMode(self) -> str:
+        return self._config.get("customThemeMode", "System")
+
+    themeMode = Property(str, _themeMode, notify=configChanged)
+
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
         self._link.toEngine(Command("setConfig", {"key": key, "value": value}))
