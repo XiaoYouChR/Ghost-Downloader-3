@@ -15,6 +15,7 @@ Frame {
     property real progress
     property string speedText
     property string progressText
+    property string metaText
     property bool completed
     property string output
     property string errorText
@@ -53,6 +54,7 @@ Frame {
                 Text { text: card.status; typography: Typography.Caption }
                 Text { text: card.progressText; typography: Typography.Caption; visible: card.progressText !== "" }
                 Text { text: card.speedText; typography: Typography.Caption; visible: card.speedText !== "" }
+                Text { text: card.metaText; typography: Typography.Caption; visible: card.metaText !== "" }
                 Text {
                     text: card.errorText
                     typography: Typography.Caption

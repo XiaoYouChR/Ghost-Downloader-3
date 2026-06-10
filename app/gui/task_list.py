@@ -61,6 +61,10 @@ class TaskItem:
         return self._task.get("error", "")
 
     @property
+    def metaText(self) -> str:
+        return self._task.get("meta", "")
+
+    @property
     def progress(self) -> float:
         return self._task.get("progress", 0.0)
 
@@ -96,6 +100,7 @@ class TaskList(QAbstractListModel):
     SelectedRole = Qt.ItemDataRole.UserRole + 11
     FileCountRole = Qt.ItemDataRole.UserRole + 12
     ErrorRole = Qt.ItemDataRole.UserRole + 13
+    MetaRole = Qt.ItemDataRole.UserRole + 14
 
     selectionModeChanged = Signal()
     selectedCountChanged = Signal()
@@ -218,6 +223,8 @@ class TaskList(QAbstractListModel):
             return item.fileCount
         if role == TaskList.ErrorRole:
             return item.errorText
+        if role == TaskList.MetaRole:
+            return item.metaText
         return None
 
     def roleNames(self) -> dict:
@@ -235,6 +242,7 @@ class TaskList(QAbstractListModel):
             TaskList.SelectedRole: b"selected",
             TaskList.FileCountRole: b"fileCount",
             TaskList.ErrorRole: b"error",
+            TaskList.MetaRole: b"meta",
         }
 
     def filesOf(self, taskId: str) -> list:

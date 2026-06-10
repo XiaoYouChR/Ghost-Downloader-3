@@ -89,6 +89,7 @@ FluentPage {
                     progress: model.progress
                     speedText: model.speedText
                     progressText: model.progressText
+                    metaText: model.meta
                     completed: model.completed
                     output: model.output
                     errorText: model.error

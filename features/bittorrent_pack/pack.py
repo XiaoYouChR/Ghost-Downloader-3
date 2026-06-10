@@ -68,6 +68,16 @@ class BitTorrentPack(FeaturePack):
             )
         ]
 
+    def meta(self, task) -> str:
+        from app.supports.utils import toReadableSize
+
+        parts = []
+        if task.peerCount or task.seedCount:
+            parts.append(f"Peers {task.peerCount} / Seeds {task.seedCount}")
+        if task.uploadRate:
+            parts.append(f"↑ {toReadableSize(task.uploadRate)}/s")
+        return " · ".join(parts)
+
     def _onTrackersLoaded(self, result, error: str | None):
         if error:
             logger.warning("初始化 Web Tracker 失败: {}", error)

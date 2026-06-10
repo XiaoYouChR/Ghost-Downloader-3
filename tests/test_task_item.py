@@ -36,3 +36,9 @@ def test_output_joinsPathAndTitle():
 def test_errorText_fromWire():
     assert TaskItem({"taskId": "x", "title": "t", "status": "FAILED", "error": "timeout"}).errorText == "timeout"
     assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).errorText == ""
+
+
+def test_metaText_fromWire():
+    item = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "meta": "Peers 5 / Seeds 2"})
+    assert item.metaText == "Peers 5 / Seeds 2"
+    assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).metaText == ""

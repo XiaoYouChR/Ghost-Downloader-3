@@ -19,3 +19,7 @@ class Downloads:
 
     def stop(self, task: Task) -> None:
         coreService.stopTask(task)
+
+    def meta(self, task: Task) -> str:
+        pack = featureService.packOf(task)
+        return pack.meta(task) if pack is not None else ""

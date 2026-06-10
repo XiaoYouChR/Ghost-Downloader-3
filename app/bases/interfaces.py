@@ -50,6 +50,10 @@ class FeaturePack:
     def fileTypes(self) -> list[FileType]:
         return []
 
+    def meta(self, task: "Task") -> str:
+        # pack 专属的一行展示串（如 BT 的 Peers/Seeds）；过缝进 wire，gui 卡片直接显示
+        return ""
+
     def setup(self, mainWindow: "MainWindow"):
         pass
 

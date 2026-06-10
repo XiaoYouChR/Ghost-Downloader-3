@@ -23,6 +23,9 @@ class FakeDownloads:
     def stop(self, task: Task) -> None:
         self.stopped.append(task)
 
+    def meta(self, task: Task) -> str:
+        return ""
+
 
 class FakeStore:
     """测试用持久化边界：内存存任务，不碰文件，记录 add/remove。"""
