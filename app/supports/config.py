@@ -2,6 +2,7 @@ import sys
 from asyncio import sleep
 from enum import Enum
 from re import compile
+from time import monotonic
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale, QOperatingSystemVersion
 from orjson import dumps, loads
@@ -333,16 +334,28 @@ class Config(QConfig):
         DEFAULT_USER_AGENT_PRESETS[0]["value"],
     )
 
-    # 全局变量
-    globalSpeed = 0  # 用于记录每秒下载速度, 单位 KB/s
+    # 全局变量：所有下载 worker 累加本窗口已下字节，超过每秒限额就异步等待
+    globalSpeed = 0  # 当前窗口累计字节（约每秒清零）
+    _speedWindowStart = 0.0  # 单调时钟窗口起点
 
     def resetGlobalSpeed(self):
         self.globalSpeed = 0
 
+    def _rollSpeedWindow(self):
+        # 窗口自滚：约每秒把累计清零，限速器据此度量每秒速度。
+        # 自足、不依赖外部每秒重置——QML 前端没有旧 task_page 的定时重置，否则累计只增不减会永久卡死下载。
+        now = monotonic()
+        if now - self._speedWindowStart >= 1.0:
+            self._speedWindowStart = now
+            self.globalSpeed = 0
+
     async def checkSpeedLimitation(self):
-        if self.enableSpeedLimitation.value:
-            while self.globalSpeed > self.speedLimitation.value:
-                await sleep(0.1)
+        if not self.enableSpeedLimitation.value:
+            return
+        self._rollSpeedWindow()
+        while self.globalSpeed > self.speedLimitation.value:
+            await sleep(0.1)
+            self._rollSpeedWindow()
 
 
 YEAR = 2026
