@@ -229,16 +229,17 @@ def test_addTaskWithOptions_passesOptionsToParse(spine):
     # 「新建任务」对话框带选项（下载目录等）→ 经缝传到引擎 → 并进 parse payload。
     spine.backend.addTaskWithOptions("https://example.com/movie.mp4", {"path": "/custom"})
 
-    assert spine.downloads.parsedOptions == [{"path": "/custom"}]
+    assert spine.downloads.parsedOptions[0]["path"] == "/custom"  # per-task 值优先
     assert spine.taskList.rowCount() == 1
 
 
-def test_addTask_injectsConfigDownloadFolder(spine):
-    # 不带 path 的添加：引擎把配置里的下载目录注入 parse payload，pack 不再直读 cfg.downloadFolder（脱 cfg）。
+def test_addTask_injectsConfigGlobals(spine):
+    # 不带选项的添加：引擎把配置里的全局设置（目录/分块数）注入 parse payload，pack 不再直读 cfg（脱 cfg）。
     spine.config.set("downloadFolder", "/cfg-default")
+    spine.config.set("preBlockNum", 16)
     spine.backend.addTask("https://example.com/movie.mp4")
 
-    assert spine.downloads.parsedOptions == [{"path": "/cfg-default"}]
+    assert spine.downloads.parsedOptions == [{"path": "/cfg-default", "preBlockNum": 16}]
 
 
 def test_primaryAction_togglesByDefault(spine):

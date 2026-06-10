@@ -89,9 +89,10 @@ class Engine:
             self._emit(Event("stats", {"globalSpeed": total}))
 
     def _addTask(self, url: str, options: dict | None = None) -> None:
-        # 没指定 per-task 目录就注入配置里的下载目录——pack 从 payload 取，不再直读 cfg.downloadFolder（脱 cfg）
+        # 注入配置里的全局下载设置——pack 从 payload 取，不再直读 cfg（脱 qfluentwidgets）。per-task 显式值优先。
         options = dict(options or {})
         options.setdefault("path", self._config.value("downloadFolder"))
+        options.setdefault("preBlockNum", self._config.value("preBlockNum"))
         self._downloads.run(self._downloads.parse(url, options), self._onParsed)
 
     def _onParsed(self, task: Task | None, error: str | None) -> None:
