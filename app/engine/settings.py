@@ -20,6 +20,7 @@ GLOBAL_SETTINGS = [
     Setting("checkUpdateAtStartUp", True),
     Setting("autoRun", False),
     Setting("enableClipboardListener", True),
+    Setting("enableCategory", False),
 ]
 
 

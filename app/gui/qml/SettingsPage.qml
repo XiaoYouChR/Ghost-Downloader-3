@@ -44,6 +44,16 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "按类型归类到子目录"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch {
+            checked: backend.config.enableCategory
+            onToggled: backend.setConfig("enableCategory", checked)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "校验 SSL 证书"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Switch {

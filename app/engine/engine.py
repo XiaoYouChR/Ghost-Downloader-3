@@ -1,8 +1,10 @@
 from functools import partial
+from urllib.parse import urlparse
 
 from orjson import loads
 from PySide6.QtCore import QTimer
 
+from app.bases.categories import categoryFolderFor
 from app.bases.models import Task, TaskStatus
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
@@ -10,7 +12,7 @@ from app.protocol.message import Command, Event
 _CONFIG_KEYS = (
     "maxTaskNum", "downloadFolder", "preBlockNum", "autoSpeedUp", "SSLVerify",
     "customThemeMode", "enableClipboardListener", "checkUpdateAtStartUp", "autoRun",
-    "enableSpeedLimitation", "speedLimitation", "maxReassignSize", "proxyServer",
+    "enableSpeedLimitation", "speedLimitation", "maxReassignSize", "proxyServer", "enableCategory",
 )
 
 
@@ -93,7 +95,12 @@ class Engine:
     def _addTask(self, url: str, options: dict | None = None) -> None:
         # 注入配置里的全局下载设置——pack 从 payload 取，不再直读 cfg（脱 qfluentwidgets）。per-task 显式值优先。
         options = dict(options or {})
-        options.setdefault("path", self._config.value("downloadFolder"))
+        if "path" not in options:  # 没显式指定才套配置目录；启用分类则按文件名归到分类子目录（引擎权威算）
+            base = self._config.value("downloadFolder")
+            options["path"] = (
+                categoryFolderFor(urlparse(url).path.rsplit("/", 1)[-1], base)
+                if self._config.value("enableCategory") else base
+            )
         options.setdefault("preBlockNum", self._config.value("preBlockNum"))
         self._downloads.run(self._downloads.parse(url, options), self._onParsed)
 

@@ -256,6 +256,31 @@ def test_editTask_reparsesAndReplacesTask(spine, tmp_path):
     assert spine.taskList.data(index, TaskList.IdRole) == taskId
 
 
+def test_addTask_appliesCategoryFolderWhenEnabled(spine):
+    # 启用分类：按文件名扩展把下载目录归到分类子目录（引擎权威算，pack 收到的就是归好类的 path）。
+    spine.config.set("downloadFolder", "/dl")
+    spine.config.set("enableCategory", True)
+    spine.backend.addTask("https://example.com/movie.mp4")
+
+    assert spine.downloads.parsedOptions[0]["path"] == "/dl/Video"
+
+
+def test_addTask_noCategoryFolderWhenDisabled(spine):
+    spine.config.set("downloadFolder", "/dl")
+    spine.config.set("enableCategory", False)
+    spine.backend.addTask("https://example.com/movie.mp4")
+
+    assert spine.downloads.parsedOptions[0]["path"] == "/dl"
+
+
+def test_addTask_explicitPathBeatsCategory(spine):
+    # 用户显式指定目录时不套分类（per-task 值优先）。
+    spine.config.set("enableCategory", True)
+    spine.backend.addTaskWithOptions("https://example.com/movie.mp4", {"path": "/custom"})
+
+    assert spine.downloads.parsedOptions[0]["path"] == "/custom"
+
+
 def test_primaryAction_togglesByDefault(spine):
     # 普通任务 actionKind=toggle：卡片主按钮 → primaryAction → 暂停/继续。
     spine.backend.addTask("https://example.com/movie.mp4")
