@@ -257,8 +257,11 @@ class M3U8Pack(FeaturePack):
 
     def meta(self, task) -> str:
         kind = "DASH" if getattr(task, "manifestType", "") == "mpd" else "HLS"
-        mode = "直播" if getattr(task, "isLive", False) else "点播"
-        return f"{kind} · {mode}"
+        if not getattr(task, "isLive", False):
+            return f"{kind} · 点播"
+        stage = task.stages[0] if task.stages else None
+        recording = "等待中" if getattr(stage, "liveStatus", "") == "Waiting" else "录制中"
+        return f"{kind} · 直播 · {recording}"
 
     def setup(self, mainWindow):
         if m3u8Config.associateFileTypes.value:
