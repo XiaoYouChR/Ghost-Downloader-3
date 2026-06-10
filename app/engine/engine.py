@@ -45,6 +45,8 @@ class Engine:
             self._startAll()
         elif command.name == "remove":
             self._remove(command.data["taskId"])
+        elif command.name == "clearCompleted":
+            self._clearCompleted()
 
     def _attach(self) -> None:
         self._attached = True
@@ -98,6 +100,11 @@ class Engine:
         del self._tasks[taskId]
         self._snapshots.pop(taskId, None)
         self._emit(Event("taskRemoved", {"taskId": taskId}))
+
+    def _clearCompleted(self) -> None:
+        completed = [taskId for taskId, task in self._tasks.items() if task.status == TaskStatus.COMPLETED]
+        for taskId in completed:
+            self._remove(taskId)
 
     def _changed(self, task: Task) -> None:
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))

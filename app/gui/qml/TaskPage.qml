@@ -21,6 +21,7 @@ FluentPage {
             Button { text: "全部开始"; onClicked: backend.startAll() }
             Button { text: "全部暂停"; onClicked: backend.pauseAll() }
             Button { text: "选择"; onClicked: taskList.setSelectionMode(true) }
+            Button { text: "清空已完成"; onClicked: backend.clearCompleted() }
             Item { Layout.fillWidth: true }
             Text {
                 text: backend.globalSpeedText

@@ -106,6 +106,18 @@ def test_startAll_runsEveryTask(spine):
         assert spine.taskList.data(spine.taskList.index(row, 0), TaskList.StatusRole) == "RUNNING"
 
 
+def test_clearCompleted_removesOnlyCompleted(spine):
+    # 清空已完成只删 COMPLETED，其余留下。
+    spine.backend.addTask("https://example.com/a.mp4")
+    spine.backend.addTask("https://example.com/b.mp4")
+    ids = [spine.taskList.data(spine.taskList.index(i, 0), TaskList.IdRole) for i in range(2)]
+    spine.engine._tasks[ids[0]].setStatus(TaskStatus.COMPLETED)
+
+    spine.backend.clearCompleted()
+
+    assert spine.taskList.rowCount() == 1
+
+
 def test_remove_dropsTaskFromGuiModel(spine):
     # gui 删除 → engine 移除、回发 taskRemoved → 该项从列表消失。
     spine.backend.addTask("https://example.com/movie.mp4")
