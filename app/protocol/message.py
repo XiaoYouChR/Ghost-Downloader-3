@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from orjson import dumps, loads
+
 
 @dataclass
 class Command:
@@ -8,6 +10,14 @@ class Command:
     name: str
     data: dict = field(default_factory=dict)
 
+    def toBytes(self) -> bytes:
+        return dumps({"name": self.name, "data": self.data})
+
+    @classmethod
+    def fromBytes(cls, raw: bytes) -> "Command":
+        obj = loads(raw)
+        return cls(obj["name"], obj.get("data", {}))
+
 
 @dataclass
 class Event:
@@ -15,3 +25,11 @@ class Event:
 
     name: str
     data: dict = field(default_factory=dict)
+
+    def toBytes(self) -> bytes:
+        return dumps({"name": self.name, "data": self.data})
+
+    @classmethod
+    def fromBytes(cls, raw: bytes) -> "Event":
+        obj = loads(raw)
+        return cls(obj["name"], obj.get("data", {}))
