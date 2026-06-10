@@ -26,6 +26,18 @@ def test_selectAll_selectsEveryItem(spine):
     assert spine.taskList.selectedCount == 2
 
 
+def test_invertSelection_flipsEverySelection(spine):
+    spine.backend.addTask("https://example.com/a.mp4")
+    spine.backend.addTask("https://example.com/b.mp4")
+    first = _taskId(spine, 0)
+    spine.taskList.toggleSelect(first)
+
+    spine.taskList.invertSelection()
+
+    second = _taskId(spine, 1)
+    assert set(spine.taskList.selectedIds()) == {second}
+
+
 def test_setSelectionMode_offClearsSelection(spine):
     spine.backend.addTask("https://example.com/a.mp4")
     spine.taskList.setSelectionMode(True)

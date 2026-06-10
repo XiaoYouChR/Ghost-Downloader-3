@@ -205,6 +205,12 @@ class TaskList(QAbstractListModel):
         self.selectedCountChanged.emit()
         self._refreshAll()
 
+    @Slot()
+    def invertSelection(self) -> None:
+        self._selected = {item.taskId for item in self._items if item.taskId not in self._selected}
+        self.selectedCountChanged.emit()
+        self._refreshAll()
+
     def selectedIds(self) -> list[str]:
         return list(self._selected)
 

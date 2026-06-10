@@ -59,17 +59,6 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            visible: taskList.selectionMode
-            spacing: 8
-            Text { text: "已选 " + taskList.selectedCount }
-            Item { Layout.fillWidth: true }
-            Button { text: "全选"; onClicked: taskList.selectAll() }
-            Button { text: "删除选中"; onClicked: backend.removeSelected() }
-            Button { text: "取消"; onClicked: taskList.setSelectionMode(false) }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
             spacing: 8
 
             TextField {
@@ -134,6 +123,25 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    // 选择模式的浮动批量操作栏（复刻 GD 的 CommandBar，浮在列表底部）
+    Frame {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 24
+        visible: taskList.selectionMode
+        padding: 6
+
+        RowLayout {
+            spacing: 4
+            Text { Layout.leftMargin: 6; text: "已选 " + taskList.selectedCount; typography: Typography.Body }
+            ToolSeparator {}
+            Button { flat: true; text: "全选"; onClicked: taskList.selectAll() }
+            Button { flat: true; text: "反选"; onClicked: taskList.invertSelection() }
+            Button { flat: true; text: "删除选中"; onClicked: backend.removeSelected() }
+            Button { flat: true; text: "取消"; onClicked: taskList.setSelectionMode(false) }
         }
     }
 
