@@ -7,30 +7,23 @@ import RinUI
 FluentPage {
     title: "设置"
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 16
-        spacing: 12
-
-        RowLayout {
-            Layout.fillWidth: true
-            Text { text: "同时下载任务数"; typography: Typography.Body }
-            Item { Layout.fillWidth: true }
-            SpinBox {
-                from: 1
-                to: 64
-                value: backend.maxTaskNum
-                onValueModified: backend.setConfig("maxTaskNum", value)
-            }
+    // 直接做 FluentPage 的内容项：自动进它的内容列（居中、留白），不再 anchors（那会落在布局管理的子项上）
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "同时下载任务数"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        SpinBox {
+            from: 1
+            to: 64
+            value: backend.maxTaskNum
+            onValueModified: backend.setConfig("maxTaskNum", value)
         }
+    }
 
-        RowLayout {
-            Layout.fillWidth: true
-            Text { text: "下载目录"; typography: Typography.Body }
-            Item { Layout.fillWidth: true }
-            Text { text: backend.downloadFolder; opacity: 0.7 }
-        }
-
-        Item { Layout.fillHeight: true }
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "下载目录"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Text { text: backend.downloadFolder; opacity: 0.7 }
     }
 }
