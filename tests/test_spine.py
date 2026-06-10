@@ -1,9 +1,12 @@
 from PySide6.QtTest import QSignalSpy
 
 from app.bases.models import TaskStatus
+from app.engine.engine import Engine
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
+from app.protocol.link import MemoryLink
 from app.protocol.message import Event
+from fakes import FakeDownloads, FakeStore
 
 
 def test_addTask_appearsInGuiModel(spine):
@@ -203,3 +206,19 @@ def test_detached_engineSuppressesEvents(spine):
 
     spine.backend.attach()
     assert spine.taskList.rowCount() == 1
+
+
+def test_addTask_parseFailure_notifiesGui(qapp):
+    # 链接解析失败 → engine 发 addError → backend.taskAddFailed 触发（gui 弹浮层提示），不留半个任务。
+    link = MemoryLink()
+    taskList = TaskList()
+    backend = Backend(link, taskList)
+    engine = Engine(link, FakeDownloads(parseError="无法解析该链接"), FakeStore())
+    link.connect(engine.receive, backend.receive)
+    backend.attach()
+
+    spy = QSignalSpy(backend.taskAddFailed)
+    backend.addTask("not-a-valid-url")
+
+    assert taskList.rowCount() == 0
+    assert spy.count() == 1

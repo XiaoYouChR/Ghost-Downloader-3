@@ -86,7 +86,8 @@ class Engine:
 
     def _onParsed(self, task: Task | None, error: str | None) -> None:
         if error or task is None:
-            return  # 解析失败先静默，后续接错误事件
+            self._emit(Event("addError", {"reason": error or "无法解析该链接"}))
+            return
         self._tasks[task.taskId] = task
         self._store.add(task)
         self._downloads.start(task)

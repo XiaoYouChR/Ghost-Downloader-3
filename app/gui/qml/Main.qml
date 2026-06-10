@@ -26,4 +26,12 @@ FluentWindow {
             position: Position.Bottom
         }
     ]
+
+    // 链接解析失败时弹个提示——这种失败没有任务卡片可挂，只能用浮层
+    Connections {
+        target: backend
+        function onTaskAddFailed(reason) {
+            floatLayer.createInfoBar({title: "添加失败", text: reason, severity: Severity.Error, timeout: 4000})
+        }
+    }
 }

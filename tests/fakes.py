@@ -6,16 +6,20 @@ from app.bases.models import Task
 class FakeDownloads:
     """测试用下载边界：不走网络、不起线程，同步建 Task 并记录 start/stop。"""
 
-    def __init__(self) -> None:
+    def __init__(self, parseError: str | None = None) -> None:
         self.started: list[Task] = []
         self.stopped: list[Task] = []
+        self._parseError = parseError
 
     def parse(self, url: str) -> Task:
         title = urlparse(url).path.rsplit("/", 1)[-1] or url
         return Task(title=title, url=url, packId="http")
 
     def run(self, parsed, callback) -> None:
-        callback(parsed, None)
+        if self._parseError:
+            callback(None, self._parseError)
+        else:
+            callback(parsed, None)
 
     def start(self, task: Task) -> None:
         self.started.append(task)

@@ -16,6 +16,8 @@ class Backend(QObject):
     configChanged = Signal()
     hashReady = Signal()
     connectedChanged = Signal()
+    taskAddFailed = Signal(str)
+    taskAddFailed = Signal(str)
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -163,3 +165,5 @@ class Backend(QObject):
         elif event.name == "hashResult":
             self._hashText = event.data["hash"]
             self.hashReady.emit()
+        elif event.name == "addError":
+            self.taskAddFailed.emit(event.data["reason"])
