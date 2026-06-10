@@ -14,6 +14,7 @@ class Backend(QObject):
     filesModelChanged = Signal()
     filesRequested = Signal()
     configChanged = Signal()
+    hashReady = Signal()
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -23,6 +24,18 @@ class Backend(QObject):
         self._filesModel: FileSelection | None = None
         self._editingTaskId = ""
         self._config: dict = {}
+        self._hashText = ""
+
+    def _hash(self) -> str:
+        return self._hashText
+
+    hashText = Property(str, _hash, notify=hashReady)
+
+    @Slot(str)
+    def verifyHash(self, taskId: str) -> None:
+        self._hashText = ""
+        self.hashReady.emit()
+        self._link.toEngine(Command("verifyHash", {"taskId": taskId}))
 
     def _maxTaskNum(self) -> int:
         return self._config.get("maxTaskNum", 1)
@@ -133,3 +146,6 @@ class Backend(QObject):
         elif event.name == "config":
             self._config.update(event.data["values"])
             self.configChanged.emit()
+        elif event.name == "hashResult":
+            self._hashText = event.data["hash"]
+            self.hashReady.emit()

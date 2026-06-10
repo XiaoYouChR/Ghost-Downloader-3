@@ -139,6 +139,16 @@ def test_startAll_runsEveryTask(spine):
         assert spine.taskList.data(spine.taskList.index(row, 0), TaskList.StatusRole) == "RUNNING"
 
 
+def test_verifyHash_returnsHashToGui(spine):
+    # 校验命令 → 引擎算文件哈希 → hashResult 事件 → backend.hashText 给对话框显示。
+    spine.backend.addTask("https://example.com/a.mp4")
+    taskId = spine.taskList.data(spine.taskList.index(0, 0), TaskList.IdRole)
+
+    spine.backend.verifyHash(taskId)
+
+    assert spine.backend.hashText == "test-hash"
+
+
 def test_rename_changesTitle(spine):
     # 重命名任务 → 标题更新（经 setTitle，会过 toSafeFilename）。
     spine.backend.addTask("https://example.com/movie.mp4")

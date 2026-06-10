@@ -26,6 +26,7 @@ Frame {
     // 卡片不直接删/改，只发意图；由页面弹框（Q5：动作即意图）
     signal deleteRequested(string taskId)
     signal editRequested(string taskId, string fileName)
+    signal hashRequested(string taskId)
 
     height: 68
 
@@ -97,6 +98,11 @@ Frame {
             text: "文件夹"
             visible: card.completed
             onClicked: backend.openFolder(card.output)
+        }
+        Button {
+            text: "校验"
+            visible: card.completed
+            onClicked: card.hashRequested(card.taskId)
         }
         Button {
             text: "编辑"

@@ -1,6 +1,17 @@
+import asyncio
+import hashlib
+
 from app.bases.models import Task
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
+
+
+def _sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as file:
+        for chunk in iter(lambda: file.read(1 << 16), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 class Downloads:
@@ -23,3 +34,10 @@ class Downloads:
     def meta(self, task: Task) -> str:
         pack = featureService.packOf(task)
         return pack.meta(task) if pack is not None else ""
+
+    def verify(self, task: Task, callback) -> None:
+        coreService.runCoroutine(self._hash(task.outputFolder), callback)
+
+    async def _hash(self, path: str) -> str:
+        # 在线程池里算（大文件读+哈希是阻塞的），不卡 engine 的事件循环
+        return await asyncio.get_event_loop().run_in_executor(None, _sha256, path)

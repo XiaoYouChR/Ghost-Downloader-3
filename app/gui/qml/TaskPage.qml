@@ -106,6 +106,10 @@ FluentPage {
                         renameField.text = fileName
                         renameDialog.open()
                     }
+                    onHashRequested: function(taskId) {
+                        backend.verifyHash(taskId)
+                        hashDialog.open()
+                    }
                 }
             }
         }
@@ -138,6 +142,22 @@ FluentPage {
             if (ok) ok.text = "确定"
             const cancel = standardButton(Dialog.Cancel)
             if (cancel) cancel.text = "取消"
+        }
+    }
+
+    Dialog {
+        id: hashDialog
+        title: "文件校验 (SHA-256)"
+        modal: true
+        standardButtons: Dialog.Ok
+        Text {
+            implicitWidth: 440
+            wrapMode: Text.WrapAnywhere
+            text: backend.hashText !== "" ? backend.hashText : "计算中…"
+        }
+        Component.onCompleted: {
+            const ok = standardButton(Dialog.Ok)
+            if (ok) ok.text = "关闭"
         }
     }
 

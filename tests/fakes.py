@@ -26,6 +26,9 @@ class FakeDownloads:
     def meta(self, task: Task) -> str:
         return ""
 
+    def verify(self, task: Task, callback) -> None:
+        callback("test-hash", None)
+
 
 class FakeStore:
     """测试用持久化边界：内存存任务，不碰文件，记录 add/remove。"""

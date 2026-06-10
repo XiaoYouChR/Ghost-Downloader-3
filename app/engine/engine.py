@@ -1,3 +1,5 @@
+from functools import partial
+
 from orjson import loads
 from PySide6.QtCore import QTimer
 
@@ -57,6 +59,8 @@ class Engine:
             self._setConfig(command.data["key"], command.data["value"])
         elif command.name == "rename":
             self._rename(command.data["taskId"], command.data["title"])
+        elif command.name == "verifyHash":
+            self._downloads.verify(self._tasks[command.data["taskId"]], partial(self._onHashed, command.data["taskId"]))
 
     def _attach(self) -> None:
         self._attached = True
@@ -130,6 +134,11 @@ class Engine:
         task = self._tasks[taskId]
         task.setTitle(title)
         self._changed(task)
+
+    def _onHashed(self, taskId: str, digest: str | None, error: str | None) -> None:
+        if error or not digest:
+            return
+        self._emit(Event("hashResult", {"taskId": taskId, "hash": digest}))
 
     def _changed(self, task: Task) -> None:
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))
