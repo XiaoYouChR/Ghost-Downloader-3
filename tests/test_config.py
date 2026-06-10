@@ -1,4 +1,5 @@
 from app.engine.config import Config, Setting
+from app.engine.settings import GLOBAL_SETTINGS
 
 
 def test_config_returnsDefaultThenStoredValue(tmp_path, qapp):
@@ -55,3 +56,18 @@ def test_config_persistsAcrossReload(tmp_path, qapp):
     reloaded.load()
 
     assert reloaded.value("maxTaskNum") == 7
+
+
+def test_globalSettings_defaultsAndValidation(tmp_path, qapp):
+    # 引擎全局 schema：默认对齐旧 cfg，校验器拦住越界/非法值。
+    config = Config(GLOBAL_SETTINGS, tmp_path / "config.json")
+    assert config.value("preBlockNum") == 8
+    assert config.value("customThemeMode") == "System"
+
+    config.set("preBlockNum", 9999)  # 越界
+    assert config.value("preBlockNum") == 8
+
+    config.set("customThemeMode", "Dark")
+    assert config.value("customThemeMode") == "Dark"
+    config.set("customThemeMode", "Neon")  # 非法主题
+    assert config.value("customThemeMode") == "Dark"
