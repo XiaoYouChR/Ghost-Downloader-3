@@ -27,6 +27,11 @@ Frame {
 
     height: 68
 
+    // 双击已完成任务直接打开文件（GD 同款便利）
+    TapHandler {
+        onDoubleTapped: if (card.completed) backend.openFile(card.output)
+    }
+
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 14
