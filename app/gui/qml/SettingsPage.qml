@@ -122,6 +122,7 @@ FluentPage {
         Text { text: "下载 User-Agent"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         ComboBox {
+            id: uaCombo
             Layout.preferredWidth: 240
             textRole: "name"
             model: backend.userAgentOptions()
@@ -131,6 +132,49 @@ FluentPage {
                     if (model[i].value === backend.config.activeUserAgent) { currentIndex = i; break }
             }
             onActivated: backend.setConfig("activeUserAgent", model[currentIndex].value)
+        }
+        Button { text: "管理"; onClicked: uaDialog.open() }
+    }
+
+    Dialog {
+        id: uaDialog
+        title: "管理 User-Agent"
+        modal: true
+        standardButtons: Dialog.Close
+        ColumnLayout {
+            implicitWidth: 520
+            spacing: 10
+            ListView {
+                Layout.fillWidth: true
+                implicitHeight: 220
+                clip: true
+                model: backend.userAgentModel
+                delegate: RowLayout {
+                    width: ListView.view.width
+                    spacing: 8
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Text { text: model.name; typography: Typography.BodyStrong }
+                        Text { text: model.value; opacity: 0.6; elide: Text.ElideRight; Layout.fillWidth: true }
+                    }
+                    ToolButton { icon.name: "ic_fluent_delete_20_regular"; onClicked: backend.userAgentModel.removeAt(index) }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                TextField { id: uaNameField; Layout.preferredWidth: 120; placeholderText: "名称" }
+                TextField { id: uaValueField; Layout.fillWidth: true; placeholderText: "User-Agent 字符串" }
+                Button {
+                    text: "添加"
+                    onClicked: {
+                        backend.userAgentModel.add(uaNameField.text, uaValueField.text)
+                        uaNameField.text = ""
+                        uaValueField.text = ""
+                    }
+                }
+            }
         }
     }
 

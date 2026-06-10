@@ -3,6 +3,7 @@ from PySide6.QtQml import QQmlPropertyMap
 
 from app.gui.autostart import applyAutoRun
 from app.gui.file_selection import FileSelection
+from app.gui.user_agents import UserAgentModel
 from app.gui.task_list import TaskItem, TaskList
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
@@ -33,6 +34,7 @@ class Backend(QObject):
         self._configMap = QQmlPropertyMap(self)  # QML 反射式读 backend.config.<key>
         self._hashText = ""
         self._connected = False
+        self._uaModel: UserAgentModel | None = None
 
     def _config(self) -> QObject:
         return self._configMap
@@ -64,6 +66,15 @@ class Backend(QObject):
         # 设置页 UA 下拉的选项；选中后经 setConfig("activeUserAgent") 走配置缝（http pack 读 cfg.activeUserAgent）
         from app.supports.config import cfg
         return [{"name": ua["name"], "value": ua["value"]} for ua in cfg.userAgents.value]
+
+    def _userAgentModel(self) -> QObject:
+        # 惰性建（测试不碰）：从 cfg.userAgents 起列、改动落回 cfg；选择器的 userAgentOptions 读同一份
+        if self._uaModel is None:
+            from app.supports.config import cfg
+            self._uaModel = UserAgentModel(cfg.userAgents.value, lambda items: cfg.set(cfg.userAgents, items))
+        return self._uaModel
+
+    userAgentModel = Property(QObject, _userAgentModel, constant=True)
 
     @Slot(result="QVariantList")
     def categoryOptions(self) -> list:
