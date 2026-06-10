@@ -255,6 +255,11 @@ Item {
     Connections {
         target: backend
         function onFilesRequested() { fileDialog.open() }
+        function onClipboardUrlsDetected(urls) {
+            // 剪贴板抓到链接：预填进新建对话框让用户确认，不静默添加（多个暂取第一个）
+            addUrlField.text = urls[0]
+            addTaskDialog.open()
+        }
     }
 
     Dialog {

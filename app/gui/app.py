@@ -13,6 +13,7 @@ from app.engine.engine import Engine
 from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.gui.backend import Backend
+from app.gui.clipboard import ClipboardWatcher
 from app.gui.task_list import TaskFilter, TaskList
 from app.protocol.link import MemoryLink
 from app.protocol.socket_link import SocketClient
@@ -51,12 +52,20 @@ class MainWindow(RinUIWindow):
             self._link.connect(self._backend.receive)
             self._link.whenConnected(self._backend.attach)
             self._link.whenDisconnected(self._onDaemonLost)
-            self._link.connectToServer()
         else:
             self._link = MemoryLink()
             self._engine = Engine(self._link, Downloads(), Store(), makeCfgBackedConfig())
             self._backend = Backend(self._link, self._taskList)
             self._link.connect(self._engine.receive, self._backend.receive)
+
+        # 剪贴板监听：桌面 gui 功能，抓到链接转成 backend 信号给 QML 弹新建框。
+        # 窗口（仅真 app）持有它，被测的 Backend 不碰系统剪贴板；在 attach 前接好以接住首份 config。
+        self._clipboard = ClipboardWatcher(self._backend.clipboardUrlsDetected.emit)
+        self._backend.configChanged.connect(self._syncClipboardListener)
+
+        if daemon:
+            self._link.connectToServer()
+        else:
             self._backend.attach()
 
         context = self.engine.rootContext()
@@ -64,6 +73,10 @@ class MainWindow(RinUIWindow):
         context.setContextProperty("taskFilter", self._taskFilter)
         context.setContextProperty("taskList", self._taskList)
         self.load(str(QML_DIR / "Main.qml"))
+
+    def _syncClipboardListener(self) -> None:
+        # config 到达/变动时按开关挂钩剪贴板（setEnabled 幂等，重复触发无妨）
+        self._clipboard.setEnabled(bool(self._backend.configValue("enableClipboardListener")))
 
     def _onDaemonLost(self) -> None:
         # daemon 掉线：界面回到“连接中”，daemon 真没了就重新拉起；SocketClient 随后自己连回来

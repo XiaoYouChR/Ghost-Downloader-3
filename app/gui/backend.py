@@ -19,6 +19,7 @@ class Backend(QObject):
     hashReady = Signal()
     connectedChanged = Signal()
     taskAddFailed = Signal(str)
+    clipboardUrlsDetected = Signal(list)  # 监听剪贴板抓到可下载链接，QML 据此弹新建对话框
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -51,6 +52,10 @@ class Backend(QObject):
         self._hashText = ""
         self.hashReady.emit()
         self._link.toEngine(Command("verifyHash", {"taskId": taskId}))
+
+    def configValue(self, key: str):
+        # gui 端（如剪贴板监听）读 config 当前值；以引擎回发的为准，daemon/内存两模式都对
+        return self._configMap.value(key)
 
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
