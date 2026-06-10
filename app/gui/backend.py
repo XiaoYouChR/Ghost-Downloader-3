@@ -1,6 +1,7 @@
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtQml import QQmlPropertyMap
 
+from app.gui.autostart import applyAutoRun
 from app.gui.file_selection import FileSelection
 from app.gui.task_list import TaskItem, TaskList
 from app.protocol.link import MemoryLink
@@ -53,6 +54,8 @@ class Backend(QObject):
 
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
+        if key == "autoRun":
+            applyAutoRun(bool(value))  # 写 OS 开机启动项是 gui 端 OS 动作，不过缝（同 openFile/openFolder）
         self._link.toEngine(Command("setConfig", {"key": key, "value": value}))
 
     def _globalSpeed(self) -> str:
