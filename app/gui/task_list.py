@@ -49,6 +49,14 @@ class TaskItem:
         return self._task.get("createdAt", 0)
 
     @property
+    def files(self) -> list:
+        return self._task.get("files") or []
+
+    @property
+    def fileCount(self) -> int:
+        return len(self.files)
+
+    @property
     def progress(self) -> float:
         return self._task.get("progress", 0.0)
 
@@ -82,6 +90,7 @@ class TaskList(QAbstractListModel):
     OutputRole = Qt.ItemDataRole.UserRole + 9
     CreatedRole = Qt.ItemDataRole.UserRole + 10
     SelectedRole = Qt.ItemDataRole.UserRole + 11
+    FileCountRole = Qt.ItemDataRole.UserRole + 12
 
     selectionModeChanged = Signal()
     selectedCountChanged = Signal()
@@ -200,6 +209,8 @@ class TaskList(QAbstractListModel):
             return item.createdAt
         if role == TaskList.SelectedRole:
             return item.taskId in self._selected
+        if role == TaskList.FileCountRole:
+            return item.fileCount
         return None
 
     def roleNames(self) -> dict:
@@ -215,7 +226,12 @@ class TaskList(QAbstractListModel):
             TaskList.OutputRole: b"output",
             TaskList.CreatedRole: b"created",
             TaskList.SelectedRole: b"selected",
+            TaskList.FileCountRole: b"fileCount",
         }
+
+    def filesOf(self, taskId: str) -> list:
+        row = self._rowOf(taskId)
+        return self._items[row].files if row is not None else []
 
 
 class TaskFilter(QSortFilterProxyModel):

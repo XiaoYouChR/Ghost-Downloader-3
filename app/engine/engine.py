@@ -47,6 +47,8 @@ class Engine:
             self._remove(command.data["taskId"])
         elif command.name == "clearCompleted":
             self._clearCompleted()
+        elif command.name == "setSelection":
+            self._setSelection(command.data["taskId"], command.data["indexes"])
 
     def _attach(self) -> None:
         self._attached = True
@@ -105,6 +107,11 @@ class Engine:
         completed = [taskId for taskId, task in self._tasks.items() if task.status == TaskStatus.COMPLETED]
         for taskId in completed:
             self._remove(taskId)
+
+    def _setSelection(self, taskId: str, indexes: list) -> None:
+        task = self._tasks[taskId]
+        task.setSelection(list(indexes))
+        self._changed(task)
 
     def _changed(self, task: Task) -> None:
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))

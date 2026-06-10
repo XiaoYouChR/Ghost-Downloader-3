@@ -1,5 +1,6 @@
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
+from app.gui.file_selection import FileSelection
 from app.gui.task_list import TaskItem, TaskList
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
@@ -10,17 +11,40 @@ class Backend(QObject):
     """gui 调它来支使后台，并把后台发来的 event 落到界面模型上。QML 经 @Slot 调用。"""
 
     globalSpeedChanged = Signal()
+    filesModelChanged = Signal()
+    filesRequested = Signal()
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
         self._link = link
         self._taskList = taskList
         self._globalSpeedText = ""
+        self._filesModel: FileSelection | None = None
+        self._editingTaskId = ""
 
     def _globalSpeed(self) -> str:
         return self._globalSpeedText
 
     globalSpeedText = Property(str, _globalSpeed, notify=globalSpeedChanged)
+
+    def _files(self) -> QObject | None:
+        return self._filesModel
+
+    filesModel = Property(QObject, _files, notify=filesModelChanged)
+
+    @Slot(str)
+    def editFiles(self, taskId: str) -> None:
+        self._editingTaskId = taskId
+        self._filesModel = FileSelection(self._taskList.filesOf(taskId))
+        self.filesModelChanged.emit()
+        self.filesRequested.emit()
+
+    @Slot()
+    def confirmFiles(self) -> None:
+        if self._filesModel is None:
+            return
+        indexes = self._filesModel.selectedIndexes()
+        self._link.toEngine(Command("setSelection", {"taskId": self._editingTaskId, "indexes": indexes}))
 
     @Slot()
     def attach(self) -> None:

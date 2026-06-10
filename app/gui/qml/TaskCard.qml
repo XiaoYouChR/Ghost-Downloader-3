@@ -19,6 +19,7 @@ Frame {
     property string output
     property bool selectionMode
     property bool selected
+    property int fileCount
 
     // 卡片不直接删，只发意图；由页面弹确认框（Q5：动作即意图）
     signal deleteRequested(string taskId)
@@ -55,6 +56,11 @@ Frame {
             }
         }
 
+        Button {
+            text: "选择文件"
+            visible: card.fileCount > 1
+            onClicked: backend.editFiles(card.taskId)
+        }
         Button {
             text: "暂停"
             visible: card.running

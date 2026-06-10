@@ -93,6 +93,7 @@ FluentPage {
                     output: model.output
                     selectionMode: taskList.selectionMode
                     selected: model.selected
+                    fileCount: model.fileCount
                     onDeleteRequested: function(taskId) {
                         taskPage.pendingDelete = taskId
                         deleteDialog.open()
@@ -112,6 +113,40 @@ FluentPage {
         Component.onCompleted: {
             const ok = standardButton(Dialog.Ok)
             if (ok) ok.text = "删除"
+            const cancel = standardButton(Dialog.Cancel)
+            if (cancel) cancel.text = "取消"
+        }
+    }
+
+    Connections {
+        target: backend
+        function onFilesRequested() { fileDialog.open() }
+    }
+
+    Dialog {
+        id: fileDialog
+        title: "选择下载文件"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: backend.confirmFiles()
+
+        ListView {
+            implicitWidth: 460
+            implicitHeight: 320
+            clip: true
+            model: backend.filesModel
+            delegate: RowLayout {
+                width: ListView.view.width
+                spacing: 10
+                CheckBox { checked: model.selected; onClicked: backend.filesModel.toggle(index) }
+                Text { text: model.path; Layout.fillWidth: true; elide: Text.ElideMiddle }
+                Text { text: model.sizeText; opacity: 0.7 }
+            }
+        }
+
+        Component.onCompleted: {
+            const ok = standardButton(Dialog.Ok)
+            if (ok) ok.text = "确定"
             const cancel = standardButton(Dialog.Cancel)
             if (cancel) cancel.text = "取消"
         }
