@@ -10,6 +10,7 @@ class FakeDownloads:
         self.started: list[Task] = []
         self.stopped: list[Task] = []
         self.parsedOptions: list[dict] = []
+        self.actionKind = "toggle"  # 测试可改成 finalize 验直播分派
         self._parseError = parseError
 
     def parse(self, url: str, options: dict | None = None) -> Task:
@@ -32,6 +33,9 @@ class FakeDownloads:
 
     def cardChips(self, task: Task) -> list[str]:
         return []
+
+    def cardActionKind(self, task: Task) -> str:
+        return self.actionKind
 
     def verify(self, task: Task, callback) -> None:
         callback("test-hash", None)

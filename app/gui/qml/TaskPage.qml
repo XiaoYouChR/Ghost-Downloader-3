@@ -112,6 +112,7 @@ Item {
                     leftTimeText: model.leftTimeText
                     progressText: model.progressText
                     chips: model.chips
+                    actionKind: model.actionKind
                     errorText: model.error
                     selectionMode: taskList.selectionMode
                     selected: model.selected

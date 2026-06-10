@@ -263,6 +263,10 @@ class M3U8Pack(FeaturePack):
         recording = "等待中" if getattr(stage, "liveStatus", "") == "Waiting" else "录制中"
         return [f"{kind} · 直播 · {recording}"]
 
+    def cardActionKind(self, task) -> str:
+        # 直播无暂停语义：主按钮是「停止并定案」；点播仍是普通暂停/继续
+        return "finalize" if getattr(task, "isLive", False) else "toggle"
+
     def setup(self, mainWindow):
         if m3u8Config.associateFileTypes.value:
             file_association.register(self.fileTypes())

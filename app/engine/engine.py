@@ -50,6 +50,8 @@ class Engine:
             self._resume(self._tasks[command.data["taskId"]])
         elif command.name == "toggle":
             self._toggle(self._tasks[command.data["taskId"]])
+        elif command.name == "primaryAction":
+            self._primaryAction(self._tasks[command.data["taskId"]])
         elif command.name == "pauseAll":
             self._pauseAll()
         elif command.name == "startAll":
@@ -112,6 +114,17 @@ class Engine:
         # 卡片的单个开关：在跑就暂停，否则继续。判断留在引擎（它持状态机），view 只发意图
         (self._pause if task.status == TaskStatus.RUNNING else self._resume)(task)
 
+    def _primaryAction(self, task: Task) -> None:
+        # 主按钮的统一意图：pack 声明 finalize（如直播）就停止收尾，否则普通暂停/继续。判断在引擎
+        if self._downloads.cardActionKind(task) == "finalize":
+            self._finalize(task)
+        else:
+            self._toggle(task)
+
+    def _finalize(self, task: Task) -> None:
+        # 直播无暂停语义：停止即让 worker 收尾标 COMPLETED，不置 PAUSED（避免闪烁）；状态由进度泵带回
+        self._downloads.stop(task)
+
     def _pauseAll(self) -> None:
         for task in self._tasks.values():
             self._pause(task)
@@ -167,6 +180,7 @@ class Engine:
         data["received"] = received
         data["error"] = task.lastError
         data["chips"] = self._downloads.cardChips(task)  # pack 专属展示串列表（BT 的 Peers/Seeds 等）
+        data["actionKind"] = self._downloads.cardActionKind(task)  # 主按钮语义：toggle / finalize(直播)
         return data
 
     def _emit(self, event: Event) -> None:

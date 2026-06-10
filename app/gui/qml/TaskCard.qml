@@ -19,6 +19,7 @@ Frame {
     property string leftTimeText
     property string progressText
     property var chips: []
+    property string actionKind: "toggle"
     property string errorText
     property bool selectionMode
     property bool selected
@@ -158,11 +159,14 @@ Frame {
         }
 
         ToolButton {
-            icon.name: card.running ? "ic_fluent_pause_20_filled" : "ic_fluent_play_20_filled"
+            // finalize（直播）显「停止定案」对勾，否则按 running 切暂停/继续；点了发统一 primaryAction 意图
+            icon.name: card.actionKind === "finalize"
+                ? "ic_fluent_checkmark_circle_20_filled"
+                : (card.running ? "ic_fluent_pause_20_filled" : "ic_fluent_play_20_filled")
             highlighted: !card.completed
             enabled: !card.completed
             size: 17
-            onClicked: backend.toggle(card.taskId)
+            onClicked: backend.primaryAction(card.taskId)
         }
         ToolButton {
             icon.name: "ic_fluent_library_20_regular"; size: 17

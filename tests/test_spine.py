@@ -233,6 +233,30 @@ def test_addTaskWithOptions_passesOptionsToParse(spine):
     assert spine.taskList.rowCount() == 1
 
 
+def test_primaryAction_togglesByDefault(spine):
+    # 普通任务 actionKind=toggle：卡片主按钮 → primaryAction → 暂停/继续。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    taskId = spine.taskList.data(spine.taskList.index(0, 0), TaskList.IdRole)
+    spine.backend.resume(taskId)
+
+    spine.backend.primaryAction(taskId)
+
+    assert spine.taskList.data(spine.taskList.index(0, 0), TaskList.StatusRole) == "PAUSED"
+
+
+def test_primaryAction_finalizesWhenPackDeclaresIt(spine):
+    # pack 声明 actionKind=finalize（如直播）：primaryAction 走停止收尾，不置 PAUSED（worker 收尾标完成）。
+    spine.downloads.actionKind = "finalize"
+    spine.backend.addTask("https://example.com/live.m3u8")
+    taskId = spine.taskList.data(spine.taskList.index(0, 0), TaskList.IdRole)
+    spine.backend.resume(taskId)
+
+    spine.backend.primaryAction(taskId)
+
+    assert len(spine.downloads.stopped) == 1
+    assert spine.taskList.data(spine.taskList.index(0, 0), TaskList.StatusRole) != "PAUSED"
+
+
 def test_toggle_pausesRunningResumesPaused(spine):
     # 卡片只发“切换”意图，由引擎据状态机决定暂停还是继续（view 不做判断）。
     spine.backend.addTask("https://example.com/movie.mp4")

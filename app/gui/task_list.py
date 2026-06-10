@@ -87,6 +87,11 @@ class TaskItem:
         return self._task.get("chips") or []
 
     @property
+    def actionKind(self) -> str:
+        # 主按钮语义：toggle（暂停/继续）或 finalize（直播停止定案）；pack 声明、引擎下发
+        return self._task.get("actionKind", "toggle")
+
+    @property
     def typeIcon(self) -> str:
         ext = self.title.rsplit(".", 1)[-1].lower() if "." in self.title else ""
         return _TYPE_ICONS.get(ext, _DEFAULT_TYPE_ICON)
@@ -138,6 +143,7 @@ class TaskList(QAbstractListModel):
     ChipsRole = Qt.ItemDataRole.UserRole + 14
     TypeIconRole = Qt.ItemDataRole.UserRole + 15
     LeftTimeTextRole = Qt.ItemDataRole.UserRole + 16
+    ActionKindRole = Qt.ItemDataRole.UserRole + 17
 
     # 角色 → (QML 绑定名, TaskItem 属性)。data()/roleNames 都由这单一来源生成，
     # 加一个展示字段 = 加一行 + TaskItem 上一个属性。selected 是模型级（不在 item 上），属性记 None 单独处理。
@@ -158,6 +164,7 @@ class TaskList(QAbstractListModel):
         ChipsRole: ("chips", "chips"),
         TypeIconRole: ("typeIcon", "typeIcon"),
         LeftTimeTextRole: ("leftTimeText", "leftTimeText"),
+        ActionKindRole: ("actionKind", "actionKind"),
     }
 
     selectionModeChanged = Signal()

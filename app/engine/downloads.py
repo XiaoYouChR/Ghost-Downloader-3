@@ -35,6 +35,10 @@ class Downloads:
         pack = featureService.packOf(task)
         return pack.cardChips(task) if pack is not None else []
 
+    def cardActionKind(self, task: Task) -> str:
+        pack = featureService.packOf(task)
+        return pack.cardActionKind(task) if pack is not None else "toggle"
+
     def verify(self, task: Task, callback) -> None:
         coreService.runCoroutine(self._hash(task.outputFolder), callback)
 

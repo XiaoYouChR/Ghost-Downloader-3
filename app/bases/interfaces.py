@@ -55,6 +55,11 @@ class FeaturePack:
         # 核心卡不认识具体 pack，只渲染这些 chip——pack 想加专属展示就实现这个。
         return []
 
+    def cardActionKind(self, task: "Task") -> str:
+        # 卡片主按钮的语义动作：默认 "toggle"（暂停/继续）；直播这类无暂停语义的 pack 返回 "finalize"（停止收尾）。
+        # 核心卡按此选图标 + 发统一 primaryAction 意图，引擎据此分派——核心不认识具体 pack。
+        return "toggle"
+
     def setup(self, mainWindow: "MainWindow"):
         pass
 

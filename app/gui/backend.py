@@ -115,6 +115,11 @@ class Backend(QObject):
     def toggle(self, taskId: str) -> None:
         self._link.toEngine(Command("toggle", {"taskId": taskId}))
 
+    @Slot(str)
+    def primaryAction(self, taskId: str) -> None:
+        # 卡片主按钮的统一意图；引擎按 pack 声明的 actionKind 决定（toggle 或 直播 finalize）
+        self._link.toEngine(Command("primaryAction", {"taskId": taskId}))
+
     @Slot()
     def startAll(self) -> None:
         self._link.toEngine(Command("startAll"))
