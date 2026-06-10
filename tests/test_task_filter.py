@@ -36,3 +36,18 @@ def test_statusFilter_andKeywordCombine(qapp):
     proxy.statusFilter = "active"
     proxy.keyword = "cherry"
     assert proxy.rowCount() == 1
+
+
+def _titles(proxy) -> list:
+    return [proxy.data(proxy.index(i, 0), TaskList.TitleRole) for i in range(proxy.rowCount())]
+
+
+def test_sortMode_defaultTimeNewestFirst(qapp):
+    proxy = _filter()  # createdAt 200/150/100 → apple, cherry, banana
+    assert _titles(proxy) == ["apple.mp4", "cherry.exe", "banana.zip"]
+
+
+def test_sortMode_nameSortsByTitle(qapp):
+    proxy = _filter()
+    proxy.sortMode = "name"
+    assert _titles(proxy) == ["apple.mp4", "banana.zip", "cherry.exe"]

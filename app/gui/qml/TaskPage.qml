@@ -43,6 +43,10 @@ Item {
 
             Item { Layout.fillWidth: true }
             ToolButton {
+                icon.name: "ic_fluent_arrow_sort_20_regular"; size: 18
+                onClicked: sortMenu.popup()
+            }
+            ToolButton {
                 icon.name: "ic_fluent_filter_20_regular"; size: 18
                 onClicked: filterMenu.popup()
             }
@@ -131,6 +135,12 @@ Item {
                 }
             }
         }
+    }
+
+    Menu {
+        id: sortMenu
+        MenuItem { text: "按时间"; onTriggered: taskFilter.sortMode = "time" }
+        MenuItem { text: "按名称"; onTriggered: taskFilter.sortMode = "name" }
     }
 
     Menu {

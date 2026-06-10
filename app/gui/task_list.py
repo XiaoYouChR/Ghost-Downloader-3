@@ -273,11 +273,13 @@ class TaskFilter(QSortFilterProxyModel):
 
     keywordChanged = Signal()
     statusFilterChanged = Signal()
+    sortModeChanged = Signal()
 
     def __init__(self, source: TaskList, parent=None) -> None:
         super().__init__(parent)
         self._word = ""
         self._statusFilter = "all"  # all | active | complete —— 先于 setSourceModel，过滤回调要用
+        self._sortMode = "time"  # time | name
         self.setSourceModel(source)
         self.setSortRole(TaskList.CreatedRole)
         self.sort(0, Qt.SortOrder.DescendingOrder)  # 新任务排最前
@@ -305,6 +307,23 @@ class TaskFilter(QSortFilterProxyModel):
         self.invalidate()
 
     statusFilter = Property(str, _getStatusFilter, _setStatusFilter, notify=statusFilterChanged)
+
+    def _getSortMode(self) -> str:
+        return self._sortMode
+
+    def _setSortMode(self, mode: str) -> None:
+        if mode == self._sortMode:
+            return
+        self._sortMode = mode
+        self.sortModeChanged.emit()
+        if mode == "name":
+            self.setSortRole(TaskList.TitleRole)
+            self.sort(0, Qt.SortOrder.AscendingOrder)
+        else:
+            self.setSortRole(TaskList.CreatedRole)
+            self.sort(0, Qt.SortOrder.DescendingOrder)  # 新任务排最前
+
+    sortMode = Property(str, _getSortMode, _setSortMode, notify=sortModeChanged)
 
     def filterAcceptsRow(self, row: int, parent: QModelIndex) -> bool:
         index = self.sourceModel().index(row, 0, parent)
