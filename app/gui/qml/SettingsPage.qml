@@ -63,6 +63,37 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "限速下载"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch { checked: backend.config.enableSpeedLimitation; onToggled: backend.setConfig("enableSpeedLimitation", checked) }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "线程重分配阈值"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        SpinBox {
+            from: 1
+            to: 100
+            value: backend.config.maxReassignSize
+            onValueModified: backend.setConfig("maxReassignSize", value)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "代理服务器"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        TextField {
+            Layout.preferredWidth: 200
+            text: backend.config.proxyServer
+            placeholderText: "Auto / Off / http://..."
+            onEditingFinished: backend.setConfig("proxyServer", text)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "监听剪贴板链接"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Switch { checked: backend.config.enableClipboardListener; onToggled: backend.setConfig("enableClipboardListener", checked) }
