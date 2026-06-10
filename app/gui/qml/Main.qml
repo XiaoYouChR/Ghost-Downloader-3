@@ -51,5 +51,8 @@ FluentWindow {
         function onUpdateAvailable(version) {
             floatLayer.createInfoBar({title: "发现新版本 " + version, text: "可前往 GitHub 发布页下载更新", severity: Severity.Info, timeout: 8000})
         }
+        function onExceptionCaught(summary) {
+            floatLayer.createInfoBar({title: "程序发生异常", text: summary + "（详情见日志）", severity: Severity.Error, timeout: 6000})
+        }
     }
 }

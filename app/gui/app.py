@@ -1,7 +1,10 @@
 import os
 import subprocess
 import sys
+import traceback
 from pathlib import Path
+
+from loguru import logger
 
 from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalSocket
@@ -123,6 +126,17 @@ class MainWindow(RinUIWindow):
     def checkForUpdates(self) -> None:
         self._updateCheck.start()
 
+    def setupExceptionDialog(self) -> None:
+        # 主线程未捕获异常：记日志 + 给界面弹摘要提示（不再静默），仍走默认 hook 打印到 stderr
+        backend = self._backend
+
+        def hook(excType, value, tb) -> None:
+            logger.opt(exception=(excType, value, tb)).error("未捕获的异常")
+            backend.exceptionCaught.emit(traceback.format_exception_only(excType, value)[-1].strip())
+            sys.__excepthook__(excType, value, tb)
+
+        sys.excepthook = hook
+
     def _onUpdateChecked(self, state, error: str) -> None:
         # 只在确有新版本时提示；查失败（error）或已是最新都静默
         if state is not None and state.outdated:
@@ -149,6 +163,7 @@ def main() -> int:
 
     window = MainWindow(daemon)
     window.setupTray()
+    window.setupExceptionDialog()
     if "--silence" in sys.argv:  # 开机自启带的标志：直接缩进托盘，不弹主界面
         window.hideWindow()
     if cfg.checkUpdateAtStartUp.value:  # 启动查更新：桌面一次性策略，读本地开关（只影响下次启动）
