@@ -9,9 +9,12 @@ class FakeDownloads:
     def __init__(self, parseError: str | None = None) -> None:
         self.started: list[Task] = []
         self.stopped: list[Task] = []
+        self.parsedOptions: list[dict] = []
         self._parseError = parseError
 
-    def parse(self, url: str) -> Task:
+    def parse(self, url: str, options: dict | None = None) -> Task:
+        if options is not None:
+            self.parsedOptions.append(options)
         title = urlparse(url).path.rsplit("/", 1)[-1] or url
         return Task(title=title, url=url, packId="http")
 

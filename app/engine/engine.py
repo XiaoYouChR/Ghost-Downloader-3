@@ -44,7 +44,7 @@ class Engine:
             self._attached = False
             self._pump.stop()
         elif command.name == "addTask":
-            self._addTask(command.data["url"])
+            self._addTask(command.data["url"], command.data.get("options"))
         elif command.name == "pause":
             self._pause(self._tasks[command.data["taskId"]])
         elif command.name == "resume":
@@ -87,8 +87,8 @@ class Engine:
             self._globalSpeed = total
             self._emit(Event("stats", {"globalSpeed": total}))
 
-    def _addTask(self, url: str) -> None:
-        self._downloads.run(self._downloads.parse(url), self._onParsed)
+    def _addTask(self, url: str, options: dict | None = None) -> None:
+        self._downloads.run(self._downloads.parse(url, options), self._onParsed)
 
     def _onParsed(self, task: Task | None, error: str | None) -> None:
         if error or task is None:

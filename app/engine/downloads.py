@@ -19,8 +19,8 @@ class Downloads:
     单独成模块让 engine.py 不直接拖这些；测试注入 fake 替掉整块。
     pack 的加载在 app 启动时做（featureService.load），这里只解析/调度。"""
 
-    def parse(self, url: str):
-        return featureService.parse({"url": url})
+    def parse(self, url: str, options: dict | None = None):
+        return featureService.parse({"url": url, **(options or {})})
 
     def run(self, parsed, callback) -> None:
         coreService.runCoroutine(parsed, callback)

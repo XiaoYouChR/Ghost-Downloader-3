@@ -98,6 +98,11 @@ class Backend(QObject):
     def addTask(self, url: str) -> None:
         self._link.toEngine(Command("addTask", {"url": url}))
 
+    @Slot(str, "QVariant")
+    def addTaskWithOptions(self, url: str, options) -> None:
+        # 「新建任务」对话框：带 path/线程等选项；引擎合进 parse payload
+        self._link.toEngine(Command("addTask", {"url": url, "options": dict(options)}))
+
     @Slot(str)
     def pause(self, taskId: str) -> None:
         self._link.toEngine(Command("pause", {"taskId": taskId}))

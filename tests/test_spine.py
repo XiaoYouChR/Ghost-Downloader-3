@@ -215,6 +215,14 @@ def test_detached_engineSuppressesEvents(spine):
     assert spine.taskList.rowCount() == 1
 
 
+def test_addTaskWithOptions_passesOptionsToParse(spine):
+    # 「新建任务」对话框带选项（下载目录等）→ 经缝传到引擎 → 并进 parse payload。
+    spine.backend.addTaskWithOptions("https://example.com/movie.mp4", {"path": "/custom"})
+
+    assert spine.downloads.parsedOptions == [{"path": "/custom"}]
+    assert spine.taskList.rowCount() == 1
+
+
 def test_toggle_pausesRunningResumesPaused(spine):
     # 卡片只发“切换”意图，由引擎据状态机决定暂停还是继续（view 不做判断）。
     spine.backend.addTask("https://example.com/movie.mp4")
