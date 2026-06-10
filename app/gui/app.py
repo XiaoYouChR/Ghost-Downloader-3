@@ -61,7 +61,7 @@ class MainWindow(RinUIWindow):
         # 剪贴板监听：桌面 gui 功能，抓到链接转成 backend 信号给 QML 弹新建框。
         # 窗口（仅真 app）持有它，被测的 Backend 不碰系统剪贴板；在 attach 前接好以接住首份 config。
         self._clipboard = ClipboardWatcher(self._backend.clipboardUrlsDetected.emit)
-        self._backend.configChanged.connect(self._syncClipboardListener)
+        self._backend.configChanged.connect(self._updateClipboardListener)
 
         if daemon:
             self._link.connectToServer()
@@ -74,7 +74,7 @@ class MainWindow(RinUIWindow):
         context.setContextProperty("taskList", self._taskList)
         self.load(str(QML_DIR / "Main.qml"))
 
-    def _syncClipboardListener(self) -> None:
+    def _updateClipboardListener(self) -> None:
         # config 到达/变动时按开关挂钩剪贴板（setEnabled 幂等，重复触发无妨）
         self._clipboard.setEnabled(bool(self._backend.configValue("enableClipboardListener")))
 

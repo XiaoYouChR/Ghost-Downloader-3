@@ -291,8 +291,8 @@ class TaskFilter(QSortFilterProxyModel):
     def __init__(self, source: TaskList, parent=None) -> None:
         super().__init__(parent)
         self._word = ""
-        self._statusFilter = "all"  # all | active | complete —— 先于 setSourceModel，过滤回调要用
-        self._sortMode = "time"  # time | name
+        self._status = "all"  # all | active | complete —— 先于 setSourceModel，过滤回调要用
+        self._sort = "time"  # time | name
         self.setSourceModel(source)
         self.setSortRole(TaskList.CreatedRole)
         self.sort(0, Qt.SortOrder.DescendingOrder)  # 新任务排最前
@@ -309,25 +309,25 @@ class TaskFilter(QSortFilterProxyModel):
 
     keyword = Property(str, _keyword, _setKeyword, notify=keywordChanged)
 
-    def _getStatusFilter(self) -> str:
-        return self._statusFilter
+    def _statusFilter(self) -> str:
+        return self._status
 
     def _setStatusFilter(self, value: str) -> None:
-        if value == self._statusFilter:
+        if value == self._status:
             return
-        self._statusFilter = value
+        self._status = value
         self.statusFilterChanged.emit()
         self.invalidate()
 
-    statusFilter = Property(str, _getStatusFilter, _setStatusFilter, notify=statusFilterChanged)
+    statusFilter = Property(str, _statusFilter, _setStatusFilter, notify=statusFilterChanged)
 
-    def _getSortMode(self) -> str:
-        return self._sortMode
+    def _sortMode(self) -> str:
+        return self._sort
 
     def _setSortMode(self, mode: str) -> None:
-        if mode == self._sortMode:
+        if mode == self._sort:
             return
-        self._sortMode = mode
+        self._sort = mode
         self.sortModeChanged.emit()
         if mode == "name":
             self.setSortRole(TaskList.TitleRole)
@@ -336,16 +336,16 @@ class TaskFilter(QSortFilterProxyModel):
             self.setSortRole(TaskList.CreatedRole)
             self.sort(0, Qt.SortOrder.DescendingOrder)  # 新任务排最前
 
-    sortMode = Property(str, _getSortMode, _setSortMode, notify=sortModeChanged)
+    sortMode = Property(str, _sortMode, _setSortMode, notify=sortModeChanged)
 
     def filterAcceptsRow(self, row: int, parent: QModelIndex) -> bool:
         index = self.sourceModel().index(row, 0, parent)
         title = self.sourceModel().data(index, TaskList.TitleRole) or ""
         if self._word and self._word.lower() not in title.lower():
             return False
-        if self._statusFilter != "all":
+        if self._status != "all":
             completed = bool(self.sourceModel().data(index, TaskList.CompletedRole))
-            if self._statusFilter == "complete":
+            if self._status == "complete":
                 return completed
             return not completed  # active：藏掉已完成
         return True
