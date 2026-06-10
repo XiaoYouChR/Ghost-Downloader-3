@@ -111,6 +111,10 @@ class Backend(QObject):
     def resume(self, taskId: str) -> None:
         self._link.toEngine(Command("resume", {"taskId": taskId}))
 
+    @Slot(str)
+    def toggle(self, taskId: str) -> None:
+        self._link.toEngine(Command("toggle", {"taskId": taskId}))
+
     @Slot()
     def startAll(self) -> None:
         self._link.toEngine(Command("startAll"))

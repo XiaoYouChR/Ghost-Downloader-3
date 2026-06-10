@@ -208,6 +208,20 @@ def test_detached_engineSuppressesEvents(spine):
     assert spine.taskList.rowCount() == 1
 
 
+def test_toggle_pausesRunningResumesPaused(spine):
+    # 卡片只发“切换”意图，由引擎据状态机决定暂停还是继续（view 不做判断）。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+    spine.backend.resume(taskId)
+
+    spine.backend.toggle(taskId)
+    assert spine.taskList.data(index, TaskList.StatusRole) == "PAUSED"
+
+    spine.backend.toggle(taskId)
+    assert spine.taskList.data(index, TaskList.StatusRole) == "RUNNING"
+
+
 def test_addTask_parseFailure_notifiesGui(qapp):
     # 链接解析失败 → engine 发 addError → backend.taskAddFailed 触发（gui 弹浮层提示），不留半个任务。
     link = MemoryLink()

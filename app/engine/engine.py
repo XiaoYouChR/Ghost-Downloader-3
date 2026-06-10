@@ -45,6 +45,8 @@ class Engine:
             self._pause(self._tasks[command.data["taskId"]])
         elif command.name == "resume":
             self._resume(self._tasks[command.data["taskId"]])
+        elif command.name == "toggle":
+            self._toggle(self._tasks[command.data["taskId"]])
         elif command.name == "pauseAll":
             self._pauseAll()
         elif command.name == "startAll":
@@ -102,6 +104,10 @@ class Engine:
         task.setStatus(TaskStatus.RUNNING)
         self._downloads.start(task)
         self._changed(task)
+
+    def _toggle(self, task: Task) -> None:
+        # 卡片的单个开关：在跑就暂停，否则继续。判断留在引擎（它持状态机），view 只发意图
+        (self._pause if task.status == TaskStatus.RUNNING else self._resume)(task)
 
     def _pauseAll(self) -> None:
         for task in self._tasks.values():

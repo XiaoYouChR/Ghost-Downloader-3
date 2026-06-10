@@ -4,9 +4,10 @@ import QtQuick.Layouts
 import RinUI
 
 // 下载任务页：工具栏（全部开始/暂停）、加链接、任务列表。所有动作经 backend 发命令。
-FluentPage {
+// 根用 Item 而非 FluentPage：任务列表要填满页面高度、靠 anchors 贴着页面定位；
+// FluentPage 的内容区是 Flickable 里高度由内容撑开的，给不出填充高度（会塌成 0）。
+Item {
     id: taskPage
-    title: "下载任务"
 
     property string pendingDelete: ""
     property string pendingRename: ""
@@ -85,18 +86,18 @@ FluentPage {
                     width: ListView.view.width
                     taskId: model.taskId
                     fileName: model.title
-                    status: model.status
+                    typeIcon: model.typeIcon
                     running: model.running
+                    completed: model.completed
                     progress: model.progress
                     speedText: model.speedText
+                    leftTimeText: model.leftTimeText
                     progressText: model.progressText
-                    metaText: model.meta
-                    completed: model.completed
-                    output: model.output
                     errorText: model.error
                     selectionMode: taskList.selectionMode
                     selected: model.selected
                     fileCount: model.fileCount
+                    output: model.output
                     onDeleteRequested: function(taskId) {
                         taskPage.pendingDelete = taskId
                         deleteDialog.open()
