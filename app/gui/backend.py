@@ -59,6 +59,12 @@ class Backend(QObject):
         # gui 端（如剪贴板监听）读 config 当前值；以引擎回发的为准，daemon/内存两模式都对
         return self._configMap.value(key)
 
+    @Slot(result="QVariantList")
+    def userAgentOptions(self) -> list:
+        # 设置页 UA 下拉的选项；选中后经 setConfig("activeUserAgent") 走配置缝（http pack 读 cfg.activeUserAgent）
+        from app.supports.config import cfg
+        return [{"name": ua["name"], "value": ua["value"]} for ua in cfg.userAgents.value]
+
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
         if key == "autoRun":

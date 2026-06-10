@@ -119,6 +119,23 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "下载 User-Agent"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        ComboBox {
+            Layout.preferredWidth: 240
+            textRole: "name"
+            model: backend.userAgentOptions()
+            // 初始选中当前生效的 UA（按 value 匹配）
+            Component.onCompleted: {
+                for (let i = 0; i < model.length; i++)
+                    if (model[i].value === backend.config.activeUserAgent) { currentIndex = i; break }
+            }
+            onActivated: backend.setConfig("activeUserAgent", model[currentIndex].value)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "监听剪贴板链接"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Switch { checked: backend.config.enableClipboardListener; onToggled: backend.setConfig("enableClipboardListener", checked) }

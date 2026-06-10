@@ -13,6 +13,7 @@ _CONFIG_KEYS = (
     "maxTaskNum", "downloadFolder", "preBlockNum", "autoSpeedUp", "SSLVerify",
     "customThemeMode", "enableClipboardListener", "checkUpdateAtStartUp", "autoRun",
     "enableSpeedLimitation", "speedLimitation", "maxReassignSize", "proxyServer", "enableCategory",
+    "activeUserAgent",
 )
 
 

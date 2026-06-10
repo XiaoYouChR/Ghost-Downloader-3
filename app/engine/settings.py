@@ -21,6 +21,7 @@ GLOBAL_SETTINGS = [
     Setting("autoRun", False),
     Setting("enableClipboardListener", True),
     Setting("enableCategory", False),
+    Setting("activeUserAgent", ""),  # 默认空，makeCfgBackedConfig 从 cfg 播种真值
 ]
 
 
