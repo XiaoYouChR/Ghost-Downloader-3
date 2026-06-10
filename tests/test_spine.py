@@ -281,6 +281,15 @@ def test_addTask_explicitPathBeatsCategory(spine):
     assert spine.downloads.parsedOptions[0]["path"] == "/custom"
 
 
+def test_addTaskWithOptions_emptyOptionsStillAppliesCategory(spine):
+    # 新建对话框留空目录时传空 options → 引擎照样按类型归类（对话框必须省略空 path，别传 {path:""}）。
+    spine.config.set("downloadFolder", "/dl")
+    spine.config.set("enableCategory", True)
+    spine.backend.addTaskWithOptions("https://example.com/song.mp3", {})
+
+    assert spine.downloads.parsedOptions[0]["path"] == "/dl/Audio"
+
+
 def test_primaryAction_togglesByDefault(spine):
     # 普通任务 actionKind=toggle：卡片主按钮 → primaryAction → 暂停/继续。
     spine.backend.addTask("https://example.com/movie.mp4")

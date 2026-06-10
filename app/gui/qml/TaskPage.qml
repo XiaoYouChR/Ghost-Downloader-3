@@ -195,6 +195,18 @@ Item {
                 TextField { id: addPathField; Layout.preferredWidth: 240 }
                 Button { text: "选择"; onClicked: addFolderDialog.open() }
             }
+            RowLayout {
+                Layout.fillWidth: true
+                visible: backend.config.enableCategory  // 开了分类才给选；自动=留空目录让引擎按类型归
+                Text { text: "归类"; typography: Typography.Body }
+                Item { Layout.fillWidth: true }
+                ComboBox {
+                    Layout.preferredWidth: 240
+                    textRole: "name"
+                    model: backend.categoryOptions()
+                    onActivated: addPathField.text = model[currentIndex].folder
+                }
+            }
         }
 
         FolderDialog {
@@ -203,7 +215,15 @@ Item {
             onAccepted: addPathField.text = String(selectedFolder).replace("file:///", "")
         }
 
-        onAccepted: if (addUrlField.text.trim() !== "") backend.addTaskWithOptions(addUrlField.text.trim(), {path: addPathField.text.trim()})
+        onAccepted: {
+            if (addUrlField.text.trim() === "")
+                return
+            // 留空目录就别传 path——引擎据此套配置目录并按类型自动归类；指定了才覆盖
+            const options = {}
+            if (addPathField.text.trim() !== "")
+                options.path = addPathField.text.trim()
+            backend.addTaskWithOptions(addUrlField.text.trim(), options)
+        }
         Component.onCompleted: {
             const ok = standardButton(Dialog.Ok)
             if (ok) ok.text = "下载"

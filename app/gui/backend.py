@@ -65,6 +65,17 @@ class Backend(QObject):
         from app.supports.config import cfg
         return [{"name": ua["name"], "value": ua["value"]} for ua in cfg.userAgents.value]
 
+    @Slot(result="QVariantList")
+    def categoryOptions(self) -> list:
+        # 新建对话框的归类下拉：「自动」(空目录→引擎按类型归) + 各分类(选中即下到该分类目录)
+        from app.services.category_service import categoryService
+        options = [{"name": "自动", "folder": ""}]
+        for category in categoryService.categories():
+            folder = categoryService.folderOf(category.categoryId)
+            if folder:
+                options.append({"name": category.name, "folder": folder})
+        return options
+
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
         if key == "autoRun":
