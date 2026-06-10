@@ -1,6 +1,7 @@
 from app.bases.models import TaskStatus
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
+from app.protocol.message import Event
 
 
 def test_addTask_appearsInGuiModel(spine):
@@ -21,6 +22,13 @@ def test_pause_updatesStatusInGuiModel(spine):
     spine.backend.pause(taskId)
 
     assert spine.taskList.data(index, TaskList.StatusRole) == "PAUSED"
+
+
+def test_stats_updatesGlobalSpeedText(spine):
+    # 进度泵汇总全局速度 → stats 事件 → backend 暴露给工具栏徽章。
+    spine.backend.receive(Event("stats", {"globalSpeed": 2048}))
+
+    assert spine.backend.globalSpeedText == "2.00 KB/s"
 
 
 def test_poll_pushesStatusChangeToGui(spine):

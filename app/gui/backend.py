@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from app.gui.task_list import TaskItem, TaskList
 from app.protocol.link import MemoryLink
@@ -9,10 +9,18 @@ from app.supports import utils
 class Backend(QObject):
     """gui 调它来支使后台，并把后台发来的 event 落到界面模型上。QML 经 @Slot 调用。"""
 
+    globalSpeedChanged = Signal()
+
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
         self._link = link
         self._taskList = taskList
+        self._globalSpeedText = ""
+
+    def _globalSpeed(self) -> str:
+        return self._globalSpeedText
+
+    globalSpeedText = Property(str, _globalSpeed, notify=globalSpeedChanged)
 
     @Slot()
     def attach(self) -> None:
@@ -70,3 +78,7 @@ class Backend(QObject):
             self._taskList.update(event.data["task"])
         elif event.name == "taskRemoved":
             self._taskList.remove(event.data["taskId"])
+        elif event.name == "stats":
+            speed = event.data["globalSpeed"]
+            self._globalSpeedText = f"{utils.toReadableSize(speed)}/s" if speed else ""
+            self.globalSpeedChanged.emit()

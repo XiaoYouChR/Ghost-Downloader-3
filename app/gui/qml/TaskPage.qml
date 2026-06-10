@@ -22,6 +22,11 @@ FluentPage {
             Button { text: "全部暂停"; onClicked: backend.pauseAll() }
             Button { text: "选择"; onClicked: taskList.setSelectionMode(true) }
             Item { Layout.fillWidth: true }
+            Text {
+                text: backend.globalSpeedText
+                visible: backend.globalSpeedText !== ""
+                opacity: 0.8
+            }
             TextField {
                 Layout.preferredWidth: 200
                 placeholderText: "搜索任务"

@@ -21,6 +21,7 @@ class Engine:
             self._tasks[task.taskId] = task
         self._attached = False
         self._snapshots: dict[str, tuple] = {}
+        self._globalSpeed = -1
         # 进度泵：下载在后台推进，定时轮询有变化的任务推给 gui。只在 attach 期间转（省内存）
         self._pump = QTimer()
         self._pump.setInterval(500)
@@ -51,12 +52,17 @@ class Engine:
         self._pump.start()
 
     def poll(self) -> None:
+        total = 0
         for task in self._tasks.values():
             _, speed, received = task.currentSnapshot()
+            total += speed
             snapshot = (task.status, received, speed)
             if self._snapshots.get(task.taskId) != snapshot:
                 self._snapshots[task.taskId] = snapshot
                 self._changed(task)
+        if total != self._globalSpeed:
+            self._globalSpeed = total
+            self._emit(Event("stats", {"globalSpeed": total}))
 
     def _addTask(self, url: str) -> None:
         self._downloads.run(self._downloads.parse(url), self._onParsed)
