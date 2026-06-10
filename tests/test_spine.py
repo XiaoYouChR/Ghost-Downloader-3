@@ -31,10 +31,16 @@ def test_pause_updatesStatusInGuiModel(spine):
 
 def test_config_event_updatesBackendProperties(spine):
     # engine 下发 config → backend 属性更新 → 设置页绑定显示。
-    spine.backend.receive(Event("config", {"values": {"maxTaskNum": 8, "downloadFolder": "/dl"}}))
+    spine.backend.receive(Event("config", {"values": {
+        "maxTaskNum": 8, "downloadFolder": "/dl", "preBlockNum": 16,
+        "autoSpeedUp": False, "SSLVerify": False,
+    }}))
 
     assert spine.backend.maxTaskNum == 8
     assert spine.backend.downloadFolder == "/dl"
+    assert spine.backend.preBlockNum == 16
+    assert spine.backend.autoSpeedUp is False
+    assert spine.backend.sslVerify is False
 
 
 def test_stats_updatesGlobalSpeedText(spine):

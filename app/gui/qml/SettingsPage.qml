@@ -22,6 +22,38 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "每任务分块数"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        SpinBox {
+            from: 1
+            to: 256
+            value: backend.preBlockNum
+            onValueModified: backend.setConfig("preBlockNum", value)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "自动提速"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch {
+            checked: backend.autoSpeedUp
+            onToggled: backend.setConfig("autoSpeedUp", checked)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "校验 SSL 证书"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch {
+            checked: backend.sslVerify
+            onToggled: backend.setConfig("SSLVerify", checked)
+        }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "下载目录"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Text { text: backend.downloadFolder; opacity: 0.7 }

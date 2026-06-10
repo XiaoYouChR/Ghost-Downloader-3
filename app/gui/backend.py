@@ -56,6 +56,21 @@ class Backend(QObject):
 
     downloadFolder = Property(str, _downloadFolder, notify=configChanged)
 
+    def _preBlockNum(self) -> int:
+        return self._config.get("preBlockNum", 8)
+
+    preBlockNum = Property(int, _preBlockNum, notify=configChanged)
+
+    def _autoSpeedUp(self) -> bool:
+        return self._config.get("autoSpeedUp", True)
+
+    autoSpeedUp = Property(bool, _autoSpeedUp, notify=configChanged)
+
+    def _sslVerify(self) -> bool:
+        return self._config.get("SSLVerify", True)
+
+    sslVerify = Property(bool, _sslVerify, notify=configChanged)
+
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
         self._link.toEngine(Command("setConfig", {"key": key, "value": value}))
