@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+from PySide6.QtCore import QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 from app.protocol.framing import Unframer, frame
@@ -46,13 +47,24 @@ class SocketClient:
         self._socket = QLocalSocket()
         self._unframer = Unframer()
         self._gui: Callable[[Event], None] | None = None
+        self._retries = 0
         self._socket.readyRead.connect(self._onReadyRead)
+        self._socket.errorOccurred.connect(self._onError)
 
     def connect(self, gui: Callable[[Event], None]) -> None:
         self._gui = gui
 
+    def whenConnected(self, callback: Callable[[], None]) -> None:
+        self._socket.connected.connect(callback)
+
     def connectToServer(self) -> None:
         self._socket.connectToServer(self._name)
+
+    def _onError(self, _error) -> None:
+        # daemon 可能还在启动（加载 pack 要几秒），稍后重连，直到连上或放弃
+        if self._retries < 30:
+            self._retries += 1
+            QTimer.singleShot(300, self.connectToServer)
 
     def toEngine(self, command: Command) -> None:
         self._socket.write(frame(command.toBytes()))

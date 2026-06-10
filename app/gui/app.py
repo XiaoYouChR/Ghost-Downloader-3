@@ -1,51 +1,86 @@
+import os
+import subprocess
 import sys
 from pathlib import Path
 
+from PySide6.QtNetwork import QLocalSocket
 from PySide6.QtWidgets import QApplication
 from RinUI import RinUIWindow
 
+from app.engine.daemon import SOCKET_NAME
 from app.engine.downloads import Downloads
 from app.engine.engine import Engine
 from app.engine.store import Store
 from app.gui.backend import Backend
 from app.gui.task_list import TaskFilter, TaskList
 from app.protocol.link import MemoryLink
+from app.protocol.socket_link import SocketClient
 
 QML_DIR = Path(__file__).parent / "qml"
 
 
-class MainWindow(RinUIWindow):
-    """Ghost Downloader 的 gui 壳：建好 gui↔engine 脉，把 backend / taskList 暴露给 QML。"""
+def _ensureDaemon() -> None:
+    # 已在跑就不重复起；否则 detached 启动，让它在 gui 退出后继续下载（省内存）
+    probe = QLocalSocket()
+    probe.connectToServer(SOCKET_NAME)
+    if probe.waitForConnected(200):
+        probe.disconnectFromServer()
+        return
+    flags = subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
+    subprocess.Popen(
+        [sys.executable, "-m", "app.engine.daemon"],
+        creationflags=flags,
+        start_new_session=sys.platform != "win32",
+    )
 
-    def __init__(self) -> None:
+
+class MainWindow(RinUIWindow):
+    """Ghost Downloader 的 gui 壳。默认同进程跑 engine（MemoryLink）；
+    GD_ENGINE=daemon 时作瘦客户端连独立 daemon 进程（SocketClient）。"""
+
+    def __init__(self, daemon: bool = False) -> None:
         super().__init__()
-        self._link = MemoryLink()
-        # 同进程的下载 engine（缝先行）；注意它与 RinUI 的 self.engine（QML 引擎）不是一回事
-        self._engine = Engine(self._link, Downloads(), Store())
         self._taskList = TaskList()
         self._taskFilter = TaskFilter(self._taskList)
-        self._backend = Backend(self._link, self._taskList)
-        self._link.connect(self._engine.receive, self._backend.receive)
+
+        if daemon:
+            _ensureDaemon()
+            self._link = SocketClient(SOCKET_NAME)
+            self._backend = Backend(self._link, self._taskList)
+            self._link.connect(self._backend.receive)
+            self._link.whenConnected(self._backend.attach)
+            self._link.connectToServer()
+        else:
+            self._link = MemoryLink()
+            self._engine = Engine(self._link, Downloads(), Store())
+            self._backend = Backend(self._link, self._taskList)
+            self._link.connect(self._engine.receive, self._backend.receive)
+            self._backend.attach()
 
         context = self.engine.rootContext()
         context.setContextProperty("backend", self._backend)
         context.setContextProperty("taskFilter", self._taskFilter)
         context.setContextProperty("taskList", self._taskList)
-
         self.load(str(QML_DIR / "Main.qml"))
-        self._backend.attach()
 
 
 def main() -> int:
     app = QApplication(sys.argv)
-    from app.services.core_service import coreService
-    from app.services.feature_service import featureService
+    daemon = os.environ.get("GD_ENGINE") == "daemon"
+    if not daemon:
+        from app.services.core_service import coreService
+        from app.services.feature_service import featureService
 
-    coreService.start()
-    featureService.load(None)  # 加载所有 pack 的 matches/parse（跳过 UI setup）
-    window = MainWindow()
+        coreService.start()
+        featureService.load(None)
+
+    window = MainWindow(daemon)
     code = app.exec()
-    coreService.stop()
+
+    if not daemon:
+        from app.services.core_service import coreService
+
+        coreService.stop()
     return code
 
 
