@@ -46,6 +46,6 @@ python -m pytest -q
 
 ## 已做 / 待办
 
-**已做**：多协议下载（http/bt/m3u8/ftp 路由）、实时进度/速度/大小、持久化、搜索/排序/多选+批量删/删除确认/重命名/打开文件/多文件选择/清空已完成/SHA-256 校验/失败显错/设置页（并发数·下载目录）/BT·M3U8 专属展示、**拆真进程（headless daemon + socket）**。
+**已做**：多协议下载（http/bt/m3u8/ftp 路由）、实时进度/速度/大小、持久化、搜索/排序/多选+批量删/删除确认/重命名/打开文件/多文件选择/清空已完成/SHA-256 校验/失败显错/设置页（并发数·下载目录）/BT·M3U8 专属展示、**拆真进程（headless daemon + socket）**、**daemon 掉线自动重连+重启**（崩/退后 gui 回到“连接中”并拉起新 daemon，自动连回重新 attach）。
 
-**待办**：config 全量迁移（cfg→`app/engine/config.py` 的 Config 存储，架构决策）、Android buildozer 对接 daemon、daemon 生命周期/断连重连策略、窗口浮层（update/tray/splash）、`coreService.stop()` teardown 噪声。
+**待办**：config 全量迁移（cfg→`app/engine/config.py` 的 Config 存储，架构决策）、Android buildozer 对接 daemon、daemon 生命周期（何时停）、窗口浮层（update/tray/splash）、`coreService.stop()` teardown 噪声。
