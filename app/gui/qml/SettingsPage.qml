@@ -15,7 +15,7 @@ FluentPage {
         SpinBox {
             from: 1
             to: 64
-            value: backend.maxTaskNum
+            value: backend.config.maxTaskNum
             onValueModified: backend.setConfig("maxTaskNum", value)
         }
     }
@@ -27,7 +27,7 @@ FluentPage {
         SpinBox {
             from: 1
             to: 256
-            value: backend.preBlockNum
+            value: backend.config.preBlockNum
             onValueModified: backend.setConfig("preBlockNum", value)
         }
     }
@@ -37,7 +37,7 @@ FluentPage {
         Text { text: "自动提速"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Switch {
-            checked: backend.autoSpeedUp
+            checked: backend.config.autoSpeedUp
             onToggled: backend.setConfig("autoSpeedUp", checked)
         }
     }
@@ -47,7 +47,7 @@ FluentPage {
         Text { text: "校验 SSL 证书"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Switch {
-            checked: backend.sslVerify
+            checked: backend.config.SSLVerify
             onToggled: backend.setConfig("SSLVerify", checked)
         }
     }
@@ -56,36 +56,36 @@ FluentPage {
         Layout.fillWidth: true
         Text { text: "主题"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
-        RadioButton { text: "浅色"; checked: backend.themeMode === "Light"; onClicked: backend.setConfig("customThemeMode", "Light") }
-        RadioButton { text: "深色"; checked: backend.themeMode === "Dark"; onClicked: backend.setConfig("customThemeMode", "Dark") }
-        RadioButton { text: "跟随系统"; checked: backend.themeMode === "System"; onClicked: backend.setConfig("customThemeMode", "System") }
+        RadioButton { text: "浅色"; checked: backend.config.customThemeMode === "Light"; onClicked: backend.setConfig("customThemeMode", "Light") }
+        RadioButton { text: "深色"; checked: backend.config.customThemeMode === "Dark"; onClicked: backend.setConfig("customThemeMode", "Dark") }
+        RadioButton { text: "跟随系统"; checked: backend.config.customThemeMode === "System"; onClicked: backend.setConfig("customThemeMode", "System") }
     }
 
     RowLayout {
         Layout.fillWidth: true
         Text { text: "监听剪贴板链接"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
-        Switch { checked: backend.clipboardListener; onToggled: backend.setConfig("enableClipboardListener", checked) }
+        Switch { checked: backend.config.enableClipboardListener; onToggled: backend.setConfig("enableClipboardListener", checked) }
     }
 
     RowLayout {
         Layout.fillWidth: true
         Text { text: "启动时检查更新"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
-        Switch { checked: backend.checkUpdate; onToggled: backend.setConfig("checkUpdateAtStartUp", checked) }
+        Switch { checked: backend.config.checkUpdateAtStartUp; onToggled: backend.setConfig("checkUpdateAtStartUp", checked) }
     }
 
     RowLayout {
         Layout.fillWidth: true
         Text { text: "开机自启"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
-        Switch { checked: backend.autoRun; onToggled: backend.setConfig("autoRun", checked) }
+        Switch { checked: backend.config.autoRun; onToggled: backend.setConfig("autoRun", checked) }
     }
 
     RowLayout {
         Layout.fillWidth: true
         Text { text: "下载目录"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
-        Text { text: backend.downloadFolder; opacity: 0.7 }
+        Text { text: backend.config.downloadFolder; opacity: 0.7 }
     }
 }

@@ -30,17 +30,18 @@ def test_pause_updatesStatusInGuiModel(spine):
 
 
 def test_config_event_updatesBackendProperties(spine):
-    # engine 下发 config → backend 属性更新 → 设置页绑定显示。
+    # engine 下发 config → 落进 backend.config 这个 PropertyMap → QML 反射式绑定显示。
     spine.backend.receive(Event("config", {"values": {
         "maxTaskNum": 8, "downloadFolder": "/dl", "preBlockNum": 16,
         "autoSpeedUp": False, "SSLVerify": False,
     }}))
 
-    assert spine.backend.maxTaskNum == 8
-    assert spine.backend.downloadFolder == "/dl"
-    assert spine.backend.preBlockNum == 16
-    assert spine.backend.autoSpeedUp is False
-    assert spine.backend.sslVerify is False
+    config = spine.backend.config
+    assert config.value("maxTaskNum") == 8
+    assert config.value("downloadFolder") == "/dl"
+    assert config.value("preBlockNum") == 16
+    assert config.value("autoSpeedUp") is False
+    assert config.value("SSLVerify") is False
 
 
 def test_stats_updatesGlobalSpeedText(spine):

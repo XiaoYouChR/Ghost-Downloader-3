@@ -1,4 +1,5 @@
 from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtQml import QQmlPropertyMap
 
 from app.gui.file_selection import FileSelection
 from app.gui.task_list import TaskItem, TaskList
@@ -17,7 +18,6 @@ class Backend(QObject):
     hashReady = Signal()
     connectedChanged = Signal()
     taskAddFailed = Signal(str)
-    taskAddFailed = Signal(str)
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -26,9 +26,14 @@ class Backend(QObject):
         self._globalSpeedText = ""
         self._filesModel: FileSelection | None = None
         self._editingTaskId = ""
-        self._config: dict = {}
+        self._configMap = QQmlPropertyMap(self)  # QML 反射式读 backend.config.<key>
         self._hashText = ""
         self._connected = False
+
+    def _config(self) -> QObject:
+        return self._configMap
+
+    config = Property(QObject, _config, constant=True)
 
     def _isConnected(self) -> bool:
         return self._connected
@@ -45,51 +50,6 @@ class Backend(QObject):
         self._hashText = ""
         self.hashReady.emit()
         self._link.toEngine(Command("verifyHash", {"taskId": taskId}))
-
-    def _maxTaskNum(self) -> int:
-        return self._config.get("maxTaskNum", 1)
-
-    maxTaskNum = Property(int, _maxTaskNum, notify=configChanged)
-
-    def _downloadFolder(self) -> str:
-        return self._config.get("downloadFolder", "")
-
-    downloadFolder = Property(str, _downloadFolder, notify=configChanged)
-
-    def _preBlockNum(self) -> int:
-        return self._config.get("preBlockNum", 8)
-
-    preBlockNum = Property(int, _preBlockNum, notify=configChanged)
-
-    def _autoSpeedUp(self) -> bool:
-        return self._config.get("autoSpeedUp", True)
-
-    autoSpeedUp = Property(bool, _autoSpeedUp, notify=configChanged)
-
-    def _sslVerify(self) -> bool:
-        return self._config.get("SSLVerify", True)
-
-    sslVerify = Property(bool, _sslVerify, notify=configChanged)
-
-    def _themeMode(self) -> str:
-        return self._config.get("customThemeMode", "System")
-
-    themeMode = Property(str, _themeMode, notify=configChanged)
-
-    def _clipboardListener(self) -> bool:
-        return self._config.get("enableClipboardListener", False)
-
-    clipboardListener = Property(bool, _clipboardListener, notify=configChanged)
-
-    def _checkUpdate(self) -> bool:
-        return self._config.get("checkUpdateAtStartUp", True)
-
-    checkUpdate = Property(bool, _checkUpdate, notify=configChanged)
-
-    def _autoRun(self) -> bool:
-        return self._config.get("autoRun", False)
-
-    autoRun = Property(bool, _autoRun, notify=configChanged)
 
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
@@ -199,7 +159,8 @@ class Backend(QObject):
             self._globalSpeedText = f"{utils.toReadableSize(speed)}/s" if speed else ""
             self.globalSpeedChanged.emit()
         elif event.name == "config":
-            self._config.update(event.data["values"])
+            for key, value in event.data["values"].items():
+                self._configMap.insert(key, value)  # 反射式：QML 绑 backend.config.<key> 自动刷新
             self.configChanged.emit()
         elif event.name == "hashResult":
             self._hashText = event.data["hash"]

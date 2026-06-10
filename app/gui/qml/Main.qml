@@ -14,7 +14,7 @@ FluentWindow {
     Component.onCompleted: {
         Theme.setBackdropEffect("mica")
         Theme.setThemeColor("#0078D4")     // 对齐 GD 跟随系统的蓝，而非 RinUI 默认紫
-        applyTheme(backend.themeMode)
+        applyTheme(backend.config.customThemeMode)
     }
 
     // cfg 里的主题模式（Light/Dark/System）到达或被设置页改动时应用；System 映射到 RinUI 的 Auto
@@ -23,7 +23,7 @@ FluentWindow {
     }
     Connections {
         target: backend
-        function onConfigChanged() { applyTheme(backend.themeMode) }
+        function onConfigChanged() { applyTheme(backend.config.customThemeMode) }
     }
 
     defaultPage: Qt.resolvedUrl("TaskPage.qml")
