@@ -131,7 +131,7 @@ class FeatureService:
 
         return [pack for pack in ordered if pack["name"] not in skipped]
 
-    def _loadPack(self, packInfo: dict, mainWindow: "MainWindow"):
+    def _loadPack(self, packInfo: dict, mainWindow: "MainWindow", withSetup: bool = True):
         try:
             packageName = packInfo["name"]
             moduleName = packageName
@@ -181,7 +181,9 @@ class FeatureService:
                 if settingPage is not None:
                     packConfig.setupSettings(settingPage)
 
-            packInstance.setup(mainWindow)
+            # setup 是 GUI 侧动作（加界面/文件关联）；engine 进程 headless，只要 matches/parse
+            if withSetup:
+                packInstance.setup(mainWindow)
             self._packs[packInfo["name"]] = packInstance
 
             logger.success("成功加载 FeaturePack: {}", packInfo["name"])
@@ -276,7 +278,7 @@ class FeatureService:
                 logger.opt(exception=e).error("获取 FeaturePack 文件类型失败 {}", packName)
         return types
 
-    def load(self, mainWindow: "MainWindow"):
+    def load(self, mainWindow: "MainWindow", withSetup: bool = True):
         logger.info("开始加载 FeaturePacks")
 
         featurePacks = self._discover()
@@ -299,7 +301,7 @@ class FeatureService:
 
         loadedCount = 0
         for packInfo in featurePacks:
-            if self._loadPack(packInfo, mainWindow):
+            if self._loadPack(packInfo, mainWindow, withSetup):
                 loadedCount += 1
 
         if loadedCount == len(featurePacks):
