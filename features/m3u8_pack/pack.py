@@ -255,6 +255,11 @@ class M3U8Pack(FeaturePack):
     def resultCard(self, task, parent=None):
         return M3U8ResultCard(task, parent)
 
+    def meta(self, task) -> str:
+        kind = "DASH" if getattr(task, "manifestType", "") == "mpd" else "HLS"
+        mode = "直播" if getattr(task, "isLive", False) else "点播"
+        return f"{kind} · {mode}"
+
     def setup(self, mainWindow):
         if m3u8Config.associateFileTypes.value:
             file_association.register(self.fileTypes())
