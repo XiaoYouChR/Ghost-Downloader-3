@@ -1,3 +1,5 @@
+from PySide6.QtTest import QSignalSpy
+
 from app.bases.models import TaskStatus
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
@@ -50,6 +52,29 @@ def test_poll_pushesStatusChangeToGui(spine):
     spine.engine.poll()
 
     assert spine.taskList.data(index, TaskList.StatusRole) == "COMPLETED"
+
+
+def test_poll_silentWhenUnchanged(spine):
+    # 进度泵去重：快照没变就不发 taskChanged（省 CPU，不刷 gui）。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    spine.engine.poll()  # 首轮记下快照
+
+    spy = QSignalSpy(spine.taskList.dataChanged)
+    spine.engine.poll()  # 快照未变
+
+    assert spy.count() == 0
+
+
+def test_completedTask_showsFullProgress(spine):
+    # 完成态进度归 100（即便末段字节计数有差）。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+
+    spine.engine._tasks[taskId].setStatus(TaskStatus.COMPLETED)
+    spine.engine.poll()
+
+    assert spine.taskList.data(index, TaskList.ProgressRole) == 100.0
 
 
 def test_addTask_startsDownload(spine):
