@@ -255,13 +255,13 @@ class M3U8Pack(FeaturePack):
     def resultCard(self, task, parent=None):
         return M3U8ResultCard(task, parent)
 
-    def meta(self, task) -> str:
+    def cardChips(self, task) -> list[str]:
         kind = "DASH" if getattr(task, "manifestType", "") == "mpd" else "HLS"
         if not getattr(task, "isLive", False):
-            return f"{kind} · 点播"
+            return [f"{kind} · 点播"]
         stage = task.stages[0] if task.stages else None
         recording = "等待中" if getattr(stage, "liveStatus", "") == "Waiting" else "录制中"
-        return f"{kind} · 直播 · {recording}"
+        return [f"{kind} · 直播 · {recording}"]
 
     def setup(self, mainWindow):
         if m3u8Config.associateFileTypes.value:

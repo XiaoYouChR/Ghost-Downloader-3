@@ -93,6 +93,7 @@ Item {
                     speedText: model.speedText
                     leftTimeText: model.leftTimeText
                     progressText: model.progressText
+                    chips: model.chips
                     errorText: model.error
                     selectionMode: taskList.selectionMode
                     selected: model.selected

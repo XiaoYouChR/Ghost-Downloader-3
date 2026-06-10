@@ -82,8 +82,9 @@ class TaskItem:
         return self._task.get("error", "")
 
     @property
-    def metaText(self) -> str:
-        return self._task.get("meta", "")
+    def chips(self) -> list:
+        # pack 专属展示串列表（BT 的 Peers/Seeds、M3U8 的直播态）；引擎算好过缝，核心原样渲染
+        return self._task.get("chips") or []
 
     @property
     def typeIcon(self) -> str:
@@ -134,7 +135,7 @@ class TaskList(QAbstractListModel):
     SelectedRole = Qt.ItemDataRole.UserRole + 11
     FileCountRole = Qt.ItemDataRole.UserRole + 12
     ErrorRole = Qt.ItemDataRole.UserRole + 13
-    MetaRole = Qt.ItemDataRole.UserRole + 14
+    ChipsRole = Qt.ItemDataRole.UserRole + 14
     TypeIconRole = Qt.ItemDataRole.UserRole + 15
     LeftTimeTextRole = Qt.ItemDataRole.UserRole + 16
 
@@ -154,7 +155,7 @@ class TaskList(QAbstractListModel):
         SelectedRole: ("selected", None),
         FileCountRole: ("fileCount", "fileCount"),
         ErrorRole: ("error", "errorText"),
-        MetaRole: ("meta", "metaText"),
+        ChipsRole: ("chips", "chips"),
         TypeIconRole: ("typeIcon", "typeIcon"),
         LeftTimeTextRole: ("leftTimeText", "leftTimeText"),
     }

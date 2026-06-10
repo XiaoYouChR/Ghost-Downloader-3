@@ -27,8 +27,8 @@ class FakeDownloads:
     def stop(self, task: Task) -> None:
         self.stopped.append(task)
 
-    def meta(self, task: Task) -> str:
-        return ""
+    def cardChips(self, task: Task) -> list[str]:
+        return []
 
     def verify(self, task: Task, callback) -> None:
         callback("test-hash", None)

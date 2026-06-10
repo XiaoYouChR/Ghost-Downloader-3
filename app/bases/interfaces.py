@@ -50,9 +50,10 @@ class FeaturePack:
     def fileTypes(self) -> list[FileType]:
         return []
 
-    def meta(self, task: "Task") -> str:
-        # pack 专属的一行展示串（如 BT 的 Peers/Seeds）；过缝进 wire，gui 卡片直接显示
-        return ""
+    def cardChips(self, task: "Task") -> list[str]:
+        # pack 专属的展示串列表（如 BT 的 Peers/Seeds、↑上传）；过缝进 wire，gui 卡片用 Repeater 渲染。
+        # 核心卡不认识具体 pack，只渲染这些 chip——pack 想加专属展示就实现这个。
+        return []
 
     def setup(self, mainWindow: "MainWindow"):
         pass

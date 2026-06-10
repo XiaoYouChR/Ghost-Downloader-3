@@ -31,9 +31,9 @@ class Downloads:
     def stop(self, task: Task) -> None:
         coreService.stopTask(task)
 
-    def meta(self, task: Task) -> str:
+    def cardChips(self, task: Task) -> list[str]:
         pack = featureService.packOf(task)
-        return pack.meta(task) if pack is not None else ""
+        return pack.cardChips(task) if pack is not None else []
 
     def verify(self, task: Task, callback) -> None:
         coreService.runCoroutine(self._hash(task.outputFolder), callback)

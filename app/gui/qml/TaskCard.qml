@@ -18,6 +18,7 @@ Frame {
     property string speedText
     property string leftTimeText
     property string progressText
+    property var chips: []
     property string errorText
     property bool selectionMode
     property bool selected
@@ -132,6 +133,15 @@ Frame {
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         typography: Typography.Caption; text: card.progressText
+                        color: Theme.currentTheme.colors.textSecondaryColor
+                    }
+                }
+                // pack 专属 chips（BT 的 Peers/Seeds·↑上传、M3U8 的直播态）——核心只渲染，不认识具体 pack
+                Repeater {
+                    model: card.chips
+                    delegate: Text {
+                        typography: Typography.Caption
+                        text: modelData
                         color: Theme.currentTheme.colors.textSecondaryColor
                     }
                 }

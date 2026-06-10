@@ -38,10 +38,11 @@ def test_errorText_fromWire():
     assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).errorText == ""
 
 
-def test_metaText_fromWire():
-    item = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "meta": "Peers 5 / Seeds 2"})
-    assert item.metaText == "Peers 5 / Seeds 2"
-    assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).metaText == ""
+def test_chips_fromWire():
+    # pack 专属展示由引擎算成 chip 列表过缝；gui 原样转给卡片的 Repeater，核心不认识具体 pack。
+    item = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "chips": ["Peers 5 / Seeds 2", "↑ 1.00 KB/s"]})
+    assert item.chips == ["Peers 5 / Seeds 2", "↑ 1.00 KB/s"]
+    assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).chips == []
 
 
 def test_typeIcon_picksByExtension():

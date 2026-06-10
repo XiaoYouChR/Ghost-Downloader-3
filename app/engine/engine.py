@@ -163,7 +163,7 @@ class Engine:
         data["speed"] = speed
         data["received"] = received
         data["error"] = task.lastError
-        data["meta"] = self._downloads.meta(task)  # pack 专属展示串（BT 的 Peers/Seeds 等）
+        data["chips"] = self._downloads.cardChips(task)  # pack 专属展示串列表（BT 的 Peers/Seeds 等）
         return data
 
     def _emit(self, event: Event) -> None:
