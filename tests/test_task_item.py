@@ -42,3 +42,30 @@ def test_metaText_fromWire():
     item = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "meta": "Peers 5 / Seeds 2"})
     assert item.metaText == "Peers 5 / Seeds 2"
     assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).metaText == ""
+
+
+def test_typeIcon_picksByExtension():
+    def icon(name: str) -> str:
+        return TaskItem({"taskId": "x", "title": name, "status": "RUNNING"}).typeIcon
+
+    assert icon("movie.mp4") == "ic_fluent_video_clip_20_filled"
+    assert icon("pack.zip") == "ic_fluent_folder_zip_20_filled"
+    assert icon("song.flac") == "ic_fluent_music_note_2_20_filled"
+    assert icon("setup.exe") == "ic_fluent_window_apps_20_filled"
+
+
+def test_typeIcon_defaultsToDocument():
+    item = TaskItem({"taskId": "x", "title": "README", "status": "RUNNING"})
+    assert item.typeIcon == "ic_fluent_document_20_filled"
+
+
+def test_leftTimeText_estimatesFromSpeed():
+    item = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "fileSize": 10000, "received": 2000, "speed": 1000})
+    assert item.leftTimeText == "8s"  # 剩余 8000 / 1000B每秒 = 8 秒
+
+
+def test_leftTimeText_dashWhenNotRunningOrStalled():
+    paused = TaskItem({"taskId": "x", "title": "t", "status": "PAUSED", "fileSize": 10000, "received": 2000, "speed": 0})
+    stalled = TaskItem({"taskId": "x", "title": "t", "status": "RUNNING", "fileSize": 10000, "received": 2000, "speed": 0})
+    assert paused.leftTimeText == "--"
+    assert stalled.leftTimeText == "--"
