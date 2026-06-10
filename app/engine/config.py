@@ -21,10 +21,10 @@ class Config(QObject):
 
     changed = Signal(str)
 
-    def __init__(self, settings: list[Setting], path: Path) -> None:
+    def __init__(self, settings: list[Setting], path: Path | None = None) -> None:
         super().__init__()
         self._settings = {setting.key: setting for setting in settings}
-        self._path = path
+        self._path = path  # None = 内存态（迁移共存期由旧 cfg 落盘，store 只作引擎的 typed 接口）
         self._values: dict[str, Any] = {}
 
     def value(self, key: str) -> Any:
@@ -42,9 +42,14 @@ class Config(QObject):
         self.save()
         self.changed.emit(key)
 
+    def seed(self, values: dict[str, Any]) -> None:
+        # 从外部权威（迁移期的旧 cfg）一次性播种现值，不校验、不落盘、不发信号
+        self._values.update({key: values[key] for key in values if key in self._settings})
+
     def load(self) -> None:
-        if self._path.exists():
+        if self._path is not None and self._path.exists():
             self._values = loads(self._path.read_bytes())
 
     def save(self) -> None:
-        self._path.write_bytes(dumps(self._values))
+        if self._path is not None:
+            self._path.write_bytes(dumps(self._values))

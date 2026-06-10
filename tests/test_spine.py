@@ -1,7 +1,9 @@
 from PySide6.QtTest import QSignalSpy
 
 from app.bases.models import TaskStatus
+from app.engine.config import Config
 from app.engine.engine import Engine
+from app.engine.settings import GLOBAL_SETTINGS
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
 from app.protocol.link import MemoryLink
@@ -42,6 +44,14 @@ def test_config_event_updatesBackendProperties(spine):
     assert config.value("preBlockNum") == 16
     assert config.value("autoSpeedUp") is False
     assert config.value("SSLVerify") is False
+
+
+def test_setConfig_writesToInjectedConfig(spine):
+    # 引擎经注入的 Config 边界存配置（不碰全局 cfg）；改动回流到 backend.config 给设置页。
+    spine.backend.setConfig("preBlockNum", 32)
+
+    assert spine.config.value("preBlockNum") == 32
+    assert spine.backend.config.value("preBlockNum") == 32
 
 
 def test_stats_updatesGlobalSpeedText(spine):
@@ -242,7 +252,7 @@ def test_addTask_parseFailure_notifiesGui(qapp):
     link = MemoryLink()
     taskList = TaskList()
     backend = Backend(link, taskList)
-    engine = Engine(link, FakeDownloads(parseError="无法解析该链接"), FakeStore())
+    engine = Engine(link, FakeDownloads(parseError="无法解析该链接"), FakeStore(), Config(GLOBAL_SETTINGS))
     link.connect(engine.receive, backend.receive)
     backend.attach()
 

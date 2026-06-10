@@ -1,5 +1,7 @@
 from app.bases.models import Task, TaskStatus
+from app.engine.config import Config
 from app.engine.engine import Engine
+from app.engine.settings import GLOBAL_SETTINGS
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
 from app.protocol.link import MemoryLink
@@ -8,7 +10,7 @@ from fakes import FakeDownloads, FakeStore
 
 def _wire(store: FakeStore):
     link = MemoryLink()
-    engine = Engine(link, FakeDownloads(), store)
+    engine = Engine(link, FakeDownloads(), store, Config(GLOBAL_SETTINGS))
     taskList = TaskList()
     backend = Backend(link, taskList)
     link.connect(engine.receive, backend.receive)

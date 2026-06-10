@@ -10,6 +10,7 @@ from RinUI import RinUIWindow
 from app.engine.daemon import SOCKET_NAME
 from app.engine.downloads import Downloads
 from app.engine.engine import Engine
+from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.gui.backend import Backend
 from app.gui.task_list import TaskFilter, TaskList
@@ -53,7 +54,7 @@ class MainWindow(RinUIWindow):
             self._link.connectToServer()
         else:
             self._link = MemoryLink()
-            self._engine = Engine(self._link, Downloads(), Store())
+            self._engine = Engine(self._link, Downloads(), Store(), makeCfgBackedConfig())
             self._backend = Backend(self._link, self._taskList)
             self._link.connect(self._engine.receive, self._backend.receive)
             self._backend.attach()

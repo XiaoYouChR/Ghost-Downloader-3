@@ -4,6 +4,7 @@ from PySide6.QtCore import QCoreApplication
 
 from app.engine.downloads import Downloads
 from app.engine.engine import Engine
+from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.protocol.socket_link import SocketServer
 from app.services.core_service import coreService
@@ -19,7 +20,7 @@ def main() -> int:
     featureService.load(None, withSetup=False)  # headless：只要 matches/parse，不跑 GUI setup
 
     server = SocketServer(SOCKET_NAME)
-    engine = Engine(server, Downloads(), Store())
+    engine = Engine(server, Downloads(), Store(), makeCfgBackedConfig())
     server.connect(engine.receive)
     server.listen()
     print(f"engine daemon listening on {SOCKET_NAME}", flush=True)

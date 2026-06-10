@@ -6,9 +6,7 @@ from PySide6.QtCore import QTimer
 from app.bases.models import Task, TaskStatus
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
-from app.supports.config import cfg
-
-# 设置页目前直接读写真 cfg（同进程缝先行）；Config 存储是日后拆进程/headless 的目标
+# gui 设置页读写的 config 键。引擎经注入的 Config 边界存取，不碰全局 cfg（脱 qfluentwidgets，Android-ready）
 _CONFIG_KEYS = (
     "maxTaskNum", "downloadFolder", "preBlockNum", "autoSpeedUp", "SSLVerify",
     "customThemeMode", "enableClipboardListener", "checkUpdateAtStartUp", "autoRun",
@@ -18,12 +16,13 @@ _CONFIG_KEYS = (
 
 class Engine:
     """后台本体：收 command、解析建任务、真起下载、回发 event。没有 gui attach 时不发事件（省内存）。
-    downloads 是与下载子系统的边界（默认真接 coreService+http pack，测试注入 fake 离线验证）。"""
+    downloads/store/config 都是可注入边界（默认真接，测试注入 fake/内存版离线验证）。"""
 
-    def __init__(self, link: MemoryLink, downloads, store) -> None:
+    def __init__(self, link: MemoryLink, downloads, store, config) -> None:
         self._link = link
         self._downloads = downloads
         self._store = store
+        self._config = config
         self._tasks: dict[str, Task] = {}
         for task in store.load():
             if task.status not in (TaskStatus.COMPLETED, TaskStatus.FAILED):
@@ -71,7 +70,7 @@ class Engine:
     def _attach(self) -> None:
         self._attached = True
         self._emit(Event("snapshot", {"tasks": [self._toWire(task) for task in self._tasks.values()]}))
-        self._emit(Event("config", {"values": {key: getattr(cfg, key).value for key in _CONFIG_KEYS}}))
+        self._emit(Event("config", {"values": {key: self._config.value(key) for key in _CONFIG_KEYS}}))
         self._pump.start()
 
     def poll(self) -> None:
@@ -138,8 +137,8 @@ class Engine:
         self._changed(task)
 
     def _setConfig(self, key: str, value) -> None:
-        getattr(cfg, key).value = value
-        self._emit(Event("config", {"values": {key: getattr(cfg, key).value}}))
+        self._config.set(key, value)
+        self._emit(Event("config", {"values": {key: self._config.value(key)}}))
 
     def _rename(self, taskId: str, title: str) -> None:
         task = self._tasks[taskId]
