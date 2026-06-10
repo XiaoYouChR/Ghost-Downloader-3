@@ -3,8 +3,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from PySide6.QtGui import QIcon
 from PySide6.QtNetwork import QLocalSocket
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 from RinUI import RinUIWindow
 
 from app.engine.daemon import SOCKET_NAME
@@ -21,6 +22,7 @@ from app.protocol.socket_link import SocketClient
 from app.supports.config import cfg
 
 QML_DIR = Path(__file__).parent / "qml"
+LOGO = Path(__file__).parent.parent / "assets" / "logo.png"
 
 
 def _daemonReachable() -> bool:
@@ -85,6 +87,34 @@ class MainWindow(RinUIWindow):
         context.setContextProperty("taskFilter", self._taskFilter)
         context.setContextProperty("taskList", self._taskList)
         self.load(str(QML_DIR / "Main.qml"))
+        self._rootWindow = self.engine.rootObjects()[0] if self.engine.rootObjects() else None
+        self._tray: QSystemTrayIcon | None = None
+
+    def setupTray(self) -> None:
+        # 托盘常驻：关窗即缩进托盘（QApplication 不随末窗关闭退出），左键单击或菜单恢复，菜单可退出。
+        QApplication.setQuitOnLastWindowClosed(False)
+        self._trayMenu = QMenu()  # ref 自留保活（MainWindow 非 QObject 不能作 parent）
+        self._trayMenu.addAction("显示主界面", self._showWindow)
+        self._trayMenu.addAction("退出", QApplication.quit)
+        self._tray = QSystemTrayIcon(QIcon(str(LOGO)), self.engine)
+        self._tray.setToolTip("Ghost Downloader")
+        self._tray.setContextMenu(self._trayMenu)
+        self._tray.activated.connect(self._onTrayActivated)
+        self._tray.show()
+
+    def _showWindow(self) -> None:
+        if self._rootWindow is not None:
+            self._rootWindow.show()
+            self._rootWindow.raise_()
+            self._rootWindow.requestActivate()
+
+    def hideWindow(self) -> None:
+        if self._rootWindow is not None:
+            self._rootWindow.hide()
+
+    def _onTrayActivated(self, reason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:  # 左键单击托盘图标
+            self._showWindow()
 
     def _updateClipboardListener(self) -> None:
         # config 到达/变动时按开关挂钩剪贴板（setEnabled 幂等，重复触发无妨）
@@ -118,6 +148,9 @@ def main() -> int:
         featureService.load(None, withSetup=False)
 
     window = MainWindow(daemon)
+    window.setupTray()
+    if "--silence" in sys.argv:  # 开机自启带的标志：直接缩进托盘，不弹主界面
+        window.hideWindow()
     if cfg.checkUpdateAtStartUp.value:  # 启动查更新：桌面一次性策略，读本地开关（只影响下次启动）
         window.checkForUpdates()
     code = app.exec()
