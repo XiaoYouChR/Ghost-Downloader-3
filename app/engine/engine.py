@@ -55,6 +55,8 @@ class Engine:
             self._setSelection(command.data["taskId"], command.data["indexes"])
         elif command.name == "setConfig":
             self._setConfig(command.data["key"], command.data["value"])
+        elif command.name == "rename":
+            self._rename(command.data["taskId"], command.data["title"])
 
     def _attach(self) -> None:
         self._attached = True
@@ -123,6 +125,11 @@ class Engine:
     def _setConfig(self, key: str, value) -> None:
         getattr(cfg, key).value = value
         self._emit(Event("config", {"values": {key: getattr(cfg, key).value}}))
+
+    def _rename(self, taskId: str, title: str) -> None:
+        task = self._tasks[taskId]
+        task.setTitle(title)
+        self._changed(task)
 
     def _changed(self, task: Task) -> None:
         self._emit(Event("taskChanged", {"task": self._toWire(task)}))

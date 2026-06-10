@@ -9,6 +9,7 @@ FluentPage {
     title: "下载任务"
 
     property string pendingDelete: ""
+    property string pendingRename: ""
 
     ColumnLayout {
         anchors.fill: parent
@@ -100,6 +101,11 @@ FluentPage {
                         taskPage.pendingDelete = taskId
                         deleteDialog.open()
                     }
+                    onEditRequested: function(taskId, fileName) {
+                        taskPage.pendingRename = taskId
+                        renameField.text = fileName
+                        renameDialog.open()
+                    }
                 }
             }
         }
@@ -115,6 +121,21 @@ FluentPage {
         Component.onCompleted: {
             const ok = standardButton(Dialog.Ok)
             if (ok) ok.text = "删除"
+            const cancel = standardButton(Dialog.Cancel)
+            if (cancel) cancel.text = "取消"
+        }
+    }
+
+    Dialog {
+        id: renameDialog
+        title: "重命名"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        TextField { id: renameField; implicitWidth: 360 }
+        onAccepted: backend.rename(taskPage.pendingRename, renameField.text.trim())
+        Component.onCompleted: {
+            const ok = standardButton(Dialog.Ok)
+            if (ok) ok.text = "确定"
             const cancel = standardButton(Dialog.Cancel)
             if (cancel) cancel.text = "取消"
         }

@@ -139,6 +139,17 @@ def test_startAll_runsEveryTask(spine):
         assert spine.taskList.data(spine.taskList.index(row, 0), TaskList.StatusRole) == "RUNNING"
 
 
+def test_rename_changesTitle(spine):
+    # 重命名任务 → 标题更新（经 setTitle，会过 toSafeFilename）。
+    spine.backend.addTask("https://example.com/movie.mp4")
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+
+    spine.backend.rename(taskId, "renamed.mp4")
+
+    assert spine.taskList.data(index, TaskList.TitleRole) == "renamed.mp4"
+
+
 def test_clearCompleted_removesOnlyCompleted(spine):
     # 清空已完成只删 COMPLETED，其余留下。
     spine.backend.addTask("https://example.com/a.mp4")

@@ -23,8 +23,9 @@ Frame {
     property bool selected
     property int fileCount
 
-    // 卡片不直接删，只发意图；由页面弹确认框（Q5：动作即意图）
+    // 卡片不直接删/改，只发意图；由页面弹框（Q5：动作即意图）
     signal deleteRequested(string taskId)
+    signal editRequested(string taskId, string fileName)
 
     height: 68
 
@@ -96,6 +97,11 @@ Frame {
             text: "文件夹"
             visible: card.completed
             onClicked: backend.openFolder(card.output)
+        }
+        Button {
+            text: "编辑"
+            visible: !card.running && !card.completed
+            onClicked: card.editRequested(card.taskId, card.fileName)
         }
         Button {
             text: "删除"
