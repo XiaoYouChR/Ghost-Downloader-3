@@ -72,7 +72,8 @@ def main() -> int:
         from app.services.feature_service import featureService
 
         coreService.start()
-        featureService.load(None)
+        # QML 前端不挂 QFluentWidgets 子界面，跳过各 pack 的 GUI setup（同 daemon）
+        featureService.load(None, withSetup=False)
 
     window = MainWindow(daemon)
     code = app.exec()

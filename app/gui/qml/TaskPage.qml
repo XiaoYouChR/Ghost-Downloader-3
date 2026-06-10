@@ -151,7 +151,7 @@ FluentPage {
         modal: true
         standardButtons: Dialog.Ok
         Text {
-            implicitWidth: 440
+            width: 440  // Text.implicitWidth 只读，定宽换行用 width
             wrapMode: Text.WrapAnywhere
             text: backend.hashText !== "" ? backend.hashText : "计算中…"
         }
