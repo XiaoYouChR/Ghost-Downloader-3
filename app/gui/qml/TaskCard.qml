@@ -17,6 +17,7 @@ Frame {
     property string progressText
     property bool completed
     property string output
+    property string errorText
     property bool selectionMode
     property bool selected
     property int fileCount
@@ -47,6 +48,14 @@ Frame {
                 Text { text: card.status; typography: Typography.Caption }
                 Text { text: card.progressText; typography: Typography.Caption; visible: card.progressText !== "" }
                 Text { text: card.speedText; typography: Typography.Caption; visible: card.speedText !== "" }
+                Text {
+                    text: card.errorText
+                    typography: Typography.Caption
+                    color: "#C42B1C"
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                    visible: card.errorText !== ""
+                }
             }
             ProgressBar {
                 Layout.fillWidth: true

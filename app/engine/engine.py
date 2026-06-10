@@ -139,6 +139,7 @@ class Engine:
         data["progress"] = progress
         data["speed"] = speed
         data["received"] = received
+        data["error"] = task.lastError
         return data
 
     def _emit(self, event: Event) -> None:

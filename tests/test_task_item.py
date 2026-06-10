@@ -31,3 +31,8 @@ def test_completed_reflectsStatus():
 def test_output_joinsPathAndTitle():
     item = TaskItem({"taskId": "x", "title": "movie.mp4", "status": "COMPLETED", "path": "/downloads"})
     assert item.output == str(Path("/downloads") / "movie.mp4")
+
+
+def test_errorText_fromWire():
+    assert TaskItem({"taskId": "x", "title": "t", "status": "FAILED", "error": "timeout"}).errorText == "timeout"
+    assert TaskItem({"taskId": "x", "title": "t", "status": "RUNNING"}).errorText == ""

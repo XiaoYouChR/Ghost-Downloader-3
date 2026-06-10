@@ -91,6 +91,7 @@ FluentPage {
                     progressText: model.progressText
                     completed: model.completed
                     output: model.output
+                    errorText: model.error
                     selectionMode: taskList.selectionMode
                     selected: model.selected
                     fileCount: model.fileCount
