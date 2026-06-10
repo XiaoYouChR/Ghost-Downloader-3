@@ -9,7 +9,10 @@ from app.protocol.message import Command, Event
 from app.supports.config import cfg
 
 # 设置页目前直接读写真 cfg（同进程缝先行）；Config 存储是日后拆进程/headless 的目标
-_CONFIG_KEYS = ("maxTaskNum", "downloadFolder", "preBlockNum", "autoSpeedUp", "SSLVerify", "customThemeMode")
+_CONFIG_KEYS = (
+    "maxTaskNum", "downloadFolder", "preBlockNum", "autoSpeedUp", "SSLVerify",
+    "customThemeMode", "enableClipboardListener", "checkUpdateAtStartUp", "autoRun",
+)
 
 
 class Engine:

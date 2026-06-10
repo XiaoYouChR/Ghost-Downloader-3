@@ -76,6 +76,21 @@ class Backend(QObject):
 
     themeMode = Property(str, _themeMode, notify=configChanged)
 
+    def _clipboardListener(self) -> bool:
+        return self._config.get("enableClipboardListener", False)
+
+    clipboardListener = Property(bool, _clipboardListener, notify=configChanged)
+
+    def _checkUpdate(self) -> bool:
+        return self._config.get("checkUpdateAtStartUp", True)
+
+    checkUpdate = Property(bool, _checkUpdate, notify=configChanged)
+
+    def _autoRun(self) -> bool:
+        return self._config.get("autoRun", False)
+
+    autoRun = Property(bool, _autoRun, notify=configChanged)
+
     @Slot(str, "QVariant")
     def setConfig(self, key: str, value) -> None:
         self._link.toEngine(Command("setConfig", {"key": key, "value": value}))

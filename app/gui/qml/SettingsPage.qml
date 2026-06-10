@@ -63,6 +63,27 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "监听剪贴板链接"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch { checked: backend.clipboardListener; onToggled: backend.setConfig("enableClipboardListener", checked) }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "启动时检查更新"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch { checked: backend.checkUpdate; onToggled: backend.setConfig("checkUpdateAtStartUp", checked) }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
+        Text { text: "开机自启"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch { checked: backend.autoRun; onToggled: backend.setConfig("autoRun", checked) }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "下载目录"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Text { text: backend.downloadFolder; opacity: 0.7 }
