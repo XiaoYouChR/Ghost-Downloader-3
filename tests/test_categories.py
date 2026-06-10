@@ -20,3 +20,10 @@ def test_unknownExtensionStaysInBase():
 
 def test_noExtensionStaysInBase():
     assert categoryFolderFor("README", "/dl") == "/dl"
+
+
+def test_customRulesOverrideDefaults():
+    # 给定自定义规则就用它（同 presets 结构），默认集让位
+    rules = [{"extensions": ["xyz"], "folder": "{default}/Custom"}]
+    assert categoryFolderFor("file.xyz", "/dl", rules) == "/dl/Custom"
+    assert categoryFolderFor("movie.mp4", "/dl", rules) == "/dl"  # mp4 不在自定义规则里 → 兜底

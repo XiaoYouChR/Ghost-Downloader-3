@@ -22,6 +22,7 @@ GLOBAL_SETTINGS = [
     Setting("enableClipboardListener", True),
     Setting("enableCategory", False),
     Setting("activeUserAgent", ""),  # 默认空，makeCfgBackedConfig 从 cfg 播种真值
+    Setting("categoryRules", []),  # 空则引擎用默认分类集；从 cfg 播种用户自定义规则
 ]
 
 

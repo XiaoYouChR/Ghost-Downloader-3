@@ -99,7 +99,7 @@ class Engine:
         if "path" not in options:  # 没显式指定才套配置目录；启用分类则按文件名归到分类子目录（引擎权威算）
             base = self._config.value("downloadFolder")
             options["path"] = (
-                categoryFolderFor(urlparse(url).path.rsplit("/", 1)[-1], base)
+                categoryFolderFor(urlparse(url).path.rsplit("/", 1)[-1], base, self._config.value("categoryRules"))
                 if self._config.value("enableCategory") else base
             )
         options.setdefault("preBlockNum", self._config.value("preBlockNum"))

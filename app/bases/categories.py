@@ -53,8 +53,9 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
 ]
 
 
-def categoryFolderFor(filename: str, baseFolder: str) -> str:
+def categoryFolderFor(filename: str, baseFolder: str, rules: list | None = None) -> str:
     """按文件扩展名把下载目录归到分类子目录（如 baseFolder/Video）；无匹配则原样返回 baseFolder。
+    rules 给定就用用户自定义规则（同 presets 结构），否则用默认集。
     tar.gz 这类双后缀先整体匹配再退单后缀，对齐 gui 的 matchByName。"""
     suffixes = [s.lstrip(".").lower() for s in Path(filename).suffixes]
     candidates: list[str] = []
@@ -64,8 +65,8 @@ def categoryFolderFor(filename: str, baseFolder: str) -> str:
         candidates.append(suffixes[-1])
 
     for candidate in candidates:
-        for preset in DEFAULT_CATEGORY_PRESETS:
-            if candidate in preset["extensions"]:
-                folder = preset.get("folder")
+        for rule in (rules or DEFAULT_CATEGORY_PRESETS):
+            if candidate in rule.get("extensions", ()):
+                folder = rule.get("folder")
                 return folder.replace(DEFAULT_FOLDER_MACRO, baseFolder) if folder else baseFolder
     return baseFolder

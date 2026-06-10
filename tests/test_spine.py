@@ -281,6 +281,16 @@ def test_addTask_explicitPathBeatsCategory(spine):
     assert spine.downloads.parsedOptions[0]["path"] == "/custom"
 
 
+def test_addTask_usesInjectedCustomCategoryRules(spine):
+    # 引擎按注入的自定义分类规则归类（从 cfg 播种来；共存期用户在旧 app 设的规则也认）。
+    spine.config.set("downloadFolder", "/dl")
+    spine.config.set("enableCategory", True)
+    spine.config.set("categoryRules", [{"extensions": ["iso"], "folder": "{default}/Disks"}])
+    spine.backend.addTask("https://example.com/ubuntu.iso")
+
+    assert spine.downloads.parsedOptions[0]["path"] == "/dl/Disks"
+
+
 def test_addTaskWithOptions_emptyOptionsStillAppliesCategory(spine):
     # 新建对话框留空目录时传空 options → 引擎照样按类型归类（对话框必须省略空 path，别传 {path:""}）。
     spine.config.set("downloadFolder", "/dl")
