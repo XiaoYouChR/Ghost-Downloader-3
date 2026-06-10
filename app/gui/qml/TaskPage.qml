@@ -20,16 +20,28 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-            Button { text: "全部开始"; onClicked: backend.startAll() }
-            Button { text: "全部暂停"; onClicked: backend.pauseAll() }
-            Button { text: "选择"; onClicked: taskList.setSelectionMode(true) }
+            Button { text: "全部开始"; icon.name: "ic_fluent_play_20_filled"; highlighted: true; onClicked: backend.startAll() }
+            Button { text: "全部暂停"; icon.name: "ic_fluent_pause_20_regular"; onClicked: backend.pauseAll() }
+            ToolButton { icon.name: "ic_fluent_select_all_off_20_regular"; size: 18; onClicked: taskList.setSelectionMode(true) }
             Button { text: "清空已完成"; onClicked: backend.clearCompleted() }
-            Item { Layout.fillWidth: true }
-            Text {
-                text: backend.globalSpeedText
+
+            Row {
+                Layout.leftMargin: 6
+                spacing: 5
                 visible: backend.globalSpeedText !== ""
-                opacity: 0.8
+                Icon {
+                    icon: "ic_fluent_gauge_20_regular"; size: 15
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Theme.currentTheme.colors.textSecondaryColor
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: backend.globalSpeedText
+                    color: Theme.currentTheme.colors.textSecondaryColor
+                }
             }
+
+            Item { Layout.fillWidth: true }
             TextField {
                 Layout.preferredWidth: 200
                 placeholderText: "搜索任务"
