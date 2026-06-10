@@ -233,6 +233,14 @@ def test_addTaskWithOptions_passesOptionsToParse(spine):
     assert spine.taskList.rowCount() == 1
 
 
+def test_addTask_injectsConfigDownloadFolder(spine):
+    # 不带 path 的添加：引擎把配置里的下载目录注入 parse payload，pack 不再直读 cfg.downloadFolder（脱 cfg）。
+    spine.config.set("downloadFolder", "/cfg-default")
+    spine.backend.addTask("https://example.com/movie.mp4")
+
+    assert spine.downloads.parsedOptions == [{"path": "/cfg-default"}]
+
+
 def test_primaryAction_togglesByDefault(spine):
     # 普通任务 actionKind=toggle：卡片主按钮 → primaryAction → 暂停/继续。
     spine.backend.addTask("https://example.com/movie.mp4")

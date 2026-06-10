@@ -198,7 +198,7 @@ class BilibiliPack(FeaturePack):
         url: str = payload["url"]
         proxies: dict = payload.get("proxies", getProxies())
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
-        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
+        path = Path(payload.get("path") or cfg.downloadFolder.value)  # 引擎注入的 path 是字符串，包成 Path
 
         headers = _buildBilibiliHeaders(url)
         async with niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True) as client:

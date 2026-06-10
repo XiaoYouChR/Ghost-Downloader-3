@@ -178,7 +178,7 @@ class HttpPack(FeaturePack):
         headers: dict = payload.get("headers", defaultHeaders())
         proxies: dict = payload.get("proxies", getProxies())
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
-        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
+        path = Path(payload.get("path") or cfg.downloadFolder.value)  # 引擎注入的 path 是字符串，包成 Path
 
         fileName = str(payload.get("filename") or "").strip()
         fileSize = payload.get("fileSize") or SpecialFileSize.UNKNOWN

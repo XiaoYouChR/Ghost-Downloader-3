@@ -89,6 +89,9 @@ class Engine:
             self._emit(Event("stats", {"globalSpeed": total}))
 
     def _addTask(self, url: str, options: dict | None = None) -> None:
+        # 没指定 per-task 目录就注入配置里的下载目录——pack 从 payload 取，不再直读 cfg.downloadFolder（脱 cfg）
+        options = dict(options or {})
+        options.setdefault("path", self._config.value("downloadFolder"))
         self._downloads.run(self._downloads.parse(url, options), self._onParsed)
 
     def _onParsed(self, task: Task | None, error: str | None) -> None:
