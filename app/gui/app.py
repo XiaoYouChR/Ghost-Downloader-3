@@ -49,6 +49,7 @@ class MainWindow(RinUIWindow):
             self._backend = Backend(self._link, self._taskList)
             self._link.connect(self._backend.receive)
             self._link.whenConnected(self._backend.attach)
+            self._link.whenDisconnected(self._onDaemonLost)
             self._link.connectToServer()
         else:
             self._link = MemoryLink()
@@ -62,6 +63,11 @@ class MainWindow(RinUIWindow):
         context.setContextProperty("taskFilter", self._taskFilter)
         context.setContextProperty("taskList", self._taskList)
         self.load(str(QML_DIR / "Main.qml"))
+
+    def _onDaemonLost(self) -> None:
+        # daemon 掉线：界面回到“连接中”，daemon 真没了就重新拉起；SocketClient 随后自己连回来
+        self._backend.setDisconnected()
+        _ensureDaemon()
 
 
 def main() -> int:

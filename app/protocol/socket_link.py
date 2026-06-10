@@ -48,8 +48,11 @@ class SocketClient:
         self._unframer = Unframer()
         self._gui: Callable[[Event], None] | None = None
         self._retries = 0
+        self._pending = False
         self._socket.readyRead.connect(self._onReadyRead)
         self._socket.errorOccurred.connect(self._onError)
+        self._socket.connected.connect(self._onConnected)
+        self._socket.disconnected.connect(self._onDisconnected)
 
     def connect(self, gui: Callable[[Event], None]) -> None:
         self._gui = gui
@@ -57,14 +60,37 @@ class SocketClient:
     def whenConnected(self, callback: Callable[[], None]) -> None:
         self._socket.connected.connect(callback)
 
+    def whenDisconnected(self, callback: Callable[[], None]) -> None:
+        self._socket.disconnected.connect(callback)
+
     def connectToServer(self) -> None:
         self._socket.connectToServer(self._name)
 
+    def _onConnected(self) -> None:
+        self._retries = 0
+        self._pending = False
+
+    def _onDisconnected(self) -> None:
+        # daemon 断了（崩或退）：重连给足新预算，自己连回来；界面回到“连接中”由 whenDisconnected 接管
+        self._retries = 0
+        self._reconnectSoon()
+
     def _onError(self, _error) -> None:
         # daemon 可能还在启动（加载 pack 要几秒），稍后重连，直到连上或放弃
-        if self._retries < 30:
-            self._retries += 1
-            QTimer.singleShot(300, self.connectToServer)
+        self._reconnectSoon()
+
+    def _reconnectSoon(self) -> None:
+        if self._pending or self._socket.state() != QLocalSocket.LocalSocketState.UnconnectedState:
+            return  # 已连上或正在连，别叠重连
+        if self._retries >= 30:
+            return
+        self._retries += 1
+        self._pending = True
+        QTimer.singleShot(300, self._reconnect)
+
+    def _reconnect(self) -> None:
+        self._pending = False
+        self.connectToServer()
 
     def toEngine(self, command: Command) -> None:
         self._socket.write(frame(command.toBytes()))

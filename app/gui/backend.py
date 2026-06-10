@@ -88,6 +88,11 @@ class Backend(QObject):
         self.connectedChanged.emit()
         self._link.toEngine(Command("attach"))
 
+    def setDisconnected(self) -> None:
+        # daemon 掉线：界面回到“连接后台中…”，SocketClient 会自己重连后重新 attach
+        self._connected = False
+        self.connectedChanged.emit()
+
     @Slot()
     def detach(self) -> None:
         self._link.toEngine(Command("detach"))
