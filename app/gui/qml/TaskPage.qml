@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import RinUI
 
 // 下载任务页：工具栏（全部开始/暂停）、加链接、任务列表。所有动作经 backend 发命令。
@@ -184,8 +185,15 @@ Item {
                 Layout.fillWidth: true
                 Text { text: "下载目录"; typography: Typography.Body }
                 Item { Layout.fillWidth: true }
-                TextField { id: addPathField; Layout.preferredWidth: 300 }
+                TextField { id: addPathField; Layout.preferredWidth: 240 }
+                Button { text: "选择"; onClicked: addFolderDialog.open() }
             }
+        }
+
+        FolderDialog {
+            id: addFolderDialog
+            // 原生目录对话框返回 file:/// URL，剥成本地路径喂给路径框
+            onAccepted: addPathField.text = String(selectedFolder).replace("file:///", "")
         }
 
         onAccepted: if (addUrlField.text.trim() !== "") backend.addTaskWithOptions(addUrlField.text.trim(), {path: addPathField.text.trim()})
