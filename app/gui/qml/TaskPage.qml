@@ -20,12 +20,24 @@ FluentPage {
             spacing: 8
             Button { text: "全部开始"; onClicked: backend.startAll() }
             Button { text: "全部暂停"; onClicked: backend.pauseAll() }
+            Button { text: "选择"; onClicked: taskList.setSelectionMode(true) }
             Item { Layout.fillWidth: true }
             TextField {
                 Layout.preferredWidth: 200
                 placeholderText: "搜索任务"
                 onTextChanged: taskFilter.keyword = text
             }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            visible: taskList.selectionMode
+            spacing: 8
+            Text { text: "已选 " + taskList.selectedCount }
+            Item { Layout.fillWidth: true }
+            Button { text: "全选"; onClicked: taskList.selectAll() }
+            Button { text: "删除选中"; onClicked: backend.removeSelected() }
+            Button { text: "取消"; onClicked: taskList.setSelectionMode(false) }
         }
 
         RowLayout {
@@ -73,6 +85,8 @@ FluentPage {
                     progressText: model.progressText
                     completed: model.completed
                     output: model.output
+                    selectionMode: taskList.selectionMode
+                    selected: model.selected
                     onDeleteRequested: function(taskId) {
                         taskPage.pendingDelete = taskId
                         deleteDialog.open()

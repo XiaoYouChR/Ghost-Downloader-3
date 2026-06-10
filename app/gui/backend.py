@@ -46,6 +46,12 @@ class Backend(QObject):
     def remove(self, taskId: str) -> None:
         self._link.toEngine(Command("remove", {"taskId": taskId}))
 
+    @Slot()
+    def removeSelected(self) -> None:
+        for taskId in self._taskList.selectedIds():
+            self._link.toEngine(Command("remove", {"taskId": taskId}))
+        self._taskList.setSelectionMode(False)
+
     @Slot(str)
     def openFile(self, path: str) -> None:
         # 打开下载好的文件是 gui 端的 OS 动作，不过缝

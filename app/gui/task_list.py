@@ -7,6 +7,7 @@ from PySide6.QtCore import (
     QSortFilterProxyModel,
     Qt,
     Signal,
+    Slot,
 )
 
 from app.supports.utils import toReadableSize
@@ -80,10 +81,65 @@ class TaskList(QAbstractListModel):
     CompletedRole = Qt.ItemDataRole.UserRole + 8
     OutputRole = Qt.ItemDataRole.UserRole + 9
     CreatedRole = Qt.ItemDataRole.UserRole + 10
+    SelectedRole = Qt.ItemDataRole.UserRole + 11
+
+    selectionModeChanged = Signal()
+    selectedCountChanged = Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._items: list[TaskItem] = []
+        self._selected: set[str] = set()
+        self._selectionMode = False
+
+    def _isSelectionMode(self) -> bool:
+        return self._selectionMode
+
+    @Slot(bool)
+    def setSelectionMode(self, on: bool) -> None:
+        if on == self._selectionMode:
+            return
+        self._selectionMode = on
+        if not on:
+            self._selected.clear()
+        self.selectionModeChanged.emit()
+        self.selectedCountChanged.emit()
+        self._refreshAll()
+
+    selectionMode = Property(bool, _isSelectionMode, notify=selectionModeChanged)
+
+    def _count(self) -> int:
+        return len(self._selected)
+
+    selectedCount = Property(int, _count, notify=selectedCountChanged)
+
+    @Slot(str)
+    def toggleSelect(self, taskId: str) -> None:
+        if taskId in self._selected:
+            self._selected.discard(taskId)
+        else:
+            self._selected.add(taskId)
+        self.selectedCountChanged.emit()
+        self._refresh(taskId)
+
+    @Slot()
+    def selectAll(self) -> None:
+        self._selected = {item.taskId for item in self._items}
+        self.selectedCountChanged.emit()
+        self._refreshAll()
+
+    def selectedIds(self) -> list[str]:
+        return list(self._selected)
+
+    def _refreshAll(self) -> None:
+        if self._items:
+            self.dataChanged.emit(self.index(0, 0), self.index(len(self._items) - 1, 0))
+
+    def _refresh(self, taskId: str) -> None:
+        for row, item in enumerate(self._items):
+            if item.taskId == taskId:
+                self.dataChanged.emit(self.index(row, 0), self.index(row, 0))
+                return
 
     def reset(self, tasks: list[dict]) -> None:
         self.beginResetModel()
@@ -137,6 +193,8 @@ class TaskList(QAbstractListModel):
             return item.output
         if role == TaskList.CreatedRole:
             return item.createdAt
+        if role == TaskList.SelectedRole:
+            return item.taskId in self._selected
         return None
 
     def roleNames(self) -> dict:
@@ -151,6 +209,7 @@ class TaskList(QAbstractListModel):
             TaskList.CompletedRole: b"completed",
             TaskList.OutputRole: b"output",
             TaskList.CreatedRole: b"created",
+            TaskList.SelectedRole: b"selected",
         }
 
 

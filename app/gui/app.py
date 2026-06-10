@@ -30,6 +30,7 @@ class MainWindow(RinUIWindow):
         context = self.engine.rootContext()
         context.setContextProperty("backend", self._backend)
         context.setContextProperty("taskFilter", self._taskFilter)
+        context.setContextProperty("taskList", self._taskList)
 
         self.load(str(QML_DIR / "Main.qml"))
         self._backend.attach()

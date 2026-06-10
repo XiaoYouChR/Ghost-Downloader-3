@@ -17,6 +17,8 @@ Frame {
     property string progressText
     property bool completed
     property string output
+    property bool selectionMode
+    property bool selected
 
     // 卡片不直接删，只发意图；由页面弹确认框（Q5：动作即意图）
     signal deleteRequested(string taskId)
@@ -28,6 +30,12 @@ Frame {
         anchors.leftMargin: 14
         anchors.rightMargin: 14
         spacing: 12
+
+        CheckBox {
+            visible: card.selectionMode
+            checked: card.selected
+            onClicked: taskList.toggleSelect(card.taskId)
+        }
 
         ColumnLayout {
             Layout.fillWidth: true
