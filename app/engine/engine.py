@@ -10,7 +10,7 @@ from app.protocol.message import Command, Event
 _CONFIG_KEYS = (
     "maxTaskNum", "downloadFolder", "preBlockNum", "autoSpeedUp", "SSLVerify",
     "customThemeMode", "enableClipboardListener", "checkUpdateAtStartUp", "autoRun",
-    "enableSpeedLimitation", "maxReassignSize", "proxyServer",
+    "enableSpeedLimitation", "speedLimitation", "maxReassignSize", "proxyServer",
 )
 
 

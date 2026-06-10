@@ -70,6 +70,21 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        visible: backend.config.enableSpeedLimitation  // 开关关时无意义，藏起来
+        Text { text: "限速值"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        SpinBox {
+            from: 1
+            to: 102400
+            stepSize: 512
+            value: Math.round(backend.config.speedLimitation / 1024)  // cfg 存字节，界面按 KB/s
+            onValueModified: backend.setConfig("speedLimitation", value * 1024)
+        }
+        Text { text: "KB/s"; typography: Typography.Body; opacity: 0.7 }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "线程重分配阈值"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         SpinBox {
