@@ -242,6 +242,20 @@ def test_addTask_injectsConfigGlobals(spine):
     assert spine.downloads.parsedOptions == [{"path": "/cfg-default", "preBlockNum": 16}]
 
 
+def test_editTask_reparsesAndReplacesTask(spine, tmp_path):
+    # 编辑任务改链接 → 引擎重解析 → replaceWith 换 url/title/stages，保留同一 taskId。
+    # 落临时目录：replaceWith 的 cleanup（清旧分片）不碰真实 Downloads。
+    spine.config.set("downloadFolder", str(tmp_path))
+    spine.backend.addTask("https://example.com/old.zip")
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+
+    spine.backend.editTask(taskId, {"url": "https://example.com/new.mkv"})
+
+    assert spine.taskList.data(index, TaskList.TitleRole) == "new.mkv"
+    assert spine.taskList.data(index, TaskList.IdRole) == taskId
+
+
 def test_primaryAction_togglesByDefault(spine):
     # 普通任务 actionKind=toggle：卡片主按钮 → primaryAction → 暂停/继续。
     spine.backend.addTask("https://example.com/movie.mp4")

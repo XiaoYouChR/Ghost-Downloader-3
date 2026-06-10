@@ -11,6 +11,7 @@ Frame {
 
     property string taskId
     property string fileName
+    property string url
     property string typeIcon: "ic_fluent_document_20_filled"
     property bool running
     property bool completed
@@ -28,14 +29,14 @@ Frame {
 
     // 卡片不直接删/改，只发意图，由页面弹框（动作即意图）
     signal deleteRequested(string taskId)
-    signal editRequested(string taskId, string fileName)
+    signal editRequested(string taskId, string fileName, string url)
     signal hashRequested(string taskId)
 
     padding: 0
     height: 60
     border.color: selected ? Theme.currentTheme.colors.primaryColor : Theme.currentTheme.colors.cardBorderColor
 
-    // 选择模式整卡点击切勾选；双击已完成开文件；右键改名（完整右键菜单后续）
+    // 选择模式整卡点击切勾选；双击已完成开文件；右键编辑（改名/换链接，完整右键菜单后续）
     TapHandler {
         enabled: card.selectionMode
         onTapped: taskList.toggleSelect(card.taskId)
@@ -45,7 +46,7 @@ Frame {
     }
     TapHandler {
         acceptedButtons: Qt.RightButton
-        onTapped: card.editRequested(card.taskId, card.fileName)
+        onTapped: card.editRequested(card.taskId, card.fileName, card.url)
     }
 
     RowLayout {

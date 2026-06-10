@@ -44,6 +44,8 @@ class Engine:
             self._pump.stop()
         elif command.name == "addTask":
             self._addTask(command.data["url"], command.data.get("options"))
+        elif command.name == "editTask":
+            self._editTask(command.data["taskId"], command.data.get("options"))
         elif command.name == "pause":
             self._pause(self._tasks[command.data["taskId"]])
         elif command.name == "resume":
@@ -103,6 +105,27 @@ class Engine:
         self._store.add(task)
         self._downloads.start(task)
         self._emit(Event("taskAdded", {"task": self._toWire(task)}))
+
+    def _editTask(self, taskId: str, options: dict | None = None) -> None:
+        # 改链接后按新 url 重解析，再把结果换进旧任务（保留 id/目录）。先停旧下载，免 worker 还在写就被换 stage。
+        old = self._tasks.get(taskId)
+        if old is None:
+            return
+        self._downloads.stop(old)
+        options = dict(options or {})
+        url = options.pop("url", old.url)
+        options.setdefault("path", str(old.path))  # 重解析沿用任务现有目录（replaceWith 保留 path）
+        options.setdefault("preBlockNum", self._config.value("preBlockNum"))
+        self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old))
+
+    def _onReparsed(self, old: Task, task: Task | None, error: str | None) -> None:
+        if error or task is None:
+            self._emit(Event("addError", {"reason": error or "无法解析该链接"}))
+            return
+        if not old.tryKeepProgress(task):  # 结构相符（如刷新过期 CDN url）能保住进度，否则整换
+            old.replaceWith(task)
+        self._store.add(old)  # 换了 url/stages，重新落盘
+        self._changed(old)
 
     def _pause(self, task: Task) -> None:
         task.setStatus(TaskStatus.PAUSED)

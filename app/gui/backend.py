@@ -112,6 +112,11 @@ class Backend(QObject):
         # 「新建任务」对话框：带 path/线程等选项；引擎合进 parse payload
         self._link.toEngine(Command("addTask", {"url": url, "options": dict(options)}))
 
+    @Slot(str, "QVariant")
+    def editTask(self, taskId: str, options) -> None:
+        # 「编辑任务」对话框：改链接后引擎按新 url 重解析、替换该任务（保留 id/目录）
+        self._link.toEngine(Command("editTask", {"taskId": taskId, "options": dict(options)}))
+
     @Slot(str)
     def pause(self, taskId: str) -> None:
         self._link.toEngine(Command("pause", {"taskId": taskId}))

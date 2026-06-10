@@ -11,7 +11,9 @@ Item {
     id: taskPage
 
     property string pendingDelete: ""
-    property string pendingRename: ""
+    property string editingTaskId: ""
+    property string editingName: ""   // 原值，accept 时比对：没改就不动（避免白重解析丢进度）
+    property string editingUrl: ""
 
     ColumnLayout {
         anchors.fill: parent
@@ -104,6 +106,7 @@ Item {
                     width: ListView.view.width
                     taskId: model.taskId
                     fileName: model.title
+                    url: model.url
                     typeIcon: model.typeIcon
                     running: model.running
                     completed: model.completed
@@ -122,10 +125,13 @@ Item {
                         taskPage.pendingDelete = taskId
                         deleteDialog.open()
                     }
-                    onEditRequested: function(taskId, fileName) {
-                        taskPage.pendingRename = taskId
-                        renameField.text = fileName
-                        renameDialog.open()
+                    onEditRequested: function(taskId, fileName, url) {
+                        taskPage.editingTaskId = taskId
+                        taskPage.editingName = fileName
+                        taskPage.editingUrl = url
+                        editNameField.text = fileName
+                        editUrlField.text = url
+                        editDialog.open()
                     }
                     onHashRequested: function(taskId) {
                         backend.verifyHash(taskId)
@@ -222,12 +228,26 @@ Item {
     }
 
     Dialog {
-        id: renameDialog
-        title: "重命名"
+        id: editDialog
+        title: "编辑任务"
         modal: true
         standardButtons: Dialog.Ok | Dialog.Cancel
-        TextField { id: renameField; implicitWidth: 360 }
-        onAccepted: backend.rename(taskPage.pendingRename, renameField.text.trim())
+        ColumnLayout {
+            spacing: 10
+            Text { text: "文件名"; typography: Typography.Body }
+            TextField { id: editNameField; Layout.preferredWidth: 420 }
+            Text { text: "下载链接"; typography: Typography.Body }
+            TextField { id: editUrlField; Layout.preferredWidth: 420 }
+        }
+        // 换了链接就重解析（文件名由新链接定，改名作罢）；否则才用改名。没改都不动——重解析会丢进度
+        onAccepted: {
+            const url = editUrlField.text.trim()
+            const name = editNameField.text.trim()
+            if (url !== "" && url !== taskPage.editingUrl)
+                backend.editTask(taskPage.editingTaskId, {url: url})
+            else if (name !== "" && name !== taskPage.editingName)
+                backend.rename(taskPage.editingTaskId, name)
+        }
         Component.onCompleted: {
             const ok = standardButton(Dialog.Ok)
             if (ok) ok.text = "确定"

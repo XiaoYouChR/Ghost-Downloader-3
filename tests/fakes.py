@@ -1,3 +1,4 @@
+from pathlib import Path
 from urllib.parse import urlparse
 
 from app.bases.models import Task
@@ -17,6 +18,9 @@ class FakeDownloads:
         if options is not None:
             self.parsedOptions.append(options)
         title = urlparse(url).path.rsplit("/", 1)[-1] or url
+        path = (options or {}).get("path")  # 认引擎注入的目录，任务才不会落到真实 Downloads
+        if path:
+            return Task(title=title, url=url, packId="http", path=Path(path))
         return Task(title=title, url=url, packId="http")
 
     def run(self, parsed, callback) -> None:
