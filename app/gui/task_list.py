@@ -131,15 +131,20 @@ class TaskList(QAbstractListModel):
     def selectedIds(self) -> list[str]:
         return list(self._selected)
 
+    def _rowOf(self, taskId: str) -> int | None:
+        for row, item in enumerate(self._items):
+            if item.taskId == taskId:
+                return row
+        return None
+
     def _refreshAll(self) -> None:
         if self._items:
             self.dataChanged.emit(self.index(0, 0), self.index(len(self._items) - 1, 0))
 
     def _refresh(self, taskId: str) -> None:
-        for row, item in enumerate(self._items):
-            if item.taskId == taskId:
-                self.dataChanged.emit(self.index(row, 0), self.index(row, 0))
-                return
+        row = self._rowOf(taskId)
+        if row is not None:
+            self.dataChanged.emit(self.index(row, 0), self.index(row, 0))
 
     def reset(self, tasks: list[dict]) -> None:
         self.beginResetModel()
@@ -153,20 +158,20 @@ class TaskList(QAbstractListModel):
         self.endInsertRows()
 
     def update(self, task: dict) -> None:
-        for row, item in enumerate(self._items):
-            if item.taskId == task["taskId"]:
-                item.update(task)
-                index = self.index(row, 0)
-                self.dataChanged.emit(index, index)
-                return
+        row = self._rowOf(task["taskId"])
+        if row is None:
+            return
+        self._items[row].update(task)
+        index = self.index(row, 0)
+        self.dataChanged.emit(index, index)
 
     def remove(self, taskId: str) -> None:
-        for row, item in enumerate(self._items):
-            if item.taskId == taskId:
-                self.beginRemoveRows(QModelIndex(), row, row)
-                del self._items[row]
-                self.endRemoveRows()
-                return
+        row = self._rowOf(taskId)
+        if row is None:
+            return
+        self.beginRemoveRows(QModelIndex(), row, row)
+        del self._items[row]
+        self.endRemoveRows()
 
     def rowCount(self, parent=QModelIndex()) -> int:
         return len(self._items)
