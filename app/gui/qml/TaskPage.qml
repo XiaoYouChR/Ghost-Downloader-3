@@ -70,7 +70,7 @@ FluentPage {
             Text {
                 anchors.centerIn: parent
                 horizontalAlignment: Text.AlignHCenter
-                text: "还没有下载任务\n粘贴链接开始"
+                text: backend.connected ? "还没有下载任务\n粘贴链接开始" : "连接后台中…"
                 opacity: 0.6
                 visible: listView.count === 0
             }

@@ -15,6 +15,7 @@ class Backend(QObject):
     filesRequested = Signal()
     configChanged = Signal()
     hashReady = Signal()
+    connectedChanged = Signal()
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -25,6 +26,12 @@ class Backend(QObject):
         self._editingTaskId = ""
         self._config: dict = {}
         self._hashText = ""
+        self._connected = False
+
+    def _isConnected(self) -> bool:
+        return self._connected
+
+    connected = Property(bool, _isConnected, notify=connectedChanged)
 
     def _hash(self) -> str:
         return self._hashText
@@ -77,6 +84,8 @@ class Backend(QObject):
 
     @Slot()
     def attach(self) -> None:
+        self._connected = True
+        self.connectedChanged.emit()
         self._link.toEngine(Command("attach"))
 
     @Slot()
