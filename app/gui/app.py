@@ -21,13 +21,18 @@ from app.protocol.socket_link import SocketClient
 QML_DIR = Path(__file__).parent / "qml"
 
 
-def _ensureDaemon() -> None:
-    # 已在跑就不重复起；否则 detached 启动，让它在 gui 退出后继续下载（省内存）
+def _daemonReachable() -> bool:
+    # 探一下本地 socket：连得上说明已有 daemon 在跑（gui 重启/掉线时据此决定要不要再起一个）
     probe = QLocalSocket()
     probe.connectToServer(SOCKET_NAME)
     if probe.waitForConnected(200):
         probe.disconnectFromServer()
-        return
+        return True
+    return False
+
+
+def _launchDaemon() -> None:
+    # detached 启动后台下载进程，让它在 gui 退出后继续下载（省内存）
     flags = subprocess.DETACHED_PROCESS if sys.platform == "win32" else 0
     subprocess.Popen(
         [sys.executable, "-m", "app.engine.daemon"],
@@ -46,7 +51,8 @@ class MainWindow(RinUIWindow):
         self._taskFilter = TaskFilter(self._taskList)
 
         if daemon:
-            _ensureDaemon()
+            if not _daemonReachable():
+                _launchDaemon()
             self._link = SocketClient(SOCKET_NAME)
             self._backend = Backend(self._link, self._taskList)
             self._link.connect(self._backend.receive)
@@ -79,9 +85,11 @@ class MainWindow(RinUIWindow):
         self._clipboard.setEnabled(bool(self._backend.configValue("enableClipboardListener")))
 
     def _onDaemonLost(self) -> None:
-        # daemon 掉线：界面回到“连接中”，daemon 真没了就重新拉起；SocketClient 随后自己连回来
+        # daemon 掉线：界面回到“连接中”。掉线也可能是 gui 自己离场而 daemon 还活着，
+        # 故探一下、真没了才重起（别重复起一个抢 socket）；SocketClient 随后自己连回来
         self._backend.setDisconnected()
-        _ensureDaemon()
+        if not _daemonReachable():
+            _launchDaemon()
 
 
 def main() -> int:
