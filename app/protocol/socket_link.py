@@ -31,8 +31,19 @@ class SocketServer:
             self._socket.write(frame(event.toBytes()))
 
     def _onNewConnection(self) -> None:
-        self._socket = self._server.nextPendingConnection()
-        self._socket.readyRead.connect(self._onReadyRead)
+        socket = self._server.nextPendingConnection()
+        self._socket = socket
+        socket.readyRead.connect(self._onReadyRead)
+        socket.disconnected.connect(lambda: self._onClientGone(socket))
+
+    def _onClientGone(self, socket: QLocalSocket) -> None:
+        # gui 退出/崩了：当作 detach——engine 停泵、不再往死 socket 发事件（省 CPU/内存）。
+        # 守一道：旧连接的迟到信号若已被新连接取代就忽略，别误清现有连接。
+        if socket is not self._socket:
+            return
+        self._socket = None
+        if self._engine is not None:
+            self._engine(Command("detach"))
 
     def _onReadyRead(self) -> None:
         for raw in self._unframer.feed(bytes(self._socket.readAll())):

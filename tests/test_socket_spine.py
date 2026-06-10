@@ -3,6 +3,7 @@ from PySide6.QtNetwork import QLocalSocket
 from app.engine.engine import Engine
 from app.gui.backend import Backend
 from app.gui.task_list import TaskList
+from app.protocol.message import Command
 from app.protocol.socket_link import SocketClient, SocketServer
 from fakes import FakeDownloads, FakeStore
 
@@ -30,3 +31,25 @@ def test_fullSpine_overSocket(qtbot):
     qtbot.waitUntil(lambda: taskList.rowCount() == 1, timeout=2000)
 
     assert taskList.data(taskList.index(0, 0), TaskList.TitleRole) == "movie.mp4"
+
+
+def test_engineDetachesWhenGuiGone(qtbot):
+    # gui 退出/崩（socket 断）时 engine 当作 detach：停泵、不再发事件（省 CPU/内存）。
+    server = SocketServer("gd3_gone_test")
+    engine = Engine(server, FakeDownloads(), FakeStore())
+    server.connect(engine.receive)
+    server.listen()
+
+    client = SocketClient("gd3_gone_test")
+    client.connect(lambda event: None)
+    client.connectToServer()
+    qtbot.waitUntil(lambda: server._socket is not None, timeout=2000)
+
+    client.toEngine(Command("attach"))
+    qtbot.waitUntil(lambda: engine._attached, timeout=2000)
+    assert engine._pump.isActive()
+
+    # gui 没了：客户端断开 → server 察觉 → engine 停泵停发
+    client._socket.disconnectFromServer()
+    qtbot.waitUntil(lambda: not engine._attached, timeout=2000)
+    assert not engine._pump.isActive()
