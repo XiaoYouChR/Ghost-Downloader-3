@@ -269,18 +269,18 @@ class TaskList(QAbstractListModel):
 
 
 class TaskFilter(QSortFilterProxyModel):
-    """按关键词筛任务标题，喂给 QML 的 ListView。子串匹配走内置过滤；TaskList 不动。"""
+    """按关键词 + 状态筛任务，新任务排最前，喂给 QML 的 ListView。TaskList 不动。"""
 
     keywordChanged = Signal()
+    statusFilterChanged = Signal()
 
     def __init__(self, source: TaskList, parent=None) -> None:
         super().__init__(parent)
+        self._word = ""
+        self._statusFilter = "all"  # all | active | complete —— 先于 setSourceModel，过滤回调要用
         self.setSourceModel(source)
-        self.setFilterRole(TaskList.TitleRole)
-        self.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.setSortRole(TaskList.CreatedRole)
         self.sort(0, Qt.SortOrder.DescendingOrder)  # 新任务排最前
-        self._word = ""
 
     def _keyword(self) -> str:
         return self._word
@@ -290,6 +290,30 @@ class TaskFilter(QSortFilterProxyModel):
             return
         self._word = keyword
         self.keywordChanged.emit()
-        self.setFilterFixedString(keyword)
+        self.invalidate()
 
     keyword = Property(str, _keyword, _setKeyword, notify=keywordChanged)
+
+    def _getStatusFilter(self) -> str:
+        return self._statusFilter
+
+    def _setStatusFilter(self, value: str) -> None:
+        if value == self._statusFilter:
+            return
+        self._statusFilter = value
+        self.statusFilterChanged.emit()
+        self.invalidate()
+
+    statusFilter = Property(str, _getStatusFilter, _setStatusFilter, notify=statusFilterChanged)
+
+    def filterAcceptsRow(self, row: int, parent: QModelIndex) -> bool:
+        index = self.sourceModel().index(row, 0, parent)
+        title = self.sourceModel().data(index, TaskList.TitleRole) or ""
+        if self._word and self._word.lower() not in title.lower():
+            return False
+        if self._statusFilter != "all":
+            completed = bool(self.sourceModel().data(index, TaskList.CompletedRole))
+            if self._statusFilter == "complete":
+                return completed
+            return not completed  # active：藏掉已完成
+        return True

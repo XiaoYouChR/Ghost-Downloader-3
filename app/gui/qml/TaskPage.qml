@@ -42,6 +42,10 @@ Item {
             }
 
             Item { Layout.fillWidth: true }
+            ToolButton {
+                icon.name: "ic_fluent_filter_20_regular"; size: 18
+                onClicked: filterMenu.popup()
+            }
             TextField {
                 Layout.preferredWidth: 200
                 placeholderText: "搜索任务"
@@ -127,6 +131,13 @@ Item {
                 }
             }
         }
+    }
+
+    Menu {
+        id: filterMenu
+        MenuItem { text: "全部任务"; onTriggered: taskFilter.statusFilter = "all" }
+        MenuItem { text: "进行中"; onTriggered: taskFilter.statusFilter = "active" }
+        MenuItem { text: "已完成"; onTriggered: taskFilter.statusFilter = "complete" }
     }
 
     Dialog {
