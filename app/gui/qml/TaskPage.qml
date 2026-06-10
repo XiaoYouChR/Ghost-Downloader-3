@@ -20,7 +20,15 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-            Button { text: "全部开始"; icon.name: "ic_fluent_play_20_filled"; highlighted: true; onClicked: backend.startAll() }
+            Button {
+                text: "新建"; icon.name: "ic_fluent_add_20_filled"; highlighted: true
+                onClicked: {
+                    addUrlField.text = ""
+                    addPathField.text = backend.config.downloadFolder
+                    addTaskDialog.open()
+                }
+            }
+            Button { text: "全部开始"; icon.name: "ic_fluent_play_20_filled"; onClicked: backend.startAll() }
             Button { text: "全部暂停"; icon.name: "ic_fluent_pause_20_regular"; onClicked: backend.pauseAll() }
             ToolButton { icon.name: "ic_fluent_select_all_off_20_regular"; size: 18; onClicked: taskList.setSelectionMode(true) }
             Button { text: "清空已完成"; onClicked: backend.clearCompleted() }
@@ -156,6 +164,37 @@ Item {
         MenuItem { text: "全部任务"; onTriggered: taskFilter.statusFilter = "all" }
         MenuItem { text: "进行中"; onTriggered: taskFilter.statusFilter = "active" }
         MenuItem { text: "已完成"; onTriggered: taskFilter.statusFilter = "complete" }
+    }
+
+    Dialog {
+        id: addTaskDialog
+        title: "新建任务"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        ColumnLayout {
+            implicitWidth: 440
+            spacing: 12
+            TextField {
+                id: addUrlField
+                Layout.fillWidth: true
+                placeholderText: "下载链接"
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Text { text: "下载目录"; typography: Typography.Body }
+                Item { Layout.fillWidth: true }
+                TextField { id: addPathField; Layout.preferredWidth: 300 }
+            }
+        }
+
+        onAccepted: if (addUrlField.text.trim() !== "") backend.addTaskWithOptions(addUrlField.text.trim(), {path: addPathField.text.trim()})
+        Component.onCompleted: {
+            const ok = standardButton(Dialog.Ok)
+            if (ok) ok.text = "下载"
+            const cancel = standardButton(Dialog.Cancel)
+            if (cancel) cancel.text = "取消"
+        }
     }
 
     Dialog {
