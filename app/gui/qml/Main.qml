@@ -48,5 +48,8 @@ FluentWindow {
         function onTaskAddFailed(reason) {
             floatLayer.createInfoBar({title: "添加失败", text: reason, severity: Severity.Error, timeout: 4000})
         }
+        function onUpdateAvailable(version) {
+            floatLayer.createInfoBar({title: "发现新版本 " + version, text: "可前往 GitHub 发布页下载更新", severity: Severity.Info, timeout: 8000})
+        }
     }
 }

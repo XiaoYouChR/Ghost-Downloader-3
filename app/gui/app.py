@@ -14,9 +14,11 @@ from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.gui.backend import Backend
 from app.gui.clipboard import ClipboardWatcher
+from app.gui.update_check import UpdateCheck
 from app.gui.task_list import TaskFilter, TaskList
 from app.protocol.link import MemoryLink
 from app.protocol.socket_link import SocketClient
+from app.supports.config import cfg
 
 QML_DIR = Path(__file__).parent / "qml"
 
@@ -69,6 +71,10 @@ class MainWindow(RinUIWindow):
         self._clipboard = ClipboardWatcher(self._backend.clipboardUrlsDetected.emit)
         self._backend.configChanged.connect(self._updateClipboardListener)
 
+        # RinUIWindow 不是 QObject，不能作 parent；ref 自留保活。仅构造、不触网——触发在 main() 编排
+        self._updateCheck = UpdateCheck()
+        self._updateCheck.checked.connect(self._onUpdateChecked)
+
         if daemon:
             self._link.connectToServer()
         else:
@@ -83,6 +89,14 @@ class MainWindow(RinUIWindow):
     def _updateClipboardListener(self) -> None:
         # config 到达/变动时按开关挂钩剪贴板（setEnabled 幂等，重复触发无妨）
         self._clipboard.setEnabled(bool(self._backend.configValue("enableClipboardListener")))
+
+    def checkForUpdates(self) -> None:
+        self._updateCheck.start()
+
+    def _onUpdateChecked(self, state, error: str) -> None:
+        # 只在确有新版本时提示；查失败（error）或已是最新都静默
+        if state is not None and state.outdated:
+            self._backend.updateAvailable.emit(state.latestVersion)
 
     def _onDaemonLost(self) -> None:
         # daemon 掉线：界面回到“连接中”。掉线也可能是 gui 自己离场而 daemon 还活着，
@@ -104,6 +118,8 @@ def main() -> int:
         featureService.load(None, withSetup=False)
 
     window = MainWindow(daemon)
+    if cfg.checkUpdateAtStartUp.value:  # 启动查更新：桌面一次性策略，读本地开关（只影响下次启动）
+        window.checkForUpdates()
     code = app.exec()
 
     if not daemon:

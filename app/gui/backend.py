@@ -20,6 +20,7 @@ class Backend(QObject):
     connectedChanged = Signal()
     taskAddFailed = Signal(str)
     clipboardUrlsDetected = Signal(list)  # 监听剪贴板抓到可下载链接，QML 据此弹新建对话框
+    updateAvailable = Signal(str)  # 启动检查发现新版本，QML 据此提示（参数为最新版本号）
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
