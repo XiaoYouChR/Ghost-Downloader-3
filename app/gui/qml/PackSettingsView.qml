@@ -38,10 +38,38 @@ ColumnLayout {
             Text { text: modelData ? modelData.label : ""; typography: Typography.Body }
             Item { Layout.fillWidth: true }
             Switch {
+                id: sw
                 checked: modelData ? modelData.value : false
-                onToggled: backend.setPackSetting(view.packId, modelData.key, checked)
+                // 普通开关即时生效；带 confirmOn 的（如 GitHub 加速）开到该值要先确认协议，拒绝则弹回
+                onToggled: {
+                    if (modelData.confirmOn !== undefined && checked === modelData.confirmOn) {
+                        confirmDialog.pendingSwitch = sw
+                        confirmDialog.pendingKey = modelData.key
+                        confirmDialog.title = modelData.confirmTitle || "确认"
+                        confirmText.text = modelData.confirmText || ""
+                        confirmDialog.open()
+                    } else {
+                        backend.setPackSetting(view.packId, modelData.key, checked)
+                    }
+                }
             }
         }
+    }
+
+    // 确认门：带 confirmOn 的设置改到该值时弹此框，同意才落、取消则把开关弹回原位
+    Dialog {
+        id: confirmDialog
+        property var pendingSwitch: null
+        property string pendingKey: ""
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        ScrollView {
+            implicitWidth: 520
+            implicitHeight: 280
+            Text { id: confirmText; width: 500; wrapMode: Text.WordWrap }
+        }
+        onAccepted: backend.setPackSetting(view.packId, pendingKey, true)
+        onRejected: if (pendingSwitch) pendingSwitch.checked = false
     }
 
     Component {

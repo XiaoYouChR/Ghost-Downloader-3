@@ -293,7 +293,9 @@ class GitHubConfig(PackConfig):
 
     def settingsSchema(self) -> list[dict]:
         return [
-            {"kind": "switch", "label": "启用 GitHub 加速", "key": "enabled", "value": self.enabled.value},
+            # 启用前必须看风险协议并同意（复刻原版）：confirmOn=开到这个值时先弹 confirmText 确认
+            {"kind": "switch", "label": "启用 GitHub 加速", "key": "enabled", "value": self.enabled.value,
+             "confirmOn": True, "confirmTitle": "GitHub 加速用户协议", "confirmText": GITHUB_USER_AGREEMENT},
             {"kind": "combo", "label": "代理站", "key": "proxySite", "value": self.proxySite.value,
              "options": [{"label": _siteName(site), "value": site} for site in GITHUB_PROXY_SITES]
              + [{"label": "自定义", "value": GITHUB_CUSTOM_PROXY_SITE}]},
