@@ -32,6 +32,7 @@ Frame {
     signal deleteRequested(string taskId)
     signal editRequested(string taskId, string fileName, string url)
     signal hashRequested(string taskId)
+    signal redownloadRequested(string taskId)
 
     padding: 0
     height: 60
@@ -55,6 +56,7 @@ Frame {
         id: cardMenu
         MenuItem { text: "复制下载链接"; onTriggered: backend.copyToClipboard(card.url) }
         MenuItem { text: "编辑任务参数"; onTriggered: card.editRequested(card.taskId, card.fileName, card.url) }
+        MenuItem { text: "重新下载"; onTriggered: card.redownloadRequested(card.taskId) }
     }
 
     RowLayout {

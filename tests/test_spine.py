@@ -303,6 +303,20 @@ def test_parsePreview_holdsWithoutCommitting(spine):
     assert len(spine.downloads.started) == 0  # 未开始
 
 
+def test_redownload_reparsesAndRestarts(spine, tmp_path):
+    # 右键「重新下载」：停旧 → 重解析 → 清旧分片换新 stage → 重新开始（仍是同一任务）。
+    spine.config.set("downloadFolder", str(tmp_path))
+    spine.backend.addTask("https://example.com/a.zip")
+    taskId = spine.taskList.data(spine.taskList.index(0, 0), TaskList.IdRole)
+    startedBefore = len(spine.downloads.started)
+
+    spine.backend.redownload(taskId)
+
+    assert len(spine.downloads.started) == startedBefore + 1  # 重新开始
+    assert spine.taskList.rowCount() == 1  # 还是这一个任务
+    assert spine.taskList.data(spine.taskList.index(0, 0), TaskList.StatusRole) == "RUNNING"
+
+
 def test_editPreview_updatesPreviewWithoutCommitting(spine, tmp_path):
     # per-URL 编辑：解析后、提交前改某条预览的链接 → 预览原地更新，不落任务/不开始。
     spine.config.set("downloadFolder", str(tmp_path))  # replaceWith 的 cleanup 落临时目录

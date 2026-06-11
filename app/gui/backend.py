@@ -175,6 +175,11 @@ class Backend(QObject):
         self._link.toEngine(Command("editSchema", {"taskId": taskId}))
 
     @Slot(str)
+    def redownload(self, taskId: str) -> None:
+        # 重新下载：引擎停旧、重解析、清旧分片、重新开始
+        self._link.toEngine(Command("redownload", {"taskId": taskId}))
+
+    @Slot(str)
     def pause(self, taskId: str) -> None:
         self._link.toEngine(Command("pause", {"taskId": taskId}))
 

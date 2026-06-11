@@ -58,6 +58,8 @@ class Engine:
             self._editTask(command.data["taskId"], command.data.get("options"))
         elif command.name == "editSchema":
             self._editSchema(command.data["taskId"])
+        elif command.name == "redownload":
+            self._redownload(command.data["taskId"])
         elif command.name == "pause":
             self._pause(self._tasks[command.data["taskId"]])
         elif command.name == "resume":
@@ -171,6 +173,25 @@ class Engine:
         options.setdefault("path", str(old.path))  # 重解析沿用现有目录（replaceWith 保留 path）
         options.setdefault("preBlockNum", self._config.value("preBlockNum"))
         self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old, isPreview))
+
+    def _redownload(self, taskId: str) -> None:
+        # 重新下载（复刻原版）：停旧下载 → 按原 url 重解析 → 换进旧任务（cleanup 删旧分片、进度归零）→ 重新开始。
+        old = self._tasks.get(taskId)
+        if old is None:
+            return
+        self._downloads.stop(old)
+        options = self._defaultOptions(old.url, {"path": str(old.path)})
+        self._downloads.run(self._downloads.parse(old.url, options), partial(self._onRedownloaded, old))
+
+    def _onRedownloaded(self, old: Task, task: Task | None, error: str | None) -> None:
+        if error or task is None:
+            self._emit(Event("addError", {"reason": error or "无法解析该链接"}))
+            return
+        old.replaceWith(task)  # 删旧分片、换上全新 stage（进度归零）
+        old.setStatus(TaskStatus.RUNNING)
+        self._store.add(old)
+        self._downloads.start(old)
+        self._changed(old)
 
     def _onReparsed(self, old: Task, isPreview: bool, task: Task | None, error: str | None) -> None:
         if error or task is None:

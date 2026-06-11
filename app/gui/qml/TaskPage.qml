@@ -126,6 +126,7 @@ Item {
                     onEditRequested: function(taskId, fileName, url) {
                         backend.requestEditSchema(taskId)  // 引擎回发该任务的编辑 schema，由 Connection 弹编辑框
                     }
+                    onRedownloadRequested: function(taskId) { backend.redownload(taskId) }
                     onHashRequested: function(taskId) {
                         backend.verifyHash(taskId)
                         hashDialog.open()
