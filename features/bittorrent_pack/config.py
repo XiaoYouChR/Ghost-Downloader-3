@@ -98,6 +98,8 @@ class BitTorrentConfig(PackConfig):
             {"kind": "switch", "label": "启用 NAT-PMP", "key": "enableNATPMP", "value": self.enableNATPMP.value},
             {"kind": "switch", "label": "启用 Web Tracker", "key": "enableWebTrackers", "value": self.enableWebTrackers.value},
             {"kind": "switch", "label": "新建任务时刷新 Web Tracker", "key": "autoRefreshWebTrackers", "value": self.autoRefreshWebTrackers.value},
+            {"kind": "lines", "label": "Web Tracker 源地址", "key": "webTrackerSources", "value": list(self.webTrackerSources.value),
+             "placeholder": "每行一个 tracker 列表源 URL，新建任务时自动拉取合并"},
             {"kind": "switch", "label": "关联 .torrent 文件", "key": "associateFileTypes", "value": self.associateFileTypes.value},
         ]
 
