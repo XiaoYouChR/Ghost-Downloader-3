@@ -79,6 +79,12 @@ class Backend(QObject):
     userAgentModel = Property(QObject, _userAgentModel, constant=True)
 
     @Slot(result="QVariantList")
+    def categories(self) -> list:
+        # per-URL 分类钮的菜单项：只给 id + 名字（展示用）。选哪个目录是引擎权威，gui 只回传 id。
+        from app.bases.categories import DEFAULT_CATEGORY_PRESETS
+        return [{"categoryId": preset["categoryId"], "name": preset["name"]} for preset in DEFAULT_CATEGORY_PRESETS]
+
+    @Slot(result="QVariantList")
     def categoryOptions(self) -> list:
         # 新建对话框的归类下拉：「自动」(空目录→引擎按类型归) + 各分类(选中即下到该分类目录)
         from app.services.category_service import categoryService

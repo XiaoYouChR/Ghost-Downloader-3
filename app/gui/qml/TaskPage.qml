@@ -228,6 +228,7 @@ Item {
                     width: ListView.view.width
                     spacing: 8
                     property bool renaming: false
+                    property string previewTaskId: model.taskId  // 存下来，菜单内层 Repeater 的 model 会遮蔽外层 model
                     Image {
                         Layout.preferredWidth: 24; Layout.preferredHeight: 24
                         source: "image://fileicon/" + encodeURIComponent(model.title)
@@ -239,11 +240,11 @@ Item {
                         visible: !renaming
                         text: model.title; Layout.fillWidth: true; elide: Text.ElideRight
                         TapHandler {
-                            onDoubleTapped: { pvNameEdit.text = model.title; renaming = true; pvNameEdit.forceActiveFocus() }
+                            onDoubleTapped: { previewNameEdit.text = model.title; renaming = true; previewNameEdit.forceActiveFocus() }
                         }
                     }
                     TextField {
-                        id: pvNameEdit
+                        id: previewNameEdit
                         visible: renaming
                         Layout.fillWidth: true
                         onAccepted: { backend.rename(model.taskId, text); renaming = false }
@@ -258,6 +259,22 @@ Item {
                         }
                     }
                     Text { text: model.sizeText; opacity: 0.6 }
+                    // per-URL 分类钮（复刻原版结果卡 categoryButton）：选分类即把这条改到该分类目录
+                    ToolButton {
+                        icon.name: "ic_fluent_folder_20_regular"; size: 15
+                        onClicked: categoryMenu.popup()
+                        Menu {
+                            id: categoryMenu
+                            Repeater {
+                                model: backend.categories()
+                                delegate: MenuItem {
+                                    required property var modelData
+                                    text: modelData.name
+                                    onTriggered: backend.editTask(previewTaskId, { category: modelData.categoryId })
+                                }
+                            }
+                        }
+                    }
                     // per-URL 编辑：复用数据驱动编辑框（链接/标头/代理/目录），提交前改这一条
                     ToolButton {
                         icon.name: "ic_fluent_edit_20_regular"; size: 15

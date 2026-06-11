@@ -10,7 +10,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from app.bases.categories import CATEGORY_FLUENT_ICONS, categoryPresetFor
+from app.bases.categories import categoryPresetFor
 from app.supports.utils import toReadableSize, toReadableTime
 
 # 文件类型 → Fluent 图标名（纯展示映射，图标资源名只 gui 认识，不下到引擎）
@@ -33,6 +33,15 @@ _TYPE_ICONS = {
     "pdf": "ic_fluent_document_pdf_20_filled",
 }
 _DEFAULT_TYPE_ICON = "ic_fluent_document_20_filled"
+
+# 分类的语义图标名（categories 里的 preset["icon"]）→ QML fluent 图标名。
+# 翻译留在 gui 层——bases 只给语义名（"VIDEO"），怎么画是界面的事。
+_CATEGORY_ICONS = {
+    "VIDEO": "ic_fluent_video_clip_20_filled", "MUSIC": "ic_fluent_music_note_2_20_filled",
+    "PHOTO": "ic_fluent_image_20_filled", "CHAT": "ic_fluent_chat_20_filled",
+    "DOCUMENT": "ic_fluent_document_20_filled", "ZIP_FOLDER": "ic_fluent_folder_zip_20_filled",
+    "APPLICATION": "ic_fluent_window_apps_20_filled", "HELP": "ic_fluent_tag_20_filled",
+}
 
 
 class TaskItem:
@@ -110,7 +119,7 @@ class TaskItem:
     def categoryIcon(self) -> str:
         # 文件名命中的自动分类小图标（复刻原版分类标记）；无匹配则空，卡片不显
         preset = categoryPresetFor(self.title)
-        return CATEGORY_FLUENT_ICONS.get(preset["icon"], "") if preset else ""
+        return _CATEGORY_ICONS.get(preset["icon"], "") if preset else ""
 
     @property
     def leftTimeText(self) -> str:

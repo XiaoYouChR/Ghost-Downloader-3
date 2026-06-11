@@ -345,6 +345,19 @@ def test_editPreview_updatesPreviewWithoutCommitting(spine, tmp_path):
     assert pv.data(pv.index(0, 0), TaskList.TitleRole) == "new.mkv"
 
 
+def test_previewCategoryOverride_routesPathThroughCommit(spine, tmp_path):
+    # per-URL 分类钮：gui 只回传 categoryId，引擎按配置目录权威算出分类子目录 → 提交后落在那。
+    spine.config.set("downloadFolder", str(tmp_path))
+    spine.backend.parsePreview(["https://example.com/a.zip"])
+    pv = spine.backend.previewList
+    previewId = pv.data(pv.index(0, 0), TaskList.IdRole)
+
+    spine.backend.editTask(previewId, {"category": "cat_video"})
+    spine.backend.commit()
+
+    assert spine.store.added[-1].path == tmp_path / "Video"
+
+
 def test_renamePreview_updatesTitleWithoutCommitting(spine):
     # 解析后、提交前内联改名 → 预览原地改文件名，不落任务列表/不开始下载。
     spine.backend.parsePreview(["https://example.com/old.zip"])

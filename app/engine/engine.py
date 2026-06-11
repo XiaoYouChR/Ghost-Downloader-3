@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from orjson import loads
 from PySide6.QtCore import QTimer
 
-from app.bases.categories import categoryFolderFor
+from app.bases.categories import categoryFolderById, categoryFolderFor
 from app.bases.models import Task, TaskStatus
 from app.protocol.link import MemoryLink
 from app.protocol.message import Command, Event
@@ -176,6 +176,13 @@ class Engine:
             options.setdefault("preBlockNum", self._config.value("preBlockNum"))
             self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old, isPreview))
             return
+
+        # 选了分类只传 categoryId，引擎按配置目录权威算出分类子目录（gui 不碰目录拼接）。
+        if "category" in options:
+            folder = categoryFolderById(
+                options["category"], self._config.value("downloadFolder"), self._config.value("categoryRules"))
+            if folder:
+                options = {**options, "path": folder}
 
         # 链接没变——就地应用设置。跑着的先停、应用后再起，让新设置（如换代理）即时生效且不丢已下字节。
         wasRunning = not isPreview and old.status == TaskStatus.RUNNING

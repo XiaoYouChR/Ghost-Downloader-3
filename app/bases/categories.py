@@ -53,15 +53,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
 ]
 
 
-# 分类的 qfluentwidgets 图标名 → QML fluent 图标名（任务卡的分类小图标用）
-CATEGORY_FLUENT_ICONS = {
-    "VIDEO": "ic_fluent_video_clip_20_filled", "MUSIC": "ic_fluent_music_note_2_20_filled",
-    "PHOTO": "ic_fluent_image_20_filled", "CHAT": "ic_fluent_chat_20_filled",
-    "DOCUMENT": "ic_fluent_document_20_filled", "ZIP_FOLDER": "ic_fluent_folder_zip_20_filled",
-    "APPLICATION": "ic_fluent_window_apps_20_filled", "HELP": "ic_fluent_tag_20_filled",
-}
-
-
 def categoryPresetFor(filename: str, rules: list | None = None) -> dict | None:
     """按文件扩展名匹配分类规则，返回命中的规则（含 folder/icon），无匹配返回 None。
     tar.gz 这类双后缀先整体匹配再退单后缀，对齐 gui 的 matchByName。"""
@@ -76,6 +67,16 @@ def categoryPresetFor(filename: str, rules: list | None = None) -> dict | None:
         for rule in (rules or DEFAULT_CATEGORY_PRESETS):
             if candidate in rule.get("extensions", ()):
                 return rule
+    return None
+
+
+def categoryFolderById(categoryId: str, baseFolder: str, rules: list | None = None) -> str | None:
+    """按分类 id 取它的下载目录（如 baseFolder/Video）；找不到或该类无目录（如「其他」）则 None。
+    用户在卡上显式选了某分类时，引擎据此权威算目录——gui 只传 id，不碰目录拼接。"""
+    for rule in (rules or DEFAULT_CATEGORY_PRESETS):
+        if rule.get("categoryId") == categoryId:
+            folder = rule.get("folder")
+            return folder.replace(DEFAULT_FOLDER_MACRO, baseFolder) if folder else None
     return None
 
 
