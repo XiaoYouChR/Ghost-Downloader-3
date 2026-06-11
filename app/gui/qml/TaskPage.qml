@@ -198,13 +198,20 @@ Item {
                 TextField { id: addPathField; Layout.preferredWidth: 240; placeholderText: "默认（按配置/分类）" }
                 Button { text: "选择"; onClicked: addFolderDialog.open() }
             }
+            RowLayout {
+                Layout.fillWidth: true
+                Text { text: "线程数"; typography: Typography.Body }
+                Item { Layout.fillWidth: true }
+                Slider { id: addThreadsSlider; Layout.preferredWidth: 180; from: 1; to: 32; stepSize: 1; value: backend.config.preBlockNum }
+                Text { text: Math.round(addThreadsSlider.value); typography: Typography.Body; Layout.preferredWidth: 22 }
+            }
             Button {
                 Layout.fillWidth: true
                 text: "解析"
                 onClicked: {
                     const urls = addUrlsField.text.split("\n").map(s => s.trim()).filter(s => s !== "")
                     backend.discardPreviews()  // 重新解析前清旧预览
-                    const opts = {}
+                    const opts = {preBlockNum: Math.round(addThreadsSlider.value)}
                     if (addPathField.text.trim() !== "") opts.path = addPathField.text.trim()
                     backend.parsePreview(urls, opts)
                 }
