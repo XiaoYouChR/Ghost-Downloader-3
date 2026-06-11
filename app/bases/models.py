@@ -336,6 +336,11 @@ class Task:
     def editorCards(self, parent):
         return []
 
+    def editorSchema(self) -> list[dict]:
+        # 数据驱动编辑卡 schema（cfg/QML-free）：子类吐一串 {kind,label,field,value}，gui 通用渲染器据此渲染。
+        # 替代 editorCards（qfluentwidgets）——pack 留引擎侧只吐数据，QML 端 pack-agnostic。默认不支持编辑。
+        return []
+
     def tryKeepProgress(self, newTask: "Task") -> bool:
         # 子类默认不支持热替换 → 调用方走 replaceWith; HttpTask 在 fileSize / stage
         # 数一致时能把新 url/headers 灌进旧 stage 保住进度, 此时返回 True

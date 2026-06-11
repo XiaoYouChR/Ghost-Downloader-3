@@ -57,6 +57,13 @@ class HttpTask(Task):
             SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
         ]
 
+    def editorSchema(self) -> list[dict]:
+        # 数据驱动编辑卡 schema（先 url + 目录两种 kind；请求标头/代理随通用渲染器补 multiline/proxies kind）
+        return [
+            {"kind": "lineedit", "label": "下载链接", "field": "url", "value": self.url},
+            {"kind": "folder", "label": "下载到", "field": "path", "value": str(self.path)},
+        ]
+
     def applySettings(self, payload):
         super().applySettings(payload)
         if "url" in payload:

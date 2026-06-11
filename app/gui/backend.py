@@ -23,6 +23,7 @@ class Backend(QObject):
     clipboardUrlsDetected = Signal(list)  # 监听剪贴板抓到可下载链接，QML 据此弹新建对话框
     updateAvailable = Signal(str)  # 启动检查发现新版本，QML 据此提示（参数为最新版本号）
     exceptionCaught = Signal(str)  # 未捕获的主线程异常摘要，QML 弹错误提示（完整 traceback 进日志）
+    editSchemaReady = Signal(str, "QVariantList")  # 某任务的编辑卡 schema 到达，QML 据此渲染编辑框
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -165,8 +166,13 @@ class Backend(QObject):
 
     @Slot(str, "QVariant")
     def editTask(self, taskId: str, options) -> None:
-        # 「编辑任务」对话框：改链接后引擎按新 url 重解析、替换该任务（保留 id/目录）
+        # 「编辑任务」对话框应用：按 payload 重解析、替换该任务（保留 id/目录）
         self._link.toEngine(Command("editTask", {"taskId": taskId, "options": dict(options)}))
+
+    @Slot(str)
+    def requestEditSchema(self, taskId: str) -> None:
+        # 请求某任务的编辑卡 schema；引擎回发后经 editSchemaReady 信号给 QML 渲染编辑框
+        self._link.toEngine(Command("editSchema", {"taskId": taskId}))
 
     @Slot(str)
     def pause(self, taskId: str) -> None:
@@ -246,3 +252,5 @@ class Backend(QObject):
             self._previewList.add(TaskItem(event.data["task"]))
         elif event.name == "previewError":
             self.taskAddFailed.emit(event.data["reason"])
+        elif event.name == "editSchema":
+            self.editSchemaReady.emit(event.data["taskId"], event.data["schema"])

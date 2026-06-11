@@ -56,6 +56,8 @@ class Engine:
             self._discardPreviews()
         elif command.name == "editTask":
             self._editTask(command.data["taskId"], command.data.get("options"))
+        elif command.name == "editSchema":
+            self._editSchema(command.data["taskId"])
         elif command.name == "pause":
             self._pause(self._tasks[command.data["taskId"]])
         elif command.name == "resume":
@@ -149,6 +151,12 @@ class Engine:
         self._store.add(task)
         self._downloads.start(task)
         self._emit(Event("taskAdded", {"task": self._toWire(task)}))
+
+    def _editSchema(self, taskId: str) -> None:
+        # gui 要编辑某任务/预览：把该任务的编辑卡 schema 回发，gui 据此渲染编辑框
+        task = self._tasks.get(taskId) or self._previews.get(taskId)
+        if task is not None:
+            self._emit(Event("editSchema", {"taskId": taskId, "schema": task.editorSchema()}))
 
     def _editTask(self, taskId: str, options: dict | None = None) -> None:
         # 改链接后按新 url 重解析，再把结果换进旧任务（保留 id/目录）。先停旧下载，免 worker 还在写就被换 stage。

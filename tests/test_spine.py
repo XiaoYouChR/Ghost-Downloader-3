@@ -281,6 +281,19 @@ def test_addTask_explicitPathBeatsCategory(spine):
     assert spine.downloads.parsedOptions[0]["path"] == "/custom"
 
 
+def test_editSchema_emitsTaskEditorSchema(spine):
+    # gui 请求编辑某任务 → 引擎回发该任务的编辑卡 schema（基类 Task 无编辑卡→空，pack 子类才有内容）。
+    spine.backend.addTask("https://example.com/a.mp4")
+    taskId = spine.taskList.data(spine.taskList.index(0, 0), TaskList.IdRole)
+    captured = []
+    spine.backend.editSchemaReady.connect(lambda tid, schema: captured.append((tid, schema)))
+
+    spine.backend.requestEditSchema(taskId)
+
+    assert captured[-1][0] == taskId
+    assert isinstance(captured[-1][1], list)
+
+
 def test_parsePreview_holdsWithoutCommitting(spine):
     # 两段式添加第一步：解析多条链接进预览，但不落任务列表、不开始下载。
     spine.backend.parsePreview(["https://example.com/a.mp4", "https://example.com/b.mkv"])
