@@ -49,7 +49,7 @@ class Engine:
         elif command.name == "addTask":
             self._addTask(command.data["url"], command.data.get("options"))
         elif command.name == "parsePreview":
-            self._parsePreview(command.data["urls"])
+            self._parsePreview(command.data["urls"], command.data.get("options"))
         elif command.name == "commit":
             self._commit(command.data.get("taskIds"))
         elif command.name == "discardPreviews":
@@ -116,10 +116,11 @@ class Engine:
         # 内联快速添加：解析即开始（不走两段式预览）
         self._downloads.run(self._downloads.parse(url, self._defaultOptions(url, options)), self._onParsed)
 
-    def _parsePreview(self, urls: list[str]) -> None:
+    def _parsePreview(self, urls: list[str], options: dict | None = None) -> None:
         # 两段式添加第一步：逐条解析、暂存进 _previews，不落任务/不开始；回发预览给 gui，确定后才 commit。
+        # options（目录/线程等）在解析时注入——pack 据此建 stage，不必事后改 path（避开时序坑）。
         for url in urls:
-            self._downloads.run(self._downloads.parse(url, self._defaultOptions(url)), partial(self._onPreviewParsed, url))
+            self._downloads.run(self._downloads.parse(url, self._defaultOptions(url, options)), partial(self._onPreviewParsed, url))
 
     def _onPreviewParsed(self, url: str, task: Task | None, error: str | None) -> None:
         if error or task is None:

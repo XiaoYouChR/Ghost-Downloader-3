@@ -26,8 +26,8 @@ Item {
             Button {
                 text: "新建"; icon.name: "ic_fluent_add_20_filled"; highlighted: true
                 onClicked: {
-                    addUrlField.text = ""
-                    addPathField.text = backend.config.downloadFolder
+                    addUrlsField.text = ""
+                    addPathField.text = ""
                     addTaskDialog.open()
                 }
             }
@@ -174,37 +174,52 @@ Item {
         MenuItem { text: "已完成"; onTriggered: taskFilter.statusFilter = "complete" }
     }
 
+    // 两段式添加（复刻原版）：贴多条链接 → 解析预览 → 下载提交。per-URL 编辑/分类、设置卡后续分层补。
     Dialog {
         id: addTaskDialog
         title: "新建任务"
         modal: true
         standardButtons: Dialog.Ok | Dialog.Cancel
+        onOpened: backend.discardPreviews()  // 清旧预览；URL 字段由开启者（新建/剪贴板）各自设
 
         ColumnLayout {
-            implicitWidth: 440
-            spacing: 12
-            TextField {
-                id: addUrlField
+            implicitWidth: 520
+            spacing: 10
+            TextArea {
+                id: addUrlsField
                 Layout.fillWidth: true
-                placeholderText: "下载链接"
+                Layout.preferredHeight: 88
+                placeholderText: "每行一个下载链接"
             }
             RowLayout {
                 Layout.fillWidth: true
                 Text { text: "下载目录"; typography: Typography.Body }
                 Item { Layout.fillWidth: true }
-                TextField { id: addPathField; Layout.preferredWidth: 240 }
+                TextField { id: addPathField; Layout.preferredWidth: 240; placeholderText: "默认（按配置/分类）" }
                 Button { text: "选择"; onClicked: addFolderDialog.open() }
             }
-            RowLayout {
+            Button {
                 Layout.fillWidth: true
-                visible: backend.config.enableCategory  // 开了分类才给选；自动=留空目录让引擎按类型归
-                Text { text: "归类"; typography: Typography.Body }
-                Item { Layout.fillWidth: true }
-                ComboBox {
-                    Layout.preferredWidth: 240
-                    textRole: "name"
-                    model: backend.categoryOptions()
-                    onActivated: addPathField.text = model[currentIndex].folder
+                text: "解析"
+                onClicked: {
+                    const urls = addUrlsField.text.split("\n").map(s => s.trim()).filter(s => s !== "")
+                    backend.discardPreviews()  // 重新解析前清旧预览
+                    const opts = {}
+                    if (addPathField.text.trim() !== "") opts.path = addPathField.text.trim()
+                    backend.parsePreview(urls, opts)
+                }
+            }
+            ListView {
+                Layout.fillWidth: true
+                implicitHeight: 200
+                clip: true
+                model: backend.previewList
+                delegate: RowLayout {
+                    width: ListView.view.width
+                    spacing: 8
+                    Icon { icon: model.typeIcon; size: 20 }
+                    Text { text: model.title; Layout.fillWidth: true; elide: Text.ElideRight }
+                    Text { text: model.sizeText; opacity: 0.6 }
                 }
             }
         }
@@ -215,15 +230,8 @@ Item {
             onAccepted: addPathField.text = String(selectedFolder).replace("file:///", "")
         }
 
-        onAccepted: {
-            if (addUrlField.text.trim() === "")
-                return
-            // 留空目录就别传 path——引擎据此套配置目录并按类型自动归类；指定了才覆盖
-            const options = {}
-            if (addPathField.text.trim() !== "")
-                options.path = addPathField.text.trim()
-            backend.addTaskWithOptions(addUrlField.text.trim(), options)
-        }
+        onAccepted: backend.commit()
+        onRejected: backend.discardPreviews()
         Component.onCompleted: {
             const ok = standardButton(Dialog.Ok)
             if (ok) ok.text = "下载"
@@ -296,8 +304,9 @@ Item {
         target: backend
         function onFilesRequested() { fileDialog.open() }
         function onClipboardUrlsDetected(urls) {
-            // 剪贴板抓到链接：预填进新建对话框让用户确认，不静默添加（多个暂取第一个）
-            addUrlField.text = urls[0]
+            // 剪贴板抓到链接：预填进新建对话框（多条逐行），用户点解析→确认，不静默添加
+            addUrlsField.text = urls.join("\n")
+            addPathField.text = ""
             addTaskDialog.open()
         }
     }

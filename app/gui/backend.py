@@ -147,10 +147,10 @@ class Backend(QObject):
 
     previewList = Property(QObject, _previews, constant=True)
 
-    @Slot("QVariantList")
-    def parsePreview(self, urls) -> None:
-        # 两段式添加第一步：把多条链接交引擎解析，结果落 previewList（不提交、不开始）
-        self._link.toEngine(Command("parsePreview", {"urls": [str(u) for u in urls]}))
+    @Slot("QVariantList", "QVariant")
+    def parsePreview(self, urls, options=None) -> None:
+        # 两段式添加第一步：把多条链接交引擎解析（options 里的目录/线程在解析时注入），结果落 previewList（不提交、不开始）
+        self._link.toEngine(Command("parsePreview", {"urls": [str(u) for u in urls], "options": dict(options or {})}))
 
     @Slot()
     def commit(self) -> None:

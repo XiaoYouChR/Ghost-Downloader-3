@@ -124,6 +124,12 @@ class TaskItem:
             return ""
         return f"{toReadableSize(self._task.get('received', 0))} / {toReadableSize(fileSize)}"
 
+    @property
+    def sizeText(self) -> str:
+        # 解析预览卡显总大小（未知则空）
+        size = self._task.get("fileSize", 0)
+        return toReadableSize(size) if size > 0 else ""
+
     def update(self, task: dict) -> None:
         self._task = task
 
@@ -149,6 +155,7 @@ class TaskList(QAbstractListModel):
     LeftTimeTextRole = Qt.ItemDataRole.UserRole + 16
     ActionKindRole = Qt.ItemDataRole.UserRole + 17
     UrlRole = Qt.ItemDataRole.UserRole + 18
+    SizeTextRole = Qt.ItemDataRole.UserRole + 19
 
     # 角色 → (QML 绑定名, TaskItem 属性)。data()/roleNames 都由这单一来源生成，
     # 加一个展示字段 = 加一行 + TaskItem 上一个属性。selected 是模型级（不在 item 上），属性记 None 单独处理。
@@ -171,6 +178,7 @@ class TaskList(QAbstractListModel):
         LeftTimeTextRole: ("leftTimeText", "leftTimeText"),
         ActionKindRole: ("actionKind", "actionKind"),
         UrlRole: ("url", "url"),
+        SizeTextRole: ("sizeText", "sizeText"),
     }
 
     selectionModeChanged = Signal()
