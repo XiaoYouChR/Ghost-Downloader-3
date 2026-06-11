@@ -431,6 +431,22 @@ class BilibiliConfig(PackConfig):
     parseDolby = ConfigItem("Download", "ParseDolby", False, BoolValidator())
     userCookie = ConfigItem("Download", "UserCookie", "", CookieValidator())
 
+    settingsTitle = "哔哩哔哩视频下载"
+
+    def settingsSchema(self) -> list[dict]:
+        qualities = [(127, "8K"), (120, "4K"), (116, "1080P60"), (112, "1080P+"),
+                     (80, "1080P"), (74, "720P60"), (64, "720P"), (32, "480P"), (16, "360P")]
+        return [
+            {"kind": "combo", "label": "默认清晰度", "key": "defaultQuality", "value": self.defaultQuality.value,
+             "options": [{"label": label, "value": value} for value, label in qualities]},
+            {"kind": "combo", "label": "备选清晰度", "key": "alternativeQuality", "value": self.alternativeQuality.value,
+             "options": [{"label": "可以下载的最高画质", "value": "max"}, {"label": "可以下载的最低画质", "value": "min"}]},
+            {"kind": "switch", "label": "HDR", "key": "parseHDR", "value": self.parseHDR.value},
+            {"kind": "switch", "label": "杜比视界", "key": "parseDolby", "value": self.parseDolby.value},
+            {"kind": "text", "label": "登录 Cookie", "key": "userCookie", "value": self.userCookie.value,
+             "placeholder": "SESSDATA=…（扫码登录后续补）"},
+        ]
+
     def setupSettings(self, settingPage: "SettingPage"):
         self.parseBilibiliGroup = CollapsibleSettingCardGroup(self.tr("哔哩哔哩视频下载"), "bili", settingPage.container)
 

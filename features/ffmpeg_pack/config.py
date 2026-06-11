@@ -162,6 +162,12 @@ class FFmpegRuntimeCard(SettingCard):
 class FFmpegConfig(PackConfig):
     installFolder = ConfigItem("FFmpeg", "InstallFolder", f"{APP_DATA_DIR}/FFmpeg", FolderValidator())
 
+    settingsTitle = "FFmpeg"
+
+    def settingsSchema(self) -> list[dict]:
+        # 安装目录是普通设置；一键安装/运行时检测是交互流程，后续单独补
+        return [{"kind": "folder", "label": "FFmpeg 安装目录", "key": "installFolder", "value": self.installFolder.value}]
+
     def setupSettings(self, settingPage: "SettingPage"):
         self.ffmpegGroup = CollapsibleSettingCardGroup(self.tr("FFmpeg"), "ffmpeg", settingPage.container)
         self.installFolderCard = InstallFolderCard(
