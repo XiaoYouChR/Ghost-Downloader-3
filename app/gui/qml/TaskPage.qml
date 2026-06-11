@@ -225,6 +225,14 @@ Item {
                         fillMode: Image.PreserveAspectFit
                     }
                     Text { text: model.title; Layout.fillWidth: true; elide: Text.ElideRight }
+                    // pack 解析出的元信息（M3U8「HLS·点播」等），复用任务卡的 chips
+                    Row {
+                        spacing: 6
+                        Repeater {
+                            model: chips
+                            delegate: Text { text: modelData; opacity: 0.55; typography: Typography.Caption }
+                        }
+                    }
                     Text { text: model.sizeText; opacity: 0.6 }
                     // per-URL 编辑：复用数据驱动编辑框（链接/标头/代理/目录），提交前改这一条
                     ToolButton {
