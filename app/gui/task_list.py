@@ -130,6 +130,13 @@ class TaskItem:
         size = self._task.get("fileSize", 0)
         return toReadableSize(size) if size > 0 else ""
 
+    @property
+    def statusText(self) -> str:
+        # 非运行态的状态文字（复刻原版）：运行时显速度/进度，其余显这行。FAILED 走 errorText。
+        return {
+            "COMPLETED": "任务已完成", "PAUSED": "任务已暂停", "WAITING": "任务正在等待",
+        }.get(self.status, "")
+
     def update(self, task: dict) -> None:
         self._task = task
 
@@ -156,6 +163,7 @@ class TaskList(QAbstractListModel):
     ActionKindRole = Qt.ItemDataRole.UserRole + 17
     UrlRole = Qt.ItemDataRole.UserRole + 18
     SizeTextRole = Qt.ItemDataRole.UserRole + 19
+    StatusTextRole = Qt.ItemDataRole.UserRole + 20
 
     # 角色 → (QML 绑定名, TaskItem 属性)。data()/roleNames 都由这单一来源生成，
     # 加一个展示字段 = 加一行 + TaskItem 上一个属性。selected 是模型级（不在 item 上），属性记 None 单独处理。
@@ -179,6 +187,7 @@ class TaskList(QAbstractListModel):
         ActionKindRole: ("actionKind", "actionKind"),
         UrlRole: ("url", "url"),
         SizeTextRole: ("sizeText", "sizeText"),
+        StatusTextRole: ("statusText", "statusText"),
     }
 
     selectionModeChanged = Signal()

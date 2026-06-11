@@ -218,6 +218,12 @@ class Backend(QObject):
         self._link.toEngine(Command("rename", {"taskId": taskId, "title": title}))
 
     @Slot(str)
+    def copyToClipboard(self, text: str) -> None:
+        # 复制下载链接等到剪贴板，gui 端动作不过缝
+        from PySide6.QtWidgets import QApplication
+        QApplication.clipboard().setText(text)
+
+    @Slot(str)
     def openFile(self, path: str) -> None:
         # 打开下载好的文件是 gui 端的 OS 动作，不过缝
         utils.openFile(path)

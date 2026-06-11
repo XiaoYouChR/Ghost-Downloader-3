@@ -111,6 +111,7 @@ Item {
                     speedText: model.speedText
                     leftTimeText: model.leftTimeText
                     progressText: model.progressText
+                    statusText: model.statusText
                     chips: model.chips
                     actionKind: model.actionKind
                     errorText: model.error

@@ -19,6 +19,7 @@ Frame {
     property string speedText
     property string leftTimeText
     property string progressText
+    property string statusText
     property var chips: []
     property string actionKind: "toggle"
     property string errorText
@@ -46,7 +47,14 @@ Frame {
     }
     TapHandler {
         acceptedButtons: Qt.RightButton
-        onTapped: card.editRequested(card.taskId, card.fileName, card.url)
+        onTapped: cardMenu.popup()
+    }
+
+    // 右键菜单（复刻原版）：复制链接 / 编辑参数（重新下载/移动分类后续补）
+    Menu {
+        id: cardMenu
+        MenuItem { text: "复制下载链接"; onTriggered: backend.copyToClipboard(card.url) }
+        MenuItem { text: "编辑任务参数"; onTriggered: card.editRequested(card.taskId, card.fileName, card.url) }
     }
 
     RowLayout {
@@ -86,9 +94,10 @@ Frame {
                 Layout.fillWidth: true
                 spacing: 14
 
+                // 非运行态的状态文字（完成/暂停/等待，引擎算好）；运行态隐藏，让位给速度/进度
                 Row {
                     spacing: 5
-                    visible: card.completed
+                    visible: card.statusText !== ""
                     Icon {
                         icon: "ic_fluent_info_20_regular"; size: 14
                         anchors.verticalCenter: parent.verticalCenter
@@ -96,13 +105,13 @@ Frame {
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        typography: Typography.Caption; text: "任务已经完成"
+                        typography: Typography.Caption; text: card.statusText
                         color: Theme.currentTheme.colors.textSecondaryColor
                     }
                 }
                 Row {
                     spacing: 5
-                    visible: !card.completed && card.speedText !== ""
+                    visible: card.running && card.speedText !== ""
                     Icon {
                         icon: "ic_fluent_top_speed_20_regular"; size: 14
                         anchors.verticalCenter: parent.verticalCenter
@@ -116,7 +125,7 @@ Frame {
                 }
                 Row {
                     spacing: 5
-                    visible: !card.completed && card.leftTimeText !== "" && card.leftTimeText !== "--"
+                    visible: card.running && card.leftTimeText !== "" && card.leftTimeText !== "--"
                     Icon {
                         icon: "ic_fluent_clock_20_regular"; size: 14
                         anchors.verticalCenter: parent.verticalCenter
@@ -130,7 +139,7 @@ Frame {
                 }
                 Row {
                     spacing: 5
-                    visible: !card.completed && card.progressText !== ""
+                    visible: card.running && card.progressText !== ""
                     Icon {
                         icon: "ic_fluent_document_20_regular"; size: 14
                         anchors.verticalCenter: parent.verticalCenter
