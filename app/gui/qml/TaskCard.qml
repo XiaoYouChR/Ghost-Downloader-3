@@ -14,6 +14,7 @@ Frame {
     property string url
     property string typeIcon: "ic_fluent_document_20_filled"
     property string categoryIcon
+    property bool renaming: false
     property bool running
     property bool completed
     property real progress
@@ -98,11 +99,24 @@ Frame {
                     size: 14
                     color: Theme.currentTheme.colors.textSecondaryColor
                 }
+                // 文件名：双击进内联改名（复刻原版结果卡 click-to-edit）；已完成的双击留给开文件
                 Text {
+                    visible: !card.renaming
                     Layout.fillWidth: true
                     typography: Typography.BodyStrong
                     text: card.fileName
                     elide: Text.ElideRight
+                    TapHandler {
+                        enabled: !card.completed
+                        onDoubleTapped: { nameEdit.text = card.fileName; card.renaming = true; nameEdit.forceActiveFocus() }
+                    }
+                }
+                TextField {
+                    id: nameEdit
+                    visible: card.renaming
+                    Layout.fillWidth: true
+                    onAccepted: { backend.rename(card.taskId, text); card.renaming = false }
+                    onActiveFocusChanged: if (!activeFocus) card.renaming = false
                 }
             }
 

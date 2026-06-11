@@ -345,6 +345,18 @@ def test_editPreview_updatesPreviewWithoutCommitting(spine, tmp_path):
     assert pv.data(pv.index(0, 0), TaskList.TitleRole) == "new.mkv"
 
 
+def test_renamePreview_updatesTitleWithoutCommitting(spine):
+    # 解析后、提交前内联改名 → 预览原地改文件名，不落任务列表/不开始下载。
+    spine.backend.parsePreview(["https://example.com/old.zip"])
+    pv = spine.backend.previewList
+    previewId = pv.data(pv.index(0, 0), TaskList.IdRole)
+
+    spine.backend.rename(previewId, "renamed.zip")
+
+    assert spine.taskList.rowCount() == 0  # 未提交
+    assert pv.data(pv.index(0, 0), TaskList.TitleRole) == "renamed.zip"
+
+
 def test_commit_movesPreviewsToTasksAndStarts(spine):
     # 第二步：确定 → 预览转成真任务、落盘+开始，预览清空。
     spine.backend.parsePreview(["https://example.com/a.mp4"])

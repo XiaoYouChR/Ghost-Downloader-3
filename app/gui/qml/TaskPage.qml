@@ -227,13 +227,28 @@ Item {
                 delegate: RowLayout {
                     width: ListView.view.width
                     spacing: 8
+                    property bool renaming: false
                     Image {
                         Layout.preferredWidth: 24; Layout.preferredHeight: 24
                         source: "image://fileicon/" + encodeURIComponent(model.title)
                         sourceSize.width: 24; sourceSize.height: 24
                         fillMode: Image.PreserveAspectFit
                     }
-                    Text { text: model.title; Layout.fillWidth: true; elide: Text.ElideRight }
+                    // 文件名：双击改名（复刻原版结果卡 click-to-edit），提交前就生效在预览上
+                    Text {
+                        visible: !renaming
+                        text: model.title; Layout.fillWidth: true; elide: Text.ElideRight
+                        TapHandler {
+                            onDoubleTapped: { pvNameEdit.text = model.title; renaming = true; pvNameEdit.forceActiveFocus() }
+                        }
+                    }
+                    TextField {
+                        id: pvNameEdit
+                        visible: renaming
+                        Layout.fillWidth: true
+                        onAccepted: { backend.rename(model.taskId, text); renaming = false }
+                        onActiveFocusChanged: if (!activeFocus) renaming = false
+                    }
                     // pack 解析出的元信息（M3U8「HLS·点播」等），复用任务卡的 chips
                     Row {
                         spacing: 6

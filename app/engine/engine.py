@@ -275,9 +275,16 @@ class Engine:
         self._emit(Event("config", {"values": {key: self._config.value(key)}}))
 
     def _rename(self, taskId: str, title: str) -> None:
-        task = self._tasks[taskId]
+        # 改文件名（复刻原版结果卡/任务卡内联改名）。预览还没落盘——只更新展示、不落库。
+        task = self._tasks.get(taskId) or self._previews.get(taskId)
+        if task is None:
+            return
         task.setTitle(title)
-        self._changed(task)
+        if taskId in self._previews:
+            self._emit(Event("previewChanged", {"task": self._toWire(task)}))
+        else:
+            self._store.add(task)  # 改名要落盘
+            self._changed(task)
 
     def _onHashed(self, taskId: str, digest: str | None, error: str | None) -> None:
         if error or not digest:
