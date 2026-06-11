@@ -273,9 +273,15 @@ class Engine:
             self._remove(taskId)
 
     def _setSelection(self, taskId: str, indexes: list) -> None:
-        task = self._tasks[taskId]
+        # 选下载哪些文件（BT 种子/FTP 目录多文件）。预览还没提交——只更新预览展示、不落库。
+        task = self._tasks.get(taskId) or self._previews.get(taskId)
+        if task is None:
+            return
         task.setSelection(list(indexes))
-        self._changed(task)
+        if taskId in self._previews:
+            self._emit(Event("previewChanged", {"task": self._toWire(task)}))
+        else:
+            self._changed(task)
 
     def _setConfig(self, key: str, value) -> None:
         self._config.set(key, value)

@@ -113,8 +113,10 @@ class Backend(QObject):
 
     @Slot(str)
     def editFiles(self, taskId: str) -> None:
+        # 任务在主列表或预览列表都行——选文件钮只在多文件（fileCount>1）时露出，对应列表必有文件
         self._editingTaskId = taskId
-        self._filesModel = FileSelection(self._taskList.filesOf(taskId))
+        files = self._taskList.filesOf(taskId) or self._previewList.filesOf(taskId)
+        self._filesModel = FileSelection(files)
         self.filesModelChanged.emit()
         self.filesRequested.emit()
 

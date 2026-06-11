@@ -259,6 +259,12 @@ Item {
                         }
                     }
                     Text { text: model.sizeText; opacity: 0.6 }
+                    // 多文件源（BT 种子/FTP 目录）选下载哪些文件，复用主列表那套选文件框
+                    ToolButton {
+                        icon.name: "ic_fluent_library_20_regular"; size: 15
+                        visible: model.fileCount > 1
+                        onClicked: backend.editFiles(model.taskId)
+                    }
                     // per-URL 分类钮（复刻原版结果卡 categoryButton）：选分类即把这条改到该分类目录
                     ToolButton {
                         icon.name: "ic_fluent_folder_20_regular"; size: 15

@@ -358,6 +358,20 @@ def test_previewCategoryOverride_routesPathThroughCommit(spine, tmp_path):
     assert spine.store.added[-1].path == tmp_path / "Video"
 
 
+def test_selectFilesOnPreview_keepsItUncommitted(spine):
+    # 多文件预览（BT/FTP）选文件：走选文件框确认 → setSelection 落在预览上，不提交、不开始。
+    # 旧实现 _setSelection 直接 self._tasks[id] 会 KeyError；这条守 setSelection 认预览。
+    spine.backend.parsePreview(["magnet:?xt=urn:btih:abc"])
+    pv = spine.backend.previewList
+    previewId = pv.data(pv.index(0, 0), TaskList.IdRole)
+
+    spine.backend.editFiles(previewId)  # 选文件框数据源能在预览列表里找到这条
+    spine.backend.confirmFiles()  # 确认 → setSelection 命令
+
+    assert spine.taskList.rowCount() == 0  # 未提交
+    assert pv.rowCount() == 1  # 仍是预览
+
+
 def test_renamePreview_updatesTitleWithoutCommitting(spine):
     # 解析后、提交前内联改名 → 预览原地改文件名，不落任务列表/不开始下载。
     spine.backend.parsePreview(["https://example.com/old.zip"])
