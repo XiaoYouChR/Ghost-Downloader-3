@@ -25,6 +25,7 @@ ColumnLayout {
                            : modelData.kind === "int" ? intRow
                            : modelData.kind === "folder" ? folderRow
                            : modelData.kind === "lines" ? linesRow
+                           : modelData.kind === "status" ? statusRow
                            : textRow
             onLoaded: item.modelData = modelData
         }
@@ -70,6 +71,18 @@ ColumnLayout {
         }
         onAccepted: backend.setPackSetting(view.packId, pendingKey, true)
         onRejected: if (pendingSwitch) pendingSwitch.checked = false
+    }
+
+    // status：只读检测信息（如 N_m3u8DL-RE / FFmpeg 是否装好），引擎建 schema 时算好，界面只显
+    Component {
+        id: statusRow
+        RowLayout {
+            property var modelData
+            Layout.fillWidth: true
+            Text { text: modelData ? modelData.label : ""; typography: Typography.Body }
+            Item { Layout.fillWidth: true }
+            Text { text: modelData ? modelData.value : ""; opacity: 0.7; elide: Text.ElideMiddle; Layout.maximumWidth: 320 }
+        }
     }
 
     Component {

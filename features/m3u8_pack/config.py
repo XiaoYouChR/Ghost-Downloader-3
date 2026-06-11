@@ -196,7 +196,10 @@ class M3U8Config(PackConfig):
         def number(label, key, item, low, high):
             return {"kind": "int", "label": label, "key": key, "value": item.value, "min": low, "max": high}
 
+        binary = downloaderPath()
         return [
+            {"kind": "status", "label": "N_m3u8DL-RE",
+             "value": (f"已检测到 @ {binary}" if binary else "未检测到——请安装 N_m3u8DL-RE 后重开设置")},
             {"kind": "folder", "label": "N_m3u8DL-RE 安装目录", "key": "installFolder", "value": self.installFolder.value},
             switch("关联 M3U8/MPD 文件", "associateFileTypes", self.associateFileTypes),
             combo("输出容器", "outputFormat", self.outputFormat, ["mp4", "mkv"]),

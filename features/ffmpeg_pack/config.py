@@ -165,8 +165,13 @@ class FFmpegConfig(PackConfig):
     settingsTitle = "FFmpeg"
 
     def settingsSchema(self) -> list[dict]:
-        # 安装目录是普通设置；一键安装/运行时检测是交互流程，后续单独补
-        return [{"kind": "folder", "label": "FFmpeg 安装目录", "key": "installFolder", "value": self.installFolder.value}]
+        # 安装目录是普通设置；运行时检测只读显；一键安装是交互流程，后续单独补
+        ffmpeg, _ = ffmpegPaths()
+        return [
+            {"kind": "status", "label": "FFmpeg",
+             "value": (f"已检测到 @ {ffmpeg}" if ffmpeg else "未检测到——部分流可能无法自动混流")},
+            {"kind": "folder", "label": "FFmpeg 安装目录", "key": "installFolder", "value": self.installFolder.value},
+        ]
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.ffmpegGroup = CollapsibleSettingCardGroup(self.tr("FFmpeg"), "ffmpeg", settingPage.container)
