@@ -269,6 +269,24 @@ class FeatureService:
                 logger.opt(exception=e).error("获取 FeaturePack 对话框设置项失败 {}", packName)
         return cards
 
+    def packSettings(self) -> list[dict]:
+        # 各 pack 的数据驱动设置组（QML 通用渲染）：[{packId, title, schema}]。无 config / 无标题的 pack 不出区。
+        groups = []
+        for packName, packInstance in self._sortedPacks():
+            config = packInstance.config
+            if config is None or not config.settingsTitle:
+                continue
+            schema = config.settingsSchema()
+            if schema:
+                groups.append({"packId": packInstance.packId, "title": config.settingsTitle, "schema": schema})
+        return groups
+
+    def applyPackSetting(self, packId: str, key: str, value) -> None:
+        for packInstance in self._packs.values():
+            if packInstance.packId == packId and packInstance.config is not None:
+                packInstance.config.applySetting(key, value)
+                return
+
     def fileTypes(self) -> list[FileType]:
         types = []
         for packName, packInstance in self._sortedPacks():

@@ -43,6 +43,12 @@ class Downloads:
         pack = featureService.packOf(task)
         return pack.cardSegments(task) if pack is not None else []
 
+    def packSettings(self) -> list[dict]:
+        return featureService.packSettings()
+
+    def applyPackSetting(self, packId: str, key: str, value) -> None:
+        featureService.applyPackSetting(packId, key, value)
+
     def verify(self, task: Task, callback) -> None:
         coreService.runCoroutine(self._hash(task.outputFolder), callback)
 

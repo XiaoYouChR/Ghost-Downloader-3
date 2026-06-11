@@ -81,6 +81,8 @@ class Engine:
             self._setSelection(command.data["taskId"], command.data["indexes"])
         elif command.name == "setConfig":
             self._setConfig(command.data["key"], command.data["value"])
+        elif command.name == "setPackSetting":
+            self._downloads.applyPackSetting(command.data["packId"], command.data["key"], command.data["value"])
         elif command.name == "rename":
             self._rename(command.data["taskId"], command.data["title"])
         elif command.name == "setCategory":
@@ -92,6 +94,7 @@ class Engine:
         self._attached = True
         self._emit(Event("snapshot", {"tasks": [self._toWire(task) for task in self._tasks.values()]}))
         self._emit(Event("config", {"values": {key: self._config.value(key) for key in _CONFIG_KEYS}}))
+        self._emit(Event("packSettings", {"groups": self._downloads.packSettings()}))  # 各 pack 的数据驱动设置组
         self._pump.start()
 
     def poll(self) -> None:

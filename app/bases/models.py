@@ -435,6 +435,19 @@ class PackConfig:
     def setupSettings(self, settingPage: "SettingPage"):
         raise NotImplementedError
 
+    settingsTitle: str = ""  # QML 设置页里这组的标题（如「GitHub 加速」）；空则该 pack 不出设置区
+
+    def settingsSchema(self) -> list[dict]:
+        # 数据驱动 pack 设置（替代 setupSettings 的 QtWidgets 卡）：吐 [{kind,label,key,value,options/min/max}]，
+        # QML 通用渲染器据此画 SpinBox/ComboBox/Switch/…。pack 留引擎侧只吐数据，不碰 QML。默认无设置。
+        return []
+
+    def applySetting(self, key: str, value) -> None:
+        # 按 key 把值写回对应 ConfigItem（key 即类属性名）。引擎收到 setPackSetting 命令时调，pack 下次读 cfg 即新值。
+        item = getattr(self, key, None)
+        if isinstance(item, ConfigItem):
+            cfg.set(item, value)
+
     def dialogCards(self, parent: "QWidget") -> Iterable["SettingCard"]:
         return []
 

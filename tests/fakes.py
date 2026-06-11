@@ -11,6 +11,7 @@ class FakeDownloads:
         self.started: list[Task] = []
         self.stopped: list[Task] = []
         self.parsedOptions: list[dict] = []
+        self.appliedPackSettings: list[tuple] = []
         self.actionKind = "toggle"  # 测试可改成 finalize 验直播分派
         self._parseError = parseError
 
@@ -43,6 +44,12 @@ class FakeDownloads:
 
     def cardSegments(self, task: Task) -> list:
         return []
+
+    def packSettings(self) -> list:
+        return []
+
+    def applyPackSetting(self, packId: str, key: str, value) -> None:
+        self.appliedPackSettings.append((packId, key, value))
 
     def verify(self, task: Task, callback) -> None:
         callback("test-hash", None)

@@ -270,6 +270,22 @@ def test_editTask_appliesSettingsInPlaceWithoutReparsing(spine, tmp_path):
     assert spine.taskList.data(index, TaskList.IdRole) == taskId
 
 
+def test_setPackSetting_routesToDownloads(spine):
+    # QML 改某 pack 设置 → setPackSetting 命令 → 引擎经 downloads 边界落到那个 pack 的 config。
+    spine.backend.setPackSetting("github", "enabled", True)
+
+    assert spine.downloads.appliedPackSettings == [("github", "enabled", True)]
+
+
+def test_packSettings_eventPopulatesBackend(spine):
+    # 引擎下发的各 pack 设置组落进 backend.packSettings，QML 设置页据此渲染。
+    spine.backend.receive(Event("packSettings", {"groups": [
+        {"packId": "x", "title": "测试组", "schema": [{"kind": "switch", "label": "开关", "key": "k", "value": False}]},
+    ]}))
+
+    assert spine.backend.packSettings[0]["title"] == "测试组"
+
+
 def test_planTask_firesActionOnceWhenAllComplete(spine):
     # 计划任务：设「完成后关机」→ 所有任务完成的边沿发一次 planActionReady，随后自动解除。
     triggered = []

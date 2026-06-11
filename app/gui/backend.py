@@ -30,6 +30,7 @@ class Backend(QObject):
     browserPairRequested = Signal("QVariant")  # 浏览器扩展请求配对，QML 弹框问用户
     browserPairAnswered = Signal(bool)  # 用户答配对（同意/拒绝），main() 转给 BrowserService
     browserExtensionChanged = Signal()
+    packSettingsChanged = Signal()  # 各 pack 的设置组到达，QML 设置页据此渲染
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -46,6 +47,7 @@ class Backend(QObject):
         self._ruleModel: CategoryRuleModel | None = None
         self._planAction = ""  # 计划任务：""=未设，否则 shutdown/restart/openFile
         self._planFilePath = ""
+        self._packSettings: list = []  # 引擎下发的各 pack 设置组
 
     def _config(self) -> QObject:
         return self._configMap
@@ -283,6 +285,15 @@ class Backend(QObject):
         self._planFilePath = ""
         self.planArmedChanged.emit()
 
+    def _packSettingsGroups(self) -> list:
+        return self._packSettings
+
+    packSettings = Property("QVariantList", _packSettingsGroups, notify=packSettingsChanged)
+
+    @Slot(str, str, "QVariant")
+    def setPackSetting(self, packId: str, key: str, value) -> None:
+        self._link.toEngine(Command("setPackSetting", {"packId": packId, "key": key, "value": value}))
+
     @Slot(bool)
     def answerBrowserPair(self, approved: bool) -> None:
         # QML 配对框的答复转给 BrowserService（main() 接 browserPairAnswered）
@@ -350,6 +361,9 @@ class Backend(QObject):
             self.taskAddFailed.emit(event.data["reason"])
         elif event.name == "editSchema":
             self.editSchemaReady.emit(event.data["taskId"], event.data["schema"])
+        elif event.name == "packSettings":
+            self._packSettings = event.data["groups"]
+            self.packSettingsChanged.emit()
         elif event.name == "allComplete":
             if self._planAction:  # 计划已设才动作，触发后即解除（复刻原版只执行一次）
                 self.planActionReady.emit(self._planAction, self._planFilePath)

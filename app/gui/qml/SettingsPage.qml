@@ -264,4 +264,17 @@ FluentPage {
         Item { Layout.fillWidth: true }
         Text { text: backend.config.downloadFolder; opacity: 0.7 }
     }
+
+    // 各 pack 的设置组（M3U8/BT/bili/github…）：引擎数据驱动下发，通用渲染器按 kind 画
+    Repeater {
+        model: backend.packSettings
+        delegate: PackSettingsView {
+            required property var modelData
+            Layout.fillWidth: true
+            Layout.topMargin: 8
+            packId: modelData.packId
+            title: modelData.title
+            schema: modelData.schema
+        }
+    }
 }

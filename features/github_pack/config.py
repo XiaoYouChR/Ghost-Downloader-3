@@ -289,6 +289,18 @@ class GitHubConfig(PackConfig):
         GitHubProxySiteValidator(),
     )
 
+    settingsTitle = "GitHub 加速"
+
+    def settingsSchema(self) -> list[dict]:
+        return [
+            {"kind": "switch", "label": "启用 GitHub 加速", "key": "enabled", "value": self.enabled.value},
+            {"kind": "combo", "label": "代理站", "key": "proxySite", "value": self.proxySite.value,
+             "options": [{"label": _siteName(site), "value": site} for site in GITHUB_PROXY_SITES]
+             + [{"label": "自定义", "value": GITHUB_CUSTOM_PROXY_SITE}]},
+            {"kind": "text", "label": "自定义代理站", "key": "customProxySite", "value": self.customProxySite.value,
+             "placeholder": "https://example.com/"},
+        ]
+
     def setupSettings(self, settingPage: "SettingPage"):
         self.githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", settingPage.container)
         self.enableCard = SwitchSettingCard(
