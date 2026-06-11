@@ -32,6 +32,13 @@ Item {
             Button { text: "全部暂停"; icon.name: "ic_fluent_pause_20_regular"; onClicked: backend.pauseAll() }
             ToolButton { icon.name: "ic_fluent_select_all_off_20_regular"; size: 18; onClicked: taskList.setSelectionMode(true) }
             Button { text: "清空已完成"; onClicked: backend.clearCompleted() }
+            // 限速快切（复刻原版工具栏；限速值在设置页）
+            ToolButton {
+                icon.name: backend.config.enableSpeedLimitation ? "ic_fluent_top_speed_20_filled" : "ic_fluent_top_speed_20_regular"
+                highlighted: backend.config.enableSpeedLimitation
+                size: 18
+                onClicked: backend.setConfig("enableSpeedLimitation", !backend.config.enableSpeedLimitation)
+            }
 
             Row {
                 Layout.leftMargin: 6
