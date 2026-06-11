@@ -5,12 +5,6 @@
 > [!NOTE]
 > 由于学习原因, 近期本项目的开发速度有所放缓.
 
-> [!IMPORTANT]
-> 欢迎加入 Ghost Downloader 用户交流群 [756042420](https://qm.qq.com/q/gPk6FR1Hby)
-
-> [!TIP]
-> 如果你想为 Ghost Downloader 贡献翻译，欢迎前往 Crowdin 项目页: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
-
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -28,7 +22,7 @@
 [![Downloads][downloads-shield]][release-url]
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 
-##### [Bug 报告](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [功能需求](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
+##### [使用文档](https://gd.xychr.com/zh/docs/) · [Bug 报告](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [功能需求](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -37,7 +31,6 @@
 
 * 在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
 * 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
-* 特点是能像 IDM 一样智能分块但又不需要合并文件，以及 AI 智能加速🚀的功能
 * 得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能 (等待插件 API 固定中...)，发挥 Python🐍 最大的优势
 
 |       平台       |     版本要求      |       架构支持       | 兼容 |
@@ -45,6 +38,7 @@
 |  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
 | 🪟 **Windows** |   `7 SP1+`    | `x86_64`/`arm64` | ✅  |
 |  🍎 **macOS**  |    `13.0+`    | `x86_64`/`arm64` | ✅  |
+| 🤖 **Android** |    `9.0+`     |   `arm64-v8a`    | ✅  |
 
 > [!WARNING]
 > 由于 Qt `6.6+` 已经不再支持 `不支持 AVX 指令集的 CPU`
@@ -52,21 +46,26 @@
 > [!TIP]  
 > **Arch Linux AUR 支持**：现已可通过社区维护的软件包 `ghost-downloader-bin` 和 `ghost-downloader-git` 进行安装（维护者：[@zxp19821005](https://github.com/zxp19821005)）
 
+<!-- FEATURES -->
+## 功能特性
+
+* 像 IDM 一样智能分块⚡但又不需要合并文件，以及 AI 智能加速🚀
+* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH 等几乎所有常用协议🌐
+* 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也是全链路支持
+* 配套的浏览器扩展🦊可以直接嗅探网页上的媒体资源
+* 任务可以暂停后修改✏️链接、请求头、代理再继续，已下载的进度不会丢
+* 完整的 Android 移动端界面📱，支持后台下载与完成通知🔔
+
+<!-- SCREEN SHOTS -->
+## 截图
+
+![QQ20260326-204347](https://github.com/user-attachments/assets/3e57b113-200c-4286-91cb-b52fe7d1711c)
+
 <!-- ROADMAP -->
 ## 计划
 
-- ✅ 全局设置
-- ✅ 更详细的下载信息
-- ✅ 计划任务功能
-- ✅ 浏览器插件优化
-- ✅ 全局限速
-- ✅ 内存占用优化
-- ✅ 磁力 / BT 下载
-- ✅ 强大的浏览器插件功能
-- ✅ 强大的插件功能 (API仍需固定...)
-- ✅ 智能加速
-- ✅ 使用 AsyncIO 解决样板代码问题
-- ❌ 由事件驱动的架构重构 (Actor Model)
+- ❌ 下载引擎 Native 化 (降低软件在后台的内存占用)
+- ❌ 公开插件 API
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Sessions 等强大功能)
 - ❌ 支持 eD2k 协议
 
@@ -96,6 +95,9 @@
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 ## 翻译贡献者
+
+> [!TIP]
+> 如果你想为 Ghost Downloader 贡献翻译，欢迎前往 Crowdin 项目页: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
 
 <!-- CROWDIN-CONTRIBUTORS-START -->
 <table>
@@ -134,11 +136,6 @@
 </table>
 <!-- CROWDIN-CONTRIBUTORS-END -->
 
-<!-- SCREEN SHOTS -->
-## 截图
-
-![QQ20260326-204347](https://github.com/user-attachments/assets/3e57b113-200c-4286-91cb-b52fe7d1711c)
-
 <!-- LICENSE -->
 ## 许可证
 
@@ -149,20 +146,28 @@ Copyright © 2025 XiaoYouChR.
 <!-- CONTACT -->
 ## 联系
 
+> [!IMPORTANT]
+> 欢迎加入 Ghost Downloader 用户交流群 [756042420](https://qm.qq.com/q/gPk6FR1Hby)
+
 * [E-mail](mailto:XiaoYouChR@qq.com) - XiaoYouChR@qq.com
-* [QQ 群](https://qm.qq.com/q/gPk6FR1Hby) - 756042420
 
 <!-- ACKNOWLEDGMENTS -->
 ## 引用
 
 * [aioftp](https://github.com/aio-libs/aioftp) Ftp client/server for asyncio
+* [cat-catch](https://github.com/xifangczy/cat-catch) 猫抓 浏览器资源嗅探扩展
 * [desktop-notifier](https://github.com/samschott/desktop-notifier) Python library for cross-platform desktop notifications
+* [FFmpeg](https://ffmpeg.org/) A complete, cross-platform solution to record, convert and stream audio and video
 * [libtorrent](https://github.com/arvidn/libtorrent) An efficient feature complete C++ bittorrent implementation
 * [loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
+* [m3u8](https://github.com/globocom/m3u8) Python m3u8 parser
+* [mpegdash](https://github.com/sangoma/mpegdash) MPEG-DASH MPD parser
 * [niquests](https://github.com/jawah/niquests) Automatic HTTP/1.1, HTTP/2, and HTTP/3. WebSocket, and SSE included.
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大、可扩展、美观优雅的 Fluent Design 风格组件库
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
+* [uvloop](https://github.com/MagicStack/uvloop) Ultra fast asyncio event loop
+* [winloop](https://github.com/Vizonex/Winloop) An alternative to uvloop for Windows
 
 ## 致谢
 
