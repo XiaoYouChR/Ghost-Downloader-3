@@ -82,6 +82,8 @@ class Engine:
             self._setConfig(command.data["key"], command.data["value"])
         elif command.name == "rename":
             self._rename(command.data["taskId"], command.data["title"])
+        elif command.name == "setCategory":
+            self._setCategory(command.data["taskId"], command.data["categoryId"])
         elif command.name == "verifyHash":
             self._downloads.verify(self._tasks[command.data["taskId"]], partial(self._onHashed, command.data["taskId"]))
 
@@ -298,6 +300,15 @@ class Engine:
         else:
             self._store.add(task)  # 改名要落盘
             self._changed(task)
+
+    def _setCategory(self, taskId: str, categoryId: str) -> None:
+        # 「移动到分类」：只重新打分类标签，不动已下文件/目录（复刻原版——文件已落盘，仅改归类）。
+        task = self._tasks.get(taskId)
+        if task is None:
+            return
+        task.category = categoryId
+        self._store.add(task)  # 标签变了要落盘
+        self._changed(task)
 
     def _onHashed(self, taskId: str, digest: str | None, error: str | None) -> None:
         if error or not digest:

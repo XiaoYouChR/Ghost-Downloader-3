@@ -223,6 +223,18 @@ class Backend(QObject):
         self._taskList.setSelectionMode(False)
 
     @Slot()
+    def redownloadSelected(self) -> None:
+        for taskId in self._taskList.selectedIds():
+            self._link.toEngine(Command("redownload", {"taskId": taskId}))
+        self._taskList.setSelectionMode(False)
+
+    @Slot(str)
+    def moveSelectedToCategory(self, categoryId: str) -> None:
+        for taskId in self._taskList.selectedIds():
+            self._link.toEngine(Command("setCategory", {"taskId": taskId, "categoryId": categoryId}))
+        self._taskList.setSelectionMode(False)
+
+    @Slot()
     def clearCompleted(self) -> None:
         self._link.toEngine(Command("clearCompleted"))
 

@@ -161,9 +161,29 @@ Item {
             spacing: 4
             Text { Layout.leftMargin: 6; text: "已选 " + taskList.selectedCount; typography: Typography.Body }
             ToolSeparator {}
+            Button { flat: true; text: "重新下载"; onClicked: backend.redownloadSelected() }
+            Button { flat: true; text: "删除选中"; onClicked: backend.removeSelected() }
+            Button {
+                flat: true; text: "移动到分类"
+                visible: backend.config.enableCategory
+                onClicked: moveCategoryMenu.popup()
+                // 只重新打标签、不动已下文件（复刻原版）；含「未分类」+ 各分类
+                Menu {
+                    id: moveCategoryMenu
+                    MenuItem { text: "未分类"; onTriggered: backend.moveSelectedToCategory("") }
+                    Repeater {
+                        model: backend.categories()
+                        delegate: MenuItem {
+                            required property var modelData
+                            text: modelData.name
+                            onTriggered: backend.moveSelectedToCategory(modelData.categoryId)
+                        }
+                    }
+                }
+            }
+            ToolSeparator {}
             Button { flat: true; text: "全选"; onClicked: taskList.selectAll() }
             Button { flat: true; text: "反选"; onClicked: taskList.invertSelection() }
-            Button { flat: true; text: "删除选中"; onClicked: backend.removeSelected() }
             Button { flat: true; text: "取消"; onClicked: taskList.setSelectionMode(false) }
         }
     }

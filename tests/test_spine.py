@@ -270,6 +270,34 @@ def test_editTask_appliesSettingsInPlaceWithoutReparsing(spine, tmp_path):
     assert spine.taskList.data(index, TaskList.IdRole) == taskId
 
 
+def test_moveSelectedToCategory_retagsLabelWithoutMovingFiles(spine, tmp_path):
+    # 批量「移动到分类」：只改 task.category 标签，不动已下文件的目录（文件已落盘，仅重新归类）。
+    spine.config.set("downloadFolder", str(tmp_path))
+    spine.backend.addTask("https://example.com/movie.mp4")  # 默认归类 cat_video
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+    pathBefore = spine.engine._tasks[taskId].path
+    spine.taskList.toggleSelect(taskId)
+
+    spine.backend.moveSelectedToCategory("cat_other")
+
+    assert spine.taskList.data(index, TaskList.CategoryRole) == "cat_other"
+    assert spine.engine._tasks[taskId].path == pathBefore  # 目录没动
+
+
+def test_redownloadSelected_restartsEachSelected(spine, tmp_path):
+    # 批量「重新下载」：每个选中的任务都重解析重开（仍是原任务）。
+    spine.config.set("downloadFolder", str(tmp_path))
+    spine.backend.addTask("https://example.com/a.zip")
+    spine.backend.addTask("https://example.com/b.zip")
+    spine.taskList.selectAll()
+    startedBefore = len(spine.downloads.started)
+
+    spine.backend.redownloadSelected()
+
+    assert len(spine.downloads.started) == startedBefore + 2  # 两个都重下
+
+
 def test_addTask_appliesCategoryFolderWhenEnabled(spine):
     # 启用分类：按文件名扩展把下载目录归到分类子目录（引擎权威算，pack 收到的就是归好类的 path）。
     spine.config.set("downloadFolder", "/dl")
