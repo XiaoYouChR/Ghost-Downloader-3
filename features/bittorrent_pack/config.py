@@ -76,6 +76,31 @@ class BitTorrentConfig(PackConfig):
         OptionsValidator(["sparse", "allocate"]),
     )
 
+    settingsTitle = "BitTorrent 下载"
+
+    def settingsSchema(self) -> list[dict]:
+        # Web Tracker 源管理是交互流程（单独补）；这里是能进 schema 的普通设置。限速值为 session 级字节数。
+        return [
+            {"kind": "int", "label": "监听端口", "key": "listenPort", "value": self.listenPort.value, "min": 0, "max": 65535},
+            {"kind": "int", "label": "元数据超时(秒)", "key": "metadataTimeout", "value": self.metadataTimeout.value, "min": 5, "max": 300},
+            {"kind": "int", "label": "连接数上限", "key": "connectionsLimit", "value": self.connectionsLimit.value, "min": 20, "max": 2000},
+            {"kind": "int", "label": "下载限速(字节/秒,0 不限)", "key": "downloadRateLimit", "value": self.downloadRateLimit.value, "min": 0, "max": 1024 * 1024 * 100},
+            {"kind": "int", "label": "上传限速(字节/秒,0 不限)", "key": "uploadRateLimit", "value": self.uploadRateLimit.value, "min": 0, "max": 1024 * 1024 * 100},
+            {"kind": "int", "label": "自动暂停做种分享率(%,0 不限)", "key": "seedRatioLimitPercent", "value": self.seedRatioLimitPercent.value, "min": 0, "max": 10000},
+            {"kind": "int", "label": "自动暂停做种时长(分,0 不限)", "key": "seedTimeLimitMinutes", "value": self.seedTimeLimitMinutes.value, "min": 0, "max": 43200},
+            {"kind": "combo", "label": "文件分配模式", "key": "storageMode", "value": self.storageMode.value,
+             "options": [{"label": "稀疏分配", "value": "sparse"}, {"label": "预分配", "value": "allocate"}]},
+            {"kind": "switch", "label": "保存 Magnet 种子文件", "key": "saveMagnetTorrentFile", "value": self.saveMagnetTorrentFile.value},
+            {"kind": "switch", "label": "顺序下载", "key": "sequentialDownload", "value": self.sequentialDownload.value},
+            {"kind": "switch", "label": "启用 DHT", "key": "enableDHT", "value": self.enableDHT.value},
+            {"kind": "switch", "label": "启用 LSD", "key": "enableLSD", "value": self.enableLSD.value},
+            {"kind": "switch", "label": "启用 UPnP", "key": "enableUPnP", "value": self.enableUPnP.value},
+            {"kind": "switch", "label": "启用 NAT-PMP", "key": "enableNATPMP", "value": self.enableNATPMP.value},
+            {"kind": "switch", "label": "启用 Web Tracker", "key": "enableWebTrackers", "value": self.enableWebTrackers.value},
+            {"kind": "switch", "label": "新建任务时刷新 Web Tracker", "key": "autoRefreshWebTrackers", "value": self.autoRefreshWebTrackers.value},
+            {"kind": "switch", "label": "关联 .torrent 文件", "key": "associateFileTypes", "value": self.associateFileTypes.value},
+        ]
+
     def setupSettings(self, settingPage: "SettingPage"):
         from .web_tracker.card import WebTrackerCard
 

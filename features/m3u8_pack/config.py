@@ -182,6 +182,53 @@ class M3U8Config(PackConfig):
     customMuxAfterDone = ConfigItem("M3U8", "CustomMuxAfterDone", "")
     selectAllAudioSubtitle = ConfigItem("M3U8", "SelectAllAudioSubtitle", True, BoolValidator())
 
+    settingsTitle = "流媒体下载"
+
+    def settingsSchema(self) -> list[dict]:
+        # 普通设置全进 schema；一键安装/运行时检测是交互流程（单独补）。combo 选项 value==label 的直接取串。
+        def combo(label, key, item, options):
+            return {"kind": "combo", "label": label, "key": key, "value": item.value,
+                    "options": [{"label": o, "value": o} for o in options]}
+
+        def switch(label, key, item):
+            return {"kind": "switch", "label": label, "key": key, "value": item.value}
+
+        def number(label, key, item, low, high):
+            return {"kind": "int", "label": label, "key": key, "value": item.value, "min": low, "max": high}
+
+        return [
+            {"kind": "folder", "label": "N_m3u8DL-RE 安装目录", "key": "installFolder", "value": self.installFolder.value},
+            switch("关联 M3U8/MPD 文件", "associateFileTypes", self.associateFileTypes),
+            combo("输出容器", "outputFormat", self.outputFormat, ["mp4", "mkv"]),
+            number("分片线程数", "threadCount", self.threadCount, 1, 64),
+            number("分片重试次数", "retryCount", self.retryCount, 0, 20),
+            number("请求超时(秒)", "requestTimeout", self.requestTimeout, 5, 600),
+            switch("自动选择最佳轨道", "autoSelect", self.autoSelect),
+            switch("并发下载音视频", "concurrentDownload", self.concurrentDownload),
+            switch("下载全部音轨与字幕", "selectAllAudioSubtitle", self.selectAllAudioSubtitle),
+            switch("追加 URL 参数", "appendUrlParams", self.appendUrlParams),
+            switch("二进制合并", "binaryMerge", self.binaryMerge),
+            switch("校验分片数量", "checkSegmentsCount", self.checkSegmentsCount),
+            switch("完成后删除临时文件", "delAfterDone", self.delAfterDone),
+            combo("字幕格式", "subtitleFormat", self.subtitleFormat, ["SRT", "VTT"]),
+            combo("解密引擎", "decryptionEngine", self.decryptionEngine, ["FFmpeg", "MP4Decrypt", "Shaka Packager"]),
+            {"kind": "text", "label": "解密引擎二进制路径", "key": "decryptionBinaryPath", "value": self.decryptionBinaryPath.value,
+             "placeholder": "留空则用 FFmpeg"},
+            switch("MP4 实时解密", "mp4RealTimeDecryption", self.mp4RealTimeDecryption),
+            number("限速(-1 不限)", "maxSpeed", self.maxSpeed, -1, 1000000),
+            combo("限速单位", "speedUnit", self.speedUnit, ["Mbps", "Kbps"]),
+            {"kind": "text", "label": "广告过滤(正则)", "key": "adKeyword", "value": self.adKeyword.value, "placeholder": "正则表达式"},
+            switch("不写入日期信息", "noDateInfo", self.noDateInfo),
+            switch("保留图形分片", "keepImageSegments", self.keepImageSegments),
+            {"kind": "text", "label": "自定义混流参数", "key": "customMuxAfterDone", "value": self.customMuxAfterDone.value,
+             "placeholder": "format=mp4"},
+            switch("直播保留原始分片", "liveKeepSegments", self.liveKeepSegments),
+            switch("直播管道混流", "livePipeMux", self.livePipeMux),
+            switch("直播校正 VTT 字幕", "liveFixVtt", self.liveFixVtt),
+            number("直播刷新等待时间(秒,0 自动)", "liveWaitTime", self.liveWaitTime, 0, 100000),
+            number("直播每次取片数(0 自动)", "liveTakeCount", self.liveTakeCount, 0, 1000),
+        ]
+
     def setupSettings(self, settingPage: "SettingPage"):
         self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
         self.installFolderCard = InstallFolderCard(
