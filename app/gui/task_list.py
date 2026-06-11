@@ -10,7 +10,6 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from app.bases.categories import categoryPresetFor
 from app.supports.utils import toReadableSize, toReadableTime
 
 # 文件类型 → Fluent 图标名（纯展示映射，图标资源名只 gui 认识，不下到引擎）
@@ -34,13 +33,12 @@ _TYPE_ICONS = {
 }
 _DEFAULT_TYPE_ICON = "ic_fluent_document_20_filled"
 
-# 分类的语义图标名（categories 里的 preset["icon"]）→ QML fluent 图标名。
-# 翻译留在 gui 层——bases 只给语义名（"VIDEO"），怎么画是界面的事。
+# 分类 id（引擎权威贴在 task.category 上）→ QML fluent 图标名。引擎给 id，怎么画是界面的事。
 _CATEGORY_ICONS = {
-    "VIDEO": "ic_fluent_video_clip_20_filled", "MUSIC": "ic_fluent_music_note_2_20_filled",
-    "PHOTO": "ic_fluent_image_20_filled", "CHAT": "ic_fluent_chat_20_filled",
-    "DOCUMENT": "ic_fluent_document_20_filled", "ZIP_FOLDER": "ic_fluent_folder_zip_20_filled",
-    "APPLICATION": "ic_fluent_window_apps_20_filled", "HELP": "ic_fluent_tag_20_filled",
+    "cat_video": "ic_fluent_video_clip_20_filled", "cat_audio": "ic_fluent_music_note_2_20_filled",
+    "cat_image": "ic_fluent_image_20_filled", "cat_subtitle": "ic_fluent_chat_20_filled",
+    "cat_document": "ic_fluent_document_20_filled", "cat_archive": "ic_fluent_folder_zip_20_filled",
+    "cat_program": "ic_fluent_window_apps_20_filled", "cat_other": "ic_fluent_tag_20_filled",
 }
 
 
@@ -116,10 +114,14 @@ class TaskItem:
         return _TYPE_ICONS.get(ext, _DEFAULT_TYPE_ICON)
 
     @property
+    def category(self) -> str:
+        # 引擎权威贴的分类 id（task.category，可被「移动到分类」改写）；未分类为空串
+        return self._task.get("category", "")
+
+    @property
     def categoryIcon(self) -> str:
-        # 文件名命中的自动分类小图标（复刻原版分类标记）；无匹配则空，卡片不显
-        preset = categoryPresetFor(self.title)
-        return _CATEGORY_ICONS.get(preset["icon"], "") if preset else ""
+        # 分类小图标：直接照引擎给的分类 id 取（不在 gui 重算分类规则）；未分类则空、卡片不显
+        return _CATEGORY_ICONS.get(self.category, "")
 
     @property
     def leftTimeText(self) -> str:
@@ -187,6 +189,7 @@ class TaskList(QAbstractListModel):
     StatusTextRole = Qt.ItemDataRole.UserRole + 20
     SegmentsRole = Qt.ItemDataRole.UserRole + 21
     CategoryIconRole = Qt.ItemDataRole.UserRole + 22
+    CategoryRole = Qt.ItemDataRole.UserRole + 23
 
     # 角色 → (QML 绑定名, TaskItem 属性)。data()/roleNames 都由这单一来源生成，
     # 加一个展示字段 = 加一行 + TaskItem 上一个属性。selected 是模型级（不在 item 上），属性记 None 单独处理。
@@ -213,6 +216,7 @@ class TaskList(QAbstractListModel):
         StatusTextRole: ("statusText", "statusText"),
         SegmentsRole: ("segments", "segments"),
         CategoryIconRole: ("categoryIcon", "categoryIcon"),
+        CategoryRole: ("category", "category"),
     }
 
     selectionModeChanged = Signal()
@@ -413,8 +417,7 @@ class TaskFilter(QSortFilterProxyModel):
             elif completed:  # active：藏掉已完成
                 return False
         if self._category != "all":
-            preset = categoryPresetFor(title)
-            categoryId = preset["categoryId"] if preset else "cat_other"
-            if categoryId != self._category:
+            # 按引擎贴的 task.category 标签筛（同卡上分类图标），与原版一致、可被「移动到分类」改写
+            if (self.sourceModel().data(index, TaskList.CategoryRole) or "") != self._category:
                 return False
         return True

@@ -4,9 +4,9 @@ from app.gui.task_list import TaskFilter, TaskList
 def _filter() -> TaskFilter:
     tasks = TaskList()
     tasks.reset([
-        {"taskId": "1", "title": "banana.zip", "status": "COMPLETED", "createdAt": 100},
-        {"taskId": "2", "title": "apple.mp4", "status": "RUNNING", "createdAt": 200},
-        {"taskId": "3", "title": "cherry.exe", "status": "PAUSED", "createdAt": 150},
+        {"taskId": "1", "title": "banana.zip", "status": "COMPLETED", "createdAt": 100, "category": "cat_archive"},
+        {"taskId": "2", "title": "apple.mp4", "status": "RUNNING", "createdAt": 200, "category": "cat_video"},
+        {"taskId": "3", "title": "cherry.exe", "status": "PAUSED", "createdAt": 150, "category": "cat_program"},
     ])
     proxy = TaskFilter(tasks)
     proxy._source = tasks  # Python 引用保住 source，测试期间不被回收
