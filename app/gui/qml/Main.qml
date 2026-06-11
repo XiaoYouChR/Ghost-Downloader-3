@@ -54,5 +54,8 @@ FluentWindow {
         function onExceptionCaught(summary) {
             floatLayer.createInfoBar({title: "程序发生异常", text: summary + "（详情见日志）", severity: Severity.Error, timeout: 6000})
         }
+        function onPackMessage(message) {
+            floatLayer.createInfoBar({title: "测速结果", text: message, severity: Severity.Info, timeout: 8000})
+        }
     }
 }

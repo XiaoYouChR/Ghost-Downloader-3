@@ -315,11 +315,21 @@ class Engine:
             self._changed(task)
 
     def _runPackAction(self, packId: str, actionId: str) -> None:
-        # pack 设置区的动作按钮。目前只有「一键安装」：跑 pack 的安装协程，结果当普通任务加进列表+开始。
+        # pack 设置区的动作按钮。install 跑安装协程当普通任务加；其余是查询型，跑出一句文案弹给用户。
         if actionId == "install":
             coroutine = self._downloads.installTask(packId)
             if coroutine is not None:
                 self._downloads.run(coroutine, self._onParsed)
+        else:
+            coroutine = self._downloads.packAction(packId, actionId)
+            if coroutine is not None:
+                self._downloads.run(coroutine, self._onPackActionResult)
+
+    def _onPackActionResult(self, message: str | None, error: str | None) -> None:
+        if error:
+            self._emit(Event("packMessage", {"message": error}))
+        elif message:
+            self._emit(Event("packMessage", {"message": message}))
 
     def _setCategory(self, taskId: str, categoryId: str) -> None:
         # 「移动到分类」：只重新打分类标签，不动已下文件/目录（复刻原版——文件已落盘，仅改归类）。

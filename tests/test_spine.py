@@ -284,6 +284,22 @@ def test_runPackAction_install_routesToDownloads(spine):
     assert spine.downloads.installRequested == ["m3u8"]
 
 
+def test_runPackAction_query_routesToDownloads(spine):
+    # 查询型动作（如 github 测延迟）：runPackAction 命令 → 引擎请 downloads 跑该 pack 的动作。
+    spine.backend.runPackAction("github", "measureLatency")
+
+    assert spine.downloads.packActionRequested == [("github", "measureLatency")]
+
+
+def test_packMessage_eventEmitsSignal(spine):
+    # pack 动作结果文案过缝 → backend 发 packMessage 信号 → QML 弹浮层。
+    captured = []
+    spine.backend.packMessage.connect(captured.append)
+    spine.backend.receive(Event("packMessage", {"message": "代理站延迟:\nx: 80 ms"}))
+
+    assert captured == ["代理站延迟:\nx: 80 ms"]
+
+
 def test_packSettings_eventPopulatesBackend(spine):
     # 引擎下发的各 pack 设置组落进 backend.packSettings，QML 设置页据此渲染。
     spine.backend.receive(Event("packSettings", {"groups": [

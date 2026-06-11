@@ -52,6 +52,9 @@ class Downloads:
     def installTask(self, packId: str):
         return featureService.installTaskCoroutine(packId)
 
+    def packAction(self, packId: str, actionId: str):
+        return featureService.packActionCoroutine(packId, actionId)
+
     def verify(self, task: Task, callback) -> None:
         coreService.runCoroutine(self._hash(task.outputFolder), callback)
 

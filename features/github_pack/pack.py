@@ -52,6 +52,19 @@ class GitHubPack(FeaturePack):
     priority = 90
     config = githubConfig
 
+    async def runAction(self, actionId: str) -> str | None:
+        if actionId != "measureLatency":
+            return None
+        from urllib.parse import urlparse
+
+        from .config import measureProxyLatencies
+        latencies = await measureProxyLatencies()
+        lines = [
+            f"{urlparse(site).netloc or site}: {'超时' if ms < 0 else f'{ms} ms'}"
+            for site, ms in latencies.items()
+        ]
+        return "代理站延迟:\n" + "\n".join(lines)
+
     def matches(self, url: str) -> bool:
         return self.config.enabled.value and bool(selectedProxySite()) and _isSupportedGitHubUrl(url)
 

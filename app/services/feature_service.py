@@ -294,6 +294,13 @@ class FeatureService:
                 return packInstance.buildInstallTask()
         return None
 
+    def packActionCoroutine(self, packId: str, actionId: str):
+        # 查询型 pack 动作（如 github 测延迟）：返回那个 pack 的 runAction 协程（产出给用户看的文案）
+        for packInstance in self._packs.values():
+            if packInstance.packId == packId:
+                return packInstance.runAction(actionId)
+        return None
+
     def fileTypeAssociations(self) -> list[tuple]:
         # 声明了文件类型且有「关联」开关的 pack：返回 [(fileTypes, associateConfigItem)]。
         # gui 据此把 .torrent/.m3u8 等注册到系统（纯桌面 OS 动作，gui 端做、watch 开关变更）。

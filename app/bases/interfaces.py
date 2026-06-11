@@ -70,6 +70,11 @@ class FeaturePack:
         # 默认无需安装。schema 的 action 项触发——只在该 pack 此平台支持安装时才出按钮。
         return None
 
+    async def runAction(self, actionId: str) -> str | None:
+        # schema 的 action 项触发的「查询型」动作（如 github 测代理站延迟）：返回一句给用户看的结果文案。
+        # pack 自己格式化结果（它懂含义），核心只把文案弹出来——保持 gui pack-agnostic。默认无动作。
+        return None
+
     def setup(self, mainWindow: "MainWindow"):
         pass
 

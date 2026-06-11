@@ -31,6 +31,7 @@ class Backend(QObject):
     browserPairAnswered = Signal(bool)  # 用户答配对（同意/拒绝），main() 转给 BrowserService
     browserExtensionChanged = Signal()
     packSettingsChanged = Signal()  # 各 pack 的设置组到达，QML 设置页据此渲染
+    packMessage = Signal(str)  # pack 查询型动作（如 github 测延迟）的结果文案，QML 弹浮层
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -369,6 +370,8 @@ class Backend(QObject):
         elif event.name == "packSettings":
             self._packSettings = event.data["groups"]
             self.packSettingsChanged.emit()
+        elif event.name == "packMessage":
+            self.packMessage.emit(event.data["message"])
         elif event.name == "allComplete":
             if self._planAction:  # 计划已设才动作，触发后即解除（复刻原版只执行一次）
                 self.planActionReady.emit(self._planAction, self._planFilePath)
