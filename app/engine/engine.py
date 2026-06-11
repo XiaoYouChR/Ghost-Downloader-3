@@ -27,6 +27,7 @@ class Engine:
         self._store = store
         self._config = config
         self._tasks: dict[str, Task] = {}
+        self._previews: dict[str, Task] = {}  # 两段式添加：解析了但未确定的任务，暂存这里
         for task in store.load():
             if task.status not in (TaskStatus.COMPLETED, TaskStatus.FAILED):
                 task.setStatus(TaskStatus.PAUSED)  # 重启时未完成任务并未真在跑，显示为暂停
@@ -47,6 +48,12 @@ class Engine:
             self._pump.stop()
         elif command.name == "addTask":
             self._addTask(command.data["url"], command.data.get("options"))
+        elif command.name == "parsePreview":
+            self._parsePreview(command.data["urls"])
+        elif command.name == "commit":
+            self._commit(command.data.get("taskIds"))
+        elif command.name == "discardPreviews":
+            self._discardPreviews()
         elif command.name == "editTask":
             self._editTask(command.data["taskId"], command.data.get("options"))
         elif command.name == "pause":
@@ -93,7 +100,7 @@ class Engine:
             self._globalSpeed = total
             self._emit(Event("stats", {"globalSpeed": total}))
 
-    def _addTask(self, url: str, options: dict | None = None) -> None:
+    def _defaultOptions(self, url: str, options: dict | None = None) -> dict:
         # 注入配置里的全局下载设置——pack 从 payload 取，不再直读 cfg（脱 qfluentwidgets）。per-task 显式值优先。
         options = dict(options or {})
         if "path" not in options:  # 没显式指定才套配置目录；启用分类则按文件名归到分类子目录（引擎权威算）
@@ -103,7 +110,35 @@ class Engine:
                 if self._config.value("enableCategory") else base
             )
         options.setdefault("preBlockNum", self._config.value("preBlockNum"))
-        self._downloads.run(self._downloads.parse(url, options), self._onParsed)
+        return options
+
+    def _addTask(self, url: str, options: dict | None = None) -> None:
+        # 内联快速添加：解析即开始（不走两段式预览）
+        self._downloads.run(self._downloads.parse(url, self._defaultOptions(url, options)), self._onParsed)
+
+    def _parsePreview(self, urls: list[str]) -> None:
+        # 两段式添加第一步：逐条解析、暂存进 _previews，不落任务/不开始；回发预览给 gui，确定后才 commit。
+        for url in urls:
+            self._downloads.run(self._downloads.parse(url, self._defaultOptions(url)), partial(self._onPreviewParsed, url))
+
+    def _onPreviewParsed(self, url: str, task: Task | None, error: str | None) -> None:
+        if error or task is None:
+            self._emit(Event("previewError", {"url": url, "reason": error or "无法解析该链接"}))
+            return
+        self._previews[task.taskId] = task
+        self._emit(Event("previewParsed", {"task": self._toWire(task)}))
+
+    def _commit(self, taskIds: list[str] | None = None) -> None:
+        # 确定：把预览转成真任务、落盘+开始。taskIds=None 提交全部预览。
+        for taskId in (taskIds if taskIds is not None else list(self._previews)):
+            task = self._previews.pop(taskId, None)
+            if task is not None:
+                self._onParsed(task, None)
+
+    def _discardPreviews(self) -> None:
+        for task in self._previews.values():
+            task.cleanup()
+        self._previews.clear()
 
     def _onParsed(self, task: Task | None, error: str | None) -> None:
         if error or task is None:

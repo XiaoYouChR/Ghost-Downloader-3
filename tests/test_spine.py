@@ -281,6 +281,35 @@ def test_addTask_explicitPathBeatsCategory(spine):
     assert spine.downloads.parsedOptions[0]["path"] == "/custom"
 
 
+def test_parsePreview_holdsWithoutCommitting(spine):
+    # 两段式添加第一步：解析多条链接进预览，但不落任务列表、不开始下载。
+    spine.backend.parsePreview(["https://example.com/a.mp4", "https://example.com/b.mkv"])
+
+    assert spine.backend.previewList.rowCount() == 2
+    assert spine.taskList.rowCount() == 0  # 未提交
+    assert len(spine.downloads.started) == 0  # 未开始
+
+
+def test_commit_movesPreviewsToTasksAndStarts(spine):
+    # 第二步：确定 → 预览转成真任务、落盘+开始，预览清空。
+    spine.backend.parsePreview(["https://example.com/a.mp4"])
+    spine.backend.commit()
+
+    assert spine.taskList.rowCount() == 1
+    assert len(spine.downloads.started) == 1
+    assert spine.backend.previewList.rowCount() == 0
+
+
+def test_discardPreviews_clearsWithoutCommitting(spine):
+    # 取消 → 丢弃预览，不留痕。
+    spine.backend.parsePreview(["https://example.com/a.mp4"])
+    spine.backend.discardPreviews()
+
+    assert spine.backend.previewList.rowCount() == 0
+    assert spine.taskList.rowCount() == 0
+    assert len(spine.downloads.started) == 0
+
+
 def test_addTask_usesInjectedCustomCategoryRules(spine):
     # 引擎按注入的自定义分类规则归类（从 cfg 播种来；共存期用户在旧 app 设的规则也认）。
     spine.config.set("downloadFolder", "/dl")

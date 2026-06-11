@@ -28,6 +28,7 @@ class Backend(QObject):
         super().__init__()
         self._link = link
         self._taskList = taskList
+        self._previewList = TaskList()  # 两段式添加的解析预览（确定前的临时列表）
         self._globalSpeedText = ""
         self._filesModel: FileSelection | None = None
         self._editingTaskId = ""
@@ -141,6 +142,27 @@ class Backend(QObject):
         # 「新建任务」对话框：带 path/线程等选项；引擎合进 parse payload
         self._link.toEngine(Command("addTask", {"url": url, "options": dict(options)}))
 
+    def _previews(self) -> QObject:
+        return self._previewList
+
+    previewList = Property(QObject, _previews, constant=True)
+
+    @Slot("QVariantList")
+    def parsePreview(self, urls) -> None:
+        # 两段式添加第一步：把多条链接交引擎解析，结果落 previewList（不提交、不开始）
+        self._link.toEngine(Command("parsePreview", {"urls": [str(u) for u in urls]}))
+
+    @Slot()
+    def commit(self) -> None:
+        # 确定：提交全部预览为真任务并开始；预览列表清空
+        self._link.toEngine(Command("commit", {}))
+        self._previewList.reset([])
+
+    @Slot()
+    def discardPreviews(self) -> None:
+        self._link.toEngine(Command("discardPreviews", {}))
+        self._previewList.reset([])
+
     @Slot(str, "QVariant")
     def editTask(self, taskId: str, options) -> None:
         # 「编辑任务」对话框：改链接后引擎按新 url 重解析、替换该任务（保留 id/目录）
@@ -219,4 +241,8 @@ class Backend(QObject):
             self._hashText = event.data["hash"]
             self.hashReady.emit()
         elif event.name == "addError":
+            self.taskAddFailed.emit(event.data["reason"])
+        elif event.name == "previewParsed":
+            self._previewList.add(TaskItem(event.data["task"]))
+        elif event.name == "previewError":
             self.taskAddFailed.emit(event.data["reason"])
