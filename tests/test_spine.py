@@ -256,6 +256,20 @@ def test_editTask_reparsesAndReplacesTask(spine, tmp_path):
     assert spine.taskList.data(index, TaskList.IdRole) == taskId
 
 
+def test_editTask_appliesSettingsInPlaceWithoutReparsing(spine, tmp_path):
+    # 链接没变、只改设置（如目录）→ 就地 applySettings，不触发重解析（免重新枚举流/不丢进度）。
+    spine.config.set("downloadFolder", str(tmp_path))
+    spine.backend.addTask("https://example.com/a.zip")
+    index = spine.taskList.index(0, 0)
+    taskId = spine.taskList.data(index, TaskList.IdRole)
+    parsesBefore = len(spine.downloads.parsedOptions)
+
+    spine.backend.editTask(taskId, {"path": str(tmp_path / "sub")})
+
+    assert len(spine.downloads.parsedOptions) == parsesBefore  # 没再 parse
+    assert spine.taskList.data(index, TaskList.IdRole) == taskId
+
+
 def test_addTask_appliesCategoryFolderWhenEnabled(spine):
     # 启用分类：按文件名扩展把下载目录归到分类子目录（引擎权威算，pack 收到的就是归好类的 path）。
     spine.config.set("downloadFolder", "/dl")

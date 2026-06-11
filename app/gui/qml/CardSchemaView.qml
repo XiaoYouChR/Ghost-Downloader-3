@@ -30,6 +30,9 @@ ColumnLayout {
             sourceComponent: modelData.kind === "headers" ? headersCard
                            : modelData.kind === "proxies" ? proxiesCard
                            : modelData.kind === "folder" ? folderCard
+                           : modelData.kind === "file" ? fileCard
+                           : modelData.kind === "combo" ? comboCard
+                           : modelData.kind === "lines" ? linesCard
                            : lineeditCard
             onLoaded: item.modelData = modelData
         }
@@ -43,7 +46,62 @@ ColumnLayout {
             property alias cardValue: input.text
             Layout.fillWidth: true; spacing: 8
             Text { text: modelData ? modelData.label : ""; typography: Typography.Body; Layout.preferredWidth: 84 }
-            TextField { id: input; Layout.fillWidth: true; text: modelData ? modelData.value : "" }
+            TextField {
+                id: input; Layout.fillWidth: true
+                text: modelData ? modelData.value : ""
+                placeholderText: modelData && modelData.placeholder ? modelData.placeholder : ""
+            }
+        }
+    }
+
+    // file：横排 label + 路径框 + 选文件钮（解密密钥文件等单文件场景）
+    Component {
+        id: fileCard
+        RowLayout {
+            property var modelData
+            property alias cardValue: fileInput.text
+            Layout.fillWidth: true; spacing: 8
+            Text { text: modelData ? modelData.label : ""; typography: Typography.Body; Layout.preferredWidth: 84 }
+            TextField { id: fileInput; Layout.fillWidth: true; text: modelData ? modelData.value : "" }
+            Button { text: "选择"; onClicked: { schemaFileDialog.target = fileInput; schemaFileDialog.open() } }
+        }
+    }
+
+    // combo：横排 label + 下拉（options=[{label,value}]）；cardValue=所选项的 value（如 M3U8 轨道的 selectExpr）
+    Component {
+        id: comboCard
+        RowLayout {
+            property var modelData
+            property var cardValue: (modelData && combo.currentIndex >= 0)
+                ? modelData.options[combo.currentIndex].value : ""
+            Layout.fillWidth: true; spacing: 8
+            Text { text: modelData ? modelData.label : ""; typography: Typography.Body; Layout.preferredWidth: 84 }
+            ComboBox {
+                id: combo
+                Layout.fillWidth: true
+                textRole: "label"
+                model: modelData ? modelData.options : []
+                currentIndex: modelData
+                    ? Math.max(0, modelData.options.findIndex(o => o.value === modelData.value)) : 0
+            }
+        }
+    }
+
+    // lines：竖排 label + 多行框（每行一项）；cardValue 转成去空的字符串列表（解密密钥、导入音轨等）
+    Component {
+        id: linesCard
+        ColumnLayout {
+            property var modelData
+            property var cardValue: larea.text.split("\n").map(s => s.trim()).filter(s => s !== "")
+            Layout.fillWidth: true; spacing: 4
+            Text { text: modelData ? modelData.label : ""; typography: Typography.Body }
+            TextArea {
+                id: larea
+                Layout.fillWidth: true
+                Layout.preferredHeight: 90
+                text: modelData ? modelData.value.join("\n") : ""
+                placeholderText: modelData && modelData.placeholder ? modelData.placeholder : ""
+            }
         }
     }
 
@@ -113,5 +171,11 @@ ColumnLayout {
         id: schemaFolderDialog
         property var target: null
         onAccepted: if (target) target.text = String(selectedFolder).replace("file:///", "")
+    }
+
+    FileDialog {
+        id: schemaFileDialog
+        property var target: null
+        onAccepted: if (target) target.text = String(selectedFile).replace("file:///", "")
     }
 }

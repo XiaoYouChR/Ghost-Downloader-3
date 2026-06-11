@@ -161,18 +161,34 @@ class Engine:
             self._emit(Event("editSchema", {"taskId": taskId, "schema": task.editorSchema()}))
 
     def _editTask(self, taskId: str, options: dict | None = None) -> None:
-        # 改链接后按新 url 重解析，把结果换进旧任务（保留 id/目录）。已提交任务要先停下载；预览还没开始，不用停。
+        # 编辑任务：链接变了才按新 url 重解析换 stage（新资源，大小/分段全变）；
+        # 只改设置（标头/代理/轨道/密钥/目录）则就地 applySettings——免重解析、不丢进度（M3U8 尤其要躲开重新枚举流）。
         isPreview = taskId in self._previews
         old = self._tasks.get(taskId) or self._previews.get(taskId)
         if old is None:
             return
-        if not isPreview:
-            self._downloads.stop(old)
         options = dict(options or {})
         url = options.pop("url", old.url)
-        options.setdefault("path", str(old.path))  # 重解析沿用现有目录（replaceWith 保留 path）
-        options.setdefault("preBlockNum", self._config.value("preBlockNum"))
-        self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old, isPreview))
+        if url != old.url:
+            if not isPreview:
+                self._downloads.stop(old)
+            options.setdefault("path", str(old.path))  # 重解析沿用现有目录（replaceWith 保留 path）
+            options.setdefault("preBlockNum", self._config.value("preBlockNum"))
+            self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old, isPreview))
+            return
+
+        # 链接没变——就地应用设置。跑着的先停、应用后再起，让新设置（如换代理）即时生效且不丢已下字节。
+        wasRunning = not isPreview and old.status == TaskStatus.RUNNING
+        if wasRunning:
+            self._downloads.stop(old)
+        old.applySettings(options)
+        if isPreview:
+            self._emit(Event("previewChanged", {"task": self._toWire(old)}))
+        else:
+            self._store.add(old)
+            if wasRunning:
+                self._downloads.start(old)
+            self._changed(old)
 
     def _redownload(self, taskId: str) -> None:
         # 重新下载（复刻原版）：停旧下载 → 按原 url 重解析 → 换进旧任务（cleanup 删旧分片、进度归零）→ 重新开始。

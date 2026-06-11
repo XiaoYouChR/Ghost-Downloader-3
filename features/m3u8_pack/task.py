@@ -170,6 +170,36 @@ class M3U8Task(Task):
         ]
         return cards
 
+    def editorSchema(self) -> list[dict]:
+        # 数据驱动编辑卡 schema（对齐 editorCards 的字段）：标头/代理/轨道/录制时长/解密/导入/目录。
+        # 应用走 applySettings 就地改 stage（免重解析，躲开重新枚举流）；combo 选项来自 parse 时枚举的 streams。
+        schema = [
+            {"kind": "headers", "label": "请求标头", "field": "headers", "value": dict(self.headers)},
+            {"kind": "proxies", "label": "代理服务器", "field": "proxies",
+             "value": (next(iter(self.proxies.values())) if self.proxies else "")},
+        ]
+        if len(self.streams) > 1:
+            schema.append({
+                "kind": "combo", "label": "视频轨道", "field": "selectVideo",
+                "value": self.stage.selectVideo,
+                "options": [{"label": "自动 (最佳)", "value": ""}]
+                + [{"label": s["label"], "value": s["selectExpr"]} for s in self.streams],
+            })
+        if self.isLive:
+            schema.append({
+                "kind": "lineedit", "label": "录制时长上限", "field": "recordLimit",
+                "value": self.stage.recordLimit, "placeholder": "如 00:30:00，留空不限",
+            })
+        schema += [
+            {"kind": "lines", "label": "解密密钥", "field": "decryptionKeys",
+             "value": list(self.stage.decryptionKeys), "placeholder": "每行一个 KID:KEY"},
+            {"kind": "file", "label": "密钥文件", "field": "keyTextFile", "value": self.stage.keyTextFile},
+            {"kind": "lines", "label": "导入音轨/字幕", "field": "muxImports",
+             "value": list(self.stage.muxImports), "placeholder": "每行一个 path,name=...,lang=..."},
+            {"kind": "folder", "label": "下载到", "field": "path", "value": str(self.path)},
+        ]
+        return schema
+
     def applySettings(self, payload):
         super().applySettings(payload)
         if "headers" in payload:
