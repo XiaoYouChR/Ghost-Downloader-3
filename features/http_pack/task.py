@@ -58,9 +58,11 @@ class HttpTask(Task):
         ]
 
     def editorSchema(self) -> list[dict]:
-        # 数据驱动编辑卡 schema（先 url + 目录两种 kind；请求标头/代理随通用渲染器补 multiline/proxies kind）
+        # 数据驱动编辑卡 schema：url / 请求标头 / 下载目录（代理 proxies kind 后续补）。
+        # 应用走 editTask 重解析——pack 的 parse 读 payload.headers，编辑后的标头会带上。
         return [
             {"kind": "lineedit", "label": "下载链接", "field": "url", "value": self.url},
+            {"kind": "headers", "label": "请求标头", "field": "headers", "value": dict(self.headers)},
             {"kind": "folder", "label": "下载到", "field": "path", "value": str(self.path)},
         ]
 
