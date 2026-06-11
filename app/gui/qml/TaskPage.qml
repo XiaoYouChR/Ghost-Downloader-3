@@ -65,6 +65,10 @@ Item {
                 icon.name: "ic_fluent_filter_20_regular"; size: 18
                 onClicked: filterMenu.popup()
             }
+            ToolButton {
+                icon.name: "ic_fluent_tag_20_regular"; size: 18
+                onClicked: categoryFilterMenu.popup()
+            }
             TextField {
                 Layout.preferredWidth: 200
                 placeholderText: "搜索任务"
@@ -175,6 +179,20 @@ Item {
         MenuItem { text: "全部任务"; onTriggered: taskFilter.statusFilter = "all" }
         MenuItem { text: "进行中"; onTriggered: taskFilter.statusFilter = "active" }
         MenuItem { text: "已完成"; onTriggered: taskFilter.statusFilter = "complete" }
+    }
+
+    // 分类筛选：「全部分类」+ 各分类（按文件名判类型，同卡上分类图标）
+    Menu {
+        id: categoryFilterMenu
+        MenuItem { text: "全部分类"; onTriggered: taskFilter.categoryFilter = "all" }
+        Repeater {
+            model: backend.categories()
+            delegate: MenuItem {
+                required property var modelData
+                text: modelData.name
+                onTriggered: taskFilter.categoryFilter = modelData.categoryId
+            }
+        }
     }
 
     // 两段式添加（复刻原版）：贴多条链接 → 解析预览 → 下载提交。per-URL 编辑/分类、设置卡后续分层补。

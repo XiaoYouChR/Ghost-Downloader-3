@@ -334,12 +334,14 @@ class TaskFilter(QSortFilterProxyModel):
 
     keywordChanged = Signal()
     statusFilterChanged = Signal()
+    categoryFilterChanged = Signal()
     sortModeChanged = Signal()
 
     def __init__(self, source: TaskList, parent=None) -> None:
         super().__init__(parent)
         self._word = ""
         self._status = "all"  # all | active | complete —— 先于 setSourceModel，过滤回调要用
+        self._category = "all"  # all | 某 categoryId，按文件名判类型（同卡上分类图标）
         self._sort = "time"  # time | name
         self.setSourceModel(source)
         self.setSortRole(TaskList.CreatedRole)
@@ -369,6 +371,18 @@ class TaskFilter(QSortFilterProxyModel):
 
     statusFilter = Property(str, _statusFilter, _setStatusFilter, notify=statusFilterChanged)
 
+    def _categoryFilter(self) -> str:
+        return self._category
+
+    def _setCategoryFilter(self, value: str) -> None:
+        if value == self._category:
+            return
+        self._category = value
+        self.categoryFilterChanged.emit()
+        self.invalidate()
+
+    categoryFilter = Property(str, _categoryFilter, _setCategoryFilter, notify=categoryFilterChanged)
+
     def _sortMode(self) -> str:
         return self._sort
 
@@ -394,6 +408,13 @@ class TaskFilter(QSortFilterProxyModel):
         if self._status != "all":
             completed = bool(self.sourceModel().data(index, TaskList.CompletedRole))
             if self._status == "complete":
-                return completed
-            return not completed  # active：藏掉已完成
+                if not completed:
+                    return False
+            elif completed:  # active：藏掉已完成
+                return False
+        if self._category != "all":
+            preset = categoryPresetFor(title)
+            categoryId = preset["categoryId"] if preset else "cat_other"
+            if categoryId != self._category:
+                return False
         return True

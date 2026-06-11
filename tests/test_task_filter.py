@@ -38,6 +38,20 @@ def test_statusFilter_andKeywordCombine(qapp):
     assert proxy.rowCount() == 1
 
 
+def test_categoryFilter_showsOnlyMatchingType(qapp):
+    # 分类筛选：只留文件名命中该分类的任务（与卡上分类图标同源——按扩展名判类型）。
+    proxy = _filter()
+    proxy.categoryFilter = "cat_video"
+    assert _titles(proxy) == ["apple.mp4"]
+
+
+def test_categoryFilter_andStatusCombine(qapp):
+    proxy = _filter()
+    proxy.categoryFilter = "cat_program"
+    proxy.statusFilter = "active"
+    assert _titles(proxy) == ["cherry.exe"]  # exe→程序 且 PAUSED 属 active
+
+
 def _titles(proxy) -> list:
     return [proxy.data(proxy.index(i, 0), TaskList.TitleRole) for i in range(proxy.rowCount())]
 
