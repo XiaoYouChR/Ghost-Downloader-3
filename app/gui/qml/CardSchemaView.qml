@@ -28,6 +28,7 @@ ColumnLayout {
             required property var modelData
             Layout.fillWidth: true
             sourceComponent: modelData.kind === "headers" ? headersCard
+                           : modelData.kind === "proxies" ? proxiesCard
                            : modelData.kind === "folder" ? folderCard
                            : lineeditCard
             onLoaded: item.modelData = modelData
@@ -79,6 +80,31 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 120
                 text: modelData ? Object.keys(modelData.value).map(k => k + ": " + modelData.value[k]).join("\n") : ""
+            }
+        }
+    }
+
+    // proxies：combo(不使用/自定义) + 条件 url 框；cardValue=null 或 {http://:url, https://:url}（pack parse 收此 dict）
+    Component {
+        id: proxiesCard
+        RowLayout {
+            property var modelData
+            property var cardValue: pcombo.currentIndex === 0 ? null
+                : ({"http://": purl.text.trim(), "https://": purl.text.trim()})
+            Layout.fillWidth: true; spacing: 8
+            Text { text: modelData ? modelData.label : ""; typography: Typography.Body; Layout.preferredWidth: 84 }
+            ComboBox {
+                id: pcombo
+                Layout.preferredWidth: 110
+                model: ["不使用", "自定义"]
+                currentIndex: (modelData && modelData.value) ? 1 : 0
+            }
+            TextField {
+                id: purl
+                Layout.fillWidth: true
+                visible: pcombo.currentIndex === 1
+                text: modelData ? modelData.value : ""
+                placeholderText: "http://host:port"
             }
         }
     }

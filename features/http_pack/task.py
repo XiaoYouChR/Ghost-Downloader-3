@@ -63,6 +63,8 @@ class HttpTask(Task):
         return [
             {"kind": "lineedit", "label": "下载链接", "field": "url", "value": self.url},
             {"kind": "headers", "label": "请求标头", "field": "headers", "value": dict(self.headers)},
+            {"kind": "proxies", "label": "代理服务器", "field": "proxies",
+             "value": (next(iter(self.proxies.values())) if self.proxies else "")},
             {"kind": "folder", "label": "下载到", "field": "path", "value": str(self.path)},
         ]
 
