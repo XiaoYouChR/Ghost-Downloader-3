@@ -39,6 +39,13 @@ Item {
                 size: 18
                 onClicked: backend.setConfig("enableSpeedLimitation", !backend.config.enableSpeedLimitation)
             }
+            // 计划任务：亮=已设，点亮开设置框、再点解除（复刻原版完成后关机/重启/打开）
+            ToolButton {
+                icon.name: "ic_fluent_alert_20_regular"
+                highlighted: backend.planArmed
+                size: 18
+                onClicked: backend.planArmed ? backend.disarmPlanTask() : planTaskDialog.open()
+            }
 
             Row {
                 Layout.leftMargin: 6
@@ -357,6 +364,43 @@ Item {
             const cancel = standardButton(Dialog.Cancel)
             if (cancel) cancel.text = "取消"
         }
+    }
+
+    // 计划任务：所有任务完成后执行关机/重启/打开文件（复刻原版 PlanTaskDialog）
+    Dialog {
+        id: planTaskDialog
+        title: "设置计划任务"
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property string planAction: "shutdown"
+
+        ColumnLayout {
+            spacing: 8
+            Text { text: "所有任务完成后执行："; typography: Typography.Body }
+            RadioButton { text: "关机"; checked: true; onCheckedChanged: if (checked) planTaskDialog.planAction = "shutdown" }
+            RadioButton { text: "重启"; onCheckedChanged: if (checked) planTaskDialog.planAction = "restart" }
+            RadioButton { id: openFileRadio; text: "打开文件"; onCheckedChanged: if (checked) planTaskDialog.planAction = "openFile" }
+            RowLayout {
+                Layout.fillWidth: true
+                visible: openFileRadio.checked
+                TextField { id: planPathField; Layout.fillWidth: true; placeholderText: "请选择要打开的文件" }
+                Button { text: "选择"; onClicked: planFileDialog.open() }
+            }
+        }
+        // 选「打开文件」却没填路径就不设（复刻原版 validate）
+        onAccepted: if (planAction !== "openFile" || planPathField.text.trim() !== "")
+            backend.armPlanTask(planAction, planPathField.text.trim())
+        Component.onCompleted: {
+            const ok = standardButton(Dialog.Ok)
+            if (ok) ok.text = "确认"
+            const cancel = standardButton(Dialog.Cancel)
+            if (cancel) cancel.text = "取消"
+        }
+    }
+
+    FileDialog {
+        id: planFileDialog
+        onAccepted: planPathField.text = String(selectedFile).replace("file:///", "")
     }
 
     // 数据驱动编辑框：引擎吐该任务的 schema → CardSchemaView 渲染 → 确定收 payload 回 editTask 重解析

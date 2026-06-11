@@ -270,6 +270,34 @@ def test_editTask_appliesSettingsInPlaceWithoutReparsing(spine, tmp_path):
     assert spine.taskList.data(index, TaskList.IdRole) == taskId
 
 
+def test_planTask_firesActionOnceWhenAllComplete(spine):
+    # 计划任务：设「完成后关机」→ 所有任务完成的边沿发一次 planActionReady，随后自动解除。
+    triggered = []
+    spine.backend.planActionReady.connect(lambda action, path: triggered.append((action, path)))
+    spine.backend.addTask("https://example.com/a.zip")
+    spine.backend.armPlanTask("shutdown", "")
+
+    for task in spine.engine._tasks.values():
+        task.setStatus(TaskStatus.COMPLETED)
+    spine.engine.poll()
+    spine.engine.poll()  # 再轮询一次：边沿不重复发
+
+    assert triggered == [("shutdown", "")]
+    assert spine.backend.planArmed is False  # 触发后解除
+
+
+def test_planTask_doesNotFireWhenNotArmed(spine):
+    triggered = []
+    spine.backend.planActionReady.connect(lambda action, path: triggered.append((action, path)))
+    spine.backend.addTask("https://example.com/a.zip")
+
+    for task in spine.engine._tasks.values():
+        task.setStatus(TaskStatus.COMPLETED)
+    spine.engine.poll()
+
+    assert triggered == []
+
+
 def test_moveSelectedToCategory_retagsLabelWithoutMovingFiles(spine, tmp_path):
     # 批量「移动到分类」：只改 task.category 标签，不动已下文件的目录（文件已落盘，仅重新归类）。
     spine.config.set("downloadFolder", str(tmp_path))

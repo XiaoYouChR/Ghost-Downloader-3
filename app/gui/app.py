@@ -19,6 +19,7 @@ from app.engine.store import Store
 from app.gui.backend import Backend
 from app.gui.clipboard import ClipboardWatcher
 from app.gui.file_icons import FileIconProvider
+from app.gui.plan_task import executePlanAction
 from app.gui.update_check import UpdateCheck
 from app.gui.task_list import TaskFilter, TaskList
 from app.protocol.link import MemoryLink
@@ -80,6 +81,9 @@ class MainWindow(RinUIWindow):
         # RinUIWindow 不是 QObject，不能作 parent；ref 自留保活。仅构造、不触网——触发在 main() 编排
         self._updateCheck = UpdateCheck()
         self._updateCheck.checked.connect(self._onUpdateChecked)
+
+        # 计划任务：全部完成时 backend 发 planActionReady → 这里执行关机/重启/打开（gui 端 OS 动作，不过缝）
+        self._backend.planActionReady.connect(executePlanAction)
 
         if daemon:
             self._link.connectToServer()

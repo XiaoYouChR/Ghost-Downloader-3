@@ -24,6 +24,8 @@ class Backend(QObject):
     updateAvailable = Signal(str)  # 启动检查发现新版本，QML 据此提示（参数为最新版本号）
     exceptionCaught = Signal(str)  # 未捕获的主线程异常摘要，QML 弹错误提示（完整 traceback 进日志）
     editSchemaReady = Signal(str, "QVariantList")  # 某任务的编辑卡 schema 到达，QML 据此渲染编辑框
+    planArmedChanged = Signal()
+    planActionReady = Signal(str, str)  # 全部完成且计划已设：(action, filePath)，main() 接到执行 OS 动作
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -37,6 +39,8 @@ class Backend(QObject):
         self._hashText = ""
         self._connected = False
         self._uaModel: UserAgentModel | None = None
+        self._planAction = ""  # 计划任务：""=未设，否则 shutdown/restart/openFile
+        self._planFilePath = ""
 
     def _config(self) -> QObject:
         return self._configMap
@@ -238,6 +242,24 @@ class Backend(QObject):
     def clearCompleted(self) -> None:
         self._link.toEngine(Command("clearCompleted"))
 
+    def _planArmed(self) -> bool:
+        return bool(self._planAction)
+
+    planArmed = Property(bool, _planArmed, notify=planArmedChanged)
+
+    @Slot(str, str)
+    def armPlanTask(self, action: str, filePath: str) -> None:
+        # 计划任务（复刻原版）：全部完成后做 action（shutdown/restart/openFile）。开关亮表示已设。
+        self._planAction = action
+        self._planFilePath = filePath
+        self.planArmedChanged.emit()
+
+    @Slot()
+    def disarmPlanTask(self) -> None:
+        self._planAction = ""
+        self._planFilePath = ""
+        self.planArmedChanged.emit()
+
     @Slot(str, str)
     def rename(self, taskId: str, title: str) -> None:
         self._link.toEngine(Command("rename", {"taskId": taskId, "title": title}))
@@ -287,3 +309,7 @@ class Backend(QObject):
             self.taskAddFailed.emit(event.data["reason"])
         elif event.name == "editSchema":
             self.editSchemaReady.emit(event.data["taskId"], event.data["schema"])
+        elif event.name == "allComplete":
+            if self._planAction:  # 计划已设才动作，触发后即解除（复刻原版只执行一次）
+                self.planActionReady.emit(self._planAction, self._planFilePath)
+                self.disarmPlanTask()

@@ -35,6 +35,7 @@ class Engine:
         self._attached = False
         self._snapshots: dict[str, tuple] = {}
         self._globalSpeed = -1
+        self._allComplete = False  # 全部完成是边沿事件——只在「最后一个完成」那刻发一次（计划任务用）
         # 进度泵：下载在后台推进，定时轮询有变化的任务推给 gui。只在 attach 期间转（省内存）
         self._pump = QTimer()
         self._pump.setInterval(500)
@@ -105,6 +106,13 @@ class Engine:
         if total != self._globalSpeed:
             self._globalSpeed = total
             self._emit(Event("stats", {"globalSpeed": total}))
+
+        # 全部任务完成的边沿：通知 gui（计划任务据此执行关机/重启/打开）。加新任务会重置、再完成再发。
+        allComplete = bool(self._tasks) and all(
+            task.status == TaskStatus.COMPLETED for task in self._tasks.values())
+        if allComplete and not self._allComplete:
+            self._emit(Event("allComplete", {}))
+        self._allComplete = allComplete
 
     def _defaultOptions(self, url: str, options: dict | None = None) -> dict:
         # 注入配置里的全局下载设置——pack 从 payload 取，不再直读 cfg（脱 qfluentwidgets）。per-task 显式值优先。
