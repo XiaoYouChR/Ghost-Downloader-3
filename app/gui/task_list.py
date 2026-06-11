@@ -10,6 +10,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from app.bases.categories import CATEGORY_FLUENT_ICONS, categoryPresetFor
 from app.supports.utils import toReadableSize, toReadableTime
 
 # 文件类型 → Fluent 图标名（纯展示映射，图标资源名只 gui 认识，不下到引擎）
@@ -106,6 +107,12 @@ class TaskItem:
         return _TYPE_ICONS.get(ext, _DEFAULT_TYPE_ICON)
 
     @property
+    def categoryIcon(self) -> str:
+        # 文件名命中的自动分类小图标（复刻原版分类标记）；无匹配则空，卡片不显
+        preset = categoryPresetFor(self.title)
+        return CATEGORY_FLUENT_ICONS.get(preset["icon"], "") if preset else ""
+
+    @property
     def leftTimeText(self) -> str:
         speed = self._task.get("speed", 0)
         remaining = self._task.get("fileSize", 0) - self._task.get("received", 0)
@@ -170,6 +177,7 @@ class TaskList(QAbstractListModel):
     SizeTextRole = Qt.ItemDataRole.UserRole + 19
     StatusTextRole = Qt.ItemDataRole.UserRole + 20
     SegmentsRole = Qt.ItemDataRole.UserRole + 21
+    CategoryIconRole = Qt.ItemDataRole.UserRole + 22
 
     # 角色 → (QML 绑定名, TaskItem 属性)。data()/roleNames 都由这单一来源生成，
     # 加一个展示字段 = 加一行 + TaskItem 上一个属性。selected 是模型级（不在 item 上），属性记 None 单独处理。
@@ -195,6 +203,7 @@ class TaskList(QAbstractListModel):
         SizeTextRole: ("sizeText", "sizeText"),
         StatusTextRole: ("statusText", "statusText"),
         SegmentsRole: ("segments", "segments"),
+        CategoryIconRole: ("categoryIcon", "categoryIcon"),
     }
 
     selectionModeChanged = Signal()

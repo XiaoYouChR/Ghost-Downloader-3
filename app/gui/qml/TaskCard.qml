@@ -13,6 +13,7 @@ Frame {
     property string fileName
     property string url
     property string typeIcon: "ic_fluent_document_20_filled"
+    property string categoryIcon
     property bool running
     property bool completed
     property real progress
@@ -86,11 +87,23 @@ Frame {
             Layout.fillWidth: true
             spacing: 2
 
-            Text {
+            RowLayout {
                 Layout.fillWidth: true
-                typography: Typography.BodyStrong
-                text: card.fileName
-                elide: Text.ElideRight
+                spacing: 5
+
+                // 自动分类小图标（复刻原版）：文件名命中分类且开了自动分类才显
+                Icon {
+                    visible: card.categoryIcon !== "" && backend.config.enableCategory
+                    icon: card.categoryIcon
+                    size: 14
+                    color: Theme.currentTheme.colors.textSecondaryColor
+                }
+                Text {
+                    Layout.fillWidth: true
+                    typography: Typography.BodyStrong
+                    text: card.fileName
+                    elide: Text.ElideRight
+                }
             }
 
             RowLayout {

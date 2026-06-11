@@ -112,6 +112,7 @@ Item {
                     fileName: model.title
                     url: model.url
                     typeIcon: model.typeIcon
+                    categoryIcon: model.categoryIcon
                     running: model.running
                     completed: model.completed
                     progress: model.progress

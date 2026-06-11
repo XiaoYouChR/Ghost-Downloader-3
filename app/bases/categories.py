@@ -53,9 +53,17 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
 ]
 
 
-def categoryFolderFor(filename: str, baseFolder: str, rules: list | None = None) -> str:
-    """按文件扩展名把下载目录归到分类子目录（如 baseFolder/Video）；无匹配则原样返回 baseFolder。
-    rules 给定就用用户自定义规则（同 presets 结构），否则用默认集。
+# 分类的 qfluentwidgets 图标名 → QML fluent 图标名（任务卡的分类小图标用）
+CATEGORY_FLUENT_ICONS = {
+    "VIDEO": "ic_fluent_video_clip_20_filled", "MUSIC": "ic_fluent_music_note_2_20_filled",
+    "PHOTO": "ic_fluent_image_20_filled", "CHAT": "ic_fluent_chat_20_filled",
+    "DOCUMENT": "ic_fluent_document_20_filled", "ZIP_FOLDER": "ic_fluent_folder_zip_20_filled",
+    "APPLICATION": "ic_fluent_window_apps_20_filled", "HELP": "ic_fluent_tag_20_filled",
+}
+
+
+def categoryPresetFor(filename: str, rules: list | None = None) -> dict | None:
+    """按文件扩展名匹配分类规则，返回命中的规则（含 folder/icon），无匹配返回 None。
     tar.gz 这类双后缀先整体匹配再退单后缀，对齐 gui 的 matchByName。"""
     suffixes = [s.lstrip(".").lower() for s in Path(filename).suffixes]
     candidates: list[str] = []
@@ -67,6 +75,12 @@ def categoryFolderFor(filename: str, baseFolder: str, rules: list | None = None)
     for candidate in candidates:
         for rule in (rules or DEFAULT_CATEGORY_PRESETS):
             if candidate in rule.get("extensions", ()):
-                folder = rule.get("folder")
-                return folder.replace(DEFAULT_FOLDER_MACRO, baseFolder) if folder else baseFolder
-    return baseFolder
+                return rule
+    return None
+
+
+def categoryFolderFor(filename: str, baseFolder: str, rules: list | None = None) -> str:
+    """按文件扩展名把下载目录归到分类子目录（如 baseFolder/Video）；无匹配则原样返回 baseFolder。"""
+    preset = categoryPresetFor(filename, rules)
+    folder = preset.get("folder") if preset else None
+    return folder.replace(DEFAULT_FOLDER_MACRO, baseFolder) if folder else baseFolder
