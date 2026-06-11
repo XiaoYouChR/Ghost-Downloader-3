@@ -12,6 +12,7 @@ class FakeDownloads:
         self.stopped: list[Task] = []
         self.parsedOptions: list[dict] = []
         self.appliedPackSettings: list[tuple] = []
+        self.installRequested: list[str] = []
         self.actionKind = "toggle"  # 测试可改成 finalize 验直播分派
         self._parseError = parseError
 
@@ -50,6 +51,10 @@ class FakeDownloads:
 
     def applyPackSetting(self, packId: str, key: str, value) -> None:
         self.appliedPackSettings.append((packId, key, value))
+
+    def installTask(self, packId: str):
+        self.installRequested.append(packId)
+        return None  # 测试不真建安装任务
 
     def verify(self, task: Task, callback) -> None:
         callback("test-hash", None)

@@ -277,6 +277,13 @@ def test_setPackSetting_routesToDownloads(spine):
     assert spine.downloads.appliedPackSettings == [("github", "enabled", True)]
 
 
+def test_runPackAction_install_routesToDownloads(spine):
+    # pack 设置区「一键安装」按钮 → runPackAction 命令 → 引擎请 downloads 建该 pack 的安装任务。
+    spine.backend.runPackAction("m3u8", "install")
+
+    assert spine.downloads.installRequested == ["m3u8"]
+
+
 def test_packSettings_eventPopulatesBackend(spine):
     # 引擎下发的各 pack 设置组落进 backend.packSettings，QML 设置页据此渲染。
     spine.backend.receive(Event("packSettings", {"groups": [

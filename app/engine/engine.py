@@ -83,6 +83,8 @@ class Engine:
             self._setConfig(command.data["key"], command.data["value"])
         elif command.name == "setPackSetting":
             self._downloads.applyPackSetting(command.data["packId"], command.data["key"], command.data["value"])
+        elif command.name == "runPackAction":
+            self._runPackAction(command.data["packId"], command.data["actionId"])
         elif command.name == "rename":
             self._rename(command.data["taskId"], command.data["title"])
         elif command.name == "setCategory":
@@ -311,6 +313,13 @@ class Engine:
         else:
             self._store.add(task)  # 改名要落盘
             self._changed(task)
+
+    def _runPackAction(self, packId: str, actionId: str) -> None:
+        # pack 设置区的动作按钮。目前只有「一键安装」：跑 pack 的安装协程，结果当普通任务加进列表+开始。
+        if actionId == "install":
+            coroutine = self._downloads.installTask(packId)
+            if coroutine is not None:
+                self._downloads.run(coroutine, self._onParsed)
 
     def _setCategory(self, taskId: str, categoryId: str) -> None:
         # 「移动到分类」：只重新打分类标签，不动已下文件/目录（复刻原版——文件已落盘，仅改归类）。

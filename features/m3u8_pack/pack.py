@@ -244,6 +244,9 @@ class M3U8Pack(FeaturePack):
             ),
         ]
 
+    async def buildInstallTask(self):
+        return await createInstallTask()  # 下载 N_m3u8DL-RE（各平台均有 release）
+
     def taskCard(self, task, parent=None):
         from disk_pack.task import InstallTask
         if isinstance(task, InstallTask):

@@ -211,6 +211,9 @@ class FFmpegPack(FeaturePack):
     async def parse(self, payload: dict) -> Task:
         return await createMergeTask(payload)
 
+    async def buildInstallTask(self):
+        return await createInstallTask()  # Windows 下载 FFmpeg 构建；schema 仅 win32 出安装按钮
+
     def taskCard(self, task, parent=None):
         from disk_pack.task import InstallTask
         if isinstance(task, InstallTask):

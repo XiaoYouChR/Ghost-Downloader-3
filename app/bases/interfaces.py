@@ -65,6 +65,11 @@ class FeaturePack:
         # 过缝进 wire，gui 卡片画成一排分段矩形（复刻原版 SegmentedProgressBar）；非分段 pack 返回 []，卡片走普通进度条。
         return []
 
+    async def buildInstallTask(self) -> "Task | None":
+        # 一键安装该 pack 依赖的二进制（如 N_m3u8DL-RE / FFmpeg）：返回一个下载任务，引擎当普通任务跑。
+        # 默认无需安装。schema 的 action 项触发——只在该 pack 此平台支持安装时才出按钮。
+        return None
+
     def setup(self, mainWindow: "MainWindow"):
         pass
 

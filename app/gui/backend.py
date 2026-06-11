@@ -294,6 +294,11 @@ class Backend(QObject):
     def setPackSetting(self, packId: str, key: str, value) -> None:
         self._link.toEngine(Command("setPackSetting", {"packId": packId, "key": key, "value": value}))
 
+    @Slot(str, str)
+    def runPackAction(self, packId: str, actionId: str) -> None:
+        # pack 设置区的动作按钮（如「一键安装」），交引擎执行
+        self._link.toEngine(Command("runPackAction", {"packId": packId, "actionId": actionId}))
+
     @Slot(bool)
     def answerBrowserPair(self, approved: bool) -> None:
         # QML 配对框的答复转给 BrowserService（main() 接 browserPairAnswered）

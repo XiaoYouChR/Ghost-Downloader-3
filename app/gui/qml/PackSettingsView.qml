@@ -26,6 +26,7 @@ ColumnLayout {
                            : modelData.kind === "folder" ? folderRow
                            : modelData.kind === "lines" ? linesRow
                            : modelData.kind === "status" ? statusRow
+                           : modelData.kind === "action" ? actionRow
                            : textRow
             onLoaded: item.modelData = modelData
         }
@@ -71,6 +72,20 @@ ColumnLayout {
         }
         onAccepted: backend.setPackSetting(view.packId, pendingKey, true)
         onRejected: if (pendingSwitch) pendingSwitch.checked = false
+    }
+
+    // action：动作按钮（如「一键安装」），点了交引擎执行（建安装任务、当普通任务跑）
+    Component {
+        id: actionRow
+        RowLayout {
+            property var modelData
+            Layout.fillWidth: true
+            Item { Layout.fillWidth: true }
+            Button {
+                text: modelData ? modelData.label : ""
+                onClicked: backend.runPackAction(view.packId, modelData.actionId)
+            }
+        }
     }
 
     // status：只读检测信息（如 N_m3u8DL-RE / FFmpeg 是否装好），引擎建 schema 时算好，界面只显

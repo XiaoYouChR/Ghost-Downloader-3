@@ -287,6 +287,13 @@ class FeatureService:
                 packInstance.config.applySetting(key, value)
                 return
 
+    def installTaskCoroutine(self, packId: str):
+        # 一键安装：返回那个 pack 的安装任务协程（引擎跑它、当普通任务加进列表）；找不到 pack 则 None
+        for packInstance in self._packs.values():
+            if packInstance.packId == packId:
+                return packInstance.buildInstallTask()
+        return None
+
     def fileTypes(self) -> list[FileType]:
         types = []
         for packName, packInstance in self._sortedPacks():
