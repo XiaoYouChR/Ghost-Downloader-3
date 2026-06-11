@@ -27,6 +27,9 @@ class Backend(QObject):
     editSchemaReady = Signal(str, "QVariantList")  # 某任务的编辑卡 schema 到达，QML 据此渲染编辑框
     planArmedChanged = Signal()
     planActionReady = Signal(str, str)  # 全部完成且计划已设：(action, filePath)，main() 接到执行 OS 动作
+    browserPairRequested = Signal("QVariant")  # 浏览器扩展请求配对，QML 弹框问用户
+    browserPairAnswered = Signal(bool)  # 用户答配对（同意/拒绝），main() 转给 BrowserService
+    browserExtensionChanged = Signal()
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -279,6 +282,24 @@ class Backend(QObject):
         self._planAction = ""
         self._planFilePath = ""
         self.planArmedChanged.emit()
+
+    @Slot(bool)
+    def answerBrowserPair(self, approved: bool) -> None:
+        # QML 配对框的答复转给 BrowserService（main() 接 browserPairAnswered）
+        self.browserPairAnswered.emit(approved)
+
+    def _browserExtensionEnabled(self) -> bool:
+        from app.supports.config import cfg
+        return bool(cfg.enableBrowserExtension.value)
+
+    @Slot(bool)
+    def setBrowserExtension(self, enabled: bool) -> None:
+        # 浏览器扩展开关是纯 gui/本机概念（BrowserService 盯 cfg、不过引擎），直接读写 cfg（同 UA）
+        from app.supports.config import cfg
+        cfg.set(cfg.enableBrowserExtension, enabled)
+        self.browserExtensionChanged.emit()
+
+    browserExtensionEnabled = Property(bool, _browserExtensionEnabled, notify=browserExtensionChanged)
 
     @Slot(str, str)
     def rename(self, taskId: str, title: str) -> None:

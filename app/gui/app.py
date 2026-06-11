@@ -17,6 +17,7 @@ from app.engine.engine import Engine
 from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.gui.backend import Backend
+from app.gui.browser_service import BrowserService, pairToken
 from app.gui.clipboard import ClipboardWatcher
 from app.gui.file_icons import FileIconProvider
 from app.gui.plan_task import executePlanAction
@@ -84,6 +85,14 @@ class MainWindow(RinUIWindow):
 
         # 计划任务：全部完成时 backend 发 planActionReady → 这里执行关机/重启/打开（gui 端 OS 动作，不过缝）
         self._backend.planActionReady.connect(executePlanAction)
+
+        # 浏览器扩展桥：本机 WebSocket，扩展发来的下载转成 backend 命令。cfg 开关控起停（gui 端，不过缝）。
+        self._browser = BrowserService(self._backend, pairToken())
+        self._browser.pairRequested.connect(self._backend.browserPairRequested)  # 配对请求 → QML 弹框
+        self._backend.browserPairAnswered.connect(
+            lambda approved: self._browser.approvePair() if approved else self._browser.rejectPair())
+        cfg.enableBrowserExtension.valueChanged.connect(self._browser.setEnabled)
+        self._browser.setEnabled(cfg.enableBrowserExtension.value)
 
         if daemon:
             self._link.connectToServer()

@@ -403,6 +403,25 @@ Item {
         onAccepted: planPathField.text = String(selectedFile).replace("file:///", "")
     }
 
+    // 浏览器扩展配对请求：backend 转发扩展的请求 → 弹框问用户 → 答复回 backend
+    Connections {
+        target: backend
+        function onBrowserPairRequested(info) {
+            pairText.text = "浏览器扩展（" + info.clientKind + " " + info.extensionVersion
+                + "）请求连接。\n仅在你刚点了扩展里的「自动配对」时允许。"
+            pairDialog.open()
+        }
+    }
+    Dialog {
+        id: pairDialog
+        title: "浏览器扩展配对请求"
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        Text { id: pairText; width: 360; wrapMode: Text.WordWrap }
+        onAccepted: backend.answerBrowserPair(true)
+        onRejected: backend.answerBrowserPair(false)
+    }
+
     // 数据驱动编辑框：引擎吐该任务的 schema → CardSchemaView 渲染 → 确定收 payload 回 editTask 重解析
     Dialog {
         id: editDialog

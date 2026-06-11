@@ -239,6 +239,13 @@ FluentPage {
 
     RowLayout {
         Layout.fillWidth: true
+        Text { text: "浏览器扩展"; typography: Typography.Body }
+        Item { Layout.fillWidth: true }
+        Switch { checked: backend.browserExtensionEnabled; onToggled: backend.setBrowserExtension(checked) }
+    }
+
+    RowLayout {
+        Layout.fillWidth: true
         Text { text: "启动时检查更新"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
         Switch { checked: backend.config.checkUpdateAtStartUp; onToggled: backend.setConfig("checkUpdateAtStartUp", checked) }
