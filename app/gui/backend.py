@@ -2,6 +2,7 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtQml import QQmlPropertyMap
 
 from app.gui.autostart import applyAutoRun
+from app.gui.category_rules import CategoryRuleModel
 from app.gui.file_selection import FileSelection
 from app.gui.user_agents import UserAgentModel
 from app.gui.task_list import TaskItem, TaskList
@@ -39,6 +40,7 @@ class Backend(QObject):
         self._hashText = ""
         self._connected = False
         self._uaModel: UserAgentModel | None = None
+        self._ruleModel: CategoryRuleModel | None = None
         self._planAction = ""  # 计划任务：""=未设，否则 shutdown/restart/openFile
         self._planFilePath = ""
 
@@ -84,9 +86,27 @@ class Backend(QObject):
 
     @Slot(result="QVariantList")
     def categories(self) -> list:
-        # per-URL 分类钮的菜单项：只给 id + 名字（展示用）。选哪个目录是引擎权威，gui 只回传 id。
+        # 分类菜单项（per-URL 钮/筛选/移动）：只给 id + 名字。含用户自定义规则，空则用默认集。
         from app.bases.categories import DEFAULT_CATEGORY_PRESETS
-        return [{"categoryId": preset["categoryId"], "name": preset["name"]} for preset in DEFAULT_CATEGORY_PRESETS]
+        from app.supports.config import cfg
+        rules = cfg.categoryRules.value or DEFAULT_CATEGORY_PRESETS
+        return [{"categoryId": rule["categoryId"], "name": rule["name"]} for rule in rules]
+
+    def _categoryRuleModel(self) -> QObject:
+        # 惰性建（测试不碰）：从 cfg.categoryRules 起列；改动落回 cfg（持久化+标签源）并经 setConfig 让引擎即时按新规则归类目录
+        if self._ruleModel is None:
+            from app.bases.categories import DEFAULT_CATEGORY_PRESETS
+            from app.supports.config import cfg
+            rules = cfg.categoryRules.value or DEFAULT_CATEGORY_PRESETS
+            self._ruleModel = CategoryRuleModel(rules, self._saveCategoryRules)
+        return self._ruleModel
+
+    categoryRuleModel = Property(QObject, _categoryRuleModel, constant=True)
+
+    def _saveCategoryRules(self, rules: list) -> None:
+        from app.supports.config import cfg
+        cfg.set(cfg.categoryRules, rules)  # 落盘 + categoryService（标签）下次加载用这份
+        self.setConfig("categoryRules", rules)  # 引擎 Config 即时生效：新任务按新规则归目录
 
     @Slot(result="QVariantList")
     def categoryOptions(self) -> list:

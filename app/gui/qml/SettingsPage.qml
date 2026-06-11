@@ -46,9 +46,61 @@ FluentPage {
         Layout.fillWidth: true
         Text { text: "按类型归类到子目录"; typography: Typography.Body }
         Item { Layout.fillWidth: true }
+        Button { text: "管理分类"; visible: backend.config.enableCategory; onClicked: categoryDialog.open() }
         Switch {
             checked: backend.config.enableCategory
             onToggled: backend.setConfig("enableCategory", checked)
+        }
+    }
+
+    Dialog {
+        id: categoryDialog
+        title: "管理分类规则"
+        modal: true
+        standardButtons: Dialog.Close
+        ColumnLayout {
+            implicitWidth: 560
+            spacing: 10
+            ListView {
+                Layout.fillWidth: true
+                implicitHeight: 240
+                clip: true
+                model: backend.categoryRuleModel
+                delegate: RowLayout {
+                    width: ListView.view.width
+                    spacing: 8
+                    Icon { icon: "ic_fluent_tag_20_regular"; size: 16 }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Text { text: model.name; typography: Typography.BodyStrong }
+                        Text { text: model.extensionsText; opacity: 0.6; elide: Text.ElideRight; Layout.fillWidth: true }
+                    }
+                    Text { text: model.folder; opacity: 0.5; elide: Text.ElideMiddle; Layout.preferredWidth: 140 }
+                    ToolButton { icon.name: "ic_fluent_delete_20_regular"; onClicked: backend.categoryRuleModel.removeAt(index) }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                TextField { id: catNameField; Layout.preferredWidth: 96; placeholderText: "名称" }
+                TextField { id: catExtField; Layout.fillWidth: true; placeholderText: "扩展名，逗号分隔" }
+                TextField { id: catFolderField; Layout.preferredWidth: 150; placeholderText: "{default}/子目录" }
+                ComboBox {
+                    id: catIconCombo
+                    Layout.preferredWidth: 120
+                    model: ["VIDEO", "MUSIC", "PHOTO", "CHAT", "DOCUMENT", "ZIP_FOLDER", "APPLICATION", "HELP"]
+                }
+                Button {
+                    text: "添加"
+                    onClicked: {
+                        backend.categoryRuleModel.add(catNameField.text, catExtField.text, catFolderField.text, catIconCombo.currentText)
+                        catNameField.text = ""
+                        catExtField.text = ""
+                        catFolderField.text = ""
+                    }
+                }
+            }
         }
     }
 
