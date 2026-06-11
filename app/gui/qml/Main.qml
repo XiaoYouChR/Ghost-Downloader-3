@@ -35,6 +35,11 @@ FluentWindow {
             icon: "ic_fluent_arrow_download_20_regular"
         },
         {
+            title: "资源下载",
+            page: Qt.resolvedUrl("JackYaoPage.qml"),
+            icon: "ic_fluent_cloud_arrow_down_20_regular"
+        },
+        {
             title: "设置",
             page: Qt.resolvedUrl("SettingsPage.qml"),
             icon: "ic_fluent_settings_20_regular",

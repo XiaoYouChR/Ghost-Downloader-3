@@ -35,6 +35,8 @@ class Backend(QObject):
     biliQrReady = Signal(str)  # B站扫码登录的二维码 url 到达，QML 弹二维码框
     biliLoginStatus = Signal(str)  # 扫码轮询状态（等待扫码/已扫码待确认）
     biliLoginFinished = Signal(bool, str)  # 登录结束：(成功, 文案)
+    jackYaoResources = Signal("QVariantList")  # 「资源下载」页的远程资源列表到达
+    jackYaoError = Signal(str)  # 资源列表加载失败
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -338,6 +340,27 @@ class Backend(QObject):
     def logoutBili(self) -> None:
         self.setPackSetting("bili", "userCookie", "")
         self.biliLoginFinished.emit(True, "已退出登录")
+
+    # —— jack_yao「资源下载」页（用户拍板接受的 gui↔pack 耦合）——
+    @Slot()
+    def loadJackYaoResources(self) -> None:
+        try:
+            from app.services.core_service import coreService
+            from jack_yao import run
+        except ImportError:
+            self.jackYaoError.emit("资源下载在当前模式不可用")
+            return
+        coreService.runCoroutine(run(), self._onJackYaoResources)
+
+    def _onJackYaoResources(self, result, error) -> None:
+        if error or result is None:
+            self.jackYaoError.emit(str(error) if error else "加载失败")
+            return
+        self.jackYaoResources.emit(result)
+
+    @Slot(str)
+    def addJackYaoResource(self, url: str) -> None:
+        self.addTaskWithOptions(url, {})
 
     @Slot(bool)
     def answerBrowserPair(self, approved: bool) -> None:

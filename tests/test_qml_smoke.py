@@ -41,7 +41,7 @@ def test_taskList_rendersInQmlListView(spine):
 
 
 @pytest.mark.parametrize("qmlFile", ["TaskPage.qml", "SettingsPage.qml", "TaskCard.qml",
-                                     "PackSettingsView.qml", "CardSchemaView.qml"])
+                                     "PackSettingsView.qml", "CardSchemaView.qml", "JackYaoPage.qml"])
 def test_realQmlPageLoadsWithoutError(spine, qmlFile):
     # 渲染期冒烟：每个真实 .qml 当组件加载，零加载错误。
     # 挡住「只读属性误赋」这类直到窗口真显示、页面真渲染才暴露的 QML 加载失败。
