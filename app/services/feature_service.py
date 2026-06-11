@@ -294,6 +294,18 @@ class FeatureService:
                 return packInstance.buildInstallTask()
         return None
 
+    def fileTypeAssociations(self) -> list[tuple]:
+        # 声明了文件类型且有「关联」开关的 pack：返回 [(fileTypes, associateConfigItem)]。
+        # gui 据此把 .torrent/.m3u8 等注册到系统（纯桌面 OS 动作，gui 端做、watch 开关变更）。
+        result = []
+        for packInstance in self._packs.values():
+            types = packInstance.fileTypes()
+            config = packInstance.config
+            associate = getattr(config, "associateFileTypes", None) if config is not None else None
+            if types and associate is not None:
+                result.append((types, associate))
+        return result
+
     def fileTypes(self) -> list[FileType]:
         types = []
         for packName, packInstance in self._sortedPacks():

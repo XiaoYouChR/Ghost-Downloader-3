@@ -175,6 +175,9 @@ def main() -> int:
         coreService.start()
         # QML 前端不挂 QFluentWidgets 子界面，跳过各 pack 的 GUI setup（同 daemon）
         featureService.load(None, withSetup=False)
+        # 文件关联是桌面 OS 动作，单独在 gui 端做（不走 pack 的 GUI setup）
+        from app.gui.file_assoc import applyFileAssociations
+        applyFileAssociations(featureService.fileTypeAssociations())
 
     window = MainWindow(daemon)
     window.setupTray()
