@@ -61,10 +61,14 @@ Frame {
             onClicked: taskList.toggleSelect(card.taskId)
         }
 
-        Icon {
-            icon: card.typeIcon
-            size: 36
-            color: Theme.currentTheme.colors.primaryColor
+        Image {
+            // 真实 OS 文件类型图标（复刻原版 QFileIconProvider），按文件名解析
+            Layout.preferredWidth: 40
+            Layout.preferredHeight: 40
+            source: "image://fileicon/" + encodeURIComponent(card.fileName)
+            sourceSize.width: 40
+            sourceSize.height: 40
+            fillMode: Image.PreserveAspectFit
         }
 
         ColumnLayout {

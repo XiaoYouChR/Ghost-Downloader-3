@@ -18,6 +18,7 @@ from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.gui.backend import Backend
 from app.gui.clipboard import ClipboardWatcher
+from app.gui.file_icons import FileIconProvider
 from app.gui.update_check import UpdateCheck
 from app.gui.task_list import TaskFilter, TaskList
 from app.protocol.link import MemoryLink
@@ -85,6 +86,7 @@ class MainWindow(RinUIWindow):
         else:
             self._backend.attach()
 
+        self.engine.addImageProvider("fileicon", FileIconProvider())  # image://fileicon/<文件名> → 真实 OS 图标
         context = self.engine.rootContext()
         context.setContextProperty("backend", self._backend)
         context.setContextProperty("taskFilter", self._taskFilter)

@@ -224,7 +224,12 @@ Item {
                 delegate: RowLayout {
                     width: ListView.view.width
                     spacing: 8
-                    Icon { icon: model.typeIcon; size: 20 }
+                    Image {
+                        Layout.preferredWidth: 24; Layout.preferredHeight: 24
+                        source: "image://fileicon/" + encodeURIComponent(model.title)
+                        sourceSize.width: 24; sourceSize.height: 24
+                        fillMode: Image.PreserveAspectFit
+                    }
                     Text { text: model.title; Layout.fillWidth: true; elide: Text.ElideRight }
                     Text { text: model.sizeText; opacity: 0.6 }
                 }
