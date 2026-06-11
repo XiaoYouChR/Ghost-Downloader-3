@@ -27,6 +27,7 @@ ColumnLayout {
                            : modelData.kind === "lines" ? linesRow
                            : modelData.kind === "status" ? statusRow
                            : modelData.kind === "action" ? actionRow
+                           : modelData.kind === "biliLogin" ? biliLoginRow
                            : textRow
             onLoaded: item.modelData = modelData
         }
@@ -72,6 +73,20 @@ ColumnLayout {
         }
         onAccepted: backend.setPackSetting(view.packId, pendingKey, true)
         onRejected: if (pendingSwitch) pendingSwitch.checked = false
+    }
+
+    // biliLogin：B站账号登录（扫码 + 退出）。用户拍板的 gui↔bili 耦合；扫码框在 SettingsPage 接 backend 信号弹
+    Component {
+        id: biliLoginRow
+        RowLayout {
+            property var modelData
+            Layout.fillWidth: true
+            Text { text: modelData ? modelData.label : ""; typography: Typography.Body }
+            Text { text: (modelData && modelData.value) ? "已登录" : "未登录"; opacity: 0.6 }
+            Item { Layout.fillWidth: true }
+            Button { text: "扫码登录"; onClicked: backend.startBiliLogin() }
+            Button { text: "退出登录"; enabled: modelData && modelData.value; onClicked: backend.logoutBili() }
+        }
     }
 
     // action：动作按钮（如「一键安装」），点了交引擎执行（建安装任务、当普通任务跑）

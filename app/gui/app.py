@@ -17,6 +17,7 @@ from app.engine.engine import Engine
 from app.engine.settings import makeCfgBackedConfig
 from app.engine.store import Store
 from app.gui.backend import Backend
+from app.gui.bili_login import BiliQrProvider
 from app.gui.browser_service import BrowserService, pairToken
 from app.gui.clipboard import ClipboardWatcher
 from app.gui.file_icons import FileIconProvider
@@ -100,6 +101,7 @@ class MainWindow(RinUIWindow):
             self._backend.attach()
 
         self.engine.addImageProvider("fileicon", FileIconProvider())  # image://fileicon/<文件名> → 真实 OS 图标
+        self.engine.addImageProvider("biliqr", BiliQrProvider())  # image://biliqr/<url> → B站登录二维码
         context = self.engine.rootContext()
         context.setContextProperty("backend", self._backend)
         context.setContextProperty("taskFilter", self._taskFilter)

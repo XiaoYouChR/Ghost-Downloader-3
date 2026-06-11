@@ -437,6 +437,7 @@ class BilibiliConfig(PackConfig):
         qualities = [(127, "8K"), (120, "4K"), (116, "1080P60"), (112, "1080P+"),
                      (80, "1080P"), (74, "720P60"), (64, "720P"), (32, "480P"), (16, "360P")]
         return [
+            {"kind": "biliLogin", "label": "账号登录", "value": bool(self.userCookie.value)},
             {"kind": "combo", "label": "默认清晰度", "key": "defaultQuality", "value": self.defaultQuality.value,
              "options": [{"label": label, "value": value} for value, label in qualities]},
             {"kind": "combo", "label": "备选清晰度", "key": "alternativeQuality", "value": self.alternativeQuality.value,

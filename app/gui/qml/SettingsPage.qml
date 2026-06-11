@@ -277,4 +277,30 @@ FluentPage {
             schema: modelData.schema
         }
     }
+
+    // B站扫码登录框（用户拍板的 gui↔bili 耦合）：二维码来自 backend 信号，扫完自动关
+    Connections {
+        target: backend
+        function onBiliQrReady(url) {
+            biliQrImage.source = "image://biliqr/" + encodeURIComponent(url)
+            biliStatusText.text = "请用哔哩哔哩 App 扫码登录"
+            biliLoginDialog.open()
+        }
+        function onBiliLoginStatus(text) { biliStatusText.text = text }
+        function onBiliLoginFinished(success, message) {
+            biliStatusText.text = message
+            if (success) biliLoginDialog.close()  // 成功自动关；失败留框显原因，用户自行取消
+        }
+    }
+    Dialog {
+        id: biliLoginDialog
+        title: "哔哩哔哩扫码登录"
+        modal: true
+        standardButtons: Dialog.Cancel
+        ColumnLayout {
+            spacing: 10
+            Image { id: biliQrImage; Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 200; Layout.preferredHeight: 200; sourceSize.width: 200; sourceSize.height: 200 }
+            Text { id: biliStatusText; Layout.alignment: Qt.AlignHCenter; text: "正在获取二维码…" }
+        }
+    }
 }

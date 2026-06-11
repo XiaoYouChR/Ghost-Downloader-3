@@ -32,6 +32,9 @@ class Backend(QObject):
     browserExtensionChanged = Signal()
     packSettingsChanged = Signal()  # 各 pack 的设置组到达，QML 设置页据此渲染
     packMessage = Signal(str)  # pack 查询型动作（如 github 测延迟）的结果文案，QML 弹浮层
+    biliQrReady = Signal(str)  # B站扫码登录的二维码 url 到达，QML 弹二维码框
+    biliLoginStatus = Signal(str)  # 扫码轮询状态（等待扫码/已扫码待确认）
+    biliLoginFinished = Signal(bool, str)  # 登录结束：(成功, 文案)
 
     def __init__(self, link: MemoryLink, taskList: TaskList) -> None:
         super().__init__()
@@ -299,6 +302,42 @@ class Backend(QObject):
     def runPackAction(self, packId: str, actionId: str) -> None:
         # pack 设置区的动作按钮（如「一键安装」），交引擎执行
         self._link.toEngine(Command("runPackAction", {"packId": packId, "actionId": actionId}))
+
+    # —— B站扫码登录（用户拍板接受的 gui↔bili 耦合；MemoryLink 模式经 coreService 跑 B站登录协程）——
+    @Slot()
+    def startBiliLogin(self) -> None:
+        from app.services.core_service import coreService
+        from bili_pack.login import requestQrCode
+        coreService.runCoroutine(requestQrCode(), self._onBiliQrReady)
+
+    def _onBiliQrReady(self, result, error) -> None:
+        if error or not result:
+            self.biliLoginFinished.emit(False, str(error) if error else "获取二维码失败")
+            return
+        self.biliQrReady.emit(result["url"])
+        from app.services.core_service import coreService
+        from bili_pack.login import pollQrLogin
+        coreService.runCoroutine(
+            pollQrLogin(result["qrcode_key"], statusCallback=self._onBiliPollStatus), self._onBiliLoginDone)
+
+    def _onBiliPollStatus(self, code, message) -> None:
+        self.biliLoginStatus.emit(message or "等待扫码…")
+
+    def _onBiliLoginDone(self, result, error) -> None:
+        if error:
+            self.biliLoginFinished.emit(False, str(error))
+            return
+        cookie = (result or {}).get("cookie", "")
+        if cookie:
+            self.setPackSetting("bili", "userCookie", cookie)
+            self.biliLoginFinished.emit(True, "登录成功")
+        else:
+            self.biliLoginFinished.emit(False, (result or {}).get("message") or "二维码已失效或已取消")
+
+    @Slot()
+    def logoutBili(self) -> None:
+        self.setPackSetting("bili", "userCookie", "")
+        self.biliLoginFinished.emit(True, "已退出登录")
 
     @Slot(bool)
     def answerBrowserPair(self, approved: bool) -> None:
