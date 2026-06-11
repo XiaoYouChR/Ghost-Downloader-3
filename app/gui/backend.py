@@ -250,6 +250,8 @@ class Backend(QObject):
             self.taskAddFailed.emit(event.data["reason"])
         elif event.name == "previewParsed":
             self._previewList.add(TaskItem(event.data["task"]))
+        elif event.name == "previewChanged":
+            self._previewList.update(event.data["task"])
         elif event.name == "previewError":
             self.taskAddFailed.emit(event.data["reason"])
         elif event.name == "editSchema":

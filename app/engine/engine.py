@@ -159,25 +159,30 @@ class Engine:
             self._emit(Event("editSchema", {"taskId": taskId, "schema": task.editorSchema()}))
 
     def _editTask(self, taskId: str, options: dict | None = None) -> None:
-        # 改链接后按新 url 重解析，再把结果换进旧任务（保留 id/目录）。先停旧下载，免 worker 还在写就被换 stage。
-        old = self._tasks.get(taskId)
+        # 改链接后按新 url 重解析，把结果换进旧任务（保留 id/目录）。已提交任务要先停下载；预览还没开始，不用停。
+        isPreview = taskId in self._previews
+        old = self._tasks.get(taskId) or self._previews.get(taskId)
         if old is None:
             return
-        self._downloads.stop(old)
+        if not isPreview:
+            self._downloads.stop(old)
         options = dict(options or {})
         url = options.pop("url", old.url)
-        options.setdefault("path", str(old.path))  # 重解析沿用任务现有目录（replaceWith 保留 path）
+        options.setdefault("path", str(old.path))  # 重解析沿用现有目录（replaceWith 保留 path）
         options.setdefault("preBlockNum", self._config.value("preBlockNum"))
-        self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old))
+        self._downloads.run(self._downloads.parse(url, options), partial(self._onReparsed, old, isPreview))
 
-    def _onReparsed(self, old: Task, task: Task | None, error: str | None) -> None:
+    def _onReparsed(self, old: Task, isPreview: bool, task: Task | None, error: str | None) -> None:
         if error or task is None:
             self._emit(Event("addError", {"reason": error or "无法解析该链接"}))
             return
         if not old.tryKeepProgress(task):  # 结构相符（如刷新过期 CDN url）能保住进度，否则整换
             old.replaceWith(task)
-        self._store.add(old)  # 换了 url/stages，重新落盘
-        self._changed(old)
+        if isPreview:  # 预览编辑：只更新预览展示，不落盘/不开始（确定时才 commit）
+            self._emit(Event("previewChanged", {"task": self._toWire(old)}))
+        else:
+            self._store.add(old)  # 换了 url/stages，重新落盘
+            self._changed(old)
 
     def _pause(self, task: Task) -> None:
         task.setStatus(TaskStatus.PAUSED)

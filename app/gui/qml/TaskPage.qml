@@ -224,6 +224,11 @@ Item {
                     }
                     Text { text: model.title; Layout.fillWidth: true; elide: Text.ElideRight }
                     Text { text: model.sizeText; opacity: 0.6 }
+                    // per-URL 编辑：复用数据驱动编辑框（链接/标头/代理/目录），提交前改这一条
+                    ToolButton {
+                        icon.name: "ic_fluent_edit_20_regular"; size: 15
+                        onClicked: backend.requestEditSchema(model.taskId)
+                    }
                 }
             }
         }

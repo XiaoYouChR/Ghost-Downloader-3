@@ -303,6 +303,20 @@ def test_parsePreview_holdsWithoutCommitting(spine):
     assert len(spine.downloads.started) == 0  # 未开始
 
 
+def test_editPreview_updatesPreviewWithoutCommitting(spine, tmp_path):
+    # per-URL 编辑：解析后、提交前改某条预览的链接 → 预览原地更新，不落任务/不开始。
+    spine.config.set("downloadFolder", str(tmp_path))  # replaceWith 的 cleanup 落临时目录
+    spine.backend.parsePreview(["https://example.com/old.zip"])
+    pv = spine.backend.previewList
+    previewId = pv.data(pv.index(0, 0), TaskList.IdRole)
+
+    spine.backend.editTask(previewId, {"url": "https://example.com/new.mkv"})
+
+    assert spine.taskList.rowCount() == 0  # 未提交
+    assert pv.rowCount() == 1  # 仍是预览
+    assert pv.data(pv.index(0, 0), TaskList.TitleRole) == "new.mkv"
+
+
 def test_commit_movesPreviewsToTasksAndStarts(spine):
     # 第二步：确定 → 预览转成真任务、落盘+开始，预览清空。
     spine.backend.parsePreview(["https://example.com/a.mp4"])
