@@ -286,6 +286,7 @@ class Engine:
         data["error"] = task.lastError
         data["chips"] = self._downloads.cardChips(task)  # pack 专属展示串列表（BT 的 Peers/Seeds 等）
         data["actionKind"] = self._downloads.cardActionKind(task)  # 主按钮语义：toggle / finalize(直播)
+        data["segments"] = self._downloads.cardSegments(task)  # HTTP 多线程分段进度（百分比区间）
         return data
 
     def _emit(self, event: Event) -> None:

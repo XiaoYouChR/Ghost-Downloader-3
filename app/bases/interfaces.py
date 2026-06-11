@@ -60,6 +60,11 @@ class FeaturePack:
         # 核心卡按此选图标 + 发统一 primaryAction 意图，引擎据此分派——核心不认识具体 pack。
         return "toggle"
 
+    def cardSegments(self, task: "Task") -> list[dict]:
+        # pack 专属的分段进度（如 HTTP 多线程各连接的区间），每段 {start,width} 为占总长的百分比。
+        # 过缝进 wire，gui 卡片画成一排分段矩形（复刻原版 SegmentedProgressBar）；非分段 pack 返回 []，卡片走普通进度条。
+        return []
+
     def setup(self, mainWindow: "MainWindow"):
         pass
 

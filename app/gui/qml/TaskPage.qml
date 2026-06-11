@@ -119,6 +119,7 @@ Item {
                     leftTimeText: model.leftTimeText
                     progressText: model.progressText
                     statusText: model.statusText
+                    segments: model.segments
                     chips: model.chips
                     actionKind: model.actionKind
                     errorText: model.error

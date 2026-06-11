@@ -21,6 +21,7 @@ Frame {
     property string progressText
     property string statusText
     property var chips: []
+    property var segments: []
     property string actionKind: "toggle"
     property string errorText
     property bool selectionMode
@@ -210,16 +211,36 @@ Frame {
         }
     }
 
-    ProgressBar {
+    // 底部进度：HTTP 多线程有分段就画一排矩形（复刻原版 SegmentedProgressBar），否则普通进度条
+    Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.leftMargin: 6
         anchors.rightMargin: 6
         anchors.bottomMargin: 2
-        from: 0
-        to: 100
-        value: card.progress
+        height: 4
         visible: !card.completed
+
+        ProgressBar {
+            anchors.fill: parent
+            from: 0; to: 100; value: card.progress
+            visible: card.segments.length === 0
+        }
+        // 分段：背景轨 + 每连接已下区间矩形
+        Rectangle {
+            anchors.fill: parent; radius: 2
+            visible: card.segments.length > 0
+            color: Theme.currentTheme.colors.primaryColor; opacity: 0.15
+        }
+        Repeater {
+            model: card.segments
+            delegate: Rectangle {
+                height: parent.height; radius: 2
+                color: Theme.currentTheme.colors.primaryColor
+                x: parent.width * modelData.start / 100
+                width: Math.max(1, parent.width * (modelData.end - modelData.start) / 100)
+            }
+        }
     }
 }

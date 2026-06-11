@@ -41,6 +41,9 @@ class FakeDownloads:
     def cardActionKind(self, task: Task) -> str:
         return self.actionKind
 
+    def cardSegments(self, task: Task) -> list:
+        return []
+
     def verify(self, task: Task, callback) -> None:
         callback("test-hash", None)
 

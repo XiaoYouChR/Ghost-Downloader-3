@@ -96,6 +96,11 @@ class TaskItem:
         return self._task.get("actionKind", "toggle")
 
     @property
+    def segments(self) -> list:
+        # pack 专属分段进度（HTTP 多线程各连接的百分比区间）；空则卡片走普通进度条
+        return self._task.get("segments") or []
+
+    @property
     def typeIcon(self) -> str:
         ext = self.title.rsplit(".", 1)[-1].lower() if "." in self.title else ""
         return _TYPE_ICONS.get(ext, _DEFAULT_TYPE_ICON)
@@ -164,6 +169,7 @@ class TaskList(QAbstractListModel):
     UrlRole = Qt.ItemDataRole.UserRole + 18
     SizeTextRole = Qt.ItemDataRole.UserRole + 19
     StatusTextRole = Qt.ItemDataRole.UserRole + 20
+    SegmentsRole = Qt.ItemDataRole.UserRole + 21
 
     # 角色 → (QML 绑定名, TaskItem 属性)。data()/roleNames 都由这单一来源生成，
     # 加一个展示字段 = 加一行 + TaskItem 上一个属性。selected 是模型级（不在 item 上），属性记 None 单独处理。
@@ -188,6 +194,7 @@ class TaskList(QAbstractListModel):
         UrlRole: ("url", "url"),
         SizeTextRole: ("sizeText", "sizeText"),
         StatusTextRole: ("statusText", "statusText"),
+        SegmentsRole: ("segments", "segments"),
     }
 
     selectionModeChanged = Signal()

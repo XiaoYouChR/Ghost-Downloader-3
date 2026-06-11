@@ -173,6 +173,16 @@ class HttpPack(FeaturePack):
         from .cards import HttpTaskCard
         return HttpTaskCard(task, parent)
 
+    def cardSegments(self, task: Task) -> list[dict]:
+        # 多线程各连接的下载区间 → 占总长百分比 {start,end}，gui 画分段进度条（复刻原版 SegmentedProgressBar）
+        if task.fileSize <= 0:
+            return []
+        subworkers = getattr(getattr(task, "stage", None), "subworkers", None) or []
+        return [
+            {"start": sw.start / task.fileSize * 100, "end": sw.progress / task.fileSize * 100}
+            for sw in subworkers
+        ]
+
     async def parse(self, payload: dict) -> Task:
         url: str = payload["url"]
         headers: dict = payload.get("headers", defaultHeaders())
