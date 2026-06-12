@@ -1,5 +1,7 @@
+import asyncio as _asyncio
 import re
 import shutil
+import subprocess
 import sys
 from datetime import datetime
 from functools import wraps
@@ -183,6 +185,144 @@ def toPosixPath(path) -> str:
 
 def toExecutable(name: str) -> str:
     return f"{name}.exe" if sys.platform == "win32" else name
+
+
+def create_subprocess_exec(program, *args, stdin=None, stdout=None, stderr=None,
+                           cwd=None, env=None, **kwargs):
+    """Like asyncio.create_subprocess_exec but hides console window on Windows.
+
+    On Windows, winloop's subprocess_exec rejects startupinfo/creationflags, so we
+    use subprocess.Popen with a reader thread to provide async-compatible I/O.
+    """
+    if sys.platform == "win32":
+        return _create_subprocess_win32(
+            program, *args,
+            stdin=stdin, stdout=stdout, stderr=stderr,
+            cwd=cwd, env=env,
+        )
+    return _asyncio.create_subprocess_exec(
+        program, *args,
+        stdin=stdin, stdout=stdout, stderr=stderr,
+        cwd=cwd, env=env, **kwargs,
+    )
+
+
+async def _create_subprocess_win32(program, *args, stdin=None, stdout=None, stderr=None,
+                                   cwd=None, env=None):
+    popen_args = [program, *args]
+
+    _stdin = subprocess.DEVNULL if stdin == _asyncio.subprocess.DEVNULL else stdin
+    _stdout = subprocess.PIPE if stdout == _asyncio.subprocess.PIPE else stdout
+    _stderr = subprocess.PIPE if stderr == _asyncio.subprocess.PIPE else stderr
+    if stderr == _asyncio.subprocess.STDOUT:
+        _stderr = subprocess.STDOUT
+
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = subprocess.SW_HIDE
+
+    proc = subprocess.Popen(
+        popen_args,
+        stdin=_stdin,
+        stdout=_stdout,
+        stderr=_stderr,
+        cwd=str(cwd) if cwd is not None else None,
+        env=env,
+        startupinfo=si,
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
+
+    return _AsyncPopenWrapper(proc)
+
+
+class _AsyncPopenWrapper:
+    """Wraps subprocess.Popen with async-compatible stdout / stderr / wait."""
+
+    def __init__(self, proc):
+        self._proc = proc
+        self.returncode = None
+        self.stdout = _AsyncPipeReader(proc.stdout) if proc.stdout is not None else None
+        self.stderr = _AsyncPipeReader(proc.stderr) if proc.stderr is not None else None
+
+    async def wait(self):
+        if self.stderr is not None:
+            drain = _asyncio.create_task(self.stderr._drain())
+        await _asyncio.to_thread(self._proc.wait)
+        self.returncode = self._proc.returncode
+        if self.stderr is not None:
+            drain.cancel()
+            with _asyncio.suppress(_asyncio.CancelledError):
+                await drain
+        return self.returncode
+
+    async def communicate(self, input=None):
+        stdout, stderr = await _asyncio.to_thread(self._proc.communicate, input)
+        self.returncode = self._proc.returncode
+        return stdout, stderr
+
+    def kill(self):
+        self._proc.kill()
+
+    def terminate(self):
+        self._proc.terminate()
+
+
+class _AsyncPipeReader:
+    """Provides async readline() and read() over a blocking pipe.
+
+    Each call dispatches a blocking pipe.read() to a thread via
+    asyncio.to_thread so data is delivered as soon as it arrives,
+    matching the responsiveness of the original winloop transport.
+    """
+
+    def __init__(self, pipe):
+        self._pipe = pipe
+        self._read_buf = b""
+
+    async def _read_chunk(self):
+        chunk = await _asyncio.to_thread(self._pipe.read1, 4096)
+        if not chunk:
+            raise EOFError
+        return chunk
+
+    async def _drain(self):
+        """Continuously discard stderr to prevent pipe deadlock."""
+        try:
+            while True:
+                await _asyncio.to_thread(self._pipe.read1, 4096)
+        except Exception:
+            pass
+
+    async def readline(self):
+        while b"\n" not in self._read_buf:
+            try:
+                self._read_buf += await self._read_chunk()
+            except EOFError:
+                line, self._read_buf = self._read_buf, b""
+                return line
+        line, self._read_buf = self._read_buf.split(b"\n", 1)
+        return line + b"\n"
+
+    async def read(self, n: int = -1):
+        if n is None or n < 0:
+            chunks = [self._read_buf] if self._read_buf else []
+            self._read_buf = b""
+            while True:
+                try:
+                    chunks.append(await self._read_chunk())
+                except EOFError:
+                    break
+            return b"".join(chunks)
+        if len(self._read_buf) >= n:
+            data, self._read_buf = self._read_buf[:n], self._read_buf[n:]
+            return data
+        try:
+            self._read_buf += await self._read_chunk()
+        except EOFError:
+            data, self._read_buf = self._read_buf, b""
+            return data
+        data, self._read_buf = self._read_buf[:n], self._read_buf[n:]
+        return data
 
 
 def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:

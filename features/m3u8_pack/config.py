@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from app.supports.utils import create_subprocess_exec
+
 from PySide6.QtCore import Qt
 from qfluentwidgets import (
     BoolValidator,
@@ -63,7 +65,7 @@ async def probeM3U8Runtime() -> dict[str, str]:
     if not execPath:
         return runtimeInfo
 
-    process = await asyncio.create_subprocess_exec(
+    process = await create_subprocess_exec(
         execPath,
         "--version",
         stdin=asyncio.subprocess.DEVNULL,

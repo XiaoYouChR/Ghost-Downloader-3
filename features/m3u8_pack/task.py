@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar, TYPE_CHECKING
 
+from app.supports.utils import create_subprocess_exec
 from typing import Literal
 
 from app.bases.interfaces import Worker
@@ -406,7 +407,7 @@ class M3U8Worker(Worker):
         supervisorTask = None
         try:
             args = self._buildArgs()
-            process = await asyncio.create_subprocess_exec(
+            process = await create_subprocess_exec(
                 execPath,
                 *args,
                 cwd=Path(execPath).parent,
