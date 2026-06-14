@@ -2,9 +2,9 @@ import {isCatCatchMedia} from "../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../shared/utils";
 
 import {AttributionLedger} from "./attribution-ledger";
-import {pickStrategy} from "./strategy-registry";
+import {resolveForPage} from "./strategy";
 import {isMediaSignal} from "./signals";
-import type {AttributedUrlView, MediaStrategy, SessionSnapshot, ResolveContext, ResolveHints} from "./strategy";
+import type {AttributedUrlView, FindUrlsByIdHint, SessionSnapshot, ResolveContext, ResolveHints} from "./strategy";
 import type {
   AttributionTier,
   MseAttributionSignal,
@@ -76,14 +76,13 @@ function toFormKind(mimeTypes: Set<string>): VideoSessionFormKind {
   return hasVideo && hasAudio ? "dash" : "unknown";
 }
 
-// Per-site strategies are extension points; bubbling their exceptions to the overlay
-// would crash the click pipeline.
-function tryResolve(strategy: MediaStrategy, ctx: ResolveContext): Resolution {
+// A per-site resolver bubbling its exception to the overlay would crash the click pipeline.
+function tryResolve(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Resolution {
   try {
-    return strategy.resolve(ctx);
+    return resolveForPage(ctx, findUrlsByIdHint);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`${LOG_PREFIX} strategy "${strategy.id}" threw`, error);
+    console.error(`${LOG_PREFIX} resolver for ${ctx.pageUrl.hostname} threw`, error);
     return { kind: "refused", message: `策略异常: ${message}` };
   }
 }
@@ -548,16 +547,15 @@ class PageMediaController {
       return { kind: "refused", message: "未识别媒体来源" };
     }
     const pageUrl = new URL(location.href);
-    const strategy: MediaStrategy = pickStrategy(pageUrl);
+    const findUrlsByIdHint: FindUrlsByIdHint = (idHint) => this.lookupByIdHint(idHint);
 
     const buildCtx = (): ResolveContext => ({
       clicked: toSessionSnapshot(session),
       pageUrl,
       hints,
-      findUrlsByIdHint: (idHint) => this.lookupByIdHint(idHint),
     });
 
-    const initial = tryResolve(strategy, buildCtx());
+    const initial = tryResolve(buildCtx(), findUrlsByIdHint);
     if (initial.kind !== "pending") {
       this.applyResolutionToState(session, initial);
       return initial;
@@ -584,7 +582,7 @@ class PageMediaController {
           finish({ kind: "refused", message: reason });
           return;
         }
-        const next = tryResolve(strategy, buildCtx());
+        const next = tryResolve(buildCtx(), findUrlsByIdHint);
         if (next.kind === "pending") {
           lastPendingReason = next.reason;
           return;

@@ -1,6 +1,6 @@
 import {hostEndsWith, isStreamUrl} from "../url-classify";
 import {newestMatching, postBindAttributedUrls} from "../strategy";
-import type {MediaStrategy, ResolveContext} from "../strategy";
+import type {ResolveContext} from "../strategy";
 import type {Resolution} from "../types";
 
 const TWITTER_MEDIA_ID = /\/(?:amplify_video(?:_thumb)?|ext_tw_video|tweet_video)\/(\d+)\//i;
@@ -23,29 +23,21 @@ function isMasterTwitterPlaylist(url: string): boolean {
 
 // Master m3u8 only — variants are single-track and dropping one would give silent video.
 // posterMediaId pins to this tweet so adjacent tweets' streams don't leak in.
-export class XStrategy implements MediaStrategy {
-  readonly id = "x";
+export function resolveX(ctx: ResolveContext): Resolution {
+  const posterMediaId = mediaIdOf(ctx.hints.poster ?? "");
+  const allStreams = postBindAttributedUrls(ctx.clicked).filter((r) =>
+    hostEndsWith(r.url, "video.twimg.com")
+    && isStreamUrl(r.url, r.contentType),
+  );
 
-  matches(pageUrl: URL): boolean {
-    return pageUrl.hostname === "x.com" || pageUrl.hostname.endsWith(".x.com");
+  const candidates = posterMediaId
+    ? allStreams.filter((r) => mediaIdOf(r.url) === posterMediaId)
+    : allStreams;
+
+  const pick = newestMatching(candidates, (url) => isMasterTwitterPlaylist(url));
+  if (pick) {
+    return { kind: "selection", selection: { kind: "stream", url: pick } };
   }
 
-  resolve(ctx: ResolveContext): Resolution {
-    const posterMediaId = mediaIdOf(ctx.hints.poster ?? "");
-    const allStreams = postBindAttributedUrls(ctx.clicked).filter((r) =>
-      hostEndsWith(r.url, "video.twimg.com")
-      && isStreamUrl(r.url, r.contentType),
-    );
-
-    const candidates = posterMediaId
-      ? allStreams.filter((r) => mediaIdOf(r.url) === posterMediaId)
-      : allStreams;
-
-    const pick = newestMatching(candidates, (url) => isMasterTwitterPlaylist(url));
-    if (pick) {
-      return { kind: "selection", selection: { kind: "stream", url: pick } };
-    }
-
-    return { kind: "pending", reason: "等待 X 主播放清单" };
-  }
+  return { kind: "pending", reason: "等待 X 主播放清单" };
 }
