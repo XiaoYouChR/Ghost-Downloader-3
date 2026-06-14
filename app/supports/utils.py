@@ -11,7 +11,7 @@ from urllib.request import getproxies
 from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
-from wreq import Client, Emulation, Proxy
+from wreq import Client, Emulation, HeaderMap, Proxy
 from wreq.redirect import Policy
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
@@ -145,11 +145,11 @@ def buildClient(proxies: dict | None = None, *, headers: dict | None = None, tim
     return Client(**config)
 
 
-def _toStr(value) -> str:
+def _toStr(value: str | bytes) -> str:
     return value.decode("latin-1") if isinstance(value, (bytes, bytearray)) else value
 
 
-def headerDict(headers) -> dict[str, str]:
+def headerDict(headers: HeaderMap) -> dict[str, str]:
     """wreq HeaderMap(键/值皆 bytes)→ 小写键的普通 str dict, 供解析 content-length/range/disposition 等。"""
     result = {}
     for key in headers.keys():
