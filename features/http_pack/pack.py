@@ -6,14 +6,17 @@ from pathlib import Path
 from time import time_ns
 from urllib.parse import unquote, urlparse, parse_qs
 
-import niquests
 from loguru import logger
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import getProxies, toSafeFilename, splitCookies
+from app.supports.utils import buildClient, getProxies, toSafeFilename
 from .task import HttpTask, HttpTaskStage
+
+
+def _toStr(value) -> str:
+    return value.decode("latin-1") if isinstance(value, (bytes, bytearray)) else value
 
 
 def _contentLength(headers: dict[str, str]) -> int:
@@ -47,35 +50,28 @@ def _rangeSize(headers: dict[str, str]) -> int:
 
 
 
-async def _sendProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
-    requestHeaders, requestCookies = splitCookies(headers)
-    response = await client.get(
-        url,
-        headers=requestHeaders,
-        cookies=requestCookies,
-        proxies=proxies,
-        verify=cfg.SSLVerify.value,
-        allow_redirects=True,
-        stream=True,
-    )
-
+async def _sendProbe(client, url: str, headers: dict) -> tuple[int, dict[str, str], str]:
+    response = await client.get(url, headers=headers)
     try:
-        if response.status_code not in {200, 206, 416}:
+        status = response.status.as_int()
+        if status not in {200, 206, 416}:
             response.raise_for_status()
-        return response.status_code, {k.lower(): v for k, v in response.headers.items()}, str(response.url)
+        responseHeaders = {}
+        for key in response.headers.keys():
+            name = _toStr(key)
+            responseHeaders[name.lower()] = _toStr(response.headers.get(name))
+        return status, responseHeaders, str(response.url)
     finally:
         await response.close()
 
 
 async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
-    async with niquests.AsyncSession(happy_eyeballs=True) as client:
-        client.trust_env = False
-
+    client = buildClient(proxies)
+    try:
         statusCode, responseHeaders, finalUrl = await _sendProbe(
             client,
             url,
             {**headers, "range": "bytes=1-1", "accept-encoding": "identity"},
-            proxies,
         )
 
         fileSize = _rangeSize(responseHeaders)
@@ -97,7 +93,6 @@ async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str
                     client,
                     url,
                     {**headers, "range": "bytes=0-0", "accept-encoding": "identity"},
-                    proxies,
                 )
                 fallbackSize = _rangeSize(fallbackHeaders)
                 if fallbackStatus == 206 and "content-range" in fallbackHeaders:
@@ -116,6 +111,8 @@ async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str
             logger.info("文件大小已知但未探测到 Range 支持, fileSize: {}", fileSize)
 
         return fileSize, False, finalUrl, responseHeaders
+    finally:
+        client.close()
 
 
 def _fileName(url: str, headers: dict) -> str:

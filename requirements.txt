@@ -13,3 +13,4 @@ pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'
 aioftp[socks]>=0.27.2
 m3u8>=6.0.0
 mpegdash>=0.4.1
+wreq>=0.12.0

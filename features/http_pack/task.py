@@ -7,14 +7,13 @@ from pathlib import Path
 from struct import unpack, pack
 from typing import ClassVar, TYPE_CHECKING
 
-import niquests
 from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import splitCookies
+from app.supports.utils import buildClient
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
@@ -118,14 +117,12 @@ class HttpSubworker:
 _PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 
 
-def _isPermanentFailure(error: BaseException) -> bool:
-    """4xx / Cloudflare 反爬挑战这类重试也不会变的失败, 应快速失败而非无限重试卡 0%。"""
-    response = getattr(error, "response", None)
-    if response is None:
-        return False
-    if "cf-mitigated" in response.headers:
-        return True
-    return response.status_code in _PERMANENT_STATUS
+class PermanentDownloadError(Exception):
+    """4xx / Cloudflare 反爬挑战这类重试也不会变的失败, 快速失败而非无限重试卡 0%。"""
+
+
+def _isPermanentFailure(status: int, headers) -> bool:
+    return status in _PERMANENT_STATUS or headers.contains_key("cf-mitigated")
 
 
 class HttpWorker(Worker):
@@ -134,7 +131,7 @@ class HttpWorker(Worker):
         self.stage = stage
         self.speedHistory = []
         self.accelCheckTime = 0
-        self.requestHeaders, self.requestCookies = splitCookies(stage.headers)
+        self.requestHeaders = dict(stage.headers)
 
     def reassignSubworker(self):
         if self.stage.fileSize <= 0:
@@ -161,7 +158,7 @@ class HttpWorker(Worker):
     async def _backoffOrRaise(self, error: Exception, retryMessage: str):
         # 永久失败(4xx / 反爬挑战)重试也不会变, 直接 raise 冒泡到 run() → FAILED, 把真实错误抛给用户;
         # 其余(网络抖动 / 5xx)才退避重试。修掉「永久失败也无限重试静默卡 0%」。
-        if _isPermanentFailure(error):
+        if isinstance(error, PermanentDownloadError):
             raise error
         logger.opt(exception=error).error(retryMessage, self.stage.outputFile)
         await asyncio.sleep(5)
@@ -173,19 +170,16 @@ class HttpWorker(Worker):
                     res = await self.client.get(
                         self.stage.url,
                         headers=self._buildRangeHeaders(f"bytes={subworker.progress}-"),
-                        cookies=self.requestCookies,
-                        proxies=self.stage.proxies,
-                        verify=cfg.SSLVerify.value,
-                        allow_redirects=True,
-                        stream=True,
                     )
                     try:
-                        res.raise_for_status()
-                        if res.status_code != 206:
-                            raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
+                        status = res.status.as_int()
+                        if _isPermanentFailure(status, res.headers):
+                            raise PermanentDownloadError(f"服务器拒绝下载，状态码：{status}")
+                        if status != 206:
+                            raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
 
-                        async for chunk in await res.iter_raw(chunk_size=65536):
-                            if not chunk:
+                        async for chunk in res.stream():
+                            if not isinstance(chunk, bytes):
                                 continue
                             await cfg.checkSpeedLimitation()
                             pwrite(self.fileHandle, chunk, subworker.progress)
@@ -210,19 +204,16 @@ class HttpWorker(Worker):
                     res = await self.client.get(
                         self.stage.url,
                         headers=requestHeaders,
-                        cookies=self.requestCookies,
-                        proxies=self.stage.proxies,
-                        verify=cfg.SSLVerify.value,
-                        allow_redirects=True,
-                        stream=True,
                     )
                     try:
-                        res.raise_for_status()
-                        if res.status_code != 200:
-                            raise Exception(f"服务器返回了异常状态码：{res.status_code}")
+                        status = res.status.as_int()
+                        if _isPermanentFailure(status, res.headers):
+                            raise PermanentDownloadError(f"服务器拒绝下载，状态码：{status}")
+                        if status != 200:
+                            raise Exception(f"服务器返回了异常状态码：{status}")
 
-                        async for chunk in await res.iter_content(chunk_size=65536):
-                            if not chunk:
+                        async for chunk in res.stream():
+                            if not isinstance(chunk, bytes):
                                 continue
                             await cfg.checkSpeedLimitation()
                             pwrite(self.fileHandle, chunk, subworker.progress)
@@ -243,19 +234,16 @@ class HttpWorker(Worker):
                     res = await self.client.get(
                         self.stage.url,
                         headers=self._buildRangeHeaders(f"bytes={subworker.progress}-{subworker.end}"),
-                        cookies=self.requestCookies,
-                        proxies=self.stage.proxies,
-                        verify=cfg.SSLVerify.value,
-                        allow_redirects=True,
-                        stream=True,
                     )
                     try:
-                        res.raise_for_status()
-                        if res.status_code != 206:
-                            raise Exception(f"服务器拒绝了范围请求，状态码：{res.status_code}")
+                        status = res.status.as_int()
+                        if _isPermanentFailure(status, res.headers):
+                            raise PermanentDownloadError(f"服务器拒绝下载，状态码：{status}")
+                        if status != 206:
+                            raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
 
-                        async for chunk in await res.iter_raw(chunk_size=65536):
-                            if not chunk:
+                        async for chunk in res.stream():
+                            if not isinstance(chunk, bytes):
                                 continue
                             remainingBytes = subworker.end - subworker.progress + 1
                             if len(chunk) > remainingBytes:
@@ -404,8 +392,7 @@ class HttpWorker(Worker):
         self.taskGroup = TaskGroup()
         self.subworkers: list[HttpSubworker] = []
         self.stage.subworkers = self.subworkers
-        self.client = niquests.AsyncSession(happy_eyeballs=True, pool_maxsize=256)
-        self.client.trust_env = False
+        self.client = buildClient(self.stage.proxies)
         shouldCleanupRecordFile = False
         Path(self.stage.outputFile).parent.mkdir(parents=True, exist_ok=True)
 
@@ -460,7 +447,7 @@ class HttpWorker(Worker):
                 with suppress(asyncio.CancelledError):
                     await supervisor
             os.close(self.fileHandle)
-            await self.client.close()
+            self.client.close()
             if shouldCleanupRecordFile:
                 self._cleanupRecordFile()
 

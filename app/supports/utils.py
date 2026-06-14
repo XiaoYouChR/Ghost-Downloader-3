@@ -13,6 +13,8 @@ from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
+from wreq import Client, Emulation, Proxy
+from wreq.redirect import Policy
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
 from app.supports.config import cfg
@@ -119,6 +121,25 @@ def getProxies():
         return None
 
     return {protocol: proxyServer for protocol in _PROXY_PROTOCOLS}
+
+
+_DEFAULT_EMULATION = Emulation.Chrome136  # 默认模拟的浏览器(TLS 指纹 + 请求头), 用于绕过反爬 / 防盗链
+
+
+def toProxies(proxies: dict | None) -> list[Proxy]:
+    if not proxies:
+        return []
+    url = next((value for value in proxies.values() if value), "")
+    return [Proxy.all(url)] if url else []
+
+
+def buildClient(proxies: dict | None) -> Client:
+    return Client(
+        emulation=_DEFAULT_EMULATION,
+        proxies=toProxies(proxies),
+        tls_verify=cfg.SSLVerify.value,
+        redirect=Policy.limited(10),  # 跟随重定向(CDN / 短链 / http→https), 上限 10 跳
+    )
 
 
 def splitCookies(headers: dict[str, str] | None) -> tuple[dict[str, str], "RequestsCookieJar | CookieJar | None"]:
