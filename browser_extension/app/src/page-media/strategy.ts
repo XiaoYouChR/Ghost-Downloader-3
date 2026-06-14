@@ -1,7 +1,7 @@
 import type {Resolution, VideoSessionFormKind} from "./types";
 
 // One attributed URL as the strategies see it — also the element type of
-// SessionSnapshot.attributedUrls and of findUrlsByDiscriminator's return.
+// SessionSnapshot.attributedUrls and of findUrlsByIdHint's return.
 export type AttributedUrlView = {
   readonly url: string;
   readonly contentType: string;
@@ -19,13 +19,13 @@ export type ResolveHints = {
   readonly poster: string;
 };
 
-// findUrlsByDiscriminator is the escape hatch for Douyin's prefetch case where the URL
+// findUrlsByIdHint is the escape hatch for Douyin's prefetch case where the URL
 // is provisionally owned by v-1 but carries v-2's __vid.
 export type ResolveContext = {
   readonly clicked: SessionSnapshot;
   readonly pageUrl: URL;
   readonly hints: ResolveHints;
-  findUrlsByDiscriminator(discriminator: string): ReadonlyArray<AttributedUrlView>;
+  findUrlsByIdHint(idHint: string): ReadonlyArray<AttributedUrlView>;
 };
 
 export interface MediaStrategy {

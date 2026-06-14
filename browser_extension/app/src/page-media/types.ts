@@ -38,7 +38,7 @@ export type VideoSession = {
   attributedUrls: Map<string, AttributedUrlMeta>;
   mimeTypes: Set<string>;
   mediaSourceIds: Set<string>;
-  discriminators: Set<string>;
+  idHints: Set<string>;
   formKind: VideoSessionFormKind;
 };
 

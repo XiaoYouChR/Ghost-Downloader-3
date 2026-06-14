@@ -56,7 +56,7 @@ export class DouyinStrategy implements MediaStrategy {
   private findByModalId(ctx: ResolveContext, kind: "muxed" | "video" | "audio"): string | undefined {
     const modalId = ctx.pageUrl.searchParams.get("modal_id");
     if (!modalId || modalId.length < 4) { return undefined; }
-    const matches = ctx.findUrlsByDiscriminator(`__vid=${modalId}`);
+    const matches = ctx.findUrlsByIdHint(`__vid=${modalId}`);
     return newestMatching(matches, (url) => douyinKindOf(url) === kind);
   }
 }

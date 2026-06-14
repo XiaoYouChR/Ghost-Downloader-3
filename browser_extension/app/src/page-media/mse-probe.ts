@@ -31,7 +31,7 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gd3Url?: string };
     return id;
   }
 
-  // Record blob URL → MediaSource so the controller can correlate <video>.src to a MS.
+  // Record blob URL → MediaSource so the controller can attribute <video>.src to a MS.
   if (typeof window.URL?.createObjectURL === "function" && typeof window.MediaSource !== "undefined") {
     const originalCreateObjectUrl = window.URL.createObjectURL;
     window.URL.createObjectURL = function patchedCreateObjectURL(source: Blob | MediaSource): string {
@@ -47,12 +47,12 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gd3Url?: string };
     const originalAddSourceBuffer = MediaSource.prototype.addSourceBuffer;
     MediaSource.prototype.addSourceBuffer = function patchedAddSourceBuffer(this: MediaSource, mimeType: string): SourceBuffer {
       const sourceBuffer = originalAddSourceBuffer.call(this, mimeType);
-      const msId = mediaSourceId(this);
-      postMediaSignal({ kind: "mse_source_buffer_added", mediaSourceId: msId, mimeType });
+      const sourceId = mediaSourceId(this);
+      postMediaSignal({ kind: "mse_source_buffer_added", mediaSourceId: sourceId, mimeType });
       try {
         const originalAppendBuffer = sourceBuffer.appendBuffer;
         sourceBuffer.appendBuffer = function patchedAppendBuffer(this: SourceBuffer, data: BufferSource): void {
-          postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: msId, mimeType });
+          postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: sourceId, mimeType });
           return originalAppendBuffer.call(this, data);
         };
       } catch {

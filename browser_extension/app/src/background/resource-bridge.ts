@@ -171,7 +171,7 @@ export function createResourceBridge(options: {
     return { ...snapshot, headers: selectAllowedHeaders(snapshot.headers) };
   }
 
-  function responseMeta(headers: chrome.webRequest.HttpHeader[] | undefined): NetworkResponseMeta {
+  function toResponseMeta(headers: chrome.webRequest.HttpHeader[] | undefined): NetworkResponseMeta {
     const meta: NetworkResponseMeta = { size: 0, mime: "", filename: "", supportsRange: false };
     let contentLengthSize = 0;
     let contentRangeSize = 0;
@@ -610,7 +610,7 @@ export function createResourceBridge(options: {
     restoredFromStorage = true;
   }
 
-  function cacheResourceFor(
+  function cacheUrlResource(
     url: string,
     tabId: number,
     tab: chrome.tabs.Tab | null,
@@ -659,7 +659,7 @@ export function createResourceBridge(options: {
     }
 
     const tab = await findTab(tabId);
-    cacheResourceFor(payload.url, tabId, tab, payload.href ?? tab?.url ?? "", {
+    cacheUrlResource(payload.url, tabId, tab, payload.href ?? tab?.url ?? "", {
       filename: resolveCapturedFilename(payload),
       mime: payload.mime?.toLowerCase() || mimeFromUrl(payload.url),
       size: 0,
@@ -669,7 +669,7 @@ export function createResourceBridge(options: {
   }
 
   async function captureNetworkResource(details: chrome.webRequest.OnResponseStartedDetails) {
-    const meta = responseMeta(details.responseHeaders);
+    const meta = toResponseMeta(details.responseHeaders);
     meta.mime = mimeFromUrl(details.url) || meta.mime;
     const responseSupportsRange = meta.supportsRange || details.statusCode === 206;
     if (responseSupportsRange && isCapturableUrl(details.url)) {
@@ -686,7 +686,7 @@ export function createResourceBridge(options: {
     }
 
     const tab = await findTab(tabId);
-    cacheResourceFor(details.url, tabId, tab, initiatorOf(details), {
+    cacheUrlResource(details.url, tabId, tab, initiatorOf(details), {
       filename: meta.filename || basenameOf(filenameFromUrl(details.url)) || "resource",
       mime: meta.mime,
       size: meta.size,
@@ -705,7 +705,7 @@ export function createResourceBridge(options: {
     }
 
     const tab = await findTab(tabId);
-    cacheResourceFor(details.url, tabId, tab, initiatorOf(details), {
+    cacheUrlResource(details.url, tabId, tab, initiatorOf(details), {
       filename: basenameOf(filenameFromUrl(details.url)) || "resource",
       mime: mimeFromUrl(details.url),
       size: 0,
@@ -803,7 +803,7 @@ export function createResourceBridge(options: {
   }
 
   // Twitter / Bilibili CDNs 403 without Referer; cat-catch's addMedia path doesn't carry one.
-  function ensureReferer(resource: CapturedResource, fallback: string): void {
+  function fillMissingReferer(resource: CapturedResource, fallback: string): void {
     if (!fallback || resource.requestHeaders.referer || resource.referer) { return; }
     resource.requestHeaders = { ...resource.requestHeaders, referer: fallback };
     resource.referer = fallback;
@@ -818,13 +818,13 @@ export function createResourceBridge(options: {
 
     const direct = resourceCache.get(tabId)?.get(id);
     if (direct) {
-      ensureReferer(direct, fallbackPageUrl);
+      fillMissingReferer(direct, fallbackPageUrl);
       return direct;
     }
 
     const waited = await awaitResourceCached(id, 1500);
     if (waited) {
-      ensureReferer(waited, fallbackPageUrl);
+      fillMissingReferer(waited, fallbackPageUrl);
       return waited;
     }
 
