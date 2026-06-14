@@ -3,7 +3,7 @@ import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import ClassVar, TYPE_CHECKING
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
@@ -74,10 +74,27 @@ class YtDlpTaskStage(TaskStage):
 @dataclass(kw_only=True, eq=False)
 class YtDlpTask(Task):
     packId: str = "ytdlp"
+    supportsEdit: ClassVar[bool] = True
 
     @property
     def stage(self) -> "YtDlpTaskStage":
         return self.stages[0]
+
+    def editorCards(self, parent):
+        from qfluentwidgets import FluentIcon
+
+        from app.view.components.add_task_dialog import SelectFolderCard
+        from .cards import YtDlpQualityEditCard
+
+        return [
+            YtDlpQualityEditCard(FluentIcon.VIDEO, parent.tr("画质"), parent, initial=self.stage.videoFormat),
+            SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
+        ]
+
+    def applySettings(self, payload: dict):
+        super().applySettings(payload)
+        if "videoFormat" in payload:
+            self.stage.videoFormat = payload["videoFormat"]
 
 
 class YtDlpWorker(Worker):
@@ -185,7 +202,6 @@ class YtDlpWorker(Worker):
                 raise RuntimeError(_friendlyError(self.stage.lastMessage) or f"yt-dlp 退出码异常: {process.returncode}")
 
             self._applyFinalFile()
-            self.stage.speed = 0
             self.stage.setStatus(TaskStatus.COMPLETED)
         except asyncio.CancelledError:
             if process is not None and process.returncode is None:

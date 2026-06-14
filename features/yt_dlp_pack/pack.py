@@ -1,3 +1,4 @@
+import asyncio
 import platform
 import sys
 from pathlib import Path
@@ -8,8 +9,8 @@ import niquests
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import activeUserAgent, cfg, defaultHeaders
-from app.supports.utils import getProxies, toExecutable, toPosixPath
-from .config import ytDlpConfig
+from app.supports.utils import getProxies, toExecutable, toPosixPath, toSafeFilename
+from .config import downloaderPath, ytDlpConfig
 from .task import YtDlpInstallStage, YtDlpTask, YtDlpTaskStage
 
 _YTDLP_RELEASE_API = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
@@ -32,6 +33,33 @@ def _assetName() -> str:
     return "yt-dlp_linux"
 
 
+async def _probeTitle(url: str, proxies: dict) -> str:
+    execPath = downloaderPath()
+    if not execPath:
+        return ""
+    args = [url, "--no-playlist", "--skip-download", "--no-warnings", "--print", "%(title)s"]
+    proxyUrl = next((v for v in proxies.values() if v), "")
+    if proxyUrl:
+        args.extend(["--proxy", proxyUrl])
+    try:
+        process = await asyncio.create_subprocess_exec(
+            execPath, *args,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await asyncio.wait_for(process.communicate(), timeout=20)
+    except asyncio.TimeoutError:
+        process.kill()
+        return ""
+    except OSError:
+        return ""
+    if process.returncode != 0:
+        return ""
+    lines = stdout.decode("utf-8", errors="ignore").strip().splitlines()
+    return lines[0].strip() if lines else ""
+
+
 class YtDlpPack(FeaturePack):
     packId = "ytdlp"
     # Below http (100) so YouTube watch pages route here instead of being grabbed as HTML.
@@ -45,18 +73,24 @@ class YtDlpPack(FeaturePack):
     async def parse(self, payload: dict) -> Task:
         url = payload["url"].strip()
         proxies = payload.get("proxies", getProxies())
+        if not isinstance(proxies, dict):
+            proxies = {}
         path = Path(payload.get("path", cfg.downloadFolder.value))
         rawHeaders = payload.get("headers")
         headers = rawHeaders.copy() if isinstance(rawHeaders, dict) and rawHeaders else {}
 
-        # Stay offline: the binary isn't needed just to enqueue. The real title and size
-        # come back from yt-dlp at download time (-o %(title)s + after_move filepath).
-        task = YtDlpTask(title="YouTube 视频.mp4", url=url, fileSize=1, path=path)
+        # Best-effort title for the dialog/card. The real filename + size land back from
+        # yt-dlp at download time (-o %(title)s + after_move filepath), so a blocked probe
+        # just falls back to the placeholder and the task still enqueues.
+        probedTitle = await _probeTitle(url, proxies)
+        title = toSafeFilename(probedTitle, fallback="youtube_video") if probedTitle else "YouTube 视频"
+
+        task = YtDlpTask(title=f"{title}.mp4", url=url, fileSize=1, path=path)
         task.addStage(YtDlpTaskStage(
             stageIndex=1,
             videoFormat=ytDlpConfig.videoFormat.value,
             headers=headers,
-            proxies=proxies if isinstance(proxies, dict) else {},
+            proxies=proxies,
         ))
         return task
 
