@@ -8,12 +8,11 @@ from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
 
 import libtorrent as lt
-import niquests
 from loguru import logger
 
 from app.bases.models import TaskStage
 from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import getProxies, splitCookies, toSafeFilename
+from app.supports.utils import buildClient, getProxies, toSafeFilename
 from .config import bittorrentConfig
 from .task import BTFile, BTTask
 from .trackers import mergeTrackers
@@ -51,22 +50,13 @@ async def _loadFromUrl(payload: dict) -> tuple[bytes, lt.torrent_info]:
     url = str(payload["url"]).strip()
     headers = payload.get("headers") or defaultHeaders()
     proxies = payload.get("proxies", getProxies())
-    requestHeaders, requestCookies = splitCookies(
-        headers if isinstance(headers, dict) else defaultHeaders()
-    )
+    if not isinstance(headers, dict):
+        headers = defaultHeaders()
 
-    async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
-        client.trust_env = False
-        response = await client.get(
-            url,
-            headers=requestHeaders,
-            cookies=requestCookies,
-            proxies=proxies,
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(proxies, headers=headers, timeout=30) as client:
+        response = await client.get(url)
         response.raise_for_status()
-        torrentBytes = cast(bytes, response.content)
+        torrentBytes = await response.bytes()
 
     return torrentBytes, lt.torrent_info(torrentBytes)
 

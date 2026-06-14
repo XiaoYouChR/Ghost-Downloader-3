@@ -3,7 +3,6 @@ from base64 import b64decode
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import niquests
 from PySide6.QtCore import Signal, Qt, QSize, QUrl
 from PySide6.QtGui import QPixmap, QColor, QDesktopServices, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
@@ -18,7 +17,7 @@ from qfluentwidgets import MaskDialogBase, \
 from app.bases.interfaces import FeaturePack
 from app.services.core_service import coreService
 from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import getProxies
+from app.supports.utils import buildClient, getProxies
 
 if sys.platform != "darwin":
     from qfluentwidgets import SmoothScrollArea as ScrollArea
@@ -38,14 +37,11 @@ class JackYaoPack(FeaturePack):
 
 
 async def run():
-    async with niquests.AsyncSession(happy_eyeballs=True) as client:
-        client.trust_env = False
+    async with buildClient(getProxies()) as client:
         result = await client.get(
-            url="https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-            proxies=getProxies(), allow_redirects=True)
-        return loads(result.text)["OS"]
+            "https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc",
+        )
+        return loads(await result.text())["OS"]
 
 
 class LoadingStatusWidget(QWidget):

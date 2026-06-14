@@ -8,7 +8,6 @@ dependencies = [
     "libtorrent>=2.0.11",
     "libtorrent-windows-dll>=0.0.3; sys_platform == 'win32'",
     "loguru>=0.7.3",
-    "niquests[http3,socks,speedups]>=3.18.2",
     "nuitka>=4.0.7",
     "pyside6~=6.10.2",
     "qrcode[png]>=8.2",

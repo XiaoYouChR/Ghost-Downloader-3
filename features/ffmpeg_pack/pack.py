@@ -5,12 +5,10 @@ from pathlib import Path
 from typing import Any, TYPE_CHECKING
 from urllib.parse import urlparse
 
-import niquests
-
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import activeUserAgent, cfg
-from app.supports.utils import getProxies, toExecutable, toSafeFilename
+from app.supports.utils import buildClient, getProxies, toExecutable, toSafeFilename
 from .config import ffmpegConfig, ffmpegPaths
 from app.view.components.cards import UniversalTaskCard
 from .task import FFmpegResourceStage, FFmpegStage
@@ -71,16 +69,10 @@ def _bestAsset(assets: list[dict[str, Any]], target: str) -> dict[str, Any]:
 
 
 async def _fetchLatestRelease(target: str) -> dict[str, Any]:
-    async with niquests.AsyncSession(headers=_FFMPEG_HEADERS, timeout=30, happy_eyeballs=True) as client:
-        client.trust_env = False
-        response = await client.get(
-            _FFMPEG_RELEASE_API,
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(getProxies(), headers=_FFMPEG_HEADERS, timeout=30) as client:
+        response = await client.get(_FFMPEG_RELEASE_API)
         response.raise_for_status()
-        payload = response.json()
+        payload = await response.json()
 
     assets = payload.get("assets")
     if not isinstance(assets, list):

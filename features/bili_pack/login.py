@@ -1,10 +1,8 @@
 import asyncio
 from urllib.parse import parse_qsl, urlparse
 
-import niquests
-
-from app.supports.config import activeUserAgent, cfg
-from app.supports.utils import getProxies
+from app.supports.config import activeUserAgent
+from app.supports.utils import buildClient, getProxies, headerDict
 
 _QR_GENERATE_API = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
 _QR_POLL_API = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll"
@@ -61,7 +59,7 @@ def _headers(cookie: str = "", origin: bool = False) -> dict[str, str]:
 
 
 def _extractCookie(response, successUrl: str) -> str:
-    items = {str(k): str(v) for k, v in response.cookies.items() if k and v}
+    items = {c.name: c.value for c in response.cookies if c.name and c.value}
     if not any(name in items for name in _COOKIE_ORDER):
         for name, value in parse_qsl(urlparse(successUrl).query, keep_blank_values=False):
             if name in _COOKIE_ORDER and value:
@@ -73,20 +71,10 @@ def _extractCookie(response, successUrl: str) -> str:
 
 
 async def requestQrCode() -> dict[str, str]:
-    async with niquests.AsyncSession(
-        headers=_headers(),
-        timeout=30,
-        happy_eyeballs=True,
-    ) as client:
-        client.trust_env = False
-        response = await client.get(
-            _QR_GENERATE_API,
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(getProxies(), headers=_headers(), timeout=30) as client:
+        response = await client.get(_QR_GENERATE_API)
         response.raise_for_status()
-        payload = response.json()
+        payload = await response.json()
 
         if payload.get("code") not in {None, 0}:
             raise ValueError(payload.get("message") or "获取二维码失败")
@@ -110,26 +98,14 @@ async def pollQrLogin(
 ) -> dict[str, str | int]:
     from app.services.core_service import coreService
 
-    async with niquests.AsyncSession(
-        headers=_headers(),
-        timeout=30,
-        happy_eyeballs=True,
-    ) as client:
-        client.trust_env = False
-
+    async with buildClient(getProxies(), headers=_headers(), timeout=30) as client:
         while True:
             if shouldStop is not None and shouldStop():
                 return {"code": -1, "message": "cancelled", "url": "", "cookie": ""}
 
-            response = await client.get(
-                _QR_POLL_API,
-                params={"qrcode_key": qrCodeKey},
-                proxies=getProxies(),
-                verify=cfg.SSLVerify.value,
-                allow_redirects=True,
-            )
+            response = await client.get(_QR_POLL_API, query={"qrcode_key": qrCodeKey})
             response.raise_for_status()
-            payload = response.json()
+            payload = await response.json()
             data = payload.get("data") or {}
             cookieString = _extractCookie(response, str(data.get("url") or "")) if data.get("code") == 0 else ""
 
@@ -163,20 +139,10 @@ async def fetchLoginInfo(cookie: str) -> dict[str, str | bool]:
             "vip": "未开通",
         }
 
-    async with niquests.AsyncSession(
-        headers=_headers(cookie),
-        timeout=30,
-        happy_eyeballs=True,
-    ) as client:
-        client.trust_env = False
-        response = await client.get(
-            _LOGIN_INFO_API,
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(getProxies(), headers=_headers(cookie), timeout=30) as client:
+        response = await client.get(_LOGIN_INFO_API)
         response.raise_for_status()
-        payload = response.json()
+        payload = await response.json()
 
         data = payload.get("data") or {}
         if payload.get("code") == -101 or not data.get("isLogin"):
@@ -229,24 +195,16 @@ async def logout(cookie: str) -> dict[str, str | bool]:
             "message": f"Cookie 缺少 {', '.join(missingCookies)}，已清除本地登录状态",
         }
 
-    async with niquests.AsyncSession(
-        headers=_headers(cookie, origin=True),
-        timeout=30,
-        happy_eyeballs=True,
-    ) as client:
-        client.trust_env = False
+    async with buildClient(getProxies(), headers=_headers(cookie, origin=True), timeout=30) as client:
         response = await client.post(
             _LOGOUT_API,
-            data={
+            form={
                 "biliCSRF": parts["bili_jct"],
                 "gourl": "https://www.bilibili.com/",
             },
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
         )
         response.raise_for_status()
-        contentType = str(response.headers.get("content-type") or "").lower()
+        contentType = headerDict(response.headers).get("content-type", "").lower()
         if "application/json" not in contentType:
             return {
                 "remote_logout": False,
@@ -254,7 +212,7 @@ async def logout(cookie: str) -> dict[str, str | bool]:
                 "message": "当前 Cookie 可能已失效，已清除本地登录状态",
             }
 
-        payload = response.json()
+        payload = await response.json()
 
         if payload.get("code") == 0 and payload.get("status") is True:
             return {

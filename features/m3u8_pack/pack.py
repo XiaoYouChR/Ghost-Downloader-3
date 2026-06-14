@@ -9,7 +9,6 @@ from urllib.parse import parse_qs, unquote, urlparse
 from urllib.request import url2pathname
 
 import m3u8
-import niquests
 from loguru import logger
 from mpegdash.parser import MPEGDASHParser
 
@@ -17,7 +16,7 @@ from app.bases.interfaces import FeaturePack, FileType
 from app.bases.models import Task
 from app.supports import file_association
 from app.supports.config import activeUserAgent, cfg, defaultHeaders
-from app.supports.utils import getProxies, splitCookies, toExecutable, toSafeFilename
+from app.supports.utils import buildClient, getProxies, headerDict, toExecutable, toSafeFilename
 from app.view.components.cards import UniversalTaskCard
 from .cards import M3U8LiveTaskCard, M3U8ResultCard, M3U8TaskCard
 from .config import m3u8Config
@@ -195,19 +194,10 @@ async def _resolveLive(manifestType: str, body: str, baseUrl: str, headers: dict
     if not variantUrl.lower().startswith(("http://", "https://")):
         return False
     try:
-        requestHeaders, requestCookies = splitCookies(headers)
-        async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
-            client.trust_env = False
-            response = await client.get(
-                variantUrl,
-                headers=requestHeaders,
-                cookies=requestCookies,
-                proxies=proxies,
-                verify=cfg.SSLVerify.value,
-                allow_redirects=True,
-            )
+        async with buildClient(proxies, headers=headers, timeout=30) as client:
+            response = await client.get(variantUrl)
             response.raise_for_status()
-            variantBody = response.text
+            variantBody = await response.text()
         return not m3u8.loads(variantBody, uri=variantUrl).is_endlist
     except Exception as e:
         logger.warning("取变体清单判活失败, 按点播处理: {}", repr(e))
@@ -285,21 +275,12 @@ class M3U8Pack(FeaturePack):
             manifestUrl = url
             loweredHeaders = {}
         else:
-            requestHeaders, requestCookies = splitCookies(headers)
-            async with niquests.AsyncSession(timeout=30, happy_eyeballs=True) as client:
-                client.trust_env = False
-                response = await client.get(
-                    url,
-                    headers=requestHeaders,
-                    cookies=requestCookies,
-                    proxies=proxies,
-                    verify=cfg.SSLVerify.value,
-                    allow_redirects=True,
-                )
+            async with buildClient(proxies, headers=headers, timeout=30) as client:
+                response = await client.get(url)
                 response.raise_for_status()
-                body = response.text
-                loweredHeaders = {key.lower(): value for key, value in response.headers.items()}
-            manifestUrl = response.url
+                body = await response.text()
+                loweredHeaders = headerDict(response.headers)
+            manifestUrl = str(response.url)
 
         manifestType = _manifestType(manifestUrl, loweredHeaders, body)
         isLive = await _resolveLive(manifestType, body, manifestUrl, headers, proxies)
@@ -376,16 +357,10 @@ async def createInstallTask() -> Task:
     else:
         raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
 
-    async with niquests.AsyncSession(headers=_M3U8DL_RELEASE_HEADERS, timeout=30, happy_eyeballs=True) as client:
-        client.trust_env = False
-        response = await client.get(
-            _M3U8DL_RELEASE_API,
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(getProxies(), headers=_M3U8DL_RELEASE_HEADERS, timeout=30) as client:
+        response = await client.get(_M3U8DL_RELEASE_API)
         response.raise_for_status()
-        payload = response.json()
+        payload = await response.json()
 
     assets = payload.get("assets")
     if not isinstance(assets, list):

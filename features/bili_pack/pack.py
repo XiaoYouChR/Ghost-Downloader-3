@@ -2,12 +2,10 @@ import re
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-import niquests
-
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task
 from app.supports.config import cfg
-from app.supports.utils import getProxies, toSafeFilename
+from app.supports.utils import buildClient, getProxies, headerDict, toSafeFilename
 from .config import bilibiliConfig
 from .task import BilibiliVideoStage, BilibiliAudioStage, BilibiliMergeStage
 
@@ -159,23 +157,16 @@ def _getStreamUrl(stream: dict) -> str:
     return ""
 
 
-async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client: niquests.AsyncSession) -> int:
+async def _getFileSizeWithClient(url: str, headers: dict, client) -> int:
     requestHeaders = headers.copy()
     requestHeaders["range"] = "bytes=0-0"
 
-    response = await client.get(
-        url,
-        headers=requestHeaders,
-        proxies=proxies,
-        verify=cfg.SSLVerify.value,
-        allow_redirects=True,
-        stream=True,
-    )
+    response = await client.get(url, headers=requestHeaders)
     try:
         response.raise_for_status()
-        head = {k.lower(): v for k, v in response.headers.items()}
+        head = headerDict(response.headers)
 
-        if response.status_code == 206 and "content-range" in head:
+        if response.status.as_int() == 206 and "content-range" in head:
             _left, _char, right = head["content-range"].rpartition("/")
             if right != "*":
                 return int(right)
@@ -201,14 +192,12 @@ class BilibiliPack(FeaturePack):
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
 
         headers = _buildBilibiliHeaders(url)
-        async with niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True) as client:
-            client.trust_env = False
-
+        async with buildClient(proxies, headers=headers, timeout=60) as client:
             videoId, selectedPages = _parseVideoIdAndPages(url)
 
-            response = await client.get(_buildViewApiUrl(videoId), proxies=proxies, allow_redirects=True)
+            response = await client.get(_buildViewApiUrl(videoId))
             response.raise_for_status()
-            videoPayload = response.json()
+            videoPayload = await response.json()
 
             if videoPayload.get("code") not in {None, 0}:
                 raise ValueError(videoPayload.get("message") or "获取 Bilibili 视频信息失败")
@@ -245,11 +234,9 @@ class BilibiliPack(FeaturePack):
 
                 playResponse = await client.get(
                     _buildPlayApiUrl(videoId, cid, _resolveRequestedFnval(requestedQuality), requestedQuality),
-                    proxies=proxies,
-                    allow_redirects=True,
                 )
                 playResponse.raise_for_status()
-                playPayload = playResponse.json()
+                playPayload = await playResponse.json()
 
                 if playPayload.get("code") not in {None, 0}:
                     raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
@@ -262,8 +249,8 @@ class BilibiliPack(FeaturePack):
                 if not videoUrl or not audioUrl:
                     raise ValueError("未能解析出完整的音视频下载链接")
 
-                videoSize = await _getFileSizeWithClient(videoUrl, headers, proxies, client)
-                audioSize = await _getFileSizeWithClient(audioUrl, headers, proxies, client)
+                videoSize = await _getFileSizeWithClient(videoUrl, headers, client)
+                audioSize = await _getFileSizeWithClient(audioUrl, headers, client)
                 totalSize += videoSize + audioSize
 
                 resolvedPages.append({

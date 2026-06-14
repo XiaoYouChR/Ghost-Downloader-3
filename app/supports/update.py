@@ -3,11 +3,10 @@ import sys
 from dataclasses import dataclass
 from typing import Any
 
-import niquests
 from PySide6.QtCore import QVersionNumber
 
 from app.supports.config import VERSION, activeUserAgent, cfg, isLessThanWin10
-from app.supports.utils import getProxies
+from app.supports.utils import buildClient, getProxies
 
 RELEASE_API_URL = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 RELEASE_HEADERS = {
@@ -113,20 +112,10 @@ class UpdateState:
 
 
 async def fetchRelease() -> dict[str, Any]:
-    async with niquests.AsyncSession(
-        headers=RELEASE_HEADERS,
-        timeout=30,
-        happy_eyeballs=True,
-    ) as session:
-        session.trust_env = False
-        response = await session.get(
-            RELEASE_API_URL,
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(getProxies(), headers=RELEASE_HEADERS, timeout=30) as session:
+        response = await session.get(RELEASE_API_URL)
         response.raise_for_status()
-        return response.json()
+        return await response.json()
 
 
 async def checkUpdate() -> UpdateState:

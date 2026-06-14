@@ -2,10 +2,9 @@ from collections.abc import Iterable
 from urllib.parse import urlsplit
 
 import libtorrent as lt
-import niquests
 
-from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import getProxies
+from app.supports.config import defaultHeaders
+from app.supports.utils import buildClient, getProxies
 
 _TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
 
@@ -46,16 +45,10 @@ async def fetchWebTrackers(sourceUrl: str) -> list[str]:
     if not normalizedSource:
         raise ValueError("Web Tracker 源地址无效")
 
-    async with niquests.AsyncSession(headers=defaultHeaders(), timeout=30, happy_eyeballs=True) as client:
-        client.trust_env = False
-        response = await client.get(
-            normalizedSource,
-            proxies=getProxies(),
-            verify=cfg.SSLVerify.value,
-            allow_redirects=True,
-        )
+    async with buildClient(getProxies(), headers=defaultHeaders(), timeout=30) as client:
+        response = await client.get(normalizedSource)
         response.raise_for_status()
-        trackers = parseTrackerText(response.text)
+        trackers = parseTrackerText(await response.text())
 
     if not trackers:
         raise ValueError("Web Tracker 源没有返回有效的 Tracker")

@@ -3,7 +3,6 @@ from time import perf_counter
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-import niquests
 from PySide6.QtCore import Qt
 from loguru import logger
 from qfluentwidgets import (
@@ -28,7 +27,7 @@ from qfluentwidgets import (
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.config import cfg
-from app.supports.utils import getProxies
+from app.supports.utils import buildClient, getProxies
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 if TYPE_CHECKING:
@@ -146,20 +145,12 @@ async def measureProxyLatencies() -> dict[str, int]:
     if customSite and customSite not in sites:
         sites.append(customSite)
 
-    async with niquests.AsyncSession(happy_eyeballs=True) as session:
-        session.trust_env = False
+    async with buildClient(getProxies(), timeout=15) as session:
 
         async def measureSiteLatency(site: str) -> tuple[str, int]:
             startedAt = perf_counter()
             try:
-                response = await session.get(
-                    f"{site.rstrip('/')}/{GITHUB_PROBE_TARGET}",
-                    timeout=15,
-                    proxies=getProxies(),
-                    verify=cfg.SSLVerify.value,
-                    allow_redirects=True,
-                    stream=True,
-                )
+                response = await session.get(f"{site.rstrip('/')}/{GITHUB_PROBE_TARGET}")
                 try:
                     response.raise_for_status()
                 finally:

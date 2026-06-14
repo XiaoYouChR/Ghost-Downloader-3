@@ -11,12 +11,8 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import buildClient, getProxies, toSafeFilename
+from app.supports.utils import buildClient, getProxies, headerDict, toSafeFilename
 from .task import HttpTask, HttpTaskStage
-
-
-def _toStr(value) -> str:
-    return value.decode("latin-1") if isinstance(value, (bytes, bytearray)) else value
 
 
 def _contentLength(headers: dict[str, str]) -> int:
@@ -56,11 +52,7 @@ async def _sendProbe(client, url: str, headers: dict) -> tuple[int, dict[str, st
         status = response.status.as_int()
         if status not in {200, 206, 416}:
             response.raise_for_status()
-        responseHeaders = {}
-        for key in response.headers.keys():
-            name = _toStr(key)
-            responseHeaders[name.lower()] = _toStr(response.headers.get(name))
-        return status, responseHeaders, str(response.url)
+        return status, headerDict(response.headers), str(response.url)
     finally:
         await response.close()
 

@@ -1,9 +1,8 @@
 import re
 import shutil
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
-from http.cookiejar import CookieJar
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Callable
@@ -12,7 +11,6 @@ from urllib.request import getproxies
 from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
-from niquests.cookies import RequestsCookieJar, cookiejar_from_dict
 from wreq import Client, Emulation, Proxy
 from wreq.redirect import Policy
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
@@ -133,42 +131,31 @@ def toProxies(proxies: dict | None) -> list[Proxy]:
     return [Proxy.all(url)] if url else []
 
 
-def buildClient(proxies: dict | None) -> Client:
-    return Client(
-        emulation=_DEFAULT_EMULATION,
-        proxies=toProxies(proxies),
-        tls_verify=cfg.SSLVerify.value,
-        redirect=Policy.limited(10),  # 跟随重定向(CDN / 短链 / http→https), 上限 10 跳
-    )
+def buildClient(proxies: dict | None = None, *, headers: dict | None = None, timeout: int | None = None) -> Client:
+    config = {
+        "emulation": _DEFAULT_EMULATION,
+        "proxies": toProxies(proxies),
+        "tls_verify": cfg.SSLVerify.value,
+        "redirect": Policy.limited(10),  # 跟随重定向(CDN / 短链 / http→https), 上限 10 跳
+    }
+    if headers:
+        config["headers"] = headers
+    if timeout is not None:
+        config["timeout"] = timedelta(seconds=timeout)
+    return Client(**config)
 
 
-def splitCookies(headers: dict[str, str] | None) -> tuple[dict[str, str], "RequestsCookieJar | CookieJar | None"]:
-    requestHeaders = dict(headers or {})
-    cookieHeader = str(requestHeaders.pop("cookie", "") or "").strip()
-    if not cookieHeader:
-        return requestHeaders, None
+def _toStr(value) -> str:
+    return value.decode("latin-1") if isinstance(value, (bytes, bytearray)) else value
 
-    cookieItems: dict[str, str] = {}
-    for part in cookieHeader.replace("\r", ";").replace("\n", ";").split(";"):
-        part = part.strip()
-        if not part or "=" not in part:
-            continue
 
-        name, value = part.split("=", 1)
-        name = name.strip()
-        value = str(value or "").strip()
-        if not name or not value:
-            continue
-        if any(ord(c) < 32 or ord(c) == 127 for c in value):
-            continue
-
-        encodedValue = value if all(ord(c) <= 255 for c in value) else value.encode("utf-8").decode("latin-1")
-        cookieItems[name] = encodedValue
-
-    if not cookieItems:
-        return requestHeaders, None
-
-    return requestHeaders, cookiejar_from_dict(cookieItems)
+def headerDict(headers) -> dict[str, str]:
+    """wreq HeaderMap(键/值皆 bytes)→ 小写键的普通 str dict, 供解析 content-length/range/disposition 等。"""
+    result = {}
+    for key in headers.keys():
+        name = _toStr(key)
+        result[name.lower()] = _toStr(headers.get(name))
+    return result
 
 
 
