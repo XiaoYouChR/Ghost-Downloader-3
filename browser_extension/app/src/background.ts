@@ -348,10 +348,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return;
   }
 
-  // popup_ messages come only from the extension's own popup (the page world uses
-  // page_download_media / bridge_page_command). handlePopupCommand answers unknown types
-  // with a structured error, so the prefix is the whole guard.
+  // popup_ commands are privileged (set token / server URL / merge resources). A page can
+  // forward arbitrary runtime messages through cat-catch's content script, so the sender —
+  // not just the type prefix — is the guard: only the extension's own popup (a
+  // chrome-extension:// page, never a tab) may reach the dispatcher. That lets the cast trust
+  // the payload, since the popup is the sole, typed caller.
   if (message.type.startsWith("popup_")) {
+    if (!sender.url?.startsWith("chrome-extension://")) { return; }
     return reply(sendResponse, handlePopupCommand(message as PopupCommand));
   }
 });
