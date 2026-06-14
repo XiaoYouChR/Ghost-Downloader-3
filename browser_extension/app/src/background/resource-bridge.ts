@@ -889,7 +889,31 @@ export function createResourceBridge(options: {
       return result;
     }
 
+    if (selection.kind === "external") {
+      if (!selection.pageUrl) {
+        return { ok: false, message: "无效的下载请求" };
+      }
+      const result = await dispatchExternalDownload(selection, payload.title, fallbackPageUrl);
+      if (result.ok) { await openActionPopup(); }
+      return result;
+    }
+
     return { ok: false, message: "未知的下载请求类型" };
+  }
+
+  // yt-dlp and other external tools take the page URL, not a captured direct URL — the
+  // desktop runs the tool, which extracts the media itself.
+  async function dispatchExternalDownload(
+    selection: { pageUrl: string; tool: string },
+    title: string,
+    fallbackPageUrl: string,
+  ): Promise<DesktopRequestResult> {
+    return options.sendDesktopRequest<DesktopRequestResult>({
+      type: "create_task",
+      source: selection.tool,
+      title: title || "",
+      payload: { url: selection.pageUrl, pageUrl: fallbackPageUrl || selection.pageUrl, pageTitle: title || "" },
+    });
   }
 
   async function dispatchMergeResources(resources: CapturedResource[]): Promise<DesktopRequestResult> {

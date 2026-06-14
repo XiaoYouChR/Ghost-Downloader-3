@@ -1,6 +1,7 @@
 import {resolveDouyin} from "./strategies/douyin";
 import {resolveGeneric} from "./strategies/generic";
 import {resolveX} from "./strategies/x";
+import {resolveYouTube} from "./strategies/youtube";
 import type {Resolution, VideoSessionFormKind} from "./types";
 
 // One attributed URL as the resolvers see it — also the element type of
@@ -42,6 +43,9 @@ export function resolveForPage(ctx: ResolveContext, findUrlsByIdHint: FindUrlsBy
   }
   if (host === "www.douyin.com" || host.endsWith(".douyin.com")) {
     return resolveDouyin(ctx, findUrlsByIdHint);
+  }
+  if (host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be") {
+    return resolveYouTube(ctx);
   }
   return resolveGeneric(ctx);
 }
