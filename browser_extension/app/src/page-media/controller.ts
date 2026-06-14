@@ -2,19 +2,19 @@ import {isCatCatchMedia} from "../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../shared/utils";
 
 import {AttributionLedger} from "./attribution-ledger";
-import {createDefaultRegistry, StrategyRegistry} from "./strategy-registry";
-import type {AttributedUrlMatch, MediaStrategy, SessionSnapshot, ResolveContext, ResolveHints} from "./strategy";
+import {pickStrategy} from "./strategy-registry";
+import {isMediaSignal} from "./signals";
+import type {AttributedUrlView, MediaStrategy, SessionSnapshot, ResolveContext, ResolveHints} from "./strategy";
 import type {
   AttributionTier,
   MseAttributionSignal,
   Resolution,
   VideoSession,
   VideoSessionFormKind,
-  VideoSessionResource,
+  AttributedUrlMeta,
   VideoSessionState,
 } from "./types";
 
-const SIGNAL_KEY = "__gd3MediaSignal";
 const LOG_PREFIX = "[GD3 Media]";
 const VIDEO_ID_QUERY_KEYS = ["__vid", "v", "modal_id", "video_id", "id", "bvid", "aid"];
 // Budget from the FIRST Pending — not per re-eval.
@@ -22,7 +22,6 @@ const WAIT_FOR_TIMEOUT_MS = 8000;
 // Matches the overlay status toast — auto-reset and toast fade on the same clock.
 const TERMINAL_RESET_MS = 1600;
 
-type RawSignal = MseAttributionSignal & { [SIGNAL_KEY]?: true };
 type ResolveStateListener = (state: VideoSessionState, reason: string) => void;
 
 // mse_buffer_appended usually follows fetch_completed within tens of ms; slow CPUs stretch.
@@ -90,20 +89,17 @@ function safeResolveOf(strategy: MediaStrategy, ctx: ResolveContext): Resolution
 }
 
 function sessionSnapshot(session: VideoSession): SessionSnapshot {
-  const resources: SessionSnapshot["resources"] = Object.freeze(
-    [...session.resources.entries()].map(([url, meta]) => Object.freeze({
+  const attributedUrls: SessionSnapshot["attributedUrls"] = Object.freeze(
+    [...session.attributedUrls.entries()].map(([url, meta]) => Object.freeze({
       url,
       contentType: meta.contentType,
       capturedAt: meta.capturedAt,
     })),
   );
   return Object.freeze({
-    id: session.id,
-    state: session.state,
     formKind: session.formKind,
     lastBoundAt: session.lastBoundAt,
-    resources,
-    discriminators: session.discriminators,
+    attributedUrls,
   });
 }
 
@@ -116,7 +112,6 @@ class PageMediaController {
   private readonly mediaSourceIdByObjectUrl = new Map<string, string>();
   private readonly transientResolveListener = new WeakMap<HTMLMediaElement, ResolveStateListener>();
   private readonly ledger = new AttributionLedger();
-  private readonly registry: StrategyRegistry = createDefaultRegistry();
   private mutationObserver: MutationObserver | null = null;
   private performanceObserver: PerformanceObserver | null = null;
   private lastBoundSession: VideoSession | null = null;
@@ -137,7 +132,7 @@ class PageMediaController {
       this.performanceObserver = new PerformanceObserver(this.onResourceTimingEntries);
       this.performanceObserver.observe({ type: "resource", buffered: true });
     } catch {
-      // mse-attribution.js covers attribution if PerformanceObserver throws.
+      // mse-probe.ts covers attribution if PerformanceObserver throws.
     }
 
     window.addEventListener("message", this.onMessage);
@@ -236,7 +231,7 @@ class PageMediaController {
       state: "inert",
       startedAt: performance.now(),
       lastBoundAt: 0,
-      resources: new Map(),
+      attributedUrls: new Map(),
       mimeTypes: new Set(),
       mediaSourceIds: new Set(),
       discriminators: new Set(),
@@ -292,11 +287,11 @@ class PageMediaController {
     let inheritedContentType = "";
     for (const session of this.sessionsById.values()) {
       if (session.id === newSession.id) { continue; }
-      const meta = session.resources.get(url);
+      const meta = session.attributedUrls.get(url);
       if (meta) { oldSession = session; inheritedContentType = meta.contentType; break; }
     }
 
-    const meta: VideoSessionResource = {
+    const meta: AttributedUrlMeta = {
       contentType: trackMime || inheritedContentType,
       capturedAt: performance.now(),
       tier: "mse",
@@ -304,17 +299,17 @@ class PageMediaController {
     };
 
     if (oldSession) {
-      oldSession.resources.delete(url);
-      // Only locked resources contribute to discriminators (see recordAttribution).
+      oldSession.attributedUrls.delete(url);
+      // Only locked attributed URLs contribute to discriminators (see recordAttribution).
       const recomputed = new Set<string>();
-      for (const [remainingUrl, remainingMeta] of oldSession.resources) {
+      for (const [remainingUrl, remainingMeta] of oldSession.attributedUrls) {
         if (!remainingMeta.lockedByMse) { continue; }
         for (const d of urlDiscriminators(remainingUrl)) { recomputed.add(d); }
       }
       oldSession.discriminators = recomputed;
     }
 
-    newSession.resources.set(url, meta);
+    newSession.attributedUrls.set(url, meta);
     for (const d of urlDiscriminators(url)) { newSession.discriminators.add(d); }
     this.notifyResolveListener(newSession, newSession.state, "url-handover");
 
@@ -345,16 +340,16 @@ class PageMediaController {
       const ledgerEntry = this.ledger.lookup(entry.url);
       if (ledgerEntry?.lockedByMse) {
         const owner = this.sessionsById.get(ledgerEntry.sessionId);
-        const meta = owner?.resources.get(entry.url);
+        const meta = owner?.attributedUrls.get(entry.url);
         if (meta) { this.upgradeTrackMime(meta, sourceBufferMime); }
         continue;
       }
       const claim = this.ledger.claim(entry.url, session.id, "mse", now, true);
       if (claim.moved || claim.ownerId === session.id) {
-        if (!session.resources.has(entry.url)) {
+        if (!session.attributedUrls.has(entry.url)) {
           this.handoverUrl(entry.url, session, sourceBufferMime);
         } else {
-          const meta = session.resources.get(entry.url);
+          const meta = session.attributedUrls.get(entry.url);
           if (meta) { this.upgradeTrackMime(meta, sourceBufferMime); }
           for (const d of urlDiscriminators(entry.url)) { session.discriminators.add(d); }
         }
@@ -368,24 +363,20 @@ class PageMediaController {
 
   // SourceBuffer mime (with `codecs=...`) is always more specific than the container mime
   // it would overwrite, so once it's in place we leave it.
-  private upgradeTrackMime(meta: VideoSessionResource, sourceBufferMime: string): void {
+  private upgradeTrackMime(meta: AttributedUrlMeta, sourceBufferMime: string): void {
     if (!sourceBufferMime) { return; }
     if (meta.contentType.includes("codecs")) { return; }
     meta.contentType = sourceBufferMime;
   }
 
   private onMessage = (event: MessageEvent): void => {
-    const data = event.data as RawSignal | null;
-    if (!data || typeof data !== "object" || data[SIGNAL_KEY] !== true) { return; }
-    this.onSignal(data);
+    if (isMediaSignal(event.data)) {
+      this.onSignal(event.data);
+    }
   };
 
   private onSignal(signal: MseAttributionSignal): void {
     switch (signal.kind) {
-      case "attribution_ready":
-        console.log(`${LOG_PREFIX} mse-attribution probe online`);
-        return;
-
       case "mse_objecturl": {
         this.mediaSourceIdByObjectUrl.set(signal.objectUrl, signal.mediaSourceId);
         for (const session of this.sessionsById.values()) {
@@ -415,8 +406,7 @@ class PageMediaController {
         this.correlateBufferAppend(signal.mediaSourceId, signal.mimeType);
         return;
 
-      case "fetch_completed":
-      case "xhr_completed":
+      case "request_completed":
         this.recordFetch(signal.url, signal.contentType);
         this.attributeFetch(signal.url, signal.contentType);
         return;
@@ -435,7 +425,7 @@ class PageMediaController {
     const existingEntry = this.ledger.lookup(url);
     if (existingEntry?.lockedByMse) {
       const owner = this.sessionsById.get(existingEntry.sessionId);
-      if (owner && !owner.resources.has(url)) {
+      if (owner && !owner.attributedUrls.has(url)) {
         this.recordAttribution(owner, url, contentType, "mse", true);
       }
       return;
@@ -446,7 +436,7 @@ class PageMediaController {
       console.log(`${LOG_PREFIX} orphan resource`, { url, contentType });
       return;
     }
-    if (session.resources.has(url)) { return; }
+    if (session.attributedUrls.has(url)) { return; }
     this.attribute(session, url, contentType, tier, false);
   }
 
@@ -482,12 +472,12 @@ class PageMediaController {
     const claim = this.ledger.claim(url, session.id, tier, performance.now(), locked);
     const ownerSession = claim.ownerId === session.id ? session : this.sessionsById.get(claim.ownerId);
     if (!ownerSession) { return; }
-    if (ownerSession.resources.has(url)) { return; }
+    if (ownerSession.attributedUrls.has(url)) { return; }
     this.recordAttribution(ownerSession, url, contentType, tier, locked || claim.ownerId !== session.id);
   }
 
   private recordAttribution(session: VideoSession, url: string, contentType: string, tier: AttributionTier, locked: boolean): void {
-    session.resources.set(url, {
+    session.attributedUrls.set(url, {
       contentType,
       capturedAt: performance.now(),
       tier,
@@ -504,7 +494,7 @@ class PageMediaController {
     } else {
       this.notifyResolveListener(session, session.state, `attributed ${url}`);
     }
-    console.log(`${LOG_PREFIX} ${session.id} += ${url}`, { hint: contentType, count: session.resources.size, tier, locked, state: session.state });
+    console.log(`${LOG_PREFIX} ${session.id} += ${url}`, { hint: contentType, count: session.attributedUrls.size, tier, locked, state: session.state });
   }
 
   private isMediaUrl(url: string, contentType: string): boolean {
@@ -525,7 +515,7 @@ class PageMediaController {
       // Re-arm so the user can click again without reloading.
       setTimeout(() => {
         if (session.state === next) {
-          this.transition(session, session.resources.size > 0 ? "ready" : "armed", "terminal-reset");
+          this.transition(session, session.attributedUrls.size > 0 ? "ready" : "armed", "terminal-reset");
         }
       }, TERMINAL_RESET_MS);
     }
@@ -539,10 +529,10 @@ class PageMediaController {
     try { listener(state, reason); } catch { /* swallow */ }
   }
 
-  resourcesFor(element: HTMLMediaElement | null): string[] {
+  attributedUrlsFor(element: HTMLMediaElement | null): string[] {
     if (!element) { return []; }
     const session = this.sessionsByElement.get(element);
-    return session ? [...session.resources.keys()] : [];
+    return session ? [...session.attributedUrls.keys()] : [];
   }
 
   async resolveForElement(
@@ -558,13 +548,12 @@ class PageMediaController {
       return { kind: "refused", message: "未识别媒体来源" };
     }
     const pageUrl = new URL(location.href);
-    const strategy: MediaStrategy = this.registry.pick(pageUrl);
+    const strategy: MediaStrategy = pickStrategy(pageUrl);
 
     const buildCtx = (): ResolveContext => ({
       clicked: sessionSnapshot(session),
       pageUrl,
       hints,
-      now: performance.now(),
       findUrlsByDiscriminator: (discriminator) => this.lookupByDiscriminator(discriminator),
     });
 
@@ -611,16 +600,15 @@ class PageMediaController {
 
   // Douyin uses this to reach across sessions for a prefetched URL claimed by a sibling
   // before the new <video> existed.
-  private lookupByDiscriminator(discriminator: string): ReadonlyArray<AttributedUrlMatch> {
-    const matches: AttributedUrlMatch[] = [];
+  private lookupByDiscriminator(discriminator: string): ReadonlyArray<AttributedUrlView> {
+    const matches: AttributedUrlView[] = [];
     for (const session of this.sessionsById.values()) {
-      for (const [url, meta] of session.resources) {
+      for (const [url, meta] of session.attributedUrls) {
         if (urlDiscriminators(url).has(discriminator)) {
           matches.push({
             url,
             contentType: meta.contentType,
             capturedAt: meta.capturedAt,
-            lockedByMse: meta.lockedByMse,
           });
         }
       }
@@ -649,7 +637,7 @@ class PageMediaController {
 declare global {
   interface Window {
     __gd3PageMedia?: {
-      resourcesForElement(element: HTMLMediaElement | null): string[];
+      attributedUrlsForElement(element: HTMLMediaElement | null): string[];
       resolveForElement(
         element: HTMLMediaElement | null,
         hints: ResolveHints,
@@ -667,7 +655,7 @@ export function startPageMediaController(): void {
   controllerInstance = new PageMediaController();
   controllerInstance.start();
   window.__gd3PageMedia = {
-    resourcesForElement: (element) => controllerInstance?.resourcesFor(element) ?? [],
+    attributedUrlsForElement: (element) => controllerInstance?.attributedUrlsFor(element) ?? [],
     resolveForElement: (element, hints, onStateChange) =>
       controllerInstance?.resolveForElement(element, hints, onStateChange) ?? Promise.resolve({ kind: "refused" as const, message: "controller not ready" }),
     markDispatchResult: (element, ok, message) =>

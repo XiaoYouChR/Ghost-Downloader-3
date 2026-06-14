@@ -1,5 +1,5 @@
 import {classifyTrackRole, isDashSegmentUrl, isStreamUrl, stripRangeParams} from "../url-classify";
-import {newestBy, postBindResources} from "../strategy";
+import {newestMatching, postBindAttributedUrls, selectMergePair} from "../strategy";
 import type {MediaStrategy, ResolveContext} from "../strategy";
 import type {Resolution} from "../types";
 
@@ -12,26 +12,25 @@ export class GenericStrategy implements MediaStrategy {
   }
 
   resolve(ctx: ResolveContext): Resolution {
-    const post = postBindResources(ctx.clicked);
+    const post = postBindAttributedUrls(ctx.clicked);
 
-    const stream = newestBy(post.filter((r) => isStreamUrl(r.url, r.contentType)), (r) => r.capturedAt);
+    const stream = newestMatching(post, isStreamUrl);
     if (stream) {
-      return { kind: "selection", selection: { kind: "stream", url: stream.url } };
+      return { kind: "selection", selection: { kind: "stream", url: stream } };
     }
 
     if (ctx.clicked.formKind === "muxed") {
-      const muxed = newestBy(post.filter((r) => !isDashSegmentUrl(r.url)), (r) => r.capturedAt);
+      const muxed = newestMatching(post, (url) => !isDashSegmentUrl(url));
       if (muxed) {
-        return { kind: "selection", selection: { kind: "single", url: stripRangeParams(muxed.url), formKind: "muxed" } };
+        return { kind: "selection", selection: { kind: "single", url: stripRangeParams(muxed), formKind: "muxed" } };
       }
       return { kind: "pending", reason: "等待嗅探到当前视频资源" };
     }
 
     if (ctx.clicked.formKind === "dash") {
-      const video = newestBy(post.filter((r) => classifyTrackRole(r.url, r.contentType) === "video"), (r) => r.capturedAt);
-      const audio = newestBy(post.filter((r) => classifyTrackRole(r.url, r.contentType) === "audio"), (r) => r.capturedAt);
-      if (video && audio) {
-        return { kind: "selection", selection: { kind: "merge", video: stripRangeParams(video.url), audio: stripRangeParams(audio.url) } };
+      const pair = selectMergePair(post, classifyTrackRole);
+      if (pair) {
+        return { kind: "selection", selection: { kind: "merge", video: stripRangeParams(pair.video), audio: stripRangeParams(pair.audio) } };
       }
       return { kind: "pending", reason: "等待音视频分轨齐全" };
     }

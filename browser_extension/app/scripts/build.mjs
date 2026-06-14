@@ -96,6 +96,26 @@ for (const [target, config] of Object.entries(buildTargets)) {
     outfile: path.resolve(config.outDir, "content-script.js"),
   });
 
+  // GD3's own page-media probe (MAIN world) and overlay (ISOLATED world). Authored in TS
+  // under src/page-media — kept out of the vendored catch-script/ directory on purpose.
+  await esbuild({
+    entryPoints: [path.resolve(appRoot, "src/page-media/mse-probe.ts")],
+    bundle: true,
+    format: "iife",
+    target: config.runtimeTarget,
+    platform: "browser",
+    outfile: path.resolve(config.outDir, "page-media-probe.js"),
+  });
+
+  await esbuild({
+    entryPoints: [path.resolve(appRoot, "src/page-media/overlay.ts")],
+    bundle: true,
+    format: "iife",
+    target: config.runtimeTarget,
+    platform: "browser",
+    outfile: path.resolve(config.outDir, "page-media-overlay.js"),
+  });
+
   await mkdir(config.outDir, { recursive: true });
   await cp(catchScriptDir, path.resolve(config.outDir, "catch-script"), { recursive: true });
   await cp(upstreamContentScript, path.resolve(config.outDir, "cat-catch-content-script.js"));

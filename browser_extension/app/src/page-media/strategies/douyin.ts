@@ -1,5 +1,5 @@
 import {douyinKindOf, hostEndsWith} from "../url-classify";
-import {newestBy, postBindResources} from "../strategy";
+import {newestMatching, postBindAttributedUrls, selectMergePair} from "../strategy";
 import type {MediaStrategy, ResolveContext} from "../strategy";
 import type {Resolution} from "../types";
 
@@ -14,25 +14,20 @@ export class DouyinStrategy implements MediaStrategy {
   }
 
   resolve(ctx: ResolveContext): Resolution {
-    const post = postBindResources(ctx.clicked).filter((r) => hostEndsWith(r.url, "douyinvod.com"));
+    const post = postBindAttributedUrls(ctx.clicked).filter((r) => hostEndsWith(r.url, "douyinvod.com"));
 
     if (ctx.clicked.formKind === "muxed") {
-      const muxed = newestBy(post.filter((r) => douyinKindOf(r.url) === "muxed"), (r) => r.capturedAt);
+      const muxed = newestMatching(post, (url) => douyinKindOf(url) === "muxed") ?? this.findByModalId(ctx, "muxed");
       if (muxed) {
-        return { kind: "selection", selection: { kind: "single", url: muxed.url, formKind: "muxed" } };
-      }
-      const fromModalId = this.findByModalId(ctx, "muxed");
-      if (fromModalId) {
-        return { kind: "selection", selection: { kind: "single", url: fromModalId, formKind: "muxed" } };
+        return { kind: "selection", selection: { kind: "single", url: muxed, formKind: "muxed" } };
       }
       return { kind: "pending", reason: "等待 Douyin 单 MP4 URL" };
     }
 
     if (ctx.clicked.formKind === "dash") {
-      const video = newestBy(post.filter((r) => douyinKindOf(r.url) === "video"), (r) => r.capturedAt);
-      const audio = newestBy(post.filter((r) => douyinKindOf(r.url) === "audio"), (r) => r.capturedAt);
-      if (video && audio) {
-        return { kind: "selection", selection: { kind: "merge", video: video.url, audio: audio.url } };
+      const pair = selectMergePair(post, douyinKindOf);
+      if (pair) {
+        return { kind: "selection", selection: { kind: "merge", video: pair.video, audio: pair.audio } };
       }
       return { kind: "pending", reason: "等待 Douyin 音视频分轨齐全" };
     }
@@ -45,14 +40,13 @@ export class DouyinStrategy implements MediaStrategy {
       }
       return { kind: "pending", reason: "等待嗅探到当前视频资源" };
     }
-    const muxed = newestBy(post.filter((r) => douyinKindOf(r.url) === "muxed"), (r) => r.capturedAt);
+    const muxed = newestMatching(post, (url) => douyinKindOf(url) === "muxed");
     if (muxed) {
-      return { kind: "selection", selection: { kind: "single", url: muxed.url, formKind: "unknown" } };
+      return { kind: "selection", selection: { kind: "single", url: muxed, formKind: "unknown" } };
     }
-    const video = newestBy(post.filter((r) => douyinKindOf(r.url) === "video"), (r) => r.capturedAt);
-    const audio = newestBy(post.filter((r) => douyinKindOf(r.url) === "audio"), (r) => r.capturedAt);
-    if (video && audio) {
-      return { kind: "selection", selection: { kind: "merge", video: video.url, audio: audio.url } };
+    const pair = selectMergePair(post, douyinKindOf);
+    if (pair) {
+      return { kind: "selection", selection: { kind: "merge", video: pair.video, audio: pair.audio } };
     }
     return { kind: "refused", message: "无法判定 Douyin 当前媒体形态，请在资源嗅探页选择" };
   }
@@ -63,7 +57,6 @@ export class DouyinStrategy implements MediaStrategy {
     const modalId = ctx.pageUrl.searchParams.get("modal_id");
     if (!modalId || modalId.length < 4) { return undefined; }
     const matches = ctx.findUrlsByDiscriminator(`__vid=${modalId}`);
-    const filtered = matches.filter((m) => douyinKindOf(m.url) === kind);
-    return newestBy(filtered, (m) => m.capturedAt)?.url;
+    return newestMatching(matches, (url) => douyinKindOf(url) === kind);
   }
 }

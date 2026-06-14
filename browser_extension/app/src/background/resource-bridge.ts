@@ -19,6 +19,7 @@ import {
     RESOURCE_LIMIT,
 } from "./constants";
 import {bridgeStorageSet, findTab, loadFromBridgeStorage, openActionPopup, queryTabs,} from "./chrome-helpers";
+import {buildDownloadSpec, filenameForDesktop, resolveCapturedFilename} from "./download-spec";
 
 type HeaderSnapshot = {
   url: string;
@@ -80,27 +81,6 @@ const HEADER_WHITELIST = new Set([
   "user-agent",
   "priority",
 ]);
-
-const MIME_EXTENSIONS: Record<string, string> = {
-  "application/dash+xml": "mpd",
-  "application/mpegurl": "m3u8",
-  "application/vnd.apple.mpegurl": "m3u8",
-  "application/x-mpegurl": "m3u8",
-  "audio/aac": "aac",
-  "audio/flac": "flac",
-  "audio/mp4": "m4a",
-  "audio/mpeg": "mp3",
-  "audio/ogg": "ogg",
-  "audio/wav": "wav",
-  "audio/webm": "webm",
-  "video/mp2t": "ts",
-  "video/mp4": "mp4",
-  "video/quicktime": "mov",
-  "video/webm": "webm",
-  "video/x-flv": "flv",
-  "video/x-m4v": "m4v",
-  "video/x-ms-wmv": "wmv",
-};
 
 export function createResourceBridge(options: {
   sendDesktopRequest: DesktopRequestSender;
@@ -383,59 +363,6 @@ export function createResourceBridge(options: {
     }
 
     return null;
-  }
-
-  function filenameWithExtension(baseName: string, extension: string): string {
-    const trimmedBaseName = cleanFilename(baseName) || "resource";
-    const normalizedExt = extension.trim().replace(/^\./, "").toLowerCase();
-    if (!normalizedExt) {
-      return trimmedBaseName;
-    }
-    if (fileExtension(trimmedBaseName) === normalizedExt) {
-      return trimmedBaseName;
-    }
-    return `${trimmedBaseName}.${normalizedExt}`;
-  }
-
-  function cleanFilename(value?: string): string {
-    return (value ?? "")
-      .trim()
-      .replace(/[<>:"/\\|?*\x00-\x1f]+/g, " ")
-      .replace(/\s+/g, " ")
-      .replace(/[. ]+$/g, "")
-      .trim()
-      .slice(0, 160);
-  }
-
-  function extensionFromMime(mime?: string): string {
-    const type = mime?.split(";")[0]?.trim().toLowerCase() ?? "";
-    return MIME_EXTENSIONS[type] ?? "";
-  }
-
-  function resolveBridgeFilename(payload: CapturePayload): string {
-    const ext = payload.ext?.trim() || extensionFromMime(payload.mime);
-    const explicit = cleanFilename(payload.filename);
-    if (explicit) {
-      return ext && !fileExtension(explicit) ? filenameWithExtension(explicit, ext) : explicit;
-    }
-
-    const fromUrl = cleanFilename(filenameFromUrl(payload.url));
-    if (fromUrl) {
-      return ext ? filenameWithExtension(fromUrl, ext) : fromUrl;
-    }
-
-    return ext ? filenameWithExtension("resource", ext) : "resource";
-  }
-
-  function filenameForDesktop(resource: CapturedResource): string {
-    const urlFilename = filenameFromUrl(resource.url);
-    const current = cleanFilename(resource.filename || urlFilename);
-    const extension = fileExtension(current)
-      || fileExtension(urlFilename)
-      || extensionFromMime(resource.mime);
-    const title = cleanFilename(resource.pageTitle);
-    const baseName = title || current || "resource";
-    return filenameWithExtension(baseName, extension);
   }
 
   async function resolveBridgeResourceTabId(sender: chrome.runtime.MessageSender, href?: string): Promise<number | null> {
@@ -733,7 +660,7 @@ export function createResourceBridge(options: {
 
     const tab = await findTab(tabId);
     cacheResourceFor(payload.url, tabId, tab, payload.href ?? tab?.url ?? "", {
-      filename: resolveBridgeFilename(payload),
+      filename: resolveCapturedFilename(payload),
       mime: payload.mime?.toLowerCase() || mimeFromUrl(payload.url),
       size: 0,
       supportsRange: false,
@@ -831,19 +758,13 @@ export function createResourceBridge(options: {
   }
 
   async function sendHttpResourceToDesktop(resource: CapturedResource): Promise<DesktopRequestResult> {
-    const filename = filenameForDesktop(resource);
+    const spec = buildDownloadSpec(resource);
     try {
       const result = await options.sendDesktopRequest<DesktopRequestResult>({
         type: "create_task",
         source: "resource",
-        title: filename,
-        payload: {
-          url: resource.url,
-          headers: resource.requestHeaders,
-          filename,
-          size: resource.size,
-          supportsRange: resource.supportsRange,
-        },
+        title: spec.filename,
+        payload: spec,
       });
 
       if (result.ok) {

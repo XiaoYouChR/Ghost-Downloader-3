@@ -1,10 +1,10 @@
 import type {
-    AdvancedFeatureKey,
     DesktopRequestResult,
     GenericTaskSummary,
     PopupStatePayload,
     PopupView,
 } from "./shared/types";
+import type {PopupCommand} from "./shared/popup-protocol";
 import {createDesktopBridge} from "./background/desktop-bridge";
 import {createFeatureBridge} from "./background/feature-bridge";
 import {createMediaBridge} from "./background/media-bridge";
@@ -41,7 +41,7 @@ async function injectMediaDownloadOverlay(tabId: number) {
 
   try {
     await chrome.scripting.executeScript({
-      files: ["catch-script/media-download-overlay.js"],
+      files: ["page-media-overlay.js"],
       injectImmediately: false,
       target: { tabId, allFrames: true },
     });
@@ -241,6 +241,73 @@ if (supportsDownloadDeterminingFilename()) {
   });
 }
 
+// The typed receiver half of the popup command seam (shared/popup-protocol.ts): one
+// exhaustive switch over the command union. Each case narrows the command to its own shape
+// (no cast); the never-typed default makes a missing case a compile error.
+async function handlePopupCommand(command: PopupCommand): Promise<PopupStatePayload | DesktopRequestResult> {
+  switch (command.type) {
+    case "popup_get_state":
+      return buildPopupState({
+        preferredTabId: typeof command.tabId === "number" ? command.tabId : null,
+        currentView: command.view,
+      });
+    case "popup_set_token":
+      await desktopBridge.setToken(command.token.trim());
+      return buildPopupState({ currentView: command.view });
+    case "popup_set_server_url":
+      await desktopBridge.setServerUrl(command.serverUrl);
+      return buildPopupState({ currentView: command.view });
+    case "popup_refresh_connection":
+      await desktopBridge.connect(true);
+      return buildPopupState({ currentView: command.view });
+    case "popup_set_intercept_downloads":
+      interceptDownloads = command.enabled;
+      await chrome.storage.local.set({ [INTERCEPT_DOWNLOADS_KEY]: interceptDownloads });
+      return buildPopupState({ currentView: command.view });
+    case "popup_set_media_download_overlay":
+      await updateMediaDownloadOverlay(command.enabled);
+      return buildPopupState({ currentView: command.view });
+    case "popup_set_media_index":
+      await mediaBridge.setMediaIndex(command.tabId, command.index);
+      return buildPopupState({ currentView: "advanced" });
+    case "popup_request_pairing":
+      void desktopBridge.requestPairing().catch(() => {
+        // The bridge snapshot carries the user-facing pairing failure message.
+      });
+      return { ok: true, message: "请确认配对" };
+    case "popup_task_action":
+      try {
+        return await desktopBridge.sendRequest<DesktopRequestResult>({
+          type: "task_action",
+          taskId: command.taskId,
+          action: command.action,
+        });
+      } catch (error) {
+        return { ok: false, message: error instanceof Error ? error.message : "任务操作失败" };
+      }
+    case "popup_send_resource":
+      return resourceBridge.sendResource(command.resourceId);
+    case "popup_merge_resources":
+      return resourceBridge.mergeResources(command.resourceIds);
+    case "popup_toggle_feature":
+      try {
+        const infoMessage = await featureBridge.toggleFeature(command.feature, command.tabId);
+        return { ok: true, message: infoMessage };
+      } catch (error) {
+        return { ok: false, message: error instanceof Error ? error.message : "功能切换失败" };
+      }
+    default:
+      return unknownPopupCommand(command);
+  }
+}
+
+// Reached only by a popup_ message whose type is not a known command. The `never` parameter
+// makes the switch above exhaustive at compile time; at runtime it returns a structured
+// error instead of throwing, so the caller still gets a response.
+function unknownPopupCommand(command: never): DesktopRequestResult {
+  return { ok: false, message: `未知命令: ${(command as { type?: string }).type ?? ""}` };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message !== "object") {
     return;
@@ -268,87 +335,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.type === "popup_get_state") {
-    return reply(sendResponse, buildPopupState({
-      preferredTabId: typeof message.tabId === "number" ? message.tabId : null,
-      currentView: message.view as PopupView | undefined,
-    }));
-  }
-
-  if (message.type === "popup_set_token") {
-    return reply(sendResponse, (async () => {
-      await desktopBridge.setToken(String(message.token ?? "").trim());
-      return buildPopupState({ currentView: message.view as PopupView | undefined });
-    })());
-  }
-
-  if (message.type === "popup_set_server_url") {
-    return reply(sendResponse, (async () => {
-      await desktopBridge.setServerUrl(String(message.serverUrl ?? ""));
-      return buildPopupState({ currentView: message.view as PopupView | undefined });
-    })());
-  }
-
-  if (message.type === "popup_refresh_connection") {
-    return reply(sendResponse, (async () => {
-      await desktopBridge.connect(true);
-      return buildPopupState({ currentView: message.view as PopupView | undefined });
-    })());
-  }
-
-  if (message.type === "popup_request_pairing") {
-    void desktopBridge.requestPairing().catch(() => {
-      // The bridge snapshot carries the user-facing pairing failure message.
-    });
-    sendResponse({ ok: true, message: "请确认配对" });
-    return true;
-  }
-
-  if (message.type === "popup_set_intercept_downloads") {
-    return reply(sendResponse, (async () => {
-      interceptDownloads = Boolean(message.enabled);
-      await chrome.storage.local.set({ [INTERCEPT_DOWNLOADS_KEY]: interceptDownloads });
-      return buildPopupState({ currentView: message.view as PopupView | undefined });
-    })());
-  }
-
-  if (message.type === "popup_set_media_download_overlay") {
-    return reply(sendResponse, (async () => {
-      await updateMediaDownloadOverlay(Boolean(message.enabled));
-      return buildPopupState({ currentView: message.view as PopupView | undefined });
-    })());
-  }
-
-  if (message.type === "popup_task_action") {
-    return reply(sendResponse, (async () => {
-      try {
-        return await desktopBridge.sendRequest<DesktopRequestResult>({
-          type: "task_action",
-          taskId: message.taskId,
-          action: message.action,
-        });
-      } catch (error) {
-        return {
-          ok: false,
-          message: error instanceof Error ? error.message : "任务操作失败",
-        };
-      }
-    })());
-  }
-
-  if (message.type === "popup_send_resource") {
-    return reply(sendResponse, resourceBridge.sendResource(String(message.resourceId ?? "")));
-  }
-
-  if (message.type === "popup_merge_resources") {
-    return reply(sendResponse, (async () => {
-      const resourceIds = Array.isArray(message.resourceIds)
-        ? message.resourceIds.map((value: unknown) => String(value ?? "")).filter(Boolean)
-        : [];
-      return resourceBridge.mergeResources(resourceIds);
-    })());
-  }
-
   if (message.type === "page_download_media") {
     return reply(sendResponse, resourceBridge.downloadPageMedia(sender, {
       selection: message.selection,
@@ -362,33 +348,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return;
   }
 
-  if (message.type === "popup_toggle_feature") {
-    return reply(sendResponse, (async () => {
-      const tabId = typeof message.tabId === "number" ? message.tabId : null;
-      if (tabId == null) {
-        return { ok: false, message: "当前没有可操作的标签页" };
-      }
-      try {
-        const infoMessage = await featureBridge.toggleFeature(message.feature as AdvancedFeatureKey, tabId);
-        return { ok: true, message: infoMessage };
-      } catch (error) {
-        return {
-          ok: false,
-          message: error instanceof Error ? error.message : "功能切换失败",
-        };
-      }
-    })());
+  // popup_ messages come only from the extension's own popup (the page world uses
+  // page_download_media / bridge_page_command). handlePopupCommand answers unknown types
+  // with a structured error, so the prefix is the whole guard.
+  if (message.type.startsWith("popup_")) {
+    return reply(sendResponse, handlePopupCommand(message as PopupCommand));
   }
-
-  if (message.type === "popup_set_media_index") {
-    return reply(sendResponse, (async () => {
-      await mediaBridge.setMediaIndex(Number(message.tabId ?? 0), Number(message.index ?? -1));
-      return buildPopupState({
-        currentView: "advanced",
-      });
-    })());
-  }
-
 });
 
 void initialize();

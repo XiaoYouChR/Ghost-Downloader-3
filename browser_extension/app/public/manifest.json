@@ -34,7 +34,7 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["catch-script/mse-attribution.js"],
+      "js": ["page-media-probe.js"],
       "run_at": "document_start",
       "all_frames": true,
       "world": "MAIN"
@@ -47,7 +47,7 @@
     },
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["catch-script/media-download-overlay.js"],
+      "js": ["page-media-overlay.js"],
       "run_at": "document_idle",
       "all_frames": true
     }

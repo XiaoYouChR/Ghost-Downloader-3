@@ -4,23 +4,13 @@ import {XStrategy} from "./strategies/x";
 
 import type {MediaStrategy} from "./strategy";
 
-export class StrategyRegistry {
-  private readonly strategies: MediaStrategy[] = [];
+// Order matters: GenericStrategy is the fallback (matches() always true), so it stays last.
+const STRATEGIES: readonly MediaStrategy[] = [
+  new DouyinStrategy(),
+  new XStrategy(),
+  new GenericStrategy(),
+];
 
-  register(strategy: MediaStrategy): void {
-    this.strategies.push(strategy);
-  }
-
-  // Relies on GenericStrategy being registered last (matches() always true).
-  pick(pageUrl: URL): MediaStrategy {
-    return this.strategies.find((strategy) => strategy.matches(pageUrl))!;
-  }
-}
-
-export function createDefaultRegistry(): StrategyRegistry {
-  const registry = new StrategyRegistry();
-  registry.register(new DouyinStrategy());
-  registry.register(new XStrategy());
-  registry.register(new GenericStrategy());
-  return registry;
+export function pickStrategy(pageUrl: URL): MediaStrategy {
+  return STRATEGIES.find((strategy) => strategy.matches(pageUrl))!;
 }

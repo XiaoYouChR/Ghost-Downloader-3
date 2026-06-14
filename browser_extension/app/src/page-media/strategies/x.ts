@@ -1,5 +1,5 @@
 import {hostEndsWith, isStreamUrl} from "../url-classify";
-import {newestBy, postBindResources} from "../strategy";
+import {newestMatching, postBindAttributedUrls} from "../strategy";
 import type {MediaStrategy, ResolveContext} from "../strategy";
 import type {Resolution} from "../types";
 
@@ -32,7 +32,7 @@ export class XStrategy implements MediaStrategy {
 
   resolve(ctx: ResolveContext): Resolution {
     const posterMediaId = mediaIdOf(ctx.hints.poster ?? "");
-    const allStreams = postBindResources(ctx.clicked).filter((r) =>
+    const allStreams = postBindAttributedUrls(ctx.clicked).filter((r) =>
       hostEndsWith(r.url, "video.twimg.com")
       && isStreamUrl(r.url, r.contentType),
     );
@@ -41,10 +41,9 @@ export class XStrategy implements MediaStrategy {
       ? allStreams.filter((r) => mediaIdOf(r.url) === posterMediaId)
       : allStreams;
 
-    const masters = candidates.filter((r) => isMasterTwitterPlaylist(r.url));
-    const pick = newestBy(masters, (r) => r.capturedAt);
+    const pick = newestMatching(candidates, (url) => isMasterTwitterPlaylist(url));
     if (pick) {
-      return { kind: "selection", selection: { kind: "stream", url: pick.url } };
+      return { kind: "selection", selection: { kind: "stream", url: pick } };
     }
 
     return { kind: "pending", reason: "等待 X 主播放清单" };
