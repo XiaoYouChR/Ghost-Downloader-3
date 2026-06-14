@@ -115,6 +115,19 @@ class HttpSubworker:
     end: int
 
 
+_PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
+
+
+def _isPermanentFailure(error: BaseException) -> bool:
+    """4xx / Cloudflare 反爬挑战这类重试也不会变的失败, 应快速失败而非无限重试卡 0%。"""
+    response = getattr(error, "response", None)
+    if response is None:
+        return False
+    if "cf-mitigated" in response.headers:
+        return True
+    return response.status_code in _PERMANENT_STATUS
+
+
 class HttpWorker(Worker):
     def __init__(self, stage: HttpTaskStage):
         super().__init__(stage)
@@ -144,6 +157,14 @@ class HttpWorker(Worker):
         requestHeaders["range"] = rangeValue
         requestHeaders["accept-encoding"] = "identity"
         return requestHeaders
+
+    async def _backoffOrRaise(self, error: Exception, retryMessage: str):
+        # 永久失败(4xx / 反爬挑战)重试也不会变, 直接 raise 冒泡到 run() → FAILED, 把真实错误抛给用户;
+        # 其余(网络抖动 / 5xx)才退避重试。修掉「永久失败也无限重试静默卡 0%」。
+        if _isPermanentFailure(error):
+            raise error
+        logger.opt(exception=error).error(retryMessage, self.stage.outputFile)
+        await asyncio.sleep(5)
 
     async def handleSubworker(self, subworker: HttpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:  # 支持断点续传, 但文件大小未知
@@ -176,10 +197,7 @@ class HttpWorker(Worker):
 
                     return
                 except Exception as e:
-                    logger.opt(exception=e).error(
-                        "{} 的未知大小分片连接中断，5 秒后重试", self.stage.outputFile,
-                    )
-                    await asyncio.sleep(5)
+                    await self._backoffOrRaise(e, "{} 的未知大小分片连接中断，5 秒后重试")
 
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:  # 不支持断点续传
             while True:
@@ -217,10 +235,7 @@ class HttpWorker(Worker):
                     ftruncate(self.fileHandle, subworker.progress)
                     return
                 except Exception as e:
-                    logger.opt(exception=e).error(
-                        "{} 不支持断点续传，已从头开始重试", self.stage.outputFile,
-                    )
-                    await asyncio.sleep(5)
+                    await self._backoffOrRaise(e, "{} 不支持断点续传，已从头开始重试")
 
         else:  # 正常下载
             while subworker.progress <= subworker.end:
@@ -259,10 +274,7 @@ class HttpWorker(Worker):
                         subworker.progress = subworker.end + 1
 
                 except Exception as e:
-                    logger.opt(exception=e).error(
-                        "{} 的分片连接中断，5 秒后重试", self.stage.outputFile,
-                    )
-                    await asyncio.sleep(5)
+                    await self._backoffOrRaise(e, "{} 的分片连接中断，5 秒后重试")
 
             self.reassignSubworker()
 

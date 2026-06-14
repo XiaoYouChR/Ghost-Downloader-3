@@ -120,6 +120,9 @@ class TaskStage:
             self._task.updateStatus()
 
     def setError(self, error: Any, sync: bool = True):
+        # TaskGroup 把子任务异常包成 ExceptionGroup, 剥到叶子才能展示真实错误(而非 group repr)
+        while isinstance(error, BaseExceptionGroup) and error.exceptions:
+            error = error.exceptions[0]
         message = repr(error).strip() if error is not None else ""
         self.error = message
         self.setStatus(TaskStatus.FAILED, sync=sync)
