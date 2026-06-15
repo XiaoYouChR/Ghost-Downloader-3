@@ -20,6 +20,7 @@ from qfluentwidgets import (
 
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
+from app.supports.android import IS_ANDROID, nativeLibraryDir
 from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import findExecutable, toPosixPath
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -43,6 +44,16 @@ def _linuxInstallCommand() -> str:
 
 
 def ffmpegPaths() -> tuple[str, str]:
+    # Android: ffmpeg/ffprobe 预编进 jniLibs, 释放到只读可执行的 nativeLibraryDir, 不走桌面的安装流。
+    if IS_ANDROID:
+        nld = nativeLibraryDir()
+        if not nld:
+            return ("", "")
+        ffmpeg, ffprobe = Path(nld) / "libffmpeg.so", Path(nld) / "libffprobe.so"
+        return (
+            str(ffmpeg) if ffmpeg.exists() else "",
+            str(ffprobe) if ffprobe.exists() else "",
+        )
     installFolder = Path(ffmpegConfig.installFolder.value)
     return (
         findExecutable(installFolder, "ffmpeg", "bin"),
@@ -93,7 +104,11 @@ class FFmpegRuntimeCard(SettingCard):
         self._bind()
 
     def _initWidget(self):
-        if sys.platform == "win32":
+        if IS_ANDROID:
+            # ffmpeg/ffprobe 已随 APK 预置在 nativeLibraryDir，无需安装
+            self.installButton.hide()
+            self._installAction = lambda: None
+        elif sys.platform == "win32":
             self.installButton.setText(self.tr("一键安装"))
             self._installAction = self._downloadFFmpeg
         elif sys.platform == "darwin" and not shutil.which("brew"):

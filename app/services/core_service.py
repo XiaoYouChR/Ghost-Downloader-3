@@ -5,20 +5,23 @@ from typing import Callable, Dict, Any, Coroutine
 
 from PySide6.QtCore import QThread, QTimer, QStandardPaths, QResource, QFileInfo, Qt
 from PySide6.QtWidgets import QApplication, QFileIconProvider
-from desktop_notifier import DesktopNotifier, Icon, Button
 from loguru import logger
 
 from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
+from app.supports.android import IS_ANDROID
 from app.supports.config import cfg
 from app.supports.subprocess_hide import hideChildConsoles
 from app.supports.utils import openFile
+
+if not IS_ANDROID:
+    from desktop_notifier import DesktopNotifier, Icon, Button
 
 if sys.platform == 'win32':
     import winloop
     winloop.install()
     hideChildConsoles()  # winloop 不透传 creationflags
-elif sys.platform != 'darwin':
+elif sys.platform != 'darwin' and not IS_ANDROID:
     import uvloop
     uvloop.install()
 
@@ -43,6 +46,8 @@ class CoreService(QThread):
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._rebalanceSoon())
 
     def sendNotification(self, task: Task):
+        if IS_ANDROID:  # v1 无桌面通知后端, 静默
+            return
         outputFolder = task.outputFolder
         if not outputFolder:
             logger.warning("task {} has no outputFolder for notification", task.taskId)
@@ -271,7 +276,8 @@ class CoreService(QThread):
 
     def run(self):
         """启动线程和事件循环"""
-        self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))  # OSError: [WinError -2147417842] 应用程序调用一个已为另一线程整理的接口。
+        if not IS_ANDROID:
+            self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))  # OSError: [WinError -2147417842] 应用程序调用一个已为另一线程整理的接口。
         try:
             self.loop.run_until_complete(self.mainLoop)
         except Exception as e:

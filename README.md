@@ -5,12 +5,6 @@
 > [!NOTE]
 > Due to academic commitments, development on this project has slowed down recently.
 
-> [!IMPORTANT]
-> Welcome to join the Ghost Downloader user group: [756042420](https://qm.qq.com/q/gPk6FR1Hby)
-
-> [!TIP]
-> If you'd like to help translate Ghost Downloader, welcome to join the Crowdin project: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
-
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -27,7 +21,7 @@
 [![Downloads][downloads-shield]][release-url]
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
 
-##### [Report Bug](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
+##### [Documentation](https://gd.xychr.com/en/docs/) · [Report Bug](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -36,7 +30,6 @@
 
 * A downloader built out of passion, and my first Python project 😣
 * It was originally created to help a Bilibili creator integrate resources 😵‍💫
-* It features IDM-style intelligent chunking without requiring file merging, plus AI smart acceleration 🚀
 * Thanks to Python's🐍 accessibility, this project will open plugin🧩 support in the future (plugin API is still being stabilized...)
 
 |    Platform    | Required Version |  Architectures   | Compatible |
@@ -44,6 +37,7 @@
 |  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
 | 🪟 **Windows** |     `7 SP1+`     | `x86_64`/`arm64` |     ✅      |
 |  🍎 **macOS**  |     `13.0+`      | `x86_64`/`arm64` |     ✅      |
+| 🤖 **Android** |      `9.0+`      |   `arm64-v8a`    |     ✅      |
 
 > [!WARNING]
 > Qt `6.6+` no longer supports CPUs without the `AVX` instruction set.
@@ -51,21 +45,26 @@
 > [!TIP]
 > **Arch Linux AUR support**: Community-maintained packages `ghost-downloader-bin` and `ghost-downloader-git` are now available (Maintainer: [@zxp19821005](https://github.com/zxp19821005))
 
+<!-- FEATURES -->
+## Features
+
+* IDM-style intelligent chunking⚡ without requiring file merging, plus AI smart acceleration 🚀
+* Supports HTTP, Magnet / BT, FTP, M3U8, MPEG-DASH and more 🌐
+* Records M3U8 live streams📺 with real-time decryption🔓, fully supported on Android as well
+* The companion browser extension🦊 sniffs media resources right off web pages
+* Tasks can be paused, edited✏️ (URL, headers, proxy) and resumed without losing progress
+* A complete Android version📱 with background downloading and completion notifications 🔔
+
+<!-- SCREEN SHOTS -->
+## Screenshots
+
+![QQ20260326-204347](https://github.com/user-attachments/assets/3e57b113-200c-4286-91cb-b52fe7d1711c)
+
 <!-- ROADMAP -->
 ## Roadmap
 
-- ✅ Global settings
-- ✅ More detailed download information
-- ✅ Scheduled task support
-- ✅ Browser extension optimization
-- ✅ Global speed limiting
-- ✅ Memory usage optimization
-- ✅ Magnet / BT downloads
-- ✅ Powerful browser extension features
-- ✅ Powerful plugin support (API still needs to be stabilized...)
-- ✅ Intelligent acceleration
-- ✅ Use AsyncIO to reduce boilerplate
-- ❌ Event-driven architecture refactor (Actor Model)
+- ❌ Native download engine (lower memory usage while running in the background)
+- ❌ Make the plugin API public
 - ❌ Enhanced task editing (powerful features like binding multiple Sessions to one task)
 - ❌ Support for eD2k protocol
 
@@ -95,6 +94,9 @@ Thanks to all contributors who have participated in this project!
 [![Contributors](http://contrib.nn.ci/api?repo=XiaoYouChR/Ghost-Downloader-3)](https://github.com/XiaoYouChR/Ghost-Downloader-3/graphs/contributors)
 
 ## Translation Contributors
+
+> [!TIP]
+> If you'd like to help translate Ghost Downloader, welcome to join the Crowdin project: [ghost-downloader](https://crowdin.com/project/ghost-downloader)
 
 <!-- CROWDIN-CONTRIBUTORS-START -->
 <table>
@@ -133,11 +135,6 @@ Thanks to all contributors who have participated in this project!
 </table>
 <!-- CROWDIN-CONTRIBUTORS-END -->
 
-<!-- SCREEN SHOTS -->
-## Screenshots
-
-![QQ20260326-204347](https://github.com/user-attachments/assets/3e57b113-200c-4286-91cb-b52fe7d1711c)
-
 <!-- LICENSE -->
 ## License
 
@@ -148,20 +145,28 @@ Copyright © 2025 XiaoYouChR.
 <!-- CONTACT -->
 ## Contact
 
+> [!IMPORTANT]
+> Welcome to join the Ghost Downloader user group: [756042420](https://qm.qq.com/q/gPk6FR1Hby)
+
 * [E-mail](mailto:XiaoYouChR@qq.com) - XiaoYouChR@qq.com
-* [QQ Group](https://qm.qq.com/q/gPk6FR1Hby) - 756042420
 
 <!-- ACKNOWLEDGMENTS -->
 ## References
 
 * [aioftp](https://github.com/aio-libs/aioftp) Ftp client/server for asyncio
+* [cat-catch](https://github.com/xifangczy/cat-catch) Browser Resource Sniffing Extension
 * [desktop-notifier](https://github.com/samschott/desktop-notifier) Python library for cross-platform desktop notifications
+* [FFmpeg](https://ffmpeg.org/) A complete, cross-platform solution to record, convert and stream audio and video
 * [libtorrent](https://github.com/arvidn/libtorrent) An efficient feature complete C++ bittorrent implementation
 * [loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
+* [m3u8](https://github.com/globocom/m3u8) Python m3u8 parser
+* [mpegdash](https://github.com/sangoma/mpegdash) MPEG-DASH MPD parser
 * [niquests](https://github.com/jawah/niquests) Automatic HTTP/1.1, HTTP/2, and HTTP/3. WebSocket, and SSE included.
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) Powerful, extensible, and elegant Fluent Design-style widget library
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
+* [uvloop](https://github.com/MagicStack/uvloop) Ultra fast asyncio event loop
+* [winloop](https://github.com/Vizonex/Winloop) An alternative to uvloop for Windows
 
 ## Acknowledgments
 

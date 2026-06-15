@@ -12,6 +12,7 @@ import type {
     TaskAction,
 } from "../../shared/types";
 import {sortTasks} from "../../shared/utils";
+import type {ActionCommand, PopupCommand, StateCommand} from "../../shared/popup-protocol";
 
 const REFRESH_INTERVAL_MS = 1000;
 const FLASH_TIMEOUT_MS = 2800;
@@ -100,8 +101,14 @@ function errorMessageOr(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-async function sendDesktopCommand(message: unknown, fallback: string) {
-  const result = await sendRuntimeMessage<DesktopRequestResult>(message);
+function dispatch(command: StateCommand): Promise<PopupStatePayload>;
+function dispatch(command: ActionCommand): Promise<DesktopRequestResult>;
+function dispatch(command: PopupCommand): Promise<PopupStatePayload | DesktopRequestResult> {
+  return sendRuntimeMessage<PopupStatePayload | DesktopRequestResult>(command);
+}
+
+async function sendDesktopCommand(command: ActionCommand, fallback: string): Promise<DesktopRequestResult> {
+  const result = await dispatch(command);
   if (!result.ok) {
     throw new Error(result.message || fallback);
   }
@@ -207,7 +214,7 @@ export function usePopupBridge(activeView: PopupView) {
       }
 
       refreshPromiseRef.current = (async () => {
-        const next = await sendRuntimeMessage<PopupStatePayload>({
+        const next = await dispatch({
           type: "popup_get_state",
           view: requestView(view),
         });
@@ -259,22 +266,14 @@ export function usePopupBridge(activeView: PopupView) {
     updateBusyState(setBusyFeatureKeys, feature, active);
   }, []);
 
-  const requestPopupState = useCallback(
-    (message: Record<string, unknown>) =>
-      sendRuntimeMessage<PopupStatePayload>({
-        ...message,
-        view: requestView(activeViewRef.current),
-      }),
-    [requestView],
-  );
-
   const saveToken = useCallback(
     async (value: string) => {
       setIsSavingToken(true);
       try {
-        const next = await requestPopupState({
+        const next = await dispatch({
           type: "popup_set_token",
           token: value.trim(),
+          view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
         setFlash(
@@ -291,16 +290,17 @@ export function usePopupBridge(activeView: PopupView) {
         }
       }
     },
-    [applyPopupState, requestPopupState, setFlash],
+    [applyPopupState, requestView, setFlash],
   );
 
   const saveServerUrl = useCallback(
     async (value: string) => {
       setIsSavingServerUrl(true);
       try {
-        const next = await requestPopupState({
+        const next = await dispatch({
           type: "popup_set_server_url",
           serverUrl: value,
+          view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
         setFlash(
@@ -317,14 +317,15 @@ export function usePopupBridge(activeView: PopupView) {
         }
       }
     },
-    [applyPopupState, requestPopupState, setFlash],
+    [applyPopupState, requestView, setFlash],
   );
 
   const refreshConnection = useCallback(async () => {
     setIsRefreshingConnection(true);
     try {
-      const next = await requestPopupState({
+      const next = await dispatch({
         type: "popup_refresh_connection",
+        view: requestView(activeViewRef.current),
       });
       applyPopupState(next);
       setFlash(next.connectionMessage, next.connectionState === "connected" ? "success" : "neutral");
@@ -337,12 +338,12 @@ export function usePopupBridge(activeView: PopupView) {
         setIsRefreshingConnection(false);
       }
     }
-  }, [applyPopupState, requestPopupState, setFlash]);
+  }, [applyPopupState, requestView, setFlash]);
 
   const requestPairing = useCallback(async () => {
     setIsRequestingPairing(true);
     try {
-      const result = await sendRuntimeMessage<DesktopRequestResult>({
+      const result = await dispatch({
         type: "popup_request_pairing",
       });
       if (!result.ok) {
@@ -367,9 +368,10 @@ export function usePopupBridge(activeView: PopupView) {
     async (enabled: boolean) => {
       setIsUpdatingIntercept(true);
       try {
-        const next = await requestPopupState({
+        const next = await dispatch({
           type: "popup_set_intercept_downloads",
           enabled,
+          view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
       } catch (error) {
@@ -380,16 +382,17 @@ export function usePopupBridge(activeView: PopupView) {
         }
       }
     },
-    [applyPopupState, requestPopupState, setFlash],
+    [applyPopupState, requestView, setFlash],
   );
 
   const setMediaDownloadOverlay = useCallback(
     async (enabled: boolean) => {
       setIsUpdatingMediaDownloadOverlay(true);
       try {
-        const next = await requestPopupState({
+        const next = await dispatch({
           type: "popup_set_media_download_overlay",
           enabled,
+          view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
       } catch (error) {
@@ -400,7 +403,7 @@ export function usePopupBridge(activeView: PopupView) {
         }
       }
     },
-    [applyPopupState, requestPopupState, setFlash],
+    [applyPopupState, requestView, setFlash],
   );
 
   const performTaskAction = useCallback(
@@ -466,7 +469,8 @@ export function usePopupBridge(activeView: PopupView) {
 
   const toggleFeature = useCallback(
     async (feature: AdvancedFeatureKey) => {
-      if (payload.tabId == null) {
+      const tabId = payload.tabId;
+      if (tabId == null) {
         setFlash("当前没有可操作的标签页", "error");
         return;
       }
@@ -475,7 +479,7 @@ export function usePopupBridge(activeView: PopupView) {
         const result = await sendDesktopCommand({
           type: "popup_toggle_feature",
           feature,
-          tabId: payload.tabId,
+          tabId,
         }, "功能切换失败");
         await refreshState(activeViewRef.current);
         setFlash(result.message || "功能状态已更新", "success");
@@ -495,7 +499,7 @@ export function usePopupBridge(activeView: PopupView) {
         return;
       }
       try {
-        const next = await sendRuntimeMessage<PopupStatePayload>({
+        const next = await dispatch({
           type: "popup_set_media_index",
           tabId,
           index,

@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import QEvent, QFileInfo, Qt, Signal
-from PySide6.QtGui import QColor, QMouseEvent, QPainter
+from PySide6.QtCore import QFileInfo, Signal
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFileDialog, QFileIconProvider, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -13,7 +13,6 @@ from qfluentwidgets import (
     ImageLabel,
     LineEdit,
     PushButton,
-    StrongBodyLabel,
     TransparentToolButton,
     isDarkTheme,
 )
@@ -26,6 +25,7 @@ from app.services.task_service import taskService
 from app.supports.utils import toReadableSize, toReadableTime
 from app.view.components.cards import ParseSettingCard, ResultCard, UniversalTaskCard
 from app.view.components.editors import AutoSizingEdit
+from app.view.components.labels import EditableLabel
 
 if TYPE_CHECKING:
     from .task import M3U8TaskStage
@@ -157,7 +157,7 @@ class M3U8ResultCard(ResultCard):
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
         self.iconLabel = ImageLabel(self)
-        self.filenameLabel = StrongBodyLabel(self.task.title, self)
+        self.filenameLabel = EditableLabel(self.task.title, self, onEdit=self._enterEditMode)
         self.filenameEdit = LineEdit(self)
         self.metaLabel = BodyLabel(self._metaText(), self)
         self.mainLayout = QHBoxLayout(self)
@@ -169,8 +169,6 @@ class M3U8ResultCard(ResultCard):
     def _initWidget(self):
         self.setFixedHeight(35)
         self._refreshIcon()
-        self.filenameLabel.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.filenameLabel.installEventFilter(self)
         self.filenameEdit.setText(self.task.title)
         self.filenameEdit.editingFinished.connect(self._onEditingFinished)
         self.filenameEdit.hide()
@@ -194,14 +192,6 @@ class M3U8ResultCard(ResultCard):
         icon = QFileIconProvider().icon(QFileInfo(self.task.outputFolder))
         self.iconLabel.setImage(icon.pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
-
-    def eventFilter(self, obj, event: QEvent):
-        if obj is self.filenameLabel:
-            if event.type() == QEvent.Type.MouseButtonDblClick and isinstance(event, QMouseEvent):
-                if event.button() == Qt.MouseButton.LeftButton:
-                    self._enterEditMode()
-                    return True
-        return super().eventFilter(obj, event)
 
     def _enterEditMode(self):
         self.filenameLabel.hide()

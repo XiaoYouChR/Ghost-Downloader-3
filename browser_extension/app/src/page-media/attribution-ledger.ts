@@ -1,7 +1,7 @@
 import type {AttributionTier} from "./types";
 
 // Single arbiter of URL → session ownership. Claims before MSE bind are provisional
-// (lockedByMse=false); reArbitrate moves them to whichever session's MSE later proves
+// (lockedByMse=false); reclaimUrls moves them to whichever session's MSE later proves
 // ownership. This is the structural fix for the Douyin v-2 prefetch case.
 
 export type LedgerEntry = {
@@ -11,8 +11,8 @@ export type LedgerEntry = {
   lockedByMse: boolean;
 };
 
-export type ReArbitrateResult = {
-  movedUrls: string[];
+export type ReclaimResult = {
+  urls: string[];
 };
 
 export type ClaimResult = {
@@ -44,22 +44,22 @@ export class AttributionLedger {
     return this.entries.get(url) ?? null;
   }
 
-  // getDiscriminatorsForUrl is a callback so the ledger stays free of URL parsing.
-  reArbitrate(
+  // idHintsForUrl is a callback so the ledger stays free of URL parsing.
+  reclaimUrls(
     newSessionId: string,
-    newDiscriminators: ReadonlySet<string>,
-    getDiscriminatorsForUrl: (url: string) => ReadonlySet<string>,
+    newIdHints: ReadonlySet<string>,
+    idHintsForUrl: (url: string) => ReadonlySet<string>,
     now: number,
-  ): ReArbitrateResult {
-    if (newDiscriminators.size === 0) { return { movedUrls: [] }; }
+  ): ReclaimResult {
+    if (newIdHints.size === 0) { return { urls: [] }; }
     const moved: string[] = [];
     for (const [url, entry] of this.entries) {
       if (entry.lockedByMse) { continue; }
       if (entry.sessionId === newSessionId) { continue; }
-      const urlDiscriminators = getDiscriminatorsForUrl(url);
+      const urlIdHints = idHintsForUrl(url);
       let intersects = false;
-      for (const d of urlDiscriminators) {
-        if (newDiscriminators.has(d)) { intersects = true; break; }
+      for (const d of urlIdHints) {
+        if (newIdHints.has(d)) { intersects = true; break; }
       }
       if (!intersects) { continue; }
       this.entries.set(url, {
@@ -70,7 +70,7 @@ export class AttributionLedger {
       });
       moved.push(url);
     }
-    return { movedUrls: moved };
+    return { urls: moved };
   }
 
   // Pins URLs that were already correctly attributed before MSE bind.

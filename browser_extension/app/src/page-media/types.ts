@@ -13,7 +13,8 @@ export type VideoSessionFormKind = "muxed" | "dash" | "unknown";
 
 export type AttributionTier = 0 | 1 | 2 | 3 | "mse";
 
-export type VideoSessionResource = {
+// Metadata about one 归属 URL (Attributed URL) within a session; the URL itself is the map key.
+export type AttributedUrlMeta = {
   contentType: string;
   capturedAt: number;
   tier: AttributionTier;
@@ -21,12 +22,10 @@ export type VideoSessionResource = {
 };
 
 export type MseAttributionSignal =
-  | { kind: "attribution_ready" }
   | { kind: "mse_objecturl"; mediaSourceId: string; objectUrl: string }
   | { kind: "mse_source_buffer_added"; mediaSourceId: string; mimeType: string }
-  | { kind: "mse_buffer_appended"; mediaSourceId: string; mimeType: string; byteLength: number }
-  | { kind: "fetch_completed"; url: string; status: number; contentType: string; contentLength: number }
-  | { kind: "xhr_completed"; url: string; status: number; contentType: string; contentLength: number };
+  | { kind: "mse_buffer_appended"; mediaSourceId: string; mimeType: string }
+  | { kind: "request_completed"; url: string; contentType: string };
 
 export type VideoSession = {
   id: string;
@@ -36,17 +35,19 @@ export type VideoSession = {
   startedAt: number;
   // performance.now() at bindBlobToMediaSource; strategies filter capturedAt > lastBoundAt.
   lastBoundAt: number;
-  resources: Map<string, VideoSessionResource>;
+  attributedUrls: Map<string, AttributedUrlMeta>;
   mimeTypes: Set<string>;
   mediaSourceIds: Set<string>;
-  discriminators: Set<string>;
+  idHints: Set<string>;
   formKind: VideoSessionFormKind;
 };
 
 export type Selection =
   | { kind: "single"; url: string; formKind: VideoSessionFormKind }
   | { kind: "stream"; url: string }
-  | { kind: "merge"; video: string; audio: string };
+  | { kind: "merge"; video: string; audio: string }
+  // The page URL handed to the desktop's yt-dlp, which extracts the media itself (YouTube/SABR).
+  | { kind: "external"; pageUrl: string };
 
 export type Resolution =
   | { kind: "selection"; selection: Selection }
