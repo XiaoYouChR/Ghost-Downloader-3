@@ -9,6 +9,7 @@ from app.supports import file_association
 from .cards import BitTorrentResultCard, BTTaskCard
 from .config import bittorrentConfig
 from .loaders import loadLocalTorrent, resolve as _btResolve
+from .session import btSessionService
 from .web_tracker.service import webTrackerService
 
 
@@ -39,6 +40,9 @@ class BitTorrentPack(FeaturePack):
             return
 
         coreService.runCoroutine(webTrackerService.refresh(), self._onTrackersLoaded)
+
+    def shutdown(self):
+        btSessionService.shutdown()
 
     def _onAssociationToggled(self, enabled: bool):
         if enabled:

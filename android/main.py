@@ -135,6 +135,7 @@ def _onApplicationStateChanged(state: Qt.ApplicationState) -> None:
 
 application.applicationStateChanged.connect(_onApplicationStateChanged)
 
+application.aboutToQuit.connect(featureService.shutdown)
 application.aboutToQuit.connect(coreService.stop)
 application.aboutToQuit.connect(taskService.flushNow)
 
