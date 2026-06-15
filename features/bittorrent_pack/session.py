@@ -122,7 +122,7 @@ class BTSessionService:
         params.storage_mode = lt.storage_mode_t.storage_mode_sparse
         params.flags |= lt.torrent_flags.default_dont_download | lt.torrent_flags.update_subscribe
 
-        handle = self._session.add_torrent(params)
+        handle = self._addToSession(params)
         handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
         if bittorrentConfig.enableDHT.value:
             handle.force_dht_announce()
@@ -262,12 +262,25 @@ class BTSessionService:
         if task.trackers:
             params.trackers = task.trackers.copy()
 
-        handle = self._session.add_torrent(params)
+        handle = self._addToSession(params)
         for file in task.files:
             mappedPath = task.mapPath(file)
             if mappedPath != file.path:
                 handle.rename_file(file.index, mappedPath)
         return handle
+
+    def _addToSession(self, params: lt.add_torrent_params) -> lt.torrent_handle:
+        # 共享 session 里一个 info_hash 只能有一个种子: add_torrent 对重复会返回既有
+        # handle, 之后误删它会连累正在下载的任务, 故在唯一的 add 入口前拦截
+        if self._session.find_torrent(self._infoHash(params)).is_valid():
+            raise RuntimeError("该种子已在下载中")
+        return self._session.add_torrent(params)
+
+    def _infoHash(self, params: lt.add_torrent_params) -> lt.sha1_hash:
+        # ti 构造的 params 不填 info_hashes(实测), 只能从 ti 取; 磁力/resume 在 info_hashes
+        if params.ti is not None:
+            return params.ti.info_hashes().v1
+        return params.info_hashes.v1
 
     def _prepareTarget(self, task: BTTask):
         target = Path(task.outputFolder)
