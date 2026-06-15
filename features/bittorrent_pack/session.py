@@ -19,7 +19,7 @@ import libtorrent as lt
 from loguru import logger
 
 from app.services.core_service import coreService
-from app.supports.config import VERSION
+from app.supports.config import VERSION, cfg
 from app.supports.utils import getProxies
 from .config import bittorrentConfig
 from .task import BTTask
@@ -79,10 +79,13 @@ class BTSessionService:
         self._pump: asyncio.Task | None = None
         self._active: dict[str, _ActiveTorrent] = {}
         self._pendingMetadata: list[tuple[lt.torrent_handle, asyncio.Future]] = []
+        # BT 自有限速 + app 全局限速, 任一变化都重算会话级下载限速
         for item in (
             bittorrentConfig.downloadRateLimit,
             bittorrentConfig.uploadRateLimit,
             bittorrentConfig.connectionsLimit,
+            cfg.enableSpeedLimitation,
+            cfg.speedLimitation,
         ):
             item.valueChanged.connect(self._onLimitsChanged)
 
@@ -189,7 +192,7 @@ class BTSessionService:
             "user_agent": USER_AGENT,
             "listen_interfaces": f"0.0.0.0:{bittorrentConfig.listenPort.value}",
             "connections_limit": bittorrentConfig.connectionsLimit.value,
-            "download_rate_limit": bittorrentConfig.downloadRateLimit.value,
+            "download_rate_limit": self._downloadLimit(),
             "upload_rate_limit": bittorrentConfig.uploadRateLimit.value,
             "enable_dht": bittorrentConfig.enableDHT.value,
             "enable_lsd": bittorrentConfig.enableLSD.value,
@@ -229,10 +232,17 @@ class BTSessionService:
         if self._session is None:
             return
         self._session.apply_settings({
-            "download_rate_limit": bittorrentConfig.downloadRateLimit.value,
+            "download_rate_limit": self._downloadLimit(),
             "upload_rate_limit": bittorrentConfig.uploadRateLimit.value,
             "connections_limit": bittorrentConfig.connectionsLimit.value,
         })
+
+    def _downloadLimit(self) -> int:
+        # 有效下载限速(B/s, 0=不限): BT 自有限速与 app 全局限速取更严的一个
+        limit = bittorrentConfig.downloadRateLimit.value
+        if cfg.enableSpeedLimitation.value:
+            limit = min(limit, cfg.speedLimitation.value) if limit > 0 else cfg.speedLimitation.value
+        return limit
 
     # ── 把一条 torrent 加进 session ───────────────────────────────────────
     def _addTorrent(self, task: BTTask) -> lt.torrent_handle:
@@ -358,6 +368,7 @@ class BTSessionService:
         task.isSeeding = status.is_seeding
         task.downloadRate = status.download_rate
         task.uploadRate = status.upload_rate
+        cfg.globalSpeed += status.download_rate  # BT 流量计入 app 总速度: 显示含 BT, 且 HTTP 据合计退让
         task._updateSlot()
 
         downloaded = status.all_time_download or status.total_wanted_done or status.total_done
