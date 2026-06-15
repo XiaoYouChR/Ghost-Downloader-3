@@ -1,8 +1,6 @@
 import asyncio
-import time
 from base64 import b64encode
 from pathlib import Path, PurePosixPath
-from tempfile import gettempdir
 from typing import cast
 from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
@@ -15,10 +13,10 @@ from app.bases.models import TaskStage
 from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import getProxies, splitCookies, toSafeFilename
 from .config import bittorrentConfig
+from .session import btSessionService
 from .task import BTFile, BTTask
 from .trackers import mergeTrackers
 from .web_tracker.service import webTrackerService
-from .worker import createSession
 
 
 def loadLocalTorrent(source: str) -> Path | None:
@@ -71,72 +69,12 @@ async def _loadFromUrl(payload: dict) -> tuple[bytes, lt.torrent_info]:
     return torrentBytes, lt.torrent_info(torrentBytes)
 
 
-def _loadFromMagnetBlocking(
-    url: str,
-    proxies: dict | None,
-    webTrackers: list[str],
-) -> tuple[bytes, lt.torrent_info, list[str]]:
-    session = createSession(
-        listenPort=bittorrentConfig.listenPort.value,
-        connectionsLimit=bittorrentConfig.connectionsLimit.value,
-        downloadRateLimit=bittorrentConfig.downloadRateLimit.value,
-        uploadRateLimit=bittorrentConfig.uploadRateLimit.value,
-        enableDHT=bittorrentConfig.enableDHT.value,
-        enableLSD=bittorrentConfig.enableLSD.value,
-        enableUPnP=bittorrentConfig.enableUPnP.value,
-        enableNATPMP=bittorrentConfig.enableNATPMP.value,
-        proxies=proxies,
-        extraSettings={
-            "announce_to_all_trackers": True,
-            "announce_to_all_tiers": True,
-        },
-    )
-
-    params = cast(lt.add_torrent_params, lt.parse_magnet_uri(url))
-    params.trackers = mergeTrackers(params.trackers, webTrackers)
-    tempDir = Path(gettempdir()) / "ghost_downloader_bt_metadata"
-    tempDir.mkdir(parents=True, exist_ok=True)
-    params.save_path = str(tempDir)
-    params.storage_mode = lt.storage_mode_t.storage_mode_sparse
-    params.flags |= lt.torrent_flags.default_dont_download | lt.torrent_flags.update_subscribe
-
-    handle = session.add_torrent(params)
-    session.resume()
-    handle.resume()
-
-    handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
-    if bittorrentConfig.enableDHT.value:
-        handle.force_dht_announce()
-
-    deadline = time.monotonic() + bittorrentConfig.metadataTimeout.value
-    try:
-        while True:
-            remainingMs = int(max(0.0, deadline - time.monotonic()) * 1000)
-            if remainingMs <= 0:
-                raise TimeoutError("等待 magnet 元数据超时")
-            session.wait_for_alert(remainingMs)
-            for alert in session.pop_alerts():
-                if isinstance(alert, lt.metadata_received_alert):
-                    ti = handle.torrent_file()
-                    if ti is not None and ti.is_valid():
-                        torrentBytes = lt.bencode(lt.create_torrent(ti).generate())
-                        return torrentBytes, ti, params.trackers.copy()
-                if isinstance(alert, (lt.metadata_failed_alert, lt.torrent_error_alert, lt.file_error_alert)):
-                    raise RuntimeError(alert.message())
-    finally:
-        try:
-            session.remove_torrent(handle)
-        except Exception:
-            pass
-
-
 async def _loadFromMagnet(
     payload: dict,
     webTrackers: list[str],
 ) -> tuple[bytes, lt.torrent_info, list[str]]:
     url = str(payload["url"]).strip()
-    proxies = payload.get("proxies", getProxies())
-    return await asyncio.to_thread(_loadFromMagnetBlocking, url, proxies, webTrackers)
+    return await btSessionService.fetchMetadata(url, webTrackers)
 
 
 def _buildTask(
@@ -175,7 +113,6 @@ def _buildTask(
         torrentData=b64encode(torrentBytes).decode(),
         trackers=trackers,
         files=entries,
-        proxies=payload.get("proxies", getProxies()),
     )
 
 

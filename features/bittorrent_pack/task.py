@@ -1,13 +1,11 @@
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import Any
 
 from loguru import logger
 
 from app.bases.models import Task, TaskStage, TaskStatus
-from app.supports.utils import getProxies, removePath, toSafeFilename
-from .config import bittorrentConfig
+from app.supports.utils import removePath, toSafeFilename
 
 
 @dataclass
@@ -32,20 +30,6 @@ class BTTask(Task):
     resumeData: str = ""
     trackers: list[str] = field(default_factory=list)
     files: list[BTFile] = field(default_factory=list)
-    proxies: dict | None = field(default_factory=getProxies)
-    listenPort: int = field(default_factory=lambda: bittorrentConfig.listenPort.value)
-    connectionsLimit: int = field(default_factory=lambda: bittorrentConfig.connectionsLimit.value)
-    downloadRateLimit: int = field(default_factory=lambda: bittorrentConfig.downloadRateLimit.value)
-    uploadRateLimit: int = field(default_factory=lambda: bittorrentConfig.uploadRateLimit.value)
-    enableDHT: bool = field(default_factory=lambda: bittorrentConfig.enableDHT.value)
-    enableLSD: bool = field(default_factory=lambda: bittorrentConfig.enableLSD.value)
-    enableUPnP: bool = field(default_factory=lambda: bittorrentConfig.enableUPnP.value)
-    enableNATPMP: bool = field(default_factory=lambda: bittorrentConfig.enableNATPMP.value)
-    sequentialDownload: bool = field(default_factory=lambda: bittorrentConfig.sequentialDownload.value)
-    storageMode: str = field(default_factory=lambda: bittorrentConfig.storageMode.value)
-    seedRatioLimitPercent: int = field(default_factory=lambda: bittorrentConfig.seedRatioLimitPercent.value)
-    seedTimeLimitMinutes: int = field(default_factory=lambda: bittorrentConfig.seedTimeLimitMinutes.value)
-    saveMagnetTorrentFile: bool = field(default_factory=lambda: bittorrentConfig.saveMagnetTorrentFile.value)
     shareRatioPercent: float = 0
     seedingTimeSeconds: int = 0
     isSeeding: bool = False
@@ -72,7 +56,7 @@ class BTTask(Task):
 
     @property
     def magnetTorrentPath(self) -> Path | None:
-        if self.sourceType != "magnet" or not self.saveMagnetTorrentFile:
+        if self.sourceType != "magnet":
             return None
         return self.path / f"{self.title}.torrent"
 
@@ -155,11 +139,6 @@ class BTTask(Task):
             file.downloadedBytes = downloaded
             file.completed = file.size > 0 and downloaded >= file.size
 
-    def applySettings(self, payload: dict[str, Any]):
-        super().applySettings(payload)
-        if "proxies" in payload:
-            self.proxies = payload.get("proxies")
-
     def reset(self) -> TaskStatus:
         result = super().reset()
         self.resumeData = ""
@@ -181,19 +160,29 @@ class BTTask(Task):
         self.usesSlot = not self.isSeeding
 
     async def run(self):
-        from .worker import BTWorker
+        from .session import btSessionService
 
         try:
-            for stage in self.pendingStages():
-                await BTWorker(stage).run()
+            await btSessionService.lease(self)
         except asyncio.CancelledError:
-            logger.info(f"{self.title} 停止下载")
+            self.stateText = "已暂停做种" if self.isSeeding else "已暂停下载"
+            self.isSeeding = False
+            self._updateSlot()
+            self.stage.setStatus(TaskStatus.PAUSED)
+            logger.info("{} 停止下载", self.title)
             raise
         except Exception as e:
             if not self.stage.error:
                 self.stage.setError(e)
             logger.opt(exception=e).error("{} 下载失败", self.title)
             raise
+        else:
+            self.isSeeding = False
+            self._updateSlot()
+            self.stateText = "已自动暂停做种"
+            self.stage.setStatus(TaskStatus.COMPLETED)
+            self.stage.progress = 100
+            self.stage.speed = 0
 
     def __hash__(self):
         return hash(self.taskId)

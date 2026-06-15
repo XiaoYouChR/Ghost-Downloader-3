@@ -310,5 +310,12 @@ class FeatureService:
 
         logger.warning("FeaturePack 加载完成: {}/{} 个成功加载", loadedCount, len(featurePacks))
 
+    def shutdown(self):
+        for packName, packInstance in self._packs.items():
+            try:
+                packInstance.shutdown()
+            except Exception as e:
+                logger.opt(exception=e).error("FeaturePack.shutdown 失败 {}", packName)
+
 
 featureService = FeatureService()
