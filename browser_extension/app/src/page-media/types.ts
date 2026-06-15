@@ -46,9 +46,8 @@ export type Selection =
   | { kind: "single"; url: string; formKind: VideoSessionFormKind }
   | { kind: "stream"; url: string }
   | { kind: "merge"; video: string; audio: string }
-  // Not a captured direct URL — the page URL handed to a desktop external tool (yt-dlp)
-  // that extracts the media itself. For SABR/cipher-gated sites like YouTube.
-  | { kind: "external"; pageUrl: string; tool: "ytdlp" };
+  // The page URL handed to the desktop's yt-dlp, which extracts the media itself (YouTube/SABR).
+  | { kind: "external"; pageUrl: string };
 
 export type Resolution =
   | { kind: "selection"; selection: Selection }

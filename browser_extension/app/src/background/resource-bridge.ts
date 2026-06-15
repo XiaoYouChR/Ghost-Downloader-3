@@ -901,19 +901,55 @@ export function createResourceBridge(options: {
     return { ok: false, message: "未知的下载请求类型" };
   }
 
-  // yt-dlp and other external tools take the page URL, not a captured direct URL — the
-  // desktop runs the tool, which extracts the media itself.
+  // The desktop's yt-dlp extracts the media from the page URL; forward login cookies for gated videos.
   async function dispatchExternalDownload(
-    selection: { pageUrl: string; tool: string },
+    selection: { pageUrl: string },
     title: string,
     fallbackPageUrl: string,
   ): Promise<DesktopRequestResult> {
     return options.sendDesktopRequest<DesktopRequestResult>({
       type: "create_task",
-      source: selection.tool,
+      source: "ytdlp",
       title: title || "",
-      payload: { url: selection.pageUrl, pageUrl: fallbackPageUrl || selection.pageUrl, pageTitle: title || "" },
+      payload: {
+        url: selection.pageUrl,
+        pageUrl: fallbackPageUrl || selection.pageUrl,
+        pageTitle: title || "",
+        headers: resolvePageHeaders(selection.pageUrl),
+      },
     });
+  }
+
+  function hostOf(url: string): string | null {
+    try {
+      return new URL(url).host;
+    } catch {
+      return null;
+    }
+  }
+
+  // SPA watch URLs often have no snapshot of their own; fall back to the freshest same-host
+  // request that carried a cookie. Only cookie + user-agent are forwarded.
+  function resolvePageHeaders(pageUrl: string): Record<string, string> {
+    const host = hostOf(pageUrl);
+    if (host === null) {
+      return {};
+    }
+
+    let snapshot = resolveHeaderSnapshot(pageUrl);
+    if (!snapshot?.headers.cookie) {
+      let freshest: HeaderSnapshot | null = null;
+      for (const candidate of headerSnapshotsByUrl.values()) {
+        if (!candidate.headers.cookie || hostOf(candidate.url) !== host) { continue; }
+        if (!freshest || candidate.capturedAt > freshest.capturedAt) { freshest = candidate; }
+      }
+      snapshot = freshest;
+    }
+
+    const headers: Record<string, string> = {};
+    if (snapshot?.headers.cookie) { headers.cookie = snapshot.headers.cookie; }
+    if (snapshot?.headers["user-agent"]) { headers["user-agent"] = snapshot.headers["user-agent"]; }
+    return headers;
   }
 
   async function dispatchMergeResources(resources: CapturedResource[]): Promise<DesktopRequestResult> {
