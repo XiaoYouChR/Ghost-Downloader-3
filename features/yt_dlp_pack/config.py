@@ -18,7 +18,7 @@ from app.services.core_service import coreService
 from app.supports.paths import APP_DATA_DIR
 from app.supports.utils import findExecutable, toPosixPath
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-from app.view.components.setting_cards import InstallFolderCard, LineEditSettingCard
+from app.view.components.setting_cards import InstallFolderCard
 
 if TYPE_CHECKING:
     from app.view.pages.setting_page import SettingPage
@@ -115,7 +115,6 @@ class YtDlpRuntimeCard(SettingCard):
 
 class YtDlpConfig(PackConfig):
     installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", FolderValidator())
-    videoFormat = ConfigItem("YtDlp", "VideoFormat", "bv*+ba/b")
 
     def setupSettings(self, settingPage: "SettingPage"):
         self.group = CollapsibleSettingCardGroup(self.tr("YouTube 下载"), "ytdlp", settingPage.container)
@@ -130,14 +129,6 @@ class YtDlpConfig(PackConfig):
         self.group.addSettingCards([
             self.installFolderCard,
             self.runtimeCard,
-            LineEditSettingCard(
-                FluentIcon.VIDEO,
-                self.tr("下载格式"),
-                self.tr("传给 yt-dlp 的 -f 选择表达式，默认最佳画质并自动合并"),
-                self.videoFormat,
-                self.group,
-                placeholder="bv*+ba/b",
-            ),
         ])
 
         self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())

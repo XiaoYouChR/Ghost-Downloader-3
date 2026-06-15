@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import ClassVar, TYPE_CHECKING
 
 from app.bases.interfaces import Worker
-from app.bases.models import Task, TaskStage, TaskStatus
+from app.bases.models import SpecialFileSize, Task, TaskStage, TaskStatus
 from app.supports.utils import toPosixPath
 from .config import downloaderPath
 
@@ -26,6 +26,8 @@ _PROGRESS_TEMPLATE = (
     "%(progress.total_bytes_estimate)s|%(progress.speed)s"
 )
 _FINAL_TEMPLATE = f"after_move:{_FINAL_SENTINEL}%(filepath)s"
+
+DEFAULT_VIDEO_FORMAT = "bv*+ba/b"
 
 
 def _toInt(value: str) -> int:
@@ -56,11 +58,52 @@ def _friendlyError(message: str) -> str:
     return message
 
 
+async def probeMediaInfo(url: str, proxies: dict, videoFormat: str, headers: dict | None = None) -> tuple[str, int]:
+    """探测真实标题与选定画质的预估总大小；受限/超时回落 ("", UNKNOWN)。"""
+    execPath = downloaderPath()
+    if not execPath:
+        return "", SpecialFileSize.UNKNOWN
+
+    args = [
+        url, "-f", videoFormat, "--no-playlist", "--skip-download", "--no-warnings",
+        "--print", "%(title)s", "--print", "%(filesize_approx)s",
+    ]
+    proxyUrl = next((v for v in proxies.values() if v), "")
+    if proxyUrl:
+        args.extend(["--proxy", proxyUrl])
+    for name, value in (headers or {}).items():
+        text = str(value).strip()
+        if text:
+            args.extend(["--add-header", f"{name}:{text}"])
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            execPath, *args,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await asyncio.wait_for(process.communicate(), timeout=20)
+    except asyncio.TimeoutError:
+        process.kill()
+        return "", SpecialFileSize.UNKNOWN
+    except OSError:
+        return "", SpecialFileSize.UNKNOWN
+
+    if process.returncode != 0:
+        return "", SpecialFileSize.UNKNOWN
+
+    lines = stdout.decode("utf-8", errors="ignore").strip().splitlines()
+    title = lines[0].strip() if lines else ""
+    size = _toInt(lines[1]) if len(lines) > 1 else SpecialFileSize.UNKNOWN
+    return title, size
+
+
 @dataclass(kw_only=True)
 class YtDlpTaskStage(TaskStage):
     workerType: type = field(init=False, repr=False)
 
-    videoFormat: str = "bv*+ba/b"
+    videoFormat: str = DEFAULT_VIDEO_FORMAT
     headers: dict[str, str] = field(default_factory=dict)
     proxies: dict[str, str] = field(default_factory=dict)
     lastMessage: str = ""
@@ -84,10 +127,8 @@ class YtDlpTask(Task):
         from qfluentwidgets import FluentIcon
 
         from app.view.components.add_task_dialog import SelectFolderCard
-        from .cards import YtDlpQualityEditCard
 
         return [
-            YtDlpQualityEditCard(FluentIcon.VIDEO, parent.tr("画质"), parent, initial=self.stage.videoFormat),
             SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
         ]
 
