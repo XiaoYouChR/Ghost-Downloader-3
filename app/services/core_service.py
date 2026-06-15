@@ -11,11 +11,13 @@ from loguru import logger
 from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
 from app.supports.config import cfg
+from app.supports.subprocess_hide import hideChildConsoles
 from app.supports.utils import openFile
 
 if sys.platform == 'win32':
     import winloop
     winloop.install()
+    hideChildConsoles()  # winloop 不透传 creationflags
 elif sys.platform != 'darwin':
     import uvloop
     uvloop.install()

@@ -8,7 +8,6 @@ from loguru import logger
 
 from app.bases.interfaces import Worker
 from app.bases.models import TaskStage, TaskStatus
-from app.supports.utils import create_subprocess_exec
 from .config import ffmpegPaths
 
 if TYPE_CHECKING:
@@ -41,7 +40,7 @@ def _parseDuration(value: str) -> float:
 
 
 async def _probeDuration(ffprobe: str, path: Path) -> float:
-    process = await create_subprocess_exec(
+    process = await asyncio.create_subprocess_exec(
         ffprobe,
         "-v", "error",
         "-show_entries", "format=duration",
@@ -119,7 +118,7 @@ class FFmpegWorker(Worker):
         progressTask = None
         try:
             totalDuration = await _probeDuration(ffprobe, self.stage.videoPath)
-            process = await create_subprocess_exec(
+            process = await asyncio.create_subprocess_exec(
                 ffmpeg,
                 "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
                 "-i", self.stage.videoPath,

@@ -18,8 +18,6 @@ from qfluentwidgets import (
     ToolButton,
 )
 
-from app.supports.utils import create_subprocess_exec
-
 from app.bases.models import PackConfig
 from app.services.core_service import coreService
 from app.supports.paths import APP_DATA_DIR
@@ -63,7 +61,7 @@ async def probeFFmpegRuntime() -> dict[str, str]:
     if not ffmpegPath or not ffprobePath:
         return runtimeInfo
 
-    process = await create_subprocess_exec(
+    process = await asyncio.create_subprocess_exec(
         ffmpegPath,
         "-version",
         stdin=asyncio.subprocess.DEVNULL,
