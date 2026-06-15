@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QFileInfo, Qt
+from PySide6.QtCore import QFileInfo, Qt
 from PySide6.QtWidgets import (
     QFileIconProvider,
     QHBoxLayout,
@@ -14,7 +14,6 @@ from qfluentwidgets import (
     IconWidget,
     LineEdit,
     PrimaryPushButton,
-    StrongBodyLabel,
     ToolButton,
 )
 
@@ -22,6 +21,7 @@ from app.bases.models import TaskStatus
 from app.supports.utils import toReadableSize, toReadableTime, openFile, openFolder
 from app.view.components.cards import ResultCard, UniversalTaskCard
 from app.view.components.dialogs import FileSelectDialog
+from app.view.components.labels import EditableLabel
 from .task import FtpTask
 
 
@@ -53,7 +53,7 @@ class FtpResultCard(ResultCard):
         self.mainLayout = QHBoxLayout(self)
         self.textLayout = QVBoxLayout()
         self.iconLabel = IconWidget(self)
-        self.titleLabel = StrongBodyLabel(self.task.title, self)
+        self.titleLabel = EditableLabel(self.task.title, self, onEdit=self._enterEditMode)
         self.titleEdit = LineEdit(self)
         self.sourceLabel = CaptionLabel(self._sourceText(), self)
         self.summaryLabel = BodyLabel("", self)
@@ -73,8 +73,6 @@ class FtpResultCard(ResultCard):
         )
         self.iconLabel.setIcon(icon)
         self.iconLabel.setFixedSize(20, 20)
-        self.titleLabel.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.titleLabel.installEventFilter(self)
         self.titleEdit.setText(self.task.title)
         self.titleEdit.editingFinished.connect(self._onEditingFinished)
         self.titleEdit.hide()
@@ -95,14 +93,6 @@ class FtpResultCard(ResultCard):
         self.mainLayout.addSpacing(12)
         self.mainLayout.addWidget(self.categoryButton)
         self.mainLayout.addWidget(self.selectFilesButton)
-
-    def eventFilter(self, obj, event: QEvent):
-        if obj is self.titleLabel:
-            if event.type() == QEvent.Type.MouseButtonDblClick:
-                if event.button() == Qt.MouseButton.LeftButton:
-                    self._enterEditMode()
-                    return True
-        return super().eventFilter(obj, event)
 
     def _enterEditMode(self):
         self.titleLabel.hide()
