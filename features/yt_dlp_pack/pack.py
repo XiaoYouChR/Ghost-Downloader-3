@@ -73,8 +73,6 @@ class YtDlpPack(FeaturePack):
     async def parse(self, payload: dict) -> Task:
         url = payload["url"].strip()
         proxies = payload.get("proxies", getProxies())
-        if not isinstance(proxies, dict):
-            proxies = {}
         path = Path(payload.get("path", cfg.downloadFolder.value))
         rawHeaders = payload.get("headers")
         headers = rawHeaders.copy() if isinstance(rawHeaders, dict) and rawHeaders else {}
@@ -83,14 +81,14 @@ class YtDlpPack(FeaturePack):
         # yt-dlp at download time (-o %(title)s + after_move filepath), so a blocked probe
         # just falls back to the placeholder and the task still enqueues.
         probedTitle = await _probeTitle(url, proxies)
-        title = toSafeFilename(probedTitle, fallback="youtube_video") if probedTitle else "YouTube 视频"
+        title = toSafeFilename(probedTitle) if probedTitle else "YouTube 视频"
 
         task = YtDlpTask(title=f"{title}.mp4", url=url, fileSize=1, path=path)
         task.addStage(YtDlpTaskStage(
             stageIndex=1,
             videoFormat=ytDlpConfig.videoFormat.value,
             headers=headers,
-            proxies=proxies,
+            proxies=proxies if isinstance(proxies, dict) else {},
         ))
         return task
 
