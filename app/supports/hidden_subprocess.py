@@ -4,14 +4,14 @@ import sys
 import threading
 
 
-def hideChildConsoles() -> None:
+def setupHiddenSubprocess() -> None:
     if sys.platform != "win32":
         return
-    asyncio.create_subprocess_exec = _spawnHiddenProcess
+    asyncio.create_subprocess_exec = createHiddenSubprocess
 
 
-async def _spawnHiddenProcess(program, *args, stdin=None, stdout=None, stderr=None,
-                              cwd=None, env=None) -> "_HiddenProcess":
+async def createHiddenSubprocess(program, *args, stdin=None, stdout=None, stderr=None,
+                                 cwd=None, env=None) -> "_HiddenProcess":
     startupInfo = subprocess.STARTUPINFO()
     startupInfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startupInfo.wShowWindow = subprocess.SW_HIDE

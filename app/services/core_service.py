@@ -11,7 +11,7 @@ from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
 from app.supports.android import IS_ANDROID
 from app.supports.config import cfg
-from app.supports.subprocess_hide import hideChildConsoles
+from app.supports.hidden_subprocess import setupHiddenSubprocess
 from app.supports.utils import openFile
 
 if not IS_ANDROID:
@@ -20,7 +20,7 @@ if not IS_ANDROID:
 if sys.platform == 'win32':
     import winloop
     winloop.install()
-    hideChildConsoles()  # winloop 不透传 creationflags
+    setupHiddenSubprocess()  # winloop 不透传 creationflags
 elif sys.platform != 'darwin' and not IS_ANDROID:
     import uvloop
     uvloop.install()
