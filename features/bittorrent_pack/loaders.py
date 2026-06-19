@@ -74,7 +74,7 @@ async def _loadFromMagnet(
     webTrackers: list[str],
 ) -> tuple[bytes, lt.torrent_info, list[str]]:
     url = str(payload["url"]).strip()
-    return await btSessionService.fetchMetadata(url, webTrackers)
+    return await btSessionService.resolveMetadata(url, webTrackers)
 
 
 def _buildTask(

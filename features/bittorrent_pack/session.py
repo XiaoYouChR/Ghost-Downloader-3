@@ -46,7 +46,7 @@ class _ActiveTorrent:
     _seedBase: int = field(init=False)
     _seedStart: int | None = field(default=None, init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._seedBase = self.task.seedingTimeSeconds
 
     def seedingElapsed(self, isSeeding: bool, sessionSeconds: int) -> int:
@@ -61,11 +61,14 @@ class _ActiveTorrent:
 
 
 class BTSessionService:
-    def __init__(self):
+    def __init__(self) -> None:
         self._session: lt.session | None = None
-        self._pump: asyncio.Task | None = None
+        self._poller: asyncio.Task | None = None
         self._active: dict[str, _ActiveTorrent] = {}
         self._pendingMetadata: list[tuple[lt.torrent_handle, asyncio.Future]] = []
+        self._bind()
+
+    def _bind(self) -> None:
         for item in (
             bittorrentConfig.downloadRateLimit,
             bittorrentConfig.uploadRateLimit,
@@ -75,7 +78,7 @@ class BTSessionService:
         ):
             item.valueChanged.connect(self._onLimitsChanged)
 
-    async def lease(self, task: BTTask):
+    async def lease(self, task: BTTask) -> None:
         if task.countSelected <= 0:
             raise RuntimeError("至少需要选择一个文件")
 
@@ -94,7 +97,7 @@ class BTSessionService:
         finally:
             await asyncio.shield(self._removeTorrent(active))
 
-    async def fetchMetadata(
+    async def resolveMetadata(
         self, magnetUri: str, webTrackers: list[str]
     ) -> tuple[bytes, lt.torrent_info, list[str]]:
         self._open()
@@ -113,8 +116,8 @@ class BTSessionService:
         waiter = asyncio.get_running_loop().create_future()
         self._pendingMetadata.append((handle, waiter))
         try:
-            ti = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
-            torrentBytes = lt.bencode(lt.create_torrent(ti).generate())
+            torrentInfo = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
+            torrentBytes = lt.bencode(lt.create_torrent(torrentInfo).generate())
         except asyncio.TimeoutError:
             raise TimeoutError("等待 magnet 元数据超时")
         finally:
@@ -124,9 +127,9 @@ class BTSessionService:
             except Exception:
                 pass
 
-        return torrentBytes, ti, params.trackers.copy()
+        return torrentBytes, torrentInfo, params.trackers.copy()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         if self._session is None:
             return
         try:
@@ -134,7 +137,7 @@ class BTSessionService:
         except Exception as e:
             logger.opt(exception=e).warning("BitTorrent session 关闭异常")
 
-    async def _shutdown(self):
+    async def _shutdown(self) -> None:
         actives = list(self._active.values())
         if actives:
             await asyncio.gather(
@@ -142,13 +145,13 @@ class BTSessionService:
                 return_exceptions=True,
             )
 
-        if self._pump is not None:
-            self._pump.cancel()
+        if self._poller is not None:
+            self._poller.cancel()
             try:
-                await self._pump
+                await self._poller
             except asyncio.CancelledError:
                 pass
-            self._pump = None
+            self._poller = None
 
         session, self._session = self._session, None
         if session is not None:
@@ -159,11 +162,11 @@ class BTSessionService:
                     pass
         self._active.clear()
 
-    def _open(self):
+    def _open(self) -> None:
         if self._session is None:
             self._session = lt.session(self._sessionSettings())
-        if self._pump is None or self._pump.done():
-            self._pump = asyncio.get_running_loop().create_task(self._pumpLoop())
+        if self._poller is None or self._poller.done():
+            self._poller = asyncio.get_running_loop().create_task(self._pollLoop())
 
     def _sessionSettings(self) -> dict:
         settings = {
@@ -205,7 +208,7 @@ class BTSessionService:
             "force_proxy": False,
         }
 
-    def _onLimitsChanged(self, _=None):
+    def _onLimitsChanged(self, _=None) -> None:
         if self._session is None:
             return
         self._session.apply_settings({
@@ -258,28 +261,24 @@ class BTSessionService:
         return handle
 
     def _addToSession(self, params: lt.add_torrent_params) -> lt.torrent_handle:
-        if self._session.find_torrent(self._infoHash(params)).is_valid():
+        infoHash = params.ti.info_hashes().v1 if params.ti is not None else params.info_hashes.v1
+        if self._session.find_torrent(infoHash).is_valid():
             raise RuntimeError("该种子已在下载中")
         return self._session.add_torrent(params)
 
-    def _infoHash(self, params: lt.add_torrent_params) -> lt.sha1_hash:
-        if params.ti is not None:
-            return params.ti.info_hashes().v1
-        return params.info_hashes.v1
-
-    def _announce(self, handle: lt.torrent_handle):
+    def _announce(self, handle: lt.torrent_handle) -> None:
         handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
         if bittorrentConfig.enableDHT.value:
             handle.force_dht_announce()
 
-    def _prepareTarget(self, task: BTTask):
+    def _prepareTarget(self, task: BTTask) -> None:
         target = Path(task.outputFolder)
         if target.exists():
             return
         target.parent.mkdir(parents=True, exist_ok=True)
         target.touch() if task.isSingleFile else target.mkdir()
 
-    def _saveMagnetFile(self, task: BTTask):
+    def _saveMagnetFile(self, task: BTTask) -> None:
         if task.sourceType != "magnet" or not bittorrentConfig.saveMagnetTorrentFile.value:
             return
         try:
@@ -287,7 +286,7 @@ class BTSessionService:
         except Exception as e:
             logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", task.title)
 
-    async def _removeTorrent(self, active: _ActiveTorrent):
+    async def _removeTorrent(self, active: _ActiveTorrent) -> None:
         await self._saveResume(active)
         self._active.pop(active.task.taskId, None)
         if self._session is not None:
@@ -296,7 +295,7 @@ class BTSessionService:
             except Exception:
                 pass
 
-    async def _saveResume(self, active: _ActiveTorrent):
+    async def _saveResume(self, active: _ActiveTorrent) -> None:
         if self._session is None:
             active.task.resumeData = ""
             return
@@ -319,25 +318,25 @@ class BTSessionService:
         finally:
             active.resumeWaiter = None
 
-    def _completeResume(self, handle: lt.torrent_handle, resumeData: str):
+    def _onResumeData(self, handle: lt.torrent_handle, resumeData: str) -> None:
         active = self._activeOf(handle)
         if active is None or active.resumeWaiter is None or active.resumeWaiter.done():
             return
         active.task.resumeData = resumeData
         active.resumeWaiter.set_result(bool(resumeData))
 
-    async def _pumpLoop(self):
+    async def _pollLoop(self) -> None:
         while self._session is not None:
             try:
                 for alert in self._session.pop_alerts():
                     self._handleAlert(alert)
                 for active in list(self._active.values()):
-                    self._applyStatus(active)
+                    self._updateTask(active)
             except Exception as e:
-                logger.opt(exception=e).error("BitTorrent 泵循环异常")
+                logger.opt(exception=e).error("BitTorrent 轮询循环异常")
             await asyncio.sleep(1)
 
-    def _applyStatus(self, active: _ActiveTorrent):
+    def _updateTask(self, active: _ActiveTorrent) -> None:
         task = active.task
         status = active.handle.status()
         wasSeeding = task.isSeeding
@@ -357,6 +356,20 @@ class BTSessionService:
             task.isSeeding, int(status.seeding_duration.total_seconds())
         )
 
+        self._updateStage(task, status)
+        task.updateProgress(active.handle.file_progress())
+
+        if active.appliedSelectionVersion != task.fileSelectionVersion:
+            active.handle.prioritize_files(task.priorities())
+            active.appliedSelectionVersion = task.fileSelectionVersion
+
+        if wasSeeding != task.isSeeding:
+            coreService.rebalance()
+
+        if self._seedingLimitReached(task) and not active.done.done():
+            active.done.set_result(None)
+
+    def _updateStage(self, task: BTTask, status: lt.torrent_status) -> None:
         task.stage.speed = status.download_rate
         task.stage.receivedBytes = status.total_wanted_done
         if status.total_wanted > 0:
@@ -367,19 +380,7 @@ class BTSessionService:
         else:
             task.stage.progress = 0
 
-        task.updateProgress(active.handle.file_progress())
-
-        if active.appliedSelectionVersion != task.fileSelectionVersion:
-            active.handle.prioritize_files(task.priorities())
-            active.appliedSelectionVersion = task.fileSelectionVersion
-
-        if wasSeeding != task.isSeeding:
-            coreService.rebalance()
-
-        if self._shouldStopSeeding(task) and not active.done.done():
-            active.done.set_result(None)
-
-    def _shouldStopSeeding(self, task: BTTask) -> bool:
+    def _seedingLimitReached(self, task: BTTask) -> bool:
         if not task.isSeeding:
             return False
 
@@ -401,18 +402,18 @@ class BTSessionService:
 
         return False
 
-    def _handleAlert(self, alert: lt.alert):
+    def _handleAlert(self, alert: lt.alert) -> None:
         if isinstance(alert, lt.metadata_received_alert):
-            self._resolveMetadata(alert)
+            self._onMetadata(alert)
             return
 
         if isinstance(alert, lt.save_resume_data_alert):
-            self._completeResume(alert.handle, b64encode(lt.write_resume_data_buf(alert.params)).decode())
+            self._onResumeData(alert.handle, b64encode(lt.write_resume_data_buf(alert.params)).decode())
             return
 
         if isinstance(alert, lt.save_resume_data_failed_alert):
             logger.warning("保存 BitTorrent resume 数据失败: {}", alert.message())
-            self._completeResume(alert.handle, "")
+            self._onResumeData(alert.handle, "")
             return
 
         if isinstance(alert, lt.file_completed_alert):
@@ -435,17 +436,17 @@ class BTSessionService:
         if isinstance(alert, _ERROR_ALERTS):
             self._failTorrent(alert)
 
-    def _resolveMetadata(self, alert: lt.metadata_received_alert):
+    def _onMetadata(self, alert: lt.metadata_received_alert) -> None:
         for handle, waiter in self._pendingMetadata:
             if handle == alert.handle and not waiter.done():
-                ti = handle.torrent_file()
-                if ti is not None and ti.is_valid():
-                    waiter.set_result(ti)
+                torrentInfo = handle.torrent_file()
+                if torrentInfo is not None and torrentInfo.is_valid():
+                    waiter.set_result(torrentInfo)
                 else:
                     waiter.set_exception(RuntimeError("magnet 元数据无效"))
                 return
 
-    def _failTorrent(self, alert: lt.alert):
+    def _failTorrent(self, alert: lt.alert) -> None:
         active = self._activeOf(alert.handle)
         if active is not None:
             if not active.done.done():
