@@ -53,5 +53,8 @@ class FeaturePack:
     def setup(self, mainWindow: "MainWindow"):
         pass
 
+    def shutdown(self):
+        pass
+
     def tr(self, text: str) -> str:
         return QCoreApplication.translate(self.__class__.__name__, text)

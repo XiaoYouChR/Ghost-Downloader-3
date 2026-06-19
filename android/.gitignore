@@ -1,13 +1,10 @@
-# 构建产物
 dist/
 deployment/
 *.apk
 .buildozer/
 
-# deploy 工具每次运行时生成（build_apk.sh 会先删除再重生）
 pysidedeploy.spec
 buildozer.spec
 
-# python 缓存
 __pycache__/
 *.pyc

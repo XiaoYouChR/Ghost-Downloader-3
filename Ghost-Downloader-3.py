@@ -80,6 +80,7 @@ mainWindow.updateThemeColor()
 if not isSilently:
     mainWindow.splashScreen.finish()
 
+application.aboutToQuit.connect(featureService.shutdown)
 application.aboutToQuit.connect(coreService.stop)
 application.aboutToQuit.connect(taskService.flushNow)
 

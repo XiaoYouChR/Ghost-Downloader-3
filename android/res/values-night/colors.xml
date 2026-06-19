@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 深色模式覆盖 values/ 的浅色, 让闪屏/windowBackground 跟随主题 -->
+
     <color name="gd3_splash_bg">#202020</color>
-    <!-- 深色底关掉 windowLightStatusBar, 状态栏图标转浅色保持可读 -->
+
     <bool name="gd3_light_status_bar">false</bool>
 </resources>

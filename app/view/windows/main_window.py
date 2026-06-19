@@ -13,7 +13,6 @@ from qfluentwidgets import MSFluentWindow, SplashScreen, FluentIcon, NavigationI
     PushButton, PrimaryPushButton, setTheme, isDarkTheme, setThemeColor
 
 from app.services.browser_service import BrowserService
-from app.services.category_service import categoryService
 from app.services.core_service import coreService
 from app.services.feature_service import featureService
 from app.supports.config import cfg, defaultHeaders, AUTHOR_URL, VERSION, FEEDBACK_URL, isWin10, \
@@ -22,7 +21,7 @@ from app.services.task_service import taskService
 from app.supports.signal_bus import signalBus
 from app.supports.update import checkUpdate, UpdateState
 from app.supports.file_open import fileUrisFromArgv
-from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, deduplicateFilename, openAppLogFolder
+from app.supports.utils import getProxies, bringWindowToTop, showMessageBox, openAppLogFolder
 from app.view.components.add_task_dialog import AddTaskDialog
 from app.view.components.labels import IconBodyLabel
 from app.view.components.release_info_dialog import ReleaseInfoDialog
@@ -336,20 +335,7 @@ class MainWindow(MSFluentWindow):
 
     def addTask(self, task) -> bool:
         try:
-            if (
-                cfg.enableCategory.value
-                and task.category
-                and task.path == Path(cfg.downloadFolder.value)
-            ):
-                folder = categoryService.folderOf(task.category)
-                if folder:
-                    task.applySettings({"path": Path(folder)})
-
-            originalTitle = task.title
-            if deduplicateFilename(task):
-                logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
-
-            taskService.add(task)
+            taskService.addTask(task)
             coreService.createTask(task)
             return True
         except Exception as e:

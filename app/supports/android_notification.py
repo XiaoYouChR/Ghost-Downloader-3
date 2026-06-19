@@ -1,7 +1,4 @@
-"""Android 本地通知 —— NotificationManager 投递, 完成 toast 与常驻通知共用 postNotification。须主线程调。"""
-
 _CHANNEL = "gd3_downloads"
-
 
 def _reopenAppIntent(activity):
     from jnius import autoclass
@@ -16,11 +13,10 @@ def _reopenAppIntent(activity):
     intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
     flags = PendingIntent.FLAG_UPDATE_CURRENT
     if autoclass("android.os.Build$VERSION").SDK_INT >= 23:
-        flags |= PendingIntent.FLAG_IMMUTABLE  # 31+ 必须显式可变性
+        flags |= PendingIntent.FLAG_IMMUTABLE
     return PendingIntent.getActivity(activity, 0, intent, flags)
 
-
-def postNotification(channelId: str, channelName: str, notifId: int, title: str, text: str,
+def postNotification(channelId: str, channelName: str, notificationId: int, title: str, text: str,
                      *, ongoing: bool, lowImportance: bool) -> None:
     from jnius import autoclass, cast
 
@@ -36,25 +32,23 @@ def postNotification(channelId: str, channelName: str, notifId: int, title: str,
         builder = autoclass("android.app.Notification$Builder")(activity, channelId)
     else:
         builder = autoclass("android.app.Notification$Builder")(activity)
-    builder.setSmallIcon(activity.getApplicationInfo().icon)  # 必填, 缺则不弹
+    builder.setSmallIcon(activity.getApplicationInfo().icon)
     builder.setContentTitle(title)
     builder.setContentText(text)
     builder.setOngoing(ongoing)
     builder.setAutoCancel(not ongoing)
-    builder.setOnlyAlertOnce(True)  # 每秒刷, 只首次提醒
+    builder.setOnlyAlertOnce(True)
     builder.setContentIntent(_reopenAppIntent(activity))
-    manager.notify(notifId, builder.build())  # 同 notifId 再投即更新
+    manager.notify(notificationId, builder.build())
 
-
-def notifyDownloadComplete(notifyKey: str, title: str, text: str) -> None:
-    postNotification(_CHANNEL, "下载", hash(notifyKey) & 0x7FFFFFFF, title, text,
+def notifyDownloadComplete(taskId: str, title: str, message: str) -> None:
+    postNotification(_CHANNEL, "下载", hash(taskId) & 0x7FFFFFFF, title, message,
                      ongoing=False, lowImportance=False)
-
 
 def requestNotificationPermission() -> None:
     from jnius import autoclass
 
-    if autoclass("android.os.Build$VERSION").SDK_INT < 33:  # POST_NOTIFICATIONS 仅 13+ 需运行时授权
+    if autoclass("android.os.Build$VERSION").SDK_INT < 33:
         return
     PackageManager = autoclass("android.content.pm.PackageManager")
     activity = autoclass("org.kivy.android.PythonActivity").mActivity

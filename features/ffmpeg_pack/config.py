@@ -44,12 +44,11 @@ def _linuxInstallCommand() -> str:
 
 
 def ffmpegPaths() -> tuple[str, str]:
-    # Android: ffmpeg/ffprobe 预编进 jniLibs, 释放到只读可执行的 nativeLibraryDir, 不走桌面的安装流。
     if IS_ANDROID:
-        nld = nativeLibraryDir()
-        if not nld:
+        nativeDir = nativeLibraryDir()
+        if not nativeDir:
             return ("", "")
-        ffmpeg, ffprobe = Path(nld) / "libffmpeg.so", Path(nld) / "libffprobe.so"
+        ffmpeg, ffprobe = Path(nativeDir) / "libffmpeg.so", Path(nativeDir) / "libffprobe.so"
         return (
             str(ffmpeg) if ffmpeg.exists() else "",
             str(ffprobe) if ffprobe.exists() else "",
@@ -105,7 +104,6 @@ class FFmpegRuntimeCard(SettingCard):
 
     def _initWidget(self):
         if IS_ANDROID:
-            # ffmpeg/ffprobe 已随 APK 预置在 nativeLibraryDir，无需安装
             self.installButton.hide()
             self._installAction = lambda: None
         elif sys.platform == "win32":

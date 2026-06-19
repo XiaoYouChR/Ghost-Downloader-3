@@ -11,21 +11,21 @@ from app.bases.models import Task, TaskStatus
 from app.services.feature_service import featureService
 from app.supports.android import IS_ANDROID
 from app.supports.config import cfg
+from app.supports.hidden_subprocess import setupHiddenSubprocess
 from app.supports.utils import openFile
 
-# desktop-notifier 在 Android 无后端(靠 D-Bus)且无 wheel, 不打包; 完成通知留 v2 走 NotificationManager。
 if not IS_ANDROID:
     from desktop_notifier import DesktopNotifier, Icon, Button
 
 if sys.platform == 'win32':
     import winloop
     winloop.install()
+    setupHiddenSubprocess()  # winloop 不透传 creationflags
 elif sys.platform != 'darwin' and not IS_ANDROID:
-    # Android 用 asyncio 默认事件循环(uvloop 无 Android 构建); 桌面 Linux 仍走 uvloop。
     import uvloop
     uvloop.install()
 
-def getNotifierIcon() -> Path:
+def notifierIconPath() -> Path:
     _ = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation) + "/gd3_logo.png")
     if not _.exists():
         with open(_, "wb") as f:
@@ -46,7 +46,7 @@ class CoreService(QThread):
         cfg.maxTaskNum.valueChanged.connect(lambda _: self._rebalanceSoon())
 
     def sendNotification(self, task: Task):
-        if IS_ANDROID:  # v1 无桌面通知后端, 静默
+        if IS_ANDROID:
             return
         outputFolder = task.outputFolder
         if not outputFolder:
@@ -87,6 +87,12 @@ class CoreService(QThread):
             return callbackId
 
         return ""
+
+    def runBlocking(self, coroutine: Coroutine, timeout: float | None = None):
+        if not self.loop.is_running():
+            coroutine.close()
+            return None
+        return asyncio.run_coroutine_threadsafe(coroutine, self.loop).result(timeout)
 
     async def _runCoroutine(self, coroutine: Coroutine, callbackId):
         try:
@@ -277,7 +283,7 @@ class CoreService(QThread):
     def run(self):
         """启动线程和事件循环"""
         if not IS_ANDROID:
-            self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=getNotifierIcon()))  # OSError: [WinError -2147417842] 应用程序调用一个已为另一线程整理的接口。
+            self.desktopNotifier = DesktopNotifier(app_name="Ghost Downloader", app_icon=Icon(path=notifierIconPath()))
         try:
             self.loop.run_until_complete(self.mainLoop)
         except Exception as e:

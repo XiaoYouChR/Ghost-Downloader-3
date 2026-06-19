@@ -219,7 +219,6 @@ class Config(QConfig):
     downloadFolder = ConfigItem(
         "GeneralDownload",
         "DownloadFolder",
-        # Android 落公共 Downloads(文件管理器可见); 桌面默认目录在 Android 是用户不可见的作用域目录
         "/storage/emulated/0/Download"
         if IS_ANDROID
         else QStandardPaths.writableLocation(

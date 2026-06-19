@@ -1,5 +1,3 @@
-"""移动端任务卡 —— 窄屏呈现抽成 mixin 叠在桌面特性卡上(卡类由 featureService 分发, 动态合成保留各类特性)。"""
-
 from PySide6.QtCore import Qt, QTimer
 from qfluentwidgets import Action, CardWidget, FluentIcon, TransparentToolButton
 
@@ -8,13 +6,10 @@ from app.supports.android import openFile, openFolder
 
 LONG_PRESS_MS = 450
 
-
-class MobileCardMixin:
-    """窄屏呈现 mixin: 只留 暂停/继续 + ⋮(overflow), 其余动作收进 ⋮ 菜单; tap=打开文件、长按=进多选。"""
-
+class MobileTaskCardBase:
     def initLayout(self):
         self.overflowButton = TransparentToolButton(FluentIcon.MORE, self)
-        # 改走 ⋮ 菜单, 不入布局; 不 hide 会因仍是子控件而停在 (0,0) 露出
+
         for widget in (self.verifyHashButton, self.openFileButton, self.openFolderButton, self.cancelButton):
             widget.hide()
 
@@ -36,11 +31,11 @@ class MobileCardMixin:
 
     def refreshToggleButton(self):
         super().refreshToggleButton()
-        self.verifyHashButton.hide()  # 完成态基类会 setVisible 它; 校验入口已移到 ⋮ 菜单
+        self.verifyHashButton.hide()
 
     def _renderTaskState(self):
         super()._renderTaskState()
-        self.leftTimeLabel.hide()  # 窄屏挤掉进度文本; 基类会在暂停→运行时重新 show, 故兜底
+        self.leftTimeLabel.hide()
 
     def connectSignalToSlot(self):
         super().connectSignalToSlot()
@@ -52,10 +47,10 @@ class MobileCardMixin:
         self._longPressTimer.timeout.connect(self._onLongPress)
 
     def _appendOverflowActions(self, menu):
-        """子类钩子: 在 ⋮ 菜单的「打开文件」前追加特性专属动作(默认无)。"""
+        pass
 
     def _showOverflowMenu(self):
-        menu = self.createContextMenu()  # 复制链接/编辑/重下/移动分类
+        menu = self.createContextMenu()
         menu.addSeparator()
         self._appendOverflowActions(menu)
 
@@ -86,7 +81,6 @@ class MobileCardMixin:
             self._longPressTimer.start()
 
     def mouseReleaseEvent(self, e):
-        # 跳过 TaskCard.mouseReleaseEvent 的「单击即选中」桌面语义，保留 CardWidget 的按压动画
         CardWidget.mouseReleaseEvent(self, e)
         self._longPressTimer.stop()
         if e.button() != Qt.MouseButton.LeftButton or self._longPressed:
@@ -97,7 +91,7 @@ class MobileCardMixin:
             openFile(self.task.outputFolder)
 
     def mouseDoubleClickEvent(self, e):
-        pass  # 移动端无双击；屏蔽桌面的双击打开文件夹
+        pass
 
     def _onLongPress(self):
         self._longPressed = True
@@ -106,17 +100,14 @@ class MobileCardMixin:
         else:
             self.selectionChanged.emit(True, False)
 
-
-class MobileFtpMixin:
-    """FTP 卡的移动端特化: 把桌面的「选择文件」按钮收进 ⋮ 菜单(窄屏布局里它落在边缘)。"""
-
+class MobileFtpTaskCardBase:
     def __init__(self, task, parent=None):
         super().__init__(task, parent)
         self.selectFilesButton.hide()
 
     def refresh(self):
         super().refresh()
-        # FtpTaskCard.refresh 会按 countAll 重新 show 这俩, 兜底隐藏(已移入 ⋮ 菜单)
+
         self.selectFilesButton.hide()
         self.verifyHashButton.hide()
 

@@ -1,5 +1,3 @@
-"""移动端底部导航 —— 自建 icon-over-text 标签栏: QFluentWidgets 的 NavigationBarPushButton 为左侧竖栏设计, 平铺成全宽底栏不居中。"""
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
@@ -8,10 +6,7 @@ from qfluentwidgets import CaptionLabel, FluentIcon, IconWidget, isDarkTheme, qc
 NAV_BAR_HEIGHT = 58
 NAV_ICON_SIZE = 24
 
-
 class NavigationButton(QWidget):
-    """底部导航单项: 图标在上、文字在下, 选中态染主题色。"""
-
     clicked = Signal()
 
     def __init__(self, icon: FluentIcon, text: str, parent: QWidget | None = None):
@@ -56,10 +51,7 @@ class NavigationButton(QWidget):
         if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.position().toPoint()):
             self.clicked.emit()
 
-
 class BottomNavigationBar(QWidget):
-    """底部标签栏: 平铺若干 NavigationButton, 互斥选中, 切换时发 currentChanged(index)。"""
-
     currentChanged = Signal(int)
 
     def __init__(self, parent: QWidget | None = None):
