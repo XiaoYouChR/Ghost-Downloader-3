@@ -54,7 +54,6 @@ class FeaturePack:
         pass
 
     def shutdown(self):
-        """app 退出时释放本 pack 的长生命周期资源。Core 保证在事件循环停止前调用。"""
         pass
 
     def tr(self, text: str) -> str:

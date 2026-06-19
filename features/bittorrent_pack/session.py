@@ -1,13 +1,3 @@
-"""全 app 唯一的 libtorrent session。
-
-主流 BT 客户端(qBittorrent/Deluge)都是一个进程一个 session，所有 torrent 加进同一个
-session，由它统一持有监听端口 / DHT / 限速器 / 连接池，并用一条 alert 泵驱动全部 torrent。
-本模块就是这个角色:Pack 拥有 session 这台机器,Core 只负责调度(占不占 slot)。
-
-每个 BTTask 通过 `lease()` 把自己的 torrent 登记进来、挂起等终态;泵循环直接把
-`torrent_status` 写回各 task 字段,并在做种到限额时 resolve 对应 Future 让 worker 收尾。
-"""
-
 import asyncio
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
@@ -27,7 +17,6 @@ from .trackers import mergeTrackers
 
 USER_AGENT = f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}"
 
-# torrent_status.state.name → 展示文案
 _STATE_TEXT = {
     "checking_files": "校验已有文件",
     "checking_resume_data": "检查续传状态",
@@ -49,8 +38,6 @@ _ERROR_ALERTS = (
 
 @dataclass(eq=False)
 class _ActiveTorrent:
-    """session 视角下的一条在跑 torrent:把 task、handle 与做种计时记在一处。"""
-
     task: BTTask
     handle: lt.torrent_handle
     done: asyncio.Future
@@ -79,7 +66,6 @@ class BTSessionService:
         self._pump: asyncio.Task | None = None
         self._active: dict[str, _ActiveTorrent] = {}
         self._pendingMetadata: list[tuple[lt.torrent_handle, asyncio.Future]] = []
-        # BT 自有限速 + app 全局限速, 任一变化都重算会话级下载限速
         for item in (
             bittorrentConfig.downloadRateLimit,
             bittorrentConfig.uploadRateLimit,
@@ -89,7 +75,6 @@ class BTSessionService:
         ):
             item.valueChanged.connect(self._onLimitsChanged)
 
-    # ── 对 worker:登记一条 torrent,挂起到终态 ──────────────────────────────
     async def lease(self, task: BTTask):
         if task.countSelected <= 0:
             raise RuntimeError("至少需要选择一个文件")
@@ -100,9 +85,7 @@ class BTSessionService:
 
         handle = self._addTorrent(task)
         handle.resume()
-        handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
-        if bittorrentConfig.enableDHT.value:
-            handle.force_dht_announce()
+        self._announce(handle)
 
         active = _ActiveTorrent(task, handle, asyncio.get_running_loop().create_future())
         self._active[task.taskId] = active
@@ -111,7 +94,6 @@ class BTSessionService:
         finally:
             await asyncio.shield(self._removeTorrent(active))
 
-    # ── 对 loaders:磁力取元数据,复用共享 session 的热 DHT ─────────────────
     async def fetchMetadata(
         self, magnetUri: str, webTrackers: list[str]
     ) -> tuple[bytes, lt.torrent_info, list[str]]:
@@ -126,9 +108,7 @@ class BTSessionService:
         params.flags |= lt.torrent_flags.default_dont_download | lt.torrent_flags.update_subscribe
 
         handle = self._addToSession(params)
-        handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
-        if bittorrentConfig.enableDHT.value:
-            handle.force_dht_announce()
+        self._announce(handle)
 
         waiter = asyncio.get_running_loop().create_future()
         self._pendingMetadata.append((handle, waiter))
@@ -146,7 +126,6 @@ class BTSessionService:
 
         return torrentBytes, ti, params.trackers.copy()
 
-    # ── 对 Core:app 退出前优雅关闭(必须在事件循环停止前完成)─────────────
     def shutdown(self):
         if self._session is None:
             return
@@ -180,7 +159,6 @@ class BTSessionService:
                     pass
         self._active.clear()
 
-    # ── session / 泵 的拉起 ────────────────────────────────────────────────
     def _open(self):
         if self._session is None:
             self._session = lt.session(self._sessionSettings())
@@ -212,7 +190,6 @@ class BTSessionService:
         if not proxyUrl:
             return {}
         parsed = urlsplit(proxyUrl)
-        # 只接受 SOCKS5: HTTP/HTTPS/SOCKS4 不支持 UDP, 配上反而会拖垮 DHT 与 UDP tracker
         if parsed.scheme.lower() != "socks5" or not parsed.hostname or not parsed.port:
             return {}
         hasCredentials = bool(parsed.username or parsed.password)
@@ -238,13 +215,14 @@ class BTSessionService:
         })
 
     def _downloadLimit(self) -> int:
-        # 有效下载限速(B/s, 0=不限): BT 自有限速与 app 全局限速取更严的一个
-        limit = bittorrentConfig.downloadRateLimit.value
-        if cfg.enableSpeedLimitation.value:
-            limit = min(limit, cfg.speedLimitation.value) if limit > 0 else cfg.speedLimitation.value
-        return limit
+        btLimit = bittorrentConfig.downloadRateLimit.value
+        if not cfg.enableSpeedLimitation.value:
+            return btLimit
+        globalLimit = cfg.speedLimitation.value
+        if btLimit <= 0:
+            return globalLimit
+        return min(btLimit, globalLimit)
 
-    # ── 把一条 torrent 加进 session ───────────────────────────────────────
     def _addTorrent(self, task: BTTask) -> lt.torrent_handle:
         params = None
         if task.resumeData:
@@ -280,17 +258,19 @@ class BTSessionService:
         return handle
 
     def _addToSession(self, params: lt.add_torrent_params) -> lt.torrent_handle:
-        # 共享 session 里一个 info_hash 只能有一个种子: add_torrent 对重复会返回既有
-        # handle, 之后误删它会连累正在下载的任务, 故在唯一的 add 入口前拦截
         if self._session.find_torrent(self._infoHash(params)).is_valid():
             raise RuntimeError("该种子已在下载中")
         return self._session.add_torrent(params)
 
     def _infoHash(self, params: lt.add_torrent_params) -> lt.sha1_hash:
-        # ti 构造的 params 不填 info_hashes(实测), 只能从 ti 取; 磁力/resume 在 info_hashes
         if params.ti is not None:
             return params.ti.info_hashes().v1
         return params.info_hashes.v1
+
+    def _announce(self, handle: lt.torrent_handle):
+        handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
+        if bittorrentConfig.enableDHT.value:
+            handle.force_dht_announce()
 
     def _prepareTarget(self, task: BTTask):
         target = Path(task.outputFolder)
@@ -302,17 +282,12 @@ class BTSessionService:
     def _saveMagnetFile(self, task: BTTask):
         if task.sourceType != "magnet" or not bittorrentConfig.saveMagnetTorrentFile.value:
             return
-        torrentPath = task.magnetTorrentPath
-        if torrentPath is None:
-            return
         try:
-            torrentPath.write_bytes(b64decode(task.torrentData))
+            task.magnetTorrentPath.write_bytes(b64decode(task.torrentData))
         except Exception as e:
             logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", task.title)
 
-    # ── 摘除 / 存 resume ──────────────────────────────────────────────────
     async def _removeTorrent(self, active: _ActiveTorrent):
-        # 先存 resume(此刻仍在 _active 中, 泵才能把 alert 回填)再摘除
         await self._saveResume(active)
         self._active.pop(active.task.taskId, None)
         if self._session is not None:
@@ -344,9 +319,14 @@ class BTSessionService:
         finally:
             active.resumeWaiter = None
 
-    # ── 泵:一条循环驱动所有 torrent ──────────────────────────────────────
+    def _completeResume(self, handle: lt.torrent_handle, resumeData: str):
+        active = self._activeOf(handle)
+        if active is None or active.resumeWaiter is None or active.resumeWaiter.done():
+            return
+        active.task.resumeData = resumeData
+        active.resumeWaiter.set_result(bool(resumeData))
+
     async def _pumpLoop(self):
-        # 一条循环驱动全部 torrent: 单个 torrent 的瞬时错误不该掀翻整条泵
         while self._session is not None:
             try:
                 for alert in self._session.pop_alerts():
@@ -368,7 +348,7 @@ class BTSessionService:
         task.isSeeding = status.is_seeding
         task.downloadRate = status.download_rate
         task.uploadRate = status.upload_rate
-        cfg.globalSpeed += status.download_rate  # BT 流量计入 app 总速度: 显示含 BT, 且 HTTP 据合计退让
+        cfg.globalSpeed += status.download_rate
         task._updateSlot()
 
         downloaded = status.all_time_download or status.total_wanted_done or status.total_done
@@ -427,18 +407,12 @@ class BTSessionService:
             return
 
         if isinstance(alert, lt.save_resume_data_alert):
-            active = self._activeOf(alert.handle)
-            if active is not None and active.resumeWaiter is not None and not active.resumeWaiter.done():
-                active.task.resumeData = b64encode(lt.write_resume_data_buf(alert.params)).decode()
-                active.resumeWaiter.set_result(True)
+            self._completeResume(alert.handle, b64encode(lt.write_resume_data_buf(alert.params)).decode())
             return
 
         if isinstance(alert, lt.save_resume_data_failed_alert):
-            active = self._activeOf(alert.handle)
-            if active is not None and active.resumeWaiter is not None and not active.resumeWaiter.done():
-                logger.warning("保存 BitTorrent resume 数据失败 {}: {}", active.task.title, alert.message())
-                active.task.resumeData = ""
-                active.resumeWaiter.set_result(False)
+            logger.warning("保存 BitTorrent resume 数据失败: {}", alert.message())
+            self._completeResume(alert.handle, "")
             return
 
         if isinstance(alert, lt.file_completed_alert):
