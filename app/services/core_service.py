@@ -89,7 +89,6 @@ class CoreService(QThread):
         return ""
 
     def runBlocking(self, coroutine: Coroutine, timeout: float | None = None):
-        """从其它线程把协程丢到核心事件循环上跑并阻塞等结果(app 退出前收尾用)。"""
         if not self.loop.is_running():
             coroutine.close()
             return None
