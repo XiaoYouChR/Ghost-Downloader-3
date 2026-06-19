@@ -75,7 +75,7 @@ class FeatureService:
 
         entryPath = packDirectory / entry
         if not entryPath.exists() and entry.endswith(".py"):
-            entryPath = packDirectory / (entry[:-3] + ".pyc")  # p4a 剥 .py 源码留 .pyc
+            entryPath = packDirectory / (entry[:-3] + ".pyc")
         if not entryPath.exists():
             logger.warning("FeaturePack 入口文件不存在: {}", packDirectory / entry)
             return None
@@ -244,7 +244,6 @@ class FeatureService:
     def taskCard(self, task: Task, parent=None):
         packInstance = self.packOf(task)
         if packInstance is None:
-            # 旧版本残留 packId 找不到 pack 时回落, 而不是 raise 把整张列表炸掉
             logger.warning("未找到 Task 对应的 FeaturePack, 回落到 UniversalTaskCard: {}", task.packId)
             from app.view.components.cards import UniversalTaskCard
             return UniversalTaskCard(task, parent)

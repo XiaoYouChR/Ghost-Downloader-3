@@ -1,5 +1,3 @@
-"""存储权限软门横幅 —— Android 11+ 的 MANAGE_EXTERNAL_STORAGE 无运行时弹窗, 只能 Intent 跳设置页, 故未授权时常驻任务页顶部引导授权。"""
-
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
@@ -7,9 +5,7 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, FluentIcon, IconWidget, PrimaryPushButton, isDarkTheme
 
-
 class PermissionBanner(QWidget):
-
     def __init__(self, onGrant: Callable[[], None], parent: QWidget | None = None):
         super().__init__(parent)
         self._onGrant = onGrant

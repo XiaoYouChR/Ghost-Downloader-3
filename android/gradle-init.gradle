@@ -1,5 +1,3 @@
-// 让 gradle 优先走 Aliyun 镜像取 Android Gradle Plugin / 依赖，替代慢且易失败的 dl.google.com。
-// 放进 ~/.gradle/init.gradle（容器内挂载卷），对所有 gradle 构建生效。CI 海外可不放（直连 google 更稳）。
 allprojects {
     buildscript {
         repositories {

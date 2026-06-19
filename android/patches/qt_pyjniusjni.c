@@ -1,6 +1,3 @@
-/* 提供 WebView_AndroidGetJNIEnv(): pyjnius 要它才能 dlopen, 但 qt bootstrap 的 libmain 不含此符号 → jnius.so 加载失败。
- * JNI_OnLoad 抓 VM; 但 qt bootstrap 下 libmain 可能不经 System.loadLibrary 加载致其不触发, 故回退 JNI_GetCreatedJavaVMs。 */
-
 #include <jni.h>
 #include <dlfcn.h>
 #include <android/log.h>
@@ -21,7 +18,7 @@ static JavaVM *resolve_vm(void)
     if (g_vm) {
         return g_vm;
     }
-    /* 回退：从运行时查已创建的 VM。JNI_GetCreatedJavaVMs 不在稳定 NDK API 里，dlsym 取。 */
+
     typedef jint (*get_vms_fn)(JavaVM **, jsize, jsize *);
     get_vms_fn get_vms = (get_vms_fn)dlsym(RTLD_DEFAULT, "JNI_GetCreatedJavaVMs");
     if (!get_vms) {

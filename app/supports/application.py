@@ -76,7 +76,6 @@ class SingletonApplication(QApplication):
             self._listenOnDesktopBus()
 
     def _lockSingleInstance(self) -> None:
-        # Android 由系统保证单实例(launcher 单 task), 且沙盒下 QSharedMemory 不可靠, 直接跳过。
         if IS_ANDROID:
             self.memory = None
             return

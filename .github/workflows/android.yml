@@ -1,9 +1,5 @@
 name: Build Android APK
 
-# 仅人工触发。本地与 CI 跑同一个 android/Dockerfile + run_build.sh：默认官方源（GH runner 海外直连最快），
-# 勾选 use_cn_mirror 才传 GD3_CN_MIRROR=1 用国内镜像（自托管/CN runner 才划算）。
-# 配齐 keystore secret 则出签名 release APK，否则回退 debug。产物传 workflow artifact。
-
 on:
   workflow_dispatch:
     inputs:
@@ -27,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 构建需 ~12-15GB（镜像 5GB + NDK + .buildozer + gradle），清掉预装 SDK 腾出 ~20GB。
       - name: Free disk space
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \

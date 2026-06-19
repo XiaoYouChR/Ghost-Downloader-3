@@ -41,12 +41,11 @@ except ImportError:
 
 
 def downloaderPath() -> str:
-    # Android：N_m3u8DL-RE 预编进 jniLibs，释放到只读可执行的 nativeLibraryDir。
     if IS_ANDROID:
-        nld = nativeLibraryDir()
-        if not nld:
+        nativeDir = nativeLibraryDir()
+        if not nativeDir:
             return ""
-        binary = Path(nld) / "libnm3u8dlre.so"
+        binary = Path(nativeDir) / "libnm3u8dlre.so"
         return str(binary) if binary.exists() else ""
     return findExecutable(Path(m3u8Config.installFolder.value), "N_m3u8DL-RE")
 

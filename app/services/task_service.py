@@ -5,7 +5,10 @@ from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from loguru import logger
 
 from app.bases.models import Task
+from app.services.category_service import categoryService
+from app.supports.config import cfg
 from app.supports.paths import APP_DATA_DIR
+from app.supports.utils import deduplicateFilename
 
 
 class TaskService(QObject):
@@ -61,6 +64,22 @@ class TaskService(QObject):
         self.tasks[task.taskId] = task
         self.scheduleFlush()
         self.taskAdded.emit(task)
+
+    def addTask(self, task: Task) -> None:
+        if (
+            cfg.enableCategory.value
+            and task.category
+            and task.path == Path(cfg.downloadFolder.value)
+        ):
+            folder = categoryService.folderOf(task.category)
+            if folder:
+                task.applySettings({"path": Path(folder)})
+
+        originalTitle = task.title
+        if deduplicateFilename(task):
+            logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
+
+        self.add(task)
 
     def remove(self, task: Task):
         if task.taskId not in self.tasks:

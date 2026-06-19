@@ -11,10 +11,6 @@ import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 
-/**
- * 同进程前台服务：把宿主进程钉在前台优先级, 下载/浏览器服务切后台不被回收。
- * 不声明 android:process(与 Activity 同进程); 文案经 Intent extra "text" 传入; 起停由 Python 侧控制(见 android_keepalive.py)。
- */
 public class KeepAliveService extends Service {
     private static final String CHANNEL_ID = "gd3_keepalive";
     private static final int NOTIFICATION_ID = 0x47443301;
@@ -36,7 +32,7 @@ public class KeepAliveService extends Service {
         } else {
             startForeground(NOTIFICATION_ID, notification);
         }
-        // 进程若被杀，无 Python 引擎单独重启服务无意义，故不黏；起停全由 app 主动控制。
+
         return START_NOT_STICKY;
     }
 

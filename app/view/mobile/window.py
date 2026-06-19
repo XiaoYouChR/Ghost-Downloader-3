@@ -1,7 +1,3 @@
-"""移动端主窗口 —— QWidget 壳, 不继承 MainWindow/MSFluentWindow(后者锁死左侧竖栏), 用 QStackedWidget + 自建底部导航。"""
-
-from pathlib import Path
-
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPalette
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
@@ -19,36 +15,32 @@ from qfluentwidgets import (
 )
 
 from app.services.browser_service import BrowserService
-from app.services.category_service import categoryService
 from app.services.core_service import coreService
 from app.services.task_service import taskService
 from app.supports.android import isStorageGranted, requestStoragePermission
 from app.supports.config import cfg, toQFluentTheme
-from app.supports.utils import deduplicateFilename
 from app.view.components.labels import IconBodyLabel
 from app.view.mobile.navigation import BottomNavigationBar
 from app.view.mobile.permission import PermissionBanner
 from app.view.mobile.setting_page import MobileSettingPage
 from app.view.mobile.task_page import MobileTaskPage
 
-
 class MobileMainWindow(QWidget):
-
     def __init__(self):
         super().__init__(parent=None)
         self.updateThemeColor()
-        BrowserService.initialize(self)  # SettingPage 建页要读 pairToken, 须先就绪
+        BrowserService.initialize(self)
         self.stackedWidget = QStackedWidget(self)
         self.navigationBar = BottomNavigationBar(self)
         self.vBoxLayout = QVBoxLayout(self)
         self.permissionBanner = PermissionBanner(requestStoragePermission, self)
-        self.taskPage = MobileTaskPage(self, onSelectionModeChanged=self._refreshAddButton)
+        self.taskPage = MobileTaskPage(self, onSelectionModeChanged=self._updateAddButtonVisibility)
         self.settingPage = MobileSettingPage(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
         self._initWidget()
         self._initLayout()
         self._bind()
-        self._refreshPermissionGate()
+        self._updatePermissionBanner()
 
     def _initWidget(self):
         self.setObjectName("MobileMainWindow")
@@ -59,8 +51,8 @@ class MobileMainWindow(QWidget):
         self.addButton.setFixedSize(56, 56)
         self.addButton.setIconSize(QSize(22, 22))
         self.addButton.raise_()
-        self.addSubInterface(self.taskPage, FluentIcon.DOWNLOAD, self.tr("任务"))
-        self.addSubInterface(self.settingPage, FluentIcon.SETTING, self.tr("设置"))
+        self.addPage(self.taskPage, FluentIcon.DOWNLOAD, self.tr("任务"))
+        self.addPage(self.settingPage, FluentIcon.SETTING, self.tr("设置"))
 
     def _initLayout(self):
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
@@ -71,13 +63,13 @@ class MobileMainWindow(QWidget):
 
     def _bind(self):
         self.navigationBar.currentChanged.connect(self.stackedWidget.setCurrentIndex)
-        self.navigationBar.currentChanged.connect(lambda *_: self._refreshAddButton())
+        self.navigationBar.currentChanged.connect(lambda *_: self._updateAddButtonVisibility())
         self.addButton.clicked.connect(self.showAddTaskDialog)
         QApplication.instance().applicationStateChanged.connect(self._onApplicationStateChanged)
         cfg.customThemeMode.valueChanged.connect(self._onThemeModeChanged)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         qconfig.themeChanged.connect(self.update)
-        qconfig.themeChanged.connect(lambda *_: IconBodyLabel.clearCache())  # 缓存按 id 不分主题, 切主题须清否则图标留旧色
+        qconfig.themeChanged.connect(lambda *_: IconBodyLabel.clearCache())
 
     def _onThemeModeChanged(self, mode: str):
         setTheme(toQFluentTheme(mode), save=False)
@@ -93,25 +85,23 @@ class MobileMainWindow(QWidget):
             setTheme(Theme.AUTO, save=False)
 
     def _onApplicationStateChanged(self, state: Qt.ApplicationState):
-        # onResume 复检权限, 收起 banner
         if state == Qt.ApplicationState.ApplicationActive:
-            self._refreshPermissionGate()
+            self._updatePermissionBanner()
 
-    def _refreshPermissionGate(self):
+    def _updatePermissionBanner(self):
         self.permissionBanner.setVisible(not isStorageGranted())
 
-    def _refreshAddButton(self):
-        # FAB 仅任务页且非多选时露面, 否则与右下多选命令栏撞位
+    def _updateAddButtonVisibility(self):
         onTaskPage = self.stackedWidget.currentIndex() == 0
         self.addButton.setVisible(onTaskPage and not self.taskPage.isSelectionMode)
 
-    def addSubInterface(self, interface: QWidget, icon: FluentIcon, text: str) -> QWidget:
-        self.stackedWidget.addWidget(interface)
+    def addPage(self, page: QWidget, icon: FluentIcon, text: str) -> QWidget:
+        self.stackedWidget.addWidget(page)
         self.navigationBar.addItem(icon, text)
-        return interface
+        return page
 
     def showAddTaskDialog(self):
-        if not isStorageGranted():  # 软门: 未授权拦截新建, 跳设置页引导
+        if not isStorageGranted():
             requestStoragePermission()
             InfoBar.warning(
                 self.tr("需要存储权限"),
@@ -125,7 +115,7 @@ class MobileMainWindow(QWidget):
         from app.view.mobile.add_task_dialog import MobileAddTaskDialog
 
         dialog = MobileAddTaskDialog.initialize(self)
-        # 桌面固定 700px 在手机会溢出, 压到窗宽内
+
         dialog.widget.setFixedWidth(min(700, self.width() - 24))
         if dialog.isVisible() and not dialog.isStandaloneMode:
             dialog.raise_()
@@ -143,20 +133,7 @@ class MobileMainWindow(QWidget):
 
     def addTask(self, task) -> bool:
         try:
-            if (
-                cfg.enableCategory.value
-                and task.category
-                and task.path == Path(cfg.downloadFolder.value)
-            ):
-                folder = categoryService.folderOf(task.category)
-                if folder:
-                    task.applySettings({"path": Path(folder)})
-
-            originalTitle = task.title
-            if deduplicateFilename(task):
-                logger.info("检测到重名文件，已自动重命名 {} -> {}", originalTitle, task.title)
-
-            taskService.add(task)
+            taskService.addTask(task)
             coreService.createTask(task)
             return True
         except Exception as e:

@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# 在 host(WSL)执行: 构建镜像 + 容器内打 APK 到 android/dist/, 随后 adb install 装机。
-# 网络: 镜像构建设 GD3_CN_MIRROR=1 走国内镜像; APK 容器设 HTTP_PROXY 透传(NDK/SDK 从 google 下); 缓存用命名卷。
+
 set -euo pipefail
 
 IMAGE=gd3-android-builder
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$HERE/.." && pwd)"   # 仓库根：真 app 源 app/ + features/
+REPO_ROOT="$(cd "$HERE/.." && pwd)"
 
-# --- 镜像构建参数：国内镜像源（GD3_CN_MIRROR=1 时启用）---
 BUILD_ARGS=()
 if [[ "${GD3_CN_MIRROR:-0}" == "1" ]]; then
     echo "[run] 启用国内镜像源构建镜像"
@@ -24,7 +22,6 @@ if [[ "${GD3_CN_MIRROR:-0}" == "1" ]]; then
     )
 fi
 
-# --- APK 构建容器参数：代理（dl.google.com 的 NDK/SDK 须走代理）---
 RUN_PROXY=()
 NET_HOST=()
 if [[ -n "${HTTP_PROXY:-}" ]]; then
@@ -35,7 +32,6 @@ if [[ -n "${HTTP_PROXY:-}" ]]; then
     NET_HOST=(--network=host)
 fi
 
-# --- Release 签名（可选）：host 设了 GD3_KEYSTORE 才挂密钥库进容器、透传口令，签为 release APK ---
 SIGN_ARGS=()
 if [[ -n "${GD3_KEYSTORE:-}" ]]; then
     echo "[run] 检测到 GD3_KEYSTORE，将签名为 release APK"
@@ -49,8 +45,6 @@ fi
 echo "[run] 构建镜像 $IMAGE ..."
 docker build "${BUILD_ARGS[@]}" -t "$IMAGE" "$HERE"
 
-# 容器内以 builder(uid 1000) 跑，但 CI runner 的 checkout 属主非 1000，builder 在挂载的 /work 下
-# mkdir dist 会 Permission denied。由宿主(/work 属主)先建好 dist 并放开写权限，容器再往里写产物。
 mkdir -p "$HERE/dist" && chmod 777 "$HERE/dist"
 
 echo "[run] 容器内构建 APK ..."
