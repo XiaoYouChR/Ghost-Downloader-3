@@ -1,7 +1,6 @@
 import asyncio
 from urllib.parse import parse_qsl, urlparse
 
-from app.supports.config import activeUserAgent
 from app.supports.utils import buildClient, getProxies, headerDict
 
 _QR_GENERATE_API = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
@@ -48,7 +47,6 @@ def _headers(cookie: str = "", origin: bool = False) -> dict[str, str]:
     headers = {
         "accept": "application/json, text/plain, */*",
         "accept-language": "zh-CN,zh;q=0.9",
-        "user-agent": activeUserAgent(),
     }
     if cookie:
         headers["cookie"] = cookie

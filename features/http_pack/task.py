@@ -13,7 +13,7 @@ from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus, SpecialFileSize
 from app.supports.config import cfg
 from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import buildClient
+from app.supports.utils import buildClient, toEmulation, toRequestHeaders
 
 if TYPE_CHECKING:
     from app.view.components.cards import ParseSettingCard
@@ -43,6 +43,7 @@ class HttpTask(Task):
     def editorCards(self, parent) -> list["ParseSettingCard"]:
         from app.view.components.add_task_dialog import SelectFolderCard
         from app.view.components.edit_task_cards import (
+            ClientProfileEditCard,
             HeadersEditCard,
             ProxiesEditCard,
             UrlEditCard,
@@ -52,6 +53,7 @@ class HttpTask(Task):
         return [
             UrlEditCard(FluentIcon.LINK, parent.tr("下载链接"), parent, initial=self.url),
             HeadersEditCard(FluentIcon.GLOBE, parent.tr("请求标头"), parent, initial=self.headers),
+            ClientProfileEditCard(FluentIcon.ROBOT, parent.tr("模拟身份"), parent, initial=self.stage.clientProfile),
             ProxiesEditCard(FluentIcon.CERTIFICATE, parent.tr("代理服务器"), parent, initial=self.proxies),
             SelectFolderCard(FluentIcon.DOWNLOAD, parent.tr("下载到"), parent, initial=self.path),
         ]
@@ -63,6 +65,8 @@ class HttpTask(Task):
             self.stage.url = payload["url"]
         if "headers" in payload:
             self.stage.headers = payload["headers"]
+        if "clientProfile" in payload:
+            self.stage.clientProfile = payload["clientProfile"]
         if "proxies" in payload:
             self.stage.proxies = payload["proxies"]
 
@@ -74,6 +78,8 @@ class HttpTask(Task):
         oldStage, newStage = self.stage, newTask.stage
         oldStage.url = newStage.url
         oldStage.headers = newStage.headers
+        oldStage.clientProfile = newStage.clientProfile
+        oldStage.sourceUserAgent = newStage.sourceUserAgent
         oldStage.proxies = newStage.proxies
         oldStage.supportsRange = newStage.supportsRange
         self.url = newTask.url
@@ -90,6 +96,8 @@ class HttpTaskStage(TaskStage):
     headers: dict
     proxies: dict
     blockNum: int
+    clientProfile: str = ""
+    sourceUserAgent: str = ""  # 来源(扩展/页面)投递的 UA, auto 据此匹配真实浏览器; 不进可编辑 headers
     supportsRange: bool = True
     accelerated: bool = False
     outputFileOverride: str = ""
@@ -131,7 +139,8 @@ class HttpWorker(Worker):
         self.stage = stage
         self.speedHistory = []
         self.accelCheckTime = 0
-        self.requestHeaders = dict(stage.headers)
+        self.emulation = toEmulation(stage.clientProfile, stage.sourceUserAgent)
+        self.requestHeaders = toRequestHeaders(stage.headers, self.emulation)
 
     def reassignSubworker(self):
         if self.stage.fileSize <= 0:
@@ -392,7 +401,7 @@ class HttpWorker(Worker):
         self.taskGroup = TaskGroup()
         self.subworkers: list[HttpSubworker] = []
         self.stage.subworkers = self.subworkers
-        self.client = buildClient(self.stage.proxies)
+        self.client = buildClient(self.stage.proxies, emulation=self.emulation)
         shouldCleanupRecordFile = False
         Path(self.stage.outputFile).parent.mkdir(parents=True, exist_ok=True)
 

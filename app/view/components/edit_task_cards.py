@@ -4,20 +4,20 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    Action,
     BodyLabel,
     ComboBox,
+    DropDownPushButton,
     FluentIcon,
     IconWidget,
     LineEdit,
-    RoundMenu,
     TransparentToolButton,
     isDarkTheme,
 )
 
-from app.supports.config import cfg, defaultHeaders
+from app.supports.config import defaultHeaders
 from app.view.components.cards import ParseSettingCard
-from app.view.components.editors import AutoSizingEdit
+from app.view.components.client_profile import buildProfileMenu, profileLabel
+from app.view.components.editors import AutoSizingEdit, headersFromText, headersToText
 
 
 class UrlEditCard(ParseSettingCard):
@@ -64,8 +64,6 @@ class HeadersEditCard(_VerticalCardBase):
         # instant widget
         self.iconWidget = IconWidget(icon, self)
         self.titleLabel = BodyLabel(title, self)
-        self.uaInsertButton = TransparentToolButton(FluentIcon.ROBOT, self)
-        self.uaInsertMenu = RoundMenu(parent=self.uaInsertButton)
         self.resetButton = TransparentToolButton(FluentIcon.SYNC, self)
         self.headersEdit = AutoSizingEdit(self, minimumVisibleLines=6, maximumVisibleLines=14)
 
@@ -77,13 +75,11 @@ class HeadersEditCard(_VerticalCardBase):
         self._initLayout()
         self._bind()
 
-        self.headersEdit.setPlainText(self._toText(initial or defaultHeaders()))
-        self._refreshUaMenu()
+        self.headersEdit.setPlainText(headersToText(initial or defaultHeaders()))
 
     def _initWidget(self) -> None:
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.iconWidget.setFixedSize(16, 16)
-        self.uaInsertButton.setToolTip(self.tr("插入 User-Agent 预设"))
         self.resetButton.setToolTip(self.tr("恢复默认请求标头"))
         self.headersEdit.setPlaceholderText(self.tr("每行一个 Name: Value"))
 
@@ -92,7 +88,6 @@ class HeadersEditCard(_VerticalCardBase):
         self.titleRowLayout.addWidget(self.iconWidget)
         self.titleRowLayout.addWidget(self.titleLabel)
         self.titleRowLayout.addStretch(1)
-        self.titleRowLayout.addWidget(self.uaInsertButton)
         self.titleRowLayout.addWidget(self.resetButton)
 
         self.vBoxLayout.setContentsMargins(24, 10, 24, 12)
@@ -102,64 +97,14 @@ class HeadersEditCard(_VerticalCardBase):
 
     def _bind(self) -> None:
         self.headersEdit.textChanged.connect(self.payloadChanged.emit)
-        self.uaInsertButton.clicked.connect(self._showUaMenu)
         self.resetButton.clicked.connect(self._reset)
-        cfg.userAgents.valueChanged.connect(self._refreshUaMenu)
-
-    def _refreshUaMenu(self) -> None:
-        self.uaInsertMenu.clear()
-        for preset in cfg.userAgents.value:
-            name = preset.get("name", "")
-            value = preset.get("value", "")
-            if not name or not value:
-                continue
-            action = Action(name, self)
-            action.triggered.connect(lambda checked=False, v=value: self._insertUserAgent(v))
-            self.uaInsertMenu.addAction(action)
-
-    def _showUaMenu(self) -> None:
-        if not self.uaInsertMenu.actions():
-            return
-        bottomLeft = self.uaInsertButton.mapToGlobal(
-            self.uaInsertButton.rect().bottomLeft()
-        )
-        self.uaInsertMenu.exec(bottomLeft)
-
-    def _insertUserAgent(self, value: str) -> None:
-        lines = self.headersEdit.toPlainText().splitlines()
-        replaced = False
-        for i, line in enumerate(lines):
-            name, separator, _ = line.partition(":")
-            if separator and name.strip().lower() == "user-agent":
-                lines[i] = f"user-agent: {value}"
-                replaced = True
-                break
-        if not replaced:
-            lines.insert(0, f"user-agent: {value}")
-        self.headersEdit.setPlainText("\n".join(lines))
 
     def _reset(self) -> None:
-        self.headersEdit.setPlainText(self._toText(defaultHeaders()))
-
-    def _toText(self, headers: dict) -> str:
-        return "\n".join(f"{name}: {value}" for name, value in headers.items())
-
-    def _toDict(self, text: str) -> dict:
-        # HTTP header 大小写不敏感; 统一小写避免 "Cookie" / "cookie" 同时存在
-        result: dict[str, str] = {}
-        for line in text.splitlines():
-            name, separator, value = line.partition(":")
-            if not separator:
-                continue
-            key = name.strip().lower()
-            if not key:
-                continue
-            result[key] = value.strip()
-        return result
+        self.headersEdit.setPlainText(headersToText(defaultHeaders()))
 
     @property
     def payload(self) -> dict[str, Any]:
-        return {"headers": self._toDict(self.headersEdit.toPlainText())}
+        return {"headers": headersFromText(self.headersEdit.toPlainText())}
 
 
 class ProxiesEditCard(_VerticalCardBase):
@@ -238,3 +183,46 @@ class ProxiesEditCard(_VerticalCardBase):
         if not url:
             return {"proxies": None}
         return {"proxies": {protocol: url for protocol in self._PROTOCOLS}}
+
+
+class ClientProfileEditCard(_VerticalCardBase):
+    def __init__(self, icon, title: str, parent=None, *, initial: str = "") -> None:
+        super().__init__(parent)
+        self._value = initial or ""
+
+        # instant widget
+        self.iconWidget = IconWidget(icon, self)
+        self.titleLabel = BodyLabel(title, self)
+        self.button = DropDownPushButton(profileLabel(self._value, followGlobal=True), self)
+
+        # instant layout
+        self.vBoxLayout = QVBoxLayout(self)
+        self.titleRowLayout = QHBoxLayout()
+
+        self._initWidget()
+        self._initLayout()
+
+    def _initWidget(self) -> None:
+        self.iconWidget.setFixedSize(16, 16)
+        self.button.setMinimumWidth(200)
+        self.button.setMenu(buildProfileMenu(self, self._onPick, includeFollowGlobal=True))
+
+    def _initLayout(self) -> None:
+        self.titleRowLayout.setSpacing(15)
+        self.titleRowLayout.addWidget(self.iconWidget)
+        self.titleRowLayout.addWidget(self.titleLabel)
+        self.titleRowLayout.addStretch(1)
+        self.titleRowLayout.addWidget(self.button)
+
+        self.vBoxLayout.setContentsMargins(24, 10, 24, 12)
+        self.vBoxLayout.setSpacing(8)
+        self.vBoxLayout.addLayout(self.titleRowLayout)
+
+    def _onPick(self, value: str) -> None:
+        self._value = value
+        self.button.setText(profileLabel(value, followGlobal=True))
+        self.payloadChanged.emit()
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        return {"clientProfile": self._value}

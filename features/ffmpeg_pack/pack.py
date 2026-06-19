@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
-from app.supports.config import activeUserAgent, cfg
+from app.supports.config import cfg
 from app.supports.utils import buildClient, getProxies, toExecutable, toSafeFilename
 from .config import ffmpegConfig, ffmpegPaths
 from app.view.components.cards import UniversalTaskCard
@@ -24,9 +24,9 @@ else:
 FFMPEG_MERGE_URL = "gd3+ffmpeg://merge"
 
 _FFMPEG_RELEASE_API = "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest"
+# UA 由 buildClient 供
 _FFMPEG_HEADERS = {
     "accept": "application/vnd.github+json",
-    "user-agent": activeUserAgent(),
 }
 
 
@@ -173,6 +173,8 @@ def _toResourceStage(
         proxies=httpStage.proxies,
         blockNum=httpStage.blockNum,
         supportsRange=httpStage.supportsRange,
+        clientProfile=httpStage.clientProfile,
+        sourceUserAgent=httpStage.sourceUserAgent,
         role=role,
         extension=extension,
     )

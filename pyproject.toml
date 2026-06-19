@@ -19,6 +19,7 @@ dependencies = [
     "m3u8>=6.0.0",
     "mpegdash>=0.4.1",
     "wreq>=0.12.0",
+    "orjson>=3.11.9",
 ]
 
 [dependency-groups]

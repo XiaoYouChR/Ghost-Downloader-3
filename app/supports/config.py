@@ -2,6 +2,7 @@ import sys
 from asyncio import sleep
 from enum import Enum
 from re import compile
+from typing import Callable
 
 from PySide6.QtCore import QRect, QStandardPaths, QLocale, QOperatingSystemVersion
 from orjson import dumps, loads
@@ -33,28 +34,8 @@ _BASE_HEADERS = {
     "upgrade-insecure-requests": "1",
 }
 
-DEFAULT_USER_AGENT_PRESETS: list[dict[str, str]] = [
-    {
-        "name": "Chrome (Windows)",
-        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-    },
-    {
-        "name": "Edge (Windows)",
-        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
-    },
-    {
-        "name": "Firefox (Windows)",
-        "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
-    },
-    {
-        "name": "Safari (macOS)",
-        "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
-    },
-    {
-        "name": "Chrome (Android)",
-        "value": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36",
-    },
-]
+def factoryHeaders() -> dict[str, str]:
+    return dict(_BASE_HEADERS)
 
 
 def isGreaterEqualWin10():
@@ -160,50 +141,38 @@ class CategoryListValidator(ConfigValidator):
         return value if self.validate(value) else []
 
 
-class CategoryListSerializer(ConfigSerializer):
-    """下载分类规则列表序列化器"""
+class JsonConfigSerializer(ConfigSerializer):
+    def __init__(self, expected: type, fallback: Callable[[], object]) -> None:
+        self._expected = expected
+        self._fallback = fallback
 
-    def serialize(self, value: list) -> str:
+    def serialize(self, value) -> str:
         return dumps(value).decode("utf-8")
 
-    def deserialize(self, value: str) -> list:
+    def deserialize(self, value: str):
         try:
             result = loads(value)
-            return result if isinstance(result, list) else []
+            return result if isinstance(result, self._expected) else self._fallback()
         except (ValueError, TypeError):
-            return []
+            return self._fallback()
 
 
-class UserAgentListValidator(ConfigValidator):
-    """User-Agent 预设列表验证器"""
-
+class ClientProfileValidator(ConfigValidator):
     def validate(self, value) -> bool:
-        if not isinstance(value, list):
-            return False
-        return all(
-            isinstance(item, dict)
-            and isinstance(item.get("name"), str)
-            and isinstance(item.get("value"), str)
-            and item["value"]
-            for item in value
+        return isinstance(value, str) and bool(value)
+
+    def correct(self, value) -> str:
+        return value if self.validate(value) else "auto"
+
+
+class HeadersValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        return isinstance(value, dict) and bool(value) and all(
+            isinstance(name, str) and isinstance(text, str) for name, text in value.items()
         )
 
-    def correct(self, value) -> list:
-        return value if self.validate(value) else list(DEFAULT_USER_AGENT_PRESETS)
-
-
-class UserAgentListSerializer(ConfigSerializer):
-    """User-Agent 预设列表序列化器"""
-
-    def serialize(self, value: list) -> str:
-        return dumps(value).decode("utf-8")
-
-    def deserialize(self, value: str) -> list:
-        try:
-            result = loads(value)
-            return result if isinstance(result, list) else list(DEFAULT_USER_AGENT_PRESETS)
-        except (ValueError, TypeError):
-            return list(DEFAULT_USER_AGENT_PRESETS)
+    def correct(self, value) -> dict:
+        return value if self.validate(value) else factoryHeaders()
 
 
 def toQFluentTheme(value: str) -> Theme:
@@ -256,7 +225,7 @@ class Config(QConfig):
         "CategoryRules",
         [],
         CategoryListValidator(),
-        CategoryListSerializer(),
+        JsonConfigSerializer(list, list),
     )
 
     # 浏览器插件设置
@@ -325,17 +294,15 @@ class Config(QConfig):
     )
 
     # 网络设置
-    userAgents = ConfigItem(
-        "Network",
-        "UserAgents",
-        list(DEFAULT_USER_AGENT_PRESETS),
-        UserAgentListValidator(),
-        UserAgentListSerializer(),
+    clientProfile = ConfigItem(
+        "Network", "ClientProfile", "auto", ClientProfileValidator()
     )
-    activeUserAgent = ConfigItem(
+    defaultRequestHeaders = ConfigItem(
         "Network",
-        "ActiveUserAgent",
-        DEFAULT_USER_AGENT_PRESETS[0]["value"],
+        "DefaultHeaders",
+        factoryHeaders(),
+        HeadersValidator(),
+        JsonConfigSerializer(dict, factoryHeaders),
     )
 
     # 全局变量
@@ -367,13 +334,5 @@ EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downl
 cfg = Config()
 
 
-def activeUserAgent() -> str:
-    value = cfg.activeUserAgent.value
-    if value:
-        return value
-    presets = cfg.userAgents.value
-    return presets[0]["value"] if presets else DEFAULT_USER_AGENT_PRESETS[0]["value"]
-
-
 def defaultHeaders() -> dict[str, str]:
-    return {**_BASE_HEADERS, "user-agent": activeUserAgent()}
+    return dict(cfg.defaultRequestHeaders.value)

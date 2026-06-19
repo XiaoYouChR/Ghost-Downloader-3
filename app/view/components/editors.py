@@ -16,6 +16,22 @@ from qfluentwidgets.common.font import setFont
 from qfluentwidgets.common.icon import isDarkTheme
 
 
+def headersToText(headers: dict) -> str:
+    return "\n".join(f"{name}: {value}" for name, value in headers.items())
+
+
+def headersFromText(text: str) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for line in text.splitlines():
+        name, separator, value = line.partition(":")
+        if not separator:
+            continue
+        key = name.strip().lower()
+        if key:
+            result[key] = value.strip()
+    return result
+
+
 class AutoSizingEdit(PlainTextEdit):
     def __init__(
         self,

@@ -15,7 +15,7 @@ from mpegdash.parser import MPEGDASHParser
 from app.bases.interfaces import FeaturePack, FileType
 from app.bases.models import Task
 from app.supports import file_association
-from app.supports.config import activeUserAgent, cfg, defaultHeaders
+from app.supports.config import cfg, defaultHeaders
 from app.supports.utils import buildClient, getProxies, headerDict, toExecutable, toSafeFilename
 from app.view.components.cards import UniversalTaskCard
 from .cards import M3U8LiveTaskCard, M3U8ResultCard, M3U8TaskCard
@@ -30,9 +30,9 @@ else:
 
 _M3U8DL_RELEASE_TAG = "v0.5.1-beta"
 _M3U8DL_RELEASE_API = f"https://api.github.com/repos/nilaoda/N_m3u8DL-RE/releases/tags/{_M3U8DL_RELEASE_TAG}"
+# UA 由 buildClient 供
 _M3U8DL_RELEASE_HEADERS = {
     "accept": "application/vnd.github+json",
-    "user-agent": activeUserAgent(),
 }
 _KNOWN_SUFFIXES = {
     ".m3u8", ".m3u", ".mpd", ".mp4", ".mkv",

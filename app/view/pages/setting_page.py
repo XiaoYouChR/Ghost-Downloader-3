@@ -17,7 +17,8 @@ from app.supports.utils import openAppLogFolder
 from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import SpinBoxSettingCard, SelectFolderSettingCard, ProxySettingCard
-from app.view.components.user_agent_settings import UserAgentSettingCard
+from app.view.components.client_profile import ClientProfileSettingCard
+from app.view.components.default_headers_settings import DefaultHeadersSettingCard
 
 if TYPE_CHECKING:
     from app.view.windows.main_window import MainWindow
@@ -151,8 +152,10 @@ class SettingPage(ScrollArea):
             cfg.proxyServer, self.generalDownloadGroup
         )
         self.generalDownloadGroup.addSettingCard(self.proxyServerCard)
-        self.userAgentCard = UserAgentSettingCard(self.generalDownloadGroup)
-        self.generalDownloadGroup.addSettingCard(self.userAgentCard)
+        self.clientProfileCard = ClientProfileSettingCard(self.generalDownloadGroup)
+        self.generalDownloadGroup.addSettingCard(self.clientProfileCard)
+        self.defaultHeadersCard = DefaultHeadersSettingCard(self.generalDownloadGroup)
+        self.generalDownloadGroup.addSettingCard(self.defaultHeadersCard)
         # Category
         self.enableCategoryCard = SwitchSettingCard(
             FluentIcon.TAG,

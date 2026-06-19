@@ -12,6 +12,7 @@ from PySide6.QtCore import QUrl, Qt, QProcess
 from PySide6.QtGui import QDesktopServices
 from loguru import logger
 from wreq import Client, Emulation, HeaderMap, Proxy
+from wreq.emulation import Platform, Profile
 from wreq.redirect import Policy
 from qfluentwidgets import MessageBox, ToolButton, FluentIcon
 
@@ -21,6 +22,16 @@ from app.supports.paths import APP_DATA_DIR
 if TYPE_CHECKING:
     from app.bases.models import Task
     from os import PathLike
+
+
+def _makeWreqExceptionsPicklable() -> None:
+    import wreq.exceptions
+    for cls in vars(wreq.exceptions).values():
+        if isinstance(cls, type) and issubclass(cls, BaseException) and cls.__module__ == "exceptions":
+            cls.__module__ = "wreq.exceptions"
+
+
+_makeWreqExceptionsPicklable()
 
 
 _PROXY_PROTOCOLS = ("http", "https", "ftp")
@@ -121,7 +132,183 @@ def getProxies():
     return {protocol: proxyServer for protocol in _PROXY_PROTOCOLS}
 
 
-_DEFAULT_EMULATION = Emulation.Chrome136  # 默认模拟的浏览器(TLS 指纹 + 请求头), 用于绕过反爬 / 防盗链
+# 收移动端变体供 auto 匹配 iOS Safari / Android Firefox; 菜单家族另见 _MENU_FAMILY_ORDER
+_FAMILY_BY_PREFIX = {
+    "Chrome": "chrome", "Edge": "edge", "Firefox": "firefox", "Safari": "safari", "OkHttp": "okhttp",
+    "FirefoxAndroid": "firefox-android", "SafariIos": "safari-ios",
+    "SafariIPad": "safari-ipad", "SafariIpad": "safari-ipad",  # wreq 两种拼写并存
+}
+_MENU_FAMILY_ORDER = ("chrome", "edge", "firefox", "safari", "okhttp")
+# 固定平台的家族(其余浏览器跟随来源 UA / 本机)
+_PLATFORM_BY_FAMILY = {
+    "okhttp": Platform.Android,
+    "firefox-android": Platform.Android,
+    "safari-ios": Platform.IOS,
+    "safari-ipad": Platform.IOS,
+}
+_PROFILE_NAME_PATTERN = re.compile(r"^([A-Za-z]+?)(\d[\d_]*)$")
+# Edge/Opera 的 UA 也含 "Chrome/", 顺序上须先判 Edge
+_UA_FAMILY_PATTERNS = (
+    ("edge", re.compile(r"Edg(?:e|A|iOS)?/(\d+)")),
+    ("okhttp", re.compile(r"okhttp/(\d+)", re.IGNORECASE)),
+    ("firefox", re.compile(r"Firefox/(\d+)")),
+    ("chrome", re.compile(r"Chrome/(\d+)")),
+    ("safari", re.compile(r"Version/(\d+).+Safari/")),
+)
+
+
+def _profileVersion(name: str) -> tuple[str, tuple[int, ...]] | None:
+    match = _PROFILE_NAME_PATTERN.match(name)
+    if not match:
+        return None
+    return match.group(1), tuple(int(part) for part in match.group(2).split("_"))
+
+
+_PROFILE_BY_NAME: dict[str, Profile] = {
+    name: getattr(Emulation, name)
+    for name in dir(Emulation)
+    if _PROFILE_NAME_PATTERN.match(name) and isinstance(getattr(Emulation, name), Profile)
+}
+
+
+def _profilesByFamily() -> dict[str, list[tuple[str, tuple[int, ...], Profile]]]:
+    families: dict[str, list[tuple[str, tuple[int, ...], Profile]]] = {family: [] for family in set(_FAMILY_BY_PREFIX.values())}
+    for name, profile in _PROFILE_BY_NAME.items():
+        parsed = _profileVersion(name)
+        family = _FAMILY_BY_PREFIX.get(parsed[0]) if parsed else None
+        if family is None:
+            continue
+        families[family].append((name, parsed[1], profile))
+    for items in families.values():
+        items.sort(key=lambda item: item[1], reverse=True)
+    return families
+
+
+_PROFILES_BY_FAMILY = _profilesByFamily()
+# 只暴露真有 profile 的菜单家族, 既保证 toEmulation/menu 不会索引到空家族, 也跟随 wreq 实际能力
+EMULATION_FAMILIES = tuple(family for family in _MENU_FAMILY_ORDER if _PROFILES_BY_FAMILY.get(family))
+
+
+def _latestProfile(family: str) -> Profile:
+    return _PROFILES_BY_FAMILY[family][0][2]
+
+
+def _latestMajor(family: str) -> int:
+    return _PROFILES_BY_FAMILY[family][0][1][0]
+
+
+# Chrome 自 UA reduction 起 UA 固定 .0.0.0, 套模板即等于 wreq 真实 Chrome UA, 版本随 wreq 走
+DEFAULT_USER_AGENT = (
+    f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    f"(KHTML, like Gecko) Chrome/{_latestMajor('chrome')}.0.0.0 Safari/537.36"
+)
+
+
+def familyProfileNames(family: str) -> list[str]:
+    return [name for name, _version, _profile in _PROFILES_BY_FAMILY.get(family, [])]
+
+
+def _hostPlatform() -> Platform:
+    return {"win32": Platform.Windows, "darwin": Platform.MacOS}.get(sys.platform, Platform.Linux)
+
+
+def _uaPlatform(userAgent: str) -> Platform:
+    if "Android" in userAgent:
+        return Platform.Android
+    if any(token in userAgent for token in ("iPhone", "iPad", "iPod")):
+        return Platform.IOS
+    if "Windows" in userAgent:
+        return Platform.Windows
+    if "Mac OS X" in userAgent or "Macintosh" in userAgent:
+        return Platform.MacOS
+    if "Linux" in userAgent:
+        return Platform.Linux
+    return _hostPlatform()
+
+
+def _profilePlatform(name: str) -> Platform:
+    parsed = _profileVersion(name)
+    family = _FAMILY_BY_PREFIX.get(parsed[0]) if parsed else None
+    return _PLATFORM_BY_FAMILY.get(family, _hostPlatform())
+
+
+def _matchFamily(family: str, platform: Platform) -> str:
+    # 移动端有专属 profile 时换过去, 免得拿桌面 TLS 配 iOS/Android(指纹自相矛盾)
+    if family == "safari" and platform == Platform.IOS and _PROFILES_BY_FAMILY.get("safari-ios"):
+        return "safari-ios"
+    if family == "firefox" and platform == Platform.Android and _PROFILES_BY_FAMILY.get("firefox-android"):
+        return "firefox-android"
+    return family
+
+
+def _nearestProfile(family: str, major: int) -> Profile | None:
+    profiles = _PROFILES_BY_FAMILY.get(family)
+    if not profiles:
+        return None
+    for _name, version, profile in profiles:
+        if version[0] <= major:
+            return profile
+    return profiles[-1][2]
+
+
+def _matchEmulation(userAgent: str | None) -> Emulation | None:
+    if not userAgent:
+        return None
+    for family, pattern in _UA_FAMILY_PATTERNS:
+        match = pattern.search(userAgent)
+        if not match:
+            continue
+        platform = _PLATFORM_BY_FAMILY.get(family) or _uaPlatform(userAgent)
+        profile = _nearestProfile(_matchFamily(family, platform), int(match.group(1)))
+        if profile is None:
+            return None
+        return Emulation(profile=profile, platform=platform)
+    return None
+
+
+def _defaultEmulation() -> Emulation:
+    return Emulation(profile=_latestProfile("chrome"), platform=_hostPlatform())
+
+
+def toEmulation(profile: str, sourceUserAgent: str | None = None) -> Emulation | None:
+    profile = profile or cfg.clientProfile.value  # "" = 跟随全局
+    if profile == "raw":
+        return None
+    if profile == "auto":
+        return _matchEmulation(sourceUserAgent) or _defaultEmulation()
+    if profile in EMULATION_FAMILIES:
+        return Emulation(profile=_latestProfile(profile), platform=_PLATFORM_BY_FAMILY.get(profile, _hostPlatform()))
+    pinned = _PROFILE_BY_NAME.get(profile)
+    if pinned is None:
+        logger.warning("未知的模拟身份 {}, 退回默认", profile)
+        return _defaultEmulation()
+    return Emulation(profile=pinned, platform=_profilePlatform(profile))
+
+
+def userAgent(headers: dict | None) -> str | None:
+    if not headers:
+        return None
+    for name, value in headers.items():
+        if name.lower() == "user-agent":
+            return value
+    return None
+
+
+def stripEmulationHeaders(headers: dict[str, str]) -> dict[str, str]:
+    return {
+        name: value
+        for name, value in headers.items()
+        if name.lower() != "user-agent" and not name.lower().startswith("sec-ch-ua")
+    }
+
+
+def toRequestHeaders(headers: dict | None, emulation: Emulation | None) -> dict:
+    headers = headers or {}
+    if emulation is not None:
+        return stripEmulationHeaders(headers)
+    if userAgent(headers) is None:
+        return {**headers, "user-agent": DEFAULT_USER_AGENT}
+    return dict(headers)
 
 
 def toProxies(proxies: dict | None) -> list[Proxy]:
@@ -131,15 +318,26 @@ def toProxies(proxies: dict | None) -> list[Proxy]:
     return [Proxy.all(url)] if url else []
 
 
-def buildClient(proxies: dict | None = None, *, headers: dict | None = None, timeout: int | None = None) -> Client:
+_USE_GLOBAL_PROFILE = object()
+
+
+def buildClient(
+    proxies: dict | None = None,
+    *,
+    emulation: Emulation | None = _USE_GLOBAL_PROFILE,
+    headers: dict | None = None,
+    timeout: int | None = None,
+) -> Client:
+    resolved = toEmulation("") if emulation is _USE_GLOBAL_PROFILE else emulation
     config = {
-        "emulation": _DEFAULT_EMULATION,
         "proxies": toProxies(proxies),
         "tls_verify": cfg.SSLVerify.value,
-        "redirect": Policy.limited(10),  # 跟随重定向(CDN / 短链 / http→https), 上限 10 跳
+        "redirect": Policy.limited(10),
     }
+    if resolved is not None:
+        config["emulation"] = resolved
     if headers:
-        config["headers"] = headers
+        config["headers"] = toRequestHeaders(headers, resolved)
     if timeout is not None:
         config["timeout"] = timedelta(seconds=timeout)
     return Client(**config)
@@ -150,7 +348,7 @@ def _toStr(value: str | bytes) -> str:
 
 
 def headerDict(headers: HeaderMap) -> dict[str, str]:
-    """wreq HeaderMap(键/值皆 bytes)→ 小写键的普通 str dict, 供解析 content-length/range/disposition 等。"""
+    # HeaderMap 键/值皆 bytes
     result = {}
     for key in headers.keys():
         name = _toStr(key)

@@ -10,7 +10,7 @@ from typing import Literal
 
 from app.bases.interfaces import Worker
 from app.bases.models import Task, TaskStage, TaskStatus
-from app.supports.utils import removePath, toBytes, toPosixPath
+from app.supports.utils import removePath, toBytes, toPosixPath, toRequestHeaders
 from .config import downloaderPath
 
 if TYPE_CHECKING:
@@ -297,7 +297,8 @@ class M3U8Worker(Worker):
             if text:
                 args.append(f"--mux-import={text}")
 
-        for name, value in stage.headers.items():
+        # 外部工具没有「模拟身份」概念, 按非模拟通道取标头(缺 UA 自动补基线)
+        for name, value in toRequestHeaders(stage.headers, None).items():
             text = value.strip()
             if not text:
                 continue

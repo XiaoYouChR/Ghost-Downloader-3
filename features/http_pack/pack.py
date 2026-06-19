@@ -11,7 +11,16 @@ from loguru import logger
 from app.bases.interfaces import FeaturePack
 from app.bases.models import Task, SpecialFileSize
 from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import buildClient, getProxies, headerDict, toSafeFilename
+from app.supports.utils import (
+    buildClient,
+    getProxies,
+    headerDict,
+    stripEmulationHeaders,
+    toEmulation,
+    toRequestHeaders,
+    toSafeFilename,
+    userAgent,
+)
 from .task import HttpTask, HttpTaskStage
 
 
@@ -57,13 +66,15 @@ async def _sendProbe(client, url: str, headers: dict) -> tuple[int, dict[str, st
         await response.close()
 
 
-async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
-    client = buildClient(proxies)
+async def _probe(url: str, headers: dict, proxies: dict, clientProfile: str = "", sourceUa: str | None = None) -> tuple[int, bool, str, dict[str, str]]:
+    emulation = toEmulation(clientProfile, sourceUa)
+    probeHeaders = toRequestHeaders(headers, emulation)
+    client = buildClient(proxies, emulation=emulation)
     try:
         statusCode, responseHeaders, finalUrl = await _sendProbe(
             client,
             url,
-            {**headers, "range": "bytes=1-1", "accept-encoding": "identity"},
+            {**probeHeaders, "range": "bytes=1-1", "accept-encoding": "identity"},
         )
 
         fileSize = _rangeSize(responseHeaders)
@@ -84,7 +95,7 @@ async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str
                 fallbackStatus, fallbackHeaders, _ = await _sendProbe(
                     client,
                     url,
-                    {**headers, "range": "bytes=0-0", "accept-encoding": "identity"},
+                    {**probeHeaders, "range": "bytes=0-0", "accept-encoding": "identity"},
                 )
                 fallbackSize = _rangeSize(fallbackHeaders)
                 if fallbackStatus == 206 and "content-range" in fallbackHeaders:
@@ -164,8 +175,11 @@ class HttpPack(FeaturePack):
 
     async def parse(self, payload: dict) -> Task:
         url: str = payload["url"]
-        headers: dict = payload.get("headers", defaultHeaders())
+        rawHeaders: dict = payload.get("headers", defaultHeaders())
+        sourceUa = userAgent(rawHeaders) or ""
+        headers = stripEmulationHeaders(rawHeaders)
         proxies: dict = payload.get("proxies", getProxies())
+        clientProfile: str = payload.get("clientProfile", "")
         blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
         path: Path = payload.get("path", Path(cfg.downloadFolder.value))
 
@@ -174,7 +188,7 @@ class HttpPack(FeaturePack):
         supportsRange = payload.get("supportsRange", False)
 
         if not fileName:
-            fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
+            fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies, clientProfile, sourceUa)
             fileName = _fileName(finalUrl, head)
         else:
             fileName = toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
@@ -191,6 +205,8 @@ class HttpPack(FeaturePack):
             fileSize=fileSize,
             headers=headers,
             proxies=proxies,
+            clientProfile=clientProfile,
+            sourceUserAgent=sourceUa,
             blockNum=blockNum,
             supportsRange=supportsRange,
         )

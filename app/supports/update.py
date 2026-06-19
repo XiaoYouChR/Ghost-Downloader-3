@@ -5,13 +5,13 @@ from typing import Any
 
 from PySide6.QtCore import QVersionNumber
 
-from app.supports.config import VERSION, activeUserAgent, cfg, isLessThanWin10
+from app.supports.config import VERSION, cfg, isLessThanWin10
 from app.supports.utils import buildClient, getProxies
 
 RELEASE_API_URL = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
+# UA 由 buildClient 供
 RELEASE_HEADERS = {
     "accept": "application/vnd.github+json",
-    "user-agent": activeUserAgent(),
 }
 
 
