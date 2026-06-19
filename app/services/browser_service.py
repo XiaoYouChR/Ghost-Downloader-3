@@ -63,6 +63,7 @@ class BrowserTaskSource(StrEnum):
     DOWNLOAD = "download"
     RESOURCE = "resource"
     RESOURCE_MERGE = "resource_merge"
+    YTDLP = "ytdlp"
 
 
 class BrowserVirtualUrl(StrEnum):
@@ -468,6 +469,10 @@ class BrowserService(QObject):
                 message=self.tr("缺少下载链接"),
             )
             return
+
+        if source == BrowserTaskSource.YTDLP:
+            parsePayload["pageTitle"] = title
+            title = ""
 
         coreService.runCoroutine(
             coreService._parse(parsePayload),

@@ -120,7 +120,7 @@ class TaskStage:
             self._task.updateStatus()
 
     def setError(self, error: Any, sync: bool = True):
-        message = repr(error).strip() if error is not None else ""
+        message = str(error).strip() if error is not None else ""
         self.error = message
         self.setStatus(TaskStatus.FAILED, sync=sync)
 

@@ -46,7 +46,6 @@ export type Selection =
   | { kind: "single"; url: string; formKind: VideoSessionFormKind }
   | { kind: "stream"; url: string }
   | { kind: "merge"; video: string; audio: string }
-  // The page URL handed to the desktop's yt-dlp, which extracts the media itself (YouTube/SABR).
   | { kind: "external"; pageUrl: string };
 
 export type Resolution =

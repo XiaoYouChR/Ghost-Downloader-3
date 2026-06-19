@@ -14,12 +14,16 @@ _QUALITY_TIERS = (
     ("480p", "bv*[height<=480]+ba/b[height<=480]"),
     ("仅音频", "ba/b"),
 )
+_UNKNOWN_SIZES = (SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED)
 
 
 class YtDlpResultCard(UniversalResultCard):
     def __init__(self, task: Task, parent: QWidget = None):
         super().__init__(task, parent)
         self._pendingFormat = self.task.stage.videoFormat
+        self._sizeByFormat: dict[str, int] = {}
+        if self.task.fileSize not in _UNKNOWN_SIZES:
+            self._sizeByFormat[self._pendingFormat] = self.task.fileSize
         self._renderSize(self.task.fileSize)
         self.qualityCombo.currentIndexChanged.connect(lambda _: self._onQualityChanged())
 
@@ -39,9 +43,12 @@ class YtDlpResultCard(UniversalResultCard):
         self.mainLayout.insertWidget(self.mainLayout.indexOf(self.sizeLabel), self.qualityCombo)
 
     def _onQualityChanged(self):
-        videoFormat = self.qualityCombo.currentData() or _QUALITY_TIERS[0][1]
+        videoFormat = self.qualityCombo.currentData() or DEFAULT_VIDEO_FORMAT
         self.task.applySettings({"videoFormat": videoFormat})
         self._pendingFormat = videoFormat
+        if videoFormat in self._sizeByFormat:
+            self._applySize(self._sizeByFormat[videoFormat])
+            return
         self.sizeLabel.setText(self.tr("计算中…"))
         coreService.runCoroutine(
             probeMediaInfo(self.task.url, getProxies(), videoFormat, self.task.stage.headers),
@@ -50,13 +57,20 @@ class YtDlpResultCard(UniversalResultCard):
 
     def _onSizeProbed(self, videoFormat: str, result, error):
         if videoFormat != self._pendingFormat:
-            return  # 用户又改了档，丢弃过期结果
-        size = result[1] if (not error and result) else SpecialFileSize.UNKNOWN
+            return
+        if error or not result:
+            self._renderSize(SpecialFileSize.UNKNOWN)
+            return
+        _, size = result
+        self._sizeByFormat[videoFormat] = size
+        self._applySize(size)
+
+    def _applySize(self, size: int):
         self.task.fileSize = size
         self._renderSize(size)
 
     def _renderSize(self, size: int):
-        if size in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
+        if size in _UNKNOWN_SIZES:
             self.sizeLabel.setText(self.tr("未知"))
         else:
             self.sizeLabel.setText(self.tr("约 {0}").format(toReadableSize(size)))

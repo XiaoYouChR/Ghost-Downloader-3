@@ -901,7 +901,6 @@ export function createResourceBridge(options: {
     return { ok: false, message: "未知的下载请求类型" };
   }
 
-  // The desktop's yt-dlp extracts the media from the page URL; forward login cookies for gated videos.
   async function dispatchExternalDownload(
     selection: { pageUrl: string },
     title: string,
@@ -920,19 +919,13 @@ export function createResourceBridge(options: {
     });
   }
 
-  function hostOf(url: string): string | null {
-    try {
-      return new URL(url).host;
-    } catch {
-      return null;
-    }
+  function siteOf(url: string): string {
+    return domainFromUrl(url).split(".").slice(-2).join(".");
   }
 
-  // SPA watch URLs often have no snapshot of their own; fall back to the freshest same-host
-  // request that carried a cookie. Only cookie + user-agent are forwarded.
   function resolvePageHeaders(pageUrl: string): Record<string, string> {
-    const host = hostOf(pageUrl);
-    if (host === null) {
+    const site = siteOf(pageUrl);
+    if (!site) {
       return {};
     }
 
@@ -940,10 +933,10 @@ export function createResourceBridge(options: {
     if (!snapshot?.headers.cookie) {
       let freshest: HeaderSnapshot | null = null;
       for (const candidate of headerSnapshotsByUrl.values()) {
-        if (!candidate.headers.cookie || hostOf(candidate.url) !== host) { continue; }
+        if (!candidate.headers.cookie || siteOf(candidate.url) !== site) { continue; }
         if (!freshest || candidate.capturedAt > freshest.capturedAt) { freshest = candidate; }
       }
-      snapshot = freshest;
+      snapshot = freshest ?? snapshot;
     }
 
     const headers: Record<string, string> = {};

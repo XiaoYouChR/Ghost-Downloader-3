@@ -7,7 +7,7 @@ from typing import ClassVar, TYPE_CHECKING
 
 from app.bases.interfaces import Worker
 from app.bases.models import SpecialFileSize, Task, TaskStage, TaskStatus
-from app.supports.utils import toPosixPath
+from app.supports.utils import removePath, toPosixPath
 from .config import downloaderPath
 
 if TYPE_CHECKING:
@@ -16,8 +16,6 @@ else:
     from ffmpeg_pack.config import ffmpegPaths
 
 
-# yt-dlp prints one line per update via --progress-template; the sentinel keeps our parser
-# clear of yt-dlp's own [download]/[youtube] chatter on the same (merged) stream.
 _PROGRESS_SENTINEL = "#GD3PROG#"
 _FINAL_SENTINEL = "#GD3FILE#"
 _PROGRESS_TEMPLATE = (
@@ -26,6 +24,7 @@ _PROGRESS_TEMPLATE = (
     "%(progress.total_bytes_estimate)s|%(progress.speed)s"
 )
 _FINAL_TEMPLATE = f"after_move:{_FINAL_SENTINEL}%(filepath)s"
+_OUTPUT_TEMPLATE = "%(title)s.%(ext)s"
 
 DEFAULT_VIDEO_FORMAT = "bv*+ba/b"
 
@@ -37,7 +36,6 @@ def _toInt(value: str) -> int:
         return 0
 
 
-# yt-dlp's ERROR lines are terse and English; map the common ones to actionable Chinese.
 _ERROR_HINTS = (
     ("is not available in your country", "该视频在当前地区不可用，可在设置里配置代理后重试"),
     ("video unavailable", "视频不可用（可能已被删除或设为私有）"),
@@ -50,7 +48,7 @@ _ERROR_HINTS = (
 )
 
 
-def _friendlyError(message: str) -> str:
+def _toFriendlyError(message: str) -> str:
     lowered = message.lower()
     for needle, hint in _ERROR_HINTS:
         if needle in lowered:
@@ -58,7 +56,19 @@ def _friendlyError(message: str) -> str:
     return message
 
 
-async def probeMediaInfo(url: str, proxies: dict, videoFormat: str, headers: dict | None = None) -> tuple[str, int]:
+def _networkArgs(proxies: dict | None, headers: dict | None) -> list[str]:
+    args: list[str] = []
+    proxyUrl = next((v for v in (proxies or {}).values() if v), "")
+    if proxyUrl:
+        args.extend(["--proxy", proxyUrl])
+    for name, value in (headers or {}).items():
+        text = str(value).strip()
+        if text:
+            args.extend(["--add-header", f"{name}:{text}"])
+    return args
+
+
+async def probeMediaInfo(url: str, proxies: dict | None, videoFormat: str, headers: dict | None = None) -> tuple[str, int]:
     """探测真实标题与选定画质的预估总大小；受限/超时回落 ("", UNKNOWN)。"""
     execPath = downloaderPath()
     if not execPath:
@@ -67,15 +77,8 @@ async def probeMediaInfo(url: str, proxies: dict, videoFormat: str, headers: dic
     args = [
         url, "-f", videoFormat, "--no-playlist", "--skip-download", "--no-warnings",
         "--print", "%(title)s", "--print", "%(filesize_approx)s",
+        *_networkArgs(proxies, headers),
     ]
-    proxyUrl = next((v for v in proxies.values() if v), "")
-    if proxyUrl:
-        args.extend(["--proxy", proxyUrl])
-    for name, value in (headers or {}).items():
-        text = str(value).strip()
-        if text:
-            args.extend(["--add-header", f"{name}:{text}"])
-
     try:
         process = await asyncio.create_subprocess_exec(
             execPath, *args,
@@ -86,6 +89,8 @@ async def probeMediaInfo(url: str, proxies: dict, videoFormat: str, headers: dic
         stdout, _ = await asyncio.wait_for(process.communicate(), timeout=20)
     except asyncio.TimeoutError:
         process.kill()
+        with suppress(Exception):
+            await process.wait()
         return "", SpecialFileSize.UNKNOWN
     except OSError:
         return "", SpecialFileSize.UNKNOWN
@@ -109,9 +114,11 @@ class YtDlpTaskStage(TaskStage):
     lastMessage: str = ""
 
     @property
-    def outputTemplate(self) -> str:
-        # yt-dlp names the file itself; the real title/size land back via after_move filepath.
-        return toPosixPath(Path(self.task.path) / "%(title)s.%(ext)s")
+    def tempDir(self) -> str:
+        return toPosixPath(Path(self.task.path) / ".gd3_ytdlp" / self.task.taskId)
+
+    def cleanup(self):
+        removePath(Path(self.tempDir))
 
 
 @dataclass(kw_only=True, eq=False)
@@ -143,33 +150,28 @@ class YtDlpWorker(Worker):
         super().__init__(stage)
         self.stage = stage
         self._finalPath = ""
+        self._streamBytes: dict[int, int] = {}
 
     def _buildArgs(self) -> list[str]:
         stage = self.stage
         args = [
             stage.task.url,
             "-f", stage.videoFormat,
-            "-o", stage.outputTemplate,
+            "-o", _OUTPUT_TEMPLATE,
+            "-P", f"home:{toPosixPath(stage.task.path)}",
+            "-P", f"temp:{stage.tempDir}",
             "--no-playlist",
             "--newline",
             "--no-color",
             "--no-simulate",
-            # --print silently turns on quiet mode, which suppresses --progress-template;
-            # --progress forces the progress lines back on so the card updates live.
             "--progress",
             "--progress-template", _PROGRESS_TEMPLATE,
             "--print", _FINAL_TEMPLATE,
+            *_networkArgs(stage.proxies, stage.headers),
         ]
         ffmpegPath, _ = ffmpegPaths()
         if ffmpegPath:
             args.extend(["--ffmpeg-location", ffmpegPath])
-        proxyUrl = next((v for v in stage.proxies.values() if v), "")
-        if proxyUrl:
-            args.extend(["--proxy", proxyUrl])
-        for name, value in stage.headers.items():
-            text = value.strip()
-            if text:
-                args.extend(["--add-header", f"{name}:{text}"])
         return args
 
     def _parseOutputLine(self, line: str):
@@ -184,13 +186,15 @@ class YtDlpWorker(Worker):
             if len(parts) >= 4:
                 downloaded = _toInt(parts[0])
                 total = _toInt(parts[1]) or _toInt(parts[2])
-                self.stage.receivedBytes = downloaded
                 self.stage.speed = _toInt(parts[3])
                 if total > 0:
-                    self.stage.task.fileSize = max(self.stage.task.fileSize, total)
-                    self.stage.progress = min(99.5, downloaded / total * 100)
+                    self._streamBytes[total] = downloaded
+                    received = sum(self._streamBytes.values())
+                    self.stage.task.fileSize = max(self.stage.task.fileSize, sum(self._streamBytes.keys()))
+                    self.stage.receivedBytes = received
+                    if self.stage.task.fileSize > 0:
+                        self.stage.progress = min(99.5, received / self.stage.task.fileSize * 100)
             return
-        # yt-dlp's ERROR:/[youtube] lines — keep the latest as the failure message.
         self.stage.lastMessage = text[:1000]
 
     async def supervisor(self, stream: asyncio.StreamReader):
@@ -212,10 +216,14 @@ class YtDlpWorker(Worker):
         if not self._finalPath:
             return
         path = Path(self._finalPath)
-        if path.is_file() and path.stat().st_size > 0:
-            self.stage.task.fileSize = max(self.stage.task.fileSize, path.stat().st_size)
-            if path.name != self.stage.task.title:
-                self.stage.task.setTitle(path.name)
+        if not path.is_file():
+            return
+        size = path.stat().st_size
+        if size <= 0:
+            return
+        self.stage.task.fileSize = max(self.stage.task.fileSize, size)
+        if path.name != self.stage.task.title:
+            self.stage.task.setTitle(path.name)
 
     async def run(self):
         execPath = downloaderPath()
@@ -240,9 +248,10 @@ class YtDlpWorker(Worker):
             await supervisorTask
 
             if process.returncode != 0:
-                raise RuntimeError(_friendlyError(self.stage.lastMessage) or f"yt-dlp 退出码异常: {process.returncode}")
+                raise RuntimeError(_toFriendlyError(self.stage.lastMessage) or f"yt-dlp 退出码异常: {process.returncode}")
 
             self._applyFinalFile()
+            self.stage.cleanup()
             self.stage.setStatus(TaskStatus.COMPLETED)
         except asyncio.CancelledError:
             if process is not None and process.returncode is None:
@@ -263,8 +272,6 @@ class YtDlpWorker(Worker):
             raise
 
 
-# yt-dlp ships as a single executable (not an archive), so install is just "place + chmod"
-# rather than disk_pack's download→extract→install. This stage runs after the download stage.
 @dataclass(kw_only=True)
 class YtDlpInstallStage(TaskStage):
     workerType: type = field(init=False, repr=False)

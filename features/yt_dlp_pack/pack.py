@@ -21,7 +21,6 @@ _YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 
 
 def _assetName() -> str:
-    # yt-dlp serves a self-contained executable per platform — pick the one yt-dlp itself names.
     machine = platform.machine().lower()
     if sys.platform == "win32":
         return "yt-dlp.exe"
@@ -34,7 +33,6 @@ def _assetName() -> str:
 
 class YtDlpPack(FeaturePack):
     packId = "ytdlp"
-    # Below http (100) so YouTube watch pages route here instead of being grabbed as HTML.
     priority = 70
     config = ytDlpConfig
 
@@ -56,9 +54,9 @@ class YtDlpPack(FeaturePack):
         headers = rawHeaders.copy() if isinstance(rawHeaders, dict) and rawHeaders else {}
         videoFormat = DEFAULT_VIDEO_FORMAT
         probedTitle, probedSize = await probeMediaInfo(url, proxies, videoFormat, headers)
-        title = toSafeFilename(probedTitle) if probedTitle else "YouTube 视频"
+        title = toSafeFilename(probedTitle or payload.get("pageTitle") or "YouTube 视频")
 
-        task = YtDlpTask(title=f"{title}.mp4", url=url, fileSize=probedSize, path=path)
+        task = YtDlpTask(title=title, url=url, fileSize=probedSize, path=path)
         task.addStage(YtDlpTaskStage(
             stageIndex=1,
             videoFormat=videoFormat,
@@ -100,7 +98,6 @@ async def createInstallTask() -> Task:
     if not downloadUrl or size <= 0:
         raise RuntimeError("GitHub Release 返回了不完整的安装包信息")
 
-    # Reuse http_pack to download the single binary straight to its final path, then chmod.
     downloadTask = await featureService.parse({
         "url": downloadUrl,
         "headers": defaultHeaders(),
