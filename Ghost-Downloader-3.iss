@@ -7,6 +7,11 @@
 #define MyAppURL "https://github.com/XiaoYouChR/Ghost-Downloader-3/"
 #define MyAppExeName "Ghost-Downloader-3.exe"
 
+; .torrent
+#define MyAppAssocName MyAppName + " Torrent file"
+#define MyAppAssocExt ".torrent"
+#define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
+
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
@@ -38,6 +43,9 @@ SetupIconFile=app/assets/installer_logo.ico
 SolidCompression=yes
 WizardStyle=modern
 
+; Allow file association writes
+ChangesAssociations=yes
+
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
@@ -61,10 +69,17 @@ Root: HKCU; Subkey: "Software\Classes\GhostDownloader.torrent"; Flags: dontcreat
 Root: HKCU; Subkey: "Software\Classes\GhostDownloader.m3u8"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\GhostDownloader.m3u"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\GhostDownloader.mpd"; Flags: dontcreatekey uninsdeletekey
+
 Root: HKCU; Subkey: "Software\Classes\.torrent\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.torrent"; Flags: dontcreatekey uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\.m3u8\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.m3u8"; Flags: dontcreatekey uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\.m3u\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.m3u"; Flags: dontcreatekey uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\.mpd\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.mpd"; Flags: dontcreatekey uninsdeletevalue
+
+; Complete .torrent file association
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocExt}\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppAssocKey}"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}"; ValueType: string; ValueName: ""; ValueData: "{#MyAppAssocName}"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
