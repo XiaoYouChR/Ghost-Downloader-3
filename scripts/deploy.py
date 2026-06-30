@@ -170,9 +170,9 @@ def copyPacks() -> None:
         raise RuntimeError("No feature packs were found to copy.")
 
     if sys.platform == "darwin":
-        targetRoot = Path("dist") / "ghost_downloader.app" / "Contents" / "MacOS" / "features"
+        targetRoot = Path("dist") / "Ghost-Downloader-3.app" / "Contents" / "MacOS" / "features"
     else:
-        targetRoot = Path("dist") / "ghost_downloader.dist" / "features"
+        targetRoot = Path("dist") / "Ghost-Downloader-3.dist" / "features"
 
     if not targetRoot.parent.exists():
         raise FileNotFoundError(f"dist directory does not exist: {targetRoot.parent}")
@@ -188,7 +188,7 @@ def copyPacks() -> None:
 
 
 def patchInfoPlist() -> None:
-    appBundle = Path("dist") / "ghost_downloader.app"
+    appBundle = Path("dist") / "Ghost-Downloader-3.app"
     plistPath = appBundle / "Contents" / "Info.plist"
     resourcesDir = appBundle / "Contents" / "Resources"
     resourcesDir.mkdir(parents=True, exist_ok=True)
