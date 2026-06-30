@@ -115,7 +115,7 @@ def buildArgs() -> list[str]:
             '--file-description="Ghost Downloader"',
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
-            'ghost_downloader.py',
+            'Ghost-Downloader-3.py',
         ]
 
     if sys.platform == "darwin":
@@ -132,7 +132,7 @@ def buildArgs() -> list[str]:
             "--macos-app-icon=app/assets/logo.icns",
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
-            'ghost_downloader.py',
+            'Ghost-Downloader-3.py',
         ]
 
     return [
@@ -145,7 +145,7 @@ def buildArgs() -> list[str]:
         '--assume-yes-for-downloads',
         '--linux-icon=app/assets/logo.png',
         '--output-dir=dist',
-        'ghost_downloader.py',
+        'Ghost-Downloader-3.py',
     ]
 
 
