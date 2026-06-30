@@ -181,7 +181,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "from app.config.constants import VERSION; print(VERSION)")
+          VERSION=$(python3 -c "exec(open('app/config/constants.py').read()); print(VERSION)")
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           python3 scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
@@ -273,7 +273,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "from app.config.constants import VERSION; print(VERSION)")
+          VERSION=$(python3 -c "exec(open('app/config/constants.py').read()); print(VERSION)")
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           python scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
