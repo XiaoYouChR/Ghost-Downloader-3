@@ -50,11 +50,12 @@
 ## 功能特性
 
 * 像 IDM 一样智能分块⚡但又不需要合并文件，以及 AI 智能加速🚀
-* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH 等几乎所有常用协议🌐
+* 支持 HTTP、磁力 / BT、FTP、M3U8、eD2k、MPEG-DASH 等几乎所有常用协议🌐
 * 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也是全链路支持
 * 配套的浏览器扩展🦊可以直接嗅探网页上的媒体资源
 * 任务可以暂停后修改✏️链接、请求头、代理再继续，已下载的进度不会丢
 * 完整的 Android 移动端界面📱，支持后台下载与完成通知🔔
+* 下载引擎 Native 化，软件在后台的内存占用极低⚡
 
 <!-- SCREEN SHOTS -->
 ## 截图
@@ -64,10 +65,8 @@
 <!-- ROADMAP -->
 ## 计划
 
-- ❌ 下载引擎 Native 化 (降低软件在后台的内存占用)
 - ❌ 公开插件 API
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Sessions 等强大功能)
-- ❌ 支持 eD2k 协议
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 

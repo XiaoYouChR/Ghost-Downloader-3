@@ -49,11 +49,12 @@
 ## Features
 
 * IDM-style intelligent chunking⚡ without requiring file merging, plus AI smart acceleration 🚀
-* Supports HTTP, Magnet / BT, FTP, M3U8, MPEG-DASH and more 🌐
+* Supports HTTP, Magnet / BT, FTP, M3U8, eD2k, MPEG-DASH and more 🌐
 * Records M3U8 live streams📺 with real-time decryption🔓, fully supported on Android as well
 * The companion browser extension🦊 sniffs media resources right off web pages
 * Tasks can be paused, edited✏️ (URL, headers, proxy) and resumed without losing progress
 * A complete Android version📱 with background downloading and completion notifications 🔔
+* Download engine fully native‑ized, with extremely low background memory footprint ⚡
 
 <!-- SCREEN SHOTS -->
 ## Screenshots
@@ -63,10 +64,8 @@
 <!-- ROADMAP -->
 ## Roadmap
 
-- ❌ Native download engine (lower memory usage while running in the background)
 - ❌ Make the plugin API public
 - ❌ Enhanced task editing (powerful features like binding multiple Sessions to one task)
-- ❌ Support for eD2k protocol
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
 
