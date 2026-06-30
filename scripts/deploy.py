@@ -20,9 +20,7 @@ MACOS_DOCUMENT_TYPES = [
 
 EXCLUDED_PACKS = {"jack_yao"}
 
-EXTRA_INCLUDE_PACKAGES = [
-    "urllib3",
-]
+EXTRA_INCLUDE_PACKAGES = []
 PLATFORM_INCLUDE_PACKAGES = {
     "win32": ["winrt"],
 }
