@@ -2006,7 +2006,7 @@ FFmpeg: {2}</translation>
     </message>
 </context>
 <context>
-    <name>SelectFolderCard</name>
+    <name>OutputFolderCard</name>
     <message>
         <location filename="../../view/components/add_task_dialog.py" line="52"/>
         <source>选择文件夹</source>

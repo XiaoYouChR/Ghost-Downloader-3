@@ -18,6 +18,7 @@ class NavigationButton(QWidget):
         self.vBoxLayout = QVBoxLayout(self)
         self._initWidget()
         self._initLayout()
+        self._bind()
 
     def _initWidget(self):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -30,6 +31,9 @@ class NavigationButton(QWidget):
         self.vBoxLayout.setSpacing(3)
         self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignHCenter)
         self.vBoxLayout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter)
+
+    def _bind(self):
+        qconfig.themeChanged.connect(self._updateColors)
 
     def setSelected(self, isSelected: bool):
         if self._isSelected == isSelected:
@@ -61,7 +65,6 @@ class BottomNavigationBar(QWidget):
         self.hBoxLayout = QHBoxLayout(self)
         self._initWidget()
         self._initLayout()
-        self._bind()
 
     def _initWidget(self):
         self.setFixedHeight(NAV_BAR_HEIGHT)
@@ -69,9 +72,6 @@ class BottomNavigationBar(QWidget):
     def _initLayout(self):
         self.hBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.hBoxLayout.setSpacing(0)
-
-    def _bind(self):
-        qconfig.themeChanged.connect(self._onThemeChanged)
 
     def addItem(self, icon: FluentIcon, text: str) -> int:
         index = len(self._buttons)
@@ -91,10 +91,6 @@ class BottomNavigationBar(QWidget):
         for i, button in enumerate(self._buttons):
             button.setSelected(i == index)
         self.currentChanged.emit(index)
-
-    def _onThemeChanged(self):
-        for button in self._buttons:
-            button._updateColors()
 
     def paintEvent(self, event):
         painter = QPainter(self)

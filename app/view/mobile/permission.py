@@ -1,13 +1,14 @@
 from collections.abc import Callable
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, FluentIcon, IconWidget, PrimaryPushButton, isDarkTheme
+from qfluentwidgets import BodyLabel, FluentIcon, IconWidget, PrimaryPushButton
 
-class PermissionBanner(QWidget):
+from app.view.components.banners import WarningBanner
+
+
+class PermissionBanner(WarningBanner):
     def __init__(self, onGrant: Callable[[], None], parent: QWidget | None = None):
-        super().__init__(parent)
+        super().__init__(parent, radius=0)
         self._onGrant = onGrant
         self.iconWidget = IconWidget(FluentIcon.INFO, self)
         self.label = BodyLabel(self.tr("未授予「所有文件访问」，下载到公共目录将失败"), self)
@@ -31,7 +32,3 @@ class PermissionBanner(QWidget):
 
     def _bind(self):
         self.grantButton.clicked.connect(lambda: self._onGrant())
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor(66, 54, 20) if isDarkTheme() else QColor(255, 244, 206))
