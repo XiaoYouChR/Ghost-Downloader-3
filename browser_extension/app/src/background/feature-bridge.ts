@@ -1,7 +1,7 @@
 import type {AdvancedFeatureKey, FeatureStateMap} from "../shared/types";
 import {CAT_CATCH_SCRIPT_FEATURES, MOBILE_USER_AGENT} from "../shared/cat-catch";
 import {FEATURE_KEYS, FEATURE_TAB_STATE_KEY, MAIN_FRAME_ID,} from "./constants";
-import {loadFromLocalStorage, localStorageSet, reloadTab,} from "./chrome-helpers";
+import {loadLocalState, queryTabs, saveLocalState, reloadTab,} from "./chrome-helpers";
 
 type ScriptFeatureKey = keyof typeof CAT_CATCH_SCRIPT_FEATURES;
 const SCRIPT_FEATURE_KEYS = Object.keys(CAT_CATCH_SCRIPT_FEATURES) as ScriptFeatureKey[];
@@ -19,13 +19,13 @@ export function createFeatureBridge() {
     }, {} as FeatureStateMap);
   }
 
-  async function persistFeatureTabs(): Promise<void> {
-    await localStorageSet({
+  async function saveFeatureTabs(): Promise<void> {
+    await saveLocalState({
       [FEATURE_TAB_STATE_KEY]: Object.fromEntries(FEATURE_KEYS.map((key) => [key, Array.from(featureTabs[key])])),
     });
   }
 
-  async function updateSessionRules(tabId: number, enabled: boolean): Promise<void> {
+  async function setSessionRule(tabId: number, enabled: boolean): Promise<void> {
     return new Promise((resolve, reject) => {
       chrome.declarativeNetRequest.updateSessionRules(
         enabled
@@ -66,7 +66,7 @@ export function createFeatureBridge() {
     });
   }
 
-  async function executeScriptFiles(
+  async function runScriptFiles(
     tabId: number,
     key: ScriptFeatureKey,
     frameIds?: number[],
@@ -110,8 +110,8 @@ export function createFeatureBridge() {
       } else {
         featureTabs.mobileUserAgent.delete(tabId);
       }
-      await updateSessionRules(tabId, enabled);
-      await persistFeatureTabs();
+      await setSessionRule(tabId, enabled);
+      await saveFeatureTabs();
       await reloadTab(tabId);
       return enabled ? "已启用模拟手机，将在刷新后生效" : "已关闭模拟手机";
     }
@@ -122,7 +122,7 @@ export function createFeatureBridge() {
     } else {
       featureTabs[scriptKey].delete(tabId);
     }
-    await persistFeatureTabs();
+    await saveFeatureTabs();
 
     if (CAT_CATCH_SCRIPT_FEATURES[scriptKey].reloadRequired) {
       await reloadTab(tabId);
@@ -131,12 +131,12 @@ export function createFeatureBridge() {
     if (!enabled) {
       return "功能后台状态已关闭，页面中的面板可在网页内自行关闭";
     }
-    await executeScriptFiles(tabId, scriptKey);
+    await runScriptFiles(tabId, scriptKey);
     return "功能已开启";
   }
 
   async function loadPersistentState() {
-    const localState = await loadFromLocalStorage<{
+    const localState = await loadLocalState<{
       [FEATURE_TAB_STATE_KEY]: Partial<Record<AdvancedFeatureKey, number[]>>;
     }>({
       [FEATURE_TAB_STATE_KEY]: {},
@@ -147,14 +147,34 @@ export function createFeatureBridge() {
       featureTabs[key] = new Set<number>((storedFeatureTabs[key] ?? []).filter((value): value is number => Number.isInteger(value)));
     }
 
+    // featureTabs is a cache of tab-level state; tabs can close while the SW is suspended,
+    // leaving stale entries that would re-apply DNR rules or trigger script injection on
+    // a tab that no longer exists. Reconcile against the live tab list before re-applying.
+    const liveTabs = await queryTabs({});
+    const liveTabIds = new Set(liveTabs.filter(tab => tab.id != null).map(tab => tab.id!));
+
+    for (const key of FEATURE_KEYS) {
+      for (const tabId of featureTabs[key]) {
+        if (liveTabIds.has(tabId)) {
+          continue;
+        }
+        featureTabs[key].delete(tabId);
+        if (key === "mobileUserAgent") {
+          void setSessionRule(tabId, false).catch(() => {
+            // Ignore cleanup errors for orphaned rules.
+          });
+        }
+      }
+    }
+
     for (const tabId of featureTabs.mobileUserAgent) {
       try {
-        await updateSessionRules(tabId, true);
+        await setSessionRule(tabId, true);
       } catch {
         featureTabs.mobileUserAgent.delete(tabId);
       }
     }
-    await persistFeatureTabs();
+    await saveFeatureTabs();
   }
 
   async function toggleFeature(key: AdvancedFeatureKey, tabId: number): Promise<string> {
@@ -178,10 +198,10 @@ export function createFeatureBridge() {
     for (const key of FEATURE_KEYS) {
       featureTabs[key].delete(tabId);
     }
-    void updateSessionRules(tabId, false).catch(() => {
+    void setSessionRule(tabId, false).catch(() => {
       // Ignore cleanup errors.
     });
-    void persistFeatureTabs();
+    void saveFeatureTabs();
   }
 
   function onNavigationCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails) {
@@ -211,7 +231,7 @@ export function createFeatureBridge() {
       if (!feature.allFrames && details.frameId !== MAIN_FRAME_ID) {
         continue;
       }
-      void executeScriptFiles(
+      void runScriptFiles(
         details.tabId,
         key,
         feature.allFrames ? [details.frameId] : [MAIN_FRAME_ID],

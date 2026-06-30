@@ -1,13 +1,13 @@
-import type {CapturedResource} from "../shared/types";
+import type {Resource} from "../shared/types";
 import {fileExtension, filenameFromUrl} from "../shared/utils";
 
-// 下载规格 (Download Spec) 的权威。Per ADR-0001, the extension — not the desktop — decides
+// ResourceTaskOptions 的权威。Per ADR-0001, the extension — not the desktop — decides
 // the filename/size/supportsRange for a browser-sourced task, because only the browser has
 // the page context (title/poster) and the media's real response. This module is that
-// authority: pure functions turning a captured 资源 (Resource) into the spec the desktop
+// authority: pure functions turning a captured 资源 (Resource) into the options the desktop
 // trusts. The two exported entry points are the test surface; the helpers stay internal.
 
-export interface DownloadSpec {
+export interface ResourceTaskOptions {
   url: string;
   headers: Record<string, string>;
   filename: string;
@@ -15,9 +15,9 @@ export interface DownloadSpec {
   supportsRange: boolean;
 }
 
-// Minimal shape resolveCapturedFilename reads; CapturePayload (cat-catch addMedia path)
+// Minimal shape resourceNameFromCapture reads; CapturePayload (cat-catch addMedia path)
 // structurally satisfies it.
-export interface CapturedFilenameInput {
+export interface ResourceNameInput {
   url: string;
   filename?: string;
   mime?: string;
@@ -73,7 +73,7 @@ function filenameWithExtension(baseName: string, extension: string): string {
 }
 
 // Capture-time name for a resource discovered via cat-catch's addMedia path.
-export function resolveCapturedFilename(payload: CapturedFilenameInput): string {
+export function resourceNameFromCapture(payload: ResourceNameInput): string {
   const ext = payload.ext?.trim() || extensionFromMime(payload.mime);
   const explicit = cleanFilename(payload.filename);
   if (explicit) {
@@ -88,8 +88,8 @@ export function resolveCapturedFilename(payload: CapturedFilenameInput): string 
   return ext ? filenameWithExtension("resource", ext) : "resource";
 }
 
-// The final filename in the spec handed to the desktop; prefers the page title.
-export function filenameForDesktop(resource: CapturedResource): string {
+// Task name derived from a captured resource; prefers the page title.
+export function taskNameForResource(resource: Resource): string {
   const urlFilename = filenameFromUrl(resource.url);
   const current = cleanFilename(resource.filename || urlFilename);
   const extension = fileExtension(current)
@@ -100,12 +100,12 @@ export function filenameForDesktop(resource: CapturedResource): string {
   return filenameWithExtension(baseName, extension);
 }
 
-// 资源 → 下载规格. The canonical single-resource handoff spec.
-export function buildDownloadSpec(resource: CapturedResource): DownloadSpec {
+// 资源 → ResourceTaskOptions.
+export function toResourceTaskOptions(resource: Resource): ResourceTaskOptions {
   return {
     url: resource.url,
     headers: resource.requestHeaders,
-    filename: filenameForDesktop(resource),
+    filename: taskNameForResource(resource),
     size: resource.size,
     supportsRange: resource.supportsRange,
   };

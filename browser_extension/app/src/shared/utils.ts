@@ -1,4 +1,4 @@
-import type {CapturedResource, DesktopConnectionState, GenericTaskSummary, ResourceFilter,} from "./types";
+import type {Resource, DesktopConnectionState, TaskSummary, ResourceFilter,} from "./types";
 import {
     CAT_CATCH_AUDIO_EXTENSIONS,
     CAT_CATCH_VIDEO_EXTENSIONS,
@@ -37,7 +37,7 @@ export type VisualKind =
   | "image"
   | "stream";
 type ResourceParserHint = "m3u8" | "mpd" | "media" | "download" | "other";
-type ResourceDeliveryTarget = "gd3" | "browser_download";
+type ResourceDeliveryTarget = "desktop" | "browser_download";
 type ResourceMediaKind = "video" | "audio" | "";
 
 interface ResourcePresentation {
@@ -55,7 +55,7 @@ interface ResourcePresentation {
   };
 }
 
-export function sortTasks(tasks: GenericTaskSummary[]): GenericTaskSummary[] {
+export function sortTasks(tasks: TaskSummary[]): TaskSummary[] {
   return [...tasks].sort((left, right) => {
     const leftActive = ACTIVE_STATUSES.has(left.status);
     const rightActive = ACTIVE_STATUSES.has(right.status);
@@ -98,14 +98,14 @@ export function formatTaskStatus(status: string): string {
   }
 }
 
-export function formatTaskMetric(task: GenericTaskSummary): string {
+export function formatTaskMetric(task: TaskSummary): string {
   if (task.speed > 0) {
     return `${formatBytes(task.speed)}/s`;
   }
   return `${formatBytes(task.receivedBytes)} / ${task.fileSize > 0 ? formatBytes(task.fileSize) : "--"}`;
 }
 
-export function formatProgress(task: GenericTaskSummary): string {
+export function formatProgress(task: TaskSummary): string {
   if (task.fileSize > 0) {
     return `${formatBytes(task.receivedBytes)} / ${formatBytes(task.fileSize)}`;
   }
@@ -259,7 +259,7 @@ export function dashTrackRoleOf(filename: string, url: string): ResourceMediaKin
   return "";
 }
 
-function mediaKindOf(resource: CapturedResource, extension: string): ResourceMediaKind {
+function mediaKindOf(resource: Resource, extension: string): ResourceMediaKind {
   const mime = resource.mime.toLowerCase();
   if (extension === "m4s") {
     const dashKind = dashTrackRoleOf(resource.filename, resource.url);
@@ -288,16 +288,25 @@ function visualKindOf({
   extension,
   mime,
   parserHint,
+  filename,
+  url,
 }: {
   extension: string;
   mime?: string;
   parserHint?: ResourceParserHint;
+  filename?: string;
+  url?: string;
 }): VisualKind {
   const loweredMime = mime?.toLowerCase() ?? "";
   const loweredExtension = extension.toLowerCase();
 
   if (parserHint === "m3u8" || parserHint === "mpd") {
     return "stream";
+  }
+  if (loweredExtension === "m4s" && filename && url) {
+    const role = dashTrackRoleOf(filename, url);
+    if (role === "audio") { return "audio"; }
+    if (role === "video") { return "video"; }
   }
   if (loweredMime.startsWith("video/") || CAT_CATCH_VIDEO_EXTENSIONS.has(loweredExtension)) {
     return "video";
@@ -328,7 +337,7 @@ function visualKindOf({
   return "download";
 }
 
-function resourcePresentationParts(resource: CapturedResource): {
+function resourcePresentationParts(resource: Resource): {
   extension: string;
   parserHint: ResourceParserHint;
   deliveryTarget: ResourceDeliveryTarget;
@@ -338,12 +347,12 @@ function resourcePresentationParts(resource: CapturedResource): {
   return {
     extension,
     parserHint: parserHintOf(resource.url, resource.mime, extension),
-    deliveryTarget: resource.url.startsWith("blob:") ? "browser_download" : "gd3",
+    deliveryTarget: resource.url.startsWith("blob:") ? "browser_download" : "desktop",
     mediaKind: mediaKindOf(resource, extension),
   };
 }
 
-function resourcePrimaryBadge(resource: CapturedResource, parts = resourcePresentationParts(resource)): string {
+function resourcePrimaryBadge(resource: Resource, parts = resourcePresentationParts(resource)): string {
   if (parts.parserHint === "m3u8") {
     return "M3U8";
   }
@@ -363,21 +372,19 @@ function resourcePrimaryBadge(resource: CapturedResource, parts = resourcePresen
   return "资源";
 }
 
-export function describeResource(resource: CapturedResource): ResourcePresentation {
+export function describeResource(resource: Resource): ResourcePresentation {
   const parts = resourcePresentationParts(resource);
   const mime = resource.mime.toLowerCase();
 
   let category: ResourceFilter = "all";
-  if (parts.parserHint === "m3u8" || parts.parserHint === "mpd") {
-    category = "streaming";
+  if (parts.parserHint === "m3u8" || parts.parserHint === "mpd" || parts.mediaKind === "video") {
+    category = "video";
   } else if (parts.mediaKind === "audio") {
     category = "audio";
-  } else if (parts.mediaKind === "video") {
-    category = "video";
   }
 
   const primaryBadge = resourcePrimaryBadge(resource, parts);
-  const needsDesktop = parts.deliveryTarget === "gd3";
+  const needsDesktop = parts.deliveryTarget === "desktop";
   const statusText = resource.sentToDesktopAt
     ? needsDesktop
       ? "已发送到 Ghost Downloader"
@@ -387,26 +394,21 @@ export function describeResource(resource: CapturedResource): ResourcePresentati
       : "浏览器下载";
 
   const tags = [primaryBadge];
-  tags.push(parts.deliveryTarget === "browser_download" ? "浏览器下载" : "GD3");
-  if (!resource.sentToDesktopAt && (parts.parserHint === "m3u8" || parts.parserHint === "mpd")) {
-    tags.push("流媒体");
+  if (parts.deliveryTarget === "browser_download") {
+    tags.push("浏览器下载");
   }
-  if (
-    !resource.sentToDesktopAt
-    && resource.requestHeaders
-    && Object.keys(resource.requestHeaders).length > 0
-    && (parts.parserHint === "m3u8" || parts.parserHint === "mpd")
-  ) {
-    tags.push("需请求头");
-  }
-  if (!resource.sentToDesktopAt && (parts.parserHint === "download" || parts.parserHint === "media")) {
-    tags.push("可直接下载");
+  if (isDashSegment(resource)) {
+    const role = dashTrackRoleOf(resource.filename, resource.url);
+    if (role === "video") { tags.push("视频轨"); }
+    else if (role === "audio") { tags.push("音频轨"); }
   }
   const visual: ResourcePresentation["visual"] = {
     kind: visualKindOf({
       extension: parts.extension,
       mime,
       parserHint: parts.parserHint,
+      filename: resource.filename,
+      url: resource.url,
     }),
   };
 
@@ -426,7 +428,7 @@ export function describeResource(resource: CapturedResource): ResourcePresentati
 
 // A DASH segment can't stand alone — either the path carries /media-(audio|video)-
 // (Douyin packagers) or it's .m4s (Bilibili/generic CMAF).
-export function isDashSegment(resource: CapturedResource): boolean {
+export function isDashSegment(resource: Resource): boolean {
   const url = resource.url;
   if (url.includes("/media-audio-") || url.includes("/media-video-")) {
     return true;
@@ -435,9 +437,9 @@ export function isDashSegment(resource: CapturedResource): boolean {
   return extension === "m4s";
 }
 
-export function canUseOnlineMerge(resource: CapturedResource): boolean {
+export function canUseOnlineMerge(resource: Resource): boolean {
   const parts = resourcePresentationParts(resource);
-  if (parts.deliveryTarget !== "gd3") {
+  if (parts.deliveryTarget !== "desktop") {
     return false;
   }
 
@@ -450,11 +452,11 @@ export function canUseOnlineMerge(resource: CapturedResource): boolean {
   );
 }
 
-export function canUseOnlineMergeSelection(resources: CapturedResource[]): boolean {
+export function canUseOnlineMergeSelection(resources: Resource[]): boolean {
   return resources.length === 2 && resources.every(canUseOnlineMerge);
 }
 
-export function sortResourcesForOnlineMerge(resources: CapturedResource[]): CapturedResource[] {
+export function sortResourcesForOnlineMerge(resources: Resource[]): Resource[] {
   return [...resources].sort((left, right) => {
     const leftCategory = describeResource(left).category;
     const rightCategory = describeResource(right).category;
@@ -471,7 +473,7 @@ export function sortResourcesForOnlineMerge(resources: CapturedResource[]): Capt
   });
 }
 
-export function filterResources(resources: CapturedResource[], filter: ResourceFilter): CapturedResource[] {
+export function filterResources(resources: Resource[], filter: ResourceFilter): Resource[] {
   const sorted = [...resources].sort((left, right) => right.capturedAt - left.capturedAt);
   if (filter === "all") {
     return sorted;
@@ -479,7 +481,7 @@ export function filterResources(resources: CapturedResource[], filter: ResourceF
   return sorted.filter((resource) => describeResource(resource).category === filter);
 }
 
-export function taskActionLabel(task: GenericTaskSummary): string {
+export function taskActionLabel(task: TaskSummary): string {
   if (task.status === "running") {
     return "暂停";
   }
@@ -489,8 +491,8 @@ export function taskActionLabel(task: GenericTaskSummary): string {
   return "";
 }
 
-export function taskVisual(task: GenericTaskSummary): { kind: VisualKind } {
-  const extension = fileExtension(task.fileExt || task.title);
+export function taskVisual(task: TaskSummary): { kind: VisualKind } {
+  const extension = fileExtension(task.fileExt || task.name);
   return {
     kind: visualKindOf({
       extension,

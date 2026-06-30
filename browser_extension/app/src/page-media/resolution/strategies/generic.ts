@@ -1,10 +1,10 @@
 import {classifyTrackRole, isDashSegmentUrl, isStreamUrl, stripRangeParams} from "../url-classify";
 import {newestMatching, postBindAttributedUrls, selectMergePair} from "../strategy";
 import type {ResolveContext} from "../strategy";
-import type {Resolution} from "../types";
+import type {Resolution} from "../../types";
 
-// Fallback resolver — runs when no per-site resolver matches the hostname.
-export function resolveGeneric(ctx: ResolveContext): Resolution {
+// Fallback strategy — runs when no per-site strategy matches the hostname.
+export function selectGeneric(ctx: ResolveContext): Resolution {
   const post = postBindAttributedUrls(ctx.clicked);
 
   const stream = newestMatching(post, isStreamUrl);

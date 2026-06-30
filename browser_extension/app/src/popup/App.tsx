@@ -2,13 +2,15 @@ import {makeStyles} from "@fluentui/react-components";
 import {useState} from "react";
 
 import type {PopupView, ThemePreference} from "../shared/types";
-import {AdvancedPage} from "./components/AdvancedPage";
-import {DownloadsPage} from "./components/DownloadsPage";
+import {AdvancedPage} from "./pages/AdvancedPage";
+import {DownloadsPage} from "./pages/DownloadsPage";
 import {Header} from "./components/Header";
-import {ResourcesPage} from "./components/ResourcesPage";
-import {SettingsPage} from "./components/SettingsPage";
+import {ImagesPage} from "./pages/ImagesPage";
+import {ResourcesPage} from "./pages/ResourcesPage";
+import {SettingsPage} from "./pages/SettingsPage";
 import {ToastHost} from "./components/ToastHost";
-import {usePopupBridge} from "./hooks/usePopupBridge";
+import {launchDesktop} from "./launch-desktop";
+import {usePopupBridge} from "./usePopupBridge";
 
 const useStyles = makeStyles({
   root: {
@@ -20,6 +22,8 @@ const useStyles = makeStyles({
     overflow: "hidden",
   },
   content: {
+    display: "flex",
+    flexDirection: "column",
     flex: 1,
     overflowY: "auto",
   },
@@ -42,13 +46,15 @@ export function App({
         currentView={currentView}
         connectionState={bridge.connectionState}
         connectionMessage={bridge.connectionMessage}
-        mediaDownloadOverlayEnabled={bridge.mediaDownloadOverlayEnabled}
-        mediaDownloadOverlayBusy={bridge.isUpdatingMediaDownloadOverlay}
-        interceptEnabled={bridge.interceptDownloads}
-        interceptBusy={bridge.isUpdatingIntercept}
+        isMediaButtonEnabled={bridge.isMediaButtonEnabled}
+        isMediaButtonBusy={bridge.isUpdatingMediaButton}
+        shouldTakeDownloads={bridge.shouldTakeDownloads}
+        isTakeDownloadsBusy={bridge.isUpdatingTakeDownloads}
+        pendingTaskCount={bridge.pendingTaskCount}
         onViewChange={setCurrentView}
-        onMediaDownloadOverlayToggle={(enabled) => void bridge.setMediaDownloadOverlay(enabled)}
-        onInterceptToggle={(enabled) => void bridge.setInterceptDownloads(enabled)}
+        onMediaButtonToggle={(enabled) => void bridge.setMediaButtonEnabled(enabled)}
+        onTakeDownloadsToggle={(enabled) => void bridge.setShouldTakeDownloads(enabled)}
+        onLaunchDesktop={launchDesktop}
       />
 
       <main className={styles.content}>
@@ -56,7 +62,14 @@ export function App({
           <DownloadsPage
             tasks={bridge.sortedTasks}
             isTaskBusy={bridge.isTaskBusy}
-            onTaskAction={(taskId, action) => void bridge.performTaskAction(taskId, action)}
+            onTaskAction={(taskId, action) => void bridge.sendTaskAction(taskId, action)}
+          />
+        ) : null}
+
+        {currentView === "images" ? (
+          <ImagesPage
+            connected={bridge.isConnected}
+            onSendImages={(images) => bridge.sendImages(images)}
           />
         ) : null}
 
@@ -81,9 +94,8 @@ export function App({
             onFeatureToggle={(feature) => void bridge.toggleFeature(feature)}
             mediaItems={bridge.mediaItems}
             mediaPlaybackState={bridge.mediaPlaybackState}
-            mediaBusy={bridge.isUpdatingMedia}
             onMediaItemChange={(index) => void bridge.setMediaIndex(index)}
-            onMediaAction={(action, value) => void bridge.performMediaAction(action, value)}
+            onMediaAction={(action, value) => void bridge.sendMediaAction(action, value)}
           />
         ) : null}
 
@@ -106,7 +118,7 @@ export function App({
         ) : null}
       </main>
 
-      <ToastHost message={bridge.flashMessage} tone={bridge.flashTone} />
+      <ToastHost message={bridge.toastMessage} intent={bridge.toastIntent} />
     </div>
   );
 }

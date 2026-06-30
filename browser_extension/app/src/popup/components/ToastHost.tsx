@@ -1,8 +1,6 @@
 import {makeStyles, MessageBar, MessageBarBody} from "@fluentui/react-components";
 
-import {flashToneToIntent} from "../lib/fluent";
-
-type FlashTone = "neutral" | "success" | "error";
+export type ToastIntent = "info" | "success" | "error";
 
 const useStyles = makeStyles({
   root: {
@@ -23,10 +21,10 @@ const useStyles = makeStyles({
 
 export function ToastHost({
   message,
-  tone,
+  intent,
 }: {
   message: string;
-  tone: FlashTone;
+  intent: ToastIntent;
 }) {
   const styles = useStyles();
   if (!message) {
@@ -35,7 +33,7 @@ export function ToastHost({
 
   return (
     <div className={styles.root}>
-      <MessageBar className={styles.bar} intent={flashToneToIntent(tone)}>
+      <MessageBar className={styles.bar} intent={intent}>
         <MessageBarBody>{message}</MessageBarBody>
       </MessageBar>
     </div>

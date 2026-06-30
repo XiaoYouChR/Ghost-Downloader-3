@@ -1,7 +1,7 @@
 import {DEFAULT_SERVER_URL} from "../shared/constants";
-import type {DesktopConnectionState, DesktopRequestResult, GenericTaskSummary,} from "../shared/types";
+import type {DesktopConnectionState, CommandResult, TaskSummary,} from "../shared/types";
 import {PAIR_TOKEN_KEY, PROTOCOL_VERSION, RECONNECT_ALARM, SERVER_URL_KEY,} from "./constants";
-import {loadFromLocalStorage, localStorageSet} from "./chrome-helpers";
+import {loadLocalState, saveLocalState} from "./chrome-helpers";
 
 type PendingRequest = {
   resolve: (value: any) => void;
@@ -17,6 +17,7 @@ type PairingResponse = {
 };
 
 const PAIRING_TIMEOUT_MS = 60000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 12000;
 const MISSING_PAIRING_MESSAGE = "待配对";
 
 export type DesktopBridgeSnapshot = {
@@ -25,23 +26,35 @@ export type DesktopBridgeSnapshot = {
   desktopVersion: string;
   token: string;
   serverUrl: string;
-  tasks: GenericTaskSummary[];
+  tasks: TaskSummary[];
 };
 
-export function createDesktopBridge() {
+export interface DesktopBridgeOptions {
+  onTaskSnapshotChanged?: (tasks: TaskSummary[]) => void;
+  onConnected?: () => void;
+}
+
+export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
   let desktopSocket: WebSocket | null = null;
   let reconnectTimer: number | null = null;
+  let installType = "";
 
   let connectionState: DesktopConnectionState = "missing_token";
   let connectionMessage = MISSING_PAIRING_MESSAGE;
   let desktopVersion = "";
   let pairToken = "";
   let serverUrl = DEFAULT_SERVER_URL;
-  let taskSnapshot: GenericTaskSummary[] = [];
+  let taskSnapshot: TaskSummary[] = [];
 
   const pendingRequests = new Map<string, PendingRequest>();
 
-  function nextRequestId(): string {
+  // Runtime fact about the extension (read once from chrome.management.getSelf in setupBackground).
+  // Owned by the bridge instance, not the module, since only connect() consumes it.
+  function setInstallType(type: string) {
+    installType = type;
+  }
+
+  function buildRequestId(): string {
     return crypto.randomUUID();
   }
 
@@ -90,16 +103,23 @@ export function createDesktopBridge() {
     if (message.type === "hello_ack") {
       desktopVersion = String(message.appVersion ?? "");
       setConnectionState("connected", "已连接");
-      desktopSocket?.send(JSON.stringify({ type: "subscribe_tasks", requestId: nextRequestId() }));
+      desktopSocket?.send(JSON.stringify({ type: "subscribe_tasks" }));
+      options.onConnected?.();
+      return;
+    }
+
+    if (message.type === "reload") {
+      chrome.runtime.reload();
       return;
     }
 
     if (message.type === "task_snapshot" && Array.isArray(message.tasks)) {
-      taskSnapshot = message.tasks as GenericTaskSummary[];
+      taskSnapshot = message.tasks as TaskSummary[];
+      options.onTaskSnapshotChanged?.(taskSnapshot);
       return;
     }
 
-    if (message.type === "create_task_result" || message.type === "task_action_result") {
+    if (message.type === "task_action_result") {
       const requestId = String(message.requestId ?? "");
       const pending = pendingRequests.get(requestId);
       if (!pending) {
@@ -108,6 +128,24 @@ export function createDesktopBridge() {
       clearTimeout(pending.timeoutId);
       pendingRequests.delete(requestId);
       pending.resolve(message);
+      return;
+    }
+
+    if (message.type === "create_task_result") {
+      const requestId = String(message.requestId ?? "");
+      const pending = pendingRequests.get(requestId);
+      if (!pending) {
+        return;
+      }
+      clearTimeout(pending.timeoutId);
+      pendingRequests.delete(requestId);
+
+      const ok = message.status === "created" || message.status === "drafted";
+      pending.resolve({
+        ok,
+        taskId: String(message.taskId ?? ""),
+        message: String(message.message ?? ""),
+      });
       return;
     }
 
@@ -155,7 +193,8 @@ export function createDesktopBridge() {
           protocolVersion: PROTOCOL_VERSION,
           token: pairToken,
           extensionVersion: chrome.runtime.getManifest().version,
-          clientKind: "chromium_popup",
+          clientKind: "browser_extension",
+          installType,
         }),
       );
     });
@@ -173,6 +212,8 @@ export function createDesktopBridge() {
       }
       desktopSocket = null;
       rejectPendingRequests("连接断开");
+      taskSnapshot = [];
+      options.onTaskSnapshotChanged?.([]);
       if (connectionState !== "unauthorized" && connectionState !== "missing_token") {
         desktopVersion = "";
         setConnectionState("disconnected", "未连接");
@@ -219,7 +260,7 @@ export function createDesktopBridge() {
           socket.send(
             JSON.stringify({
               type: "pair_request",
-              requestId: nextRequestId(),
+              requestId: buildRequestId(),
               protocolVersion: PROTOCOL_VERSION,
               extensionVersion: chrome.runtime.getManifest().version,
               clientKind: "browser_extension",
@@ -268,19 +309,23 @@ export function createDesktopBridge() {
     }
   }
 
-  async function sendRequest<T extends DesktopRequestResult>(payload: Record<string, unknown>): Promise<T> {
+  async function sendRequest<T extends CommandResult>(
+    payload: Record<string, unknown>,
+    timeoutMs?: number,
+  ): Promise<T> {
     if (!isReady() || !desktopSocket) {
       throw new Error("未连接");
     }
 
-    const requestId = String(payload.requestId ?? nextRequestId());
+    const requestId = String(payload.requestId ?? buildRequestId());
     const message = { ...payload, requestId };
+    const effectiveTimeout = timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
 
     return new Promise<T>((resolve, reject) => {
       const timeoutId = self.setTimeout(() => {
         pendingRequests.delete(requestId);
         reject(new Error("响应超时"));
-      }, 12000);
+      }, effectiveTimeout);
 
       pendingRequests.set(requestId, {
         resolve: (value) => resolve(value as T),
@@ -293,7 +338,7 @@ export function createDesktopBridge() {
   }
 
   async function loadPersistentState() {
-    const localState = await loadFromLocalStorage<{
+    const localState = await loadLocalState<{
       [PAIR_TOKEN_KEY]: string;
       [SERVER_URL_KEY]: string;
     }>({
@@ -307,7 +352,7 @@ export function createDesktopBridge() {
 
   async function setToken(token: string) {
     pairToken = String(token ?? "").trim();
-    await localStorageSet({ [PAIR_TOKEN_KEY]: pairToken });
+    await saveLocalState({ [PAIR_TOKEN_KEY]: pairToken });
     if (pairToken) {
       await connect(true);
       return;
@@ -324,7 +369,7 @@ export function createDesktopBridge() {
 
   async function setServerUrl(nextServerUrl: string) {
     serverUrl = String(nextServerUrl ?? DEFAULT_SERVER_URL).trim() || DEFAULT_SERVER_URL;
-    await localStorageSet({ [SERVER_URL_KEY]: serverUrl });
+    await saveLocalState({ [SERVER_URL_KEY]: serverUrl });
     await connect(true);
   }
 
@@ -348,7 +393,7 @@ export function createDesktopBridge() {
     };
   }
 
-  function ensureReconnectAlarm() {
+  function setupReconnectAlarm() {
     chrome.alarms.create(RECONNECT_ALARM, { periodInMinutes: 1 });
   }
 
@@ -362,12 +407,13 @@ export function createDesktopBridge() {
   return {
     buildSnapshot,
     connect,
-    ensureReconnectAlarm,
+    setupReconnectAlarm,
     onReconnectAlarm,
     isReady,
     loadPersistentState,
     requestPairing,
     sendRequest,
+    setInstallType,
     setServerUrl,
     setToken,
     onLocalStorageChanged,

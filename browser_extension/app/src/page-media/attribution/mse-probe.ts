@@ -1,22 +1,22 @@
 /*
  * Ghost Downloader — MSE attribution probe (MAIN world).
  * Proxy layout derived from cat-catch (catch-script/catch.js); upstream is GPL-3.0.
- * We post tagged, typed signals to the ISOLATED-world controller instead of capturing
- * buffers. Built as a standalone IIFE bundle (see scripts/build.mjs).
+ * We post tagged, typed signals to the ISOLATED-world attribution engine instead of
+ * capturing buffers. Built as a standalone IIFE bundle (see scripts/build.mjs).
  */
-import {postMediaSignal} from "./signals";
+import {postMediaSignal} from "./attribution-signal";
 
 declare global {
   interface Window {
-    __gd3MseAttributionInstalled?: boolean;
+    __gdMseAttributionInstalled?: boolean;
   }
 }
 
-type GhostXMLHttpRequest = XMLHttpRequest & { __gd3Url?: string };
+type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
 
 (function installGhostDownloaderMseAttribution() {
-  if (window.__gd3MseAttributionInstalled) { return; }
-  window.__gd3MseAttributionInstalled = true;
+  if (window.__gdMseAttributionInstalled) { return; }
+  window.__gdMseAttributionInstalled = true;
 
   const mediaSourceIdByInstance = new WeakMap<MediaSource, string>();
   let mediaSourceCounter = 0;
@@ -31,7 +31,7 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gd3Url?: string };
     return id;
   }
 
-  // Record blob URL → MediaSource so the controller can attribute <video>.src to a MS.
+  // Record blob URL → MediaSource so the attribution engine can attribute <video>.src to a MS.
   if (typeof window.URL?.createObjectURL === "function" && typeof window.MediaSource !== "undefined") {
     const originalCreateObjectUrl = window.URL.createObjectURL;
     window.URL.createObjectURL = function patchedCreateObjectURL(source: Blob | MediaSource): string {
@@ -90,12 +90,12 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gd3Url?: string };
     const originalOpen = XMLHttpRequest.prototype.open;
     const originalSend = XMLHttpRequest.prototype.send;
     XMLHttpRequest.prototype.open = function patchedOpen(this: GhostXMLHttpRequest, method: string, url: string | URL, ...rest: unknown[]): void {
-      this.__gd3Url = String(url);
+      this.__gdUrl = String(url);
       return (originalOpen as (...args: unknown[]) => void).apply(this, [method, url, ...rest]);
     };
     XMLHttpRequest.prototype.send = function patchedSend(this: GhostXMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
       const xhr = this;
-      const url = xhr.__gd3Url || "";
+      const url = xhr.__gdUrl || "";
       xhr.addEventListener("loadend", () => {
         try {
           postMediaSignal({

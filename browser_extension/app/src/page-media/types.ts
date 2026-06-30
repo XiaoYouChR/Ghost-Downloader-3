@@ -25,7 +25,8 @@ export type MseAttributionSignal =
   | { kind: "mse_objecturl"; mediaSourceId: string; objectUrl: string }
   | { kind: "mse_source_buffer_added"; mediaSourceId: string; mimeType: string }
   | { kind: "mse_buffer_appended"; mediaSourceId: string; mimeType: string }
-  | { kind: "request_completed"; url: string; contentType: string };
+  | { kind: "request_completed"; url: string; contentType: string }
+  | { kind: "media_metadata"; urls: string[]; duration: number; videoWidth: number; videoHeight: number; posterUrl: string };
 
 export type VideoSession = {
   id: string;
@@ -46,6 +47,7 @@ export type Selection =
   | { kind: "single"; url: string; formKind: VideoSessionFormKind }
   | { kind: "stream"; url: string }
   | { kind: "merge"; video: string; audio: string }
+  // The page URL handed to the desktop's yt-dlp, which extracts the media itself (YouTube/SABR).
   | { kind: "external"; pageUrl: string };
 
 export type Resolution =

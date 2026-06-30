@@ -3,7 +3,7 @@ import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 
 import {App} from "./popup/App";
-import {useThemePreference} from "./popup/hooks/useThemePreference";
+import {useThemePreference} from "./popup/useThemePreference";
 import "./index.css";
 
 function PopupRoot() {

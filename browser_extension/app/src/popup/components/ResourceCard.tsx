@@ -1,66 +1,79 @@
 import {
     Avatar,
-    Badge,
-    Body1Strong,
     Button,
     Caption1,
     Card,
     Checkbox,
-    Link,
     makeStyles,
+    mergeClasses,
 } from "@fluentui/react-components";
-import {ArrowDownloadRegular, CheckmarkCircleRegular} from "@fluentui/react-icons";
+import {ArrowDownloadRegular, CheckmarkRegular} from "@fluentui/react-icons";
 
-import type {CapturedResource} from "../../shared/types";
-import {describeResource, domainFromUrl, formatBytes, formatCapturedAt, truncate,} from "../../shared/utils";
-import {visualIcon} from "../lib/presenters";
+import type {Resource} from "../../shared/types";
+import {describeResource, formatBytes, isDashSegment,} from "../../shared/utils";
+import {visualIcon} from "../fluent";
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = String(Math.floor(seconds % 60)).padStart(2, "0");
+  return `${m}:${s}`;
+}
 
 const useStyles = makeStyles({
   root: {
-    gap: "8px",
-    padding: "12px",
+    padding: "8px 10px",
   },
-  header: {
+  sent: {
+    opacity: 0.55,
+  },
+  row: {
     display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
+    alignItems: "center",
+    gap: "8px",
   },
   select: {
-    paddingTop: "2px",
     flexShrink: 0,
+  },
+  mediaBox: {
+    position: "relative",
+    flexShrink: 0,
+    width: "40px",
+    height: "23px",
+  },
+  poster: {
+    width: "40px",
+    height: "23px",
+    objectFit: "cover",
+    borderRadius: "3px",
+    display: "block",
+  },
+  typeOverlay: {
+    position: "absolute",
+    bottom: "-4px",
+    right: "-4px",
   },
   body: {
     minWidth: 0,
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
+    gap: "2px",
   },
   title: {
-    display: "-webkit-box",
     overflow: "hidden",
-    wordBreak: "break-word",
-    WebkitLineClamp: "2",
-    WebkitBoxOrient: "vertical",
-  },
-  tags: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "6px",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    fontWeight: 600,
+    fontSize: "13px",
+    lineHeight: "18px",
   },
   meta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-  url: {
     overflow: "hidden",
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
   },
   action: {
-    alignSelf: "flex-start",
+    flexShrink: 0,
   },
 });
 
@@ -72,7 +85,7 @@ export function ResourceCard({
   onSend,
   onSelectedChange,
 }: {
-  resource: CapturedResource;
+  resource: Resource;
   connected: boolean;
   busy?: boolean;
   selected?: boolean;
@@ -82,75 +95,76 @@ export function ResourceCard({
   const styles = useStyles();
   const presentation = describeResource(resource);
   const ResourceIcon = visualIcon(presentation.visual.kind);
-  const sourceDomain = domainFromUrl(resource.pageUrl || resource.url) || "当前页面";
+  const isSent = Boolean(resource.sentToDesktopAt);
+  const isDash = isDashSegment(resource);
+
+  const metaParts: string[] = [presentation.primaryBadge];
+  if (resource.videoWidth && resource.videoHeight) {
+    metaParts.push(`${resource.videoHeight}p`);
+  }
+  if (resource.duration && resource.duration > 0) {
+    metaParts.push(formatDuration(resource.duration));
+  }
+  if (resource.size > 0) {
+    metaParts.push(formatBytes(resource.size));
+  }
+  for (const tag of presentation.tags) {
+    if (tag !== presentation.primaryBadge) {
+      metaParts.push(tag);
+    }
+  }
+
+  const displayTitle = isDash && resource.pageTitle
+    ? resource.pageTitle
+    : resource.filename || resource.pageTitle || resource.url;
 
   return (
-    <Card appearance="filled-alternative" className={styles.root}>
-      <div className={styles.header}>
+    <Card
+      appearance="filled-alternative"
+      className={mergeClasses(styles.root, isSent && styles.sent)}
+    >
+      <div className={styles.row}>
         <Checkbox
-          aria-label={`选择 ${resource.filename || resource.url}`}
+          aria-label={`选择 ${displayTitle}`}
           checked={selected}
           className={styles.select}
           onChange={(_event, data) => onSelectedChange?.(Boolean(data.checked))}
         />
-        <Avatar
-          aria-label={resource.filename || resource.url}
-          color="colorful"
-          icon={<ResourceIcon />}
-          idForColor={resource.id}
-          shape="square"
-          size={36}
-        />
+        {resource.posterUrl ? (
+          <div className={styles.mediaBox}>
+            <img alt="" className={styles.poster} src={resource.posterUrl} />
+            <Avatar
+              className={styles.typeOverlay}
+              color="colorful"
+              icon={<ResourceIcon />}
+              idForColor={resource.id}
+              shape="square"
+              size={16}
+            />
+          </div>
+        ) : (
+          <Avatar
+            color="colorful"
+            icon={<ResourceIcon />}
+            idForColor={resource.id}
+            shape="square"
+            size={24}
+          />
+        )}
 
         <div className={styles.body}>
-          <Body1Strong className={styles.title}>{resource.filename || resource.url}</Body1Strong>
-
-          <div className={styles.tags}>
-            {presentation.tags.map((tag) => (
-              <Badge key={tag} appearance="tint" color="brand" size="small">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-
-          <div className={styles.meta}>
-            {resource.size > 0 ? <Caption1>{formatBytes(resource.size)}</Caption1> : null}
-            <Caption1>{sourceDomain}</Caption1>
-            <Caption1>{formatCapturedAt(resource.capturedAt)}</Caption1>
-          </div>
-
-          <Link
-            appearance="subtle"
-            className={styles.url}
-            href={resource.url}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {truncate(resource.url, 68)}
-          </Link>
-
-          {resource.sentToDesktopAt ? (
-            <Button
-              appearance="secondary"
-              className={styles.action}
-              icon={<CheckmarkCircleRegular />}
-              size="small"
-            >
-              {presentation.statusText}
-            </Button>
-          ) : (
-            <Button
-              appearance="primary"
-              className={styles.action}
-              disabled={busy || (presentation.needsDesktop && !connected)}
-              icon={<ArrowDownloadRegular />}
-              size="small"
-              onClick={onSend}
-            >
-              {presentation.actionLabel}
-            </Button>
-          )}
+          <div className={styles.title}>{displayTitle}</div>
+          <Caption1 className={styles.meta}>{metaParts.join(" · ")}</Caption1>
         </div>
+
+        <Button
+          appearance={isSent ? "subtle" : "primary"}
+          className={styles.action}
+          disabled={isSent || busy || (presentation.needsDesktop && !connected)}
+          icon={isSent ? <CheckmarkRegular /> : <ArrowDownloadRegular />}
+          size="small"
+          onClick={isSent ? undefined : onSend}
+        />
       </div>
     </Card>
   );

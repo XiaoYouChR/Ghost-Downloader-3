@@ -24,16 +24,8 @@ export function extensionBrowserTarget(): ExtensionBrowserTarget {
   return cachedBrowserTarget;
 }
 
-export function isFirefoxExtension(): boolean {
-  return extensionBrowserTarget() === "firefox";
-}
-
-export function installDirectory(): string {
-  return isFirefoxExtension() ? "browser_extension/firefox" : "browser_extension/chromium";
-}
-
 export function onSendHeadersExtraInfoSpec(): chrome.webRequest.OnSendHeadersOptions[] {
-  return isFirefoxExtension()
+  return extensionBrowserTarget() === "firefox"
     ? [REQUEST_HEADERS]
     : [REQUEST_HEADERS, EXTRA_HEADERS];
 }
