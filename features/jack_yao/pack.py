@@ -1,462 +1,293 @@
+from __future__ import annotations
+
+import json
 import sys
 from base64 import b64decode
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-import niquests
-from PySide6.QtCore import Signal, Qt, QSize, QUrl
-from PySide6.QtGui import QPixmap, QColor, QDesktopServices, QPainter
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QHBoxLayout, QFileDialog
-from loguru import logger
-from orjson import loads
-from qfluentwidgets import MaskDialogBase, \
-    FluentStyleSheet, SettingCardGroup, OptionsConfigItem, OptionsValidator, ComboBoxSettingCard, FluentIcon, \
-    PlainTextEdit, PushSettingCard, RangeSettingCard, RangeConfigItem, RangeValidator, PrimaryPushButton, PushButton, \
-    PixmapLabel, TitleLabel, BodyLabel, PrimarySplitPushButton, SimpleCardWidget, RoundMenu, Action, IconWidget, \
-    CaptionLabel, isDarkTheme, InfoBar, InfoBarPosition
+from PySide6.QtCore import QCoreApplication, Qt, QUrl, Signal
+from PySide6.QtGui import QColor, QDesktopServices, QPixmap
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import (
+    BodyLabel,
+    CaptionLabel,
+    FluentIcon,
+    IconWidget,
+    IndeterminateProgressRing,
+    MessageBoxBase,
+    OptionsConfigItem,
+    OptionsValidator,
+    ComboBoxSettingCard,
+    PrimaryPushButton,
+    PushButton,
+    PixmapLabel,
+    SettingCardGroup,
+    SimpleCardWidget,
+    TitleLabel,
+    ToolTipFilter,
+    TransparentToolButton,
+)
 
-from app.bases.interfaces import FeaturePack
-from app.services.core_service import coreService
-from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import getProxies
+from app.client import buildClient
+from app.config.cfg import cfg
+from app.models.pack import FeaturePack, PackPage
 
 if sys.platform != "darwin":
     from qfluentwidgets import SmoothScrollArea as ScrollArea
 else:
     from qfluentwidgets import ScrollArea
 
-if TYPE_CHECKING:
-    from app.view.windows.main_window import MainWindow
+CATALOG_API = "https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc"
+CONTENT_MARGIN = 16
+
+
+async def fetchCatalog() -> list[dict]:
+    client = buildClient()
+    try:
+        response = await client.get(CATALOG_API)
+        response.raise_for_status()
+        return json.loads(await response.text())["OS"]
+    finally:
+        client.close()
+
+
+class CatalogPage(PackPage, ScrollArea):
+    icon = FluentIcon.CLOUD_DOWNLOAD
+    title = QCoreApplication.translate("CatalogPage", "资源下载")
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("CatalogPage")
+        self._cards: list[CatalogCard] = []
+
+        self._scrollWidget = QWidget()
+        self._layout = QVBoxLayout(self._scrollWidget)
+        self._loadingWidget = LoadingWidget(self._scrollWidget)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+        self._loadCatalog()
+
+    def _initWidget(self):
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+    def _initLayout(self):
+        self._layout.setSpacing(8)
+        self._layout.setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN)
+        self._layout.addWidget(self._loadingWidget, 1, Qt.AlignmentFlag.AlignCenter)
+
+        self.setWidget(self._scrollWidget)
+        self.setWidgetResizable(True)
+        self.enableTransparentBackground()
+
+    def _bind(self):
+        self._loadingWidget.retryRequested.connect(self._loadCatalog)
+
+    def _loadCatalog(self):
+        from app.services.coroutine_runner import coroutineRunner
+        self._loadingWidget.setLoading()
+        coroutineRunner.submit(
+            fetchCatalog(),
+            done=self._onCatalogLoaded, failed=self._onCatalogFailed,
+            owner=self,
+        )
+
+    def _onCatalogLoaded(self, items: list[dict]):
+        for card in self._cards:
+            self._layout.removeWidget(card)
+            card.deleteLater()
+        self._cards.clear()
+
+        self._layout.removeWidget(self._loadingWidget)
+        self._loadingWidget.setParent(None)
+        self._loadingWidget.deleteLater()
+
+        for item in items:
+            card = CatalogCard(item, self._scrollWidget)
+            self._layout.addWidget(card)
+            self._cards.append(card)
+
+        self._layout.addStretch(1)
+
+    def _onCatalogFailed(self, error: str):
+        self._loadingWidget.setError(self.tr("加载失败，请检查网络后重试\n") + str(error))
+
+
+class LoadingWidget(QWidget):
+    retryRequested = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._ring = IndeterminateProgressRing(self)
+        self._ring.setFixedSize(48, 48)
+        self._label = CaptionLabel(self.tr("正在加载..."), self)
+        self._errorIcon = IconWidget(FluentIcon.CANCEL, self)
+        self._errorIcon.setFixedSize(48, 48)
+        self._errorIcon.hide()
+        self._retryButton = PushButton(self.tr("重试"), self)
+        self._retryButton.hide()
+
+        self._label.setTextColor(QColor(96, 96, 96), QColor(206, 206, 206))
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setWordWrap(True)
+
+        self._retryButton.clicked.connect(self.retryRequested)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._ring, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self._errorIcon, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self._label, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self._retryButton, 0, Qt.AlignmentFlag.AlignHCenter)
+
+    def setLoading(self):
+        self._ring.show()
+        self._errorIcon.hide()
+        self._label.setText(self.tr("正在加载..."))
+        self._retryButton.hide()
+        self.show()
+
+    def setError(self, text: str):
+        self._ring.hide()
+        self._errorIcon.show()
+        self._label.setText(text)
+        self._retryButton.show()
+
+
+class CatalogCard(SimpleCardWidget):
+    def __init__(self, item: dict, parent=None):
+        super().__init__(parent)
+        self._catalogItems: list[dict] = item["List"]
+        self._videoUrl: str = item["Video"]
+        self.setFixedHeight(91)
+
+        self._logoLabel = PixmapLabel(self)
+        self._logoLabel.setFixedSize(71, 71)
+        self._logoLabel.setScaledContents(True)
+        pixmap = QPixmap()
+        pixmap.loadFromData(b64decode(item["Icon"]))
+        self._logoLabel.setPixmap(pixmap)
+        self._logoLabel.setFixedSize(71, 71)
+
+        self._titleLabel = TitleLabel(item["Name"], self)
+        self._bodyLabel = BodyLabel(item["Intro"].replace(r"\n", "\n"), self)
+        self._bodyLabel.setMaximumHeight(61)
+        self._bodyLabel.setWordWrap(True)
+
+        self._downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("下载"), self)
+        self._downloadButton.setFixedWidth(100)
+        self._videoButton = TransparentToolButton(FluentIcon.VIDEO, self)
+        self._videoButton.installEventFilter(ToolTipFilter(self._videoButton))
+        self._videoButton.setToolTip(self.tr("观看视频"))
+        self._videoButton.setEnabled(bool(self._videoUrl))
+
+        self._initLayout()
+        self._bind()
+
+    def _initLayout(self):
+        textLayout = QVBoxLayout()
+        textLayout.setSpacing(0)
+        textLayout.addWidget(self._titleLabel)
+        textLayout.addWidget(self._bodyLabel)
+
+        mainLayout = QHBoxLayout(self)
+        mainLayout.setSpacing(12)
+        mainLayout.addWidget(self._logoLabel)
+        mainLayout.addLayout(textLayout, 1)
+        mainLayout.addWidget(self._downloadButton)
+        mainLayout.addWidget(self._videoButton)
+
+    def _bind(self):
+        self._downloadButton.clicked.connect(self._onDownloadClicked)
+        self._videoButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self._videoUrl)))
+
+    def _onDownloadClicked(self):
+        dialog = CatalogDownloadDialog(self.window(), self._catalogItems)
+        dialog.exec()
+
+
+class CatalogDownloadDialog(MessageBoxBase):
+    def __init__(self, parent=None, catalogItems: list[dict] | None = None):
+        from app.view.components.card_groups import OptionCardGroup
+        from app.view.components.editors import AutoSizingEdit
+        from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
+
+        super().__init__(parent)
+        self._items = catalogItems or []
+
+        versions = [item["Version"] for item in self._items]
+        versionItem = OptionsConfigItem("Material", "Version", versions[0], OptionsValidator(versions))
+
+        self._versionGroup = SettingCardGroup(self.tr("选择版本"), self)
+        self._versionCard = ComboBoxSettingCard(
+            versionItem, FluentIcon.VIEW, self.tr("选择版本"), self.tr("选择你想下载的版本"),
+            texts=versions, parent=self._versionGroup,
+        )
+        self._versionGroup.addSettingCard(self._versionCard)
+
+        self._logGroup = SettingCardGroup(self.tr("更新日志"), self)
+        self._logEdit = AutoSizingEdit(self._logGroup, minimumVisibleLines=3, maximumVisibleLines=8)
+        self._logEdit.setReadOnly(True)
+        self._logEdit.setPlainText(self._items[0]["Log"] if self._items else "")
+        self._logGroup.addSettingCard(self._logEdit)
+
+        self._optionGroup = OptionCardGroup(self)
+        self._optionGroup.addCard(OutputFolderCard(self._optionGroup))
+        self._optionGroup.addCard(SubworkerCountCard(self._optionGroup))
+
+        self.yesButton.setText(self.tr("开始下载"))
+        self.cancelButton.setText(self.tr("取消"))
+
+        self.viewLayout.addWidget(self._versionGroup)
+        self.viewLayout.addWidget(self._logGroup)
+        self.viewLayout.addWidget(self._optionGroup)
+
+        self.widget.setFixedWidth(700)
+
+        self._versionCard.comboBox.currentIndexChanged.connect(
+            lambda i: self._logEdit.setPlainText(self._items[i]["Log"] if i < len(self._items) else "")
+        )
+        self.yesButton.clicked.disconnect()
+        self.yesButton.clicked.connect(self._onStartClicked)
+
+    def _onStartClicked(self):
+        from qfluentwidgets import InfoBar, InfoBarPosition
+        from app.models.task import ResourceTaskOptions
+        from app.services.coroutine_runner import coroutineRunner
+        from app.services.feature_service import featureService
+        from app.services.task_service import taskService
+
+        index = self._versionCard.comboBox.currentIndex()
+        item = self._items[index]
+        options = self._optionGroup.options()
+        window = self.window()
+        failedTitle = self.tr("下载失败")
+
+        def onParsed(task):
+            for step in task.steps:
+                step.setOptions(options)
+            taskService.add(task)
+
+        def onFailed(error):
+            InfoBar.error(failedTitle, str(error), duration=-1,
+                          position=InfoBarPosition.BOTTOM_RIGHT, parent=window)
+
+        coroutineRunner.submit(
+            featureService.parse(ResourceTaskOptions(
+                url=item["Url"],
+                outputFolder=options.get("outputFolder", Path(cfg.downloadFolder.value)),
+            )),
+            done=onParsed,
+            failed=onFailed,
+            owner=window,
+        )
+        self.accept()
 
 
 class JackYaoPack(FeaturePack):
     packId = "jack_yao"
 
-    def setup(self, mainWindow:"MainWindow"):
-        mainWindow.resourceInterface = ResourceInterface()
-        mainWindow.addSubInterface(mainWindow.resourceInterface, FluentIcon.CLOUD_DOWNLOAD, "资源下载")
-
-
-async def run():
-    async with niquests.AsyncSession(happy_eyeballs=True) as client:
-        client.trust_env = False
-        result = await client.get(
-            url="https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64"},
-            proxies=getProxies(), allow_redirects=True)
-        return loads(result.text)["OS"]
-
-
-class LoadingStatusWidget(QWidget):
-    retrySignal = Signal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.iconWidget = IconWidget(FluentIcon.SYNC, self)
-        self.label = CaptionLabel("正在加载...", self)
-        self.retryButton = PushButton("重试", self)
-        self.vBoxLayout = QVBoxLayout(self)
-        self.borderRadius = 10
-
-        self.initWidget()
-
-    def initWidget(self):
-        self.iconWidget.setFixedSize(64, 64)
-
-        self.label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setWordWrap(True)
-
-        self.retryButton.setVisible(False)
-        self.retryButton.clicked.connect(self.onRetryClicked)
-
-        self.vBoxLayout.setSpacing(10)
-        self.vBoxLayout.setContentsMargins(16, 20, 16, 20)
-        self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignHCenter)
-        self.vBoxLayout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter)
-        self.vBoxLayout.addWidget(self.retryButton, 0, Qt.AlignmentFlag.AlignHCenter)
-
-    def setLoading(self):
-        """设置为加载状态"""
-        self.iconWidget.setIcon(FluentIcon.SYNC)
-        self.label.setText("正在加载...")
-        self.retryButton.setVisible(False)
-
-    def setError(self, errorText: str):
-        """设置为错误状态"""
-        self.iconWidget.setIcon(FluentIcon.CANCEL)
-        self.label.setText(errorText)
-        self.retryButton.setVisible(True)
-
-    def onRetryClicked(self):
-        """重试按钮点击事件"""
-        self.setLoading()
-        self.retrySignal.emit()
-
-    @property
-    def backgroundColor(self):
-        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
-
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
-        painter.setBrush(self.backgroundColor)
-        painter.setPen(Qt.PenStyle.NoPen)
-
-        r = self.borderRadius
-        painter.drawRoundedRect(self.rect(), r, r)
-
-
-class ResourceInterface(ScrollArea):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-
-        self.setObjectName("ResourceInterface")
-        self.cards = []
-        self.jsonData = []
-        
-        self.initWidget()
-        self.initLayout()
-        self.connectSignalToSlot()
-        self.loadData()
-
-    def initWidget(self):
-        """初始化UI组件"""
-        self.scrollWidget = QWidget()
-        self.scrollWidget.setMinimumWidth(816)
-        self.expandLayout = QVBoxLayout(self.scrollWidget)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        
-        self.loadingStatusWidget = LoadingStatusWidget(self.scrollWidget)
-        self.expandLayout.addWidget(self.loadingStatusWidget, 0, Qt.AlignmentFlag.AlignCenter)
-
-    def initLayout(self):
-        """设置布局"""
-        self.setWidget(self.scrollWidget)
-        self.setWidgetResizable(True)
-        self.enableTransparentBackground()
-
-    def connectSignalToSlot(self):
-        """初始化信号连接"""
-        self.loadingStatusWidget.retrySignal.connect(self.loadData)
-
-    def loadData(self):
-        """加载数据"""
-        self.loadingStatusWidget.setLoading()
-        coreService.runCoroutine(run(), self.loadInfoCards)
-
-    def loadInfoCards(self, jsonData: list, error: str):
-        """加载信息卡片"""
-        if error:
-            self.loadingStatusWidget.setError(f"加载失败: {error}")
-            return
-
-        self.jsonData = jsonData
-
-        # 清除现有的卡片
-        for card in self.cards:
-            self.expandLayout.removeWidget(card)
-            card.deleteLater()
-        self.cards.clear()
-
-        for item in self.jsonData:
-            card = SystemInfoCard(self.scrollWidget)
-            self.cards.append(card)
-            
-            card.listData = item["List"]
-            card.titleLabel.setText(item["Name"])
-            
-            logger.debug(f'Loading System Card: {item["Name"]}')
-
-            # 从字节数据中创建QPixmap对象
-            pixmap = QPixmap()
-            pixmap.loadFromData(b64decode(item["Icon"]))
-            card.logoPixmapLabel.setPixmap(pixmap)
-            card.logoPixmapLabel.setFixedSize(71, 71)
-
-            card.bodyLabel.setText(item["Intro"].replace(r"\n", "\n"))
-            card.videoUrl = item["Video"]
-
-            card.connectSignalToSlot()
-            self.expandLayout.addWidget(card)
-            card.show()
-
-        self.hideLoadingStatusWidget()
-
-    def hideLoadingStatusWidget(self):
-        """隐藏加载状态控件"""
-        self.expandLayout.removeWidget(self.loadingStatusWidget)
-        self.loadingStatusWidget.hide()
-        self.loadingStatusWidget.setParent(None)
-        self.loadingStatusWidget.deleteLater()
-
-
-class DownloadOptionDialog(MaskDialogBase):
-    startSignal = Signal()
-
-    def __init__(self, parent=None, listData=None, cardData=None):
-        super().__init__(parent=parent)
-
-        FluentStyleSheet.DIALOG.apply(self.widget)
-
-        self.cardData = cardData
-        self.listData = listData
-        self.versions = []
-
-        self.initWidget()
-        self.initGroups()
-        self.initButtons()
-        self.initLayout()
-        self.connectSignalToSlot()
-
-    def initWidget(self):
-        """初始化UI基础设置"""
-        self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
-        self.setMaskColor(QColor(0, 0, 0, 76))
-
-        self.mainLayout = QVBoxLayout(self.widget)
-        self.mainLayout.setContentsMargins(18, 18, 18, 18)
-        self.widget.setLayout(self.mainLayout)
-        self.widget.setMinimumSize(510, 580)
-        self.widget.setMaximumSize(680, 580)
-
-    def initGroups(self):
-        """设置各功能组"""
-        self.initVersionGroup()
-        self.initLogGroup()
-        self.initSettingGroup()
-
-    def initVersionGroup(self):
-        """设置版本选择组"""
-        self.versionGroup = SettingCardGroup("选择版本", self.widget)
-
-        for item in self.listData:
-            self.versions.append(item["Version"])
-
-        versionItem = OptionsConfigItem(
-            "Material", "Version", self.versions[0], OptionsValidator(self.versions))
-
-        self.versionCard = ComboBoxSettingCard(
-            versionItem,
-            FluentIcon.VIEW,
-            "选择版本",
-            "选择你想下载的版本",
-            texts=self.versions,
-            parent=self.versionGroup
-        )
-
-        self.versionGroup.addSettingCard(self.versionCard)
-
-    def initLogGroup(self):
-        """设置日志组"""
-        self.logGroup = SettingCardGroup("更新日志", self.widget)
-
-        self.logTextEdit = PlainTextEdit(self.logGroup)
-        self.logTextEdit.setReadOnly(True)
-        self.logTextEdit.setMinimumHeight(140)
-        self.logTextEdit.setPlainText(self.listData[0]["Log"])
-        
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
-        self.logTextEdit.setSizePolicy(sizePolicy)
-        self.logGroup.addSettingCard(self.logTextEdit)
-
-    def initSettingGroup(self):
-        """设置下载设置组"""
-        self.settingGroup = SettingCardGroup("下载设置", self.widget)
-
-        # 下载目录设置卡
-        self.downloadFolderCard = PushSettingCard(
-            "选择下载目录",
-            FluentIcon.DOWNLOAD,
-            "下载目录",
-            cfg.downloadFolder.value,
-            self.settingGroup
-        )
-
-        # 下载线程数设置卡
-        self.threadCountCard = RangeSettingCard(
-            RangeConfigItem("Material", "AcrylicBlurRadius", 24, RangeValidator(1, 256)),
-            FluentIcon.CHAT,
-            "下载线程数",
-            '下载线程越多，下载越快，同时也越吃性能',
-            self.settingGroup
-        )
-
-        self.settingGroup.addSettingCards([self.downloadFolderCard, self.threadCountCard])
-
-    def initButtons(self):
-        """设置按钮"""
-        self.buttonLayout = QHBoxLayout()
-
-        self.cancelButton = PushButton(self)
-        self.cancelButton.setObjectName("cancelButton")
-        self.cancelButton.setText("取消下载")
-
-        self.startButton = PrimaryPushButton(self)
-        self.startButton.setObjectName("startButton")
-        self.startButton.setText("开始下载")
-
-        self.buttonLayout.addWidget(self.cancelButton)
-        self.buttonLayout.addWidget(self.startButton)
-        self.buttonLayout.setSpacing(18)
-
-    def initLayout(self):
-        """设置整体布局"""
-        self.mainLayout.addWidget(self.versionGroup)
-        self.mainLayout.addWidget(self.logGroup)
-        self.mainLayout.addWidget(self.settingGroup)
-        self.mainLayout.addLayout(self.buttonLayout)
-
-    def connectSignalToSlot(self):
-        """连接信号槽"""
-        self.downloadFolderCard.clicked.connect(self.onDownloadFolderClicked)
-        self.cancelButton.clicked.connect(self.close)
-        self.startButton.clicked.connect(self.startDownload)
-        self.versionCard.comboBox.currentIndexChanged.connect(self.onVersionChanged)
-
-    def startDownload(self):
-        """开始下载任务"""
-        payload = {
-            "url": self.listData[self.versionCard.comboBox.currentIndex()]["Url"],
-            "headers": defaultHeaders(),
-            "proxies": getProxies(),
-            "path": Path(cfg.downloadFolder.value),
-        }
-        coreService.runCoroutine(
-            coreService._parse(payload),
-            lambda task, error: self._onAssetParsed(task, error),
-        )
-        self.close()
-
-    def _onAssetParsed(self, task, error):
-        if error:
-            InfoBar.error(self.tr("下载失败"), error, duration=-1, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
-            return
-        
-        window: "MainWindow" = self.window()
-        if window.addTask(task):
-            InfoBar.success(self.tr("下载任务已添加"), content=task.title, duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=window)
-
-    def onDownloadFolderClicked(self):
-        """下载目录点击事件"""
-        folder = QFileDialog.getExistingDirectory(self, "选择文件夹", "./")
-        if not folder or self.downloadFolderCard.contentLabel.text() == folder:
-            return
-
-        self.downloadFolderCard.setContent(folder)
-
-    def onVersionChanged(self, index: int):
-        """版本选择变化事件"""
-        self.logTextEdit.setPlainText(self.listData[index]["Log"])
-
-
-class SystemInfoCard(SimpleCardWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        
-        self.listData = []
-        self.videoUrl = ""
-        self.pixmap = None
-        
-        self.initWidget()
-        self.initMenu()
-        self.initButtonText()
-
-    def initWidget(self):
-        """初始化UI组件"""
-        self.setObjectName("SystemInfoCard")
-        self.setFixedHeight(91)
-        
-        self.initMainLayout()
-        self.initLogoLabel()
-        self.initTextLayout()
-        self.initTitleLabel()
-        self.initBodyLabel()
-        self.initDownloadButton()
-
-    def initMainLayout(self):
-        """设置主布局"""
-        self.horizontalLayout = QHBoxLayout(self)
-        self.horizontalLayout.setSpacing(12)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-
-    def initLogoLabel(self):
-        """设置Logo标签"""
-        self.logoPixmapLabel = PixmapLabel(self)
-        self.logoPixmapLabel.setObjectName("logoPixmapLabel")
-        self.logoPixmapLabel.setMinimumSize(QSize(71, 71))
-        self.logoPixmapLabel.setMaximumSize(QSize(71, 71))
-        self.logoPixmapLabel.setScaledContents(True)
-        self.logoPixmapLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.horizontalLayout.addWidget(self.logoPixmapLabel)
-
-    def initTextLayout(self):
-        """设置文本布局"""
-        self.bodyVBoxLayout = QVBoxLayout()
-        self.bodyVBoxLayout.setSpacing(0)
-        self.bodyVBoxLayout.setObjectName("bodyVBoxLayout")
-
-    def initTitleLabel(self):
-        """设置标题标签"""
-        self.titleLabel = TitleLabel(self)
-        self.titleLabel.setObjectName("titleLabel")
-        
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.titleLabel.sizePolicy().hasHeightForWidth())
-        self.titleLabel.setSizePolicy(sizePolicy)
-        self.bodyVBoxLayout.addWidget(self.titleLabel)
-
-    def initBodyLabel(self):
-        """设置内容标签"""
-        self.bodyLabel = BodyLabel(self)
-        self.bodyLabel.setObjectName("bodyLabel")
-        
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.bodyLabel.sizePolicy().hasHeightForWidth())
-        self.bodyLabel.setSizePolicy(sizePolicy)
-        self.bodyLabel.setMaximumSize(QSize(16777215, 61))
-        self.bodyLabel.setWordWrap(True)
-        self.bodyVBoxLayout.addWidget(self.bodyLabel)
-        self.horizontalLayout.addLayout(self.bodyVBoxLayout)
-
-    def initDownloadButton(self):
-        """设置下载按钮"""
-        self.downloadButton = PrimarySplitPushButton(self)
-        self.downloadButton.setObjectName("downloadButton")
-        self.downloadButton.setFixedSize(QSize(121, 31))
-        self.downloadButton.setText("       下载       ")
-        self.horizontalLayout.addWidget(self.downloadButton)
-
-    def initMenu(self):
-        """设置菜单"""
-        self.menu = RoundMenu(parent=self)
-        self.videoAction = Action(FluentIcon.VIDEO, "视频")
-        self.menu.addAction(self.videoAction)
-        self.downloadButton.setFlyout(self.menu)
-
-    def initButtonText(self):
-        """设置按钮文本"""
-        self.downloadButton.setText("      下载      ")
-
-    def connectSignalToSlot(self):
-        """连接信号槽"""
-        self.videoAction.triggered.connect(self.openVideoUrl)
-        self.downloadButton.clicked.connect(self.openDownloadDialog)
-
-    def openVideoUrl(self):
-        """打开视频链接"""
-        QDesktopServices.openUrl(QUrl(self.videoUrl))
-
-    def openDownloadDialog(self):
-        """打开下载对话框"""
-        dialog = DownloadOptionDialog(
-            self.window(),
-            self.listData,
-            {"pixmap": self.pixmap, "name": self.titleLabel.text()}
-        )
-        dialog.exec()
+    def pages(self):
+        return [CatalogPage]

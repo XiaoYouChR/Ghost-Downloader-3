@@ -1,345 +1,216 @@
-import asyncio
+from __future__ import annotations
+
+import platform
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
 from qfluentwidgets import (
     BoolValidator,
-    ComboBoxSettingCard,
     ConfigItem,
-    FluentIcon,
     FolderValidator,
-    InfoBar,
     OptionsConfigItem,
     OptionsValidator,
-    PrimaryPushButton,
     RangeConfigItem,
-    RangeSettingCard,
     RangeValidator,
-    SettingCard,
-    SwitchSettingCard,
-    ToolButton,
 )
 
-from app.bases.models import PackConfig
-from app.services.core_service import coreService
-from app.supports.android import IS_ANDROID, nativeLibraryDir
-from app.supports.paths import APP_DATA_DIR
-from app.supports.utils import findExecutable, toPosixPath
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-from app.view.components.setting_cards import InstallFolderCard, LineEditSettingCard, SelectFileCard, SpinBoxSettingCard
+from app.client import buildClient
+from app.config.paths import APP_DATA_DIR
+from app.models.pack import BinaryRuntime, PackConfig
+from app.models.task import Task
+from app.platform.android import IS_ANDROID, nativeLibraryDir
+from app.platform.filesystem import findExecutable
 
-if TYPE_CHECKING:
-    from app.view.pages.setting_page import SettingPage
-    from app.view.windows.main_window import MainWindow
-
-try:
-    from ffmpeg_pack.config import ffmpegPaths
-except ImportError:
-    from features.ffmpeg_pack.config import ffmpegPaths
-
-
-def downloaderPath() -> str:
-    if IS_ANDROID:
-        nativeDir = nativeLibraryDir()
-        if not nativeDir:
-            return ""
-        binary = Path(nativeDir) / "libnm3u8dlre.so"
-        return str(binary) if binary.exists() else ""
-    return findExecutable(Path(m3u8Config.installFolder.value), "N_m3u8DL-RE")
-
-
-async def probeM3U8Runtime() -> dict[str, str]:
-    execPath = downloaderPath()
-    ffmpegPath, _ = ffmpegPaths()
-    runtimeInfo = {
-        "downloaderPath": execPath,
-        "version": "",
-        "installPath": "",
-        "ffmpegPath": ffmpegPath,
-    }
-    if not execPath:
-        return runtimeInfo
-
-    process = await asyncio.create_subprocess_exec(
-        execPath,
-        "--version",
-        stdin=asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
-        return runtimeInfo
-
-    output = stdout.decode("utf-8", errors="ignore") or stderr.decode("utf-8", errors="ignore")
-    lines = [line.strip() for line in output.splitlines() if line.strip()]
-    runtimeInfo["version"] = lines[0] if lines else ""
-    runtimeInfo["installPath"] = toPosixPath(Path(execPath).parent)
-    return runtimeInfo
-
-
-class M3U8RuntimeCard(SettingCard):
-    def __init__(self, parent=None):
-        super().__init__(FluentIcon.INFO, self.tr("当前 N_m3u8DL-RE"), self.tr("正在检测运行时..."), parent)
-        self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
-        self.refreshButton = ToolButton(FluentIcon.SYNC, self)
-
-        self._initLayout()
-        self._bind()
-
-    def _initLayout(self):
-        self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
-
-    def _bind(self):
-        self.installButton.clicked.connect(self._onInstallClicked)
-        self.refreshButton.clicked.connect(self.refreshStatus)
-
-    def refreshStatus(self):
-        self.refreshButton.setEnabled(False)
-        self.setContent(self.tr("正在检测运行时..."))
-        coreService.runCoroutine(probeM3U8Runtime(), self._onRuntimeLoaded)
-
-    def _onRuntimeLoaded(self, result, error: str | None):
-        self.refreshButton.setEnabled(True)
-        if error:
-            self.setContent(self.tr("检测运行时失败"))
-            return
-
-        runtimeInfo = result or {}
-        executablePath = runtimeInfo.get("downloaderPath", "")
-        version = runtimeInfo.get("version", "")
-        installPath = runtimeInfo.get("installPath", "")
-        ffmpegPath = runtimeInfo.get("ffmpegPath", "")
-
-        if executablePath:
-            ffmpegText = ffmpegPath if ffmpegPath else self.tr("未检测到，部分流可能无法自动混流")
-            content = self.tr("版本: {0}\n安装路径: {1}\nFFmpeg: {2}").format(
-                version or self.tr("未知"),
-                installPath or executablePath,
-                ffmpegText,
-            )
-        else:
-            content = self.tr("未检测到可用的 N_m3u8DL-RE")
-        self.setContent(content)
-
-    def _onInstallClicked(self):
-        from .pack import createInstallTask
-
-        self.installButton.setEnabled(False)
-        self.installButton.setText(self.tr("准备中..."))
-        coreService.runCoroutine(createInstallTask(), self._onInstallTaskCreated)
-
-    def _onInstallTaskCreated(self, result, error: str | None):
-        self.installButton.setEnabled(True)
-        self.installButton.setText(self.tr("一键安装"))
-
-        mainWindow: "MainWindow" = self.window()
-        if error or result is None:
-            InfoBar.error(self.tr("安装 N_m3u8DL-RE 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
-            return
-
-        mainWindow.addTask(result)
+RELEASE_TAG = "v0.5.1-beta"
+RELEASE_API = f"https://api.github.com/repos/nilaoda/N_m3u8DL-RE/releases/tags/{RELEASE_TAG}"
 
 
 class M3U8Config(PackConfig):
-    installFolder = ConfigItem(
-        "M3U8",
-        "InstallFolder",
-        f"{APP_DATA_DIR}/M3U8DL",
-        FolderValidator(),
-    )
+    installFolder = ConfigItem("M3U8", "InstallFolder", f"{APP_DATA_DIR}/M3U8DL", FolderValidator())
     associateFileTypes = ConfigItem("M3U8", "AssociateFileTypes", False, BoolValidator())
-
     outputFormat = OptionsConfigItem("M3U8", "OutputFormat", "mp4", OptionsValidator(["mp4", "mkv"]))
     threadCount = RangeConfigItem("M3U8", "ThreadCount", 8, RangeValidator(1, 64))
     retryCount = RangeConfigItem("M3U8", "RetryCount", 3, RangeValidator(0, 20))
     requestTimeout = RangeConfigItem("M3U8", "RequestTimeout", 100, RangeValidator(5, 600))
-    autoSelect = ConfigItem("M3U8", "AutoSelect", True, BoolValidator())
-    concurrentDownload = ConfigItem("M3U8", "ConcurrentDownload", True, BoolValidator())
-    appendUrlParams = ConfigItem("M3U8", "AppendUrlParams", False, BoolValidator())
-    binaryMerge = ConfigItem("M3U8", "BinaryMerge", False, BoolValidator())
-    checkSegmentsCount = ConfigItem("M3U8", "CheckSegmentsCount", True, BoolValidator())
-
-    # 直播（real-time-merge 对直播恒开，不设开关）
-    liveKeepSegments = ConfigItem("M3U8", "LiveKeepSegments", False, BoolValidator())
-    livePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
-    liveFixVtt = ConfigItem("M3U8", "LiveFixVtt", False, BoolValidator())
+    shouldAutoSelect = ConfigItem("M3U8", "AutoSelect", True, BoolValidator())
+    shouldConcurrentDownload = ConfigItem("M3U8", "ConcurrentDownload", True, BoolValidator())
+    shouldAppendUrlParams = ConfigItem("M3U8", "AppendUrlParams", False, BoolValidator())
+    shouldBinaryMerge = ConfigItem("M3U8", "BinaryMerge", False, BoolValidator())
+    shouldCheckSegmentsCount = ConfigItem("M3U8", "CheckSegmentsCount", True, BoolValidator())
+    shouldKeepLiveSegments = ConfigItem("M3U8", "LiveKeepSegments", False, BoolValidator())
+    shouldUseLivePipeMux = ConfigItem("M3U8", "LivePipeMux", False, BoolValidator())
+    shouldFixLiveVtt = ConfigItem("M3U8", "LiveFixVtt", False, BoolValidator())
     liveWaitTime = RangeConfigItem("M3U8", "LiveWaitTime", 0, RangeValidator(0, 100000))
     liveTakeCount = RangeConfigItem("M3U8", "LiveTakeCount", 0, RangeValidator(0, 1000))
-
     decryptionEngine = OptionsConfigItem(
         "M3U8", "DecryptionEngine", "FFmpeg",
         OptionsValidator(["FFmpeg", "MP4Decrypt", "Shaka Packager"]),
     )
     decryptionBinaryPath = ConfigItem("M3U8", "DecryptionBinaryPath", "")
-    mp4RealTimeDecryption = ConfigItem("M3U8", "MP4RealTimeDecryption", True, BoolValidator())
-
+    shouldUseMp4RealTimeDecryption = ConfigItem("M3U8", "MP4RealTimeDecryption", True, BoolValidator())
     maxSpeed = RangeConfigItem("M3U8", "MaxSpeed", -1, RangeValidator(-1, 1000000))
     speedUnit = OptionsConfigItem("M3U8", "SpeedUnit", "Mbps", OptionsValidator(["Mbps", "Kbps"]))
     adKeyword = ConfigItem("M3U8", "AdKeyword", "")
     subtitleFormat = OptionsConfigItem("M3U8", "SubtitleFormat", "SRT", OptionsValidator(["SRT", "VTT"]))
-    noDateInfo = ConfigItem("M3U8", "NoDateInfo", False, BoolValidator())
-    keepImageSegments = ConfigItem("M3U8", "KeepImageSegments", False, BoolValidator())
-    delAfterDone = ConfigItem("M3U8", "DelAfterDone", True, BoolValidator())
+    shouldOmitDateInfo = ConfigItem("M3U8", "NoDateInfo", False, BoolValidator())
+    shouldKeepImageSegments = ConfigItem("M3U8", "KeepImageSegments", False, BoolValidator())
+    shouldDeleteTemp = ConfigItem("M3U8", "DelAfterDone", True, BoolValidator())
     customMuxAfterDone = ConfigItem("M3U8", "CustomMuxAfterDone", "")
-    selectAllAudioSubtitle = ConfigItem("M3U8", "SelectAllAudioSubtitle", True, BoolValidator())
+    shouldSelectAllAudioSubtitle = ConfigItem("M3U8", "SelectAllAudioSubtitle", True, BoolValidator())
 
-    def setupSettings(self, settingPage: "SettingPage"):
-        self.m3u8Group = CollapsibleSettingCardGroup(self.tr("流媒体下载"), "m3u8", settingPage.container)
-        self.installFolderCard = InstallFolderCard(
-            self.installFolder,
-            f"{APP_DATA_DIR}/M3U8DL",
-            self.tr("N_m3u8DL-RE 安装目录"),
-            self.tr("选择 N_m3u8DL-RE 安装目录"),
-            self.m3u8Group,
+    def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
+        import sys
+        from qfluentwidgets import ComboBoxSettingCard, FluentIcon, RangeSettingCard, SwitchSettingCard
+        from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+        from app.view.components.setting_cards import (
+            SelectFolderSettingCard, LineEditSettingCard, RuntimeCard, SelectFileCard, SpinBoxSettingCard,
         )
-        self.runtimeCard = M3U8RuntimeCard(self.m3u8Group)
 
-        cards = [self.installFolderCard, self.runtimeCard]
-        # macOS 的文件关联在构建时烘进 Info.plist, 运行时开关无意义, 不创建也不显示
+        m3u8Group = CollapsibleSettingCardGroup(self.tr("M3U8 下载"), "m3u8", parent)
+        installFolderCard = SelectFolderSettingCard(
+            self.installFolder, f"{APP_DATA_DIR}/M3U8DL",
+            self.tr("N_m3u8DL-RE 安装目录"),
+            m3u8Group,
+        )
+        runtimeCard = RuntimeCard(m3u8Runtime, m3u8Group)
+
+        cards = [installFolderCard, runtimeCard]
         if sys.platform != "darwin":
             cards.append(SwitchSettingCard(
-                FluentIcon.LINK,
-                self.tr("关联 M3U8/MPD 文件"),
+                FluentIcon.LINK, self.tr("关联 M3U8/MPD 文件"),
                 self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
-                self.associateFileTypes,
-                self.m3u8Group,
+                self.associateFileTypes, m3u8Group,
             ))
         cards += [
-            ComboBoxSettingCard(
-                self.outputFormat, FluentIcon.VIDEO, self.tr("输出容器"),
-                self.tr("点播下载完成后优先使用 ffmpeg 混流为指定容器"),
-                texts=["MP4", "MKV"], parent=self.m3u8Group,
-            ),
-            RangeSettingCard(
-                self.threadCount, FluentIcon.CLOUD, self.tr("分片线程数"),
-                self.tr("传给 N_m3u8DL-RE 的下载线程数"), self.m3u8Group,
-            ),
-            RangeSettingCard(
-                self.retryCount, FluentIcon.SYNC, self.tr("分片重试次数"),
-                self.tr("单个分片下载失败时的最大重试次数"), self.m3u8Group,
-            ),
-            SpinBoxSettingCard(
-                FluentIcon.HISTORY, self.tr("请求超时"), self.tr("HTTP 请求超时时间"),
-                " s", self.requestTimeout, self.m3u8Group, 5,
-            ),
-            SwitchSettingCard(
-                FluentIcon.ACCEPT, self.tr("自动选择最佳轨道"),
-                self.tr("默认选择最佳音视频轨道，避免每个链接都手动挑选"),
-                self.autoSelect, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.PAUSE, self.tr("并发下载音视频"),
-                self.tr("同时下载已选择的音频、视频和字幕轨道"),
-                self.concurrentDownload, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.LINK, self.tr("追加 URL 参数"),
-                self.tr("把输入链接上的 Query 参数追加到分片请求"),
-                self.appendUrlParams, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.ALIGNMENT, self.tr("二进制合并"),
-                self.tr("让 N_m3u8DL-RE 使用二进制方式合并分片"),
-                self.binaryMerge, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.SEARCH, self.tr("校验分片数量"),
-                self.tr("下载完成后检查实际分片数是否与预期一致"),
-                self.checkSegmentsCount, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.SAVE, self.tr("直播保留原始分片"),
-                self.tr("实时合并录制时仍保留下载的原始分片"),
-                self.liveKeepSegments, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.CODE, self.tr("直播管道混流"),
-                self.tr("录制时通过管道交给 ffmpeg 实时混流为封装容器"),
-                self.livePipeMux, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.FONT, self.tr("直播校正 VTT 字幕"),
-                self.tr("根据音频起始时间校正 VTT 字幕时间轴"),
-                self.liveFixVtt, self.m3u8Group,
-            ),
-            SpinBoxSettingCard(
-                FluentIcon.STOP_WATCH, self.tr("直播刷新等待时间"),
-                self.tr("两次拉取直播清单之间的等待秒数，0 为自动"),
-                " s", self.liveWaitTime, self.m3u8Group, 1,
-            ),
-            SpinBoxSettingCard(
-                FluentIcon.DOWNLOAD, self.tr("直播每次取片数"),
-                self.tr("每次刷新最多取走的分片数量，0 为自动"),
-                "", self.liveTakeCount, self.m3u8Group, 1,
-            ),
-            ComboBoxSettingCard(
-                self.decryptionEngine, FluentIcon.CERTIFICATE, self.tr("解密引擎"),
-                self.tr("调用的第三方解密程序"),
-                texts=["FFmpeg", "MP4Decrypt", "Shaka Packager"], parent=self.m3u8Group,
-            ),
-            SelectFileCard(
-                self.decryptionBinaryPath, FluentIcon.COMMAND_PROMPT, self.tr("解密引擎二进制路径"),
+            ComboBoxSettingCard(self.outputFormat, FluentIcon.VIDEO, self.tr("输出容器"),
+                self.tr("点播下载完成后优先使用 ffmpeg 混流为指定容器"), texts=["MP4", "MKV"], parent=m3u8Group),
+            RangeSettingCard(self.threadCount, FluentIcon.CLOUD, self.tr("分片线程数"),
+                self.tr("传给 N_m3u8DL-RE 的下载线程数"), m3u8Group),
+            RangeSettingCard(self.retryCount, FluentIcon.SYNC, self.tr("分片重试次数"),
+                self.tr("单个分片下载失败时的最大重试次数"), m3u8Group),
+            SpinBoxSettingCard(FluentIcon.HISTORY, self.tr("请求超时"), self.tr("HTTP 请求超时时间"),
+                " s", self.requestTimeout, m3u8Group, 5),
+            SwitchSettingCard(FluentIcon.ACCEPT, self.tr("自动选择最佳轨道"),
+                self.tr("默认选择最佳音视频轨道"), self.shouldAutoSelect, m3u8Group),
+            SwitchSettingCard(FluentIcon.PAUSE, self.tr("并发下载音视频"),
+                self.tr("同时下载已选择的音频、视频和字幕轨道"), self.shouldConcurrentDownload, m3u8Group),
+            SwitchSettingCard(FluentIcon.LINK, self.tr("追加 URL 参数"),
+                self.tr("把输入链接上的 Query 参数追加到分片请求"), self.shouldAppendUrlParams, m3u8Group),
+            SwitchSettingCard(FluentIcon.ALIGNMENT, self.tr("二进制合并"),
+                self.tr("让 N_m3u8DL-RE 使用二进制方式合并分片"), self.shouldBinaryMerge, m3u8Group),
+            SwitchSettingCard(FluentIcon.SEARCH, self.tr("校验分片数量"),
+                self.tr("下载完成后检查实际分片数是否与预期一致"), self.shouldCheckSegmentsCount, m3u8Group),
+            SwitchSettingCard(FluentIcon.SAVE, self.tr("直播保留原始分片"),
+                self.tr("实时合并录制时仍保留下载的原始分片"), self.shouldKeepLiveSegments, m3u8Group),
+            SwitchSettingCard(FluentIcon.CODE, self.tr("直播管道混流"),
+                self.tr("录制时通过管道交给 ffmpeg 实时混流为封装容器"), self.shouldUseLivePipeMux, m3u8Group),
+            SwitchSettingCard(FluentIcon.FONT, self.tr("直播校正 VTT 字幕"),
+                self.tr("根据音频起始时间校正 VTT 字幕时间轴"), self.shouldFixLiveVtt, m3u8Group),
+            SpinBoxSettingCard(FluentIcon.STOP_WATCH, self.tr("直播刷新等待时间"),
+                self.tr("两次拉取直播清单之间的等待秒数，0 为自动"), " s", self.liveWaitTime, m3u8Group, 1),
+            SpinBoxSettingCard(FluentIcon.DOWNLOAD, self.tr("直播每次取片数"),
+                self.tr("每次刷新最多取走的分片数量，0 为自动"), "", self.liveTakeCount, m3u8Group, 1),
+            ComboBoxSettingCard(self.decryptionEngine, FluentIcon.CERTIFICATE, self.tr("解密引擎"),
+                self.tr("调用的第三方解密程序"), texts=["FFmpeg", "MP4Decrypt", "Shaka Packager"], parent=m3u8Group),
+            SelectFileCard(FluentIcon.COMMAND_PROMPT, self.tr("解密引擎二进制路径"),
                 self.tr("MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg"),
-                self.tr("选择解密引擎可执行文件"), self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.FINGERPRINT, self.tr("MP4 实时解密"),
-                self.tr("下载 MP4 分片时实时解密"),
-                self.mp4RealTimeDecryption, self.m3u8Group,
-            ),
-            SpinBoxSettingCard(
-                FluentIcon.SPEED_HIGH, self.tr("限速"),
-                self.tr("最大下载速度，-1 为不限速"),
-                "", self.maxSpeed, self.m3u8Group, 1,
-            ),
-            ComboBoxSettingCard(
-                self.speedUnit, FluentIcon.TAG, self.tr("限速单位"),
-                self.tr("限速数值的单位"), texts=["Mbps", "Kbps"], parent=self.m3u8Group,
-            ),
-            LineEditSettingCard(
-                FluentIcon.REMOVE, self.tr("广告过滤"),
-                self.tr("匹配广告分片 URL 的正则表达式"),
-                self.adKeyword, self.m3u8Group, placeholder=self.tr("正则表达式"),
-            ),
-            ComboBoxSettingCard(
-                self.subtitleFormat, FluentIcon.DICTIONARY, self.tr("字幕格式"),
-                self.tr("字幕输出格式"), texts=["SRT", "VTT"], parent=self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.DATE_TIME, self.tr("不写入日期信息"),
-                self.tr("混流时不写入日期信息"), self.noDateInfo, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.PHOTO, self.tr("保留图形分片"),
-                self.tr("把图形字幕转图片后保留原始分片"),
-                self.keepImageSegments, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.DELETE, self.tr("完成后删除临时文件"),
-                self.tr("下载完成后删除分片临时目录"), self.delAfterDone, self.m3u8Group,
-            ),
-            SwitchSettingCard(
-                FluentIcon.MUSIC, self.tr("下载全部音轨与字幕"),
-                self.tr("默认拉取全部音频与字幕轨道，而非仅最佳"),
-                self.selectAllAudioSubtitle, self.m3u8Group,
-            ),
-            LineEditSettingCard(
-                FluentIcon.VIDEO, self.tr("自定义混流参数"),
+                configItem=self.decryptionBinaryPath, parent=m3u8Group),
+            SwitchSettingCard(FluentIcon.FINGERPRINT, self.tr("MP4 实时解密"),
+                self.tr("下载 MP4 分片时实时解密"), self.shouldUseMp4RealTimeDecryption, m3u8Group),
+            SpinBoxSettingCard(FluentIcon.SPEED_HIGH, self.tr("限速"),
+                self.tr("最大下载速度，-1 为不限速"), "", self.maxSpeed, m3u8Group, 1),
+            ComboBoxSettingCard(self.speedUnit, FluentIcon.TAG, self.tr("限速单位"),
+                self.tr("限速数值的单位"), texts=["Mbps", "Kbps"], parent=m3u8Group),
+            LineEditSettingCard(FluentIcon.REMOVE, self.tr("广告过滤"),
+                self.tr("匹配广告分片 URL 的正则表达式"), self.adKeyword, m3u8Group, placeholder=self.tr("正则表达式")),
+            ComboBoxSettingCard(self.subtitleFormat, FluentIcon.DICTIONARY, self.tr("字幕格式"),
+                self.tr("字幕输出格式"), texts=["SRT", "VTT"], parent=m3u8Group),
+            SwitchSettingCard(FluentIcon.DATE_TIME, self.tr("不写入日期信息"),
+                self.tr("混流时不写入日期信息"), self.shouldOmitDateInfo, m3u8Group),
+            SwitchSettingCard(FluentIcon.PHOTO, self.tr("保留图形分片"),
+                self.tr("把图形字幕转图片后保留原始分片"), self.shouldKeepImageSegments, m3u8Group),
+            SwitchSettingCard(FluentIcon.DELETE, self.tr("完成后删除临时文件"),
+                self.tr("下载完成后删除分片临时目录"), self.shouldDeleteTemp, m3u8Group),
+            SwitchSettingCard(FluentIcon.MUSIC, self.tr("下载全部音轨与字幕"),
+                self.tr("默认拉取全部音频与字幕轨道"), self.shouldSelectAllAudioSubtitle, m3u8Group),
+            LineEditSettingCard(FluentIcon.VIDEO, self.tr("自定义混流参数"),
                 self.tr("自定义 --mux-after-done，留空则按输出容器自动混流"),
-                self.customMuxAfterDone, self.m3u8Group, placeholder="format=mp4",
-            ),
+                self.customMuxAfterDone, m3u8Group, placeholder="format=mp4"),
         ]
-        self.m3u8Group.addSettingCards(cards)
-
-        self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
-        settingPage.addSettingGroup(self.m3u8Group)
-        self.runtimeCard.refreshStatus()
+        m3u8Group.addSettingCards(cards)
+        installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
+        runtimeCard.refreshStatus()
+        return [m3u8Group]
 
 
 m3u8Config = M3U8Config()
+
+
+class M3U8Runtime(BinaryRuntime):
+    name = "N_m3u8DL-RE"
+    canInstall = not IS_ANDROID
+
+    def path(self) -> str:
+        if IS_ANDROID:
+            nativeDir = nativeLibraryDir()
+            if not nativeDir:
+                return ""
+            binary = Path(nativeDir) / "libnm3u8dlre.so"
+            return str(binary) if binary.exists() else ""
+        return findExecutable(Path(m3u8Config.installFolder.value), "N_m3u8DL-RE")
+
+    async def installTask(self) -> Task:
+        machine = platform.machine().lower()
+        if sys.platform == "win32":
+            if machine in {"amd64", "x86_64"}:
+                target = "win-x64"
+            elif machine in {"arm64", "aarch64"}:
+                target = "win-arm64"
+            else:
+                target = "win-NT6.0-x86"
+        elif sys.platform == "darwin":
+            target = "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
+        elif sys.platform == "linux":
+            libcName = platform.libc_ver()[0].lower()
+            if machine in {"arm64", "aarch64"}:
+                target = "linux-musl-arm64" if libcName == "musl" else "linux-arm64"
+            else:
+                target = "linux-musl-x64" if libcName == "musl" else "linux-x64"
+        else:
+            raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
+
+        client = buildClient(headers={"accept": "application/vnd.github+json"})
+        try:
+            response = await client.get(RELEASE_API)
+            response.raise_for_status()
+            release = await response.json()
+        finally:
+            client.close()
+
+        assets = release.get("assets")
+        if not isinstance(assets, list):
+            raise RuntimeError("GitHub Release 返回了无效的 assets 数据")
+
+        asset = next((item for item in assets if target in item["name"]), None)
+        if asset is None:
+            raise RuntimeError(f"未找到适用于当前平台的 N_m3u8DL-RE 安装包: {target}")
+
+        url = asset["browser_download_url"].strip()
+        fileName = asset["name"].strip()
+        fileSize = asset["size"]
+        if not url or not fileName or fileSize <= 0:
+            raise RuntimeError("GitHub Release 返回了不完整的安装包信息")
+
+        from app.services.feature_service import featureService
+        from app.models.task import BinaryInstallOptions
+
+        binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
+        return await featureService.parse(BinaryInstallOptions(
+            url=url,
+            outputFolder=Path(m3u8Config.installFolder.value),
+            name=f"N_m3u8DL-RE 安装 ({target})",
+            executableNames=(binaryName,),
+        ))
+
+
+m3u8Runtime = M3U8Runtime()

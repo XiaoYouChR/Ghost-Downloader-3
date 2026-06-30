@@ -1,59 +1,62 @@
+from __future__ import annotations
+
 import asyncio
+from urllib.parse import urlsplit
 
-from PySide6.QtCore import QObject, Signal
+from app.client import buildClient
+from app.config.cfg import cfg
 
-from app.supports.config import cfg
 from ..config import bittorrentConfig
-from ..trackers import (
-    fetchWebTrackers,
-    mergeTrackers,
-    parseTrackerText,
-)
+
+TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
 
 
-class WebTrackerService(QObject):
-    trackersChanged = Signal()
-
-    def sourceUrls(self) -> list[str]:
-        return list(bittorrentConfig.webTrackerSources.value)
-
-    def customTrackers(self) -> list[str]:
-        return parseTrackerText(bittorrentConfig.webTrackerCustomList.value)
-
-    def cachedCount(self, url: str) -> int | None:
-        cache = self._sourceCache()
-        if url not in cache:
-            return None
-        return len(cache[url])
-
+class TrackerService:
     def mergedTrackers(self) -> list[str]:
-        cache = self._sourceCache()
-        return mergeTrackers(*cache.values(), self.customTrackers())
-
-    def setSourceUrls(self, urls: list[str]) -> None:
-        cfg.set(bittorrentConfig.webTrackerSources, urls)
-        cache = self._sourceCache()
-        prunedCache = {url: trackers for url, trackers in cache.items() if url in urls}
-        if prunedCache != cache:
-            cfg.set(bittorrentConfig.webTrackerSourceCache, prunedCache)
-        self.trackersChanged.emit()
-
-    def setCustomTrackers(self, trackers: list[str]) -> None:
-        cfg.set(bittorrentConfig.webTrackerCustomList, "\n".join(trackers))
-        self.trackersChanged.emit()
+        cache = dict(bittorrentConfig.webTrackerSourceCache.value)
+        customText = bittorrentConfig.webTrackerCustomList.value
+        customTrackers = [
+            t for t in customText.split()
+            if (p := urlsplit(t)).scheme.lower() in TRACKER_SCHEMES and p.netloc
+        ]
+        return list(dict.fromkeys(
+            tracker
+            for source in (*cache.values(), customTrackers)
+            for tracker in source
+            if tracker
+        ))
 
     async def refresh(self) -> tuple[int, int]:
-        urls = self.sourceUrls()
+        urls = list(bittorrentConfig.webTrackerSources.value)
         if not urls:
-            self.trackersChanged.emit()
             return 0, 0
 
+        async def fetchOne(sourceUrl: str) -> list[str]:
+            normalized = sourceUrl.strip()
+            parsed = urlsplit(normalized)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError("Web Tracker 源地址无效")
+            client = buildClient()
+            try:
+                response = await client.get(normalized)
+                response.raise_for_status()
+                text = await response.text()
+            finally:
+                client.close()
+            trackers = [
+                t for t in text.split()
+                if (p := urlsplit(t)).scheme.lower() in TRACKER_SCHEMES and p.netloc
+            ]
+            if not trackers:
+                raise ValueError("Web Tracker 源没有返回有效的 Tracker")
+            return trackers
+
         results = await asyncio.gather(
-            *(fetchWebTrackers(url) for url in urls),
+            *(fetchOne(url) for url in urls),
             return_exceptions=True,
         )
 
-        oldCache = self._sourceCache()
+        oldCache = dict(bittorrentConfig.webTrackerSourceCache.value)
         newCache: dict[str, list[str]] = {}
         successCount = 0
         for url, result in zip(urls, results):
@@ -65,11 +68,7 @@ class WebTrackerService(QObject):
                 successCount += 1
 
         cfg.set(bittorrentConfig.webTrackerSourceCache, newCache)
-        self.trackersChanged.emit()
         return successCount, len(urls)
 
-    def _sourceCache(self) -> dict[str, list[str]]:
-        return dict(bittorrentConfig.webTrackerSourceCache.value)
 
-
-webTrackerService = WebTrackerService()
+trackerService = TrackerService()

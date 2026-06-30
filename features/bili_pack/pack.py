@@ -1,219 +1,89 @@
+from __future__ import annotations
+
 import re
-from pathlib import Path
+import urllib.parse
 from urllib.parse import parse_qs, urlparse
 
-import niquests
-
-from app.bases.interfaces import FeaturePack
-from app.bases.models import Task
-from app.supports.config import cfg
-from app.supports.utils import getProxies, toSafeFilename
+from app.client import buildClient, toEmulation
+from app.config.cfg import cfg
+from app.models.pack import FeaturePack, TaskParser
+from app.models.task import TaskOptions
+from app.platform.filesystem import toSafeFilename
+from .account import bilibiliAccount
 from .config import bilibiliConfig
-from .task import BilibiliVideoStage, BilibiliAudioStage, BilibiliMergeStage
+from .task import BilibiliTask
 
 
-def _normalizeBilibiliReferer(referer: str) -> str:
-    parsedUrl = urlparse(referer)
-    if (parsedUrl.hostname or "").lower() != "bilibili.com":
-        return referer
-    return parsedUrl._replace(netloc="www.bilibili.com").geturl()
-
-
-def _buildBilibiliHeaders(referer: str) -> dict[str, str]:
-    headers = {
-        "accept-encoding": "deflate, br, gzip",
-        "accept-language": "zh-CN,zh;q=0.9",
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "upgrade-insecure-requests": "1",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0",
-        "referer": _normalizeBilibiliReferer(referer),
-    }
-
-    userCookie = bilibiliConfig.userCookie.value
-    if userCookie:
-        headers["cookie"] = userCookie
-
-    return headers
-
-
-def _parseVideoIdAndPages(url: str) -> tuple[str, list[int] | None]:
-    parsedUrl = urlparse(url)
-    host = (parsedUrl.hostname or "").lower()
-    if not (host == "bilibili.com" or host.endswith(".bilibili.com")):
-        raise ValueError("Invalid Bilibili video URL")
-
-    matchResult = re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", parsedUrl.path)
-    if not matchResult:
-        raise ValueError("Invalid Bilibili video URL")
-
-    pageParam = parse_qs(parsedUrl.query).get("p", [""])[0].strip()
-    pageRange = None if not pageParam else _parsePageParam(pageParam)
-    return matchResult.group(1), pageRange
-
-
-def _parsePageParam(pageParam: str) -> list[int]:
-    values: list[int] = []
-    if "," in pageParam:
-        for part in pageParam.split(","):
-            values.extend(_parsePageParam(part.strip()))
-        return values
-
-    if "-" in pageParam:
-        start, end = map(int, pageParam.split("-", 1))
-        if start > end:
-            start, end = end, start
-        return list(range(start, end + 1))
-
-    return [int(pageParam)]
-
-
-def _buildViewApiUrl(videoId: str) -> str:
-    if videoId.startswith("av"):
-        return f"https://api.bilibili.com/x/web-interface/view?avid={videoId[2:]}"
-    return f"https://api.bilibili.com/x/web-interface/view?bvid={videoId}"
-
-
-def _buildPlayApiUrl(videoId: str, cid: int, fnval: int, qn: int) -> str:
-    if videoId.startswith("av"):
-        return f"https://api.bilibili.com/x/player/wbi/playurl?avid={videoId[2:]}&cid={cid}&qn={qn}&fnval={fnval}&fourk=1"
-    return f"https://api.bilibili.com/x/player/wbi/playurl?bvid={videoId}&cid={cid}&qn={qn}&fnval={fnval}&fourk=1"
-
-
-def _resolveRequestedFnval(videoQuality: int) -> int:
-    fnval = 16
-    if bilibiliConfig.parseHDR.value:
-        fnval |= 64
-    if bilibiliConfig.parseDolby.value:
-        fnval |= 256
-        fnval |= 512
-    if videoQuality == 128:
-        fnval |= 1024
-    if videoQuality == 120:
-        fnval |= 128
-    return fnval
-
-
-def _buildPageSuffix(pageNumber: int, pagePart: str, baseTitle: str, totalSelected: int) -> str:
-    if totalSelected <= 1:
-        return ""
-    suffix = f" - P{pageNumber}"
-    if pagePart and pagePart != baseTitle:
-        suffix += f" {pagePart}"
-    return suffix
-
-
-def _pickVideoStream(pageData: dict, requestedQuality: int) -> dict:
-    dash = pageData.get("dash") or {}
-    videoOptions = dash.get("video") or []
-    if not videoOptions:
-        raise ValueError("Bilibili 返回结果中不存在 DASH 视频流")
-
-    acceptQuality = list(pageData.get("accept_quality") or [])
-    quality = requestedQuality
-    if acceptQuality and quality not in acceptQuality:
-        if bilibiliConfig.alternativeQuality.value == "max":
-            quality = max(acceptQuality)
-        else:
-            quality = min(acceptQuality)
-
-    for option in videoOptions:
-        if option.get("id") != quality:
-            continue
-        if _getStreamUrl(option):
-            return option
-
-    for option in videoOptions:
-        if _getStreamUrl(option):
-            return option
-
-    raise ValueError("未找到可用的视频流")
-
-
-def _pickAudioStream(pageData: dict) -> dict:
-    dash = pageData.get("dash") or {}
-    audioOptions = dash.get("audio") or []
-    if not audioOptions:
-        raise ValueError("Bilibili 返回结果中不存在 DASH 音频流")
-
-    for option in audioOptions:
-        if _getStreamUrl(option):
-            return option
-
-    raise ValueError("未找到可用的音频流")
-
-
-def _getStreamUrl(stream: dict) -> str:
-    url = stream.get("baseUrl") or stream.get("base_url")
-    if isinstance(url, str) and url:
-        return url
-
-    backup = stream.get("backupUrl") or stream.get("backup_url") or []
-    if isinstance(backup, list):
-        for item in backup:
-            if isinstance(item, str) and item:
-                return item
-
-    return ""
-
-
-async def _getFileSizeWithClient(url: str, headers: dict, proxies: dict, client: niquests.AsyncSession) -> int:
-    requestHeaders = headers.copy()
-    requestHeaders["range"] = "bytes=0-0"
-
-    response = await client.get(
-        url,
-        headers=requestHeaders,
-        proxies=proxies,
-        verify=cfg.SSLVerify.value,
-        allow_redirects=True,
-        stream=True,
-    )
-    try:
-        response.raise_for_status()
-        head = {k.lower(): v for k, v in response.headers.items()}
-
-        if response.status_code == 206 and "content-range" in head:
-            _left, _char, right = head["content-range"].rpartition("/")
-            if right != "*":
-                return int(right)
-
-        raise ValueError("音视频流不支持范围请求，当前实现无法下载")
-    finally:
-        await response.close()
-
-
-class BilibiliPack(FeaturePack):
-    packId = "bili"
+class BilibiliParser(TaskParser):
     priority = 50
-    config = bilibiliConfig
 
-    def matches(self, url: str) -> bool:
-        hostname = (urlparse(url).hostname or "").lower()
+    def match(self, options: TaskOptions) -> bool:
+        hostname = (urlparse(options.url).hostname or "").lower()
         return hostname == "bilibili.com" or hostname.endswith(".bilibili.com")
 
-    async def parse(self, payload: dict) -> Task:
-        url: str = payload["url"]
-        proxies: dict = payload.get("proxies", getProxies())
-        blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
-        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
+    async def parse(self, options: TaskOptions) -> Task:
+        url = options.url
+        subworkerCount = options.subworkerCount
+        outputFolder = options.outputFolder
 
-        headers = _buildBilibiliHeaders(url)
-        async with niquests.AsyncSession(headers=headers, timeout=60, happy_eyeballs=True) as client:
-            client.trust_env = False
+        await bilibiliAccount.fetchWbiKeys()
 
-            videoId, selectedPages = _parseVideoIdAndPages(url)
+        parsed = urlparse(url)
+        referer = parsed._replace(netloc="www.bilibili.com").geturl() if (
+            (parsed.hostname or "").lower() != "bilibili.com"
+        ) else url
 
-            response = await client.get(_buildViewApiUrl(videoId), proxies=proxies, allow_redirects=True)
+        apiHeaders = {}
+        cookie = bilibiliAccount.cookie
+        if cookie:
+            apiHeaders["cookie"] = cookie
+
+        downloadHeaders = {
+            **dict(options.headers),
+            "referer": referer,
+        }
+        if cookie:
+            downloadHeaders["cookie"] = cookie
+
+        emulation = toEmulation(
+            options.clientProfile or cfg.clientProfile.value,
+            options.sourceUserAgent,
+        )
+        client = buildClient(emulation=None, headers=apiHeaders)
+
+        try:
+            videoIdMatch = re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", parsed.path)
+            if not videoIdMatch:
+                raise ValueError("不是有效的 Bilibili 视频链接")
+            videoId = videoIdMatch.group(1)
+
+            pageParam = parse_qs(parsed.query).get("p", [""])[0].strip()
+            selectedPages: list[int] | None = None
+            if pageParam:
+                selectedPages = []
+                for part in pageParam.split(","):
+                    part = part.strip()
+                    if "-" in part:
+                        start, end = map(int, part.split("-", 1))
+                        if start > end:
+                            start, end = end, start
+                        selectedPages.extend(range(start, end + 1))
+                    else:
+                        selectedPages.append(int(part))
+
+            viewApiUrl = (
+                f"https://api.bilibili.com/x/web-interface/view?avid={videoId[2:]}"
+                if videoId.startswith("av")
+                else f"https://api.bilibili.com/x/web-interface/view?bvid={videoId}"
+            )
+
+            response = await client.get(viewApiUrl)
             response.raise_for_status()
-            videoPayload = response.json()
+            viewPayload = await response.json()
+            if viewPayload.get("code") not in {None, 0}:
+                raise ValueError(viewPayload.get("message") or "获取 Bilibili 视频信息失败")
 
-            if videoPayload.get("code") not in {None, 0}:
-                raise ValueError(videoPayload.get("message") or "获取 Bilibili 视频信息失败")
-
-            viewData = videoPayload.get("data") or {}
+            viewData = viewPayload.get("data") or {}
             pages = list(viewData.get("pages") or [])
             if not pages:
                 raise ValueError("未获取到视频分P信息")
@@ -226,47 +96,58 @@ class BilibiliPack(FeaturePack):
 
             videoTitle = str(viewData.get("title", "")).strip() or "bilibili_video"
             requestedQuality = bilibiliConfig.defaultQuality.value
+            baseName = toSafeFilename(videoTitle, fallback="bilibili_video")
+            taskName = f"{baseName}.mp4"
+
+            fnval = 16
+            if bilibiliConfig.shouldIncludeHdr.value:
+                fnval |= 64
+            if bilibiliConfig.shouldIncludeDolby.value:
+                fnval |= 256 | 512
+            if requestedQuality == 128:
+                fnval |= 1024
+            if requestedQuality == 120:
+                fnval |= 128
+
             totalSize = 0
+            parsedPages = []
 
-            baseTitle = toSafeFilename(videoTitle, fallback="bilibili_video")
-            if len(selectedPages) == 1:
-                page = pages[selectedPages[0] - 1]
-                pagePart = str(page.get("part", "")).strip()
-                suffix = _buildPageSuffix(selectedPages[0], pagePart, baseTitle, len(selectedPages))
-                title = f"{baseTitle}{suffix}.mp4"
-            else:
-                title = f"{baseTitle}.mp4"
-
-            resolvedPages = []
-            for index, pageNumber in enumerate(selectedPages):
+            for pageNumber in range(1, len(pages) + 1):
                 page = pages[pageNumber - 1]
                 pagePart = str(page.get("part", "")).strip()
                 cid = int(page["cid"])
 
-                playResponse = await client.get(
-                    _buildPlayApiUrl(videoId, cid, _resolveRequestedFnval(requestedQuality), requestedQuality),
-                    proxies=proxies,
-                    allow_redirects=True,
-                )
-                playResponse.raise_for_status()
-                playPayload = playResponse.json()
+                playParams = {"cid": cid, "qn": requestedQuality, "fnval": fnval, "fourk": 1}
+                if videoId.startswith("av"):
+                    playParams["avid"] = videoId[2:]
+                else:
+                    playParams["bvid"] = videoId
+                playParams = bilibiliAccount.signParams(playParams)
+                playApiUrl = f"https://api.bilibili.com/x/player/wbi/playurl?{urllib.parse.urlencode(playParams)}"
 
+                response = await client.get(playApiUrl)
+                response.raise_for_status()
+                playPayload = await response.json()
                 if playPayload.get("code") not in {None, 0}:
                     raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
 
                 pageData = playPayload.get("data") or {}
-                videoStream = _pickVideoStream(pageData, requestedQuality)
-                audioStream = _pickAudioStream(pageData)
-                videoUrl = _getStreamUrl(videoStream)
-                audioUrl = _getStreamUrl(audioStream)
+                videoUrl = self._selectStream(
+                    pageData.get("dash", {}).get("video") or [],
+                    requestedQuality,
+                    list(pageData.get("accept_quality") or []),
+                )
+                audioUrl = self._selectStream(
+                    pageData.get("dash", {}).get("audio") or [],
+                )
                 if not videoUrl or not audioUrl:
                     raise ValueError("未能解析出完整的音视频下载链接")
 
-                videoSize = await _getFileSizeWithClient(videoUrl, headers, proxies, client)
-                audioSize = await _getFileSizeWithClient(audioUrl, headers, proxies, client)
+                videoSize = await self._fetchSize(client, videoUrl, downloadHeaders)
+                audioSize = await self._fetchSize(client, audioUrl, downloadHeaders)
                 totalSize += videoSize + audioSize
 
-                resolvedPages.append({
+                parsedPages.append({
                     "pageNumber": pageNumber,
                     "pagePart": pagePart,
                     "videoUrl": videoUrl,
@@ -275,47 +156,104 @@ class BilibiliPack(FeaturePack):
                     "audioSize": audioSize,
                 })
 
-            task = Task(
-                title=title,
+            coverUrl = str(viewData.get("pic") or "").strip()
+            if coverUrl.startswith("http://"):
+                coverUrl = "https://" + coverUrl[7:]
+
+            coverSize = 0
+            if coverUrl:
+                try:
+                    headResponse = await client.head(coverUrl)
+                    cl = headResponse.headers.get("content-length")
+                    if cl:
+                        coverSize = int(cl.decode() if isinstance(cl, bytes) else cl)
+                except Exception:
+                    pass
+
+            for info in parsedPages:
+                info["headers"] = dict(downloadHeaders)
+                info["subworkerCount"] = subworkerCount
+                info["selected"] = info["pageNumber"] in selectedPages
+
+            task = BilibiliTask(
+                name=taskName,
                 url=url,
-                packId=self.packId,
                 fileSize=totalSize,
-                path=path,
+                outputFolder=outputFolder,
+                coverUrl=coverUrl,
+                coverSize=coverSize,
+                pages=parsedPages,
+                _baseName=baseName,
             )
-
-            for index, pageInfo in enumerate(resolvedPages):
-                pageSuffix = _buildPageSuffix(
-                    pageInfo["pageNumber"],
-                    pageInfo["pagePart"],
-                    baseTitle,
-                    len(selectedPages),
-                )
-                stageBase = index * 3
-
-                task.addStage(BilibiliVideoStage(
-                    stageIndex=stageBase + 1,
-                    url=pageInfo["videoUrl"],
-                    fileSize=pageInfo["videoSize"],
-                    headers=headers.copy(),
-                    proxies=proxies,
-                    blockNum=blockNum,
-                    pageIndex=index,
-                    pageSuffix=pageSuffix,
-                ))
-                task.addStage(BilibiliAudioStage(
-                    stageIndex=stageBase + 2,
-                    url=pageInfo["audioUrl"],
-                    fileSize=pageInfo["audioSize"],
-                    headers=headers.copy(),
-                    proxies=proxies,
-                    blockNum=blockNum,
-                    pageIndex=index,
-                    pageSuffix=pageSuffix,
-                ))
-                task.addStage(BilibiliMergeStage(
-                    stageIndex=stageBase + 3,
-                    pageIndex=index,
-                    pageSuffix=pageSuffix,
-                ))
+            task._rebuildSteps()
 
             return task
+        finally:
+            client.close()
+
+    def _selectStream(
+        self,
+        streams: list[dict],
+        quality: int | None = None,
+        acceptQuality: list[int] | None = None,
+    ) -> str:
+        if not streams:
+            raise ValueError("Bilibili 返回结果中不存在可用的媒体流")
+
+        def streamUrl(s: dict) -> str:
+            url = s.get("baseUrl") or s.get("base_url")
+            if isinstance(url, str) and url:
+                return url
+            backup = s.get("backupUrl") or s.get("backup_url") or []
+            if isinstance(backup, list):
+                for item in backup:
+                    if isinstance(item, str) and item:
+                        return item
+            return ""
+
+        if quality is not None and acceptQuality:
+            targetQuality = quality
+            if targetQuality not in acceptQuality:
+                targetQuality = max(acceptQuality) if bilibiliConfig.alternativeQuality.value == "max" else min(acceptQuality)
+            for s in streams:
+                if s.get("id") == targetQuality and streamUrl(s):
+                    return streamUrl(s)
+
+        for s in streams:
+            url = streamUrl(s)
+            if url:
+                return url
+
+        raise ValueError("未找到可用的媒体流")
+
+    async def _fetchSize(self, client, url: str, headers: dict) -> int:
+        response = await client.get(url, headers={**headers, "range": "bytes=0-0"})
+        try:
+            response.raise_for_status()
+            head = {k.decode().lower(): v.decode() for k, v in response.headers}
+            if response.status.as_int() == 206 and "content-range" in head:
+                _, _, total = head["content-range"].rpartition("/")
+                if total != "*":
+                    return int(total)
+            raise ValueError("音视频流不支持范围请求，当前实现无法下载")
+        finally:
+            response.close()
+
+
+class BilibiliPack(FeaturePack):
+    packId = "bili"
+    config = bilibiliConfig
+
+    def parsers(self):
+        return [BilibiliParser()]
+
+    def draftCard(self, task, parent=None):
+        from .cards import BilibiliDraftCard
+        return BilibiliDraftCard(task, parent)
+
+    def optionCards(self, task, parent=None):
+        from app.view.components.option_cards import OutputFolderCard
+        return [OutputFolderCard(parent, initial=task.outputFolder)]
+
+    def start(self):
+        bilibiliAccount.fetchAccountInfo()

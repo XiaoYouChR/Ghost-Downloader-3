@@ -5,16 +5,17 @@ from urllib.parse import urlparse
 from app.client import buildClient
 from app.config.cfg import ConfigItem
 from app.models.pack import PackConfig
-from qfluentwidgets import BoolValidator, ComboBox, ConfigValidator, FluentIcon, LineEdit, SettingCard, ToolButton, ToolTipFilter
+from qfluentwidgets import (
+    BoolValidator, ComboBox, ConfigValidator, FluentIcon, HyperlinkButton,
+    LineEdit, PasswordLineEdit, SettingCard, ToolButton, ToolTipFilter,
+)
 
-GITHUB_PROXY_SITES = (
-    "https://gh-proxy.com",
-    "https://ghproxy.vip",
-    "https://ghproxy.homeboyc.cn",
-    "https://gh.llkk.cc",
+HF_PROXY_SITES = (
+    "https://hf-mirror.com",
 )
 CUSTOM_SITE_KEY = "__custom__"
-PROBE_TARGET = "https://raw.githubusercontent.com/asjdf/ghproxy/main/src/index.ts"
+PROBE_TARGET = "https://huggingface.co/api/models/gpt2"
+TOKEN_URL = "https://huggingface.co/settings/tokens"
 
 
 def toProxySite(site: str) -> str:
@@ -27,17 +28,21 @@ def toProxySite(site: str) -> str:
 
 
 def selectedProxySite() -> str:
-    if githubConfig.selectedSite.value == CUSTOM_SITE_KEY:
-        return githubConfig.customSite.value
-    return githubConfig.selectedSite.value
+    if huggingFaceConfig.selectedSite.value == CUSTOM_SITE_KEY:
+        return huggingFaceConfig.customSite.value
+    return huggingFaceConfig.selectedSite.value
+
+
+def accessToken() -> str:
+    return huggingFaceConfig.accessToken.value
 
 
 async def probeProxyLatencies() -> dict[str, int]:
     import asyncio
     from time import perf_counter
 
-    sites = list(GITHUB_PROXY_SITES)
-    custom = githubConfig.customSite.value
+    sites = list(HF_PROXY_SITES)
+    custom = huggingFaceConfig.customSite.value
     if custom:
         sites.append(custom)
 
@@ -58,7 +63,7 @@ async def probeProxyLatencies() -> dict[str, int]:
     return dict(results)
 
 
-class GitHubProxySiteValidator(ConfigValidator):
+class HuggingFaceProxySiteValidator(ConfigValidator):
     def validate(self, value) -> bool:
         site = toProxySite(value)
         if not site:
@@ -77,13 +82,13 @@ class GitHubProxySiteValidator(ConfigValidator):
         return site if self.validate(site) else ""
 
 
-class GitHubProxySiteCard(SettingCard):
+class HuggingFaceProxySiteCard(SettingCard):
     def __init__(self, parent=None):
         super().__init__(
-            FluentIcon.GLOBE, self.tr("代理站"),
-            self.tr("选择 GitHub 反向代理站，延迟仅供参考"), parent,
+            FluentIcon.GLOBE, self.tr("镜像站"),
+            self.tr("选择 HuggingFace 镜像站，延迟仅供参考"), parent,
         )
-        self._latencies: dict[str, int | None] = {s: None for s in GITHUB_PROXY_SITES}
+        self._latencies: dict[str, int | None] = {s: None for s in HF_PROXY_SITES}
         self._isRefreshing = False
         self.comboBox = ComboBox(self)
         self.customSiteEdit = LineEdit(self)
@@ -93,7 +98,7 @@ class GitHubProxySiteCard(SettingCard):
         self._initLayout()
         self._bind()
 
-    def _initWidget(self):
+    def _initWidget(self) -> None:
         self.comboBox.setMinimumWidth(260)
         self.customSiteEdit.setPlaceholderText("https://example.com/")
         self.customSiteEdit.setClearButtonEnabled(True)
@@ -101,21 +106,21 @@ class GitHubProxySiteCard(SettingCard):
         self.refreshButton.setToolTip(self.tr("刷新延迟"))
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
 
-        for site in GITHUB_PROXY_SITES:
+        for site in HF_PROXY_SITES:
             self.comboBox.addItem(urlparse(site).netloc or site.rstrip("/"))
         self.comboBox.addItem(self.tr("自定义"))
 
-        currentSite = githubConfig.selectedSite.value
+        currentSite = huggingFaceConfig.selectedSite.value
         if currentSite == CUSTOM_SITE_KEY:
-            self.comboBox.setCurrentIndex(len(GITHUB_PROXY_SITES))
-        elif currentSite in GITHUB_PROXY_SITES:
-            self.comboBox.setCurrentIndex(GITHUB_PROXY_SITES.index(currentSite))
+            self.comboBox.setCurrentIndex(len(HF_PROXY_SITES))
+        elif currentSite in HF_PROXY_SITES:
+            self.comboBox.setCurrentIndex(HF_PROXY_SITES.index(currentSite))
         else:
             self.comboBox.setCurrentIndex(0)
-        self.customSiteEdit.setText(githubConfig.customSite.value)
+        self.customSiteEdit.setText(huggingFaceConfig.customSite.value)
         self.customSiteEdit.setVisible(currentSite == CUSTOM_SITE_KEY)
 
-    def _initLayout(self):
+    def _initLayout(self) -> None:
         self.hBoxLayout.addWidget(self.comboBox)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.customSiteEdit)
@@ -123,13 +128,13 @@ class GitHubProxySiteCard(SettingCard):
         self.hBoxLayout.addWidget(self.refreshButton)
         self.hBoxLayout.addSpacing(16)
 
-    def _bind(self):
+    def _bind(self) -> None:
         self.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
         self.customSiteEdit.editingFinished.connect(self._onCustomSiteEditingFinished)
         self.refreshButton.clicked.connect(self.refreshLatencies)
 
-    def _refreshLatencyLabels(self):
-        for i, site in enumerate(GITHUB_PROXY_SITES):
+    def _refreshLatencyLabels(self) -> None:
+        for i, site in enumerate(HF_PROXY_SITES):
             displayName = urlparse(site).netloc or site.rstrip("/")
             latency = self._latencies.get(site)
             if latency is None:
@@ -140,7 +145,7 @@ class GitHubProxySiteCard(SettingCard):
                 label = f"{displayName} ({latency} ms)"
             self.comboBox.setItemText(i, label)
 
-        customSite = githubConfig.customSite.value
+        customSite = huggingFaceConfig.customSite.value
         customLatency = self._latencies.get(customSite) if customSite else None
         if customLatency is None:
             customLabel = self.tr("自定义")
@@ -148,67 +153,94 @@ class GitHubProxySiteCard(SettingCard):
             customLabel = f"{self.tr('自定义')} ({self.tr('超时')})"
         else:
             customLabel = f"{self.tr('自定义')} ({customLatency} ms)"
-        self.comboBox.setItemText(len(GITHUB_PROXY_SITES), customLabel)
+        self.comboBox.setItemText(len(HF_PROXY_SITES), customLabel)
 
-    def _onCurrentIndexChanged(self, index: int):
+    def _onCurrentIndexChanged(self, index: int) -> None:
         from app.config.cfg import cfg
         if index < 0:
             return
-        if index < len(GITHUB_PROXY_SITES):
-            cfg.set(githubConfig.selectedSite, GITHUB_PROXY_SITES[index])
+        if index < len(HF_PROXY_SITES):
+            cfg.set(huggingFaceConfig.selectedSite, HF_PROXY_SITES[index])
         else:
-            cfg.set(githubConfig.selectedSite, CUSTOM_SITE_KEY)
-        self.customSiteEdit.setVisible(index >= len(GITHUB_PROXY_SITES))
+            cfg.set(huggingFaceConfig.selectedSite, CUSTOM_SITE_KEY)
+        self.customSiteEdit.setVisible(index >= len(HF_PROXY_SITES))
 
-    def _onCustomSiteEditingFinished(self):
+    def _onCustomSiteEditingFinished(self) -> None:
         from app.config.cfg import cfg
-        cfg.set(githubConfig.customSite, self.customSiteEdit.text().strip())
+        cfg.set(huggingFaceConfig.customSite, self.customSiteEdit.text().strip())
 
-    def refreshLatencies(self):
+    def refreshLatencies(self) -> None:
         if self._isRefreshing:
             return
         self._isRefreshing = True
-        self._latencies = {s: None for s in GITHUB_PROXY_SITES}
+        self._latencies = {s: None for s in HF_PROXY_SITES}
         self._refreshLatencyLabels()
         self.refreshButton.setEnabled(False)
         from app.services.coroutine_runner import coroutineRunner
-
         coroutineRunner.submit(
             probeProxyLatencies(),
             done=self._onLatenciesDone, failed=self._onLatenciesFailed,
             owner=self,
         )
 
-    def _onLatenciesDone(self, latencies: dict[str, int]):
+    def _onLatenciesDone(self, latencies: dict[str, int]) -> None:
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
         self._latencies.update(latencies)
         self._refreshLatencyLabels()
 
-    def _onLatenciesFailed(self, error):
+    def _onLatenciesFailed(self, error) -> None:
         self._isRefreshing = False
         self.refreshButton.setEnabled(True)
 
 
-class GitHubConfig(PackConfig):
-    enabled = ConfigItem("GitHub", "Enabled", False, BoolValidator())
-    selectedSite = ConfigItem("GitHub", "SelectedSite", GITHUB_PROXY_SITES[0], GitHubProxySiteValidator())
-    customSite = ConfigItem("GitHub", "CustomSite", "", GitHubProxySiteValidator())
+class HuggingFaceTokenCard(SettingCard):
+    def __init__(self, parent=None):
+        super().__init__(
+            FluentIcon.FINGERPRINT, self.tr("Access Token"),
+            self.tr("用于下载需要授权的模型（如 Llama、Mistral）"), parent,
+        )
+        self.tokenEdit = PasswordLineEdit(self)
+        self.tokenEdit.setPlaceholderText("hf_xxxxxxxxxxxx")
+        self.tokenEdit.setMinimumWidth(240)
+        self.tokenEdit.setText(huggingFaceConfig.accessToken.value)
+        self.openTokenPageButton = HyperlinkButton(self)
+        self.openTokenPageButton.setText(self.tr("获取 Token"))
+        self.openTokenPageButton.setUrl(TOKEN_URL)
+
+        self.hBoxLayout.addWidget(self.tokenEdit)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.openTokenPageButton)
+        self.hBoxLayout.addSpacing(16)
+
+        self.tokenEdit.editingFinished.connect(self._onTokenEdited)
+
+    def _onTokenEdited(self) -> None:
+        from app.config.cfg import cfg
+        cfg.set(huggingFaceConfig.accessToken, self.tokenEdit.text().strip())
+
+
+class HuggingFaceConfig(PackConfig):
+    isEnabled = ConfigItem("HuggingFace", "Enabled", True, BoolValidator())
+    selectedSite = ConfigItem("HuggingFace", "SelectedSite", "", HuggingFaceProxySiteValidator())
+    customSite = ConfigItem("HuggingFace", "CustomSite", "", HuggingFaceProxySiteValidator())
+    accessToken = ConfigItem("HuggingFace", "AccessToken", "")
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
-        githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", parent)
-        enableCard = SwitchSettingCard(
-            FluentIcon.LINK, self.tr("启用 GitHub 加速"),
-            self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),
-            self.enabled, githubGroup,
-        )
-        proxySiteCard = GitHubProxySiteCard(githubGroup)
+        group = CollapsibleSettingCardGroup(self.tr("HuggingFace"), "huggingface", parent)
+        group.addSettingCards([
+            SwitchSettingCard(
+                FluentIcon.CONNECT, self.tr("启用 HuggingFace 加速"),
+                self.tr("命中 HuggingFace 链接时，自动改写为所选镜像站"),
+                self.isEnabled, group,
+            ),
+            HuggingFaceProxySiteCard(group),
+            HuggingFaceTokenCard(group),
+        ])
+        return [group]
 
-        githubGroup.addSettingCards([enableCard, proxySiteCard])
-        return [githubGroup]
 
-
-githubConfig = GitHubConfig()
+huggingFaceConfig = HuggingFaceConfig()

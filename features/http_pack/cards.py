@@ -1,42 +1,32 @@
 from PySide6.QtCore import Qt, QRectF, QTimer
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import isDarkTheme, themeColor
 
-from app.view.components.cards import UniversalTaskCard
-from .task import HttpTaskStage
+from app.view.cards.task_cards import UniversalTaskCard
+from .task import HttpTaskStep
 
 FILL_EASING = 0.25
 
 
 class SegmentedProgressBar(QWidget):
-    """多连接下载的分段进度条
-
-    整条代表文件 [0, fileSize], 每个分片按真实字节区间 [start, progress) 填充,
-    分片间的待下载区天然留缝. 配色与 qfluentwidgets.ProgressBar 对齐.
-    """
-
-    def __init__(self, stage: HttpTaskStage, parent: QWidget = None):
+    def __init__(self, step: HttpTaskStep, parent=None):
         super().__init__(parent)
-        self._stage = stage
+        self._step = step
         self._isPaused = False
         self._isError = False
         self._fillProgress: dict[int, float] = {}
         self._spans: list[tuple[float, float]] = []
         self._fillTimer = QTimer(self, interval=16)
-        self._bind()
-
-    def _bind(self):
         self._fillTimer.timeout.connect(self._onFillTimeout)
 
     def setValue(self, value: float):
-        # 数值不看: 段位置取自 subworkers; 立即推进一步免挂载首帧空白
         self._fillTimer.start()
         self._onFillTimeout()
 
     def _onFillTimeout(self):
-        live = {sw.start: sw.progress for sw in list(self._stage.subworkers)}
-        fresh = not self._fillProgress  # 首次填充(挂载/恢复运行): 直接到位, 不从头爬
+        live = {sw.start: sw.position for sw in list(self._step.subworkers)}
+        fresh = not self._fillProgress
         settled = True
         for start, target in live.items():
             shown = self._fillProgress.get(start, target if fresh else start)
@@ -45,11 +35,10 @@ class SegmentedProgressBar(QWidget):
                 settled = False
             else:
                 self._fillProgress[start] = target
-        self._fillProgress = {start: self._fillProgress[start] for start in live}  # 剪掉消失的段
+        self._fillProgress = {start: self._fillProgress[start] for start in live}
         self._spans = self._toMergedSpans()
-        if not self._spans and self._stage.receivedBytes > 0:
-            # worker 没跑过(重启恢复/等待中): 退化成单根, 按已收字节画
-            self._spans = [(0, self._stage.receivedBytes)]
+        if not self._spans and self._step.receivedBytes > 0:
+            self._spans = [(0, self._step.receivedBytes)]
         if settled:
             self._fillTimer.stop()
         self.update()
@@ -60,9 +49,8 @@ class SegmentedProgressBar(QWidget):
             self._isPaused = False
         self.update()
 
-    def error(self):
-        self._isError = True
-        self.update()
+    def error(self) -> bool:
+        return self._isError
 
     def pause(self):
         self._isPaused = True
@@ -76,7 +64,6 @@ class SegmentedProgressBar(QWidget):
         return themeColor()
 
     def _toMergedSpans(self) -> list[tuple[float, float]]:
-        # 相邻分片下载完后首尾恰好相接, 合并掉以免接缝处冒出假凹口
         intervals = sorted(
             (start, shown) for start, shown in self._fillProgress.items() if shown > start
         )
@@ -88,8 +75,8 @@ class SegmentedProgressBar(QWidget):
                 merged.append((start, end))
         return merged
 
-    def paintEvent(self, e):
-        fileSize = self._stage.fileSize
+    def paintEvent(self, event: QPaintEvent):
+        fileSize = self._step.fileSize
         if fileSize <= 0 or not self._spans:
             return
 
@@ -108,10 +95,8 @@ class SegmentedProgressBar(QWidget):
 
 
 class HttpTaskCard(UniversalTaskCard):
-    """HTTP 任务卡片: 已知大小且支持续传时用分段进度条, 否则退回通用进度条"""
-
-    def createProgressBar(self) -> QWidget:
-        stage = self.task.stages[0]
-        if isinstance(stage, HttpTaskStage) and self.task.fileSize > 0 and stage.supportsRange:
-            return SegmentedProgressBar(stage, self)
-        return super().createProgressBar()
+    def _buildProgressBar(self) -> QWidget:
+        step = self.task.steps[0] if self.task.steps else None
+        if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.subworkerCount > 1:
+            return SegmentedProgressBar(step, self)
+        return super()._buildProgressBar()

@@ -1,6 +1,6 @@
-from orjson import dumps, loads
-from qfluentwidgets import ConfigSerializer, ConfigValidator
+import json
 
+from qfluentwidgets import ConfigSerializer, ConfigValidator
 
 DEFAULT_WEB_TRACKER_SOURCE = "https://cf.trackerslist.com/best.txt"
 
@@ -9,12 +9,11 @@ class SourceCacheValidator(ConfigValidator):
     def validate(self, value) -> bool:
         if not isinstance(value, dict):
             return False
-        for url, trackers in value.items():
-            if not isinstance(url, str) or not isinstance(trackers, list):
-                return False
-            if not all(isinstance(tracker, str) for tracker in trackers):
-                return False
-        return True
+        return all(
+            isinstance(url, str) and isinstance(trackers, list)
+            and all(isinstance(t, str) for t in trackers)
+            for url, trackers in value.items()
+        )
 
     def correct(self, value) -> dict:
         return value if self.validate(value) else {}
@@ -22,11 +21,11 @@ class SourceCacheValidator(ConfigValidator):
 
 class SourceCacheSerializer(ConfigSerializer):
     def serialize(self, value: dict[str, list[str]]) -> str:
-        return dumps(value).decode("utf-8")
+        return json.dumps(value, ensure_ascii=False)
 
     def deserialize(self, value: str) -> dict[str, list[str]]:
         try:
-            result = loads(value)
+            result = json.loads(value)
         except (ValueError, TypeError):
             return {}
         if not isinstance(result, dict):

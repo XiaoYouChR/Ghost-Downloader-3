@@ -1,165 +1,143 @@
+from __future__ import annotations
+
 import asyncio
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from app.bases.interfaces import Worker
-from app.bases.models import TaskStage, TaskStatus
-from .config import ffmpegPaths
-
-if TYPE_CHECKING:
-    from features.http_pack.task import HttpTaskStage
-else:
-    from http_pack.task import HttpTaskStage
+from app.models.task import TaskStep, TaskStatus
+from app.platform.filesystem import deletePath
+from http_pack.task import HttpTaskStep
+from .config import ffmpegRuntime
 
 
-def _baseTitle(taskTitle: str) -> str:
-    return taskTitle[:-4] if taskTitle.lower().endswith(".mp4") else taskTitle
+def mediaStem(task) -> str:
+    name = task.name
+    return name.rsplit(".", 1)[0] if "." in name else name
 
 
 @dataclass(kw_only=True)
-class FFmpegResourceStage(HttpTaskStage):
-    # role ∈ {"video", "audio"}：合并任务里两路源各自的角色，落盘文件名带这个中缀
-    role: str = "video"
+class FFmpegResourceStep(HttpTaskStep):
+    role: str = ""
     extension: str = ""
 
     @property
-    def outputFile(self) -> str:
+    def outputPath(self) -> str:
         suffix = f".{self.extension}" if self.extension else ""
-        return str(Path(self.task.path) / f"{_baseTitle(self.task.title)}.{self.role}{suffix}")
-
-
-def _parseDuration(value: str) -> float:
-    try:
-        return max(0.0, float(value))
-    except ValueError:
-        return 0.0
-
-
-async def _probeDuration(ffprobe: str, path: Path) -> float:
-    process = await asyncio.create_subprocess_exec(
-        ffprobe,
-        "-v", "error",
-        "-show_entries", "format=duration",
-        "-of", "default=noprint_wrappers=1:nokey=1",
-        path,
-        stdin=asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await process.communicate()
-
-    if process.returncode != 0:
-        message = stderr.decode("utf-8", errors="ignore").strip()
-        logger.warning("ffprobe 获取时长失败: {}, {}", path, message or process.returncode)
-        return 0.0
-
-    return _parseDuration(stdout.decode("utf-8", errors="ignore").strip())
+        return str(self.task.outputFolder / f"{mediaStem(self.task)}.{self.role}{suffix}")
 
 
 @dataclass(kw_only=True)
-class FFmpegStage(TaskStage):
-    workerType: type = field(init=False, repr=False)
-    canPause: bool = field(init=False, default=False)
+class FFmpegStep(TaskStep):
+    canPause = False
 
     videoExtension: str = ""
     audioExtension: str = ""
-    cleanupSource: bool = True
+    shouldDeleteSource: bool = True
 
     @property
-    def outputFile(self) -> Path:
-        return Path(self.task.path) / f"{_baseTitle(self.task.title)}.mp4"
+    def outputFile(self) -> str:
+        return str(self.task.outputFolder / f"{mediaStem(self.task)}.mp4")
 
     @property
-    def videoPath(self) -> Path:
+    def _videoPath(self) -> Path:
         suffix = f".{self.videoExtension}" if self.videoExtension else ""
-        return Path(self.task.path) / f"{_baseTitle(self.task.title)}.video{suffix}"
+        return self.task.outputFolder / f"{mediaStem(self.task)}.video{suffix}"
 
     @property
-    def audioPath(self) -> Path:
+    def _audioPath(self) -> Path:
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
-        return Path(self.task.path) / f"{_baseTitle(self.task.title)}.audio{suffix}"
+        return self.task.outputFolder / f"{mediaStem(self.task)}.audio{suffix}"
 
+    async def run(self) -> None:
 
-class FFmpegWorker(Worker):
-    def __init__(self, stage: FFmpegStage):
-        super().__init__(stage)
-        self.stage = stage
+        ffmpegPath = ffmpegRuntime.path()
+        ffprobePath = ffmpegRuntime.ffprobePath()
+        if not ffmpegPath or not ffprobePath:
+            raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
+
+        Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
+
+        totalDuration = await self._probeDuration(ffprobePath, self._videoPath)
+
+        process = await asyncio.create_subprocess_exec(
+            ffmpegPath,
+            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
+            "-i", str(self._videoPath),
+            "-i", str(self._audioPath),
+            "-c", "copy",
+            self.outputFile,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
+
+        try:
+            await process.wait()
+            await progressTask
+
+            if process.returncode != 0:
+                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
+                suffix = f", {stderr}" if stderr else ""
+                raise RuntimeError(f"ffmpeg 退出码异常: {process.returncode}{suffix}")
+
+            self.setStatus(TaskStatus.COMPLETED)
+
+            if self.shouldDeleteSource:
+                for path in (self._videoPath, self._audioPath):
+                    deletePath(path)
+                    deletePath(Path(f"{path}.ghd"))
+        except asyncio.CancelledError:
+            self.setStatus(TaskStatus.PAUSED)
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            if not progressTask.done():
+                progressTask.cancel()
+                with suppress(asyncio.CancelledError):
+                    await progressTask
+            raise
+        except Exception as e:
+            self.setError(e)
+            raise
 
     async def _readProgress(self, stream: asyncio.StreamReader, totalDuration: float):
         while True:
             rawLine = await stream.readline()
             if not rawLine:
                 break
-
             line = rawLine.decode("utf-8", errors="ignore").strip()
             if not line:
                 continue
-
             if line.startswith("out_time_us=") and totalDuration > 0:
-                currentDuration = _parseDuration(line.removeprefix("out_time_us=")) / 1_000_000
-                if currentDuration <= 0:
+                try:
+                    currentSeconds = max(0.0, float(line.removeprefix("out_time_us="))) / 1_000_000
+                except ValueError:
                     continue
-                self.stage.progress = min(99.5, max(0.0, currentDuration / totalDuration * 100))
+                if currentSeconds > 0:
+                    self.progress = min(99.5, max(0.0, currentSeconds / totalDuration * 100))
             elif line == "progress=end":
-                self.stage.progress = 100
+                self.progress = 100
 
-    async def run(self):
-        ffmpeg, ffprobe = ffmpegPaths()
-        if not ffmpeg or not ffprobe:
-            raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
-
-        self.stage.outputFile.parent.mkdir(parents=True, exist_ok=True)
-
-        process = None
-        progressTask = None
+    async def _probeDuration(self, ffprobePath: str, videoPath: Path) -> float:
+        process = await asyncio.create_subprocess_exec(
+            ffprobePath,
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(videoPath),
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            logger.warning("ffprobe 获取时长失败: {}", videoPath)
+            return 0.0
         try:
-            totalDuration = await _probeDuration(ffprobe, self.stage.videoPath)
-            process = await asyncio.create_subprocess_exec(
-                ffmpeg,
-                "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
-                "-i", self.stage.videoPath,
-                "-i", self.stage.audioPath,
-                "-c", "copy",
-                self.stage.outputFile,
-                stdin=asyncio.subprocess.DEVNULL,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
-
-            await process.wait()
-            await progressTask
-            if process.returncode != 0:
-                stderrOutput = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
-                suffix = f", {stderrOutput}" if stderrOutput else ""
-                raise RuntimeError(f"ffmpeg 退出码异常: {process.returncode}{suffix}")
-
-            self.stage.setStatus(TaskStatus.COMPLETED)
-            if self.stage.cleanupSource:
-                # 同时清理 HttpWorker 写下的 .ghd 临时元数据文件
-                for path in (self.stage.videoPath, self.stage.audioPath):
-                    for target in (path, path.with_name(f"{path.name}.ghd")):
-                        try:
-                            target.unlink(missing_ok=True)
-                        except OSError as e:
-                            logger.opt(exception=e).warning("failed to cleanup temporary file {}", target)
-        except asyncio.CancelledError:
-            self.stage.setStatus(TaskStatus.PAUSED)
-            if process is not None and process.returncode is None:
-                process.kill()
-                await process.wait()
-            if progressTask is not None and not progressTask.done():
-                progressTask.cancel()
-                with suppress(asyncio.CancelledError):
-                    await progressTask
-            raise
-        except Exception as e:
-            self.stage.setError(e)
-            raise
-
-
-FFmpegStage.workerType = FFmpegWorker
+            return max(0.0, float(stdout.decode("utf-8", errors="ignore").strip()))
+        except ValueError:
+            return 0.0
