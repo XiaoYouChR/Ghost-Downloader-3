@@ -99,7 +99,7 @@ class MobileMainWindow(QWidget):
             requestStoragePermission()
             InfoBar.warning(
                 self.tr("需要存储权限"),
-                self.tr("请在系统设置授予「所有文件访问」后再新建任务"),
+                self.tr("请授予存储权限后再新建任务"),
                 duration=4000,
                 position=InfoBarPosition.TOP,
                 parent=self,
