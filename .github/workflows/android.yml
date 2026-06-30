@@ -14,14 +14,14 @@ permissions:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       GD3_CN_MIRROR: ${{ inputs.use_cn_mirror && '1' || '' }}
       GD3_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       GD3_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Free disk space
         run: |
@@ -49,7 +49,7 @@ jobs:
         run: ls -la dist/ 2>/dev/null || echo "no dist/"
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ghost-downloader-android
           path: android/dist/*.apk

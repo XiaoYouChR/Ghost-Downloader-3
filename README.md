@@ -8,7 +8,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
 
-![Banner](app/assets/banner.webp)
+![Banner](.github/assets/banner.webp)
 
 <a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
@@ -140,7 +140,7 @@ Thanks to all contributors who have participated in this project!
 
 Distributed under the GPL v3.0 License. Open `LICENSE` for more details.
 
-Copyright © 2025 XiaoYouChR.
+Copyright © 2024-2026 XiaoYouChR.
 
 <!-- CONTACT -->
 ## Contact
@@ -200,7 +200,6 @@ Copyright © 2025 XiaoYouChR.
 [stars-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/stargazers
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
-[product-screenshot]: app/assets/screenshot.png
 [release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
 [release-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest
 [downloads-shield]: https://img.shields.io/github/downloads/XiaoYouChR/Ghost-Downloader-3/total?style=for-the-badge

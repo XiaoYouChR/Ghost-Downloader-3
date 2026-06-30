@@ -8,7 +8,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
 
-![Banner](app/assets/banner.webp)
+![Banner](.github/assets/banner.webp)
 
 <a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
@@ -141,7 +141,7 @@
 
 根据 GPL v3.0 许可证分发。打开 `LICENSE` 查看更多内容。
 
-Copyright © 2025 XiaoYouChR.
+Copyright © 2024-2026 XiaoYouChR.
 
 <!-- CONTACT -->
 ## 联系
@@ -203,7 +203,6 @@ Copyright © 2025 XiaoYouChR.
 [atomgit-stars-url]: https://gitcode.com/XiaoYouChR/Ghost-Downloader-3
 [issues-shield]: https://img.shields.io/github/issues/XiaoYouChR/Ghost-Downloader-3.svg?style=for-the-badge
 [issues-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/issues
-[product-screenshot]: app/assets/screenshot.png
 [release-shield]: https://img.shields.io/github/v/release/XiaoYouChR/Ghost-Downloader-3?style=for-the-badge
 [release-url]: https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/latest
 [downloads-shield]: https://img.shields.io/github/downloads/XiaoYouChR/Ghost-Downloader-3/total?style=for-the-badge

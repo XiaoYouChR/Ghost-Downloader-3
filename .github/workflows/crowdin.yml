@@ -32,7 +32,7 @@ jobs:
       CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -49,10 +49,10 @@ jobs:
       - name: Install Qt translation tools
         run: |
           python -m pip install --upgrade pip
-          pip install --timeout=300 "pyside6~=6.10.2"
+          pip install --timeout=300 "pyside6~=6.10.3"
 
       - name: Refresh Qt translation assets
-        run: python sync_i18n_res.py
+        run: python scripts/sync_i18n_res.py
 
       - name: Upload sources and translations
         if: github.event.inputs.operation == 'push'
@@ -81,7 +81,7 @@ jobs:
         run: |
           sudo chown -R "$(id -u):$(id -g)" .git app/assets
           rm -f .git/COMMIT_EDITMSG
-          python sync_i18n_res.py
+          python scripts/sync_i18n_res.py
 
       - name: Update Crowdin contributors
         if: github.event.inputs.operation == 'pull'

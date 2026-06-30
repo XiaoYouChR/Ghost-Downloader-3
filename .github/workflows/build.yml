@@ -44,7 +44,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -59,12 +59,12 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.supports.config import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
+          python -c "from app.config.constants import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('scripts/Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
           $VERSION = gc version.txt
           Write-Host "VERSION=$VERSION"
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
           del version.txt
-          python deploy.py
+          python scripts/deploy.py
 
       - name: Prepare For Sign
         if: ${{ github.event_name == 'release' || github.event.inputs.sign_artifact == 'true' }}
@@ -74,14 +74,14 @@ jobs:
       - name: upload-unsigned-artifact
         if: ${{ github.event_name == 'release' || github.event.inputs.sign_artifact == 'true' }}
         id: upload-unsigned-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
           path: dist/Ghost-Downloader-3-Unsigned.dist
 
       - name: Sign
         if: ${{ github.event_name == 'release' || github.event.inputs.sign_artifact == 'true' }}
-        uses: signpath/github-action-submit-signing-request@v1.1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
@@ -99,9 +99,9 @@ jobs:
 
       - name: Build Installer
         if: ${{ github.event_name == 'release' || github.event.inputs.package_installer == 'true' }}
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.8
         with:
-          path: Ghost-Downloader-3.iss
+          path: scripts/Ghost-Downloader-3.iss
 
       - name: Rename Installer
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package_installer == 'true' }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload Installer
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package_installer == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup
           path: dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
@@ -127,19 +127,19 @@ jobs:
           Write-Output "Zipping contents of $distPath..."
           7z a -tzip -mx=9 -m0=LZMA Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip dist/Ghost-Downloader-3.dist/*
           Write-Output "Zip created at $zipFile"
-          
+
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
       - name: Upload artifacts
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
           path: |
             dist/Ghost-Downloader-3.dist
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') }}
         with:
           files: |
@@ -160,7 +160,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -181,11 +181,9 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
-          version=$(sed -n '4p' version.txt)
-          echo "VERSION=${version}" >> "$GITHUB_ENV"
-          rm -rf version.txt
-          python3 deploy.py
+          VERSION=$(python3 -c "from app.config.constants import VERSION; print(VERSION)")
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          python3 scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
@@ -230,14 +228,14 @@ jobs:
             "$DMG_SOURCE_DIR"
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') }}
         with:
           files: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
 
       - name: Upload artifacts
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
           path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
@@ -258,7 +256,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -275,11 +273,9 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python3 -c "import sys; sys.path.append('./app/supports'); import config; print(config.VERSION)" > version.txt
-          version=$(sed -n '4p' version.txt)
-          echo "VERSION=${version}" >> "$GITHUB_ENV"
-          rm -rf version.txt
-          python deploy.py
+          VERSION=$(python3 -c "from app.config.constants import VERSION; print(VERSION)")
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          python scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
 
       - name: Build .deb and .AppImage
@@ -371,7 +367,7 @@ jobs:
         run: |
           $distPath = "dist/Ghost-Downloader-3.dist"
           $tarFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
-          
+
           # Create a tar.xz archive containing the contents of Ghost-Downloader.dist, without the folder itself
           Write-Output "Creating tar.xz archive of $distPath..."
           tar -cJf $tarFile -C $distPath .
@@ -379,7 +375,7 @@ jobs:
 
       - name: Upload artifacts
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
           path: |
@@ -388,7 +384,7 @@ jobs:
             dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') }}
         with:
           files: |
