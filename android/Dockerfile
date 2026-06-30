@@ -140,18 +140,22 @@ RUN QTSTR=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/strings.tmpl.x
     && chown builder:builder "$QTSTR" \
     && echo "[patch] qt 状态栏沉浸 statusBarColor+windowLightStatusBar OK"
 
+# minapi=28: Qt 6.10 库硬要求 ≥28(Android 9)。app 存储授权按 SDK 分支(≥30 All Files / <30 WRITE + manifest
+# requestLegacyExternalStorage), 故下限贴齐 Qt 的 Android 9; minapi 与 ndk_api 一并设, 否则声明 SDK 与 .so 编译 API 错位。
 RUN DEPLOY_BZ=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib/android/buildozer.py \
-    && sed -i '/self.set_value("app", "title",/a\        self.set_value("app", "version", __import__("os").environ.get("GD3_VERSION", "") or "0.1")\n        self.set_value("app", "android.accept_sdk_license", "True")\n        self.set_value("buildozer", "log_level", "1")' "$DEPLOY_BZ" \
-    && grep -q 'GD3_VERSION' "$DEPLOY_BZ" && grep -q 'accept_sdk_license' "$DEPLOY_BZ" && grep -q 'log_level' "$DEPLOY_BZ" && echo "[patch] GD3_VERSION + accept_sdk_license + log_level=1 注入 OK"
+    && sed -i '/self.set_value("app", "title",/a\        self.set_value("app", "version", __import__("os").environ.get("GD3_VERSION", "") or "0.1")\n        self.set_value("app", "android.accept_sdk_license", "True")\n        self.set_value("buildozer", "log_level", "1")\n        self.set_value("app", "android.minapi", __import__("os").environ.get("GD3_MINAPI", "") or "28")\n        self.set_value("app", "android.ndk_api", __import__("os").environ.get("GD3_MINAPI", "") or "28")' "$DEPLOY_BZ" \
+    && grep -q 'GD3_VERSION' "$DEPLOY_BZ" && grep -q 'accept_sdk_license' "$DEPLOY_BZ" && grep -q 'log_level' "$DEPLOY_BZ" && grep -q 'android.minapi' "$DEPLOY_BZ" && echo "[patch] GD3_VERSION + accept_sdk_license + log_level + minapi/ndk_api=28 注入 OK"
 
 COPY java/org/ghostdownloader/KeepAliveService.java /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader/KeepAliveService.java
 RUN QTMAN=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/AndroidManifest.tmpl.xml \
     && sed -i '/<\/application>/i\        <service android:name="org.ghostdownloader.KeepAliveService" android:exported="false" android:foregroundServiceType="dataSync" />' "$QTMAN" \
     && sed -i '0,/<\/activity>/{s##            <meta-data android:name="android.app.background_running" android:value="true" />\n        </activity>#}' "$QTMAN" \
+    && sed -i 's/<application /<application android:requestLegacyExternalStorage="true" /' "$QTMAN" \
     && grep -q 'KeepAliveService' "$QTMAN" \
     && grep -q 'background_running' "$QTMAN" \
+    && grep -q 'requestLegacyExternalStorage' "$QTMAN" \
     && chown -R builder:builder /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader \
-    && echo "[patch] KeepAliveService + background_running(后台事件循环不挂起) 注入 OK"
+    && echo "[patch] KeepAliveService + background_running + requestLegacyExternalStorage(Android10 legacy 存储) 注入 OK"
 
 # 隔离的新版 cmake 专供 wreq 的 btls-sys/BoringSSL（系统 cmake 3.25 在 NDK toolchain 下 FindThreads 会炸）
 RUN python3 -m venv /opt/cmake4 \
