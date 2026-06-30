@@ -1,24 +1,24 @@
 import type {Dispatch, SetStateAction} from "react";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 
-import {ADVANCED_FEATURES} from "../../shared/constants";
+import {ADVANCED_FEATURES} from "../shared/constants";
 import type {
     AdvancedFeatureKey,
-    DesktopRequestResult,
+    CommandResult,
     FeatureStateMap,
+    MediaAction,
     MediaPlaybackState,
-    PopupStatePayload,
+    PopupState,
     PopupView,
+    ScannedImage,
     TaskAction,
-} from "../../shared/types";
-import {sortTasks} from "../../shared/utils";
-import type {ActionCommand, PopupCommand, StateCommand} from "../../shared/popup-protocol";
+} from "../shared/types";
+import {sortTasks} from "../shared/utils";
+import type {ActionCommand, PopupCommand, StateCommand} from "../shared/popup-protocol";
+import type {ToastIntent} from "./components/ToastHost";
 
 const REFRESH_INTERVAL_MS = 1000;
-const FLASH_TIMEOUT_MS = 2800;
-const MEDIA_COMMAND_TIMEOUT_MS = 300;
-
-type FlashTone = "neutral" | "success" | "error";
+const TOAST_TIMEOUT_MS = 2800;
 
 function sendRuntimeMessage<T>(message: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -28,12 +28,16 @@ function sendRuntimeMessage<T>(message: unknown): Promise<T> {
         reject(new Error(lastError.message));
         return;
       }
+      if (response == null) {
+        reject(new Error("后台服务未就绪"));
+        return;
+      }
       resolve(response);
     });
   });
 }
 
-function createEmptyFeatureStates(): FeatureStateMap {
+function emptyFeatureStates(): FeatureStateMap {
   const state = {} as FeatureStateMap;
   for (const { key } of ADVANCED_FEATURES) {
     state[key] = false;
@@ -41,9 +45,9 @@ function createEmptyFeatureStates(): FeatureStateMap {
   return state;
 }
 
-function createEmptyMediaState(): MediaPlaybackState {
+function emptyMediaState(): MediaPlaybackState {
   return {
-    available: false,
+    isAvailable: false,
     message: "",
     tabId: null,
     mediaIndex: -1,
@@ -51,22 +55,22 @@ function createEmptyMediaState(): MediaPlaybackState {
     duration: 0,
     progress: 0,
     volume: 1,
-    paused: true,
-    loop: false,
-    muted: false,
+    isPaused: true,
+    shouldLoop: false,
+    isMuted: false,
     speed: 1,
   };
 }
 
-function createEmptyPayload(): PopupStatePayload {
+function emptyPopupState(): PopupState {
   return {
     connectionState: "missing_token",
     connectionMessage: "待配对",
     desktopVersion: "",
     token: "",
     serverUrl: "",
-    interceptDownloads: true,
-    mediaDownloadOverlayEnabled: true,
+    shouldTakeDownloads: true,
+    isMediaButtonEnabled: true,
     tasks: [],
     taskCounters: { total: 0, active: 0, completed: 0 },
     resourceState: "restoring",
@@ -75,9 +79,10 @@ function createEmptyPayload(): PopupStatePayload {
     otherResources: [],
     tabId: null,
     activePageDomain: "",
-    featureStates: createEmptyFeatureStates(),
+    featureStates: emptyFeatureStates(),
     mediaItems: [],
-    mediaPlaybackState: createEmptyMediaState(),
+    mediaPlaybackState: emptyMediaState(),
+    pendingTaskCount: 0,
   };
 }
 
@@ -101,34 +106,18 @@ function errorMessageOr(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function dispatch(command: StateCommand): Promise<PopupStatePayload>;
-function dispatch(command: ActionCommand): Promise<DesktopRequestResult>;
-function dispatch(command: PopupCommand): Promise<PopupStatePayload | DesktopRequestResult> {
-  return sendRuntimeMessage<PopupStatePayload | DesktopRequestResult>(command);
+function dispatch(command: StateCommand): Promise<PopupState>;
+function dispatch(command: ActionCommand): Promise<CommandResult>;
+function dispatch(command: PopupCommand): Promise<PopupState | CommandResult> {
+  return sendRuntimeMessage<PopupState | CommandResult>(command);
 }
 
-async function sendDesktopCommand(command: ActionCommand, fallback: string): Promise<DesktopRequestResult> {
+async function sendActionCommand(command: ActionCommand, fallback: string): Promise<CommandResult> {
   const result = await dispatch(command);
   if (!result.ok) {
     throw new Error(result.message || fallback);
   }
   return result;
-}
-
-async function sendMediaMessage(tabId: number, message: Record<string, unknown>) {
-  return new Promise<void>((resolve, reject) => {
-    const timeout = window.setTimeout(resolve, MEDIA_COMMAND_TIMEOUT_MS);
-
-    chrome.tabs.sendMessage(tabId, message, () => {
-      window.clearTimeout(timeout);
-      const lastError = chrome.runtime.lastError;
-      if (lastError && !/message port closed before a response/i.test(lastError.message ?? "")) {
-        reject(new Error(lastError.message));
-        return;
-      }
-      resolve();
-    });
-  });
 }
 
 async function sendFullscreenMessage(tabId: number, index: number) {
@@ -158,22 +147,21 @@ async function sendFullscreenMessage(tabId: number, index: number) {
 }
 
 export function usePopupBridge(activeView: PopupView) {
-  const [payload, setPayload] = useState<PopupStatePayload>(createEmptyPayload);
+  const [payload, setPayload] = useState<PopupState>(emptyPopupState);
   const [busyTaskIds, setBusyTaskIds] = useState<ReadonlySet<string>>(() => new Set());
   const [busyResourceIds, setBusyResourceIds] = useState<ReadonlySet<string>>(() => new Set());
   const [busyFeatureKeys, setBusyFeatureKeys] = useState<ReadonlySet<AdvancedFeatureKey>>(() => new Set());
-  const [flashMessage, setFlashMessage] = useState("");
-  const [flashTone, setFlashTone] = useState<FlashTone>("neutral");
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastIntent, setToastIntent] = useState<ToastIntent>("info");
   const [isSavingToken, setIsSavingToken] = useState(false);
   const [isSavingServerUrl, setIsSavingServerUrl] = useState(false);
   const [isRefreshingConnection, setIsRefreshingConnection] = useState(false);
   const [isRequestingPairing, setIsRequestingPairing] = useState(false);
-  const [isUpdatingIntercept, setIsUpdatingIntercept] = useState(false);
-  const [isUpdatingMediaDownloadOverlay, setIsUpdatingMediaDownloadOverlay] = useState(false);
-  const [isUpdatingMedia, setIsUpdatingMedia] = useState(false);
+  const [isUpdatingTakeDownloads, setIsUpdatingTakeDownloads] = useState(false);
+  const [isUpdatingMediaButton, setIsUpdatingMediaButton] = useState(false);
 
   const mountedRef = useRef(true);
-  const flashTimerRef = useRef<number | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
   const refreshPromiseRef = useRef<Promise<void> | null>(null);
   const lastContentViewRef = useRef<Exclude<PopupView, "settings">>("tasks");
   const activeViewRef = useRef(activeView);
@@ -182,29 +170,29 @@ export function usePopupBridge(activeView: PopupView) {
     return view === "settings" ? lastContentViewRef.current : view;
   }, []);
 
-  const applyPopupState = useCallback((next: PopupStatePayload) => {
+  const applyPopupState = useCallback((next: PopupState) => {
     if (!mountedRef.current) {
       return;
     }
     setPayload(next);
   }, []);
 
-  const setFlash = useCallback((message: string, tone: FlashTone = "neutral") => {
+  const showToast = useCallback((message: string, intent: ToastIntent = "info") => {
     if (!mountedRef.current) {
       return;
     }
-    setFlashMessage(message);
-    setFlashTone(tone);
-    if (flashTimerRef.current !== null) {
-      window.clearTimeout(flashTimerRef.current);
+    setToastMessage(message);
+    setToastIntent(intent);
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
     }
-    flashTimerRef.current = window.setTimeout(() => {
+    toastTimerRef.current = window.setTimeout(() => {
       if (!mountedRef.current) {
         return;
       }
-      setFlashMessage("");
-      flashTimerRef.current = null;
-    }, FLASH_TIMEOUT_MS);
+      setToastMessage("");
+      toastTimerRef.current = null;
+    }, TOAST_TIMEOUT_MS);
   }, []);
 
   const refreshState = useCallback(
@@ -234,8 +222,8 @@ export function usePopupBridge(activeView: PopupView) {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (flashTimerRef.current !== null) {
-        window.clearTimeout(flashTimerRef.current);
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
       }
     };
   }, []);
@@ -276,13 +264,13 @@ export function usePopupBridge(activeView: PopupView) {
           view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
-        setFlash(
+        showToast(
           next.connectionState === "connected" ? "配对令牌已保存" : next.connectionMessage,
-          next.connectionState === "connected" ? "success" : "neutral",
+          next.connectionState === "connected" ? "success" : "info",
         );
         return true;
       } catch (error) {
-        setFlash(errorMessageOr(error, "保存配对令牌失败"), "error");
+        showToast(errorMessageOr(error, "保存配对令牌失败"), "error");
         return false;
       } finally {
         if (mountedRef.current) {
@@ -290,7 +278,7 @@ export function usePopupBridge(activeView: PopupView) {
         }
       }
     },
-    [applyPopupState, requestView, setFlash],
+    [applyPopupState, requestView, showToast],
   );
 
   const saveServerUrl = useCallback(
@@ -303,13 +291,13 @@ export function usePopupBridge(activeView: PopupView) {
           view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
-        setFlash(
+        showToast(
           next.connectionState === "connected" ? "地址已保存" : next.connectionMessage,
-          next.connectionState === "connected" ? "success" : "neutral",
+          next.connectionState === "connected" ? "success" : "info",
         );
         return true;
       } catch (error) {
-        setFlash(errorMessageOr(error, "保存服务地址失败"), "error");
+        showToast(errorMessageOr(error, "保存服务地址失败"), "error");
         return false;
       } finally {
         if (mountedRef.current) {
@@ -317,7 +305,7 @@ export function usePopupBridge(activeView: PopupView) {
         }
       }
     },
-    [applyPopupState, requestView, setFlash],
+    [applyPopupState, requestView, showToast],
   );
 
   const refreshConnection = useCallback(async () => {
@@ -328,17 +316,17 @@ export function usePopupBridge(activeView: PopupView) {
         view: requestView(activeViewRef.current),
       });
       applyPopupState(next);
-      setFlash(next.connectionMessage, next.connectionState === "connected" ? "success" : "neutral");
+      showToast(next.connectionMessage, next.connectionState === "connected" ? "success" : "info");
       return true;
     } catch (error) {
-      setFlash(errorMessageOr(error, "重新连接失败"), "error");
+      showToast(errorMessageOr(error, "重新连接失败"), "error");
       return false;
     } finally {
       if (mountedRef.current) {
         setIsRefreshingConnection(false);
       }
     }
-  }, [applyPopupState, requestView, setFlash]);
+  }, [applyPopupState, requestView, showToast]);
 
   const requestPairing = useCallback(async () => {
     setIsRequestingPairing(true);
@@ -349,100 +337,100 @@ export function usePopupBridge(activeView: PopupView) {
       if (!result.ok) {
         throw new Error(result.message || "自动配对失败");
       }
-      setFlash(result.message || "配对请求已发送，请在桌面端确认");
+      showToast(result.message || "配对请求已发送，请在桌面端确认");
       void refreshState(activeViewRef.current).catch(() => {
         // Ignore transient popup refresh failures.
       });
       return true;
     } catch (error) {
-      setFlash(errorMessageOr(error, "自动配对失败"), "error");
+      showToast(errorMessageOr(error, "自动配对失败"), "error");
       return false;
     } finally {
       if (mountedRef.current) {
         setIsRequestingPairing(false);
       }
     }
-  }, [refreshState, setFlash]);
+  }, [refreshState, showToast]);
 
-  const setInterceptDownloads = useCallback(
+  const setShouldTakeDownloads = useCallback(
     async (enabled: boolean) => {
-      setIsUpdatingIntercept(true);
+      setIsUpdatingTakeDownloads(true);
       try {
         const next = await dispatch({
-          type: "popup_set_intercept_downloads",
+          type: "popup_set_take_downloads",
           enabled,
           view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
       } catch (error) {
-        setFlash(errorMessageOr(error, "更新拦截下载失败"), "error");
+        showToast(errorMessageOr(error, "更新接管下载失败"), "error");
       } finally {
         if (mountedRef.current) {
-          setIsUpdatingIntercept(false);
+          setIsUpdatingTakeDownloads(false);
         }
       }
     },
-    [applyPopupState, requestView, setFlash],
+    [applyPopupState, requestView, showToast],
   );
 
-  const setMediaDownloadOverlay = useCallback(
+  const setMediaButtonEnabled = useCallback(
     async (enabled: boolean) => {
-      setIsUpdatingMediaDownloadOverlay(true);
+      setIsUpdatingMediaButton(true);
       try {
         const next = await dispatch({
-          type: "popup_set_media_download_overlay",
+          type: "popup_set_media_button",
           enabled,
           view: requestView(activeViewRef.current),
         });
         applyPopupState(next);
       } catch (error) {
-        setFlash(errorMessageOr(error, "更新下载按钮失败"), "error");
+        showToast(errorMessageOr(error, "更新下载按钮失败"), "error");
       } finally {
         if (mountedRef.current) {
-          setIsUpdatingMediaDownloadOverlay(false);
+          setIsUpdatingMediaButton(false);
         }
       }
     },
-    [applyPopupState, requestView, setFlash],
+    [applyPopupState, requestView, showToast],
   );
 
-  const performTaskAction = useCallback(
+  const sendTaskAction = useCallback(
     async (taskId: string, action: TaskAction) => {
       updateBusyState(setBusyTaskIds, taskId, true);
       try {
-        await sendDesktopCommand({
+        await sendActionCommand({
           type: "popup_task_action",
           taskId,
           action,
         }, "任务操作失败");
         await refreshState(activeViewRef.current);
-        setFlash("任务操作已发送", "success");
+        showToast("任务操作已发送", "success");
       } catch (error) {
-        setFlash(errorMessageOr(error, "任务操作失败"), "error");
+        showToast(errorMessageOr(error, "任务操作失败"), "error");
       } finally {
         updateBusyState(setBusyTaskIds, taskId, false);
       }
     },
-    [refreshState, setFlash],
+    [refreshState, showToast],
   );
 
   const sendResource = useCallback(
     async (resourceId: string) => {
       updateBusyState(setBusyResourceIds, resourceId, true);
       try {
-        const result = await sendDesktopCommand({
+        const result = await sendActionCommand({
           type: "popup_send_resource",
           resourceId,
         }, "发送资源失败");
         await refreshState(activeViewRef.current);
-        setFlash(result.message || "资源处理成功", "success");
+        showToast(result.message || "资源处理成功", "success");
       } catch (error) {
-        setFlash(errorMessageOr(error, "发送资源失败"), "error");
+        showToast(errorMessageOr(error, "发送资源失败"), "error");
       } finally {
         updateBusyState(setBusyResourceIds, resourceId, false);
       }
     },
-    [refreshState, setFlash],
+    [refreshState, showToast],
   );
 
   const mergeResources = useCallback(
@@ -450,46 +438,46 @@ export function usePopupBridge(activeView: PopupView) {
       const ids = [...new Set(resourceIds.map((value) => String(value || "")).filter(Boolean))];
       ids.forEach((resourceId) => updateBusyState(setBusyResourceIds, resourceId, true));
       try {
-        const result = await sendDesktopCommand({
+        const result = await sendActionCommand({
           type: "popup_merge_resources",
           resourceIds: ids,
         }, "在线合并失败");
         await refreshState(activeViewRef.current);
-        setFlash(result.message || "资源已发送到 Ghost Downloader", "success");
+        showToast(result.message || "资源已发送到 Ghost Downloader", "success");
         return true;
       } catch (error) {
-        setFlash(errorMessageOr(error, "在线合并失败"), "error");
+        showToast(errorMessageOr(error, "在线合并失败"), "error");
         return false;
       } finally {
         ids.forEach((resourceId) => updateBusyState(setBusyResourceIds, resourceId, false));
       }
     },
-    [refreshState, setFlash],
+    [refreshState, showToast],
   );
 
   const toggleFeature = useCallback(
     async (feature: AdvancedFeatureKey) => {
       const tabId = payload.tabId;
       if (tabId == null) {
-        setFlash("当前没有可操作的标签页", "error");
+        showToast("当前没有可操作的标签页", "error");
         return;
       }
       setBusyFeature(feature, true);
       try {
-        const result = await sendDesktopCommand({
+        const result = await sendActionCommand({
           type: "popup_toggle_feature",
           feature,
           tabId,
         }, "功能切换失败");
         await refreshState(activeViewRef.current);
-        setFlash(result.message || "功能状态已更新", "success");
+        showToast(result.message || "功能状态已更新", "success");
       } catch (error) {
-        setFlash(errorMessageOr(error, "功能切换失败"), "error");
+        showToast(errorMessageOr(error, "功能切换失败"), "error");
       } finally {
         setBusyFeature(feature, false);
       }
     },
-    [payload.tabId, refreshState, setBusyFeature, setFlash],
+    [payload.tabId, refreshState, setBusyFeature, showToast],
   );
 
   const setMediaIndex = useCallback(
@@ -506,119 +494,99 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        setFlash(errorMessageOr(error, "切换媒体失败"), "error");
+        showToast(errorMessageOr(error, "切换媒体失败"), "error");
       }
     },
-    [applyPopupState, payload.mediaPlaybackState.tabId, setFlash],
+    [applyPopupState, payload.mediaPlaybackState.tabId, showToast],
   );
 
-  const performMediaAction = useCallback(
-    async (action: string, value?: number | boolean) => {
-      setIsUpdatingMedia(true);
-      try {
+  const sendMediaAction = useCallback(
+    async (action: MediaAction, value?: number | boolean) => {
+      // Fullscreen and PiP need a user-gesture context that SW routing loses.
+      if (action === "fullscreen" || action === "pip") {
         const tabId = payload.mediaPlaybackState.tabId;
         const index = payload.mediaPlaybackState.mediaIndex;
         if (!tabId || index < 0) {
-          throw new Error("当前没有可控制的媒体");
-        }
-
-        if (action === "fullscreen") {
-          await sendFullscreenMessage(tabId, index);
+          showToast("当前没有可控制的媒体", "error");
           return;
         }
-
-        const mediaMessage: Record<string, unknown> = { index };
-        switch (action) {
-          case "toggle_play":
-            mediaMessage.Message = payload.mediaPlaybackState.paused ? "play" : "pause";
-            break;
-          case "set_speed":
-            mediaMessage.Message = "speed";
-            mediaMessage.speed = Number(value ?? 1);
-            break;
-          case "pip":
-            mediaMessage.Message = "pip";
-            break;
-          case "screenshot":
-            mediaMessage.Message = "screenshot";
-            break;
-          case "toggle_loop":
-            mediaMessage.Message = "loop";
-            mediaMessage.action = Boolean(value);
-            break;
-          case "toggle_muted":
-            mediaMessage.Message = "muted";
-            mediaMessage.action = Boolean(value);
-            break;
-          case "set_volume":
-            mediaMessage.Message = "setVolume";
-            mediaMessage.volume = Number(value ?? 1);
-            break;
-          case "set_time":
-            mediaMessage.Message = "setTime";
-            mediaMessage.time = Number(value ?? 0);
-            break;
-          default:
-            throw new Error("未知的媒体操作");
+        try {
+          if (action === "fullscreen") {
+            await sendFullscreenMessage(tabId, index);
+          } else {
+            chrome.tabs.sendMessage(tabId, { Message: "pip", index });
+          }
+        } catch (error) {
+          showToast(errorMessageOr(error, action === "fullscreen" ? "全屏失败" : "画中画失败"), "error");
         }
+        return;
+      }
 
-        if (
-          action === "set_volume"
-          && typeof value === "number"
-          && value > 0
-          && payload.mediaPlaybackState.muted
-        ) {
-          await sendMediaMessage(tabId, { Message: "muted", action: false, index });
+      try {
+        const result = await sendActionCommand(
+          { type: "popup_media_action", action, value },
+          "媒体操作失败",
+        );
+        if (result.playbackState && mountedRef.current) {
+          setPayload((prev) => ({ ...prev, mediaPlaybackState: result.playbackState! }));
         }
-
-        await sendMediaMessage(tabId, mediaMessage);
-        await refreshState("advanced");
       } catch (error) {
-        setFlash(errorMessageOr(error, "媒体控制失败"), "error");
-      } finally {
-        if (mountedRef.current) {
-          setIsUpdatingMedia(false);
-        }
+        showToast(errorMessageOr(error, "媒体操作失败"), "error");
       }
     },
-    [
-      payload.mediaPlaybackState.muted,
-      payload.mediaPlaybackState.paused,
-      payload.mediaPlaybackState.tabId,
-      payload.mediaPlaybackState.mediaIndex,
-      refreshState,
-      setFlash,
-    ],
+    [payload.mediaPlaybackState.tabId, payload.mediaPlaybackState.mediaIndex, showToast],
+  );
+
+  const sendImages = useCallback(
+    async (images: ScannedImage[]) => {
+      try {
+        const [tab] = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+          chrome.tabs.query({ active: true, currentWindow: true }, resolve);
+        });
+        const pageUrl = tab?.url ?? "";
+        const result = await sendActionCommand({
+          type: "popup_send_images",
+          images,
+          pageUrl,
+        }, "发送图片失败");
+        showToast(result.message || "图片已发送", "success");
+        return true;
+      } catch (error) {
+        showToast(errorMessageOr(error, "发送图片失败"), "error");
+        return false;
+      }
+    },
+    [showToast],
   );
 
   const sortedTasks = useMemo(() => sortTasks(payload.tasks), [payload.tasks]);
 
   return {
     ...payload,
-    flashMessage,
-    flashTone,
+    toastMessage,
+    toastIntent,
     isConnected: payload.connectionState === "connected",
     isSavingToken,
     isSavingServerUrl,
     isRefreshingConnection,
     isRequestingPairing,
-    isUpdatingIntercept,
-    isUpdatingMediaDownloadOverlay,
-    isUpdatingMedia,
+    isUpdatingTakeDownloads,
+    isUpdatingMediaButton,
     saveToken,
     saveServerUrl,
     refreshConnection,
     requestPairing,
-    setInterceptDownloads,
-    setMediaDownloadOverlay,
-    performTaskAction,
+    setShouldTakeDownloads,
+    setMediaButtonEnabled,
+    sendTaskAction,
     sendResource,
     mergeResources,
     toggleFeature,
     setMediaIndex,
-    performMediaAction,
+    sendMediaAction,
     sortedTasks,
     isTaskBusy: (taskId: string) => busyTaskIds.has(taskId),
+    sendImages,
     isResourceBusy: (resourceId: string) => busyResourceIds.has(resourceId),
     isFeatureBusy: (featureKey: AdvancedFeatureKey) => busyFeatureKeys.has(featureKey),
   };

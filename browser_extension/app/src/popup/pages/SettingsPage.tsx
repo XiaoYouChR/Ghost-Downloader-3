@@ -8,18 +8,26 @@ import {
     MessageBar,
     MessageBarBody,
     Select,
+    SpinButton,
+    Switch,
 } from "@fluentui/react-components";
+import type {SpinButtonOnChangeData, SwitchOnChangeData} from "@fluentui/react-components";
 import {ArrowClockwiseRegular, ClipboardPasteRegular, PlugConnectedRegular,} from "@fluentui/react-icons";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 
-import {DEFAULT_SERVER_URL, EXTENSION_VERSION, HELP_CONTENT} from "../../shared/constants";
+import {DEFAULT_SERVER_URL, EXTENSION_VERSION} from "../../shared/constants";
+import {
+    BYPASS_MODIFIER_KEY,
+    MIN_TAKE_SIZE_KB_KEY,
+    SHOULD_TAKE_UNKNOWN_SIZE_KEY,
+} from "../../background/constants";
 import type {ThemePreference} from "../../shared/types";
 
 const useStyles = makeStyles({
   root: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: "16px",
     padding: "16px",
   },
   card: {
@@ -39,31 +47,6 @@ const useStyles = makeStyles({
   },
   input: {
     flex: 1,
-  },
-  statusCard: {
-    gap: "8px",
-    padding: "16px",
-  },
-  appearanceCard: {
-    gap: "12px",
-    padding: "16px",
-  },
-  helpSection: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-  helpCard: {
-    gap: "12px",
-    padding: "16px",
-  },
-  helpList: {
-    margin: 0,
-    paddingLeft: "20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    fontSize: "14px",
   },
 });
 
@@ -101,6 +84,35 @@ export function SettingsPage({
   const [serverUrlDraft, setServerUrlDraft] = useState(serverUrl || DEFAULT_SERVER_URL);
   const [tokenDirty, setTokenDirty] = useState(false);
   const [serverDirty, setServerDirty] = useState(false);
+  const [minSizeKB, setMinSizeKB] = useState(0);
+  const [takeUnknownSize, setInterceptUnknown] = useState(true);
+  const [bypassModifier, setBypassModifier] = useState("alt");
+  const [installType, setInstallType] = useState("");
+
+  const installLabel = useCallback(() => {
+    switch (installType) {
+      case "development": return "桌面端自管理";
+      case "admin": case "normal": return "商店安装";
+      case "sideload": return "侧载安装";
+      default: return installType || "未知";
+    }
+  }, [installType]);
+
+  useEffect(() => {
+    chrome.management.getSelf((info) => setInstallType(info.installType));
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.get({
+      [MIN_TAKE_SIZE_KB_KEY]: 0,
+      [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
+      [BYPASS_MODIFIER_KEY]: "alt",
+    }, (result) => {
+      setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
+      setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
+      setBypassModifier(String(result[BYPASS_MODIFIER_KEY] || "alt"));
+    });
+  }, []);
 
   useEffect(() => {
     if (!tokenDirty) {
@@ -220,18 +232,49 @@ export function SettingsPage({
         </Field>
       </Card>
 
-      <Card appearance="filled-alternative" className={styles.statusCard}>
-        <Body1Strong>服务状态</Body1Strong>
-        <MessageBar intent="info">
-          <MessageBarBody>{`扩展版本：${EXTENSION_VERSION}`}</MessageBarBody>
-        </MessageBar>
-        <MessageBar intent="info">
-          <MessageBarBody>{`桌面端版本：${desktopVersion || "未连接"}`}</MessageBarBody>
-        </MessageBar>
-      </Card>
+      <Card appearance="filled-alternative" className={styles.card}>
+        <Body1Strong>通用</Body1Strong>
 
-      <Card appearance="filled-alternative" className={styles.appearanceCard}>
-        <Body1Strong>界面外观</Body1Strong>
+        <Field label="最小拦截大小" hint="低于此大小的文件由浏览器直接下载，0 为全部拦截">
+          <SpinButton
+            min={0}
+            max={1048576}
+            step={100}
+            value={minSizeKB}
+            displayValue={`${minSizeKB} KB`}
+            onChange={(_event, data: SpinButtonOnChangeData) => {
+              const value = data.value ?? 0;
+              setMinSizeKB(value);
+              void chrome.storage.local.set({ [MIN_TAKE_SIZE_KB_KEY]: value });
+            }}
+          />
+        </Field>
+
+        <Field label="大小未知时拦截">
+          <Switch
+            checked={takeUnknownSize}
+            onChange={(_event, data: SwitchOnChangeData) => {
+              setInterceptUnknown(data.checked);
+              void chrome.storage.local.set({ [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: data.checked });
+            }}
+          />
+        </Field>
+
+        <Field label="跳过拦截快捷键" hint="按住此键点击下载链接，跳过拦截由浏览器下载">
+          <Select
+            value={bypassModifier}
+            onChange={(_event, data) => {
+              const value = data.value;
+              setBypassModifier(value);
+              void chrome.storage.local.set({ [BYPASS_MODIFIER_KEY]: value });
+            }}
+          >
+            <option value="alt">Alt / Option</option>
+            <option value="ctrl">Ctrl</option>
+            <option value="shift">Shift</option>
+          </Select>
+        </Field>
+
         <Field label="主题">
           <Select
             value={themePreference}
@@ -244,19 +287,18 @@ export function SettingsPage({
         </Field>
       </Card>
 
-      <section className={styles.helpSection}>
-        <Body1Strong>帮助与支持</Body1Strong>
-        {Object.values(HELP_CONTENT).map((entry) => (
-          <Card key={entry.title} appearance="filled-alternative" className={styles.helpCard}>
-            <Body1Strong>{entry.title}</Body1Strong>
-            <ul className={styles.helpList}>
-              {entry.body.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </Card>
-        ))}
-      </section>
+      <Card appearance="filled-alternative" className={styles.card}>
+        <Body1Strong>关于</Body1Strong>
+        <MessageBar intent="info">
+          <MessageBarBody>{`扩展版本 ${EXTENSION_VERSION}`}</MessageBarBody>
+        </MessageBar>
+        <MessageBar intent="info">
+          <MessageBarBody>{`安装方式 ${installLabel()}`}</MessageBarBody>
+        </MessageBar>
+        <MessageBar intent={desktopVersion ? "success" : "warning"}>
+          <MessageBarBody>{`桌面端 ${desktopVersion || "未连接"}`}</MessageBarBody>
+        </MessageBar>
+      </Card>
     </div>
   );
 }

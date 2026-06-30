@@ -1,7 +1,7 @@
 // Strategies see only URL + content-type so they can't reach into background-only fields.
 
-import {isCatCatchM3u8, isCatCatchMedia, isCatCatchMpd} from "../shared/cat-catch";
-import {dashTrackRoleOf, fileExtension, filenameFromUrl, mimeFromUrl} from "../shared/utils";
+import {isCatCatchM3u8, isCatCatchMedia, isCatCatchMpd} from "../../shared/cat-catch";
+import {dashTrackRoleOf, fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
 
 export type TrackRole = "video" | "audio" | "muxed" | "unknown";
 

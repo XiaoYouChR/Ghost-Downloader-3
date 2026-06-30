@@ -1,4 +1,4 @@
-// Upstream cat-catch media/script rules, with existing GD3 extension coverage kept compatible.
+// Upstream cat-catch media/script rules, with existing extension coverage kept compatible.
 const CAT_CATCH_HLS_TYPES = new Set([
   "application/vnd.apple.mpegurl",
   "application/x-mpegurl",

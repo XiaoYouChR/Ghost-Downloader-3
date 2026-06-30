@@ -1,4 +1,4 @@
-import {Avatar, Badge, Body1Strong, Button, Caption1, Card, makeStyles, ProgressBar,} from "@fluentui/react-components";
+import {Avatar, Button, Caption1, Card, makeStyles, ProgressBar} from "@fluentui/react-components";
 import {
     ArrowClockwiseRegular,
     DismissRegular,
@@ -8,19 +8,19 @@ import {
     PlayRegular,
 } from "@fluentui/react-icons";
 
-import type {GenericTaskSummary, TaskAction} from "../../shared/types";
-import {formatBytes, formatTaskMetric, formatTaskStatus, taskActionLabel, taskVisual,} from "../../shared/utils";
-import {taskStatusToBadgeColor, taskStatusToBadgeIcon} from "../lib/fluent";
-import {visualIcon} from "../lib/presenters";
+import type {TaskAction, TaskSummary} from "../../shared/types";
+import {formatBytes, formatTaskMetric, taskVisual} from "../../shared/utils";
+import {visualIcon} from "../fluent";
 
 const useStyles = makeStyles({
   root: {
-    gap: "6px",
-    padding: "10px",
+    position: "relative",
+    padding: "8px 10px",
+    overflow: "hidden",
   },
-  header: {
+  row: {
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: "8px",
   },
   body: {
@@ -28,169 +28,172 @@ const useStyles = makeStyles({
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
-  },
-  titleRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "6px",
+    gap: "2px",
   },
   title: {
-    flex: 1,
-    display: "-webkit-box",
     overflow: "hidden",
-    WebkitLineClamp: "2",
-    WebkitBoxOrient: "vertical",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
+    fontWeight: 600,
+    fontSize: "13px",
+    lineHeight: "18px",
   },
-  status: {
-    flexShrink: 0,
-  },
-  progress: {
-    marginTop: "2px",
-  },
-  footer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "8px",
-    flexWrap: "wrap",
-  },
-  metrics: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    flexWrap: "wrap",
-    minWidth: 0,
+  meta: {
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    textOverflow: "ellipsis",
   },
   actions: {
     display: "flex",
     alignItems: "center",
-    flexWrap: "wrap",
-    gap: "6px",
-    marginLeft: "auto",
+    flexShrink: 0,
+    gap: "2px",
   },
-  dismissButton: {
-    minWidth: "auto",
+  progress: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderRadius: 0,
   },
 });
+
+function metaText(task: TaskSummary): string {
+  const sizePart = task.fileSize > 0
+    ? `${formatBytes(task.receivedBytes)} / ${formatBytes(task.fileSize)}`
+    : task.receivedBytes > 0
+      ? formatBytes(task.receivedBytes)
+      : "";
+
+  switch (task.status) {
+    case "running":
+      return [formatTaskMetric(task), sizePart].filter(Boolean).join(" · ");
+    case "waiting":
+      return ["等待中", sizePart].filter(Boolean).join(" · ");
+    case "paused":
+      return ["已暂停", sizePart].filter(Boolean).join(" · ");
+    case "failed":
+      return ["失败", sizePart].filter(Boolean).join(" · ");
+    case "completed":
+      return ["已完成", task.fileSize > 0 ? formatBytes(task.fileSize) : ""].filter(Boolean).join(" · ");
+    default:
+      return task.status;
+  }
+}
+
+function progressColor(status: string): "brand" | "warning" | "error" {
+  switch (status) {
+    case "paused":
+      return "warning";
+    case "failed":
+      return "error";
+    default:
+      return "brand";
+  }
+}
 
 export function TaskCard({
   task,
   busy,
   onAction,
 }: {
-  task: GenericTaskSummary;
+  task: TaskSummary;
   busy?: boolean;
   onAction: (action: TaskAction) => void;
 }) {
   const styles = useStyles();
   const visual = taskVisual(task);
   const TaskIcon = visualIcon(visual.kind);
-  const StatusIcon = taskStatusToBadgeIcon(task.status);
-  const primaryAction = taskActionLabel(task);
-  const showProgress = task.status !== "completed";
-  const showRedownload = task.status === "completed";
-  const showOpenActions = task.status === "completed";
-  const metric = task.status === "completed"
-    ? (task.fileSize > 0 ? formatBytes(task.fileSize) : "--")
-    : formatTaskMetric(task);
+  const isCompleted = task.status === "completed";
+  const isRunning = task.status === "running";
+  const isPausedOrFailed = task.status === "paused" || task.status === "failed" || task.status === "waiting";
+  const showProgress = !isCompleted;
+  const progressValue = task.status === "waiting" ? undefined : Math.max(0, Math.min(100, task.progress)) / 100;
 
   return (
     <Card appearance="filled-alternative" className={styles.root}>
-      <div className={styles.header}>
+      <div className={styles.row}>
         <Avatar
-          aria-label={task.title}
           color="colorful"
           icon={<TaskIcon />}
           idForColor={task.taskId}
           shape="square"
-          size={32}
+          size={24}
         />
 
         <div className={styles.body}>
-          <div className={styles.titleRow}>
-            <Body1Strong className={styles.title}>{task.title}</Body1Strong>
-            <Badge
-              appearance="tint"
-              className={styles.status}
-              color={taskStatusToBadgeColor(task.status)}
-              icon={<StatusIcon />}
-              size="medium"
-            >
-              {formatTaskStatus(task.status)}
-            </Badge>
-          </div>
+          <div className={styles.title}>{task.name}</div>
+          <Caption1 className={styles.meta}>{metaText(task)}</Caption1>
+        </div>
 
-          {showProgress ? (
-            <ProgressBar
-              className={styles.progress}
-              thickness="medium"
-              value={Math.max(0, Math.min(100, task.progress)) / 100}
-            />
-          ) : null}
-
-          <div className={styles.footer}>
-            <div className={styles.metrics}>
-              <Caption1>{`${Math.max(0, Math.round(task.progress))}%`}</Caption1>
-              <Caption1>{metric}</Caption1>
-            </div>
-
-            <div className={styles.actions}>
-              {showRedownload ? (
-                <Button
-                  disabled={busy}
-                  icon={<ArrowClockwiseRegular />}
-                  size="small"
-                  onClick={() => onAction("redownload")}
-                >
-                  重新下载
-                </Button>
-              ) : null}
-
-              {showOpenActions ? (
-                <>
-                  <Button
-                    disabled={busy || !task.canOpenFile}
-                    icon={<OpenRegular />}
-                    size="small"
-                    onClick={() => onAction("open_file")}
-                  >
-                    打开文件
-                  </Button>
-                  <Button
-                    disabled={busy || !task.canOpenFolder}
-                    icon={<FolderOpenRegular />}
-                    size="small"
-                    onClick={() => onAction("open_folder")}
-                  >
-                    打开文件夹
-                  </Button>
-                </>
-              ) : primaryAction ? (
-                <Button
-                  disabled={busy || (task.status === "running" && !task.canPause)}
-                  icon={task.status === "running" ? <PauseRegular /> : <PlayRegular />}
-                  size="small"
-                  onClick={() => onAction("toggle_pause")}
-                >
-                  {primaryAction}
-                </Button>
-              ) : null}
-
+        <div className={styles.actions}>
+          {isCompleted && (
+            <>
               <Button
                 appearance="subtle"
-                className={styles.dismissButton}
                 disabled={busy}
-                icon={<DismissRegular />}
-                aria-label="取消"
+                icon={<ArrowClockwiseRegular />}
+                aria-label="重新下载"
                 size="small"
-                onClick={() => onAction("cancel")}
+                onClick={() => onAction("redownload")}
               />
-            </div>
-          </div>
+              <Button
+                appearance="subtle"
+                disabled={busy || !task.canOpenFile}
+                icon={<OpenRegular />}
+                aria-label="打开文件"
+                size="small"
+                onClick={() => onAction("open_file")}
+              />
+              <Button
+                appearance="subtle"
+                disabled={busy || !task.canOpenFolder}
+                icon={<FolderOpenRegular />}
+                aria-label="打开文件夹"
+                size="small"
+                onClick={() => onAction("open_folder")}
+              />
+            </>
+          )}
+          {isRunning && (
+            <Button
+              appearance="subtle"
+              disabled={busy || !task.canPause}
+              icon={<PauseRegular />}
+              aria-label="暂停"
+              size="small"
+              onClick={() => onAction("toggle_pause")}
+            />
+          )}
+          {isPausedOrFailed && (
+            <Button
+              appearance="subtle"
+              disabled={busy}
+              icon={<PlayRegular />}
+              aria-label="继续"
+              size="small"
+              onClick={() => onAction("toggle_pause")}
+            />
+          )}
+          <Button
+            appearance="subtle"
+            disabled={busy}
+            icon={<DismissRegular />}
+            aria-label="取消"
+            size="small"
+            onClick={() => onAction("cancel")}
+          />
         </div>
       </div>
+
+      {showProgress && (
+        <ProgressBar
+          className={styles.progress}
+          color={progressColor(task.status)}
+          thickness="medium"
+          value={progressValue}
+        />
+      )}
     </Card>
   );
 }

@@ -3,7 +3,7 @@ import {Avatar, Badge, Body1Strong, Caption1, Card, makeStyles, Switch} from "@f
 import {ArrowClockwiseRegular} from "@fluentui/react-icons";
 
 import type {AdvancedFeatureKey} from "../../shared/types";
-import {featureIcon} from "../lib/presenters";
+import {featureIcon} from "../fluent";
 
 const useStyles = makeStyles({
   root: {

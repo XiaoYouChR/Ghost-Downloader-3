@@ -1,3 +1,0 @@
-[submodule "browser_extension/upstream"]
-	path = browser_extension/upstream
-	url = https://github.com/xifangczy/cat-catch.git

@@ -1,5 +1,15 @@
-export type PopupView = "tasks" | "resources" | "advanced" | "settings";
+export type PopupView = "tasks" | "resources" | "images" | "advanced" | "settings";
 export type TaskAction = "toggle_pause" | "redownload" | "open_file" | "open_folder" | "cancel";
+export type MediaAction =
+  | "toggle_play"
+  | "set_speed"
+  | "pip"
+  | "screenshot"
+  | "toggle_loop"
+  | "toggle_muted"
+  | "set_volume"
+  | "set_time"
+  | "fullscreen";
 export type ThemePreference = "system" | "light" | "dark";
 
 export type DesktopConnectionState =
@@ -10,7 +20,7 @@ export type DesktopConnectionState =
   | "unauthorized"
   | "disconnected";
 
-export type ResourceFilter = "all" | "video" | "audio" | "streaming";
+export type ResourceFilter = "all" | "video" | "audio";
 export type ResourceScope = "current" | "other";
 export type ResourceCollectionState = "restoring" | "ready" | "unavailable";
 
@@ -22,9 +32,9 @@ export type AdvancedFeatureKey =
   | "search"
   | "catch";
 
-export interface GenericTaskSummary {
+export interface TaskSummary {
   taskId: string;
-  title: string;
+  name: string;
   status: string;
   progress: number;
   receivedBytes: number;
@@ -38,7 +48,7 @@ export interface GenericTaskSummary {
   packName: string;
 }
 
-export interface CapturedResource {
+export interface Resource {
   id: string;
   tabId: number;
   url: string;
@@ -52,6 +62,10 @@ export interface CapturedResource {
   requestHeaders: Record<string, string>;
   capturedAt: number;
   sentToDesktopAt?: number;
+  duration?: number;
+  videoWidth?: number;
+  videoHeight?: number;
+  posterUrl?: string;
 }
 
 export interface TaskCounters {
@@ -75,7 +89,7 @@ export interface MediaItemOption {
 }
 
 export interface MediaPlaybackState {
-  available: boolean;
+  isAvailable: boolean;
   message: string;
   tabId: number | null;
   mediaIndex: number;
@@ -83,35 +97,44 @@ export interface MediaPlaybackState {
   duration: number;
   progress: number;
   volume: number;
-  paused: boolean;
-  loop: boolean;
-  muted: boolean;
+  isPaused: boolean;
+  shouldLoop: boolean;
+  isMuted: boolean;
   speed: number;
 }
 
-export interface PopupStatePayload {
+export interface PopupState {
   connectionState: DesktopConnectionState;
   connectionMessage: string;
   desktopVersion: string;
   token: string;
   serverUrl: string;
-  interceptDownloads: boolean;
-  mediaDownloadOverlayEnabled: boolean;
-  tasks: GenericTaskSummary[];
+  shouldTakeDownloads: boolean;
+  isMediaButtonEnabled: boolean;
+  tasks: TaskSummary[];
   taskCounters: TaskCounters;
   resourceState: ResourceCollectionState;
   resourceStateMessage: string;
-  currentResources: CapturedResource[];
-  otherResources: CapturedResource[];
+  currentResources: Resource[];
+  otherResources: Resource[];
   tabId: number | null;
   activePageDomain: string;
   featureStates: FeatureStateMap;
   mediaItems: MediaItemOption[];
   mediaPlaybackState: MediaPlaybackState;
+  pendingTaskCount: number;
 }
 
-export interface DesktopRequestResult {
+export interface ScannedImage {
+  src: string;
+  naturalWidth: number;
+  naturalHeight: number;
+  alt: string;
+}
+
+export interface CommandResult {
   ok: boolean;
   message?: string;
   taskId?: string;
+  playbackState?: MediaPlaybackState;
 }

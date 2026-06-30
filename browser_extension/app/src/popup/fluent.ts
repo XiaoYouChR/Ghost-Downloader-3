@@ -1,15 +1,59 @@
 import type {ComponentType} from "react";
-import type {BadgeProps, MessageBarProps} from "@fluentui/react-components";
+import type {BadgeProps} from "@fluentui/react-components";
 import {
     ArrowClockwiseRegular,
     CheckmarkCircleRegular,
     ClockRegular,
+    DataUsageRegular,
     DismissCircleRegular,
+    DocumentArrowDownRegular,
+    DocumentPdfRegular,
+    DocumentTableRegular,
+    DocumentTextRegular,
+    FolderZipRegular,
+    GlobeVideoRegular,
+    ImageRegular,
+    MusicNote2Regular,
     PauseCircleRegular,
+    PhoneRegular,
     PlayCircleRegular,
+    SearchRegular,
+    StorageRegular,
+    TabDesktopRegular,
+    VideoClipRegular,
 } from "@fluentui/react-icons";
 
-import type {AccentTone} from "../../shared/utils";
+import type {AdvancedFeatureKey} from "../shared/types";
+import type {AccentTone, VisualKind} from "../shared/utils";
+
+const VISUAL_ICON_MAP: Record<VisualKind, ComponentType> = {
+  download: DocumentArrowDownRegular,
+  video: VideoClipRegular,
+  audio: MusicNote2Regular,
+  archive: FolderZipRegular,
+  document: DocumentTextRegular,
+  pdf: DocumentPdfRegular,
+  spreadsheet: DocumentTableRegular,
+  image: ImageRegular,
+  stream: GlobeVideoRegular,
+};
+
+const FEATURE_ICON_MAP: Record<AdvancedFeatureKey, ComponentType> = {
+  recorder: VideoClipRegular,
+  webrtc: DataUsageRegular,
+  recorder2: TabDesktopRegular,
+  mobileUserAgent: PhoneRegular,
+  search: SearchRegular,
+  catch: StorageRegular,
+};
+
+export function visualIcon(kind: VisualKind) {
+  return VISUAL_ICON_MAP[kind];
+}
+
+export function featureIcon(key: AdvancedFeatureKey) {
+  return FEATURE_ICON_MAP[key];
+}
 
 export function toneToBadgeColor(tone: AccentTone): NonNullable<BadgeProps["color"]> {
   switch (tone) {
@@ -55,18 +99,5 @@ export function taskStatusToBadgeIcon(status: string): ComponentType {
       return DismissCircleRegular;
     default:
       return PlayCircleRegular;
-  }
-}
-
-export function flashToneToIntent(
-  tone: "neutral" | "success" | "error",
-): NonNullable<MessageBarProps["intent"]> {
-  switch (tone) {
-    case "success":
-      return "success";
-    case "error":
-      return "error";
-    default:
-      return "info";
   }
 }

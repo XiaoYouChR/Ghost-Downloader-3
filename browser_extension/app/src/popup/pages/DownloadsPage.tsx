@@ -1,17 +1,21 @@
 import {ArrowDownloadRegular} from "@fluentui/react-icons";
 import {makeStyles} from "@fluentui/react-components";
 
-import type {GenericTaskSummary, TaskAction} from "../../shared/types";
-import {EmptyState} from "./EmptyState";
-import {TaskCard} from "./TaskCard";
+import type {TaskSummary, TaskAction} from "../../shared/types";
+import {EmptyState} from "../components/EmptyState";
+import {TaskCard} from "../components/TaskCard";
 
 const useStyles = makeStyles({
   empty: {
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
     padding: "14px",
   },
   root: {
     display: "flex",
     flexDirection: "column",
+    flex: 1,
     gap: "10px",
     padding: "14px",
   },
@@ -27,7 +31,7 @@ export function DownloadsPage({
   isTaskBusy,
   onTaskAction,
 }: {
-  tasks: GenericTaskSummary[];
+  tasks: TaskSummary[];
   isTaskBusy: (taskId: string) => boolean;
   onTaskAction: (taskId: string, action: TaskAction) => void;
 }) {

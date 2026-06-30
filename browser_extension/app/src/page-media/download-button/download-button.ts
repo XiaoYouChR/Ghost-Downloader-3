@@ -1,10 +1,11 @@
 /*
  * Ghost Downloader — "download this media" overlay (ISOLATED world).
- * A floating button that locates the active <video> and asks the page-media controller
- * (window.__gd3PageMedia) to resolve the right stream, then hands it to the background.
+ * A floating button that locates the active <video> and asks the page-media attribution
+ * engine (window.__gdPageMedia) to resolve the right stream, then hands it to the background.
  * Built as a standalone IIFE bundle (see scripts/build.mjs).
  */
-import type {VideoSessionState} from "./types";
+import {findActiveMedia} from "./active-media";
+import type {VideoSessionState} from "../types";
 
 declare global {
   interface Window {
@@ -12,7 +13,8 @@ declare global {
   }
 }
 
-type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
+const IDLE_TIMEOUT_MS = 3000;
+const FADE_DURATION_MS = 300;
 
 (function installGhostDownloaderMediaButton() {
   if (window.GhostDownloaderMediaButton?.installed) { return; }
@@ -23,13 +25,22 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
   let resetTimer = 0;
   let updateQueued = false;
   let enabled = false;
+  let positionTimer = 0;
+  let idleTimer = 0;
+  let isVisible = false;
+  let isHoveringButton = false;
+  let mouseMoveQueued = false;
+  let lastMouseX = -1;
+  let lastMouseY = -1;
 
   host.id = "ghostDownloaderMediaDownload";
   Object.assign(host.style, {
     display: "none",
     left: "0",
+    opacity: "0",
     position: "fixed",
     top: "0",
+    transition: `opacity ${FADE_DURATION_MS}ms ease`,
     zIndex: "1000000000",
   });
 
@@ -89,47 +100,72 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
   const label = root.querySelector(".label")!;
   const status = root.querySelector(".status")!;
 
-  function mediaRect(media: HTMLVideoElement): DOMRect | null {
-    const rect = media.getBoundingClientRect();
-    if (rect.width < 120 || rect.height < 80 || rect.bottom <= 0 || rect.right <= 0 || rect.top >= innerHeight || rect.left >= innerWidth) {
-      return null;
-    }
-    return rect;
+  function showButton(): void {
+    if (isVisible) { return; }
+    isVisible = true;
+    host.style.display = "block";
+    void host.offsetHeight;
+    host.style.opacity = "1";
   }
 
-  // Digit slots: playing (1e9) beats readyState (1e6) beats viewport area, so the user's
-  // active video always wins over a paused full-screen poster.
-  function mediaScore(media: HTMLVideoElement, rect: DOMRect): number {
-    const playing = !media.paused && !media.ended ? 1_000_000_000 : 0;
-    return playing + media.readyState * 1_000_000 + rect.width * rect.height;
+  function hideButton(): void {
+    if (!isVisible) { return; }
+    isVisible = false;
+    host.style.opacity = "0";
   }
 
-  function findActiveMedia(): ActiveMedia | null {
-    let selected: ActiveMedia | null = null;
-    for (const media of Array.from(document.querySelectorAll<HTMLVideoElement>("video"))) {
-      const rect = mediaRect(media);
-      if (!rect) { continue; }
-      const score = mediaScore(media, rect);
-      if (!selected || score > selected.score) {
-        selected = { media, rect, score };
-      }
+  function resetIdleTimer(): void {
+    clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => {
+      if (!isHoveringButton) { hideButton(); }
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  host.addEventListener("transitionend", () => {
+    if (host.style.opacity === "0") {
+      host.style.display = "none";
     }
-    return selected;
+  });
+
+  host.addEventListener("mouseenter", () => {
+    isHoveringButton = true;
+    clearTimeout(idleTimer);
+  });
+
+  host.addEventListener("mouseleave", () => {
+    isHoveringButton = false;
+    resetIdleTimer();
+  });
+
+  function isMouseOverVideo(): boolean {
+    const active = findActiveMedia();
+    if (!active) { return false; }
+    const { rect } = active;
+    return lastMouseX >= rect.left && lastMouseX <= rect.right
+        && lastMouseY >= rect.top && lastMouseY <= rect.bottom;
+  }
+
+  function onMouseMoveFrame(): void {
+    mouseMoveQueued = false;
+    if (!enabled) { return; }
+    if (isMouseOverVideo()) {
+      showButton();
+      resetIdleTimer();
+      scheduleUpdate();
+    }
   }
 
   function updatePosition(): void {
     updateQueued = false;
-    if (!enabled) {
-      host.style.display = "none";
+    if (!enabled || !isVisible) {
       return;
     }
     const selected = findActiveMedia();
     if (!selected) {
-      host.style.display = "none";
+      hideButton();
       return;
     }
 
-    host.style.display = "block";
     const gap = 8;
     const buttonWidth = host.offsetWidth || 112;
     const buttonHeight = host.offsetHeight || 32;
@@ -157,13 +193,32 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
     if (document.documentElement && !host.isConnected) {
       document.documentElement.appendChild(host);
     }
-    scheduleUpdate();
+    document.addEventListener("mousemove", onMouseMove, { passive: true });
+    if (positionTimer) { clearInterval(positionTimer); }
+    positionTimer = window.setInterval(() => {
+      if (isVisible) { scheduleUpdate(); }
+    }, 1000);
   }
 
   function disableOverlay(): void {
     enabled = false;
-    host.style.display = "none";
+    hideButton();
     host.remove();
+    document.removeEventListener("mousemove", onMouseMove);
+    clearTimeout(idleTimer);
+    if (positionTimer) {
+      clearInterval(positionTimer);
+      positionTimer = 0;
+    }
+  }
+
+  function onMouseMove(event: MouseEvent): void {
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+    if (!mouseMoveQueued) {
+      mouseMoveQueued = true;
+      requestAnimationFrame(onMouseMoveFrame);
+    }
   }
 
   function scheduleUpdate(): void {
@@ -177,14 +232,12 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
     status.className = failed ? "status error" : "status";
     clearTimeout(resetTimer);
     if (text && !failed) {
-      // Matches TERMINAL_RESET_MS in controller.ts so toast fade and button re-enable line up.
       resetTimer = window.setTimeout(() => { status.textContent = ""; }, 1600);
     }
   }
 
   let downloadInFlight = false;
   async function downloadMedia(): Promise<void> {
-    // Double-click would otherwise re-fire within the toast window before the auto-reset.
     if (downloadInFlight) { return; }
     const media = findActiveMedia()?.media;
     if (!media) {
@@ -192,8 +245,8 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
       return;
     }
 
-    const pageMedia = window.__gd3PageMedia;
-    if (!pageMedia?.resolveForElement) {
+    const pageMedia = window.__gdPageMedia;
+    if (!pageMedia?.selectMediaForElement) {
       setStatus("扩展未就绪", true);
       return;
     }
@@ -203,18 +256,16 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
     label.textContent = "正在解析";
     setStatus("");
 
-    // Mirror controller state on the button so the user sees a "waiting" beat instead of staring at "正在解析".
     const onState = (next: VideoSessionState) => {
       if (next === "waiting") { label.textContent = "等待资源…"; }
       else if (next === "resolving" || next === "dispatched") { label.textContent = "正在发送"; }
     };
 
     try {
-      const resolution = await pageMedia.resolveForElement(media, {
+      const resolution = await pageMedia.selectMediaForElement(media, {
         poster: media.poster || "",
       }, onState);
       if (!resolution || resolution.kind === "refused") {
-        // resolveForElement already moved the session to 'refused'; flipping to 'failed' would misreport why.
         setStatus(resolution?.message || "未能定位媒体", true);
         return;
       }
@@ -239,7 +290,6 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
       label.textContent = "下载此媒体";
       (button as HTMLButtonElement).disabled = false;
       downloadInFlight = false;
-      scheduleUpdate();
     }
   }
 
@@ -254,15 +304,14 @@ type ActiveMedia = { media: HTMLVideoElement; rect: DOMRect; score: number };
   document.addEventListener("play", scheduleUpdate, true);
   document.addEventListener("pause", scheduleUpdate, true);
   document.addEventListener("loadedmetadata", scheduleUpdate, true);
-  setInterval(scheduleUpdate, 1000);
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== "media_download_overlay_set_enabled") { return; }
+    if (message?.type !== "media_button_set_enabled") { return; }
     Boolean(message.enabled) ? enableOverlay() : disableOverlay();
     sendResponse({ ok: true });
   });
 
-  chrome.runtime.sendMessage({ type: "page_media_overlay_state" }, (result) => {
+  chrome.runtime.sendMessage({ type: "page_media_button_state" }, (result) => {
     const lastError = chrome.runtime.lastError;
     if (!lastError && result?.enabled === false) {
       disableOverlay();

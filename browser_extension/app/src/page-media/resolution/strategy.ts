@@ -1,10 +1,10 @@
-import {resolveDouyin} from "./strategies/douyin";
-import {resolveGeneric} from "./strategies/generic";
-import {resolveX} from "./strategies/x";
-import {resolveYouTube} from "./strategies/youtube";
-import type {Resolution, VideoSessionFormKind} from "./types";
+import {selectDouyin} from "./strategies/douyin";
+import {selectGeneric} from "./strategies/generic";
+import {selectX} from "./strategies/x";
+import {selectYouTube} from "./strategies/youtube";
+import type {Resolution, VideoSessionFormKind} from "../types";
 
-// One attributed URL as the resolvers see it — also the element type of
+// One attributed URL as the strategies see it — also the element type of
 // SessionSnapshot.attributedUrls and of a FindUrlsByIdHint return.
 export type AttributedUrlView = {
   readonly url: string;
@@ -12,7 +12,7 @@ export type AttributedUrlView = {
   readonly capturedAt: number;
 };
 
-// Resolvers see only this — they MUST NOT reach back into the controller.
+// Strategies see only this — they MUST NOT reach back into the controller.
 export type SessionSnapshot = {
   readonly formKind: VideoSessionFormKind;
   readonly lastBoundAt: number;
@@ -30,24 +30,24 @@ export type ResolveContext = {
 };
 
 // Cross-session ledger lookup. It is Douyin's escape hatch for the prefetch case where the
-// URL is provisionally owned by v-1 but carries v-2's __vid — so only Douyin's resolver
-// gets it, instead of leaking the capability into every resolver's context.
+// URL is provisionally owned by v-1 but carries v-2's __vid — so only Douyin's strategy
+// gets it, instead of leaking the capability into every strategy's context.
 export type FindUrlsByIdHint = (idHint: string) => ReadonlyArray<AttributedUrlView>;
 
-// The whole dispatch: pick the resolver by hostname, Generic being the fallback. Resolvers
+// The whole dispatch: pick the strategy by hostname, Generic being the fallback. Strategies
 // are pure functions of the context; Douyin alone also takes the ledger lookup.
-export function resolveForPage(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Resolution {
+export function selectMediaForPage(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Resolution {
   const host = ctx.pageUrl.hostname;
   if (host === "x.com" || host.endsWith(".x.com")) {
-    return resolveX(ctx);
+    return selectX(ctx);
   }
   if (host === "www.douyin.com" || host.endsWith(".douyin.com")) {
-    return resolveDouyin(ctx, findUrlsByIdHint);
+    return selectDouyin(ctx, findUrlsByIdHint);
   }
   if (host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be") {
-    return resolveYouTube(ctx);
+    return selectYouTube(ctx);
   }
-  return resolveGeneric(ctx);
+  return selectGeneric(ctx);
 }
 
 // Belt-and-suspenders against pre-bind leakage that survived the ledger.
@@ -68,7 +68,7 @@ export function newestBy<T>(items: ReadonlyArray<T>, key: (item: T) => number): 
 }
 
 // The freshest attributed URL whose url/contentType matches — the shared shape behind every
-// "pick the newest stream / muxed / track" line the resolvers used to spell out by hand.
+// "pick the newest stream / muxed / track" line the strategies used to spell out by hand.
 export function newestMatching(
   urls: SessionSnapshot["attributedUrls"],
   predicate: (url: string, contentType: string) => boolean,

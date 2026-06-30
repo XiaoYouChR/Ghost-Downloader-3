@@ -4,12 +4,14 @@
 
 html,
 body {
-  width: 455px;
-  height: 600px;
   margin: 0;
+  height: 100%;
 }
 
 body {
+  width: 455px;
+  max-width: 100%;
+  min-height: 600px;
   overflow: hidden;
 }
 

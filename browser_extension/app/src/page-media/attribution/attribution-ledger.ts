@@ -1,4 +1,4 @@
-import type {AttributionTier} from "./types";
+import type {AttributionTier} from "../types";
 
 // Single arbiter of URL → session ownership. Claims before MSE bind are provisional
 // (lockedByMse=false); reclaimUrls moves them to whichever session's MSE later proves

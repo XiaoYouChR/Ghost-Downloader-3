@@ -1,12 +1,12 @@
-import type {MseAttributionSignal} from "./types";
+import type {MseAttributionSignal} from "../types";
 
-// The typed contract for the MAIN-world probe → ISOLATED-world controller channel. Both
-// ends import this file: the probe posts via postMediaSignal, the controller guards with
+// The typed contract for the MAIN-world probe → ISOLATED-world attribution engine channel.
+// Both ends import this file: the probe posts via postMediaSignal, the engine guards with
 // isMediaSignal. The signal shapes live in MseAttributionSignal (./types). The probe and
-// controller are bundled separately, so each carries its own copy of the key — they agree
-// on the string, not on a shared runtime object.
+// engine are bundled separately, so each carries its own copy of the key — they agree on
+// the string, not on a shared runtime object.
 
-export const MEDIA_SIGNAL_KEY = "__gd3MediaSignal";
+export const MEDIA_SIGNAL_KEY = "__gdMediaSignal";
 
 type TaggedSignal = MseAttributionSignal & { [MEDIA_SIGNAL_KEY]?: true };
 
