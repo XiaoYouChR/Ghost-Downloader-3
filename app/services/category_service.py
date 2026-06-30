@@ -1,28 +1,19 @@
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, Signal
-from qfluentwidgets import FluentIcon
 
-from app.supports.config import cfg
+from app.config.cfg import cfg
 
 if TYPE_CHECKING:
-    from app.bases.models import Task
+    from app.models.task import Task
 
 
-UNCATEGORIZED_ID = ""
-DEFAULT_FOLDER_MACRO = "{default}"
-
-
-def _resolveFolder(folder: str | None) -> str | None:
-    if not folder:
-        return None
-    return folder.replace(DEFAULT_FOLDER_MACRO, cfg.downloadFolder.value)
-
-
-_DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
+DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     {
         "categoryId": "cat_video",
         "name": "视频",
@@ -115,29 +106,25 @@ class Category:
     extensions: list[str] = field(default_factory=list)
     folder: str | None = None
 
-    def fluentIcon(self) -> FluentIcon:
-        try:
-            return FluentIcon[self.icon]
-        except KeyError:
-            return FluentIcon.DOCUMENT
+    def toIcon(self):
+        from qfluentwidgets import FluentIcon
+        return getattr(FluentIcon, self.icon, FluentIcon.TAG)
 
+    @classmethod
+    def fromDict(cls, data: dict[str, Any]) -> Category:
+        extensions: list[str] = []
+        for ext in data.get("extensions") or []:
+            normalized = str(ext).strip().lstrip(".").lower()
+            if normalized and normalized not in extensions:
+                extensions.append(normalized)
 
-def _toCategory(data: dict[str, Any]) -> Category:
-    extensions: list[str] = []
-    for ext in data.get("extensions") or []:
-        normalized = str(ext).strip().lstrip(".").lower()
-        if normalized and normalized not in extensions:
-            extensions.append(normalized)
-
-    folder = data.get("folder") or None
-
-    return Category(
-        categoryId=data.get("categoryId") or f"cat_{uuid4().hex}",
-        name=data.get("name") or "",
-        icon=data.get("icon") or "DOCUMENT",
-        extensions=extensions,
-        folder=folder,
-    )
+        return cls(
+            categoryId=data.get("categoryId") or f"cat_{uuid4().hex}",
+            name=data.get("name") or "",
+            icon=data.get("icon") or "DOCUMENT",
+            extensions=extensions,
+            folder=data.get("folder") or None,
+        )
 
 
 class CategoryService(QObject):
@@ -146,18 +133,19 @@ class CategoryService(QObject):
     def __init__(self) -> None:
         super().__init__()
         self._categories: list[Category] = []
-        self._loadFromConfig()
+        self._load()
 
-    def _loadFromConfig(self) -> None:
+    def _load(self) -> None:
         raw = cfg.categoryRules.value
         if not raw:
-            self._categories = [_toCategory(data) for data in _DEFAULT_CATEGORY_PRESETS]
-            self._persist()
+            self._categories = [Category.fromDict(data) for data in DEFAULT_CATEGORY_PRESETS]
+            self._save()
             return
-        self._categories = [_toCategory(data) for data in raw]
+        self._categories = [Category.fromDict(data) for data in raw]
 
-    def _persist(self) -> None:
+    def _save(self) -> None:
         cfg.set(cfg.categoryRules, [asdict(c) for c in self._categories])
+        self.categoriesChanged.emit()
 
     def categories(self) -> list[Category]:
         return list(self._categories)
@@ -171,9 +159,8 @@ class CategoryService(QObject):
     def matchByName(self, filename: str) -> str:
         suffixes = [s.lstrip(".").lower() for s in Path(filename).suffixes]
         if not suffixes:
-            return UNCATEGORIZED_ID
+            return ""
 
-        # 先尝试最后两个后缀拼接（如 tar.gz），再 fallback 到单后缀
         candidates: list[str] = []
         if len(suffixes) >= 2:
             candidates.append(".".join(suffixes[-2:]))
@@ -183,43 +170,39 @@ class CategoryService(QObject):
             for category in self._categories:
                 if candidate in category.extensions:
                     return category.categoryId
-        return UNCATEGORIZED_ID
+        return ""
 
-    def categoryOf(self, task: "Task") -> str:
+    def categoryOf(self, task: Task) -> str:
         if task.files is not None and len(task.files) > 1:
-            return UNCATEGORIZED_ID
-        return self.matchByName(task.title)
+            return ""
+        return self.matchByName(task.name)
 
     def folderOf(self, categoryId: str) -> str | None:
         category = self.categoryById(categoryId)
-        if category is None:
+        if category is None or not category.folder:
             return None
-        return _resolveFolder(category.folder)
+        return category.folder.replace("{default}", cfg.downloadFolder.value)
 
     def addCategory(self, category: Category) -> None:
         self._categories.append(category)
-        self._persist()
-        self.categoriesChanged.emit()
+        self._save()
 
     def updateCategory(self, category: Category) -> None:
         for i, existing in enumerate(self._categories):
             if existing.categoryId == category.categoryId:
                 self._categories[i] = category
-                self._persist()
-                self.categoriesChanged.emit()
+                self._save()
                 return
 
     def removeCategory(self, categoryId: str) -> None:
         before = len(self._categories)
         self._categories = [c for c in self._categories if c.categoryId != categoryId]
         if len(self._categories) != before:
-            self._persist()
-            self.categoriesChanged.emit()
+            self._save()
 
-    def resetToDefaults(self) -> None:
-        self._categories = [_toCategory(data) for data in _DEFAULT_CATEGORY_PRESETS]
-        self._persist()
-        self.categoriesChanged.emit()
+    def reset(self) -> None:
+        self._categories = [Category.fromDict(data) for data in DEFAULT_CATEGORY_PRESETS]
+        self._save()
 
     def reorder(self, categoryIds: list[str]) -> None:
         byId = {c.categoryId: c for c in self._categories}
@@ -227,8 +210,7 @@ class CategoryService(QObject):
         if len(reordered) != len(self._categories):
             return
         self._categories = reordered
-        self._persist()
-        self.categoriesChanged.emit()
+        self._save()
 
 
 categoryService = CategoryService()

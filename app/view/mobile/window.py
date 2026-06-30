@@ -1,46 +1,46 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPalette
+from PySide6.QtGui import QColor, QIcon, QPainter
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
-from loguru import logger
 from qfluentwidgets import (
-    FluentIcon,
-    InfoBar,
-    InfoBarPosition,
-    PrimaryToolButton,
-    Theme,
-    isDarkTheme,
-    qconfig,
-    setTheme,
-    setThemeColor,
+    FluentIcon, InfoBar, InfoBarPosition, PrimaryToolButton,
+    Theme, isDarkTheme, qconfig, setTheme,
 )
 
-from app.services.browser_service import BrowserService
-from app.services.core_service import coreService
+from app.config.cfg import cfg
+from app.platform.android import isStorageGranted, requestStoragePermission
+from app.services.task_draft import TaskDraft
 from app.services.task_service import taskService
-from app.supports.android import isStorageGranted, requestStoragePermission
-from app.supports.config import cfg, toQFluentTheme
-from app.view.components.labels import IconBodyLabel
+from app.view.dialogs.task_draft import TaskDraftDialog
+from app.view.mobile.device import setupAccentColor
 from app.view.mobile.navigation import BottomNavigationBar
 from app.view.mobile.permission import PermissionBanner
 from app.view.mobile.setting_page import MobileSettingPage
 from app.view.mobile.task_page import MobileTaskPage
 
+
 class MobileMainWindow(QWidget):
     def __init__(self):
         super().__init__(parent=None)
-        self.updateThemeColor()
-        BrowserService.initialize(self)
+        setupAccentColor()
+
         self.stackedWidget = QStackedWidget(self)
         self.navigationBar = BottomNavigationBar(self)
-        self.vBoxLayout = QVBoxLayout(self)
         self.permissionBanner = PermissionBanner(requestStoragePermission, self)
-        self.taskPage = MobileTaskPage(self, onSelectionModeChanged=self._updateAddButtonVisibility)
+        self.taskPage = MobileTaskPage(self)
         self.settingPage = MobileSettingPage(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
+        self.vBoxLayout = QVBoxLayout(self)
+
+        self._draft = TaskDraft(parent=self)
+        self._draftDialog = TaskDraftDialog(self._draft, parent=self)
+
         self._initWidget()
         self._initLayout()
         self._bind()
         self._updatePermissionBanner()
+        self._updateAddButtonVisibility()
 
     def _initWidget(self):
         self.setObjectName("MobileMainWindow")
@@ -51,8 +51,8 @@ class MobileMainWindow(QWidget):
         self.addButton.setFixedSize(56, 56)
         self.addButton.setIconSize(QSize(22, 22))
         self.addButton.raise_()
-        self.addPage(self.taskPage, FluentIcon.DOWNLOAD, self.tr("任务"))
-        self.addPage(self.settingPage, FluentIcon.SETTING, self.tr("设置"))
+        self._addPage(self.taskPage, FluentIcon.DOWNLOAD, self.tr("任务"))
+        self._addPage(self.settingPage, FluentIcon.SETTING, self.tr("设置"))
 
     def _initLayout(self):
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
@@ -64,24 +64,23 @@ class MobileMainWindow(QWidget):
     def _bind(self):
         self.navigationBar.currentChanged.connect(self.stackedWidget.setCurrentIndex)
         self.navigationBar.currentChanged.connect(lambda *_: self._updateAddButtonVisibility())
-        self.addButton.clicked.connect(self.showAddTaskDialog)
+        self.taskPage.selectionModeChanged.connect(lambda *_: self._updateAddButtonVisibility())
+        self.addButton.clicked.connect(self._showAddTaskDialog)
+        self._draft.taskConfirmed.connect(taskService.add)
         QApplication.instance().applicationStateChanged.connect(self._onApplicationStateChanged)
-        cfg.customThemeMode.valueChanged.connect(self._onThemeModeChanged)
+        cfg.themeMode.valueChanged.connect(self._onThemeModeChanged)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         qconfig.themeChanged.connect(self.update)
-        qconfig.themeChanged.connect(lambda *_: IconBodyLabel.clearCache())
 
-    def _onThemeModeChanged(self, mode: str):
-        setTheme(toQFluentTheme(mode), save=False)
+    def _addPage(self, page: QWidget, icon: FluentIcon, text: str):
+        self.stackedWidget.addWidget(page)
+        self.navigationBar.addItem(icon, text)
 
-    def _onSystemColorSchemeChanged(self, colorScheme: Qt.ColorScheme):
-        if cfg.customThemeMode.value != "System":
-            return
-        if colorScheme == Qt.ColorScheme.Dark:
-            setTheme(Theme.DARK, save=False)
-        elif colorScheme == Qt.ColorScheme.Light:
-            setTheme(Theme.LIGHT, save=False)
-        else:
+    def _onThemeModeChanged(self, value):
+        setTheme(value if isinstance(value, Theme) else Theme.AUTO, save=False)
+
+    def _onSystemColorSchemeChanged(self, _scheme):
+        if cfg.themeMode.value == Theme.AUTO:
             setTheme(Theme.AUTO, save=False)
 
     def _onApplicationStateChanged(self, state: Qt.ApplicationState):
@@ -95,12 +94,7 @@ class MobileMainWindow(QWidget):
         onTaskPage = self.stackedWidget.currentIndex() == 0
         self.addButton.setVisible(onTaskPage and not self.taskPage.isSelectionMode)
 
-    def addPage(self, page: QWidget, icon: FluentIcon, text: str) -> QWidget:
-        self.stackedWidget.addWidget(page)
-        self.navigationBar.addItem(icon, text)
-        return page
-
-    def showAddTaskDialog(self):
+    def _showAddTaskDialog(self):
         if not isStorageGranted():
             requestStoragePermission()
             InfoBar.warning(
@@ -111,17 +105,12 @@ class MobileMainWindow(QWidget):
                 parent=self,
             )
             return
-
-        from app.view.mobile.add_task_dialog import MobileAddTaskDialog
-
-        dialog = MobileAddTaskDialog.initialize(self)
-
-        dialog.widget.setFixedWidth(min(700, self.width() - 24))
-        if dialog.isVisible() and not dialog.isStandaloneMode:
-            dialog.raise_()
-            dialog.activateWindow()
+        self._draftDialog.widget.setFixedWidth(min(700, self.width() - 24))
+        if self._draftDialog.isVisible():
+            self._draftDialog.raise_()
+            self._draftDialog.activateWindow()
             return
-        dialog.showMask()
+        self._draftDialog.showMask()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -130,27 +119,6 @@ class MobileMainWindow(QWidget):
             self.width() - self.addButton.width() - margin,
             self.height() - self.navigationBar.height() - self.addButton.height() - margin,
         )
-
-    def addTask(self, task) -> bool:
-        try:
-            taskService.addTask(task)
-            coreService.createTask(task)
-            return True
-        except Exception as e:
-            logger.opt(exception=e).error("无法创建任务卡片 {}", task.title)
-            return False
-
-    @staticmethod
-    def updateThemeColor():
-        palette = QApplication.palette()
-
-        for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
-            color = palette.color(role)
-            if not color.isValid() or cfg.themeColor.value == color:
-                continue
-
-            setThemeColor(color, save=False)
-            return
 
     def paintEvent(self, event):
         painter = QPainter(self)

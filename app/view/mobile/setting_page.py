@@ -6,7 +6,8 @@ from qfluentwidgets import SettingCard, SwitchButton, isDarkTheme, qconfig
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.pages.setting_page import SettingPage
 
-_QWIDGETSIZE_MAX = (1 << 24) - 1
+QWIDGETSIZE_MAX = (1 << 24) - 1
+
 
 class MobileSettingPage(SettingPage):
     def __init__(self, parent=None):
@@ -35,10 +36,10 @@ class MobileSettingPage(SettingPage):
         for i in range(group.cardLayout.count()):
             card = group.cardLayout.itemAt(i).widget()
             if isinstance(card, SettingCard):
-                self._setCardVerticalLayout(card)
+                self._reflowToVertical(card)
         super().addSettingGroup(group)
 
-    def _setCardVerticalLayout(self, card: SettingCard):
+    def _reflowToVertical(self, card: SettingCard):
         if getattr(card, "_usesMobileLayout", False):
             return
 
@@ -73,7 +74,7 @@ class MobileSettingPage(SettingPage):
         outer.addLayout(controlRow)
 
         card.setMinimumHeight(0)
-        card.setMaximumHeight(_QWIDGETSIZE_MAX)
+        card.setMaximumHeight(QWIDGETSIZE_MAX)
         card._usesMobileLayout = True
 
     def _controlsAfterTitle(self, card: SettingCard) -> list[QWidget]:

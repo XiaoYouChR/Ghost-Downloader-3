@@ -1,71 +1,45 @@
-from typing import Final
-from urllib.parse import urlsplit
+from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, QEvent
+from urllib.parse import urlsplit
+import weakref
+
+from PySide6.QtCore import Qt, QEvent, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QButtonGroup,
-    QHBoxLayout,
-    QSpacerItem,
-    QSizePolicy,
-    QFileDialog,
+    QWidget, QVBoxLayout, QButtonGroup, QHBoxLayout,
+    QSpacerItem, QSizePolicy, QFileDialog,
 )
 from qfluentwidgets import (
-    SettingCard,
-    RangeConfigItem,
-    SpinBox,
-    ExpandGroupSettingCard,
-    ConfigItem,
-    FluentIcon,
-    BodyLabel,
-    RadioButton,
-    ComboBox,
-    LineEdit,
-    ToolButton,
-    ToolTipFilter,
+    SettingCard, PushSettingCard, RangeConfigItem, SpinBox,
+    ExpandGroupSettingCard, ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
+    RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
+    PrimaryPushButton, InfoBar, InfoBarPosition,
+    IconWidget,
 )
 
-from app.supports.config import cfg
-from app.supports.utils import getProxies
-from app.view.components.editors import AutoSizingComboBox
+from app.config.cfg import cfg, proxy, BASE_HEADERS
+from app.view.components.banners import WarningBanner
 
 
 class SpinBoxSettingCard(SettingCard):
-    """支持自定义倍数的 SpinBox 设置卡片"""
 
-    def __init__(
-        self,
-        icon,
-        title,
-        content=None,
-        suffix: str = None,
-        configItem: RangeConfigItem = None,
-        parent=None,
-        singleStep: int = 50,
-        division: float = 1,
-        blockWheelEvent: bool = True,
-    ):
+    def __init__(self, icon, title: str, content: str = "",
+                 suffix: str = "", configItem: RangeConfigItem = None,
+                 parent=None, singleStep: int = 50, division: float = 1):
         super().__init__(icon, title, content, parent)
-        self.division = division
-        self.configItem = configItem
+        self._configItem = configItem
+        self._division = division
 
         self.spinBox = SpinBox(self)
-        self.spinBox.setObjectName("spinBox")
         self.spinBox.setSingleStep(singleStep)
         self.spinBox.setMinimumWidth(180)
         self.spinBox.setSuffix(suffix)
-        if blockWheelEvent:
-            self.spinBox.installEventFilter(self)
-
-        if configItem:
-            _ = configItem.range
-            self.spinBox.setRange(_[0] * division, _[1] * division)
+        self.spinBox.installEventFilter(self)
+        r = configItem.range
+        self.spinBox.setRange(int(r[0] * division), int(r[1] * division))
+        self.spinBox.setValue(int(configItem.value * division))
 
         self.hBoxLayout.addWidget(self.spinBox)
         self.hBoxLayout.addSpacing(24)
-
-        self.spinBox.setValue(self.configItem.value * division)
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Type.Wheel:
@@ -73,432 +47,471 @@ class SpinBoxSettingCard(SettingCard):
         return super().eventFilter(watched, event)
 
     def leaveEvent(self, event):
-        if self.configItem:
-            cfg.set(self.configItem, self.spinBox.value() / self.division)
+        cfg.set(self._configItem, int(self.spinBox.value() / self._division))
 
 
 class LineEditSettingCard(SettingCard):
-    """绑定字符串 ConfigItem 的行编辑设置卡"""
 
-    def __init__(
-        self,
-        icon,
-        title,
-        content=None,
-        configItem: ConfigItem = None,
-        parent=None,
-        placeholder: str = "",
-    ):
+    def __init__(self, icon, title: str, content: str = "",
+                 configItem: ConfigItem = None, parent=None,
+                 placeholder: str = "", isPassword: bool = False):
         super().__init__(icon, title, content, parent)
-        self.configItem = configItem
+        self._configItem = configItem
 
-        self.lineEdit = LineEdit(self)
-
-        self._initWidget(placeholder)
-        self._initLayout()
-        self._bind()
-
-    def _initWidget(self, placeholder: str):
+        from qfluentwidgets import PasswordLineEdit
+        self.lineEdit = PasswordLineEdit(self) if isPassword else LineEdit(self)
         self.lineEdit.setMinimumWidth(180)
         self.lineEdit.setClearButtonEnabled(True)
         self.lineEdit.setPlaceholderText(placeholder)
-        if self.configItem:
-            self.lineEdit.setText(self.configItem.value)
+        if configItem:
+            self.lineEdit.setText(configItem.value)
 
-    def _initLayout(self):
         self.hBoxLayout.addWidget(self.lineEdit)
         self.hBoxLayout.addSpacing(16)
 
-    def _bind(self):
-        self.lineEdit.editingFinished.connect(self._onEditingFinished)
-
-    def _onEditingFinished(self):
-        if self.configItem:
-            cfg.set(self.configItem, self.lineEdit.text())
+        self.lineEdit.editingFinished.connect(
+            lambda: cfg.set(self._configItem, self.lineEdit.text())
+        )
 
 
 class ProxySettingCard(ExpandGroupSettingCard):
-    """Custom proxyServer setting card"""
 
     def __init__(self, configItem: ConfigItem, parent=None):
-        """
-        Parameters
-        ----------
-        configItem: ColorConfigItem
-            options config item
-
-        parent: QWidget
-            parent window
-        """
-        super().__init__(
-            FluentIcon.GLOBE,
-            self.tr("代理"),
-            self.tr("设置下载时希望使用的代理"),
-            parent=parent,
-        )
-
-        self.configItem = configItem
+        super().__init__(FluentIcon.GLOBE, self.tr("代理"),
+                         self.tr("设置下载时希望使用的代理"), parent=parent)
+        self._configItem = configItem
 
         self.choiceLabel = BodyLabel(self)
         self.radioWidget = QWidget(self.view)
         self.radioLayout = QVBoxLayout(self.radioWidget)
 
         self.buttonGroup = QButtonGroup(self)
-        self.offRadioButton = RadioButton(self.tr("不使用代理"), self.radioWidget)
-        self.defaultRadioButton = RadioButton(
-            self.tr("自动检测系统代理"), self.radioWidget
-        )
-        self.customRadioButton = RadioButton(
-            self.tr("使用自定义代理"), self.radioWidget
-        )
+        self.offRadio = RadioButton(self.tr("不使用代理"), self.radioWidget)
+        self.autoRadio = RadioButton(self.tr("自动检测系统代理"), self.radioWidget)
+        self.customRadio = RadioButton(self.tr("使用自定义代理"), self.radioWidget)
 
-        self.customProxyWidget = QWidget(self.view)
-        self.customProxyLayout = QHBoxLayout(self.customProxyWidget)
-        self.customLabel = BodyLabel(
-            self.tr("编辑代理服务器: "), self.customProxyWidget
-        )
-        self.customProtocolComboBox = ComboBox(self.customProxyWidget)
-        self.customProtocolComboBox.addItems(["socks4", "socks5", "http", "https"])
-        self.label_1 = BodyLabel("://", self.customProxyWidget)
-        self.customIPLineEdit = LineEdit(self.customProxyWidget)
-        self.customIPLineEdit.setPlaceholderText(self.tr("代理 IP 地址"))
-        self.label_2 = BodyLabel(":", self.customProxyWidget)
-        self.customPortLineEdit = LineEdit(self.customProxyWidget)
-        self.customPortLineEdit.setPlaceholderText(self.tr("端口"))
+        self.customWidget = QWidget(self.view)
+        self.customLayout = QHBoxLayout(self.customWidget)
+        self.protocolCombo = ComboBox(self.customWidget)
+        self.protocolCombo.addItems(["socks4", "socks5", "socks5h", "http", "https"])
+        self.ipEdit = LineEdit(self.customWidget)
+        self.ipEdit.setPlaceholderText(self.tr("代理 IP 地址"))
+        self.portEdit = LineEdit(self.customWidget)
+        self.portEdit.setPlaceholderText(self.tr("端口"))
 
-        # 代理账号和密码
-        self.credentialsWidget = QWidget(self.view)
-        self.credentialsLayout = QHBoxLayout(self.credentialsWidget)
-        self.credentialsLabel = BodyLabel(self.tr("认证信息: "), self.credentialsWidget)
-        self.usernameLineEdit = LineEdit(self.credentialsWidget)
-        self.usernameLineEdit.setPlaceholderText(self.tr("用户名（可选）"))
-        self.label_3 = BodyLabel(" : ", self.credentialsWidget)
-        self.passwordLineEdit = LineEdit(self.credentialsWidget)
-        self.passwordLineEdit.setPlaceholderText(self.tr("密码（可选）"))
-        self.passwordLineEdit.setEchoMode(LineEdit.EchoMode.Password)
+        self.credWidget = QWidget(self.view)
+        self.credLayout = QHBoxLayout(self.credWidget)
+        self.userEdit = LineEdit(self.credWidget)
+        self.userEdit.setPlaceholderText(self.tr("用户名（可选）"))
+        self.passEdit = LineEdit(self.credWidget)
+        self.passEdit.setPlaceholderText(self.tr("密码（可选）"))
+        self.passEdit.setEchoMode(LineEdit.EchoMode.Password)
 
-        self.__initWidget()
-        configValue = self.configItem.value
+        self.compatBanner = WarningBanner(self.view)
+        self.compatBanner.setContentsMargins(48, 0, 44, 10)
+        bannerLayout = QHBoxLayout(self.compatBanner)
+        bannerLayout.setContentsMargins(10, 8, 10, 8)
+        bannerLayout.setSpacing(8)
+        bannerIcon = IconWidget(FluentIcon.INFO, self.compatBanner)
+        bannerIcon.setFixedSize(16, 16)
+        bannerLayout.addWidget(bannerIcon)
+        self._compatLabel = CaptionLabel("", self.compatBanner)
+        self._compatLabel.setWordWrap(True)
+        bannerLayout.addWidget(self._compatLabel, 1)
 
-        if configValue == "Auto":
-            self.defaultRadioButton.setChecked(True)
-            self.__onRadioButtonClicked(self.defaultRadioButton)
-        elif configValue == "Off":
-            self.offRadioButton.setChecked(True)
-            self.__onRadioButtonClicked(self.offRadioButton)
+        self._initLayout()
+
+        value = configItem.value
+        if value == "Auto":
+            self.autoRadio.setChecked(True)
+            self._onRadioClicked(self.autoRadio)
+        elif value == "Off":
+            self.offRadio.setChecked(True)
+            self._onRadioClicked(self.offRadio)
         else:
-            self.customRadioButton.setChecked(True)
-            self.__onRadioButtonClicked(self.customRadioButton)
-            self._applyProxyUrl(configValue)
+            self.customRadio.setChecked(True)
+            self._onRadioClicked(self.customRadio)
+            self._showProxyUrl(value)
 
-            self.choiceLabel.setText(self.buttonGroup.checkedButton().text())
-            self.choiceLabel.adjustSize()
+        self.buttonGroup.buttonClicked.connect(self._onRadioClicked)
+        self.protocolCombo.currentTextChanged.connect(self._refreshCompatBanner)
+        self._refreshCompatBanner()
 
-    def _applyProxyUrl(self, proxyUrl: str | None):
-        if not proxyUrl:
-            self.customProtocolComboBox.setCurrentText("")
-            self.customIPLineEdit.setText(self.tr("未检测到代理"))
-            self.customPortLineEdit.setText("")
-            self.usernameLineEdit.setText("")
-            self.passwordLineEdit.setText("")
-            return
-
-        parsed = urlsplit(proxyUrl)
-        self.customProtocolComboBox.setCurrentText(parsed.scheme)
-        self.customIPLineEdit.setText(parsed.hostname or "")
-        self.customPortLineEdit.setText(str(parsed.port or ""))
-        self.usernameLineEdit.setText(parsed.username or "")
-        self.passwordLineEdit.setText(parsed.password or "")
-
-    def __initWidget(self):
-        self.__initLayout()
-        self.buttonGroup.buttonClicked.connect(self.__onRadioButtonClicked)
-
-    def __initLayout(self):
+    def _initLayout(self) -> None:
         self.addWidget(self.choiceLabel)
 
         self.radioLayout.setSpacing(19)
         self.radioLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.radioLayout.setContentsMargins(48, 5, 0, 18)
+        self.radioLayout.setContentsMargins(48, 18, 0, 18)
+        for btn in (self.offRadio, self.autoRadio, self.customRadio):
+            self.buttonGroup.addButton(btn)
+            self.radioLayout.addWidget(btn)
 
-        self.buttonGroup.addButton(self.offRadioButton)
-        self.buttonGroup.addButton(self.defaultRadioButton)
-        self.buttonGroup.addButton(self.customRadioButton)
+        self.customLayout.setContentsMargins(48, 5, 44, 10)
+        self.customLayout.addWidget(BodyLabel(self.tr("编辑代理服务器: "), self.customWidget))
+        self.customLayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.customLayout.addWidget(self.protocolCombo)
+        self.customLayout.addWidget(BodyLabel("://", self.customWidget))
+        self.customLayout.addWidget(self.ipEdit)
+        self.customLayout.addWidget(BodyLabel(":", self.customWidget))
+        self.customLayout.addWidget(self.portEdit)
 
-        self.radioLayout.addWidget(self.offRadioButton)
-        self.radioLayout.addWidget(self.defaultRadioButton)
-        self.radioLayout.addWidget(self.customRadioButton)
-        self.radioLayout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
-
-        self.customProxyLayout.setContentsMargins(48, 5, 44, 10)
-        self.customProxyLayout.addWidget(
-            self.customLabel, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.customProxyLayout.addSpacerItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
-        self.customProxyLayout.addWidget(
-            self.customProtocolComboBox, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.customProxyLayout.addWidget(self.label_1, 0, Qt.AlignmentFlag.AlignLeft)
-        self.customProxyLayout.addWidget(
-            self.customIPLineEdit, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.customProxyLayout.addWidget(self.label_2, 0, Qt.AlignmentFlag.AlignLeft)
-        self.customProxyLayout.addWidget(
-            self.customPortLineEdit, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.customProxyLayout.setSizeConstraint(
-            QHBoxLayout.SizeConstraint.SetMinimumSize
-        )
-
-        self.credentialsLayout.setContentsMargins(48, 5, 44, 18)
-        self.credentialsLayout.addWidget(
-            self.credentialsLabel, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.credentialsLayout.addSpacerItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
-        self.credentialsLayout.addWidget(
-            self.usernameLineEdit, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.credentialsLayout.addWidget(self.label_3, 0, Qt.AlignmentFlag.AlignLeft)
-        self.credentialsLayout.addWidget(
-            self.passwordLineEdit, 0, Qt.AlignmentFlag.AlignLeft
-        )
-        self.credentialsLayout.setSizeConstraint(
-            QHBoxLayout.SizeConstraint.SetMinimumSize
-        )
+        self.credLayout.setContentsMargins(48, 5, 44, 18)
+        self.credLayout.addWidget(BodyLabel(self.tr("认证信息: "), self.credWidget))
+        self.credLayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.credLayout.addWidget(self.userEdit)
+        self.credLayout.addWidget(BodyLabel(" : ", self.credWidget))
+        self.credLayout.addWidget(self.passEdit)
 
         self.viewLayout.setSpacing(0)
         self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.addGroupWidget(self.compatBanner)
         self.addGroupWidget(self.radioWidget)
-        self.addGroupWidget(self.customProxyWidget)
-        self.addGroupWidget(self.credentialsWidget)
+        self.addGroupWidget(self.customWidget)
+        self.addGroupWidget(self.credWidget)
 
-    def __onRadioButtonClicked(self, button: RadioButton):
-        """radio button clicked slot"""
-        if button.text() == self.choiceLabel.text():
-            return
-
+    def _onRadioClicked(self, button) -> None:
         self.choiceLabel.setText(button.text())
-        self.choiceLabel.adjustSize()
+        isCustom = button is self.customRadio
+        self.customWidget.setEnabled(isCustom)
+        self.credWidget.setEnabled(isCustom)
 
-        if button is self.defaultRadioButton:  # 自动
-            # 禁用 Custom 编辑器
-            self.customProxyWidget.setDisabled(True)
-            self.credentialsWidget.setDisabled(True)
+        if button is self.autoRadio:
+            cfg.set(self._configItem, "Auto")
+            self._showProxyUrl(proxy())
+        elif button is self.offRadio:
+            cfg.set(self._configItem, "Off")
+        elif button is self.customRadio:
+            if self.ipEdit.text() == self.tr("未检测到代理"):
+                self.ipEdit.clear()
+        self._refreshCompatBanner()
 
-            cfg.set(self.configItem, "Auto")
-            proxies = getProxies()
-            self._applyProxyUrl(
-                next(
-                    (
-                        proxies.get(protocol)
-                        for protocol in ("https", "http", "ftp")
-                        if proxies and proxies.get(protocol)
-                    ),
-                    None,
+    def _showProxyUrl(self, url: str | None) -> None:
+        if not url:
+            self.protocolCombo.setCurrentText("")
+            self.ipEdit.setText(self.tr("未检测到代理"))
+            self.portEdit.setText("")
+            self.userEdit.setText("")
+            self.passEdit.setText("")
+            return
+        parsed = urlsplit(url)
+        self.protocolCombo.setCurrentText(parsed.scheme)
+        self.ipEdit.setText(parsed.hostname or "")
+        self.portEdit.setText(str(parsed.port or ""))
+        self.userEdit.setText(parsed.username or "")
+        self.passEdit.setText(parsed.password or "")
+
+    def _refreshCompatBanner(self) -> None:
+        if self.offRadio.isChecked():
+            scheme = ""
+        elif self.autoRadio.isChecked():
+            url = proxy()
+            scheme = urlsplit(url).scheme.lower() if url else ""
+        else:
+            scheme = self.protocolCombo.currentText().lower()
+
+        if scheme == "socks5h":
+            scheme = "socks5"
+        if scheme:
+            from app.services.feature_service import featureService
+            incompatible = [
+                p.packId.upper() for p in featureService.packs
+                if p.proxySchemes is not None and scheme not in p.proxySchemes
+            ]
+            if incompatible:
+                names = "、".join(incompatible)
+                self._compatLabel.setText(
+                    self.tr("{0} 不支持当前代理协议，建议使用 SOCKS5 以兼容全部下载方式").format(names)
                 )
-            )
-
-        elif button is self.offRadioButton:  # 关闭
-            # 禁用 Custom 编辑器
-            self.customProxyWidget.setDisabled(True)
-            self.credentialsWidget.setDisabled(True)
-
-            cfg.set(self.configItem, "Off")
-
-        elif button is self.customRadioButton:
-            # 启用 Custom 编辑器
-            self.customProxyWidget.setDisabled(False)
-            self.credentialsWidget.setDisabled(False)
-
-    def leaveEvent(self, event):  # 鼠标离开时检测 Custom 选项是否合法并保存配置
-        if self.customRadioButton.isChecked():
-            protocol = self.customProtocolComboBox.currentText()
-            ip = self.customIPLineEdit.text()
-            port = self.customPortLineEdit.text()
-            username = self.usernameLineEdit.text()
-            password = self.passwordLineEdit.text()
-
-            # 构建代理字符串：protocol://[username:password@]ip:port
-            if username or password:
-                credentials = f"{username}:{password}@"
+                self.compatBanner.show()
             else:
-                credentials = ""
+                self.compatBanner.hide()
+        else:
+            self.compatBanner.hide()
 
-            proxyServer = f"{protocol}://{credentials}{ip}:{port}"
-            if cfg.proxyServer.validator.validate(proxyServer):
-                cfg.set(self.configItem, proxyServer)
+        h = self.viewLayout.sizeHint().height()
+        self.spaceWidget.setFixedHeight(h)
+        if self.isExpand:
+            self.setFixedHeight(self.card.height() + h)
+
+    def _buildProxyUrl(self) -> str:
+        protocol = self.protocolCombo.currentText()
+        ip = self.ipEdit.text()
+        port = self.portEdit.text()
+        user = self.userEdit.text()
+        password = self.passEdit.text()
+        cred = f"{user}:{password}@" if user or password else ""
+        return f"{protocol}://{cred}{ip}:{port}"
+
+    def leaveEvent(self, event):
+        if self.customRadio.isChecked():
+            url = self._buildProxyUrl()
+            if cfg.proxyServer.validator.validate(url):
+                cfg.set(self._configItem, url)
             else:
-                self.defaultRadioButton.click()
-                self.defaultRadioButton.setChecked(True)
-
-
-class InstallFolderCard(SettingCard):
-    pathChanged = Signal(str)
-
-    def __init__(self, configItem: ConfigItem, defaultPath: str,
-                 title: str, browseTitle: str, parent=None):
-        super().__init__(FluentIcon.FOLDER, title, configItem.value, parent)
-        self.configItem = configItem
-        self.defaultPath = defaultPath
-        self.browseTitle = browseTitle
-        self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
-        self.restoreDefaultButton = ToolButton(FluentIcon.CANCEL, self)
-
-        self._initWidget()
-        self._initLayout()
-        self._bind()
-
-    def _initWidget(self):
-        self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
-        self.chooseFolderButton.installEventFilter(ToolTipFilter(self.chooseFolderButton))
-        self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
-        self.restoreDefaultButton.installEventFilter(ToolTipFilter(self.restoreDefaultButton))
-
-    def _initLayout(self):
-        self.hBoxLayout.addWidget(self.chooseFolderButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.restoreDefaultButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
-
-    def _bind(self):
-        self.chooseFolderButton.clicked.connect(self._chooseFolder)
-        self.restoreDefaultButton.clicked.connect(self._restoreDefault)
-
-    def _updatePath(self, path: str):
-        cfg.set(self.configItem, path)
-        self.setContent(self.configItem.value)
-        self.pathChanged.emit(self.configItem.value)
-
-    def _chooseFolder(self):
-        folder = QFileDialog.getExistingDirectory(self.window(), self.browseTitle)
-        if folder:
-            self._updatePath(folder)
-
-    def _restoreDefault(self):
-        self._updatePath(self.defaultPath)
-
-
-class SelectFileCard(SettingCard):
-    pathChanged = Signal(str)
-
-    def __init__(self, configItem: ConfigItem, icon, title: str, hint: str,
-                 browseTitle: str, parent=None):
-        super().__init__(icon, title, configItem.value or hint, parent)
-        self.configItem = configItem
-        self.hint = hint
-        self.browseTitle = browseTitle
-        self.chooseFileButton = ToolButton(FluentIcon.FOLDER, self)
-        self.clearButton = ToolButton(FluentIcon.CANCEL, self)
-
-        self._initWidget()
-        self._initLayout()
-        self._bind()
-
-    def _initWidget(self):
-        self.chooseFileButton.setToolTip(self.tr("选择文件"))
-        self.chooseFileButton.installEventFilter(ToolTipFilter(self.chooseFileButton))
-        self.clearButton.setToolTip(self.tr("清除路径"))
-        self.clearButton.installEventFilter(ToolTipFilter(self.clearButton))
-
-    def _initLayout(self):
-        self.hBoxLayout.addWidget(self.chooseFileButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.clearButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
-
-    def _bind(self):
-        self.chooseFileButton.clicked.connect(self._onChooseFile)
-        self.clearButton.clicked.connect(lambda: self._updatePath(""))
-
-    def _onChooseFile(self):
-        path, _ = QFileDialog.getOpenFileName(self.window(), self.browseTitle)
-        if path:
-            self._updatePath(path)
-
-    def _updatePath(self, path: str):
-        cfg.set(self.configItem, path)
-        self.setContent(path or self.hint)
-        self.pathChanged.emit(path)
-
-
-_MAX_HISTORY: Final[int] = 7
+                self.autoRadio.click()
 
 
 class SelectFolderSettingCard(SettingCard):
     pathChanged = Signal(str)
 
-    def __init__(
-        self,
-        initialPath: str,
-        historyConfig: ConfigItem,
-        parent: QWidget | None = None,
-    ) -> None:
-        super().__init__(
-            FluentIcon.DOWNLOAD, self.tr("下载路径"), cfg.downloadFolder.value, parent
-        )
-        self._initialPath = initialPath
-        self._historyConfig = historyConfig
-        self._history: list[str] = list(
-            dict.fromkeys(p for p in historyConfig.value if p)
-        )
-        if self._history != historyConfig.value:
-            cfg.set(historyConfig, self._history)
+    def __init__(self, configItem: ConfigItem, defaultPath: str,
+                 title: str, parent=None):
+        super().__init__(FluentIcon.FOLDER, title, configItem.value, parent)
+        self._configItem = configItem
+        self._defaultPath = defaultPath
 
-        self.pathComboBox = AutoSizingComboBox(self)
-        self.chooseFolderButton = ToolButton(FluentIcon.FOLDER, self)
-        self.restoreDefaultButton = ToolButton(FluentIcon.CANCEL, self)
+        self.browseButton = ToolButton(FluentIcon.FOLDER, self)
+        self.restoreButton = ToolButton(FluentIcon.CANCEL, self)
+        self.browseButton.setToolTip(self.tr("浏览文件夹"))
+        self.browseButton.installEventFilter(ToolTipFilter(self.browseButton))
+        self.restoreButton.setToolTip(self.tr("恢复默认路径"))
+        self.restoreButton.installEventFilter(ToolTipFilter(self.restoreButton))
 
+        self.hBoxLayout.addWidget(self.browseButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.restoreButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+
+        self.browseButton.clicked.connect(self._onBrowseClicked)
+        self.restoreButton.clicked.connect(lambda: self._setPath(self._defaultPath))
+
+    def _onBrowseClicked(self) -> None:
+        folder = QFileDialog.getExistingDirectory(self.window(), self.tr("选择文件夹"), self._configItem.value)
+        if folder:
+            self._setPath(folder)
+
+    def _setPath(self, path: str) -> None:
+        cfg.set(self._configItem, path)
+        self.setContent(path)
+        self.pathChanged.emit(path)
+
+
+class ClientProfileSettingCard(SettingCard):
+
+    def __init__(self, parent=None):
+        from qfluentwidgets import DropDownPushButton
+        from app.client import toProfileLabel
+        super().__init__(FluentIcon.ROBOT, self.tr("模拟身份"), self.tr("浏览器 TLS 指纹与 User-Agent"), parent)
+        self.button = DropDownPushButton(toProfileLabel(cfg.clientProfile.value), self)
         self._initWidget()
         self._initLayout()
         self._bind()
 
     def _initWidget(self) -> None:
-        # ReadOnly 避免编辑中间态触发 currentTextChanged 把变体写入历史
-        self.pathComboBox.setReadOnly(True)
-        self.chooseFolderButton.setToolTip(self.tr("浏览文件夹"))
-        self.restoreDefaultButton.setToolTip(self.tr("恢复默认路径"))
-        # initialPath 可能也存在于 history（用户曾把当前路径加入过），用 dict 去重
-        items = list(dict.fromkeys(p for p in [self._initialPath, *self._history] if p))
-        self.pathComboBox.addItems(items)
-        self.pathComboBox.setCurrentText(cfg.downloadFolder.value)
+        from qfluentwidgets import Action, RoundMenu
+        from app.client import (
+            PROFILE_FAMILY_LABELS, profileFamilies, profileVersions, toProfileLabel,
+        )
+
+        self.button.setMinimumWidth(200)
+        menu = RoundMenu(parent=self)
+
+        for value, icon in (("auto", FluentIcon.ROBOT), ("raw", FluentIcon.CANCEL)):
+            action = Action(icon, toProfileLabel(value), self)
+            action.triggered.connect(lambda checked=False, v=value: self._onPick(v))
+            menu.addAction(action)
+
+        for family in profileFamilies():
+            submenu = RoundMenu(PROFILE_FAMILY_LABELS.get(family, family), self)
+            latest = Action(toProfileLabel(family), self)
+            latest.triggered.connect(lambda checked=False, v=family: self._onPick(v))
+            submenu.addAction(latest)
+            submenu.addSeparator()
+            for name in profileVersions(family):
+                action = Action(toProfileLabel(name), self)
+                action.triggered.connect(lambda checked=False, v=name: self._onPick(v))
+                submenu.addAction(action)
+            menu.addMenu(submenu)
+
+        self.button.setMenu(menu)
 
     def _initLayout(self) -> None:
-        self.hBoxLayout.addWidget(self.pathComboBox)
-        self.hBoxLayout.addSpacing(5)
-        self.hBoxLayout.addWidget(self.chooseFolderButton)
-        self.hBoxLayout.addSpacing(5)
-        self.hBoxLayout.addWidget(self.restoreDefaultButton)
+        self.hBoxLayout.addWidget(self.button, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(16)
 
     def _bind(self) -> None:
-        # textActivated 只在用户主动选中时触发，setCurrentText 等程序操作不触发——无递归隐患
-        self.pathComboBox.textActivated.connect(self._setPath)
-        self.chooseFolderButton.clicked.connect(self._onChooseFolderClicked)
-        self.restoreDefaultButton.clicked.connect(self._onRestoreDefaultClicked)
+        cfg.clientProfile.valueChanged.connect(self._onProfileChanged)
 
-    def _onChooseFolderClicked(self) -> None:
-        folder = QFileDialog.getExistingDirectory(None, self.tr("选择文件夹"))
-        if folder:
-            self._setPath(folder)
+    def _onProfileChanged(self, value: str) -> None:
+        from app.client import toProfileLabel
+        self.button.setText(toProfileLabel(value))
 
-    def _onRestoreDefaultClicked(self) -> None:
-        self._setPath(self._initialPath)
+    def _onPick(self, value: str) -> None:
+        cfg.set(cfg.clientProfile, value)
+
+
+class DefaultHeadersSettingCard(PushSettingCard):
+    def __init__(self, icon, title: str, content: str = "", parent=None):
+        super().__init__(self.tr("编辑"), icon, title, content, parent)
+        self.clicked.connect(self._onClicked)
+
+    def _onClicked(self) -> None:
+        from qfluentwidgets import MessageBoxBase, SubtitleLabel, TransparentToolButton
+        from app.view.components.editors import AutoSizingEdit, headersToText, headersFromText
+
+        dialog = MessageBoxBase(self.window())
+        dialog.widget.setMinimumWidth(500)
+
+        titleRow = QHBoxLayout()
+        titleRow.addWidget(SubtitleLabel(self.tr("编辑默认请求头"), dialog))
+        titleRow.addStretch(1)
+        resetButton = TransparentToolButton(FluentIcon.HISTORY, dialog)
+        resetButton.setToolTip(self.tr("恢复默认"))
+        resetButton.installEventFilter(ToolTipFilter(resetButton))
+        titleRow.addWidget(resetButton)
+        dialog.viewLayout.addLayout(titleRow)
+
+        edit = AutoSizingEdit(dialog, minimumVisibleLines=8, maximumVisibleLines=20)
+        edit.setPlainText(headersToText(cfg.defaultRequestHeaders.value))
+        dialog.viewLayout.addWidget(edit)
+
+        resetButton.clicked.connect(
+            lambda: edit.setPlainText(headersToText(dict(BASE_HEADERS)))
+        )
+
+        if dialog.exec():
+            headers = headersFromText(edit.toPlainText())
+            if headers:
+                cfg.set(cfg.defaultRequestHeaders, headers)
+
+
+class SelectFileCard(SettingCard):
+    pathChanged = Signal(str)
+
+    def __init__(self, icon, title: str, hint: str = "",
+                 configItem: ConfigItem = None, parent=None):
+        super().__init__(icon, title, configItem.value or hint if configItem else hint, parent)
+        self._configItem = configItem
+        self._hint = hint
+
+        self.chooseFileButton = ToolButton(FluentIcon.FOLDER, self)
+        self.clearButton = ToolButton(FluentIcon.CANCEL, self)
+        self.chooseFileButton.setToolTip(self.tr("选择文件"))
+        self.chooseFileButton.installEventFilter(ToolTipFilter(self.chooseFileButton))
+        self.clearButton.setToolTip(self.tr("清除路径"))
+        self.clearButton.installEventFilter(ToolTipFilter(self.clearButton))
+
+        self.hBoxLayout.addWidget(self.chooseFileButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.clearButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+
+        self.chooseFileButton.clicked.connect(self._onChooseFile)
+        self.clearButton.clicked.connect(lambda: self._setPath(""))
+
+    def _onChooseFile(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self.window(), self.tr("选择文件"))
+        if path:
+            self._setPath(path)
 
     def _setPath(self, path: str) -> None:
-        if not path:
-            return
-        if path not in self._history:
-            self._history.append(path)
-            if len(self._history) > _MAX_HISTORY:
-                evicted = self._history.pop(0)
-                self.pathComboBox.removeItem(self.pathComboBox.findText(evicted))
-            cfg.set(self._historyConfig, self._history)
-            if self.pathComboBox.findText(path) == -1:
-                self.pathComboBox.addItem(path)
-        self.pathComboBox.setCurrentText(path)
-        self.setContent(path)
+        cfg.set(self._configItem, path)
+        self.setContent(path or self._hint)
         self.pathChanged.emit(path)
+
+
+class RuntimeCard(SettingCard):
+
+    def __init__(self, runtime, parent=None):
+        from app.models.pack import BinaryRuntime
+        from app.services.runtime_status import runtimeStatusService
+
+        self._runtime: BinaryRuntime = runtime
+        super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
+
+        self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
+        self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+        self.updateStatus(runtimeStatusService.status(runtime))
+
+    def _initWidget(self) -> None:
+        if not self._runtime.canInstall:
+            self.installButton.hide()
+        self.refreshButton.setToolTip(self.tr("刷新"))
+        self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
+
+    def _initLayout(self) -> None:
+        self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+
+    def _bind(self) -> None:
+        from app.services.runtime_status import runtimeStatusService
+
+        runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
+        self.installButton.clicked.connect(self._onInstallClicked)
+        self.refreshButton.clicked.connect(self._onRefreshClicked)
+
+    def refreshStatus(self, force: bool = False) -> None:
+        from app.services.runtime_status import runtimeStatusService
+
+        runtimeStatusService.refresh(self._runtime, force=force)
+
+    def updateStatus(self, status) -> None:
+        self.refreshButton.setEnabled(not status.isBusy)
+        if status.isBusy:
+            self.setContent(self.tr("正在检测运行时..."))
+        elif status.error:
+            self.setContent(self.tr("检测运行时失败"))
+        elif status.version and status.path:
+            self.setContent(self.tr("版本: {0}\n路径: {1}").format(status.version, status.path))
+        elif status.path:
+            self.setContent(self.tr("路径: {0}").format(status.path))
+        else:
+            self.setContent(self.tr("未检测到可用的 {0}").format(status.name))
+
+    def _onRefreshClicked(self, *_args) -> None:
+        self.refreshStatus(force=True)
+
+    def _onInstallFolderChanged(self, *_args) -> None:
+        self.refreshStatus()
+
+    def _onRuntimeStatusChanged(self, status) -> None:
+        if status.runtimeId == self._runtime.runtimeId:
+            self.updateStatus(status)
+
+    def _onInstallClicked(self) -> None:
+        from app.services.coroutine_runner import coroutineRunner
+
+        self.installButton.setEnabled(False)
+        cardRef = weakref.ref(self)
+
+        def onCreated(task) -> None:
+            from shiboken6 import isValid
+            from app.services.task_service import taskService
+
+            taskService.add(task)
+            card = cardRef()
+            if card is not None and isValid(card):
+                card.installButton.setEnabled(True)
+                InfoBar.success(
+                    card.tr("安装任务已创建"),
+                    card.tr("请前往任务页查看安装进度"),
+                    duration=3000,
+                    position=InfoBarPosition.TOP,
+                    parent=card.window(),
+                )
+
+        def onFailed(error: str) -> None:
+            from shiboken6 import isValid
+
+            card = cardRef()
+            if card is not None and isValid(card):
+                card._onInstallTaskFailed(error)
+
+        coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
+
+    def _onInstallTaskFailed(self, error: str) -> None:
+        self.installButton.setEnabled(True)
+        InfoBar.error(
+            self.tr("安装失败"),
+            error,
+            duration=-1,
+            position=InfoBarPosition.TOP,
+            parent=self.window(),
+        )

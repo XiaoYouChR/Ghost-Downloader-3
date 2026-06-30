@@ -1,35 +1,48 @@
+from __future__ import annotations
+
 from enum import IntEnum
-from sys import platform
+from typing import TYPE_CHECKING
 
-from typing import Callable
+from PySide6.QtCore import Qt, QSize, QTimer
+from PySide6.QtGui import QActionGroup, QColor, QCursor, QPainter
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import (
+    Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
+    FluentIcon, IconWidget, MenuIndicatorType, PrimaryPushButton, PushButton,
+    RoundMenu, ScrollArea, SearchLineEdit, ToggleToolButton, ToolButton, ToolTipFilter,
+    isDarkTheme,
+)
 
-from PySide6.QtCore import Qt, QSize, QTimer, Slot
-from PySide6.QtGui import QPainter, QColor, QActionGroup, QCursor
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsDropShadowEffect, QDialog
-from loguru import logger
-from qfluentwidgets import ScrollArea, PrimaryPushButton, FluentIcon, PushButton, \
-    SearchLineEdit, ToolButton, ToggleToolButton, ToolTipFilter, Action, \
-    CommandBarView, isDarkTheme, IconWidget, CaptionLabel, CheckableMenu, MenuIndicatorType, \
-    DropDownToolButton, RoundMenu
-
-from app.bases.models import Task, TaskStatus
-from app.services.category_service import UNCATEGORIZED_ID, categoryService
-from app.services.core_service import coreService
+from app.config.cfg import cfg
+from app.format import toReadableSize
+from app.models.task import TaskStatus
 from app.services.feature_service import featureService
+from app.services.speed_meter import speedMeter
 from app.services.task_service import taskService
-from app.supports.config import cfg
-from app.supports.signal_bus import signalBus
-from app.supports.utils import toReadableSize, openFile
-from app.view.components.cards import TaskCard
-from app.view.components.dialogs import DeleteTaskDialog, PlanTaskDialog
+from app.view.cards.task_cards import TaskCard
 from app.view.components.labels import IconBodyLabel
 
+if TYPE_CHECKING:
+    from app.models.task import Task
 
-ROW_HEIGHT = 60
-ROW_SPACING = 8
-SIDE_PADDING = 12
-BOTTOM_PADDING = 12
-BUFFER_ROWS = 5
+
+class FilterMode(IntEnum):
+    ALL = 0
+    ACTIVE = 1
+    COMPLETED = 2
+
+
+FILTER_TO_STATUSES = {
+    FilterMode.ACTIVE: {TaskStatus.RUNNING, TaskStatus.WAITING, TaskStatus.PAUSED},
+    FilterMode.COMPLETED: {TaskStatus.COMPLETED, TaskStatus.FAILED},
+}
+
+
+class SortField(IntEnum):
+    CREATED_AT = 0
+    NAME = 1
+    SIZE = 2
+    COMPLETED_AT = 3
 
 
 class TaskCommandBarView(CommandBarView):
@@ -40,6 +53,7 @@ class TaskCommandBarView(CommandBarView):
         self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
         self.moveCategoryAction = Action(FluentIcon.TAG, self.tr("移动到分类"), self)
         self.selectAllAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("全选"), self)
+        self.selectMissingAction = Action(FluentIcon.REMOVE, self.tr("选择缺失"), self)
         self.invertSelectAction = Action(FluentIcon.CUT, self.tr("反选"), self)
         self.cancelAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("取消全选"), self)
 
@@ -50,746 +64,589 @@ class TaskCommandBarView(CommandBarView):
         self.addAction(self.moveCategoryAction)
         self.addSeparator()
         self.addAction(self.selectAllAction)
+        self.addAction(self.selectMissingAction)
         self.addAction(self.invertSelectAction)
         self.addAction(self.cancelAction)
         self.resizeToSuitableWidth()
-        self.setShadowEffect()
 
-        self.moveCategoryAction.setVisible(cfg.enableCategory.value)
-        cfg.enableCategory.valueChanged.connect(
-            lambda value: self.moveCategoryAction.setVisible(bool(value))
-        )
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(35)
+        shadow.setOffset(0, 8)
+        shadow.setColor(QColor(0, 0, 0, 80 if isDarkTheme() else 30))
+        self.setGraphicsEffect(shadow)
 
-    def setShadowEffect(self, blurRadius=35, offset=(0, 8)):
-        color = QColor(0, 0, 0, 80 if isDarkTheme() else 30)
-        self.shadowEffect = QGraphicsDropShadowEffect(self)
-        self.shadowEffect.setBlurRadius(blurRadius)
-        self.shadowEffect.setOffset(*offset)
-        self.shadowEffect.setColor(color)
-        self.setGraphicsEffect(None)
-        self.setGraphicsEffect(self.shadowEffect)
+        self.moveCategoryAction.setVisible(cfg.isCategoryEnabled.value)
+        cfg.isCategoryEnabled.valueChanged.connect(self._onCategoryEnabledChanged)
+
+    def _onCategoryEnabledChanged(self, value) -> None:
+        self.moveCategoryAction.setVisible(bool(value))
 
 
 class EmptyStatusWidget(QWidget):
 
     def __init__(self, icon, text, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.iconWidget = IconWidget(icon)
-        self.label = CaptionLabel(text)
-        self.vBoxLayout = QVBoxLayout(self)
-        self.borderRadius = 10
-
-        self.initWidget()
-
-    def initWidget(self):
         self.iconWidget.setFixedSize(64, 64)
-
+        self.label = CaptionLabel(text)
         self.label.setTextColor(QColor(96, 96, 96), QColor(216, 216, 216))
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.borderRadius = 10
 
-        self.vBoxLayout.setSpacing(10)
-        self.vBoxLayout.setContentsMargins(16, 20, 16, 20)
-        self.vBoxLayout.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignHCenter)
-        self.vBoxLayout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+        layout.setContentsMargins(16, 20, 16, 20)
+        layout.addWidget(self.iconWidget, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignHCenter)
 
-    def setIcon(self, icon):
-        self.iconWidget.setIcon(icon)
-
-    def setText(self, text):
+    def setText(self, text: str) -> None:
         self.label.setText(text)
-
-    @property
-    def backgroundColor(self):
-        return QColor(255, 255, 255, 13 if isDarkTheme() else 200)
 
     def paintEvent(self, e):
         painter = QPainter(self)
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
-        painter.setBrush(self.backgroundColor)
+        painter.setBrush(QColor(255, 255, 255, 13 if isDarkTheme() else 200))
         painter.setPen(Qt.PenStyle.NoPen)
-
-        r = self.borderRadius
-        painter.drawRoundedRect(self.rect(), r, r)
+        painter.drawRoundedRect(self.rect(), self.borderRadius, self.borderRadius)
 
 
-class TaskListView(QWidget):
-    """Tall canvas hosting absolutely-positioned TaskCard children.
-
-    Reports a sizeHint of `rowCount × (rowH + spacing)` so the surrounding
-    ScrollArea knows how much vertical room the logical list needs, but does
-    not own a layout — TaskPage positions visible cards via setGeometry.
-    """
-
-    def __init__(self, parent: "TaskPage", onResize: Callable[[], None]):
-        super().__init__(parent)
-        self._rowCount = 0
-        self._onResize = onResize
-
-    def setRowCount(self, count: int):
-        if self._rowCount == count:
-            return
-        self._rowCount = count
-        self.updateGeometry()
-
-    def rowCount(self) -> int:
-        return self._rowCount
-
-    def rowTop(self, index: int) -> int:
-        return index * (ROW_HEIGHT + ROW_SPACING)
-
-    def rowAt(self, y: int) -> int:
-        if y <= 0:
-            return 0
-        return y // (ROW_HEIGHT + ROW_SPACING)
-
-    def sizeHint(self) -> QSize:
-        if self._rowCount == 0:
-            return QSize(0, 0)
-        height = self._rowCount * ROW_HEIGHT + (self._rowCount - 1) * ROW_SPACING + BOTTOM_PADDING
-        return QSize(0, height)
-
-    def minimumSizeHint(self) -> QSize:
-        return self.sizeHint()
-
-    def resizeEvent(self, e):
-        super().resizeEvent(e)
-        self._onResize()
-
-
-class FilterMode(IntEnum):
-    ALL = 0
-    ACTIVE = 1
-    COMPLETE = 2
-
-
-class SortField(IntEnum):
-    TIME = 0
-    NAME = 1
-
-
-class TaskPage(ScrollArea):
+class TaskPage(QWidget):
+    ROW_SPACING = 8
+    SIDE_PADDING = 12
+    BOTTOM_PADDING = 12
+    VIEWPORT_BUFFER = 5
 
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
-        self.displayOrder: list[Task] = []
-        self.mountedCards: dict[str, TaskCard] = {}
-        self.selectedIds: set[str] = set()
-        self.selectionAnchorTaskId: str | None = None
-        self.isSelectionMode = False
-        self.searchKeyword = ""
-        self.filterMode: FilterMode = FilterMode.ALL
-        self.categoryFilterId: str | None = None
-        self.sortField: SortField = SortField.TIME
-        self.sortReverse = True
-        self.planAction: int | None = None
-        self.planFilePath = ""
+        super().__init__(parent)
+        self._filterMode = FilterMode.ALL
+        self._categoryFilter = ""
+        self._sortField = SortField.CREATED_AT
+        self._sortAscending = False
+        self._searchText = ""
+        self._selectionMode = False
+        self._selectionAnchor: str | None = None
+        self._cards: dict[str, TaskCard] = {}
+        self._displayOrder: list[str] = []
+        self._mounted: set[str] = set()
 
-        self.container = TaskListView(self, self._refreshViewport)
-        self.vBoxLayout = QVBoxLayout(self)
-        # tool bar
-        self.toolBar = QWidget(self)
-        self.toolBarLayout = QHBoxLayout(self.toolBar)
-        self.allStartButton = PrimaryPushButton(FluentIcon.PLAY, self.tr("全部开始"), self)
-        self.allPauseButton = PushButton(FluentIcon.PAUSE, self.tr("全部暂停"), self)
-        self.selectButton = ToolButton(FluentIcon.CLEAR_SELECTION, self)
-        self.planButton = ToggleToolButton(FluentIcon.DATE_TIME, self)
-        self.rateLimitButton = ToggleToolButton(FluentIcon.SPEED_OFF, self)
-        self.speedBadge = IconBodyLabel(self.tr("0.00KB/s"), FluentIcon.SPEED_HIGH, self)
-        self.sortButton = DropDownToolButton(FluentIcon.LAYOUT, self)
-        self.sortMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
-        self.sortFieldActionGroup = QActionGroup(self)
-        self.sortOrderActionGroup = QActionGroup(self)
-        self.timeSortAction = Action(FluentIcon.DATE_TIME, self.tr('按时间排序'), self, checkable=True)
-        self.nameSortAction = Action(FluentIcon.FONT, self.tr('按名称排序'), self, checkable=True)
-        self.ascendingSortAction = Action(FluentIcon.UP, self.tr('顺序'), self, checkable=True)
-        self.reverseSortAction = Action(FluentIcon.DOWN, self.tr('倒序'), self, checkable=True)
-        self.filterButton = DropDownToolButton(FluentIcon.FILTER, self)
-        self.filterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
-        self.filterActionGroup = QActionGroup(self)
-        self.noFilterAction = Action(FluentIcon.FILTER, self.tr('全部任务'), self, checkable=True)
-        self.activeFilterAction = Action(FluentIcon.DOWNLOAD, self.tr('活动任务'), self, checkable=True)
-        self.completedFilterAction = Action(FluentIcon.TRAIN, self.tr('完成任务'), self, checkable=True)
-        self.categoryFilterButton = DropDownToolButton(FluentIcon.TAG, self)
-        self.categoryFilterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
-        self.categoryFilterActionGroup = QActionGroup(self)
-        self.searchLineEdit = SearchLineEdit(self)
-        # other widgets
-        self.commandView = TaskCommandBarView(self)
+        self._rebuildTimer = QTimer(self, singleShot=True)
+        self._rebuildTimer.setInterval(0)
+        self._rebuildTimer.timeout.connect(self._rebuildList)
+
+        self.scrollArea = ScrollArea(self)
+        self.scrollWidget = QWidget(self)
         self.emptyStatusWidget = EmptyStatusWidget(FluentIcon.EMOJI_TAB_SYMBOLS, self.tr("暂无下载任务"), self)
-        self.refreshTimer = QTimer(self, interval=1000)
+
+        # toolbar
+        self.toolBar = QWidget(self)
+        self.startAllButton = PrimaryPushButton(FluentIcon.PLAY, self.tr("全部开始"), self.toolBar)
+        self.pauseAllButton = PushButton(FluentIcon.PAUSE, self.tr("全部暂停"), self.toolBar)
+        self.selectButton = ToolButton(FluentIcon.CLEAR_SELECTION, self.toolBar)
+        self.planButton = ToggleToolButton(FluentIcon.DATE_TIME, self.toolBar)
+        self.rateLimitButton = ToggleToolButton(FluentIcon.SPEED_OFF, self.toolBar)
+        self.speedBadge = IconBodyLabel("0.00B/s", FluentIcon.SPEED_HIGH, self.toolBar)
+        self.sortButton = DropDownToolButton(FluentIcon.LAYOUT, self.toolBar)
+        self.filterButton = DropDownToolButton(FluentIcon.FILTER, self.toolBar)
+        self.categoryFilterButton = DropDownToolButton(FluentIcon.TAG, self.toolBar)
+        self.searchLineEdit = SearchLineEdit(self.toolBar)
+
+        # sort menu
+        self.sortMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.sortFieldGroup = QActionGroup(self)
+        self.sortOrderGroup = QActionGroup(self)
+        self.createdAtSortAction = Action(FluentIcon.DATE_TIME, self.tr("按添加时间"), self, checkable=True)
+        self.completedAtSortAction = Action(FluentIcon.HISTORY, self.tr("按完成时间"), self, checkable=True)
+        self.nameSortAction = Action(FluentIcon.FONT, self.tr("按名称排序"), self, checkable=True)
+        self.ascendingAction = Action(FluentIcon.UP, self.tr("顺序"), self, checkable=True)
+        self.descendingAction = Action(FluentIcon.DOWN, self.tr("倒序"), self, checkable=True)
+
+        # filter menu
+        self.filterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.filterGroup = QActionGroup(self)
+        self.allFilterAction = Action(FluentIcon.FILTER, self.tr("全部任务"), self, checkable=True)
+        self.activeFilterAction = Action(FluentIcon.DOWNLOAD, self.tr("活动任务"), self, checkable=True)
+        self.completedFilterAction = Action(FluentIcon.TRAIN, self.tr("完成任务"), self, checkable=True)
+
+        # category filter menu
+        self.categoryFilterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
+        self.categoryFilterGroup = QActionGroup(self)
+
+        # selection command bar
+        self.commandView = TaskCommandBarView(self)
+        self.commandView.hide()
 
         self._initWidget()
         self._initLayout()
         self._bind()
 
-    def _initWidget(self):
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setWidget(self.container)
+    def _initWidget(self) -> None:
         self.setObjectName("TaskPage")
-        self.setWidgetResizable(True)
-        self.enableTransparentBackground()
-        self.setViewportMargins(0, 60, 0, 0)
+        self.scrollArea.setWidget(self.scrollWidget)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.enableTransparentBackground()
 
-        self.sortFieldActionGroup.addAction(self.timeSortAction)
-        self.sortFieldActionGroup.addAction(self.nameSortAction)
-        self.sortOrderActionGroup.addAction(self.ascendingSortAction)
-        self.sortOrderActionGroup.addAction(self.reverseSortAction)
-        self.sortMenu.addAction(self.timeSortAction)
+        self.sortFieldGroup.addAction(self.createdAtSortAction)
+        self.sortFieldGroup.addAction(self.completedAtSortAction)
+        self.sortFieldGroup.addAction(self.nameSortAction)
+        self.sortOrderGroup.addAction(self.ascendingAction)
+        self.sortOrderGroup.addAction(self.descendingAction)
+        self.sortMenu.addAction(self.createdAtSortAction)
+        self.sortMenu.addAction(self.completedAtSortAction)
         self.sortMenu.addAction(self.nameSortAction)
         self.sortMenu.addSeparator()
-        self.sortMenu.addAction(self.ascendingSortAction)
-        self.sortMenu.addAction(self.reverseSortAction)
+        self.sortMenu.addAction(self.ascendingAction)
+        self.sortMenu.addAction(self.descendingAction)
         self.sortButton.setMenu(self.sortMenu)
-        self.rateLimitButton.setChecked(cfg.get(cfg.enableSpeedLimitation))
+        self.createdAtSortAction.setChecked(True)
+        self.descendingAction.setChecked(True)
 
-        self.filterActionGroup.addAction(self.noFilterAction)
-        self.filterActionGroup.addAction(self.activeFilterAction)
-        self.filterActionGroup.addAction(self.completedFilterAction)
-        self.filterMenu.addAction(self.noFilterAction)
+        self.filterGroup.addAction(self.allFilterAction)
+        self.filterGroup.addAction(self.activeFilterAction)
+        self.filterGroup.addAction(self.completedFilterAction)
+        self.filterMenu.addAction(self.allFilterAction)
         self.filterMenu.addAction(self.activeFilterAction)
         self.filterMenu.addAction(self.completedFilterAction)
         self.filterButton.setMenu(self.filterMenu)
+        self.allFilterAction.setChecked(True)
 
         self.categoryFilterButton.setMenu(self.categoryFilterMenu)
-        self.categoryFilterButton.setToolTip(self.tr("按分类筛选"))
-        self.categoryFilterButton.installEventFilter(ToolTipFilter(self.categoryFilterButton))
-        self.categoryFilterButton.setVisible(cfg.enableCategory.value)
-        self._rebuildCategoryFilterMenu()
+        self.categoryFilterButton.setVisible(cfg.isCategoryEnabled.value)
 
-        self.selectButton.setToolTip(self.tr("选择任务"))
-        self.selectButton.installEventFilter(ToolTipFilter(self.selectButton))
-        self.planButton.setToolTip(self.tr("计划任务"))
-        self.planButton.installEventFilter(ToolTipFilter(self.planButton))
-        self.rateLimitButton.setToolTip(self.tr("限速"))
-        self.rateLimitButton.installEventFilter(ToolTipFilter(self.rateLimitButton))
+        self.rateLimitButton.setChecked(cfg.isSpeedLimitEnabled.value)
+
+        for btn, tip in (
+            (self.selectButton, self.tr("选择任务")),
+            (self.planButton, self.tr("计划任务")),
+            (self.rateLimitButton, self.tr("限速")),
+            (self.categoryFilterButton, self.tr("按分类筛选")),
+        ):
+            btn.setToolTip(tip)
+            btn.installEventFilter(ToolTipFilter(btn))
+
+        self.searchLineEdit.setPlaceholderText(self.tr("搜索任务"))
+        self.searchLineEdit.setMinimumWidth(200)
+        self.searchLineEdit.setMaximumWidth(300)
 
         self.emptyStatusWidget.setMinimumWidth(200)
         self.emptyStatusWidget.adjustSize()
 
-        self.commandView.hide()
+        self._rebuildCategoryFilterMenu()
 
-        self.searchLineEdit.setPlaceholderText(self.tr("搜索任务"))
+    def _initLayout(self) -> None:
+        toolBarLayout = QHBoxLayout(self.toolBar)
+        toolBarLayout.setContentsMargins(16, 10, 16, 10)
+        toolBarLayout.addWidget(self.startAllButton)
+        toolBarLayout.addWidget(self.pauseAllButton)
+        toolBarLayout.addWidget(self.selectButton)
+        toolBarLayout.addWidget(self.planButton)
+        toolBarLayout.addWidget(self.rateLimitButton)
+        toolBarLayout.addSpacing(10)
+        toolBarLayout.addWidget(self.speedBadge)
+        toolBarLayout.addStretch(1)
+        toolBarLayout.addWidget(self.sortButton)
+        toolBarLayout.addWidget(self.filterButton)
+        toolBarLayout.addWidget(self.categoryFilterButton)
+        toolBarLayout.addWidget(self.searchLineEdit)
 
-        self.timeSortAction.setChecked(True)
-        self.reverseSortAction.setChecked(True)
-        self.noFilterAction.setChecked(True)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.toolBar)
+        layout.addWidget(self.scrollArea)
 
-    def _initLayout(self):
-        self.vBoxLayout.setSpacing(20)
-        self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.vBoxLayout.addWidget(self.toolBar)
-
-        self.toolBarLayout.setContentsMargins(5, 5, 5, 5)
-        self.toolBarLayout.addWidget(self.allStartButton)
-        self.toolBarLayout.addWidget(self.allPauseButton)
-        self.toolBarLayout.addWidget(self.selectButton)
-        self.toolBarLayout.addWidget(self.planButton)
-        self.toolBarLayout.addWidget(self.rateLimitButton)
-        self.toolBarLayout.addSpacing(10)
-        self.toolBarLayout.addWidget(self.speedBadge)
-        self.toolBarLayout.addStretch(1)
-        self.toolBarLayout.addWidget(self.sortButton)
-        self.toolBarLayout.addWidget(self.filterButton)
-        self.toolBarLayout.addWidget(self.categoryFilterButton)
-        self.toolBarLayout.addWidget(self.searchLineEdit)
-        self.searchLineEdit.setMinimumWidth(200)
-        self.searchLineEdit.setMaximumWidth(300)
-
-    def _bind(self):
-        self.allStartButton.clicked.connect(self.startAllTasks)
-        self.allPauseButton.clicked.connect(self.pauseAllTasks)
-        self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self.isSelectionMode))
-        self.commandView.redownloadAction.triggered.connect(self._onRedownloadActionTriggered)
-        self.commandView.deleteAction.triggered.connect(self._onDeleteActionTriggered)
-        self.commandView.selectAllAction.triggered.connect(self.selectAll)
-        self.commandView.invertSelectAction.triggered.connect(self.invertSelection)
-        self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
-        self.timeSortAction.triggered.connect(lambda: self.setSortField(SortField.TIME))
-        self.nameSortAction.triggered.connect(lambda: self.setSortField(SortField.NAME))
-        self.ascendingSortAction.triggered.connect(lambda: self.setSortOrder(False))
-        self.reverseSortAction.triggered.connect(lambda: self.setSortOrder(True))
-        self.noFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
-        self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
-        self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETE))
-        self.searchLineEdit.textChanged.connect(self._onSearchTextChanged)
-        self.searchLineEdit.searchSignal.connect(self._onSearchTextChanged)
-        self.searchLineEdit.clearSignal.connect(lambda: self._onSearchTextChanged(""))
-        self.rateLimitButton.clicked.connect(self._onRateLimitButtonClicked)
-        self.planButton.clicked.connect(self._onPlanButtonClicked)
-        self.commandView.moveCategoryAction.triggered.connect(self._onMoveCategoryActionTriggered)
-        cfg.enableCategory.valueChanged.connect(self._onEnableCategoryChanged)
-        categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
-
-        self.verticalScrollBar().valueChanged.connect(self._refreshViewport)
-        self.refreshTimer.timeout.connect(self.refresh)
-        self.refreshTimer.start()
-
+    def _bind(self) -> None:
         taskService.taskAdded.connect(self._onTaskAdded)
         taskService.taskRemoved.connect(self._onTaskRemoved)
+        for signal in (taskService.taskStarted, taskService.taskPaused,
+                       taskService.taskCompleted, taskService.taskFailed):
+            signal.connect(self._refreshVisibleCards)
+        taskService.fileDisappeared.connect(self._onFileDisappeared)
+        speedMeter.speedChanged.connect(self._onSpeedChanged)
+        self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
-    def resumeMemorizedTasks(self):
-        for task in taskService.tasks.values():
-            if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
-                coreService.createTask(task)
+        self.startAllButton.clicked.connect(self.startAll)
+        self.pauseAllButton.clicked.connect(self.pauseAll)
+        self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self._selectionMode))
+        self.planButton.clicked.connect(self._onPlanButtonClicked)
+        self.rateLimitButton.clicked.connect(self._onRateLimitToggled)
 
-        self._refreshTaskList()
+        self.createdAtSortAction.triggered.connect(lambda: self.setSortField(SortField.CREATED_AT))
+        self.completedAtSortAction.triggered.connect(lambda: self.setSortField(SortField.COMPLETED_AT))
+        self.nameSortAction.triggered.connect(lambda: self.setSortField(SortField.NAME))
+        self.ascendingAction.triggered.connect(lambda: self.setSortOrder(True))
+        self.descendingAction.triggered.connect(lambda: self.setSortOrder(False))
 
-    def refresh(self):
-        for card in self.mountedCards.values():
-            card.refresh()
+        self.allFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
+        self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
+        self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETED))
 
-        self.speedBadge.setText(f"{toReadableSize(cfg.globalSpeed)}/s")
-        signalBus.globalSpeedChanged.emit(cfg.globalSpeed)
-        cfg.resetGlobalSpeed()
+        self.searchLineEdit.textChanged.connect(self.setSearchText)
+        self.searchLineEdit.clearSignal.connect(lambda: self.setSearchText(""))
 
-    @Slot()
-    def _onCardFinished(self):
-        sender = self.sender()
-        if isinstance(sender, TaskCard):
-            coreService.sendNotification(sender.task)
+        self.commandView.redownloadAction.triggered.connect(self._onRedownloadSelected)
+        self.commandView.deleteAction.triggered.connect(self._onDeleteSelected)
+        self.commandView.moveCategoryAction.triggered.connect(self._onMoveCategorySelected)
+        self.commandView.selectAllAction.triggered.connect(self.selectAll)
+        self.commandView.selectMissingAction.triggered.connect(self.selectMissing)
+        self.commandView.invertSelectAction.triggered.connect(self.invertSelection)
+        self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
 
-        if self.filterMode != FilterMode.ALL or self.categoryFilterId is not None:
-            self._refreshTaskList()
+        cfg.isCategoryEnabled.valueChanged.connect(self._onCategoryEnabledChanged)
+        from app.services.category_service import categoryService
+        categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
 
-        if not self.planButton.isChecked() or not self.planAction or not taskService.tasks:
+        for task in taskService.tasks:
+            self._onTaskAdded(task)
+
+    # ── intent methods ──
+
+    def setFilterMode(self, mode: FilterMode) -> None:
+        self._filterMode = mode
+        self._rebuildList()
+
+    def setCategoryFilter(self, categoryId: str) -> None:
+        self._categoryFilter = categoryId
+        self._rebuildList()
+
+    def setSortField(self, field: SortField) -> None:
+        self._sortField = field
+        self._rebuildList()
+
+    def setSortOrder(self, ascending: bool) -> None:
+        self._sortAscending = ascending
+        self._rebuildList()
+
+    def setSearchText(self, text: str) -> None:
+        self._searchText = text
+        self._rebuildList()
+
+    def startAll(self) -> None:
+        taskService.startAll()
+
+    def pauseAll(self) -> None:
+        taskService.pauseAll()
+
+    def selectAll(self) -> None:
+        for taskId in self._displayOrder:
+            card = self._cards.get(taskId)
+            if card:
+                card.setChecked(True)
+
+    def invertSelection(self) -> None:
+        for taskId in self._displayOrder:
+            card = self._cards.get(taskId)
+            if card:
+                card.setChecked(not card.isChecked())
+
+    def selectMissing(self) -> None:
+        for taskId in self._displayOrder:
+            card = self._cards.get(taskId)
+            if card:
+                card.setChecked(card._fileMissing)
+
+    def setSelectionMode(self, enter: bool) -> None:
+        if self._selectionMode == enter:
             return
+        self._selectionMode = enter
+        self._selectionAnchor = None
+        for card in self._cards.values():
+            card.setSelectionMode(enter)
+            if not enter:
+                card.setChecked(False)
+        self.commandView.setVisible(enter)
+        if enter:
+            self.commandView.raise_()
 
-        if any(task.status != TaskStatus.COMPLETED for task in taskService.tasks.values()):
-            return
+    def _onCardSelectionChanged(self, taskId: str, checked: bool, extend: bool) -> None:
+        if not self._selectionMode:
+            self.setSelectionMode(True)
 
-        action = self.planAction
-        filePath = self.planFilePath
-        self.planButton.setChecked(False)
-        self.planAction = None
-        self.planFilePath = ""
-
-        try:
-            if action == PlanTaskDialog.OPEN_FILE:
-                if filePath:
-                    openFile(filePath)
+        if extend and self._selectionAnchor:
+            try:
+                anchorIdx = self._displayOrder.index(self._selectionAnchor)
+                currentIdx = self._displayOrder.index(taskId)
+            except ValueError:
                 return
-
-            from subprocess import Popen
-
-            if action == PlanTaskDialog.RESTART:
-                if platform == "win32":
-                    Popen(["shutdown", "/r", "/t", "0"])
-                elif platform == "darwin":
-                    Popen(["osascript", "-e", 'tell app "System Events" to restart'])
-                else:
-                    Popen(["shutdown", "-r", "now"])
-                return
-
-            if platform == "win32":
-                Popen(["shutdown", "/s", "/t", "0"])
-            elif platform == "darwin":
-                Popen(["osascript", "-e", 'tell app "System Events" to shut down'])
-            else:
-                Popen(["shutdown", "-h", "now"])
-
-        except Exception as e:
-            logger.opt(exception=e).error("计划任务执行失败")
-
-    @Slot()
-    def _refreshTaskList(self):
-        previousIds = {task.taskId for task in self.displayOrder}
-
-        candidates = [task for task in taskService.tasks.values() if self._matchTask(task)]
-        candidates.sort(key=self._sortKey, reverse=self.sortReverse)
-        self.displayOrder = candidates
-
-        currentIds = {task.taskId for task in self.displayOrder}
-        for taskId in previousIds - currentIds:
-            self._unmountCard(taskId)
-        self.selectedIds &= currentIds
-        if self.selectionAnchorTaskId not in currentIds:
-            self.selectionAnchorTaskId = None
-
-        self.container.setRowCount(len(self.displayOrder))
-        self._refreshViewport()
-        self._refreshEmptyState()
-
-    @Slot(object)
-    def _onTaskAdded(self, _task):
-        self._refreshTaskList()
-
-    @Slot(str)
-    def _onTaskRemoved(self, taskId: str):
-        self._unmountCard(taskId)
-        self.selectedIds.discard(taskId)
-        if self.selectionAnchorTaskId == taskId:
-            self.selectionAnchorTaskId = None
-        self._refreshTaskList()
-        self._refreshSelection()
-
-    def _sortKey(self, task: Task):
-        if self.sortField == SortField.NAME:
-            return str(getattr(task, "title", "")).lower()
-        return getattr(task, "createdAt", 0)
-
-    def _matchSearch(self, task: Task) -> bool:
-        if not self.searchKeyword:
-            return True
-        return self.searchKeyword in str(task.title).strip().lower()
-
-    def _matchFilter(self, task: Task) -> bool:
-        if self.filterMode == FilterMode.ALL:
-            return True
-        if self.filterMode == FilterMode.ACTIVE:
-            return task.status != TaskStatus.COMPLETED
-        if self.filterMode == FilterMode.COMPLETE:
-            return task.status == TaskStatus.COMPLETED
-        return True
-
-    def _matchCategory(self, task: Task) -> bool:
-        if not cfg.enableCategory.value or self.categoryFilterId is None:
-            return True
-        return task.category == self.categoryFilterId
-
-    def _matchTask(self, task: Task) -> bool:
-        return self._matchSearch(task) and self._matchFilter(task) and self._matchCategory(task)
-
-    def findCardByTaskId(self, taskId: str) -> TaskCard | None:
-        return self.mountedCards.get(taskId)
-
-    @Slot()
-    def _refreshViewport(self):
-        if not self.displayOrder:
-            self._unmountAll()
-            return
-
-        viewportTop = self.verticalScrollBar().value()
-        viewportHeight = self.viewport().height()
-        firstIndex = max(0, self.container.rowAt(viewportTop) - BUFFER_ROWS)
-        lastIndex = min(
-            len(self.displayOrder) - 1,
-            self.container.rowAt(viewportTop + viewportHeight) + BUFFER_ROWS,
-        )
-
-        targetIds = {self.displayOrder[idx].taskId for idx in range(firstIndex, lastIndex + 1)}
-        for taskId in list(self.mountedCards.keys()):
-            if taskId not in targetIds:
-                self._unmountCard(taskId)
-
-        for idx in range(firstIndex, lastIndex + 1):
-            task = self.displayOrder[idx]
-            card = self.mountedCards.get(task.taskId)
-            if card is None:
-                card = self._mountCard(task)
-            self._positionCard(card, idx)
-
-    def _mountCard(self, task: Task) -> TaskCard:
-        card = featureService.taskCard(task, self.container)
-        card.finished.connect(self._onCardFinished)
-        card.selectionChanged.connect(
-            lambda checked, extend, t=task: self._onCardSelectionChanged(t, checked, extend)
-        )
-        card.categoryChanged.connect(self._refreshTaskList)
-        card.show()
-        self.mountedCards[task.taskId] = card
-
-        if self.isSelectionMode:
-            card.setSelectionMode(True)
-        if task.taskId in self.selectedIds:
-            card.setChecked(True)
-        return card
-
-    def _unmountCard(self, taskId: str):
-        card = self.mountedCards.pop(taskId, None)
-        if card is not None:
-            card.deleteLater()
-
-    def _unmountAll(self):
-        for taskId in list(self.mountedCards.keys()):
-            self._unmountCard(taskId)
-
-    def _positionCard(self, card: TaskCard, index: int):
-        y = self.container.rowTop(index)
-        width = self.container.width() - 2 * SIDE_PADDING
-        card.setGeometry(SIDE_PADDING, y, max(0, width), ROW_HEIGHT)
-
-    def _refreshEmptyState(self):
-        if self.displayOrder:
-            self.emptyStatusWidget.hide()
-            return
-        if not taskService.tasks:
-            text = self.tr("暂无下载任务")
-        elif self.searchKeyword and (self.filterMode != FilterMode.ALL or self.categoryFilterId is not None):
-            text = self.tr("没有匹配筛选条件的任务")
-        elif self.searchKeyword:
-            text = self.tr("没有匹配的任务")
-        elif self.categoryFilterId is not None:
-            text = self.tr("该分类下暂无任务")
-        elif self.filterMode == FilterMode.ACTIVE:
-            text = self.tr("暂无活动任务")
-        elif self.filterMode == FilterMode.COMPLETE:
-            text = self.tr("暂无完成任务")
+            for tid in self._displayOrder:
+                card = self._cards.get(tid)
+                if card:
+                    card.setChecked(False)
+            for i in range(min(anchorIdx, currentIdx), max(anchorIdx, currentIdx) + 1):
+                card = self._cards.get(self._displayOrder[i])
+                if card:
+                    card.setChecked(True)
         else:
-            text = self.tr("暂无下载任务")
-        self.emptyStatusWidget.setText(text)
-        self.emptyStatusWidget.adjustSize()
-        self.emptyStatusWidget.move(
-            (self.width() - self.emptyStatusWidget.width()) >> 1,
-            (self.height() - self.emptyStatusWidget.height()) >> 1,
-        )
-        self.emptyStatusWidget.show()
+            card = self._cards.get(taskId)
+            if card:
+                card.setChecked(checked)
+            if checked:
+                self._selectionAnchor = taskId
+            elif taskId == self._selectionAnchor:
+                self._selectionAnchor = None
 
-    def _onRateLimitButtonClicked(self):
-        cfg.set(cfg.enableSpeedLimitation, self.rateLimitButton.isChecked())
+        if not any(c.isChecked() for c in self._cards.values()):
+            self.setSelectionMode(False)
 
-    def _onPlanButtonClicked(self):
+    @property
+    def isSelectionMode(self) -> bool:
+        return self._selectionMode
+
+    @property
+    def isSortAscending(self) -> bool:
+        return self._sortAscending
+
+    # ── toolbar handlers ──
+
+    def _onSpeedChanged(self, speed: int) -> None:
+        self.speedBadge.setText(f"{toReadableSize(speed)}/s")
+        self._refreshVisibleCards()
+
+    def _onRateLimitToggled(self) -> None:
+        cfg.set(cfg.isSpeedLimitEnabled, self.rateLimitButton.isChecked())
+
+    def _onPlanButtonClicked(self) -> None:
+        from app.services.plan import plan
         if self.planButton.isChecked():
-            w = PlanTaskDialog(self.window(), deleteOnClose=False)
-            if w.exec() == QDialog.DialogCode.Accepted:
-                self.planAction = w.selectedAction()
-                self.planFilePath = w.selectedFilePath()
+            from app.view.dialogs.plan_task import PlanTaskDialog
+            dialog = PlanTaskDialog(self.window())
+            if dialog.exec():
+                plan.set(dialog.selectedAction(), dialog.selectedFilePath(),
+                         onCleared=lambda: self.planButton.setChecked(False))
             else:
                 self.planButton.setChecked(False)
-                self.planAction = None
-                self.planFilePath = ""
-            w.deleteLater()
+            dialog.deleteLater()
         else:
-            self.planAction = None
-            self.planFilePath = ""
+            plan.clear()
 
-    def _onSearchTextChanged(self, text: str):
-        keyword = text.strip().lower()
-        if keyword == self.searchKeyword:
-            return
-        self.searchKeyword = keyword
-        self._refreshTaskList()
+    def _onCategoryEnabledChanged(self, value) -> None:
+        self.categoryFilterButton.setVisible(bool(value))
 
-    def setFilterMode(self, mode: FilterMode):
-        if self.filterMode == mode:
-            return
-        self.filterMode = mode
-        self._refreshTaskList()
-
-    def setCategoryFilter(self, categoryId: str | None):
-        if self.categoryFilterId == categoryId:
-            return
-        self.categoryFilterId = categoryId
-        self._refreshTaskList()
-
-    def _rebuildCategoryFilterMenu(self):
+    def _rebuildCategoryFilterMenu(self) -> None:
+        from app.services.category_service import categoryService
         self.categoryFilterMenu.clear()
-        self.categoryFilterMenu.view.clear()
-        for action in self.categoryFilterActionGroup.actions():
-            self.categoryFilterActionGroup.removeAction(action)
+        for action in self.categoryFilterGroup.actions():
+            self.categoryFilterGroup.removeAction(action)
             action.deleteLater()
 
         allAction = Action(FluentIcon.FILTER, self.tr("全部分类"), self, checkable=True)
-        allAction.triggered.connect(lambda: self.setCategoryFilter(None))
-        self.categoryFilterActionGroup.addAction(allAction)
+        allAction.triggered.connect(lambda: self.setCategoryFilter(""))
+        self.categoryFilterGroup.addAction(allAction)
         self.categoryFilterMenu.addAction(allAction)
         self.categoryFilterMenu.addSeparator()
 
-        uncategorizedAction = Action(FluentIcon.MORE, self.tr("未分类"), self, checkable=True)
-        uncategorizedAction.triggered.connect(lambda: self.setCategoryFilter(UNCATEGORIZED_ID))
-        self.categoryFilterActionGroup.addAction(uncategorizedAction)
-        self.categoryFilterMenu.addAction(uncategorizedAction)
-
-        validIds = {UNCATEGORIZED_ID}
+        validIds: set[str] = {""}
         for category in categoryService.categories():
             cid = category.categoryId
             validIds.add(cid)
-            action = Action(category.fluentIcon(), category.name, self, checkable=True)
-            action.triggered.connect(
-                lambda checked=False, c=cid: self.setCategoryFilter(c)
-            )
-            self.categoryFilterActionGroup.addAction(action)
+            action = Action(category.toIcon(), category.name, self, checkable=True)
+            action.triggered.connect(lambda checked=False, c=cid: self.setCategoryFilter(c))
+            self.categoryFilterGroup.addAction(action)
             self.categoryFilterMenu.addAction(action)
+            if cid == self._categoryFilter:
+                action.setChecked(True)
 
-        if self.categoryFilterId is not None and self.categoryFilterId not in validIds:
-            self.categoryFilterId = None
-            self._refreshTaskList()
+        if self._categoryFilter not in validIds:
+            self._categoryFilter = ""
+            self._rebuildList()
 
-        for action in self.categoryFilterActionGroup.actions():
-            action.setChecked(False)
-        if self.categoryFilterId is None:
+        if not self._categoryFilter:
             allAction.setChecked(True)
-        elif self.categoryFilterId == UNCATEGORIZED_ID:
-            uncategorizedAction.setChecked(True)
-        else:
-            for action in self.categoryFilterActionGroup.actions():
-                if action.text() and action is not allAction and action is not uncategorizedAction:
-                    category = next(
-                        (c for c in categoryService.categories() if c.name == action.text()),
-                        None,
-                    )
-                    if category and category.categoryId == self.categoryFilterId:
-                        action.setChecked(True)
-                        break
 
-    def _onEnableCategoryChanged(self, value: bool):
-        self.categoryFilterButton.setVisible(bool(value))
-        if not value and self.categoryFilterId is not None:
-            self.categoryFilterId = None
-        self._refreshTaskList()
+    def _onRedownloadSelected(self) -> None:
+        for taskId in list(self._displayOrder):
+            card = self._cards.get(taskId)
+            if card and card.isChecked():
+                taskService.redownload(card.task)
+        self.setSelectionMode(False)
 
-    def _onMoveCategoryActionTriggered(self):
-        targets = [taskService.tasks[tid] for tid in self.selectedIds if tid in taskService.tasks]
+    def _onDeleteSelected(self) -> None:
+        from qfluentwidgets import CheckBox, MessageBox
+        dialog = MessageBox(self.tr("删除任务"), self.tr("确定要删除选中的下载任务吗？"), self.window())
+        deleteFiles = CheckBox(self.tr("同时删除已下载的文件"))
+        dialog.textLayout.addWidget(deleteFiles)
+        if dialog.exec():
+            self._onDeleteConfirmed(deleteFiles.isChecked())
+
+    def _onMoveCategorySelected(self) -> None:
+        from app.services.category_service import categoryService
+        targets = [
+            card.task for taskId in self._displayOrder
+            if (card := self._cards.get(taskId)) and card.isChecked()
+        ]
         if not targets:
             return
 
+        def moveTo(categoryId):
+            for task in targets:
+                taskService.setCategory(task, categoryId)
+            self.setSelectionMode(False)
+            self._rebuildList()
+
         popup = RoundMenu(parent=self)
-        uncategorizedAction = Action(FluentIcon.MORE, self.tr("未分类"), self)
-        uncategorizedAction.triggered.connect(
-            lambda: self._applyCategoryToTasks(targets, UNCATEGORIZED_ID)
-        )
-        popup.addAction(uncategorizedAction)
+        uncategorized = Action(FluentIcon.MORE, self.tr("未分类"), self)
+        uncategorized.triggered.connect(lambda: moveTo(""))
+        popup.addAction(uncategorized)
         popup.addSeparator()
         for category in categoryService.categories():
             cid = category.categoryId
-            action = Action(category.fluentIcon(), category.name, self)
-            action.triggered.connect(
-                lambda checked=False, c=cid: self._applyCategoryToTasks(targets, c)
-            )
+            action = Action(category.toIcon(), category.name, self)
+            action.triggered.connect(lambda checked=False, c=cid: moveTo(c))
             popup.addAction(action)
-
         popup.exec(QCursor.pos())
 
-    def _applyCategoryToTasks(self, tasks: list[Task], categoryId: str):
-        for task in tasks:
-            if task.category == categoryId:
-                continue
-            task.category = categoryId
-            card = self.mountedCards.get(task.taskId)
-            if card is not None:
-                card._onCategoryUpdated()
-        taskService.scheduleFlush()
-        self._refreshTaskList()
+    def _onDeleteConfirmed(self, shouldDeleteFiles: bool) -> None:
+        toDelete = [
+            taskId for taskId in self._displayOrder
+            if (card := self._cards.get(taskId)) and card.isChecked()
+        ]
+        for taskId in toDelete:
+            task = taskService.taskById(taskId)
+            if task:
+                taskService.delete(task, shouldDeleteFiles)
+        self.setSelectionMode(False)
 
-    def setSortField(self, field: SortField):
-        if self.sortField == field:
-            return
-        self.sortField = field
-        self._refreshTaskList()
+    # ── list management ──
 
-    def setSortOrder(self, reverse: bool):
-        if self.sortReverse == reverse:
-            return
-        self.sortReverse = reverse
-        self._refreshTaskList()
+    def _rebuildList(self) -> None:
+        tasks = taskService.tasks
 
-    def startAllTasks(self):
-        for task in self.displayOrder:
-            if task.status in {TaskStatus.WAITING, TaskStatus.PAUSED, TaskStatus.FAILED}:
-                coreService.createTask(task)
+        if self._filterMode != FilterMode.ALL:
+            statuses = FILTER_TO_STATUSES.get(self._filterMode)
+            if statuses is not None:
+                tasks = [t for t in tasks if t.status in statuses]
 
-    def pauseAllTasks(self):
-        for task in self.displayOrder:
-            if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
-                coreService.stopTask(task)
+        if self._categoryFilter:
+            tasks = [t for t in tasks if t.category == self._categoryFilter]
 
-    def selectAll(self):
-        for task in self.displayOrder:
-            self.selectedIds.add(task.taskId)
-        if self.displayOrder:
-            self.selectionAnchorTaskId = self.displayOrder[-1].taskId
-        self._refreshSelection()
+        if self._searchText:
+            lower = self._searchText.lower()
+            tasks = [t for t in tasks if lower in t.name.lower() or lower in t.url.lower()]
 
-    def invertSelection(self):
-        for task in self.displayOrder:
-            if task.taskId in self.selectedIds:
-                self.selectedIds.discard(task.taskId)
+        if self._sortField == SortField.NAME:
+            tasks.sort(key=lambda t: t.name.lower(), reverse=not self._sortAscending)
+        elif self._sortField == SortField.SIZE:
+            tasks.sort(key=lambda t: t.fileSize, reverse=not self._sortAscending)
+        elif self._sortField == SortField.COMPLETED_AT:
+            desc = not self._sortAscending
+            completed = [t for t in tasks if t.completedAt]
+            pending = [t for t in tasks if not t.completedAt]
+            completed.sort(key=lambda t: t.completedAt, reverse=desc)
+            pending.sort(key=lambda t: t.createdAt, reverse=desc)
+            tasks = pending + completed if desc else completed + pending
+        else:
+            tasks.sort(key=lambda t: t.createdAt, reverse=not self._sortAscending)
+
+        self._displayOrder = [t.taskId for t in tasks]
+        stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
+        count = len(self._displayOrder)
+        self.scrollWidget.setFixedHeight(
+            count * stride - self.ROW_SPACING + self.BOTTOM_PADDING if count else 0
+        )
+        self._refreshViewport()
+
+        if self._displayOrder:
+            self.emptyStatusWidget.hide()
+        else:
+            if not self._cards:
+                text = self.tr("暂无下载任务")
+            elif self._searchText and (self._filterMode != FilterMode.ALL or self._categoryFilter):
+                text = self.tr("没有匹配筛选条件的任务")
+            elif self._searchText:
+                text = self.tr("没有匹配的任务")
+            elif self._categoryFilter:
+                text = self.tr("该分类下暂无任务")
+            elif self._filterMode == FilterMode.ACTIVE:
+                text = self.tr("暂无活动任务")
+            elif self._filterMode == FilterMode.COMPLETED:
+                text = self.tr("暂无完成任务")
             else:
-                self.selectedIds.add(task.taskId)
-        self._refreshSelection()
+                text = self.tr("暂无下载任务")
+            self.emptyStatusWidget.setText(text)
+            self.emptyStatusWidget.adjustSize()
+            self.emptyStatusWidget.show()
 
-    def resizeEvent(self, event):
+    def _refreshViewport(self) -> None:
+        stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
+        width = self.scrollWidget.width()
+        count = len(self._displayOrder)
+        if count:
+            top = self.scrollArea.verticalScrollBar().value()
+            height = self.scrollArea.viewport().height()
+            first = max(0, top // stride - self.VIEWPORT_BUFFER)
+            last = min(count - 1, (top + height) // stride + self.VIEWPORT_BUFFER)
+        else:
+            first, last = 0, -1
+
+        desired: set[str] = set()
+        for idx in range(first, last + 1):
+            taskId = self._displayOrder[idx]
+            card = self._cards.get(taskId)
+            if card is None:
+                continue
+            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
+            if taskId not in self._mounted:
+                card.refresh()
+            card.show()
+            desired.add(taskId)
+
+        for taskId in self._mounted - desired:
+            card = self._cards.get(taskId)
+            if card is not None:
+                card.hide()
+        self._mounted = desired
+
+    def _refreshVisibleCards(self) -> None:
+        for taskId in self._mounted:
+            card = self._cards.get(taskId)
+            if card is not None:
+                card.refresh()
+
+    # ── events ──
+
+    def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._refreshViewport()
-        width = self.width()
-        height = self.height()
         self.commandView.move(
-            (width - self.commandView.width()) >> 1,
-            height - self.commandView.sizeHint().height() - 20,
+            (self.width() - self.commandView.width()) // 2,
+            self.height() - self.commandView.sizeHint().height() - 20,
         )
         self.emptyStatusWidget.move(
-            (width - self.emptyStatusWidget.width()) >> 1,
-            (height - self.emptyStatusWidget.height()) >> 1,
+            (self.width() - self.emptyStatusWidget.width()) // 2,
+            (self.height() - self.emptyStatusWidget.height()) // 2,
         )
 
-    def _refreshSelection(self):
-        for taskId, card in self.mountedCards.items():
-            card.setChecked(taskId in self.selectedIds)
-        self.setSelectionMode(bool(self.selectedIds))
-        if not self.selectedIds:
-            self.selectionAnchorTaskId = None
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._refreshViewport()
 
-    def _onCardSelectionChanged(self, task: Task, checked: bool, extend: bool):
-        if extend and self.displayOrder:
-            anchorId = self.selectionAnchorTaskId
-            anchorTask = taskService.tasks.get(anchorId) if anchorId else None
-            if anchorTask is None or anchorTask not in self.displayOrder:
-                anchorTask = task
+    def _createCard(self, task: Task) -> TaskCard | None:
+        return featureService.taskCard(task, self.scrollWidget)
 
-            start = self.displayOrder.index(anchorTask)
-            end = self.displayOrder.index(task)
-            if start > end:
-                start, end = end, start
-
-            rangeIds = {self.displayOrder[i].taskId for i in range(start, end + 1)}
-            self.selectedIds = rangeIds
-            self.selectionAnchorTaskId = anchorTask.taskId
-        else:
-            if checked:
-                self.selectedIds.add(task.taskId)
-                self.selectionAnchorTaskId = task.taskId
-            else:
-                self.selectedIds.discard(task.taskId)
-                if self.selectionAnchorTaskId == task.taskId:
-                    self.selectionAnchorTaskId = None
-
-        self._refreshSelection()
-
-    def _onDeleteActionTriggered(self):
-        w = DeleteTaskDialog(self.window(), deleteOnClose=False)
-        w.deleteFileCheckBox.setChecked(False)
-
-        if w.exec():
-            deleteFiles = w.deleteFileCheckBox.isChecked()
-            for taskId in list(self.selectedIds):
-                task = taskService.tasks.get(taskId)
-                if task is None:
-                    continue
-                card = self.mountedCards.get(taskId)
-                if card is not None:
-                    card.removeTask(deleteFiles)
-                else:
-                    coreService.runCoroutine(
-                        coreService._stopTask(task),
-                        lambda _result, _error, t=task, f=deleteFiles: self._onUnmountedTaskStopped(t, f),
-                    )
-
-        w.deleteLater()
-
-    def _onUnmountedTaskStopped(self, task: Task, deleteFile: bool):
-        if deleteFile:
-            task.cleanup()
-        taskService.remove(task)
-
-    def _onRedownloadActionTriggered(self):
-        for taskId in list(self.selectedIds):
-            card = self.mountedCards.get(taskId)
-            if card is not None:
-                card.redownloadTask()
-
-    def setSelectionMode(self, enter: bool):
-        if self.isSelectionMode == enter:
+    def _onTaskAdded(self, task: Task) -> None:
+        if task.taskId in self._cards:
             return
+        card = self._createCard(task)
+        if card is None:  # 该任务所属 pack 不可用, 跳过渲染
+            return
+        card.hide()
+        self._cards[task.taskId] = card
+        card.setSelectionMode(self._selectionMode)
+        card.selectionChanged.connect(
+            lambda checked, extend, tid=task.taskId: self._onCardSelectionChanged(tid, checked, extend)
+        )
+        self._rebuildTimer.start()
 
-        self.isSelectionMode = enter
+    def _onTaskRemoved(self, taskId: str) -> None:
+        card = self._cards.pop(taskId, None)
+        if card is not None:
+            card.hide()
+            card.deleteLater()
+        self._mounted.discard(taskId)
+        if self._selectionAnchor == taskId:
+            self._selectionAnchor = None
+        self._rebuildTimer.start()
 
-        for card in self.mountedCards.values():
-            card.setSelectionMode(enter)
-            card.setChecked(card.task.taskId in self.selectedIds)
-
-        if enter:
-            self.commandView.setVisible(True)
-            self.commandView.raise_()
-        else:
-            self.commandView.setVisible(False)
-            self.selectedIds.clear()
-            self.selectionAnchorTaskId = None
+    def _onFileDisappeared(self, task: Task) -> None:
+        card = self._cards.get(task.taskId)
+        if card is not None:
+            card.refresh(force=True)
