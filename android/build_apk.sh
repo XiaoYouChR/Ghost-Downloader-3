@@ -13,7 +13,9 @@ cp -a "$REPO/app" "$STAGE/app"
 cp -a "$REPO/features" "$STAGE/features"
 cp -a "$ANDROID_DIR/main.py" "$STAGE/main.py"
 rm -rf "$STAGE/features/bittorrent_pack"
+rm -rf "$STAGE/features/ed2k_pack"
 rm -rf "$STAGE/features/jack_yao"
+rm -rf "$STAGE/features/yt_dlp_pack"
 find "$STAGE/app" "$STAGE/features" -name "__pycache__" -type d -prune -exec rm -rf {} +
 
 cd "$STAGE"
@@ -24,39 +26,28 @@ find "$STAGE" -name "*.apk" -delete
 BUILD_MARKER="$STAGE/.build_marker"
 touch "$BUILD_MARKER"
 
-export GD3_EXTRA_REQ="${GD3_EXTRA_REQ:-,pyjnius,niquests,urllib3-future,charset-normalizer,idna,h11,wassima,jh2,PySide6-Fluent-Widgets,PySideSix-Frameless-Window,darkdetect,loguru,qrcode,pypng,m3u8,mpegdash,aioftp,gd3ffmpeg}"
+export GD3_EXTRA_REQ="${GD3_EXTRA_REQ:-,pyjnius,wreq,charset-normalizer,idna,PySide6-Fluent-Widgets,PySideSix-Frameless-Window,darkdetect,loguru,qrcode,pypng,m3u8,mpegdash,aioftp,gd3ffmpeg}"
 export GD3_EXTRA_PERM="${GD3_EXTRA_PERM:-,MANAGE_EXTERNAL_STORAGE,POST_NOTIFICATIONS,FOREGROUND_SERVICE,FOREGROUND_SERVICE_DATA_SYNC,REQUEST_IGNORE_BATTERY_OPTIMIZATIONS}"
 
 export GD3_ICON="${GD3_ICON:-$REPO/app/assets/logo.png}"
 
-export GD3_ICON_FG="${GD3_ICON_FG:-$ANDROID_DIR/assets/icon_foreground.png}"
-export GD3_ICON_BG="${GD3_ICON_BG:-$ANDROID_DIR/assets/icon_background.png}"
-export GD3_PRESPLASH="${GD3_PRESPLASH:-$ANDROID_DIR/assets/presplash.jpg}"
-export GD3_PRESPLASH_COLOR="${GD3_PRESPLASH_COLOR:-#F3F3F3}"
+export GD3_ICON_FG="${GD3_ICON_FG:-$ANDROID_DIR/res/icon_foreground.png}"
+export GD3_ICON_BG="${GD3_ICON_BG:-$ANDROID_DIR/res/icon_background.png}"
 
-export GD3_RES="${GD3_RES:-$ANDROID_DIR/res/values-night/colors.xml:values-night/colors.xml}"
+export GD3_RES="${GD3_RES:-$ANDROID_DIR/res/values-night/colors.xml:values-night/colors.xml,$ANDROID_DIR/res/splash_logo.png:drawable-nodpi/gd3_splash_logo.png,$ANDROID_DIR/res/drawable/gd3_splash.xml:drawable/gd3_splash.xml}"
 
 export GD3_APP_TITLE="${GD3_APP_TITLE:-Ghost Downloader}"
 export GD3_PKG_NAME="${GD3_PKG_NAME:-ghostdownloader}"
 export GD3_PKG_DOMAIN="${GD3_PKG_DOMAIN:-io.github.xiaoyouchr}"
 
-export GD3_VERSION="${GD3_VERSION:-$(grep -oP '^VERSION = "\K[^"]+' "$REPO/app/supports/config.py")}"
+export GD3_VERSION="${GD3_VERSION:-$(grep -oP '^VERSION = "\K[^"]+' "$REPO/app/config/constants.py")}"
 
 export GD3_QT_MODULES="${GD3_QT_MODULES:-Core,Gui,Widgets,Network,Svg,SvgWidgets,WebSockets,Xml}"
 echo "[build] STAGE=$STAGE"
 echo "[build] applicationId=$GD3_PKG_DOMAIN.$GD3_PKG_NAME  label=$GD3_APP_TITLE"
-echo "[build] adaptive icon fg=$GD3_ICON_FG bg=$GD3_ICON_BG  presplash=$GD3_PRESPLASH color=$GD3_PRESPLASH_COLOR"
+echo "[build] adaptive icon fg=$GD3_ICON_FG bg=$GD3_ICON_BG"
 echo "[build] GD3_EXTRA_REQ=$GD3_EXTRA_REQ  GD3_EXTRA_PERM=$GD3_EXTRA_PERM"
 echo "[build] GD3_QT_MODULES=$GD3_QT_MODULES"
-
-if [ -d "$STAGE/.buildozer" ]; then
-    find "$STAGE/.buildozer" -name "build.py" \( -path "*bootstrap_builds/qt/*" -o -path "*dists/*" \) 2>/dev/null | while read -r buildPy; do
-        if grep -q "mipmap-anydpi-v26/icon.xml" "$buildPy" && ! grep -q 'ensure_dir(join(res_dir, "mipmap-anydpi-v26"))' "$buildPy"; then
-            sed -i 's#^\( *\)with open(join(res_dir, .mipmap-anydpi-v26/icon.xml.), .w.) as fd:#\1ensure_dir(join(res_dir, "mipmap-anydpi-v26"))\n&#' "$buildPy"
-            echo "[build] 补 p4a adaptive icon mkdir: $buildPy"
-        fi
-    done
-fi
 
 PYSIDE_WHL=$(ls "$WHEEL_DIR"/PySide6-*android_aarch64.whl)
 SHIBOKEN_WHL=$(ls "$WHEEL_DIR"/shiboken6-*android_aarch64.whl)

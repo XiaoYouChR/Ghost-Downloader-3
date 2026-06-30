@@ -24,11 +24,14 @@ RUN sed -i "s|deb.debian.org|${APT_MIRROR_HOST}|g" /etc/apt/sources.list.d/debia
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 ENV RUSTUP_HOME=/opt/rustup CARGO_HOME=/opt/cargo PATH="/opt/cargo/bin:${PATH}"
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable \
+RUN curl --proto '=https' --tlsv1.2 -sSf "${RUSTUP_UPDATE_ROOT}/dist/x86_64-unknown-linux-gnu/rustup-init" -o /tmp/rustup-init \
+    && chmod +x /tmp/rustup-init \
+    && /tmp/rustup-init -y --no-modify-path --default-toolchain stable \
+    && rm /tmp/rustup-init \
     && rustup target add aarch64-linux-android \
     && chmod -R a+rX /opt/rustup /opt/cargo
 
-RUN pip install --no-cache-dir \
+RUN pip install --no-cache-dir --timeout 300 --retries 10 \
         "PySide6==${PYSIDE_VERSION}" \
         "buildozer==1.5.0" \
         "cython==0.29.33" \
@@ -62,7 +65,7 @@ ENV GD3_P4A_SOURCE=/opt/p4a
 COPY patches/qt_pyjniusjni.c /opt/qt_pyjniusjni.c
 COPY gradle-init.gradle /opt/gradle-init.gradle
 
-COPY patches/recipes/ /opt/gd3-recipes/
+COPY recipes/ /opt/gd3-recipes/
 COPY patches/gd3_prune.py /opt/gd3_prune.py
 RUN git clone --depth 1 -b develop "${P4A_GIT_URL}" /opt/p4a \
     && QTSRC=/opt/p4a/pythonforandroid/bootstraps/qt/build/jni/application/src \
@@ -84,32 +87,40 @@ RUN git clone --depth 1 -b develop "${P4A_GIT_URL}" /opt/p4a \
     && QTPA=/opt/p4a/pythonforandroid/bootstraps/qt/build/src/main/java/org/kivy/android/PythonActivity.java \
     && sed -i '/protected void onActivityResult(int requestCode, int resultCode, Intent intent) {/a\        super.onActivityResult(requestCode, resultCode, intent);' "$QTPA" \
     && grep -q 'super.onActivityResult' "$QTPA" && echo "[patch] qt PythonActivity super.onActivityResult OK" \
+    && sed -i '/public boolean onKeyDown(int keyCode, KeyEvent event) {/a\        if (keyCode == KeyEvent.KEYCODE_BACK) { moveTaskToBack(true); return true; }' "$QTPA" \
+    && grep -q 'moveTaskToBack' "$QTPA" && echo "[patch] qt PythonActivity 返回键退后台 OK" \
     && QTSTR=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/strings.tmpl.xml \
-    && sed -i '/<item name="android:windowNoTitle">true<\/item>/a\        <item name="android:windowBackground">@color/gd3_splash_bg</item>\n        <item name="android:windowSplashScreenBackground">@color/gd3_splash_bg</item>' "$QTSTR" \
+    && sed -i '/<item name="android:windowNoTitle">true<\/item>/a\        <item name="android:windowBackground">@drawable/gd3_splash</item>\n        <item name="android:windowSplashScreenBackground">@color/gd3_splash_bg</item>' "$QTSTR" \
     && sed -i '/<resources>/a\    <color name="gd3_splash_bg">#f3f3f3</color>' "$QTSTR" \
     && grep -q 'windowSplashScreenBackground' "$QTSTR" && echo "[patch] qt native SplashScreen(API31 windowSplashScreen) OK" \
     && chmod -R a+rX /opt/p4a
 
-ARG FFMPEG_BASE=https://raw.githubusercontent.com/hzw1199/Android-FFmpeg-Prebuilt/main/ffmpeg-8.1.1/bin
+# Minimal LGPL FFmpeg from our own build repo (~3MB tarball with ffmpeg+ffprobe),
+# replacing hzw1199's full build (~30MB). Pinned to a tag for reproducible APKs;
+# bump the tag to update. See https://github.com/XiaoYouChR/Ghost-Downloader-FFmpeg
+ARG FFMPEG_TARBALL=https://github.com/XiaoYouChR/Ghost-Downloader-FFmpeg/releases/download/n8.1.2-gd1/ffmpeg-android-arm64.tar.gz
 ARG NM3U8_URL=https://github.com/nilaoda/N_m3u8DL-RE/releases/download/v0.5.1-beta/N_m3u8DL-RE_v0.5.1-beta_android-bionic-arm64_20251029.tar.gz
 RUN mkdir -p /opt/gd3-ffmpeg && cd /opt/gd3-ffmpeg \
-    && wget -q "${FFMPEG_BASE}/ffmpeg" -O libffmpeg.so \
-    && wget -q "${FFMPEG_BASE}/ffprobe" -O libffprobe.so \
+    && wget -q "${FFMPEG_TARBALL}" -O /tmp/ffmpeg.tar.gz \
+    && tar -xzf /tmp/ffmpeg.tar.gz -C /tmp \
+    && cp /tmp/ffmpeg /opt/gd3-ffmpeg/libffmpeg.so \
+    && cp /tmp/ffprobe /opt/gd3-ffmpeg/libffprobe.so \
+    && rm -f /tmp/ffmpeg.tar.gz /tmp/ffmpeg /tmp/ffprobe \
     && wget -q "${NM3U8_URL}" -O /tmp/nm3u8.tar.gz \
     && tar -xzf /tmp/nm3u8.tar.gz -C /tmp \
     && cp /tmp/N_m3u8DL-RE /opt/gd3-ffmpeg/libnm3u8dlre.so \
     && rm -f /tmp/nm3u8.tar.gz /tmp/N_m3u8DL-RE \
     && chmod a+rx libffmpeg.so libffprobe.so libnm3u8dlre.so \
     && ls -la /opt/gd3-ffmpeg \
-    && file libffmpeg.so | grep -q "ARM aarch64" && echo "[ffmpeg] bionic arm64 预置 OK" \
+    && file libffmpeg.so | grep -q "ARM aarch64" && echo "[ffmpeg] minimal arm64 预置 OK" \
     && file libnm3u8dlre.so | grep -q "ARM aarch64" && echo "[nm3u8] bionic arm64 预置 OK"
 
 RUN DEPLOY_BASECFG=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib/config.py \
     && DEPLOY_BZ=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib/android/buildozer.py \
     && sed -i 's|config_icon = self.get_value("app", "icon")|config_icon = __import__("os").environ.get("GD3_ICON", "") or self.get_value("app", "icon")|' "$DEPLOY_BASECFG" \
     && grep -q 'GD3_ICON' "$DEPLOY_BASECFG" && echo "[patch] GD3_ICON 注入 OK" \
-    && sed -i 's|        self.set_value("app", "icon.filename", pysidedeploy_config.icon)|&\n        self.set_value("app", "icon.adaptive_foreground.filename", __import__("os").environ.get("GD3_ICON_FG", ""), raise_warning=False)\n        self.set_value("app", "icon.adaptive_background.filename", __import__("os").environ.get("GD3_ICON_BG", ""), raise_warning=False)\n        self.set_value("app", "presplash.filename", __import__("os").environ.get("GD3_PRESPLASH", ""), raise_warning=False)\n        self.set_value("app", "android.presplash_color", __import__("os").environ.get("GD3_PRESPLASH_COLOR", ""), raise_warning=False)\n        self.set_value("app", "android.add_resources", __import__("os").environ.get("GD3_RES", ""), raise_warning=False)|' "$DEPLOY_BZ" \
-    && grep -q 'GD3_ICON_FG' "$DEPLOY_BZ" && grep -q 'GD3_PRESPLASH_COLOR' "$DEPLOY_BZ" && echo "[patch] GD3 adaptive icon + presplash 注入 OK" \
+    && sed -i 's|        self.set_value("app", "icon.filename", pysidedeploy_config.icon)|&\n        self.set_value("app", "icon.adaptive_foreground.filename", __import__("os").environ.get("GD3_ICON_FG", ""), raise_warning=False)\n        self.set_value("app", "icon.adaptive_background.filename", __import__("os").environ.get("GD3_ICON_BG", ""), raise_warning=False)\n        self.set_value("app", "android.add_resources", __import__("os").environ.get("GD3_RES", ""), raise_warning=False)|' "$DEPLOY_BZ" \
+    && grep -q 'GD3_ICON_FG' "$DEPLOY_BZ" && grep -q 'add_resources' "$DEPLOY_BZ" && echo "[patch] GD3 adaptive icon + add_resources 注入 OK" \
     && sed -i 's|"title", pysidedeploy_config.title)|"title", __import__("os").environ.get("GD3_APP_TITLE", "") or pysidedeploy_config.title)|' "$DEPLOY_BZ" \
     && sed -i 's|"package.name", pysidedeploy_config.title)|"package.name", __import__("os").environ.get("GD3_PKG_NAME", "") or pysidedeploy_config.title)|' "$DEPLOY_BZ" \
     && sed -i 's|f"org.{pysidedeploy_config.title}")|(__import__("os").environ.get("GD3_PKG_DOMAIN", "") or f"org.{pysidedeploy_config.title}"))|' "$DEPLOY_BZ" \
@@ -133,7 +144,7 @@ RUN DEPLOY_BZ=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib
     && sed -i '/self.set_value("app", "title",/a\        self.set_value("app", "version", __import__("os").environ.get("GD3_VERSION", "") or "0.1")\n        self.set_value("app", "android.accept_sdk_license", "True")\n        self.set_value("buildozer", "log_level", "1")' "$DEPLOY_BZ" \
     && grep -q 'GD3_VERSION' "$DEPLOY_BZ" && grep -q 'accept_sdk_license' "$DEPLOY_BZ" && grep -q 'log_level' "$DEPLOY_BZ" && echo "[patch] GD3_VERSION + accept_sdk_license + log_level=1 注入 OK"
 
-COPY keepalive_service/KeepAliveService.java /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader/KeepAliveService.java
+COPY java/org/ghostdownloader/KeepAliveService.java /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader/KeepAliveService.java
 RUN QTMAN=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/AndroidManifest.tmpl.xml \
     && sed -i '/<\/application>/i\        <service android:name="org.ghostdownloader.KeepAliveService" android:exported="false" android:foregroundServiceType="dataSync" />' "$QTMAN" \
     && sed -i '0,/<\/activity>/{s##            <meta-data android:name="android.app.background_running" android:value="true" />\n        </activity>#}' "$QTMAN" \
@@ -141,6 +152,11 @@ RUN QTMAN=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/AndroidManifes
     && grep -q 'background_running' "$QTMAN" \
     && chown -R builder:builder /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader \
     && echo "[patch] KeepAliveService + background_running(后台事件循环不挂起) 注入 OK"
+
+# 隔离的新版 cmake 专供 wreq 的 btls-sys/BoringSSL（系统 cmake 3.25 在 NDK toolchain 下 FindThreads 会炸）
+RUN python3 -m venv /opt/cmake4 \
+    && for i in 1 2 3 4 5; do /opt/cmake4/bin/pip install --no-cache-dir --timeout 300 --retries 10 "cmake>=4.0" && break || sleep 5; done \
+    && /opt/cmake4/bin/cmake --version
 
 USER builder
 WORKDIR /work
