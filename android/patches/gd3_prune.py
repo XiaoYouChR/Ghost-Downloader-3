@@ -9,36 +9,34 @@ KEEP = {
     "OpenGL", "OpenGLWidgets", "PrintSupport", "Sql",
 }
 
-_EXTRA_LIB_PREFIXES = ("libavcodec", "libavformat", "libavutil", "libavdevice",
-                       "libavfilter", "libswscale", "libswresample", "libQt6FFmpegStub")
+FFMPEG_LIBS = ("libavcodec", "libavformat", "libavutil", "libavdevice",
+               "libavfilter", "libswscale", "libswresample", "libQt6FFmpegStub")
 
-_PATTERNS = (
+MODULE_RE = (
     re.compile(r"^libQt6([A-Za-z0-9]+)_arm64-v8a\.so$"),
     re.compile(r"^Qt([A-Za-z0-9]+)\.abi3\.so$"),
     re.compile(r"^Qt6([A-Za-z0-9]+)_arm64-v8a-android-dependencies\.xml$"),
 )
 
-_PLUGIN_REMOVE = {
+UNUSED_PLUGINS = {
     "sceneparsers", "assetimporters", "renderers", "geometryloaders",
     "qmltooling", "scenegraph", "webview", "designer", "position", "sensors",
     "multimedia",
 }
 
-def _matchedModule(name):
-    for rx in _PATTERNS:
-        m = rx.match(name)
-        if m:
-            return m.group(1)
-    return None
 
-def _pruneFlat(d):
+def pruneDir(d):
     if not isdir(d):
         return 0
     freed = 0
     for name in list(os.listdir(d)):
-        mod = _matchedModule(name)
-        remove = (mod is not None and mod not in KEEP) or name.startswith(_EXTRA_LIB_PREFIXES)
-        if remove:
+        mod = None
+        for rx in MODULE_RE:
+            m = rx.match(name)
+            if m:
+                mod = m.group(1)
+                break
+        if (mod is not None and mod not in KEEP) or name.startswith(FFMPEG_LIBS):
             p = join(d, name)
             try:
                 freed += os.path.getsize(p)
@@ -47,7 +45,8 @@ def _pruneFlat(d):
                 pass
     return freed
 
-def _rmtreeSize(d):
+
+def removeDir(d):
     if not isdir(d):
         return 0
     total = 0
@@ -60,17 +59,18 @@ def _rmtreeSize(d):
     shutil.rmtree(d, ignore_errors=True)
     return total
 
-def pruneQt(libs_dir, pyside_dir, log):
+
+def pruneQt(libs, pyside, log):
     freed = 0
-    freed += _pruneFlat(libs_dir)
-    freed += _pruneFlat(join(pyside_dir, "Qt", "lib"))
-    freed += _pruneFlat(pyside_dir)
+    freed += pruneDir(libs)
+    freed += pruneDir(join(pyside, "Qt", "lib"))
+    freed += pruneDir(pyside)
 
-    freed += _rmtreeSize(join(pyside_dir, "Qt", "qml"))
-    freed += _rmtreeSize(join(pyside_dir, "Qt", "translations"))
+    freed += removeDir(join(pyside, "Qt", "qml"))
+    freed += removeDir(join(pyside, "Qt", "translations"))
 
-    for cat in _PLUGIN_REMOVE:
-        freed += _rmtreeSize(join(pyside_dir, "Qt", "plugins", cat))
+    for plugin in UNUSED_PLUGINS:
+        freed += removeDir(join(pyside, "Qt", "plugins", plugin))
     log("[gd3-prune] 裁掉未用 Qt 模块/QML/translations，释放 ~{} MB（keep={} 个模块）".format(
         freed // 1024 // 1024, len(KEEP)))
     return freed
