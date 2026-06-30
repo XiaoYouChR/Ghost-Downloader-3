@@ -1,139 +1,129 @@
-import asyncio
+from __future__ import annotations
+
+import platform
+import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
-from qfluentwidgets import (
-    ConfigItem,
-    FluentIcon,
-    FolderValidator,
-    InfoBar,
-    PrimaryPushButton,
-    SettingCard,
-    ToolButton,
-)
+from PySide6.QtWidgets import QWidget
+from qfluentwidgets import BoolValidator, ConfigItem, FolderValidator, OptionsConfigItem, OptionsValidator, RangeConfigItem, RangeValidator
 
-from app.bases.models import PackConfig
-from app.services.core_service import coreService
-from app.supports.paths import APP_DATA_DIR
-from app.supports.utils import findExecutable, toPosixPath
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-from app.view.components.setting_cards import InstallFolderCard
-
-if TYPE_CHECKING:
-    from app.view.pages.setting_page import SettingPage
-    from app.view.windows.main_window import MainWindow
-
-
-def downloaderPath() -> str:
-    return findExecutable(Path(ytDlpConfig.installFolder.value), "yt-dlp")
-
-
-async def probeYtDlpRuntime() -> dict[str, str]:
-    execPath = downloaderPath()
-    info = {"downloaderPath": execPath, "version": "", "installPath": ""}
-    if not execPath:
-        return info
-
-    process = await asyncio.create_subprocess_exec(
-        execPath,
-        "--version",
-        stdin=asyncio.subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await process.communicate()
-    if process.returncode != 0:
-        return info
-
-    output = stdout.decode("utf-8", errors="ignore") or stderr.decode("utf-8", errors="ignore")
-    lines = [line.strip() for line in output.splitlines() if line.strip()]
-    info["version"] = lines[0] if lines else ""
-    info["installPath"] = toPosixPath(Path(execPath).parent)
-    return info
-
-
-class YtDlpRuntimeCard(SettingCard):
-    def __init__(self, parent=None):
-        super().__init__(FluentIcon.INFO, self.tr("当前 yt-dlp"), self.tr("正在检测运行时..."), parent)
-        self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
-        self.refreshButton = ToolButton(FluentIcon.SYNC, self)
-
-        self._initLayout()
-        self._bind()
-
-    def _initLayout(self):
-        self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
-
-    def _bind(self):
-        self.installButton.clicked.connect(self._onInstallClicked)
-        self.refreshButton.clicked.connect(self.refreshStatus)
-
-    def refreshStatus(self):
-        self.refreshButton.setEnabled(False)
-        self.setContent(self.tr("正在检测运行时..."))
-        coreService.runCoroutine(probeYtDlpRuntime(), self._onRuntimeLoaded)
-
-    def _onRuntimeLoaded(self, result, error: str | None):
-        self.refreshButton.setEnabled(True)
-        if error:
-            self.setContent(self.tr("检测运行时失败"))
-            return
-
-        info = result or {}
-        executablePath = info.get("downloaderPath", "")
-        if executablePath:
-            content = self.tr("版本: {0}\n安装路径: {1}").format(
-                info.get("version") or self.tr("未知"),
-                info.get("installPath") or executablePath,
-            )
-        else:
-            content = self.tr("未检测到可用的 yt-dlp")
-        self.setContent(content)
-
-    def _onInstallClicked(self):
-        from .pack import createInstallTask
-
-        self.installButton.setEnabled(False)
-        self.installButton.setText(self.tr("准备中..."))
-        coreService.runCoroutine(createInstallTask(), self._onInstallTaskCreated)
-
-    def _onInstallTaskCreated(self, result, error: str | None):
-        self.installButton.setEnabled(True)
-        self.installButton.setText(self.tr("一键安装"))
-
-        mainWindow: "MainWindow" = self.window()
-        if error or result is None:
-            InfoBar.error(self.tr("安装 yt-dlp 失败"), error or self.tr("无法创建安装任务"), duration=-1, parent=mainWindow)
-            return
-
-        mainWindow.addTask(result)
+from app.config.paths import APP_DATA_DIR
+from app.models.pack import BinaryRuntime, PackConfig
+from app.models.task import Task
+from app.platform.android import IS_ANDROID
+from app.platform.filesystem import findExecutable
 
 
 class YtDlpConfig(PackConfig):
     installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", FolderValidator())
+    parallelFragments = RangeConfigItem("YtDlp", "ParallelFragments", 4, RangeValidator(1, 16))
+    loginBrowser = OptionsConfigItem(
+        "YtDlp", "LoginBrowser", "",
+        OptionsValidator(["", "chrome", "firefox", "edge", "safari"]),
+    )
+    shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
+    subtitleLanguages = ConfigItem("YtDlp", "SubtitleLanguages", "en")
+    shouldEmbedThumbnail = ConfigItem("YtDlp", "EmbedThumbnail", True, BoolValidator())
+    shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
+    shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
 
-    def setupSettings(self, settingPage: "SettingPage"):
-        self.group = CollapsibleSettingCardGroup(self.tr("YouTube 下载"), "ytdlp", settingPage.container)
-        self.installFolderCard = InstallFolderCard(
-            self.installFolder,
-            f"{APP_DATA_DIR}/YtDlp",
+    def settingGroups(self, parent: QWidget) -> list:
+        from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
+        from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+        from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard, SpinBoxSettingCard
+
+        group = CollapsibleSettingCardGroup(self.tr("YouTube 下载"), "ytdlp", parent)
+        installFolderCard = SelectFolderSettingCard(
+            ytDlpConfig.installFolder, f"{APP_DATA_DIR}/YtDlp",
             self.tr("yt-dlp 安装目录"),
-            self.tr("选择 yt-dlp 安装目录"),
-            self.group,
+            group,
         )
-        self.runtimeCard = YtDlpRuntimeCard(self.group)
-        self.group.addSettingCards([
-            self.installFolderCard,
-            self.runtimeCard,
-        ])
+        runtimeCard = RuntimeCard(ytDlpRuntime, group)
+        installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
 
-        self.installFolderCard.pathChanged.connect(lambda _: self.runtimeCard.refreshStatus())
-        settingPage.addSettingGroup(self.group)
-        self.runtimeCard.refreshStatus()
+        group.addSettingCards([
+            installFolderCard,
+            runtimeCard,
+            SpinBoxSettingCard(
+                FluentIcon.SPEED_HIGH,
+                self.tr("并行分片数"),
+                self.tr("同时下载的视频分片数量，越高越快但可能被限流"),
+                configItem=self.parallelFragments,
+                parent=group,
+            ),
+            ComboBoxSettingCard(
+                self.loginBrowser,
+                FluentIcon.PEOPLE,
+                self.tr("登录浏览器"),
+                self.tr("从指定浏览器读取 YouTube 登录状态，用于下载需要登录的内容"),
+                texts=[self.tr("不使用"), "Chrome", "Firefox", "Edge", "Safari"],
+                parent=group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.VIDEO,
+                self.tr("优先 MP4 格式"),
+                self.tr("优先选择 H.264/MP4 编码，避免输出 WebM/MKV"),
+                self.shouldPreferMp4,
+                group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.PHOTO,
+                self.tr("嵌入缩略图"),
+                self.tr("下载完成后通过 FFmpeg 将封面嵌入文件"),
+                self.shouldEmbedThumbnail,
+                group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.BOOK_SHELF,
+                self.tr("嵌入章节"),
+                self.tr("下载完成后通过 FFmpeg 将章节标记嵌入文件"),
+                self.shouldEmbedChapters,
+                group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.INFO,
+                self.tr("嵌入元数据"),
+                self.tr("下载完成后通过 FFmpeg 将标题、作者等信息嵌入文件"),
+                self.shouldEmbedMetadata,
+                group,
+            ),
+        ])
+        runtimeCard.refreshStatus()
+        return [group]
 
 
 ytDlpConfig = YtDlpConfig()
+
+
+class YtDlpRuntime(BinaryRuntime):
+    name = "yt-dlp"
+    canInstall = not IS_ANDROID
+
+    def path(self) -> str:
+        return findExecutable(Path(ytDlpConfig.installFolder.value), "yt-dlp")
+
+    async def installTask(self) -> Task:
+        from app.services.feature_service import featureService
+        from app.models.task import BinaryInstallOptions
+
+        machine = platform.machine().lower()
+        if sys.platform == "win32":
+            asset = "yt-dlp.exe"
+        elif sys.platform == "darwin":
+            asset = "yt-dlp_macos"
+        elif machine in {"arm64", "aarch64"}:
+            asset = "yt-dlp_linux_aarch64"
+        else:
+            asset = "yt-dlp_linux"
+
+        binaryName = "yt-dlp.exe" if sys.platform == "win32" else "yt-dlp"
+        url = f"https://github.com/yt-dlp/yt-dlp/releases/latest/download/{asset}"
+        return await featureService.parse(BinaryInstallOptions(
+            url=url,
+            outputFolder=Path(ytDlpConfig.installFolder.value),
+            name=f"yt-dlp 安装 ({asset})",
+            executableNames=(binaryName,),
+        ))
+
+
+ytDlpRuntime = YtDlpRuntime()

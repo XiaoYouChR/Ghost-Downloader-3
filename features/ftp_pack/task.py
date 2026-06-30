@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import ssl
@@ -6,351 +8,298 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from struct import pack, unpack
-from typing import Any
 from urllib.parse import unquote, urlparse
 
 import aioftp
 from loguru import logger
 
-from app.bases.interfaces import Worker
-from app.bases.models import SpecialFileSize, Task, TaskStage, TaskStatus
-from app.supports.config import cfg
-from app.supports.sysio import ftruncate, pwrite
-from app.supports.utils import getProxies, removePath, toSafeFilename
+from app.config.cfg import cfg
+from app.models.task import Task, TaskStep, TaskFile, TaskStatus, SpecialFileSize
+from app.platform.filesystem import deletePath, toPosixPath
+from app.platform.sysio import ftruncate, pwrite
+from app.services.speed_meter import speedMeter
 
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
 FTP_PATH_TIMEOUT = 30
-FTP_CHUNK_SIZE = 65536
 FTP_RETRY_DELAY = 5
 FTP_DEFAULT_PORT = 21
 FTPS_DEFAULT_PORT = 990
 
-def _parseSize(value) -> int:
-    size = int(value or 0)
-    return size if size > 0 else SpecialFileSize.UNKNOWN
-
-
-def _buildArgs(proxies: dict | None) -> dict[str, Any]:
-    kwargs: dict[str, Any] = {
-        "connection_timeout": FTP_CONNECTION_TIMEOUT,
-        "socket_timeout": FTP_SOCKET_TIMEOUT,
-        "path_timeout": FTP_PATH_TIMEOUT,
-    }
-
-    proxyUrl = ""
-    if isinstance(proxies, dict):
-        for key in ("ftp", "https", "http"):
-            value = str(proxies.get(key) or "").strip()
-            if value:
-                proxyUrl = value
-                break
-    if not proxyUrl:
-        return kwargs
-
-    parsedProxy = urlparse(proxyUrl)
-    if parsedProxy.scheme not in {"socks4", "socks5"}:
-        raise ValueError("FTP/FTPS 下载目前仅支持 SOCKS4/SOCKS5 代理或直连")
-    if not parsedProxy.hostname or not parsedProxy.port:
-        raise ValueError("代理配置无效")
-
-    kwargs.update(
-        {
-            "socks_host": parsedProxy.hostname,
-            "socks_port": parsedProxy.port,
-            "socks_version": 4 if parsedProxy.scheme == "socks4" else 5,
-        }
-    )
-    if parsedProxy.username:
-        kwargs["username"] = unquote(parsedProxy.username)
-    if parsedProxy.password:
-        kwargs["password"] = unquote(parsedProxy.password)
-    return kwargs
-
 
 @dataclass
 class FtpConnectionInfo:
+    scheme: str
     host: str
-    scheme: str = "ftp"
-    port: int = FTP_DEFAULT_PORT
-    username: str = "anonymous"
-    password: str = "anon@"
-    sourcePath: str = "/"
-    portSpecified: bool = False
+    port: int
+    username: str
+    password: str
+    sourcePath: str
+    hasPort: bool = False
 
-# 选了不一定下载, 故拆成 FtpFile 和 FtpStage
+    async def connect(self) -> aioftp.Client:
+        from app.config.cfg import proxy
+
+        scheme = self.scheme.lower()
+        if scheme != "ftps":
+            attempts = [(self.port, "plain")]
+        elif not self.hasPort:
+            attempts = [(FTP_DEFAULT_PORT, "explicit"), (FTPS_DEFAULT_PORT, "implicit")]
+        elif self.port == FTPS_DEFAULT_PORT:
+            attempts = [(self.port, "implicit")]
+        else:
+            attempts = [(self.port, "explicit"), (self.port, "implicit")]
+
+        kwargs = {
+            "connection_timeout": FTP_CONNECTION_TIMEOUT,
+            "socket_timeout": FTP_SOCKET_TIMEOUT,
+            "path_timeout": FTP_PATH_TIMEOUT,
+        }
+
+        url = proxy()
+        if url:
+            parsed = urlparse(url)
+            if parsed.scheme in {"socks4", "socks5", "socks5h"} and parsed.hostname and parsed.port:
+                kwargs.update({
+                    "socks_host": parsed.hostname,
+                    "socks_port": parsed.port,
+                    "socks_version": 4 if parsed.scheme == "socks4" else 5,
+                })
+                if parsed.username:
+                    kwargs["username"] = unquote(parsed.username)
+                if parsed.password:
+                    kwargs["password"] = unquote(parsed.password)
+
+        lastError: Exception | None = None
+        for index, (port, mode) in enumerate(attempts):
+            client = aioftp.Client(
+                **kwargs,
+                ssl=ssl.create_default_context() if mode == "implicit" else None,
+            )
+            try:
+                await client.connect(self.host, port)
+                if mode == "explicit":
+                    await client.upgrade_to_tls()
+                await client.login(self.username, self.password)
+                return client
+            except Exception as e:
+                client.close()
+                lastError = e
+                if index < len(attempts) - 1:
+                    logger.info(
+                        "{}://{}:{} 使用 {} TLS 连接失败，尝试下一种模式: {}",
+                        scheme, self.host, port, mode, repr(e),
+                    )
+
+        raise lastError or RuntimeError("无法建立 FTP 连接")
+
+
 @dataclass
-class FtpFile:
+class FtpSubworker:
     index: int
-    remotePath: str
-    relativePath: str
-    size: int
-    selected: bool = True
-    downloadedBytes: int = 0
-    completed: bool = False
+    start: int
+    end: int
+    receivedBytes: int = 0
 
-    def __post_init__(self):
-        self.remotePath = str(PurePosixPath(self.remotePath))
-        self.relativePath = str(PurePosixPath(self.relativePath))
+    @property
+    def position(self) -> int:
+        return self.start + self.receivedBytes
 
 
 @dataclass(kw_only=True)
-class FtpStage(TaskStage):
+class FtpFile(TaskFile):
+    remotePath: str
+
+    def __post_init__(self):
+        self.remotePath = toPosixPath(self.remotePath)
+        self.relativePath = toPosixPath(self.relativePath)
+
+
+@dataclass(kw_only=True)
+class FtpStep(TaskStep):
     fileIndex: int
     remotePath: str
-    fileSize: int
-    outputFile: str
-    supportsRange: bool = field(default=True)
-    accelerated: bool = field(default=False)
+    fileSize: int = 0
+    canUseRangeRequests: bool = False
+    isAccelerated: bool = False
+    subworkerCount: int = 8
+    def __post_init__(self):
+        self.canPause = self.canUseRangeRequests
+
+    @property
+    def outputPath(self) -> str:
+        task: FtpTask = self.task
+        if self.fileIndex >= 0 and task.files and task.isFolder:
+            for file in task.files:
+                if file.index == self.fileIndex:
+                    return toPosixPath(task.outputFolder / task.name / file.relativePath)
+        return toPosixPath(task.outputFolder / task.name)
+
+    def setOptions(self, options: dict) -> None:
+        if "subworkerCount" in options:
+            self.subworkerCount = options["subworkerCount"]
 
     def setStatus(self, status: TaskStatus, sync: bool = True):
         if status == TaskStatus.COMPLETED:
             self.receivedBytes = self.fileSize
         super().setStatus(status, sync=sync)
 
+    @classmethod
+    def fromFile(cls, file: TaskFile, task: Task) -> FtpStep:
+        ftpFile: FtpFile = file
+        return cls(
+            stepIndex=file.index + 1,
+            fileIndex=file.index,
+            remotePath=ftpFile.remotePath,
+            fileSize=file.size,
+            canUseRangeRequests=True,
+            subworkerCount=cfg.preBlockNum.value,
+        )
 
-@dataclass(kw_only=True, eq=False)
-class FtpTask(Task):
-    packId: str = field(default="ftp")
-    connectionInfo: FtpConnectionInfo | dict[str, Any]
-    sourceType: str = field(default="file")
-    files: list[FtpFile | dict[str, Any]] = field(default_factory=list)
-    proxies: dict | None = field(default_factory=getProxies)
-    blockNum: int = field(default_factory=lambda: cfg.preBlockNum.value)
-
-    def __post_init__(self):
-        if isinstance(self.connectionInfo, dict):
-            self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
-        self.files = [
-            item if isinstance(item, FtpFile) else FtpFile(**item)
-            for item in self.files
-        ]
-        self._filesByIndex = {file.index: file for file in self.files}
-        self.title = toSafeFilename(self.title, fallback="ftp_download")
-        super().__post_init__()
-        self._recalculateSelection()
-        self._syncFiles()
-        self.updateStagePaths()
-
-    @property
-    def countAll(self) -> int:
-        return len(self.files)
-
-    @property
-    def countSelected(self) -> int:
-        return sum(1 for file in self.files if file.selected)
-
-    @property
-    def isDirectory(self) -> bool:
-        return self.sourceType == "dir"
-
-    @property
-    def selectedStages(self) -> list["FtpStage"]:
-        return [
-            stage
-            for stage in self.stages
-            if self.fileByIndex(stage.fileIndex).selected
-        ]
-
-    def currentSnapshot(self) -> tuple[float, int, int]:
-        selectedStages = self.selectedStages
-        if not selectedStages:
-            return 0.0, 0, 0
-
-        receivedBytes = 0
-        speed = 0
-        progressSum = 0.0
-        for stage in selectedStages:
-            receivedBytes += stage.receivedBytes
-            speed += stage.speed
-            progressSum += stage.progress
-
-        if self.fileSize > 0:
-            progress = receivedBytes / self.fileSize * 100
-        else:
-            progress = progressSum / len(selectedStages)
-
-        return progress, speed, receivedBytes
-
-    def cleanup(self):
-        if self.isDirectory:
-            removePath(Path(self.outputFolder))
-            return
-
-        for stage in self.stages:
-            outputFile = getattr(stage, "outputFile", "").strip()
-            if not outputFile:
-                continue
-            target = Path(outputFile)
-            removePath(target)
-            removePath(Path(str(target) + ".ghd"))
-
-    def fileByIndex(self, index: int) -> FtpFile:
-        return self._filesByIndex[index]
-
-    def updateStagePaths(self):
-        rootPath = Path(self.path) / self.title
-        if not self.isDirectory:
-            outputFile = str(rootPath)
-            for stage in self.stages:
-                stage.outputFile = outputFile
-            return
-
-        for stage in self.stages:
-            file = self.fileByIndex(stage.fileIndex)
-            stage.outputFile = str(
-                rootPath / Path(*PurePosixPath(file.relativePath).parts)
-            )
-
-    def setTitle(self, title: str):
-        self.title = toSafeFilename(title, fallback=self.title or "ftp_download")
-        self.updateStagePaths()
-
-    def _recalculateSelection(self):
-        self.fileSize = sum(file.size for file in self.files if file.selected)
-
-    def _syncFiles(self):
-        stageByFileIndex = {stage.fileIndex: stage for stage in self.stages}
-
-        for file in self.files:
-            stage = stageByFileIndex[file.index]
-            file.downloadedBytes = max(0, int(stage.receivedBytes))
-            file.completed = stage.status == TaskStatus.COMPLETED
-            if file.completed and file.size > 0:
-                file.downloadedBytes = max(file.downloadedBytes, file.size)
-
-    def setSelection(self, selectedIndexes: set[int]):
-        if not selectedIndexes:
-            raise ValueError("至少需要选择一个文件")
-
-        changed = False
-        for file in self.files:
-            selected = file.index in selectedIndexes
-            if file.selected != selected:
-                changed = True
-            file.selected = selected
-
-        if not changed:
-            return
-
-        self._recalculateSelection()
-        self._syncFiles()
-        self.updateStatus()
-
-    def updateStatus(self) -> TaskStatus:
-        self._syncFiles()
-        selectedStages = self.selectedStages
-        if not selectedStages:
-            self.status = TaskStatus.WAITING
-            return self.status
-
-        stageStatus = [stage.status for stage in selectedStages]
-        activeStatuses = {
-            status for status in stageStatus if status != TaskStatus.COMPLETED
-        }
-        if TaskStatus.FAILED in activeStatuses:
-            self.status = TaskStatus.FAILED
-        elif not activeStatuses:
-            self.status = TaskStatus.COMPLETED
-        elif TaskStatus.RUNNING in activeStatuses:
-            self.status = TaskStatus.RUNNING
-        elif activeStatuses == {TaskStatus.PAUSED}:
-            self.status = TaskStatus.PAUSED
-        else:
-            self.status = TaskStatus.WAITING
-
-        return self.status
-
-    def setStatus(self, status: TaskStatus) -> TaskStatus:
-        selectedStageIds = {stage.stageId for stage in self.selectedStages}
-        for stage in self.stages:
-            if stage.stageId not in selectedStageIds:
-                continue
-            if stage.status == TaskStatus.COMPLETED:
-                continue
-            if status == TaskStatus.RUNNING and stage.status == TaskStatus.FAILED:
-                stage.reset(sync=False)
-            stage.setStatus(status, sync=False)
-
-        return self.updateStatus()
-
-    def reset(self) -> TaskStatus:
-        for file in self.files:
-            file.downloadedBytes = 0
-            file.completed = False
-        for stage in self.stages:
-            stage.reset(sync=False)
-        return self.updateStatus()
-
-    def reopen(self) -> bool:
-        if self.status != TaskStatus.COMPLETED:
-            return False
-
-        pendingSelectedStages = [
-            stage for stage in self.selectedStages if stage.status != TaskStatus.COMPLETED
-        ]
-        if not pendingSelectedStages:
-            return False
-
-        for stage in pendingSelectedStages:
-            stage.setStatus(TaskStatus.PAUSED, sync=False)
-
-        self._syncFiles()
-        self.updateStatus()
-        return True
-
-    def applySettings(self, payload: dict[str, Any]):
-        super().applySettings(payload)
-        if "proxies" in payload:
-            self.proxies = payload["proxies"]
-        self.updateStagePaths()
-
-    @property
-    def canPause(self) -> bool:
-        selectedStages = self.selectedStages
-        return bool(selectedStages) and all(stage.supportsRange for stage in selectedStages)
-
-    def pendingStages(self):
-        self.stages.sort(key=lambda stage: stage.stageIndex)
-        for stage in self.selectedStages:
-            if self.status != TaskStatus.RUNNING:
-                break
-            if stage.status == TaskStatus.COMPLETED:
-                continue
-            yield stage
-
-    async def run(self):
-        currentStage = None
+    def _loadRecord(self) -> list[FtpSubworker]:
+        recordPath = Path(self.outputPath + ".ghd")
+        if not recordPath.exists():
+            return []
         try:
-            for stage in self.pendingStages():
-                currentStage = stage
-                await FtpWorker(stage).run()
-        except CancelledError:
-            logger.info(f"{self.title} 停止下载")
-            raise
+            subworkers = []
+            with open(recordPath, "rb") as f:
+                index = 0
+                while data := f.read(24):
+                    start, position, end = unpack("<QQQ", data)
+                    subworkers.append(FtpSubworker(
+                        index=index, start=start, end=end,
+                        receivedBytes=position - start,
+                    ))
+                    index += 1
+            return subworkers
         except Exception as e:
-            if currentStage is not None and not currentStage.error:
-                currentStage.setError(e)
-            logger.opt(exception=e).error("{} 下载失败", self.title)
-            raise
+            logger.opt(exception=e).error("恢复 FTP 下载分片失败 {}", self.outputPath)
+            return []
 
+    def _buildSubworkers(self) -> list[FtpSubworker]:
+        if not self.canUseRangeRequests:
+            return [FtpSubworker(index=0, start=0, end=SpecialFileSize.NOT_SUPPORTED)]
 
-@dataclass
-class FtpSubworker:
-    start: int
-    progress: int
-    end: int
+        if self.fileSize <= 0:
+            return [FtpSubworker(index=0, start=0, end=SpecialFileSize.UNKNOWN)]
 
+        count = min(self.subworkerCount, self.fileSize)
+        chunkSize = self.fileSize // count
+        if chunkSize <= 0:
+            return [FtpSubworker(index=0, start=0, end=max(0, self.fileSize - 1))]
 
-class FtpWorker(Worker):
-    def __init__(self, stage: FtpStage):
-        super().__init__(stage)
-        self.stage = stage
-        self.task: FtpTask = stage._task
-        self.speedHistory: list[int] = []
-        self.accelCheckTime = 0.0
-        self.subworkerTasks: set[asyncio.Task] = set()
-        self._stopping = False
+        subworkers = []
+        start = 0
+        for i in range(count - 1):
+            end = start + chunkSize - 1
+            subworkers.append(FtpSubworker(index=i, start=start, end=end))
+            start = end + 1
+        subworkers.append(FtpSubworker(index=count - 1, start=start, end=self.fileSize - 1))
+        return subworkers
+
+    def _deleteRecord(self) -> None:
+        target = Path(self.outputPath + ".ghd")
+        try:
+            if target.is_file() or target.is_symlink():
+                target.unlink()
+        except Exception as e:
+            logger.opt(exception=e).error("删除进度文件失败 {}", target)
+
+    def _reassignSubworker(self) -> None:
+        if self._stopping or self.task.status != TaskStatus.RUNNING or self.fileSize <= 0:
+            return
+
+        slowest = max(self._subworkers, key=lambda sw: sw.end - sw.position + 1)
+        remainingBytes = slowest.end - slowest.position + 1
+        if remainingBytes < cfg.maxReassignSize.value * 1024:
+            return
+
+        base = remainingBytes // 2
+        remainder = remainingBytes % 2
+        oldEnd = slowest.end
+        slowest.end = slowest.position + base + remainder - 1
+
+        newSubworker = FtpSubworker(
+            index=len(self._subworkers),
+            start=slowest.end + 1,
+            end=oldEnd,
+        )
+        self._subworkers.insert(self._subworkers.index(slowest) + 1, newSubworker)
+        self._startSubworkerTask(newSubworker)
+
+    def _autoSpeedUp(self) -> None:
+        if self.isAccelerated or not cfg.autoSpeedUp.value:
+            return
+
+        self._speedHistory.append(self.speed)
+        if len(self._speedHistory) > 5:
+            self._speedHistory.pop(0)
+        if len(self._speedHistory) < 5:
+            return
+
+        avgSpeed = sum(self._speedHistory) / len(self._speedHistory)
+        if avgSpeed == 0:
+            return
+
+        maxDeviation = max(abs(s - avgSpeed) / avgSpeed for s in self._speedHistory)
+        if maxDeviation > 0.15:
+            return
+
+        if self._accelCheckTime == 0:
+            self._accelInitialWorkers = len(self._subworkers)
+            self._accelInitialSpeed = avgSpeed
+            self._accelCheckTime = asyncio.get_event_loop().time()
+            for _ in range(4):
+                self._reassignSubworker()
+        else:
+            elapsed = asyncio.get_event_loop().time() - self._accelCheckTime
+            if elapsed <= 5:
+                return
+
+            workerRatio = (len(self._subworkers) - self._accelInitialWorkers) / self._accelInitialWorkers
+            speedRatio = (avgSpeed - self._accelInitialSpeed) / self._accelInitialSpeed
+
+            if speedRatio < 0.8 * workerRatio:
+                self.isAccelerated = True
+                logger.info("自动加速已禁用，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
+                            workerRatio, speedRatio)
+            else:
+                self._accelCheckTime = 0
+                logger.info("继续自动加速，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
+                            workerRatio, speedRatio)
+
+    async def _supervise(self) -> None:
+        recordFile = None
+        if self.canUseRangeRequests:
+            recordFile = open(self.outputPath + ".ghd", "wb")
+        try:
+            self.receivedBytes = sum(sw.receivedBytes for sw in self._subworkers)
+            while True:
+                if recordFile is not None:
+                    data = tuple(
+                        val for sw in self._subworkers
+                        for val in (sw.start, sw.position, sw.end)
+                    )
+                    recordFile.seek(0)
+                    recordFile.write(pack("<" + "Q" * len(data), *data))
+                    recordFile.flush()
+                    recordFile.truncate()
+
+                receivedBytes = sum(sw.receivedBytes for sw in self._subworkers)
+                self.speed = receivedBytes - self.receivedBytes
+                self.receivedBytes = receivedBytes
+                if self.fileSize > 0:
+                    self.progress = (receivedBytes / self.fileSize) * 100
+                else:
+                    self.progress = 0
+
+                self._autoSpeedUp()
+                await asyncio.sleep(1)
+        except CancelledError:
+            pass
+        finally:
+            if recordFile is not None:
+                recordFile.close()
 
     def _closeTransfer(self, client: aioftp.Client | None, stream):
         with suppress(Exception):
@@ -359,550 +308,284 @@ class FtpWorker(Worker):
         if client is not None:
             client.close()
 
-    def _startSubworker(self, subworker: FtpSubworker):
-        if self._stopping:
-            return
+    async def _runSubworker(self, subworker: FtpSubworker, fd: int) -> None:
+        ftpTask: FtpTask = self.task
 
-        task = asyncio.create_task(self.handleSubworker(subworker))
-        self.subworkerTasks.add(task)
-        task.add_done_callback(self.subworkerTasks.discard)
-
-    async def _stopSubworkers(self):
-        if self._stopping:
-            return
-
-        self._stopping = True
-        runningTasks = tuple(task for task in self.subworkerTasks if not task.done())
-
-        for task in runningTasks:
-            task.cancel()
-
-        if not runningTasks:
-            return
-
-        done, pending = await asyncio.wait(runningTasks, timeout=5)
-        for finishedTask in done:
-            with suppress(Exception, CancelledError):
-                finishedTask.result()
-
-        if pending:
-            logger.warning(
-                "{} 仍有 {} 个 FTP 子任务未及时退出，已继续结束当前任务",
-                self.stage.outputFile,
-                len(pending),
-            )
-
-    def reassignSubworker(self):
-        if self._stopping or self.task.status != TaskStatus.RUNNING or self.stage.fileSize <= 0:
-            return
-
-        slowestSubworker = max(
-            self.subworkers,
-            key=lambda subworker: subworker.end - subworker.progress,
-        )
-        remainingBytes = slowestSubworker.end - slowestSubworker.progress
-        if remainingBytes < cfg.maxReassignSize.value * 1048576:
-            return
-
-        base = remainingBytes // 2
-        remainder = remainingBytes % 2
-        slowestSubworker.end = slowestSubworker.progress + base + remainder
-        newSubworker = FtpSubworker(
-            slowestSubworker.end + 1,
-            slowestSubworker.end + 1,
-            slowestSubworker.end + base,
-        )
-        self.subworkers.insert(
-            self.subworkers.index(slowestSubworker) + 1,
-            newSubworker,
-        )
-        self._startSubworker(newSubworker)
-
-    async def _downloadRange(self, subworker: FtpSubworker):
-        client = None
-        stream = None
-        try:
-            client = await _openClient(self.task.connectionInfo, self.task.proxies)
-            stream = await client.download_stream(
-                PurePosixPath(self.stage.remotePath),
-                offset=subworker.progress,
-            )
-
-            remaining = subworker.end - subworker.progress + 1
-            while remaining > 0:
-                chunk = await stream.read(min(FTP_CHUNK_SIZE, remaining))
-                if not chunk:
-                    raise RuntimeError("FTP 数据流提前结束")
-                chunkSize = len(chunk)
-
-                await cfg.checkSpeedLimitation()
-                pwrite(self.fileHandle, chunk, subworker.progress)
-                subworker.progress += chunkSize
-                remaining -= chunkSize
-                cfg.globalSpeed += chunkSize
-        finally:
-            self._closeTransfer(client, stream)
-
-    async def _downloadUnknown(self, subworker: FtpSubworker):
-        client = None
-        stream = None
-        try:
-            client = await _openClient(self.task.connectionInfo, self.task.proxies)
-            stream = await client.download_stream(
-                PurePosixPath(self.stage.remotePath),
-                offset=subworker.progress,
-            )
-
-            while True:
-                chunk = await stream.read(FTP_CHUNK_SIZE)
-                if not chunk:
-                    return
-                chunkSize = len(chunk)
-
-                await cfg.checkSpeedLimitation()
-                pwrite(self.fileHandle, chunk, subworker.progress)
-                subworker.progress += chunkSize
-                cfg.globalSpeed += chunkSize
-        finally:
-            self._closeTransfer(client, stream)
-
-    async def _downloadWholeFile(self, subworker: FtpSubworker):
-        client = None
-        stream = None
-        try:
-            client = await _openClient(self.task.connectionInfo, self.task.proxies)
-            stream = await client.download_stream(PurePosixPath(self.stage.remotePath))
-
-            ftruncate(self.fileHandle, 0)
-            subworker.progress = 0
-
-            while True:
-                chunk = await stream.read(FTP_CHUNK_SIZE)
-                if not chunk:
-                    ftruncate(self.fileHandle, subworker.progress)
-                    return
-                chunkSize = len(chunk)
-
-                await cfg.checkSpeedLimitation()
-                pwrite(self.fileHandle, chunk, subworker.progress)
-                subworker.progress += chunkSize
-                cfg.globalSpeed += chunkSize
-        finally:
-            self._closeTransfer(client, stream)
-
-    async def handleSubworker(self, subworker: FtpSubworker):
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
+                client = None
+                stream = None
                 try:
-                    await self._downloadUnknown(subworker)
-                    return
+                    client = await ftpTask.connectionInfo.connect()
+                    stream = await client.download_stream(
+                        PurePosixPath(self.remotePath),
+                        offset=subworker.position,
+                    )
+                    while True:
+                        chunk = await stream.read(65536)
+                        if not chunk:
+                            return
+                        pwrite(fd, chunk, subworker.position)
+                        subworker.receivedBytes += len(chunk)
+                        speedMeter.addSpeed(len(chunk))
+                        await speedMeter.waitForSpeedLimit()
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
                         raise CancelledError
-                    logger.opt(exception=e).error(
-                        "{} 的未知大小分片 {} 连接中断，5 秒后重试",
-                        self.stage.outputFile,
-                        subworker,
-                    )
+                    logger.opt(exception=e).error("{} 的未知大小分片连接中断，5 秒后重试", self.outputPath)
                     await asyncio.sleep(FTP_RETRY_DELAY)
+                finally:
+                    self._closeTransfer(client, stream)
+
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
             while True:
+                client = None
+                stream = None
                 try:
-                    await self._downloadWholeFile(subworker)
-                    return
+                    client = await ftpTask.connectionInfo.connect()
+                    stream = await client.download_stream(PurePosixPath(self.remotePath))
+                    ftruncate(fd, 0)
+                    subworker.receivedBytes = 0
+                    while True:
+                        chunk = await stream.read(65536)
+                        if not chunk:
+                            ftruncate(fd, subworker.receivedBytes)
+                            return
+                        pwrite(fd, chunk, subworker.receivedBytes)
+                        subworker.receivedBytes += len(chunk)
+                        speedMeter.addSpeed(len(chunk))
+                        await speedMeter.waitForSpeedLimit()
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
                         raise CancelledError
-                    logger.opt(exception=e).error(
-                        "{} 不支持断点续传，已从头开始重试",
-                        self.stage.outputFile,
-                    )
+                    logger.opt(exception=e).error("{} 不支持断点续传，已从头开始重试", self.outputPath)
                     await asyncio.sleep(FTP_RETRY_DELAY)
+                finally:
+                    self._closeTransfer(client, stream)
+
         else:
-            while subworker.progress <= subworker.end:
+            while subworker.position <= subworker.end:
+                client = None
+                stream = None
                 try:
-                    await self._downloadRange(subworker)
+                    client = await ftpTask.connectionInfo.connect()
+                    stream = await client.download_stream(
+                        PurePosixPath(self.remotePath),
+                        offset=subworker.position,
+                    )
+                    remaining = subworker.end - subworker.position + 1
+                    while remaining > 0:
+                        chunk = await stream.read(min(65536, remaining))
+                        if not chunk:
+                            raise RuntimeError("FTP 数据流提前结束")
+                        pwrite(fd, chunk, subworker.position)
+                        chunkSize = len(chunk)
+                        subworker.receivedBytes += chunkSize
+                        remaining -= chunkSize
+                        speedMeter.addSpeed(chunkSize)
+                        await speedMeter.waitForSpeedLimit()
                     break
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
                         raise CancelledError
-                    logger.opt(exception=e).error(
-                        "{} 的分片 {} 连接中断，5 秒后重试",
-                        self.stage.outputFile,
-                        subworker,
-                    )
+                    logger.opt(exception=e).error("{} 的分片连接中断，5 秒后重试", self.outputPath)
                     await asyncio.sleep(FTP_RETRY_DELAY)
+                finally:
+                    self._closeTransfer(client, stream)
 
-            if subworker.progress > subworker.end:
-                subworker.progress = subworker.end + 1
+            if subworker.position > subworker.end:
+                subworker.receivedBytes = subworker.end - subworker.start + 1
 
-            self.reassignSubworker()
+            self._reassignSubworker()
 
-    def _trySpeedUp(self):
-        if self.stage.accelerated or not cfg.autoSpeedUp.value:
+    def _startSubworkerTask(self, subworker: FtpSubworker):
+        if self._stopping:
             return
+        task = asyncio.create_task(self._runSubworker(subworker, self._fd))
+        self._subworkerTasks.add(task)
+        task.add_done_callback(self._subworkerTasks.discard)
 
-        self.speedHistory.append(self.stage.speed)
-        if len(self.speedHistory) > 5:
-            self.speedHistory.pop(0)
-        if len(self.speedHistory) < 5:
+    async def _stopSubworkerTasks(self):
+        if self._stopping:
             return
+        self._stopping = True
+        running = tuple(t for t in self._subworkerTasks if not t.done())
+        for t in running:
+            t.cancel()
+        if running:
+            done, _ = await asyncio.wait(running, timeout=5)
+            for t in done:
+                with suppress(Exception, CancelledError):
+                    t.result()
 
-        avgSpeed = sum(self.speedHistory) / len(self.speedHistory)
-        if avgSpeed == 0:
-            return
-
-        maxDeviation = max(
-            abs(speed - avgSpeed) / avgSpeed for speed in self.speedHistory
-        )
-        if maxDeviation > 0.15:
-            return
-
-        if self.accelCheckTime == 0:
-            self.accelInitialWorkers = len(self.subworkers)
-            self.accelInitialSpeed = avgSpeed
-            self.accelCheckTime = asyncio.get_event_loop().time()
-
-            for _ in range(4):
-                self.reassignSubworker()
-        else:
-            elapsedTime = asyncio.get_event_loop().time() - self.accelCheckTime
-            if elapsedTime <= 5:
-                return
-
-            currentWorkers = len(self.subworkers)
-            workerIncreaseRatio = (
-                (currentWorkers - self.accelInitialWorkers) / self.accelInitialWorkers
-            )
-            speedIncreaseRatio = (
-                (avgSpeed - self.accelInitialSpeed) / self.accelInitialSpeed
-            )
-
-            if speedIncreaseRatio < 0.8 * workerIncreaseRatio:
-                self.stage.accelerated = True
-                logger.info(
-                    "FTP 自动加速已禁用，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
-                    workerIncreaseRatio,
-                    speedIncreaseRatio,
-                )
-            else:
-                self.accelCheckTime = 0
-                logger.info(
-                    "继续 FTP 自动加速，subworker 增加比: {:.2%}, 速度提升比: {:.2%}",
-                    workerIncreaseRatio,
-                    speedIncreaseRatio,
-                )
-
-    async def supervisor(self):
-        recordFileHandle = None
-        if self.stage.supportsRange:
-            recordFileHandle = open(Path(self.stage.outputFile + ".ghd"), "wb")
-        try:
-            self.stage.receivedBytes = sum(
-                subworker.progress - subworker.start for subworker in self.subworkers
-            )
-            while True:
-                if recordFileHandle is not None:
-                    data = tuple(
-                        value
-                        for subworker in self.subworkers
-                        for value in (
-                            subworker.start,
-                            subworker.progress,
-                            subworker.end,
-                        )
-                    )
-                    recordFileHandle.seek(0)
-                    recordFileHandle.write(pack("<" + "Q" * len(data), *data))
-                    recordFileHandle.flush()
-                    recordFileHandle.truncate()
-
-                receivedBytes = sum(
-                    subworker.progress - subworker.start
-                    for subworker in self.subworkers
-                )
-                self.stage.speed = receivedBytes - self.stage.receivedBytes
-                self.stage.receivedBytes = receivedBytes
-                if self.stage.fileSize > 0:
-                    self.stage.progress = (receivedBytes / self.stage.fileSize) * 100
-                else:
-                    self.stage.progress = 0
-
-                self._trySpeedUp()
-                await asyncio.sleep(1)
-        except CancelledError:
-            logger.info(f"{self.stage.outputFile} 停止下载")
-        except Exception as e:
-            logger.opt(exception=e).error(
-                "{} 的监控协程异常退出",
-                self.stage.outputFile,
-            )
-        finally:
-            if recordFileHandle is not None:
-                recordFileHandle.close()
-
-    def _restoreProgress(self) -> bool:
-        recordFile = Path(self.stage.outputFile + ".ghd")
-        if not recordFile.exists():
-            return False
-
-        try:
-            with open(recordFile, "rb") as f:
-                while True:
-                    data = f.read(24)
-                    if not data:
-                        break
-                    start, progress, end = unpack("<QQQ", data)
-                    self.subworkers.append(FtpSubworker(start, progress, end))
-            return True
-        except Exception as e:
-            logger.opt(exception=e).error("恢复 FTP 下载分片失败 {}", self.stage.outputFile)
-            self.subworkers.clear()
-            return False
-
-    def _generateSubworkers(self):
-        if not self.stage.supportsRange:
-            self.subworkers.append(FtpSubworker(0, 0, SpecialFileSize.NOT_SUPPORTED))
-            return
-
-        if self.stage.fileSize <= 0:
-            self.subworkers.append(FtpSubworker(0, 0, SpecialFileSize.UNKNOWN))
-            return
-
-        step = self.stage.fileSize // self.task.blockNum
-        if step <= 0:
-            self.subworkers.append(FtpSubworker(0, 0, max(0, self.stage.fileSize - 1)))
-            return
-
-        start = 0
-        for _ in range(self.task.blockNum - 1):
-            end = start + step - 1
-            self.subworkers.append(FtpSubworker(start, start, end))
-            start = end + 1
-
-        self.subworkers.append(FtpSubworker(start, start, self.stage.fileSize - 1))
-
-    def _cleanupRecordFile(self):
-        target = Path(self.stage.outputFile + ".ghd")
-        try:
-            if target.is_file() or target.is_symlink():
-                target.unlink()
-        except Exception as e:
-            logger.opt(exception=e).error("failed to cleanup temporary file {}", target)
-
-    async def run(self):
-        self.subworkers: list[FtpSubworker] = []
-        self.subworkerTasks.clear()
+    async def run(self) -> None:
+        self._subworkers: list[FtpSubworker] = []
+        self._subworkerTasks: set[asyncio.Task] = set()
+        self._speedHistory: list[int] = []
+        self._accelCheckTime = 0.0
         self._stopping = False
-        shouldCleanupRecordFile = False
-        Path(self.stage.outputFile).parent.mkdir(parents=True, exist_ok=True)
+        shouldDeleteRecord = False
+
+        Path(self.outputPath).parent.mkdir(parents=True, exist_ok=True)
 
         restored = False
-        if self.stage.supportsRange:
-            restored = self._restoreProgress()
-        else:
-            self._cleanupRecordFile()
+        if self.canUseRangeRequests:
+            loaded = self._loadRecord()
+            if loaded:
+                self._subworkers = loaded
+                restored = True
 
         if not restored:
-            logger.info("正在为 {} 生成 FTP 下载分片", self.stage.outputFile)
-            self._generateSubworkers()
-        else:
-            logger.info("从进度文件恢复 FTP 下载分片 {}", self.stage.outputFile)
+            if not self.canUseRangeRequests:
+                self._deleteRecord()
+            self._subworkers = self._buildSubworkers()
 
         openMode = os.O_RDWR | os.O_CREAT
-        if not self.stage.supportsRange:
+        if not self.canUseRangeRequests:
             openMode |= os.O_TRUNC
-        self.fileHandle = os.open(self.stage.outputFile, openMode, 0o666)
+        self._fd = os.open(self.outputPath, openMode, 0o666)
 
-        if not restored and self.stage.fileSize > 0:
+        if not restored and self.fileSize > 0:
             try:
-                ftruncate(self.fileHandle, self.stage.fileSize)
+                ftruncate(self._fd, self.fileSize)
             except Exception as e:
-                logger.opt(exception=e).error("{} 预分配文件大小失败", self.stage.outputFile)
+                logger.opt(exception=e).error("{} 预分配文件大小失败", self.outputPath)
 
-        supervisor = asyncio.create_task(self.supervisor())
+        supervisor = asyncio.create_task(self._supervise())
 
         try:
-            for subworker in self.subworkers:
-                self._startSubworker(subworker)
+            for subworker in self._subworkers:
+                self._startSubworkerTask(subworker)
 
-            while self.subworkerTasks:
-                currentTasks = tuple(self.subworkerTasks)
-                done, _ = await asyncio.wait(
-                    currentTasks,
-                    return_when=asyncio.FIRST_EXCEPTION,
-                )
-                for finishedTask in done:
-                    if finishedTask.cancelled():
+            while self._subworkerTasks:
+                currentTasks = tuple(self._subworkerTasks)
+                done, _ = await asyncio.wait(currentTasks, return_when=asyncio.FIRST_EXCEPTION)
+                for finished in done:
+                    if finished.cancelled():
                         raise CancelledError
-                    exception = finishedTask.exception()
-                    if exception is not None:
-                        raise exception
+                    exc = finished.exception()
+                    if exc is not None:
+                        raise exc
 
-            self.stage.setStatus(TaskStatus.COMPLETED)
-            shouldCleanupRecordFile = True
-            logger.info("{} 下载完成", self.stage.outputFile)
+            self.setStatus(TaskStatus.COMPLETED)
+            shouldDeleteRecord = True
         except CancelledError:
-            await self._stopSubworkers()
-            self.stage.setStatus(TaskStatus.PAUSED)
+            await self._stopSubworkerTasks()
+            self.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
-            await self._stopSubworkers()
-            self.stage.setError(e)
-            logger.opt(exception=e).error("{} 下载阶段失败", self.stage.outputFile)
+            await self._stopSubworkerTasks()
+            self.setError(e)
             raise
         finally:
             if not supervisor.done():
                 supervisor.cancel()
-                with suppress(asyncio.CancelledError):
+                with suppress(CancelledError):
                     await supervisor
-            self.subworkerTasks.clear()
-            os.close(self.fileHandle)
-            if shouldCleanupRecordFile:
-                self._cleanupRecordFile()
+            self._subworkerTasks.clear()
+            os.close(self._fd)
+            if shouldDeleteRecord:
+                self._deleteRecord()
 
 
-async def _openClient(connectionInfo: FtpConnectionInfo, proxies: dict | None) -> aioftp.Client:
-    scheme = connectionInfo.scheme.lower()
-    if scheme != "ftps":
-        attempts = [(connectionInfo.port, "plain")]
-    elif not connectionInfo.portSpecified:
-        attempts = [(FTP_DEFAULT_PORT, "explicit"), (FTPS_DEFAULT_PORT, "implicit")]
-    elif connectionInfo.port == FTPS_DEFAULT_PORT:
-        attempts = [(connectionInfo.port, "implicit")]
-    else:
-        attempts = [(connectionInfo.port, "explicit"), (connectionInfo.port, "implicit")]
+@dataclass(kw_only=True, eq=False)
+class FtpTask(Task):
+    packId: str = "ftp"
+    canEdit = True
+    fileType = FtpFile
+    connectionInfo: FtpConnectionInfo
+    sourceType: str = "file"
+    stepType: type = field(default=FtpStep, repr=False)
 
-    lastError: Exception | None = None
+    def __post_init__(self):
+        if isinstance(self.connectionInfo, dict):
+            self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
+        super().__post_init__()
 
-    for index, (port, mode) in enumerate(attempts):
-        client = aioftp.Client(
-            **_buildArgs(proxies),
-            ssl=ssl.create_default_context() if mode == "implicit" else None,
-        )
-        try:
-            await client.connect(connectionInfo.host, port)
-            if mode == "explicit":
-                await client.upgrade_to_tls()
-            await client.login(connectionInfo.username, connectionInfo.password)
-            return client
-        except Exception as e:
-            client.close()
-            lastError = e
-            if index < len(attempts) - 1:
-                logger.info(
-                    "{}://{}:{} 使用 {} TLS 连接失败，尝试下一种模式: {}",
-                    connectionInfo.scheme.lower(),
-                    connectionInfo.host,
-                    port,
-                    mode,
-                    repr(e),
-                )
+    @property
+    def isFolder(self) -> bool:
+        return self.sourceType == "dir"
 
-    raise lastError or RuntimeError("无法建立 FTP 连接")
+    @property
+    def countSelected(self) -> int:
+        return sum(1 for file in self.files if file.selected)
 
+    def _updateFilesFromSteps(self) -> None:
+        if not self.files:
+            return
+        for step in self.steps:
+            fileIndex = getattr(step, "fileIndex", None)
+            if fileIndex is not None and fileIndex < len(self.files):
+                file = self.files[fileIndex]
+                file.downloadedBytes = step.receivedBytes
+                file.completed = step.status == TaskStatus.COMPLETED
 
-
-async def _supportsRange(client: aioftp.Client) -> bool:
-    try:
-        await client.command("TYPE I", "200")
-        await client.command("REST 1", "350")
-        return True
-    except Exception as e:
-        logger.info("FTP 服务器不支持 REST 断点续传: {}", repr(e))
-        return False
-
-
-async def resolve(payload: dict) -> FtpTask:
-    url = str(payload["url"]).strip()
-    parsedUrl = urlparse(url)
-    scheme = parsedUrl.scheme.lower()
-    if scheme not in {"ftp", "ftps"}:
-        raise ValueError("不是有效的 FTP/FTPS 链接")
-    if not parsedUrl.hostname:
-        raise ValueError("FTP/FTPS 链接缺少主机名")
-
-    sourcePath = PurePosixPath(unquote(parsedUrl.path or "/"))
-    connectionInfo = FtpConnectionInfo(
-        scheme=scheme,
-        host=parsedUrl.hostname,
-        port=parsedUrl.port or FTP_DEFAULT_PORT,
-        username=unquote(parsedUrl.username or "anonymous"),
-        password=unquote(parsedUrl.password or "anon@"),
-        sourcePath=str(sourcePath),
-        portSpecified=parsedUrl.port is not None,
-    )
-    proxies = payload.get("proxies", getProxies())
-    path = Path(payload.get("path", cfg.downloadFolder.value))
-    blockNum = payload.get("preBlockNum", cfg.preBlockNum.value)
-
-    client = await _openClient(connectionInfo, proxies)
-    try:
-        sourceInfo = await client.stat(sourcePath)
-        sourceType = sourceInfo["type"]
-        if sourceType not in {"file", "dir"}:
-            raise ValueError("当前 FTP 路径既不是普通文件，也不是目录")
-
-        supportsRange = await _supportsRange(client)
-        files: list[FtpFile] = []
-        stages: list[FtpStage] = []
-
-        if sourceType == "file":
-            files.append(
-                FtpFile(
-                    index=0,
-                    remotePath=str(sourcePath),
-                    relativePath=sourcePath.name or "ftp_file",
-                    size=_parseSize(sourceInfo.get("size")),
-                )
-            )
+    def updateStatus(self) -> TaskStatus:
+        self._updateFilesFromSteps()
+        selected = [s for s in self.steps if self._isStepSelected(s)]
+        if not selected:
+            self.status = TaskStatus.COMPLETED
+            return self.status
+        statuses = [s.status for s in selected]
+        if any(s == TaskStatus.FAILED for s in statuses):
+            self.status = TaskStatus.FAILED
+        elif all(s == TaskStatus.COMPLETED for s in statuses):
+            self.status = TaskStatus.COMPLETED
+        elif any(s == TaskStatus.RUNNING for s in statuses):
+            self.status = TaskStatus.RUNNING
+        elif all(s == TaskStatus.PAUSED for s in statuses):
+            self.status = TaskStatus.PAUSED
         else:
-            entries = [item async for item in client.list(sourcePath, recursive=True)]
-            index = 0
-            for remotePath, info in entries:
-                if info["type"] != "file":
-                    continue
-                files.append(
-                    FtpFile(
-                        index=index,
-                        remotePath=str(remotePath),
-                        relativePath=(str(remotePath.relative_to(sourcePath)) if sourcePath in remotePath.parents else remotePath.name),
-                        size=_parseSize(info.get("size")),
-                    )
-                )
-                index += 1
+            self.status = TaskStatus.WAITING
+        return self.status
 
-            if not files:
-                raise ValueError("该 FTP 目录中没有可下载的普通文件")
+    def setStatus(self, status: TaskStatus) -> TaskStatus:
+        for step in self.steps:
+            if not self._isStepSelected(step):
+                continue
+            if step.status == TaskStatus.COMPLETED:
+                continue
+            if status == TaskStatus.RUNNING and step.status == TaskStatus.FAILED:
+                step.reset(sync=False)
+            step.setStatus(status, sync=False)
+        return self.updateStatus()
 
-        for file in files:
-            stages.append(
-                FtpStage(
-                    stageIndex=len(stages) + 1,
-                    fileIndex=file.index,
-                    remotePath=file.remotePath,
-                    fileSize=file.size,
-                    outputFile="",
-                    supportsRange=supportsRange,
-                )
-            )
+    def pendingSteps(self):
+        self.steps.sort(key=lambda step: step.stepIndex)
+        for step in self.steps:
+            if self.status != TaskStatus.RUNNING:
+                break
+            if not self._isStepSelected(step):
+                continue
+            if step.status == TaskStatus.COMPLETED:
+                continue
+            yield step
 
-        task = FtpTask(
-            title=toSafeFilename(sourcePath.name, fallback="ftp_download") if sourcePath.name else toSafeFilename(connectionInfo.host, fallback="ftp_download"),
-            url=url,
-            fileSize=sum(file.size for file in files),
-            path=path,
-            stages=stages,
-            connectionInfo=connectionInfo,
-            sourceType=sourceType,
-            files=files,
-            proxies=proxies,
-            blockNum=blockNum if isinstance(blockNum, int) else cfg.preBlockNum.value,
-        )
-        return task
-    finally:
-        if client is not None:
-            try:
-                await client.quit()
-            except Exception:
-                client.close()
+    def currentSnapshot(self) -> tuple[float, int, int]:
+        selected = [s for s in self.steps if self._isStepSelected(s)]
+        if not selected:
+            return 0.0, 0, 0
+        progress = sum(s.progress for s in selected) / len(selected)
+        speed = sum(s.speed for s in selected)
+        receivedBytes = sum(s.receivedBytes for s in selected)
+        return progress, speed, receivedBytes
+
+    def deleteFiles(self):
+        if self.isFolder:
+            deletePath(Path(self.outputPath))
+            return
+        for step in self.steps:
+            target = Path(step.outputPath)
+            deletePath(target)
+            deletePath(Path(f"{target}.ghd"))
+
+    def _isStepSelected(self, step) -> bool:
+        if not self.files:
+            return True
+        fileIndex = getattr(step, "fileIndex", None)
+        if fileIndex is None:
+            return True
+        for file in self.files:
+            if file.index == fileIndex:
+                return file.selected
+        return False

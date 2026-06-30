@@ -1,17 +1,10 @@
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from app.bases.interfaces import FeaturePack
-from app.bases.models import Task
+from app.models.pack import FeaturePack, TaskParser
+from app.models.task import Task, TaskOptions
 from .config import githubConfig, selectedProxySite
 
-if TYPE_CHECKING:
-    from features.http_pack.pack import HttpPack
-else:
-    from http_pack.pack import HttpPack
-
-
-_SUPPORTED_GITHUB_HOSTS = {
+GITHUB_HOSTS = {
     "api.github.com",
     "codeload.github.com",
     "gist.github.com",
@@ -24,7 +17,7 @@ _SUPPORTED_GITHUB_HOSTS = {
 }
 
 
-def _isSupportedGitHubUrl(url: str) -> bool:
+def isGitHubFileUrl(url: str) -> bool:
     parsedUrl = urlparse(url)
     scheme = parsedUrl.scheme.lower()
     host = (parsedUrl.hostname or "").lower().removeprefix("www.")
@@ -33,7 +26,7 @@ def _isSupportedGitHubUrl(url: str) -> bool:
     if scheme not in {"http", "https"} or not host:
         return False
 
-    if host in _SUPPORTED_GITHUB_HOSTS:
+    if host in GITHUB_HOSTS:
         return True
 
     if host != "github.com":
@@ -47,25 +40,34 @@ def _isSupportedGitHubUrl(url: str) -> bool:
     )
 
 
-class GitHubPack(FeaturePack):
-    packId = "github"
+class GitHubParser(TaskParser):
     priority = 90
-    config = githubConfig
 
-    def matches(self, url: str) -> bool:
-        return self.config.enabled.value and bool(selectedProxySite()) and _isSupportedGitHubUrl(url)
+    def match(self, options: TaskOptions) -> bool:
+        return (
+            githubConfig.enabled.value
+            and bool(selectedProxySite())
+            and isGitHubFileUrl(options.url)
+        )
 
-    async def parse(self, payload: dict) -> Task:
-        originalUrl = str(payload["url"]).strip()
-        proxiedPayload = payload.copy()
-        proxiedPayload["url"] = f"{selectedProxySite().rstrip('/')}/{originalUrl.lstrip('/')}"
+    async def parse(self, options: TaskOptions) -> Task:
+        from dataclasses import replace
+        from app.services.feature_service import featureService
 
-        httpPack = HttpPack()
-        task = await httpPack.parse(proxiedPayload)
-        task.url = originalUrl
-        task.packId = self.packId
+        proxiedUrl = f"{selectedProxySite().rstrip('/')}/{options.url.lstrip('/')}"
+        task = await featureService.parse(replace(options, url=proxiedUrl))
+        task.url = options.url
+        task.packId = "github"
         return task
 
-    def taskCard(self, task: Task, parent=None):
+
+class GitHubPack(FeaturePack):
+    packId = "github"
+    config = githubConfig
+
+    def parsers(self):
+        return [GitHubParser()]
+
+    def taskCard(self, task, parent=None):
         from http_pack.cards import HttpTaskCard
         return HttpTaskCard(task, parent)

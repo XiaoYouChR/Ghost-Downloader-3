@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import asyncio
+from asyncio import CancelledError
+import hashlib
 import shutil
 import sys
 import tarfile
@@ -7,174 +11,153 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
 
-from app.bases.interfaces import Worker
-from app.bases.models import Task, TaskStage, TaskStatus
-from app.supports.utils import removePath
+from app.models.task import Task, TaskStep, TaskStatus
+from app.platform.filesystem import deletePath
+
+CHUNK_SIZE = 1 << 20
+
+
+# Disabled: our own HTTP client doesn't set com.apple.quarantine, so for one-click
+# install this is a no-op. Kept (commented) in case a future install source is
+# quarantined (e.g. a user-supplied, browser-downloaded archive). To re-enable,
+# uncomment this plus the two call sites below and restore `import os` / suppress.
+# def removeQuarantine(path: Path) -> None:
+#     if sys.platform != "darwin":
+#         return
+#     with suppress(OSError):
+#         os.removexattr(str(path), "com.apple.quarantine")
 
 
 @dataclass(kw_only=True, eq=False)
 class InstallTask(Task):
+    hasOutputFile = False
     installFolder: str = ""
 
-    def cleanup(self):
-        # 装好的工具产物散在 installFolder 各处, 不能只删 archive — 整个目录端掉
+    @property
+    def canPause(self) -> bool:
+        return False
+
+    def deleteFiles(self):
         if self.installFolder:
-            removePath(Path(self.installFolder))
+            deletePath(Path(self.installFolder))
             return
-        super().cleanup()
-
-
-_CHUNK_SIZE = 1 << 20
+        super().deleteFiles()
 
 
 @dataclass(kw_only=True)
-class ExtractStage(TaskStage):
-    workerType: type = field(init=False, repr=False)
-    canPause: bool = field(init=False, default=False)
+class ExtractStep(TaskStep):
+    canPause = False
 
     archivePath: str
     outputFolder: str
     archiveSize: int = 0
 
+    async def _extractZip(self, archive: Path, outputFolder: Path):
+        with zipfile.ZipFile(archive) as zf:
+            files = [info for info in zf.infolist() if not info.is_dir()]
+            totalSize = sum(info.file_size for info in files)
+            self.task.fileSize = max(self.archiveSize + totalSize, self.archiveSize)
 
-async def _extractZip(archive: Path, outputFolder: Path, stage: ExtractStage):
-    with zipfile.ZipFile(archive) as zf:
-        files = [info for info in zf.infolist() if not info.is_dir()]
-        totalSize = sum(info.file_size for info in files)
-        stage.task.fileSize = max(stage.archiveSize + totalSize, stage.archiveSize)
+            safeRoot = outputFolder.resolve()
+            extractedBytes = speedBytes = 0
+            speedTime = perf_counter()
+            for info in files:
+                memberPath = (outputFolder / info.filename).resolve()
+                if safeRoot not in {memberPath, *memberPath.parents}:
+                    raise RuntimeError(f"压缩包包含非法路径: {info.filename}")
+                memberPath.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(info, "r") as source, open(memberPath, "wb") as target:
+                    while chunk := source.read(CHUNK_SIZE):
+                        target.write(chunk)
+                        extractedBytes += len(chunk)
+                        self.receivedBytes = extractedBytes
+                        if totalSize > 0:
+                            self.progress = min(99.5, extractedBytes / totalSize * 100)
+                        now = perf_counter()
+                        if now - speedTime >= 0.5:
+                            self.speed = int((extractedBytes - speedBytes) / (now - speedTime))
+                            speedBytes, speedTime = extractedBytes, now
+                            await asyncio.sleep(0)
 
-        safeRoot = outputFolder.resolve()
-        extractedBytes = speedBytes = 0
-        speedTime = perf_counter()
-        for info in files:
-            # 防 zip-slip：archive 里若含 "../" 路径会让文件落到 outputFolder 之外
-            memberPath = (outputFolder / info.filename).resolve()
-            if safeRoot not in {memberPath, *memberPath.parents}:
-                raise RuntimeError(f"压缩包包含非法路径: {info.filename}")
-            memberPath.parent.mkdir(parents=True, exist_ok=True)
-            with zf.open(info, "r") as source, open(memberPath, "wb") as target:
-                while chunk := source.read(_CHUNK_SIZE):
-                    target.write(chunk)
-                    extractedBytes += len(chunk)
-                    stage.receivedBytes = extractedBytes
-                    if totalSize > 0:
-                        stage.progress = min(99.5, extractedBytes / totalSize * 100)
-                    now = perf_counter()
-                    if now - speedTime >= 0.5:
-                        stage.speed = int((extractedBytes - speedBytes) / (now - speedTime))
-                        speedBytes, speedTime = extractedBytes, now
-                        await asyncio.sleep(0)
+    async def _extractTar(self, archive: Path, outputFolder: Path):
+        with tarfile.open(archive, "r:*") as tf:
+            files = [m for m in tf.getmembers() if m.isfile()]
+            totalSize = sum(m.size for m in files)
+            self.task.fileSize = max(self.archiveSize + totalSize, self.archiveSize)
 
+            safeRoot = outputFolder.resolve()
+            extractedBytes = speedBytes = 0
+            speedTime = perf_counter()
+            for member in files:
+                memberPath = (outputFolder / member.name).resolve()
+                if safeRoot not in {memberPath, *memberPath.parents}:
+                    raise RuntimeError(f"压缩包包含非法路径: {member.name}")
+                memberPath.parent.mkdir(parents=True, exist_ok=True)
+                source = tf.extractfile(member)
+                if source is None:
+                    continue
+                with source, open(memberPath, "wb") as target:
+                    while chunk := source.read(CHUNK_SIZE):
+                        target.write(chunk)
+                        extractedBytes += len(chunk)
+                        self.receivedBytes = extractedBytes
+                        if totalSize > 0:
+                            self.progress = min(99.5, extractedBytes / totalSize * 100)
+                        now = perf_counter()
+                        if now - speedTime >= 0.5:
+                            self.speed = int((extractedBytes - speedBytes) / (now - speedTime))
+                            speedBytes, speedTime = extractedBytes, now
+                            await asyncio.sleep(0)
 
-async def _extractTar(archive: Path, outputFolder: Path, stage: ExtractStage):
-    with tarfile.open(archive, "r:*") as tf:
-        files = [m for m in tf.getmembers() if m.isfile()]
-        totalSize = sum(m.size for m in files)
-        stage.task.fileSize = max(stage.archiveSize + totalSize, stage.archiveSize)
-
-        safeRoot = outputFolder.resolve()
-        extractedBytes = speedBytes = 0
-        speedTime = perf_counter()
-        for member in files:
-            # 防 tar-slip：archive 里若含 "../" 路径会让文件落到 outputFolder 之外
-            memberPath = (outputFolder / member.name).resolve()
-            if safeRoot not in {memberPath, *memberPath.parents}:
-                raise RuntimeError(f"压缩包包含非法路径: {member.name}")
-            memberPath.parent.mkdir(parents=True, exist_ok=True)
-            source = tf.extractfile(member)
-            if source is None:
-                continue
-            with source, open(memberPath, "wb") as target:
-                while chunk := source.read(_CHUNK_SIZE):
-                    target.write(chunk)
-                    extractedBytes += len(chunk)
-                    stage.receivedBytes = extractedBytes
-                    if totalSize > 0:
-                        stage.progress = min(99.5, extractedBytes / totalSize * 100)
-                    now = perf_counter()
-                    if now - speedTime >= 0.5:
-                        stage.speed = int((extractedBytes - speedBytes) / (now - speedTime))
-                        speedBytes, speedTime = extractedBytes, now
-                        await asyncio.sleep(0)
-
-
-class ExtractWorker(Worker):
-    def __init__(self, stage: ExtractStage):
-        super().__init__(stage)
-        self.stage = stage
-
-    async def run(self):
-        archive = Path(self.stage.archivePath)
-        if not archive.is_file():
-            raise FileNotFoundError(f"未找到安装包: {archive}")
-
-        outputFolder = Path(self.stage.outputFolder)
-
+    async def run(self) -> None:
         try:
-            self.stage.progress = 0
-            self.stage.speed = 0
-            self.stage.receivedBytes = 0
+            archive = Path(self.archivePath)
+            if not archive.is_file():
+                raise FileNotFoundError(f"未找到安装包: {archive}")
 
+            outputFolder = Path(self.outputFolder)
+            self.progress = 0
+            self.speed = 0
+            self.receivedBytes = 0
             outputFolder.mkdir(parents=True, exist_ok=True)
 
             lowered = archive.name.lower()
             if lowered.endswith(".tar.gz"):
-                await _extractTar(archive, outputFolder, self.stage)
+                await self._extractTar(archive, outputFolder)
             elif lowered.endswith(".zip"):
-                await _extractZip(archive, outputFolder, self.stage)
+                await self._extractZip(archive, outputFolder)
             else:
                 raise RuntimeError(f"不支持的压缩包格式: {archive.name}")
 
-            self.stage.setStatus(TaskStatus.COMPLETED)
-        except asyncio.CancelledError:
-            self.stage.setStatus(TaskStatus.PAUSED)
+            self.setStatus(TaskStatus.COMPLETED)
+        except CancelledError:
+            self.setStatus(TaskStatus.PAUSED)
             raise
         except Exception as e:
-            self.stage.setError(e)
+            self.setError(e)
             raise
-
-
-ExtractStage.workerType = ExtractWorker
 
 
 @dataclass(kw_only=True)
-class InstallStage(TaskStage):
-    workerType: type = field(init=False, repr=False)
-    canPause: bool = field(init=False, default=False)
+class InstallStep(TaskStep):
+    canPause = False
 
-    sourceDir: str
+    sourceFolder: str
     installFolder: str
     archivePath: str = ""
-    cleanup: bool = True
+    shouldDeleteSource: bool = True
     executableNames: list[str] = field(default_factory=list)
 
-
-def _executablePath(root: Path, name: str) -> Path:
-    for candidate in (root / "bin" / name, root / name):
-        if candidate.is_file():
-            return candidate
-    found = next((c for c in root.rglob(name) if c.is_file()), None)
-    if found is None:
-        raise RuntimeError(f"安装包解压完成，但未找到可执行文件: {name}")
-    return found
-
-
-class InstallWorker(Worker):
-    def __init__(self, stage: InstallStage):
-        super().__init__(stage)
-        self.stage = stage
-
-    async def run(self):
-        sourceDir = Path(self.stage.sourceDir)
-        installDir = Path(self.stage.installFolder)
-        archive = Path(self.stage.archivePath) if self.stage.archivePath else None
+    async def run(self) -> None:
+        sourceFolder = Path(self.sourceFolder)
+        installFolder = Path(self.installFolder)
+        archive = Path(self.archivePath) if self.archivePath else None
 
         try:
-            # archive 和 sourceDir 都可能位于 installDir 内，清空时必须保留
-            preserve = {sourceDir.name}
-            if archive is not None and archive.parent == installDir:
+            preserve = {sourceFolder.name}
+            if archive is not None and archive.parent == installFolder:
                 preserve.add(archive.name)
-            for child in installDir.iterdir():
+            for child in installFolder.iterdir():
                 if child.name in preserve:
                     continue
                 if child.is_dir() and not child.is_symlink():
@@ -182,34 +165,83 @@ class InstallWorker(Worker):
                 else:
                     child.unlink(missing_ok=True)
 
-            # archive 常把内容包在一个顶层版本目录里（如 ffmpeg-7.0/），跳过它直接移内层
-            children = list(sourceDir.iterdir())
-            contentRoot = children[0] if len(children) == 1 and children[0].is_dir() else sourceDir
+            children = list(sourceFolder.iterdir())
+            contentRoot = children[0] if len(children) == 1 and children[0].is_dir() else sourceFolder
 
             for child in list(contentRoot.iterdir()):
-                shutil.move(str(child), str(installDir / child.name))
+                shutil.move(str(child), str(installFolder / child.name))
 
-            executables: dict[str, Path] = {
-                name: _executablePath(installDir, name)
-                for name in self.stage.executableNames
-            }
-            if sys.platform != "win32":
-                for path in executables.values():
-                    path.chmod(path.stat().st_mode | 0o755)
+            for name in self.executableNames:
+                executable = None
+                for candidate in (installFolder / "bin" / name, installFolder / name):
+                    if candidate.is_file():
+                        executable = candidate
+                        break
+                if executable is None:
+                    executable = next((c for c in installFolder.rglob(name) if c.is_file()), None)
+                if executable is None:
+                    raise RuntimeError(f"安装包解压完成，但未找到可执行文件: {name}")
+                if sys.platform != "win32":
+                    executable.chmod(executable.stat().st_mode | 0o755)
+                # removeQuarantine(executable)  # disabled — see removeQuarantine note
 
-            if self.stage.cleanup and archive is not None and archive.exists():
+            if self.shouldDeleteSource and archive is not None and archive.exists():
                 archive.unlink()
 
-            self.stage.setStatus(TaskStatus.COMPLETED)
-        except asyncio.CancelledError:
-            self.stage.setStatus(TaskStatus.PAUSED)
-            raise
+            self.setStatus(TaskStatus.COMPLETED)
         except Exception as e:
-            self.stage.setError(e)
+            self.setError(e)
             raise
         finally:
-            if self.stage.cleanup and sourceDir.exists():
-                shutil.rmtree(sourceDir, ignore_errors=True)
+            if self.shouldDeleteSource and sourceFolder.exists():
+                shutil.rmtree(sourceFolder, ignore_errors=True)
 
 
-InstallStage.workerType = InstallWorker
+@dataclass(kw_only=True)
+class ChecksumStep(TaskStep):
+    canPause = False
+
+    targetFile: str
+    sha256File: str
+
+    async def run(self) -> None:
+        try:
+            text = Path(self.sha256File).read_text(encoding="utf-8", errors="ignore").strip()
+            expected = text.split()[0].lower() if text else ""
+            if not expected:
+                raise RuntimeError(f"未能从校验文件读取 SHA256: {self.sha256File}")
+            actual = await asyncio.to_thread(self._sha256, Path(self.targetFile))
+            if expected != actual:
+                raise RuntimeError(f"SHA256 校验失败: 期望 {expected}, 实际 {actual}")
+            deletePath(Path(self.sha256File))
+            self.setStatus(TaskStatus.COMPLETED)
+        except Exception as e:
+            self.setError(e)
+            raise
+
+    def _sha256(self, path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as file:
+            for chunk in iter(lambda: file.read(CHUNK_SIZE), b""):
+                digest.update(chunk)
+        return digest.hexdigest().lower()
+
+
+@dataclass(kw_only=True)
+class BinaryInstallStep(TaskStep):
+    canPause = False
+
+    binaryPath: str
+
+    async def run(self) -> None:
+        try:
+            path = Path(self.binaryPath)
+            if not path.is_file():
+                raise FileNotFoundError(f"未找到已下载的可执行文件: {path}")
+            if sys.platform != "win32":
+                path.chmod(path.stat().st_mode | 0o755)
+            # removeQuarantine(path)  # disabled — see removeQuarantine note
+            self.setStatus(TaskStatus.COMPLETED)
+        except Exception as e:
+            self.setError(e)
+            raise

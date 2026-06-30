@@ -1,209 +1,234 @@
+from __future__ import annotations
+
 import re
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from mimetypes import guess_extension
-from pathlib import Path
 from time import time_ns
 from urllib.parse import unquote, urlparse, parse_qs
 
-import niquests
 from loguru import logger
 
-from app.bases.interfaces import FeaturePack
-from app.bases.models import Task, SpecialFileSize
-from app.supports.config import cfg, defaultHeaders
-from app.supports.utils import getProxies, toSafeFilename, splitCookies
-from .task import HttpTask, HttpTaskStage
+from app.client import buildClient, toEmulation
+from app.config.cfg import cfg
+from app.models.pack import FeaturePack, TaskParser
+from app.models.task import (
+    Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
+)
+from app.platform.filesystem import toSafeFilename
+from .task import HttpTask, HttpTaskStep
 
 
-def _contentLength(headers: dict[str, str]) -> int:
-    value = headers.get("content-length", "").strip()
-    if not value:
-        return SpecialFileSize.UNKNOWN
-
-    try:
-        length = int(value)
-    except ValueError:
-        return SpecialFileSize.UNKNOWN
-
-    return length if length > 0 else SpecialFileSize.UNKNOWN
+DOWNLOADABLE_EXTENSIONS = frozenset({
+    ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".ts", ".m2ts",
+    ".mp3", ".flac", ".wav", ".aac", ".ogg", ".m4a", ".wma", ".opus",
+    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".zst",
+    ".exe", ".msi", ".dmg", ".deb", ".rpm", ".appimage", ".pkg",
+    ".iso", ".img",
+    ".pdf", ".epub",
+    ".apk", ".ipa",
+})
 
 
-def _rangeSize(headers: dict[str, str]) -> int:
-    contentRange = headers.get("content-range", "").strip()
-    if not contentRange or "/" not in contentRange:
-        return SpecialFileSize.UNKNOWN
+class HttpParser(TaskParser):
+    priority = 100
 
-    _, _, total = contentRange.rpartition("/")
-    if not total or total == "*":
-        return SpecialFileSize.UNKNOWN
+    def match(self, options: TaskOptions) -> bool:
+        return urlparse(options.url).scheme.lower() in {"http", "https"}
 
-    try:
-        size = int(total)
-    except ValueError:
-        return SpecialFileSize.UNKNOWN
+    def matchPassive(self, options: TaskOptions) -> bool:
+        parsed = urlparse(options.url)
+        if parsed.scheme.lower() not in {"http", "https"}:
+            return False
+        path = parsed.path.lower()
+        return any(path.endswith(ext) for ext in DOWNLOADABLE_EXTENSIONS)
 
-    return size if size > 0 else SpecialFileSize.UNKNOWN
+    async def parse(self, options: TaskOptions) -> Task:
+        url = options.url
+        headers = dict(options.headers)
+        clientProfile = options.clientProfile
+        subworkerCount = options.subworkerCount
+        outputFolder = options.outputFolder
 
+        name = ""
+        fileSize = SpecialFileSize.UNKNOWN
+        canUseRangeRequests = False
+        lastModified = ""
 
-
-async def _sendProbe(client: niquests.AsyncSession, url: str, headers: dict, proxies: dict) -> tuple[int, dict[str, str], str]:
-    requestHeaders, requestCookies = splitCookies(headers)
-    response = await client.get(
-        url,
-        headers=requestHeaders,
-        cookies=requestCookies,
-        proxies=proxies,
-        verify=cfg.SSLVerify.value,
-        allow_redirects=True,
-        stream=True,
-    )
-
-    try:
-        if response.status_code not in {200, 206, 416}:
-            response.raise_for_status()
-        return response.status_code, {k.lower(): v for k, v in response.headers.items()}, str(response.url)
-    finally:
-        await response.close()
-
-
-async def _probe(url: str, headers: dict, proxies: dict) -> tuple[int, bool, str, dict[str, str]]:
-    async with niquests.AsyncSession(happy_eyeballs=True) as client:
-        client.trust_env = False
-
-        statusCode, responseHeaders, finalUrl = await _sendProbe(
-            client,
-            url,
-            {**headers, "range": "bytes=1-1", "accept-encoding": "identity"},
-            proxies,
-        )
-
-        fileSize = _rangeSize(responseHeaders)
-        supportsRange = statusCode == 206 and "content-range" in responseHeaders
-
-        if supportsRange:
-            logger.info("偏移 Range 探测成功, content-range: {}, fileSize: {}",
-                        responseHeaders.get("content-range", ""), fileSize)
-            return fileSize, True, finalUrl, responseHeaders
-
-        fileSize = _contentLength(responseHeaders)
-
-        if statusCode == 200:
-            logger.info("偏移 Range 探测返回 200, content-length: {}",
-                        responseHeaders.get("content-length", ""))
-            if fileSize in {SpecialFileSize.UNKNOWN, 1}:
-                # bytes=0- 和 bytes=0-0 哪个更好存疑
-                fallbackStatus, fallbackHeaders, _ = await _sendProbe(
-                    client,
-                    url,
-                    {**headers, "range": "bytes=0-0", "accept-encoding": "identity"},
-                    proxies,
-                )
-                fallbackSize = _rangeSize(fallbackHeaders)
-                if fallbackStatus == 206 and "content-range" in fallbackHeaders:
-                    logger.info("回退 Range 探测成功, content-range: {}, fileSize: {}",
-                                fallbackHeaders.get("content-range", ""), fallbackSize)
-                    return fallbackSize, True, finalUrl, fallbackHeaders
-
-                if fileSize == SpecialFileSize.UNKNOWN:
-                    fileSize = _contentLength(fallbackHeaders)
-                    if fileSize == SpecialFileSize.UNKNOWN and fallbackStatus == 416:
-                        fileSize = _rangeSize(fallbackHeaders)
-
-        if fileSize == SpecialFileSize.UNKNOWN:
-            logger.info("文件大小未知，按不支持断点续传处理")
+        if isinstance(options, ResourceTaskOptions) and options.name:
+            name = toSafeFilename(options.name, fallback=f"file_{time_ns()}")
+            fileSize = options.size if options.size > 0 else SpecialFileSize.UNKNOWN
+            canUseRangeRequests = options.canUseRangeRequests
         else:
-            logger.info("文件大小已知但未探测到 Range 支持, fileSize: {}", fileSize)
+            emulation = toEmulation(
+                options.clientProfile or cfg.clientProfile.value,
+                options.sourceUserAgent,
+            )
+            client = buildClient(emulation=emulation)
 
-        return fileSize, False, finalUrl, responseHeaders
+            def rangeTotal(h: dict) -> int:
+                cr = h.get("content-range", "")
+                if not cr or "/" not in cr:
+                    return SpecialFileSize.UNKNOWN
+                _, _, total = cr.rpartition("/")
+                if not total or total == "*":
+                    return SpecialFileSize.UNKNOWN
+                try:
+                    size = int(total)
+                except ValueError:
+                    return SpecialFileSize.UNKNOWN
+                return size if size > 0 else SpecialFileSize.UNKNOWN
 
+            def bodyLength(h: dict) -> int:
+                val = h.get("content-length", "").strip()
+                if not val:
+                    return SpecialFileSize.UNKNOWN
+                try:
+                    length = int(val)
+                except ValueError:
+                    return SpecialFileSize.UNKNOWN
+                return length if length > 0 else SpecialFileSize.UNKNOWN
 
-def _fileName(url: str, headers: dict) -> str:
-    fileName = ""
+            async def request(rangeValue: str = "") -> tuple[int, dict[str, str], str]:
+                probeHeaders = dict(headers)
+                probeHeaders["accept-encoding"] = "identity"
+                if rangeValue:
+                    probeHeaders["range"] = rangeValue
+                response = await client.get(url, headers=probeHeaders)
+                try:
+                    status = response.status.as_int()
+                    if status not in {200, 206, 416}:
+                        response.raise_for_status()
+                    return (
+                        status,
+                        {k.decode().lower(): v.decode() for k, v in response.headers},
+                        str(response.url),
+                    )
+                finally:
+                    response.close()
 
-    cd = headers.get("content-disposition", "")
-    if cd:
-        msg = Message()
-        msg["Content-Disposition"] = cd
-        params = msg.get_params(header="Content-Disposition")
-        paramDict = {k.lower(): v for k, v in params}
-        fileName = collapse_rfc2231_value(
-            paramDict.get("filename") or paramDict.get("filename*") or ""
-        ).strip("\"' ")
+            try:
+                statusCode, responseHeaders, finalUrl = await request("bytes=1-1")
 
-    if not fileName and "content-location" in headers:
-        cl = headers["content-location"]
-        fileName = unquote(urlparse(cl).path.split("/")[-1])
+                fileSize = rangeTotal(responseHeaders)
+                canUseRangeRequests = statusCode == 206 and "content-range" in responseHeaders
 
-    if not fileName:
-        parsedUrl = urlparse(url)
-        queryParams = parse_qs(parsedUrl.query)
-        rcd = queryParams.get("response-content-disposition", [""])[0]
-        if "filename=" in rcd.lower():
-            match = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', rcd, re.IGNORECASE)
-            if match:
-                fileName = unquote(match.group(1)).strip("\"' ")
+                if canUseRangeRequests:
+                    logger.info(
+                        "偏移 Range 探测成功, content-range: {}, fileSize: {}",
+                        responseHeaders.get("content-range", ""), fileSize,
+                    )
+                else:
+                    fileSize = bodyLength(responseHeaders)
+                    logger.info(
+                        "偏移 Range 探测返回 {}, content-length: {}",
+                        statusCode, responseHeaders.get("content-length", ""),
+                    )
 
-    if not fileName:
-        path = urlparse(url).path
-        if path and "/" in path:
-            cleanPath = path.split(";")[0]
-            fileName = unquote(cleanPath.split("/")[-1])
+                    if statusCode == 200 and fileSize in {SpecialFileSize.UNKNOWN, 1}:
+                        fbStatus, fbHeaders, _ = await request("bytes=0-0")
+                        fbSize = rangeTotal(fbHeaders)
+                        if fbStatus == 206 and "content-range" in fbHeaders:
+                            logger.info(
+                                "回退 Range 探测成功, content-range: {}, fileSize: {}",
+                                fbHeaders.get("content-range", ""), fbSize,
+                            )
+                            fileSize = fbSize
+                            canUseRangeRequests = True
+                        else:
+                            if fileSize == SpecialFileSize.UNKNOWN:
+                                fileSize = bodyLength(fbHeaders)
+                                if fileSize == SpecialFileSize.UNKNOWN and fbStatus == 416:
+                                    fileSize = rangeTotal(fbHeaders)
 
-    contentType = headers.get("content-type", "").split(";", 1)[0].lower().strip()
-    standardExt = guess_extension(contentType) if contentType else ""
-    standardExt = standardExt or ""
+                cd = responseHeaders.get("content-disposition", "")
+                if cd:
+                    msg = Message()
+                    msg["Content-Disposition"] = cd
+                    params = msg.get_params(header="Content-Disposition")
+                    paramDict = {k.lower(): v for k, v in params}
+                    name = collapse_rfc2231_value(
+                        paramDict.get("filename") or paramDict.get("filename*") or ""
+                    ).strip("\"' ")
 
-    if not fileName:
-        fileName = f"file_{int(time_ns())}{standardExt}"
-    elif "." not in fileName and standardExt:
-        fileName = f"{fileName}{standardExt}"
+                if not name and "content-location" in responseHeaders:
+                    cl = responseHeaders["content-location"]
+                    name = unquote(urlparse(cl).path.split("/")[-1])
 
-    return toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
+                if not name:
+                    queryParams = parse_qs(urlparse(finalUrl).query)
+                    rcd = queryParams.get("response-content-disposition", [""])[0]
+                    if "filename=" in rcd.lower():
+                        m = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', rcd, re.IGNORECASE)
+                        if m:
+                            name = unquote(m.group(1)).strip("\"' ")
+
+                if not name:
+                    path = urlparse(finalUrl).path
+                    if path and "/" in path:
+                        cleanPath = path.split(";")[0]
+                        name = unquote(cleanPath.split("/")[-1])
+
+                contentType = responseHeaders.get("content-type", "").split(";", 1)[0].lower().strip()
+                standardExt = guess_extension(contentType) if contentType else ""
+                standardExt = standardExt or ""
+
+                if not name:
+                    name = f"file_{time_ns()}{standardExt}"
+                elif "." not in name and standardExt:
+                    name = f"{name}{standardExt}"
+
+                name = toSafeFilename(name, fallback=f"file_{time_ns()}")
+                lastModified = responseHeaders.get("last-modified", "")
+            finally:
+                client.close()
+
+        task = HttpTask(
+            name=name,
+            url=url,
+            fileSize=fileSize,
+            outputFolder=outputFolder,
+        )
+        task.addStep(HttpTaskStep(
+            stepIndex=1,
+            url=url,
+            fileSize=fileSize,
+            headers=headers,
+            clientProfile=clientProfile,
+            subworkerCount=subworkerCount,
+            canUseRangeRequests=canUseRangeRequests,
+            lastModified=lastModified,
+        ))
+        return task
 
 
 class HttpPack(FeaturePack):
     packId = "http"
-    priority = 100
 
-    def matches(self, url: str) -> bool:
-        return urlparse(url).scheme.lower() in {"http", "https"}
+    def parsers(self):
+        return [HttpParser()]
 
-    def taskCard(self, task: Task, parent=None):
+    def optionCards(self, task, parent=None):
+        from app.view.components.option_cards import (
+            ClientProfileCard, HeadersEditCard, OutputFolderCard, SubworkerCountCard,
+        )
+        step = task.steps[0] if task.steps else None
+        if not isinstance(step, HttpTaskStep):
+            return []
+        return [
+            OutputFolderCard(parent, initial=task.outputFolder),
+            HeadersEditCard(parent, initial=step.headers),
+            ClientProfileCard(parent, initial=step.clientProfile),
+            SubworkerCountCard(parent, initial=step.subworkerCount),
+        ]
+
+    def editCards(self, task, parent=None):
+        from app.view.components.option_cards import UrlEditCard
+        return [
+            UrlEditCard(parent, initial=task.url),
+            *self.optionCards(task, parent),
+        ]
+
+    def taskCard(self, task, parent=None):
         from .cards import HttpTaskCard
         return HttpTaskCard(task, parent)
-
-    async def parse(self, payload: dict) -> Task:
-        url: str = payload["url"]
-        headers: dict = payload.get("headers", defaultHeaders())
-        proxies: dict = payload.get("proxies", getProxies())
-        blockNum: int = payload.get("preBlockNum", cfg.preBlockNum.value)
-        path: Path = payload.get("path", Path(cfg.downloadFolder.value))
-
-        fileName = str(payload.get("filename") or "").strip()
-        fileSize = payload.get("fileSize") or SpecialFileSize.UNKNOWN
-        supportsRange = payload.get("supportsRange", False)
-
-        if not fileName:
-            fileSize, supportsRange, finalUrl, head = await _probe(url, headers, proxies)
-            fileName = _fileName(finalUrl, head)
-        else:
-            fileName = toSafeFilename(fileName, fallback=f"file_{int(time_ns())}")
-
-        task = HttpTask(
-            title=fileName,
-            url=url,
-            fileSize=fileSize,
-            path=path,
-        )
-        stage = HttpTaskStage(
-            stageIndex=1,
-            url=url,
-            fileSize=fileSize,
-            headers=headers,
-            proxies=proxies,
-            blockNum=blockNum,
-            supportsRange=supportsRange,
-        )
-        task.addStage(stage)
-        return task
