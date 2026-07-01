@@ -23,6 +23,18 @@
         <source>退出程序</source>
         <translation>Sair do programa</translation>
     </message>
+    <message>
+        <source>自动（匹配来源）</source>
+        <translation type="vanished">Automático (corresponder à origem)</translation>
+    </message>
+    <message>
+        <source>不模拟（原样发送）</source>
+        <translation type="vanished">Não simular (enviar como original)</translation>
+    </message>
+    <message>
+        <source>{0}（最新）</source>
+        <translation type="vanished">{0} (mais recente)</translation>
+    </message>
 </context>
 <context>
     <name>BTDraftCard</name>
@@ -558,7 +570,22 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>ClientProfileCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="119"/>
+        <location filename="../../view/components/option_cards.py" line="21"/>
+        <source>自动（匹配来源）</source>
+        <translation>Automático (corresponder à origem)</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="23"/>
+        <source>不模拟（原样发送）</source>
+        <translation>Não simular (enviar como original)</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="25"/>
+        <source>{0}（最新）</source>
+        <translation>{0} (mais recente)</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="136"/>
         <source>模拟身份</source>
         <translation>Perfil de cliente simulado</translation>
     </message>
@@ -593,17 +620,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>DefaultHeadersSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="346"/>
+        <location filename="../../view/components/setting_cards.py" line="345"/>
         <source>编辑</source>
         <translation>Editar</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="357"/>
+        <location filename="../../view/components/setting_cards.py" line="356"/>
         <source>编辑默认请求头</source>
         <translation>Editar cabeçalhos de requisição padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="360"/>
+        <location filename="../../view/components/setting_cards.py" line="359"/>
         <source>恢复默认</source>
         <translation>Restaurar padrão</translation>
     </message>
@@ -1011,17 +1038,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HeadersEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="198"/>
+        <location filename="../../view/components/option_cards.py" line="213"/>
         <source>请求标头</source>
         <translation>Cabeçalhos da requisição</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="213"/>
+        <location filename="../../view/components/option_cards.py" line="228"/>
         <source>恢复默认请求标头</source>
         <translation>Restaurar cabeçalhos de requisição padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="214"/>
+        <location filename="../../view/components/option_cards.py" line="229"/>
         <source>每行一个 Name: Value</source>
         <translation>Um por linha no formato Name: Value</translation>
     </message>
@@ -1585,24 +1612,43 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
 <context>
     <name>MobileMainWindow</name>
     <message>
-        <location filename="../../view/mobile/window.py" line="54"/>
+        <location filename="../../view/mobile/window.py" line="57"/>
         <source>任务</source>
         <translation>Tarefas</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="55"/>
+        <location filename="../../view/mobile/window.py" line="58"/>
         <source>设置</source>
         <translation>Configurações</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="101"/>
+        <location filename="../../view/mobile/window.py" line="139"/>
         <source>需要存储权限</source>
         <translation>Permissão de armazenamento necessária</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="102"/>
+        <location filename="../../view/mobile/window.py" line="140"/>
         <source>请授予存储权限后再新建任务</source>
         <translation>Conceda a permissão de armazenamento antes de criar uma nova tarefa</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="164"/>
+        <source>程序发生异常</source>
+        <translation>O programa encontrou um erro</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="165"/>
+        <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
+
+{0}</source>
+        <translation>Ao clicar em &quot;OK&quot;, a mensagem de erro será copiada e a página de feedback será aberta.
+
+{0}</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="169"/>
+        <source>查看日志</source>
+        <translation>Ver registro</translation>
     </message>
 </context>
 <context>
@@ -1660,8 +1706,8 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
 <context>
     <name>OutputFolderCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="35"/>
-        <location filename="../../view/components/option_cards.py" line="60"/>
+        <location filename="../../view/components/option_cards.py" line="54"/>
+        <location filename="../../view/components/option_cards.py" line="79"/>
         <source>选择下载路径</source>
         <translation>Escolher caminho de download</translation>
     </message>
@@ -1886,45 +1932,45 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
 <context>
     <name>RuntimeCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="421"/>
-        <location filename="../../view/components/setting_cards.py" line="458"/>
+        <location filename="../../view/components/setting_cards.py" line="420"/>
+        <location filename="../../view/components/setting_cards.py" line="457"/>
         <source>正在检测运行时...</source>
         <translation>Detectando runtime...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="423"/>
+        <location filename="../../view/components/setting_cards.py" line="422"/>
         <source>一键安装</source>
         <translation>Instalar com um clique</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="434"/>
+        <location filename="../../view/components/setting_cards.py" line="433"/>
         <source>刷新</source>
         <translation>Atualizar</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="460"/>
+        <location filename="../../view/components/setting_cards.py" line="459"/>
         <source>检测运行时失败</source>
         <translation>Falha ao detectar runtime</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="462"/>
+        <location filename="../../view/components/setting_cards.py" line="461"/>
         <source>版本: {0}
 路径: {1}</source>
         <translation>Versão: {0}
 Caminho: {1}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="464"/>
+        <location filename="../../view/components/setting_cards.py" line="463"/>
         <source>路径: {0}</source>
         <translation>Caminho: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="466"/>
+        <location filename="../../view/components/setting_cards.py" line="465"/>
         <source>未检测到可用的 {0}</source>
         <translation>Nenhum {0} utilizável detectado</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="512"/>
+        <location filename="../../view/components/setting_cards.py" line="511"/>
         <source>安装失败</source>
         <translation>Falha na instalação</translation>
     </message>
@@ -1996,13 +2042,13 @@ Caminho: {1}</translation>
 <context>
     <name>SelectFileCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="390"/>
-        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <location filename="../../view/components/setting_cards.py" line="389"/>
+        <location filename="../../view/components/setting_cards.py" line="403"/>
         <source>选择文件</source>
         <translation>Selecionar arquivo</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="392"/>
+        <location filename="../../view/components/setting_cards.py" line="391"/>
         <source>清除路径</source>
         <translation>Limpar caminho</translation>
     </message>
@@ -2625,7 +2671,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>SubworkerCountCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="72"/>
+        <location filename="../../view/components/option_cards.py" line="91"/>
         <source>预分配线程数</source>
         <translation>Número de threads pré-alocadas</translation>
     </message>
@@ -2982,7 +3028,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>UrlEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="171"/>
+        <location filename="../../view/components/option_cards.py" line="186"/>
         <source>下载链接</source>
         <translation>Link de download</translation>
     </message>
@@ -3251,12 +3297,12 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>card</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="493"/>
+        <location filename="../../view/components/setting_cards.py" line="492"/>
         <source>安装任务已创建</source>
         <translation>Tarefa de instalação criada</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="494"/>
+        <location filename="../../view/components/setting_cards.py" line="493"/>
         <source>请前往任务页查看安装进度</source>
         <translation>Vá para a página de tarefas para ver o progresso da instalação</translation>
     </message>

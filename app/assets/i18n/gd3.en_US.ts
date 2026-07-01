@@ -27,6 +27,18 @@
         <source>退出程序</source>
         <translation>Exit</translation>
     </message>
+    <message>
+        <source>自动（匹配来源）</source>
+        <translation type="vanished">Auto (Match Source)</translation>
+    </message>
+    <message>
+        <source>不模拟（原样发送）</source>
+        <translation type="vanished">No Emulation (Send As-Is)</translation>
+    </message>
+    <message>
+        <source>{0}（最新）</source>
+        <translation type="vanished">{0} (Latest)</translation>
+    </message>
 </context>
 <context>
     <name>AddTaskDialog</name>
@@ -868,7 +880,22 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
 <context>
     <name>ClientProfileCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="119"/>
+        <location filename="../../view/components/option_cards.py" line="21"/>
+        <source>自动（匹配来源）</source>
+        <translation>Auto (Match Source)</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="23"/>
+        <source>不模拟（原样发送）</source>
+        <translation>No Emulation (Send As-Is)</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="25"/>
+        <source>{0}（最新）</source>
+        <translation>{0} (Latest)</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="136"/>
         <source>模拟身份</source>
         <translation>Client Profile</translation>
     </message>
@@ -918,17 +945,17 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
 <context>
     <name>DefaultHeadersSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="346"/>
+        <location filename="../../view/components/setting_cards.py" line="345"/>
         <source>编辑</source>
         <translation>Edit</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="357"/>
+        <location filename="../../view/components/setting_cards.py" line="356"/>
         <source>编辑默认请求头</source>
         <translation>Edit Default Request Headers</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="360"/>
+        <location filename="../../view/components/setting_cards.py" line="359"/>
         <source>恢复默认</source>
         <translation>Restore Defaults</translation>
     </message>
@@ -1505,17 +1532,17 @@ Install Location: {1}</translation>
         <translation type="vanished">Insert User Agent Preset</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="198"/>
+        <location filename="../../view/components/option_cards.py" line="213"/>
         <source>请求标头</source>
         <translation>Request Headers</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="213"/>
+        <location filename="../../view/components/option_cards.py" line="228"/>
         <source>恢复默认请求标头</source>
         <translation>Restore Default Request Headers</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="214"/>
+        <location filename="../../view/components/option_cards.py" line="229"/>
         <source>每行一个 Name: Value</source>
         <translation>One Name: Value pair per line</translation>
     </message>
@@ -2276,24 +2303,43 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>MobileMainWindow</name>
     <message>
-        <location filename="../../view/mobile/window.py" line="54"/>
+        <location filename="../../view/mobile/window.py" line="57"/>
         <source>任务</source>
         <translation>Tasks</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="55"/>
+        <location filename="../../view/mobile/window.py" line="58"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="101"/>
+        <location filename="../../view/mobile/window.py" line="139"/>
         <source>需要存储权限</source>
         <translation>Storage permission required</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="102"/>
+        <location filename="../../view/mobile/window.py" line="140"/>
         <source>请授予存储权限后再新建任务</source>
         <translation>Grant storage permission before creating a new task</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="164"/>
+        <source>程序发生异常</source>
+        <translation>An exception occurred</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="165"/>
+        <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
+
+{0}</source>
+        <translation>After clicking &quot;OK&quot;, the error info will be copied and the feedback page will open.
+
+{0}</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="169"/>
+        <source>查看日志</source>
+        <translation>View Logs</translation>
     </message>
 </context>
 <context>
@@ -2355,8 +2401,8 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Select Folder</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="35"/>
-        <location filename="../../view/components/option_cards.py" line="60"/>
+        <location filename="../../view/components/option_cards.py" line="54"/>
+        <location filename="../../view/components/option_cards.py" line="79"/>
         <source>选择下载路径</source>
         <translation>Choose Download Path</translation>
     </message>
@@ -2637,45 +2683,45 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>RuntimeCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="421"/>
-        <location filename="../../view/components/setting_cards.py" line="458"/>
+        <location filename="../../view/components/setting_cards.py" line="420"/>
+        <location filename="../../view/components/setting_cards.py" line="457"/>
         <source>正在检测运行时...</source>
         <translation>Detecting runtime...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="423"/>
+        <location filename="../../view/components/setting_cards.py" line="422"/>
         <source>一键安装</source>
         <translation>Install</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="434"/>
+        <location filename="../../view/components/setting_cards.py" line="433"/>
         <source>刷新</source>
         <translation>Refresh</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="460"/>
+        <location filename="../../view/components/setting_cards.py" line="459"/>
         <source>检测运行时失败</source>
         <translation>Runtime detection failed</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="462"/>
+        <location filename="../../view/components/setting_cards.py" line="461"/>
         <source>版本: {0}
 路径: {1}</source>
         <translation>Version: {0}
 Path: {1}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="464"/>
+        <location filename="../../view/components/setting_cards.py" line="463"/>
         <source>路径: {0}</source>
         <translation>Path: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="466"/>
+        <location filename="../../view/components/setting_cards.py" line="465"/>
         <source>未检测到可用的 {0}</source>
         <translation>No available {0} detected</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="512"/>
+        <location filename="../../view/components/setting_cards.py" line="511"/>
         <source>安装失败</source>
         <translation>Installation failed</translation>
     </message>
@@ -2771,13 +2817,13 @@ Path: {1}</translation>
 <context>
     <name>SelectFileCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="390"/>
-        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <location filename="../../view/components/setting_cards.py" line="389"/>
+        <location filename="../../view/components/setting_cards.py" line="403"/>
         <source>选择文件</source>
         <translation>Select Files</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="392"/>
+        <location filename="../../view/components/setting_cards.py" line="391"/>
         <source>清除路径</source>
         <translation>Clear Path</translation>
     </message>
@@ -3456,7 +3502,7 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>SubworkerCountCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="72"/>
+        <location filename="../../view/components/option_cards.py" line="91"/>
         <source>预分配线程数</source>
         <translation>Pre-allocated Threads</translation>
     </message>
@@ -3833,7 +3879,7 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>UrlEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="171"/>
+        <location filename="../../view/components/option_cards.py" line="186"/>
         <source>下载链接</source>
         <translation>Download Link</translation>
     </message>
@@ -4205,12 +4251,12 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>card</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="493"/>
+        <location filename="../../view/components/setting_cards.py" line="492"/>
         <source>安装任务已创建</source>
         <translation>Installation task created</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="494"/>
+        <location filename="../../view/components/setting_cards.py" line="493"/>
         <source>请前往任务页查看安装进度</source>
         <translation>Please go to Tasks page to check installation progress</translation>
     </message>

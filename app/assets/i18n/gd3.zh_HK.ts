@@ -27,6 +27,18 @@
         <source>退出程序</source>
         <translation>退出程式</translation>
     </message>
+    <message>
+        <source>自动（匹配来源）</source>
+        <translation type="vanished">自動（匹配來源）</translation>
+    </message>
+    <message>
+        <source>不模拟（原样发送）</source>
+        <translation type="vanished">不模擬（原樣傳送）</translation>
+    </message>
+    <message>
+        <source>{0}（最新）</source>
+        <translation type="vanished">{0}（最新）</translation>
+    </message>
 </context>
 <context>
     <name>AddTaskDialog</name>
@@ -868,7 +880,22 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>ClientProfileCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="119"/>
+        <location filename="../../view/components/option_cards.py" line="21"/>
+        <source>自动（匹配来源）</source>
+        <translation>自動（匹配來源）</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="23"/>
+        <source>不模拟（原样发送）</source>
+        <translation>不模擬（原樣傳送）</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="25"/>
+        <source>{0}（最新）</source>
+        <translation>{0}（最新）</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/option_cards.py" line="136"/>
         <source>模拟身份</source>
         <translation>模擬身份</translation>
     </message>
@@ -918,17 +945,17 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>DefaultHeadersSettingCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="346"/>
+        <location filename="../../view/components/setting_cards.py" line="345"/>
         <source>编辑</source>
         <translation>編輯</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="357"/>
+        <location filename="../../view/components/setting_cards.py" line="356"/>
         <source>编辑默认请求头</source>
         <translation>編輯預設請求標頭</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="360"/>
+        <location filename="../../view/components/setting_cards.py" line="359"/>
         <source>恢复默认</source>
         <translation>恢復預設</translation>
     </message>
@@ -1505,17 +1532,17 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation type="obsolete">插入 User-Agent 预设</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="198"/>
+        <location filename="../../view/components/option_cards.py" line="213"/>
         <source>请求标头</source>
         <translation>請求標頭</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="213"/>
+        <location filename="../../view/components/option_cards.py" line="228"/>
         <source>恢复默认请求标头</source>
         <translation>恢復預設請求標頭</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="214"/>
+        <location filename="../../view/components/option_cards.py" line="229"/>
         <source>每行一个 Name: Value</source>
         <translation>每行一個 Name: Value</translation>
     </message>
@@ -2276,24 +2303,43 @@ FFmpeg: {2}</translation>
 <context>
     <name>MobileMainWindow</name>
     <message>
-        <location filename="../../view/mobile/window.py" line="54"/>
+        <location filename="../../view/mobile/window.py" line="57"/>
         <source>任务</source>
         <translation>任務</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="55"/>
+        <location filename="../../view/mobile/window.py" line="58"/>
         <source>设置</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="101"/>
+        <location filename="../../view/mobile/window.py" line="139"/>
         <source>需要存储权限</source>
         <translation>需要儲存權限</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="102"/>
+        <location filename="../../view/mobile/window.py" line="140"/>
         <source>请授予存储权限后再新建任务</source>
         <translation>請授予儲存權限後先至新增任務</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="164"/>
+        <source>程序发生异常</source>
+        <translation>程式發生異常</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="165"/>
+        <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
+
+{0}</source>
+        <translation>點擊「確定」後將會複製錯誤訊息並開啟回饋頁面。
+
+{0}</translation>
+    </message>
+    <message>
+        <location filename="../../view/mobile/window.py" line="169"/>
+        <source>查看日志</source>
+        <translation>查看日誌</translation>
     </message>
 </context>
 <context>
@@ -2355,8 +2401,8 @@ FFmpeg: {2}</translation>
         <translation type="vanished">揀資料夾</translation>
     </message>
     <message>
-        <location filename="../../view/components/option_cards.py" line="35"/>
-        <location filename="../../view/components/option_cards.py" line="60"/>
+        <location filename="../../view/components/option_cards.py" line="54"/>
+        <location filename="../../view/components/option_cards.py" line="79"/>
         <source>选择下载路径</source>
         <translation>揀下載路徑</translation>
     </message>
@@ -2637,45 +2683,45 @@ FFmpeg: {2}</translation>
 <context>
     <name>RuntimeCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="421"/>
-        <location filename="../../view/components/setting_cards.py" line="458"/>
+        <location filename="../../view/components/setting_cards.py" line="420"/>
+        <location filename="../../view/components/setting_cards.py" line="457"/>
         <source>正在检测运行时...</source>
         <translation>正喺檢測執行環境...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="423"/>
+        <location filename="../../view/components/setting_cards.py" line="422"/>
         <source>一键安装</source>
         <translation>一鍵安裝</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="434"/>
+        <location filename="../../view/components/setting_cards.py" line="433"/>
         <source>刷新</source>
         <translation>重新整理</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="460"/>
+        <location filename="../../view/components/setting_cards.py" line="459"/>
         <source>检测运行时失败</source>
         <translation>檢測執行環境失敗</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="462"/>
+        <location filename="../../view/components/setting_cards.py" line="461"/>
         <source>版本: {0}
 路径: {1}</source>
         <translation>版本: {0}
 路徑: {1}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="464"/>
+        <location filename="../../view/components/setting_cards.py" line="463"/>
         <source>路径: {0}</source>
         <translation>路徑: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="466"/>
+        <location filename="../../view/components/setting_cards.py" line="465"/>
         <source>未检测到可用的 {0}</source>
         <translation>未檢測到可用嘅 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="512"/>
+        <location filename="../../view/components/setting_cards.py" line="511"/>
         <source>安装失败</source>
         <translation>安裝失敗</translation>
     </message>
@@ -2771,13 +2817,13 @@ FFmpeg: {2}</translation>
 <context>
     <name>SelectFileCard</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="390"/>
-        <location filename="../../view/components/setting_cards.py" line="404"/>
+        <location filename="../../view/components/setting_cards.py" line="389"/>
+        <location filename="../../view/components/setting_cards.py" line="403"/>
         <source>选择文件</source>
         <translation>選擇檔案</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="392"/>
+        <location filename="../../view/components/setting_cards.py" line="391"/>
         <source>清除路径</source>
         <translation>清除路徑</translation>
     </message>
@@ -3456,7 +3502,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>SubworkerCountCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="72"/>
+        <location filename="../../view/components/option_cards.py" line="91"/>
         <source>预分配线程数</source>
         <translation>預先分配執行緒數</translation>
     </message>
@@ -3833,7 +3879,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>UrlEditCard</name>
     <message>
-        <location filename="../../view/components/option_cards.py" line="171"/>
+        <location filename="../../view/components/option_cards.py" line="186"/>
         <source>下载链接</source>
         <translation>下載連結</translation>
     </message>
@@ -4205,12 +4251,12 @@ FFmpeg: {2}</translation>
 <context>
     <name>card</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="493"/>
+        <location filename="../../view/components/setting_cards.py" line="492"/>
         <source>安装任务已创建</source>
         <translation>安裝任務已建立</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="494"/>
+        <location filename="../../view/components/setting_cards.py" line="493"/>
         <source>请前往任务页查看安装进度</source>
         <translation>請前往任務頁查看安裝進度</translation>
     </message>

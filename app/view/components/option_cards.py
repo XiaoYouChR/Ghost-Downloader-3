@@ -17,14 +17,14 @@ PROFILE_FAMILY_LABELS = {
 
 
 def toProfileLabel(value: str) -> str:
-    tr = lambda text: QCoreApplication.translate("ClientProfileCard", text)
-
     if value in {"", "auto"}:
-        return tr("自动（匹配来源）")
+        return QCoreApplication.translate("ClientProfileCard", "自动（匹配来源）")
     if value == "raw":
-        return tr("不模拟（原样发送）")
+        return QCoreApplication.translate("ClientProfileCard", "不模拟（原样发送）")
     if value in PROFILE_FAMILY_LABELS:
-        return tr("{0}（最新）").format(PROFILE_FAMILY_LABELS[value])
+        return QCoreApplication.translate("ClientProfileCard", "{0}（最新）").format(
+            PROFILE_FAMILY_LABELS[value]
+        )
     head = value.rstrip("0123456789_")
     version = value[len(head):].replace("_", ".")
     return f"{head} {version}" if version else value
