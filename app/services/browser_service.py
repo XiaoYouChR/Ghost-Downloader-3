@@ -508,7 +508,7 @@ class BrowserService(QObject):
 
     def _onTaskAction(self, session: BrowserClientSession, data: dict) -> None:
         from app.models.task import TaskStatus
-        from app.platform.desktop import requestForeground, openFile, openFolder
+        from app.platform.desktop import requestForeground, openFile, revealInFolder
 
         requestId = toStr(data, "requestId")
         taskId = toStr(data, "taskId")
@@ -566,7 +566,7 @@ class BrowserService(QObject):
                                      ok=False, message="目录不存在")
                     return
                 requestForeground()
-                openFolder(path)
+                revealInFolder(path)
 
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=True)
             self._broadcastSnapshots()

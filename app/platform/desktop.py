@@ -14,9 +14,12 @@ def openFile(path: str | bytes | PathLike[str]) -> None:
 
 
 def openFolder(path: str | PathLike[str]) -> None:
+    QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+
+
+def revealInFolder(path: str | PathLike[str]) -> None:
     path = Path(path)
     if path.exists():
-        folder = str(path.parent)
         target = str(path)
         match sys.platform:
             case "win32":
@@ -24,9 +27,9 @@ def openFolder(path: str | PathLike[str]) -> None:
             case "darwin":
                 QProcess.startDetached("open", ["-R", target])
             case _:
-                QProcess.startDetached("xdg-open", [folder])
+                QProcess.startDetached("xdg-open", [str(path.parent)])
     elif path.parent.exists():
-        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path.parent)))
+        openFolder(path.parent)
 
 
 def shutdown() -> None:

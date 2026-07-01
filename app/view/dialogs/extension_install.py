@@ -7,7 +7,7 @@ from qfluentwidgets import BodyLabel, MessageBoxBase, SubtitleLabel, isDarkTheme
 
 from app.view.components.scroll_area import ScrollArea
 
-from app.platform.desktop import openChromiumUrl, openFolder
+from app.platform.desktop import openChromiumUrl, revealInFolder
 
 PREVIEW_SIZE = QSize(720, 405)
 PREVIEW_GIF = ":/res/install_chrome_extension_guidance.webp"
@@ -121,7 +121,7 @@ class ExtensionInstallDialog(MessageBoxBase):
     def _onInstall(self) -> None:
         from qfluentwidgets import InfoBar, InfoBarPosition
 
-        openFolder(str(self._path))
+        revealInFolder(str(self._path))
         if not openChromiumUrl("chrome://extensions"):
             QApplication.clipboard().setText("chrome://extensions")
             InfoBar.info(

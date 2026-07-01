@@ -247,8 +247,8 @@ class MainWindow(MSFluentWindow):
 
     def _openLogFolder(self) -> None:
         from app.config.paths import APP_DATA_DIR
-        from app.platform.desktop import openFolder
-        openFolder(APP_DATA_DIR)
+        from app.platform.desktop import revealInFolder
+        revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
 
     def closeEvent(self, event) -> None:
         event.ignore()

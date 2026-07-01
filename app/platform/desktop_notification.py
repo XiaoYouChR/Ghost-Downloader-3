@@ -7,7 +7,7 @@ from PySide6.QtCore import QFileInfo, QStandardPaths, Qt
 from PySide6.QtWidgets import QFileIconProvider
 from loguru import logger
 
-from app.platform.desktop import openFile, openFolder
+from app.platform.desktop import openFile, revealInFolder
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -39,7 +39,6 @@ def notifyTaskCompleted(task: Task) -> None:
     if not outputPath:
         return
 
-    parentFolder = str(Path(outputPath).parent)
     iconPath = Path(QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.TempLocation
     )) / "gd_finished_icon.png"
@@ -61,7 +60,7 @@ def notifyTaskCompleted(task: Task) -> None:
         message=task.name,
         buttons=[
             Button(title="打开文件", on_pressed=lambda: openFile(outputPath)),
-            Button(title="打开目录", on_pressed=lambda: openFolder(parentFolder)),
+            Button(title="打开目录", on_pressed=lambda: revealInFolder(outputPath)),
         ],
         on_clicked=lambda: openFile(outputPath),
         icon=Icon(path=iconPath) if iconPath.exists() else None,

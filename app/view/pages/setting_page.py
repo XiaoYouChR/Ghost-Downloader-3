@@ -476,8 +476,8 @@ class SettingPage(ScrollArea):
 
     def _onOpenLogClicked(self) -> None:
         from app.config.paths import APP_DATA_DIR
-        from app.platform.desktop import openFolder
-        openFolder(APP_DATA_DIR)
+        from app.platform.desktop import revealInFolder
+        revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
 
     def showEvent(self, event) -> None:
         self._restoreOrder()

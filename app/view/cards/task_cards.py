@@ -16,7 +16,7 @@ from qfluentwidgets import (
 from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
-from app.platform.desktop import openFile, openFolder
+from app.platform.desktop import openFile, revealInFolder
 from app.services.task_service import taskService
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 
@@ -203,7 +203,7 @@ class UniversalTaskCard(TaskCard):
         self.toggleButton.clicked.connect(self._onToggleClicked)
         self.verifyHashButton.clicked.connect(self._onVerifyHashClicked)
         self.openFileButton.clicked.connect(lambda: openFile(self._task.outputPath))
-        self.openFolderButton.clicked.connect(lambda: openFolder(str(self._task.outputFolder)))
+        self.openFolderButton.clicked.connect(lambda: revealInFolder(self._task.outputPath))
         self.deleteButton.clicked.connect(self._onDeleteClicked)
 
         from app.services.category_service import categoryService
