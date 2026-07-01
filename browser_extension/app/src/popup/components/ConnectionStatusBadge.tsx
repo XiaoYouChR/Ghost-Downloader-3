@@ -33,7 +33,6 @@ export function ConnectionStatusBadge({
 }) {
   const styles = useStyles();
   const tone = connectionTone(state);
-  const isOffline = state !== "connected" && state !== "connecting" && state !== "authenticating";
   const hasPending = (pendingCount ?? 0) > 0;
 
   const label = state === "connected" ? "已连接" : connectionLabel(state, message);
@@ -60,7 +59,7 @@ export function ConnectionStatusBadge({
       >
         {badgeText}
       </Badge>
-      {isOffline && onLaunchDesktop && (
+      {onLaunchDesktop && (
         <Button
           appearance="subtle"
           aria-label="启动桌面端"
