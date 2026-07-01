@@ -80,6 +80,7 @@ def startApp(application):
     mainWindow = MobileMainWindow()
     mainWindow.show()
     setupTouchScrolling(mainWindow)
+    signalBus.exceptionCaught.connect(mainWindow.alertException)
 
     requestNotificationPermission()
     requestIgnoreBatteryOptimizations()
@@ -87,6 +88,8 @@ def startApp(application):
     taskService.taskCompleted.connect(notifyTaskCompleted)
     taskService.taskStarted.connect(lambda _: keepAlive.holdFor(REASON_DOWNLOAD))
     taskService.tasksAllCompleted.connect(lambda: keepAlive.release(REASON_DOWNLOAD))
+    taskService.taskStarted.connect(lambda _: speedMeter.start())
+    taskService.tasksAllCompleted.connect(speedMeter.stop)
     speedMeter.speedChanged.connect(keepAlive.setSpeed)
 
     def onBrowserTaskDraftRequested(tasks):

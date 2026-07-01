@@ -39,7 +39,7 @@ class MobileTaskPage(TaskPage):
 
     def _initLayout(self) -> None:
         toolBarLayout = QHBoxLayout(self.toolBar)
-        toolBarLayout.setContentsMargins(10, 6, 10, 0)
+        toolBarLayout.setContentsMargins(10, 4, 10, 0)
         toolBarLayout.setSpacing(6)
         toolBarLayout.addWidget(self.startAllButton)
         toolBarLayout.addWidget(self.pauseAllButton)
@@ -49,7 +49,7 @@ class MobileTaskPage(TaskPage):
         toolBarLayout.addWidget(self.planButton)
 
         filterToolBarLayout = QHBoxLayout(self.filterToolBar)
-        filterToolBarLayout.setContentsMargins(10, 0, 10, 6)
+        filterToolBarLayout.setContentsMargins(10, 0, 10, 4)
         filterToolBarLayout.setSpacing(6)
         filterToolBarLayout.addWidget(self.sortButton)
         filterToolBarLayout.addWidget(self.filterButton)
@@ -58,7 +58,7 @@ class MobileTaskPage(TaskPage):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(6)
         layout.addWidget(self.toolBar)
         layout.addWidget(self.filterToolBar)
         layout.addWidget(self.scrollArea)
