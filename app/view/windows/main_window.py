@@ -290,6 +290,7 @@ class MainWindow(MSFluentWindow):
                 uris = fileUrisFromCopyData(msg.lParam)
                 if uris:
                     signalBus.openFileRequested.emit(uris)
+                    raiseWindow(self)
                 return True, 1
 
         return super().nativeEvent(eventType, message)
@@ -417,6 +418,7 @@ if sys.platform == "win32":
                     uris = fileUrisFromCopyData(msg.lParam)
                     if uris:
                         signalBus.openFileRequested.emit(uris)
+                        raiseWindow(self)
                     return True, 1
 
             return FramelessWindow.nativeEvent(self, eventType, message)

@@ -508,7 +508,7 @@ class BrowserService(QObject):
 
     def _onTaskAction(self, session: BrowserClientSession, data: dict) -> None:
         from app.models.task import TaskStatus
-        from app.platform.desktop import openFile, openFolder
+        from app.platform.desktop import requestForeground, openFile, openFolder
 
         requestId = toStr(data, "requestId")
         taskId = toStr(data, "taskId")
@@ -556,6 +556,7 @@ class BrowserService(QObject):
                     self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId,
                                      ok=False, message="文件尚未生成")
                     return
+                requestForeground()
                 openFile(path)
 
             elif action == TaskAction.OPEN_FOLDER:
@@ -564,6 +565,7 @@ class BrowserService(QObject):
                     self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId,
                                      ok=False, message="目录不存在")
                     return
+                requestForeground()
                 openFolder(path)
 
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=True)

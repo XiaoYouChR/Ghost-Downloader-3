@@ -110,6 +110,36 @@ def openChromiumUrl(url: str) -> bool:
     return False
 
 
+def requestForeground() -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        import win32api
+        import win32con
+        import win32gui
+        import win32process
+
+        hwnd = win32gui.FindWindow(None, "Ghost Downloader")
+        if not hwnd:
+            return
+        foregroundHwnd = win32gui.GetForegroundWindow()
+        if not foregroundHwnd or foregroundHwnd == hwnd:
+            return
+        foregroundThreadId = win32process.GetWindowThreadProcessId(foregroundHwnd)[0]
+        currentThreadId = win32api.GetCurrentThreadId()
+        attached = False
+        try:
+            if foregroundThreadId != currentThreadId:
+                win32process.AttachThreadInput(currentThreadId, foregroundThreadId, True)
+                attached = True
+            win32gui.SetForegroundWindow(hwnd)
+        finally:
+            if attached:
+                win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
+    except Exception:
+        pass
+
+
 def raiseWindow(window) -> None:
     window.show()
     window.setWindowState(
