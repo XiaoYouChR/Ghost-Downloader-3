@@ -45,6 +45,7 @@ def setupEnvironment():
 
 
 def startApp(application, isSilent=False):
+    from PySide6.QtCore import QTranslator
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
     from app.services.coroutine_runner import coroutineRunner
@@ -64,6 +65,12 @@ def startApp(application, isSilent=False):
     sys.excepthook = exceptionHook
 
     application.setQuitOnLastWindowClosed(False)
+
+    locale = cfg.language.value.value
+    translator = QTranslator(application)
+    translator.load(locale, "gd3", ".", ":/i18n")
+    application.installTranslator(translator)
+
     if sys.platform == "darwin":
         from app.view.shell.dock import setDockIconVisible
         setDockIconVisible(cfg.shouldShowDockIcon.value, activate=False)

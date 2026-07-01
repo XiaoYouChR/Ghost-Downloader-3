@@ -163,8 +163,8 @@ class SettingPage(ScrollArea):
         )
 
         self.urlSchemeCard = SwitchSettingCard(
-            FluentIcon.LINK, self.tr("注册 ghostdownloader:// 协议"),
-            self.tr("允许浏览器扩展在桌面端未运行时自动启动"),
+            FluentIcon.LINK, self.tr("注册 URL 协议"),
+            self.tr("注册 ghostdownloader:// 协议，允许浏览器扩展启动桌面端"),
             cfg.isUrlSchemeRegistered,
         ) if sys.platform != "darwin" else None
 
@@ -246,7 +246,7 @@ class SettingPage(ScrollArea):
                                 self.tr("设置界面的首选语言"),
                                 texts=["简体中文 (中国大陆)", "正體中文 (台灣)", "粤语 (香港)",
                                        "English (US)", "日本語 (日本)", "Русский (Россия)",
-                                       self.tr("使用系统设置")]),
+                                       "Português (Brasil)", self.tr("使用系统设置")]),
         )
         self.personalGroup.addSettingCards(personalCards)
 

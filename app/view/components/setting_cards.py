@@ -291,7 +291,7 @@ class ClientProfileSettingCard(SettingCard):
 
     def __init__(self, parent=None):
         from qfluentwidgets import DropDownPushButton
-        from app.client import toProfileLabel
+        from app.view.components.option_cards import toProfileLabel
         super().__init__(FluentIcon.ROBOT, self.tr("模拟身份"), self.tr("浏览器 TLS 指纹与 User-Agent"), parent)
         self.button = DropDownPushButton(toProfileLabel(cfg.clientProfile.value), self)
         self._initWidget()
@@ -300,9 +300,8 @@ class ClientProfileSettingCard(SettingCard):
 
     def _initWidget(self) -> None:
         from qfluentwidgets import Action, RoundMenu
-        from app.client import (
-            PROFILE_FAMILY_LABELS, profileFamilies, profileVersions, toProfileLabel,
-        )
+        from app.client import profileFamilies, profileVersions
+        from app.view.components.option_cards import PROFILE_FAMILY_LABELS, toProfileLabel
 
         self.button.setMinimumWidth(200)
         menu = RoundMenu(parent=self)
@@ -334,7 +333,7 @@ class ClientProfileSettingCard(SettingCard):
         cfg.clientProfile.valueChanged.connect(self._onProfileChanged)
 
     def _onProfileChanged(self, value: str) -> None:
-        from app.client import toProfileLabel
+        from app.view.components.option_cards import toProfileLabel
         self.button.setText(toProfileLabel(value))
 
     def _onPick(self, value: str) -> None:

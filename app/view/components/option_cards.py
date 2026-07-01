@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
@@ -9,6 +9,25 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import cfg
+
+PROFILE_FAMILY_LABELS = {
+    "chrome": "Chrome", "edge": "Edge", "firefox": "Firefox",
+    "safari": "Safari", "okhttp": "OkHttp",
+}
+
+
+def toProfileLabel(value: str) -> str:
+    tr = lambda text: QCoreApplication.translate("ClientProfileCard", text)
+
+    if value in {"", "auto"}:
+        return tr("自动（匹配来源）")
+    if value == "raw":
+        return tr("不模拟（原样发送）")
+    if value in PROFILE_FAMILY_LABELS:
+        return tr("{0}（最新）").format(PROFILE_FAMILY_LABELS[value])
+    head = value.rstrip("0123456789_")
+    version = value[len(head):].replace("_", ".")
+    return f"{head} {version}" if version else value
 
 
 class OptionCard(QWidget):
@@ -107,9 +126,7 @@ class ClientProfileCard(OptionCard):
 
     def __init__(self, parent=None, *, initial: str = ""):
         from qfluentwidgets import DropDownPushButton, RoundMenu
-        from app.client import (
-            PROFILE_FAMILY_LABELS, profileFamilies, profileVersions, toProfileLabel,
-        )
+        from app.client import profileFamilies, profileVersions
 
         super().__init__(parent)
         self.setFixedHeight(50)
@@ -150,12 +167,10 @@ class ClientProfileCard(OptionCard):
         return {"clientProfile": self._value}
 
     def reset(self) -> None:
-        from app.client import toProfileLabel
         self._value = ""
         self.button.setText(toProfileLabel(""))
 
     def _onPick(self, value: str) -> None:
-        from app.client import toProfileLabel
         self._value = value
         self.button.setText(toProfileLabel(value))
 

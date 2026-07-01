@@ -120,24 +120,6 @@ def profileVersions(family: str) -> list[str]:
     return [name for name, _ver, _profile in PROFILES_BY_FAMILY.get(family, [])]
 
 
-PROFILE_FAMILY_LABELS = {
-    "chrome": "Chrome", "edge": "Edge", "firefox": "Firefox",
-    "safari": "Safari", "okhttp": "OkHttp",
-}
-
-
-def toProfileLabel(value: str) -> str:
-    if value in {"", "auto"}:
-        return "自动（匹配来源）"
-    if value == "raw":
-        return "不模拟（原样发送）"
-    if value in PROFILE_FAMILY_LABELS:
-        return f"{PROFILE_FAMILY_LABELS[value]}（最新）"
-    head = value.rstrip("0123456789_")
-    version = value[len(head):].replace("_", ".")
-    return f"{head} {version}" if version else value
-
-
 def matchEmulation(userAgent: str, host: Platform) -> Emulation | None:
     if not userAgent:
         return None
