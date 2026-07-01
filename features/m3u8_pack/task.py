@@ -121,7 +121,12 @@ class M3U8TaskStep(TaskStep):
             self._process.terminate()
 
     def deleteFiles(self):
-        deletePath(Path(self._tempFolder))
+        tempFolder = Path(self._tempFolder)
+        deletePath(tempFolder)
+        try:
+            tempFolder.parent.rmdir()
+        except OSError:
+            pass
         outputDir = self.task.outputFolder
         if not outputDir.is_dir():
             return
