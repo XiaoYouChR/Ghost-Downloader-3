@@ -11,28 +11,47 @@ def setupHiddenSubprocess() -> None:
 
 
 async def _createHiddenSubprocess(program, *args, stdin=None, stdout=None, stderr=None,
-                                  cwd=None, env=None) -> "_HiddenProcess":
-    startupInfo = subprocess.STARTUPINFO()
-    startupInfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    startupInfo.wShowWindow = subprocess.SW_HIDE
+                                  limit=2**16, **kwds) -> "_HiddenProcess":
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = subprocess.SW_HIDE
 
     proc = subprocess.Popen(
         [program, *args],
         stdin=stdin, stdout=stdout, stderr=stderr,
-        cwd=str(cwd) if cwd is not None else None,
-        env=env,
-        startupinfo=startupInfo,
+        startupinfo=si,
         creationflags=subprocess.CREATE_NO_WINDOW,
+        **kwds,
     )
-    return _HiddenProcess(proc)
+    return _HiddenProcess(proc, limit)
+
+
+class _StdinWriter:
+    __slots__ = ("_pipe",)
+
+    def __init__(self, pipe):
+        self._pipe = pipe
+
+    def write(self, data: bytes) -> None:
+        self._pipe.write(data)
+
+    async def drain(self) -> None:
+        self._pipe.flush()
+
+    def close(self) -> None:
+        self._pipe.close()
+
+    async def wait_closed(self) -> None:
+        pass
 
 
 class _HiddenProcess:
-    def __init__(self, proc: subprocess.Popen):
+    def __init__(self, proc: subprocess.Popen, limit: int):
         self._proc = proc
         self._loop = asyncio.get_running_loop()
-        self.stdout = self._openReader(proc.stdout) if proc.stdout is not None else None
-        self.stderr = self._openReader(proc.stderr) if proc.stderr is not None else None
+        self.stdin = _StdinWriter(proc.stdin) if proc.stdin is not None else None
+        self.stdout = self._openReader(proc.stdout, limit) if proc.stdout is not None else None
+        self.stderr = self._openReader(proc.stderr, limit) if proc.stderr is not None else None
 
     @property
     def returncode(self) -> int | None:
@@ -54,8 +73,8 @@ class _HiddenProcess:
         self._proc.kill()
         self._proc.wait()
 
-    def _openReader(self, pipe) -> asyncio.StreamReader:
-        reader = asyncio.StreamReader()
+    def _openReader(self, pipe, limit: int) -> asyncio.StreamReader:
+        reader = asyncio.StreamReader(limit=limit)
         threading.Thread(
             target=self._pumpPipe, args=(pipe, reader),
             name="subprocess-pipe-pump", daemon=True,
