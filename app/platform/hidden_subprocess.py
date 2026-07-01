@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 import subprocess
 import sys
 import threading
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import io
 
 
 def setupHiddenSubprocess() -> None:
@@ -29,7 +35,7 @@ async def _createHiddenSubprocess(program, *args, stdin=None, stdout=None, stder
 class _StdinWriter:
     __slots__ = ("_pipe",)
 
-    def __init__(self, pipe):
+    def __init__(self, pipe: io.BufferedWriter):
         self._pipe = pipe
 
     def write(self, data: bytes) -> None:
@@ -71,9 +77,8 @@ class _HiddenProcess:
 
     def kill(self) -> None:
         self._proc.kill()
-        self._proc.wait()
 
-    def _openReader(self, pipe, limit: int) -> asyncio.StreamReader:
+    def _openReader(self, pipe: io.BufferedReader, limit: int) -> asyncio.StreamReader:
         reader = asyncio.StreamReader(limit=limit)
         threading.Thread(
             target=self._pumpPipe, args=(pipe, reader),
@@ -81,11 +86,11 @@ class _HiddenProcess:
         ).start()
         return reader
 
-    def _pumpPipe(self, pipe, reader: asyncio.StreamReader) -> None:
+    def _pumpPipe(self, pipe: io.BufferedReader, reader: asyncio.StreamReader) -> None:
         try:
             while chunk := pipe.read1(65536):
                 self._loop.call_soon_threadsafe(reader.feed_data, chunk)
-        except (OSError, ValueError):
+        except (OSError, ValueError, RuntimeError):
             pass
         finally:
             try:
