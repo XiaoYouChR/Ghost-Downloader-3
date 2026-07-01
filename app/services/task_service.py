@@ -125,6 +125,7 @@ class TaskService(QObject):
     taskFailed = Signal(object)
     tasksAllCompleted = Signal()
     fileDisappeared = Signal(object)
+    diskSpaceInsufficient = Signal(int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -166,6 +167,15 @@ class TaskService(QObject):
         self._store.add(task)
         self._flushTimer.start()
         self.taskAdded.emit(task)
+        if task.fileSize > 0:
+            from shutil import disk_usage
+            try:
+                free = disk_usage(task.outputFolder).free
+                if free < task.fileSize:
+                    self.diskSpaceInsufficient.emit(free, task.fileSize)
+                    return
+            except OSError:
+                pass
         self._schedule(task)
 
     def start(self, task: Task) -> None:
