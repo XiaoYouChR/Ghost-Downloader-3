@@ -6,15 +6,24 @@ on:
       build_target:
         description: 'Build Target'
         required: true
-        default: 'windows'
+        default: 'all'
         type: choice
         options:
           - 'windows'
           - 'macos'
           - 'linux'
+          - 'android'
           - 'all'
+      create_release:
+        description: 'Create Release'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
       package_installer:
-        description: 'Package Installer'
+        description: 'Package Installer (Windows)'
         required: true
         default: 'true'
         type: choice
@@ -22,22 +31,67 @@ on:
           - 'true'
           - 'false'
       sign_artifact:
-        description: 'Sign Artifact'
+        description: 'Sign Artifact (Windows)'
         required: true
         default: 'true'
         type: choice
         options:
           - 'true'
           - 'false'
-  release:
-    types: [ published ]
+      use_cn_mirror:
+        description: 'Use CN Mirror (Android)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(python3 -c "exec(open('app/config/constants.py').read()); print(VERSION)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$VERSION"
+
+      - name: Create tag and release
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v$VERSION"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            PREV_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+            BODY=""
+            if [ -n "$PREV_TAG" ]; then
+              BODY="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            fi
+            gh release create "$TAG" --title "$TAG" --notes "$BODY" --latest
+          fi
+
   build-windows:
-    if: ${{ github.event_name == 'release' || github.event.inputs.build_target == 'windows' || github.event.inputs.build_target == 'all' }}
+    needs: [prepare]
+    if: ${{ github.event.inputs.build_target == 'windows' || github.event.inputs.build_target == 'all' }}
     strategy:
       matrix:
         architecture: [ x86_64, arm64 ]
@@ -59,20 +113,17 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          python -c "from app.config.constants import VERSION; f = open('version.txt', 'w'); f.write(VERSION); f.close(); f = open('scripts/Ghost-Downloader-3.iss', 'r+'); _ = f.read().replace('APPLICATION_VERSION', VERSION); f.seek(0); f.write(_); f.truncate(); f.close();"
-          $VERSION = gc version.txt
-          Write-Host "VERSION=$VERSION"
-          echo "VERSION=$VERSION" >> $env:GITHUB_ENV
-          del version.txt
+          echo "VERSION=${{ needs.prepare.outputs.version }}" >> $env:GITHUB_ENV
+          (Get-Content scripts/Ghost-Downloader-3.iss) -replace 'APPLICATION_VERSION', '${{ needs.prepare.outputs.version }}' | Set-Content scripts/Ghost-Downloader-3.iss
           python scripts/deploy.py
 
       - name: Prepare For Sign
-        if: ${{ github.event_name == 'release' || github.event.inputs.sign_artifact == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
         run: |
           mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
 
       - name: upload-unsigned-artifact
-        if: ${{ github.event_name == 'release' || github.event.inputs.sign_artifact == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v7
         with:
@@ -80,7 +131,7 @@ jobs:
           path: dist/Ghost-Downloader-3-Unsigned.dist
 
       - name: Sign
-        if: ${{ github.event_name == 'release' || github.event.inputs.sign_artifact == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
         uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -92,62 +143,55 @@ jobs:
           output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
 
       - name: Download Inno Setup Translation Files
-        if: ${{ github.event_name == 'release' || github.event.inputs.package_installer == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true' }}
         run: |
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
           Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseTraditional.isl"
 
       - name: Build Installer
-        if: ${{ github.event_name == 'release' || github.event.inputs.package_installer == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true' }}
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.8
         with:
           path: scripts/Ghost-Downloader-3.iss
 
       - name: Rename Installer
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package_installer == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'false' && github.event.inputs.package_installer == 'true' }}
         shell: pwsh
         run: |
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
       - name: Upload Installer
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.package_installer == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'false' && github.event.inputs.package_installer == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup
           path: dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
-      - name: Create zip file
-        if: ${{ github.event_name == 'release' }}
+      - name: Package release files
+        if: ${{ github.event.inputs.create_release == 'true' }}
         shell: pwsh
         run: |
-          $distPath = "dist/Ghost-Downloader-3.dist"
-          $zipFile = "Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip"
-
-          # Create a zip file containing the contents of Ghost-Downloader.dist, without the folder itself
-          Write-Output "Zipping contents of $distPath..."
           7z a -tzip -mx=9 -m0=LZMA Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip dist/Ghost-Downloader-3.dist/*
-          Write-Output "Zip created at $zipFile"
-
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
+      - name: Upload to release
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${{ env.VERSION }}" "Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip" "dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe" --clobber
+
       - name: Upload artifacts
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
           path: |
             dist/Ghost-Downloader-3.dist
 
-      - name: Upload to release
-        uses: softprops/action-gh-release@v3
-        if: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') }}
-        with:
-          files: |
-            Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip
-            dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
-
   build-macos:
-    if: ${{ github.event_name == 'release' || github.event.inputs.build_target == 'macos' || github.event.inputs.build_target == 'all' }}
+    needs: [prepare]
+    if: ${{ github.event.inputs.build_target == 'macos' || github.event.inputs.build_target == 'all' }}
     strategy:
       matrix:
         include:
@@ -181,8 +225,7 @@ jobs:
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "exec(open('app/config/constants.py').read()); print(VERSION)")
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "VERSION=${{ needs.prepare.outputs.version }}" >> "$GITHUB_ENV"
           python3 scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
@@ -228,20 +271,22 @@ jobs:
             "$DMG_SOURCE_DIR"
 
       - name: Upload to release
-        uses: softprops/action-gh-release@v3
-        if: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') }}
-        with:
-          files: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${{ env.VERSION }}" "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg" --clobber
 
       - name: Upload artifacts
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
           path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
 
   build-ubuntu:
-    if: ${{ github.event_name == 'release' || github.event.inputs.build_target == 'linux' || github.event.inputs.build_target == 'all' }}
+    needs: [prepare]
+    if: ${{ github.event.inputs.build_target == 'linux' || github.event.inputs.build_target == 'all' }}
     strategy:
       matrix:
         include:
@@ -268,13 +313,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y desktop-file-utils libegl1-mesa-dev
+          sudo apt-get install -y desktop-file-utils libegl1-mesa-dev libzstd1
           pip install --timeout=300 -r requirements.txt
 
       - name: Build with Nuitka
         run: |
-          VERSION=$(python3 -c "exec(open('app/config/constants.py').read()); print(VERSION)")
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "VERSION=${{ needs.prepare.outputs.version }}" >> "$GITHUB_ENV"
           python scripts/deploy.py
           chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
 
@@ -306,6 +350,7 @@ jobs:
 
           cp -R "$DIST_DIR"/. "$DEB_ROOT$INSTALL_DIR/"
           cp -R "$DIST_DIR"/. "$APPDIR/usr/lib/$PACKAGE_NAME/"
+          cp /usr/lib/*/libzstd.so.1 "$APPDIR/usr/lib/$PACKAGE_NAME/"
 
           ln -s "$INSTALL_DIR/Ghost-Downloader-3.bin" "$DEB_ROOT/usr/bin/$PACKAGE_NAME"
           ln -s "../lib/$PACKAGE_NAME/Ghost-Downloader-3.bin" "$APPDIR/usr/bin/$PACKAGE_NAME"
@@ -362,19 +407,29 @@ jobs:
           file "$APPIMAGE_FILE"
 
       - name: Tar the contents of Ghost-Downloader
-        if: ${{ github.event_name == 'release' }}
+        if: ${{ github.event.inputs.create_release == 'true' }}
         shell: pwsh
         run: |
           $distPath = "dist/Ghost-Downloader-3.dist"
           $tarFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
 
-          # Create a tar.xz archive containing the contents of Ghost-Downloader.dist, without the folder itself
           Write-Output "Creating tar.xz archive of $distPath..."
           tar -cJf $tarFile -C $distPath .
           Write-Output "Archive created at $tarFile"
 
+      - name: Upload to release
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${{ env.VERSION }}" \
+            "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz" \
+            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb" \
+            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage" \
+            --clobber
+
       - name: Upload artifacts
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
           name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
@@ -383,11 +438,63 @@ jobs:
             dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb
             dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
 
+  build-android:
+    needs: [prepare]
+    if: ${{ github.event.inputs.build_target == 'android' || github.event.inputs.build_target == 'all' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GD3_CN_MIRROR: ${{ inputs.use_cn_mirror && '1' || '' }}
+      GD3_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      GD3_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+            /usr/local/share/boost /usr/local/share/powershell /opt/hostedtoolcache/CodeQL \
+            "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}" || true
+          sudo docker image prune -af || true
+          df -h /
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            export GD3_KEYSTORE="$RUNNER_TEMP/release.jks"
+            echo "[ci] keystore ready, signing as release"
+          else
+            echo "[ci] no keystore secret, building debug APK"
+          fi
+          bash run_build.sh
+
+      - name: Show APK info
+        if: always()
+        working-directory: android
+        run: ls -la dist/ 2>/dev/null || echo "no dist/"
+
+      - name: Rename APK
+        run: |
+          APK=$(ls android/dist/*.apk | head -1)
+          DEST="Ghost-Downloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a.apk"
+          mv "$APK" "$DEST"
+          echo "APK_FILE=$DEST" >> "$GITHUB_ENV"
+
       - name: Upload to release
-        uses: softprops/action-gh-release@v3
-        if: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${{ needs.prepare.outputs.version }}" "${{ env.APK_FILE }}" --clobber
+
+      - name: Upload APK artifact
+        if: ${{ github.event.inputs.create_release == 'false' }}
+        uses: actions/upload-artifact@v7
         with:
-          files: |
-            Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz
-            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb
-            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
+          name: Ghost-Downloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a
+          path: ${{ env.APK_FILE }}
+          if-no-files-found: error
