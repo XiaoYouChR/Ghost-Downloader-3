@@ -5,6 +5,8 @@ from PySide6.QtGui import QMovie
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, MessageBoxBase, SubtitleLabel, isDarkTheme, themeColor
 
+from app.view.components.scroll_area import ScrollArea
+
 from app.platform.desktop import openChromiumUrl, openFolder
 
 PREVIEW_SIZE = QSize(720, 405)
@@ -26,9 +28,11 @@ class ExtensionInstallDialog(MessageBoxBase):
 
     def _initWidget(self) -> None:
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.widget.setMinimumWidth(PREVIEW_SIZE.width() + 48)  # + viewLayout 左右各 24 边距
+        self.widget.setMinimumWidth(PREVIEW_SIZE.width() + 48)  # + scrollLayout 左右各 24 边距
         # viewLayout margins 48 + spacers/spacing 60 + title 28 + steps 168 + buttonGroup 81
-        self.widget.setMinimumHeight(PREVIEW_SIZE.height() + 385)
+        self.widget.setMaximumHeight(PREVIEW_SIZE.height() + 385)
+        self._hBoxLayout.setContentsMargins(40, 40, 40, 40)
+        self._hBoxLayout.setAlignment(self.widget, Qt.AlignmentFlag.AlignHCenter)
         self.yesButton.setText(self.tr("打开扩展页面并定位目录"))
         self.cancelButton.setText(self.tr("关闭"))
         self._initPreview()
@@ -89,11 +93,26 @@ class ExtensionInstallDialog(MessageBoxBase):
             layout.addLayout(row)
 
     def _initLayout(self) -> None:
-        self.viewLayout.addWidget(self.previewLabel)
-        self.viewLayout.addSpacing(8)
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addSpacing(4)
-        self.viewLayout.addWidget(self.stepsWidget)
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.viewLayout.setSpacing(0)
+
+        scrollArea = ScrollArea(self.widget)
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scrollArea.enableTransparentBackground()
+
+        scrollWidget = QWidget()
+        scrollLayout = QVBoxLayout(scrollWidget)
+        scrollLayout.setSpacing(12)
+        scrollLayout.setContentsMargins(24, 24, 24, 24)
+        scrollLayout.addWidget(self.previewLabel)
+        scrollLayout.addSpacing(8)
+        scrollLayout.addWidget(self.titleLabel)
+        scrollLayout.addSpacing(4)
+        scrollLayout.addWidget(self.stepsWidget)
+
+        scrollArea.setWidget(scrollWidget)
+        self.viewLayout.addWidget(scrollArea)
 
     def _bind(self) -> None:
         self.yesButton.clicked.disconnect()

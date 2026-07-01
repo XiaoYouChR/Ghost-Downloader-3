@@ -1,7 +1,9 @@
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QColor, QFont, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
-from qfluentwidgets import CaptionLabel, ScrollArea, setFont, isDarkTheme
+from qfluentwidgets import CaptionLabel, setFont, isDarkTheme
+
+from app.view.components.scroll_area import ScrollArea
 
 from app.format import toReadableSize
 

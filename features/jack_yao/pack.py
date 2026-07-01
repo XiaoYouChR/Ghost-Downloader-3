@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from base64 import b64decode
 from pathlib import Path
 
@@ -32,10 +31,7 @@ from app.client import buildClient
 from app.config.cfg import cfg
 from app.models.pack import FeaturePack, PackPage
 
-if sys.platform != "darwin":
-    from qfluentwidgets import SmoothScrollArea as ScrollArea
-else:
-    from qfluentwidgets import ScrollArea
+from app.view.components.scroll_area import ScrollArea
 
 CATALOG_API = "https://xineko-my.sharepoint.com/personal/os_store_xineko_onmicrosoft_com/_layouts/52/download.aspx?share=IQCK7kKU1-8oSqWDNNPss2xeAbmG3v4cItTXNqW2NG9Hzwc"
 CONTENT_MARGIN = 16

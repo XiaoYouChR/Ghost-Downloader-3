@@ -8,8 +8,10 @@ from PySide6.QtWidgets import QVBoxLayout, QWidget, QApplication
 from qfluentwidgets import (
     ComboBoxSettingCard, FluentIcon, HyperlinkCard, HyperlinkButton, InfoBar,
     InfoBarPosition, MessageBox, PrimaryPushSettingCard, PushSettingCard,
-    RangeSettingCard, ScrollArea, SwitchSettingCard, ToolButton, ToolTipFilter,
+    RangeSettingCard, SwitchSettingCard, ToolButton, ToolTipFilter,
 )
+
+from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg
 from app.platform.android import IS_ANDROID
