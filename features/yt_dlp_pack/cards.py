@@ -15,7 +15,7 @@ from app.view.cards.draft_cards import UniversalDraftCard
 from app.view.cards.task_cards import UniversalTaskCard
 from app.view.components.tree_view import AutoSizingTreeView
 from .config import ytDlpConfig
-from .task import YtDlpTask
+from .task import YtDlpTask, toInt
 
 
 def buildQualityTiers(mediaInfo: dict) -> list[tuple[str, str]]:
@@ -73,9 +73,15 @@ class YtDlpDraftCard(UniversalDraftCard):
         super()._initWidget()
         task: YtDlpTask = self._task
         mediaInfo: dict = getattr(task, "_mediaInfo", {})
+        hasMediaInfo = bool(mediaInfo.get("formats"))
 
-        self._qualityTiers = buildQualityTiers(mediaInfo)
-        self._subtitleChoices = buildSubtitleChoices(mediaInfo)
+        self._qualityTiers = buildQualityTiers(mediaInfo) if hasMediaInfo else [("bv*+ba/b", self.tr("最佳画质"))]
+        self._subtitleChoices = buildSubtitleChoices(mediaInfo) if hasMediaInfo else []
+
+        self._mediaSpinner = IndeterminateProgressRing(self)
+        self._mediaSpinner.setFixedSize(20, 20)
+        self._mediaSpinner.setStrokeWidth(3)
+        self._mediaSpinner.setVisible(not hasMediaInfo)
 
         self._qualityCombo = ComboBox(self)
         self._qualityCombo.setMinimumWidth(160)
@@ -99,8 +105,12 @@ class YtDlpDraftCard(UniversalDraftCard):
         self._playlistSpinner.setStrokeWidth(3)
         self._playlistSpinner.hide()
 
+        if not hasMediaInfo:
+            self._startMediaInfoFetch()
+
     def _initLayout(self) -> None:
         super()._initLayout()
+        self.layout().addWidget(self._mediaSpinner)
         self.layout().addWidget(self._qualityCombo)
         self.layout().addWidget(self._subtitleButton)
         self.layout().addWidget(self._videoSelectButton)
@@ -111,6 +121,40 @@ class YtDlpDraftCard(UniversalDraftCard):
         self._qualityCombo.currentIndexChanged.connect(self._onQualityChanged)
         self._subtitleButton.clicked.connect(self._onSubtitleClicked)
         self._videoSelectButton.clicked.connect(self._onVideoSelectClicked)
+
+    def _startMediaInfoFetch(self) -> None:
+        from app.services.coroutine_runner import coroutineRunner
+        from features.yt_dlp_pack.pack import YouTubeParser
+        parser = YouTubeParser()
+        coroutineRunner.submit(
+            parser.fetchMediaInfo(self._task.url),
+            done=self._onMediaInfoLoaded,
+            failed=self._onMediaInfoFailed,
+            owner=self,
+        )
+
+    def _onMediaInfoLoaded(self, mediaInfo: dict) -> None:
+        self._mediaSpinner.hide()
+        task: YtDlpTask = self._task
+        task._mediaInfo = mediaInfo
+
+        fileSize = toInt(str(mediaInfo.get("filesize_approx") or 0))
+        if fileSize:
+            task.fileSize = fileSize
+            self.sizeLabel.setText(toReadableSize(fileSize))
+
+        self._qualityTiers = buildQualityTiers(mediaInfo)
+        self._qualityCombo.clear()
+        for _selector, label in self._qualityTiers:
+            self._qualityCombo.addItem(label)
+        if self._qualityTiers:
+            self._qualityCombo.setCurrentIndex(0)
+
+        self._subtitleChoices = buildSubtitleChoices(mediaInfo)
+        self._subtitleButton.setEnabled(bool(self._subtitleChoices))
+
+    def _onMediaInfoFailed(self, error: str) -> None:
+        self._mediaSpinner.hide()
 
     def _onQualityChanged(self, index: int) -> None:
         if 0 <= index < len(self._qualityTiers):

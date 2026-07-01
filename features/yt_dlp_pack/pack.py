@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import json
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, quote
 
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
 from .config import ytDlpConfig, ytDlpRuntime
-from .task import DEFAULT_VIDEO_FORMAT, YtDlpTask, YtDlpTaskStep, toInt
+from .task import YtDlpTask, YtDlpTaskStep
 
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
@@ -25,20 +25,14 @@ class YouTubeParser(TaskParser):
         url = options.url.strip()
         headers = dict(options.headers)
 
-        mediaInfo = {}
-        stdout = await self._runCommand([url, "--dump-json", "--no-playlist", "--no-warnings"])
-        if stdout:
-            mediaInfo = json.loads(stdout.decode("utf-8", errors="ignore"))
-
-        title = str(mediaInfo.get("title") or "").strip()
+        title = await self._fetchTitle(url)
         name = toSafeFilename(title) if title else "YouTube 视频"
-        fileSize = toInt(str(mediaInfo.get("filesize_approx") or 0)) or SpecialFileSize.UNKNOWN
         isPlaylist = bool(parse_qs(urlparse(url).query).get("list"))
 
         task = YtDlpTask(
             name=f"{name}.mp4",
             url=url,
-            fileSize=fileSize,
+            fileSize=SpecialFileSize.UNKNOWN,
             outputFolder=options.outputFolder,
             isPlaylist=isPlaylist,
         )
@@ -46,9 +40,24 @@ class YouTubeParser(TaskParser):
             stepIndex=1,
             headers=headers,
         ))
-
-        task._mediaInfo = mediaInfo
         return task
+
+    async def fetchMediaInfo(self, url: str) -> dict:
+        stdout = await self._runCommand([url, "--dump-json", "--no-playlist", "--no-warnings"])
+        if stdout:
+            return json.loads(stdout.decode("utf-8", errors="ignore"))
+        return {}
+
+    async def _fetchTitle(self, url: str) -> str:
+        from app.client import buildClient
+        oembedUrl = f"https://www.youtube.com/oembed?url={quote(url, safe='')}&format=json"
+        try:
+            client = buildClient(timeout=5)
+            response = await client.get(oembedUrl)
+            data = await response.json()
+            return str(data.get("title") or "")
+        except Exception:
+            return ""
 
     async def probePlaylist(self, url: str) -> list[dict]:
         stdout = await self._runCommand([url, "--flat-playlist", "--dump-json", "--no-warnings"], timeout=60)
