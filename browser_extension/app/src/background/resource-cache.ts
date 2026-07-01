@@ -11,6 +11,7 @@ export type HeaderSnapshot = {
   capturedAt: number;
   tabId: number | null;
   supportsRange: boolean;
+  size: number;
 };
 
 // Forwarded to desktop on resource handoff. Cookies/auth/sec-* are needed for gated CDNs;
@@ -283,6 +284,7 @@ export class ResourceCache {
     headers: Record<string, string>,
     tabId: number | null,
     supportsRange: boolean,
+    size = 0,
   ): void {
     const existing = this.headerSnapshotsByUrl.get(url);
     const mergedHeaders = {
@@ -290,7 +292,8 @@ export class ResourceCache {
       ...headers,
     };
     const mergedSupportsRange = supportsRange || Boolean(existing?.supportsRange);
-    if (Object.keys(mergedHeaders).length === 0 && !mergedSupportsRange) {
+    const mergedSize = (size > 0 ? size : 0) || existing?.size || 0;
+    if (Object.keys(mergedHeaders).length === 0 && !mergedSupportsRange && !mergedSize) {
       return;
     }
     this.headerSnapshotsByUrl.set(url, {
@@ -299,6 +302,7 @@ export class ResourceCache {
       capturedAt: Date.now(),
       tabId: tabId ?? existing?.tabId ?? null,
       supportsRange: mergedSupportsRange,
+      size: mergedSize,
     });
     this.removeStaleHeaders();
     this.onChange();

@@ -369,8 +369,8 @@ export function createResourceBridge(options: {
     const meta = toResponseMeta(details.responseHeaders);
     meta.mime = mimeFromUrl(details.url) || meta.mime;
     const responseSupportsRange = meta.supportsRange || details.statusCode === 206;
-    if (responseSupportsRange && isCapturableUrl(details.url)) {
-      cache.setHeaderSnapshot(details.url, {}, details.tabId > 0 ? details.tabId : lastActiveTabId, true);
+    if (isCapturableUrl(details.url) && (responseSupportsRange || meta.size > 0)) {
+      cache.setHeaderSnapshot(details.url, {}, details.tabId > 0 ? details.tabId : lastActiveTabId, responseSupportsRange, meta.size);
     }
 
     if (!shouldCaptureNetworkResource(details, meta)) {
@@ -437,7 +437,7 @@ export function createResourceBridge(options: {
           size:
             typeof downloadItem.totalBytes === "number" && downloadItem.totalBytes > 0
               ? downloadItem.totalBytes
-              : matchedResource?.size ?? 0,
+              : matchedResource?.size || headerSnapshot?.size || 0,
           supportsRange: Boolean(
             matchedResource?.supportsRange
             || headerSnapshot?.supportsRange
