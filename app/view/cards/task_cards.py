@@ -134,6 +134,7 @@ class UniversalTaskCard(TaskCard):
         super().__init__(task, parent)
         self.setFixedHeight(self.ROW_HEIGHT)
         self._lastStatus: TaskStatus | None = None
+        self._hashDigest: str = ""
 
         self.iconLabel = ImageLabel(self)
         self.nameLabel = IconStrongBodyLabel(task.name, self)
@@ -332,7 +333,22 @@ class UniversalTaskCard(TaskCard):
             self._showStatus(self.tr("文件不存在，无法校验"))
             return
         from app.view.dialogs.file_hash import FileHashDialog
-        FileHashDialog(self._task.outputPath, self.window()).exec()
+        dialog = FileHashDialog(self._task.outputPath, self.window())
+        dialog.hashReady.connect(self._onHashReady)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def _onHashReady(self, algorithm: str, digest: str) -> None:
+        self._hashDigest = f"{algorithm}: {digest}"
+        self._showStatus(self._hashDigest)
+
+    def buildContextMenu(self) -> RoundMenu:
+        menu = super().buildContextMenu()
+        if self._hashDigest:
+            copyHash = Action(FluentIcon.FINGERPRINT, self.tr("复制校验值"), self)
+            copyHash.triggered.connect(lambda: QApplication.clipboard().setText(self._hashDigest))
+            menu.insertAction(menu.actions()[1], copyHash)
+        return menu
 
     def resizeEvent(self, e) -> None:
         self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)
