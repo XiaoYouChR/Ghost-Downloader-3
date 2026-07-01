@@ -1,5 +1,5 @@
 import {makeStyles} from "@fluentui/react-components";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 
 import type {PopupView, ThemePreference} from "../shared/types";
 import {AdvancedPage} from "./pages/AdvancedPage";
@@ -39,6 +39,15 @@ export function App({
   const styles = useStyles();
   const [currentView, setCurrentView] = useState<PopupView>("tasks");
   const bridge = usePopupBridge(currentView);
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ type: "popup_mounted" }, (response) => {
+      void chrome.runtime.lastError;
+      if (response?.autoLaunch) {
+        launchDesktop();
+      }
+    });
+  }, []);
 
   return (
     <div className={styles.root}>

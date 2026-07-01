@@ -49,8 +49,24 @@ async function sendTaskOrEnqueue<T extends CommandResult>(payload: Record<string
   return { ok: true, message: "桌面端未连接，任务已排队" } as T;
 }
 
+const openWhenDoneIds = new Set<string>();
+
+function onTaskSnapshotChanged(tasks: TaskSummary[]): void {
+  updateIconForTasks(tasks);
+  for (const task of tasks) {
+    if (task.status === "completed" && openWhenDoneIds.has(task.taskId)) {
+      openWhenDoneIds.delete(task.taskId);
+      void desktopBridge.sendRequest({
+        type: "task_action",
+        taskId: task.taskId,
+        action: "open_file",
+      });
+    }
+  }
+}
+
 const desktopBridge = createDesktopBridge({
-  onTaskSnapshotChanged: updateIconForTasks,
+  onTaskSnapshotChanged,
   onConnected: () => void flushQueue(),
 });
 const resourceBridge = createResourceBridge({
@@ -146,7 +162,7 @@ async function buildPopupState(options: {
     serverUrl: desktopState.serverUrl,
     shouldTakeDownloads,
     isMediaButtonEnabled,
-    tasks: desktopState.tasks,
+    tasks: desktopState.tasks.map((t) => ({ ...t, shouldOpenWhenDone: openWhenDoneIds.has(t.taskId) })),
     taskCounters: buildTaskCounters(desktopState.tasks),
     tabId: activeTabId,
     featureStates: featureBridge.createFeatureStateMap(activeTabId),
@@ -295,6 +311,7 @@ chrome.webRequest.onResponseStarted.addListener(
 
 let bypassNextDownload = false;
 let bypassTimer = 0;
+let autoLaunchPending = false;
 
 async function takeBrowserDownload(
   downloadItem: chrome.downloads.DownloadItem,
@@ -317,6 +334,8 @@ async function takeBrowserDownload(
     if (totalBytes >= 0 && totalBytes < minTakeSizeKB * 1024) { return; }
   }
 
+  const wasReady = desktopBridge.isReady();
+
   try {
     await cancelDownload(downloadItem.id);
     if (options.eraseFromHistory) {
@@ -324,6 +343,10 @@ async function takeBrowserDownload(
     }
   } catch {
     // Cleanup failed but the browser will still finish the download as fallback.
+  }
+
+  if (!wasReady) {
+    autoLaunchPending = true;
   }
 
   await resourceBridge.routeBrowserDownload(downloadItem);
@@ -380,6 +403,14 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
       });
       return { ok: true, message: "请确认配对" };
     case "popup_task_action":
+      if (command.action === "open_when_done") {
+        if (openWhenDoneIds.has(command.taskId)) {
+          openWhenDoneIds.delete(command.taskId);
+        } else {
+          openWhenDoneIds.add(command.taskId);
+        }
+        return { ok: true };
+      }
       try {
         return await desktopBridge.sendRequest<CommandResult>({
           type: "task_action",
@@ -497,6 +528,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     bypassNextDownload = true;
     clearTimeout(bypassTimer);
     bypassTimer = self.setTimeout(() => { bypassNextDownload = false; }, 3000);
+    return;
+  }
+
+  if (message.type === "popup_mounted") {
+    const shouldLaunch = autoLaunchPending;
+    autoLaunchPending = false;
+    sendResponse({ autoLaunch: shouldLaunch });
     return;
   }
 

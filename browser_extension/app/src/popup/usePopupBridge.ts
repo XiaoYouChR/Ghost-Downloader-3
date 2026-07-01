@@ -404,7 +404,9 @@ export function usePopupBridge(activeView: PopupView) {
           action,
         }, "任务操作失败");
         await refreshState(activeViewRef.current);
-        showToast("任务操作已发送", "success");
+        if (action !== "open_when_done") {
+          showToast("任务操作已发送", "success");
+        }
       } catch (error) {
         showToast(errorMessageOr(error, "任务操作失败"), "error");
       } finally {

@@ -1,4 +1,4 @@
-import {Avatar, Button, Caption1, Card, makeStyles, ProgressBar} from "@fluentui/react-components";
+import {Avatar, Button, Caption1, Card, makeStyles, ProgressBar, tokens} from "@fluentui/react-components";
 import {
     ArrowClockwiseRegular,
     DismissRegular,
@@ -42,6 +42,16 @@ const useStyles = makeStyles({
     overflow: "hidden",
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
+    cursor: "default",
+  },
+  metaClickable: {
+    cursor: "pointer",
+    "&:hover": {
+      textDecoration: "underline",
+    },
+  },
+  openWhenDone: {
+    color: tokens.colorBrandForeground1,
   },
   actions: {
     display: "flex",
@@ -64,6 +74,10 @@ function metaText(task: TaskSummary): string {
     : task.receivedBytes > 0
       ? formatBytes(task.receivedBytes)
       : "";
+
+  if (task.shouldOpenWhenDone && task.status !== "completed") {
+    return ["完成后打开", sizePart].filter(Boolean).join(" · ");
+  }
 
   switch (task.status) {
     case "running":
@@ -106,9 +120,14 @@ export function TaskCard({
   const TaskIcon = visualIcon(visual.kind);
   const isCompleted = task.status === "completed";
   const isRunning = task.status === "running";
+  const isActive = isRunning || task.status === "waiting";
   const isPausedOrFailed = task.status === "paused" || task.status === "failed" || task.status === "waiting";
   const showProgress = !isCompleted;
   const progressValue = task.status === "waiting" ? undefined : Math.max(0, Math.min(100, task.progress)) / 100;
+
+  const metaClassName = isActive
+    ? `${styles.meta} ${styles.metaClickable}${task.shouldOpenWhenDone ? ` ${styles.openWhenDone}` : ""}`
+    : styles.meta;
 
   return (
     <Card appearance="filled-alternative" className={styles.root}>
@@ -123,7 +142,12 @@ export function TaskCard({
 
         <div className={styles.body}>
           <div className={styles.title}>{task.name}</div>
-          <Caption1 className={styles.meta}>{metaText(task)}</Caption1>
+          <Caption1
+            className={metaClassName}
+            onClick={isActive ? () => onAction("open_when_done") : undefined}
+          >
+            {metaText(task)}
+          </Caption1>
         </div>
 
         <div className={styles.actions}>
