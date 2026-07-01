@@ -1,3 +1,4 @@
+import re
 import sys
 from functools import lru_cache
 
@@ -102,3 +103,34 @@ def openFolder(folder) -> None:
     if not IS_ANDROID:
         return
     _launchView(str(folder), "vnd.android.document/directory")
+
+
+def toTaskUrls(text: str) -> list[str]:
+    matches = re.findall(r'(?i)(?:https?|ftp)://[^\s"\'<>，。！？、；：）》】」]+', text)
+    return [url.rstrip(".,!?;:)]}>") for url in matches]
+
+
+def sharedText() -> str | None:
+    if not IS_ANDROID:
+        return None
+    from jnius import autoclass
+    Intent = autoclass("android.content.Intent")
+    activity = autoclass("org.kivy.android.PythonActivity").mActivity
+    intent = activity.getIntent()
+    if intent is None or intent.getAction() != Intent.ACTION_SEND:
+        return None
+    text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)  # 用 CharSequence 版: getStringExtra 对带样式文本返回 null
+    if text is None:
+        return ""
+    return text if isinstance(text, str) else text.toString()  # pyjnius 把 String 转 str, 带样式 CharSequence 才是包装对象
+
+
+def clearShare() -> None:
+    if not IS_ANDROID:
+        return
+    from jnius import autoclass
+    Intent = autoclass("android.content.Intent")
+    activity = autoclass("org.kivy.android.PythonActivity").mActivity
+    intent = activity.getIntent()
+    if intent is not None:
+        intent.setAction(Intent.ACTION_MAIN)  # 分享已取走, 防回前台重复添加同一分享

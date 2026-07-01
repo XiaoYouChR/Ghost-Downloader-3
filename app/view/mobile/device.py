@@ -3,10 +3,12 @@ def setupAccentColor() -> None:
     from PySide6.QtWidgets import QApplication
     from qfluentwidgets import setThemeColor
 
+    from app.config.cfg import cfg
+
     palette = QApplication.palette()
     for role in (QPalette.ColorRole.Accent, QPalette.ColorRole.Highlight):
         color = palette.color(role)
-        if color.isValid():
+        if color.isValid() and cfg.themeColor.value != color:
             setThemeColor(color, save=False)
             return
 

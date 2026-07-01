@@ -89,6 +89,8 @@ RUN git clone --depth 1 -b develop "${P4A_GIT_URL}" /opt/p4a \
     && grep -q 'super.onActivityResult' "$QTPA" && echo "[patch] qt PythonActivity super.onActivityResult OK" \
     && sed -i '/public boolean onKeyDown(int keyCode, KeyEvent event) {/a\        if (keyCode == KeyEvent.KEYCODE_BACK) { moveTaskToBack(true); return true; }' "$QTPA" \
     && grep -q 'moveTaskToBack' "$QTPA" && echo "[patch] qt PythonActivity 返回键退后台 OK" \
+    && sed -i '/protected void onNewIntent(Intent intent) {/a\        setIntent(intent);' "$QTPA" \
+    && grep -q 'setIntent(intent)' "$QTPA" && echo "[patch] qt PythonActivity onNewIntent setIntent(热启分享 getIntent 生效) OK" \
     && QTSTR=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/strings.tmpl.xml \
     && sed -i '/<item name="android:windowNoTitle">true<\/item>/a\        <item name="android:windowBackground">@drawable/gd3_splash</item>\n        <item name="android:windowSplashScreenBackground">@color/gd3_splash_bg</item>' "$QTSTR" \
     && sed -i '/<resources>/a\    <color name="gd3_splash_bg">#f3f3f3</color>' "$QTSTR" \
@@ -150,12 +152,14 @@ COPY java/org/ghostdownloader/KeepAliveService.java /opt/p4a/pythonforandroid/bo
 RUN QTMAN=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/AndroidManifest.tmpl.xml \
     && sed -i '/<\/application>/i\        <service android:name="org.ghostdownloader.KeepAliveService" android:exported="false" android:foregroundServiceType="dataSync" />' "$QTMAN" \
     && sed -i '0,/<\/activity>/{s##            <meta-data android:name="android.app.background_running" android:value="true" />\n        </activity>#}' "$QTMAN" \
+    && sed -i '0,/<\/activity>/{s##            <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="text/plain" />\n            </intent-filter>\n        </activity>#}' "$QTMAN" \
     && sed -i 's/<application /<application android:requestLegacyExternalStorage="true" /' "$QTMAN" \
     && grep -q 'KeepAliveService' "$QTMAN" \
     && grep -q 'background_running' "$QTMAN" \
     && grep -q 'requestLegacyExternalStorage' "$QTMAN" \
+    && grep -q 'android.intent.action.SEND' "$QTMAN" \
     && chown -R builder:builder /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader \
-    && echo "[patch] KeepAliveService + background_running + requestLegacyExternalStorage(Android10 legacy 存储) 注入 OK"
+    && echo "[patch] KeepAliveService + background_running + requestLegacyExternalStorage + SEND intent-filter(分享入口) 注入 OK"
 
 # 隔离的新版 cmake 专供 wreq 的 btls-sys/BoringSSL（系统 cmake 3.25 在 NDK toolchain 下 FindThreads 会炸）
 RUN python3 -m venv /opt/cmake4 \
