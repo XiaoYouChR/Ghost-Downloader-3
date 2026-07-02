@@ -259,7 +259,13 @@ class UniversalTaskCard(TaskCard):
 
         elif task.status == TaskStatus.FAILED:
             self.progressBar.error()
-            self._showStatus(task.lastError or self.tr("下载过程中发生错误，请稍后重试"))
+            error = task.lastError
+            if error:
+                from PySide6.QtCore import QCoreApplication
+                text = QCoreApplication.translate("TaskErrors", error.message)
+                self._showStatus(text.format_map(error.params) if error.params else text)
+            else:
+                self._showStatus(self.tr("下载过程中发生错误，请稍后重试"))
 
         else:
             self.progressBar.setError(False)

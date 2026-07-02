@@ -87,7 +87,7 @@ class TaskDraft(QObject):
                     )
                 except Exception as e:
                     logger.opt(exception=e).error("提交解析请求失败 {}", url)
-                    self.parseFailed.emit(url, repr(e))
+                    self.parseFailed.emit(url, str(e) or repr(e))
                     nextItems.append(item)
                     continue
                 item.parseId = parseId

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from app.config.cfg import cfg
 from app.format import toBytes
-from app.models.task import Task, TaskStep, TaskStatus
+from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath, toPosixPath
 from .config import m3u8Runtime
 
@@ -313,7 +313,7 @@ class M3U8TaskStep(TaskStep):
 
         execPath = m3u8Runtime.path()
         if not execPath:
-            raise RuntimeError("未找到可用的 N_m3u8DL-RE，请先在设置中安装或配置运行时")
+            raise TaskError("Binary not found: {name}", name="N_m3u8DL-RE")
 
         self.task.outputFolder.mkdir(parents=True, exist_ok=True)
         Path(self._tempFolder).mkdir(parents=True, exist_ok=True)
@@ -340,7 +340,11 @@ class M3U8TaskStep(TaskStep):
             await outputTask
 
             if self._process.returncode != 0 and not self._stopping:
-                raise RuntimeError(self.lastMessage or f"N_m3u8DL-RE 退出码异常: {self._process.returncode}")
+                raise TaskError(
+                    "Process exited with error ({code}): {detail}",
+                    code=self._process.returncode,
+                    detail=self.lastMessage or "N_m3u8DL-RE",
+                )
 
             self._findOutputFile()
             self.setStatus(TaskStatus.COMPLETED)
@@ -361,7 +365,4 @@ class M3U8TaskStep(TaskStep):
                 self.setStatus(TaskStatus.COMPLETED)
             else:
                 self.setStatus(TaskStatus.PAUSED)
-            raise
-        except Exception as e:
-            self.setError(e)
             raise

@@ -12,7 +12,7 @@ from loguru import logger
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
-from app.models.task import Task, TaskStep, TaskStatus, SpecialFileSize
+from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
 from app.services.speed_meter import speedMeter
 
@@ -21,7 +21,9 @@ PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 
 
 class PermanentDownloadError(Exception):
-    pass
+    def __init__(self, status: int):
+        super().__init__(f"HTTP {status}")
+        self.status = status
 
 
 @dataclass
@@ -236,7 +238,7 @@ class HttpTaskStep(TaskStep):
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
-                            raise PermanentDownloadError(f"服务器返回了永久错误，状态码：{status}")
+                            raise PermanentDownloadError(status)
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
                         async for chunk in response.stream():
@@ -266,7 +268,7 @@ class HttpTaskStep(TaskStep):
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
-                            raise PermanentDownloadError(f"服务器返回了永久错误，状态码：{status}")
+                            raise PermanentDownloadError(status)
                         if status != 200:
                             raise Exception(f"服务器返回了异常状态码：{status}")
                         async for chunk in response.stream():
@@ -300,7 +302,7 @@ class HttpTaskStep(TaskStep):
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
-                            raise PermanentDownloadError(f"服务器返回了永久错误，状态码：{status}")
+                            raise PermanentDownloadError(status)
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
                         async for chunk in response.stream():
@@ -378,9 +380,11 @@ class HttpTaskStep(TaskStep):
         except CancelledError:
             self.setStatus(TaskStatus.PAUSED)
             raise
-        except Exception as e:
-            self.setError(e)
-            raise
+        except ExceptionGroup as eg:
+            cause = eg.exceptions[0]
+            if isinstance(cause, PermanentDownloadError):
+                raise TaskError("Server returned error ({status})", status=cause.status) from eg
+            raise cause from eg
         finally:
             if not supervisor.done():
                 supervisor.cancel()

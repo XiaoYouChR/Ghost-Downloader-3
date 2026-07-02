@@ -9,7 +9,7 @@ from pathlib import Path, PurePosixPath
 import libtorrent as lt
 from loguru import logger
 
-from app.models.task import Task, TaskStep, TaskFile, TaskStatus
+from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus
 from app.platform.filesystem import deletePath, toPosixPath
 from app.services.speed_meter import speedMeter
 from .config import bittorrentConfig
@@ -71,7 +71,7 @@ class BTTask(Task):
         self.fileSize = sum(f.size for f in self.files if f.selected)
 
     @property
-    def step(self) -> TaskStep:
+    def step(self) -> BTTaskStep:
         return self.steps[0]
 
     @property
@@ -169,7 +169,7 @@ class BTTask(Task):
             eh = existing.info_hashes()
             if (hashes.has_v1() and eh.has_v1() and hashes.v1 == eh.v1) or \
                (hashes.has_v2() and eh.has_v2() and hashes.v2 == eh.v2):
-                raise RuntimeError("该种子已在下载中")
+                raise TaskError("Torrent is already downloading")
 
         handle = session.add_torrent(params)
 
@@ -180,31 +180,34 @@ class BTTask(Task):
 
         return handle
 
-    async def run(self):
+
+@dataclass(kw_only=True)
+class BTTaskStep(TaskStep):
+    async def run(self) -> None:
         from .session import btSession
 
+        task: BTTask = self.task
+
+        if task.countSelected <= 0:
+            raise TaskError("No files selected for download")
+
+        target = Path(task.outputPath)
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.touch() if task.isSingleFile else target.mkdir()
+
+        if task.sourceType == "magnet" and bittorrentConfig.saveMagnetFile.value:
+            try:
+                task.magnetTorrentPath.write_bytes(b64decode(task.torrentData))
+            except Exception as e:
+                logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", task.name)
+
         try:
-            if self.countSelected <= 0:
-                raise RuntimeError("至少需要选择一个文件")
-
-            target = Path(self.outputPath)
-            if not target.exists():
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.touch() if self.isSingleFile else target.mkdir()
-
-            if self.sourceType == "magnet" and bittorrentConfig.saveMagnetFile.value:
-                try:
-                    self.magnetTorrentPath.write_bytes(b64decode(self.torrentData))
-                except Exception as e:
-                    logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", self.name)
-
             btSession.open()
-
             session = btSession.session()
-            handle = self._addTorrent(session)
         except Exception as e:
-            self.step.setError(e)
-            raise
+            raise TaskError("BitTorrent session failed: {detail}", detail=str(e)) from e
+        handle = task._addTorrent(session)
 
         handle.resume()
         handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
@@ -223,18 +226,14 @@ class BTTask(Task):
         try:
             await self._downloadDone
             completed = True
-            self.step.setStatus(TaskStatus.COMPLETED)
-            self.step.progress = 100
-            self.step.speed = 0
-            self.downloadRate = 0
-            btSession.registerSeeding(self, handle)
+            self.setStatus(TaskStatus.COMPLETED)
+            self.progress = 100
+            self.speed = 0
+            task.downloadRate = 0
+            btSession.registerSeeding(task, handle)
         except asyncio.CancelledError:
-            self.stateText = "已暂停下载"
-            self.isSeeding = False
-            self.step.setStatus(TaskStatus.PAUSED)
-            raise
-        except Exception as e:
-            self.step.setError(e)
+            task.stateText = "已暂停下载"
+            task.isSeeding = False
             raise
         finally:
             btSession.alertReceived.disconnect(self._onAlert)
@@ -252,33 +251,34 @@ class BTTask(Task):
             pass
 
     async def _supervise(self):
+        task: BTTask = self.task
         while True:
             try:
                 status = self._handle.status()
 
-                self.stateText = STATE_TEXT.get(status.state.name, status.state.name)
-                self.peerCount = status.num_peers
-                self.seedCount = status.num_seeds
-                self.isSeeding = status.is_seeding
-                self.downloadRate = status.download_rate
-                self.uploadRate = status.upload_rate
+                task.stateText = STATE_TEXT.get(status.state.name, status.state.name)
+                task.peerCount = status.num_peers
+                task.seedCount = status.num_seeds
+                task.isSeeding = status.is_seeding
+                task.downloadRate = status.download_rate
+                task.uploadRate = status.upload_rate
                 speedMeter.addSpeed(status.download_rate)
 
                 downloaded = status.all_time_download or status.total_wanted_done or status.total_done
-                self.shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0
+                task.shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0
 
-                self.step.speed = status.download_rate
-                self.step.receivedBytes = status.total_wanted_done
+                self.speed = status.download_rate
+                self.receivedBytes = status.total_wanted_done
                 if status.total_wanted > 0:
-                    self.fileSize = status.total_wanted
-                    self.step.progress = status.total_wanted_done / status.total_wanted * 100
-                elif self.fileSize > 0:
-                    self.step.progress = self.step.receivedBytes / self.fileSize * 100
+                    task.fileSize = status.total_wanted
+                    self.progress = status.total_wanted_done / status.total_wanted * 100
+                elif task.fileSize > 0:
+                    self.progress = self.receivedBytes / task.fileSize * 100
                 else:
-                    self.step.progress = 0
+                    self.progress = 0
 
                 fileBytes = self._handle.file_progress()
-                for f in self.files:
+                for f in task.files:
                     if not f.selected:
                         f.downloadedBytes = 0
                         f.completed = False
@@ -287,9 +287,9 @@ class BTTask(Task):
                     f.downloadedBytes = dl
                     f.completed = f.size > 0 and dl >= f.size
 
-                if self._appliedSelectionVersion != self._fileSelectionVersion:
-                    self._handle.prioritize_files(self.priorities())
-                    self._appliedSelectionVersion = self._fileSelectionVersion
+                if self._appliedSelectionVersion != task._fileSelectionVersion:
+                    self._handle.prioritize_files(task.priorities())
+                    self._appliedSelectionVersion = task._fileSelectionVersion
 
                 if status.is_seeding and not self._downloadDone.done():
                     self._downloadDone.set_result(None)
@@ -299,24 +299,25 @@ class BTTask(Task):
             await asyncio.sleep(1)
 
     def _onAlert(self, alert):
+        task: BTTask = self.task
         if not hasattr(alert, "handle") or alert.handle != self._handle:
             return
 
         if isinstance(alert, lt.save_resume_data_alert):
             data = b64encode(lt.write_resume_data_buf(alert.params)).decode()
-            self.resumeData = data
+            task.resumeData = data
             if self._resumeWaiter is not None and not self._resumeWaiter.done():
                 self._resumeWaiter.set_result(True)
             return
 
         if isinstance(alert, lt.save_resume_data_failed_alert):
-            self.resumeData = ""
+            task.resumeData = ""
             if self._resumeWaiter is not None and not self._resumeWaiter.done():
                 self._resumeWaiter.set_result(False)
             return
 
         if isinstance(alert, lt.file_completed_alert):
-            for f in self.files:
+            for f in task.files:
                 if f.index == alert.index:
                     f.completed = True
                     f.downloadedBytes = f.size
@@ -324,28 +325,31 @@ class BTTask(Task):
             return
 
         if isinstance(alert, lt.fastresume_rejected_alert):
-            self.resumeData = ""
+            task.resumeData = ""
             return
 
         if isinstance(alert, ERROR_ALERTS):
             if not self._downloadDone.done():
-                self._downloadDone.set_exception(RuntimeError(alert.message()))
+                self._downloadDone.set_exception(
+                    TaskError("BitTorrent error: {detail}", detail=alert.message())
+                )
 
     async def _saveResume(self):
+        task: BTTask = self.task
         try:
             self._handle.save_resume_data(
                 lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
             )
         except Exception as e:
-            logger.opt(exception=e).warning("保存 BitTorrent resume 数据失败 {}", self.name)
-            self.resumeData = ""
+            logger.opt(exception=e).warning("保存 BitTorrent resume 数据失败 {}", task.name)
+            task.resumeData = ""
             return
 
         self._resumeWaiter = asyncio.get_running_loop().create_future()
         try:
             await asyncio.wait_for(self._resumeWaiter, timeout=10)
         except asyncio.TimeoutError:
-            logger.warning("等待 BitTorrent resume 数据超时 {}", self.name)
-            self.resumeData = ""
+            logger.warning("等待 BitTorrent resume 数据超时 {}", task.name)
+            task.resumeData = ""
         finally:
             self._resumeWaiter = None

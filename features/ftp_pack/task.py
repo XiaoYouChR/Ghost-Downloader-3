@@ -14,7 +14,7 @@ import aioftp
 from loguru import logger
 
 from app.config.cfg import cfg
-from app.models.task import Task, TaskStep, TaskFile, TaskStatus, SpecialFileSize
+from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus, SpecialFileSize
 from app.platform.filesystem import deletePath, toPosixPath
 from app.platform.sysio import ftruncate, pwrite
 from app.services.speed_meter import speedMeter
@@ -91,7 +91,7 @@ class FtpConnectionInfo:
                         scheme, self.host, port, mode, repr(e),
                     )
 
-        raise lastError or RuntimeError("无法建立 FTP 连接")
+        raise TaskError("Cannot establish FTP connection") from lastError
 
 
 @dataclass
@@ -473,9 +473,8 @@ class FtpStep(TaskStep):
             await self._stopSubworkerTasks()
             self.setStatus(TaskStatus.PAUSED)
             raise
-        except Exception as e:
+        except Exception:
             await self._stopSubworkerTasks()
-            self.setError(e)
             raise
         finally:
             if not supervisor.done():
