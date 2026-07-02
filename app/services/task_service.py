@@ -126,11 +126,14 @@ class TaskService(QObject):
     tasksAllCompleted = Signal()
     fileDisappeared = Signal(object)
     diskSpaceInsufficient = Signal(int, int)
+    transientCompleted = Signal(object)
+    transientFailed = Signal(object, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._store = TaskStore()
         self._queue = TaskQueue()
+        self._transient: dict[str, str] = {}  # taskId -> workId，进行中的临时任务
         self._fileWatcher = QFileSystemWatcher(self)
         self._watchedPaths: dict[str, str] = {}
         self._fileWatcher.fileChanged.connect(self._onWatchedFileChanged)
@@ -153,6 +156,9 @@ class TaskService(QObject):
         return self._queue.runningCount()
 
     def add(self, task: Task) -> None:
+        if task.transient:
+            self.addTransient(task)
+            return
         if task.taskId in self._store.tasks:
             return
         if cfg.isCategoryEnabled.value:
@@ -177,6 +183,37 @@ class TaskService(QObject):
             except OSError:
                 pass
         self._schedule(task)
+
+    def addTransient(self, task: Task) -> None:
+        """运行一个临时任务（如自更新下载）。不进 Store（故不持久化、不 resume）、
+        不进 Queue（故独立于 maxTaskNum 立即开始）、不发 taskAdded（故列表不渲染）。
+        通过 transientCompleted / transientFailed 回调进度结束状态；取消用 cancelTransient。"""
+        from app.models.task import TaskStatus
+        from app.services.coroutine_runner import coroutineRunner
+
+        task.setStatus(TaskStatus.RUNNING)
+        workId = coroutineRunner.submit(
+            task.run(),
+            done=lambda _: self._onTransientDone(task),
+            failed=lambda error: self._onTransientFailed(task, error),
+        )
+        self._transient[task.taskId] = workId
+
+    def _onTransientDone(self, task: Task) -> None:
+        self._transient.pop(task.taskId, None)
+        self.transientCompleted.emit(task)
+
+    def _onTransientFailed(self, task: Task, error: str) -> None:
+        self._transient.pop(task.taskId, None)
+        self.transientFailed.emit(task, error)
+
+    def cancelTransient(self, task: Task) -> None:
+        """取消一个仍在进行的临时任务并删除其半成品文件。"""
+        from app.services.coroutine_runner import coroutineRunner
+        workId = self._transient.pop(task.taskId, None)
+        if workId is not None:
+            coroutineRunner.cancel(workId)
+        task.deleteFiles()
 
     def start(self, task: Task) -> None:
         if self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId):
@@ -245,6 +282,10 @@ class TaskService(QObject):
 
     def stop(self) -> None:
         from app.models.task import TaskStatus
+        from app.services.coroutine_runner import coroutineRunner
+        for taskId, workId in list(self._transient.items()):
+            coroutineRunner.cancel(workId)
+        self._transient.clear()
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 task.setStatus(TaskStatus.PAUSED)

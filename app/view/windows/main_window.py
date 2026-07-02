@@ -179,7 +179,7 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: self._onDownloadUpdateClicked(release))
+        downloadButton.clicked.connect(lambda: self._onDownloadUpdateClicked(release, infoBar))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
         detailButton.clicked.connect(lambda: ReleaseInfoDialog(release, self).exec())
@@ -189,11 +189,9 @@ class MainWindow(MSFluentWindow):
         infoBar.addWidget(sponsorButton)
         infoBar.show()
 
-    def _onDownloadUpdateClicked(self, release) -> None:
-        from app.models.task import TaskOptions
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
+    def _onDownloadUpdateClicked(self, release, infoBar=None) -> None:
         from app.update import bestAsset
+        from app.services.update_service import startUpdateDownload
 
         asset = bestAsset(release)
         if asset is None:
@@ -206,12 +204,9 @@ class MainWindow(MSFluentWindow):
             ReleaseInfoDialog(release, self).exec()
             return
 
-        coroutineRunner.submit(
-            featureService.parse(TaskOptions(url=asset.downloadUrl)),
-            done=taskService.add,
-            failed=self._onUpdateAssetParseFailed,
-            owner=self,
-        )
+        if infoBar is not None:
+            infoBar.close()  # 点击下载后，新版本提示的使命完成，交接给 StateToolTip
+        startUpdateDownload(asset, self)
 
     def _onUpdateAssetParseFailed(self, error: str) -> None:
         InfoBar.error(

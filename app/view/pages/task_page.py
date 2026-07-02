@@ -625,6 +625,8 @@ class TaskPage(QWidget):
         return featureService.taskCard(task, self.scrollWidget)
 
     def _onTaskAdded(self, task: Task) -> None:
+        if task.transient:  # 临时任务（如自更新下载）不在列表渲染
+            return
         if task.taskId in self._cards:
             return
         card = self._createCard(task)

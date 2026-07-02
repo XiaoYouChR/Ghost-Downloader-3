@@ -183,6 +183,7 @@ class Task:
     canEdit: ClassVar[bool] = False
     fileType: ClassVar[type] = TaskFile
     hasOutputFile: ClassVar[bool] = True
+    transient: ClassVar[bool] = False  # True: 临时任务，不持久化、不 resume、不进列表、不受 maxTaskNum 限制
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

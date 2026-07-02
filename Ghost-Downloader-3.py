@@ -76,6 +76,9 @@ def startApp(application, isSilent=False):
         setDockIconVisible(cfg.shouldShowDockIcon.value, activate=False)
     coroutineRunner.start()
 
+    from app.config.paths import clearUpdateDir
+    clearUpdateDir()  # 启动清理：清空上次残留的更新文件（含崩溃留下的半成品）
+
     MainWindow.refreshThemeColor()
     window = MainWindow()
 
@@ -205,6 +208,8 @@ def startApp(application, isSilent=False):
         aria2RpcServer.stop()
         featureService.stop()
         coroutineRunner.stop()
+        from app.config.paths import clearUpdateDir
+        clearUpdateDir()  # 退出清理：不保留任何更新文件，压缩损坏半成品残留窗口
 
     application.aboutToQuit.connect(stopApp)
 

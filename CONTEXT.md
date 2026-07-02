@@ -32,6 +32,17 @@ The durable stored form of a Task, one JSON line in `tasks.jsonl`.
 **Saved Tasks**:
 Task Records loaded from a previous app run that may need to start again.
 
+**Update Task**:
+A transient Task that downloads a release asset into the Update Folder for
+self-update. Class-level `transient = True`: never written to `tasks.jsonl`,
+never resumed, hidden from the task list, and outside the `maxTaskNum` limit.
+Only used for the Windows `.exe` full-update path; other assets fall back to an
+ordinary Task.
+
+**Update Folder**:
+The `APP_DATA_DIR/update` directory holding a downloaded installer. Wiped
+unconditionally on both app start and app stop — nothing persists across runs.
+
 **Coroutine Runner**:
 The app actor that owns the background asyncio loop and Qt callback delivery.
 Knows nothing about Task.

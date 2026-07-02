@@ -51,6 +51,15 @@ class HttpTask(Task):
         )
 
 
+@dataclass(kw_only=True, eq=False)
+class UpdateTask(HttpTask):
+    """自更新专用任务：复用 HTTP 下载引擎，但作为临时任务存在。
+    transient=True → 不写入 tasks.jsonl、不参与 resumeSaved、不在列表渲染、不受 maxTaskNum 限制。
+    canEdit=False → 不允许用户编辑。"""
+    transient = True
+    canEdit = False
+
+
 @dataclass(kw_only=True)
 class HttpTaskStep(TaskStep):
     url: str = ""
