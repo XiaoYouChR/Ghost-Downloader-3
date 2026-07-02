@@ -39,6 +39,10 @@ class M3U8TaskCard(UniversalTaskCard):
 
 class M3U8LiveTaskCard(UniversalTaskCard):
 
+    def _initWidget(self) -> None:
+        super()._initWidget()
+        self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton))
+
     def refresh(self):
         super().refresh()
         step = self._step()
@@ -59,7 +63,6 @@ class M3U8LiveTaskCard(UniversalTaskCard):
         if self._task.status == TaskStatus.RUNNING:
             self.toggleButton.setIcon(FluentIcon.ACCEPT)
             self.toggleButton.setToolTip(self.tr("停止并定案"))
-            self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton))
             self.toggleButton.setEnabled(True)
         elif self._task.status == TaskStatus.COMPLETED:
             self.toggleButton.setIcon(FluentIcon.ACCEPT)
