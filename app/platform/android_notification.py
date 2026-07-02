@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import QCoreApplication
+
 if TYPE_CHECKING:
     from app.models.task import Task
+
+tr = QCoreApplication.translate
 
 DOWNLOAD_CHANNEL = "gd3_downloads"
 
@@ -36,8 +40,23 @@ def notify(channelId: str, channelName: str, notificationId: int,
 
 
 def notifyTaskCompleted(task: Task) -> None:
-    notify(DOWNLOAD_CHANNEL, "下载", hash(task.taskId) & 0x7FFFFFFF,
-           "下载完成", task.name, ongoing=False, lowImportance=False)
+    notify(DOWNLOAD_CHANNEL, tr("Notifications", "Downloads"),
+           hash(task.taskId) & 0x7FFFFFFF,
+           tr("Notifications", "Download completed"), task.name,
+           ongoing=False, lowImportance=False)
+
+
+DISK_SPACE_NOTIFICATION_ID = 0x6764_0003
+
+
+def notifyDiskSpaceInsufficient(free: int, needed: int) -> None:
+    from app.format import toReadableSize
+    notify(DOWNLOAD_CHANNEL, tr("Notifications", "Downloads"),
+           DISK_SPACE_NOTIFICATION_ID,
+           tr("Notifications", "Disk space insufficient"),
+           tr("Notifications", "Remaining {0}, need {1}, task not auto-started").format(
+               toReadableSize(free), toReadableSize(needed)),
+           ongoing=False, lowImportance=False)
 
 
 BROWSER_PUSH_NOTIFICATION_ID = 0x6764_0001
@@ -48,17 +67,21 @@ def notifyBrowserTaskAdded(tasks: list[Task]) -> None:
     if not tasks:
         return
     count = len(tasks)
-    title = "浏览器推送" if count == 1 else f"浏览器推送 ({count})"
+    title = tr("Notifications", "Browser push") if count == 1 \
+        else tr("Notifications", "Browser push ({count})").format(count=count)
     text = tasks[0].name if count == 1 else "、".join(t.name for t in tasks[:3])
     if count > 3:
-        text += f" 等 {count} 项"
-    notify(DOWNLOAD_CHANNEL, "下载", BROWSER_PUSH_NOTIFICATION_ID,
+        text += tr("Notifications", " and {count} more").format(count=count)
+    notify(DOWNLOAD_CHANNEL, tr("Notifications", "Downloads"),
+           BROWSER_PUSH_NOTIFICATION_ID,
            title, text, ongoing=False, lowImportance=False)
 
 
 def notifyBrowserPaired(peerAddress: str) -> None:
-    notify(DOWNLOAD_CHANNEL, "下载", BROWSER_PAIR_NOTIFICATION_ID,
-           "浏览器扩展已连接", peerAddress, ongoing=False, lowImportance=True)
+    notify(DOWNLOAD_CHANNEL, tr("Notifications", "Downloads"),
+           BROWSER_PAIR_NOTIFICATION_ID,
+           tr("Notifications", "Browser extension connected"), peerAddress,
+           ongoing=False, lowImportance=True)
 
 
 def requestNotificationPermission() -> None:

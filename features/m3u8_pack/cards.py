@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout
-from qfluentwidgets import BodyLabel, ComboBox, CompactSpinBox, FluentIcon, TransparentToolButton
+from qfluentwidgets import BodyLabel, ComboBox, CompactSpinBox, FluentIcon, ToolTipFilter, TransparentToolButton
 
 from app.format import toReadableSize
 from app.models.task import TaskStatus
@@ -38,6 +38,10 @@ class M3U8TaskCard(UniversalTaskCard):
 
 
 class M3U8LiveTaskCard(UniversalTaskCard):
+
+    def _initWidget(self) -> None:
+        super()._initWidget()
+        self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton))
 
     def refresh(self):
         super().refresh()
@@ -183,6 +187,7 @@ class DecryptionKeyCard(OptionCard):
 
     def _initWidget(self, keys: list):
         self.keyFileButton.setToolTip(self.tr("选择 KEY 文本文件"))
+        self.keyFileButton.installEventFilter(ToolTipFilter(self.keyFileButton))
         self.keysEdit.setPlaceholderText("KID1:KEY1\nKID2:KEY2")
         self.keysEdit.setPlainText("\n".join(keys))
         self.keyFileLabel.setText(Path(self._keyTextFile).name if self._keyTextFile else "")

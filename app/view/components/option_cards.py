@@ -5,7 +5,7 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, IconWidget, LineEdit, Slider,
-    TransparentToolButton, isDarkTheme,
+    ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 
 from app.config.cfg import cfg
@@ -226,6 +226,7 @@ class HeadersEditCard(OptionCard):
     def _initWidget(self) -> None:
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.resetButton.setToolTip(self.tr("恢复默认请求标头"))
+        self.resetButton.installEventFilter(ToolTipFilter(self.resetButton))
         self.headersEdit.setPlaceholderText(self.tr("每行一个 Name: Value"))
 
     def _initLayout(self) -> None:
