@@ -7,7 +7,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from app.models.task import TaskStep, TaskStatus
+from app.models.task import TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath
 from http_pack.task import HttpTaskStep
 from .config import ffmpegRuntime
@@ -56,7 +56,7 @@ class FFmpegStep(TaskStep):
         ffmpegPath = ffmpegRuntime.path()
         ffprobePath = ffmpegRuntime.ffprobePath()
         if not ffmpegPath or not ffprobePath:
-            raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
+            raise TaskError("Binary not found: {name}", name="FFmpeg")
 
         Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
 
@@ -81,8 +81,11 @@ class FFmpegStep(TaskStep):
 
             if process.returncode != 0:
                 stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
-                suffix = f", {stderr}" if stderr else ""
-                raise RuntimeError(f"ffmpeg 退出码异常: {process.returncode}{suffix}")
+                raise TaskError(
+                    "FFmpeg merge failed ({code}): {detail}",
+                    code=process.returncode,
+                    detail=stderr or "unknown error",
+                )
 
             self.setStatus(TaskStatus.COMPLETED)
 
@@ -99,9 +102,6 @@ class FFmpegStep(TaskStep):
                 progressTask.cancel()
                 with suppress(asyncio.CancelledError):
                     await progressTask
-            raise
-        except Exception as e:
-            self.setError(e)
             raise
 
     async def _readProgress(self, stream: asyncio.StreamReader, totalDuration: float):

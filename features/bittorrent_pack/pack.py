@@ -11,12 +11,12 @@ from loguru import logger
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser, FileType
-from app.models.task import Task, TaskOptions, TaskStep
+from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 
 from .config import bittorrentConfig
 from .session import btSession
-from .task import BTFile, BTTask
+from .task import BTFile, BTTask, BTTaskStep
 from .web_tracker.service import trackerService
 
 
@@ -95,7 +95,7 @@ class TorrentParser(TaskParser):
             url=sourceUrl,
             fileSize=sum(e.size for e in entries),
             outputFolder=outputFolder,
-            steps=[TaskStep(stepIndex=1)],
+            steps=[BTTaskStep(stepIndex=1)],
             sourceType=sourceType,
             torrentData=b64encode(torrentBytes).decode(),
             trackers=trackers,

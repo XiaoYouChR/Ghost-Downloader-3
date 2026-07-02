@@ -28,6 +28,24 @@ class SpecialFileSize(IntEnum):
     UNKNOWN = 0
 
 
+class TaskError(Exception):
+    def __init__(self, message: str, **params):
+        super().__init__(message)
+        self.params = params
+
+
+@dataclass(frozen=True)
+class StepError:
+    message: str
+    params: dict = field(default_factory=dict)
+
+    def __str__(self) -> str:
+        return self.message.format_map(self.params)
+
+    def __bool__(self) -> bool:
+        return bool(self.message)
+
+
 @dataclass(frozen=True)
 class TaskOptions:
     url: str
@@ -96,7 +114,7 @@ class TaskStep:
     progress: float = 0
     receivedBytes: int = 0
     speed: int = 0
-    error: str = ""
+    error: StepError | None = field(default=None, repr=False, init=False)
 
     def _bindTask(self, task: Task):
         self._task = task
@@ -110,29 +128,29 @@ class TaskStep:
         if status == TaskStatus.COMPLETED:
             self.progress = 100
             self.speed = 0
-            self.error = ""
+            self.error = None
         elif status in {TaskStatus.WAITING, TaskStatus.PAUSED}:
             self.speed = 0
-            self.error = ""
+            self.error = None
         elif status == TaskStatus.FAILED:
             self.speed = 0
 
         if sync and hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def setError(self, error, sync: bool = True):
-        while isinstance(error, BaseExceptionGroup) and error.exceptions:
-            error = error.exceptions[0]
-        message = repr(error).strip() if error is not None else ""
-        self.error = message
-        self.setStatus(TaskStatus.FAILED, sync=sync)
+    def setError(self, error: StepError) -> None:
+        self.error = error
+        self.status = TaskStatus.FAILED
+        self.speed = 0
+        if hasattr(self, "_task"):
+            self._task.updateStatus()
 
     def reset(self, sync: bool = True):
         self.status = TaskStatus.WAITING
         self.progress = 0
         self.receivedBytes = 0
         self.speed = 0
-        self.error = ""
+        self.error = None
         if sync and hasattr(self, "_task"):
             self._task.updateStatus()
 
@@ -196,14 +214,14 @@ class Task:
         return True
 
     @property
-    def lastError(self) -> str:
+    def lastError(self) -> StepError | None:
         for step in reversed(self.steps):
             if step.status == TaskStatus.FAILED and step.error:
                 return step.error
         for step in reversed(self.steps):
             if step.error:
                 return step.error
-        return ""
+        return None
 
     def __post_init__(self):
         self.name = toSafeFilename(self.name, fallback="download")
@@ -385,9 +403,17 @@ class Task:
         except asyncio.CancelledError:
             logger.info("{} stopped", self.name)
             raise
+        except TaskError as e:
+            if currentStep is not None:
+                currentStep.setError(StepError(str(e), e.params))
+            logger.opt(exception=e).error("{} failed", self.name)
+            raise
         except Exception as e:
-            if currentStep is not None and not currentStep.error:
-                currentStep.setError(e)
+            if currentStep is not None:
+                currentStep.setError(StepError(
+                    "Unexpected error: {detail}",
+                    {"detail": str(e) or type(e).__name__}
+                ))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
 

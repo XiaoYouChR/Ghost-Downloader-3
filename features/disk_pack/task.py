@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import CancelledError
 import hashlib
 import shutil
 import sys
@@ -11,7 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
 
-from app.models.task import Task, TaskStep, TaskStatus
+from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath
 
 CHUNK_SIZE = 1 << 20
@@ -64,7 +63,7 @@ class ExtractStep(TaskStep):
             for info in files:
                 memberPath = (outputFolder / info.filename).resolve()
                 if safeRoot not in {memberPath, *memberPath.parents}:
-                    raise RuntimeError(f"压缩包包含非法路径: {info.filename}")
+                    raise TaskError("Archive contains unsafe path: {path}", path=info.filename)
                 memberPath.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(info, "r") as source, open(memberPath, "wb") as target:
                     while chunk := source.read(CHUNK_SIZE):
@@ -91,7 +90,7 @@ class ExtractStep(TaskStep):
             for member in files:
                 memberPath = (outputFolder / member.name).resolve()
                 if safeRoot not in {memberPath, *memberPath.parents}:
-                    raise RuntimeError(f"压缩包包含非法路径: {member.name}")
+                    raise TaskError("Archive contains unsafe path: {path}", path=member.name)
                 memberPath.parent.mkdir(parents=True, exist_ok=True)
                 source = tf.extractfile(member)
                 if source is None:
@@ -110,32 +109,25 @@ class ExtractStep(TaskStep):
                             await asyncio.sleep(0)
 
     async def run(self) -> None:
-        try:
-            archive = Path(self.archivePath)
-            if not archive.is_file():
-                raise FileNotFoundError(f"未找到安装包: {archive}")
+        archive = Path(self.archivePath)
+        if not archive.is_file():
+            raise TaskError("Archive not found: {path}", path=str(archive))
 
-            outputFolder = Path(self.outputFolder)
-            self.progress = 0
-            self.speed = 0
-            self.receivedBytes = 0
-            outputFolder.mkdir(parents=True, exist_ok=True)
+        outputFolder = Path(self.outputFolder)
+        self.progress = 0
+        self.speed = 0
+        self.receivedBytes = 0
+        outputFolder.mkdir(parents=True, exist_ok=True)
 
-            lowered = archive.name.lower()
-            if lowered.endswith(".tar.gz"):
-                await self._extractTar(archive, outputFolder)
-            elif lowered.endswith(".zip"):
-                await self._extractZip(archive, outputFolder)
-            else:
-                raise RuntimeError(f"不支持的压缩包格式: {archive.name}")
+        lowered = archive.name.lower()
+        if lowered.endswith(".tar.gz"):
+            await self._extractTar(archive, outputFolder)
+        elif lowered.endswith(".zip"):
+            await self._extractZip(archive, outputFolder)
+        else:
+            raise TaskError("Unsupported archive format: {name}", name=archive.name)
 
-            self.setStatus(TaskStatus.COMPLETED)
-        except CancelledError:
-            self.setStatus(TaskStatus.PAUSED)
-            raise
-        except Exception as e:
-            self.setError(e)
-            raise
+        self.setStatus(TaskStatus.COMPLETED)
 
 
 @dataclass(kw_only=True)
@@ -180,7 +172,7 @@ class InstallStep(TaskStep):
                 if executable is None:
                     executable = next((c for c in installFolder.rglob(name) if c.is_file()), None)
                 if executable is None:
-                    raise RuntimeError(f"安装包解压完成，但未找到可执行文件: {name}")
+                    raise TaskError("Executable not found after extraction: {name}", name=name)
                 if sys.platform != "win32":
                     executable.chmod(executable.stat().st_mode | 0o755)
                 # removeQuarantine(executable)  # disabled — see removeQuarantine note
@@ -189,9 +181,6 @@ class InstallStep(TaskStep):
                 archive.unlink()
 
             self.setStatus(TaskStatus.COMPLETED)
-        except Exception as e:
-            self.setError(e)
-            raise
         finally:
             if self.shouldDeleteSource and sourceFolder.exists():
                 shutil.rmtree(sourceFolder, ignore_errors=True)
@@ -205,19 +194,15 @@ class ChecksumStep(TaskStep):
     sha256File: str
 
     async def run(self) -> None:
-        try:
-            text = Path(self.sha256File).read_text(encoding="utf-8", errors="ignore").strip()
-            expected = text.split()[0].lower() if text else ""
-            if not expected:
-                raise RuntimeError(f"未能从校验文件读取 SHA256: {self.sha256File}")
-            actual = await asyncio.to_thread(self._sha256, Path(self.targetFile))
-            if expected != actual:
-                raise RuntimeError(f"SHA256 校验失败: 期望 {expected}, 实际 {actual}")
-            deletePath(Path(self.sha256File))
-            self.setStatus(TaskStatus.COMPLETED)
-        except Exception as e:
-            self.setError(e)
-            raise
+        text = Path(self.sha256File).read_text(encoding="utf-8", errors="ignore").strip()
+        expected = text.split()[0].lower() if text else ""
+        if not expected:
+            raise TaskError("Could not read SHA256 from checksum file: {path}", path=self.sha256File)
+        actual = await asyncio.to_thread(self._sha256, Path(self.targetFile))
+        if expected != actual:
+            raise TaskError("SHA256 mismatch: expected {expected}, got {actual}", expected=expected, actual=actual)
+        deletePath(Path(self.sha256File))
+        self.setStatus(TaskStatus.COMPLETED)
 
     def _sha256(self, path: Path) -> str:
         digest = hashlib.sha256()
@@ -234,14 +219,10 @@ class BinaryInstallStep(TaskStep):
     binaryPath: str
 
     async def run(self) -> None:
-        try:
-            path = Path(self.binaryPath)
-            if not path.is_file():
-                raise FileNotFoundError(f"未找到已下载的可执行文件: {path}")
-            if sys.platform != "win32":
-                path.chmod(path.stat().st_mode | 0o755)
-            # removeQuarantine(path)  # disabled — see removeQuarantine note
-            self.setStatus(TaskStatus.COMPLETED)
-        except Exception as e:
-            self.setError(e)
-            raise
+        path = Path(self.binaryPath)
+        if not path.is_file():
+            raise TaskError("Downloaded binary not found: {path}", path=str(path))
+        if sys.platform != "win32":
+            path.chmod(path.stat().st_mode | 0o755)
+        # removeQuarantine(path)  # disabled — see removeQuarantine note
+        self.setStatus(TaskStatus.COMPLETED)
