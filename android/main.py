@@ -47,7 +47,10 @@ def startApp(application):
     from app.config.cfg import cfg
     from app.models.pack import PackConfig
     from app.platform.android_keepalive import keepAlive, REASON_DOWNLOAD, REASON_BROWSER, requestIgnoreBatteryOptimizations
-    from app.platform.android_notification import notifyBrowserPaired, notifyBrowserTaskAdded, notifyTaskCompleted, requestNotificationPermission
+    from app.platform.android_notification import (
+        notifyBrowserPaired, notifyBrowserTaskAdded, notifyDiskSpaceInsufficient,
+        notifyTaskCompleted, requestNotificationPermission,
+    )
     from app.services.browser_service import browserService
     from app.services.coroutine_runner import coroutineRunner
     from app.services.feature_service import featureService
@@ -86,6 +89,7 @@ def startApp(application):
     requestIgnoreBatteryOptimizations()
 
     taskService.taskCompleted.connect(notifyTaskCompleted)
+    taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
     taskService.taskStarted.connect(lambda _: keepAlive.holdFor(REASON_DOWNLOAD))
     taskService.tasksAllCompleted.connect(lambda: keepAlive.release(REASON_DOWNLOAD))
     taskService.taskStarted.connect(lambda _: speedMeter.start())

@@ -175,11 +175,12 @@ def startApp(application, isSilent=False):
 
     from app.platform.android import IS_ANDROID
     if IS_ANDROID:
-        from app.platform.android_notification import notifyTaskCompleted
+        from app.platform.android_notification import notifyTaskCompleted, notifyDiskSpaceInsufficient
     else:
-        from app.platform.desktop_notification import init, notifyTaskCompleted
+        from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
         coroutineRunner.submit(init())
     taskService.taskCompleted.connect(notifyTaskCompleted)
+    taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
 
     from app.services.plan import plan
     taskService.tasksAllCompleted.connect(plan.trigger)
