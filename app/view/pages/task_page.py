@@ -263,7 +263,6 @@ class TaskPage(QWidget):
                        taskService.taskCompleted, taskService.taskFailed):
             signal.connect(self._refreshVisibleCards)
         taskService.fileDisappeared.connect(self._onFileDisappeared)
-        taskService.diskSpaceInsufficient.connect(self._onDiskSpaceInsufficient)
         speedMeter.speedChanged.connect(self._onSpeedChanged)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
@@ -420,17 +419,6 @@ class TaskPage(QWidget):
             dialog.deleteLater()
         else:
             plan.clear()
-
-    def _onDiskSpaceInsufficient(self, free: int, needed: int) -> None:
-        from qfluentwidgets import InfoBar, InfoBarPosition
-        InfoBar.warning(
-            self.tr("磁盘空间不足"),
-            self.tr("剩余 {}，需要 {}，任务未自动开始").format(
-                toReadableSize(free), toReadableSize(needed)),
-            duration=5000,
-            position=InfoBarPosition.TOP,
-            parent=self.window(),
-        )
 
     def _onCategoryEnabledChanged(self, value) -> None:
         self.categoryFilterButton.setVisible(bool(value))
