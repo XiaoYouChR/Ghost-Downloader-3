@@ -1,3 +1,16 @@
+def toDockSpeed(bytesPerSec: int) -> str:
+    if bytesPerSec < 1024:
+        return f"{bytesPerSec} B/s"
+    v = bytesPerSec / 1024
+    if v < 1024:
+        return f"{v:.1f} K/s"
+    v /= 1024
+    if v < 1024:
+        return f"{v:.1f} M/s"
+    v /= 1024
+    return f"{v:.1f} G/s"
+
+
 def toReadableSize(size: int) -> str:
     for unit in ["B", "KB", "MB", "GB"]:
         if size < 1024.0:
