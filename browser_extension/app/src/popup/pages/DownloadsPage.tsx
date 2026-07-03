@@ -42,8 +42,8 @@ export function DownloadsPage({
       <div className={styles.empty}>
         <EmptyState
           icon={<ArrowDownloadRegular />}
-          title="当前还没有任务"
-          description="浏览器接管下载或从资源嗅探页发送资源后，任务会出现在这里。"
+          title={chrome.i18n.getMessage("emptyTasksTitle")}
+          description={chrome.i18n.getMessage("emptyTasksDescription")}
         />
       </div>
     );

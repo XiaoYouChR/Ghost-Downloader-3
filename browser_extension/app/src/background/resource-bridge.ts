@@ -283,7 +283,7 @@ export function createResourceBridge(options: {
             return;
           }
           if (typeof downloadId !== "number") {
-            reject(new Error("浏览器未返回下载任务"));
+            reject(new Error(chrome.i18n.getMessage("errorBrowserNoDownloadId")));
             return;
           }
           resolve();
@@ -468,14 +468,14 @@ export function createResourceBridge(options: {
         cache.setSent(resource.id);
         return {
           ...result,
-          message: result.message || "资源已发送到 Ghost Downloader",
+          message: result.message || chrome.i18n.getMessage("resourceSentToDesktop"),
         };
       }
       return result;
     } catch (error) {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : "发送资源失败",
+        message: error instanceof Error ? error.message : chrome.i18n.getMessage("errorSendFailed"),
       };
     }
   }
@@ -483,16 +483,16 @@ export function createResourceBridge(options: {
   async function sendResource(resourceId: string): Promise<CommandResult> {
     const resource = cache.resourceById(resourceId) ?? null;
     if (!resource) {
-      return { ok: false, message: "资源不存在" };
+      return { ok: false, message: chrome.i18n.getMessage("errorResourceNotFound") };
     }
 
     if (resource.url.startsWith("blob:")) {
       try {
         await downloadResourceViaBrowser(resource);
         cache.setSent(resource.id);
-        return { ok: true, message: "资源已交给浏览器下载" };
+        return { ok: true, message: chrome.i18n.getMessage("resourceSentToBrowser") };
       } catch (error) {
-        return { ok: false, message: error instanceof Error ? error.message : "发送资源失败" };
+        return { ok: false, message: error instanceof Error ? error.message : chrome.i18n.getMessage("errorSendFailed") };
       }
     }
 
@@ -554,18 +554,18 @@ export function createResourceBridge(options: {
   async function downloadPageMedia(sender: chrome.runtime.MessageSender, payload: ClickPayload): Promise<CommandResult> {
     const tabId = await tabIdForPageMessage(sender, payload.href);
     if (!tabId) {
-      return { ok: false, message: "当前没有可操作的标签页" };
+      return { ok: false, message: chrome.i18n.getMessage("errorNoActiveTab") };
     }
 
     const selection = payload.selection;
     if (!selection || typeof selection !== "object") {
-      return { ok: false, message: "无效的下载请求" };
+      return { ok: false, message: chrome.i18n.getMessage("errorInvalidDownloadRequest") };
     }
     const fallbackPageUrl = payload.href || "";
 
     if (selection.kind === "single" || selection.kind === "stream") {
       if (!selection.url) {
-        return { ok: false, message: "无效的下载请求" };
+        return { ok: false, message: chrome.i18n.getMessage("errorInvalidDownloadRequest") };
       }
       const resource = await resourceForMediaUrl(selection.url, tabId, payload.title, fallbackPageUrl);
       const result = await sendHttpResourceToDesktop(resource);
@@ -575,7 +575,7 @@ export function createResourceBridge(options: {
 
     if (selection.kind === "merge") {
       if (!selection.video || !selection.audio) {
-        return { ok: false, message: "无效的合并请求" };
+        return { ok: false, message: chrome.i18n.getMessage("errorInvalidMergeRequest") };
       }
       const [video, audio] = await Promise.all([
         resourceForMediaUrl(selection.video, tabId, payload.title, fallbackPageUrl),
@@ -588,14 +588,14 @@ export function createResourceBridge(options: {
 
     if (selection.kind === "external") {
       if (!selection.pageUrl) {
-        return { ok: false, message: "无效的下载请求" };
+        return { ok: false, message: chrome.i18n.getMessage("errorInvalidDownloadRequest") };
       }
       const result = await sendExternalDownload(selection, payload.title, fallbackPageUrl);
       if (result.ok) { await openActionPopup(); }
       return result;
     }
 
-    return { ok: false, message: "未知的下载请求类型" };
+    return { ok: false, message: chrome.i18n.getMessage("errorUnknownDownloadType") };
   }
 
   // The desktop's yt-dlp extracts the media from the page URL; forward login cookies for gated videos.
@@ -634,7 +634,7 @@ export function createResourceBridge(options: {
 
   async function sendMergeResources(resources: Resource[]): Promise<CommandResult> {
     if (resources.length !== 2) {
-      return { ok: false, message: "在线合并暂时只支持选中 2 个资源" };
+      return { ok: false, message: chrome.i18n.getMessage("errorMergeRequiresTwoResources") };
     }
     const ordered = sortResourcesForOnlineMerge(resources);
     try {
@@ -656,11 +656,11 @@ export function createResourceBridge(options: {
       });
       if (result.ok) {
         ordered.forEach((resource) => cache.setSent(resource.id));
-        return { ...result, message: result.message || "在线合并任务已发送到 Ghost Downloader" };
+        return { ...result, message: result.message || chrome.i18n.getMessage("mergeTaskSentToDesktop") };
       }
       return result;
     } catch (error) {
-      return { ok: false, message: error instanceof Error ? error.message : "在线合并失败" };
+      return { ok: false, message: error instanceof Error ? error.message : chrome.i18n.getMessage("errorMergeFailed") };
     }
   }
 
@@ -671,7 +671,7 @@ export function createResourceBridge(options: {
       .filter((resource): resource is Resource => resource != null);
 
     if (!canUseOnlineMergeSelection(resources)) {
-      return { ok: false, message: "当前选中的资源不符合在线合并条件" };
+      return { ok: false, message: chrome.i18n.getMessage("errorResourcesNotMergeable") };
     }
 
     return sendMergeResources(resources);
@@ -680,13 +680,13 @@ export function createResourceBridge(options: {
   function buildPopupStateData(resolvedTabId: number | null, activeTab: chrome.tabs.Tab | null) {
     const canCaptureCurrentTab = Boolean(activeTab?.url && isCapturableUrl(activeTab.url));
     let resourceState: ResourceCollectionState = "ready";
-    let resourceStateMessage = "等待 cat-catch 捕获资源";
+    let resourceStateMessage = chrome.i18n.getMessage("waitingForResourceCapture");
     if (!loadedFromStorage) {
       resourceState = "restoring";
-      resourceStateMessage = "正在恢复 cat-catch 已捕获的资源";
+      resourceStateMessage = chrome.i18n.getMessage("restoringCatCatchResources");
     } else if (!canCaptureCurrentTab) {
       resourceState = "unavailable";
-      resourceStateMessage = "当前标签页不支持 cat-catch 资源桥接";
+      resourceStateMessage = chrome.i18n.getMessage("tabNotSupportResourceBridge");
     }
 
     return {

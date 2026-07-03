@@ -1,0 +1,656 @@
+{
+  "about": {
+    "message": "について"
+  },
+  "advancedFeatures": {
+    "message": "高度な機能"
+  },
+  "advancedFeaturesHint": {
+    "message": "必要に応じて有効化。一部機能はページへの注入や特殊な権限が必要です"
+  },
+  "audio": {
+    "message": "音声",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "音声トラック"
+  },
+  "authenticating": {
+    "message": "認証中"
+  },
+  "autoPair": {
+    "message": "自動ペアリング"
+  },
+  "awaitingPairing": {
+    "message": "ペアリング待ち"
+  },
+  "browserDownload": {
+    "message": "ブラウザでダウンロード"
+  },
+  "bypassShortcutKey": {
+    "message": "インターセプトをスキップするショートカットキー"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "このキーを押しながらダウンロードリンクをクリックすると、インターセプトをスキップしてブラウザでダウンロードします"
+  },
+  "cacheCapture": {
+    "message": "キャッシュキャプチャ"
+  },
+  "cacheCaptureDescription": {
+    "message": "ブラウザのキャッシュリソースを捕捉"
+  },
+  "cancel": {
+    "message": "キャンセル"
+  },
+  "clearSelection": {
+    "message": "選択解除",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "完了"
+  },
+  "confirmPairing": {
+    "message": "ペアリングを確認してください"
+  },
+  "connected": {
+    "message": "接続済み"
+  },
+  "connecting": {
+    "message": "接続中"
+  },
+  "connectionClosed": {
+    "message": "接続が切断されました"
+  },
+  "connectionConfig": {
+    "message": "接続設定"
+  },
+  "darkTheme": {
+    "message": "ダークテーマ"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 個の DASH セグメント $2"
+  },
+  "deepSearch": {
+    "message": "詳細検索"
+  },
+  "deepSearchDescription": {
+    "message": "ページのリクエストリソースを詳細に分析"
+  },
+  "desktopVersionInfo": {
+    "message": "デスクトップ版 $1"
+  },
+  "disconnected": {
+    "message": "未接続"
+  },
+  "downloadThisMedia": {
+    "message": "このメディアをダウンロード"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "Ghost Downloader でダウンロード"
+  },
+  "downloading": {
+    "message": "ダウンロード中"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "動画や音声を再生すると、ここにキャプチャされたリソースが自動的に表示されます。"
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "現在のページにはまだリソースがありません"
+  },
+  "emptyImagesDescription": {
+    "message": "画像のあるページに切り替えるか、フィルター条件を調整してみてください。"
+  },
+  "emptyImagesTitle": {
+    "message": "現在のページに画像が見つかりません"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "別のタブに切り替えてリソースをキャプチャすると、ここに自動的に集約表示されます。"
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "まだ他のページのリソースはありません"
+  },
+  "emptyTasksDescription": {
+    "message": "ブラウザがダウンロードを引き継ぐか、リソーススニッファーページからリソースを送信すると、タスクがここに表示されます。"
+  },
+  "emptyTasksTitle": {
+    "message": "まだタスクはありません"
+  },
+  "errorAutoPairingFailed": {
+    "message": "自動ペアリングに失敗しました"
+  },
+  "errorBackgroundNotReady": {
+    "message": "バックグラウンドサービスが準備できていません"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "ブラウザがダウンロードタスクを返しませんでした"
+  },
+  "errorCannotDetermineDouyinMediaForm": {
+    "message": "Douyin の現在のメディア形式を判別できません。リソーススニッファーページで選択してください"
+  },
+  "errorCannotLocateMedia": {
+    "message": "メディアを見つけられませんでした"
+  },
+  "errorConnectionFailed": {
+    "message": "接続に失敗しました"
+  },
+  "errorExtensionNotReady": {
+    "message": "拡張機能が準備できていません"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "機能の切り替えに失敗しました"
+  },
+  "errorFullscreenFailed": {
+    "message": "全画面表示に失敗しました"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "無効なダウンロードリクエストです"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "無効なマージリクエストです"
+  },
+  "errorInvalidPairToken": {
+    "message": "ペアリングトークンが無効です"
+  },
+  "errorMediaActionFailed": {
+    "message": "メディア操作に失敗しました"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "メディアソースが認識されません"
+  },
+  "errorMergeFailed": {
+    "message": "オンラインマージに失敗しました"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "オンラインマージは現在、選択された 2 つのリソースのみをサポートしています"
+  },
+  "errorMultipleMediaFound": {
+    "message": "複数のメディアリソースが見つかりました。リソーススニッファーページで選択してください"
+  },
+  "errorNoActiveTab": {
+    "message": "操作可能なタブがありません"
+  },
+  "errorNoControllableMedia": {
+    "message": "制御可能なメディアがありません"
+  },
+  "errorNoMediaDetected": {
+    "message": "メディアが検出されませんでした"
+  },
+  "errorNoTokenReturned": {
+    "message": "トークンが返されませんでした"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "オンラインマージに失敗しました"
+  },
+  "errorPairingDisconnected": {
+    "message": "ペアリングが切断されました"
+  },
+  "errorPairingRejected": {
+    "message": "ペアリングが拒否されました"
+  },
+  "errorPairingTimeout": {
+    "message": "ペアリングがタイムアウトしました"
+  },
+  "errorPipFailed": {
+    "message": "ピクチャインピクチャに失敗しました"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "メディア状態の読み取りに失敗しました"
+  },
+  "errorReconnectFailed": {
+    "message": "再接続に失敗しました"
+  },
+  "errorResourceNotFound": {
+    "message": "リソースが見つかりません"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "現在選択されているリソースはオンラインマージの条件を満たしていません"
+  },
+  "errorResponseTimeout": {
+    "message": "応答がタイムアウトしました"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "ペアリングトークンの保存に失敗しました"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "サービスアドレスの保存に失敗しました"
+  },
+  "errorSendFailed": {
+    "message": "送信に失敗しました"
+  },
+  "errorSendImagesFailed": {
+    "message": "画像の送信に失敗しました"
+  },
+  "errorSendResourceFailed": {
+    "message": "リソースの送信に失敗しました"
+  },
+  "errorStrategyException": {
+    "message": "戦略例外: $1"
+  },
+  "errorSwitchMediaFailed": {
+    "message": "メディアの切り替えに失敗しました"
+  },
+  "errorTargetTabNotFound": {
+    "message": "対象のタブが見つかりません"
+  },
+  "errorTaskActionFailed": {
+    "message": "タスク操作に失敗しました"
+  },
+  "errorUnknownCommand": {
+    "message": "不明なコマンド: $1"
+  },
+  "errorUnknownDownloadType": {
+    "message": "不明なダウンロードリクエストタイプです"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "ダウンロードボタンの更新に失敗しました"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "ダウンロード引継ぎの更新に失敗しました"
+  },
+  "extensionDescription": {
+    "message": "Ghost Downloaderのタスクを管理し、ブラウザリソースをGhost Downloaderに送信します。"
+  },
+  "extensionName": {
+    "message": "Ghost Downloader for Browser"
+  },
+  "extensionVersionInfo": {
+    "message": "拡張機能バージョン $1"
+  },
+  "failed": {
+    "message": "失敗"
+  },
+  "featureBackgroundDisabled": {
+    "message": "機能のバックグラウンド状態はオフです。ページ内のパネルはウェブページ内で手動で閉じることができます"
+  },
+  "featureDisabled": {
+    "message": "機能はオフです"
+  },
+  "featureEnabled": {
+    "message": "機能はオンです"
+  },
+  "featureEnabledAfterReload": {
+    "message": "機能がオンになりました。ページの更新後に有効になります"
+  },
+  "featureStateUpdated": {
+    "message": "機能の状態が更新されました"
+  },
+  "featureToggles": {
+    "message": "機能トグル"
+  },
+  "filterAll": {
+    "message": "すべて"
+  },
+  "filterAudio": {
+    "message": "音声"
+  },
+  "filterHeightLabel": {
+    "message": "高さ",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "動画"
+  },
+  "filterWidthLabel": {
+    "message": "幅",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "システム設定に従う"
+  },
+  "fullscreen": {
+    "message": "全画面"
+  },
+  "general": {
+    "message": "一般"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 個の HLS セグメント $2"
+  },
+  "imagesProcessed": {
+    "message": "$1 枚の画像を処理しました"
+  },
+  "imagesSent": {
+    "message": "画像を送信しました"
+  },
+  "installMethodInfo": {
+    "message": "インストール方法 $1"
+  },
+  "installTypeDevelopment": {
+    "message": "デスクトップ版自己管理"
+  },
+  "installTypeSideload": {
+    "message": "サイドロードインストール"
+  },
+  "installTypeStore": {
+    "message": "ストアからインストール"
+  },
+  "installTypeUnknown": {
+    "message": "不明"
+  },
+  "interceptUnknownSize": {
+    "message": "サイズ不明時にインターセプト"
+  },
+  "invertSelection": {
+    "message": "選択を反転"
+  },
+  "itemCount": {
+    "message": "$1 項目"
+  },
+  "itemCount_popup_pages_ImagesPage_tsx": {
+    "message": "$1 項目"
+  },
+  "launchDesktop": {
+    "message": "デスクトップ版を起動"
+  },
+  "lightTheme": {
+    "message": "ライトテーマ"
+  },
+  "localServerAddress": {
+    "message": "ローカルサーバーアドレス"
+  },
+  "loop": {
+    "message": "ループ"
+  },
+  "mediaBridgeNotReady": {
+    "message": "現在のページのメディアブリッジの準備ができていません"
+  },
+  "mediaConnected": {
+    "message": "現在のメディア状態は接続済みです"
+  },
+  "mediaControl": {
+    "message": "メディアコントロール"
+  },
+  "mediaReleased": {
+    "message": "メディアが解放されました"
+  },
+  "merge": {
+    "message": "マージ"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "オンラインマージタスクが Ghost Downloader に送信されました"
+  },
+  "minInterceptSize": {
+    "message": "最小インターセプトサイズ"
+  },
+  "minInterceptSizeHint": {
+    "message": "このサイズより小さいファイルはブラウザが直接ダウンロードします。0 の場合はすべてインターセプトします"
+  },
+  "mobileUserAgent": {
+    "message": "モバイルをエミュレート"
+  },
+  "mobileUserAgentDescription": {
+    "message": "モバイルデバイスとしてページにアクセスします"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "モバイルエミュレーションをオフにしました"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "モバイルエミュレーションをオンにしました。更新後に有効になります"
+  },
+  "mute": {
+    "message": "ミュート"
+  },
+  "navAdvanced": {
+    "message": "詳細"
+  },
+  "navImages": {
+    "message": "画像"
+  },
+  "navResources": {
+    "message": "リソース"
+  },
+  "navTasks": {
+    "message": "タスク"
+  },
+  "noActiveTabForMedia": {
+    "message": "操作可能なタブがありません"
+  },
+  "noControllableMedia": {
+    "message": "制御可能なメディアがありません"
+  },
+  "noControllableMediaDetected": {
+    "message": "制御可能なメディアが検出されていません"
+  },
+  "noMediaDetected": {
+    "message": "制御可能なメディアが検出されていません"
+  },
+  "noMediaStateResponse": {
+    "message": "ページがメディア状態を返しませんでした"
+  },
+  "notConnected": {
+    "message": "未接続"
+  },
+  "openFile": {
+    "message": "ファイルを開く"
+  },
+  "openFolder": {
+    "message": "フォルダを開く"
+  },
+  "openWhenDone": {
+    "message": "完了後に開く"
+  },
+  "pageNoControllableMedia": {
+    "message": "現在のページで制御可能なメディアが検出されていません"
+  },
+  "pairing": {
+    "message": "ペアリング中"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "ペアリングリクエストが送信されました。デスクトップ版で確認してください"
+  },
+  "pairingToken": {
+    "message": "ペアリングトークン"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "ペアリングトークンを入力してください"
+  },
+  "pairingTokenSaved": {
+    "message": "ペアリングトークンが保存されました"
+  },
+  "pasteToken": {
+    "message": "トークンを貼り付け"
+  },
+  "pause": {
+    "message": "一時停止"
+  },
+  "paused": {
+    "message": "一時停止中"
+  },
+  "pendingPairing": {
+    "message": "ペアリング待ち"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 待ち"
+  },
+  "pictureInPicture": {
+    "message": "ピクチャインピクチャ"
+  },
+  "play": {
+    "message": "再生"
+  },
+  "reconnect": {
+    "message": "再接続"
+  },
+  "recordWebRTC": {
+    "message": "WebRTC を録画"
+  },
+  "recordWebRTCDescription": {
+    "message": "WebRTC リアルタイム通信の内容を録画します"
+  },
+  "redownload": {
+    "message": "再ダウンロード"
+  },
+  "reloadRequired": {
+    "message": "更新が必要"
+  },
+  "rescan": {
+    "message": "再スキャン"
+  },
+  "resolving": {
+    "message": "解析中"
+  },
+  "resource": {
+    "message": "リソース",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "現在のタブはリソースリストを提供できません。"
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "現在のタブはリソースブリッジをサポートしていません"
+  },
+  "resourceProcessed": {
+    "message": "リソースの処理に成功しました"
+  },
+  "resourceSentToBrowser": {
+    "message": "リソースをブラウザのダウンロードに渡しました"
+  },
+  "resourceSentToDesktop": {
+    "message": "リソースを Ghost Downloader に送信しました"
+  },
+  "restoringCapturedResources": {
+    "message": "キャプチャ済みリソースを復元中"
+  },
+  "restoringCatCatchResources": {
+    "message": "cat-catch でキャプチャされたリソースを復元中"
+  },
+  "restoringResourcesDescription": {
+    "message": "キャプチャ済みリソースを復元しています。"
+  },
+  "restoringResourcesTitle": {
+    "message": "現在のページのリソースを復元中"
+  },
+  "resume": {
+    "message": "再開"
+  },
+  "scanning": {
+    "message": "スキャン中…"
+  },
+  "scopeCurrentPage": {
+    "message": "現在のページ"
+  },
+  "scopeOtherPages": {
+    "message": "その他のページ"
+  },
+  "screenCapture": {
+    "message": "画面キャプチャ"
+  },
+  "screenCaptureDescription": {
+    "message": "画面、ウィンドウ、またはタブをキャプチャします"
+  },
+  "screenshot": {
+    "message": "スクリーンショット"
+  },
+  "selectAll": {
+    "message": "すべて選択"
+  },
+  "selectMedia": {
+    "message": "メディアを選択"
+  },
+  "selectMediaPlaceholder": {
+    "message": "メディアを選択してください"
+  },
+  "selectResourceLabel": {
+    "message": "$1 を選択"
+  },
+  "sendCount": {
+    "message": "送信 ($1)"
+  },
+  "sendCount_popup_pages_ImagesPage_tsx": {
+    "message": "送信 ($1)"
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "現在のメディアを Ghost Downloader に送信"
+  },
+  "sendToDesktop": {
+    "message": "Ghost Downloader に送信"
+  },
+  "sending": {
+    "message": "送信中"
+  },
+  "sent": {
+    "message": "送信済み"
+  },
+  "sentToBrowserDownload": {
+    "message": "ブラウザのダウンロードに渡しました"
+  },
+  "sentToDesktop": {
+    "message": "Ghost Downloader に送信しました"
+  },
+  "serverUrlSaved": {
+    "message": "アドレスが保存されました"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "sortByArea": {
+    "message": "面積"
+  },
+  "sortByHeight": {
+    "message": "高さ"
+  },
+  "sortByWidth": {
+    "message": "幅"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "現在のタブは cat-catch リソースブリッジをサポートしていません"
+  },
+  "takeOverDownloads": {
+    "message": "ダウンロードの引継ぎ"
+  },
+  "taskActionSent": {
+    "message": "タスク操作を送信しました"
+  },
+  "taskQueued": {
+    "message": "デスクトップ版が未接続のため、タスクはキューに入りました"
+  },
+  "theme": {
+    "message": "テーマ"
+  },
+  "tokenInvalid": {
+    "message": "トークンが無効です"
+  },
+  "unmute": {
+    "message": "ミュート解除"
+  },
+  "video": {
+    "message": "動画",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "動画録画"
+  },
+  "videoRecordingDescription": {
+    "message": "ウェブページ内の動画コンテンツを録画します"
+  },
+  "videoTrack": {
+    "message": "動画トラック"
+  },
+  "waitedTimeout": {
+    "message": "$1（$2 秒待機済み）"
+  },
+  "waiting": {
+    "message": "待機中"
+  },
+  "waitingForDouyinMuxedUrl": {
+    "message": "Douyin の単一 MP4 URL を待機中"
+  },
+  "waitingForDouyinSeparateTracks": {
+    "message": "Douyin の音声・動画トラックが揃うのを待機中"
+  },
+  "waitingForResource": {
+    "message": "リソース待機中…"
+  },
+  "waitingForResourceCapture": {
+    "message": "cat-catch がリソースをキャプチャするのを待機中"
+  },
+  "waitingForSeparateTracks": {
+    "message": "音声・動画トラックが揃うのを待機中"
+  },
+  "waitingForVideoResource": {
+    "message": "現在の動画リソースがスニッフィングされるのを待機中"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "X マスタープレイリストを待機中"
+  }
+}

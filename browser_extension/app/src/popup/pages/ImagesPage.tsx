@@ -258,7 +258,7 @@ export function ImagesPage({
           size="small"
           onClick={() => void scan()}
         >
-          {isScanning ? "扫描中…" : "重新扫描"}
+          {isScanning ? chrome.i18n.getMessage("scanning") : chrome.i18n.getMessage("rescan")}
         </Button>
         <div className={styles.toolbarSpacer} />
         <Select
@@ -267,9 +267,9 @@ export function ImagesPage({
           value={sortField}
           onChange={(_e, data) => setSortField(data.value as SortField)}
         >
-          <option value="area">面积</option>
-          <option value="width">宽度</option>
-          <option value="height">高度</option>
+          <option value="area">{chrome.i18n.getMessage("sortByArea")}</option>
+          <option value="width">{chrome.i18n.getMessage("sortByWidth")}</option>
+          <option value="height">{chrome.i18n.getMessage("sortByHeight")}</option>
         </Select>
         <Button
           appearance="subtle"
@@ -284,14 +284,14 @@ export function ImagesPage({
           onClick={() => setIsFilterOpen(!isFilterOpen)}
         />
         <Badge appearance="outline" color="informative" size="small">
-          {`${filteredImages.length} 项`}
+          {chrome.i18n.getMessage("itemCount_popup_pages_ImagesPage_tsx", [String(filteredImages.length)])}
         </Badge>
       </div>
 
       {isFilterOpen && (
         <Card appearance="filled-alternative" className={styles.filterPanel}>
           <div className={styles.sliderRow}>
-            <Caption1 className={styles.sliderLabel}>宽</Caption1>
+            <Caption1 className={styles.sliderLabel}>{chrome.i18n.getMessage("filterWidthLabel")}</Caption1>
             <Slider
               className={styles.slider}
               max={maxWidth}
@@ -303,7 +303,7 @@ export function ImagesPage({
             <Caption1 className={styles.sliderValue}>{`≥ ${minWidth}px`}</Caption1>
           </div>
           <div className={styles.sliderRow}>
-            <Caption1 className={styles.sliderLabel}>高</Caption1>
+            <Caption1 className={styles.sliderLabel}>{chrome.i18n.getMessage("filterHeightLabel")}</Caption1>
             <Slider
               className={styles.slider}
               max={maxHeight}
@@ -337,8 +337,8 @@ export function ImagesPage({
       {!hasScanned || isScanning ? null : filteredImages.length === 0 ? (
         <EmptyState
           icon={<ImageRegular />}
-          title="当前页面没有找到图片"
-          description="试试切换到有图片的页面，或调整筛选条件。"
+          title={chrome.i18n.getMessage("emptyImagesTitle")}
+          description={chrome.i18n.getMessage("emptyImagesDescription")}
         />
       ) : (
         <div className={styles.grid}>
@@ -356,9 +356,9 @@ export function ImagesPage({
 
       {hasSelection && (
         <div className={styles.actionBar}>
-          <Button appearance="subtle" icon={<CheckboxCheckedRegular />} size="small" onClick={selectAll}>全选</Button>
-          <Button appearance="subtle" icon={<CheckboxIndeterminateRegular />} size="small" onClick={invertSelection}>反选</Button>
-          <Button appearance="subtle" icon={<DismissRegular />} size="small" onClick={clearSelection}>取消</Button>
+          <Button appearance="subtle" icon={<CheckboxCheckedRegular />} size="small" onClick={selectAll}>{chrome.i18n.getMessage("selectAll")}</Button>
+          <Button appearance="subtle" icon={<CheckboxIndeterminateRegular />} size="small" onClick={invertSelection}>{chrome.i18n.getMessage("invertSelection")}</Button>
+          <Button appearance="subtle" icon={<DismissRegular />} size="small" onClick={clearSelection}>{chrome.i18n.getMessage("clearSelection")}</Button>
           <div className={styles.actionSpacer} />
           <Button
             appearance="primary"
@@ -367,7 +367,7 @@ export function ImagesPage({
             size="small"
             onClick={() => void sendSelected()}
           >
-            {`发送 (${selectedImages.length})`}
+            {chrome.i18n.getMessage("sendCount_popup_pages_ImagesPage_tsx", [String(selectedImages.length)])}
           </Button>
         </div>
       )}

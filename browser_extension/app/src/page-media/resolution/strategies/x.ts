@@ -39,5 +39,5 @@ export function selectX(ctx: ResolveContext): Resolution {
     return { kind: "selection", selection: { kind: "stream", url: pick } };
   }
 
-  return { kind: "pending", reason: "等待 X 主播放清单" };
+  return { kind: "pending", reason: chrome.i18n.getMessage("waitingForXMasterPlaylist") };
 }

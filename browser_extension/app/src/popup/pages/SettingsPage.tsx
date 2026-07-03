@@ -91,10 +91,10 @@ export function SettingsPage({
 
   const installLabel = useCallback(() => {
     switch (installType) {
-      case "development": return "桌面端自管理";
-      case "admin": case "normal": return "商店安装";
-      case "sideload": return "侧载安装";
-      default: return installType || "未知";
+      case "development": return chrome.i18n.getMessage("installTypeDevelopment");
+      case "admin": case "normal": return chrome.i18n.getMessage("installTypeStore");
+      case "sideload": return chrome.i18n.getMessage("installTypeSideload");
+      default: return installType || chrome.i18n.getMessage("installTypeUnknown");
     }
   }, [installType]);
 
@@ -171,18 +171,18 @@ export function SettingsPage({
     <div className={styles.root}>
       <Card appearance="filled-alternative" className={styles.card}>
         <div className={styles.header}>
-          <Body1Strong>连接配置</Body1Strong>
+          <Body1Strong>{chrome.i18n.getMessage("connectionConfig")}</Body1Strong>
           <Button
             appearance="primary"
             disabled={requestingPairing || savingToken || savingServerUrl}
             icon={<PlugConnectedRegular />}
             onClick={() => void onRequestPairing()}
           >
-            自动配对
+            {chrome.i18n.getMessage("autoPair")}
           </Button>
         </div>
 
-        <Field label="本地服务地址">
+        <Field label={chrome.i18n.getMessage("localServerAddress")}>
           <div className={styles.inputRow}>
             <Input
               className={styles.input}
@@ -202,19 +202,19 @@ export function SettingsPage({
             <Button
               disabled={refreshingConnection || savingServerUrl}
               icon={<ArrowClockwiseRegular />}
-              aria-label="重新连接"
+              aria-label={chrome.i18n.getMessage("reconnect")}
               onClick={() => void onRefreshConnection()}
             />
           </div>
         </Field>
 
-        <Field label="配对令牌">
+        <Field label={chrome.i18n.getMessage("pairingToken")}>
           <div className={styles.inputRow}>
             <Input
               className={styles.input}
               disabled={savingToken}
               type="password"
-              placeholder="请输入配对令牌"
+              placeholder={chrome.i18n.getMessage("pairingTokenPlaceholder")}
               value={tokenDraft}
               onBlur={() => void commitToken()}
               onChange={(_event, data) => {
@@ -227,15 +227,15 @@ export function SettingsPage({
                 }
               }}
             />
-            <Button disabled={savingToken} icon={<ClipboardPasteRegular />} aria-label="粘贴令牌" onClick={() => void pasteToken()} />
+            <Button disabled={savingToken} icon={<ClipboardPasteRegular />} aria-label={chrome.i18n.getMessage("pasteToken")} onClick={() => void pasteToken()} />
           </div>
         </Field>
       </Card>
 
       <Card appearance="filled-alternative" className={styles.card}>
-        <Body1Strong>通用</Body1Strong>
+        <Body1Strong>{chrome.i18n.getMessage("general")}</Body1Strong>
 
-        <Field label="最小拦截大小" hint="低于此大小的文件由浏览器直接下载，0 为全部拦截">
+        <Field label={chrome.i18n.getMessage("minInterceptSize")} hint={chrome.i18n.getMessage("minInterceptSizeHint")}>
           <SpinButton
             min={0}
             max={1048576}
@@ -250,7 +250,7 @@ export function SettingsPage({
           />
         </Field>
 
-        <Field label="大小未知时拦截">
+        <Field label={chrome.i18n.getMessage("interceptUnknownSize")}>
           <Switch
             checked={takeUnknownSize}
             onChange={(_event, data: SwitchOnChangeData) => {
@@ -260,7 +260,7 @@ export function SettingsPage({
           />
         </Field>
 
-        <Field label="跳过拦截快捷键" hint="按住此键点击下载链接，跳过拦截由浏览器下载">
+        <Field label={chrome.i18n.getMessage("bypassShortcutKey")} hint={chrome.i18n.getMessage("bypassShortcutKeyHint")}>
           <Select
             value={bypassModifier}
             onChange={(_event, data) => {
@@ -275,28 +275,28 @@ export function SettingsPage({
           </Select>
         </Field>
 
-        <Field label="主题">
+        <Field label={chrome.i18n.getMessage("theme")}>
           <Select
             value={themePreference}
             onChange={(_event) => onThemePreferenceChange(_event.currentTarget.value as ThemePreference)}
           >
-            <option value="system">跟随系统设置</option>
-            <option value="light">浅色</option>
-            <option value="dark">深色</option>
+            <option value="system">{chrome.i18n.getMessage("followSystem")}</option>
+            <option value="light">{chrome.i18n.getMessage("lightTheme")}</option>
+            <option value="dark">{chrome.i18n.getMessage("darkTheme")}</option>
           </Select>
         </Field>
       </Card>
 
       <Card appearance="filled-alternative" className={styles.card}>
-        <Body1Strong>关于</Body1Strong>
+        <Body1Strong>{chrome.i18n.getMessage("about")}</Body1Strong>
         <MessageBar intent="info">
-          <MessageBarBody>{`扩展版本 ${EXTENSION_VERSION}`}</MessageBarBody>
+          <MessageBarBody>{chrome.i18n.getMessage("extensionVersionInfo", [EXTENSION_VERSION])}</MessageBarBody>
         </MessageBar>
         <MessageBar intent="info">
-          <MessageBarBody>{`安装方式 ${installLabel()}`}</MessageBarBody>
+          <MessageBarBody>{chrome.i18n.getMessage("installMethodInfo", [installLabel()])}</MessageBarBody>
         </MessageBar>
         <MessageBar intent={desktopVersion ? "success" : "warning"}>
-          <MessageBarBody>{`桌面端 ${desktopVersion || "未连接"}`}</MessageBarBody>
+          <MessageBarBody>{chrome.i18n.getMessage("desktopVersionInfo", [desktopVersion || chrome.i18n.getMessage("notConnected")])}</MessageBarBody>
         </MessageBar>
       </Card>
     </div>

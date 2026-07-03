@@ -84,15 +84,15 @@ export function formatBytes(value: number): string {
 export function formatTaskStatus(status: string): string {
   switch (status) {
     case "running":
-      return "下载中";
+      return chrome.i18n.getMessage("downloading");
     case "waiting":
-      return "等待中";
+      return chrome.i18n.getMessage("waiting");
     case "paused":
-      return "已暂停";
+      return chrome.i18n.getMessage("paused");
     case "completed":
-      return "已完成";
+      return chrome.i18n.getMessage("completed");
     case "failed":
-      return "失败";
+      return chrome.i18n.getMessage("failed");
     default:
       return status;
   }
@@ -166,17 +166,17 @@ export function connectionLabel(state: DesktopConnectionState, fallback: string)
   }
   switch (state) {
     case "connected":
-      return "已连接";
+      return chrome.i18n.getMessage("connected");
     case "connecting":
-      return "连接中";
+      return chrome.i18n.getMessage("connecting");
     case "authenticating":
-      return "校验中";
+      return chrome.i18n.getMessage("authenticating");
     case "missing_token":
-      return "待配对";
+      return chrome.i18n.getMessage("awaitingPairing");
     case "unauthorized":
-      return "令牌无效";
+      return chrome.i18n.getMessage("tokenInvalid");
     default:
-      return "未连接";
+      return chrome.i18n.getMessage("disconnected");
   }
 }
 
@@ -364,12 +364,12 @@ function resourcePrimaryBadge(resource: Resource, parts = resourcePresentationPa
     return parts.extension.slice(0, 6).toUpperCase();
   }
   if (resource.mime.startsWith("audio/")) {
-    return "音频";
+    return chrome.i18n.getMessage("audio");
   }
   if (resource.mime.startsWith("video/")) {
-    return "视频";
+    return chrome.i18n.getMessage("video");
   }
-  return "资源";
+  return chrome.i18n.getMessage("resource");
 }
 
 export function describeResource(resource: Resource): ResourcePresentation {
@@ -387,20 +387,20 @@ export function describeResource(resource: Resource): ResourcePresentation {
   const needsDesktop = parts.deliveryTarget === "desktop";
   const statusText = resource.sentToDesktopAt
     ? needsDesktop
-      ? "已发送到 Ghost Downloader"
-      : "已交给浏览器下载"
+      ? chrome.i18n.getMessage("sentToDesktop")
+      : chrome.i18n.getMessage("sentToBrowserDownload")
     : needsDesktop
-      ? "发送到 Ghost Downloader"
-      : "浏览器下载";
+      ? chrome.i18n.getMessage("sendToDesktop")
+      : chrome.i18n.getMessage("browserDownload");
 
   const tags = [primaryBadge];
   if (parts.deliveryTarget === "browser_download") {
-    tags.push("浏览器下载");
+    tags.push(chrome.i18n.getMessage("browserDownload"));
   }
   if (isDashSegment(resource)) {
     const role = dashTrackRoleOf(resource.filename, resource.url);
-    if (role === "video") { tags.push("视频轨"); }
-    else if (role === "audio") { tags.push("音频轨"); }
+    if (role === "video") { tags.push(chrome.i18n.getMessage("videoTrack")); }
+    else if (role === "audio") { tags.push(chrome.i18n.getMessage("audioTrack")); }
   }
   const visual: ResourcePresentation["visual"] = {
     kind: visualKindOf({
@@ -419,7 +419,7 @@ export function describeResource(resource: Resource): ResourcePresentation {
     category,
     primaryBadge,
     statusText,
-    actionLabel: needsDesktop ? "发送到 Ghost Downloader" : "浏览器下载",
+    actionLabel: needsDesktop ? chrome.i18n.getMessage("sendToDesktop") : chrome.i18n.getMessage("browserDownload"),
     needsDesktop,
     tags,
     visual,
@@ -483,10 +483,10 @@ export function filterResources(resources: Resource[], filter: ResourceFilter): 
 
 export function taskActionLabel(task: TaskSummary): string {
   if (task.status === "running") {
-    return "暂停";
+    return chrome.i18n.getMessage("pause");
   }
   if (task.status === "paused" || task.status === "waiting" || task.status === "failed") {
-    return "继续";
+    return chrome.i18n.getMessage("resume");
   }
   return "";
 }
