@@ -10,6 +10,7 @@ from qfluentwidgets import (
 
 from app.config.cfg import cfg
 from app.platform.android import clearShare, isStorageGranted, requestStoragePermission, sharedText, toTaskUrls
+from app.platform.android_notification import isNotificationEnabled, requestNotificationPermission
 from app.services.task_draft import TaskDraft
 from app.services.task_service import taskService
 from app.view.dialogs.task_draft import TaskDraftDialog
@@ -29,7 +30,12 @@ class MobileMainWindow(QWidget):
 
         self.stackedWidget = QStackedWidget(self)
         self.navigationBar = BottomNavigationBar(self)
-        self.permissionBanner = PermissionBanner(requestStoragePermission, self)
+        self.permissionBanner = PermissionBanner(requestStoragePermission, parent=self)
+        self.notificationBanner = PermissionBanner(
+            requestNotificationPermission,
+            text=self.tr("未开启通知权限，下载完成后将无法提醒"),
+            parent=self,
+        )
         self.taskPage = MobileTaskPage(self)
         self.settingPage = MobileSettingPage(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
@@ -61,6 +67,7 @@ class MobileMainWindow(QWidget):
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.addWidget(self.permissionBanner, 0)
+        self.vBoxLayout.addWidget(self.notificationBanner, 0)
         self.vBoxLayout.addWidget(self.stackedWidget, 1)
         self.vBoxLayout.addWidget(self.navigationBar, 0)
 
@@ -127,6 +134,7 @@ class MobileMainWindow(QWidget):
 
     def _updatePermissionBanner(self):
         self.permissionBanner.setVisible(not isStorageGranted())
+        self.notificationBanner.setVisible(not isNotificationEnabled())
 
     def _updateAddButtonVisibility(self):
         onTaskPage = self.stackedWidget.currentIndex() == TASK_PAGE_INDEX
@@ -149,6 +157,28 @@ class MobileMainWindow(QWidget):
             self._draftDialog.activateWindow()
             return
         self._draftDialog.showMask()
+
+    def _onUpdateAvailable(self, release) -> None:
+        from qfluentwidgets import PrimaryPushButton, PushButton
+        from app.update import addBestAssetTask, showReleaseDialog
+
+        infoBar = InfoBar(
+            icon=FluentIcon.CLOUD,
+            title=self.tr("检测到新版本"),
+            content=self.tr("最新版本: {0}").format(release.version),
+            orient=Qt.Orientation.Vertical,
+            isClosable=True,
+            duration=-1,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self,
+        )
+        downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
+        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self))
+        infoBar.addWidget(downloadButton)
+        detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
+        detailButton.clicked.connect(lambda: showReleaseDialog(release, self))
+        infoBar.addWidget(detailButton)
+        infoBar.show()
 
     def alertException(self, message: str) -> None:
         from PySide6.QtCore import QUrl

@@ -8,7 +8,7 @@ from loguru import logger
 from app.config.paths import APP_DATA_DIR
 
 Path(APP_DATA_DIR).mkdir(parents=True, exist_ok=True)
-logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", enqueue=False)
+logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB")
 
 
 def _exceptionHook(exceptionType, value, tb):
@@ -42,21 +42,16 @@ def setupEnvironment():
 
 
 def startApp(application):
-    from PySide6.QtCore import QTranslator
-
     from app.config.cfg import cfg
-    from app.models.pack import PackConfig
     from app.platform.android_keepalive import keepAlive, REASON_DOWNLOAD, REASON_BROWSER, requestIgnoreBatteryOptimizations
     from app.platform.android_notification import (
         notifyBrowserPaired, notifyBrowserTaskAdded, notifyDiskSpaceInsufficient,
-        notifyTaskCompleted, requestNotificationPermission,
+        notifyTaskCompleted,
     )
     from app.services.browser_service import browserService
-    from app.services.coroutine_runner import coroutineRunner
-    from app.services.feature_service import featureService
     from app.services.speed_meter import speedMeter
-    from app.services.task_service import taskService
     from app.signal_bus import signalBus
+    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.mobile.device import setupTouchScrolling
     from app.view.mobile.window import MobileMainWindow
 
@@ -67,34 +62,26 @@ def startApp(application):
 
     sys.excepthook = exceptionHook
 
-    import app.assets.resources  # noqa: F401
-
-    locale = cfg.language.value.value
-    translator = QTranslator(application)  # 挂到 application: 否则局部变量出栈即被 GC, 翻译失效
-    translator.load(locale, "gd3", ".", ":/i18n")
-    application.installTranslator(translator)
-
-    coroutineRunner.start()
-    featureService.load()
-    PackConfig.load()
-    taskService.resumeSaved()
-    featureService.start()
+    loadEngine(application)
+    loadPacks()
 
     mainWindow = MobileMainWindow()
     mainWindow.show()
     setupTouchScrolling(mainWindow)
-    signalBus.exceptionCaught.connect(mainWindow.alertException)
 
-    requestNotificationPermission()
-    requestIgnoreBatteryOptimizations()
-
-    taskService.taskCompleted.connect(notifyTaskCompleted)
-    taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
+    from app.services.task_service import taskService
     taskService.taskStarted.connect(lambda _: keepAlive.holdFor(REASON_DOWNLOAD))
     taskService.tasksAllCompleted.connect(lambda: keepAlive.release(REASON_DOWNLOAD))
-    taskService.taskStarted.connect(lambda _: speedMeter.start())
-    taskService.tasksAllCompleted.connect(speedMeter.stop)
     speedMeter.speedChanged.connect(keepAlive.setSpeed)
+
+    startEngine()
+
+    signalBus.exceptionCaught.connect(mainWindow.alertException)
+    signalBus.updateAvailable.connect(mainWindow._onUpdateAvailable)
+
+    requestIgnoreBatteryOptimizations()
+
+    bindNotifications(notifyTaskCompleted, notifyDiskSpaceInsufficient)
 
     def onBrowserTaskDraftRequested(tasks):
         for task in tasks:
@@ -115,22 +102,21 @@ def startApp(application):
     cfg.isAria2RpcEnabled.valueChanged.connect(aria2RpcServer.setEnabled)
     cfg.aria2RpcPort.valueChanged.connect(aria2RpcServer.setPort)
 
-    cfg.isBrowserExtensionEnabled.valueChanged.connect(
-        lambda enabled: keepAlive.holdFor(REASON_BROWSER) if enabled else keepAlive.release(REASON_BROWSER)
-    )
+    def onBrowserExtensionToggled(enabled):
+        if enabled:
+            keepAlive.holdFor(REASON_BROWSER)
+        else:
+            keepAlive.release(REASON_BROWSER)
+        browserService.setEnabled(enabled)
+
+    cfg.isBrowserExtensionEnabled.valueChanged.connect(onBrowserExtensionToggled)
     if cfg.isBrowserExtensionEnabled.value:
         keepAlive.holdFor(REASON_BROWSER)
         browserService.start()
 
-    def stopApp():
-        taskService.stop()
-        taskService.flush()
-        browserService.stop()
-        aria2RpcServer.stop()
-        featureService.stop()
-        coroutineRunner.stop()
+    checkUpdateAtStartup()
 
-    application.aboutToQuit.connect(stopApp)
+    application.aboutToQuit.connect(stopEngine)
 
 
 if __name__ == "__main__":

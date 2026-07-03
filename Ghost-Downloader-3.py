@@ -5,7 +5,7 @@ from loguru import logger
 
 from app.config.paths import APP_DATA_DIR
 
-logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", enqueue=False)
+logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB")
 
 
 def _exceptionHook(exceptionType, value, tb):
@@ -45,16 +45,13 @@ def setupEnvironment():
 
 
 def startApp(application, isSilent=False):
-    from PySide6.QtCore import QTranslator
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
-    from app.services.coroutine_runner import coroutineRunner
-    from app.services.speed_meter import speedMeter
-    from app.services.task_service import taskService
-    from app.services.feature_service import featureService
     from app.services.browser_service import browserService
     from app.services.clipboard_listener import ClipboardListener
+    from app.services.task_service import taskService
     from app.signal_bus import signalBus
+    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -66,15 +63,11 @@ def startApp(application, isSilent=False):
 
     application.setQuitOnLastWindowClosed(False)
 
-    locale = cfg.language.value.value
-    translator = QTranslator(application)
-    translator.load(locale, "gd3", ".", ":/i18n")
-    application.installTranslator(translator)
-
     if sys.platform == "darwin":
         from app.view.shell.dock import setDockIconVisible
         setDockIconVisible(cfg.shouldShowDockIcon.value, activate=False)
-    coroutineRunner.start()
+
+    loadEngine(application)
 
     MainWindow.refreshThemeColor()
     window = MainWindow()
@@ -86,15 +79,9 @@ def startApp(application, isSilent=False):
         window.show()
         application.processEvents()
 
-    featureService.load()
-    from app.models.pack import PackConfig
-    PackConfig.load()
+    loadPacks()
     window.setupPacks()
-
-    taskService.taskStarted.connect(lambda _: speedMeter.start())
-    taskService.tasksAllCompleted.connect(speedMeter.stop)
-    taskService.resumeSaved()
-    featureService.start()
+    startEngine()
 
     if not isSilent:
         splash.finish()
@@ -137,6 +124,7 @@ def startApp(application, isSilent=False):
     signalBus.updateAvailable.connect(lambda release: show()._onUpdateAvailable(release))
     browserService.taskDraftRequested.connect(onBrowserDraft)
     browserService.pairRequested.connect(lambda req: show().confirmPair(req))
+
     def onExtensionUpdated(version):
         from qfluentwidgets import InfoBar, InfoBarPosition
         w = show()
@@ -163,6 +151,7 @@ def startApp(application, isSilent=False):
     if sys.platform == "darwin":
         from app.view.shell.mac_status_item import MacStatusItem
         from app.view.shell.dock import setupDock
+        from app.services.speed_meter import speedMeter
         statusItem = MacStatusItem()
         statusItem.show()
         speedMeter.speedChanged.connect(statusItem.setSpeed)
@@ -173,14 +162,10 @@ def startApp(application, isSilent=False):
         tray = SystemTrayIcon(QIcon(":/image/logo.png"), parent=application)
         tray.show()
 
-    from app.platform.android import IS_ANDROID
-    if IS_ANDROID:
-        from app.platform.android_notification import notifyTaskCompleted, notifyDiskSpaceInsufficient
-    else:
-        from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
-        coroutineRunner.submit(init())
-    taskService.taskCompleted.connect(notifyTaskCompleted)
-    taskService.diskSpaceInsufficient.connect(notifyDiskSpaceInsufficient)
+    from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
+    from app.services.coroutine_runner import coroutineRunner
+    coroutineRunner.submit(init())
+    bindNotifications(notifyTaskCompleted, notifyDiskSpaceInsufficient)
 
     from app.services.plan import plan
     taskService.tasksAllCompleted.connect(plan.trigger)
@@ -189,24 +174,9 @@ def startApp(application, isSilent=False):
     if isSilent:
         emptyWorkingSetIfIdle()
 
-    if cfg.shouldCheckUpdateAtStartup.value:
-        from app.update import fetchRelease, isOutdated
+    checkUpdateAtStartup()
 
-        def _onStartupReleaseFetched(release):
-            if isOutdated(release):
-                signalBus.updateAvailable.emit(release)
-
-        coroutineRunner.submit(fetchRelease(), done=_onStartupReleaseFetched)
-
-    def stopApp():
-        taskService.stop()
-        taskService.flush()
-        browserService.stop()
-        aria2RpcServer.stop()
-        featureService.stop()
-        coroutineRunner.stop()
-
-    application.aboutToQuit.connect(stopApp)
+    application.aboutToQuit.connect(stopEngine)
 
 
 if __name__ == "__main__":
