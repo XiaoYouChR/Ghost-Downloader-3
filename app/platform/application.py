@@ -37,7 +37,9 @@ class SingletonApplication(QApplication):
         except Exception as e:
             logger.warning("Failed to register SIGINT handler: {}", e)
 
-        if sys.platform == "linux" and not IS_ANDROID:
+        if sys.platform == "win32":
+            self._registerIpcReceiver()
+        elif sys.platform == "linux" and not IS_ANDROID:
             self._registerDbusReceiver()
 
     def exec(self) -> int:
@@ -106,6 +108,9 @@ class SingletonApplication(QApplication):
         logger.error("KeyboardInterrupt, quitting")
         self.quit()
 
+    def _registerIpcReceiver(self) -> None:
+        self._ipcHwnd = _createIpcWindow()
+
     def _registerDbusReceiver(self) -> None:
         from PySide6.QtDBus import QDBusConnection
 
@@ -125,8 +130,10 @@ class SingletonApplication(QApplication):
 if sys.platform == "win32":
     import ctypes
     from ctypes import wintypes
+    import win32api
     import win32gui
 
+    IPC_CLASS_NAME = "GhostDownloaderIPC"
     COPYDATA_OPEN_FILES = 0x4744
     WM_COPYDATA = 0x004A
     WM_USER_WAKE = 1025
@@ -138,8 +145,39 @@ if sys.platform == "win32":
             ("lpData", ctypes.c_void_p),
         ]
 
+    def _onIpcWake(hWnd, msg, wParam, lParam):
+        signalBus.activationRequested.emit()
+        return 0
+
+    def _onIpcCopyData(hWnd, msg, wParam, lParam):
+        payload = _CopyDataStruct.from_address(lParam)
+        if payload.dwData == COPYDATA_OPEN_FILES:
+            raw = ctypes.string_at(payload.lpData, payload.cbData)
+            uris = [line for line in raw.decode("utf-16-le").rstrip("\x00").split("\n") if line]
+            if uris:
+                signalBus.openFileRequested.emit(uris)
+        return 1
+
+    _IPC_MESSAGE_MAP = {
+        WM_USER_WAKE: _onIpcWake,
+        WM_COPYDATA: _onIpcCopyData,
+    }
+
+    def _createIpcWindow() -> int:
+        hInstance = win32api.GetModuleHandle(None)
+        wc = win32gui.WNDCLASS()
+        wc.lpfnWndProc = _IPC_MESSAGE_MAP
+        wc.hInstance = hInstance
+        wc.lpszClassName = IPC_CLASS_NAME
+        win32gui.RegisterClass(wc)
+        return win32gui.CreateWindow(
+            IPC_CLASS_NAME, IPC_CLASS_NAME, 0,
+            0, 0, 0, 0,
+            0, 0, hInstance, None,
+        )
+
     def _sendToRunningWindows() -> None:
-        hWnd = win32gui.FindWindow(None, "Ghost Downloader")
+        hWnd = win32gui.FindWindow(IPC_CLASS_NAME, None)
         if not hWnd:
             return
         uris = fileUrisFromArgv(sys.argv)
@@ -151,13 +189,6 @@ if sys.platform == "win32":
         else:
             win32gui.SendMessage(hWnd, WM_USER_WAKE, 0, 0)
         win32gui.SetForegroundWindow(hWnd)
-
-    def fileUrisFromCopyData(lParam: int) -> list[str]:
-        payload = _CopyDataStruct.from_address(lParam)
-        if payload.dwData != COPYDATA_OPEN_FILES:
-            return []
-        raw = ctypes.string_at(payload.lpData, payload.cbData)
-        return [line for line in raw.decode("utf-16-le").rstrip("\x00").split("\n") if line]
 
 
 if sys.platform == "linux":
