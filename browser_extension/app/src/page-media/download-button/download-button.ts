@@ -41,7 +41,7 @@ const FADE_DURATION_MS = 300;
     position: "fixed",
     top: "0",
     transition: `opacity ${FADE_DURATION_MS}ms ease`,
-    zIndex: "1000000000",
+    zIndex: "2147483647",
   });
 
   root.innerHTML = `
@@ -87,11 +87,11 @@ const FADE_DURATION_MS = 300;
                 color: #b10e1c;
             }
         </style>
-        <button type="button" title="发送当前媒体到 Ghost Downloader">
+        <button type="button" title="${chrome.i18n.getMessage("sendCurrentMediaToGhostDownloader")}">
             <svg class="icon" viewBox="0 0 20 20" aria-hidden="true">
                 <path fill="currentColor" d="M10 2.5a.75.75 0 0 1 .75.75v7.69l2.72-2.72a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 1.06-1.06l2.72 2.72V3.25A.75.75 0 0 1 10 2.5Zm-5.25 11a.75.75 0 0 1 .75.75v1.25h9v-1.25a.75.75 0 0 1 1.5 0v2a.75.75 0 0 1-.75.75H4.75A.75.75 0 0 1 4 16.25v-2a.75.75 0 0 1 .75-.75Z"/>
             </svg>
-            <span class="label">下载此媒体</span>
+            <span class="label">${chrome.i18n.getMessage("downloadThisMedia")}</span>
             <span class="status"></span>
         </button>
     `;
@@ -169,19 +169,18 @@ const FADE_DURATION_MS = 300;
     const gap = 8;
     const buttonWidth = host.offsetWidth || 112;
     const buttonHeight = host.offsetHeight || 32;
-    let left = selected.rect.right + gap;
-    let top = selected.rect.top;
+    let left = Math.min(selected.rect.right - buttonWidth, innerWidth - buttonWidth - gap);
+    let top = selected.rect.top - buttonHeight - gap;
 
-    if (left + buttonWidth > innerWidth - gap) {
-      left = Math.min(innerWidth - buttonWidth - gap, Math.max(gap, selected.rect.right - buttonWidth));
-      top = selected.rect.top - buttonHeight - gap;
-    }
-    if (top < gap && selected.rect.left - buttonWidth - gap >= gap) {
-      left = selected.rect.left - buttonWidth - gap;
-      top = selected.rect.top;
-    }
     if (top < gap) {
       top = selected.rect.bottom + gap;
+    }
+    if (top + buttonHeight > innerHeight - gap) {
+      left = selected.rect.right + gap;
+      top = selected.rect.top;
+      if (left + buttonWidth > innerWidth - gap) {
+        left = selected.rect.left - buttonWidth - gap;
+      }
     }
 
     host.style.left = `${Math.max(gap, Math.min(left, innerWidth - buttonWidth - gap))}px`;
@@ -241,24 +240,24 @@ const FADE_DURATION_MS = 300;
     if (downloadInFlight) { return; }
     const media = findActiveMedia()?.media;
     if (!media) {
-      setStatus("未检测到媒体", true);
+      setStatus(chrome.i18n.getMessage("errorNoMediaDetected"), true);
       return;
     }
 
     const pageMedia = window.__gdPageMedia;
     if (!pageMedia?.selectMediaForElement) {
-      setStatus("扩展未就绪", true);
+      setStatus(chrome.i18n.getMessage("errorExtensionNotReady"), true);
       return;
     }
 
     downloadInFlight = true;
     (button as HTMLButtonElement).disabled = true;
-    label.textContent = "正在解析";
+    label.textContent = chrome.i18n.getMessage("resolving");
     setStatus("");
 
     const onState = (next: VideoSessionState) => {
-      if (next === "waiting") { label.textContent = "等待资源…"; }
-      else if (next === "resolving" || next === "dispatched") { label.textContent = "正在发送"; }
+      if (next === "waiting") { label.textContent = chrome.i18n.getMessage("waitingForResource"); }
+      else if (next === "resolving" || next === "dispatched") { label.textContent = chrome.i18n.getMessage("sending"); }
     };
 
     try {
@@ -266,11 +265,11 @@ const FADE_DURATION_MS = 300;
         poster: media.poster || "",
       }, onState);
       if (!resolution || resolution.kind === "refused") {
-        setStatus(resolution?.message || "未能定位媒体", true);
+        setStatus(resolution?.message || chrome.i18n.getMessage("errorCannotLocateMedia"), true);
         return;
       }
       if (resolution.kind !== "selection") {
-        setStatus("未能定位媒体", true);
+        setStatus(chrome.i18n.getMessage("errorCannotLocateMedia"), true);
         return;
       }
       const result = await chrome.runtime.sendMessage({
@@ -280,14 +279,14 @@ const FADE_DURATION_MS = 300;
         title: document.title,
       });
       const ok = Boolean(result?.ok);
-      setStatus(ok ? "已发送" : result?.message || "发送失败", !ok);
+      setStatus(ok ? chrome.i18n.getMessage("sent") : result?.message || chrome.i18n.getMessage("errorSendFailed"), !ok);
       pageMedia.markDispatchResult?.(media, ok, result?.message || "");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "发送失败";
+      const message = error instanceof Error ? error.message : chrome.i18n.getMessage("errorSendFailed");
       setStatus(message, true);
       pageMedia.markDispatchResult?.(media, false, message);
     } finally {
-      label.textContent = "下载此媒体";
+      label.textContent = chrome.i18n.getMessage("downloadThisMedia");
       (button as HTMLButtonElement).disabled = false;
       downloadInFlight = false;
     }
