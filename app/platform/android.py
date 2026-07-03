@@ -6,17 +6,13 @@ IS_ANDROID = hasattr(sys, "getandroidapilevel")
 
 
 @lru_cache(maxsize=1)
-def nativeLibraryDir() -> str | None:
-    if not IS_ANDROID:
-        return None
+def nativeLibraryDir() -> str:
     from jnius import autoclass
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
     return activity.getApplicationInfo().nativeLibraryDir
 
 
-def isSystemDark() -> bool | None:
-    if not IS_ANDROID:
-        return None
+def isSystemDark() -> bool:
     from jnius import autoclass
     Configuration = autoclass("android.content.res.Configuration")
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
@@ -28,8 +24,6 @@ WRITE_EXTERNAL_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE"
 
 
 def isStorageGranted() -> bool:
-    if not IS_ANDROID:
-        return True
     from jnius import autoclass
     # API30+ scoped storage 下下载到任意公共目录需 All Files Access; API<30(Android 9/10)回退运行时 WRITE 权限
     # (Android 10 靠 manifest 的 requestLegacyExternalStorage 让 WRITE 仍能自由写外置存储)。
@@ -41,8 +35,6 @@ def isStorageGranted() -> bool:
 
 
 def requestStoragePermission() -> None:
-    if not IS_ANDROID:
-        return
     from jnius import autoclass
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
     if autoclass("android.os.Build$VERSION").SDK_INT >= 30:
@@ -90,8 +82,6 @@ def _launchView(path: str, mimeType: str) -> None:
 
 
 def openFile(filePath) -> None:
-    if not IS_ANDROID:
-        return
     from jnius import autoclass
     text = str(filePath)
     extension = text.rsplit(".", 1)[-1].lower() if "." in text else ""
@@ -100,8 +90,6 @@ def openFile(filePath) -> None:
 
 
 def openFolder(folder) -> None:
-    if not IS_ANDROID:
-        return
     _launchView(str(folder), "vnd.android.document/directory")
 
 
@@ -111,8 +99,6 @@ def toTaskUrls(text: str) -> list[str]:
 
 
 def sharedText() -> str | None:
-    if not IS_ANDROID:
-        return None
     from jnius import autoclass
     Intent = autoclass("android.content.Intent")
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
@@ -126,8 +112,6 @@ def sharedText() -> str | None:
 
 
 def clearShare() -> None:
-    if not IS_ANDROID:
-        return
     from jnius import autoclass
     Intent = autoclass("android.content.Intent")
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
