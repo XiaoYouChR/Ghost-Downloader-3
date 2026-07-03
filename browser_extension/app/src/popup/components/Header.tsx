@@ -47,10 +47,10 @@ const NAV_ITEMS: Array<{
   label: string;
   icon: React.JSX.Element;
 }> = [
-  { key: "tasks", label: "任务", icon: <ArrowDownloadRegular /> },
-  { key: "resources", label: "资源", icon: <GlobeRegular /> },
-  { key: "images", label: "图片", icon: <ImageRegular /> },
-  { key: "advanced", label: "高级", icon: <WrenchRegular /> },
+  { key: "tasks", label: chrome.i18n.getMessage("navTasks"), icon: <ArrowDownloadRegular /> },
+  { key: "resources", label: chrome.i18n.getMessage("navResources"), icon: <GlobeRegular /> },
+  { key: "images", label: chrome.i18n.getMessage("navImages"), icon: <ImageRegular /> },
+  { key: "advanced", label: chrome.i18n.getMessage("navAdvanced"), icon: <WrenchRegular /> },
 ];
 
 export function Header({
@@ -101,7 +101,7 @@ export function Header({
         <Button
           appearance={currentView === "settings" ? "primary" : "secondary"}
           icon={<SettingsRegular />}
-          aria-label="设置"
+          aria-label={chrome.i18n.getMessage("settings")}
           onClick={() => onViewChange("settings")}
         />
       </div>
@@ -118,14 +118,14 @@ export function Header({
           <Switch
             checked={isMediaButtonEnabled}
             disabled={isMediaButtonBusy}
-            label="下载此媒体"
+            label={chrome.i18n.getMessage("downloadThisMedia")}
             labelPosition="before"
             onChange={(_event, data: SwitchOnChangeData) => onMediaButtonToggle(Boolean(data.checked))}
           />
           <Switch
             checked={shouldTakeDownloads}
             disabled={isTakeDownloadsBusy}
-            label="接管下载"
+            label={chrome.i18n.getMessage("takeOverDownloads")}
             labelPosition="before"
             onChange={(_event, data: SwitchOnChangeData) => onTakeDownloadsToggle(Boolean(data.checked))}
           />

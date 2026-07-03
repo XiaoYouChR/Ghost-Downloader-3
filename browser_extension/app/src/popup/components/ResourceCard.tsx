@@ -125,7 +125,7 @@ export function ResourceCard({
     >
       <div className={styles.row}>
         <Checkbox
-          aria-label={`选择 ${displayTitle}`}
+          aria-label={chrome.i18n.getMessage("selectResourceLabel", [displayTitle])}
           checked={selected}
           className={styles.select}
           onChange={(_event, data) => onSelectedChange?.(Boolean(data.checked))}

@@ -67,22 +67,22 @@ const useStyles = makeStyles({
 });
 
 const RESOURCE_FILTERS: Array<{ key: ResourceFilter; label: string }> = [
-  { key: "all", label: "全部" },
-  { key: "video", label: "视频" },
-  { key: "audio", label: "音频" },
+  { key: "all", label: chrome.i18n.getMessage("filterAll") },
+  { key: "video", label: chrome.i18n.getMessage("filterVideo") },
+  { key: "audio", label: chrome.i18n.getMessage("filterAudio") },
 ];
 
 function emptyCopy(scope: ResourceScope, state: ResourceCollectionState, message: string) {
   if (scope === "current" && state === "restoring") {
-    return { title: "正在恢复当前页面资源", description: message || "正在恢复已捕获的资源。" };
+    return { title: chrome.i18n.getMessage("restoringResourcesTitle"), description: message || chrome.i18n.getMessage("restoringResourcesDescription") };
   }
   if (scope === "current" && state === "unavailable") {
-    return { title: "当前标签页暂不支持资源桥接", description: message || "当前标签页暂时无法提供资源列表。" };
+    return { title: chrome.i18n.getMessage("resourceBridgeUnavailableTitle"), description: message || chrome.i18n.getMessage("resourceBridgeUnavailableDescription") };
   }
   if (scope === "current") {
-    return { title: "当前页面还没有资源", description: "播放视频或音频后，这里会自动显示捕获到的资源。" };
+    return { title: chrome.i18n.getMessage("emptyCurrentResourcesTitle"), description: chrome.i18n.getMessage("emptyCurrentResourcesDescription") };
   }
-  return { title: "还没有其他页面的资源", description: "切换到其他标签页并捕获到资源后，这里会自动汇总显示。" };
+  return { title: chrome.i18n.getMessage("emptyOtherResourcesTitle"), description: chrome.i18n.getMessage("emptyOtherResourcesDescription") };
 }
 
 export function ResourcesPage({
@@ -237,10 +237,10 @@ export function ResourcesPage({
           value={scope}
           onChange={(_e, data) => setScope(data.value as ResourceScope)}
         >
-          <option value="current">当前页面</option>
-          <option value="other">其他页面</option>
+          <option value="current">{chrome.i18n.getMessage("scopeCurrentPage")}</option>
+          <option value="other">{chrome.i18n.getMessage("scopeOtherPages")}</option>
         </Select>
-        <Badge appearance="outline" color="informative" size="small">{`${filteredResources.length} 项`}</Badge>
+        <Badge appearance="outline" color="informative" size="small">{chrome.i18n.getMessage("itemCount", [String(filteredResources.length)])}</Badge>
       </div>
 
       {filteredResources.length === 0 ? (
@@ -262,7 +262,7 @@ export function ResourcesPage({
                 className={styles.foldToggle}
                 onClick={() => setDashExpanded(!isDashExpanded)}
               >
-                <Caption1>{`${dashSegments.length} 个 DASH 分片 ${isDashExpanded ? "▾" : "▸"}`}</Caption1>
+                <Caption1>{chrome.i18n.getMessage("dashSegmentsCount", [String(dashSegments.length), isDashExpanded ? "▾" : "▸"])}</Caption1>
               </Card>
               {isDashExpanded && (
                 <section className={styles.list}>{dashSegments.map(renderCard)}</section>
@@ -277,7 +277,7 @@ export function ResourcesPage({
                 className={styles.foldToggle}
                 onClick={() => setHlsExpanded(!isHlsExpanded)}
               >
-                <Caption1>{`${hlsSegments.length} 个 HLS 分片 ${isHlsExpanded ? "▾" : "▸"}`}</Caption1>
+                <Caption1>{chrome.i18n.getMessage("hlsSegmentsCount", [String(hlsSegments.length), isHlsExpanded ? "▾" : "▸"])}</Caption1>
               </Card>
               {isHlsExpanded && (
                 <section className={styles.list}>{hlsSegments.map(renderCard)}</section>
@@ -289,9 +289,9 @@ export function ResourcesPage({
 
       {hasSelection && (
         <div className={styles.actionBar}>
-          <Button appearance="subtle" size="small" icon={<CheckboxCheckedRegular />} onClick={selectAll}>全选</Button>
-          <Button appearance="subtle" size="small" icon={<CheckboxIndeterminateRegular />} onClick={invertSelection}>反选</Button>
-          <Button appearance="subtle" size="small" icon={<DismissRegular />} onClick={clearSelection}>取消</Button>
+          <Button appearance="subtle" size="small" icon={<CheckboxCheckedRegular />} onClick={selectAll}>{chrome.i18n.getMessage("selectAll")}</Button>
+          <Button appearance="subtle" size="small" icon={<CheckboxIndeterminateRegular />} onClick={invertSelection}>{chrome.i18n.getMessage("invertSelection")}</Button>
+          <Button appearance="subtle" size="small" icon={<DismissRegular />} onClick={clearSelection}>{chrome.i18n.getMessage("clearSelection")}</Button>
           <div className={styles.actionSpacer} />
           <Button
             appearance="primary"
@@ -300,7 +300,7 @@ export function ResourcesPage({
             size="small"
             onClick={sendSelected}
           >
-            {`发送 (${selectedResources.length})`}
+            {chrome.i18n.getMessage("sendCount", [String(selectedResources.length)])}
           </Button>
           <Button
             appearance="secondary"
@@ -309,7 +309,7 @@ export function ResourcesPage({
             size="small"
             onClick={() => void mergeSelected()}
           >
-            合并
+            {chrome.i18n.getMessage("merge")}
           </Button>
         </div>
       )}

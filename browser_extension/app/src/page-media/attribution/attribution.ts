@@ -83,7 +83,7 @@ function trySelect(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Res
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`${LOG_PREFIX} strategy for ${ctx.pageUrl.hostname} threw`, error);
-    return { kind: "refused", message: `策略异常: ${message}` };
+    return { kind: "refused", message: chrome.i18n.getMessage("errorStrategyException", [message]) };
   }
 }
 
@@ -225,7 +225,7 @@ class MediaAttribution {
     console.log(`${LOG_PREFIX} ${previous.id} emptied — releasing`);
 
     // Unblock any inflight click before teardown, otherwise it sits orphaned for 8s.
-    this.notifyResolveListener(previous, "refused", "媒体已释放");
+    this.notifyResolveListener(previous, "refused", chrome.i18n.getMessage("mediaReleased"));
 
     // Without release, Douyin/X feeds accumulate one session per swipe forever.
     this.ledger.release(previous.id);
@@ -564,11 +564,11 @@ class MediaAttribution {
     onStateChange?: ResolveStateListener,
   ): Promise<Resolution> {
     if (!element) {
-      return { kind: "refused", message: "未识别媒体来源" };
+      return { kind: "refused", message: chrome.i18n.getMessage("errorMediaSourceUnrecognized") };
     }
     const session = this.sessionsByElement.get(element);
     if (!session) {
-      return { kind: "refused", message: "未识别媒体来源" };
+      return { kind: "refused", message: chrome.i18n.getMessage("errorMediaSourceUnrecognized") };
     }
     const pageUrl = new URL(location.href);
     const findUrlsByIdHint: FindUrlsByIdHint = (idHint) => this.lookupByIdHint(idHint);
@@ -615,7 +615,7 @@ class MediaAttribution {
       });
 
       const timer = setTimeout(() => {
-        finish({ kind: "refused", message: `${lastPendingReason}（已等待 ${Math.round(WAIT_FOR_TIMEOUT_MS / 1000)}s）` });
+        finish({ kind: "refused", message: chrome.i18n.getMessage("waitedTimeout", [lastPendingReason, String(Math.round(WAIT_FOR_TIMEOUT_MS / 1000))]) });
       }, WAIT_FOR_TIMEOUT_MS);
     });
   }

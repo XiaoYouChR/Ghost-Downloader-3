@@ -102,9 +102,9 @@ function panelMessage(playbackState: MediaPlaybackState) {
     return playbackState.message;
   }
   if (playbackState.isAvailable) {
-    return "当前媒体状态已连接";
+    return chrome.i18n.getMessage("mediaConnected");
   }
-  return "当前未检测到可控制媒体";
+  return chrome.i18n.getMessage("noMediaDetected");
 }
 
 export function MediaControlPanel({
@@ -163,17 +163,17 @@ export function MediaControlPanel({
 
   return (
     <section className={styles.root}>
-      <Body1Strong>媒体控制</Body1Strong>
+      <Body1Strong>{chrome.i18n.getMessage("mediaControl")}</Body1Strong>
 
       <Card appearance="filled-alternative" className={styles.card}>
-        <Field className={styles.selectField} label="选择媒体">
+        <Field className={styles.selectField} label={chrome.i18n.getMessage("selectMedia")}>
           <Select
             className={styles.selectControl}
             disabled={mediaItems.length === 0}
             value={playbackState.mediaIndex >= 0 ? String(playbackState.mediaIndex) : ""}
             onChange={(_event, data) => onChangeMedia(Number(data.value))}
           >
-            <option value="">请选择媒体</option>
+            <option value="">{chrome.i18n.getMessage("selectMediaPlaceholder")}</option>
             {mediaItems.map((item) => (
               <option key={item.index} value={String(item.index)}>
                 {item.label}
@@ -214,7 +214,7 @@ export function MediaControlPanel({
             icon={playbackState.isPaused ? <PlayRegular /> : <PauseRegular />}
             onClick={() => onAction("toggle_play")}
           >
-            {playbackState.isPaused ? "播放" : "暂停"}
+            {playbackState.isPaused ? chrome.i18n.getMessage("play") : "暂停"}
           </Button>
 
           <div className={styles.inlineActions}>
@@ -233,21 +233,21 @@ export function MediaControlPanel({
               appearance="secondary"
               disabled={!playbackState.isAvailable}
               icon={<FullScreenMaximizeRegular />}
-              aria-label="全屏"
+              aria-label={chrome.i18n.getMessage("fullscreen")}
               onClick={() => onAction("fullscreen")}
             />
             <Button
               appearance="secondary"
               disabled={!playbackState.isAvailable}
               icon={<PictureInPictureRegular />}
-              aria-label="画中画"
+              aria-label={chrome.i18n.getMessage("pictureInPicture")}
               onClick={() => onAction("pip")}
             />
             <Button
               appearance="secondary"
               disabled={!playbackState.isAvailable}
               icon={<CameraRegular />}
-              aria-label="截图"
+              aria-label={chrome.i18n.getMessage("screenshot")}
               onClick={() => onAction("screenshot")}
             />
           </div>
@@ -262,7 +262,7 @@ export function MediaControlPanel({
             icon={<ArrowClockwiseRegular />}
             onClick={() => onAction("toggle_loop", !playbackState.shouldLoop)}
           >
-            循环
+            {chrome.i18n.getMessage("loop")}
           </Button>
 
           <div className={styles.volumeRow}>
@@ -270,7 +270,7 @@ export function MediaControlPanel({
               appearance="secondary"
               disabled={!playbackState.isAvailable}
               icon={displayMuted ? <SpeakerMuteRegular /> : <Speaker2Regular />}
-              aria-label={displayMuted ? "取消静音" : "静音"}
+              aria-label={displayMuted ? chrome.i18n.getMessage("unmute") : chrome.i18n.getMessage("mute")}
               onClick={() => onAction("toggle_muted", !displayMuted)}
             />
             <div className={styles.volumeSlider}>

@@ -113,7 +113,7 @@ export function createFeatureBridge() {
       await setSessionRule(tabId, enabled);
       await saveFeatureTabs();
       await reloadTab(tabId);
-      return enabled ? "已启用模拟手机，将在刷新后生效" : "已关闭模拟手机";
+      return enabled ? chrome.i18n.getMessage("mobileUserAgentEnabled") : chrome.i18n.getMessage("mobileUserAgentDisabled");
     }
 
     const scriptKey = key as ScriptFeatureKey;
@@ -126,13 +126,13 @@ export function createFeatureBridge() {
 
     if (CAT_CATCH_SCRIPT_FEATURES[scriptKey].reloadRequired) {
       await reloadTab(tabId);
-      return enabled ? "功能已开启，页面刷新后生效" : "功能已关闭";
+      return enabled ? chrome.i18n.getMessage("featureEnabledAfterReload") : chrome.i18n.getMessage("featureDisabled");
     }
     if (!enabled) {
-      return "功能后台状态已关闭，页面中的面板可在网页内自行关闭";
+      return chrome.i18n.getMessage("featureBackgroundDisabled");
     }
     await runScriptFiles(tabId, scriptKey);
-    return "功能已开启";
+    return chrome.i18n.getMessage("featureEnabled");
   }
 
   async function loadPersistentState() {

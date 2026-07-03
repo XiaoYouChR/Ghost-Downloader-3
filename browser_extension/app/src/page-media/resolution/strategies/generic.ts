@@ -17,7 +17,7 @@ export function selectGeneric(ctx: ResolveContext): Resolution {
     if (muxed) {
       return { kind: "selection", selection: { kind: "single", url: stripRangeParams(muxed), formKind: "muxed" } };
     }
-    return { kind: "pending", reason: "等待嗅探到当前视频资源" };
+    return { kind: "pending", reason: chrome.i18n.getMessage("waitingForVideoResource") };
   }
 
   if (ctx.clicked.formKind === "dash") {
@@ -25,19 +25,19 @@ export function selectGeneric(ctx: ResolveContext): Resolution {
     if (pair) {
       return { kind: "selection", selection: { kind: "merge", video: stripRangeParams(pair.video), audio: stripRangeParams(pair.audio) } };
     }
-    return { kind: "pending", reason: "等待音视频分轨齐全" };
+    return { kind: "pending", reason: chrome.i18n.getMessage("waitingForSeparateTracks") };
   }
 
   if (post.length === 0) {
-    return { kind: "pending", reason: "等待嗅探到当前视频资源" };
+    return { kind: "pending", reason: chrome.i18n.getMessage("waitingForVideoResource") };
   }
   if (post.length === 1) {
     const only = post[0];
     if (isDashSegmentUrl(only.url)) {
       // The sibling track may still be in flight pre-MSE-ack.
-      return { kind: "pending", reason: "等待音视频分轨齐全" };
+      return { kind: "pending", reason: chrome.i18n.getMessage("waitingForSeparateTracks") };
     }
     return { kind: "selection", selection: { kind: "single", url: stripRangeParams(only.url), formKind: "unknown" } };
   }
-  return { kind: "refused", message: "找到多个媒体资源，请在资源嗅探页选择" };
+  return { kind: "refused", message: chrome.i18n.getMessage("errorMultipleMediaFound") };
 }

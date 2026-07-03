@@ -49,7 +49,7 @@ export async function sendMessageToTab<T>(
   if (!tab?.id) {
     return {
       status: "no_receiver",
-      message: "目标标签页不存在",
+      message: chrome.i18n.getMessage("errorTargetTabNotFound"),
     };
   }
 

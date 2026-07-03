@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 
 REPO = Path(__file__).resolve().parent.parent
 I18N_DIR = REPO / "app" / "assets" / "i18n"
+BROWSER_I18N_DIR = REPO / "browser_extension" / "app" / "public" / "_locales"
 
 API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 API_URL = "https://api.deepseek.com/chat/completions"
@@ -23,7 +24,7 @@ LOCALES = {
     "pt_BR": "Português (Brasil)",
 }
 
-SYSTEM_PROMPT = """\
+SYSTEM_PROMPT_DESKTOP = """\
 你是专业软件本地化译员。将下载管理器 "Ghost Downloader 3" 的 UI 文本从简体中文译为 {locale_name}。
 
 规则:
@@ -34,6 +35,19 @@ SYSTEM_PROMPT = """\
 5. 严格保持 === Context === 分组 + "源文 = 译文" 格式输出
 6. 只输出待翻译部分的结果
 7. 不要输出解释、注释、markdown 标记"""
+
+SYSTEM_PROMPT_BROWSER = """\
+你是专业软件本地化译员。将 "Ghost Downloader" 浏览器扩展的 UI 文本从简体中文译为 {locale_name}。
+
+「已有翻译」格式: key = 源文 → 译文（用于参考术语和语气）
+「待翻译」格式: key = 源文（行尾 # 注释是上下文提示，不要翻译）
+
+规则:
+1. 占位符 $1 $2 $NAME$ 等必须原样保留，位置和数量不变
+2. 参考「已有翻译」的术语和语气
+3. 严格保持 "key = 译文" 格式输出，每行一条
+4. 只输出待翻译部分的结果
+5. 不要输出解释、注释、markdown 标记"""
 
 
 def escapeNewlines(s: str) -> str:
@@ -173,7 +187,7 @@ def translateLocale(locale: str, localeName: str) -> None:
 
     print(f"[{locale}] {len(unfinished)} unfinished, {len(finished)} reference …")
 
-    system = SYSTEM_PROMPT.format(locale_name=localeName)
+    system = SYSTEM_PROMPT_DESKTOP.format(locale_name=localeName)
     user = buildPrompt(finished, unfinished)
     print(f"[{locale}] Calling API ({len(user)} chars) …")
 
@@ -203,9 +217,126 @@ def checkLocales(locales: dict[str, str]) -> int:
     return total
 
 
+def parseBrowserMessages(path: Path) -> dict[str, dict]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def buildBrowserPrompt(
+    source: dict[str, dict],
+    existing: dict[str, dict],
+    untranslated: dict[str, dict],
+) -> str:
+    lines = []
+
+    if existing:
+        lines.append("## 已有翻译")
+        for key, entry in existing.items():
+            src = source.get(key, {}).get("message", "")
+            lines.append(f"{key} = {src} → {entry['message']}")
+        lines.append("")
+
+    lines.append("## 待翻译")
+    for key, entry in untranslated.items():
+        desc = entry.get("description")
+        hint = f"  # {desc}" if desc else ""
+        lines.append(f"{key} = {entry['message']}{hint}")
+
+    return "\n".join(lines)
+
+
+def parseBrowserResponse(text: str) -> dict[str, str]:
+    translations = {}
+    for raw in text.split("\n"):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if " = " in line:
+            key, trans = line.split(" = ", 1)
+            trans = trans.strip()
+            if trans:
+                translations[key.strip()] = trans
+    return translations
+
+
+BROWSER_LOCALE_MAP = {
+    "en_US": "en_US",
+    "ja_JP": "ja",
+    "ru_RU": "ru",
+    "zh_HK": "zh_HK",
+    "zh_TW": "zh_TW",
+    "pt_BR": "pt_BR",
+}
+
+
+def translateBrowserLocale(locale: str, localeName: str) -> None:
+    chromeLocale = BROWSER_LOCALE_MAP.get(locale, locale)
+    sourceDir = BROWSER_I18N_DIR / "zh_CN"
+    targetDir = BROWSER_I18N_DIR / chromeLocale
+
+    source = parseBrowserMessages(sourceDir / "messages.json")
+    if not source:
+        print(f"[browser:{locale}] source messages.json not found")
+        return
+
+    existing = parseBrowserMessages(targetDir / "messages.json")
+    untranslated = {k: v for k, v in source.items() if k not in existing}
+    if not untranslated:
+        print(f"[browser:{locale}] Nothing to translate")
+        return
+
+    print(f"[browser:{locale}] {len(untranslated)} untranslated, {len(existing)} reference …")
+
+    system = SYSTEM_PROMPT_BROWSER.format(locale_name=localeName)
+    user = buildBrowserPrompt(source, existing, untranslated)
+    print(f"[browser:{locale}] Calling API ({len(user)} chars) …")
+
+    response = fetchTranslation(system, user)
+    translations = parseBrowserResponse(response)
+
+    merged = {**existing}
+    filled = 0
+    for key, trans in translations.items():
+        if key in source:
+            merged[key] = {"message": trans}
+            if desc := source[key].get("description"):
+                merged[key]["description"] = desc
+            filled += 1
+
+    targetDir.mkdir(parents=True, exist_ok=True)
+    (targetDir / "messages.json").write_text(
+        json.dumps(merged, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    missed = len(untranslated) - filled
+    status = "done" if missed == 0 else f"done ({missed} missed)"
+    print(f"[browser:{locale}] {status}: {filled}/{len(untranslated)} filled")
+
+
+def checkBrowserLocales(locales: dict[str, str]) -> int:
+    total = 0
+    source = parseBrowserMessages(BROWSER_I18N_DIR / "zh_CN" / "messages.json")
+    if not source:
+        print("  browser: source messages.json not found")
+        return 0
+    for locale in locales:
+        chromeLocale = BROWSER_LOCALE_MAP.get(locale, locale)
+        existing = parseBrowserMessages(BROWSER_I18N_DIR / chromeLocale / "messages.json")
+        missing = len(source) - len(existing)
+        total += max(missing, 0)
+        if missing > 0:
+            print(f"  browser:{locale}: {missing} untranslated")
+        else:
+            print(f"  browser:{locale}: up to date")
+    return total
+
+
 def main() -> int:
     args = sys.argv[1:]
     check = "--check" in args
+    browser = "--browser" in args
     targets = [a for a in args if not a.startswith("-")]
 
     if targets:
@@ -219,17 +350,19 @@ def main() -> int:
         locales = LOCALES
 
     if check:
-        total = checkLocales(locales)
+        total = checkBrowserLocales(locales) if browser else checkLocales(locales)
         return 0 if total == 0 else 2
 
     if not API_KEY:
         print("Set DEEPSEEK_API_KEY environment variable", file=sys.stderr)
         return 1
 
+    translateFn = translateBrowserLocale if browser else translateLocale
+
     failed = False
     with ThreadPoolExecutor(max_workers=len(locales)) as pool:
         futures = {
-            pool.submit(translateLocale, loc, name): loc
+            pool.submit(translateFn, loc, name): loc
             for loc, name in locales.items()
         }
         for fut in as_completed(futures):
