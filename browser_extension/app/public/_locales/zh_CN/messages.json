@@ -1,0 +1,762 @@
+{
+  "about": {
+    "message": "关于"
+  },
+  "advancedFeatures": {
+    "message": "高级功能"
+  },
+  "advancedFeaturesHint": {
+    "message": "按需开启，部分功能需要页面注入或特殊权限"
+  },
+  "audio": {
+    "message": "音频",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "音频轨"
+  },
+  "authenticating": {
+    "message": "校验中"
+  },
+  "autoPair": {
+    "message": "自动配对"
+  },
+  "awaitingPairing": {
+    "message": "待配对"
+  },
+  "browserDownload": {
+    "message": "浏览器下载"
+  },
+  "bypassShortcutKey": {
+    "message": "跳过拦截快捷键"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "按住此键点击下载链接，跳过拦截由浏览器下载"
+  },
+  "cacheCapture": {
+    "message": "缓存捕捉"
+  },
+  "cacheCaptureDescription": {
+    "message": "捕捉浏览器缓存的资源"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "clearSelection": {
+    "message": "取消",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "已完成"
+  },
+  "confirmPairing": {
+    "message": "请确认配对"
+  },
+  "connected": {
+    "message": "已连接"
+  },
+  "connecting": {
+    "message": "连接中"
+  },
+  "connectionClosed": {
+    "message": "连接断开"
+  },
+  "connectionConfig": {
+    "message": "连接配置"
+  },
+  "darkTheme": {
+    "message": "深色"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 个 DASH 分片 $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
+  },
+  "deepSearch": {
+    "message": "深度搜索"
+  },
+  "deepSearchDescription": {
+    "message": "深入分析页面请求资源"
+  },
+  "desktopVersionInfo": {
+    "message": "桌面端 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "4.0.1"
+      }
+    }
+  },
+  "disconnected": {
+    "message": "未连接"
+  },
+  "downloadThisMedia": {
+    "message": "下载此媒体"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "使用 Ghost Downloader 下载"
+  },
+  "downloading": {
+    "message": "下载中"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "播放视频或音频后，这里会自动显示捕获到的资源。"
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "当前页面还没有资源"
+  },
+  "emptyImagesDescription": {
+    "message": "试试切换到有图片的页面，或调整筛选条件。"
+  },
+  "emptyImagesTitle": {
+    "message": "当前页面没有找到图片"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "切换到其他标签页并捕获到资源后，这里会自动汇总显示。"
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "还没有其他页面的资源"
+  },
+  "emptyTasksDescription": {
+    "message": "浏览器接管下载或从资源嗅探页发送资源后，任务会出现在这里。"
+  },
+  "emptyTasksTitle": {
+    "message": "当前还没有任务"
+  },
+  "errorAutoPairingFailed": {
+    "message": "自动配对失败"
+  },
+  "errorBackgroundNotReady": {
+    "message": "后台服务未就绪"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "浏览器未返回下载任务"
+  },
+  "errorCannotDetermineDouyinMediaForm": {
+    "message": "无法判定 Douyin 当前媒体形态，请在资源嗅探页选择"
+  },
+  "errorCannotLocateMedia": {
+    "message": "未能定位媒体"
+  },
+  "errorConnectionFailed": {
+    "message": "连接失败"
+  },
+  "errorExtensionNotReady": {
+    "message": "扩展未就绪"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "功能切换失败"
+  },
+  "errorFullscreenFailed": {
+    "message": "全屏失败"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "无效的下载请求"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "无效的合并请求"
+  },
+  "errorInvalidPairToken": {
+    "message": "配对令牌无效"
+  },
+  "errorMediaActionFailed": {
+    "message": "媒体操作失败"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "未识别媒体来源"
+  },
+  "errorMergeFailed": {
+    "message": "在线合并失败"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "在线合并暂时只支持选中 2 个资源"
+  },
+  "errorMultipleMediaFound": {
+    "message": "找到多个媒体资源，请在资源嗅探页选择"
+  },
+  "errorNoActiveTab": {
+    "message": "当前没有可操作的标签页"
+  },
+  "errorNoControllableMedia": {
+    "message": "当前没有可控制的媒体"
+  },
+  "errorNoMediaDetected": {
+    "message": "未检测到媒体"
+  },
+  "errorNoTokenReturned": {
+    "message": "未返回令牌"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "在线合并失败"
+  },
+  "errorPairingDisconnected": {
+    "message": "配对断开"
+  },
+  "errorPairingRejected": {
+    "message": "已拒绝配对"
+  },
+  "errorPairingTimeout": {
+    "message": "配对超时"
+  },
+  "errorPipFailed": {
+    "message": "画中画失败"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "读取媒体状态失败"
+  },
+  "errorReconnectFailed": {
+    "message": "重新连接失败"
+  },
+  "errorResourceNotFound": {
+    "message": "资源不存在"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "当前选中的资源不符合在线合并条件"
+  },
+  "errorResponseTimeout": {
+    "message": "响应超时"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "保存配对令牌失败"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "保存服务地址失败"
+  },
+  "errorSendFailed": {
+    "message": "发送失败"
+  },
+  "errorSendImagesFailed": {
+    "message": "发送图片失败"
+  },
+  "errorSendResourceFailed": {
+    "message": "发送资源失败"
+  },
+  "errorStrategyException": {
+    "message": "策略异常: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "TypeError: ..."
+      }
+    }
+  },
+  "errorSwitchMediaFailed": {
+    "message": "切换媒体失败"
+  },
+  "errorTargetTabNotFound": {
+    "message": "目标标签页不存在"
+  },
+  "errorTaskActionFailed": {
+    "message": "任务操作失败"
+  },
+  "errorUnknownCommand": {
+    "message": "未知命令: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "popup_foo"
+      }
+    }
+  },
+  "errorUnknownDownloadType": {
+    "message": "未知的下载请求类型"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "更新下载按钮失败"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "更新接管下载失败"
+  },
+  "extensionDescription": {
+    "message": "管理 Ghost Downloader 任务，将浏览器资源发送到 Ghost Downloader。"
+  },
+  "extensionName": {
+    "message": "Ghost Downloader for Browser"
+  },
+  "extensionVersionInfo": {
+    "message": "扩展版本 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "2.0.1"
+      }
+    }
+  },
+  "failed": {
+    "message": "失败"
+  },
+  "featureBackgroundDisabled": {
+    "message": "功能后台状态已关闭，页面中的面板可在网页内自行关闭"
+  },
+  "featureDisabled": {
+    "message": "功能已关闭"
+  },
+  "featureEnabled": {
+    "message": "功能已开启"
+  },
+  "featureEnabledAfterReload": {
+    "message": "功能已开启，页面刷新后生效"
+  },
+  "featureStateUpdated": {
+    "message": "功能状态已更新"
+  },
+  "featureToggles": {
+    "message": "功能开关"
+  },
+  "filterAll": {
+    "message": "全部"
+  },
+  "filterAudio": {
+    "message": "音频"
+  },
+  "filterHeightLabel": {
+    "message": "高",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "视频"
+  },
+  "filterWidthLabel": {
+    "message": "宽",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "跟随系统设置"
+  },
+  "fullscreen": {
+    "message": "全屏"
+  },
+  "general": {
+    "message": "通用"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 个 HLS 分片 $2",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      },
+      "2": {
+        "content": "$2",
+        "example": "▾"
+      }
+    }
+  },
+  "imagesProcessed": {
+    "message": "已处理 $1 张图片",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "imagesSent": {
+    "message": "图片已发送"
+  },
+  "installMethodInfo": {
+    "message": "安装方式 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "商店安装"
+      }
+    }
+  },
+  "installTypeDevelopment": {
+    "message": "桌面端自管理"
+  },
+  "installTypeSideload": {
+    "message": "侧载安装"
+  },
+  "installTypeStore": {
+    "message": "商店安装"
+  },
+  "installTypeUnknown": {
+    "message": "未知"
+  },
+  "interceptUnknownSize": {
+    "message": "大小未知时拦截"
+  },
+  "invertSelection": {
+    "message": "反选"
+  },
+  "itemCount": {
+    "message": "$1 项",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "itemCount_popup_pages_ImagesPage_tsx": {
+    "message": "$1 项",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
+  },
+  "launchDesktop": {
+    "message": "启动桌面端"
+  },
+  "lightTheme": {
+    "message": "浅色"
+  },
+  "localServerAddress": {
+    "message": "本地服务地址"
+  },
+  "loop": {
+    "message": "循环"
+  },
+  "mediaBridgeNotReady": {
+    "message": "当前页面的媒体桥接还没有准备好"
+  },
+  "mediaConnected": {
+    "message": "当前媒体状态已连接"
+  },
+  "mediaControl": {
+    "message": "媒体控制"
+  },
+  "mediaReleased": {
+    "message": "媒体已释放"
+  },
+  "merge": {
+    "message": "合并"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "在线合并任务已发送到 Ghost Downloader"
+  },
+  "minInterceptSize": {
+    "message": "最小拦截大小"
+  },
+  "minInterceptSizeHint": {
+    "message": "低于此大小的文件由浏览器直接下载，0 为全部拦截"
+  },
+  "mobileUserAgent": {
+    "message": "模拟手机"
+  },
+  "mobileUserAgentDescription": {
+    "message": "模拟移动设备访问页面"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "已关闭模拟手机"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "已启用模拟手机，将在刷新后生效"
+  },
+  "mute": {
+    "message": "静音"
+  },
+  "navAdvanced": {
+    "message": "高级"
+  },
+  "navImages": {
+    "message": "图片"
+  },
+  "navResources": {
+    "message": "资源"
+  },
+  "navTasks": {
+    "message": "任务"
+  },
+  "noActiveTabForMedia": {
+    "message": "当前没有可操作的标签页"
+  },
+  "noControllableMedia": {
+    "message": "当前没有可控制的媒体"
+  },
+  "noControllableMediaDetected": {
+    "message": "当前未检测到可控制媒体"
+  },
+  "noMediaDetected": {
+    "message": "当前未检测到可控制媒体"
+  },
+  "noMediaStateResponse": {
+    "message": "页面没有返回媒体状态"
+  },
+  "notConnected": {
+    "message": "未连接"
+  },
+  "openFile": {
+    "message": "打开文件"
+  },
+  "openFolder": {
+    "message": "打开文件夹"
+  },
+  "openWhenDone": {
+    "message": "完成后打开"
+  },
+  "pageNoControllableMedia": {
+    "message": "当前页面未检测到可控制媒体"
+  },
+  "pairing": {
+    "message": "配对中"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "配对请求已发送，请在桌面端确认"
+  },
+  "pairingToken": {
+    "message": "配对令牌"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "请输入配对令牌"
+  },
+  "pairingTokenSaved": {
+    "message": "配对令牌已保存"
+  },
+  "pasteToken": {
+    "message": "粘贴令牌"
+  },
+  "pause": {
+    "message": "暂停"
+  },
+  "paused": {
+    "message": "已暂停"
+  },
+  "pendingPairing": {
+    "message": "待配对"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 排队",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "已连接"
+      },
+      "2": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "pictureInPicture": {
+    "message": "画中画"
+  },
+  "play": {
+    "message": "播放"
+  },
+  "reconnect": {
+    "message": "重新连接"
+  },
+  "recordWebRTC": {
+    "message": "录制 WebRTC"
+  },
+  "recordWebRTCDescription": {
+    "message": "录制 WebRTC 实时通信内容"
+  },
+  "redownload": {
+    "message": "重新下载"
+  },
+  "reloadRequired": {
+    "message": "需刷新"
+  },
+  "rescan": {
+    "message": "重新扫描"
+  },
+  "resolving": {
+    "message": "正在解析"
+  },
+  "resource": {
+    "message": "资源",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "当前标签页暂时无法提供资源列表。"
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "当前标签页暂不支持资源桥接"
+  },
+  "resourceProcessed": {
+    "message": "资源处理成功"
+  },
+  "resourceSentToBrowser": {
+    "message": "资源已交给浏览器下载"
+  },
+  "resourceSentToDesktop": {
+    "message": "资源已发送到 Ghost Downloader"
+  },
+  "restoringCapturedResources": {
+    "message": "正在恢复已捕获的资源"
+  },
+  "restoringCatCatchResources": {
+    "message": "正在恢复 cat-catch 已捕获的资源"
+  },
+  "restoringResourcesDescription": {
+    "message": "正在恢复已捕获的资源。"
+  },
+  "restoringResourcesTitle": {
+    "message": "正在恢复当前页面资源"
+  },
+  "resume": {
+    "message": "继续"
+  },
+  "scanning": {
+    "message": "扫描中…"
+  },
+  "scopeCurrentPage": {
+    "message": "当前页面"
+  },
+  "scopeOtherPages": {
+    "message": "其他页面"
+  },
+  "screenCapture": {
+    "message": "屏幕捕捉"
+  },
+  "screenCaptureDescription": {
+    "message": "捕捉屏幕、窗口或标签页"
+  },
+  "screenshot": {
+    "message": "截图"
+  },
+  "selectAll": {
+    "message": "全选"
+  },
+  "selectMedia": {
+    "message": "选择媒体"
+  },
+  "selectMediaPlaceholder": {
+    "message": "请选择媒体"
+  },
+  "selectResourceLabel": {
+    "message": "选择 $1",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "video.mp4"
+      }
+    }
+  },
+  "sendCount": {
+    "message": "发送 ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "sendCount_popup_pages_ImagesPage_tsx": {
+    "message": "发送 ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "发送当前媒体到 Ghost Downloader"
+  },
+  "sendToDesktop": {
+    "message": "发送到 Ghost Downloader"
+  },
+  "sending": {
+    "message": "正在发送"
+  },
+  "sent": {
+    "message": "已发送"
+  },
+  "sentToBrowserDownload": {
+    "message": "已交给浏览器下载"
+  },
+  "sentToDesktop": {
+    "message": "已发送到 Ghost Downloader"
+  },
+  "serverUrlSaved": {
+    "message": "地址已保存"
+  },
+  "settings": {
+    "message": "设置"
+  },
+  "sortByArea": {
+    "message": "面积"
+  },
+  "sortByHeight": {
+    "message": "高度"
+  },
+  "sortByWidth": {
+    "message": "宽度"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "当前标签页不支持 cat-catch 资源桥接"
+  },
+  "takeOverDownloads": {
+    "message": "接管下载"
+  },
+  "taskActionSent": {
+    "message": "任务操作已发送"
+  },
+  "taskQueued": {
+    "message": "桌面端未连接，任务已排队"
+  },
+  "theme": {
+    "message": "主题"
+  },
+  "tokenInvalid": {
+    "message": "令牌无效"
+  },
+  "unmute": {
+    "message": "取消静音"
+  },
+  "video": {
+    "message": "视频",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "视频录制"
+  },
+  "videoRecordingDescription": {
+    "message": "录制网页中的视频内容"
+  },
+  "videoTrack": {
+    "message": "视频轨"
+  },
+  "waitedTimeout": {
+    "message": "$1（已等待 $2s）",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "等待音视频分轨齐全"
+      },
+      "2": {
+        "content": "$2",
+        "example": "8"
+      }
+    }
+  },
+  "waiting": {
+    "message": "等待中"
+  },
+  "waitingForDouyinMuxedUrl": {
+    "message": "等待 Douyin 单 MP4 URL"
+  },
+  "waitingForDouyinSeparateTracks": {
+    "message": "等待 Douyin 音视频分轨齐全"
+  },
+  "waitingForResource": {
+    "message": "等待资源…"
+  },
+  "waitingForResourceCapture": {
+    "message": "等待 cat-catch 捕获资源"
+  },
+  "waitingForSeparateTracks": {
+    "message": "等待音视频分轨齐全"
+  },
+  "waitingForVideoResource": {
+    "message": "等待嗅探到当前视频资源"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "等待 X 主播放清单"
+  }
+}

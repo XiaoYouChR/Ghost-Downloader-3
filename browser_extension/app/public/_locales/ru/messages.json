@@ -1,0 +1,656 @@
+{
+  "about": {
+    "message": "О программе"
+  },
+  "advancedFeatures": {
+    "message": "Расширенные функции"
+  },
+  "advancedFeaturesHint": {
+    "message": "Включайте по необходимости, некоторые функции требуют внедрения скриптов или особых разрешений"
+  },
+  "audio": {
+    "message": "Аудио",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "Аудиодорожка"
+  },
+  "authenticating": {
+    "message": "Проверка"
+  },
+  "autoPair": {
+    "message": "Автосопряжение"
+  },
+  "awaitingPairing": {
+    "message": "Ожидание сопряжения"
+  },
+  "browserDownload": {
+    "message": "Загрузка браузером"
+  },
+  "bypassShortcutKey": {
+    "message": "Клавиша пропуска перехвата"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "Удерживайте эту клавишу при нажатии на ссылку, чтобы пропустить перехват и загрузить браузером"
+  },
+  "cacheCapture": {
+    "message": "Перехват кэша"
+  },
+  "cacheCaptureDescription": {
+    "message": "Перехватывать ресурсы из кэша браузера"
+  },
+  "cancel": {
+    "message": "Отмена"
+  },
+  "clearSelection": {
+    "message": "Снять выделение",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "Завершено"
+  },
+  "confirmPairing": {
+    "message": "Подтвердите сопряжение"
+  },
+  "connected": {
+    "message": "Подключено"
+  },
+  "connecting": {
+    "message": "Подключение"
+  },
+  "connectionClosed": {
+    "message": "Соединение разорвано"
+  },
+  "connectionConfig": {
+    "message": "Настройки подключения"
+  },
+  "darkTheme": {
+    "message": "Тёмная"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 сегментов DASH $2"
+  },
+  "deepSearch": {
+    "message": "Глубокий поиск"
+  },
+  "deepSearchDescription": {
+    "message": "Глубокий анализ запрошенных ресурсов страницы"
+  },
+  "desktopVersionInfo": {
+    "message": "Десктопная версия $1"
+  },
+  "disconnected": {
+    "message": "Не подключено"
+  },
+  "downloadThisMedia": {
+    "message": "Скачать это медиа"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "Скачать через Ghost Downloader"
+  },
+  "downloading": {
+    "message": "Загрузка"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "Здесь появятся обнаруженные ресурсы после начала воспроизведения видео или аудио."
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "На этой странице пока нет ресурсов"
+  },
+  "emptyImagesDescription": {
+    "message": "Переключитесь на страницу с изображениями или измените фильтры."
+  },
+  "emptyImagesTitle": {
+    "message": "На этой странице не найдено изображений"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "Здесь будут собраны ресурсы с других вкладок после перехвата."
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "Пока нет ресурсов с других страниц"
+  },
+  "emptyTasksDescription": {
+    "message": "Задачи появятся здесь после того, как браузер перехватит загрузку или ресурсы будут отправлены со страницы анализа."
+  },
+  "emptyTasksTitle": {
+    "message": "Сейчас нет задач"
+  },
+  "errorAutoPairingFailed": {
+    "message": "Не удалось выполнить автосопряжение"
+  },
+  "errorBackgroundNotReady": {
+    "message": "Фоновая служба не готова"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "Браузер не вернул идентификатор загрузки"
+  },
+  "errorCannotDetermineDouyinMediaForm": {
+    "message": "Не удалось определить текущий тип медиа Douyin, выберите на странице анализа"
+  },
+  "errorCannotLocateMedia": {
+    "message": "Не удалось найти медиа"
+  },
+  "errorConnectionFailed": {
+    "message": "Ошибка подключения"
+  },
+  "errorExtensionNotReady": {
+    "message": "Расширение не готово"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "Не удалось переключить функцию"
+  },
+  "errorFullscreenFailed": {
+    "message": "Не удалось открыть на весь экран"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "Неверный запрос на загрузку"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "Неверный запрос на объединение"
+  },
+  "errorInvalidPairToken": {
+    "message": "Недействительный токен сопряжения"
+  },
+  "errorMediaActionFailed": {
+    "message": "Не удалось выполнить действие с медиа"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "Неопознанный источник медиа"
+  },
+  "errorMergeFailed": {
+    "message": "Ошибка онлайн-объединения"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "Для онлайн-объединения необходимо выбрать ровно 2 ресурса"
+  },
+  "errorMultipleMediaFound": {
+    "message": "Найдено несколько медиаресурсов, выберите на странице анализа"
+  },
+  "errorNoActiveTab": {
+    "message": "Нет активной вкладки для управления"
+  },
+  "errorNoControllableMedia": {
+    "message": "Нет управляемого медиа"
+  },
+  "errorNoMediaDetected": {
+    "message": "Медиа не обнаружено"
+  },
+  "errorNoTokenReturned": {
+    "message": "Токен не возвращён"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "Ошибка онлайн-объединения"
+  },
+  "errorPairingDisconnected": {
+    "message": "Сопряжение разорвано"
+  },
+  "errorPairingRejected": {
+    "message": "Сопряжение отклонено"
+  },
+  "errorPairingTimeout": {
+    "message": "Тайм-аут сопряжения"
+  },
+  "errorPipFailed": {
+    "message": "Не удалось запустить картинку в картинке"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "Не удалось прочитать состояние медиа"
+  },
+  "errorReconnectFailed": {
+    "message": "Не удалось переподключиться"
+  },
+  "errorResourceNotFound": {
+    "message": "Ресурс не найден"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "Выбранные ресурсы не подходят для онлайн-объединения"
+  },
+  "errorResponseTimeout": {
+    "message": "Тайм-аут ответа"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "Не удалось сохранить токен сопряжения"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "Не удалось сохранить адрес сервера"
+  },
+  "errorSendFailed": {
+    "message": "Ошибка отправки"
+  },
+  "errorSendImagesFailed": {
+    "message": "Не удалось отправить изображения"
+  },
+  "errorSendResourceFailed": {
+    "message": "Не удалось отправить ресурс"
+  },
+  "errorStrategyException": {
+    "message": "Исключение стратегии: $1"
+  },
+  "errorSwitchMediaFailed": {
+    "message": "Не удалось переключить медиа"
+  },
+  "errorTargetTabNotFound": {
+    "message": "Целевая вкладка не найдена"
+  },
+  "errorTaskActionFailed": {
+    "message": "Не удалось выполнить действие с задачей"
+  },
+  "errorUnknownCommand": {
+    "message": "Неизвестная команда: $1"
+  },
+  "errorUnknownDownloadType": {
+    "message": "Неизвестный тип запроса на загрузку"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "Не удалось обновить кнопку загрузки"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "Не удалось обновить перехват загрузок"
+  },
+  "extensionDescription": {
+    "message": "Управление задачами Ghost Downloader и отправка ресурсов браузера в Ghost Downloader."
+  },
+  "extensionName": {
+    "message": "Ghost Downloader for Browser"
+  },
+  "extensionVersionInfo": {
+    "message": "Версия расширения $1"
+  },
+  "failed": {
+    "message": "Не удалось"
+  },
+  "featureBackgroundDisabled": {
+    "message": "Фоновое состояние функции отключено, панель на странице можно закрыть самостоятельно"
+  },
+  "featureDisabled": {
+    "message": "Функция отключена"
+  },
+  "featureEnabled": {
+    "message": "Функция включена"
+  },
+  "featureEnabledAfterReload": {
+    "message": "Функция включена, вступит в силу после обновления страницы"
+  },
+  "featureStateUpdated": {
+    "message": "Состояние функции обновлено"
+  },
+  "featureToggles": {
+    "message": "Переключатели функций"
+  },
+  "filterAll": {
+    "message": "Все"
+  },
+  "filterAudio": {
+    "message": "Аудио"
+  },
+  "filterHeightLabel": {
+    "message": "В",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "Видео"
+  },
+  "filterWidthLabel": {
+    "message": "Ш",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "Как в системе"
+  },
+  "fullscreen": {
+    "message": "На весь экран"
+  },
+  "general": {
+    "message": "Основные"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 сегментов HLS $2"
+  },
+  "imagesProcessed": {
+    "message": "Обработано $1 изображений"
+  },
+  "imagesSent": {
+    "message": "Изображения отправлены"
+  },
+  "installMethodInfo": {
+    "message": "Способ установки $1"
+  },
+  "installTypeDevelopment": {
+    "message": "Самоуправляемая десктопная версия"
+  },
+  "installTypeSideload": {
+    "message": "Загрузка не из магазина"
+  },
+  "installTypeStore": {
+    "message": "Установка из магазина"
+  },
+  "installTypeUnknown": {
+    "message": "Неизвестно"
+  },
+  "interceptUnknownSize": {
+    "message": "Перехватывать при неизвестном размере"
+  },
+  "invertSelection": {
+    "message": "Инвертировать выделение"
+  },
+  "itemCount": {
+    "message": "$1 элементов"
+  },
+  "itemCount_popup_pages_ImagesPage_tsx": {
+    "message": "$1 элементов"
+  },
+  "launchDesktop": {
+    "message": "Запустить десктопную версию"
+  },
+  "lightTheme": {
+    "message": "Светлая"
+  },
+  "localServerAddress": {
+    "message": "Адрес локального сервера"
+  },
+  "loop": {
+    "message": "Зациклить"
+  },
+  "mediaBridgeNotReady": {
+    "message": "Медиа-мост на этой странице ещё не готов"
+  },
+  "mediaConnected": {
+    "message": "Медиа подключено"
+  },
+  "mediaControl": {
+    "message": "Управление медиа"
+  },
+  "mediaReleased": {
+    "message": "Медиа освобождено"
+  },
+  "merge": {
+    "message": "Объединить"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "Задача онлайн-объединения отправлена в Ghost Downloader"
+  },
+  "minInterceptSize": {
+    "message": "Минимальный размер перехвата"
+  },
+  "minInterceptSizeHint": {
+    "message": "Файлы меньше этого размера будут загружены браузером напрямую, 0 — перехватывать все"
+  },
+  "mobileUserAgent": {
+    "message": "Имитация мобильного устройства"
+  },
+  "mobileUserAgentDescription": {
+    "message": "Посещать страницы, притворяясь мобильным устройством"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "Имитация мобильного устройства отключена"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "Имитация мобильного устройства включена, вступит в силу после обновления"
+  },
+  "mute": {
+    "message": "Выключить звук"
+  },
+  "navAdvanced": {
+    "message": "Дополнительно"
+  },
+  "navImages": {
+    "message": "Изображения"
+  },
+  "navResources": {
+    "message": "Ресурсы"
+  },
+  "navTasks": {
+    "message": "Задачи"
+  },
+  "noActiveTabForMedia": {
+    "message": "Нет активной вкладки для управления"
+  },
+  "noControllableMedia": {
+    "message": "Нет управляемого медиа"
+  },
+  "noControllableMediaDetected": {
+    "message": "Управляемое медиа не обнаружено"
+  },
+  "noMediaDetected": {
+    "message": "Медиа не обнаружено"
+  },
+  "noMediaStateResponse": {
+    "message": "Страница не вернула состояние медиа"
+  },
+  "notConnected": {
+    "message": "Не подключено"
+  },
+  "openFile": {
+    "message": "Открыть файл"
+  },
+  "openFolder": {
+    "message": "Открыть папку"
+  },
+  "openWhenDone": {
+    "message": "Открыть по завершении"
+  },
+  "pageNoControllableMedia": {
+    "message": "На этой странице управляемое медиа не обнаружено"
+  },
+  "pairing": {
+    "message": "Сопряжение"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "Запрос на сопряжение отправлен, подтвердите в десктопной версии"
+  },
+  "pairingToken": {
+    "message": "Токен сопряжения"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "Введите токен сопряжения"
+  },
+  "pairingTokenSaved": {
+    "message": "Токен сопряжения сохранён"
+  },
+  "pasteToken": {
+    "message": "Вставить токен"
+  },
+  "pause": {
+    "message": "Пауза"
+  },
+  "paused": {
+    "message": "Приостановлено"
+  },
+  "pendingPairing": {
+    "message": "Ожидание сопряжения"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 в очереди"
+  },
+  "pictureInPicture": {
+    "message": "Картинка в картинке"
+  },
+  "play": {
+    "message": "Воспроизвести"
+  },
+  "reconnect": {
+    "message": "Переподключиться"
+  },
+  "recordWebRTC": {
+    "message": "Запись WebRTC"
+  },
+  "recordWebRTCDescription": {
+    "message": "Записывать коммуникации в реальном времени через WebRTC"
+  },
+  "redownload": {
+    "message": "Загрузить заново"
+  },
+  "reloadRequired": {
+    "message": "Требуется обновление"
+  },
+  "rescan": {
+    "message": "Пересканировать"
+  },
+  "resolving": {
+    "message": "Разрешение"
+  },
+  "resource": {
+    "message": "Ресурс",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "Текущая вкладка временно не может предоставить список ресурсов."
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "Текущая вкладка не поддерживает мост ресурсов"
+  },
+  "resourceProcessed": {
+    "message": "Ресурс обработан"
+  },
+  "resourceSentToBrowser": {
+    "message": "Ресурс передан браузеру для загрузки"
+  },
+  "resourceSentToDesktop": {
+    "message": "Ресурс отправлен в Ghost Downloader"
+  },
+  "restoringCapturedResources": {
+    "message": "Восстановление захваченных ресурсов"
+  },
+  "restoringCatCatchResources": {
+    "message": "Восстановление захваченных cat-catch ресурсов"
+  },
+  "restoringResourcesDescription": {
+    "message": "Идёт восстановление захваченных ресурсов."
+  },
+  "restoringResourcesTitle": {
+    "message": "Восстановление ресурсов страницы"
+  },
+  "resume": {
+    "message": "Продолжить"
+  },
+  "scanning": {
+    "message": "Сканирование…"
+  },
+  "scopeCurrentPage": {
+    "message": "Текущая страница"
+  },
+  "scopeOtherPages": {
+    "message": "Другие страницы"
+  },
+  "screenCapture": {
+    "message": "Захват экрана"
+  },
+  "screenCaptureDescription": {
+    "message": "Захватывать экран, окно или вкладку"
+  },
+  "screenshot": {
+    "message": "Снимок экрана"
+  },
+  "selectAll": {
+    "message": "Выбрать всё"
+  },
+  "selectMedia": {
+    "message": "Выбрать медиа"
+  },
+  "selectMediaPlaceholder": {
+    "message": "Выберите медиа"
+  },
+  "selectResourceLabel": {
+    "message": "Выбрать $1"
+  },
+  "sendCount": {
+    "message": "Отправить ($1)"
+  },
+  "sendCount_popup_pages_ImagesPage_tsx": {
+    "message": "Отправить ($1)"
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "Отправить текущее медиа в Ghost Downloader"
+  },
+  "sendToDesktop": {
+    "message": "Отправить в Ghost Downloader"
+  },
+  "sending": {
+    "message": "Отправка"
+  },
+  "sent": {
+    "message": "Отправлено"
+  },
+  "sentToBrowserDownload": {
+    "message": "Передано браузеру для загрузки"
+  },
+  "sentToDesktop": {
+    "message": "Отправлено в Ghost Downloader"
+  },
+  "serverUrlSaved": {
+    "message": "Адрес сохранён"
+  },
+  "settings": {
+    "message": "Настройки"
+  },
+  "sortByArea": {
+    "message": "По площади"
+  },
+  "sortByHeight": {
+    "message": "По высоте"
+  },
+  "sortByWidth": {
+    "message": "По ширине"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "Текущая вкладка не поддерживает мост ресурсов cat-catch"
+  },
+  "takeOverDownloads": {
+    "message": "Перехватывать загрузки"
+  },
+  "taskActionSent": {
+    "message": "Действие над задачей отправлено"
+  },
+  "taskQueued": {
+    "message": "Рабочий стол не подключён, задача поставлена в очередь"
+  },
+  "theme": {
+    "message": "Тема"
+  },
+  "tokenInvalid": {
+    "message": "Токен недействителен"
+  },
+  "unmute": {
+    "message": "Включить звук"
+  },
+  "video": {
+    "message": "Видео",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "Запись видео"
+  },
+  "videoRecordingDescription": {
+    "message": "Записывать видеоконтент на веб-странице"
+  },
+  "videoTrack": {
+    "message": "Видеодорожка"
+  },
+  "waitedTimeout": {
+    "message": "$1 (ожидание $2с)"
+  },
+  "waiting": {
+    "message": "Ожидание"
+  },
+  "waitingForDouyinMuxedUrl": {
+    "message": "Ожидание единого MP4 URL Douyin"
+  },
+  "waitingForDouyinSeparateTracks": {
+    "message": "Ожидание готовности раздельных аудио и видео дорожек Douyin"
+  },
+  "waitingForResource": {
+    "message": "Ожидание ресурса…"
+  },
+  "waitingForResourceCapture": {
+    "message": "Ожидание захвата ресурса cat-catch"
+  },
+  "waitingForSeparateTracks": {
+    "message": "Ожидание готовности раздельных дорожек"
+  },
+  "waitingForVideoResource": {
+    "message": "Ожидание обнаружения видеоресурса"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "Ожидание основного плейлиста X"
+  }
+}

@@ -47,8 +47,8 @@ export function AdvancedPage({
       <MessageBar intent="info">
         <div className={styles.messageLayout}>
           <MessageBarBody>
-            <MessageBarTitle>高级功能</MessageBarTitle>
-            按需开启，部分功能需要页面注入或特殊权限
+            <MessageBarTitle>{chrome.i18n.getMessage("advancedFeatures")}</MessageBarTitle>
+            {chrome.i18n.getMessage("advancedFeaturesHint")}
           </MessageBarBody>
         </div>
       </MessageBar>
@@ -61,7 +61,7 @@ export function AdvancedPage({
       />
 
       <section className={styles.section}>
-        <Body1Strong>功能开关</Body1Strong>
+        <Body1Strong>{chrome.i18n.getMessage("featureToggles")}</Body1Strong>
 
         {ADVANCED_FEATURES.map((feature) => (
           <FeatureToggleCard
