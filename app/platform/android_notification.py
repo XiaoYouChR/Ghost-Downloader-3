@@ -84,16 +84,27 @@ def notifyBrowserPaired(peerAddress: str) -> None:
            ongoing=False, lowImportance=True)
 
 
+def isNotificationEnabled() -> bool:
+    from jnius import autoclass, cast
+
+    Context = autoclass("android.content.Context")
+    activity = autoclass("org.kivy.android.PythonActivity").mActivity
+    manager = cast("android.app.NotificationManager",
+                    activity.getSystemService(Context.NOTIFICATION_SERVICE))
+    return manager.areNotificationsEnabled()
+
+
 def requestNotificationPermission() -> None:
     from jnius import autoclass
 
-    if autoclass("android.os.Build$VERSION").SDK_INT < 33:
+    if isNotificationEnabled():
         return
-    PackageManager = autoclass("android.content.pm.PackageManager")
+    Settings = autoclass("android.provider.Settings")
+    Intent = autoclass("android.content.Intent")
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
-    permission = "android.permission.POST_NOTIFICATIONS"
-    if activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED:
-        activity.requestPermissions([permission], 0)
+    intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+    intent.putExtra(Settings.EXTRA_APP_PACKAGE, activity.getPackageName())
+    activity.startActivity(intent)
 
 
 def _reopenAppIntent(activity):
