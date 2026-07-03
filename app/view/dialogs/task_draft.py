@@ -13,6 +13,7 @@ from qfluentwidgets import (
     MessageBoxBase, PushButton, SubtitleLabel,
 )
 
+from app.platform.android import IS_ANDROID
 from app.services.feature_service import featureService
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit
@@ -68,6 +69,7 @@ class TaskDraftDialog(MessageBoxBase):
         self._standaloneWrapper = StandaloneWrapper(self)
         self.destroyed.connect(self._standaloneWrapper.deleteLater)
         self._isStandalone = False
+        self._isDragEnabled = not IS_ANDROID
         self._dragPos = QPoint()
         self._cardByUrl: dict[str, object] = {}
         self._failCount = 0
@@ -199,7 +201,7 @@ class TaskDraftDialog(MessageBoxBase):
         return self._draft.canConfirm()
 
     def eventFilter(self, obj, event: QEvent):
-        if obj is not self.windowMask:
+        if obj is not self.windowMask or not self._isDragEnabled:
             return super().eventFilter(obj, event)
 
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
