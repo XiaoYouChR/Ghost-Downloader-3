@@ -7,11 +7,12 @@ from app.view.components.banners import WarningBanner
 
 
 class PermissionBanner(WarningBanner):
-    def __init__(self, onGrant: Callable[[], None], parent: QWidget | None = None):
+    def __init__(self, onGrant: Callable[[], None], text: str = "",
+                 parent: QWidget | None = None):
         super().__init__(parent, radius=0)
         self._onGrant = onGrant
         self.iconWidget = IconWidget(FluentIcon.INFO, self)
-        self.label = BodyLabel(self.tr("未授予存储权限，下载到公共目录将失败"), self)
+        self.label = BodyLabel(text or self.tr("未授予存储权限，下载到公共目录将失败"), self)
         self.grantButton = PrimaryPushButton(self.tr("去授权"), self)
         self.hBoxLayout = QHBoxLayout(self)
         self._initWidget()
