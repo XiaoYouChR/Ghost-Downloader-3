@@ -152,6 +152,21 @@ class TaskService(QObject):
     def runningCount(self) -> int:
         return self._queue.runningCount()
 
+    def runningProgress(self) -> float:
+        from app.models.task import TaskStatus
+        totalReceived = 0
+        totalSize = 0
+        for task in self._store.tasks.values():
+            if task.status != TaskStatus.RUNNING:
+                continue
+            _, _, receivedBytes = task.currentSnapshot()
+            if task.fileSize > 0:
+                totalReceived += receivedBytes
+                totalSize += task.fileSize
+        if totalSize == 0:
+            return -1.0
+        return min(100.0, totalReceived / totalSize * 100)
+
     def add(self, task: Task) -> None:
         if task.taskId in self._store.tasks:
             return

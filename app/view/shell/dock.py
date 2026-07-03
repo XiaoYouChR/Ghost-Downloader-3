@@ -1,14 +1,14 @@
-from PySide6.QtCore import QBuffer, QByteArray, QRectF, Qt
-from PySide6.QtGui import QColor, QFontMetricsF, QPainter, QPixmap
+from PySide6.QtCore import QBuffer, QByteArray, Qt
+from PySide6.QtGui import QColor, QFontMetricsF, QPainter, QPainterPath, QPen, QPixmap
 
 from AppKit import (
-    NSApp, NSApplication, NSImage, NSImageView,
+    NSApp, NSApplication, NSImage, NSImageView, NSProgressIndicator, NSView,
     NSApplicationActivationPolicyRegular, NSApplicationActivationPolicyAccessory,
 )
 from Foundation import NSData
 
 from app.config.cfg import cfg
-from app.format import toReadableSize
+from app.format import toDockSpeed
 from app.services.speed_meter import speedMeter
 
 
@@ -22,11 +22,15 @@ def setDockIconVisible(visible: bool, activate: bool) -> None:
 
 
 def setupDock() -> None:
-    baseIcon = None
-    imageView = None
+    from app.services.task_service import taskService
 
-    def render(text: str) -> None:
-        nonlocal baseIcon, imageView
+    baseIcon = None
+    container = None
+    imageView = None
+    progressBar = None
+
+    def update(text: str, progress: float) -> None:
+        nonlocal baseIcon, container, imageView, progressBar
 
         if baseIcon is None:
             baseIcon = QPixmap(":/image/logo_macOS.png").scaled(
@@ -40,24 +44,27 @@ def setupDock() -> None:
         painter = QPainter(canvas)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        margin = size * 0.11
-        bandHeight = size * 0.24
-        band = QRectF(margin * 1.3, size - margin - bandHeight, size - margin * 2.6, bandHeight)
-
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(0, 0, 0, 165))
-        painter.drawRoundedRect(band, bandHeight / 2, bandHeight / 2)
-
         font = painter.font()
         font.setBold(True)
-        pixel = bandHeight * 0.5
-        font.setPixelSize(int(pixel))
-        while QFontMetricsF(font).horizontalAdvance(text) > band.width() * 0.88 and pixel > 6:
+        pixel = int(size * 0.14)
+        font.setPixelSize(pixel)
+        maxWidth = size * 0.85
+        while QFontMetricsF(font).horizontalAdvance(text) > maxWidth and pixel > 6:
             pixel -= 1
-            font.setPixelSize(int(pixel))
-        painter.setFont(font)
-        painter.setPen(QColor(255, 255, 255))
-        painter.drawText(band, Qt.AlignmentFlag.AlignCenter, text)
+            font.setPixelSize(pixel)
+
+        fm = QFontMetricsF(font)
+        textX = (size - fm.horizontalAdvance(text)) / 2
+        textY = size * 0.82
+
+        path = QPainterPath()
+        path.addText(textX, textY, font, text)
+        painter.strokePath(
+            path,
+            QPen(QColor(0, 0, 0, 180), 12,
+                 Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin),
+        )
+        painter.fillPath(path, QColor(255, 255, 255))
         painter.end()
 
         data = QByteArray()
@@ -69,37 +76,66 @@ def setupDock() -> None:
         nsImage = NSImage.alloc().initWithData_(
             NSData.dataWithBytes_length_(data.data(), data.size())
         )
+
         tile = (NSApp or NSApplication.sharedApplication()).dockTile()
-        if imageView is None:
-            imageView = NSImageView.alloc().init()
-            tile.setContentView_(imageView)
+        if container is None:
+            tileSize = tile.size()
+            container = NSView.alloc().initWithFrame_(
+                ((0, 0), (tileSize.width, tileSize.height))
+            )
+            imageView = NSImageView.alloc().initWithFrame_(
+                ((0, 0), (tileSize.width, tileSize.height))
+            )
+            container.addSubview_(imageView)
+
+            barHeight = tileSize.height * 0.08
+            progressBar = NSProgressIndicator.alloc().initWithFrame_(
+                ((0, 0), (tileSize.width, barHeight))
+            )
+            progressBar.setStyle_(0)
+            progressBar.setMinValue_(0)
+            progressBar.setMaxValue_(100)
+            progressBar.setIndeterminate_(False)
+            container.addSubview_(progressBar)
+
+            tile.setContentView_(container)
+
         imageView.setImage_(nsImage)
+
+        if progress >= 0:
+            progressBar.setHidden_(False)
+            progressBar.setDoubleValue_(progress)
+        else:
+            progressBar.setHidden_(True)
+
         tile.display()
 
-    def restore() -> None:
-        nonlocal imageView
-        if imageView is None:
+    def clear() -> None:
+        nonlocal container, imageView, progressBar
+        if container is None:
             return
         tile = (NSApp or NSApplication.sharedApplication()).dockTile()
         tile.setContentView_(None)
         tile.display()
+        container = None
         imageView = None
+        progressBar = None
 
     def onSpeedChanged(speed: int) -> None:
         if not (cfg.shouldShowDockSpeed.value and cfg.shouldShowDockIcon.value):
             return
         if speed <= 0:
-            restore()
+            clear()
             return
-        render(f"{toReadableSize(speed)}/s")
+        update(toDockSpeed(speed), taskService.runningProgress())
 
     def onShowSpeedChanged(enabled: bool) -> None:
         if not enabled:
-            restore()
+            clear()
 
     def onShowIconChanged(visible: bool) -> None:
         setDockIconVisible(visible, activate=True)
-        restore()
+        clear()
 
     cfg.shouldShowDockIcon.valueChanged.connect(onShowIconChanged)
     speedMeter.speedChanged.connect(onSpeedChanged)
