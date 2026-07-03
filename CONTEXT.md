@@ -219,7 +219,7 @@ _Avoid_: `directory` in project-owned names (only when mirroring an external API
 
 ### Boolean names
 
-Booleans use `is*`, `has*`, `can*`, or `should*`.
+Booleans are named with `is*`, `has*`, `can*`, or `should*` prefixes.
 _Avoid_: bare adjectives (`available`), action-looking booleans (`enableX`),
 third-person verbs (`supportsX`).
 
@@ -262,22 +262,23 @@ _Avoid_: `find*` for in-memory lookup (keep `find*` for disk/PATH search).
 
 ### Parser routing
 
-`featureService.parse(options)` iterates parsers by priority (higher checked
-first) and calls the first match:
+`featureService.parse(options)` iterates parsers in ascending priority order;
+the first `match(options)` wins. Specific parsers have low priority numbers
+and are checked first; HttpParser (100) is the fallback, checked last.
 
 | Parser | Priority | Match condition |
 |---|---|---|
-| HttpParser | 100 | any `http`/`https` URL (fallback) |
-| FtpParser | 95 | `ftp`/`ftps` scheme |
-| GitHubParser | 90 | GitHub file URL + proxy configured |
-| HuggingFaceParser | 85 | HuggingFace domain |
-| TorrentParser | 85 | `magnet:` scheme or `.torrent` |
-| M3U8Parser | 80 | `.m3u8`/`.mpd` in URL or local manifest |
-| YouTubeParser | 70 | YouTube domain |
-| MergeParser | 60 | `isinstance(options, MergeTaskOptions)` |
-| InstallParser | 55 | `isinstance(options, BinaryInstallOptions)` |
-| BilibiliParser | 50 | Bilibili domain |
 | ED2kParser | 45 | `ed2k://` scheme |
+| BilibiliParser | 50 | Bilibili domain |
+| InstallParser | 55 | `isinstance(options, BinaryInstallOptions)` |
+| MergeParser | 60 | `isinstance(options, MergeTaskOptions)` |
+| YouTubeParser | 70 | YouTube domain |
+| M3U8Parser | 80 | `.m3u8`/`.mpd` in URL or local manifest |
+| TorrentParser | 85 | `magnet:` scheme or `.torrent` |
+| HuggingFaceParser | 85 | HuggingFace domain |
+| GitHubParser | 90 | GitHub file URL + proxy configured |
+| FtpParser | 95 | `ftp`/`ftps` scheme |
+| HttpParser | 100 | any `http`/`https` URL (fallback) |
 
 Delegation patterns:
 - **GitHubParser** rewrites URL through proxy, then calls
@@ -324,7 +325,7 @@ loop. Services hold no View references; Views connect to service signals.
 
 **Browser Service** is a protocol adapter: receive WebSocket messages, translate
 to Task Service verbs, send results back. It holds no MainWindow reference.
-View connection is purely via signals wired in the entry script.
+View connection is purely via signals bound in the entry script.
 
 **Dependency direction** (leaf → top):
 
@@ -336,7 +337,7 @@ featureService     holds packs + parsers; parse() returns Task
 taskDraft          uses coroutineRunner + featureService
 browserService     uses taskService + featureService; emits signals for View
 categoryService    standalone; taskService calls matchByName on add
-View / Entry       wires everything; connects signals
+View / Entry       binds everything; connects signals
 ```
 
 ## Module topology
@@ -367,7 +368,7 @@ Pack capabilities: `parsers()`, `taskCard()`, `draftCard()`, `optionCards()`,
 `editCards()`, `fileTypes()`, `pages()`, `settingGroups()`, `start()`, `stop()`.
 
 Module singletons created at import time (configs, runtimes, services, actors)
-must not read `cfg` values at construction — use lazy properties. `qconfig.load`
+do not read `cfg` values at construction — they use lazy properties. `qconfig.load`
 happens before `featureService.load`.
 
 Notable pack-level actors:
@@ -381,7 +382,7 @@ Notable pack-level actors:
 ### View layer
 
 **MainWindow** owns a `TaskDraft` service instance and a lazy
-`TaskDraftDialog`. It does not own task lifecycle — it wires
+`TaskDraftDialog`. It does not own task lifecycle — it binds
 `draft.taskConfirmed → taskService.add`, which is the only task-creation path.
 
 **TaskPage** subscribes to `taskService.*` signals for card lifecycle. Virtual
@@ -445,26 +446,25 @@ setupEnvironment():
 
 startApp(application, isSilent):
   sys.excepthook → signalBus.exceptionCaught
-  load translator
-  coroutineRunner.start()
+  loadEngine(application)          → translator + coroutineRunner.start
   MainWindow()
-  featureService.load() → discover + import packs
-  PackConfig.load() → register pack ConfigItems
-  window.setupPacks() → add pack pages/settings
-  taskService.taskStarted → speedMeter.start
-  tasksAllCompleted → speedMeter.stop
-  taskService.resumeSaved()
-  featureService.start() → pack.start() on each
-  wire signalBus, browserService, clipboardListener, tray/dock
-  taskService.taskCompleted → notifyTaskCompleted
-  tasksAllCompleted → plan.trigger
-  application.aboutToQuit.connect(stopApp)
+  splash (if not silent)
+  loadPacks()                      → featureService.load + PackConfig.load
+  window.setupPacks()
+  startEngine()                    → speedMeter bind + resumeSaved + featureService.start
+  bind signalBus, browserService, clipboardListener, tray/dock
+  bindNotifications(completed, diskSpace)
+  checkUpdateAtStartup()
+  application.aboutToQuit.connect(stopEngine)
 ```
+
+Shared startup functions live in `app/startup.py`: `loadEngine`, `loadPacks`,
+`startEngine`, `bindNotifications`, `checkUpdateAtStartup`, `stopEngine`.
 
 ### Desktop shutdown
 
 ```
-stopApp():
+stopEngine():
   taskService.stop()       # pause all running/waiting
   taskService.flush()      # write store to disk
   browserService.stop()    # close WebSocket server
@@ -492,17 +492,133 @@ Shutdown is identical to desktop.
 
 ## Code shape
 
+### Naming conventions
+
 Functions and methods use `camelCase`. Classes use `PascalCase`. Constants use
 `UPPER_SNAKE_CASE`. Object-private attributes and class-internal helpers start
 with `_`. Module-level classes and constants do not add `_`.
 
-QWidget and QDialog subclasses follow a four-phase `__init__`:
-`_initWidget()` → `_initLayout()` → `_bind()`. Signals are connected in
-`_bind`, after all widgets exist — so `_initWidget` can set initial state
-without triggering slots.
+Function names combine one verb from the verb vocabulary above with one
+concrete business noun: `taskService.add(task)`,
+`featureService.parse(options)`, `browserService.stop()`. No verbs outside the
+vocabulary appear in app-owned code — if none of the existing verbs fit, the
+function's responsibility is unclear and the seam is wrong, not the vocabulary.
 
-Services are signal-driven actors with private state. They do not hold View
-references. Views connect to service signals and call service methods directly.
+### Word choice
+
+Names use short, common English words that a first-time reader understands
+without a dictionary: `task`, `step`, `name`, `folder`, `speed`, `draft`.
+Rare or academic words are replaced with plain equivalents: `sanitize` →
+`toSafeFilename`, `normalize` → `toProxySite`, `orchestrate` → `run`.
+When a shorter word means the same thing, the shorter word wins: `add` over
+`insert`, `stop` over `terminate`.
+
+Names describe what the actor owns in the domain, not its structural role.
+Actors are named `taskService`, `speedMeter`, `categoryService` — generic
+structural nouns like `manager`, `controller`, `coordinator`, `provider`,
+`repository`, `facade`, `pipeline`, and `context` are absent because each
+actor is named for the business concept it owns. A new noun represents a real
+domain concept; introducing a noun just to make an awkward helper sound nicer
+is a sign the helper belongs on an existing actor.
+
+A forced long name (`removeTaskRecordAndDeleteFiles`) is a sign the function
+owns two responsibilities. Better seams make names short:
+`taskService.delete(task, shouldDeleteFiles)`.
+
+### Comments
+
+Code carries no comments and no docstrings by default. A well-named function
+with typed parameters explains what it does; comments that restate the code
+compete for the reader's attention without adding information. Comments earn
+their place only when they explain **why** — a hidden constraint, a workaround
+for a specific bug, or behavior that would surprise a reader. If removing a
+comment would not confuse a future reader, the comment is not written.
+
+### Inlining
+
+This codebase prefers inlined code over shallow extractions. A function earns
+extraction when it is called from two or more sites, or when it exceeds ~15
+lines with a single clear duty and a return type that is a single named type
+(not a tuple or dict). One-line wrappers, single-caller helpers under 5 lines,
+and trivial delegations are inlined at their call site. Three similar lines of
+obvious code are kept inline rather than extracted into a function whose
+interface is as complex as its body — the extraction adds a jump without
+reducing knowledge for the caller.
+
+### Deepening
+
+"Deeper module" in this project means less call-site knowledge, not more
+architecture nouns. Refactors in this codebase have been subtractive:
+workflows moved behind existing actors before new actors were created;
+reach-through plumbing deleted; new modules introduced only when the same
+business rule was already spreading across multiple callers. New seams were
+earned by deleting knowledge from call sites, not by drawing boxes.
+
+### Four-phase `__init__`
+
+QWidget and QDialog subclasses follow a four-phase `__init__`:
+
+```python
+def __init__(self, parent=None):
+    super().__init__(parent)
+    self._initWidget()
+    self._initLayout()
+    self._bind()
+```
+
+Each phase has a single responsibility:
+
+`_initWidget()` — create and configure child widgets. Set initial property
+values, default text, icons, size policies. No signal connections — the widgets
+are inert at this point, so setting state does not trigger any reactions.
+
+`_initLayout()` — assemble layouts and add widgets. Only layout code: margins,
+spacing, stretch factors, addWidget/addLayout calls.
+
+`_bind()` — connect signals to slots. All widgets exist and are laid out, so
+it is safe to connect. Slots triggered here can safely reference any sibling
+widget.
+
+This separation exists because Qt signals fire immediately on connect if the
+current widget state already matches the signal condition. Connecting in
+`_initWidget` before sibling widgets exist leads to slot calls that reference
+widgets not yet created.
+
+### Responsibility layers
+
+```
+View (app/view/)
+  Renders state and collects user intent.
+  Calls service methods: taskService.pause(task), taskService.delete(task, ...).
+  Connects to service signals for refresh: taskService.taskAdded → _onTaskAdded.
+  Does not own task lifecycle, persist records, run downloads, or manage the
+  event loop.
+
+Service (app/services/)
+  Signal-driven actors with private state. The single source of truth for the
+  state they own. Emit signals when state changes.
+  Do not import from app/view/. Do not hold QWidget references. Do not show
+  dialogs or InfoBars.
+
+FeaturePack (features/*_pack/)
+  Declare capabilities (parsers, cards, runtimes). Provide pack-specific
+  business logic (download step implementation, protocol handling).
+  Do not import from app/view/ except for card classes returned by taskCard /
+  draftCard / optionCards. Do not reach into Task Service internals.
+
+Platform (app/platform/)
+  OS-specific adapters: file association, run at login, hidden subprocess,
+  notifications, Android keepalive. Thin wrappers with no business logic.
+
+Entry (Ghost-Downloader-3.py, android/main.py)
+  Composition root. Creates services and views, binds signals, defines
+  shutdown order. Platform-specific wiring lives here, not in services or views.
+```
+
+When a View method grows long because it orchestrates multiple service calls,
+the orchestration belongs behind a service method — the View calls one verb,
+the service owns the ordering. This is how `taskService.redownload(task)`
+replaced multi-step card code that called stop + delete files + reset + start.
 
 ## Task execution
 
@@ -513,7 +629,7 @@ skips COMPLETED, yields remaining while `self.status == RUNNING`. No protocol
 overrides `Task.run()` — it is the universal error boundary:
 
 - `TaskError` → `step.setError(StepError(str(e), e.params))` — user-facing
-- `Exception` → `step.setError(StepError(repr(e)))` — unexpected, debuggable
+- `Exception` → `step.setError(StepError("Unexpected error: {detail}"))` — generic wrapper, detail from `str(e)`
 - `CancelledError` → passes through (BaseException in Python 3.11+), no error set
 
 Steps raise `TaskError` for known business errors. Steps that use `TaskGroup`
