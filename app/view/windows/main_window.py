@@ -245,26 +245,6 @@ class MainWindow(MSFluentWindow):
                 desktop = QApplication.primaryScreen().availableGeometry()
                 self.move(desktop.center() - self.rect().center())
 
-    def nativeEvent(self, eventType, message):
-        if sys.platform == "win32" and eventType == "windows_generic_MSG":
-            from ctypes.wintypes import MSG
-            from app.platform.application import WM_USER_WAKE, WM_COPYDATA, fileUrisFromCopyData
-            msg = MSG.from_address(message.__int__())
-
-            if msg.message == WM_USER_WAKE:
-                from app.platform.desktop import raiseWindow
-                raiseWindow(self)
-                return True, 0
-
-            if msg.message == WM_COPYDATA:
-                uris = fileUrisFromCopyData(msg.lParam)
-                if uris:
-                    signalBus.openFileRequested.emit(uris)
-                    raiseWindow(self)
-                return True, 1
-
-        return super().nativeEvent(eventType, message)
-
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.PaletteChange:
@@ -368,7 +348,6 @@ if sys.platform == "win32":
         def _win10NativeEvent(self, eventType, message):
             if eventType == "windows_generic_MSG":
                 from ctypes.wintypes import MSG
-                from app.platform.application import WM_USER_WAKE, WM_COPYDATA, fileUrisFromCopyData
                 msg = MSG.from_address(message.__int__())
 
                 WM_ENTERSIZEMOVE = 561
@@ -380,16 +359,6 @@ if sys.platform == "win32":
                     self.windowEffect.setAcrylicEffect(
                         self.winId(), "00000030" if isDarkTheme() else "FFFFFF30",
                     )
-                elif msg.message == WM_USER_WAKE:
-                    from app.platform.desktop import raiseWindow
-                    raiseWindow(self)
-                    return True, 0
-                elif msg.message == WM_COPYDATA:
-                    uris = fileUrisFromCopyData(msg.lParam)
-                    if uris:
-                        signalBus.openFileRequested.emit(uris)
-                        raiseWindow(self)
-                    return True, 1
 
             return FramelessWindow.nativeEvent(self, eventType, message)
 
