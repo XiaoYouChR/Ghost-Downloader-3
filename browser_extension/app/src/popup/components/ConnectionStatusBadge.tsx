@@ -35,7 +35,7 @@ export function ConnectionStatusBadge({
   const tone = connectionTone(state);
   const hasPending = (pendingCount ?? 0) > 0;
 
-  const label = state === "connected" ? "已连接" : connectionLabel(state, message);
+  const label = state === "connected" ? chrome.i18n.getMessage("connected") : connectionLabel(state, message);
   const icon =
     tone === "info" ? (
       <Spinner size="tiny" />
@@ -47,7 +47,7 @@ export function ConnectionStatusBadge({
       <PlugDisconnectedRegular />
     );
 
-  const badgeText = hasPending ? `${label} · ${pendingCount} 排队` : label;
+  const badgeText = hasPending ? chrome.i18n.getMessage("pendingQueueBadge", [String(label), String(pendingCount)]) : label;
 
   return (
     <div className={styles.root}>
@@ -62,7 +62,7 @@ export function ConnectionStatusBadge({
       {onLaunchDesktop && (
         <Button
           appearance="subtle"
-          aria-label="启动桌面端"
+          aria-label={chrome.i18n.getMessage("launchDesktop")}
           icon={<OpenRegular />}
           size="small"
           onClick={onLaunchDesktop}
