@@ -51,7 +51,7 @@ class ED2kTaskStep(TaskStep):
                 transfer = await client.addLink(task.url, task.outputFolder)
             except Error as e:
                 if e.code != ErrorCode.TRANSFER_EXISTS:
-                    raise TaskError("ED2k error: {detail}", detail=str(e)) from e
+                    raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
                 _, _, linkHash = parseEd2kLink(task.url)
                 await client.remove(linkHash, deleteFile=False)
                 transfer = await client.addLink(task.url, task.outputFolder)
@@ -91,7 +91,7 @@ class ED2kInstallStep(TaskStep):
     async def run(self) -> None:
         path = Path(self.binaryPath)
         if not path.is_file():
-            raise TaskError("Binary not found: {name}", name="goed2kd")
+            raise TaskError("{name} 未安装，请在设置中安装", name="goed2kd")
         if sys.platform != "win32":
             path.chmod(path.stat().st_mode | 0o755)
         self.setStatus(TaskStatus.COMPLETED)

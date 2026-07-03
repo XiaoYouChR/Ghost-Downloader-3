@@ -169,7 +169,7 @@ class BTTask(Task):
             eh = existing.info_hashes()
             if (hashes.has_v1() and eh.has_v1() and hashes.v1 == eh.v1) or \
                (hashes.has_v2() and eh.has_v2() and hashes.v2 == eh.v2):
-                raise TaskError("Torrent is already downloading")
+                raise TaskError("该种子已在下载中")
 
         handle = session.add_torrent(params)
 
@@ -189,7 +189,7 @@ class BTTaskStep(TaskStep):
         task: BTTask = self.task
 
         if task.countSelected <= 0:
-            raise TaskError("No files selected for download")
+            raise TaskError("至少需要选择一个文件")
 
         target = Path(task.outputPath)
         if not target.exists():
@@ -206,7 +206,7 @@ class BTTaskStep(TaskStep):
             btSession.open()
             session = btSession.session()
         except Exception as e:
-            raise TaskError("BitTorrent session failed: {detail}", detail=str(e)) from e
+            raise TaskError("BitTorrent 会话启动失败：{detail}", detail=str(e)) from e
         handle = task._addTorrent(session)
 
         handle.resume()
@@ -331,7 +331,7 @@ class BTTaskStep(TaskStep):
         if isinstance(alert, ERROR_ALERTS):
             if not self._downloadDone.done():
                 self._downloadDone.set_exception(
-                    TaskError("BitTorrent error: {detail}", detail=alert.message())
+                    TaskError("BitTorrent 错误：{detail}", detail=alert.message())
                 )
 
     async def _saveResume(self):
