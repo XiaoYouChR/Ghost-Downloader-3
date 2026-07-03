@@ -65,7 +65,7 @@ export function FeatureToggleCard({
         <div className={styles.actions}>
           {reloadRequired ? (
             <Badge appearance="tint" color="warning" icon={<ArrowClockwiseRegular />}>
-              需刷新
+              {chrome.i18n.getMessage("reloadRequired")}
             </Badge>
           ) : null}
           <Switch

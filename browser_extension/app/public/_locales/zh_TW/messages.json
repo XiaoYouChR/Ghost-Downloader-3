@@ -1,0 +1,656 @@
+{
+  "about": {
+    "message": "關於"
+  },
+  "advancedFeatures": {
+    "message": "進階功能"
+  },
+  "advancedFeaturesHint": {
+    "message": "按需開啟，部分功能需要頁面注入或特殊權限"
+  },
+  "audio": {
+    "message": "音訊",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "音軌"
+  },
+  "authenticating": {
+    "message": "驗證中"
+  },
+  "autoPair": {
+    "message": "自動配對"
+  },
+  "awaitingPairing": {
+    "message": "等待配對"
+  },
+  "browserDownload": {
+    "message": "瀏覽器下載"
+  },
+  "bypassShortcutKey": {
+    "message": "略過攔截快速鍵"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "按住此鍵點擊下載連結，略過攔截由瀏覽器下載"
+  },
+  "cacheCapture": {
+    "message": "快取捕捉"
+  },
+  "cacheCaptureDescription": {
+    "message": "捕捉瀏覽器快取的資源"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "clearSelection": {
+    "message": "取消",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "已完成"
+  },
+  "confirmPairing": {
+    "message": "請確認配對"
+  },
+  "connected": {
+    "message": "已連線"
+  },
+  "connecting": {
+    "message": "連線中"
+  },
+  "connectionClosed": {
+    "message": "連線已中斷"
+  },
+  "connectionConfig": {
+    "message": "連線設定"
+  },
+  "darkTheme": {
+    "message": "深色"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 個 DASH 分片 $2"
+  },
+  "deepSearch": {
+    "message": "深度搜尋"
+  },
+  "deepSearchDescription": {
+    "message": "深入分析頁面請求資源"
+  },
+  "desktopVersionInfo": {
+    "message": "桌面端 $1"
+  },
+  "disconnected": {
+    "message": "未連線"
+  },
+  "downloadThisMedia": {
+    "message": "下載此媒體"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "使用 Ghost Downloader 下載"
+  },
+  "downloading": {
+    "message": "下載中"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "播放影片或音訊後，這裡會自動顯示捕捉到的資源。"
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "目前頁面還沒有資源"
+  },
+  "emptyImagesDescription": {
+    "message": "試試切換到有圖片的頁面，或調整篩選條件。"
+  },
+  "emptyImagesTitle": {
+    "message": "目前頁面沒有找到圖片"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "切換到其他分頁並捕捉到資源後，這裡會自動彙總顯示。"
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "還沒有其他頁面的資源"
+  },
+  "emptyTasksDescription": {
+    "message": "瀏覽器接管下載或從資源嗅探頁傳送資源後，任務會出現在這裡。"
+  },
+  "emptyTasksTitle": {
+    "message": "當前還沒有任務"
+  },
+  "errorAutoPairingFailed": {
+    "message": "自動配對失敗"
+  },
+  "errorBackgroundNotReady": {
+    "message": "背景服務未就緒"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "瀏覽器未返回下載任務"
+  },
+  "errorCannotDetermineDouyinMediaForm": {
+    "message": "無法判定 Douyin 當前媒體形態，請在資源嗅探頁選擇"
+  },
+  "errorCannotLocateMedia": {
+    "message": "未能定位媒體"
+  },
+  "errorConnectionFailed": {
+    "message": "連線失敗"
+  },
+  "errorExtensionNotReady": {
+    "message": "擴充功能未就緒"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "功能切換失敗"
+  },
+  "errorFullscreenFailed": {
+    "message": "全螢幕失敗"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "無效的下載請求"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "無效的合併請求"
+  },
+  "errorInvalidPairToken": {
+    "message": "配對權杖無效"
+  },
+  "errorMediaActionFailed": {
+    "message": "媒體操作失敗"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "未識別媒體來源"
+  },
+  "errorMergeFailed": {
+    "message": "線上合併失敗"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "線上合併暫時只支援選取 2 個資源"
+  },
+  "errorMultipleMediaFound": {
+    "message": "找到多個媒體資源，請在資源嗅探頁選擇"
+  },
+  "errorNoActiveTab": {
+    "message": "目前沒有可操作的分頁"
+  },
+  "errorNoControllableMedia": {
+    "message": "目前沒有可控制的媒體"
+  },
+  "errorNoMediaDetected": {
+    "message": "未偵測到媒體"
+  },
+  "errorNoTokenReturned": {
+    "message": "未返回權杖"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "線上合併失敗"
+  },
+  "errorPairingDisconnected": {
+    "message": "配對中斷"
+  },
+  "errorPairingRejected": {
+    "message": "已拒絕配對"
+  },
+  "errorPairingTimeout": {
+    "message": "配對逾時"
+  },
+  "errorPipFailed": {
+    "message": "子母畫面失敗"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "讀取媒體狀態失敗"
+  },
+  "errorReconnectFailed": {
+    "message": "重新連線失敗"
+  },
+  "errorResourceNotFound": {
+    "message": "資源不存在"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "目前選取的資源不符合線上合併條件"
+  },
+  "errorResponseTimeout": {
+    "message": "回應逾時"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "儲存配對權杖失敗"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "儲存服務位址失敗"
+  },
+  "errorSendFailed": {
+    "message": "傳送失敗"
+  },
+  "errorSendImagesFailed": {
+    "message": "傳送圖片失敗"
+  },
+  "errorSendResourceFailed": {
+    "message": "傳送資源失敗"
+  },
+  "errorStrategyException": {
+    "message": "策略異常: $1"
+  },
+  "errorSwitchMediaFailed": {
+    "message": "切換媒體失敗"
+  },
+  "errorTargetTabNotFound": {
+    "message": "目標分頁不存在"
+  },
+  "errorTaskActionFailed": {
+    "message": "任務操作失敗"
+  },
+  "errorUnknownCommand": {
+    "message": "未知命令: $1"
+  },
+  "errorUnknownDownloadType": {
+    "message": "未知的下載請求類型"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "更新下載按鈕失敗"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "更新接管下載失敗"
+  },
+  "extensionDescription": {
+    "message": "管理 Ghost Downloader 任務，將瀏覽器資源傳送到 Ghost Downloader。"
+  },
+  "extensionName": {
+    "message": "Ghost Downloader for Browser"
+  },
+  "extensionVersionInfo": {
+    "message": "擴充功能版本 $1"
+  },
+  "failed": {
+    "message": "失敗"
+  },
+  "featureBackgroundDisabled": {
+    "message": "功能背景狀態已關閉，頁面中的面板可在網頁內自行關閉"
+  },
+  "featureDisabled": {
+    "message": "功能已關閉"
+  },
+  "featureEnabled": {
+    "message": "功能已開啟"
+  },
+  "featureEnabledAfterReload": {
+    "message": "功能已開啟，頁面重新整理後生效"
+  },
+  "featureStateUpdated": {
+    "message": "功能狀態已更新"
+  },
+  "featureToggles": {
+    "message": "功能開關"
+  },
+  "filterAll": {
+    "message": "全部"
+  },
+  "filterAudio": {
+    "message": "音訊"
+  },
+  "filterHeightLabel": {
+    "message": "高",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "視訊"
+  },
+  "filterWidthLabel": {
+    "message": "寬",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "跟隨系統設定"
+  },
+  "fullscreen": {
+    "message": "全螢幕"
+  },
+  "general": {
+    "message": "一般"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 個 HLS 分片 $2"
+  },
+  "imagesProcessed": {
+    "message": "已處理 $1 張圖片"
+  },
+  "imagesSent": {
+    "message": "圖片已傳送"
+  },
+  "installMethodInfo": {
+    "message": "安裝方式 $1"
+  },
+  "installTypeDevelopment": {
+    "message": "桌面端自行管理"
+  },
+  "installTypeSideload": {
+    "message": "側載安裝"
+  },
+  "installTypeStore": {
+    "message": "商店安裝"
+  },
+  "installTypeUnknown": {
+    "message": "未知"
+  },
+  "interceptUnknownSize": {
+    "message": "大小未知時攔截"
+  },
+  "invertSelection": {
+    "message": "反向選取"
+  },
+  "itemCount": {
+    "message": "$1 項"
+  },
+  "itemCount_popup_pages_ImagesPage_tsx": {
+    "message": "$1 項"
+  },
+  "launchDesktop": {
+    "message": "啟動桌面端"
+  },
+  "lightTheme": {
+    "message": "淺色"
+  },
+  "localServerAddress": {
+    "message": "本機服務位址"
+  },
+  "loop": {
+    "message": "循環"
+  },
+  "mediaBridgeNotReady": {
+    "message": "目前頁面的媒體橋接尚未就緒"
+  },
+  "mediaConnected": {
+    "message": "目前媒體狀態已連線"
+  },
+  "mediaControl": {
+    "message": "媒體控制"
+  },
+  "mediaReleased": {
+    "message": "媒體已釋放"
+  },
+  "merge": {
+    "message": "合併"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "線上合併任務已傳送到 Ghost Downloader"
+  },
+  "minInterceptSize": {
+    "message": "最小攔截大小"
+  },
+  "minInterceptSizeHint": {
+    "message": "低於此大小的檔案由瀏覽器直接下載，0 為全部攔截"
+  },
+  "mobileUserAgent": {
+    "message": "模擬手機"
+  },
+  "mobileUserAgentDescription": {
+    "message": "模擬行動裝置存取頁面"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "已關閉模擬手機"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "已啟用模擬手機，將在重新整理後生效"
+  },
+  "mute": {
+    "message": "靜音"
+  },
+  "navAdvanced": {
+    "message": "進階"
+  },
+  "navImages": {
+    "message": "圖片"
+  },
+  "navResources": {
+    "message": "資源"
+  },
+  "navTasks": {
+    "message": "任務"
+  },
+  "noActiveTabForMedia": {
+    "message": "目前沒有可操作的分頁"
+  },
+  "noControllableMedia": {
+    "message": "目前沒有可控制的媒體"
+  },
+  "noControllableMediaDetected": {
+    "message": "目前未偵測到可控制媒體"
+  },
+  "noMediaDetected": {
+    "message": "目前未偵測到可控制媒體"
+  },
+  "noMediaStateResponse": {
+    "message": "頁面沒有返回媒體狀態"
+  },
+  "notConnected": {
+    "message": "未連線"
+  },
+  "openFile": {
+    "message": "開啟檔案"
+  },
+  "openFolder": {
+    "message": "開啟資料夾"
+  },
+  "openWhenDone": {
+    "message": "完成後開啟"
+  },
+  "pageNoControllableMedia": {
+    "message": "目前頁面未偵測到可控制媒體"
+  },
+  "pairing": {
+    "message": "配對中"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "配對請求已傳送，請在桌面端確認"
+  },
+  "pairingToken": {
+    "message": "配對權杖"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "請輸入配對權杖"
+  },
+  "pairingTokenSaved": {
+    "message": "配對權杖已儲存"
+  },
+  "pasteToken": {
+    "message": "貼上權杖"
+  },
+  "pause": {
+    "message": "暫停"
+  },
+  "paused": {
+    "message": "已暫停"
+  },
+  "pendingPairing": {
+    "message": "等待配對"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 排隊"
+  },
+  "pictureInPicture": {
+    "message": "子母畫面"
+  },
+  "play": {
+    "message": "播放"
+  },
+  "reconnect": {
+    "message": "重新連線"
+  },
+  "recordWebRTC": {
+    "message": "錄製 WebRTC"
+  },
+  "recordWebRTCDescription": {
+    "message": "錄製 WebRTC 即時通訊內容"
+  },
+  "redownload": {
+    "message": "重新下載"
+  },
+  "reloadRequired": {
+    "message": "需重新整理"
+  },
+  "rescan": {
+    "message": "重新掃描"
+  },
+  "resolving": {
+    "message": "正在解析"
+  },
+  "resource": {
+    "message": "資源",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "目前分頁暫時無法提供資源清單。"
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "目前分頁暫不支援資源橋接"
+  },
+  "resourceProcessed": {
+    "message": "資源處理成功"
+  },
+  "resourceSentToBrowser": {
+    "message": "資源已交給瀏覽器下載"
+  },
+  "resourceSentToDesktop": {
+    "message": "資源已傳送到 Ghost Downloader"
+  },
+  "restoringCapturedResources": {
+    "message": "正在還原已捕捉的資源"
+  },
+  "restoringCatCatchResources": {
+    "message": "正在還原 cat-catch 已捕捉的資源"
+  },
+  "restoringResourcesDescription": {
+    "message": "正在還原已捕捉的資源。"
+  },
+  "restoringResourcesTitle": {
+    "message": "正在還原目前頁面資源"
+  },
+  "resume": {
+    "message": "繼續"
+  },
+  "scanning": {
+    "message": "掃描中…"
+  },
+  "scopeCurrentPage": {
+    "message": "目前頁面"
+  },
+  "scopeOtherPages": {
+    "message": "其他頁面"
+  },
+  "screenCapture": {
+    "message": "螢幕捕捉"
+  },
+  "screenCaptureDescription": {
+    "message": "捕捉螢幕、視窗或分頁"
+  },
+  "screenshot": {
+    "message": "截圖"
+  },
+  "selectAll": {
+    "message": "全選"
+  },
+  "selectMedia": {
+    "message": "選取媒體"
+  },
+  "selectMediaPlaceholder": {
+    "message": "請選取媒體"
+  },
+  "selectResourceLabel": {
+    "message": "選取 $1"
+  },
+  "sendCount": {
+    "message": "傳送 ($1)"
+  },
+  "sendCount_popup_pages_ImagesPage_tsx": {
+    "message": "傳送 ($1)"
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "傳送目前媒體到 Ghost Downloader"
+  },
+  "sendToDesktop": {
+    "message": "傳送到 Ghost Downloader"
+  },
+  "sending": {
+    "message": "正在傳送"
+  },
+  "sent": {
+    "message": "已傳送"
+  },
+  "sentToBrowserDownload": {
+    "message": "已交給瀏覽器下載"
+  },
+  "sentToDesktop": {
+    "message": "已傳送到 Ghost Downloader"
+  },
+  "serverUrlSaved": {
+    "message": "位址已儲存"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "sortByArea": {
+    "message": "面積"
+  },
+  "sortByHeight": {
+    "message": "高度"
+  },
+  "sortByWidth": {
+    "message": "寬度"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "目前分頁不支援 cat-catch 資源橋接"
+  },
+  "takeOverDownloads": {
+    "message": "接管下載"
+  },
+  "taskActionSent": {
+    "message": "任務操作已傳送"
+  },
+  "taskQueued": {
+    "message": "桌面端未連線，任務已排隊"
+  },
+  "theme": {
+    "message": "主題"
+  },
+  "tokenInvalid": {
+    "message": "權杖無效"
+  },
+  "unmute": {
+    "message": "取消靜音"
+  },
+  "video": {
+    "message": "視訊",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "視訊錄製"
+  },
+  "videoRecordingDescription": {
+    "message": "錄製網頁中的視訊內容"
+  },
+  "videoTrack": {
+    "message": "視訊軌"
+  },
+  "waitedTimeout": {
+    "message": "$1（已等待 $2s）"
+  },
+  "waiting": {
+    "message": "等待中"
+  },
+  "waitingForDouyinMuxedUrl": {
+    "message": "等待 Douyin 單 MP4 URL"
+  },
+  "waitingForDouyinSeparateTracks": {
+    "message": "等待 Douyin 音視訊分軌齊全"
+  },
+  "waitingForResource": {
+    "message": "等待資源…"
+  },
+  "waitingForResourceCapture": {
+    "message": "等待 cat-catch 捕捉資源"
+  },
+  "waitingForSeparateTracks": {
+    "message": "等待音視訊分軌齊全"
+  },
+  "waitingForVideoResource": {
+    "message": "等待嗅探到目前視訊資源"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "等待 X 主播放清單"
+  }
+}

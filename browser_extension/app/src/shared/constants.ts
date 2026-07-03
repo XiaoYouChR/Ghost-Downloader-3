@@ -12,36 +12,36 @@ export const ADVANCED_FEATURES: Array<{
 }> = [
   {
     key: "recorder",
-    title: "视频录制",
-    description: "录制网页中的视频内容",
+    title: chrome.i18n.getMessage("videoRecording"),
+    description: chrome.i18n.getMessage("videoRecordingDescription"),
   },
   {
     key: "webrtc",
-    title: "录制 WebRTC",
-    description: "录制 WebRTC 实时通信内容",
+    title: chrome.i18n.getMessage("recordWebRTC"),
+    description: chrome.i18n.getMessage("recordWebRTCDescription"),
     reloadRequired: CAT_CATCH_SCRIPT_FEATURES.webrtc.reloadRequired,
   },
   {
     key: "recorder2",
-    title: "屏幕捕捉",
-    description: "捕捉屏幕、窗口或标签页",
+    title: chrome.i18n.getMessage("screenCapture"),
+    description: chrome.i18n.getMessage("screenCaptureDescription"),
   },
   {
     key: "mobileUserAgent",
-    title: "模拟手机",
-    description: "模拟移动设备访问页面",
+    title: chrome.i18n.getMessage("mobileUserAgent"),
+    description: chrome.i18n.getMessage("mobileUserAgentDescription"),
     reloadRequired: true,
   },
   {
     key: "search",
-    title: "深度搜索",
-    description: "深入分析页面请求资源",
+    title: chrome.i18n.getMessage("deepSearch"),
+    description: chrome.i18n.getMessage("deepSearchDescription"),
     reloadRequired: CAT_CATCH_SCRIPT_FEATURES.search.reloadRequired,
   },
   {
     key: "catch",
-    title: "缓存捕捉",
-    description: "捕捉浏览器缓存的资源",
+    title: chrome.i18n.getMessage("cacheCapture"),
+    description: chrome.i18n.getMessage("cacheCaptureDescription"),
     reloadRequired: CAT_CATCH_SCRIPT_FEATURES.catch.reloadRequired,
   },
 ];

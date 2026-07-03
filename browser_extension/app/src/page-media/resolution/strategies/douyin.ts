@@ -14,7 +14,7 @@ export function selectDouyin(ctx: ResolveContext, findUrlsByIdHint: FindUrlsById
     if (muxed) {
       return { kind: "selection", selection: { kind: "single", url: muxed, formKind: "muxed" } };
     }
-    return { kind: "pending", reason: "等待 Douyin 单 MP4 URL" };
+    return { kind: "pending", reason: chrome.i18n.getMessage("waitingForDouyinMuxedUrl") };
   }
 
   if (ctx.clicked.formKind === "dash") {
@@ -22,7 +22,7 @@ export function selectDouyin(ctx: ResolveContext, findUrlsByIdHint: FindUrlsById
     if (pair) {
       return { kind: "selection", selection: { kind: "merge", video: pair.video, audio: pair.audio } };
     }
-    return { kind: "pending", reason: "等待 Douyin 音视频分轨齐全" };
+    return { kind: "pending", reason: chrome.i18n.getMessage("waitingForDouyinSeparateTracks") };
   }
 
   // formKind unknown — MSE hasn't reported yet.
@@ -31,7 +31,7 @@ export function selectDouyin(ctx: ResolveContext, findUrlsByIdHint: FindUrlsById
     if (fromModalId) {
       return { kind: "selection", selection: { kind: "single", url: fromModalId, formKind: "unknown" } };
     }
-    return { kind: "pending", reason: "等待嗅探到当前视频资源" };
+    return { kind: "pending", reason: chrome.i18n.getMessage("waitingForVideoResource") };
   }
   const muxed = newestMatching(post, (url) => douyinKindOf(url) === "muxed");
   if (muxed) {
@@ -41,7 +41,7 @@ export function selectDouyin(ctx: ResolveContext, findUrlsByIdHint: FindUrlsById
   if (pair) {
     return { kind: "selection", selection: { kind: "merge", video: pair.video, audio: pair.audio } };
   }
-  return { kind: "refused", message: "无法判定 Douyin 当前媒体形态，请在资源嗅探页选择" };
+  return { kind: "refused", message: chrome.i18n.getMessage("errorCannotDetermineDouyinMediaForm") };
 }
 
 // Ledger query crosses session boundaries — that's what lets us pick the prefetched

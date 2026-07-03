@@ -35,7 +35,7 @@ type MediaSnapshot = {
 export function createMediaBridge() {
   let mediaSnapshot: MediaSnapshot | null = null;
 
-  function createEmptyPlaybackState(message = "当前未检测到可控制媒体"): MediaPlaybackState {
+  function createEmptyPlaybackState(message = chrome.i18n.getMessage("noControllableMediaDetected")): MediaPlaybackState {
     return {
       isAvailable: false,
       message,
@@ -72,13 +72,13 @@ export function createMediaBridge() {
   function mediaFailureMessage(result: TabMessageResult<unknown>): string {
     switch (result.status) {
       case "no_receiver":
-        return "当前页面的媒体桥接还没有准备好";
+        return chrome.i18n.getMessage("mediaBridgeNotReady");
       case "runtime_error":
-        return result.message || "读取媒体状态失败";
+        return result.message || chrome.i18n.getMessage("errorReadMediaStateFailed");
       case "no_response":
-        return "页面没有返回媒体状态";
+        return chrome.i18n.getMessage("noMediaStateResponse");
       default:
-        return "当前页面未检测到可控制媒体";
+        return chrome.i18n.getMessage("pageNoControllableMedia");
     }
   }
 
@@ -117,7 +117,7 @@ export function createMediaBridge() {
   async function sendMediaCommand(tabId: number, message: Record<string, unknown>): Promise<void> {
     const result = await sendMessageToTab<void>(tabId, message, { frameId: MAIN_FRAME_ID });
     if (result.status === "no_receiver") {
-      throw new Error("当前页面的媒体桥接还没有准备好");
+      throw new Error(chrome.i18n.getMessage("mediaBridgeNotReady"));
     }
   }
 
@@ -160,7 +160,7 @@ export function createMediaBridge() {
     // When the popup isn't on the advanced view, activeTabId is null. Don't touch the
     // snapshot — the user may switch back and expect their video selection to persist.
     if (!tabId) {
-      return createEmptyMediaPanelState("当前没有可操作的标签页");
+      return createEmptyMediaPanelState(chrome.i18n.getMessage("noActiveTabForMedia"));
     }
 
     let mediaIndex = mediaSnapshot?.tabId === tabId ? mediaSnapshot.index : 0;
@@ -192,7 +192,7 @@ export function createMediaBridge() {
   // rather than what the popup last polled.
   async function runAction(action: MediaAction, value?: number | boolean): Promise<MediaPlaybackState> {
     if (!mediaSnapshot) {
-      throw new Error("当前没有可控制的媒体");
+      throw new Error(chrome.i18n.getMessage("noControllableMedia"));
     }
 
     const tabId = mediaSnapshot.tabId;

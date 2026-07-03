@@ -1,0 +1,81 @@
+name: Sync Crowdin (Browser Extension)
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Choose which Crowdin sync operation to run"
+        required: true
+        default: push
+        type: choice
+        options:
+          - push
+          - pull
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: crowdin-browser-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-crowdin:
+    name: Sync Crowdin (Browser Extension)
+    runs-on: ubuntu-latest
+    env:
+      CROWDIN_BROWSER_PROJECT_ID: ${{ secrets.CROWDIN_BROWSER_PROJECT_ID }}
+      CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate Crowdin secrets
+        run: |
+          test -n "$CROWDIN_BROWSER_PROJECT_ID" || (echo "Missing CROWDIN_BROWSER_PROJECT_ID secret" && exit 1)
+          test -n "$CROWDIN_PERSONAL_TOKEN" || (echo "Missing CROWDIN_PERSONAL_TOKEN secret" && exit 1)
+
+      - name: Upload sources and translations
+        if: github.event.inputs.operation == 'push'
+        uses: crowdin/github-action@v2
+        with:
+          config: crowdin-browser.yml
+          upload_sources: true
+          upload_translations: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download translations
+        if: github.event.inputs.operation == 'pull'
+        uses: crowdin/github-action@v2
+        with:
+          config: crowdin-browser.yml
+          download_translations: true
+          push_translations: false
+          create_pull_request: false
+          skip_ref_checkout: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create translation pull request
+        if: github.event.inputs.operation == 'pull'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ github.ref_name }}
+          branch: chore/crowdin-browser-translations
+          delete-branch: true
+          author: Crowdin Bot <support+bot@crowdin.com>
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          title: "chore(i18n): sync browser extension translations from Crowdin"
+          commit-message: "chore(i18n): sync browser extension translations from Crowdin"
+          body: |
+            This PR was created automatically by the Crowdin sync workflow.
+
+            It updates browser extension locale files under
+            `browser_extension/app/public/_locales/`.
+          add-paths: |
+            browser_extension/app/public/_locales/**

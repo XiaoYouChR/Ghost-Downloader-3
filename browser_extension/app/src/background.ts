@@ -46,7 +46,7 @@ async function sendTaskOrEnqueue<T extends CommandResult>(payload: Record<string
     }
   }
   await enqueue(payload);
-  return { ok: true, message: "桌面端未连接，任务已排队" } as T;
+  return { ok: true, message: chrome.i18n.getMessage("taskQueued") } as T;
 }
 
 const openWhenDoneIds = new Set<string>();
@@ -217,7 +217,7 @@ async function setupBackground() {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "gd-download-link",
-    title: "使用 Ghost Downloader 下载",
+    title: chrome.i18n.getMessage("downloadWithGhostDownloader"),
     contexts: ["link"],
   });
 });
@@ -401,7 +401,7 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
       void desktopBridge.requestPairing().catch(() => {
         // The bridge snapshot carries the user-facing pairing failure message.
       });
-      return { ok: true, message: "请确认配对" };
+      return { ok: true, message: chrome.i18n.getMessage("confirmPairing") };
     case "popup_task_action":
       if (command.action === "open_when_done") {
         if (openWhenDoneIds.has(command.taskId)) {
@@ -418,7 +418,7 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
           action: command.action,
         });
       } catch (error) {
-        return { ok: false, message: error instanceof Error ? error.message : "任务操作失败" };
+        return { ok: false, message: error instanceof Error ? error.message : chrome.i18n.getMessage("errorTaskActionFailed") };
       }
     case "popup_send_resource":
       return resourceBridge.sendResource(command.resourceId);
@@ -429,14 +429,14 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
         const infoMessage = await featureBridge.toggleFeature(command.feature, command.tabId);
         return { ok: true, message: infoMessage };
       } catch (error) {
-        return { ok: false, message: error instanceof Error ? error.message : "功能切换失败" };
+        return { ok: false, message: error instanceof Error ? error.message : chrome.i18n.getMessage("errorFeatureToggleFailed") };
       }
     case "popup_media_action":
       try {
         const playbackState = await mediaBridge.runAction(command.action, command.value);
         return { ok: true, message: "", playbackState };
       } catch (error) {
-        return { ok: false, message: error instanceof Error ? error.message : "媒体操作失败" };
+        return { ok: false, message: error instanceof Error ? error.message : chrome.i18n.getMessage("errorMediaActionFailed") };
       }
     case "popup_send_images": {
       let count = 0;
@@ -456,7 +456,7 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
         });
         count += 1;
       }
-      return { ok: true, message: `已处理 ${count} 张图片` };
+      return { ok: true, message: chrome.i18n.getMessage("imagesProcessed", [String(count)]) };
     }
     default:
       return unknownPopupCommand(command);
@@ -467,7 +467,7 @@ async function runPopupCommand(command: PopupCommand): Promise<PopupState | Comm
 // makes the switch above exhaustive at compile time; at runtime it returns a structured
 // error instead of throwing, so the caller still gets a response.
 function unknownPopupCommand(command: never): CommandResult {
-  return { ok: false, message: `未知命令: ${(command as { type?: string }).type ?? ""}` };
+  return { ok: false, message: chrome.i18n.getMessage("errorUnknownCommand", [String((command as { type?: string }).type ?? "")]) };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

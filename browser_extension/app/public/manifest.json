@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Ghost Downloader Browser",
-  "description": "Manage Ghost Downloader tasks and send browser resources to Ghost Downloader.",
-  "version": "2.0.1",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "zh_CN",
+  "version": "2.0.2",
   "permissions": [
     "alarms",
     "contextMenus",

@@ -76,20 +76,20 @@ function metaText(task: TaskSummary): string {
       : "";
 
   if (task.shouldOpenWhenDone && task.status !== "completed") {
-    return ["完成后打开", sizePart].filter(Boolean).join(" · ");
+    return [chrome.i18n.getMessage("openWhenDone"), sizePart].filter(Boolean).join(" · ");
   }
 
   switch (task.status) {
     case "running":
       return [formatTaskMetric(task), sizePart].filter(Boolean).join(" · ");
     case "waiting":
-      return ["等待中", sizePart].filter(Boolean).join(" · ");
+      return [chrome.i18n.getMessage("waiting"), sizePart].filter(Boolean).join(" · ");
     case "paused":
-      return ["已暂停", sizePart].filter(Boolean).join(" · ");
+      return [chrome.i18n.getMessage("paused"), sizePart].filter(Boolean).join(" · ");
     case "failed":
-      return ["失败", sizePart].filter(Boolean).join(" · ");
+      return [chrome.i18n.getMessage("failed"), sizePart].filter(Boolean).join(" · ");
     case "completed":
-      return ["已完成", task.fileSize > 0 ? formatBytes(task.fileSize) : ""].filter(Boolean).join(" · ");
+      return [chrome.i18n.getMessage("completed"), task.fileSize > 0 ? formatBytes(task.fileSize) : ""].filter(Boolean).join(" · ");
     default:
       return task.status;
   }
@@ -157,7 +157,7 @@ export function TaskCard({
                 appearance="subtle"
                 disabled={busy}
                 icon={<ArrowClockwiseRegular />}
-                aria-label="重新下载"
+                aria-label={chrome.i18n.getMessage("redownload")}
                 size="small"
                 onClick={() => onAction("redownload")}
               />
@@ -165,7 +165,7 @@ export function TaskCard({
                 appearance="subtle"
                 disabled={busy || !task.canOpenFile}
                 icon={<OpenRegular />}
-                aria-label="打开文件"
+                aria-label={chrome.i18n.getMessage("openFile")}
                 size="small"
                 onClick={() => onAction("open_file")}
               />
@@ -173,7 +173,7 @@ export function TaskCard({
                 appearance="subtle"
                 disabled={busy || !task.canOpenFolder}
                 icon={<FolderOpenRegular />}
-                aria-label="打开文件夹"
+                aria-label={chrome.i18n.getMessage("openFolder")}
                 size="small"
                 onClick={() => onAction("open_folder")}
               />
@@ -184,7 +184,7 @@ export function TaskCard({
               appearance="subtle"
               disabled={busy || !task.canPause}
               icon={<PauseRegular />}
-              aria-label="暂停"
+              aria-label={chrome.i18n.getMessage("pause")}
               size="small"
               onClick={() => onAction("toggle_pause")}
             />
@@ -194,7 +194,7 @@ export function TaskCard({
               appearance="subtle"
               disabled={busy}
               icon={<PlayRegular />}
-              aria-label="继续"
+              aria-label={chrome.i18n.getMessage("resume")}
               size="small"
               onClick={() => onAction("toggle_pause")}
             />
@@ -203,7 +203,7 @@ export function TaskCard({
             appearance="subtle"
             disabled={busy}
             icon={<DismissRegular />}
-            aria-label="取消"
+            aria-label={chrome.i18n.getMessage("cancel")}
             size="small"
             onClick={() => onAction("cancel")}
           />

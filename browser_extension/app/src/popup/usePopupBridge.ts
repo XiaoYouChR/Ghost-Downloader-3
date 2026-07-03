@@ -29,7 +29,7 @@ function sendRuntimeMessage<T>(message: unknown): Promise<T> {
         return;
       }
       if (response == null) {
-        reject(new Error("后台服务未就绪"));
+        reject(new Error(chrome.i18n.getMessage("errorBackgroundNotReady")));
         return;
       }
       resolve(response);
@@ -65,7 +65,7 @@ function emptyMediaState(): MediaPlaybackState {
 function emptyPopupState(): PopupState {
   return {
     connectionState: "missing_token",
-    connectionMessage: "待配对",
+    connectionMessage: chrome.i18n.getMessage("awaitingPairing"),
     desktopVersion: "",
     token: "",
     serverUrl: "",
@@ -74,7 +74,7 @@ function emptyPopupState(): PopupState {
     tasks: [],
     taskCounters: { total: 0, active: 0, completed: 0 },
     resourceState: "restoring",
-    resourceStateMessage: "正在恢复已捕获的资源",
+    resourceStateMessage: chrome.i18n.getMessage("restoringCapturedResources"),
     currentResources: [],
     otherResources: [],
     tabId: null,
@@ -125,7 +125,7 @@ async function sendFullscreenMessage(tabId: number, index: number) {
     chrome.tabs.get(tabId, (tab) => {
       const tabError = chrome.runtime.lastError;
       if (tabError || typeof tab.index !== "number" || typeof tab.windowId !== "number") {
-        reject(new Error(tabError?.message || "目标标签页不存在"));
+        reject(new Error(tabError?.message || chrome.i18n.getMessage("errorTargetTabNotFound")));
         return;
       }
 
@@ -265,12 +265,12 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
         showToast(
-          next.connectionState === "connected" ? "配对令牌已保存" : next.connectionMessage,
+          next.connectionState === "connected" ? chrome.i18n.getMessage("pairingTokenSaved") : next.connectionMessage,
           next.connectionState === "connected" ? "success" : "info",
         );
         return true;
       } catch (error) {
-        showToast(errorMessageOr(error, "保存配对令牌失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorSavePairingTokenFailed")), "error");
         return false;
       } finally {
         if (mountedRef.current) {
@@ -292,12 +292,12 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
         showToast(
-          next.connectionState === "connected" ? "地址已保存" : next.connectionMessage,
+          next.connectionState === "connected" ? chrome.i18n.getMessage("serverUrlSaved") : next.connectionMessage,
           next.connectionState === "connected" ? "success" : "info",
         );
         return true;
       } catch (error) {
-        showToast(errorMessageOr(error, "保存服务地址失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorSaveServerUrlFailed")), "error");
         return false;
       } finally {
         if (mountedRef.current) {
@@ -319,7 +319,7 @@ export function usePopupBridge(activeView: PopupView) {
       showToast(next.connectionMessage, next.connectionState === "connected" ? "success" : "info");
       return true;
     } catch (error) {
-      showToast(errorMessageOr(error, "重新连接失败"), "error");
+      showToast(errorMessageOr(error, chrome.i18n.getMessage("errorReconnectFailed")), "error");
       return false;
     } finally {
       if (mountedRef.current) {
@@ -335,15 +335,15 @@ export function usePopupBridge(activeView: PopupView) {
         type: "popup_request_pairing",
       });
       if (!result.ok) {
-        throw new Error(result.message || "自动配对失败");
+        throw new Error(result.message || chrome.i18n.getMessage("errorAutoPairingFailed"));
       }
-      showToast(result.message || "配对请求已发送，请在桌面端确认");
+      showToast(result.message || chrome.i18n.getMessage("pairingRequestSentConfirmOnDesktop"));
       void refreshState(activeViewRef.current).catch(() => {
         // Ignore transient popup refresh failures.
       });
       return true;
     } catch (error) {
-      showToast(errorMessageOr(error, "自动配对失败"), "error");
+      showToast(errorMessageOr(error, chrome.i18n.getMessage("errorAutoPairingFailed")), "error");
       return false;
     } finally {
       if (mountedRef.current) {
@@ -363,7 +363,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        showToast(errorMessageOr(error, "更新接管下载失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorUpdateTakeDownloadsFailed")), "error");
       } finally {
         if (mountedRef.current) {
           setIsUpdatingTakeDownloads(false);
@@ -384,7 +384,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        showToast(errorMessageOr(error, "更新下载按钮失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorUpdateMediaButtonFailed")), "error");
       } finally {
         if (mountedRef.current) {
           setIsUpdatingMediaButton(false);
@@ -402,13 +402,13 @@ export function usePopupBridge(activeView: PopupView) {
           type: "popup_task_action",
           taskId,
           action,
-        }, "任务操作失败");
+        }, chrome.i18n.getMessage("errorTaskActionFailed"));
         await refreshState(activeViewRef.current);
         if (action !== "open_when_done") {
-          showToast("任务操作已发送", "success");
+          showToast(chrome.i18n.getMessage("taskActionSent"), "success");
         }
       } catch (error) {
-        showToast(errorMessageOr(error, "任务操作失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorTaskActionFailed")), "error");
       } finally {
         updateBusyState(setBusyTaskIds, taskId, false);
       }
@@ -423,11 +423,11 @@ export function usePopupBridge(activeView: PopupView) {
         const result = await sendActionCommand({
           type: "popup_send_resource",
           resourceId,
-        }, "发送资源失败");
+        }, chrome.i18n.getMessage("errorSendResourceFailed"));
         await refreshState(activeViewRef.current);
-        showToast(result.message || "资源处理成功", "success");
+        showToast(result.message || chrome.i18n.getMessage("resourceProcessed"), "success");
       } catch (error) {
-        showToast(errorMessageOr(error, "发送资源失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorSendResourceFailed")), "error");
       } finally {
         updateBusyState(setBusyResourceIds, resourceId, false);
       }
@@ -443,12 +443,12 @@ export function usePopupBridge(activeView: PopupView) {
         const result = await sendActionCommand({
           type: "popup_merge_resources",
           resourceIds: ids,
-        }, "在线合并失败");
+        }, chrome.i18n.getMessage("errorOnlineMergeFailed"));
         await refreshState(activeViewRef.current);
-        showToast(result.message || "资源已发送到 Ghost Downloader", "success");
+        showToast(result.message || chrome.i18n.getMessage("resourceSentToDesktop"), "success");
         return true;
       } catch (error) {
-        showToast(errorMessageOr(error, "在线合并失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorOnlineMergeFailed")), "error");
         return false;
       } finally {
         ids.forEach((resourceId) => updateBusyState(setBusyResourceIds, resourceId, false));
@@ -461,7 +461,7 @@ export function usePopupBridge(activeView: PopupView) {
     async (feature: AdvancedFeatureKey) => {
       const tabId = payload.tabId;
       if (tabId == null) {
-        showToast("当前没有可操作的标签页", "error");
+        showToast(chrome.i18n.getMessage("errorNoActiveTab"), "error");
         return;
       }
       setBusyFeature(feature, true);
@@ -470,11 +470,11 @@ export function usePopupBridge(activeView: PopupView) {
           type: "popup_toggle_feature",
           feature,
           tabId,
-        }, "功能切换失败");
+        }, chrome.i18n.getMessage("errorFeatureToggleFailed"));
         await refreshState(activeViewRef.current);
-        showToast(result.message || "功能状态已更新", "success");
+        showToast(result.message || chrome.i18n.getMessage("featureStateUpdated"), "success");
       } catch (error) {
-        showToast(errorMessageOr(error, "功能切换失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorFeatureToggleFailed")), "error");
       } finally {
         setBusyFeature(feature, false);
       }
@@ -496,7 +496,7 @@ export function usePopupBridge(activeView: PopupView) {
         });
         applyPopupState(next);
       } catch (error) {
-        showToast(errorMessageOr(error, "切换媒体失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorSwitchMediaFailed")), "error");
       }
     },
     [applyPopupState, payload.mediaPlaybackState.tabId, showToast],
@@ -509,7 +509,7 @@ export function usePopupBridge(activeView: PopupView) {
         const tabId = payload.mediaPlaybackState.tabId;
         const index = payload.mediaPlaybackState.mediaIndex;
         if (!tabId || index < 0) {
-          showToast("当前没有可控制的媒体", "error");
+          showToast(chrome.i18n.getMessage("errorNoControllableMedia"), "error");
           return;
         }
         try {
@@ -519,7 +519,7 @@ export function usePopupBridge(activeView: PopupView) {
             chrome.tabs.sendMessage(tabId, { Message: "pip", index });
           }
         } catch (error) {
-          showToast(errorMessageOr(error, action === "fullscreen" ? "全屏失败" : "画中画失败"), "error");
+          showToast(errorMessageOr(error, action === "fullscreen" ? chrome.i18n.getMessage("errorFullscreenFailed") : chrome.i18n.getMessage("errorPipFailed")), "error");
         }
         return;
       }
@@ -527,13 +527,13 @@ export function usePopupBridge(activeView: PopupView) {
       try {
         const result = await sendActionCommand(
           { type: "popup_media_action", action, value },
-          "媒体操作失败",
+          chrome.i18n.getMessage("errorMediaActionFailed"),
         );
         if (result.playbackState && mountedRef.current) {
           setPayload((prev) => ({ ...prev, mediaPlaybackState: result.playbackState! }));
         }
       } catch (error) {
-        showToast(errorMessageOr(error, "媒体操作失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorMediaActionFailed")), "error");
       }
     },
     [payload.mediaPlaybackState.tabId, payload.mediaPlaybackState.mediaIndex, showToast],
@@ -550,11 +550,11 @@ export function usePopupBridge(activeView: PopupView) {
           type: "popup_send_images",
           images,
           pageUrl,
-        }, "发送图片失败");
-        showToast(result.message || "图片已发送", "success");
+        }, chrome.i18n.getMessage("errorSendImagesFailed"));
+        showToast(result.message || chrome.i18n.getMessage("imagesSent"), "success");
         return true;
       } catch (error) {
-        showToast(errorMessageOr(error, "发送图片失败"), "error");
+        showToast(errorMessageOr(error, chrome.i18n.getMessage("errorSendImagesFailed")), "error");
         return false;
       }
     },
