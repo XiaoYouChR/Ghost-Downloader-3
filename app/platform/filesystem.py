@@ -60,11 +60,26 @@ def toPosixPath(path) -> str:
 
 
 def localFilePath(url: str, validSuffixes: set[str] | None = None) -> Path | None:
-    from urllib.parse import urlparse, unquote
+    from urllib.parse import urlparse
+    from urllib.request import url2pathname
     parsed = urlparse(url)
     if parsed.scheme != "file":
         return None
-    path = Path(unquote(parsed.path))
+
+    rawPath = parsed.path
+    if parsed.netloc:
+        host = parsed.netloc.lower()
+        if host == "localhost":
+            rawPath = parsed.path
+        elif sys.platform == "win32":
+            if re.fullmatch(r"[a-zA-Z]:", parsed.netloc):
+                rawPath = f"{parsed.netloc}{parsed.path}"
+            else:
+                rawPath = f"//{parsed.netloc}{parsed.path}"
+        else:
+            return None
+
+    path = Path(url2pathname(rawPath))
     if not path.is_file():
         return None
     if validSuffixes is not None and path.suffix.lower() not in validSuffixes:
