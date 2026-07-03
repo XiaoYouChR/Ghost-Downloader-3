@@ -40,6 +40,8 @@ class ReleaseInfoDialog(MessageBoxBase):
         self._bind()
 
     def _initWidget(self) -> None:
+        self.widget.setMinimumWidth(min(580, self.width() - 48))
+        self.yesButton.setText(self.tr("下载"))
         self.versionLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.prereleaseLabel.setVisible(self._release.prerelease)
         self.detailButton.setToolTip(self.tr("打开发布页"))
@@ -57,10 +59,9 @@ class ReleaseInfoDialog(MessageBoxBase):
 
         self.assetModel.setHorizontalHeaderLabels([self.tr("文件名"), self.tr("大小"), self.tr("下载次数")])
         self.assetView.setModel(self.assetModel)
-        self.assetView.header().setStretchLastSection(False)
-        self.assetView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.assetView.header().setStretchLastSection(True)
+        self.assetView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.assetView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        self.assetView.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         for asset in self._release.assets:
             row = [
@@ -74,6 +75,10 @@ class ReleaseInfoDialog(MessageBoxBase):
             self.assetModel.appendRow(row)
 
         self.assetView.setVisible(bool(self._release.assets))
+
+        if self._release.assets:
+            needed = sum(self.assetView.sizeHintForColumn(i) for i in range(self.assetModel.columnCount()))
+            self.widget.setMinimumWidth(max(self.widget.minimumWidth(), needed + 48 + 20))
 
     def _initLayout(self) -> None:
         self.titleLayout.setContentsMargins(0, 0, 0, 0)
