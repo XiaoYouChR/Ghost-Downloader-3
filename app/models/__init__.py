@@ -6,6 +6,7 @@ from app.models.task import (
     TaskFile,
     TaskOptions,
     ResourceTaskOptions,
+    FetchedTaskOptions,
     PageTaskOptions,
     MergeTaskOptions,
 )

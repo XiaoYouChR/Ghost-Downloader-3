@@ -71,6 +71,13 @@ class ResourceTaskOptions(TaskOptions):
 
 
 @dataclass(frozen=True)
+class FetchedTaskOptions(TaskOptions):
+    name: str = ""
+    contentType: str = ""
+    body: bytes = b""
+
+
+@dataclass(frozen=True)
 class PageTaskOptions(TaskOptions):
     pageUrl: str = ""
     pageTitle: str = ""
