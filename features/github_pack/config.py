@@ -9,12 +9,12 @@ from qfluentwidgets import BoolValidator, ComboBox, ConfigValidator, FluentIcon,
 
 GITHUB_PROXY_SITES = (
     "https://gh-proxy.com",
-    "https://ghproxy.vip",
-    "https://ghproxy.homeboyc.cn",
-    "https://gh.llkk.cc",
+    "https://gh-proxy.org",
+    "https://gh.ddlc.top",
+    "https://ghfast.top",
 )
 CUSTOM_SITE_KEY = "__custom__"
-PROBE_TARGET = "https://raw.githubusercontent.com/asjdf/ghproxy/main/src/index.ts"
+PROBE_TARGET = "https://github.com/cli/cli/releases/download/v2.62.0/gh_2.62.0_linux_amd64.tar.gz"
 
 
 def toProxySite(site: str) -> str:
@@ -32,6 +32,10 @@ def selectedProxySite() -> str:
     return githubConfig.selectedSite.value
 
 
+PROBE_UNAVAILABLE = -1
+PROBE_TIMEOUT = -2
+
+
 async def probeProxyLatencies() -> dict[str, int]:
     import asyncio
     from time import perf_counter
@@ -46,11 +50,13 @@ async def probeProxyLatencies() -> dict[str, int]:
         client = buildClient()
         try:
             start = perf_counter()
-            response = await asyncio.wait_for(client.get(url), timeout=10)
+            response = await asyncio.wait_for(client.head(url), timeout=10)
             elapsed = int((perf_counter() - start) * 1000)
-            return site, elapsed if response.status.as_int() < 400 else -1
+            return site, elapsed if response.status.as_int() < 400 else PROBE_UNAVAILABLE
+        except (asyncio.TimeoutError, TimeoutError):
+            return site, PROBE_TIMEOUT
         except Exception:
-            return site, -1
+            return site, PROBE_TIMEOUT
         finally:
             client.close()
 
@@ -128,26 +134,26 @@ class GitHubProxySiteCard(SettingCard):
         self.customSiteEdit.editingFinished.connect(self._onCustomSiteEditingFinished)
         self.refreshButton.clicked.connect(self.refreshLatencies)
 
+    def _latencyTag(self, latency: int | None) -> str:
+        if latency is None:
+            return ""
+        if latency == PROBE_UNAVAILABLE:
+            return self.tr("不可用")
+        if latency == PROBE_TIMEOUT:
+            return self.tr("超时")
+        return f"{latency} ms"
+
     def _refreshLatencyLabels(self):
         for i, site in enumerate(GITHUB_PROXY_SITES):
             displayName = urlparse(site).netloc or site.rstrip("/")
-            latency = self._latencies.get(site)
-            if latency is None:
-                label = displayName
-            elif latency < 0:
-                label = f"{displayName} ({self.tr('超时')})"
-            else:
-                label = f"{displayName} ({latency} ms)"
+            tag = self._latencyTag(self._latencies.get(site))
+            label = f"{displayName} ({tag})" if tag else displayName
             self.comboBox.setItemText(i, label)
 
         customSite = githubConfig.customSite.value
         customLatency = self._latencies.get(customSite) if customSite else None
-        if customLatency is None:
-            customLabel = self.tr("自定义")
-        elif customLatency < 0:
-            customLabel = f"{self.tr('自定义')} ({self.tr('超时')})"
-        else:
-            customLabel = f"{self.tr('自定义')} ({customLatency} ms)"
+        tag = self._latencyTag(customLatency)
+        customLabel = f"{self.tr('自定义')} ({tag})" if tag else self.tr("自定义")
         self.comboBox.setItemText(len(GITHUB_PROXY_SITES), customLabel)
 
     def _onCurrentIndexChanged(self, index: int):
@@ -199,7 +205,7 @@ class GitHubConfig(PackConfig):
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
-        githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", parent)
+        githubGroup = CollapsibleSettingCardGroup(FluentIcon.GITHUB, self.tr("GitHub 加速"), "github", parent)
         enableCard = SwitchSettingCard(
             FluentIcon.LINK, self.tr("启用 GitHub 加速"),
             self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),
