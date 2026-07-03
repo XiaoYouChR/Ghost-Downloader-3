@@ -24,6 +24,7 @@ def patchFileDialogs() -> None:
 
     originalDirectory = QFileDialog.getExistingDirectory
     originalOpenFiles = QFileDialog.getOpenFileNames
+    originalSaveFile = QFileDialog.getSaveFileName
 
     def resolveExistingDirectory(*args, **kwargs) -> str:
         return toRealPath(originalDirectory(*args, **kwargs))
@@ -32,8 +33,13 @@ def patchFileDialogs() -> None:
         paths, selectedFilter = originalOpenFiles(*args, **kwargs)
         return [toRealPath(path) for path in paths], selectedFilter
 
+    def resolveSaveFileName(*args, **kwargs):
+        path, selectedFilter = originalSaveFile(*args, **kwargs)
+        return toRealPath(path), selectedFilter
+
     QFileDialog.getExistingDirectory = staticmethod(resolveExistingDirectory)
     QFileDialog.getOpenFileNames = staticmethod(resolveOpenFileNames)
+    QFileDialog.getSaveFileName = staticmethod(resolveSaveFileName)
 
 
 def patchDialogWidth() -> None:
