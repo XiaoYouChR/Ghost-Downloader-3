@@ -162,10 +162,13 @@ def startApp(application, isSilent=False):
         tray = SystemTrayIcon(QIcon(":/image/logo.png"), parent=application)
         tray.show()
 
-    from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
+    from app.platform.desktop_notification import (
+        init, notifyTaskStarted, notifyTaskCompleted, notifyTaskFailed,
+        notifyDiskSpaceInsufficient,
+    )
     from app.services.coroutine_runner import coroutineRunner
     coroutineRunner.submit(init())
-    bindNotifications(notifyTaskCompleted, notifyDiskSpaceInsufficient)
+    bindNotifications(notifyTaskStarted, notifyTaskCompleted, notifyTaskFailed, notifyDiskSpaceInsufficient)
 
     from app.services.plan import plan
     taskService.tasksAllCompleted.connect(plan.trigger)

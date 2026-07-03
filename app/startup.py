@@ -36,9 +36,11 @@ def startEngine() -> None:
     featureService.start()
 
 
-def bindNotifications(notifyCompleted, notifyDiskSpace) -> None:
+def bindNotifications(notifyStarted, notifyCompleted, notifyFailed, notifyDiskSpace) -> None:
     from app.services.task_service import taskService
+    taskService.taskStarted.connect(notifyStarted)
     taskService.taskCompleted.connect(notifyCompleted)
+    taskService.taskFailed.connect(notifyFailed)
     taskService.diskSpaceInsufficient.connect(notifyDiskSpace)
 
 

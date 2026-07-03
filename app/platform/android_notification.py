@@ -39,11 +39,21 @@ def notify(channelId: str, channelName: str, notificationId: int,
     manager.notify(notificationId, builder.build())
 
 
+def notifyTaskStarted(task: Task) -> None:
+    """任务开始通知（Android 端暂无进度条通知，保留接口兼容）。"""
+    pass
+
+
 def notifyTaskCompleted(task: Task) -> None:
     notify(DOWNLOAD_CHANNEL, tr("Notifications", "Downloads"),
            hash(task.taskId) & 0x7FFFFFFF,
            tr("Notifications", "Download completed"), task.name,
            ongoing=False, lowImportance=False)
+
+
+def notifyTaskFailed(task: Task) -> None:
+    """任务失败通知（Android 端暂无通知，保留接口兼容）。"""
+    pass
 
 
 DISK_SPACE_NOTIFICATION_ID = 0x6764_0003

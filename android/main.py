@@ -46,7 +46,7 @@ def startApp(application):
     from app.platform.android_keepalive import keepAlive, REASON_DOWNLOAD, REASON_BROWSER, requestIgnoreBatteryOptimizations
     from app.platform.android_notification import (
         notifyBrowserPaired, notifyBrowserTaskAdded, notifyDiskSpaceInsufficient,
-        notifyTaskCompleted,
+        notifyTaskStarted, notifyTaskCompleted, notifyTaskFailed,
     )
     from app.services.browser_service import browserService
     from app.services.speed_meter import speedMeter
@@ -81,7 +81,7 @@ def startApp(application):
 
     requestIgnoreBatteryOptimizations()
 
-    bindNotifications(notifyTaskCompleted, notifyDiskSpaceInsufficient)
+    bindNotifications(notifyTaskStarted, notifyTaskCompleted, notifyTaskFailed, notifyDiskSpaceInsufficient)
 
     def onBrowserTaskDraftRequested(tasks):
         for task in tasks:
