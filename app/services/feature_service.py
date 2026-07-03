@@ -54,9 +54,6 @@ class FeatureService(QObject):
                 return task
         raise ValueError(f"No parser matched: {options.url}")
 
-    def matchFetched(self, options: TaskOptions) -> bool:
-        return any(parser.match(options) for parser in self._parsers)
-
     def matchPassive(self, url: str) -> bool:
         from app.models.task import TaskOptions
         options = TaskOptions(url=url)

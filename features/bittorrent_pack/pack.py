@@ -9,7 +9,7 @@ import libtorrent as lt
 from loguru import logger
 
 from app.models.pack import FeaturePack, TaskParser, FileType
-from app.models.task import FetchedTaskOptions, Task, TaskOptions
+from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 
 from .config import bittorrentConfig
@@ -18,27 +18,10 @@ from .task import BTFile, BTTask, BTTaskStep
 from .web_tracker.service import trackerService
 
 
-TORRENT_CONTENT_TYPES = frozenset({
-    "application/x-bittorrent",
-    "application/x-torrent",
-})
-
-
-def isFetchedTorrent(options: FetchedTaskOptions) -> bool:
-    contentType = options.contentType.split(";", 1)[0].strip().lower()
-    if contentType in TORRENT_CONTENT_TYPES or "bittorrent" in contentType:
-        return True
-    if Path(options.name).suffix.lower() == ".torrent":
-        return True
-    return PurePosixPath(urlparse(options.url).path).suffix.lower() == ".torrent"
-
-
 class TorrentParser(TaskParser):
     priority = 85
 
     def match(self, options: TaskOptions) -> bool:
-        if isinstance(options, FetchedTaskOptions):
-            return isFetchedTorrent(options)
         url = options.url.strip()
         if urlparse(url).scheme.lower() == "magnet":
             return True
@@ -59,11 +42,7 @@ class TorrentParser(TaskParser):
             webTrackers = []
 
         localPath = localFilePath(url, {".torrent"})
-        if isinstance(options, FetchedTaskOptions):
-            torrentBytes = options.body
-            sourceType, sourceUrl = "torrent", url
-
-        elif localPath is not None:
+        if localPath is not None:
             torrentBytes = await asyncio.to_thread(localPath.resolve().read_bytes)
             sourceType, sourceUrl = "torrent", str(localPath.resolve())
 

@@ -77,14 +77,8 @@ The full path of a Task's finished file; equals `outputFolder / name`.
 **Task Options**:
 The app-owned options used to parse, create, or edit a Task. Frozen dataclass
 with subtypes: ResourceTaskOptions, PageTaskOptions, MergeTaskOptions,
-FetchedTaskOptions, BinaryInstallOptions.
+BinaryInstallOptions.
 _Avoid_: payload (keep only at raw transport seams)
-
-**Fetched Task Options**:
-A second-pass parse input for small response bodies already fetched by a
-parser. Used when the HTTP fallback discovers that a URL returned a descriptor
-format owned by a more specific parser, such as BitTorrent metadata.
-_Avoid_: using it for large user files.
 
 **Task Parser**:
 A FeaturePack-provided capability that turns Task Options into a Task.
@@ -280,7 +274,7 @@ and are checked first; HttpParser (100) is the fallback, checked last.
 | MergeParser | 60 | `isinstance(options, MergeTaskOptions)` |
 | YouTubeParser | 70 | YouTube domain |
 | M3U8Parser | 80 | `.m3u8`/`.mpd` in URL or local manifest |
-| TorrentParser | 85 | `magnet:` scheme, `.torrent`, or fetched BitTorrent metadata |
+| TorrentParser | 85 | `magnet:` scheme or `.torrent` local file |
 | HuggingFaceParser | 85 | HuggingFace domain |
 | GitHubParser | 90 | GitHub file URL + proxy configured |
 | FtpParser | 95 | `ftp`/`ftps` scheme |
@@ -295,11 +289,6 @@ Delegation patterns:
   through the priority chain.
 - **InstallParser** delegates the download through
   `featureService.parse(TaskOptions(url=...))` so GitHubParser mirrors it.
-- **HttpParser** may fetch a small response body and call
-  `featureService.parse(FetchedTaskOptions(...))` when
-  `featureService.matchFetched(...)` says a more specific parser matches the
-  fetched response metadata. HttpParser does not match Fetched Task Options, so
-  second-pass routing cannot fall back to itself.
 
 ## Ownership rules
 
