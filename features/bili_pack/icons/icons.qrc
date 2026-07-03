@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="bili_pack">
+    <file>Bilibili_black.svg</file>
+    <file>Bilibili_white.svg</file>
+  </qresource>
+</RCC>

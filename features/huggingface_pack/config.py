@@ -230,7 +230,8 @@ class HuggingFaceConfig(PackConfig):
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
-        group = CollapsibleSettingCardGroup(self.tr("HuggingFace"), "huggingface", parent)
+        from features.huggingface_pack.icons import HFIcon
+        group = CollapsibleSettingCardGroup(HFIcon.HUGGINGFACE, self.tr("HuggingFace"), "huggingface", parent)
         group.addSettingCards([
             SwitchSettingCard(
                 FluentIcon.CONNECT, self.tr("启用 HuggingFace 加速"),

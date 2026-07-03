@@ -43,7 +43,7 @@ class TitledCardGroup(QWidget):
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QColor(255, 255, 255, 13 if isDarkTheme() else 200))
         painter.setPen(QColor(0, 0, 0, 96 if isDarkTheme() else 24))
-        painter.drawRoundedRect(self.rect(), 5, 5)
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 5, 5)
 
 
 class DraftCardGroup(TitledCardGroup):

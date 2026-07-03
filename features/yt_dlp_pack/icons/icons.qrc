@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="yt_dlp_pack">
+    <file>YouTube_black.svg</file>
+    <file>YouTube_white.svg</file>
+  </qresource>
+</RCC>
