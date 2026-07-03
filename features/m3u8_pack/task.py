@@ -120,6 +120,26 @@ class M3U8TaskStep(TaskStep):
         if self._process is not None and self._process.returncode is None:
             self._process.terminate()
 
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        from shutil import move
+        super().moveFiles(oldFolder, newFolder)
+        rawPath = self.outputPath
+        if rawPath:
+            ghdPath = Path(f"{rawPath}.ghd")
+            if ghdPath.exists():
+                try:
+                    relPath = Path(rawPath).relative_to(oldFolder)
+                    newGhd = newFolder / f"{relPath}.ghd"
+                    newGhd.parent.mkdir(parents=True, exist_ok=True)
+                    move(str(ghdPath), str(newGhd))
+                except ValueError:
+                    pass
+        oldTemp = Path(self._tempFolder)
+        if oldTemp.is_dir():
+            newTemp = newFolder / ".gd3_m3u8" / self.task.taskId
+            newTemp.parent.mkdir(parents=True, exist_ok=True)
+            move(str(oldTemp), str(newTemp))
+
     def deleteFiles(self):
         tempFolder = Path(self._tempFolder)
         deletePath(tempFolder)
