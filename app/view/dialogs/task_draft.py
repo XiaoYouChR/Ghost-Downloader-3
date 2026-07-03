@@ -63,13 +63,13 @@ class StandaloneWrapper(FramelessDialog):
 class TaskDraftDialog(MessageBoxBase):
 
     def __init__(self, draft: TaskDraft, parent=None):
+        self._isDragEnabled = not IS_ANDROID
         super().__init__(parent)
         self._draft = draft
         self._parseTimer = QTimer(self, singleShot=True)
         self._standaloneWrapper = StandaloneWrapper(self)
         self.destroyed.connect(self._standaloneWrapper.deleteLater)
         self._isStandalone = False
-        self._isDragEnabled = not IS_ANDROID
         self._dragPos = QPoint()
         self._cardByUrl: dict[str, object] = {}
         self._failCount = 0
