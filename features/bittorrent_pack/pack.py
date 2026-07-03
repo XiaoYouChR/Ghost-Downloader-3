@@ -149,11 +149,6 @@ class BitTorrentPack(FeaturePack):
             ),
         ]
 
-    def start(self):
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.task_service import taskService
-        coroutineRunner.submit(btSession.resumeAllSeeding(taskService.tasks))
-
     def stop(self):
         from app.services.coroutine_runner import coroutineRunner
         coroutineRunner.submit(btSession.close())
