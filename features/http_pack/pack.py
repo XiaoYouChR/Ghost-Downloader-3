@@ -13,7 +13,7 @@ from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import (
-    Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
+    FetchedTaskOptions, Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
 )
 from app.platform.filesystem import toSafeFilename
 from .task import HttpTask, HttpTaskStep
@@ -28,12 +28,15 @@ DOWNLOADABLE_EXTENSIONS = frozenset({
     ".pdf", ".epub",
     ".apk", ".ipa",
 })
+FETCHED_TASK_MAX_BYTES = 50 * 1024 * 1024
 
 
 class HttpParser(TaskParser):
     priority = 100
 
     def match(self, options: TaskOptions) -> bool:
+        if isinstance(options, FetchedTaskOptions):
+            return False
         return urlparse(options.url).scheme.lower() in {"http", "https"}
 
     def matchPassive(self, options: TaskOptions) -> bool:
@@ -55,10 +58,61 @@ class HttpParser(TaskParser):
         canUseRangeRequests = False
         lastModified = ""
 
+        def fetchedOptions(name: str, contentType: str, body: bytes = b"") -> FetchedTaskOptions:
+            return FetchedTaskOptions(
+                url=url,
+                outputFolder=outputFolder,
+                headers=headers,
+                clientProfile=clientProfile,
+                sourceUserAgent=options.sourceUserAgent,
+                subworkerCount=subworkerCount,
+                name=name,
+                contentType=contentType,
+                body=body,
+            )
+
+        async def parseFetchedTask(client, name: str, contentType: str, contentLength: int) -> Task | None:
+            from app.services.feature_service import featureService
+            probe = fetchedOptions(name, contentType)
+            if not featureService.matchFetched(probe):
+                return None
+            if contentLength > FETCHED_TASK_MAX_BYTES:
+                raise ValueError("响应体过大，无法在解析阶段读取")
+            body = await fetchSmallBody(client)
+            return await featureService.parse(fetchedOptions(name, contentType, body))
+
+        async def fetchSmallBody(client) -> bytes:
+            response = await client.get(url, headers={**headers, "accept-encoding": "identity"})
+            try:
+                response.raise_for_status()
+                chunks = []
+                size = 0
+                async for chunk in response.stream():
+                    if not chunk:
+                        continue
+                    size += len(chunk)
+                    if size > FETCHED_TASK_MAX_BYTES:
+                        raise ValueError("响应体过大，无法在解析阶段读取")
+                    chunks.append(chunk)
+                return b"".join(chunks)
+            finally:
+                response.close()
+
         if isinstance(options, ResourceTaskOptions) and options.name:
             name = toSafeFilename(options.name, fallback=f"file_{time_ns()}")
             fileSize = options.size if options.size > 0 else SpecialFileSize.UNKNOWN
             canUseRangeRequests = options.canUseRangeRequests
+            emulation = toEmulation(
+                options.clientProfile or cfg.clientProfile.value,
+                options.sourceUserAgent,
+            )
+            client = buildClient(emulation=emulation, headers=headers)
+            try:
+                task = await parseFetchedTask(client, name, "", fileSize)
+                if task is not None:
+                    return task
+            finally:
+                client.close()
         else:
             emulation = toEmulation(
                 options.clientProfile or cfg.clientProfile.value,
@@ -170,6 +224,10 @@ class HttpParser(TaskParser):
                         name = unquote(cleanPath.split("/")[-1])
 
                 contentType = responseHeaders.get("content-type", "").split(";", 1)[0].lower().strip()
+                task = await parseFetchedTask(client, name, contentType, fileSize)
+                if task is not None:
+                    return task
+
                 standardExt = guess_extension(contentType) if contentType else ""
                 standardExt = standardExt or ""
 

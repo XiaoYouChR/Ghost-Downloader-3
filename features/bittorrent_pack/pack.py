@@ -8,10 +8,8 @@ from urllib.parse import urlparse
 import libtorrent as lt
 from loguru import logger
 
-from app.client import buildClient, toEmulation
-from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser, FileType
-from app.models.task import Task, TaskOptions
+from app.models.task import FetchedTaskOptions, Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 
 from .config import bittorrentConfig
@@ -20,14 +18,31 @@ from .task import BTFile, BTTask, BTTaskStep
 from .web_tracker.service import trackerService
 
 
+TORRENT_CONTENT_TYPES = frozenset({
+    "application/x-bittorrent",
+    "application/x-torrent",
+})
+
+
+def isFetchedTorrent(options: FetchedTaskOptions) -> bool:
+    contentType = options.contentType.split(";", 1)[0].strip().lower()
+    if contentType in TORRENT_CONTENT_TYPES or "bittorrent" in contentType:
+        return True
+    if Path(options.name).suffix.lower() == ".torrent":
+        return True
+    return PurePosixPath(urlparse(options.url).path).suffix.lower() == ".torrent"
+
+
 class TorrentParser(TaskParser):
     priority = 85
 
     def match(self, options: TaskOptions) -> bool:
+        if isinstance(options, FetchedTaskOptions):
+            return isFetchedTorrent(options)
         url = options.url.strip()
         if urlparse(url).scheme.lower() == "magnet":
             return True
-        return localFilePath(url, {".torrent"}) is not None or url.lower().endswith(".torrent")
+        return localFilePath(url, {".torrent"}) is not None
 
     async def parse(self, options: TaskOptions) -> Task:
         url = options.url.strip()
@@ -44,7 +59,11 @@ class TorrentParser(TaskParser):
             webTrackers = []
 
         localPath = localFilePath(url, {".torrent"})
-        if localPath is not None:
+        if isinstance(options, FetchedTaskOptions):
+            torrentBytes = options.body
+            sourceType, sourceUrl = "torrent", url
+
+        elif localPath is not None:
             torrentBytes = await asyncio.to_thread(localPath.resolve().read_bytes)
             sourceType, sourceUrl = "torrent", str(localPath.resolve())
 
@@ -55,20 +74,16 @@ class TorrentParser(TaskParser):
             sourceType, sourceUrl = "magnet", url
 
         else:
-            emulation = toEmulation(
-                options.clientProfile or cfg.clientProfile.value,
-                options.sourceUserAgent,
-            )
-            client = buildClient(emulation=emulation, headers=dict(options.headers))
-            try:
-                response = await client.get(url)
-                response.raise_for_status()
-                torrentBytes = response.content
-            finally:
-                client.close()
-            sourceType, sourceUrl = "torrent", url
+            raise ValueError("无法解析 BitTorrent 来源")
 
-        ti = lt.torrent_info(torrentBytes)
+        if not torrentBytes:
+            raise ValueError("种子文件为空")
+
+        try:
+            ti = lt.torrent_info(torrentBytes)
+        except Exception as e:
+            raise ValueError(f"无效的 BitTorrent 种子文件：{e}") from e
+
         torrentTrackers = [str(t.url).strip() for t in ti.trackers()]
         allSources = (magnetTrackers, torrentTrackers, webTrackers) if sourceType == "magnet" else (torrentTrackers, webTrackers)
         trackers = list(dict.fromkeys(t for g in allSources for t in g if t))
