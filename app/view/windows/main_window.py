@@ -222,13 +222,17 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event) -> None:
         event.ignore()
+        from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+        for dialog in self.findChildren(MaskDialogBase):
+            if dialog.isVisible():
+                dialog.reject()
+                return
         if sys.platform == "darwin" and self.isFullScreen():
             self.showNormal()
             QTimer.singleShot(1000, self, self.close)
             return
         if not self.isMaximized():
             cfg.set(cfg.geometry, self.geometry())
-        self._draftDialog.reject()
         from app.view.qfw_patch import unregisterRouter
         unregisterRouter(self.stackedWidget)
         event.accept()
