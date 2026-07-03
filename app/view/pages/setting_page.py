@@ -36,13 +36,14 @@ class SettingPage(ScrollArea):
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
 
-        self.generalGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
-        self.categoryGroup = CollapsibleSettingCardGroup(self.tr("下载分类"), "category", self.container)
-        self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
-        self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
-        self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
-        self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
-        self.aboutGroup = CollapsibleSettingCardGroup(self.tr("关于"), "about", self.container)
+        from app.view.icons import AppIcon
+        self.generalGroup = CollapsibleSettingCardGroup(AppIcon.DOWNLOAD, self.tr("综合下载设置"), "general", self.container)
+        self.categoryGroup = CollapsibleSettingCardGroup(AppIcon.CATEGORY, self.tr("下载分类"), "category", self.container)
+        self.browserGroup = CollapsibleSettingCardGroup(AppIcon.BROWSER, self.tr("浏览器扩展"), "browser", self.container)
+        self.aria2RpcGroup = CollapsibleSettingCardGroup(AppIcon.CONNECT, self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
+        self.personalGroup = CollapsibleSettingCardGroup(AppIcon.CUSTOMIZE, self.tr("个性化"), "personalization", self.container)
+        self.softwareGroup = CollapsibleSettingCardGroup(AppIcon.APPLICATION, self.tr("应用"), "software", self.container)
+        self.aboutGroup = CollapsibleSettingCardGroup(AppIcon.ABOUT, self.tr("关于"), "about", self.container)
 
         self._initWidget()
         self._initCards()
@@ -350,12 +351,7 @@ class SettingPage(ScrollArea):
 
     def _onDownloadFolderChanged(self, path: str) -> None:
         cfg.set(cfg.downloadFolder, path)
-        history = list(cfg.memoryDownloadFolders.value)
-        if path in history:
-            history.remove(path)
-        history.insert(0, path)
-        cfg.set(cfg.memoryDownloadFolders, history[:20])
-        self.downloadFolderPicker.refreshHistory()
+        self.downloadFolderPicker.saveHistory(path)
 
     def _showRestartTooltip(self) -> None:
         InfoBar.success(self.tr("已配置"), self.tr("重启软件后生效"), duration=1500, parent=self)
@@ -411,13 +407,15 @@ class SettingPage(ScrollArea):
         self.browserEnableCard.setContent(text)
 
     def _onExportExtensionClicked(self) -> None:
-        from PySide6.QtCore import QResource
+        from PySide6.QtCore import QFile, QIODevice, QResource
         from PySide6.QtWidgets import QFileDialog
         path, _ = QFileDialog.getSaveFileName(self, self.tr("选择导出路径"),
                                               "./Extension.crx", "Chromium Extension(*.crx)")
         if path:
-            with open(path, "wb") as f:
+            f = QFile(path)
+            if f.open(QIODevice.OpenModeFlag.WriteOnly):
                 f.write(QResource(":/res/chrome_extension.crx").data())
+                f.close()
 
     def _onUrlSchemeChanged(self, enabled: bool) -> None:
         from app.platform.url_scheme import registerUrlScheme, unregisterUrlScheme
@@ -468,8 +466,8 @@ class SettingPage(ScrollArea):
                             duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
             return
 
-        from app.view.dialogs.release_info import ReleaseInfoDialog
-        ReleaseInfoDialog(release, self.window()).exec()
+        from app.update import showReleaseDialog
+        showReleaseDialog(release, self.window())
 
     def _onUpdateCheckFailed(self, error: str) -> None:
         InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),

@@ -94,6 +94,15 @@ class FolderPicker(QWidget):
     def setPath(self, path: str) -> None:
         self.comboBox.setText(path)
 
+    def saveHistory(self, path: str) -> None:
+        from app.config.cfg import cfg
+        history = list(cfg.memoryDownloadFolders.value)
+        if path in history:
+            history.remove(path)
+        history.insert(0, path)
+        cfg.set(cfg.memoryDownloadFolders, history[:20])
+        self.refreshHistory()
+
     def refreshHistory(self) -> None:
         from app.config.cfg import cfg
         current = self.comboBox.currentText()

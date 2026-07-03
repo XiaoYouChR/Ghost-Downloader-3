@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="huggingface_pack">
+    <file>HuggingFace_black.svg</file>
+    <file>HuggingFace_white.svg</file>
+  </qresource>
+</RCC>

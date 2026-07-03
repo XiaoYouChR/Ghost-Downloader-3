@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from PySide6.QtCore import (
     QByteArray, QEasingCurve, QEvent, QObject,
-    QPropertyAnimation, QRectF, QSize, Qt, Signal,
+    QPropertyAnimation, QSize, Qt, Signal,
 )
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    FluentIcon, FluentStyleSheet, SettingCard, StrongBodyLabel,
-    TransparentToolButton, isDarkTheme,
+    FluentIcon, FluentIconBase, FluentStyleSheet, IconWidget, SettingCard,
+    StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
     ExpandBorderWidget, ExpandSettingCard, GroupSeparator,
@@ -44,10 +44,12 @@ class CardPaintFilter(QObject):
 class CollapsibleSettingCardGroup(QWidget):
     orderChanged = Signal()
 
-    def __init__(self, title: str, key: str, parent=None):
+    def __init__(self, icon: FluentIconBase, title: str, key: str, parent=None):
         super().__init__(parent)
         self.setObjectName(key)
 
+        self.iconWidget = IconWidget(icon, self)
+        self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = StrongBodyLabel(title, self)
         self.moveUpButton = TransparentToolButton(FluentIcon.UP, self)
         self.moveDownButton = TransparentToolButton(FluentIcon.DOWN, self)
@@ -85,6 +87,8 @@ class CollapsibleSettingCardGroup(QWidget):
     def _initLayout(self) -> None:
         self.headerLayout.setContentsMargins(16, 4, 8, 4)
         self.headerLayout.setSpacing(4)
+        self.headerLayout.addWidget(self.iconWidget)
+        self.headerLayout.addSpacing(4)
         self.headerLayout.addWidget(self.titleLabel)
         self.headerLayout.addStretch(1)
         self.headerLayout.addWidget(self.moveUpButton)
@@ -148,7 +152,7 @@ class CollapsibleSettingCardGroup(QWidget):
             isDark = isDarkTheme()
             painter.setBrush(QColor(255, 255, 255, 13) if isDark else QColor(255, 255, 255, 200))
             painter.setPen(QColor(0, 0, 0, 96) if isDark else QColor(0, 0, 0, 24))
-            painter.drawRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), 5, 5)
+            painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 5, 5)
 
     def _onExpandClicked(self) -> None:
         self._setCollapsed(not self._collapsed)

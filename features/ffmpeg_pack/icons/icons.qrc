@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="ffmpeg_pack">
+    <file>FFmpeg_black.svg</file>
+    <file>FFmpeg_white.svg</file>
+  </qresource>
+</RCC>
