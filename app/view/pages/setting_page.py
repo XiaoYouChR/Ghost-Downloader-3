@@ -414,7 +414,7 @@ class SettingPage(ScrollArea):
         if path:
             f = QFile(path)
             if f.open(QIODevice.OpenModeFlag.WriteOnly):
-                f.write(QResource(":/res/chrome_extension.crx").data())
+                f.write(bytes(QResource(":/res/chrome_extension.crx").data()))
                 f.close()
 
     def _onUrlSchemeChanged(self, enabled: bool) -> None:
