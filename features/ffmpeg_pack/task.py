@@ -38,6 +38,10 @@ class FFmpegStep(TaskStep):
     shouldDeleteSource: bool = True
 
     @property
+    def outputPath(self) -> str:
+        return self.outputFile
+
+    @property
     def outputFile(self) -> str:
         return str(self.task.outputFolder / f"{mediaStem(self.task)}.mp4")
 

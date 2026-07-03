@@ -12,12 +12,14 @@ from .config import ytDlpConfig, ytDlpRuntime
 DEFAULT_VIDEO_FORMAT = "bv*+ba/b"
 PROGRESS_TOKEN = "__GD3_PROGRESS__"
 FINAL_FILE_TOKEN = "__GD3_FINAL__"
+BEFORE_DL_TOKEN = "__GD3_BEFORE__"
 PROGRESS_TEMPLATE = (
     f"download:{PROGRESS_TOKEN}"
     "%(progress.downloaded_bytes)s|%(progress.total_bytes)s|"
     "%(progress.total_bytes_estimate)s|%(progress.speed)s"
 )
 FINAL_TEMPLATE = f"after_move:{FINAL_FILE_TOKEN}%(filepath)s"
+BEFORE_DL_TEMPLATE = f"before_dl:{BEFORE_DL_TOKEN}%(filename)s"
 
 ERROR_HINTS = (
     ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理"),
@@ -100,6 +102,31 @@ class YtDlpTaskStep(TaskStep):
     lastMessage: str = ""
 
     @property
+    def outputPath(self) -> str:
+        return self.outputFile
+
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        from shutil import move
+        if not self.outputFile:
+            return
+        oldPath = Path(self.outputFile)
+        try:
+            relPath = oldPath.relative_to(oldFolder)
+        except ValueError:
+            return
+        newBase = newFolder / relPath
+        newBase.parent.mkdir(parents=True, exist_ok=True)
+        if oldPath.exists():
+            move(str(oldPath), str(newBase))
+        for suffix in (".part", ".ytdl"):
+            p = Path(f"{oldPath}{suffix}")
+            if p.exists():
+                move(str(p), str(f"{newBase}{suffix}"))
+        for frag in oldPath.parent.glob(f"{oldPath.name}.part-Frag*"):
+            move(str(frag), str(newFolder / frag.relative_to(oldFolder)))
+        self.outputFile = str(newBase)
+
+    @property
     def _outputTemplate(self) -> str:
         return toPosixPath(self.task.outputFolder / "%(title)s.%(ext)s")
 
@@ -118,6 +145,7 @@ class YtDlpTaskStep(TaskStep):
             "--no-simulate",
             "--progress",
             "--progress-template", PROGRESS_TEMPLATE,
+            "--print", BEFORE_DL_TEMPLATE,
             "--print", FINAL_TEMPLATE,
         ]
 
@@ -167,6 +195,9 @@ class YtDlpTaskStep(TaskStep):
     def _parseOutputLine(self, line: str) -> None:
         text = line.strip()
         if not text:
+            return
+        if text.startswith(BEFORE_DL_TOKEN):
+            self.outputFile = text[len(BEFORE_DL_TOKEN):].strip()
             return
         if text.startswith(FINAL_FILE_TOKEN):
             self._finalPath = text[len(FINAL_FILE_TOKEN):].strip()

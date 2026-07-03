@@ -73,6 +73,14 @@ class HttpTaskStep(TaskStep):
         deletePath(path)
         deletePath(Path(f"{path}.ghd"))
 
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        super().moveFiles(oldFolder, newFolder)
+        if self.outputFile:
+            try:
+                self.outputFile = str(newFolder / Path(self.outputFile).relative_to(oldFolder))
+            except ValueError:
+                pass
+
     def setOptions(self, options: dict) -> None:
         if "headers" in options:
             self.headers = options["headers"]
