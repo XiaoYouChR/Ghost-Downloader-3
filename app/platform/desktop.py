@@ -9,7 +9,72 @@ from PySide6.QtGui import QDesktopServices
 from loguru import logger
 
 
+def _sendForegroundInput() -> None:
+    # https://github.com/microsoft/PowerToys/pull/14383
+    """Send a zero-effect mouse input so Windows grants us foreground rights."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+    import ctypes.wintypes
+
+    class MOUSEINPUT(ctypes.Structure):
+        _fields_ = [
+            ("dx", ctypes.wintypes.LONG),
+            ("dy", ctypes.wintypes.LONG),
+            ("mouseData", ctypes.wintypes.DWORD),
+            ("dwFlags", ctypes.wintypes.DWORD),
+            ("time", ctypes.wintypes.DWORD),
+            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+        ]
+
+    class INPUT(ctypes.Structure):
+        class _UNION(ctypes.Union):
+            _fields_ = [("mi", MOUSEINPUT)]
+
+        _fields_ = [
+            ("type", ctypes.wintypes.DWORD),
+            ("union", _UNION),
+        ]
+
+    inp = INPUT()
+    inp.type = 0  # INPUT_MOUSE
+    ctypes.windll.user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+
+
+def _revealInFolderShell(path: Path) -> bool:
+    """Use SHOpenFolderAndSelectItems to reveal *path* in Explorer."""
+    import ctypes
+
+    shell32 = ctypes.windll.shell32
+    ole32 = ctypes.windll.ole32
+
+    S_OK = 0
+    S_FALSE = 1
+    COINIT_APARTMENTTHREADED = 0x2
+
+    hr = ole32.CoInitializeEx(None, COINIT_APARTMENTTHREADED)
+    weInitialized = hr == S_OK
+    if hr not in (S_OK, S_FALSE):
+        return False
+
+    try:
+        pidl = ctypes.c_void_p()
+        hr = shell32.SHParseDisplayName(str(path), None, ctypes.byref(pidl), 0, None)
+        if hr != S_OK or not pidl.value:
+            return False
+        try:
+            _sendForegroundInput()
+            hr = shell32.SHOpenFolderAndSelectItems(pidl, 0, None, 0)
+            return hr == S_OK
+        finally:
+            ole32.CoTaskMemFree(pidl)
+    finally:
+        if weInitialized:
+            ole32.CoUninitialize()
+
+
 def openFile(path: str | bytes | PathLike[str]) -> None:
+    _sendForegroundInput()
     QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
 
@@ -20,12 +85,12 @@ def openFolder(path: str | PathLike[str]) -> None:
 def revealInFolder(path: str | PathLike[str]) -> None:
     path = Path(path)
     if path.exists():
-        target = str(path)
         match sys.platform:
             case "win32":
-                QProcess.startDetached("explorer.exe", ["/select,", target])
+                if not _revealInFolderShell(path):
+                    QProcess.startDetached("explorer.exe", ["/select,", str(path)])
             case "darwin":
-                QProcess.startDetached("open", ["-R", target])
+                QProcess.startDetached("open", ["-R", str(path)])
             case _:
                 QProcess.startDetached("xdg-open", [str(path.parent)])
     elif path.parent.exists():
