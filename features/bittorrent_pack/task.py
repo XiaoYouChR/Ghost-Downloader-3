@@ -120,6 +120,12 @@ class BTTask(Task):
         if self.magnetTorrentPath is not None:
             deletePath(self.magnetTorrentPath)
 
+    def _move(self, newFolder: Path) -> None:
+        from shutil import move
+        if self.magnetTorrentPath is not None and self.magnetTorrentPath.exists():
+            move(str(self.magnetTorrentPath), str(newFolder / f"{self.name}.torrent"))
+        super()._move(newFolder)
+
     def reset(self) -> TaskStatus:
         result = super().reset()
         self.resumeData = ""
@@ -183,6 +189,10 @@ class BTTask(Task):
 
 @dataclass(kw_only=True)
 class BTTaskStep(TaskStep):
+    @property
+    def outputPath(self) -> str:
+        return self.task.outputPath
+
     async def run(self) -> None:
         from .session import btSession
 
