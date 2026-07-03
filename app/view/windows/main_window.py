@@ -345,22 +345,29 @@ if sys.platform == "win32":
             self.winCompAttrData.Attribute = WINDOWCOMPOSITIONATTRIB.WCA_ACCENT_POLICY.value
             self.SetWindowCompositionAttribute(hWnd, pointer(self.winCompAttrData))
 
-        def _win10NativeEvent(self, eventType, message):
+        def _nativeEvent(self, eventType, message):
             if eventType == "windows_generic_MSG":
                 from ctypes.wintypes import MSG
                 msg = MSG.from_address(message.__int__())
 
+                if cfg.backgroundEffect.value != "Acrylic":
+                    return FramelessWindow.nativeEvent(self, eventType, message)
+
                 WM_ENTERSIZEMOVE = 561
                 WM_EXITSIZEMOVE = 562
-                if msg.message == WM_ENTERSIZEMOVE and cfg.backgroundEffect.value == "Acrylic":
+                if msg.message == WM_ENTERSIZEMOVE:
                     self.windowEffect.resetAcrylicEffect(self.winId())
-                elif msg.message == WM_EXITSIZEMOVE and cfg.backgroundEffect.value == "Acrylic":
+                elif msg.message == WM_EXITSIZEMOVE:
                     from qfluentwidgets import isDarkTheme
+                    isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
                     self.windowEffect.setAcrylicEffect(
-                        self.winId(), "00000030" if isDarkTheme() else "FFFFFF30",
+                        self.winId(), "00000030" if isDark else "FFFFFF30",
                     )
 
             return FramelessWindow.nativeEvent(self, eventType, message)
 
+        from qframelesswindow import AcrylicWindow
+
         WindowEffect.resetAcrylicEffect = _resetAcrylicEffect
-        MainWindow.nativeEvent = _win10NativeEvent
+        MainWindow.updateFrameless = AcrylicWindow.updateFrameless
+        MainWindow.nativeEvent = _nativeEvent

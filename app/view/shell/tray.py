@@ -40,6 +40,7 @@ if sys.platform == "win32":
     from typing import TYPE_CHECKING
 
     from PySide6.QtWidgets import QProxyStyle, QStyle, QStyleFactory
+    from app.platform.windows import isGreaterEqualWin11
     from qfluentwidgets.common.screen import getCurrentScreenGeometry
     from qfluentwidgets.components.widgets.menu import MenuActionListWidget
     from qframelesswindow import WindowEffect
@@ -153,7 +154,7 @@ if sys.platform == "win32":
             painter.setBrush(QColor(0, 0, 0, 1))
             painter.drawRect(self.rect())
 
-    TrayMenu = AcrylicMenu
+    TrayMenu = AcrylicMenu if isGreaterEqualWin11() else RoundMenu
 else:
     TrayMenu = RoundMenu
 
