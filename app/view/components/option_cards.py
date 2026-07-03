@@ -2,9 +2,9 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
-    Action, BodyLabel, FluentIcon, IconWidget, LineEdit, Slider,
+    Action, BodyLabel, FluentIcon, IconWidget, Slider,
     ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 
@@ -40,45 +40,46 @@ class OptionCard(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setPen(QColor(0, 0, 0, 96 if isDarkTheme() else 80))
-        painter.drawLine(self.rect().topLeft(), self.rect().topRight())
+        painter.fillRect(0, 0, self.width(), 1, QColor(0, 0, 0, 96 if isDarkTheme() else 24))
 
 
 class OutputFolderCard(OptionCard):
 
     def __init__(self, parent=None, *, initial: Path | None = None):
         super().__init__(parent)
+        from app.view.components.editors import FolderPicker
+
         self.setFixedHeight(50)
         self.iconWidget = IconWidget(FluentIcon.DOWNLOAD, self)
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("选择下载路径"), self)
-        self.pathEdit = LineEdit(self)
-        self.pathEdit.setReadOnly(True)
-        self.pathEdit.setText(str(initial) if initial else cfg.downloadFolder.value)
-        browseAction = Action(FluentIcon.FOLDER, "", self)
-        browseAction.triggered.connect(self._onBrowse)
-        self.pathEdit.addAction(browseAction)
+        self.folderPicker = FolderPicker(self)
+        self.folderPicker.setPath(str(initial) if initial else cfg.downloadFolder.value)
 
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self) -> None:
+        self.folderPicker.refreshHistory()
+
+    def _initLayout(self) -> None:
         layout = QHBoxLayout(self)
         layout.setContentsMargins(24, 5, 24, 5)
         layout.setSpacing(15)
         layout.addWidget(self.iconWidget)
         layout.addWidget(self.titleLabel)
         layout.addStretch(1)
-        layout.addWidget(self.pathEdit, stretch=3)
+        layout.addWidget(self.folderPicker, stretch=3)
+
+    def _bind(self) -> None:
+        self.folderPicker.pathChanged.connect(self.folderPicker.saveHistory)
 
     def options(self) -> dict:
-        return {"outputFolder": Path(self.pathEdit.text())}
+        return {"outputFolder": Path(self.folderPicker.path())}
 
     def reset(self) -> None:
-        self.pathEdit.setText(cfg.downloadFolder.value)
-
-    def _onBrowse(self) -> None:
-        path = Path(self.pathEdit.text())
-        startDir = str(path if path.exists() else path.parent)
-        selected = QFileDialog.getExistingDirectory(self, self.tr("选择下载路径"), startDir)
-        if selected:
-            self.pathEdit.setText(selected)
+        self.folderPicker.setPath(cfg.downloadFolder.value)
 
 
 class SubworkerCountCard(OptionCard):

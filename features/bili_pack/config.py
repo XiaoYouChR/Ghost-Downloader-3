@@ -253,7 +253,8 @@ class BilibiliConfig(PackConfig):
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
-        biliGroup = CollapsibleSettingCardGroup(self.tr("Bilibili 下载"), "bilibili", parent)
+        from features.bili_pack.icons import BiliIcon
+        biliGroup = CollapsibleSettingCardGroup(BiliIcon.BILIBILI, self.tr("Bilibili 下载"), "bilibili", parent)
         loginCard = BilibiliLoginSettingCard(biliGroup)
         biliGroup.addSettingCards([
             loginCard,
