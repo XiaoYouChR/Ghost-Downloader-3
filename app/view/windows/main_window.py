@@ -166,7 +166,7 @@ class MainWindow(MSFluentWindow):
 
     def _onUpdateAvailable(self, release) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
-        from app.view.dialogs.release_info import ReleaseInfoDialog
+        from app.update import addBestAssetTask, showReleaseDialog
 
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
@@ -179,45 +179,15 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: self._onDownloadUpdateClicked(release))
+        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
-        detailButton.clicked.connect(lambda: ReleaseInfoDialog(release, self).exec())
+        detailButton.clicked.connect(lambda: showReleaseDialog(release, self))
         infoBar.addWidget(detailButton)
         sponsorButton = PushButton(FluentIcon.HEART, self.tr("请作者喝咖啡"))
         sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
         infoBar.addWidget(sponsorButton)
         infoBar.show()
-
-    def _onDownloadUpdateClicked(self, release) -> None:
-        from app.models.task import TaskOptions
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
-        from app.update import bestAsset
-
-        asset = bestAsset(release)
-        if asset is None:
-            InfoBar.warning(
-                self.tr("未找到适配的安装包"),
-                self.tr("请在版本详情中手动选择"),
-                duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self,
-            )
-            from app.view.dialogs.release_info import ReleaseInfoDialog
-            ReleaseInfoDialog(release, self).exec()
-            return
-
-        coroutineRunner.submit(
-            featureService.parse(TaskOptions(url=asset.downloadUrl)),
-            done=taskService.add,
-            failed=self._onUpdateAssetParseFailed,
-            owner=self,
-        )
-
-    def _onUpdateAssetParseFailed(self, error: str) -> None:
-        InfoBar.error(
-            self.tr("创建下载任务失败"), str(error),
-            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self,
-        )
 
     def alertException(self, message: str) -> None:
         from qfluentwidgets import TransparentToolButton, ToolTipFilter

@@ -3,7 +3,10 @@ from __future__ import annotations
 import platform
 import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 from PySide6.QtCore import QVersionNumber
 
@@ -87,6 +90,8 @@ def bestAsset(release: Release) -> ReleaseAsset | None:
 
 
 def assetScore(name: str) -> int:
+    from app.platform.android import IS_ANDROID
+
     lower = name.lower()
 
     if sys.platform == "win32":
@@ -94,6 +99,8 @@ def assetScore(name: str) -> int:
         platformKw = ["windows7", "windows"] if isLessThanWin10() else ["windows"]
     elif sys.platform == "darwin":
         platformKw = ["macos", "darwin", "mac"]
+    elif IS_ANDROID:
+        platformKw = ["android"]
     else:
         platformKw = ["linux"]
 
@@ -128,6 +135,9 @@ def assetScore(name: str) -> int:
             score += 90
         elif lower.endswith(".zip"):
             score += 30
+    elif IS_ANDROID:
+        if lower.endswith(".apk"):
+            score += 100
     else:
         if lower.endswith(".appimage"):
             score += 100
@@ -139,3 +149,43 @@ def assetScore(name: str) -> int:
             score += 50
 
     return score
+
+
+def showReleaseDialog(release: Release, parent: QWidget) -> None:
+    from app.view.dialogs.release_info import ReleaseInfoDialog
+    dialog = ReleaseInfoDialog(release, parent)
+    dialog.accepted.connect(lambda: addAssetTask(dialog.selectedAsset(), parent))
+    dialog.open()
+
+
+def addBestAssetTask(release: Release, parent: QWidget) -> None:
+    from qfluentwidgets import InfoBar, InfoBarPosition
+    asset = bestAsset(release)
+    if asset is None:
+        InfoBar.warning(
+            parent.tr("未找到适配的安装包"),
+            parent.tr("请在版本详情中手动选择"),
+            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
+        )
+        showReleaseDialog(release, parent)
+        return
+    addAssetTask(asset, parent)
+
+
+def addAssetTask(asset: ReleaseAsset, parent: QWidget) -> None:
+    from qfluentwidgets import InfoBar, InfoBarPosition
+    from app.models.task import TaskOptions
+    from app.services.coroutine_runner import coroutineRunner
+    from app.services.feature_service import featureService
+    from app.services.task_service import taskService
+    coroutineRunner.submit(
+        featureService.parse(TaskOptions(url=asset.downloadUrl)),
+        done=taskService.add,
+        failed=lambda e: InfoBar.error(
+            parent.tr("创建下载任务失败"), str(e),
+            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
+        ),
+        owner=parent,
+    )
+
+
