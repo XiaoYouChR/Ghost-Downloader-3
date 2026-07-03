@@ -1,0 +1,18 @@
+<RCC>
+  <qresource prefix="app_icons">
+    <file>Download_black.svg</file>
+    <file>Download_white.svg</file>
+    <file>Category_black.svg</file>
+    <file>Category_white.svg</file>
+    <file>Browser_black.svg</file>
+    <file>Browser_white.svg</file>
+    <file>Connect_black.svg</file>
+    <file>Connect_white.svg</file>
+    <file>Customize_black.svg</file>
+    <file>Customize_white.svg</file>
+    <file>Application_black.svg</file>
+    <file>Application_white.svg</file>
+    <file>About_black.svg</file>
+    <file>About_white.svg</file>
+  </qresource>
+</RCC>

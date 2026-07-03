@@ -27,7 +27,8 @@ class ED2kConfig(PackConfig):
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard, SpinBoxSettingCard
 
-        group = CollapsibleSettingCardGroup(self.tr("eD2k 下载"), "ed2k", parent)
+        from features.ed2k_pack.icons import ED2kIcon
+        group = CollapsibleSettingCardGroup(ED2kIcon.P2P, self.tr("eD2k 下载"), "ed2k", parent)
         installFolderCard = SelectFolderSettingCard(
             ed2kConfig.installFolder, f"{APP_DATA_DIR}/goed2kd",
             self.tr("goed2kd 安装目录"),

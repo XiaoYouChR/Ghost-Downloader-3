@@ -130,8 +130,7 @@ class DraftCard(QWidget):
 
     def paintEvent(self, e) -> None:
         painter = QPainter(self)
-        painter.setPen(QColor(0, 0, 0, 96 if isDarkTheme() else 24))
-        painter.drawLine(self.rect().topLeft(), self.rect().topRight())
+        painter.fillRect(0, 0, self.width(), 1, QColor(0, 0, 0, 96 if isDarkTheme() else 24))
 
 
 class UniversalDraftCard(DraftCard):

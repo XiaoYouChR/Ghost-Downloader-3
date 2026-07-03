@@ -181,8 +181,9 @@ def copyPacks() -> None:
         shutil.rmtree(targetRoot)
     targetRoot.mkdir(parents=True, exist_ok=True)
 
+    ignorePatterns = shutil.ignore_patterns("*.svg", "*.qrc")
     for source in packs:
-        shutil.copytree(source, targetRoot / source.name)
+        shutil.copytree(source, targetRoot / source.name, ignore=ignorePatterns)
 
     print(f"Copied feature packs to {targetRoot}: {[p.name for p in packs]}")
 
