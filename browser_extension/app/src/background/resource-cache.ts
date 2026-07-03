@@ -309,7 +309,7 @@ export class ResourceCache {
   }
 
   // SPA watch URLs often have no snapshot of their own; fall back to the freshest same-host
-  // request that carried a cookie. Only cookie + user-agent are forwarded.
+  // request that carried a cookie.
   headersForPage(pageUrl: string): Record<string, string> {
     const host = hostOf(pageUrl);
     if (host === null) {
@@ -330,14 +330,7 @@ export class ResourceCache {
       snapshot = freshest;
     }
 
-    const headers: Record<string, string> = {};
-    if (snapshot?.headers.cookie) {
-      headers.cookie = snapshot.headers.cookie;
-    }
-    if (snapshot?.headers["user-agent"]) {
-      headers["user-agent"] = snapshot.headers["user-agent"];
-    }
-    return headers;
+    return { ...(snapshot?.headers ?? {}) };
   }
 
   // Lets resourceForMediaUrl wait when a click races ahead of webRequest (SW restart).
