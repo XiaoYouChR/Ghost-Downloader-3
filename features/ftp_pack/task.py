@@ -91,7 +91,7 @@ class FtpConnectionInfo:
                         scheme, self.host, port, mode, repr(e),
                     )
 
-        raise TaskError("Cannot establish FTP connection") from lastError
+        raise TaskError("无法建立 FTP 连接") from lastError
 
 
 @dataclass
