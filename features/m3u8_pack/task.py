@@ -313,7 +313,7 @@ class M3U8TaskStep(TaskStep):
 
         execPath = m3u8Runtime.path()
         if not execPath:
-            raise TaskError("Binary not found: {name}", name="N_m3u8DL-RE")
+            raise TaskError("{name} 未安装，请在设置中安装", name="N_m3u8DL-RE")
 
         self.task.outputFolder.mkdir(parents=True, exist_ok=True)
         Path(self._tempFolder).mkdir(parents=True, exist_ok=True)
@@ -341,7 +341,7 @@ class M3U8TaskStep(TaskStep):
 
             if self._process.returncode != 0 and not self._stopping:
                 raise TaskError(
-                    "Process exited with error ({code}): {detail}",
+                    "进程异常退出（{code}）：{detail}",
                     code=self._process.returncode,
                     detail=self.lastMessage or "N_m3u8DL-RE",
                 )

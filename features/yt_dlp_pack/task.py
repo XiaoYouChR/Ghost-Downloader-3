@@ -20,14 +20,14 @@ PROGRESS_TEMPLATE = (
 FINAL_TEMPLATE = f"after_move:{FINAL_FILE_TOKEN}%(filepath)s"
 
 ERROR_HINTS = (
-    ("is not available in your country", "Video not available in your region, try configuring a proxy"),
-    ("video unavailable", "Video unavailable (may be deleted or private)"),
-    ("private video", "Private video, requires cookies from an authorized account"),
-    ("members-only", "Members-only video, requires cookies from a member account"),
-    ("confirm your age", "Age-restricted video, requires cookies from a logged-in account"),
-    ("confirm you're not a bot", "YouTube requires human verification, configure cookies in settings"),
-    ("requested format is not available", "Requested format not available, try a different quality"),
-    ("http error 403", "Download rejected (403), link may have expired"),
+    ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理"),
+    ("video unavailable", "视频不可用（可能已被删除或设为私密）"),
+    ("private video", "私密视频，需要已授权账号的 Cookie"),
+    ("members-only", "会员专属视频，需要会员账号的 Cookie"),
+    ("confirm your age", "年龄限制视频，需要已登录账号的 Cookie"),
+    ("confirm you're not a bot", "YouTube 需要人机验证，请在设置中配置 Cookie"),
+    ("requested format is not available", "请求的格式不可用，请尝试其他画质"),
+    ("http error 403", "下载被拒绝（403），链接可能已失效"),
 )
 
 
@@ -208,7 +208,7 @@ class YtDlpTaskStep(TaskStep):
     async def run(self) -> None:
         execPath = ytDlpRuntime.path()
         if not execPath:
-            raise TaskError("Binary not found: {name}", name="yt-dlp")
+            raise TaskError("{name} 未安装，请在设置中安装", name="yt-dlp")
 
         self._finalPath = ""
         self._totalBytes = 0
@@ -233,7 +233,7 @@ class YtDlpTaskStep(TaskStep):
                 lowered = self.lastMessage.lower()
                 hint = next((h for needle, h in ERROR_HINTS if needle in lowered), "")
                 raise TaskError(
-                    hint or "Process exited with error ({code}): {detail}",
+                    hint or "进程异常退出（{code}）：{detail}",
                     code=process.returncode,
                     detail=self.lastMessage or "yt-dlp",
                 )

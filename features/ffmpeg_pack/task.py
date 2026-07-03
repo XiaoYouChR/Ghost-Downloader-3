@@ -56,7 +56,7 @@ class FFmpegStep(TaskStep):
         ffmpegPath = ffmpegRuntime.path()
         ffprobePath = ffmpegRuntime.ffprobePath()
         if not ffmpegPath or not ffprobePath:
-            raise TaskError("Binary not found: {name}", name="FFmpeg")
+            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
 
         Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
 
@@ -82,7 +82,7 @@ class FFmpegStep(TaskStep):
             if process.returncode != 0:
                 stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
                 raise TaskError(
-                    "FFmpeg merge failed ({code}): {detail}",
+                    "FFmpeg 合并失败（{code}）：{detail}",
                     code=process.returncode,
                     detail=stderr or "unknown error",
                 )

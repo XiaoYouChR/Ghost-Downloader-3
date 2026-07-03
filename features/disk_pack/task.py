@@ -63,7 +63,7 @@ class ExtractStep(TaskStep):
             for info in files:
                 memberPath = (outputFolder / info.filename).resolve()
                 if safeRoot not in {memberPath, *memberPath.parents}:
-                    raise TaskError("Archive contains unsafe path: {path}", path=info.filename)
+                    raise TaskError("压缩包包含不安全路径：{path}", path=info.filename)
                 memberPath.parent.mkdir(parents=True, exist_ok=True)
                 with zf.open(info, "r") as source, open(memberPath, "wb") as target:
                     while chunk := source.read(CHUNK_SIZE):
@@ -90,7 +90,7 @@ class ExtractStep(TaskStep):
             for member in files:
                 memberPath = (outputFolder / member.name).resolve()
                 if safeRoot not in {memberPath, *memberPath.parents}:
-                    raise TaskError("Archive contains unsafe path: {path}", path=member.name)
+                    raise TaskError("压缩包包含不安全路径：{path}", path=member.name)
                 memberPath.parent.mkdir(parents=True, exist_ok=True)
                 source = tf.extractfile(member)
                 if source is None:
@@ -111,7 +111,7 @@ class ExtractStep(TaskStep):
     async def run(self) -> None:
         archive = Path(self.archivePath)
         if not archive.is_file():
-            raise TaskError("Archive not found: {path}", path=str(archive))
+            raise TaskError("压缩包未找到：{path}", path=str(archive))
 
         outputFolder = Path(self.outputFolder)
         self.progress = 0
@@ -125,7 +125,7 @@ class ExtractStep(TaskStep):
         elif lowered.endswith(".zip"):
             await self._extractZip(archive, outputFolder)
         else:
-            raise TaskError("Unsupported archive format: {name}", name=archive.name)
+            raise TaskError("不支持的压缩格式：{name}", name=archive.name)
 
         self.setStatus(TaskStatus.COMPLETED)
 
@@ -172,7 +172,7 @@ class InstallStep(TaskStep):
                 if executable is None:
                     executable = next((c for c in installFolder.rglob(name) if c.is_file()), None)
                 if executable is None:
-                    raise TaskError("Executable not found after extraction: {name}", name=name)
+                    raise TaskError("解压后未找到可执行文件：{name}", name=name)
                 if sys.platform != "win32":
                     executable.chmod(executable.stat().st_mode | 0o755)
                 # removeQuarantine(executable)  # disabled — see removeQuarantine note
@@ -197,10 +197,10 @@ class ChecksumStep(TaskStep):
         text = Path(self.sha256File).read_text(encoding="utf-8", errors="ignore").strip()
         expected = text.split()[0].lower() if text else ""
         if not expected:
-            raise TaskError("Could not read SHA256 from checksum file: {path}", path=self.sha256File)
+            raise TaskError("无法读取校验文件：{path}", path=self.sha256File)
         actual = await asyncio.to_thread(self._sha256, Path(self.targetFile))
         if expected != actual:
-            raise TaskError("SHA256 mismatch: expected {expected}, got {actual}", expected=expected, actual=actual)
+            raise TaskError("SHA256 校验失败：期望 {expected}，实际 {actual}", expected=expected, actual=actual)
         deletePath(Path(self.sha256File))
         self.setStatus(TaskStatus.COMPLETED)
 
@@ -221,7 +221,7 @@ class BinaryInstallStep(TaskStep):
     async def run(self) -> None:
         path = Path(self.binaryPath)
         if not path.is_file():
-            raise TaskError("Downloaded binary not found: {path}", path=str(path))
+            raise TaskError("下载的文件未找到：{path}", path=str(path))
         if sys.platform != "win32":
             path.chmod(path.stat().st_mode | 0o755)
         # removeQuarantine(path)  # disabled — see removeQuarantine note

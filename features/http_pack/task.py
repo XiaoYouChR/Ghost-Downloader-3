@@ -383,7 +383,7 @@ class HttpTaskStep(TaskStep):
         except ExceptionGroup as eg:
             cause = eg.exceptions[0]
             if isinstance(cause, PermanentDownloadError):
-                raise TaskError("Server returned error ({status})", status=cause.status) from eg
+                raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
             raise cause from eg
         finally:
             if not supervisor.done():
