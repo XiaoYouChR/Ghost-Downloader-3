@@ -6,6 +6,7 @@ preserve_hierarchy: true
 files:
   - source: /browser_extension/app/public/_locales/zh_CN/messages.json
     translation: /browser_extension/app/public/_locales/%locale%/messages.json
+    type: chrome_json
     languages_mapping:
       locale:
         en-US: en_US
