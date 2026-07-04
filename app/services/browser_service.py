@@ -485,16 +485,15 @@ class BrowserService(QObject):
             featureService.parse(options),
             done=self._onTaskParsed,
             failed=self._onTaskParseFailed,
-            session=session, requestId=requestId, source=source, title=title,
+            session=session, requestId=requestId, title=title,
         )
 
     def _onTaskParsed(self, task: Task, session: BrowserClientSession, requestId: str,
-                      source: TaskSource, title: str) -> None:
+                      title: str) -> None:
         if title:
             task.setName(title)
 
-        isInteractive = source != TaskSource.DOWNLOAD
-        if isInteractive and cfg.shouldRaiseWindowOnBrowserTask.value:
+        if cfg.shouldRaiseWindowOnBrowserTask.value:
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
             self.taskDraftRequested.emit([task])
             return
