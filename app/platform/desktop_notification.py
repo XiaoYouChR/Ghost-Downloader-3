@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, QFileInfo, QStandardPaths, Qt
 from PySide6.QtWidgets import QFileIconProvider
-
-tr = QCoreApplication.translate
 from loguru import logger
 
 from app.platform.desktop import openFile, revealInFolder
@@ -39,8 +37,8 @@ def notifyDiskSpaceInsufficient(free: int, needed: int) -> None:
     from app.format import toReadableSize
     from app.services.coroutine_runner import coroutineRunner
     coroutineRunner.submit(notifier.send(
-        title=tr("Notifications", "Disk space insufficient"),
-        message=tr("Notifications", "Remaining {0}, need {1}, task not auto-started").format(
+        title=QCoreApplication.translate("Notifications", "磁盘空间不足"),
+        message=QCoreApplication.translate("Notifications", "剩余 {0}，需要 {1}，任务未自动开始").format(
             toReadableSize(free), toReadableSize(needed)),
     ))
 
@@ -70,11 +68,11 @@ def notifyTaskCompleted(task: Task) -> None:
     from app.services.coroutine_runner import coroutineRunner
 
     coroutineRunner.submit(notifier.send(
-        title=tr("Notifications", "Download completed"),
+        title=QCoreApplication.translate("Notifications", "下载完成"),
         message=task.name,
         buttons=[
-            Button(title=tr("Notifications", "Open file"), on_pressed=lambda: openFile(outputPath)),
-            Button(title=tr("Notifications", "Open folder"), on_pressed=lambda: revealInFolder(outputPath)),
+            Button(title=QCoreApplication.translate("Notifications", "打开文件"), on_pressed=lambda: openFile(outputPath)),
+            Button(title=QCoreApplication.translate("Notifications", "打开文件夹"), on_pressed=lambda: revealInFolder(outputPath)),
         ],
         on_clicked=lambda: openFile(outputPath),
         icon=Icon(path=iconPath) if iconPath.exists() else None,

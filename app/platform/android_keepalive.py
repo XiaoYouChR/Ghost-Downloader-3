@@ -2,8 +2,6 @@ from PySide6.QtCore import QCoreApplication
 
 from app.platform.android_notification import notify
 
-tr = QCoreApplication.translate
-
 REASON_DOWNLOAD = "download"
 REASON_BROWSER = "browser"
 
@@ -61,8 +59,9 @@ class BackgroundKeepAlive:
                 self._startService(statusMessage)
                 self._running = True
             elif statusMessage != self._statusMessage:
-                notify(KEEPALIVE_CHANNEL, tr("KeepAlive", "Background task"), KEEPALIVE_NOTIF_ID,
-                       "Ghost Downloader", statusMessage, ongoing=True, lowImportance=True)
+                notify(KEEPALIVE_CHANNEL, QCoreApplication.translate("KeepAlive", "后台任务"),
+                       KEEPALIVE_NOTIF_ID, "Ghost Downloader", statusMessage,
+                       ongoing=True, lowImportance=True)
             self._statusMessage = statusMessage
         elif self._running:
             self._stopService()
@@ -74,8 +73,8 @@ class BackgroundKeepAlive:
             from app.format import toReadableSize
             return f"{toReadableSize(self._speed)}/s"
         if REASON_DOWNLOAD in self._activeReasons:
-            return tr("KeepAlive", "Downloading")
-        return tr("KeepAlive", "Browser extension connected")
+            return QCoreApplication.translate("KeepAlive", "下载中")
+        return QCoreApplication.translate("KeepAlive", "浏览器扩展已连接")
 
     def _startService(self, statusMessage: str) -> None:
         from jnius import autoclass
