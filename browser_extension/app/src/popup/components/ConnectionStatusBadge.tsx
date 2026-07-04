@@ -14,7 +14,6 @@ const useStyles = makeStyles({
   root: {
     display: "flex",
     alignItems: "center",
-    flexShrink: 0,
     gap: "6px",
     whiteSpace: "nowrap",
   },

@@ -22,7 +22,7 @@
     "message": "Автосопряжение"
   },
   "awaitingPairing": {
-    "message": "Ожидание сопряжения"
+    "message": "Ожидание"
   },
   "browserDownload": {
     "message": "Загрузка браузером"
@@ -83,7 +83,7 @@
     "message": "Не подключено"
   },
   "downloadThisMedia": {
-    "message": "Скачать это медиа"
+    "message": "Медиа-кнопка"
   },
   "downloadWithGhostDownloader": {
     "message": "Скачать через Ghost Downloader"
@@ -391,10 +391,10 @@
     "message": "Выключить звук"
   },
   "navAdvanced": {
-    "message": "Дополнительно"
+    "message": "Ещё"
   },
   "navImages": {
-    "message": "Изображения"
+    "message": "Фото"
   },
   "navResources": {
     "message": "Ресурсы"
@@ -457,7 +457,7 @@
     "message": "Приостановлено"
   },
   "pendingPairing": {
-    "message": "Ожидание сопряжения"
+    "message": "Ожидание"
   },
   "pendingQueueBadge": {
     "message": "$1 · $2 в очереди"
@@ -596,7 +596,7 @@
     "message": "Текущая вкладка не поддерживает мост ресурсов cat-catch"
   },
   "takeOverDownloads": {
-    "message": "Перехватывать загрузки"
+    "message": "Перехват"
   },
   "taskActionSent": {
     "message": "Действие над задачей отправлено"
@@ -608,7 +608,7 @@
     "message": "Тема"
   },
   "tokenInvalid": {
-    "message": "Токен недействителен"
+    "message": "Неверный токен"
   },
   "unmute": {
     "message": "Включить звук"
