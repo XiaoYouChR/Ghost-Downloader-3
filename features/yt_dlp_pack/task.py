@@ -5,9 +5,11 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from loguru import logger
+
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import toPosixPath
-from .config import ytDlpConfig, ytDlpRuntime
+from .config import jsRuntime, ytDlpConfig, ytDlpRuntime
 
 DEFAULT_VIDEO_FORMAT = "bv*+ba/b"
 PROGRESS_TOKEN = "__GD3_PROGRESS__"
@@ -22,14 +24,14 @@ FINAL_TEMPLATE = f"after_move:{FINAL_FILE_TOKEN}%(filepath)s"
 BEFORE_DL_TEMPLATE = f"before_dl:{BEFORE_DL_TOKEN}%(filename)s"
 
 ERROR_HINTS = (
-    ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理"),
-    ("video unavailable", "视频不可用（可能已被删除或设为私密）"),
-    ("private video", "私密视频，需要已授权账号的 Cookie"),
-    ("members-only", "会员专属视频，需要会员账号的 Cookie"),
-    ("confirm your age", "年龄限制视频，需要已登录账号的 Cookie"),
-    ("confirm you're not a bot", "YouTube 需要人机验证，请在设置中配置 Cookie"),
-    ("requested format is not available", "请求的格式不可用，请尝试其他画质"),
-    ("http error 403", "下载被拒绝（403），链接可能已失效"),
+    ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理（{detail}）"),
+    ("video unavailable", "视频不可用，可能已被删除或设为私密（{detail}）"),
+    ("private video", "私密视频，需要已授权账号的 Cookie（{detail}）"),
+    ("members-only", "会员专属视频，需要会员账号的 Cookie（{detail}）"),
+    ("confirm your age", "年龄限制视频，需要已登录账号的 Cookie（{detail}）"),
+    ("confirm you're not a bot", "YouTube 需要人机验证，请在设置中配置 Cookie（{detail}）"),
+    ("requested format is not available", "请求的格式不可用，请稍后重试（{detail}）"),
+    ("http error 403", "下载被拒绝（403），链接可能已失效（{detail}）"),
 )
 
 
@@ -124,6 +126,9 @@ class YtDlpTaskStep(TaskStep):
                 move(str(p), str(f"{newBase}{suffix}"))
         for frag in oldPath.parent.glob(f"{oldPath.name}.part-Frag*"):
             move(str(frag), str(newFolder / frag.relative_to(oldFolder)))
+        for sub in oldPath.parent.glob(f"{oldPath.stem}.*"):
+            if sub != oldPath and sub.suffix.lower() in (".vtt", ".srt", ".ass", ".ssa"):
+                move(str(sub), str(newFolder / sub.relative_to(oldFolder)))
         self.outputFile = str(newBase)
 
     @property
@@ -151,6 +156,8 @@ class YtDlpTaskStep(TaskStep):
 
         if ytDlpConfig.shouldPreferMp4.value:
             args.extend(["--format-sort", "ext:mp4:m4a"])
+
+        args.extend(jsRuntime.buildArgs())
 
         ffmpegPath = ffmpegRuntime.path()
         if ffmpegPath:
@@ -263,6 +270,7 @@ class YtDlpTaskStep(TaskStep):
             if process.returncode != 0:
                 lowered = self.lastMessage.lower()
                 hint = next((h for needle, h in ERROR_HINTS if needle in lowered), "")
+                logger.warning("yt-dlp exited ({}): {}", process.returncode, self.lastMessage)
                 raise TaskError(
                     hint or "进程异常退出（{code}）：{detail}",
                     code=process.returncode,

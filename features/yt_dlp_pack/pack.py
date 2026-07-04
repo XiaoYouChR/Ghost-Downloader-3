@@ -7,7 +7,7 @@ from urllib.parse import urlparse, parse_qs, quote
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
-from .config import ytDlpConfig, ytDlpRuntime
+from .config import jsRuntime, ytDlpConfig, ytDlpRuntime
 from .task import YtDlpTask, YtDlpTaskStep
 
 
@@ -84,6 +84,7 @@ class YouTubeParser(TaskParser):
         browser = ytDlpConfig.loginBrowser.value
         if browser:
             args.extend(["--cookies-from-browser", browser])
+        args.extend(jsRuntime.buildArgs())
 
         process = await asyncio.create_subprocess_exec(
             execPath, *args,

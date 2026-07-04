@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+import shutil
 import sys
 from pathlib import Path
 
@@ -40,11 +41,13 @@ class YtDlpConfig(PackConfig):
             group,
         )
         runtimeCard = RuntimeCard(ytDlpRuntime, group)
+        jsRuntimeCard = RuntimeCard(jsRuntime, group)
         installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
 
         group.addSettingCards([
             installFolderCard,
             runtimeCard,
+            jsRuntimeCard,
             SpinBoxSettingCard(
                 FluentIcon.SPEED_HIGH,
                 self.tr("并行分片数"),
@@ -90,6 +93,7 @@ class YtDlpConfig(PackConfig):
             ),
         ])
         runtimeCard.refreshStatus()
+        jsRuntimeCard.refreshStatus()
         return [group]
 
 
@@ -128,3 +132,23 @@ class YtDlpRuntime(BinaryRuntime):
 
 
 ytDlpRuntime = YtDlpRuntime()
+
+
+class JsRuntime(BinaryRuntime):
+    name = "JavaScript Runtime"
+
+    def path(self) -> str:
+        for runtime in ("deno", "node", "bun"):
+            found = shutil.which(runtime)
+            if found:
+                return found
+        return ""
+
+    def buildArgs(self) -> list[str]:
+        path = self.path()
+        if not path:
+            return []
+        return ["--js-runtimes", f"{Path(path).stem}:{path}"]
+
+
+jsRuntime = JsRuntime()
