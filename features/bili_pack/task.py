@@ -4,7 +4,9 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 
-from app.models.task import Task
+from loguru import logger
+
+from app.models.task import Task, TaskStep, TaskStatus
 from app.platform.filesystem import toSafeFilename
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.task import FFmpegStep
@@ -24,10 +26,15 @@ class BilibiliTask(Task):
     coverSize: int = 0
     mode: DownloadMode = DownloadMode.VIDEO
     pages: list[dict] = field(default_factory=list)
+    subtitleLanguages: list[str] = field(default_factory=list)
     _baseName: str = ""
 
     def setMode(self, mode: DownloadMode) -> None:
         self.mode = mode
+        self._rebuildSteps()
+
+    def setSubtitleLanguages(self, languages: list[str]) -> None:
+        self.subtitleLanguages = languages
         self._rebuildSteps()
 
     def setPageSelection(self, selectedPageNumbers: set[int]) -> None:
@@ -73,6 +80,7 @@ class BilibiliTask(Task):
     def _rebuildSteps(self) -> None:
         self.steps.clear()
         selected = self.selectedPages
+        hasSubs = bool(self.subtitleLanguages)
 
         if self.mode == DownloadMode.COVER:
             self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
@@ -91,10 +99,11 @@ class BilibiliTask(Task):
             suffix = ".m4a" if len(selected) <= 1 else ".m4a"
             self.name = toSafeFilename(f"{self._baseName}{suffix}", fallback=f"audio{suffix}")
             self.fileSize = sum(p["audioSize"] for p in selected)
+            stepIndex = 1
             for i, info in enumerate(selected):
                 pageSuffix = self._pageSuffix(info)
                 self.addStep(BilibiliAudioStep(
-                    stepIndex=i + 1,
+                    stepIndex=stepIndex,
                     url=info["audioUrl"],
                     fileSize=info["audioSize"],
                     headers=dict(info.get("headers") or {}),
@@ -103,16 +112,24 @@ class BilibiliTask(Task):
                     pageIndex=i,
                     pageSuffix=pageSuffix,
                 ))
+                stepIndex += 1
+                if hasSubs and info.get("subtitles"):
+                    self.addStep(BilibiliSubtitleStep(
+                        stepIndex=stepIndex,
+                        pageIndex=i,
+                        pageSuffix=pageSuffix,
+                    ))
+                    stepIndex += 1
             return
 
         # VIDEO mode
         self.name = toSafeFilename(f"{self._baseName}.mp4", fallback="video.mp4")
         self.fileSize = sum(p["videoSize"] + p["audioSize"] for p in selected)
+        stepIndex = 1
         for i, info in enumerate(selected):
             pageSuffix = self._pageSuffix(info)
-            stepBase = i * 3
             self.addStep(BilibiliVideoStep(
-                stepIndex=stepBase + 1,
+                stepIndex=stepIndex,
                 url=info["videoUrl"],
                 fileSize=info["videoSize"],
                 headers=dict(info.get("headers") or {}),
@@ -122,7 +139,7 @@ class BilibiliTask(Task):
                 pageSuffix=pageSuffix,
             ))
             self.addStep(BilibiliAudioStep(
-                stepIndex=stepBase + 2,
+                stepIndex=stepIndex + 1,
                 url=info["audioUrl"],
                 fileSize=info["audioSize"],
                 headers=dict(info.get("headers") or {}),
@@ -132,10 +149,18 @@ class BilibiliTask(Task):
                 pageSuffix=pageSuffix,
             ))
             self.addStep(BilibiliMergeStep(
-                stepIndex=stepBase + 3,
+                stepIndex=stepIndex + 2,
                 pageIndex=i,
                 pageSuffix=pageSuffix,
             ))
+            stepIndex += 3
+            if hasSubs and info.get("subtitles"):
+                self.addStep(BilibiliSubtitleStep(
+                    stepIndex=stepIndex,
+                    pageIndex=i,
+                    pageSuffix=pageSuffix,
+                ))
+                stepIndex += 1
 
     def _pageSuffix(self, pageInfo: dict) -> str:
         selected = self.selectedPages
@@ -194,3 +219,87 @@ class BilibiliMergeStep(FFmpegStep):
     @property
     def _audioPath(self) -> Path:
         return self.task.outputFolder / f"{pageStem(self.task.name, self.pageSuffix)}.audio.m4s"
+
+
+@dataclass(kw_only=True)
+class BilibiliSubtitleStep(TaskStep):
+    canPause = False
+    pageIndex: int = 0
+    pageSuffix: str = ""
+
+    @property
+    def outputPath(self) -> str:
+        return ""
+
+    def deleteFiles(self) -> None:
+        stem = pageStem(self.task.name, self.pageSuffix)
+        for path in self.task.outputFolder.glob(f"{stem}.*.srt"):
+            path.unlink(missing_ok=True)
+
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        from shutil import move
+        stem = pageStem(self.task.name, self.pageSuffix)
+        for path in oldFolder.glob(f"{stem}.*.srt"):
+            target = newFolder / path.name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if path.exists():
+                move(str(path), str(target))
+
+    async def run(self) -> None:
+        from app.client import buildClient
+
+        task: BilibiliTask = self.task
+        pageInfo = task.selectedPages[self.pageIndex]
+        subtitles = pageInfo.get("subtitles") or []
+        selectedLangs = set(task.subtitleLanguages)
+
+        matching = [s for s in subtitles if s["lan"] in selectedLangs]
+        if not matching:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+
+        stem = pageStem(task.name, self.pageSuffix)
+        task.outputFolder.mkdir(parents=True, exist_ok=True)
+
+        def toSrtTime(seconds: float) -> str:
+            total_ms = int(round(seconds * 1000))
+            h, rem = divmod(total_ms // 1000, 3600)
+            m, s = divmod(rem, 60)
+            return f"{h:02d}:{m:02d}:{s:02d},{total_ms % 1000:03d}"
+
+        client = buildClient()
+        try:
+            for sub in matching:
+                url = sub.get("subtitle_url", "")
+                if not url:
+                    continue
+                if url.startswith("//"):
+                    url = "https:" + url
+                try:
+                    response = await client.get(url)
+                    response.raise_for_status()
+                    payload = await response.json()
+                    body = payload.get("body") or []
+                    if not body:
+                        continue
+                    lines: list[str] = []
+                    seq = 0
+                    for entry in body:
+                        start = float(entry.get("from", 0))
+                        end = float(entry.get("to", 0))
+                        content = str(entry.get("content", "")).strip()
+                        if not content:
+                            continue
+                        seq += 1
+                        lines.append(str(seq))
+                        lines.append(f"{toSrtTime(start)} --> {toSrtTime(end)}")
+                        lines.append(content)
+                        lines.append("")
+                    srtFile = task.outputFolder / f"{stem}.{sub['lan']}.srt"
+                    srtFile.write_text("\n".join(lines), encoding="utf-8")
+                except Exception:
+                    logger.opt(exception=True).debug("Subtitle download failed: {}", sub.get("lan"))
+        finally:
+            client.close()
+
+        self.setStatus(TaskStatus.COMPLETED)

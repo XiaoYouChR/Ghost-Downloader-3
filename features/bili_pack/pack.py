@@ -4,6 +4,8 @@ import re
 import urllib.parse
 from urllib.parse import parse_qs, urlparse
 
+from loguru import logger
+
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser
@@ -147,6 +149,8 @@ class BilibiliParser(TaskParser):
                 audioSize = await self._fetchSize(client, audioUrl, downloadHeaders)
                 totalSize += videoSize + audioSize
 
+                subtitles = await self._fetchSubtitles(client, videoId, cid)
+
                 parsedPages.append({
                     "pageNumber": pageNumber,
                     "pagePart": pagePart,
@@ -154,6 +158,7 @@ class BilibiliParser(TaskParser):
                     "audioUrl": audioUrl,
                     "videoSize": videoSize,
                     "audioSize": audioSize,
+                    "subtitles": subtitles,
                 })
 
             coverUrl = str(viewData.get("pic") or "").strip()
@@ -190,6 +195,34 @@ class BilibiliParser(TaskParser):
             return task
         finally:
             client.close()
+
+    async def _fetchSubtitles(self, client, videoId: str, cid: int) -> list[dict]:
+        try:
+            params: dict = {"cid": cid}
+            if videoId.startswith("av"):
+                params["aid"] = videoId[2:]
+            else:
+                params["bvid"] = videoId
+
+            url = f"https://api.bilibili.com/x/player/v2?{urllib.parse.urlencode(params)}"
+            response = await client.get(url)
+            response.raise_for_status()
+            payload = await response.json()
+
+            subtitleData = (payload.get("data") or {}).get("subtitle") or {}
+            rawList = subtitleData.get("subtitles") or []
+            return [
+                {
+                    "lan": s["lan"],
+                    "lan_doc": s.get("lan_doc", s["lan"]),
+                    "subtitle_url": s.get("subtitle_url", ""),
+                    "isAi": s.get("type", 0) == 1,
+                }
+                for s in rawList if s.get("lan") and s.get("subtitle_url")
+            ]
+        except Exception:
+            logger.opt(exception=True).debug("Failed to fetch subtitles for cid={}", cid)
+            return []
 
     def _selectStream(
         self,
