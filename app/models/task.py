@@ -409,7 +409,7 @@ class Task:
             raise
         except TaskError as e:
             if currentStep is not None:
-                currentStep.setError(StepError(str(e), e.params))
+                currentStep.setError(StepError(e.message, e.params))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
         except Exception as e:
