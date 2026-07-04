@@ -203,6 +203,11 @@ class SettingPage(ScrollArea):
                 placeholder=self.tr("可选"),
                 isPassword=True,
             ),
+            SwitchSettingCard(
+                FluentIcon.VPN, self.tr("模拟浏览器指纹"),
+                self.tr("为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头"),
+                cfg.aria2RpcEmulateFingerprint,
+            ),
         ])
 
         self.zoomCard = SpinBoxSettingCard(

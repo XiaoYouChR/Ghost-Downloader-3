@@ -166,6 +166,13 @@ class Aria2RpcServer(QObject):
                     k, v = h.split(":", 1)
                     headers[k.strip()] = v.strip()
 
+        ua = options.get("user-agent", "")
+        if isinstance(ua, str) and ua:
+            headers.setdefault("User-Agent", ua)
+        referer = options.get("referer", "")
+        if isinstance(referer, str) and referer:
+            headers.setdefault("Referer", referer)
+
         gid = token_hex(8)
         self._respond(socket, rpcId, gid)
 
@@ -174,10 +181,12 @@ class Aria2RpcServer(QObject):
         from app.services.feature_service import featureService
 
         outputFolder = Path(directory) if directory else Path(cfg.downloadFolder.value)
+        clientProfile = "" if cfg.aria2RpcEmulateFingerprint.value else "raw"
         taskOptions = TaskOptions(
             url=url,
             headers=headers,
             outputFolder=outputFolder,
+            clientProfile=clientProfile,
         )
         coroutineRunner.submit(
             featureService.parse(taskOptions),
