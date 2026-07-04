@@ -206,6 +206,7 @@ class Config(QConfig):
     isAria2RpcEnabled = ConfigItem("Aria2Rpc", "Enabled", False, BoolValidator())
     aria2RpcPort = RangeConfigItem("Aria2Rpc", "Port", 16800, RangeValidator(1024, 65535))
     aria2RpcToken = ConfigItem("Aria2Rpc", "Token", "")
+    aria2RpcEmulateFingerprint = ConfigItem("Aria2Rpc", "EmulateFingerprint", False, BoolValidator())
 
     # 个性化
     if sys.platform == "win32":
