@@ -69,13 +69,13 @@ class HuggingFaceTaskCard(UniversalTaskCard):
         )
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
-    def refresh(self) -> None:
-        super().refresh()
+    def refresh(self, force: bool = False) -> None:
+        super().refresh(force=force)
         hasMultipleFiles = self._task.files and len(self._task.files) > 1
         self.selectFilesButton.setVisible(hasMultipleFiles)
         self.selectFilesButton.setEnabled(self._task.status != TaskStatus.RUNNING)
 
-        if self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and hasMultipleFiles:
+        if self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and hasMultipleFiles and not self._fileMissing:
             selected = sum(1 for f in self._task.files if f.selected)
             self.statusLabel.setText(self.tr("{0}/{1} 个文件").format(selected, len(self._task.files)))
 

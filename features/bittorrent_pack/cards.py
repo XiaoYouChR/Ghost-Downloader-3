@@ -134,7 +134,7 @@ class BTTaskCard(UniversalTaskCard):
             self.uploadLabel.hide()
             super().refresh(force)
             btStatus = self._seedingSummary(task)
-            if btStatus:
+            if btStatus and not self._fileMissing:
                 self.statusLabel.setText(btStatus)
 
         self.selectFilesButton.setEnabled(

@@ -23,8 +23,8 @@ class M3U8DraftCard(UniversalDraftCard):
 
 class M3U8TaskCard(UniversalTaskCard):
 
-    def refresh(self):
-        super().refresh()
+    def refresh(self, force: bool = False) -> None:
+        super().refresh(force=force)
         if self._task.status == TaskStatus.RUNNING and self._task.fileSize <= 1:
             step = self._step()
             if step is not None:
@@ -43,8 +43,8 @@ class M3U8LiveTaskCard(UniversalTaskCard):
         super()._initWidget()
         self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton))
 
-    def refresh(self):
-        super().refresh()
+    def refresh(self, force: bool = False) -> None:
+        super().refresh(force=force)
         step = self._step()
         if step is None:
             return
@@ -56,22 +56,17 @@ class M3U8LiveTaskCard(UniversalTaskCard):
                 self.sizeLabel.setText(self.tr("等待中"))
             else:
                 self.sizeLabel.setText(self.tr("录制中"))
-        elif self._task.status == TaskStatus.COMPLETED:
+        elif self._task.status == TaskStatus.COMPLETED and not self._fileMissing:
             self._showStatus(self.tr("录制已结束"))
 
     def _refreshButtons(self) -> None:
+        super()._refreshButtons()
         if self._task.status == TaskStatus.RUNNING:
             self.toggleButton.setIcon(FluentIcon.ACCEPT)
             self.toggleButton.setToolTip(self.tr("停止并定案"))
             self.toggleButton.setEnabled(True)
         elif self._task.status == TaskStatus.COMPLETED:
             self.toggleButton.setIcon(FluentIcon.ACCEPT)
-            self.toggleButton.setEnabled(False)
-        else:
-            self.toggleButton.setIcon(FluentIcon.PLAY)
-            self.toggleButton.setEnabled(True)
-        self.verifyHashButton.setVisible(self._task.status == TaskStatus.COMPLETED)
-        self.verifyHashButton.setEnabled(self._task.status == TaskStatus.COMPLETED)
 
     def _onToggleClicked(self) -> None:
         if self._task.status == TaskStatus.RUNNING:

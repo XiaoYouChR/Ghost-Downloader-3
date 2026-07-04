@@ -75,13 +75,13 @@ class FtpTaskCard(UniversalTaskCard):
         )
         self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
-    def refresh(self):
-        super().refresh()
+    def refresh(self, force: bool = False) -> None:
+        super().refresh(force=force)
         hasMultipleFiles = self.task.files and len(self.task.files) > 1
         self.selectFilesButton.setVisible(hasMultipleFiles)
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
 
-        if self.task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and hasMultipleFiles:
+        if self.task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and hasMultipleFiles and not self._fileMissing:
             selected = sum(1 for f in self.task.files if f.selected)
             self.statusLabel.setText(self.tr("{0}/{1} 个文件").format(selected, len(self.task.files)))
 
