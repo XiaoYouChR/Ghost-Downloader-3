@@ -18,6 +18,9 @@ const useStyles = makeStyles({
     padding: "8px 10px",
     overflow: "hidden",
   },
+  clickable: {
+    cursor: "pointer",
+  },
   row: {
     display: "flex",
     alignItems: "center",
@@ -130,7 +133,11 @@ export function TaskCard({
     : styles.meta;
 
   return (
-    <Card appearance="filled-alternative" className={styles.root}>
+    <Card
+      appearance="filled-alternative"
+      className={`${styles.root}${isCompleted && task.canOpenFile ? ` ${styles.clickable}` : ""}`}
+      onClick={isCompleted && task.canOpenFile && !busy ? () => onAction("open_file") : undefined}
+    >
       <div className={styles.row}>
         <Avatar
           color="colorful"
