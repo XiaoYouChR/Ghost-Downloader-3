@@ -43,6 +43,7 @@ class YtDlpConfig(PackConfig):
         runtimeCard = RuntimeCard(ytDlpRuntime, group)
         jsRuntimeCard = RuntimeCard(jsRuntime, group)
         installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
+        installFolderCard.pathChanged.connect(jsRuntimeCard._onInstallFolderChanged)
 
         group.addSettingCards([
             installFolderCard,
@@ -136,9 +137,13 @@ ytDlpRuntime = YtDlpRuntime()
 
 class JsRuntime(BinaryRuntime):
     name = "JavaScript Runtime"
+    canInstall = not IS_ANDROID
 
     def path(self) -> str:
-        for runtime in ("deno", "node", "bun"):
+        found = findExecutable(Path(ytDlpConfig.installFolder.value), "deno")
+        if found:
+            return found
+        for runtime in ("node", "bun"):
             found = shutil.which(runtime)
             if found:
                 return found
@@ -149,6 +154,29 @@ class JsRuntime(BinaryRuntime):
         if not path:
             return []
         return ["--js-runtimes", f"{Path(path).stem}:{path}"]
+
+    async def installTask(self) -> Task:
+        from app.services.feature_service import featureService
+        from app.models.task import BinaryInstallOptions
+
+        machine = platform.machine().lower()
+        if sys.platform == "win32":
+            target = "x86_64-pc-windows-msvc"
+        elif sys.platform == "darwin":
+            target = "aarch64-apple-darwin" if machine in {"arm64", "aarch64"} else "x86_64-apple-darwin"
+        elif machine in {"arm64", "aarch64"}:
+            target = "aarch64-unknown-linux-gnu"
+        else:
+            target = "x86_64-unknown-linux-gnu"
+
+        url = f"https://github.com/denoland/deno/releases/latest/download/deno-{target}.zip"
+        binaryName = "deno.exe" if sys.platform == "win32" else "deno"
+        return await featureService.parse(BinaryInstallOptions(
+            url=url,
+            outputFolder=Path(ytDlpConfig.installFolder.value),
+            name=f"deno 安装 ({target})",
+            executableNames=(binaryName,),
+        ))
 
 
 jsRuntime = JsRuntime()
