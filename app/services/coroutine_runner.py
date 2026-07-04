@@ -14,12 +14,11 @@ class CoroutineRunner(QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._loop: asyncio.AbstractEventLoop | None = None
+        self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self._pending: dict[str, tuple] = {}
         self._running: dict[str, asyncio.Task] = {}
 
     def run(self):
-        self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
         self._loop.run_forever()
         self._loop.close()

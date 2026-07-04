@@ -446,7 +446,6 @@ class BrowserService(QObject):
             )
 
     def _onExtensionExtracted(self, _path: Path, session: BrowserClientSession) -> None:
-        self._isUpdatingExtension = False
         if id(session.socket) not in self._sessions:
             return
         self._send(session, {"type": MessageType.RELOAD})
