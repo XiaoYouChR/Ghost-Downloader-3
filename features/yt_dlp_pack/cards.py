@@ -398,8 +398,8 @@ class YtDlpTaskCard(UniversalTaskCard):
         bar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         return bar
 
-    def refresh(self) -> None:
-        super().refresh()
+    def refresh(self, force: bool = False) -> None:
+        super().refresh(force=force)
         task: YtDlpTask = self._task
         if len(task.steps) <= 1:
             return

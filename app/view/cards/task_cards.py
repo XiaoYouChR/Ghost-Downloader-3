@@ -214,6 +214,7 @@ class UniversalTaskCard(TaskCard):
         if not force and self._lastStatus == self._task.status and self._task.status != TaskStatus.RUNNING:
             return
 
+        self._fileMissing = False
         task = self._task
         progress, speed, receivedBytes = task.currentSnapshot()
 
