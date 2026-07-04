@@ -32,6 +32,7 @@ const useStyles = makeStyles({
     gap: "8px",
     paddingLeft: "8px",
     paddingRight: "4px",
+    overflow: "hidden",
   },
   switches: {
     display: "flex",
@@ -122,7 +123,7 @@ export function Header({
           <Switch
             checked={isMediaButtonEnabled}
             disabled={isMediaButtonBusy}
-            label={chrome.i18n.getMessage("downloadThisMedia")}
+            label={chrome.i18n.getMessage("mediaButtonLabel")}
             labelPosition="before"
             onChange={(_event, data: SwitchOnChangeData) => onMediaButtonToggle(Boolean(data.checked))}
           />
