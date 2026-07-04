@@ -83,6 +83,9 @@
     "message": "Disconnected"
   },
   "downloadThisMedia": {
+    "message": "Download this media"
+  },
+  "mediaButtonLabel": {
     "message": "Media button"
   },
   "downloadWithGhostDownloader": {

@@ -83,7 +83,10 @@
     "message": "Не подключено"
   },
   "downloadThisMedia": {
-    "message": "Медиа-кнопка"
+    "message": "Скачать это медиа"
+  },
+  "mediaButtonLabel": {
+    "message": "Медиа"
   },
   "downloadWithGhostDownloader": {
     "message": "Скачать через Ghost Downloader"

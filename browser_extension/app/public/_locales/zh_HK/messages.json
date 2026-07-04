@@ -83,6 +83,9 @@
     "message": "未連接"
   },
   "downloadThisMedia": {
+    "message": "下載此媒體"
+  },
+  "mediaButtonLabel": {
     "message": "媒體按鈕"
   },
   "downloadWithGhostDownloader": {

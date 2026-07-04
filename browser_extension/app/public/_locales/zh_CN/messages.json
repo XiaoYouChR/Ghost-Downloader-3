@@ -99,6 +99,9 @@
     "message": "未连接"
   },
   "downloadThisMedia": {
+    "message": "下载此媒体"
+  },
+  "mediaButtonLabel": {
     "message": "媒体按钮"
   },
   "downloadWithGhostDownloader": {

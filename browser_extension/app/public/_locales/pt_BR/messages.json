@@ -83,7 +83,10 @@
     "message": "Desconectado"
   },
   "downloadThisMedia": {
-    "message": "Botão de mídia"
+    "message": "Baixar esta mídia"
+  },
+  "mediaButtonLabel": {
+    "message": "Mídia"
   },
   "downloadWithGhostDownloader": {
     "message": "Baixar com Ghost Downloader"
