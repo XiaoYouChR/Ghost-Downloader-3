@@ -2871,37 +2871,37 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
     <name>SubtitleSelectDialog</name>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="108"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="212"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="225"/>
         <source>选择字幕语言</source>
         <translation>Selecionar idioma da legenda</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="111"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="215"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="228"/>
         <source>全选</source>
         <translation>Selecionar todos</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="112"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="216"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="229"/>
         <source>全不选</source>
         <translation>Desmarcar todos</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="124"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="228"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="241"/>
         <source>确定</source>
         <translation>OK</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="125"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="229"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="242"/>
         <source>取消</source>
         <translation>Cancelar</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="170"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="278"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="291"/>
         <source>{0}/{1} 种语言</source>
         <translation>{0}/{1} idiomas</translation>
     </message>
@@ -3272,47 +3272,47 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>VideoSelectDialog</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="298"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="311"/>
         <source>选择视频</source>
         <translation>Selecionar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="301"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="314"/>
         <source>全选</source>
         <translation>Selecionar todos</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="302"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="315"/>
         <source>全不选</source>
         <translation>Desmarcar todos</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="303"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="316"/>
         <source>反选</source>
         <translation>Inverter seleção</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="315"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="328"/>
         <source>确定</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="316"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="329"/>
         <source>取消</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="322"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="335"/>
         <source>标题</source>
         <translation>Título</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="322"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="335"/>
         <source>时长</source>
         <translation>Duração</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="384"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="397"/>
         <source>{0}/{1} 个视频</source>
         <translation>{0}/{1} vídeos</translation>
     </message>
@@ -3419,105 +3419,113 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>YtDlpConfig</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="37"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="38"/>
         <source>YouTube 下载</source>
         <translation>Download do YouTube</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="40"/>
         <source>yt-dlp 安装目录</source>
-        <translation>Diretório de instalação do yt-dlp</translation>
+        <translation type="vanished">Diretório de instalação do yt-dlp</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="54"/>
         <source>并行分片数</source>
-        <translation>Número de segmentos paralelos</translation>
+        <translation type="vanished">Número de segmentos paralelos</translation>
+    </message>
+    <message>
+        <source>同时下载的视频分片数量，越高越快但可能被限流</source>
+        <translation type="vanished">Número de segmentos de vídeo baixados simultaneamente; quanto maior, mais rápido, mas pode ser limitado</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="46"/>
+        <source>运行环境安装目录</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/config.py" line="55"/>
-        <source>同时下载的视频分片数量，越高越快但可能被限流</source>
-        <translation>Número de segmentos de vídeo baixados simultaneamente; quanto maior, mais rápido, mas pode ser limitado</translation>
-    </message>
-    <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="62"/>
         <source>登录浏览器</source>
         <translation>Navegador de login</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="63"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="56"/>
         <source>从指定浏览器读取 YouTube 登录状态，用于下载需要登录的内容</source>
         <translation>Ler o estado de login do YouTube do navegador especificado para baixar conteúdo que requer login</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="64"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="57"/>
         <source>不使用</source>
         <translation>Não usar</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="69"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="64"/>
         <source>优先 MP4 格式</source>
         <translation>Priorizar formato MP4</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="70"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="65"/>
         <source>优先选择 H.264/MP4 编码，避免输出 WebM/MKV</source>
         <translation>Priorizar codificação H.264/MP4 para evitar saída WebM/MKV</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="76"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="72"/>
+        <source>下载完成后将标题、作者等信息嵌入文件</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="79"/>
+        <source>下载完成后将章节标记嵌入文件</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>嵌入缩略图</source>
-        <translation>Incorporar miniatura</translation>
+        <translation type="vanished">Incorporar miniatura</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="77"/>
         <source>下载完成后通过 FFmpeg 将封面嵌入文件</source>
-        <translation>Incorporar a capa no arquivo usando FFmpeg após o download</translation>
+        <translation type="vanished">Incorporar a capa no arquivo usando FFmpeg após o download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="83"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="78"/>
         <source>嵌入章节</source>
         <translation>Incorporar capítulos</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="84"/>
         <source>下载完成后通过 FFmpeg 将章节标记嵌入文件</source>
-        <translation>Incorporar marcadores de capítulo no arquivo usando FFmpeg após o download</translation>
+        <translation type="vanished">Incorporar marcadores de capítulo no arquivo usando FFmpeg após o download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="90"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="71"/>
         <source>嵌入元数据</source>
         <translation>Incorporar metadados</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="91"/>
         <source>下载完成后通过 FFmpeg 将标题、作者等信息嵌入文件</source>
-        <translation>Incorporar informações como título e autor no arquivo usando FFmpeg após o download</translation>
+        <translation type="vanished">Incorporar informações como título e autor no arquivo usando FFmpeg após o download</translation>
     </message>
 </context>
 <context>
     <name>YtDlpDraftCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="78"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="86"/>
         <source>最佳画质</source>
         <translation>Melhor qualidade</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="95"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="103"/>
         <source>选择字幕</source>
         <translation>Selecionar legenda</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="100"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="108"/>
         <source>选择视频</source>
         <translation>Selecionar vídeo</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="198"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="211"/>
         <source>未找到播放列表</source>
         <translation>Lista de reprodução não encontrada</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="203"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="216"/>
         <source>加载播放列表失败</source>
         <translation>Falha ao carregar lista de reprodução</translation>
     </message>
@@ -3525,7 +3533,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
 <context>
     <name>YtDlpTaskCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="424"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="422"/>
         <source>{0} 个视频 · {1}</source>
         <translation>{0} vídeos · {1}</translation>
     </message>
