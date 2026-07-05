@@ -154,7 +154,19 @@ if sys.platform == "win32":
             painter.setBrush(QColor(0, 0, 0, 1))
             painter.drawRect(self.rect())
 
-    TrayMenu = AcrylicMenu if isGreaterEqualWin11() else RoundMenu
+    class TrayRoundMenu(RoundMenu):
+
+        def showEvent(self, event):
+            for action in self._actions:
+                item = action.property('item')
+                if item:
+                    self._adjustItemText(item, action)
+            self.view.adjustSize()
+            self.adjustSize()
+            self.adjustPosition()
+            super().showEvent(event)
+
+    TrayMenu = AcrylicMenu if isGreaterEqualWin11() else TrayRoundMenu
 else:
     TrayMenu = RoundMenu
 
