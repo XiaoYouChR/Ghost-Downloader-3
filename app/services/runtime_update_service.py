@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, QTimer, Signal
@@ -116,19 +115,10 @@ class RuntimeUpdateService(QObject):
         """任务创建成功，开始运行"""
         from app.models.task import TaskStatus
         from app.services.coroutine_runner import coroutineRunner
-        from app.config.paths import UPDATE_DIR
 
-        # 修改任务名称，标识为运行时安装
-        task.name = f"{name} 安装/更新"
-
-        # 将输出目录设置为 UPDATE_DIR（统一的临时下载目录）
-        # 注意：最终安装位置由 BinaryRuntime.installTask() 内部的逻辑决定
-        # 这里只是用 UPDATE_DIR 作为下载过程中的临时存储
-        task.outputFolder = Path(UPDATE_DIR)
-
+        # installTask() 已经正确设置了输出路径，不能覆盖
         self._tasks[runtimeId] = task
 
-        # 启动任务
         task.setStatus(TaskStatus.RUNNING)
         coroutineRunner.submit(
             task.run(),
@@ -161,6 +151,7 @@ class RuntimeUpdateService(QObject):
 
         try:
             progress, speed, _ = task.currentSnapshot()
+            logger.debug(f"RuntimeUpdateService: Emitting progress for {runtimeId}: {progress:.1f}%, {speed} B/s")
             self.progressChanged.emit(runtimeId, progress, speed)
         except Exception as e:
             logger.opt(exception=e).warning(f"Failed to get progress for {runtimeId}")
