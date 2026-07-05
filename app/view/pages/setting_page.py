@@ -220,6 +220,9 @@ class SettingPage(ScrollArea):
             ComboBoxSettingCard(cfg.themeMode, FluentIcon.BRUSH, self.tr("应用主题"),
                                 self.tr("更改应用程序的外观"),
                                 texts=[self.tr("浅色"), self.tr("深色"), self.tr("跟随系统设置")]),
+            ComboBoxSettingCard(cfg.progressBarStyle, FluentIcon.LAYOUT, self.tr("下载进度条样式"),
+                                self.tr("分段：按线程范围显示各分片进度；经典：单色整体进度条"),
+                                texts=[self.tr("分段"), self.tr("经典")]),
         ]
         if sys.platform == "win32":
             personalCards.append(

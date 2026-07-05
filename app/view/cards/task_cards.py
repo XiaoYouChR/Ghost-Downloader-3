@@ -357,6 +357,13 @@ class UniversalTaskCard(TaskCard):
             menu.insertAction(menu.actions()[1], copyHash)
         return menu
 
+    def _rebuildProgressBar(self) -> None:
+        old = self.progressBar
+        self.progressBar = self._buildProgressBar()
+        self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)
+        old.hide()
+        old.deleteLater()
+
     def resizeEvent(self, e) -> None:
         self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)
         super().resizeEvent(e)
