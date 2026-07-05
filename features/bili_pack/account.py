@@ -170,7 +170,6 @@ class BilibiliAccount(QObject):
         self._qrWorkId = ""
         if cookie:
             self.setCookie(cookie)
-            self.fetchAccountInfo()
             self.qrStateChanged.emit(QR_LOGIN_SUCCESS, "")
 
     def _onQrLoginFailed(self, error: str):
@@ -189,10 +188,14 @@ class BilibiliAccount(QObject):
             def onDone(_):
                 cfg.set(bilibiliConfig.userCookie, cookie)
                 self.accountChanged.emit()
+                if cookie:
+                    self.fetchAccountInfo()
             coroutineRunner.submit(self._logout(), done=onDone, failed=onDone)
         else:
             cfg.set(bilibiliConfig.userCookie, cookie)
             self.accountChanged.emit()
+            if cookie:
+                self.fetchAccountInfo()
 
     def logout(self):
         from app.services.coroutine_runner import coroutineRunner
