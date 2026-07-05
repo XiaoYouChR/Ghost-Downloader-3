@@ -31,6 +31,7 @@ class SpecialFileSize(IntEnum):
 class TaskError(Exception):
     def __init__(self, message: str, **params):
         super().__init__(message)
+        self.message = message
         self.params = params
 
 
