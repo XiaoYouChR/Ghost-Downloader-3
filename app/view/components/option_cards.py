@@ -4,7 +4,7 @@ from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
-    Action, BodyLabel, FluentIcon, IconWidget, Slider,
+    Action, BodyLabel, FluentIcon, IconWidget, LineEdit, Slider,
     ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 
