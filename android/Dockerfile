@@ -117,6 +117,14 @@ RUN mkdir -p /opt/gd3-ffmpeg && cd /opt/gd3-ffmpeg \
     && file libffmpeg.so | grep -q "ARM aarch64" && echo "[ffmpeg] minimal arm64 预置 OK" \
     && file libnm3u8dlre.so | grep -q "ARM aarch64" && echo "[nm3u8] bionic arm64 预置 OK"
 
+# QuickJS-NG for yt-dlp YouTube JS challenge solving.
+# Static musl binary from releases works on Android (issue #1512).
+ARG QJS_VERSION=v0.15.1
+RUN mkdir -p /opt/gd3-qjs && cd /opt/gd3-qjs \
+    && wget -q "https://github.com/quickjs-ng/quickjs/releases/download/${QJS_VERSION}/qjs-linux-aarch64" -O libqjs.so \
+    && chmod a+rx libqjs.so \
+    && file libqjs.so | grep -q "ARM aarch64" && echo "[qjs] static arm64 预置 OK"
+
 RUN DEPLOY_BASECFG=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib/config.py \
     && DEPLOY_BZ=/usr/local/lib/python3.11/site-packages/PySide6/scripts/deploy_lib/android/buildozer.py \
     && sed -i 's|config_icon = self.get_value("app", "icon")|config_icon = __import__("os").environ.get("GD3_ICON", "") or self.get_value("app", "icon")|' "$DEPLOY_BASECFG" \
