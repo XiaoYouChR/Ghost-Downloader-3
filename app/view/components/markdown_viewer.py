@@ -89,6 +89,7 @@ class MarkdownViewer(TextBrowser):
         separated = self.ALERT_BLOCK.sub(lambda m: m.group(0) + "\n\n<!-- -->", text)
         self.document().setMarkdown(separated)
         self._refreshAlertStyle()
+        self.moveCursor(QTextCursor.MoveOperation.Start)  # 重置滚动位置到顶部
 
     def _refreshAlertStyle(self) -> None:
         isDark = isDarkTheme()
