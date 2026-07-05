@@ -12,7 +12,7 @@ from qfluentwidgets import (
     SettingCard, PushSettingCard, RangeConfigItem, SpinBox,
     ExpandGroupSettingCard, ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
-    PrimaryPushButton, InfoBar, InfoBarPosition,
+    PrimaryPushButton, InfoBar, InfoBarPosition, StateToolTip,
     IconWidget,
 )
 
