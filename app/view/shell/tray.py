@@ -157,13 +157,10 @@ if sys.platform == "win32":
     class TrayRoundMenu(RoundMenu):
 
         def showEvent(self, event):
-            for action in self._actions:
-                item = action.property('item')
-                if item:
-                    self._adjustItemText(item, action)
-            self.view.adjustSize()
-            self.adjustSize()
-            self.adjustPosition()
+            rect = getCurrentScreenGeometry()
+            x = min(self.x(), rect.right() - self.width())
+            y = min(self.y(), rect.bottom() - self.height())
+            self.move(x, y)
             super().showEvent(event)
 
     TrayMenu = AcrylicMenu if isGreaterEqualWin11() else TrayRoundMenu
