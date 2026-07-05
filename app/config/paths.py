@@ -20,6 +20,8 @@ APP_DATA_DIR: str = (
     else f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
 )
 
+UPDATE_DIR = f"{APP_DATA_DIR}/update"
+
 PORTABLE_PATH = executableDir / "GhostDownloader"
 USER_PATH = Path(QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.GenericDataLocation

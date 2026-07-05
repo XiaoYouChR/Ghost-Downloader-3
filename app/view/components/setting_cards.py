@@ -417,6 +417,7 @@ class RuntimeCard(SettingCard):
         from app.services.runtime_status import runtimeStatusService
 
         self._runtime: BinaryRuntime = runtime
+        self._stateToolTip = None
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
@@ -441,8 +442,12 @@ class RuntimeCard(SettingCard):
 
     def _bind(self) -> None:
         from app.services.runtime_status import runtimeStatusService
+        from app.services.runtime_update_service import runtimeUpdateService
 
         runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
+        runtimeUpdateService.progressChanged.connect(self._onUpdateProgressChanged)
+        runtimeUpdateService.downloadSucceeded.connect(self._onUpdateSucceeded)
+        runtimeUpdateService.downloadFailed.connect(self._onUpdateFailed)
         self.installButton.clicked.connect(self._onInstallClicked)
         self.refreshButton.clicked.connect(self._onRefreshClicked)
 
@@ -475,41 +480,74 @@ class RuntimeCard(SettingCard):
             self.updateStatus(status)
 
     def _onInstallClicked(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
+        from app.services.runtime_update_service import runtimeUpdateService
 
         self.installButton.setEnabled(False)
-        cardRef = weakref.ref(self)
 
-        def onCreated(task) -> None:
-            from shiboken6 import isValid
-            from app.services.task_service import taskService
+        # 显示下载进度提示
+        if self._stateToolTip is None:
+            self._stateToolTip = StateToolTip(
+                self.tr("正在下载 {0}").format(self._runtime.name),
+                "0%",
+                self.window()
+            )
+            self._stateToolTip.move(self._stateToolTip.getSuitablePos())
+            self._stateToolTip.destroyed.connect(self._onStateToolTipDestroyed)
+            self._stateToolTip.show()
 
-            taskService.add(task)
-            card = cardRef()
-            if card is not None and isValid(card):
-                card.installButton.setEnabled(True)
-                InfoBar.success(
-                    card.tr("安装任务已创建"),
-                    card.tr("请前往任务页查看安装进度"),
-                    duration=3000,
-                    position=InfoBarPosition.TOP,
-                    parent=card.window(),
-                )
+        # 使用新的运行时更新服务
+        runtimeUpdateService.downloadRuntime(self._runtime)
 
-        def onFailed(error: str) -> None:
-            from shiboken6 import isValid
+    def _onStateToolTipDestroyed(self) -> None:
+        self._stateToolTip = None
 
-            card = cardRef()
-            if card is not None and isValid(card):
-                card._onInstallTaskFailed(error)
+    def _onUpdateProgressChanged(self, runtimeId: str, progress: float, speed: int) -> None:
+        """更新进度"""
+        if runtimeId != self._runtime.runtimeId:
+            return
 
-        coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
+        if self._stateToolTip is not None:
+            from app.format import toReadableSize
+            self._stateToolTip.setContent(f"{progress:.1f}%  ·  {toReadableSize(speed)}/s")
 
-    def _onInstallTaskFailed(self, error: str) -> None:
+    def _onUpdateSucceeded(self, runtimeId: str, installedPath: str) -> None:
+        """下载成功"""
+        if runtimeId != self._runtime.runtimeId:
+            return
+
         self.installButton.setEnabled(True)
+
+        if self._stateToolTip is not None:
+            self._stateToolTip.setContent(self.tr("安装完成"))
+            self._stateToolTip.setState(True)
+            self._stateToolTip = None
+
+        # 刷新运行时状态
+        self.refreshStatus(force=True)
+
+        InfoBar.success(
+            self.tr("安装成功"),
+            self.tr("{0} 已安装完成").format(self._runtime.name),
+            duration=3000,
+            position=InfoBarPosition.TOP,
+            parent=self.window(),
+        )
+
+    def _onUpdateFailed(self, runtimeId: str, errorMsg: str) -> None:
+        """下载失败"""
+        if runtimeId != self._runtime.runtimeId:
+            return
+
+        self.installButton.setEnabled(True)
+
+        if self._stateToolTip is not None:
+            self._stateToolTip.setContent(self.tr("下载失败"))
+            self._stateToolTip.setState(True)
+            self._stateToolTip = None
+
         InfoBar.error(
             self.tr("安装失败"),
-            error,
+            errorMsg,
             duration=-1,
             position=InfoBarPosition.TOP,
             parent=self.window(),

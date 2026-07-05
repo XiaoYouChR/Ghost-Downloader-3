@@ -69,7 +69,10 @@ def startApp(application, isSilent=False):
     from app.services.clipboard_listener import ClipboardListener
     from app.services.task_service import taskService
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import (
+        loadEngine, loadPacks, startEngine, bindNotifications,
+        checkUpdateAtStartup, checkRuntimeUpdatesAtStartup, stopEngine
+    )
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -193,6 +196,7 @@ def startApp(application, isSilent=False):
         emptyWorkingSetIfIdle()
 
     checkUpdateAtStartup()
+    checkRuntimeUpdatesAtStartup()
 
     application.aboutToQuit.connect(stopEngine)
 
