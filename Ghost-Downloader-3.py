@@ -1,3 +1,4 @@
+import os
 import sys
 import traceback
 
@@ -33,6 +34,10 @@ def setupEnvironment():
     patchFluentLabelThemeChanged()
     qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
+
+    if cfg.dpiScale.value != 0:
+        os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+        os.environ["QT_SCALE_FACTOR"] = str(cfg.dpiScale.value)
 
     if sys.platform == "win32":
         from PySide6.QtGui import QFont
