@@ -28,6 +28,19 @@ def setupEnvironment():
     if sys.platform == "win32":
         setupHiddenSubprocess()
 
+        # https://github.com/python/cpython/issues/100256
+        import mimetypes
+        try:
+            mimetypes.init()
+        except OSError:
+            mimetypes._mimetypes_read_windows_registry = None
+            try:
+                mimetypes.init()
+            except OSError:
+                pass
+        if mimetypes._db is None:
+            mimetypes._db = mimetypes.MimeTypes()
+
     import app.assets.resources  # noqa: F401
     from app.view.qfw_patch import patchFluentLabelThemeChanged
     from app.view.components.labels import IconBodyLabel
