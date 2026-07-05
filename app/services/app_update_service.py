@@ -18,6 +18,8 @@ class AppUpdateService(QObject):
     使用独立下载模式，不进入任务队列，通过 StateToolTip 显示实时进度。
     """
 
+    # 信号：下载开始（解析前立即发出）
+    downloadStarted = Signal()
     # 信号：(progress, speed)
     progressChanged = Signal(float, int)
     # 信号：(installerPath)
@@ -56,6 +58,7 @@ class AppUpdateService(QObject):
         self._installerPath = ""
 
         logger.info(f"Starting app update download: {name}")
+        self.downloadStarted.emit()
 
         coroutineRunner.submit(
             featureService.parse(TaskOptions(url=url, outputFolder=UPDATE_DIR)),

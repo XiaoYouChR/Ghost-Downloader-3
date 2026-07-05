@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import (
     FluentIcon, InfoBar, InfoBarPosition, PrimaryPushButton, StateToolTip,
@@ -14,77 +14,11 @@ if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
 
 
-class RuntimeUpdatePrompt:
-    """运行时更新 UI 提示管理器
-
-    负责显示运行时下载进度（StateToolTip）和完成通知（InfoBar）
-    """
-
-    def __init__(self, window: QWidget):
-        self._window = window
-        self._toolTips: dict[str, StateToolTip] = {}
-
-    def showProgress(self, runtimeId: str, runtimeName: str) -> None:
-        """显示下载进度提示"""
-        if runtimeId in self._toolTips:
-            return
-
-        toolTip = StateToolTip(
-            self._window.tr("正在下载 {0}").format(runtimeName),
-            "0%",
-            self._window
-        )
-        toolTip.move(toolTip.getSuitablePos())
-        toolTip.destroyed.connect(lambda: self._onToolTipDestroyed(runtimeId))
-        toolTip.show()
-        self._toolTips[runtimeId] = toolTip
-
-    def updateProgress(self, runtimeId: str, progress: float, speed: int) -> None:
-        """更新下载进度"""
-        toolTip = self._toolTips.get(runtimeId)
-        if toolTip is not None:
-            toolTip.setContent(f"{progress:.1f}%  ·  {toReadableSize(speed)}/s")
-
-    def showSuccess(self, runtimeId: str, runtimeName: str) -> None:
-        """显示下载成功"""
-        toolTip = self._toolTips.get(runtimeId)
-        if toolTip is not None:
-            toolTip.setContent(self._window.tr("下载完成"))
-            toolTip.setState(True)
-            self._toolTips.pop(runtimeId, None)
-
-        InfoBar.success(
-            self._window.tr("安装成功"),
-            self._window.tr("{0} 已安装完成").format(runtimeName),
-            duration=3000,
-            position=InfoBarPosition.TOP,
-            parent=self._window,
-        )
-
-    def showError(self, runtimeId: str, runtimeName: str, errorMsg: str) -> None:
-        """显示下载失败"""
-        toolTip = self._toolTips.get(runtimeId)
-        if toolTip is not None:
-            toolTip.setContent(self._window.tr("下载失败"))
-            toolTip.setState(True)
-            self._toolTips.pop(runtimeId, None)
-
-        InfoBar.error(
-            self._window.tr("安装失败"),
-            self._window.tr("{0}: {1}").format(runtimeName, errorMsg),
-            duration=-1,
-            position=InfoBarPosition.TOP,
-            parent=self._window,
-        )
-
-    def _onToolTipDestroyed(self, runtimeId: str) -> None:
-        self._toolTips.pop(runtimeId, None)
-
-
 class BatchRuntimeUpdateCard(QWidget):
     """批量运行时更新卡片
 
-    提供"检查全部更新"和批量下载功能
+    点击"全部更新"后，并行启动所有运行时下载，并用一个 StateToolTip
+    汇总显示：(已完成/总数) 当前任务名  X%  speed/s
     """
 
     def __init__(self, runtimes: list[BinaryRuntime], parent=None):
@@ -103,75 +37,168 @@ class BatchRuntimeUpdateCard(QWidget):
         self._updateAllButton = PrimaryPushButton(self.tr("全部更新"), self)
         self._updateAllButton.setEnabled(False)
 
+        # 批量下载状态追踪
+        self._totalCount: int = 0
+        self._completedCount: int = 0
+        self._failedCount: int = 0
+        # runtimeId -> (name, progress, speed)
+        self._activeDownloads: dict[str, tuple[str, float, int]] = {}
+        self._stateToolTip: StateToolTip | None = None
+
         self._initLayout()
         self._bind()
 
     def _initLayout(self) -> None:
         from PySide6.QtWidgets import QHBoxLayout
-
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._card)
-
         self._card.hBoxLayout.addWidget(self._updateAllButton, 0, Qt.AlignmentFlag.AlignRight)
         self._card.hBoxLayout.addSpacing(8)
         self._card.hBoxLayout.addWidget(self._checkAllButton, 0, Qt.AlignmentFlag.AlignRight)
         self._card.hBoxLayout.addSpacing(16)
 
     def _bind(self) -> None:
+        from app.services.runtime_update_service import runtimeUpdateService
         self._checkAllButton.clicked.connect(self._onCheckAllClicked)
         self._updateAllButton.clicked.connect(self._onUpdateAllClicked)
+        runtimeUpdateService.downloadStarted.connect(self._onDownloadStarted)
+        runtimeUpdateService.progressChanged.connect(self._onProgressChanged)
+        runtimeUpdateService.downloadSucceeded.connect(self._onDownloadSucceeded)
+        runtimeUpdateService.downloadFailed.connect(self._onDownloadFailed)
+
+    # ── 按钮事件 ────────────────────────────────────────────────
 
     def _onCheckAllClicked(self) -> None:
-        """检查所有运行时更新"""
         from app.services.runtime_status import runtimeStatusService
-
-        # 刷新所有运行时状态
         for runtime in self._runtimes:
             if runtime.canInstall:
                 runtimeStatusService.refresh(runtime, force=True)
-
-        # TODO: 实现版本比对逻辑，当前直接启用"全部更新"按钮
         self._updateAllButton.setEnabled(True)
-
         InfoBar.info(
-            self.tr("检查完成"),
-            self.tr("已刷新所有运行时状态"),
-            duration=2000,
-            position=InfoBarPosition.TOP,
-            parent=self.window(),
+            self.tr("检查完成"), self.tr("已刷新所有运行时状态"),
+            duration=2000, position=InfoBarPosition.TOP, parent=self.window(),
         )
 
     def _onUpdateAllClicked(self) -> None:
-        """更新所有可安装的运行时"""
         from app.services.runtime_update_service import runtimeUpdateService
 
-        updateCount = 0
-        for runtime in self._runtimes:
-            if not runtime.canInstall:
-                continue
-
-            # 检查是否已在下载中
-            if runtimeUpdateService.isDownloading(runtime.runtimeId):
-                continue
-
-            # 启动下载
-            runtimeUpdateService.downloadRuntime(runtime)
-            updateCount += 1
-
-        if updateCount > 0:
-            InfoBar.info(
-                self.tr("开始更新"),
-                self.tr("正在更新 {0} 个运行时").format(updateCount),
-                duration=3000,
-                position=InfoBarPosition.TOP,
-                parent=self.window(),
-            )
-        else:
+        targets = [
+            r for r in self._runtimes
+            if r.canInstall and not runtimeUpdateService.isDownloading(r.runtimeId)
+        ]
+        if not targets:
             InfoBar.warning(
                 self.tr("无可用更新"),
                 self.tr("所有运行时都在下载中或不支持自动安装"),
-                duration=3000,
-                position=InfoBarPosition.TOP,
-                parent=self.window(),
+                duration=3000, position=InfoBarPosition.TOP, parent=self.window(),
             )
+            return
+
+        # 初始化追踪状态
+        self._totalCount = len(targets)
+        self._completedCount = 0
+        self._failedCount = 0
+        self._activeDownloads.clear()
+        self._updateAllButton.setEnabled(False)
+
+        for runtime in targets:
+            runtimeUpdateService.downloadRuntime(runtime)
+
+    # ── 信号处理（只处理本次批量任务里的 runtimeId）───────────────
+
+    def _isBatchMember(self, runtimeId: str) -> bool:
+        return runtimeId in self._activeDownloads or self._totalCount > 0
+
+    def _onDownloadStarted(self, runtimeId: str, name: str) -> None:
+        """某个运行时开始解析/下载"""
+        if self._totalCount == 0:
+            return  # 不是由本卡片触发的批量任务
+        # 只追踪本次批量里的运行时
+        batchIds = {r.runtimeId for r in self._runtimes if r.canInstall}
+        if runtimeId not in batchIds:
+            return
+        self._activeDownloads[runtimeId] = (name, 0.0, 0)
+        self._refreshToolTip()
+
+    def _onProgressChanged(self, runtimeId: str, progress: float, speed: int) -> None:
+        if runtimeId not in self._activeDownloads:
+            return
+        name = self._activeDownloads[runtimeId][0]
+        self._activeDownloads[runtimeId] = (name, progress, speed)
+        self._refreshToolTip()
+
+    def _onDownloadSucceeded(self, runtimeId: str, _path: str) -> None:
+        if runtimeId not in self._activeDownloads:
+            return
+        self._completedCount += 1
+        self._activeDownloads.pop(runtimeId)
+        self._refreshToolTip()
+        self._checkBatchDone()
+
+    def _onDownloadFailed(self, runtimeId: str, _error: str) -> None:
+        if runtimeId not in self._activeDownloads:
+            return
+        self._failedCount += 1
+        self._activeDownloads.pop(runtimeId)
+        self._refreshToolTip()
+        self._checkBatchDone()
+
+    # ── StateToolTip 管理 ──────────────────────────────────────
+
+    def _ensureToolTip(self) -> StateToolTip:
+        if self._stateToolTip is None:
+            self._stateToolTip = StateToolTip(
+                self.tr("正在更新运行时"), "", self.window()
+            )
+            self._stateToolTip.move(self._stateToolTip.getSuitablePos())
+            self._stateToolTip.destroyed.connect(self._onToolTipDestroyed)
+            self._stateToolTip.show()
+        return self._stateToolTip
+
+    def _onToolTipDestroyed(self) -> None:
+        self._stateToolTip = None
+
+    def _refreshToolTip(self) -> None:
+        done = self._completedCount + self._failedCount
+        total = self._totalCount
+        if total == 0:
+            return
+
+        tip = self._ensureToolTip()
+
+        # 汇总所有活跃下载的进度和速度
+        totalSpeed = sum(s for _, _, s in self._activeDownloads.values())
+        progresses = [p for _, p, _ in self._activeDownloads.values()]
+        avgProgress = sum(progresses) / len(progresses) if progresses else 100.0
+
+        # 找速度最快的那个作为"当前"显示名
+        currentName = ""
+        if self._activeDownloads:
+            fastestId = max(self._activeDownloads, key=lambda k: self._activeDownloads[k][2])
+            currentName = self._activeDownloads[fastestId][0]
+
+        count_str = f"({done}/{total})"
+        progress_str = f"{avgProgress:.1f}%"
+        speed_str = toReadableSize(totalSpeed) + "/s" if totalSpeed > 0 else self.tr("解析中...")
+        name_str = f"  {currentName}" if currentName else ""
+
+        tip.setContent(f"{count_str}{name_str}  {progress_str}  {speed_str}")
+
+    def _checkBatchDone(self) -> None:
+        done = self._completedCount + self._failedCount
+        if done < self._totalCount:
+            return
+
+        # 全部完成
+        if self._stateToolTip is not None:
+            self._stateToolTip.setContent(
+                self.tr("全部完成 ({0} 成功，{1} 失败)").format(
+                    self._completedCount, self._failedCount
+                )
+            )
+            self._stateToolTip.setState(True)
+            self._stateToolTip = None
+
+        self._totalCount = 0
+        self._updateAllButton.setEnabled(True)

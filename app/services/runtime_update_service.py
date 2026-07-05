@@ -39,14 +39,14 @@ class RuntimeUpdateService(QObject):
     使用独立下载逻辑（类似应用更新），不进入任务队列。
     """
 
+    # 信号：(runtimeId, runtimeName) — 开始解析/下载（立即发出，用于UI立即响应）
+    downloadStarted = Signal(str, str)
     # 信号：(runtimeId, progress, speed)
     progressChanged = Signal(str, float, int)
     # 信号：(runtimeId, installedPath)
     downloadSucceeded = Signal(str, str)
     # 信号：(runtimeId, errorMessage)
     downloadFailed = Signal(str, str)
-    # 信号：(runtimeId, updateInfo)
-    updateAvailable = Signal(str, object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -102,6 +102,7 @@ class RuntimeUpdateService(QObject):
         self._installedPaths[runtimeId] = ""
 
         logger.info(f"Starting download for runtime: {runtime.name} ({runtimeId})")
+        self.downloadStarted.emit(runtimeId, runtime.name)
 
         coroutineRunner.submit(
             runtime.installTask(),

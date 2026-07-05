@@ -29,10 +29,17 @@ class AppUpdatePrompt(QObject):
         self._stateToolTip: StateToolTip | None = None
         self._infoBar: InfoBar | None = None
 
+        appUpdateService.downloadStarted.connect(self._onDownloadStarted)
         appUpdateService.progressChanged.connect(self._onProgressChanged)
         appUpdateService.downloadSucceeded.connect(self._onDownloadSucceeded)
         appUpdateService.downloadFailed.connect(self._onDownloadFailed)
         signalBus.activationRequested.connect(self._onWindowShown)
+
+    def _onDownloadStarted(self) -> None:
+        """解析阶段立即显示 StateToolTip"""
+        toolTip = self._ensureStateToolTip()
+        if toolTip is not None:
+            toolTip.setContent(self.tr("正在解析下载链接..."))
 
     def _onProgressChanged(self, percent: float, speed: int) -> None:
         """更新下载进度"""
