@@ -145,7 +145,6 @@ class BatchRuntimeUpdateCard(QWidget):
     def _onUpdateAllClicked(self) -> None:
         """更新所有可安装的运行时"""
         from app.services.runtime_update_service import runtimeUpdateService
-        from app.services.runtime_status import runtimeStatusService
 
         updateCount = 0
         for runtime in self._runtimes:

@@ -93,6 +93,12 @@ def startApp(application, isSilent=False):
     MainWindow.refreshThemeColor()
     window = MainWindow()
 
+    # 创建应用更新提示管理器
+    from app.view.shell.app_update_prompt import AppUpdatePrompt
+    def currentWindow():
+        return window
+    appUpdatePrompt = AppUpdatePrompt(currentWindow, parent=application)
+
     if not isSilent:
         from qfluentwidgets import SplashScreen
         splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
