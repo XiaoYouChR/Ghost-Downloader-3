@@ -1,27 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
+import re
+import shutil
+import tempfile
+import threading
+from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import time
+from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
-from app.platform.filesystem import toPosixPath
-from .config import jsRuntime, ytDlpConfig, ytDlpRuntime
-
-DEFAULT_VIDEO_FORMAT = "bv*+ba/b"
-PROGRESS_TOKEN = "__GD3_PROGRESS__"
-FINAL_FILE_TOKEN = "__GD3_FINAL__"
-BEFORE_DL_TOKEN = "__GD3_BEFORE__"
-PROGRESS_TEMPLATE = (
-    f"download:{PROGRESS_TOKEN}"
-    "%(progress.downloaded_bytes)s|%(progress.total_bytes)s|"
-    "%(progress.total_bytes_estimate)s|%(progress.speed)s"
-)
-FINAL_TEMPLATE = f"after_move:{FINAL_FILE_TOKEN}%(filepath)s"
-BEFORE_DL_TEMPLATE = f"before_dl:{BEFORE_DL_TOKEN}%(filename)s"
+from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
 
 ERROR_HINTS = (
     ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理（{detail}）"),
@@ -34,270 +29,448 @@ ERROR_HINTS = (
     ("http error 403", "下载被拒绝（403），链接可能已失效（{detail}）"),
 )
 
+STEPS_PER_VIDEO = 4
 
-def toInt(value: str) -> int:
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return 0
+_pathLock = threading.Lock()
+_pathInserted = False
+
+
+def loadYtDlpToPath() -> None:
+    global _pathInserted
+    if _pathInserted:
+        return
+    with _pathLock:
+        if _pathInserted:
+            return
+        import sys
+        from .config import youTubeRuntime
+        vendorPath = str(youTubeRuntime.ytDlpFolder())
+        if vendorPath and vendorPath not in sys.path:
+            sys.path.insert(0, vendorPath)
+        _pathInserted = True
+
+
+def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
+    from .config import youTubeRuntime, ytDlpConfig
+    from app.config.cfg import proxy
+
+    opts: dict = {
+        "quiet": True,
+        "no_warnings": True,
+        "allowed_extractors": ["youtube.*"],
+    }
+    if noplaylist:
+        opts["noplaylist"] = True
+    qjsPath = youTubeRuntime.qjsPath()
+    if qjsPath:
+        opts["js_runtimes"] = {"quickjs": {"path": qjsPath}}
+    proxyUrl = proxy()
+    if proxyUrl:
+        opts["proxy"] = proxyUrl
+    browser = ytDlpConfig.loginBrowser.value
+    if browser:
+        opts["cookiesfrombrowser"] = (browser,)
+    return opts
+
+
+def probeFormats(url: str) -> dict:
+    loadYtDlpToPath()
+    yt_dlp = importlib.import_module("yt_dlp")
+    opts = buildYtDlpOptions()
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        return ydl.extract_info(url, download=False)
+
+
+def probePlaylist(url: str) -> list[dict]:
+    loadYtDlpToPath()
+    yt_dlp = importlib.import_module("yt_dlp")
+    opts = buildYtDlpOptions(noplaylist=False)
+    opts["extract_flat"] = True
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+    entries = info.get("entries") or []
+    return [
+        {"id": e.get("id") or "", "title": e.get("title") or "", "duration": e.get("duration") or 0}
+        for e in entries if e and e.get("id")
+    ]
+
+
+def buildStepGroup(groupIndex: int, videoUrl: str = "", videoStem: str = "") -> list[TaskStep]:
+    base = groupIndex * STEPS_PER_VIDEO
+    return [
+        YouTubeExtractStep(stepIndex=base + 1, groupIndex=groupIndex, videoUrl=videoUrl),
+        YouTubeResourceStep(stepIndex=base + 2, groupIndex=groupIndex, videoStem=videoStem, role="video"),
+        YouTubeResourceStep(stepIndex=base + 3, groupIndex=groupIndex, videoStem=videoStem, role="audio"),
+        YouTubeMergeStep(stepIndex=base + 4, groupIndex=groupIndex, videoStem=videoStem),
+    ]
 
 
 @dataclass(kw_only=True, eq=False)
-class YtDlpTask(Task):
+class YouTubeTask(Task):
     packId: str = "ytdlp"
     canEdit = True
-    videoFormat: str = DEFAULT_VIDEO_FORMAT
+    videoFormatFilter: str = ""
     subtitleLanguages: str = ""
     shouldIncludeAutoSubs: bool = False
     isPlaylist: bool = False
     videos: list[dict] = field(default_factory=list)
 
-    def currentSnapshot(self) -> tuple[float, int, int]:
-        if not self.steps or len(self.steps) == 1:
-            return super().currentSnapshot()
-        completedCount = sum(1 for s in self.steps if s.status == TaskStatus.COMPLETED)
-        currentStep = next((s for s in self.steps if s.status == TaskStatus.RUNNING), None)
-        totalCount = len(self.steps)
-        if currentStep:
-            progress = (completedCount * 100 + currentStep.progress) / totalCount
-            speed = currentStep.speed
-        else:
-            progress = completedCount * 100 / totalCount
-            speed = 0
-        receivedBytes = sum(s.receivedBytes for s in self.steps)
-        return progress, speed, receivedBytes
-
     def setVideos(self, videos: list[dict]) -> None:
         self.videos = videos
-        self._rebuildSteps()
+        self._updateSteps()
 
     def setSelectedVideos(self, indices: set[int]) -> None:
         for i, video in enumerate(self.videos):
             video["selected"] = i in indices
-        self._rebuildSteps()
+        self._updateSteps()
 
-    def _rebuildSteps(self) -> None:
-        self._savedHeaders = self.steps[0].headers if self.steps else getattr(self, "_savedHeaders", {})
+    def _updateSteps(self) -> None:
         self.steps.clear()
         if not self.videos:
-            self.addStep(YtDlpTaskStep(stepIndex=1, headers=self._savedHeaders))
+            for step in buildStepGroup(0):
+                self.addStep(step)
             return
+        from app.platform.filesystem import toSafeFilename
+        groupIndex = 0
         for video in self.videos:
             if not video.get("selected", True):
                 continue
-            self.addStep(YtDlpTaskStep(
-                stepIndex=len(self.steps) + 1,
-                videoUrl=f"https://www.youtube.com/watch?v={video['id']}",
-                videoTitle=str(video.get("title") or ""),
-                headers=self._savedHeaders,
-            ))
+            videoUrl = f"https://www.youtube.com/watch?v={video['id']}"
+            videoStem = toSafeFilename(str(video.get("title") or f"视频 {groupIndex + 1}"))
+            for step in buildStepGroup(groupIndex, videoUrl=videoUrl, videoStem=videoStem):
+                self.addStep(step)
+            groupIndex += 1
         if not self.steps:
-            self.addStep(YtDlpTaskStep(stepIndex=1, headers=self._savedHeaders))
+            for step in buildStepGroup(0):
+                self.addStep(step)
+
+    def pendingSteps(self) -> Iterable[TaskStep]:
+        self.steps.sort(key=lambda step: step.stepIndex)
+        for step in self.steps:
+            if self.status != TaskStatus.RUNNING:
+                break
+            if isinstance(step, YouTubeExtractStep):
+                yield step
+                continue
+            if step.status == TaskStatus.COMPLETED:
+                continue
+            yield step
+
+    def currentSnapshot(self) -> tuple[float, int, int]:
+        downloadSteps = [s for s in self.steps if not isinstance(s, YouTubeExtractStep)]
+        if not downloadSteps:
+            return 0.0, 0, 0
+        completedCount = sum(1 for s in downloadSteps if s.status == TaskStatus.COMPLETED)
+        currentStep = next((s for s in downloadSteps if s.status == TaskStatus.RUNNING), None)
+        totalCount = len(downloadSteps)
+        if currentStep:
+            progress = (completedCount * 100 + currentStep.progress) / totalCount
+            speed = currentStep.speed
+        else:
+            progress = completedCount * 100 / totalCount if totalCount else 0
+            speed = 0
+        receivedBytes = sum(s.receivedBytes for s in downloadSteps)
+        return progress, speed, receivedBytes
 
 
 @dataclass(kw_only=True)
-class YtDlpTaskStep(TaskStep):
+class YouTubeExtractStep(TaskStep):
+    canPause = False
+    groupIndex: int = 0
     videoUrl: str = ""
-    videoTitle: str = ""
-    outputFile: str = ""
-    headers: dict[str, str] = field(default_factory=dict)
-    lastMessage: str = ""
+
+    async def run(self) -> None:
+        if self._hasFreshSiblingUrls():
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+
+        from .config import youTubeRuntime
+        if not youTubeRuntime.path():
+            raise TaskError("{name} 未安装，请在设置中安装", name="YouTube 运行环境")
+
+        url = self.videoUrl or self.task.url
+        try:
+            info = await asyncio.to_thread(probeFormats, url)
+        except Exception as e:
+            logger.opt(exception=e).warning("extract_info failed for {}", url)
+            detail = str(e)
+            lowered = detail.lower()
+            hint = next((h for needle, h in ERROR_HINTS if needle in lowered), "")
+            if hint:
+                raise TaskError(hint, detail=detail)
+            raise TaskError("视频信息提取失败：{detail}", detail=detail or "unknown")
+
+        videoFmt, audioFmt = self._buildFormatPair(info)
+        if not videoFmt and not audioFmt:
+            logger.warning("no formats found for {} (formats count: {})", url, len(info.get("formats") or []))
+            raise TaskError("未找到可用的视频格式")
+
+        self._updateSiblingSteps(videoFmt, audioFmt, info)
+        logger.info("selected video={} audio={} for {}",
+                     videoFmt.get("format_id") if videoFmt else None,
+                     audioFmt.get("format_id") if audioFmt else None, url)
+
+        title = info.get("title")
+        if title:
+            from app.platform.filesystem import toSafeFilename
+            safeName = toSafeFilename(title)
+            if safeName:
+                if self.groupIndex == 0 and not self.task.isPlaylist:
+                    ext = "m4a" if not videoFmt else "mp4"
+                    self.task.setName(f"{safeName}.{ext}")
+                for step in self.task.steps:
+                    if getattr(step, "groupIndex", -1) == self.groupIndex and hasattr(step, "videoStem"):
+                        step.videoStem = safeName
+
+        self.setStatus(TaskStatus.COMPLETED)
+
+    def _hasFreshSiblingUrls(self) -> bool:
+        now = time()
+        for s in self.task.steps:
+            if not isinstance(s, YouTubeResourceStep) or s.groupIndex != self.groupIndex:
+                continue
+            if not s.url:
+                continue
+            expireValues = parse_qs(urlparse(s.url).query).get("expire", [])
+            try:
+                if now < int(expireValues[0]) - 60:
+                    return True
+            except (ValueError, IndexError):
+                continue
+        return False
+
+    def _buildFormatPair(self, info: dict) -> tuple[dict | None, dict | None]:
+        from .config import ytDlpConfig
+        formats = info.get("formats") or []
+        shouldPreferMp4 = ytDlpConfig.shouldPreferMp4.value
+        filterStr = self.task.videoFormatFilter
+        isAudioOnly = filterStr and "bv" not in filterStr
+
+        audioFormats = [
+            f for f in formats
+            if f.get("acodec", "none") != "none"
+            and f.get("vcodec", "none") == "none"
+        ]
+
+        audioFormats.sort(
+            key=lambda f: (shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"), f.get("abr") or f.get("tbr") or 0),
+            reverse=True,
+        )
+        audioFmt = audioFormats[0] if audioFormats else None
+
+        if isAudioOnly:
+            return None, audioFmt
+
+        videoFormats = [
+            f for f in formats
+            if f.get("vcodec", "none") != "none"
+            and f.get("acodec", "none") == "none"
+        ]
+
+        heightMatch = re.search(r"height<=(\d+)", filterStr) if filterStr else None
+        if heightMatch:
+            maxHeight = int(heightMatch.group(1))
+            videoFormats = [f for f in videoFormats if (f.get("height") or 0) <= maxHeight]
+
+        videoFormats.sort(
+            key=lambda f: (shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"), f.get("height") or 0, f.get("tbr") or 0),
+            reverse=True,
+        )
+        videoFmt = videoFormats[0] if videoFormats else None
+
+        if not videoFmt:
+            combined = [f for f in formats if f.get("vcodec", "none") != "none"]
+            combined.sort(
+                key=lambda f: (f.get("height") or 0, f.get("tbr") or 0),
+                reverse=True,
+            )
+            if combined:
+                videoFmt = combined[0]
+
+        return videoFmt, audioFmt
+
+    def _updateSiblingSteps(self, videoFmt: dict | None, audioFmt: dict | None, info: dict) -> None:
+        from app.config.cfg import cfg
+        from .config import ytDlpConfig
+
+        for step in self.task.steps:
+            if getattr(step, "groupIndex", -1) != self.groupIndex:
+                continue
+            if isinstance(step, FFmpegResourceStep):
+                fmt = videoFmt if step.role == "video" else audioFmt
+                if not fmt:
+                    step.url = ""
+                    continue
+                step.url = fmt["url"]
+                step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
+                step.extension = fmt.get("ext") or ("mp4" if step.role == "video" else "m4a")
+                step.canUseRangeRequests = True
+                step.subworkerCount = cfg.preBlockNum.value
+                step.headers = dict(fmt.get("http_headers") or {})
+            elif isinstance(step, YouTubeMergeStep):
+                step.videoExtension = videoFmt.get("ext", "mp4") if videoFmt else ""
+                step.audioExtension = audioFmt.get("ext", "m4a") if audioFmt else ""
+                if ytDlpConfig.shouldEmbedMetadata.value:
+                    step.metadataTitle = info.get("title") or ""
+                    step.metadataArtist = info.get("uploader") or info.get("channel") or ""
+                if ytDlpConfig.shouldEmbedChapters.value:
+                    step.chapters = info.get("chapters") or []
+
+        totalSize = sum(s.fileSize for s in self.task.steps if isinstance(s, FFmpegResourceStep))
+        self.task.fileSize = totalSize if totalSize > 0 else 0
+
+
+@dataclass(kw_only=True)
+class YouTubeResourceStep(FFmpegResourceStep):
+    groupIndex: int = 0
+    videoStem: str = ""
 
     @property
     def outputPath(self) -> str:
-        return self.outputFile
-
-    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        from shutil import move
-        if not self.outputFile:
-            return
-        oldPath = Path(self.outputFile)
-        try:
-            relPath = oldPath.relative_to(oldFolder)
-        except ValueError:
-            return
-        newBase = newFolder / relPath
-        newBase.parent.mkdir(parents=True, exist_ok=True)
-        if oldPath.exists():
-            move(str(oldPath), str(newBase))
-        for suffix in (".part", ".ytdl"):
-            p = Path(f"{oldPath}{suffix}")
-            if p.exists():
-                move(str(p), str(f"{newBase}{suffix}"))
-        for frag in oldPath.parent.glob(f"{oldPath.name}.part-Frag*"):
-            move(str(frag), str(newFolder / frag.relative_to(oldFolder)))
-        for sub in oldPath.parent.glob(f"{oldPath.stem}.*"):
-            if sub != oldPath and sub.suffix.lower() in (".vtt", ".srt", ".ass", ".ssa"):
-                move(str(sub), str(newFolder / sub.relative_to(oldFolder)))
-        self.outputFile = str(newBase)
-
-    @property
-    def _outputTemplate(self) -> str:
-        return toPosixPath(self.task.outputFolder / "%(title)s.%(ext)s")
-
-    def _buildCommand(self) -> list[str]:
-        from ffmpeg_pack.config import ffmpegRuntime
-
-        url = self.videoUrl or self.task.url
-        task: YtDlpTask = self.task
-        args = [
-            url,
-            "-f", task.videoFormat,
-            "-o", self._outputTemplate,
-            "--no-playlist",
-            "--newline",
-            "--no-color",
-            "--no-simulate",
-            "--progress",
-            "--progress-template", PROGRESS_TEMPLATE,
-            "--print", BEFORE_DL_TEMPLATE,
-            "--print", FINAL_TEMPLATE,
-        ]
-
-        if ytDlpConfig.shouldPreferMp4.value:
-            args.extend(["--format-sort", "ext:mp4:m4a"])
-
-        args.extend(jsRuntime.buildArgs())
-
-        ffmpegPath = ffmpegRuntime.path()
-        if ffmpegPath:
-            args.extend(["--ffmpeg-location", ffmpegPath])
-
-        from app.config.cfg import cfg, proxy
-        proxyUrl = proxy()
-        if proxyUrl:
-            args.extend(["--proxy", proxyUrl])
-        if cfg.isSpeedLimitEnabled.value:
-            args.extend(["--limit-rate", str(cfg.speedLimitation.value)])
-
-        fragments = ytDlpConfig.parallelFragments.value
-        if fragments > 1:
-            args.extend(["--concurrent-fragments", str(fragments)])
-
-        browser = ytDlpConfig.loginBrowser.value
-        if browser:
-            args.extend(["--cookies-from-browser", browser])
-
-        if task.subtitleLanguages:
-            args.extend(["--write-subs", "--sub-langs", task.subtitleLanguages])
-            if task.shouldIncludeAutoSubs:
-                args.append("--write-auto-subs")
-
-        if ytDlpConfig.shouldEmbedThumbnail.value:
-            # Convert to jpg so embedding never needs FFmpeg's png/zlib path — our
-            # minimal FFmpeg ships mjpeg only (webp/jpg thumbnails, no png).
-            args.extend(["--embed-thumbnail", "--convert-thumbnails", "jpg"])
-        if ytDlpConfig.shouldEmbedChapters.value:
-            args.append("--embed-chapters")
-        if ytDlpConfig.shouldEmbedMetadata.value:
-            args.append("--embed-metadata")
-
-        for name, value in self.headers.items():
-            text = value.strip()
-            if text:
-                args.extend(["--add-header", f"{name}:{text}"])
-
-        return args
-
-    def _parseOutputLine(self, line: str) -> None:
-        text = line.strip()
-        if not text:
-            return
-        if text.startswith(BEFORE_DL_TOKEN):
-            self.outputFile = text[len(BEFORE_DL_TOKEN):].strip()
-            return
-        if text.startswith(FINAL_FILE_TOKEN):
-            self._finalPath = text[len(FINAL_FILE_TOKEN):].strip()
-            return
-        if text.startswith(PROGRESS_TOKEN):
-            parts = text[len(PROGRESS_TOKEN):].split("|")
-            if len(parts) >= 4:
-                downloaded = toInt(parts[0])
-                total = toInt(parts[1]) or toInt(parts[2])
-                self.speed = toInt(parts[3])
-                self.receivedBytes = self._completedBytes + downloaded
-                if total > 0:
-                    if self._totalBytes > 0 and total != self._totalBytes:
-                        self._completedBytes += self._totalBytes
-                        self.receivedBytes += self._totalBytes
-                    self._totalBytes = total
-                    allTotal = self._completedBytes + total
-                    if len(self.task.steps) == 1:
-                        self.task.fileSize = max(self.task.fileSize, allTotal)
-                    self.progress = min(99.5, self.receivedBytes / allTotal * 100)
-            return
-        self.lastMessage = text[:1000]
-
-    async def _readOutput(self, stream: asyncio.StreamReader) -> None:
-        buffer = ""
-        while True:
-            chunk = await stream.read(4096)
-            if not chunk:
-                break
-            buffer += chunk.decode("utf-8", errors="ignore")
-            buffer = buffer.replace("\r\n", "\n").replace("\r", "\n")
-            lines = buffer.split("\n")
-            buffer = lines.pop()
-            for line in lines:
-                self._parseOutputLine(line)
-        if buffer.strip():
-            self._parseOutputLine(buffer)
+        stem = self.videoStem or mediaStem(self.task)
+        suffix = f".{self.extension}" if self.extension else ""
+        return str(self.task.outputFolder / f"{stem}.{self.role}{suffix}")
 
     async def run(self) -> None:
-        execPath = ytDlpRuntime.path()
-        if not execPath:
-            raise TaskError("{name} 未安装，请在设置中安装", name="yt-dlp")
+        if not self.url:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+        await super().run()
 
-        self._finalPath = ""
-        self._totalBytes = 0
-        self._completedBytes = 0
-        self.task.outputFolder.mkdir(parents=True, exist_ok=True)
+
+@dataclass(kw_only=True)
+class YouTubeMergeStep(FFmpegStep):
+    groupIndex: int = 0
+    videoStem: str = ""
+    metadataTitle: str = ""
+    metadataArtist: str = ""
+    chapters: list[dict] = field(default_factory=list)
+
+    @property
+    def outputFile(self) -> str:
+        stem = self.videoStem or mediaStem(self.task)
+        ext = "mp4" if self.videoExtension else (self.audioExtension or "m4a")
+        return str(self.task.outputFolder / f"{stem}.{ext}")
+
+    @property
+    def _videoPath(self) -> Path:
+        stem = self.videoStem or mediaStem(self.task)
+        suffix = f".{self.videoExtension}" if self.videoExtension else ""
+        return self.task.outputFolder / f"{stem}.video{suffix}"
+
+    @property
+    def _audioPath(self) -> Path:
+        stem = self.videoStem or mediaStem(self.task)
+        suffix = f".{self.audioExtension}" if self.audioExtension else ""
+        return self.task.outputFolder / f"{stem}.audio{suffix}"
+
+    async def run(self) -> None:
+        hasVideo = self._videoPath.exists()
+        hasAudio = self._audioPath.exists()
+
+        if hasVideo and hasAudio:
+            if self.metadataTitle or self.chapters:
+                await self._runWithMetadata()
+            else:
+                await super().run()
+            return
+
+        singleInput = self._videoPath if hasVideo else self._audioPath if hasAudio else None
+        if singleInput:
+            outputPath = Path(self.outputFile)
+            outputPath.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(singleInput), str(outputPath))
+            Path(f"{singleInput}.ghd").unlink(missing_ok=True)
+        self.setStatus(TaskStatus.COMPLETED)
+
+    async def _runWithMetadata(self) -> None:
+        from ffmpeg_pack.config import ffmpegRuntime
+        from app.platform.filesystem import deletePath
+
+        ffmpegPath = ffmpegRuntime.path()
+        ffprobePath = ffmpegRuntime.ffprobePath()
+        if not ffmpegPath or not ffprobePath:
+            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
+
+        Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
+        totalDuration = await self._probeDuration(ffprobePath, self._videoPath)
+
+        args = [
+            ffmpegPath,
+            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
+            "-i", str(self._videoPath),
+            "-i", str(self._audioPath),
+        ]
+
+        chaptersFile = None
+        if self.chapters:
+            chaptersFile = self._createChaptersFile()
+            args.extend(["-f", "ffmetadata", "-i", chaptersFile])
+
+        args.extend(["-c", "copy"])
+
+        if self.chapters and chaptersFile:
+            args.extend(["-map", "0", "-map", "1", "-map_metadata", "2"])
+
+        if self.metadataTitle:
+            args.extend(["-metadata", f"title={self.metadataTitle}"])
+        if self.metadataArtist:
+            args.extend(["-metadata", f"artist={self.metadataArtist}"])
+
+        args.append(self.outputFile)
 
         process = await asyncio.create_subprocess_exec(
-            execPath,
-            *self._buildCommand(),
-            cwd=Path(execPath).parent,
+            *args,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
+            stderr=asyncio.subprocess.PIPE,
         )
-        readerTask = asyncio.create_task(self._readOutput(process.stdout))
+        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
 
         try:
             await process.wait()
-            await readerTask
+            await progressTask
 
             if process.returncode != 0:
-                lowered = self.lastMessage.lower()
-                hint = next((h for needle, h in ERROR_HINTS if needle in lowered), "")
-                logger.warning("yt-dlp exited ({}): {}", process.returncode, self.lastMessage)
+                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
                 raise TaskError(
-                    hint or "进程异常退出（{code}）：{detail}",
+                    "FFmpeg 合并失败（{code}）：{detail}",
                     code=process.returncode,
-                    detail=self.lastMessage or "yt-dlp",
+                    detail=stderr or "unknown error",
                 )
 
-            if self._finalPath:
-                self.outputFile = self._finalPath
-                path = Path(self._finalPath)
-                if path.is_file() and path.stat().st_size > 0:
-                    if len(self.task.steps) == 1:
-                        self.task.fileSize = max(self.task.fileSize, path.stat().st_size)
-                        if path.name != self.task.name:
-                            self.task.setName(path.name)
-
             self.setStatus(TaskStatus.COMPLETED)
+
+            if self.shouldDeleteSource:
+                for path in (self._videoPath, self._audioPath):
+                    deletePath(path)
+                    deletePath(Path(f"{path}.ghd"))
         except asyncio.CancelledError:
-            if process.returncode is None:
-                process.terminate()
-                try:
-                    await asyncio.wait_for(process.wait(), timeout=3)
-                except asyncio.TimeoutError:
-                    process.kill()
-                    await process.wait()
-            if not readerTask.done():
-                readerTask.cancel()
-                with suppress(asyncio.CancelledError):
-                    await readerTask
             self.setStatus(TaskStatus.PAUSED)
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            if not progressTask.done():
+                progressTask.cancel()
+                with suppress(asyncio.CancelledError):
+                    await progressTask
             raise
+        finally:
+            if chaptersFile:
+                Path(chaptersFile).unlink(missing_ok=True)
+
+    def _createChaptersFile(self) -> str:
+        lines = [";FFMETADATA1"]
+        for ch in self.chapters:
+            start = int(ch.get("start_time", 0) * 1000)
+            end = int(ch.get("end_time", 0) * 1000)
+            title = str(ch.get("title", "")).replace("=", "\\=").replace(";", "\\;").replace("#", "\\#")
+            lines.append("[CHAPTER]")
+            lines.append("TIMEBASE=1/1000")
+            lines.append(f"START={start}")
+            lines.append(f"END={end}")
+            lines.append(f"title={title}")
+        fd, path = tempfile.mkstemp(suffix=".txt", prefix="gd3_chapters_")
+        with open(fd, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        return path

@@ -15,7 +15,7 @@ from app.view.cards.draft_cards import UniversalDraftCard
 from app.view.cards.task_cards import UniversalTaskCard
 from app.view.components.tree_view import AutoSizingTreeView
 from .config import ytDlpConfig
-from .task import YtDlpTask, toInt
+from .task import STEPS_PER_VIDEO, YouTubeTask
 
 
 def buildQualityTiers(mediaInfo: dict) -> list[tuple[str, str]]:
@@ -67,11 +67,19 @@ def buildSubtitleChoices(mediaInfo: dict) -> list[tuple[str, str, bool]]:
     return choices
 
 
+STEP_LABELS = {
+    1: "提取信息",
+    2: "下载视频",
+    3: "下载音频",
+    4: "合并",
+}
+
+
 class YtDlpDraftCard(UniversalDraftCard):
 
     def _initWidget(self) -> None:
         super()._initWidget()
-        task: YtDlpTask = self._task
+        task: YouTubeTask = self._task
         mediaInfo: dict = getattr(task, "_mediaInfo", {})
         hasMediaInfo = bool(mediaInfo.get("formats"))
 
@@ -127,7 +135,7 @@ class YtDlpDraftCard(UniversalDraftCard):
         from features.yt_dlp_pack.pack import YouTubeParser
         parser = YouTubeParser()
         coroutineRunner.submit(
-            parser.fetchMediaInfo(self._task.url),
+            parser.fetchFormats(self._task.url),
             done=self._onMediaInfoLoaded,
             failed=self._onMediaInfoFailed,
             owner=self,
@@ -135,10 +143,15 @@ class YtDlpDraftCard(UniversalDraftCard):
 
     def _onMediaInfoLoaded(self, mediaInfo: dict) -> None:
         self._mediaSpinner.hide()
-        task: YtDlpTask = self._task
+        if not mediaInfo:
+            return
+        task: YouTubeTask = self._task
         task._mediaInfo = mediaInfo
 
-        fileSize = toInt(str(mediaInfo.get("filesize_approx") or 0))
+        try:
+            fileSize = int(float(mediaInfo.get("filesize_approx") or 0))
+        except (TypeError, ValueError):
+            fileSize = 0
         if fileSize:
             task.fileSize = fileSize
             self.sizeLabel.setText(toReadableSize(fileSize))
@@ -158,7 +171,7 @@ class YtDlpDraftCard(UniversalDraftCard):
 
     def _onQualityChanged(self, index: int) -> None:
         if 0 <= index < len(self._qualityTiers):
-            self._task.videoFormat = self._qualityTiers[index][0]
+            self._task.videoFormatFilter = self._qualityTiers[index][0]
 
     def _onSubtitleClicked(self) -> None:
         dialog = SubtitleSelectDialog(self._subtitleChoices, self.window())
@@ -168,7 +181,7 @@ class YtDlpDraftCard(UniversalDraftCard):
             self._task.shouldIncludeAutoSubs = includeAuto
 
     def _onVideoSelectClicked(self) -> None:
-        task: YtDlpTask = self._task
+        task: YouTubeTask = self._task
         if not task.videos:
             self._videoSelectButton.hide()
             self._playlistSpinner.show()
@@ -176,7 +189,7 @@ class YtDlpDraftCard(UniversalDraftCard):
             from features.yt_dlp_pack.pack import YouTubeParser
             parser = YouTubeParser()
             coroutineRunner.submit(
-                parser.probePlaylist(task.url),
+                parser.fetchPlaylist(task.url),
                 done=self._onPlaylistLoaded,
                 failed=self._onPlaylistFailed,
             )
@@ -189,7 +202,7 @@ class YtDlpDraftCard(UniversalDraftCard):
     def _onPlaylistLoaded(self, videos: list[dict]) -> None:
         self._playlistSpinner.hide()
         self._videoSelectButton.show()
-        task: YtDlpTask = self._task
+        task: YouTubeTask = self._task
         if videos:
             task.setVideos(videos)
             self._onVideoSelectClicked()
@@ -400,27 +413,29 @@ class YtDlpTaskCard(UniversalTaskCard):
 
     def refresh(self, force: bool = False) -> None:
         super().refresh(force=force)
-        task: YtDlpTask = self._task
-        if len(task.steps) <= 1:
-            return
-        completedCount = sum(1 for s in task.steps if s.status == TaskStatus.COMPLETED)
-        totalCount = len(task.steps)
-        if task.status == TaskStatus.RUNNING:
-            currentStep = next((s for s in task.steps if s.status == TaskStatus.RUNNING), None)
-            if currentStep:
-                title = currentStep.videoTitle or task.name
-                self.nameLabel.setText(f"{title} ({completedCount + 1}/{totalCount})")
-                totalBytes = getattr(currentStep, "_totalBytes", 0)
-                if totalBytes > 0:
-                    self.sizeLabel.setText(
-                        f"{toReadableSize(currentStep.receivedBytes)}/{toReadableSize(totalBytes)}"
-                    )
-                else:
-                    self.sizeLabel.setText(toReadableSize(currentStep.receivedBytes))
+        task: YouTubeTask = self._task
+        if task.status != TaskStatus.RUNNING:
+            if task.status == TaskStatus.COMPLETED and task.isPlaylist:
+                videoCount = len(task.steps) // STEPS_PER_VIDEO
+                receivedBytes = sum(s.receivedBytes for s in task.steps)
+                self.sizeLabel.setText(
+                    self.tr("{0} 个视频 · {1}").format(videoCount, toReadableSize(receivedBytes))
+                )
                 self.sizeLabel.show()
-        elif task.status == TaskStatus.COMPLETED:
-            receivedBytes = sum(s.receivedBytes for s in task.steps)
-            self.sizeLabel.setText(
-                self.tr("{0} 个视频 · {1}").format(totalCount, toReadableSize(receivedBytes))
-            )
-            self.sizeLabel.show()
+            return
+
+        currentStep = next((s for s in task.steps if s.status == TaskStatus.RUNNING), None)
+        if not currentStep:
+            return
+
+        groupIndex = getattr(currentStep, "groupIndex", 0)
+        stepInGroup = currentStep.stepIndex - groupIndex * STEPS_PER_VIDEO
+        label = STEP_LABELS.get(stepInGroup, "")
+
+        if task.isPlaylist:
+            videoCount = len(task.steps) // STEPS_PER_VIDEO
+            videoStem = getattr(currentStep, "videoStem", "") or task.name
+            if label:
+                self.nameLabel.setText(f"{videoStem} ({groupIndex + 1}/{videoCount} · {label})")
+        elif label:
+            self.nameLabel.setText(f"{task.name} ({label})")

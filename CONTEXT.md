@@ -106,7 +106,7 @@ A navigation page contributed by a FeaturePack.
 
 **Binary Runtime**:
 An external executable family that a pack can probe or provide an install task
-for. Concrete implementations: M3U8Runtime, FFmpegRuntime, YtDlpRuntime.
+for. Concrete implementations: M3U8Runtime, FFmpegRuntime, YouTubeRuntime.
 
 **Resource**:
 A downloadable thing captured by the browser extension.
@@ -377,7 +377,7 @@ Notable pack-level actors:
 - `btSession` — module singleton wrapping the libtorrent session; lazy open
   on first BTTask.run(); emits `alertReceived` for broadcast+filter routing.
 - `trackerService` — tracker source fetch + cache + merge.
-- `ffmpegRuntime`, `m3u8Runtime`, `ytDlpRuntime` — BinaryRuntime singletons.
+- `ffmpegRuntime`, `m3u8Runtime`, `youTubeRuntime` — BinaryRuntime singletons.
 
 ### View layer
 
