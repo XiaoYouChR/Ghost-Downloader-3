@@ -26,6 +26,17 @@ PLATFORM_INCLUDE_PACKAGES = {
 }
 EXTRA_INCLUDE_MODULES = [
     "app.view.dialogs.edit_task",
+    "concurrent.futures",
+    "email.header",
+    "html.entities",
+    "html.parser",
+    "http.client",
+    "http.cookiejar",
+    "http.cookies",
+    "http.server",
+    "urllib.error",
+    "urllib.response",
+    "xml.etree.ElementTree",
 ]
 
 

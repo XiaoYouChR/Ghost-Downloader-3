@@ -1,69 +1,64 @@
 from __future__ import annotations
 
+import ast
 import platform
-import shutil
 import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QWidget
-from qfluentwidgets import BoolValidator, ConfigItem, FolderValidator, OptionsConfigItem, OptionsValidator, RangeConfigItem, RangeValidator
+from qfluentwidgets import BoolValidator, ConfigItem, FolderValidator, OptionsConfigItem, OptionsValidator
 
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
-from app.models.task import Task
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
+
+PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
+QJS_RELEASE_API = "https://api.github.com/repos/quickjs-ng/quickjs/releases/latest"
+QJS_RELEASE_HEADERS = {"accept": "application/vnd.github+json"}
 
 
 class YtDlpConfig(PackConfig):
     installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", FolderValidator())
-    parallelFragments = RangeConfigItem("YtDlp", "ParallelFragments", 4, RangeValidator(1, 16))
     loginBrowser = OptionsConfigItem(
         "YtDlp", "LoginBrowser", "",
         OptionsValidator(["", "chrome", "firefox", "edge", "safari"]),
     )
-    shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
     subtitleLanguages = ConfigItem("YtDlp", "SubtitleLanguages", "en")
-    shouldEmbedThumbnail = ConfigItem("YtDlp", "EmbedThumbnail", True, BoolValidator())
-    shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
+    shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
+    shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
 
     def settingGroups(self, parent: QWidget) -> list:
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard, SpinBoxSettingCard
+        from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard
 
         from features.yt_dlp_pack.icons import YTIcon
         group = CollapsibleSettingCardGroup(YTIcon.YOUTUBE, self.tr("YouTube 下载"), "ytdlp", parent)
-        installFolderCard = SelectFolderSettingCard(
-            ytDlpConfig.installFolder, f"{APP_DATA_DIR}/YtDlp",
-            self.tr("yt-dlp 安装目录"),
-            group,
-        )
-        runtimeCard = RuntimeCard(ytDlpRuntime, group)
-        jsRuntimeCard = RuntimeCard(jsRuntime, group)
-        installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
-        installFolderCard.pathChanged.connect(jsRuntimeCard._onInstallFolderChanged)
 
-        group.addSettingCards([
-            installFolderCard,
-            runtimeCard,
-            jsRuntimeCard,
-            SpinBoxSettingCard(
-                FluentIcon.SPEED_HIGH,
-                self.tr("并行分片数"),
-                self.tr("同时下载的视频分片数量，越高越快但可能被限流"),
-                configItem=self.parallelFragments,
-                parent=group,
-            ),
-            ComboBoxSettingCard(
+        runtimeCard = RuntimeCard(youTubeRuntime, group)
+        cards = [runtimeCard]
+
+        if not IS_ANDROID:
+            installFolderCard = SelectFolderSettingCard(
+                ytDlpConfig.installFolder, f"{APP_DATA_DIR}/YtDlp",
+                self.tr("运行环境安装目录"),
+                group,
+            )
+            installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
+            cards.insert(0, installFolderCard)
+
+            cards.append(ComboBoxSettingCard(
                 self.loginBrowser,
                 FluentIcon.PEOPLE,
                 self.tr("登录浏览器"),
                 self.tr("从指定浏览器读取 YouTube 登录状态，用于下载需要登录的内容"),
                 texts=[self.tr("不使用"), "Chrome", "Firefox", "Edge", "Safari"],
                 parent=group,
-            ),
+            ))
+
+        cards.extend([
             SwitchSettingCard(
                 FluentIcon.VIDEO,
                 self.tr("优先 MP4 格式"),
@@ -72,111 +67,213 @@ class YtDlpConfig(PackConfig):
                 group,
             ),
             SwitchSettingCard(
-                FluentIcon.PHOTO,
-                self.tr("嵌入缩略图"),
-                self.tr("下载完成后通过 FFmpeg 将封面嵌入文件"),
-                self.shouldEmbedThumbnail,
+                FluentIcon.INFO,
+                self.tr("嵌入元数据"),
+                self.tr("下载完成后将标题、作者等信息嵌入文件"),
+                self.shouldEmbedMetadata,
                 group,
             ),
             SwitchSettingCard(
                 FluentIcon.BOOK_SHELF,
                 self.tr("嵌入章节"),
-                self.tr("下载完成后通过 FFmpeg 将章节标记嵌入文件"),
+                self.tr("下载完成后将章节标记嵌入文件"),
                 self.shouldEmbedChapters,
                 group,
             ),
-            SwitchSettingCard(
-                FluentIcon.INFO,
-                self.tr("嵌入元数据"),
-                self.tr("下载完成后通过 FFmpeg 将标题、作者等信息嵌入文件"),
-                self.shouldEmbedMetadata,
-                group,
-            ),
         ])
+
+        group.addSettingCards(cards)
         runtimeCard.refreshStatus()
-        jsRuntimeCard.refreshStatus()
         return [group]
 
 
 ytDlpConfig = YtDlpConfig()
 
 
-class YtDlpRuntime(BinaryRuntime):
-    name = "yt-dlp"
-    canInstall = not IS_ANDROID
+class YouTubeRuntime(BinaryRuntime):
+    name = "YouTube 运行环境"
+    canInstall = True
 
     def path(self) -> str:
-        return findExecutable(Path(ytDlpConfig.installFolder.value), "yt-dlp")
+        folder = Path(ytDlpConfig.installFolder.value)
+        if not (folder / "yt_dlp" / "__init__.py").is_file():
+            return ""
+        return self.qjsPath()
 
-    async def installTask(self) -> Task:
-        from app.services.feature_service import featureService
-        from app.models.task import BinaryInstallOptions
+    def ytDlpFolder(self) -> Path:
+        return Path(ytDlpConfig.installFolder.value)
 
-        machine = platform.machine().lower()
-        if sys.platform == "win32":
-            asset = "yt-dlp.exe"
-        elif sys.platform == "darwin":
-            asset = "yt-dlp_macos"
-        elif machine in {"arm64", "aarch64"}:
-            asset = "yt-dlp_linux_aarch64"
+    def qjsPath(self) -> str:
+        if IS_ANDROID:
+            from app.platform.android import nativeLibraryDir
+            binary = Path(nativeLibraryDir()) / "libqjs.so"
+            return str(binary) if binary.is_file() else ""
+        return findExecutable(Path(ytDlpConfig.installFolder.value), "qjs")
+
+    async def probeVersion(self) -> str:
+        ytDlpDir = Path(ytDlpConfig.installFolder.value) / "yt_dlp"
+        versionFile = ytDlpDir / "version.py"
+        if not versionFile.is_file():
+            return ""
+
+        ytDlpVersion = ""
+        try:
+            text = versionFile.read_text(encoding="utf-8")
+            for node in ast.walk(ast.parse(text)):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name) and target.id == "__version__":
+                            if isinstance(node.value, ast.Constant):
+                                ytDlpVersion = str(node.value.value)
+        except Exception:
+            pass
+
+        qjsPath = self.qjsPath()
+        if qjsPath:
+            import asyncio
+            process = await asyncio.create_subprocess_exec(
+                qjsPath, "--version",
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            stdout, _ = await process.communicate()
+            isQjsOk = process.returncode == 0
         else:
-            asset = "yt-dlp_linux"
+            isQjsOk = False
 
-        binaryName = "yt-dlp.exe" if sys.platform == "win32" else "yt-dlp"
-        url = f"https://github.com/yt-dlp/yt-dlp/releases/latest/download/{asset}"
-        return await featureService.parse(BinaryInstallOptions(
-            url=url,
-            outputFolder=Path(ytDlpConfig.installFolder.value),
-            name=f"yt-dlp 安装 ({asset})",
-            executableNames=(binaryName,),
+        parts = []
+        if ytDlpVersion:
+            parts.append(f"yt-dlp {ytDlpVersion}")
+        if isQjsOk:
+            parts.append("qjs ✓")
+        return " | ".join(parts) if parts else ""
+
+    async def installTask(self):
+        from app.config.cfg import cfg
+        from disk_pack.task import ExtractStep, InstallTask
+        from http_pack.task import HttpTaskStep
+
+        whlUrl, whlSize = await self._fetchWhlAsset()
+
+        installFolder = Path(ytDlpConfig.installFolder.value)
+        installFolder.mkdir(parents=True, exist_ok=True)
+        archiveName = "yt_dlp.zip"
+
+        if IS_ANDROID:
+            task = InstallTask(
+                name="yt-dlp 安装",
+                url=whlUrl,
+                packId="disk",
+                fileSize=whlSize,
+                outputFolder=installFolder,
+                installFolder=str(installFolder),
+            )
+            task.addStep(HttpTaskStep(
+                stepIndex=1,
+                url=whlUrl,
+                fileSize=whlSize,
+                headers=dict(cfg.defaultRequestHeaders.value),
+                subworkerCount=cfg.preBlockNum.value,
+                canUseRangeRequests=True,
+                outputFile=str(installFolder / archiveName),
+            ))
+            task.addStep(ExtractStep(
+                stepIndex=2,
+                archivePath=str(installFolder / archiveName),
+                outputFolder=str(installFolder),
+                archiveSize=whlSize,
+            ))
+            return task
+
+        from disk_pack.task import BinaryInstallStep
+
+        qjsUrl, qjsSize, qjsAssetName = await self._fetchQjsAsset()
+        qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
+
+        task = InstallTask(
+            name="YouTube 运行环境安装",
+            url=whlUrl,
+            packId="disk",
+            fileSize=whlSize + qjsSize,
+            outputFolder=installFolder,
+            installFolder=str(installFolder),
+        )
+        task.addStep(HttpTaskStep(
+            stepIndex=1,
+            url=whlUrl,
+            fileSize=whlSize,
+            headers=dict(cfg.defaultRequestHeaders.value),
+            subworkerCount=cfg.preBlockNum.value,
+            canUseRangeRequests=True,
+            outputFile=str(installFolder / archiveName),
         ))
-
-
-ytDlpRuntime = YtDlpRuntime()
-
-
-class JsRuntime(BinaryRuntime):
-    name = "JavaScript Runtime"
-    canInstall = not IS_ANDROID
-
-    def path(self) -> str:
-        found = findExecutable(Path(ytDlpConfig.installFolder.value), "deno")
-        if found:
-            return found
-        for runtime in ("node", "bun"):
-            found = shutil.which(runtime)
-            if found:
-                return found
-        return ""
-
-    def buildArgs(self) -> list[str]:
-        path = self.path()
-        if not path:
-            return []
-        return ["--js-runtimes", f"{Path(path).stem}:{path}"]
-
-    async def installTask(self) -> Task:
-        from app.services.feature_service import featureService
-        from app.models.task import BinaryInstallOptions
-
-        machine = platform.machine().lower()
-        if sys.platform == "win32":
-            target = "x86_64-pc-windows-msvc"
-        elif sys.platform == "darwin":
-            target = "aarch64-apple-darwin" if machine in {"arm64", "aarch64"} else "x86_64-apple-darwin"
-        elif machine in {"arm64", "aarch64"}:
-            target = "aarch64-unknown-linux-gnu"
-        else:
-            target = "x86_64-unknown-linux-gnu"
-
-        url = f"https://github.com/denoland/deno/releases/latest/download/deno-{target}.zip"
-        binaryName = "deno.exe" if sys.platform == "win32" else "deno"
-        return await featureService.parse(BinaryInstallOptions(
-            url=url,
-            outputFolder=Path(ytDlpConfig.installFolder.value),
-            name=f"deno 安装 ({target})",
-            executableNames=(binaryName,),
+        task.addStep(HttpTaskStep(
+            stepIndex=2,
+            url=qjsUrl,
+            fileSize=qjsSize,
+            headers=dict(cfg.defaultRequestHeaders.value),
+            subworkerCount=cfg.preBlockNum.value,
+            canUseRangeRequests=True,
+            outputFile=str(installFolder / qjsBinaryName),
         ))
+        task.addStep(ExtractStep(
+            stepIndex=3,
+            archivePath=str(installFolder / archiveName),
+            outputFolder=str(installFolder),
+            archiveSize=whlSize,
+        ))
+        task.addStep(BinaryInstallStep(
+            stepIndex=4,
+            binaryPath=str(installFolder / qjsBinaryName),
+        ))
+        return task
+
+    async def _fetchWhlAsset(self) -> tuple[str, int]:
+        from app.client import buildClient
+
+        client = buildClient(timeout=15)
+        try:
+            response = await client.get(PYPI_API)
+            response.raise_for_status()
+            data = await response.json()
+        finally:
+            client.close()
+
+        urls = data.get("urls") or []
+        for entry in urls:
+            if entry.get("packagetype") == "bdist_wheel" and entry.get("filename", "").endswith(".whl"):
+                return entry["url"], entry.get("size") or 0
+        raise RuntimeError("未找到 yt-dlp wheel 安装包")
+
+    async def _fetchQjsAsset(self) -> tuple[str, int, str]:
+        from app.client import buildClient
+
+        client = buildClient(timeout=15, headers=QJS_RELEASE_HEADERS)
+        try:
+            response = await client.get(QJS_RELEASE_API)
+            response.raise_for_status()
+            release = await response.json()
+        finally:
+            client.close()
+
+        assetName = _qjsAssetName()
+        for asset in release.get("assets") or []:
+            if asset.get("name") == assetName:
+                return asset["browser_download_url"], asset.get("size") or 0, assetName
+        raise RuntimeError(f"未找到适配当前平台的 qjs: {assetName}")
 
 
-jsRuntime = JsRuntime()
+def _qjsAssetName() -> str:
+    machine = platform.machine().lower()
+    if sys.platform == "win32":
+        arch = "x86" if machine in {"x86", "i386", "i686"} else "x86_64"
+        return f"qjs-windows-{arch}.exe"
+    elif sys.platform == "darwin":
+        return "qjs-darwin"
+    else:
+        arch = "aarch64" if machine in {"arm64", "aarch64"} else "x86_64"
+        return f"qjs-linux-{arch}"
+
+
+youTubeRuntime = YouTubeRuntime()

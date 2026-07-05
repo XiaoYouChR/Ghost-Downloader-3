@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from urllib.parse import urlparse, parse_qs, quote
 
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
-from .config import jsRuntime, ytDlpConfig, ytDlpRuntime
-from .task import YtDlpTask, YtDlpTaskStep
+from loguru import logger
 
+from .config import ytDlpConfig
+from .task import YouTubeTask, buildStepGroup, probeFormats, probePlaylist
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 
@@ -23,30 +23,43 @@ class YouTubeParser(TaskParser):
 
     async def parse(self, options: TaskOptions) -> Task:
         url = options.url.strip()
-        headers = dict(options.headers)
+        isPlaylist = bool(parse_qs(urlparse(url).query).get("list"))
 
         title = await self._fetchTitle(url)
         name = toSafeFilename(title) if title else "YouTube 视频"
-        isPlaylist = bool(parse_qs(urlparse(url).query).get("list"))
 
-        task = YtDlpTask(
+        task = YouTubeTask(
             name=f"{name}.mp4",
             url=url,
             fileSize=SpecialFileSize.UNKNOWN,
             outputFolder=options.outputFolder,
             isPlaylist=isPlaylist,
         )
-        task.addStep(YtDlpTaskStep(
-            stepIndex=1,
-            headers=headers,
-        ))
+        for step in buildStepGroup(0):
+            task.addStep(step)
         return task
 
-    async def fetchMediaInfo(self, url: str) -> dict:
-        stdout = await self._runCommand([url, "--dump-json", "--no-playlist", "--no-warnings"])
-        if stdout:
-            return json.loads(stdout.decode("utf-8", errors="ignore"))
-        return {}
+    async def fetchFormats(self, url: str) -> dict:
+        from .config import youTubeRuntime
+        runtimePath = youTubeRuntime.path()
+        if not runtimePath:
+            logger.warning("fetchFormats skipped: runtime not found (installFolder={})", youTubeRuntime.ytDlpFolder())
+            return {}
+        try:
+            return await asyncio.to_thread(probeFormats, url)
+        except Exception as e:
+            logger.opt(exception=e).warning("fetchFormats failed for {}", url)
+            return {}
+
+    async def fetchPlaylist(self, url: str) -> list[dict]:
+        from .config import youTubeRuntime
+        if not youTubeRuntime.path():
+            return []
+        try:
+            return await asyncio.to_thread(probePlaylist, url)
+        except Exception as e:
+            logger.opt(exception=e).warning("fetchPlaylist failed for {}", url)
+            return []
 
     async def _fetchTitle(self, url: str) -> str:
         from app.client import buildClient
@@ -58,50 +71,6 @@ class YouTubeParser(TaskParser):
             return str(data.get("title") or "")
         except Exception:
             return ""
-
-    async def probePlaylist(self, url: str) -> list[dict]:
-        stdout = await self._runCommand([url, "--flat-playlist", "--dump-json", "--no-warnings"], timeout=60)
-        entries: list[dict] = []
-        if stdout:
-            for line in stdout.decode("utf-8", errors="ignore").strip().splitlines():
-                line = line.strip()
-                if line:
-                    try:
-                        entries.append(json.loads(line))
-                    except json.JSONDecodeError:
-                        continue
-        return entries
-
-    async def _runCommand(self, args: list[str], timeout: int = 30) -> bytes | None:
-        execPath = ytDlpRuntime.path()
-        if not execPath:
-            return None
-
-        from app.config.cfg import proxy
-        proxyUrl = proxy()
-        if proxyUrl:
-            args.extend(["--proxy", proxyUrl])
-        browser = ytDlpConfig.loginBrowser.value
-        if browser:
-            args.extend(["--cookies-from-browser", browser])
-        args.extend(jsRuntime.buildArgs())
-
-        process = await asyncio.create_subprocess_exec(
-            execPath, *args,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-        if process.returncode == 0:
-            return stdout
-
-        errorText = stderr.decode("utf-8", errors="ignore").strip()
-        for line in reversed(errorText.splitlines()):
-            if "ERROR:" in line:
-                errorText = line.split("ERROR:", 1)[-1].strip()
-                break
-        raise RuntimeError(errorText or f"yt-dlp 退出码异常: {process.returncode}")
 
 
 class YouTubePack(FeaturePack):
