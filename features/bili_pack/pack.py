@@ -23,6 +23,13 @@ class BilibiliParser(TaskParser):
         hostname = (urlparse(options.url).hostname or "").lower()
         return hostname == "bilibili.com" or hostname.endswith(".bilibili.com")
 
+    def matchPassive(self, options: TaskOptions) -> bool:
+        parsed = urlparse(options.url)
+        hostname = (parsed.hostname or "").lower()
+        if hostname != "bilibili.com" and not hostname.endswith(".bilibili.com"):
+            return False
+        return bool(re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", parsed.path))
+
     async def parse(self, options: TaskOptions) -> Task:
         url = options.url
         subworkerCount = options.subworkerCount
