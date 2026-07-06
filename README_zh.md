@@ -2,9 +2,6 @@
   简体中文 | <a href="README.md">English</a>
 </h4>
 
-> [!NOTE]
-> 由于学习原因, 近期本项目的开发速度有所放缓.
-
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -26,6 +23,21 @@
 
 </div>
 
+<!-- FEATURES -->
+## 功能特性
+
+* 像 IDM 一样智能分块⚡但又不需要合并文件，以及 AI 智能加速🚀
+* 最小化到托盘后自动释放界面资源🍃，后台内存占用极低
+* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH、eD2k 等几乎所有常用协议🌐
+* 下载时模拟真实浏览器 TLS 指纹🥷，更不容易被网站风控拦截
+* 支持解析 YouTube▶️ 与 Bilibili 视频——播放列表 / 多 P、最高 4K/HDR、字幕与账号登录
+* 为 GitHub🐙 Release 与 HuggingFace🤗 模型提供专用解析和镜像加速
+* 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也是全链路支持
+* 配套的浏览器扩展🦊可以嗅探网页媒体、接管浏览器下载，不用离开浏览器就能查看和控制任务
+* 提供 aria2 兼容的 RPC 接口🔌，第三方工具可以直接推送下载任务
+* 任务可以暂停后修改✏️链接、请求头、代理再继续，已下载的进度不会丢
+* 完整的 Android 移动端界面📱，支持后台下载与完成通知🔔
+
 <!-- ABOUT THE PROJECT -->
 ## 关于本项目
 
@@ -36,25 +48,15 @@
 |       平台       |     版本要求      |       架构支持       | 兼容 |
 |:--------------:|:-------------:|:----------------:|:--:|
 |  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
-| 🪟 **Windows** |   `7 SP1+`    | `x86_64`/`arm64` | ✅  |
+| 🪟 **Windows** |    `10+`      | `x86_64`/`arm64` | ✅  |
 |  🍎 **macOS**  |    `13.0+`    | `x86_64`/`arm64` | ✅  |
-| 🤖 **Android** |    `9.0+`     |   `arm64-v8a`    | ✅  |
+| 🤖 **Android** |   `10.0+`     |   `arm64-v8a`    | ✅  |
 
 > [!WARNING]
 > 由于 Qt `6.6+` 已经不再支持 `不支持 AVX 指令集的 CPU`
 
 > [!TIP]  
 > **Arch Linux AUR 支持**：现已可通过社区维护的软件包 `ghost-downloader-bin` 和 `ghost-downloader-git` 进行安装（维护者：[@zxp19821005](https://github.com/zxp19821005)）
-
-<!-- FEATURES -->
-## 功能特性
-
-* 像 IDM 一样智能分块⚡但又不需要合并文件，以及 AI 智能加速🚀
-* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH 等几乎所有常用协议🌐
-* 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也是全链路支持
-* 配套的浏览器扩展🦊可以直接嗅探网页上的媒体资源
-* 任务可以暂停后修改✏️链接、请求头、代理再继续，已下载的进度不会丢
-* 完整的 Android 移动端界面📱，支持后台下载与完成通知🔔
 
 <!-- SCREEN SHOTS -->
 ## 截图
@@ -64,10 +66,8 @@
 <!-- ROADMAP -->
 ## 计划
 
-- ❌ 下载引擎 Native 化 (降低软件在后台的内存占用)
 - ❌ 公开插件 API
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Sessions 等强大功能)
-- ❌ 支持 eD2k 协议
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
@@ -158,16 +158,20 @@ Copyright © 2024-2026 XiaoYouChR.
 * [cat-catch](https://github.com/xifangczy/cat-catch) 猫抓 浏览器资源嗅探扩展
 * [desktop-notifier](https://github.com/samschott/desktop-notifier) Python library for cross-platform desktop notifications
 * [FFmpeg](https://ffmpeg.org/) A complete, cross-platform solution to record, convert and stream audio and video
+* [goed2k](https://github.com/monkeyWie/goed2k) The eD2k download daemon behind Ghost Downloader's eD2k support
 * [libtorrent](https://github.com/arvidn/libtorrent) An efficient feature complete C++ bittorrent implementation
 * [loguru](https://github.com/Delgan/loguru) A library which aims to bring enjoyable logging in Python
 * [m3u8](https://github.com/globocom/m3u8) Python m3u8 parser
 * [mpegdash](https://github.com/sangoma/mpegdash) MPEG-DASH MPD parser
-* [niquests](https://github.com/jawah/niquests) Automatic HTTP/1.1, HTTP/2, and HTTP/3. WebSocket, and SSE included.
+* [N_m3u8DL-RE](https://github.com/nilaoda/N_m3u8DL-RE) Cross-platform DASH/HLS/MSS download tool powering Ghost Downloader's M3U8 support
 * [Nuitka](https://github.com/Nuitka/Nuitka) The Python compiler
 * [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 强大、可扩展、美观优雅的 Fluent Design 风格组件库
 * [PySide6](https://github.com/PySide/pyside-setup) The official Python module
+* [QuickJS-NG](https://github.com/quickjs-ng/quickjs) A small and embeddable JavaScript engine
 * [uvloop](https://github.com/MagicStack/uvloop) Ultra fast asyncio event loop
 * [winloop](https://github.com/Vizonex/Winloop) An alternative to uvloop for Windows
+* [wreq](https://github.com/0x676e67/wreq-python) An ergonomic Python HTTP client with TLS fingerprint emulation
+* [yt-dlp](https://github.com/yt-dlp/yt-dlp) A feature-rich command-line audio/video downloader
 
 ## 致谢
 
