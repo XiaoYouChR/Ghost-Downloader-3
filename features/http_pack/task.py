@@ -64,8 +64,9 @@ class HttpTaskStep(TaskStep):
     outputFile: str = ""
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
-    def __post_init__(self):
-        self.canPause = self.canUseRangeRequests
+    @property
+    def canPause(self) -> bool:
+        return self.canUseRangeRequests
 
     def deleteFiles(self):
         from app.platform.filesystem import deletePath

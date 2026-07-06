@@ -123,8 +123,10 @@ class FtpStep(TaskStep):
     canUseRangeRequests: bool = False
     isAccelerated: bool = False
     subworkerCount: int = 8
-    def __post_init__(self):
-        self.canPause = self.canUseRangeRequests
+
+    @property
+    def canPause(self) -> bool:
+        return self.canUseRangeRequests
 
     @property
     def outputPath(self) -> str:

@@ -51,6 +51,12 @@ owns `run()` directly — there is no separate Worker class.
 **Subworker**:
 A split transfer unit for one byte-range chunk inside an HTTP or FTP step.
 
+**Pausable**:
+A Task is pausable while its running Step can resume from a breakpoint (for
+transfers, whether the server honours byte-range requests). Pausability is
+derived from resumability at the moment it is read — never stored as separate
+state, because a Step may only learn its resumability after it was created.
+
 **Task Files**:
 The files and temporary progress state produced by a Task.
 
