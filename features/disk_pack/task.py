@@ -36,11 +36,10 @@ class InstallTask(Task):
     def canPause(self) -> bool:
         return False
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> bool:
         if self.installFolder:
-            deletePath(Path(self.installFolder))
-            return
-        super().deleteFiles()
+            return deletePath(Path(self.installFolder))
+        return super().deleteFiles()
 
 
 @dataclass(kw_only=True)

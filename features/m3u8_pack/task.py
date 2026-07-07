@@ -140,20 +140,24 @@ class M3U8TaskStep(TaskStep):
             newTemp.parent.mkdir(parents=True, exist_ok=True)
             move(str(oldTemp), str(newTemp))
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> bool:
         tempFolder = Path(self._tempFolder)
-        deletePath(tempFolder)
+        ok = deletePath(tempFolder)
         try:
             tempFolder.parent.rmdir()
         except OSError:
             pass
         outputDir = self.task.outputFolder
         if not outputDir.is_dir():
-            return
+            return ok
         prefix = f"{self._saveName}."
         for candidate in outputDir.iterdir():
             if candidate.is_file() and candidate.name.startswith(prefix) and candidate.name != self.task.name:
-                candidate.unlink(missing_ok=True)
+                try:
+                    candidate.unlink(missing_ok=True)
+                except OSError:
+                    ok = False
+        return ok
 
     def _buildCommand(self) -> list[str]:
         def toBool(v: bool) -> str:

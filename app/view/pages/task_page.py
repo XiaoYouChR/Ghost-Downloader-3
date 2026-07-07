@@ -263,6 +263,7 @@ class TaskPage(QWidget):
                        taskService.taskCompleted, taskService.taskFailed):
             signal.connect(self._refreshVisibleCards)
         taskService.fileDisappeared.connect(self._onFileDisappeared)
+        taskService.fileDeleteFailed.connect(self._onFileDeleteFailed)
         speedMeter.speedChanged.connect(self._onSpeedChanged)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
@@ -652,3 +653,13 @@ class TaskPage(QWidget):
         card = self._cards.get(task.taskId)
         if card is not None:
             card.refresh(force=True)
+
+    def _onFileDeleteFailed(self, task: Task) -> None:
+        from qfluentwidgets import InfoBar, InfoBarPosition
+        InfoBar.warning(
+            self.tr("文件删除失败"),
+            self.tr('"{0}" 部分文件正被占用，无法删除').format(task.name),
+            duration=4000,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self.window()
+        )

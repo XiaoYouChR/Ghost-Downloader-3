@@ -21,7 +21,7 @@ class ED2kTask(Task):
         self.fileHash = ""
         return super().reset()
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> bool:
         if self.fileHash:
             from app.services.coroutine_runner import coroutineRunner
             from .session import ed2kSession
@@ -29,7 +29,7 @@ class ED2kTask(Task):
                 coroutineRunner.submit(ed2kSession.client().remove(self.fileHash, deleteFile=True))
             except Exception:
                 pass
-        super().deleteFiles()
+        return super().deleteFiles()
 
 
 @dataclass(kw_only=True)

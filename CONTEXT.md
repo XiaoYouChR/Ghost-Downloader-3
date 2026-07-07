@@ -318,7 +318,7 @@ and Task Queue. No caller reaches either directly.
 **Task lifecycle signals are emitted by Task Service:**
 `taskAdded(Task)`, `taskRemoved(taskId)`, `taskStarted(Task)`,
 `taskPaused(Task)`, `taskCompleted(Task)`, `taskFailed(Task)`,
-`tasksAllCompleted()`.
+`tasksAllCompleted()`, `fileDisappeared(Task)`, `fileDeleteFailed(Task)`.
 
 **Speed Meter** owns aggregate download speed — separate from task
 orchestration. Download engines feed it bytes; it emits `speedChanged` per
@@ -651,6 +651,12 @@ Pack-specific `error_catalog.py` files hold `QT_TRANSLATE_NOOP` markers for
 `asyncio.Task.cancel()` → `CancelledError` into running step. Each protocol
 handles cleanup: HTTP/FTP preserve `.ghd` progress for resume; M3U8/yt-dlp
 terminate subprocess; BT saves resume data and removes torrent from session.
+
+`cancel(workId, stopped=None)` accepts an optional `stopped` callback that fires
+once the run's `finally` has completed (all file handles closed). If the task
+already finished, `stopped` fires immediately. `delete`/`redownload`/`edit` use
+this to defer file deletion until the run fully releases resources, eliminating
+the race where `deleteFiles` ran while `os.close(fd)` had not yet executed.
 
 ### Split transfer (HTTP/FTP)
 

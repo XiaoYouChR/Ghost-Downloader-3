@@ -17,6 +17,7 @@ class CoroutineRunner(QThread):
         self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
         self._pending: dict[str, tuple] = {}
         self._running: dict[str, asyncio.Task] = {}
+        self._stopCallbacks: dict[str, Callable] = {}
 
     def run(self):
         asyncio.set_event_loop(self._loop)
@@ -39,19 +40,23 @@ class CoroutineRunner(QThread):
         self._pending[workId] = (done, failed, args, kwargs)
 
         async def execute():
-            result, error = None, None
+            result, error, cancelled = None, None, False
             try:
                 result = await work
             except asyncio.CancelledError:
-                return
+                cancelled = True
             except Exception as e:
                 logger.opt(exception=e).error("async work failed: {}", workId)
                 error = str(e) or repr(e)
             finally:
                 self._running.pop(workId, None)
 
+            stopped = self._stopCallbacks.pop(workId, None)
             entry = self._pending.pop(workId, None)
-            if entry is None:
+            if stopped is not None:
+                self.post(stopped)
+                return
+            if cancelled or entry is None:
                 return
             done, failed, args, kwargs = entry
             if error is None:
@@ -66,12 +71,16 @@ class CoroutineRunner(QThread):
         self._loop.call_soon_threadsafe(schedule)
         return workId
 
-    def cancel(self, workId: str) -> bool:
+    def cancel(self, workId: str, stopped: Callable = None) -> bool:
         self._pending.pop(workId, None)
-        task = self._running.pop(workId, None)
+        task = self._running.get(workId)
         if task is not None:
+            if stopped is not None:
+                self._stopCallbacks[workId] = stopped
             self._loop.call_soon_threadsafe(task.cancel)
             return True
+        if stopped is not None:
+            self.post(stopped)
         return False
 
     def post(self, callback: Callable, *args, **kwargs) -> None:

@@ -571,14 +571,15 @@ class FtpTask(Task):
         receivedBytes = sum(s.receivedBytes for s in selected)
         return progress, speed, receivedBytes
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> bool:
         if self.isFolder:
-            deletePath(Path(self.outputPath))
-            return
+            return deletePath(Path(self.outputPath))
+        ok = True
         for step in self.steps:
             target = Path(step.outputPath)
-            deletePath(target)
-            deletePath(Path(f"{target}.ghd"))
+            ok = deletePath(target) and ok
+            ok = deletePath(Path(f"{target}.ghd")) and ok
+        return ok
 
     def _isStepSelected(self, step) -> bool:
         if not self.files:

@@ -165,8 +165,8 @@ class TaskStep:
     def outputPath(self) -> str:
         return ""
 
-    def deleteFiles(self):
-        pass
+    def deleteFiles(self) -> bool:
+        return True
 
     def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
         from shutil import move
@@ -372,10 +372,11 @@ class Task:
                 continue
             yield step
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> bool:
         from app.platform.filesystem import deletePath
+        ok = True
         for step in self.steps:
-            step.deleteFiles()
+            ok = step.deleteFiles() and ok
         targets: set[Path] = set()
         if self.outputPath:
             targets.add(Path(self.outputPath))
@@ -384,8 +385,9 @@ class Task:
             if outputFile:
                 targets.add(Path(outputFile))
         for target in targets:
-            deletePath(target)
-            deletePath(Path(str(target) + ".ghd"))
+            ok = deletePath(target) and ok
+            ok = deletePath(Path(str(target) + ".ghd")) and ok
+        return ok
 
     def canReuseProgress(self, newTask: Task) -> bool:
         return False

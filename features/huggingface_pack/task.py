@@ -26,10 +26,11 @@ class HuggingFaceStep(HttpTaskStep):
                     return str(self.task.outputFolder / file.relativePath)
         return super().outputPath
 
-    def deleteFiles(self) -> None:
+    def deleteFiles(self) -> bool:
         path = Path(self.outputPath)
-        deletePath(path)
-        deletePath(Path(f"{path}.ghd"))
+        ok = deletePath(path)
+        ok = deletePath(Path(f"{path}.ghd")) and ok
+        return ok
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
@@ -60,8 +61,8 @@ class HuggingFaceTask(Task):
     def countSelected(self) -> int:
         return sum(1 for f in self.files if f.selected) if self.files else 0
 
-    def deleteFiles(self) -> None:
-        for step in self.steps:
-            step.deleteFiles()
+    def deleteFiles(self) -> bool:
+        ok = all([step.deleteFiles() for step in self.steps])
         if self.files:
-            deletePath(Path(self.outputFolder / self.name))
+            ok = deletePath(Path(self.outputFolder / self.name)) and ok
+        return ok

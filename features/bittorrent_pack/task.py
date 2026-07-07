@@ -91,10 +91,11 @@ class BTTask(Task):
         self._fileSelectionVersion += 1
         self.fileSize = sum(f.size for f in self.files if f.selected)
 
-    def deleteFiles(self):
-        super().deleteFiles()
+    def deleteFiles(self) -> bool:
+        ok = super().deleteFiles()
         if self.magnetTorrentPath is not None:
-            deletePath(self.magnetTorrentPath)
+            ok = deletePath(self.magnetTorrentPath) and ok
+        return ok
 
     def _move(self, newFolder: Path) -> None:
         from shutil import move

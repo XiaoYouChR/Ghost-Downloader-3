@@ -68,11 +68,11 @@ class HttpTaskStep(TaskStep):
     def canPause(self) -> bool:
         return self.canUseRangeRequests
 
-    def deleteFiles(self):
+    def deleteFiles(self) -> bool:
         from app.platform.filesystem import deletePath
         path = Path(self.outputPath)
-        deletePath(path)
-        deletePath(Path(f"{path}.ghd"))
+        ok = deletePath(path)
+        return deletePath(Path(f"{path}.ghd")) and ok
 
     def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
         super().moveFiles(oldFolder, newFolder)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 from PySide6.QtCore import QFileSystemWatcher, QObject, QTimer, Signal
 from loguru import logger
@@ -125,6 +125,7 @@ class TaskService(QObject):
     taskFailed = Signal(object)
     tasksAllCompleted = Signal()
     fileDisappeared = Signal(object)
+    fileDeleteFailed = Signal(object)
     diskSpaceInsufficient = Signal(int, int)
 
     def __init__(self, parent=None):
@@ -206,32 +207,42 @@ class TaskService(QObject):
         self.taskPaused.emit(task)
 
     def delete(self, task: Task, shouldDeleteFiles: bool) -> None:
-        self._cancelRun(task)
         self._unwatchFile(task)
         self._store.remove(task.taskId)
         self._flushTimer.start()
         self.taskRemoved.emit(task.taskId)
-        if shouldDeleteFiles:
-            task.deleteFiles()
+
+        def stopped() -> None:
+            if shouldDeleteFiles and not task.deleteFiles():
+                self.fileDeleteFailed.emit(task)
+
+        self._cancelRun(task, stopped)
         self._pump()
 
     def redownload(self, task: Task) -> None:
-        self._cancelRun(task)
         self._unwatchFile(task)
-        task.deleteFiles()
-        task.reset()
-        self._flushTimer.start()
-        self._schedule(task)
+
+        def stopped() -> None:
+            if not task.deleteFiles():
+                self.fileDeleteFailed.emit(task)
+            task.reset()
+            self._flushTimer.start()
+            self._schedule(task)
+
+        self._cancelRun(task, stopped)
 
     def edit(self, task: Task, options: dict, newTask: Task | None = None) -> None:
-        self._cancelRun(task)
-        if newTask is not None:
-            if not task.canReuseProgress(newTask):
-                task.deleteFiles()
-            task.replaceWith(newTask)
-        task.setOptions(options)
-        self._flushTimer.start()
-        self._schedule(task)
+        def stopped() -> None:
+            if newTask is not None:
+                if not task.canReuseProgress(newTask):
+                    if not task.deleteFiles():
+                        self.fileDeleteFailed.emit(task)
+                task.replaceWith(newTask)
+            task.setOptions(options)
+            self._flushTimer.start()
+            self._schedule(task)
+
+        self._cancelRun(task, stopped)
 
     def setCategory(self, task: Task, categoryId: str) -> None:
         task.category = categoryId
@@ -285,13 +296,15 @@ class TaskService(QObject):
         self._queue.run(task.taskId, workId)
         self.taskStarted.emit(task)
 
-    def _cancelRun(self, task: Task) -> None:
+    def _cancelRun(self, task: Task, stopped: Callable | None = None) -> None:
         from app.services.coroutine_runner import coroutineRunner
 
         workId = self._queue.workIdOf(task.taskId)
-        if workId is not None:
-            coroutineRunner.cancel(workId)
         self._queue.cancel(task.taskId)
+        if workId is not None:
+            coroutineRunner.cancel(workId, stopped)
+        elif stopped is not None:
+            stopped()
 
     def _rebalance(self) -> None:
         from app.models.task import TaskStatus

@@ -231,10 +231,15 @@ class BilibiliSubtitleStep(TaskStep):
     def outputPath(self) -> str:
         return ""
 
-    def deleteFiles(self) -> None:
+    def deleteFiles(self) -> bool:
         stem = pageStem(self.task.name, self.pageSuffix)
+        ok = True
         for path in self.task.outputFolder.glob(f"{stem}.*.srt"):
-            path.unlink(missing_ok=True)
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                ok = False
+        return ok
 
     def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
         from shutil import move

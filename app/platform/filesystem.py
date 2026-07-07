@@ -3,6 +3,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from loguru import logger
+
 INVALID_FILENAME_PATTERN = re.compile(r'[\x00-\x1f\x7f<>:"/\\|?*]+')
 WINDOWS_RESERVED_FILENAMES = {
     "CON", "PRN", "AUX", "NUL",
@@ -100,8 +102,13 @@ def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
     return toPosixPath(found) if found else ""
 
 
-def deletePath(path: Path) -> None:
-    if path.is_dir() and not path.is_symlink():
-        shutil.rmtree(path, ignore_errors=True)
-    else:
-        path.unlink(missing_ok=True)
+def deletePath(path: Path) -> bool:
+    try:
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        else:
+            path.unlink(missing_ok=True)
+    except OSError as e:
+        logger.warning("删除失败，文件可能被占用 {}: {}", path, e)
+        return False
+    return True
