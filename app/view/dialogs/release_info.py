@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QSizePolicy
+from PySide6.QtCore import (
+    QEasingCurve, QItemSelectionModel, QParallelAnimationGroup,
+    QPropertyAnimation, Qt, QUrl,
+)
+from PySide6.QtGui import QColor, QDesktopServices, QStandardItem, QStandardItemModel
+from PySide6.QtWidgets import (
+    QAbstractItemView, QDialog, QGraphicsOpacityEffect,
+    QHeaderView, QHBoxLayout, QSizePolicy, QWidget,
+)
 from qfluentwidgets import (
     CaptionLabel, FluentIcon, MessageBoxBase,
     PrimaryToolButton, SubtitleLabel, ToolButton, ToolTipFilter,
@@ -12,6 +18,7 @@ from qfluentwidgets import (
 
 from app.config.constants import AUTHOR_URL
 from app.format import toReadableSize
+from app.update import bestAsset
 from app.view.components.markdown_viewer import MarkdownViewer
 from app.view.components.tree_view import AutoSizingTreeView
 
@@ -40,6 +47,8 @@ class ReleaseInfoDialog(MessageBoxBase):
         self._bind()
 
     def _initWidget(self) -> None:
+        self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
+        self.setMaskColor(QColor(0, 0, 0, 76))
         self.widget.setMinimumWidth(min(580, self.width() - 48))
         self.yesButton.setText(self.tr("下载"))
         self.versionLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -63,7 +72,10 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.assetView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.assetView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
 
-        for asset in self._release.assets:
+        best = bestAsset(self._release)
+        bestRow = -1
+
+        for i, asset in enumerate(self._release.assets):
             row = [
                 QStandardItem(asset.name),
                 QStandardItem(toReadableSize(asset.size)),
@@ -73,8 +85,16 @@ class ReleaseInfoDialog(MessageBoxBase):
             for item in row:
                 item.setEditable(False)
             self.assetModel.appendRow(row)
+            if best is not None and asset.name == best.name:
+                bestRow = i
 
         self.assetView.setVisible(bool(self._release.assets))
+        if bestRow >= 0:
+            index = self.assetModel.index(bestRow, 0)
+            self.assetView.setCurrentIndex(index)
+            sm = self.assetView.selectionModel()
+            if sm is not None:
+                sm.select(index, QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows)
 
         if self._release.assets:
             needed = sum(self.assetView.sizeHintForColumn(i) for i in range(self.assetModel.columnCount()))
@@ -110,3 +130,53 @@ class ReleaseInfoDialog(MessageBoxBase):
 
     def validate(self) -> bool:
         return self.selectedAsset() is not None
+
+    def _createOpacityAnimation(
+        self, widget: QWidget, start: float, end: float, duration: int, curve: QEasingCurve.Type
+    ) -> QPropertyAnimation:
+        effect = QGraphicsOpacityEffect(widget)
+        widget.setGraphicsEffect(effect)
+        ani = QPropertyAnimation(effect, b"opacity", self)
+        ani.setStartValue(start)
+        ani.setEndValue(end)
+        ani.setDuration(duration)
+        ani.setEasingCurve(curve)
+        return ani
+
+    def showEvent(self, e) -> None:
+        parent = self.parent()
+        if parent is not None:
+            widthLimit = parent.width() - 24
+            if 0 < widthLimit < self.widget.width():
+                self.widget.setFixedWidth(widthLimit)
+
+        QDialog.showEvent(self, e)
+
+        self._showGroup = QParallelAnimationGroup(self)
+        self._showGroup.addAnimation(
+            self._createOpacityAnimation(self.windowMask, 0, 1, 200, QEasingCurve.Type.OutQuad)
+        )
+        self._showGroup.addAnimation(
+            self._createOpacityAnimation(self.widget, 0, 1, 200, QEasingCurve.Type.OutQuad)
+        )
+
+        def _onShowFinished():
+            self.windowMask.setGraphicsEffect(None)
+            self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
+
+        self._showGroup.finished.connect(_onShowFinished)
+        self._showGroup.start()
+
+    def done(self, code: int) -> None:
+        self.windowMask.setGraphicsEffect(None)
+        self.widget.setGraphicsEffect(None)
+
+        self._doneGroup = QParallelAnimationGroup(self)
+        self._doneGroup.addAnimation(
+            self._createOpacityAnimation(self.windowMask, 1, 0, 120, QEasingCurve.Type.InQuad)
+        )
+        self._doneGroup.addAnimation(
+            self._createOpacityAnimation(self.widget, 1, 0, 120, QEasingCurve.Type.InQuad)
+        )
+        self._doneGroup.finished.connect(lambda: self._onDone(code))
+        self._doneGroup.start()
