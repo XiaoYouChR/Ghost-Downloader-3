@@ -166,7 +166,10 @@ def showReleaseDialog(release: Release, parent: QWidget, coroutineRunner, featur
     from app.view.dialogs.release_info import ReleaseInfoDialog
     dialog = ReleaseInfoDialog(release, parent)
     dialog.accepted.connect(lambda: addAssetTask(dialog.selectedAsset(), parent, coroutineRunner, featureService, taskService))
-    dialog.open()
+    if parent is not None:
+        dialog.setGeometry(0, 0, parent.width(), parent.height())
+        dialog.windowMask.resize(dialog.size())
+    dialog.exec()
 
 
 def addBestAssetTask(release: Release, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
@@ -183,17 +186,36 @@ def addBestAssetTask(release: Release, parent: QWidget, coroutineRunner, feature
     addAssetTask(asset, parent, coroutineRunner, featureService, taskService)
 
 
-def addAssetTask(asset: ReleaseAsset, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
+def switchToTaskPage(parent: QWidget | None) -> None:
+    if parent is None:
+        return
+    try:
+        window = parent.window()
+        if hasattr(window, "_showPage"):
+            from app.view.pages.task_page import TaskPage
+            window._showPage(TaskPage)
+    except RuntimeError:
+        pass
+
+
+def addAssetTask(asset: ReleaseAsset | None, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
+    if asset is None:
+        return
     from qfluentwidgets import InfoBar, InfoBarPosition
     from app.models.task import TaskOptions
+
+    switchToTaskPage(parent)
+
+    def _onDone(task):
+        taskService.add(task)
+        switchToTaskPage(parent)
+
     coroutineRunner.submit(
         featureService.parse(TaskOptions(url=asset.downloadUrl)),
-        done=taskService.add,
+        done=_onDone,
         failed=lambda e: InfoBar.error(
             parent.tr("创建下载任务失败"), str(e),
             duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
         ),
         owner=parent,
     )
-
-
