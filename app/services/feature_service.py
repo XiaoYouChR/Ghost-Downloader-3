@@ -94,6 +94,41 @@ class FeatureService(QObject):
             types.extend(pack.fileTypes())
         return types
 
+    def runtimes(self) -> list:
+        """收集所有 Feature Pack 提供的 BinaryRuntime"""
+        from app.models.pack import BinaryRuntime
+
+        runtimes = []
+        for pack in self._packs:
+            # 查找每个 pack 模块中定义的 Runtime 实例
+            if not hasattr(pack, '__module__'):
+                continue
+
+            import sys
+            module = sys.modules.get(pack.__module__)
+            if module is None:
+                continue
+
+            # 查找该模块所在的包
+            package_name = pack.__module__.rsplit('.', 1)[0] if '.' in pack.__module__ else pack.__module__
+
+            # 尝试导入 config 模块
+            try:
+                config_module = sys.modules.get(f"{package_name}.config")
+                if config_module is None:
+                    import importlib
+                    config_module = importlib.import_module(f"{package_name}.config")
+
+                # 查找所有 BinaryRuntime 实例
+                for attr_name in dir(config_module):
+                    attr = getattr(config_module, attr_name, None)
+                    if isinstance(attr, BinaryRuntime):
+                        runtimes.append(attr)
+            except (ImportError, AttributeError):
+                pass
+
+        return runtimes
+
     def _registerFileAssociations(self) -> None:
         types = []
         for pack in self._packs:

@@ -249,3 +249,37 @@ def raiseWindow(window) -> None:
                     win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
         except Exception as e:
             logger.opt(exception=e).warning("Failed to raise window on Windows")
+
+
+def launchInstaller(installerPath: str) -> None:
+    """启动安装程序
+
+    Args:
+        installerPath: 安装程序的完整路径
+
+    Raises:
+        OSError: 如果无法启动安装程序
+    """
+    from subprocess import Popen
+
+    installerPath = Path(installerPath)
+    if not installerPath.exists():
+        raise OSError(f"Installer not found: {installerPath}")
+
+    logger.info(f"Launching installer: {installerPath}")
+
+    try:
+        if sys.platform == "win32":
+            # Windows: 直接启动 .exe 或 .msi
+            Popen([str(installerPath)], cwd=str(installerPath.parent))
+        elif sys.platform == "darwin":
+            # macOS: 使用 open 命令启动 .dmg 或 .pkg
+            Popen(["open", str(installerPath)])
+        else:
+            # Linux: 启动 .appimage 或其他可执行文件
+            if installerPath.suffix.lower() == ".appimage":
+                installerPath.chmod(0o755)  # 确保可执行
+            Popen([str(installerPath)], cwd=str(installerPath.parent))
+    except Exception as e:
+        logger.opt(exception=e).error(f"Failed to launch installer: {installerPath}")
+        raise OSError(f"Failed to launch installer: {e}") from e

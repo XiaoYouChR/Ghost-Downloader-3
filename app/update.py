@@ -151,14 +151,33 @@ def assetScore(name: str) -> int:
     return score
 
 
+def isFullUpdateAsset(asset: ReleaseAsset) -> bool:
+    """判断是否为完整更新包（.exe/.msi/.dmg/.pkg/.apk）"""
+    name = asset.name.lower()
+    if sys.platform == "win32":
+        return name.endswith((".exe", ".msi"))
+    elif sys.platform == "darwin":
+        return name.endswith((".dmg", ".pkg"))
+    else:
+        from app.platform.android import IS_ANDROID
+        if IS_ANDROID:
+            return name.endswith(".apk")
+        return name.endswith(".appimage")
+
+
 def showReleaseDialog(release: Release, parent: QWidget) -> None:
     from app.view.dialogs.release_info import ReleaseInfoDialog
     dialog = ReleaseInfoDialog(release, parent)
-    dialog.accepted.connect(lambda: addAssetTask(dialog.selectedAsset(), parent))
+    dialog.accepted.connect(lambda: downloadAsset(dialog.selectedAsset(), parent))
     dialog.open()
 
 
 def addBestAssetTask(release: Release, parent: QWidget) -> None:
+    """为了兼容性保留的旧方法，现在调用新的下载逻辑"""
+    downloadBestAsset(release, parent)
+
+
+def downloadBestAsset(release: Release, parent: QWidget) -> None:
     from qfluentwidgets import InfoBar, InfoBarPosition
     asset = bestAsset(release)
     if asset is None:
@@ -169,23 +188,56 @@ def addBestAssetTask(release: Release, parent: QWidget) -> None:
         )
         showReleaseDialog(release, parent)
         return
-    addAssetTask(asset, parent)
+    downloadAsset(asset, parent)
 
 
-def addAssetTask(asset: ReleaseAsset, parent: QWidget) -> None:
+def downloadAsset(asset: ReleaseAsset | None, parent: QWidget) -> None:
+    """下载应用更新资源
+
+    对于完整更新包（.exe/.msi/.dmg等），使用独立下载模式并显示实时进度。
+    对于其他格式（.zip等），退化为普通任务队列下载。
+    """
+    if asset is None:
+        return
+
+    if isFullUpdateAsset(asset):
+        # 使用独立下载模式
+        from app.services.app_update_service import appUpdateService
+        appUpdateService.downloadAppUpdate(asset.downloadUrl, asset.name)
+    else:
+        # 退化为任务队列
+        _downloadAsFallbackTask(asset, parent)
+
+
+def _downloadAsFallbackTask(asset: ReleaseAsset, parent: QWidget) -> None:
+    """将更新包作为普通任务加入下载队列"""
     from qfluentwidgets import InfoBar, InfoBarPosition
     from app.models.task import TaskOptions
     from app.services.coroutine_runner import coroutineRunner
     from app.services.feature_service import featureService
     from app.services.task_service import taskService
+
+    def onParsed(task) -> None:
+        taskService.add(task)
+        InfoBar.info(
+            parent.tr("已加入下载列表"),
+            parent.tr("下载完成后请手动安装"),
+            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
+        )
+
     coroutineRunner.submit(
         featureService.parse(TaskOptions(url=asset.downloadUrl)),
-        done=taskService.add,
+        done=onParsed,
         failed=lambda e: InfoBar.error(
             parent.tr("创建下载任务失败"), str(e),
             duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
         ),
         owner=parent,
     )
+
+
+def addAssetTask(asset: ReleaseAsset, parent: QWidget) -> None:
+    """为了兼容性保留的旧方法，现在调用新的下载逻辑"""
+    downloadAsset(asset, parent)
 
 

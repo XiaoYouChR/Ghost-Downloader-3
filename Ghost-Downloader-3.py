@@ -69,7 +69,10 @@ def startApp(application, isSilent=False):
     from app.services.clipboard_listener import ClipboardListener
     from app.services.task_service import taskService
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import (
+        loadEngine, loadPacks, startEngine, bindNotifications,
+        checkUpdateAtStartup, checkRuntimeUpdatesAtStartup, stopEngine
+    )
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -89,6 +92,12 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
     window = MainWindow()
+
+    # 创建应用更新提示管理器
+    from app.view.shell.app_update_prompt import AppUpdatePrompt
+    def currentWindow():
+        return window
+    appUpdatePrompt = AppUpdatePrompt(currentWindow, parent=application)
 
     if not isSilent:
         from qfluentwidgets import SplashScreen
@@ -193,6 +202,7 @@ def startApp(application, isSilent=False):
         emptyWorkingSetIfIdle()
 
     checkUpdateAtStartup()
+    checkRuntimeUpdatesAtStartup()
 
     application.aboutToQuit.connect(stopEngine)
 

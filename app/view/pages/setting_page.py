@@ -322,9 +322,38 @@ class SettingPage(ScrollArea):
         self.addSettingGroup(self.personalGroup)
         self.addSettingGroup(self.softwareGroup)
         from app.services.feature_service import featureService
+
+        # 添加各个功能包的设置组
         for group in featureService.settingGroups(self.container):
             self.addSettingGroup(group)
+
+        # 添加运行时批量更新组
+        self._addRuntimeUpdateGroup()
+
         self.addSettingGroup(self.aboutGroup)
+
+    def _addRuntimeUpdateGroup(self) -> None:
+        """添加运行时批量更新设置组"""
+        from app.services.feature_service import featureService
+        from app.view.components.runtime_update_cards import BatchRuntimeUpdateCard
+
+        runtimes = featureService.runtimes()
+        if not runtimes:
+            return
+
+        # 创建运行时管理设置组
+        runtimeGroup = CollapsibleSettingCardGroup(
+            FluentIcon.DEVELOPER_TOOLS,
+            self.tr("运行时管理"),
+            "runtime-management",
+            self.container
+        )
+
+        # 添加批量更新卡片
+        batchCard = BatchRuntimeUpdateCard(runtimes, runtimeGroup)
+        runtimeGroup.addSettingCard(batchCard)
+
+        self.addSettingGroup(runtimeGroup)
 
     def _bind(self) -> None:
         from app.services.browser_service import browserService

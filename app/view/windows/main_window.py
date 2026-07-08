@@ -166,7 +166,7 @@ class MainWindow(MSFluentWindow):
 
     def _onUpdateAvailable(self, release) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
-        from app.update import addBestAssetTask, showReleaseDialog
+        from app.update import downloadBestAsset, showReleaseDialog
 
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
@@ -179,7 +179,12 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self))
+
+        def onDownloadClicked():
+            infoBar.close()  # 点击后关闭 InfoBar
+            downloadBestAsset(release, self)
+
+        downloadButton.clicked.connect(onDownloadClicked)
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
         detailButton.clicked.connect(lambda: showReleaseDialog(release, self))

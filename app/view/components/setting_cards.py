@@ -12,7 +12,7 @@ from qfluentwidgets import (
     SettingCard, PushSettingCard, RangeConfigItem, SpinBox,
     ExpandGroupSettingCard, ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
-    PrimaryPushButton, InfoBar, InfoBarPosition,
+    PrimaryPushButton, InfoBar, InfoBarPosition, StateToolTip,
     IconWidget,
 )
 
@@ -415,12 +415,24 @@ class RuntimeCard(SettingCard):
     def __init__(self, runtime, parent=None):
         from app.models.pack import BinaryRuntime
         from app.services.runtime_status import runtimeStatusService
+        from qfluentwidgets import IndeterminateProgressRing, ProgressRing
 
         self._runtime: BinaryRuntime = runtime
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+
+        # 解析阶段（不确定进度）
+        self._spinRing = IndeterminateProgressRing(self)
+        self._spinRing.setFixedSize(24, 24)
+        self._spinRing.hide()
+
+        # 下载阶段（确定进度 0-100）
+        self._progressRing = ProgressRing(self)
+        self._progressRing.setFixedSize(24, 24)
+        self._progressRing.setRange(0, 100)
+        self._progressRing.hide()
 
         self._initWidget()
         self._initLayout()
@@ -434,6 +446,9 @@ class RuntimeCard(SettingCard):
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
 
     def _initLayout(self) -> None:
+        self.hBoxLayout.addWidget(self._spinRing, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addWidget(self._progressRing, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
@@ -441,8 +456,13 @@ class RuntimeCard(SettingCard):
 
     def _bind(self) -> None:
         from app.services.runtime_status import runtimeStatusService
+        from app.services.runtime_update_service import runtimeUpdateService
 
         runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
+        runtimeUpdateService.downloadStarted.connect(self._onUpdateStarted)
+        runtimeUpdateService.progressChanged.connect(self._onUpdateProgressChanged)
+        runtimeUpdateService.downloadSucceeded.connect(self._onUpdateSucceeded)
+        runtimeUpdateService.downloadFailed.connect(self._onUpdateFailed)
         self.installButton.clicked.connect(self._onInstallClicked)
         self.refreshButton.clicked.connect(self._onRefreshClicked)
 
@@ -475,41 +495,53 @@ class RuntimeCard(SettingCard):
             self.updateStatus(status)
 
     def _onInstallClicked(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-
+        from app.services.runtime_update_service import runtimeUpdateService
         self.installButton.setEnabled(False)
-        cardRef = weakref.ref(self)
+        runtimeUpdateService.downloadRuntime(self._runtime)
 
-        def onCreated(task) -> None:
-            from shiboken6 import isValid
-            from app.services.task_service import taskService
+    def _onUpdateStarted(self, runtimeId: str, _name: str) -> None:
+        """解析阶段：立即显示不确定进度环"""
+        if runtimeId != self._runtime.runtimeId:
+            return
+        self._progressRing.hide()
+        self._spinRing.show()
 
-            taskService.add(task)
-            card = cardRef()
-            if card is not None and isValid(card):
-                card.installButton.setEnabled(True)
-                InfoBar.success(
-                    card.tr("安装任务已创建"),
-                    card.tr("请前往任务页查看安装进度"),
-                    duration=3000,
-                    position=InfoBarPosition.TOP,
-                    parent=card.window(),
-                )
+    def _onUpdateProgressChanged(self, runtimeId: str, progress: float, speed: int) -> None:
+        """下载阶段：切换到确定进度环并更新"""
+        if runtimeId != self._runtime.runtimeId:
+            return
+        from app.format import toReadableSize
+        self._spinRing.hide()
+        self._progressRing.setValue(int(progress))
+        self._progressRing.setToolTip(f"{progress:.1f}%  ·  {toReadableSize(speed)}/s")
+        self._progressRing.show()
 
-        def onFailed(error: str) -> None:
-            from shiboken6 import isValid
+    def _onUpdateSucceeded(self, runtimeId: str, _installedPath: str) -> None:
+        """下载完成：隐藏进度环，刷新状态，恢复按钮"""
+        if runtimeId != self._runtime.runtimeId:
+            return
+        self._spinRing.hide()
+        self._progressRing.hide()
+        self.installButton.setEnabled(True)
+        self.refreshStatus(force=True)
+        InfoBar.success(
+            self.tr("安装成功"),
+            self.tr("{0} 已安装完成").format(self._runtime.name),
+            duration=3000,
+            position=InfoBarPosition.TOP,
+            parent=self.window(),
+        )
 
-            card = cardRef()
-            if card is not None and isValid(card):
-                card._onInstallTaskFailed(error)
-
-        coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
-
-    def _onInstallTaskFailed(self, error: str) -> None:
+    def _onUpdateFailed(self, runtimeId: str, errorMsg: str) -> None:
+        """下载失败：隐藏进度环，恢复按钮"""
+        if runtimeId != self._runtime.runtimeId:
+            return
+        self._spinRing.hide()
+        self._progressRing.hide()
         self.installButton.setEnabled(True)
         InfoBar.error(
             self.tr("安装失败"),
-            error,
+            errorMsg,
             duration=-1,
             position=InfoBarPosition.TOP,
             parent=self.window(),
