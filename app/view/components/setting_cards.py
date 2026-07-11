@@ -30,13 +30,6 @@ PORT_PATTERN = compile(r"^\d{1,5}$")
 
 class ErrorVisibleLineEdit(LineEdit):
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.textEdited.connect(self._onTextEdited)
-
-    def _onTextEdited(self) -> None:
-        self.setError(False)
-
     def paintEvent(self, e):
         QLineEdit.paintEvent(self, e)
         if not self.hasFocus() and not self.isError():
@@ -188,10 +181,10 @@ class ProxySettingCard(ExpandGroupSettingCard):
 
         self.buttonGroup.buttonClicked.connect(self._onRadioClicked)
         self.protocolCombo.activated.connect(self._onProxyFieldChanged)
-        self.ipEdit.editingFinished.connect(self._onProxyFieldChanged)
-        self.portEdit.editingFinished.connect(self._onProxyFieldChanged)
-        self.userEdit.editingFinished.connect(self._onProxyFieldChanged)
-        self.passEdit.editingFinished.connect(self._onProxyFieldChanged)
+        self.ipEdit.textEdited.connect(self._onProxyFieldChanged)
+        self.portEdit.textEdited.connect(self._onProxyFieldChanged)
+        self.userEdit.textEdited.connect(self._onProxyFieldChanged)
+        self.passEdit.textEdited.connect(self._onProxyFieldChanged)
         self._refreshCompatBanner()
 
     def _initLayout(self) -> None:
@@ -327,7 +320,6 @@ class ProxySettingCard(ExpandGroupSettingCard):
 
         url = self._buildProxyUrl()
         if cfg.proxyServer.validator.validate(url):
-            cfg.set(self._configItem, url)
             self.choiceLabel.setText(url)
             self.ipEdit.setError(False)
             self.portEdit.setError(False)
@@ -339,6 +331,11 @@ class ProxySettingCard(ExpandGroupSettingCard):
             self.portEdit.setError(bool(port) and not PORT_PATTERN.match(port))
         self._refreshCompatBanner()
 
+    def leaveEvent(self, event):
+        if self.customRadio.isChecked():
+            url = self._buildProxyUrl()
+            if cfg.proxyServer.validator.validate(url):
+                cfg.set(self._configItem, url)
 
 
 class SelectFolderSettingCard(SettingCard):
