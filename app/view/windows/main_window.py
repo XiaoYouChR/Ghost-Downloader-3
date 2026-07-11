@@ -12,7 +12,7 @@ from qfluentwidgets import (
     setThemeColor,
 )
 
-from app.config.cfg import cfg
+from app.config.cfg import CloseMode, cfg
 from app.config.constants import AUTHOR_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
 from app.services.task_service import taskService
@@ -222,20 +222,44 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event) -> None:
         event.ignore()
-        from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
-        for dialog in self.findChildren(MaskDialogBase):
-            if dialog.isVisible():
-                dialog.reject()
+
+        mode = CloseMode.BACKGROUND
+
+        if event.spontaneous():
+            from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+            for dialog in self.findChildren(MaskDialogBase):
+                if dialog.isVisible():
+                    dialog.reject()
+                    return
+            if sys.platform == "darwin" and self.isFullScreen():
+                self.showNormal()
+                QTimer.singleShot(1000, self, self.close)
                 return
-        if sys.platform == "darwin" and self.isFullScreen():
-            self.showNormal()
-            QTimer.singleShot(1000, self, self.close)
-            return
+
+            mode = cfg.closeMode.value
+            if mode == CloseMode.ASK:
+                from qfluentwidgets import CheckBox
+                dialog = MessageBox(
+                    self.tr("关闭主窗口"),
+                    self.tr("继续在后台运行后，可通过系统托盘图标重新打开主窗口。"),
+                    self,
+                )
+                dialog.yesButton.setText(self.tr("退出程序"))
+                dialog.cancelButton.setText(self.tr("继续在后台运行"))
+                checkbox = CheckBox(self.tr("记住我的选择"), dialog)
+                dialog.textLayout.addWidget(checkbox)
+                mode = CloseMode.QUIT if dialog.exec() else CloseMode.BACKGROUND
+                if checkbox.isChecked():
+                    cfg.set(cfg.closeMode, mode)
+
         if not self.isMaximized():
             cfg.set(cfg.geometry, self.geometry())
         from app.view.qfw_patch import unregisterRouter
         unregisterRouter(self.stackedWidget)
         event.accept()
+
+        if mode == CloseMode.QUIT:
+            QApplication.quit()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
