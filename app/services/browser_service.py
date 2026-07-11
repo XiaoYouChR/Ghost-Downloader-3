@@ -463,6 +463,7 @@ class BrowserService(QObject):
         payload = data.get("payload")
         rawSource = toStr(data, "source", TaskSource.RESOURCE)
         title = toStr(data, "title")
+        draft = data.get("draft")  # None = not present (auto-intercept / old extension)
 
         if not requestId or not isinstance(payload, dict):
             self._sendError(session, "无效的请求")
@@ -484,15 +485,20 @@ class BrowserService(QObject):
             featureService.parse(options),
             done=self._onTaskParsed,
             failed=self._onTaskParseFailed,
-            session=session, requestId=requestId, title=title,
+            session=session, requestId=requestId, title=title, draft=draft,
         )
 
     def _onTaskParsed(self, task: Task, session: BrowserClientSession, requestId: str,
-                      title: str) -> None:
+                      title: str, draft: bool | None = None) -> None:
         if title:
-            task.setName(title)
+            existingSuffix = Path(task.name).suffix
+            if existingSuffix and not title.lower().endswith(existingSuffix.lower()):
+                task.setName(title + existingSuffix)
+            else:
+                task.setName(title)
 
-        if cfg.shouldRaiseWindowOnBrowserTask.value:
+        shouldDraft = draft if draft is not None else cfg.shouldDraftTakenDownload.value
+        if shouldDraft:
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.DRAFTED)
             self.taskDraftRequested.emit([task])
             return

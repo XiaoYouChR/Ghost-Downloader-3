@@ -100,6 +100,9 @@ class SettingPage(ScrollArea):
             SwitchSettingCard(FluentIcon.DEVELOPER_TOOLS, self.tr("下载时验证 SSL 证书"),
                               self.tr("文件无法下载时，可尝试关闭该选项"),
                               cfg.shouldVerifySsl),
+            SwitchSettingCard(FluentIcon.DELETE, self.tr("删除任务时默认删除本地文件"),
+                              self.tr("删除任务的确认对话框中默认勾选同时删除已下载的文件"),
+                              cfg.shouldDeleteFilesOnRemove),
             self.downloadFolderCard,
             ProxySettingCard(cfg.proxyServer),
             self.clientProfileCard,
@@ -180,9 +183,9 @@ class SettingPage(ScrollArea):
 
         browserCards = [
             self.browserEnableCard,
-            SwitchSettingCard(FluentIcon.CHAT, self.tr("收到下载信息时弹出窗口"),
-                              self.tr("收到下载信息时弹出窗口，方便您调整下载参数"),
-                              cfg.shouldRaiseWindowOnBrowserTask),
+            SwitchSettingCard(FluentIcon.CHAT, self.tr("接管下载时进入草稿模式"),
+                              self.tr("自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名"),
+                              cfg.shouldDraftTakenDownload),
             self.browserPairTokenCard,
             self.storeInstallCard,
             self.chromiumInstallCard,

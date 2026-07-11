@@ -19,6 +19,7 @@ import {DEFAULT_SERVER_URL, EXTENSION_VERSION} from "../../shared/constants";
 import {
     BYPASS_MODIFIER_KEY,
     MIN_TAKE_SIZE_KB_KEY,
+    SHOULD_SKIP_IMAGES_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
 } from "../../background/constants";
 import type {ThemePreference} from "../../shared/types";
@@ -86,6 +87,7 @@ export function SettingsPage({
   const [serverDirty, setServerDirty] = useState(false);
   const [minSizeKB, setMinSizeKB] = useState(0);
   const [takeUnknownSize, setInterceptUnknown] = useState(true);
+  const [skipImages, setSkipImages] = useState(false);
   const [bypassModifier, setBypassModifier] = useState("alt");
   const [installType, setInstallType] = useState("");
 
@@ -106,10 +108,12 @@ export function SettingsPage({
     chrome.storage.local.get({
       [MIN_TAKE_SIZE_KB_KEY]: 0,
       [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
+      [SHOULD_SKIP_IMAGES_KEY]: false,
       [BYPASS_MODIFIER_KEY]: "alt",
     }, (result) => {
       setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
       setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
+      setSkipImages(Boolean(result[SHOULD_SKIP_IMAGES_KEY] ?? false));
       setBypassModifier(String(result[BYPASS_MODIFIER_KEY] || "alt"));
     });
   }, []);
@@ -256,6 +260,16 @@ export function SettingsPage({
             onChange={(_event, data: SwitchOnChangeData) => {
               setInterceptUnknown(data.checked);
               void chrome.storage.local.set({ [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: data.checked });
+            }}
+          />
+        </Field>
+
+        <Field label={chrome.i18n.getMessage("skipImages")}>
+          <Switch
+            checked={skipImages}
+            onChange={(_event, data: SwitchOnChangeData) => {
+              setSkipImages(data.checked);
+              void chrome.storage.local.set({ [SHOULD_SKIP_IMAGES_KEY]: data.checked });
             }}
           />
         </Field>

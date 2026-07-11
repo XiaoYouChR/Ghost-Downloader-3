@@ -124,7 +124,7 @@ class MobileMainWindow(QWidget):
         urls = toTaskUrls(text)
         if not urls:
             return
-        if cfg.shouldRaiseWindowOnBrowserTask.value or not isStorageGranted():
+        if cfg.shouldDraftTakenDownload.value or not isStorageGranted():
             self._draftDialog.addUrls(urls)
             self._draftDialog.showMask()
             return

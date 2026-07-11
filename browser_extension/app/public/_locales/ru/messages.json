@@ -336,6 +336,9 @@
   "interceptUnknownSize": {
     "message": "Перехватывать при неизвестном размере"
   },
+  "skipImages": {
+    "message": "Пропускать изображения"
+  },
   "invertSelection": {
     "message": "Инвертировать выделение"
   },

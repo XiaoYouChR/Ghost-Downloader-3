@@ -189,6 +189,7 @@ class Config(QConfig):
     preBlockNum = RangeConfigItem("GeneralDownload", "PreBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     shouldPreserveLastModified = ConfigItem("GeneralDownload", "PreserveLastModified", False, BoolValidator())
+    shouldDeleteFilesOnRemove = ConfigItem("GeneralDownload", "DeleteFilesOnRemove", False, BoolValidator())
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 512, RangeValidator(64, 102400)
     )
@@ -204,7 +205,7 @@ class Config(QConfig):
     isBrowserExtensionEnabled = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
     browserExtensionPairToken = ConfigItem("Browser", "BrowserExtensionPairToken", "")
     browserExtensionPort = RangeConfigItem("Browser", "Port", 14370, RangeValidator(1024, 65535))
-    shouldRaiseWindowOnBrowserTask = ConfigItem(
+    shouldDraftTakenDownload = ConfigItem(
         "Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator()
     )
     isUrlSchemeRegistered = ConfigItem("Browser", "UrlSchemeRegistered", False, BoolValidator())

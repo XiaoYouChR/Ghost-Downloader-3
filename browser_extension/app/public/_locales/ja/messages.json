@@ -336,6 +336,9 @@
   "interceptUnknownSize": {
     "message": "サイズ不明時にインターセプト"
   },
+  "skipImages": {
+    "message": "画像をスキップ"
+  },
   "invertSelection": {
     "message": "選択を反転"
   },

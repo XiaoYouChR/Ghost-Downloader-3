@@ -15,6 +15,7 @@ export const IS_MEDIA_BUTTON_ENABLED_KEY = "isMediaButtonEnabled";
 export const MIN_TAKE_SIZE_KB_KEY = "minTakeSizeKB";
 export const SHOULD_TAKE_UNKNOWN_SIZE_KEY = "shouldTakeUnknownSize";
 export const BYPASS_MODIFIER_KEY = "bypassModifier";
+export const SHOULD_SKIP_IMAGES_KEY = "shouldSkipImages";
 export const FEATURE_TAB_STATE_KEY = "featureTabState";
 
 export const BRIDGE_RESOURCE_CACHE_KEY = "bridgeResourceCacheByTab";

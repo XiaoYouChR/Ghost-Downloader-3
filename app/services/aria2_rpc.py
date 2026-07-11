@@ -201,7 +201,7 @@ class Aria2RpcServer(QObject):
         if filename:
             task.setName(filename)
 
-        if cfg.shouldRaiseWindowOnBrowserTask.value:
+        if cfg.shouldDraftTakenDownload.value:
             self.taskDraftRequested.emit([task])
             return
 

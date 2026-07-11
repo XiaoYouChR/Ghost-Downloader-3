@@ -28,10 +28,10 @@
     "message": "浏览器下载"
   },
   "bypassShortcutKey": {
-    "message": "跳过拦截快捷键"
+    "message": "跳过接管快捷键"
   },
   "bypassShortcutKeyHint": {
-    "message": "按住此键点击下载链接，跳过拦截由浏览器下载"
+    "message": "按住此键点击下载链接，跳过接管由浏览器下载"
   },
   "cacheCapture": {
     "message": "缓存捕捉"
@@ -105,7 +105,7 @@
     "message": "媒体按钮"
   },
   "downloadWithGhostDownloader": {
-    "message": "使用 Ghost Downloader 下载"
+    "message": "用 Ghost Downloader 下载"
   },
   "saveAsWithGhostDownloader": {
     "message": "用 Ghost Downloader 另存为"
@@ -390,7 +390,10 @@
     "message": "未知"
   },
   "interceptUnknownSize": {
-    "message": "大小未知时拦截"
+    "message": "大小未知时接管"
+  },
+  "skipImages": {
+    "message": "跳过接管图片"
   },
   "invertSelection": {
     "message": "反选"
@@ -444,10 +447,10 @@
     "message": "在线合并任务已发送到 Ghost Downloader"
   },
   "minInterceptSize": {
-    "message": "最小拦截大小"
+    "message": "最小接管大小"
   },
   "minInterceptSizeHint": {
-    "message": "低于此大小的文件由浏览器直接下载，0 为全部拦截"
+    "message": "低于此大小的文件由浏览器直接下载，0 为全部接管"
   },
   "mobileUserAgent": {
     "message": "模拟手机"

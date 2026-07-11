@@ -13,6 +13,7 @@ import {
     BYPASS_MODIFIER_KEY,
     IS_MEDIA_BUTTON_ENABLED_KEY,
     MIN_TAKE_SIZE_KB_KEY,
+    SHOULD_SKIP_IMAGES_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
     SHOULD_TAKE_DOWNLOADS_KEY,
 } from "./background/constants";
@@ -79,6 +80,7 @@ let shouldTakeDownloads = true;
 let isMediaButtonEnabled = true;
 let minTakeSizeKB = 0;
 let shouldTakeUnknownSize = true;
+let shouldSkipImages = false;
 
 function imageFilename(url: string, alt: string): string {
   try {
@@ -179,17 +181,20 @@ async function setupBackground() {
     [IS_MEDIA_BUTTON_ENABLED_KEY]: boolean;
     [MIN_TAKE_SIZE_KB_KEY]: number;
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: boolean;
+    [SHOULD_SKIP_IMAGES_KEY]: boolean;
   }>({
     [SHOULD_TAKE_DOWNLOADS_KEY]: true,
     [IS_MEDIA_BUTTON_ENABLED_KEY]: true,
     [MIN_TAKE_SIZE_KB_KEY]: 0,
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
+    [SHOULD_SKIP_IMAGES_KEY]: false,
   });
 
   shouldTakeDownloads = Boolean(localState[SHOULD_TAKE_DOWNLOADS_KEY] ?? true);
   isMediaButtonEnabled = Boolean(localState[IS_MEDIA_BUTTON_ENABLED_KEY] ?? true);
   minTakeSizeKB = Number(localState[MIN_TAKE_SIZE_KB_KEY]) || 0;
   shouldTakeUnknownSize = Boolean(localState[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true);
+  shouldSkipImages = Boolean(localState[SHOULD_SKIP_IMAGES_KEY] ?? false);
 
   try {
     const selfInfo = await chrome.management.getSelf();
@@ -241,6 +246,8 @@ chrome.contextMenus.onClicked.addListener((info) => {
     draft,
     title: "",
     payload: { url, headers, filename: "", size: 0, supportsRange: false },
+  }).then((result) => {
+    if (result.ok) { void openActionPopup(); }
   });
 });
 
@@ -270,6 +277,9 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
   if (changes[SHOULD_TAKE_UNKNOWN_SIZE_KEY]) {
     shouldTakeUnknownSize = Boolean(changes[SHOULD_TAKE_UNKNOWN_SIZE_KEY].newValue ?? true);
+  }
+  if (changes[SHOULD_SKIP_IMAGES_KEY]) {
+    shouldSkipImages = Boolean(changes[SHOULD_SKIP_IMAGES_KEY].newValue ?? false);
   }
 });
 
@@ -333,6 +343,10 @@ async function takeBrowserDownload(
 
   const finalUrl = downloadItem.finalUrl || downloadItem.url;
   if (!shouldTakeDownloads || !/^https?:/i.test(finalUrl)) {
+    return;
+  }
+
+  if (shouldSkipImages && downloadItem.mime?.startsWith("image/")) {
     return;
   }
 

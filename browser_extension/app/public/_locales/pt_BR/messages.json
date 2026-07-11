@@ -336,6 +336,9 @@
   "interceptUnknownSize": {
     "message": "Interceptar quando tamanho desconhecido"
   },
+  "skipImages": {
+    "message": "Pular imagens"
+  },
   "invertSelection": {
     "message": "Inverter seleção"
   },
