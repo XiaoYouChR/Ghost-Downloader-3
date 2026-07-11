@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QSpacerItem, QSizePolicy, QFileDialog,
 )
 from qfluentwidgets import (
-    SettingCard, PushSettingCard, RangeConfigItem, SpinBox,
+    SettingCard, PushSettingCard, RangeConfigItem, SpinBox, DoubleSpinBox,
     ExpandGroupSettingCard, ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
     PrimaryPushButton, InfoBar, InfoBarPosition,
@@ -48,6 +48,36 @@ class SpinBoxSettingCard(SettingCard):
 
     def leaveEvent(self, event):
         cfg.set(self._configItem, int(self.spinBox.value() / self._division))
+
+
+class PercentSpinBoxSettingCard(SettingCard):
+
+    def __init__(self, icon, title: str, content: str = "",
+                 configItem: RangeConfigItem = None, parent=None,
+                 singleStep: float = 25):
+        super().__init__(icon, title, content, parent)
+        self._configItem = configItem
+
+        self.spinBox = DoubleSpinBox(self)
+        self.spinBox.setDecimals(0)
+        self.spinBox.setSingleStep(singleStep)
+        self.spinBox.setMinimumWidth(180)
+        self.spinBox.setSuffix(" %")
+        self.spinBox.installEventFilter(self)
+        r = configItem.range
+        self.spinBox.setRange(r[0] * 100, r[1] * 100)
+        self.spinBox.setValue(configItem.value * 100)
+
+        self.hBoxLayout.addWidget(self.spinBox)
+        self.hBoxLayout.addSpacing(24)
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.Wheel:
+            return True
+        return super().eventFilter(watched, event)
+
+    def leaveEvent(self, event):
+        cfg.set(self._configItem, self.spinBox.value() / 100)
 
 
 class LineEditSettingCard(SettingCard):
