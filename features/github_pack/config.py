@@ -205,7 +205,7 @@ class GitHubConfig(PackConfig):
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
-        githubGroup = CollapsibleSettingCardGroup(FluentIcon.GITHUB, self.tr("GitHub 加速"), "github", parent)
+        githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", parent)
         enableCard = SwitchSettingCard(
             FluentIcon.LINK, self.tr("启用 GitHub 加速"),
             self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),

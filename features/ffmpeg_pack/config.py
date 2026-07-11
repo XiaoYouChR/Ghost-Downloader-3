@@ -35,8 +35,7 @@ class FFmpegConfig(PackConfig):
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import RuntimeCard, SelectFolderSettingCard
 
-        from features.ffmpeg_pack.icons import FFmpegIcon
-        ffmpegGroup = CollapsibleSettingCardGroup(FFmpegIcon.FFMPEG, self.tr("FFmpeg"), "ffmpeg", parent)
+        ffmpegGroup = CollapsibleSettingCardGroup(self.tr("FFmpeg"), "ffmpeg", parent)
         installFolderCard = SelectFolderSettingCard(
             ffmpegConfig.installFolder, f"{APP_DATA_DIR}/FFmpeg",
             self.tr("FFmpeg 安装目录"),

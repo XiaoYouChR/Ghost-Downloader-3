@@ -59,8 +59,7 @@ class BitTorrentConfig(PackConfig):
         from app.view.components.setting_cards import SpinBoxSettingCard
         from .web_tracker.card import WebTrackerCard
 
-        from features.bittorrent_pack.icons import BTIcon
-        btGroup = CollapsibleSettingCardGroup(BTIcon.BITTORRENT, self.tr("BitTorrent 下载"), "bittorrent", parent)
+        btGroup = CollapsibleSettingCardGroup(self.tr("BitTorrent 下载"), "bittorrent", parent)
 
         cards = []
         if sys.platform != "darwin":

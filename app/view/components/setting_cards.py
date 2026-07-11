@@ -300,7 +300,6 @@ class ProxySettingCard(CollapsibleSettingCard):
         else:
             self.compatBanner.hide()
 
-
     def _buildProxyUrl(self) -> str:
         protocol = self.protocolCombo.currentText()
         ip = self.ipEdit.text()

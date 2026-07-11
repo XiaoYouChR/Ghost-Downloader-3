@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="ed2k_pack">
-    <file>P2P_black.svg</file>
-    <file>P2P_white.svg</file>
-  </qresource>
-</RCC>

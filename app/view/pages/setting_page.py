@@ -20,7 +20,9 @@ from app.config.constants import (
     FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
 )
 from app.view.components.category_settings import CategoryRulesCard
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+from app.view.components.setting_card_group import (
+    CollapsibleSettingCard, CollapsibleSettingCardGroup, QWIDGETSIZE_MAX,
+)
 from app.view.components.setting_cards import (
     ClientProfileSettingCard, DefaultHeadersSettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
@@ -36,14 +38,17 @@ class SettingPage(ScrollArea):
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
 
-        from app.view.icons import AppIcon
-        self.generalGroup = CollapsibleSettingCardGroup(AppIcon.DOWNLOAD, self.tr("综合下载设置"), "general", self.container)
-        self.categoryGroup = CollapsibleSettingCardGroup(AppIcon.CATEGORY, self.tr("下载分类"), "category", self.container)
-        self.browserGroup = CollapsibleSettingCardGroup(AppIcon.BROWSER, self.tr("浏览器扩展"), "browser", self.container)
-        self.aria2RpcGroup = CollapsibleSettingCardGroup(AppIcon.CONNECT, self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
-        self.personalGroup = CollapsibleSettingCardGroup(AppIcon.CUSTOMIZE, self.tr("个性化"), "personalization", self.container)
-        self.softwareGroup = CollapsibleSettingCardGroup(AppIcon.APPLICATION, self.tr("应用"), "software", self.container)
-        self.aboutGroup = CollapsibleSettingCardGroup(AppIcon.ABOUT, self.tr("关于"), "about", self.container)
+        self.generalGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
+        self.categoryGroup = CollapsibleSettingCardGroup(self.tr("下载分类"), "category", self.container)
+        self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
+        self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
+        self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
+        self.softwareGroup = CollapsibleSettingCardGroup(self.tr("应用"), "software", self.container)
+        self.aboutGroup = CollapsibleSettingCardGroup(self.tr("关于"), "about", self.container)
+
+        from app.view.pages.task_page import EmptyStatusWidget
+        self.emptyStatusWidget = EmptyStatusWidget(FluentIcon.SEARCH_MIRROR, self.tr("未找到匹配的设置项"), self)
+        self.emptyStatusWidget.hide()
 
         self._initWidget()
         self._initCards()
@@ -504,6 +509,76 @@ class SettingPage(ScrollArea):
         from app.config.paths import APP_DATA_DIR
         from app.platform.desktop import revealInFolder
         revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
+
+    @property
+    def searchPlaceholder(self) -> str:
+        return self.tr("搜索设置")
+
+    def setSearchText(self, text: str) -> None:
+        text = text.strip().lower()
+        if not text:
+            self._clearSearchFilter()
+            return
+
+        hasMatch = False
+        for i in range(self.vBoxLayout.count()):
+            group = self.vBoxLayout.itemAt(i).widget()
+            if not isinstance(group, CollapsibleSettingCardGroup):
+                continue
+            groupHasMatch = False
+            for j in range(group.cardLayout.count()):
+                card = group.cardLayout.itemAt(j).widget()
+                if card is None:
+                    continue
+                if self._cardMatchesSearch(card, text):
+                    card.show()
+                    groupHasMatch = True
+                else:
+                    card.hide()
+            if groupHasMatch:
+                group.show()
+                group.cardContainer.setMaximumHeight(QWIDGETSIZE_MAX)
+                hasMatch = True
+            else:
+                group.hide()
+
+        self.emptyStatusWidget.setVisible(not hasMatch)
+        if not hasMatch:
+            self.emptyStatusWidget.adjustSize()
+            self._refreshEmptyWidgetGeometry()
+
+    def _cardMatchesSearch(self, widget, text: str) -> bool:
+        if isinstance(widget, CollapsibleSettingCard):
+            widget = widget.card
+        title = widget.titleLabel.text().lower()
+        content = widget.contentLabel.text().lower()
+        return text in title or text in content
+
+    def _clearSearchFilter(self) -> None:
+        for i in range(self.vBoxLayout.count()):
+            group = self.vBoxLayout.itemAt(i).widget()
+            if not isinstance(group, CollapsibleSettingCardGroup):
+                continue
+            group.show()
+            for j in range(group.cardLayout.count()):
+                card = group.cardLayout.itemAt(j).widget()
+                if card is not None:
+                    card.show()
+            group.cardContainer.setMaximumHeight(
+                0 if group._collapsed else QWIDGETSIZE_MAX
+            )
+        self.emptyStatusWidget.hide()
+
+    def _refreshEmptyWidgetGeometry(self) -> None:
+        self.emptyStatusWidget.move(
+            (self.width() - self.emptyStatusWidget.width()) // 2,
+            (self.height() - self.emptyStatusWidget.height()) // 2,
+        )
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if self.emptyStatusWidget.isVisible():
+            self._refreshEmptyWidgetGeometry()
 
     def showEvent(self, event) -> None:
         self._restoreOrder()

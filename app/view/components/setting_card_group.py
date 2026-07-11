@@ -7,7 +7,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    CardWidget, FluentIcon, FluentIconBase, FluentStyleSheet, SettingCard,
+    CardWidget, FluentIcon, FluentStyleSheet, SettingCard,
     StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
@@ -101,14 +101,12 @@ class CollapsibleSettingCard(QWidget):
         if self.isExpand:
             self.view.setMaximumHeight(QWIDGETSIZE_MAX)
 
-    def setValue(self, value) -> None:
-        pass
 
 
 class CollapsibleSettingCardGroup(CardWidget):
     orderChanged = Signal()
 
-    def __init__(self, icon: FluentIconBase, title: str, key: str, parent=None):
+    def __init__(self, title: str, key: str, parent=None):
         super().__init__(parent)
         self.setObjectName(key)
 

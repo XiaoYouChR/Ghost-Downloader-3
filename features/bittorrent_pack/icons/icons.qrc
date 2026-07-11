@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="bittorrent_pack">
-    <file>BitTorrent_black.svg</file>
-    <file>BitTorrent_white.svg</file>
-  </qresource>
-</RCC>

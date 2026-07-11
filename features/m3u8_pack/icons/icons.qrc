@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="m3u8_pack">
-    <file>Stream_black.svg</file>
-    <file>Stream_white.svg</file>
-  </qresource>
-</RCC>

@@ -66,8 +66,7 @@ class M3U8Config(PackConfig):
             SelectFolderSettingCard, LineEditSettingCard, RuntimeCard, SelectFileCard, SpinBoxSettingCard,
         )
 
-        from features.m3u8_pack.icons import M3U8Icon
-        m3u8Group = CollapsibleSettingCardGroup(M3U8Icon.STREAM, self.tr("M3U8 下载"), "m3u8", parent)
+        m3u8Group = CollapsibleSettingCardGroup(self.tr("M3U8 下载"), "m3u8", parent)
         installFolderCard = SelectFolderSettingCard(
             self.installFolder, f"{APP_DATA_DIR}/M3U8DL",
             self.tr("N_m3u8DL-RE 安装目录"),

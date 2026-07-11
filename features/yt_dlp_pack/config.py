@@ -34,8 +34,7 @@ class YtDlpConfig(PackConfig):
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard
 
-        from features.yt_dlp_pack.icons import YTIcon
-        group = CollapsibleSettingCardGroup(YTIcon.YOUTUBE, self.tr("YouTube 下载"), "ytdlp", parent)
+        group = CollapsibleSettingCardGroup(self.tr("YouTube 下载"), "ytdlp", parent)
 
         runtimeCard = RuntimeCard(youTubeRuntime, group)
         cards = [runtimeCard]
