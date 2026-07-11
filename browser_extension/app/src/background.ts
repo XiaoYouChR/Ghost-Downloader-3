@@ -223,6 +223,8 @@ async function setupBackground() {
 
   if (desktopBridge.buildSnapshot().token) {
     void desktopBridge.connect();
+  } else {
+    void desktopBridge.requestPairing().catch(() => {});
   }
 
   desktopBridge.setupReconnectAlarm();

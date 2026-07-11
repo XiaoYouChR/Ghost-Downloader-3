@@ -47,6 +47,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
   let taskSnapshot: TaskSummary[] = [];
 
   const pendingRequests = new Map<string, PendingRequest>();
+  let shouldRetryPairing = false;
 
   // Runtime fact about the extension (read once from chrome.management.getSelf in setupBackground).
   // Owned by the bridge instance, not the module, since only connect() consumes it.
@@ -236,6 +237,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
     clearReconnectTimer();
     setConnectionState("connecting", chrome.i18n.getMessage("pairing"));
 
+    let desktopReached = false;
     try {
       const token = await new Promise<string>((resolve, reject) => {
         const socket = new WebSocket(serverUrl);
@@ -257,6 +259,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
         }, PAIRING_TIMEOUT_MS);
 
         socket.addEventListener("open", () => {
+          desktopReached = true;
           socket.send(
             JSON.stringify({
               type: "pair_request",
@@ -301,8 +304,10 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
           finish(() => reject(new Error(chrome.i18n.getMessage("errorConnectionFailed"))));
         });
       });
+      shouldRetryPairing = false;
       await setToken(token);
     } catch (error: unknown) {
+      shouldRetryPairing = !desktopReached;
       const message = error instanceof Error ? error.message : chrome.i18n.getMessage("errorAutoPairingFailed");
       setConnectionState(pairToken ? "disconnected" : "missing_token", message);
       throw error;
@@ -399,6 +404,10 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
 
   function onReconnectAlarm(alarm: chrome.alarms.Alarm) {
     if (alarm.name !== RECONNECT_ALARM || connectionState === "connected") {
+      return;
+    }
+    if (!pairToken && shouldRetryPairing) {
+      void requestPairing().catch(() => {});
       return;
     }
     void connect();
