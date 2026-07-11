@@ -23,7 +23,7 @@ from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.components.setting_cards import (
     ClientProfileSettingCard, DefaultHeadersSettingCard, LineEditSettingCard,
-    ProxySettingCard, SpinBoxSettingCard,
+    PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
 from app.view.components.editors import FolderPicker
 
@@ -210,10 +210,10 @@ class SettingPage(ScrollArea):
             ),
         ])
 
-        self.zoomCard = SpinBoxSettingCard(
+        self.zoomCard = PercentSpinBoxSettingCard(
             FluentIcon.ZOOM, self.tr("界面缩放"),
             self.tr("改变应用程序界面的缩放比例, 0% 为自动"),
-            suffix=" %", configItem=cfg.dpiScale, division=100,
+            configItem=cfg.dpiScale,
         )
 
         personalCards = [
