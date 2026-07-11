@@ -157,7 +157,7 @@ export function TaskCard({
           </Caption1>
         </div>
 
-        <div className={styles.actions}>
+        <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
           {isCompleted && (
             <>
               <Button
