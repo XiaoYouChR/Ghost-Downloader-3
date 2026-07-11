@@ -7,7 +7,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QApplication
 from qfluentwidgets import (
     ComboBoxSettingCard, FluentIcon, HyperlinkCard, HyperlinkButton, InfoBar,
-    InfoBarPosition, MessageBox, PrimaryPushSettingCard, PushSettingCard,
+    InfoBarPosition, MessageBox, PrimaryPushSettingCard, PushButton, PushSettingCard,
     RangeSettingCard, SwitchSettingCard, ToolButton, ToolTipFilter,
 )
 
@@ -319,11 +319,9 @@ class SettingPage(ScrollArea):
         self.feedbackCard = PrimaryPushSettingCard(
             self.tr("提供反馈"), FluentIcon.FEEDBACK,
             self.tr("提供反馈"),
-            self.tr("通过提供反馈来帮助我们改进 Ghost Downloader"),
+            self.tr("通过提供反馈来帮助我们改进 Ghost Downloader（日志）"),
         )
-        self.openLogButton = ToolButton(FluentIcon.DOCUMENT, self.feedbackCard)
-        self.openLogButton.setToolTip(self.tr("查看日志"))
-        self.openLogButton.installEventFilter(ToolTipFilter(self.openLogButton))
+        self.openLogButton = PushButton(self.tr("查看日志"), self.feedbackCard)
         self.feedbackCard.hBoxLayout.insertSpacing(6, 8)
         self.feedbackCard.hBoxLayout.insertWidget(
             7, self.openLogButton, 0, Qt.AlignmentFlag.AlignRight,
