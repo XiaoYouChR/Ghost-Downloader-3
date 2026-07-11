@@ -66,12 +66,18 @@ class CoroutineRunner(QThread):
         self._loop.call_soon_threadsafe(schedule)
         return workId
 
-    def cancel(self, workId: str) -> bool:
+    def cancel(self, workId: str, finished: Callable = None) -> bool:
         self._pending.pop(workId, None)
         task = self._running.pop(workId, None)
         if task is not None:
-            self._loop.call_soon_threadsafe(task.cancel)
+            def scheduleCancel():
+                if finished is not None:
+                    task.add_done_callback(lambda _: self.post(finished))
+                task.cancel()
+            self._loop.call_soon_threadsafe(scheduleCancel)
             return True
+        if finished is not None:
+            finished()
         return False
 
     def post(self, callback: Callable, *args, **kwargs) -> None:
