@@ -9,7 +9,7 @@ from PySide6.QtGui import QColor, QIcon, QDesktopServices, QPalette
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
-    setThemeColor,
+    SearchLineEdit, setThemeColor,
 )
 
 from app.config.cfg import CloseMode, cfg
@@ -31,6 +31,7 @@ class MainWindow(MSFluentWindow):
     def __init__(self, parent=None):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
+        self._searchTarget = None
         super().__init__(parent)
         self.setMicaEffectEnabled(False)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -50,6 +51,11 @@ class MainWindow(MSFluentWindow):
         self._refreshBackgroundEffect()
         if sys.platform == "darwin":
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
+
+        self.searchEdit = SearchLineEdit(self.titleBar)
+        self.searchEdit.setClearButtonEnabled(True)
+        self.searchEdit.hide()
+        self.searchEdit.raise_()
 
     def _initLayout(self) -> None:
         self._addPage(TaskPage, FluentIcon.DOWNLOAD, self.tr("下载任务"),
@@ -100,8 +106,39 @@ class MainWindow(MSFluentWindow):
                 from qfluentwidgets.common import qrouter
                 self.stackedWidget.currentChanged.connect(self._onCurrentInterfaceChanged)
                 qrouter.setDefaultRouteKey(self.stackedWidget, routeKey)
+            if isinstance(page, TaskPage):
+                page.searchLineEdit.hide()
         self.switchTo(page)
         self.navigationInterface.setCurrentItem(routeKey)
+        self._updateSearchTarget(page)
+
+    def _updateSearchTarget(self, page: QWidget) -> None:
+        self.searchEdit.clear()
+        if self._searchTarget is not None:
+            self.searchEdit.textChanged.disconnect(self._searchTarget)
+            self._searchTarget = None
+        if hasattr(page, 'setSearchText'):
+            self._searchTarget = page.setSearchText
+            self.searchEdit.textChanged.connect(self._searchTarget)
+            self.searchEdit.setPlaceholderText(page.searchPlaceholder)
+            self.searchEdit.show()
+        else:
+            self.searchEdit.hide()
+        self._refreshSearchEditGeometry()
+
+    def _refreshSearchEditGeometry(self) -> None:
+        tb = self.titleBar
+        w = min(360, tb.width() - 300)
+        w = max(200, w)
+        self.searchEdit.setFixedWidth(w)
+        x = (tb.width() - w) // 2
+        y = (tb.height() - self.searchEdit.height()) // 2
+        self.searchEdit.move(x, y)
+
+    def _onSearchShortcut(self) -> None:
+        if self.searchEdit.isVisible():
+            self.searchEdit.setFocus()
+            self.searchEdit.selectAll()
 
     def _bind(self) -> None:
         self._draft.taskConfirmed.connect(taskService.add)
@@ -110,10 +147,12 @@ class MainWindow(MSFluentWindow):
         self.titleBar.closeBtn.clicked.disconnect(self.close)
         self.titleBar.closeBtn.clicked.connect(self._onCloseClicked)
 
+        from PySide6.QtGui import QKeySequence, QShortcut
+        QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
+
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffect)
         if sys.platform == "darwin":
-            from PySide6.QtGui import QKeySequence, QShortcut
             QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self._onCloseClicked)
 
     def addUrls(self, urls: list[str]) -> None:
@@ -252,6 +291,11 @@ class MainWindow(MSFluentWindow):
         self.close()
         if mode == CloseMode.QUIT:
             QApplication.quit()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if self._searchTarget is not None:
+            self._refreshSearchEditGeometry()
 
     def closeEvent(self, event) -> None:
         if event.spontaneous():

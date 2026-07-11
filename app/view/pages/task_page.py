@@ -317,6 +317,10 @@ class TaskPage(QWidget):
         self._sortAscending = ascending
         self._rebuildList()
 
+    @property
+    def searchPlaceholder(self) -> str:
+        return self.tr("搜索任务")
+
     def setSearchText(self, text: str) -> None:
         self._searchText = text
         self._rebuildList()

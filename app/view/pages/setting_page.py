@@ -530,7 +530,7 @@ class SettingPage(ScrollArea):
                 card = group.cardLayout.itemAt(j).widget()
                 if card is None:
                     continue
-                if self._cardMatchesSearch(card, text):
+                if self._isSearchMatch(card, text):
                     card.show()
                     groupHasMatch = True
                 else:
@@ -547,7 +547,7 @@ class SettingPage(ScrollArea):
             self.emptyStatusWidget.adjustSize()
             self._refreshEmptyWidgetGeometry()
 
-    def _cardMatchesSearch(self, widget, text: str) -> bool:
+    def _isSearchMatch(self, widget, text: str) -> bool:
         if isinstance(widget, CollapsibleSettingCard):
             widget = widget.card
         title = widget.titleLabel.text().lower()
