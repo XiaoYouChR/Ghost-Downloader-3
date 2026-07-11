@@ -3310,6 +3310,10 @@ FFmpeg: {2}</translation>
         <translation>商店版擴充功能需等待審核後先可以獲得更新</translation>
     </message>
     <message>
+        <source>Chrome 商店</source>
+        <translation>Chrome 商店</translation>
+    </message>
+    <message>
         <location filename="../../view/pages/setting_page.py" line="136"/>
         <source>Firefox 商店</source>
         <translation>Firefox 商店</translation>

@@ -2412,6 +2412,10 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Chrome 商店</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../view/pages/setting_page.py" line="136"/>
         <source>Firefox 商店</source>
         <translation type="unfinished"></translation>
