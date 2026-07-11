@@ -42,9 +42,10 @@ def setupEnvironment():
             mimetypes._db = mimetypes.MimeTypes()
 
     import app.assets.resources  # noqa: F401
-    from app.view.qfw_patch import patchFluentLabelThemeChanged
+    from app.view.qfw_patch import patchFluentLabelThemeChanged, patchStackedWidgetAnimation
     from app.view.components.labels import IconBodyLabel
     patchFluentLabelThemeChanged()
+    patchStackedWidgetAnimation()
     qconfig.themeChanged.connect(IconBodyLabel.clearCache)
     qconfig.load(f"{APP_DATA_DIR}/UserConfig.json", cfg)
 
