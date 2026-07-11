@@ -16,8 +16,8 @@ from app.view.components.scroll_area import ScrollArea
 from app.config.cfg import cfg
 from app.platform.android import IS_ANDROID
 from app.config.constants import (
-    AUTHOR, AUTHOR_URL, EDGE_ADDONS_URL, FEEDBACK_URL,
-    FIREFOX_ADDONS_URL, VERSION, YEAR,
+    AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
+    FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
 )
 from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -128,15 +128,23 @@ class SettingPage(ScrollArea):
         )
 
         self.storeInstallCard = HyperlinkCard(
-            EDGE_ADDONS_URL, self.tr("Edge 商店"), FluentIcon.GLOBE,
+            FIREFOX_ADDONS_URL, self.tr("Firefox 商店"), FluentIcon.GLOBE,
             self.tr("从商店安装扩展"),
             self.tr("商店版扩展需等待审核后才能获得更新"),
         )
-        firefoxBtn = HyperlinkButton(self.storeInstallCard)
-        firefoxBtn.setText(self.tr("Firefox 商店"))
-        firefoxBtn.setUrl(FIREFOX_ADDONS_URL)
+        edgeBtn = HyperlinkButton(self.storeInstallCard)
+        edgeBtn.setText(self.tr("Edge 商店"))
+        edgeBtn.setUrl(EDGE_ADDONS_URL)
         self.storeInstallCard.hBoxLayout.insertWidget(
-            5, firefoxBtn, 0, Qt.AlignmentFlag.AlignRight,
+            5, edgeBtn, 0, Qt.AlignmentFlag.AlignRight,
+        )
+        self.storeInstallCard.hBoxLayout.insertSpacing(6, 16)
+
+        chromeBtn = HyperlinkButton(self.storeInstallCard)
+        chromeBtn.setText(self.tr("Chrome 商店"))
+        chromeBtn.setUrl(CHROME_WEBSTORE_URL)
+        self.storeInstallCard.hBoxLayout.insertWidget(
+            5, chromeBtn, 0, Qt.AlignmentFlag.AlignRight,
         )
         self.storeInstallCard.hBoxLayout.insertSpacing(6, 16)
 
@@ -281,10 +289,21 @@ class SettingPage(ScrollArea):
                               self.tr("新版本将更稳定，并具有更多功能"),
                               cfg.shouldCheckUpdateAtStartup),
             self.autoRunCard,
+        ]
+        if not IS_ANDROID:
+            softwareCards.append(
+                ComboBoxSettingCard(
+                    cfg.closeMode, FluentIcon.POWER_BUTTON,
+                    self.tr("关闭主窗口时"),
+                    self.tr("设置关闭主窗口后程序继续在后台运行还是退出"),
+                    texts=[self.tr("关闭时询问"), self.tr("继续在后台运行"), self.tr("退出程序")],
+                ),
+            )
+        softwareCards.append(
             SwitchSettingCard(FluentIcon.PASTE, self.tr("剪贴板监听"),
                               self.tr("剪贴板监听器将自动检测剪贴板中的链接并添加下载任务"),
                               cfg.isClipboardListenerEnabled),
-        ]
+        )
         if not IS_ANDROID:
             softwareCards.append(self.migrateCard)
         self.softwareGroup.addSettingCards(softwareCards)

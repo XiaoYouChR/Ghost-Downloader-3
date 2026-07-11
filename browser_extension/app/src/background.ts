@@ -216,14 +216,21 @@ async function setupBackground() {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: "gd-download-link",
+    id: "gd-download",
     title: chrome.i18n.getMessage("downloadWithGhostDownloader"),
-    contexts: ["link"],
+    contexts: ["link", "image", "video", "audio"],
+  });
+  chrome.contextMenus.create({
+    id: "gd-save-as",
+    title: chrome.i18n.getMessage("saveAsWithGhostDownloader"),
+    contexts: ["link", "image", "video", "audio"],
   });
 });
 
 chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId !== "gd-download-link" || !info.linkUrl) { return; }
+  const url = info.linkUrl || info.srcUrl;
+  if (!url) { return; }
+  const draft = info.menuItemId === "gd-save-as";
   const headers = resourceBridge.headersForPage(info.pageUrl ?? "");
   if (!headers.referer && info.pageUrl) {
     headers.referer = info.pageUrl;
@@ -231,8 +238,9 @@ chrome.contextMenus.onClicked.addListener((info) => {
   void sendTaskOrEnqueue({
     type: "create_task",
     source: "download",
+    draft,
     title: "",
-    payload: { url: info.linkUrl, headers, filename: "", size: 0, supportsRange: false },
+    payload: { url, headers, filename: "", size: 0, supportsRange: false },
   });
 });
 

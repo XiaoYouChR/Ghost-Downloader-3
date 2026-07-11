@@ -15,6 +15,7 @@ from qfluentwidgets import (
     FolderValidator,
     ConfigValidator,
     ConfigSerializer,
+    EnumSerializer,
     FolderListValidator,
     Theme,
 )
@@ -41,6 +42,12 @@ class Language(Enum):
     RUSSIAN = QLocale(QLocale.Language.Russian, QLocale.Country.Russia)
     PORTUGUESE_BRAZIL = QLocale(QLocale.Language.Portuguese, QLocale.Country.Brazil)
     AUTO = QLocale()
+
+
+class CloseMode(Enum):
+    ASK = "Ask"
+    BACKGROUND = "Background"
+    QUIT = "Quit"
 
 
 class ProxyValidator(ConfigValidator):
@@ -229,6 +236,10 @@ class Config(QConfig):
     # 软件
     shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
     shouldRunAtLogin = ConfigItem("Software", "AutoRun", False, BoolValidator())
+    closeMode = OptionsConfigItem(
+        "Software", "CloseMode", CloseMode.ASK,
+        OptionsValidator(CloseMode), EnumSerializer(CloseMode),
+    )
     isClipboardListenerEnabled = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
     geometry = ConfigItem(
         "Software", "Geometry", QRect(0, 0, 0, 0), serializer=GeometrySerializer(),
