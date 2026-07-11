@@ -14,6 +14,7 @@ GITHUB_HOSTS = {
     "objects.githubusercontent.com",
     "raw.githubusercontent.com",
     "raw.github.com",
+    "release-assets.githubusercontent.com",
 }
 
 
