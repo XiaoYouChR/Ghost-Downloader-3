@@ -228,6 +228,10 @@ class Config(QConfig):
         shouldShowDockIcon = ConfigItem("Personalization", "ShowDockIcon", True, BoolValidator())
         shouldShowDockSpeed = ConfigItem("Personalization", "ShowDockSpeed", True, BoolValidator())
         shouldShowMenuBarSpeed = ConfigItem("Personalization", "ShowMenuBarSpeed", True, BoolValidator())
+    speedUnit = OptionsConfigItem(
+        "Personalization", "SpeedUnit", "1000",
+        OptionsValidator(["1000", "1024"]),
+    )
     language = OptionsConfigItem(
         "Personalization", "Language", Language.AUTO,
         OptionsValidator(Language), LanguageSerializer(), restart=True,

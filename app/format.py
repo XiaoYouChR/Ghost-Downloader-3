@@ -1,13 +1,26 @@
-def toDockSpeed(bytesPerSec: int) -> str:
+def toReadableSpeed(bytesPerSec: int, divisor: int = 1000) -> str:
     if bytesPerSec < 1024:
         return f"{bytesPerSec} B/s"
-    v = bytesPerSec / 1024
-    if v < 1024:
+    v = bytesPerSec / divisor
+    if v < divisor:
+        return f"{v:.1f} KB/s"
+    v /= divisor
+    if v < divisor:
+        return f"{v:.1f} MB/s"
+    v /= divisor
+    return f"{v:.1f} GB/s"
+
+
+def toDockSpeed(bytesPerSec: int, divisor: int = 1000) -> str:
+    if bytesPerSec < 1024:
+        return f"{bytesPerSec} B/s"
+    v = bytesPerSec / divisor
+    if v < divisor:
         return f"{v:.1f} K/s"
-    v /= 1024
-    if v < 1024:
+    v /= divisor
+    if v < divisor:
         return f"{v:.1f} M/s"
-    v /= 1024
+    v /= divisor
     return f"{v:.1f} G/s"
 
 

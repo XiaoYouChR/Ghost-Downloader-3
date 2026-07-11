@@ -127,7 +127,7 @@ def setupDock() -> None:
         if speed <= 0:
             clear()
             return
-        update(toDockSpeed(speed), taskService.runningProgress())
+        update(toDockSpeed(speed, int(cfg.speedUnit.value)), taskService.runningProgress())
 
     def onShowSpeedChanged(enabled: bool) -> None:
         if not enabled:

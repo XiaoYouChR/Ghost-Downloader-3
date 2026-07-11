@@ -257,6 +257,11 @@ class SettingPage(ScrollArea):
                                   cfg.shouldShowMenuBarSpeed),
             ])
         personalCards.append(
+            ComboBoxSettingCard(cfg.speedUnit, FluentIcon.SPEED_HIGH, self.tr("速度单位"),
+                                self.tr("任务速度显示使用 SI 单位（1 MB = 1000 KB）或二进制单位（1 MB = 1024 KB）"),
+                                texts=["1000 KB = 1 MB（网络标准）", "1024 KB = 1 MB（二进制）"]),
+        )
+        personalCards.append(
             ComboBoxSettingCard(cfg.language, FluentIcon.LANGUAGE, self.tr("语言"),
                                 self.tr("设置界面的首选语言"),
                                 texts=["简体中文 (中国大陆)", "正體中文 (台灣)", "粤语 (香港)",

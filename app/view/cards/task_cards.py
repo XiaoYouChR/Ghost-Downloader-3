@@ -14,7 +14,7 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import cfg
-from app.format import toReadableSize, toReadableTime
+from app.format import toReadableSize, toReadableSpeed, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.services.task_service import taskService
@@ -232,7 +232,7 @@ class UniversalTaskCard(TaskCard):
                 self.speedLabel.show()
                 self.etaLabel.show()
                 self.sizeLabel.show()
-            self.speedLabel.setText(f"{toReadableSize(speed)}/s")
+            self.speedLabel.setText(toReadableSpeed(speed, int(cfg.speedUnit.value)))
             if task.fileSize > 0 and speed > 0:
                 self.etaLabel.setText(toReadableTime(int((task.fileSize - receivedBytes) / speed)))
             else:
