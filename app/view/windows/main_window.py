@@ -31,14 +31,14 @@ class MainWindow(MSFluentWindow):
     def __init__(self, parent=None):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
-        self._searchTarget = None
+        self.searchEdit = None
         super().__init__(parent)
         self.setMicaEffectEnabled(False)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._pages: dict[str, QWidget] = {}
-
         self._draft = TaskDraft(parent=self)
+        self.searchEdit = SearchLineEdit(self.titleBar)
 
         self._initWidget()
         self._initLayout()
@@ -52,7 +52,6 @@ class MainWindow(MSFluentWindow):
         if sys.platform == "darwin":
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
 
-        self.searchEdit = SearchLineEdit(self.titleBar)
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.hide()
         self.searchEdit.raise_()
@@ -112,14 +111,14 @@ class MainWindow(MSFluentWindow):
         self.navigationInterface.setCurrentItem(routeKey)
         self._updateSearchTarget(page)
 
+    def _onSearchTextChanged(self, text: str) -> None:
+        page = self.stackedWidget.currentWidget()
+        if hasattr(page, 'setSearchText'):
+            page.setSearchText(text)
+
     def _updateSearchTarget(self, page: QWidget) -> None:
         self.searchEdit.clear()
-        if self._searchTarget is not None:
-            self.searchEdit.textChanged.disconnect(self._searchTarget)
-            self._searchTarget = None
         if hasattr(page, 'setSearchText'):
-            self._searchTarget = page.setSearchText
-            self.searchEdit.textChanged.connect(self._searchTarget)
             self.searchEdit.setPlaceholderText(page.searchPlaceholder)
             self.searchEdit.show()
         else:
@@ -146,6 +145,7 @@ class MainWindow(MSFluentWindow):
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)
         self.titleBar.closeBtn.clicked.connect(self._onCloseClicked)
+        self.searchEdit.textChanged.connect(self._onSearchTextChanged)
 
         from PySide6.QtGui import QKeySequence, QShortcut
         QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
@@ -294,7 +294,7 @@ class MainWindow(MSFluentWindow):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        if self._searchTarget is not None:
+        if self.searchEdit is not None and self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
 
     def closeEvent(self, event) -> None:

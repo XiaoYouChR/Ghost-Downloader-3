@@ -319,7 +319,7 @@ class SettingPage(ScrollArea):
         self.feedbackCard = PrimaryPushSettingCard(
             self.tr("提供反馈"), FluentIcon.FEEDBACK,
             self.tr("提供反馈"),
-            self.tr("通过提供反馈来帮助我们改进 Ghost Downloader（日志）"),
+            self.tr("通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题"),
         )
         self.openLogButton = PushButton(self.tr("查看日志"), self.feedbackCard)
         self.feedbackCard.hBoxLayout.insertSpacing(6, 8)

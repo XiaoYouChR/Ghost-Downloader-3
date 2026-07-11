@@ -51,10 +51,10 @@ class MobileTaskPage(TaskPage):
         filterToolBarLayout = QHBoxLayout(self.filterToolBar)
         filterToolBarLayout.setContentsMargins(10, 0, 10, 4)
         filterToolBarLayout.setSpacing(6)
-        filterToolBarLayout.addWidget(self.sortButton)
         filterToolBarLayout.addWidget(self.filterSegment)
+        filterToolBarLayout.addStretch(1)
+        filterToolBarLayout.addWidget(self.sortButton)
         filterToolBarLayout.addWidget(self.categoryFilterButton)
-        filterToolBarLayout.addWidget(self.searchLineEdit, 1)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

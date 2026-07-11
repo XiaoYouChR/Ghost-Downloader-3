@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter
-from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    FluentIcon, InfoBar, InfoBarPosition, PrimaryToolButton,
+    FluentIcon, InfoBar, InfoBarPosition, PrimaryToolButton, SearchLineEdit,
     Theme, isDarkTheme, qconfig,
 )
 
@@ -38,6 +38,7 @@ class MobileMainWindow(QWidget):
         )
         self.taskPage = MobileTaskPage(self)
         self.settingPage = MobileSettingPage(self)
+        self.searchEdit = SearchLineEdit(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
         self.vBoxLayout = QVBoxLayout(self)
 
@@ -50,6 +51,7 @@ class MobileMainWindow(QWidget):
         self._bind()
         self._updatePermissionBanner()
         self._updateAddButtonVisibility()
+        self._updateSearchTarget(self.taskPage)
 
     def _initWidget(self):
         self.setObjectName("MobileMainWindow")
@@ -57,6 +59,8 @@ class MobileMainWindow(QWidget):
         self.setWindowTitle("Ghost Downloader")
         self.taskPage.setObjectName("taskInterface")
         self.settingPage.setObjectName("settingInterface")
+        self.searchEdit.setClearButtonEnabled(True)
+        self.taskPage.searchLineEdit.hide()
         self.addButton.setFixedSize(56, 56)
         self.addButton.setIconSize(QSize(22, 22))
         self.addButton.raise_()
@@ -68,12 +72,21 @@ class MobileMainWindow(QWidget):
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.addWidget(self.permissionBanner, 0)
         self.vBoxLayout.addWidget(self.notificationBanner, 0)
+        searchBar = QWidget(self)
+        searchBarLayout = QHBoxLayout(searchBar)
+        searchBarLayout.setContentsMargins(10, 6, 10, 6)
+        searchBarLayout.addWidget(self.searchEdit)
+        self.vBoxLayout.addWidget(searchBar, 0)
         self.vBoxLayout.addWidget(self.stackedWidget, 1)
         self.vBoxLayout.addWidget(self.navigationBar, 0)
 
     def _bind(self):
         self.navigationBar.currentChanged.connect(self.stackedWidget.setCurrentIndex)
         self.navigationBar.currentChanged.connect(lambda *_: self._updateAddButtonVisibility())
+        self.navigationBar.currentChanged.connect(
+            lambda index: self._updateSearchTarget(self.stackedWidget.widget(index))
+        )
+        self.searchEdit.textChanged.connect(self._onSearchTextChanged)
         self.taskPage.selectionModeChanged.connect(lambda *_: self._updateAddButtonVisibility())
         self.addButton.clicked.connect(self._showAddTaskDialog)
         self._draft.taskConfirmed.connect(taskService.add)
@@ -86,6 +99,19 @@ class MobileMainWindow(QWidget):
     def _addPage(self, page: QWidget, icon: FluentIcon, text: str):
         self.stackedWidget.addWidget(page)
         self.navigationBar.addItem(icon, text)
+
+    def _onSearchTextChanged(self, text: str) -> None:
+        page = self.stackedWidget.currentWidget()
+        if hasattr(page, 'setSearchText'):
+            page.setSearchText(text)
+
+    def _updateSearchTarget(self, page: QWidget) -> None:
+        self.searchEdit.clear()
+        if hasattr(page, 'setSearchText'):
+            self.searchEdit.setPlaceholderText(page.searchPlaceholder)
+            self.searchEdit.show()
+        else:
+            self.searchEdit.hide()
 
     def _onSystemColorSchemeChanged(self, colorScheme):
         if cfg.themeMode.value != Theme.AUTO:

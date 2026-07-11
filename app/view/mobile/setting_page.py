@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import SearchLineEdit, SettingCard, SwitchButton, isDarkTheme, qconfig
+from qfluentwidgets import SettingCard, SwitchButton, isDarkTheme, qconfig
 
 from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 from app.view.pages.setting_page import SettingPage
@@ -12,12 +12,6 @@ QWIDGETSIZE_MAX = (1 << 24) - 1
 class MobileSettingPage(SettingPage):
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        self.searchEdit = SearchLineEdit(self.container)
-        self.searchEdit.setPlaceholderText(self.tr("搜索设置"))
-        self.vBoxLayout.insertWidget(0, self.searchEdit)
-        self.searchEdit.textChanged.connect(self.setSearchText)
-
         self._setScrollContentOpaque()
 
     def showEvent(self, event):
