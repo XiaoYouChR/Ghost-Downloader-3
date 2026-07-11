@@ -3,10 +3,11 @@ from typing import Final
 from PySide6.QtCore import QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QKeyEvent, QPainter, QPainterPath
 from PySide6.QtWidgets import (
-    QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget,
+    QCompleter, QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QVBoxLayout,
+    QWidget,
 )
 from qfluentwidgets import (
-    EditableComboBox, FlowLayout, FluentIcon, PlainTextEdit,
+    EditableComboBox, FlowLayout, FluentIcon, LineEdit, PlainTextEdit,
     ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.common.color import autoFallbackThemeColor
@@ -361,16 +362,124 @@ class TokenLineEdit(QWidget):
             painter.drawPath(barPath.subtracted(rectPath))
 
 
-def headersToText(headers: dict[str, str]) -> str:
-    return "\n".join(f"{k}: {v}" for k, v in headers.items())
+HEADER_SUGGESTIONS: Final[list[str]] = [
+    "Accept", "Accept-Encoding", "Accept-Language", "Authorization",
+    "Cache-Control", "Cookie", "Origin", "Range", "Referer", "User-Agent",
+]
 
 
-def headersFromText(text: str) -> dict[str, str]:
-    headers = {}
-    for line in text.strip().splitlines():
-        name, _, value = line.partition(":")
-        name = name.strip()
-        value = value.strip()
-        if name and value:
-            headers[name] = value
-    return headers
+class HeadersEditor(QWidget):
+    headersChanged = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._rows: list[tuple] = []
+
+        self.vBoxLayout = QVBoxLayout(self)
+
+        self._initWidget()
+        self._initLayout()
+
+    def _initWidget(self) -> None:
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+
+    def _initLayout(self) -> None:
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setSpacing(4)
+
+    def headers(self) -> dict[str, str]:
+        result: dict[str, str] = {}
+        for keyEdit, valueEdit, _, _ in self._rows:
+            key = keyEdit.text().strip().lower()
+            value = valueEdit.text().strip()
+            if key and value:
+                result[key] = value
+        return result
+
+    def setHeaders(self, headers: dict[str, str]) -> None:
+        self._clearRows()
+        for key, value in headers.items():
+            self._appendRow(key, value)
+        self._appendRow()
+        self._refreshDuplicates()
+
+    def _appendRow(self, key: str = "", value: str = "") -> None:
+        keyEdit = LineEdit(self)
+        keyEdit.setPlaceholderText(self.tr("名称"))
+        completer = QCompleter(HEADER_SUGGESTIONS, keyEdit)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        keyEdit.setCompleter(completer)
+        keyEdit.setText(key)
+
+        valueEdit = LineEdit(self)
+        valueEdit.setPlaceholderText(self.tr("值"))
+        valueEdit.setText(value)
+
+        removeButton = TransparentToolButton(FluentIcon.CLOSE, self)
+        removeButton.setFixedSize(24, 24)
+        removeButton.setIconSize(QSize(10, 10))
+        sp = removeButton.sizePolicy()
+        sp.setRetainSizeWhenHidden(True)
+        removeButton.setSizePolicy(sp)
+        removeButton.setVisible(bool(key or value))
+
+        rowLayout = QHBoxLayout()
+        rowLayout.setSpacing(8)
+        rowLayout.setContentsMargins(0, 0, 0, 0)
+        rowLayout.addWidget(keyEdit, 2)
+        rowLayout.addWidget(valueEdit, 3)
+        rowLayout.addWidget(removeButton)
+        self.vBoxLayout.addLayout(rowLayout)
+
+        row = (keyEdit, valueEdit, removeButton, rowLayout)
+        self._rows.append(row)
+
+        keyEdit.textChanged.connect(
+            lambda _t, r=row: self._onRowTextChanged(r))
+        valueEdit.textChanged.connect(
+            lambda _t, r=row: self._onRowTextChanged(r))
+        removeButton.clicked.connect(
+            lambda _c=False, r=row: self._removeRow(r))
+
+    def _onRowTextChanged(self, row: tuple) -> None:
+        keyEdit, valueEdit, removeButton, _ = row
+        if row is self._rows[-1] and (keyEdit.text().strip() or valueEdit.text().strip()):
+            removeButton.show()
+            self._appendRow()
+        self._refreshDuplicates()
+        self.headersChanged.emit()
+
+    def _removeRow(self, row: tuple) -> None:
+        if row is self._rows[-1]:
+            return
+        self._rows.remove(row)
+        keyEdit, valueEdit, removeButton, rowLayout = row
+        for widget in (keyEdit, valueEdit, removeButton):
+            rowLayout.removeWidget(widget)
+            widget.hide()
+            widget.deleteLater()
+        self.vBoxLayout.removeItem(rowLayout)
+        rowLayout.deleteLater()
+        self._refreshDuplicates()
+        self.headersChanged.emit()
+
+    def _clearRows(self) -> None:
+        for keyEdit, valueEdit, removeButton, rowLayout in self._rows:
+            for widget in (keyEdit, valueEdit, removeButton):
+                rowLayout.removeWidget(widget)
+                widget.hide()
+                widget.deleteLater()
+            self.vBoxLayout.removeItem(rowLayout)
+            rowLayout.deleteLater()
+        self._rows.clear()
+
+    def _refreshDuplicates(self) -> None:
+        seen: set[str] = set()
+        for keyEdit, _, _, _ in self._rows:
+            key = keyEdit.text().strip().lower()
+            if not key:
+                keyEdit.setError(False)
+                continue
+            keyEdit.setError(key in seen)
+            seen.add(key)

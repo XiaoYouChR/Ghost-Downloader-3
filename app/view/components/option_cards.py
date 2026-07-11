@@ -206,14 +206,14 @@ class UrlEditCard(OptionCard):
 class HeadersEditCard(OptionCard):
 
     def __init__(self, parent=None, *, initial: dict[str, str] | None = None):
-        from app.view.components.editors import AutoSizingEdit
+        from app.view.components.editors import HeadersEditor
 
         super().__init__(parent)
         self.iconWidget = IconWidget(FluentIcon.GLOBE, self)
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("请求标头"), self)
         self.resetButton = TransparentToolButton(FluentIcon.SYNC, self)
-        self.headersEdit = AutoSizingEdit(self, minimumVisibleLines=4, maximumVisibleLines=10)
+        self.headersEditor = HeadersEditor(self)
 
         self.vBoxLayout = QVBoxLayout(self)
         self.titleRowLayout = QHBoxLayout()
@@ -222,13 +222,12 @@ class HeadersEditCard(OptionCard):
         self._initLayout()
         self._bind()
 
-        self.headersEdit.setPlainText(self._headersToText(initial or dict(cfg.defaultRequestHeaders.value)))
+        self.headersEditor.setHeaders(initial or dict(cfg.defaultRequestHeaders.value))
 
     def _initWidget(self) -> None:
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.resetButton.setToolTip(self.tr("恢复默认请求标头"))
         self.resetButton.installEventFilter(ToolTipFilter(self.resetButton))
-        self.headersEdit.setPlaceholderText(self.tr("每行一个 Name: Value"))
 
     def _initLayout(self) -> None:
         self.titleRowLayout.setSpacing(15)
@@ -240,27 +239,13 @@ class HeadersEditCard(OptionCard):
         self.vBoxLayout.setContentsMargins(24, 10, 24, 12)
         self.vBoxLayout.setSpacing(10)
         self.vBoxLayout.addLayout(self.titleRowLayout)
-        self.vBoxLayout.addWidget(self.headersEdit)
+        self.vBoxLayout.addWidget(self.headersEditor)
 
     def _bind(self) -> None:
         self.resetButton.clicked.connect(self.reset)
 
     def options(self) -> dict:
-        return {"headers": self._textToHeaders(self.headersEdit.toPlainText())}
+        return {"headers": self.headersEditor.headers()}
 
     def reset(self) -> None:
-        self.headersEdit.setPlainText(self._headersToText(dict(cfg.defaultRequestHeaders.value)))
-
-    def _headersToText(self, headers: dict[str, str]) -> str:
-        return "\n".join(f"{name}: {value}" for name, value in headers.items())
-
-    def _textToHeaders(self, text: str) -> dict[str, str]:
-        result: dict[str, str] = {}
-        for line in text.splitlines():
-            name, separator, value = line.partition(":")
-            if not separator:
-                continue
-            key = name.strip().lower()
-            if key:
-                result[key] = value.strip()
-        return result
+        self.headersEditor.setHeaders(dict(cfg.defaultRequestHeaders.value))

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from re import compile
 from urllib.parse import urlsplit
 import weakref
 
-from PySide6.QtCore import Qt, QEvent, Signal
+from PySide6.QtCore import Qt, QEvent, QRectF, Signal
+from PySide6.QtGui import QPainter, QPainterPath
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QButtonGroup, QHBoxLayout,
+    QWidget, QVBoxLayout, QButtonGroup, QHBoxLayout, QLineEdit,
     QSpacerItem, QSizePolicy, QFileDialog,
 )
 from qfluentwidgets import (
@@ -18,6 +20,38 @@ from qfluentwidgets import (
 
 from app.config.cfg import cfg, proxy, BASE_HEADERS
 from app.view.components.banners import WarningBanner
+
+HOST_PATTERN = compile(
+    r"^(?:(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)"
+    r"|(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6})$"
+)
+PORT_PATTERN = compile(r"^\d{1,5}$")
+
+
+class ErrorVisibleLineEdit(LineEdit):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.textEdited.connect(self._onTextEdited)
+
+    def _onTextEdited(self) -> None:
+        self.setError(False)
+
+    def paintEvent(self, e):
+        QLineEdit.paintEvent(self, e)
+        if not self.hasFocus() and not self.isError():
+            return
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        m = self.contentsMargins()
+        path = QPainterPath()
+        w, h = self.width() - m.left() - m.right(), self.height()
+        path.addRoundedRect(QRectF(m.left(), h - 10, w, 10), 5, 5)
+        rectPath = QPainterPath()
+        rectPath.addRect(m.left(), h - 10, w, 8)
+        path = path.subtracted(rectPath)
+        painter.fillPath(path, self.focusedBorderColor())
 
 
 class SpinBoxSettingCard(SettingCard):
@@ -124,9 +158,9 @@ class ProxySettingCard(ExpandGroupSettingCard):
         self.customLayout = QHBoxLayout(self.customWidget)
         self.protocolCombo = ComboBox(self.customWidget)
         self.protocolCombo.addItems(["socks4", "socks5", "socks5h", "http", "https"])
-        self.ipEdit = LineEdit(self.customWidget)
+        self.ipEdit = ErrorVisibleLineEdit(self.customWidget)
         self.ipEdit.setPlaceholderText(self.tr("代理 IP 地址"))
-        self.portEdit = LineEdit(self.customWidget)
+        self.portEdit = ErrorVisibleLineEdit(self.customWidget)
         self.portEdit.setPlaceholderText(self.tr("端口"))
 
         self.credWidget = QWidget(self.view)
@@ -150,21 +184,14 @@ class ProxySettingCard(ExpandGroupSettingCard):
         bannerLayout.addWidget(self._compatLabel, 1)
 
         self._initLayout()
-
-        value = configItem.value
-        if value == "Auto":
-            self.autoRadio.setChecked(True)
-            self._onRadioClicked(self.autoRadio)
-        elif value == "Off":
-            self.offRadio.setChecked(True)
-            self._onRadioClicked(self.offRadio)
-        else:
-            self.customRadio.setChecked(True)
-            self._onRadioClicked(self.customRadio)
-            self._showProxyUrl(value)
+        self._loadProxy()
 
         self.buttonGroup.buttonClicked.connect(self._onRadioClicked)
-        self.protocolCombo.currentTextChanged.connect(self._refreshCompatBanner)
+        self.protocolCombo.activated.connect(self._onProxyFieldChanged)
+        self.ipEdit.editingFinished.connect(self._onProxyFieldChanged)
+        self.portEdit.editingFinished.connect(self._onProxyFieldChanged)
+        self.userEdit.editingFinished.connect(self._onProxyFieldChanged)
+        self.passEdit.editingFinished.connect(self._onProxyFieldChanged)
         self._refreshCompatBanner()
 
     def _initLayout(self) -> None:
@@ -200,6 +227,24 @@ class ProxySettingCard(ExpandGroupSettingCard):
         self.addGroupWidget(self.customWidget)
         self.addGroupWidget(self.credWidget)
 
+    def _loadProxy(self) -> None:
+        value = self._configItem.value
+        if value == "Auto":
+            self.autoRadio.setChecked(True)
+            self._onRadioClicked(self.autoRadio)
+        elif value == "Off":
+            self.offRadio.setChecked(True)
+            self._onRadioClicked(self.offRadio)
+        else:
+            self.customRadio.setChecked(True)
+            self._showProxyUrl(value)
+            self._onRadioClicked(self.customRadio)
+
+    def setExpand(self, isExpand):
+        super().setExpand(isExpand)
+        if not isExpand:
+            self._loadProxy()
+
     def _onRadioClicked(self, button) -> None:
         self.choiceLabel.setText(button.text())
         isCustom = button is self.customRadio
@@ -214,6 +259,7 @@ class ProxySettingCard(ExpandGroupSettingCard):
         elif button is self.customRadio:
             if self.ipEdit.text() == self.tr("未检测到代理"):
                 self.ipEdit.clear()
+            self._onProxyFieldChanged()
         self._refreshCompatBanner()
 
     def _showProxyUrl(self, url: str | None) -> None:
@@ -273,13 +319,26 @@ class ProxySettingCard(ExpandGroupSettingCard):
         cred = f"{user}:{password}@" if user or password else ""
         return f"{protocol}://{cred}{ip}:{port}"
 
-    def leaveEvent(self, event):
-        if self.customRadio.isChecked():
-            url = self._buildProxyUrl()
-            if cfg.proxyServer.validator.validate(url):
-                cfg.set(self._configItem, url)
-            else:
-                self.autoRadio.click()
+    def _onProxyFieldChanged(self) -> None:
+        if not self.customRadio.isChecked():
+            self.ipEdit.setError(False)
+            self.portEdit.setError(False)
+            return
+
+        url = self._buildProxyUrl()
+        if cfg.proxyServer.validator.validate(url):
+            cfg.set(self._configItem, url)
+            self.choiceLabel.setText(url)
+            self.ipEdit.setError(False)
+            self.portEdit.setError(False)
+        else:
+            self.choiceLabel.setText(self.customRadio.text())
+            ip = self.ipEdit.text().strip()
+            port = self.portEdit.text().strip()
+            self.ipEdit.setError(bool(ip) and not HOST_PATTERN.match(ip))
+            self.portEdit.setError(bool(port) and not PORT_PATTERN.match(port))
+        self._refreshCompatBanner()
+
 
 
 class SelectFolderSettingCard(SettingCard):
@@ -377,7 +436,7 @@ class DefaultHeadersSettingCard(PushSettingCard):
 
     def _onClicked(self) -> None:
         from qfluentwidgets import MessageBoxBase, SubtitleLabel, TransparentToolButton
-        from app.view.components.editors import AutoSizingEdit, headersToText, headersFromText
+        from app.view.components.editors import HeadersEditor
 
         dialog = MessageBoxBase(self.window())
         dialog.widget.setMinimumWidth(500)
@@ -391,16 +450,16 @@ class DefaultHeadersSettingCard(PushSettingCard):
         titleRow.addWidget(resetButton)
         dialog.viewLayout.addLayout(titleRow)
 
-        edit = AutoSizingEdit(dialog, minimumVisibleLines=8, maximumVisibleLines=20)
-        edit.setPlainText(headersToText(cfg.defaultRequestHeaders.value))
-        dialog.viewLayout.addWidget(edit)
+        editor = HeadersEditor(dialog)
+        editor.setHeaders(dict(cfg.defaultRequestHeaders.value))
+        dialog.viewLayout.addWidget(editor)
 
         resetButton.clicked.connect(
-            lambda: edit.setPlainText(headersToText(dict(BASE_HEADERS)))
+            lambda: editor.setHeaders(dict(BASE_HEADERS))
         )
 
         if dialog.exec():
-            headers = headersFromText(edit.toPlainText())
+            headers = editor.headers()
             if headers:
                 cfg.set(cfg.defaultRequestHeaders, headers)
 
