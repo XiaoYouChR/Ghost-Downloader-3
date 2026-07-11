@@ -431,7 +431,7 @@ export function createResourceBridge(options: {
         source: "download",
         title: filename,
         payload: {
-          url: finalUrl,
+          url: downloadItem.url,
           headers,
           filename: filename,
           size:
