@@ -336,8 +336,20 @@
   "interceptUnknownSize": {
     "message": "Intercept when size unknown"
   },
-  "skipImages": {
-    "message": "Skip images"
+  "skipExtensions": {
+    "message": "Skip extensions"
+  },
+  "skipExtensionsHint": {
+    "message": "File extensions to skip, separated by commas"
+  },
+  "catImages": {
+    "message": "Images"
+  },
+  "catDocuments": {
+    "message": "Documents"
+  },
+  "catAudio": {
+    "message": "Audio"
   },
   "invertSelection": {
     "message": "Invert Selection"

@@ -336,8 +336,20 @@
   "interceptUnknownSize": {
     "message": "サイズ不明時にインターセプト"
   },
-  "skipImages": {
-    "message": "画像をスキップ"
+  "skipExtensions": {
+    "message": "スキップする拡張子"
+  },
+  "skipExtensionsHint": {
+    "message": "インターセプトしないファイル拡張子をカンマ区切りで入力"
+  },
+  "catImages": {
+    "message": "画像"
+  },
+  "catDocuments": {
+    "message": "文書"
+  },
+  "catAudio": {
+    "message": "音声"
   },
   "invertSelection": {
     "message": "選択を反転"

@@ -19,10 +19,25 @@ import {DEFAULT_SERVER_URL, EXTENSION_VERSION} from "../../shared/constants";
 import {
     BYPASS_MODIFIER_KEY,
     MIN_TAKE_SIZE_KB_KEY,
-    SHOULD_SKIP_IMAGES_KEY,
+    SKIP_EXTENSIONS_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
 } from "../../background/constants";
 import type {ThemePreference} from "../../shared/types";
+
+const SKIP_CATEGORIES = [
+  { key: "catImages", extensions: ["jpg", "jpeg", "png", "gif", "webp", "svg", "avif", "bmp", "ico"] },
+  { key: "catDocuments", extensions: ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt"] },
+  { key: "catAudio", extensions: ["mp3", "flac", "wav", "aac", "ogg", "m4a", "wma"] },
+];
+
+function parseExtSet(raw: string): Set<string> {
+  const result = new Set<string>();
+  for (const part of raw.split(",")) {
+    const ext = part.trim().replace(/^\./, "").toLowerCase();
+    if (ext) { result.add(ext); }
+  }
+  return result;
+}
 
 const useStyles = makeStyles({
   root: {
@@ -87,7 +102,7 @@ export function SettingsPage({
   const [serverDirty, setServerDirty] = useState(false);
   const [minSizeKB, setMinSizeKB] = useState(0);
   const [takeUnknownSize, setInterceptUnknown] = useState(true);
-  const [skipImages, setSkipImages] = useState(false);
+  const [skipExtensionsRaw, setSkipExtensionsRaw] = useState("");
   const [bypassModifier, setBypassModifier] = useState("alt");
   const [installType, setInstallType] = useState("");
 
@@ -108,12 +123,12 @@ export function SettingsPage({
     chrome.storage.local.get({
       [MIN_TAKE_SIZE_KB_KEY]: 0,
       [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
-      [SHOULD_SKIP_IMAGES_KEY]: false,
+      [SKIP_EXTENSIONS_KEY]: "",
       [BYPASS_MODIFIER_KEY]: "alt",
     }, (result) => {
       setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
       setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
-      setSkipImages(Boolean(result[SHOULD_SKIP_IMAGES_KEY] ?? false));
+      setSkipExtensionsRaw(String(result[SKIP_EXTENSIONS_KEY] ?? ""));
       setBypassModifier(String(result[BYPASS_MODIFIER_KEY] || "alt"));
     });
   }, []);
@@ -264,12 +279,39 @@ export function SettingsPage({
           />
         </Field>
 
-        <Field label={chrome.i18n.getMessage("skipImages")}>
-          <Switch
-            checked={skipImages}
-            onChange={(_event, data: SwitchOnChangeData) => {
-              setSkipImages(data.checked);
-              void chrome.storage.local.set({ [SHOULD_SKIP_IMAGES_KEY]: data.checked });
+        <Field label={chrome.i18n.getMessage("skipExtensions")} hint={chrome.i18n.getMessage("skipExtensionsHint")}>
+          <div style={{ display: "flex", gap: "4px", marginBottom: "8px", flexWrap: "wrap" }}>
+            {SKIP_CATEGORIES.map((cat) => {
+              const currentSet = parseExtSet(skipExtensionsRaw);
+              const active = cat.extensions.every((e) => currentSet.has(e));
+              return (
+                <Button
+                  key={cat.key}
+                  size="small"
+                  appearance={active ? "primary" : "outline"}
+                  onClick={() => {
+                    const current = parseExtSet(skipExtensionsRaw);
+                    if (active) {
+                      cat.extensions.forEach((e) => current.delete(e));
+                    } else {
+                      cat.extensions.forEach((e) => current.add(e));
+                    }
+                    const next = [...current].join(", ");
+                    setSkipExtensionsRaw(next);
+                    void chrome.storage.local.set({ [SKIP_EXTENSIONS_KEY]: next });
+                  }}
+                >
+                  {chrome.i18n.getMessage(cat.key)}
+                </Button>
+              );
+            })}
+          </div>
+          <Input
+            value={skipExtensionsRaw}
+            placeholder="jpg, png, gif, webp"
+            onChange={(_event, data) => {
+              setSkipExtensionsRaw(data.value);
+              void chrome.storage.local.set({ [SKIP_EXTENSIONS_KEY]: data.value });
             }}
           />
         </Field>

@@ -13,7 +13,7 @@ import {
     BYPASS_MODIFIER_KEY,
     IS_MEDIA_BUTTON_ENABLED_KEY,
     MIN_TAKE_SIZE_KB_KEY,
-    SHOULD_SKIP_IMAGES_KEY,
+    SKIP_EXTENSIONS_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
     SHOULD_TAKE_DOWNLOADS_KEY,
 } from "./background/constants";
@@ -28,6 +28,15 @@ import {
 import {onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
 import {loadBaseIcons, updateIconForTasks} from "./background/icon-progress";
 import {enqueue, flush, pendingCount} from "./background/task-queue";
+
+function parseExtensions(raw: string): Set<string> {
+  const result = new Set<string>();
+  for (const part of raw.split(",")) {
+    const ext = part.trim().replace(/^\./, "").toLowerCase();
+    if (ext) { result.add(ext); }
+  }
+  return result;
+}
 
 async function flushQueue(): Promise<void> {
   const sent = await flush((payload) => desktopBridge.sendRequest(payload));
@@ -80,7 +89,7 @@ let shouldTakeDownloads = true;
 let isMediaButtonEnabled = true;
 let minTakeSizeKB = 0;
 let shouldTakeUnknownSize = true;
-let shouldSkipImages = false;
+let skipExtensions: Set<string> = new Set();
 
 function imageFilename(url: string, alt: string): string {
   try {
@@ -181,20 +190,20 @@ async function setupBackground() {
     [IS_MEDIA_BUTTON_ENABLED_KEY]: boolean;
     [MIN_TAKE_SIZE_KB_KEY]: number;
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: boolean;
-    [SHOULD_SKIP_IMAGES_KEY]: boolean;
+    [SKIP_EXTENSIONS_KEY]: string;
   }>({
     [SHOULD_TAKE_DOWNLOADS_KEY]: true,
     [IS_MEDIA_BUTTON_ENABLED_KEY]: true,
     [MIN_TAKE_SIZE_KB_KEY]: 0,
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
-    [SHOULD_SKIP_IMAGES_KEY]: false,
+    [SKIP_EXTENSIONS_KEY]: "",
   });
 
   shouldTakeDownloads = Boolean(localState[SHOULD_TAKE_DOWNLOADS_KEY] ?? true);
   isMediaButtonEnabled = Boolean(localState[IS_MEDIA_BUTTON_ENABLED_KEY] ?? true);
   minTakeSizeKB = Number(localState[MIN_TAKE_SIZE_KB_KEY]) || 0;
   shouldTakeUnknownSize = Boolean(localState[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true);
-  shouldSkipImages = Boolean(localState[SHOULD_SKIP_IMAGES_KEY] ?? false);
+  skipExtensions = parseExtensions(String(localState[SKIP_EXTENSIONS_KEY] ?? ""));
 
   try {
     const selfInfo = await chrome.management.getSelf();
@@ -278,8 +287,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (changes[SHOULD_TAKE_UNKNOWN_SIZE_KEY]) {
     shouldTakeUnknownSize = Boolean(changes[SHOULD_TAKE_UNKNOWN_SIZE_KEY].newValue ?? true);
   }
-  if (changes[SHOULD_SKIP_IMAGES_KEY]) {
-    shouldSkipImages = Boolean(changes[SHOULD_SKIP_IMAGES_KEY].newValue ?? false);
+  if (changes[SKIP_EXTENSIONS_KEY]) {
+    skipExtensions = parseExtensions(String(changes[SKIP_EXTENSIONS_KEY].newValue ?? ""));
   }
 });
 
@@ -346,8 +355,10 @@ async function takeBrowserDownload(
     return;
   }
 
-  if (shouldSkipImages && downloadItem.mime?.startsWith("image/")) {
-    return;
+  if (skipExtensions.size > 0) {
+    const filename = downloadItem.filename || new URL(finalUrl).pathname.split("/").pop() || "";
+    const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
+    if (ext && skipExtensions.has(ext)) { return; }
   }
 
   if (minTakeSizeKB > 0) {

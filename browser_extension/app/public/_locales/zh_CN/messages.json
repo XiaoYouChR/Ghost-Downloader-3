@@ -392,8 +392,20 @@
   "interceptUnknownSize": {
     "message": "大小未知时接管"
   },
-  "skipImages": {
-    "message": "跳过接管图片"
+  "skipExtensions": {
+    "message": "跳过接管的扩展名"
+  },
+  "skipExtensionsHint": {
+    "message": "填写不需要接管的文件扩展名，用逗号分隔"
+  },
+  "catImages": {
+    "message": "图片"
+  },
+  "catDocuments": {
+    "message": "文档"
+  },
+  "catAudio": {
+    "message": "音频"
   },
   "invertSelection": {
     "message": "反选"

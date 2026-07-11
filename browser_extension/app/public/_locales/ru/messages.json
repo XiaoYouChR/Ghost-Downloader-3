@@ -336,8 +336,20 @@
   "interceptUnknownSize": {
     "message": "Перехватывать при неизвестном размере"
   },
-  "skipImages": {
-    "message": "Пропускать изображения"
+  "skipExtensions": {
+    "message": "Пропускать расширения"
+  },
+  "skipExtensionsHint": {
+    "message": "Расширения файлов для пропуска, через запятую"
+  },
+  "catImages": {
+    "message": "Изображения"
+  },
+  "catDocuments": {
+    "message": "Документы"
+  },
+  "catAudio": {
+    "message": "Аудио"
   },
   "invertSelection": {
     "message": "Инвертировать выделение"

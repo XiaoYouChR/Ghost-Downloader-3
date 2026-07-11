@@ -336,8 +336,20 @@
   "interceptUnknownSize": {
     "message": "Interceptar quando tamanho desconhecido"
   },
-  "skipImages": {
-    "message": "Pular imagens"
+  "skipExtensions": {
+    "message": "Extensões para pular"
+  },
+  "skipExtensionsHint": {
+    "message": "Extensões de arquivo para pular, separadas por vírgulas"
+  },
+  "catImages": {
+    "message": "Imagens"
+  },
+  "catDocuments": {
+    "message": "Documentos"
+  },
+  "catAudio": {
+    "message": "Áudio"
   },
   "invertSelection": {
     "message": "Inverter seleção"
