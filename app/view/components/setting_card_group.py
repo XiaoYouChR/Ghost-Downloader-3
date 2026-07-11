@@ -7,7 +7,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    FluentIcon, FluentIconBase, FluentStyleSheet, IconWidget, SettingCard,
+    CardWidget, FluentIcon, FluentIconBase, FluentStyleSheet, SettingCard,
     StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
@@ -41,15 +41,13 @@ class CardPaintFilter(QObject):
         return event.type() == QEvent.Type.Paint
 
 
-class CollapsibleSettingCardGroup(QWidget):
+class CollapsibleSettingCardGroup(CardWidget):
     orderChanged = Signal()
 
     def __init__(self, icon: FluentIconBase, title: str, key: str, parent=None):
         super().__init__(parent)
         self.setObjectName(key)
 
-        self.iconWidget = IconWidget(icon, self)
-        self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = StrongBodyLabel(title, self)
         self.moveUpButton = TransparentToolButton(FluentIcon.UP, self)
         self.moveDownButton = TransparentToolButton(FluentIcon.DOWN, self)
@@ -73,12 +71,12 @@ class CollapsibleSettingCardGroup(QWidget):
             btn.setIconSize(QSize(12, 12))
         self.moveUpButton.setVisible(False)
         self.moveDownButton.setVisible(False)
+        self.titleLabel.setFixedHeight(26)
 
         self._collapseAnim.setDuration(200)
         self._collapseAnim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         FluentStyleSheet.SETTING_CARD_GROUP.apply(self)
-        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
 
         self._collapsed = self.objectName() not in cfg.expandedSettingGroups.value
         self.cardContainer.setMaximumHeight(0 if self._collapsed else QWIDGETSIZE_MAX)
@@ -87,8 +85,6 @@ class CollapsibleSettingCardGroup(QWidget):
     def _initLayout(self) -> None:
         self.headerLayout.setContentsMargins(16, 4, 8, 4)
         self.headerLayout.setSpacing(4)
-        self.headerLayout.addWidget(self.iconWidget)
-        self.headerLayout.addSpacing(4)
         self.headerLayout.addWidget(self.titleLabel)
         self.headerLayout.addStretch(1)
         self.headerLayout.addWidget(self.moveUpButton)
@@ -102,7 +98,7 @@ class CollapsibleSettingCardGroup(QWidget):
         self.vBoxLayout.setSpacing(0)
         self.vBoxLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.vBoxLayout.addLayout(self.headerLayout)
-        self.vBoxLayout.addWidget(self.cardContainer, 1)
+        self.vBoxLayout.addWidget(self.cardContainer)
 
     def _bind(self) -> None:
         self.expandButton.clicked.connect(self._onExpandClicked)
@@ -136,23 +132,18 @@ class CollapsibleSettingCardGroup(QWidget):
             self._onExpandClicked()
         super().mousePressEvent(event)
 
-    def event(self, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.HoverEnter:
-            self.moveUpButton.setVisible(True)
-            self.moveDownButton.setVisible(True)
-        elif event.type() == QEvent.Type.HoverLeave:
-            self.moveUpButton.setVisible(False)
-            self.moveDownButton.setVisible(False)
-        return super().event(event)
+    def enterEvent(self, event) -> None:
+        super().enterEvent(event)
+        self.moveUpButton.setVisible(True)
+        self.moveDownButton.setVisible(True)
 
-    def paintEvent(self, event) -> None:
-        super().paintEvent(event)
-        with QPainter(self) as painter:
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            isDark = isDarkTheme()
-            painter.setBrush(QColor(255, 255, 255, 13) if isDark else QColor(255, 255, 255, 200))
-            painter.setPen(QColor(0, 0, 0, 96) if isDark else QColor(0, 0, 0, 24))
-            painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 5, 5)
+    def leaveEvent(self, event) -> None:
+        super().leaveEvent(event)
+        self.moveUpButton.setVisible(False)
+        self.moveDownButton.setVisible(False)
+
+    def _normalBackgroundColor(self):
+        return QColor(255, 255, 255, 13 if isDarkTheme() else 170)
 
     def _onExpandClicked(self) -> None:
         self._setCollapsed(not self._collapsed)
