@@ -52,7 +52,7 @@ class MobileTaskPage(TaskPage):
         filterToolBarLayout.setContentsMargins(10, 0, 10, 4)
         filterToolBarLayout.setSpacing(6)
         filterToolBarLayout.addWidget(self.sortButton)
-        filterToolBarLayout.addWidget(self.filterButton)
+        filterToolBarLayout.addWidget(self.filterSegment)
         filterToolBarLayout.addWidget(self.categoryFilterButton)
         filterToolBarLayout.addWidget(self.searchLineEdit, 1)
 

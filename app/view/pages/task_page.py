@@ -8,9 +8,9 @@ from PySide6.QtGui import QActionGroup, QColor, QCursor, QPainter
 from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
-    FluentIcon, IconWidget, MenuIndicatorType, PrimaryPushButton, PushButton,
-    RoundMenu, SearchLineEdit, ToggleToolButton, ToolButton, ToolTipFilter,
-    isDarkTheme,
+    FluentIcon, IconWidget, MenuIndicatorType, PushButton,
+    RoundMenu, SearchLineEdit, SegmentedToggleToolWidget, ToggleToolButton,
+    ToolButton, ToolTipFilter, isDarkTheme,
 )
 
 from app.view.components.scroll_area import ScrollArea
@@ -37,6 +37,12 @@ class FilterMode(IntEnum):
 FILTER_TO_STATUSES = {
     FilterMode.ACTIVE: {TaskStatus.RUNNING, TaskStatus.WAITING, TaskStatus.PAUSED},
     FilterMode.COMPLETED: {TaskStatus.COMPLETED, TaskStatus.FAILED},
+}
+
+ROUTE_TO_FILTER = {
+    "all": FilterMode.ALL,
+    "active": FilterMode.ACTIVE,
+    "completed": FilterMode.COMPLETED,
 }
 
 
@@ -141,14 +147,13 @@ class TaskPage(QWidget):
 
         # toolbar
         self.toolBar = QWidget(self)
-        self.startAllButton = PrimaryPushButton(FluentIcon.PLAY, self.tr("全部开始"), self.toolBar)
+        self.startAllButton = PushButton(FluentIcon.PLAY, self.tr("全部开始"), self.toolBar)
         self.pauseAllButton = PushButton(FluentIcon.PAUSE, self.tr("全部暂停"), self.toolBar)
         self.selectButton = ToolButton(FluentIcon.CLEAR_SELECTION, self.toolBar)
         self.planButton = ToggleToolButton(FluentIcon.DATE_TIME, self.toolBar)
         self.rateLimitButton = ToggleToolButton(FluentIcon.SPEED_OFF, self.toolBar)
         self.speedBadge = IconBodyLabel("0.00B/s", FluentIcon.SPEED_HIGH, self.toolBar)
         self.sortButton = DropDownToolButton(FluentIcon.LAYOUT, self.toolBar)
-        self.filterButton = DropDownToolButton(FluentIcon.FILTER, self.toolBar)
         self.categoryFilterButton = DropDownToolButton(FluentIcon.TAG, self.toolBar)
         self.searchLineEdit = SearchLineEdit(self.toolBar)
 
@@ -162,12 +167,8 @@ class TaskPage(QWidget):
         self.ascendingAction = Action(FluentIcon.UP, self.tr("顺序"), self, checkable=True)
         self.descendingAction = Action(FluentIcon.DOWN, self.tr("倒序"), self, checkable=True)
 
-        # filter menu
-        self.filterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
-        self.filterGroup = QActionGroup(self)
-        self.allFilterAction = Action(FluentIcon.FILTER, self.tr("全部任务"), self, checkable=True)
-        self.activeFilterAction = Action(FluentIcon.DOWNLOAD, self.tr("活动任务"), self, checkable=True)
-        self.completedFilterAction = Action(FluentIcon.TRAIN, self.tr("完成任务"), self, checkable=True)
+        # filter segment
+        self.filterSegment = SegmentedToggleToolWidget(self.toolBar)
 
         # category filter menu
         self.categoryFilterMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
@@ -202,14 +203,14 @@ class TaskPage(QWidget):
         self.createdAtSortAction.setChecked(True)
         self.descendingAction.setChecked(True)
 
-        self.filterGroup.addAction(self.allFilterAction)
-        self.filterGroup.addAction(self.activeFilterAction)
-        self.filterGroup.addAction(self.completedFilterAction)
-        self.filterMenu.addAction(self.allFilterAction)
-        self.filterMenu.addAction(self.activeFilterAction)
-        self.filterMenu.addAction(self.completedFilterAction)
-        self.filterButton.setMenu(self.filterMenu)
-        self.allFilterAction.setChecked(True)
+        self.filterSegment.addItem("all", FluentIcon.HOME)
+        self.filterSegment.addItem("active", FluentIcon.DOWNLOAD)
+        self.filterSegment.addItem("completed", FluentIcon.ACCEPT)
+        self.filterSegment.setCurrentItem("all")
+        for key, tip in (("all", self.tr("全部任务")), ("active", self.tr("活动任务")), ("completed", self.tr("完成任务"))):
+            w = self.filterSegment.widget(key)
+            w.setToolTip(tip)
+            w.installEventFilter(ToolTipFilter(w))
 
         self.categoryFilterButton.setMenu(self.categoryFilterMenu)
         self.categoryFilterButton.setVisible(cfg.isCategoryEnabled.value)
@@ -237,6 +238,7 @@ class TaskPage(QWidget):
     def _initLayout(self) -> None:
         toolBarLayout = QHBoxLayout(self.toolBar)
         toolBarLayout.setContentsMargins(16, 10, 16, 10)
+        toolBarLayout.addWidget(self.filterSegment)
         toolBarLayout.addWidget(self.startAllButton)
         toolBarLayout.addWidget(self.pauseAllButton)
         toolBarLayout.addWidget(self.selectButton)
@@ -246,7 +248,6 @@ class TaskPage(QWidget):
         toolBarLayout.addWidget(self.speedBadge)
         toolBarLayout.addStretch(1)
         toolBarLayout.addWidget(self.sortButton)
-        toolBarLayout.addWidget(self.filterButton)
         toolBarLayout.addWidget(self.categoryFilterButton)
         toolBarLayout.addWidget(self.searchLineEdit)
 
@@ -278,9 +279,7 @@ class TaskPage(QWidget):
         self.ascendingAction.triggered.connect(lambda: self.setSortOrder(True))
         self.descendingAction.triggered.connect(lambda: self.setSortOrder(False))
 
-        self.allFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ALL))
-        self.activeFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.ACTIVE))
-        self.completedFilterAction.triggered.connect(lambda: self.setFilterMode(FilterMode.COMPLETED))
+        self.filterSegment.currentItemChanged.connect(lambda key: self.setFilterMode(ROUTE_TO_FILTER[key]))
 
         self.searchLineEdit.textChanged.connect(self.setSearchText)
         self.searchLineEdit.clearSignal.connect(lambda: self.setSearchText(""))
