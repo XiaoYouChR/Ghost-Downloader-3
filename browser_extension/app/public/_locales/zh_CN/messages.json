@@ -107,6 +107,9 @@
   "downloadWithGhostDownloader": {
     "message": "使用 Ghost Downloader 下载"
   },
+  "saveAsWithGhostDownloader": {
+    "message": "用 Ghost Downloader 另存为"
+  },
   "downloading": {
     "message": "下载中"
   },
@@ -746,6 +749,9 @@
   },
   "waitingForDouyinSeparateTracks": {
     "message": "等待 Douyin 音视频分轨齐全"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "等待 Instagram 音视频分轨齐全"
   },
   "waitingForResource": {
     "message": "等待资源…"

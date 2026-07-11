@@ -53,6 +53,44 @@ export function douyinKindOf(url: string): "video" | "audio" | "muxed" | "" {
   return "";
 }
 
+export function isInstagramCdnUrl(url: string): boolean {
+  return hostEndsWith(url, "cdninstagram.com") || hostEndsWith(url, "fbcdn.net");
+}
+
+function parseEfg(url: string): Record<string, unknown> | null {
+  try {
+    const efg = new URL(url).searchParams.get("efg");
+    if (!efg) { return null; }
+    return JSON.parse(atob(efg));
+  } catch {
+    return null;
+  }
+}
+
+export function instagramVencodeTag(url: string): string {
+  const efg = parseEfg(url);
+  if (!efg || typeof efg !== "object") { return ""; }
+  const tag = (efg as Record<string, unknown>).vencode_tag;
+  return typeof tag === "string" ? tag : "";
+}
+
+export function instagramAssetId(url: string): string {
+  const efg = parseEfg(url);
+  if (!efg || typeof efg !== "object") { return ""; }
+  const id = (efg as Record<string, unknown>).xpv_asset_id;
+  if (typeof id === "string") { return id; }
+  if (typeof id === "number") { return String(id); }
+  return "";
+}
+
+export function instagramKindOf(url: string): "video" | "audio" | "" {
+  const tag = instagramVencodeTag(url);
+  if (!tag) { return ""; }
+  if (tag.includes("_audio")) { return "audio"; }
+  if (tag.includes("dash_")) { return "video"; }
+  return "";
+}
+
 export function classifyTrackRole(url: string, contentType: string): TrackRole {
   const douyin = douyinKindOf(url);
   if (douyin === "muxed") { return "muxed"; }

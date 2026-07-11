@@ -1,5 +1,6 @@
 import {isCatCatchMedia} from "../../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
+import {instagramAssetId, isInstagramCdnUrl} from "../resolution/url-classify";
 
 import {AttributionLedger} from "./attribution-ledger";
 import {selectMediaForPage} from "../resolution/strategy";
@@ -52,6 +53,10 @@ function urlIdHints(url: string): Set<string> {
   for (const key of VIDEO_ID_QUERY_KEYS) {
     const value = parsed.searchParams.get(key);
     if (value && value.length >= 4) { result.add(`${key}=${value}`); }
+  }
+  if (isInstagramCdnUrl(url)) {
+    const assetId = instagramAssetId(url);
+    if (assetId) { result.add(`xpv_asset_id=${assetId}`); }
   }
   return result;
 }

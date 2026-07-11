@@ -91,6 +91,9 @@
   "downloadWithGhostDownloader": {
     "message": "Скачать через Ghost Downloader"
   },
+  "saveAsWithGhostDownloader": {
+    "message": "Сохранить как через Ghost Downloader"
+  },
   "downloading": {
     "message": "Загрузка"
   },
@@ -640,6 +643,9 @@
   },
   "waitingForDouyinSeparateTracks": {
     "message": "Ожидание готовности раздельных аудио и видео дорожек Douyin"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "Ожидание готовности раздельных аудио и видео дорожек Instagram"
   },
   "waitingForResource": {
     "message": "Ожидание ресурса…"

@@ -91,6 +91,9 @@
   "downloadWithGhostDownloader": {
     "message": "Ghost Downloader でダウンロード"
   },
+  "saveAsWithGhostDownloader": {
+    "message": "Ghost Downloader で名前を付けて保存"
+  },
   "downloading": {
     "message": "ダウンロード中"
   },
@@ -640,6 +643,9 @@
   },
   "waitingForDouyinSeparateTracks": {
     "message": "Douyin の音声・動画トラックが揃うのを待機中"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "Instagram の音声・動画トラックが揃うのを待機中"
   },
   "waitingForResource": {
     "message": "リソース待機中…"
