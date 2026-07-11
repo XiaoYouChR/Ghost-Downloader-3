@@ -331,6 +331,7 @@ class UniversalTaskCard(TaskCard):
         from qfluentwidgets import MessageBox
         dialog = MessageBox(self.tr("删除任务"), self.tr("确定要删除这个下载任务吗？"), self.window())
         deleteFiles = CheckBox(self.tr("同时删除已下载的文件"))
+        deleteFiles.setChecked(cfg.shouldDeleteFilesOnRemove.value)
         dialog.textLayout.addWidget(deleteFiles)
         if dialog.exec():
             taskService.delete(self._task, deleteFiles.isChecked())

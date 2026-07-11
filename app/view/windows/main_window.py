@@ -107,12 +107,14 @@ class MainWindow(MSFluentWindow):
         self._draft.taskConfirmed.connect(taskService.add)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
+        self.titleBar.closeBtn.clicked.disconnect(self.close)
+        self.titleBar.closeBtn.clicked.connect(self._onCloseClicked)
 
         if sys.platform == "win32":
             cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffect)
         if sys.platform == "darwin":
             from PySide6.QtGui import QKeySequence, QShortcut
-            QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self.close)
+            QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self._onCloseClicked)
 
     def addUrls(self, urls: list[str]) -> None:
         dialog = self._draftDialog
@@ -220,46 +222,47 @@ class MainWindow(MSFluentWindow):
         from app.platform.desktop import revealInFolder
         revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
 
-    def closeEvent(self, event) -> None:
-        event.ignore()
-
-        mode = CloseMode.BACKGROUND
-
-        if event.spontaneous():
-            from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
-            for dialog in self.findChildren(MaskDialogBase):
-                if dialog.isVisible():
-                    dialog.reject()
-                    return
-            if sys.platform == "darwin" and self.isFullScreen():
-                self.showNormal()
-                QTimer.singleShot(1000, self, self.close)
+    def _onCloseClicked(self) -> None:
+        from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+        for dialog in self.findChildren(MaskDialogBase):
+            if dialog.isVisible():
+                dialog.reject()
                 return
+        if sys.platform == "darwin" and self.isFullScreen():
+            self.showNormal()
+            QTimer.singleShot(1000, self._onCloseClicked)
+            return
 
-            mode = cfg.closeMode.value
-            if mode == CloseMode.ASK:
-                from qfluentwidgets import CheckBox
-                dialog = MessageBox(
-                    self.tr("关闭主窗口"),
-                    self.tr("继续在后台运行后，可通过系统托盘图标重新打开主窗口。"),
-                    self,
-                )
-                dialog.yesButton.setText(self.tr("退出程序"))
-                dialog.cancelButton.setText(self.tr("继续在后台运行"))
-                checkbox = CheckBox(self.tr("记住我的选择"), dialog)
-                dialog.textLayout.addWidget(checkbox)
-                mode = CloseMode.QUIT if dialog.exec() else CloseMode.BACKGROUND
-                if checkbox.isChecked():
-                    cfg.set(cfg.closeMode, mode)
+        mode = cfg.closeMode.value
+        if mode == CloseMode.ASK:
+            from qfluentwidgets import CheckBox
+            dialog = MessageBox(
+                self.tr("是否完全退出程序？"),
+                self.tr("后台运行时可通过系统托盘图标重新打开。"),
+                self,
+            )
+            dialog.yesButton.setText(self.tr("退出程序"))
+            dialog.cancelButton.setText(self.tr("继续在后台运行"))
+            checkbox = CheckBox(self.tr("记住我的选择"), dialog)
+            dialog.textLayout.addWidget(checkbox)
+            mode = CloseMode.QUIT if dialog.exec() else CloseMode.BACKGROUND
+            if checkbox.isChecked():
+                cfg.set(cfg.closeMode, mode)
 
+        self.close()
+        if mode == CloseMode.QUIT:
+            QApplication.quit()
+
+    def closeEvent(self, event) -> None:
+        if event.spontaneous():
+            event.ignore()
+            self._onCloseClicked()
+            return
         if not self.isMaximized():
             cfg.set(cfg.geometry, self.geometry())
         from app.view.qfw_patch import unregisterRouter
         unregisterRouter(self.stackedWidget)
         event.accept()
-
-        if mode == CloseMode.QUIT:
-            QApplication.quit()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)

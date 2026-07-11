@@ -465,6 +465,7 @@ class TaskPage(QWidget):
         from qfluentwidgets import CheckBox, MessageBox
         dialog = MessageBox(self.tr("删除任务"), self.tr("确定要删除选中的下载任务吗？"), self.window())
         deleteFiles = CheckBox(self.tr("同时删除已下载的文件"))
+        deleteFiles.setChecked(cfg.shouldDeleteFilesOnRemove.value)
         dialog.textLayout.addWidget(deleteFiles)
         if dialog.exec():
             self._onDeleteConfirmed(deleteFiles.isChecked())
