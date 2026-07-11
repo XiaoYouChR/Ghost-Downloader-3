@@ -12,11 +12,13 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import (
     SettingCard, PushSettingCard, RangeConfigItem, SpinBox, DoubleSpinBox,
-    ExpandGroupSettingCard, ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
+    ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
     PrimaryPushButton, InfoBar, InfoBarPosition,
     IconWidget,
 )
+
+from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.config.cfg import cfg, proxy, BASE_HEADERS
 from app.view.components.banners import WarningBanner
@@ -131,7 +133,7 @@ class LineEditSettingCard(SettingCard):
         )
 
 
-class ProxySettingCard(ExpandGroupSettingCard):
+class ProxySettingCard(CollapsibleSettingCard):
 
     def __init__(self, configItem: ConfigItem, parent=None):
         super().__init__(FluentIcon.GLOBE, self.tr("代理"),
@@ -298,10 +300,6 @@ class ProxySettingCard(ExpandGroupSettingCard):
         else:
             self.compatBanner.hide()
 
-        h = self.viewLayout.sizeHint().height()
-        self.spaceWidget.setFixedHeight(h)
-        if self.isExpand:
-            self.setFixedHeight(self.card.height() + h)
 
     def _buildProxyUrl(self) -> str:
         protocol = self.protocolCombo.currentText()

@@ -5,13 +5,13 @@ from PySide6.QtCore import (
     QPropertyAnimation, QSize, Qt, Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     CardWidget, FluentIcon, FluentIconBase, FluentStyleSheet, SettingCard,
     StrongBodyLabel, TransparentToolButton, isDarkTheme,
 )
 from qfluentwidgets.components.settings.expand_setting_card import (
-    ExpandBorderWidget, ExpandSettingCard, GroupSeparator,
+    ExpandBorderWidget, GroupSeparator, HeaderSettingCard,
 )
 
 from app.config.cfg import cfg
@@ -39,6 +39,70 @@ class LabelElideFilter(QObject):
 class CardPaintFilter(QObject):
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         return event.type() == QEvent.Type.Paint
+
+
+class CollapsibleSettingCard(QWidget):
+
+    def __init__(self, icon, title: str, content: str | None = None, parent=None):
+        super().__init__(parent)
+        self.isExpand = False
+
+        self.card = HeaderSettingCard(icon, title, content, self)
+        self.view = QWidget(self)
+        self.borderWidget = ExpandBorderWidget(self)
+
+        self._expandAnim = QPropertyAnimation(self.view, QByteArray(b"maximumHeight"), self)
+        self._expandAnim.setDuration(200)
+        self._expandAnim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        self.vBoxLayout = QVBoxLayout(self)
+        self.viewLayout = QVBoxLayout(self.view)
+
+        self.view.setMaximumHeight(0)
+        self.view.setObjectName("view")
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.addWidget(self.card)
+        self.vBoxLayout.addWidget(self.view)
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.viewLayout.setSpacing(0)
+
+        self.card.expandButton.clicked.connect(self._onExpandClicked)
+        self._expandAnim.finished.connect(self._onExpandFinished)
+
+        FluentStyleSheet.EXPAND_SETTING_CARD.apply(self.card)
+        FluentStyleSheet.EXPAND_SETTING_CARD.apply(self)
+
+    def addWidget(self, widget: QWidget) -> None:
+        self.card.addWidget(widget)
+
+    def addGroupWidget(self, widget: QWidget) -> None:
+        if self.viewLayout.count() >= 1:
+            self.viewLayout.addWidget(GroupSeparator(self.view))
+        widget.setParent(self.view)
+        self.viewLayout.addWidget(widget)
+
+    def setExpand(self, isExpand: bool) -> None:
+        if self.isExpand == isExpand:
+            return
+        self.isExpand = isExpand
+        self.setProperty("isExpand", isExpand)
+        self.setStyle(QApplication.style())
+        self.card.expandButton.setExpand(isExpand)
+        self._expandAnim.stop()
+        self._expandAnim.setStartValue(self.view.height())
+        self._expandAnim.setEndValue(0 if not isExpand else self.view.sizeHint().height())
+        self._expandAnim.start()
+
+    def _onExpandClicked(self) -> None:
+        self.setExpand(not self.isExpand)
+
+    def _onExpandFinished(self) -> None:
+        if self.isExpand:
+            self.view.setMaximumHeight(QWIDGETSIZE_MAX)
+
+    def setValue(self, value) -> None:
+        pass
 
 
 class CollapsibleSettingCardGroup(CardWidget):
@@ -109,7 +173,7 @@ class CollapsibleSettingCardGroup(CardWidget):
     def addSettingCard(self, card: SettingCard) -> None:
         self.cardLayout.addWidget(card)
         targets: list[QWidget] = [card]
-        if isinstance(card, ExpandSettingCard):
+        if isinstance(card, CollapsibleSettingCard):
             targets += card.findChildren(SettingCard)
             targets += card.findChildren(ExpandBorderWidget)
             targets += card.findChildren(GroupSeparator)

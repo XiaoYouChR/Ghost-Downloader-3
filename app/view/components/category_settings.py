@@ -1,9 +1,11 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
-    BodyLabel, ExpandSettingCard, FluentIcon, IconWidget,
+    BodyLabel, FluentIcon, IconWidget,
     PushButton, StrongBodyLabel, ToolButton, ToolTipFilter,
 )
+
+from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.services.category_service import Category, categoryService
 
@@ -58,7 +60,7 @@ class CategoryRowWidget(QWidget):
         return head
 
 
-class CategoryRulesCard(ExpandSettingCard):
+class CategoryRulesCard(CollapsibleSettingCard):
 
     def __init__(self, parent=None):
         super().__init__(
@@ -106,12 +108,6 @@ class CategoryRulesCard(ExpandSettingCard):
 
         self.viewLayout.addWidget(self.buttonContainer)
         self.card.setContent(self.tr("已配置 {0} 个分类").format(len(self._rowWidgets)))
-
-        h = sum(row.sizeHint().height() for row in self._rowWidgets)
-        h += self.buttonContainer.sizeHint().height()
-        self.spaceWidget.setFixedHeight(h)
-        if self.isExpand:
-            self.setFixedHeight(self.card.height() + h)
 
     def _onAddClicked(self) -> None:
         from app.view.dialogs.category_edit import CategoryEditDialog
