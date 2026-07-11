@@ -1,7 +1,3 @@
-"""在桌面上预览移动端 UI，用于开发调试。
-
-用法: uv run python android/preview.py
-"""
 import sys
 from pathlib import Path
 
