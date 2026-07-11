@@ -18,9 +18,10 @@ export function selectDouyin(ctx: ResolveContext, findUrlsByIdHint: FindUrlsById
   }
 
   if (ctx.clicked.formKind === "dash") {
-    const pair = selectMergePair(post, douyinKindOf);
-    if (pair) {
-      return { kind: "selection", selection: { kind: "merge", video: pair.video, audio: pair.audio } };
+    const video = newestMatching(post, (url) => douyinKindOf(url) === "video") ?? findByModalId(ctx, findUrlsByIdHint, "video");
+    const audio = newestMatching(post, (url) => douyinKindOf(url) === "audio") ?? findByModalId(ctx, findUrlsByIdHint, "audio");
+    if (video && audio) {
+      return { kind: "selection", selection: { kind: "merge", video, audio } };
     }
     return { kind: "pending", reason: chrome.i18n.getMessage("waitingForDouyinSeparateTracks") };
   }

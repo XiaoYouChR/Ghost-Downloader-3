@@ -91,6 +91,9 @@
   "downloadWithGhostDownloader": {
     "message": "Baixar com Ghost Downloader"
   },
+  "saveAsWithGhostDownloader": {
+    "message": "Salvar como com Ghost Downloader"
+  },
   "downloading": {
     "message": "Baixando"
   },
@@ -640,6 +643,9 @@
   },
   "waitingForDouyinSeparateTracks": {
     "message": "Aguardando faixas de áudio e vídeo separadas do Douyin"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "Aguardando faixas de áudio e vídeo separadas do Instagram"
   },
   "waitingForResource": {
     "message": "Aguardando recurso…"
