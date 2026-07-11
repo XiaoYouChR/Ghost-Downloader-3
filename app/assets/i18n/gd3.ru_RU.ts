@@ -3310,6 +3310,10 @@ FFmpeg: {2}</translation>
         <translation>Версия из магазина получает обновления после проверки</translation>
     </message>
     <message>
+        <source>Chrome 商店</source>
+        <translation>Магазин Chrome</translation>
+    </message>
+    <message>
         <location filename="../../view/pages/setting_page.py" line="136"/>
         <source>Firefox 商店</source>
         <translation>Магазин Firefox</translation>

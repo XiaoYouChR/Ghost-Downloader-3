@@ -3310,6 +3310,10 @@ FFmpeg: {2}</translation>
         <translation>ストア版拡張機能は審査後に更新されます</translation>
     </message>
     <message>
+        <source>Chrome 商店</source>
+        <translation>Chrome ストア</translation>
+    </message>
+    <message>
         <location filename="../../view/pages/setting_page.py" line="136"/>
         <source>Firefox 商店</source>
         <translation>Firefox ストア</translation>

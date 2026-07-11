@@ -3310,6 +3310,10 @@ Path: {1}</translation>
         <translation>Store version requires review before receiving updates</translation>
     </message>
     <message>
+        <source>Chrome 商店</source>
+        <translation>Chrome Store</translation>
+    </message>
+    <message>
         <location filename="../../view/pages/setting_page.py" line="136"/>
         <source>Firefox 商店</source>
         <translation>Firefox Store</translation>
