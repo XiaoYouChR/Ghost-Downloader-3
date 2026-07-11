@@ -2692,6 +2692,11 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     </message>
     <message>
         <location filename="../../view/dialogs/plan_task.py" line="20"/>
+        <source>睡眠</source>
+        <translation>Sleep</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/plan_task.py" line="21"/>
         <source>打开文件</source>
         <translation>Open File</translation>
     </message>

@@ -17,6 +17,7 @@ class PlanTaskDialog(MessageBoxBase):
         self.radioGroup = QButtonGroup(self)
         self.shutdownButton = RadioButton(self.tr("关机"), self)
         self.restartButton = RadioButton(self.tr("重启"), self)
+        self.sleepButton = RadioButton(self.tr("睡眠"), self)
         self.openFileButton = RadioButton(self.tr("打开文件"), self)
         self.pathContainer = QWidget(self)
         self.pathLayout = QHBoxLayout(self.pathContainer)
@@ -34,6 +35,7 @@ class PlanTaskDialog(MessageBoxBase):
 
         self.radioGroup.addButton(self.shutdownButton)
         self.radioGroup.addButton(self.restartButton)
+        self.radioGroup.addButton(self.sleepButton)
         self.radioGroup.addButton(self.openFileButton)
         self.radioGroup.setExclusive(True)
         self.shutdownButton.setChecked(True)
@@ -55,6 +57,7 @@ class PlanTaskDialog(MessageBoxBase):
         optionsLayout.setSpacing(10)
         optionsLayout.addWidget(self.shutdownButton)
         optionsLayout.addWidget(self.restartButton)
+        optionsLayout.addWidget(self.sleepButton)
         optionsLayout.addWidget(self.openFileButton)
 
         self.viewLayout.addWidget(self.titleLabel)
@@ -80,6 +83,8 @@ class PlanTaskDialog(MessageBoxBase):
     def selectedAction(self) -> int:
         if self.radioGroup.checkedButton() is self.restartButton:
             return PlanAction.RESTART
+        if self.radioGroup.checkedButton() is self.sleepButton:
+            return PlanAction.SLEEP
         if self.radioGroup.checkedButton() is self.openFileButton:
             return PlanAction.OPEN_FILE
         return PlanAction.SHUTDOWN

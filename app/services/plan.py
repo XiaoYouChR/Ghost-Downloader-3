@@ -4,7 +4,8 @@ from enum import IntEnum
 class PlanAction(IntEnum):
     SHUTDOWN = 0
     RESTART = 1
-    OPEN_FILE = 2
+    SLEEP = 2
+    OPEN_FILE = 3
 
 
 class Plan:
@@ -35,7 +36,7 @@ class Plan:
         if any(t.status != TaskStatus.COMPLETED for t in taskService.tasks):
             return
 
-        from app.platform.desktop import openFile, restart, shutdown
+        from app.platform.desktop import openFile, restart, shutdown, sleep
 
         action, filePath = self.action, self.filePath
         self.clear()
@@ -45,6 +46,8 @@ class Plan:
                 openFile(filePath)
         elif action == PlanAction.RESTART:
             restart()
+        elif action == PlanAction.SLEEP:
+            sleep()
         else:
             shutdown()
 

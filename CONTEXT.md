@@ -141,7 +141,7 @@ Process-level event bus with exactly four signals: `activationRequested`,
 business signals — those live on Task Service and Speed Meter.
 
 **Plan**:
-A "do X after all tasks complete" intent: shutdown, restart, or open file.
+A "do X after all tasks complete" intent: shutdown, restart, sleep, or open file.
 
 ### Verb vocabulary
 

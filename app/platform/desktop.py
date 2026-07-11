@@ -119,6 +119,17 @@ def restart() -> None:
             Popen(["shutdown", "-r", "now"])
 
 
+def sleep() -> None:
+    from subprocess import Popen
+    match sys.platform:
+        case "win32":
+            Popen(["rundll32.exe", "powrprof.dll,SetSuspendState", "0", "1", "0"])
+        case "darwin":
+            Popen(["pmset", "sleepnow"])
+        case _:
+            Popen(["systemctl", "suspend"])
+
+
 def openChromiumUrl(url: str) -> bool:
     import shutil
     import subprocess
