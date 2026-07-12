@@ -105,9 +105,6 @@ class MainWindow(MSFluentWindow):
                 from qfluentwidgets.common import qrouter
                 self.stackedWidget.currentChanged.connect(self._onCurrentInterfaceChanged)
                 qrouter.setDefaultRouteKey(self.stackedWidget, routeKey)
-            page.resize(self.stackedWidget.size())
-            if page.layout():
-                page.layout().activate()
         self.switchTo(page)
         self.navigationInterface.setCurrentItem(routeKey)
         self._updateSearchTarget(page)

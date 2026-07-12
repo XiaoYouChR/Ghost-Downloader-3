@@ -7,63 +7,44 @@ if TYPE_CHECKING:
 
 
 def patchStackedWidgetAnimation() -> None:
-    from PySide6.QtCore import QAbstractAnimation, QEasingCurve, QPoint
-    from PySide6.QtWidgets import QStackedWidget as _QStackedWidget
+    # show() 触发 layout activation → setGeometry 把 widget 拉回 (0,0)，DWM 会合成该帧。
+    # 禁用 layout 并预移 widget 到动画起点来规避。
+    from PySide6.QtCore import QEasingCurve, QPoint
+    from PySide6.QtGui import QResizeEvent
     from qfluentwidgets.components.widgets.stacked_widget import PopUpAniStackedWidget
 
-    def setCurrentIndex(self, index, needPopOut=False, showNextWidgetDirectly=True,
-                        duration=250, easingCurve=QEasingCurve.OutQuad):
-        if index < 0 or index >= self.count():
-            raise Exception(f'The index `{index}` is illegal')
-        if index == self.currentIndex():
-            return
-        if not self.isAnimationEnabled:
-            return _QStackedWidget.setCurrentIndex(self, index)
+    _originalSetCurrentIndex = PopUpAniStackedWidget.setCurrentIndex
+    _originalResizeEvent = PopUpAniStackedWidget.resizeEvent
 
-        if self._ani and self._ani.state() == QAbstractAnimation.Running:
-            self._ani.stop()
-            self._ani.finished.disconnect()
-            _QStackedWidget.setCurrentIndex(self, self._nextIndex)
-            self.aniFinished.emit()
-
-        self._nextIndex = index
-        nextAniInfo = self.aniInfos[index]
-        currentAniInfo = self.aniInfos[self.currentIndex()]
-        currentWidget = self.currentWidget()
-        nextWidget = nextAniInfo.widget
-        ani = currentAniInfo.ani if needPopOut else nextAniInfo.ani
-        self._ani = ani
-
-        if needPopOut:
-            deltaX, deltaY = currentAniInfo.deltaX, currentAniInfo.deltaY
-            pos = currentWidget.pos() + QPoint(deltaX, deltaY)
-            ani.setEasingCurve(easingCurve)
-            ani.setStartValue(currentWidget.pos())
-            ani.setEndValue(pos)
-            ani.setDuration(duration)
-            nextWidget.setVisible(showNextWidgetDirectly)
+    def setCurrentIndex(self, index: int, needPopOut: bool = False,
+                        showNextWidgetDirectly: bool = True,
+                        duration: int = 250,
+                        easingCurve: QEasingCurve = QEasingCurve.OutQuad) -> None:
+        if not needPopOut and 0 <= index < self.count() and index != self.currentIndex() and self.isAnimationEnabled:
+            info = self.aniInfos[index]
+            widget = info.widget
+            savedDX, savedDY = info.deltaX, info.deltaY
+            widget.resize(self.size())
+            widget.move(QPoint(widget.x(), 0) + QPoint(savedDX, savedDY))
+            # 暂零 delta，让原方法从预移后的 pos 算出正确的动画值
+            info.deltaX, info.deltaY = 0, 0
+            self.layout().setEnabled(False)
+            try:
+                _originalSetCurrentIndex(self, index, needPopOut, showNextWidgetDirectly, duration, easingCurve)
+            finally:
+                info.deltaX, info.deltaY = savedDX, savedDY
         else:
-            deltaX, deltaY = nextAniInfo.deltaX, nextAniInfo.deltaY
-            pos = nextWidget.pos() + QPoint(deltaX, deltaY)
-            ani.setEasingCurve(easingCurve)
-            ani.setStartValue(pos)
-            ani.setEndValue(QPoint(nextWidget.x(), 0))
-            ani.setDuration(duration)
-            currentWidget.hide()
-            nextWidget.resize(self.size())
-            nextWidget.move(pos)
-            nextWidget.setVisible(True)
+            _originalSetCurrentIndex(self, index, needPopOut, showNextWidgetDirectly, duration, easingCurve)
 
-        def onFinished():
-            ani.finished.disconnect(onFinished)
-            _QStackedWidget.setCurrentIndex(self, self._nextIndex)
-            self.aniFinished.emit()
-
-        ani.finished.connect(onFinished)
-        ani.start()
-        self.aniStart.emit()
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        _originalResizeEvent(self, event)
+        # layout 禁用期间不会 resize 子 widget
+        current = self.currentWidget()
+        if current and current.size() != event.size():
+            current.resize(event.size())
 
     PopUpAniStackedWidget.setCurrentIndex = setCurrentIndex
+    PopUpAniStackedWidget.resizeEvent = resizeEvent
 
 
 def patchFluentLabelThemeChanged() -> None:
