@@ -593,4 +593,4 @@ chrome.runtime.onSuspend.addListener(() => {
   void resourceBridge.flushState();
 });
 
-void setupBackground();
+await setupBackground();
