@@ -466,6 +466,7 @@ class TaskPage(QWidget):
         deleteFiles.setChecked(cfg.shouldDeleteFilesOnRemove.value)
         dialog.textLayout.addWidget(deleteFiles)
         if dialog.exec():
+            cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
             self._onDeleteConfirmed(deleteFiles.isChecked())
 
     def _onMoveCategorySelected(self) -> None:

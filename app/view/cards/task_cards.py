@@ -335,6 +335,7 @@ class UniversalTaskCard(TaskCard):
         deleteFiles.setChecked(cfg.shouldDeleteFilesOnRemove.value)
         dialog.textLayout.addWidget(deleteFiles)
         if dialog.exec():
+            cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
             taskService.delete(self._task, deleteFiles.isChecked())
 
     def _onVerifyHashClicked(self) -> None:
