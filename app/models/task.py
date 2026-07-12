@@ -300,6 +300,10 @@ class Task:
             self.status = TaskStatus.COMPLETED
             if not self.completedAt:
                 self.completedAt = int(time())
+            if self.fileSize <= 0:
+                _, _, receivedBytes = self.currentSnapshot()
+                if receivedBytes > 0:
+                    self.fileSize = receivedBytes
         elif any(s == TaskStatus.RUNNING for s in statuses):
             self.status = TaskStatus.RUNNING
         elif all(s == TaskStatus.PAUSED for s in statuses):

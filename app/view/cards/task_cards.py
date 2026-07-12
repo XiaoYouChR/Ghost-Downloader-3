@@ -241,8 +241,10 @@ class UniversalTaskCard(TaskCard):
         elif task.status == TaskStatus.COMPLETED:
             if task.fileSize > 0:
                 self.progressBar.hide()
+                self.sizeLabel.setText(toReadableSize(task.fileSize))
             else:
                 self.progressBar.stop()
+                self.sizeLabel.hide()
             self._fileMissing = task.hasOutputFile and not Path(task.outputPath).exists()
             if self._fileMissing:
                 statusText = self.tr("文件不存在")
@@ -282,7 +284,6 @@ class UniversalTaskCard(TaskCard):
     def _showStatus(self, text: str) -> None:
         self.speedLabel.hide()
         self.etaLabel.hide()
-        self.sizeLabel.hide()
         self.statusLabel.setTextColor()
         self.statusLabel.setText(text)
         self.statusLabel.show()
