@@ -73,7 +73,7 @@ class MobileMainWindow(QWidget):
         self.vBoxLayout.addWidget(self.notificationBanner, 0)
         searchBar = QWidget(self)
         searchBarLayout = QHBoxLayout(searchBar)
-        searchBarLayout.setContentsMargins(10, 6, 10, 6)
+        searchBarLayout.setContentsMargins(10, 4, 10, 2)
         searchBarLayout.addWidget(self.searchEdit)
         self.vBoxLayout.addWidget(searchBar, 0)
         self.vBoxLayout.addWidget(self.stackedWidget, 1)
