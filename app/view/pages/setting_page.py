@@ -271,6 +271,12 @@ class SettingPage(ScrollArea):
                                        "English (US)", "日本語 (日本)", "Русский (Россия)",
                                        "Português (Brasil)", self.tr("使用系统设置")]),
         )
+        personalCards.append(
+            ComboBoxSettingCard(cfg.progressBarStyle, FluentIcon.TILES,
+                                self.tr("下载进度条样式"),
+                                self.tr("多线程 HTTP 下载时的进度条外观，其他任务始终为经典样式"),
+                                texts=[self.tr("分段"), self.tr("经典")]),
+        )
         self.personalGroup.addSettingCards(personalCards)
 
         self.autoRunCard = SwitchSettingCard(
