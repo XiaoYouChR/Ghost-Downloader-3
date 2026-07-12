@@ -50,6 +50,11 @@ class CloseMode(Enum):
     QUIT = "Quit"
 
 
+class ProgressBarStyle(Enum):
+    SEGMENTED = "Segmented"
+    CLASSIC = "Classic"
+
+
 class ProxyValidator(ConfigValidator):
     PATTERN = compile(
         r"^"
@@ -232,6 +237,10 @@ class Config(QConfig):
     language = OptionsConfigItem(
         "Personalization", "Language", Language.AUTO,
         OptionsValidator(Language), LanguageSerializer(), restart=True,
+    )
+    progressBarStyle = OptionsConfigItem(
+        "Personalization", "ProgressBarStyle", ProgressBarStyle.SEGMENTED,
+        OptionsValidator(ProgressBarStyle), EnumSerializer(ProgressBarStyle),
     )
 
     # 软件
