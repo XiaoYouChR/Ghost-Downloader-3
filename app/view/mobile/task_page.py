@@ -34,8 +34,6 @@ class MobileTaskPage(TaskPage):
         self.selectButton.hide()
 
         self.filterToolBar = QWidget(self)
-        self.searchLineEdit.setMinimumWidth(0)
-        self.searchLineEdit.setMaximumWidth(16777215)
 
     def _initLayout(self) -> None:
         toolBarLayout = QHBoxLayout(self.toolBar)

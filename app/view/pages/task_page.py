@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayou
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
     FluentIcon, IconWidget, MenuIndicatorType, PushButton,
-    RoundMenu, SearchLineEdit, SegmentedToggleToolWidget, ToggleToolButton,
+    RoundMenu, SegmentedToggleToolWidget, ToggleToolButton,
     ToolButton, ToolTipFilter, isDarkTheme,
 )
 
@@ -155,7 +155,6 @@ class TaskPage(QWidget):
         self.speedBadge = IconBodyLabel("0.00B/s", FluentIcon.SPEED_HIGH, self.toolBar)
         self.sortButton = DropDownToolButton(FluentIcon.LAYOUT, self.toolBar)
         self.categoryFilterButton = DropDownToolButton(FluentIcon.TAG, self.toolBar)
-        self.searchLineEdit = SearchLineEdit(self.toolBar)
 
         # sort menu
         self.sortMenu = CheckableMenu(parent=self, indicatorType=MenuIndicatorType.RADIO)
@@ -226,10 +225,6 @@ class TaskPage(QWidget):
             btn.setToolTip(tip)
             btn.installEventFilter(ToolTipFilter(btn))
 
-        self.searchLineEdit.setPlaceholderText(self.tr("搜索任务"))
-        self.searchLineEdit.setMinimumWidth(200)
-        self.searchLineEdit.setMaximumWidth(300)
-
         self.emptyStatusWidget.setMinimumWidth(200)
         self.emptyStatusWidget.adjustSize()
 
@@ -249,7 +244,6 @@ class TaskPage(QWidget):
         toolBarLayout.addStretch(1)
         toolBarLayout.addWidget(self.sortButton)
         toolBarLayout.addWidget(self.categoryFilterButton)
-        toolBarLayout.addWidget(self.searchLineEdit)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -280,9 +274,6 @@ class TaskPage(QWidget):
         self.descendingAction.triggered.connect(lambda: self.setSortOrder(False))
 
         self.filterSegment.currentItemChanged.connect(lambda key: self.setFilterMode(ROUTE_TO_FILTER[key]))
-
-        self.searchLineEdit.textChanged.connect(self.setSearchText)
-        self.searchLineEdit.clearSignal.connect(lambda: self.setSearchText(""))
 
         self.commandView.redownloadAction.triggered.connect(self._onRedownloadSelected)
         self.commandView.deleteAction.triggered.connect(self._onDeleteSelected)

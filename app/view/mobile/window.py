@@ -60,7 +60,6 @@ class MobileMainWindow(QWidget):
         self.taskPage.setObjectName("taskInterface")
         self.settingPage.setObjectName("settingInterface")
         self.searchEdit.setClearButtonEnabled(True)
-        self.taskPage.searchLineEdit.hide()
         self.addButton.setFixedSize(56, 56)
         self.addButton.setIconSize(QSize(22, 22))
         self.addButton.raise_()
