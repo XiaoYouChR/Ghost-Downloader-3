@@ -105,6 +105,9 @@ class MainWindow(MSFluentWindow):
                 from qfluentwidgets.common import qrouter
                 self.stackedWidget.currentChanged.connect(self._onCurrentInterfaceChanged)
                 qrouter.setDefaultRouteKey(self.stackedWidget, routeKey)
+            page.resize(self.stackedWidget.size())
+            if page.layout():
+                page.layout().activate()
         self.switchTo(page)
         self.navigationInterface.setCurrentItem(routeKey)
         self._updateSearchTarget(page)
@@ -121,7 +124,6 @@ class MainWindow(MSFluentWindow):
             self.searchEdit.show()
         else:
             self.searchEdit.hide()
-        self._refreshSearchEditGeometry()
 
     def _refreshSearchEditGeometry(self) -> None:
         tb = self.titleBar
@@ -317,6 +319,8 @@ class MainWindow(MSFluentWindow):
                 self.resize(960, 540)
                 desktop = QApplication.primaryScreen().availableGeometry()
                 self.move(desktop.center() - self.rect().center())
+        if self.searchEdit.isVisible():
+            self._refreshSearchEditGeometry()
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
