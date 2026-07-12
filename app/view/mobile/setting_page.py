@@ -3,7 +3,7 @@ from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import SettingCard, SwitchButton, isDarkTheme, qconfig
 
-from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+from app.view.components.setting_card_group import CollapsibleSettingCard, CollapsibleSettingCardGroup
 from app.view.pages.setting_page import SettingPage
 
 QWIDGETSIZE_MAX = (1 << 24) - 1
@@ -37,6 +37,10 @@ class MobileSettingPage(SettingPage):
             card = group.cardLayout.itemAt(i).widget()
             if isinstance(card, SettingCard):
                 self._reflowToVertical(card)
+            elif isinstance(card, CollapsibleSettingCard):
+                policy = card.sizePolicy()
+                policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+                card.setSizePolicy(policy)
         super().addSettingGroup(group)
 
     def _reflowToVertical(self, card: SettingCard):
