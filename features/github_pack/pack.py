@@ -69,6 +69,14 @@ class GitHubPack(FeaturePack):
     def parsers(self):
         return [GitHubParser()]
 
+    def optionCards(self, task, parent=None):
+        from http_pack.pack import HttpPack
+        return HttpPack.optionCards(self, task, parent)
+
+    def editCards(self, task, parent=None):
+        from http_pack.pack import HttpPack
+        return HttpPack.editCards(self, task, parent)
+
     def taskCard(self, task, parent=None):
         from http_pack.cards import HttpTaskCard
         return HttpTaskCard(task, parent)
