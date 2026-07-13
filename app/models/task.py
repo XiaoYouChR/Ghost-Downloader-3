@@ -34,6 +34,9 @@ class TaskError(Exception):
         self.message = message
         self.params = params
 
+    def __str__(self):
+        return self.message.format_map(self.params) if self.params else self.message
+
 
 @dataclass(frozen=True)
 class StepError:
