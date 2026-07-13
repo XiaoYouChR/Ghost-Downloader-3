@@ -58,6 +58,7 @@ class TaskOptions:
         default_factory=lambda: dict(cfg.defaultRequestHeaders.value)
     )
     clientProfile: str = ""
+    userAgent: str = ""
     sourceUserAgent: str = ""
     subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
 

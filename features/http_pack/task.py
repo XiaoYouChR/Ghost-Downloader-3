@@ -57,6 +57,7 @@ class HttpTaskStep(TaskStep):
     fileSize: int = 0
     headers: dict[str, str] = field(default_factory=dict)
     clientProfile: str = ""
+    userAgent: str = ""
     subworkerCount: int = 8
     canUseRangeRequests: bool = False
     lastModified: str = ""
@@ -87,6 +88,8 @@ class HttpTaskStep(TaskStep):
             self.headers = options["headers"]
         if "clientProfile" in options:
             self.clientProfile = options["clientProfile"]
+        if "userAgent" in options:
+            self.userAgent = options["userAgent"]
         if "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
@@ -242,7 +245,7 @@ class HttpTaskStep(TaskStep):
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 try:
-                    headers = {**self.headers, "range": f"bytes={subworker.position}-", "accept-encoding": "identity"}
+                    headers = {**self._effectiveHeaders, "range": f"bytes={subworker.position}-", "accept-encoding": "identity"}
                     response = await self._client.get(self.url, headers=headers)
                     try:
                         status = response.status.as_int()
@@ -273,7 +276,7 @@ class HttpTaskStep(TaskStep):
                 try:
                     ftruncate(fd, 0)
                     subworker.receivedBytes = 0
-                    response = await self._client.get(self.url, headers=dict(self.headers))
+                    response = await self._client.get(self.url, headers=dict(self._effectiveHeaders))
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -351,8 +354,12 @@ class HttpTaskStep(TaskStep):
 
         Path(self.outputPath).parent.mkdir(parents=True, exist_ok=True)
 
+        self._effectiveHeaders = {**self.headers}
+        if self.userAgent and not any(k.lower() == "user-agent" for k in self.headers):
+            self._effectiveHeaders["user-agent"] = self.userAgent
+
         emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
-        self._client = buildClient(emulation=emulation)
+        self._client = buildClient(emulation=emulation, userAgent=self.userAgent or None)
 
         restored = False
         if self.canUseRangeRequests:

@@ -151,6 +151,29 @@ class ClientProfileValidator(ConfigValidator):
         return value if self.validate(value) else "auto"
 
 
+class IdentityPresetListValidator(ConfigValidator):
+    REQUIRED_KEYS = {"name", "clientProfile", "userAgent", "hosts"}
+
+    def _isValidPreset(self, item) -> bool:
+        return (
+            isinstance(item, dict)
+            and self.REQUIRED_KEYS <= item.keys()
+            and isinstance(item["name"], str)
+            and isinstance(item["clientProfile"], str)
+            and isinstance(item["userAgent"], str)
+            and isinstance(item["hosts"], list)
+            and all(isinstance(h, str) for h in item["hosts"])
+        )
+
+    def validate(self, value) -> bool:
+        return isinstance(value, list) and all(self._isValidPreset(item) for item in value)
+
+    def correct(self, value) -> list:
+        if not isinstance(value, list):
+            return []
+        return [item for item in value if self._isValidPreset(item)]
+
+
 class HeadersValidator(ConfigValidator):
     def validate(self, value) -> bool:
         return isinstance(value, dict) and bool(value) and all(
@@ -255,6 +278,13 @@ class Config(QConfig):
     defaultRequestHeaders = ConfigItem(
         "Network", "DefaultHeaders", dict(BASE_HEADERS),
         HeadersValidator(), JsonConfigSerializer(dict, lambda: dict(BASE_HEADERS)),
+    )
+    identityPresets = ConfigItem(
+        "Network", "IdentityPresets",
+        [{"name": "百度网盘客户端", "clientProfile": "raw",
+          "userAgent": "pan.baidu.com", "hosts": ["*.pcs.baidu.com"],
+          "isEnabled": True}],
+        IdentityPresetListValidator(), JsonConfigSerializer(list, list),
     )
 
 

@@ -4,7 +4,7 @@ from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
-    Action, BodyLabel, FluentIcon, IconWidget, LineEdit, Slider,
+    Action, BodyLabel, FluentIcon, IconWidget, LineEdit, RoundMenu, Slider,
     ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 
@@ -28,6 +28,41 @@ def toProfileLabel(value: str) -> str:
     head = value.rstrip("0123456789_")
     version = value[len(head):].replace("_", ".")
     return f"{head} {version}" if version else value
+
+
+def buildProfileMenu(parent, onPick, *, includeAuto: bool = True) -> RoundMenu:
+    from app.client import profileFamilies, profileVersions
+
+    menu = RoundMenu(parent=parent)
+
+    if includeAuto:
+        action = Action(FluentIcon.ROBOT, toProfileLabel("auto"), parent)
+        action.triggered.connect(lambda checked=False: onPick("auto"))
+        menu.addAction(action)
+    else:
+        action = Action(toProfileLabel(""), parent)
+        action.triggered.connect(lambda checked=False: onPick(""))
+        menu.addAction(action)
+
+    rawAction = Action(FluentIcon.CANCEL, toProfileLabel("raw"), parent)
+    rawAction.triggered.connect(lambda checked=False: onPick("raw"))
+    menu.addAction(rawAction)
+
+    menu.addSeparator()
+
+    for family in profileFamilies():
+        submenu = RoundMenu(PROFILE_FAMILY_LABELS.get(family, family), parent)
+        latest = Action(toProfileLabel(family), parent)
+        latest.triggered.connect(lambda checked=False, v=family: onPick(v))
+        submenu.addAction(latest)
+        submenu.addSeparator()
+        for name in profileVersions(family):
+            action = Action(toProfileLabel(name), parent)
+            action.triggered.connect(lambda checked=False, v=name: onPick(v))
+            submenu.addAction(action)
+        menu.addMenu(submenu)
+
+    return menu
 
 
 class OptionCard(QWidget):
@@ -125,35 +160,33 @@ class SubworkerCountCard(OptionCard):
 
 class ClientProfileCard(OptionCard):
 
-    def __init__(self, parent=None, *, initial: str = ""):
-        from qfluentwidgets import DropDownPushButton, RoundMenu
-        from app.client import profileFamilies, profileVersions
+    def __init__(self, parent=None, *, initial: str = "", initialUserAgent: str = ""):
+        from qfluentwidgets import DropDownPushButton
+        from app.config.cfg import cfg
 
         super().__init__(parent)
         self.setFixedHeight(50)
         self._value = initial
+        self._userAgent = initialUserAgent
         self.iconWidget = IconWidget(FluentIcon.ROBOT, self)
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("模拟身份"), self)
-        self.button = DropDownPushButton(toProfileLabel(initial), self)
+
+        label = self._presetLabelFor(initial, initialUserAgent) or toProfileLabel(initial)
+        self.button = DropDownPushButton(label, self)
         self.button.setMinimumWidth(200)
 
-        menu = RoundMenu(parent=self)
-        for value, icon in (("auto", FluentIcon.ROBOT), ("raw", FluentIcon.CANCEL)):
-            action = Action(icon, toProfileLabel(value), self)
-            action.triggered.connect(lambda _=False, v=value: self._onPick(v))
-            menu.addAction(action)
-        for family in profileFamilies():
-            submenu = RoundMenu(PROFILE_FAMILY_LABELS.get(family, family), self)
-            latest = Action(toProfileLabel(family), self)
-            latest.triggered.connect(lambda _=False, v=family: self._onPick(v))
-            submenu.addAction(latest)
-            submenu.addSeparator()
-            for name in profileVersions(family):
-                action = Action(toProfileLabel(name), self)
-                action.triggered.connect(lambda _=False, v=name: self._onPick(v))
-                submenu.addAction(action)
-            menu.addMenu(submenu)
+        menu = buildProfileMenu(self, self._onPick, includeAuto=True)
+
+        presets = cfg.identityPresets.value
+        if presets:
+            menu.addSeparator()
+            for preset in presets:
+                action = Action(preset["name"], self)
+                action.triggered.connect(
+                    lambda _=False, p=preset: self._onPickPreset(p))
+                menu.addAction(action)
+
         self.button.setMenu(menu)
 
         layout = QHBoxLayout(self)
@@ -165,15 +198,34 @@ class ClientProfileCard(OptionCard):
         layout.addWidget(self.button)
 
     def options(self) -> dict:
-        return {"clientProfile": self._value}
+        result = {"clientProfile": self._value}
+        if self._userAgent:
+            result["userAgent"] = self._userAgent
+        return result
 
     def reset(self) -> None:
         self._value = ""
+        self._userAgent = ""
         self.button.setText(toProfileLabel(""))
 
     def _onPick(self, value: str) -> None:
         self._value = value
+        self._userAgent = ""
         self.button.setText(toProfileLabel(value))
+
+    def _onPickPreset(self, preset: dict) -> None:
+        self._value = preset["clientProfile"]
+        self._userAgent = preset["userAgent"]
+        self.button.setText(preset["name"])
+
+    def _presetLabelFor(self, clientProfile: str, userAgent: str) -> str:
+        if not userAgent:
+            return ""
+        from app.config.cfg import cfg
+        for preset in cfg.identityPresets.value:
+            if preset["clientProfile"] == clientProfile and preset["userAgent"] == userAgent:
+                return preset["name"]
+        return ""
 
 
 class UrlEditCard(OptionCard):

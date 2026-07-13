@@ -53,7 +53,8 @@ class M3U8Parser(TaskParser):
                 options.clientProfile or cfg.clientProfile.value,
                 options.sourceUserAgent,
             )
-            client = buildClient(emulation=emulation, headers=headers)
+            client = buildClient(emulation=emulation, headers=headers,
+                                 userAgent=options.userAgent or None)
             try:
                 response = await client.get(url)
                 response.raise_for_status()
@@ -85,7 +86,7 @@ class M3U8Parser(TaskParser):
                         variantClient = buildClient(emulation=toEmulation(
                             options.clientProfile or cfg.clientProfile.value,
                             options.sourceUserAgent,
-                        ), headers=headers)
+                        ), headers=headers, userAgent=options.userAgent or None)
                         try:
                             variantResponse = await variantClient.get(variantUrl)
                             variantResponse.raise_for_status()

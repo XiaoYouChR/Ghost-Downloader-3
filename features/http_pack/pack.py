@@ -47,6 +47,7 @@ class HttpParser(TaskParser):
         url = options.url
         headers = dict(options.headers)
         clientProfile = options.clientProfile
+        userAgent = options.userAgent
         subworkerCount = options.subworkerCount
         outputFolder = options.outputFolder
 
@@ -64,7 +65,7 @@ class HttpParser(TaskParser):
                 options.clientProfile or cfg.clientProfile.value,
                 options.sourceUserAgent,
             )
-            client = buildClient(emulation=emulation)
+            client = buildClient(emulation=emulation, userAgent=userAgent or None)
 
             def rangeTotal(h: dict) -> int:
                 cr = h.get("content-range", "")
@@ -195,6 +196,7 @@ class HttpParser(TaskParser):
             fileSize=fileSize,
             headers=headers,
             clientProfile=clientProfile,
+            userAgent=userAgent,
             subworkerCount=subworkerCount,
             canUseRangeRequests=canUseRangeRequests,
             lastModified=lastModified,
@@ -218,7 +220,7 @@ class HttpPack(FeaturePack):
         return [
             OutputFolderCard(parent, initial=task.outputFolder),
             HeadersEditCard(parent, initial=step.headers),
-            ClientProfileCard(parent, initial=step.clientProfile),
+            ClientProfileCard(parent, initial=step.clientProfile, initialUserAgent=step.userAgent),
             SubworkerCountCard(parent, initial=step.subworkerCount),
         ]
 

@@ -363,8 +363,8 @@ class TokenLineEdit(QWidget):
 
 
 HEADER_SUGGESTIONS: Final[list[str]] = [
-    "Accept", "Accept-Encoding", "Accept-Language", "Authorization",
-    "Cache-Control", "Cookie", "Origin", "Range", "Referer", "User-Agent",
+    "accept", "accept-encoding", "accept-language", "authorization",
+    "cache-control", "cookie", "origin", "range", "referer", "user-agent",
 ]
 
 

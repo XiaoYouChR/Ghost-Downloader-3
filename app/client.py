@@ -75,10 +75,25 @@ def toEmulation(profile: str, sourceUa: str = "") -> Emulation | None:
     return Emulation(profile=PROFILES_BY_FAMILY["chrome"][0][2], platform=host)
 
 
+def matchIdentityPreset(host: str) -> dict | None:
+    for preset in cfg.identityPresets.value:
+        if not preset.get("isEnabled", True):
+            continue
+        for pattern in preset.get("hosts", []):
+            if pattern.startswith("*."):
+                suffix = pattern[2:]
+                if host == suffix or host.endswith("." + suffix):
+                    return preset
+            elif host == pattern:
+                return preset
+    return None
+
+
 def buildClient(
     *,
     emulation: Emulation | None = ...,
     headers: dict | None = None,
+    userAgent: str | None = None,
     timeout: int | None = None,
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
@@ -93,12 +108,17 @@ def buildClient(
 
     if headers:
         if resolved is not None:
-            config["headers"] = {
+            filtered = {
                 k: v for k, v in headers.items()
                 if k.lower() != "user-agent" and not k.lower().startswith("sec-ch-ua")
             }
+            if userAgent:
+                filtered["user-agent"] = userAgent
+            config["headers"] = filtered
         else:
-            if not any(k.lower() == "user-agent" for k in headers):
+            if userAgent:
+                headers = {**headers, "user-agent": userAgent}
+            elif not any(k.lower() == "user-agent" for k in headers):
                 major = PROFILES_BY_FAMILY["chrome"][0][1][0]
                 headers = {
                     **headers,
@@ -106,6 +126,8 @@ def buildClient(
                                   f"(KHTML, like Gecko) Chrome/{major}.0.0.0 Safari/537.36",
                 }
             config["headers"] = headers
+    elif userAgent:
+        config["headers"] = {"user-agent": userAgent}
 
     if timeout is not None:
         config["timeout"] = timedelta(seconds=timeout)

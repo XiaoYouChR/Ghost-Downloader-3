@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 from PySide6.QtCore import QObject
 
@@ -45,6 +47,19 @@ class FeatureService(QObject):
                 toggle.connect(self._registerFileAssociations)
 
     async def parse(self, options: TaskOptions) -> Task:
+        if not options.clientProfile:
+            from app.client import matchIdentityPreset
+            host = urlparse(options.url).hostname or ""
+            preset = matchIdentityPreset(host)
+            if preset is not None:
+                kwargs = {}
+                if preset["clientProfile"]:
+                    kwargs["clientProfile"] = preset["clientProfile"]
+                if preset["userAgent"]:
+                    kwargs["userAgent"] = preset["userAgent"]
+                if kwargs:
+                    options = replace(options, **kwargs)
+
         for parser in self._parsers:
             if parser.match(options):
                 task = await parser.parse(options)

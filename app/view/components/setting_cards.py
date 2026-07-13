@@ -15,7 +15,7 @@ from qfluentwidgets import (
     ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
     PrimaryPushButton, InfoBar, InfoBarPosition,
-    IconWidget,
+    IconWidget, TransparentToolButton,
 )
 
 from app.view.components.setting_card_group import CollapsibleSettingCard
@@ -370,57 +370,231 @@ class SelectFolderSettingCard(SettingCard):
         self.pathChanged.emit(path)
 
 
-class ClientProfileSettingCard(SettingCard):
+class PresetRowWidget(QWidget):
+    editRequested = Signal(int)
+    removeRequested = Signal(int)
+    toggled = Signal(int, bool)
+
+    def __init__(self, index: int, preset: dict, parent=None):
+        from qfluentwidgets import IconWidget, PrimaryToolButton, SwitchButton, StrongBodyLabel, ToolButton
+        super().__init__(parent)
+        self._index = index
+        self._preset = preset
+
+        self.iconWidget = IconWidget(FluentIcon.VPN, self)
+        self.nameLabel = StrongBodyLabel(preset.get("name", ""), self)
+        self.descLayout = QHBoxLayout()
+        self.switchButton = SwitchButton(self)
+        self.editButton = PrimaryToolButton(FluentIcon.EDIT, self)
+        self.removeButton = ToolButton(FluentIcon.DELETE, self)
+
+        self._initWidget(preset)
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self, preset: dict) -> None:
+        self.iconWidget.setFixedSize(16, 16)
+        self.switchButton.setChecked(preset.get("isEnabled", True))
+        self.switchButton.setOnText("")
+        self.switchButton.setOffText("")
+        self.editButton.setToolTip(self.tr("编辑"))
+        self.editButton.installEventFilter(ToolTipFilter(self.editButton))
+        self.removeButton.setToolTip(self.tr("删除"))
+        self.removeButton.installEventFilter(ToolTipFilter(self.removeButton))
+        self._refreshOpacity(preset.get("isEnabled", True))
+
+    def _initLayout(self) -> None:
+        from app.view.components.labels import IconBodyLabel
+        from app.view.components.option_cards import toProfileLabel
+
+        self.descLayout.setContentsMargins(0, 0, 0, 0)
+        self.descLayout.setSpacing(0)
+
+        hosts = self._preset.get("hosts", [])
+        if hosts:
+            self.descLayout.addWidget(
+                IconBodyLabel(", ".join(hosts[:3]), FluentIcon.GLOBE, self, size=12))
+            self.descLayout.addSpacing(8)
+        profile = self._preset.get("clientProfile", "")
+        if profile:
+            self.descLayout.addWidget(
+                IconBodyLabel(toProfileLabel(profile), FluentIcon.FINGERPRINT, self, size=12))
+            self.descLayout.addSpacing(8)
+        ua = self._preset.get("userAgent", "")
+        if ua:
+            display = ua if len(ua) <= 24 else ua[:21] + "..."
+            self.descLayout.addWidget(
+                IconBodyLabel(display, FluentIcon.PEOPLE, self, size=12))
+        self.descLayout.addStretch(1)
+
+        textLayout = QVBoxLayout()
+        textLayout.setContentsMargins(0, 0, 0, 0)
+        textLayout.setSpacing(2)
+        textLayout.addWidget(self.nameLabel)
+        textLayout.addLayout(self.descLayout)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(48, 8, 24, 8)
+        layout.setSpacing(12)
+        layout.addWidget(self.iconWidget)
+        layout.addLayout(textLayout, 1)
+        layout.addWidget(self.switchButton)
+        layout.addWidget(self.editButton)
+        layout.addWidget(self.removeButton)
+
+    def _bind(self) -> None:
+        self.editButton.clicked.connect(lambda: self.editRequested.emit(self._index))
+        self.removeButton.clicked.connect(lambda: self.removeRequested.emit(self._index))
+        self.switchButton.checkedChanged.connect(
+            lambda checked: self._onToggled(checked))
+
+    def _onToggled(self, checked: bool) -> None:
+        self._refreshOpacity(checked)
+        self.toggled.emit(self._index, checked)
+
+    def _refreshOpacity(self, enabled: bool) -> None:
+        self.nameLabel.setEnabled(enabled)
+        for i in range(self.descLayout.count()):
+            w = self.descLayout.itemAt(i).widget()
+            if w:
+                w.setEnabled(enabled)
+
+
+class IdentitySettingCard(CollapsibleSettingCard):
 
     def __init__(self, parent=None):
         from qfluentwidgets import DropDownPushButton
         from app.view.components.option_cards import toProfileLabel
-        super().__init__(FluentIcon.ROBOT, self.tr("模拟身份"), self.tr("浏览器 TLS 指纹与 User-Agent"), parent)
-        self.button = DropDownPushButton(toProfileLabel(cfg.clientProfile.value), self)
+
+        super().__init__(FluentIcon.ROBOT, self.tr("模拟身份"),
+                         self.tr("TLS 指纹与 User-Agent 预设"), parent=parent)
+        self._rowWidgets: list[PresetRowWidget] = []
+
+        from qfluentwidgets import IconWidget
+        from app.view.components.labels import IconBodyLabel
+
+        self.choiceLabel = BodyLabel(self)
+        self.profileButton = DropDownPushButton(toProfileLabel(cfg.clientProfile.value), self.view)
+        self.profileButton.setMinimumWidth(200)
+
+        self.profileWidget = QWidget(self.view)
+        self.profileLayout = QHBoxLayout(self.profileWidget)
+        self.profileIcon = IconWidget(FluentIcon.ROBOT, self.profileWidget)
+        self.profileIcon.setFixedSize(16, 16)
+        self.profileTitleLabel = BodyLabel(self.tr("全局默认"), self.profileWidget)
+        self.profileDescLabel = CaptionLabel(self.tr("未被预设匹配时使用"), self.profileWidget)
+
+        self.buttonContainer = QWidget(self.view)
+        self.buttonLayout = QHBoxLayout(self.buttonContainer)
+        from qfluentwidgets import PrimaryPushButton
+        self.addButton = PrimaryPushButton(FluentIcon.ADD, self.tr("添加预设"), self.buttonContainer)
+
         self._initWidget()
         self._initLayout()
         self._bind()
+        self._reload()
 
     def _initWidget(self) -> None:
-        from qfluentwidgets import Action, RoundMenu
-        from app.client import profileFamilies, profileVersions
-        from app.view.components.option_cards import PROFILE_FAMILY_LABELS, toProfileLabel
+        from app.view.components.option_cards import buildProfileMenu
 
-        self.button.setMinimumWidth(200)
-        menu = RoundMenu(parent=self)
-
-        for value, icon in (("auto", FluentIcon.ROBOT), ("raw", FluentIcon.CANCEL)):
-            action = Action(icon, toProfileLabel(value), self)
-            action.triggered.connect(lambda checked=False, v=value: self._onPick(v))
-            menu.addAction(action)
-
-        for family in profileFamilies():
-            submenu = RoundMenu(PROFILE_FAMILY_LABELS.get(family, family), self)
-            latest = Action(toProfileLabel(family), self)
-            latest.triggered.connect(lambda checked=False, v=family: self._onPick(v))
-            submenu.addAction(latest)
-            submenu.addSeparator()
-            for name in profileVersions(family):
-                action = Action(toProfileLabel(name), self)
-                action.triggered.connect(lambda checked=False, v=name: self._onPick(v))
-                submenu.addAction(action)
-            menu.addMenu(submenu)
-
-        self.button.setMenu(menu)
+        self.profileButton.setMenu(
+            buildProfileMenu(self, self._onPick, includeAuto=True)
+        )
+        self._refreshChoiceLabel()
 
     def _initLayout(self) -> None:
-        self.hBoxLayout.addWidget(self.button, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(16)
+        self.addWidget(self.choiceLabel)
+
+        profileTextLayout = QVBoxLayout()
+        profileTextLayout.setContentsMargins(0, 0, 0, 0)
+        profileTextLayout.setSpacing(2)
+        profileTextLayout.addWidget(self.profileTitleLabel)
+        profileTextLayout.addWidget(self.profileDescLabel)
+
+        self.profileLayout.setContentsMargins(48, 12, 24, 12)
+        self.profileLayout.setSpacing(12)
+        self.profileLayout.addWidget(self.profileIcon)
+        self.profileLayout.addLayout(profileTextLayout, 1)
+        self.profileLayout.addWidget(self.profileButton)
+
+        self.buttonLayout.setContentsMargins(48, 8, 24, 8)
+        self.buttonLayout.addStretch(1)
+        self.buttonLayout.addWidget(self.addButton)
+
+        self.viewLayout.setSpacing(0)
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+        self.addGroupWidget(self.profileWidget)
 
     def _bind(self) -> None:
         cfg.clientProfile.valueChanged.connect(self._onProfileChanged)
+        self.addButton.clicked.connect(self._onAddClicked)
 
     def _onProfileChanged(self, value: str) -> None:
         from app.view.components.option_cards import toProfileLabel
-        self.button.setText(toProfileLabel(value))
+        self.profileButton.setText(toProfileLabel(value))
+        self._refreshChoiceLabel()
 
     def _onPick(self, value: str) -> None:
         cfg.set(cfg.clientProfile, value)
+
+    def _refreshChoiceLabel(self) -> None:
+        from app.view.components.option_cards import toProfileLabel
+        self.choiceLabel.setText(toProfileLabel(cfg.clientProfile.value))
+
+    def _reload(self) -> None:
+        for row in self._rowWidgets:
+            self.viewLayout.removeWidget(row)
+            row.deleteLater()
+        self._rowWidgets.clear()
+        self.viewLayout.removeWidget(self.buttonContainer)
+
+        for i, preset in enumerate(cfg.identityPresets.value):
+            row = PresetRowWidget(i, preset, self.view)
+            row.editRequested.connect(self._onEditClicked)
+            row.removeRequested.connect(self._onRemoveClicked)
+            row.toggled.connect(self._onToggled)
+            self.viewLayout.addWidget(row)
+            self._rowWidgets.append(row)
+
+        self.viewLayout.addWidget(self.buttonContainer)
+        self._refreshChoiceLabel()
+
+    def _onAddClicked(self) -> None:
+        from app.view.dialogs.preset_edit import PresetEditDialog
+        dialog = PresetEditDialog(self.window())
+        if dialog.exec():
+            presets = list(cfg.identityPresets.value)
+            presets.append(dialog.preset())
+            cfg.set(cfg.identityPresets, presets)
+            self._reload()
+            if not self.isExpand:
+                self.setExpand(True)
+
+    def _onEditClicked(self, index: int) -> None:
+        presets = list(cfg.identityPresets.value)
+        if index < 0 or index >= len(presets):
+            return
+        from app.view.dialogs.preset_edit import PresetEditDialog
+        dialog = PresetEditDialog(self.window(), preset=presets[index])
+        if dialog.exec():
+            presets[index] = dialog.preset()
+            cfg.set(cfg.identityPresets, presets)
+            self._reload()
+
+    def _onToggled(self, index: int, checked: bool) -> None:
+        presets = list(cfg.identityPresets.value)
+        if index < 0 or index >= len(presets):
+            return
+        presets[index] = {**presets[index], "isEnabled": checked}
+        cfg.set(cfg.identityPresets, presets)
+
+    def _onRemoveClicked(self, index: int) -> None:
+        presets = list(cfg.identityPresets.value)
+        if index < 0 or index >= len(presets):
+            return
+        presets.pop(index)
+        cfg.set(cfg.identityPresets, presets)
+        self._reload()
 
 
 class DefaultHeadersSettingCard(PushSettingCard):

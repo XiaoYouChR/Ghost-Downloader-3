@@ -24,7 +24,7 @@ from app.view.components.setting_card_group import (
     CollapsibleSettingCard, CollapsibleSettingCardGroup, QWIDGETSIZE_MAX,
 )
 from app.view.components.setting_cards import (
-    ClientProfileSettingCard, DefaultHeadersSettingCard, LineEditSettingCard,
+    DefaultHeadersSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
 from app.view.components.editors import FolderPicker
@@ -85,7 +85,7 @@ class SettingPage(ScrollArea):
         self.downloadFolderCard.hBoxLayout.addSpacing(8)
         self.downloadFolderCard.hBoxLayout.addWidget(self.downloadRestoreButton, 0, Qt.AlignmentFlag.AlignRight)
         self.downloadFolderCard.hBoxLayout.addSpacing(16)
-        self.clientProfileCard = ClientProfileSettingCard()
+        self.clientProfileCard = IdentitySettingCard()
 
         self.generalGroup.addSettingCards([
             RangeSettingCard(cfg.maxTaskNum, FluentIcon.TRAIN, self.tr("最大任务数"),
@@ -109,7 +109,7 @@ class SettingPage(ScrollArea):
             ProxySettingCard(cfg.proxyServer),
             self.clientProfileCard,
             DefaultHeadersSettingCard(FluentIcon.DICTIONARY, self.tr("默认请求头"),
-                                      self.tr("设置默认 HTTP 请求头，User-Agent 由模拟身份控制（选择原样发送时除外）")),
+                                      self.tr("设置默认 HTTP 请求头")),
         ])
 
         self.categoryRulesCard = CategoryRulesCard()
