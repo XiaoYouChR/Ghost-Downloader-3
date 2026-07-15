@@ -4,9 +4,11 @@ import platform
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from qfluentwidgets import (
     BoolValidator,
     ConfigItem,
+    FluentIcon,
     FolderValidator,
     OptionsConfigItem,
     OptionsValidator,
@@ -14,15 +16,15 @@ from qfluentwidgets import (
     RangeValidator,
 )
 
-from app.client import buildClient
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.models.task import Task
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
 
-RELEASE_TAG = "v0.5.1-beta"
-RELEASE_API = f"https://api.github.com/repos/nilaoda/N_m3u8DL-RE/releases/tags/{RELEASE_TAG}"
+RELEASE_TAG = "v0.6.0-beta"
+RELEASE_DATE = "20260629"
+RELEASE_BASE = f"https://github.com/nilaoda/N_m3u8DL-RE/releases/download/{RELEASE_TAG}"
 
 
 class M3U8Config(PackConfig):
@@ -149,6 +151,10 @@ m3u8Config = M3U8Config()
 class M3U8Runtime(BinaryRuntime):
     name = "N_m3u8DL-RE"
     canInstall = not IS_ANDROID
+    title = N("BinaryRuntime", "M3U8 / 直播下载")
+    description = N("BinaryRuntime", "支持 HLS、DASH 等流媒体协议，可录制直播流")
+    icon = FluentIcon.MEDIA
+    isRecommended = True
 
     def path(self) -> str:
         if IS_ANDROID:
@@ -171,42 +177,18 @@ class M3U8Runtime(BinaryRuntime):
         elif sys.platform == "darwin":
             target = "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
         elif sys.platform == "linux":
-            libcName = platform.libc_ver()[0].lower()
-            if machine in {"arm64", "aarch64"}:
-                target = "linux-musl-arm64" if libcName == "musl" else "linux-arm64"
-            else:
-                target = "linux-musl-x64" if libcName == "musl" else "linux-x64"
+            target = "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
         else:
             raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
-
-        client = buildClient(headers={"accept": "application/vnd.github+json"})
-        try:
-            response = await client.get(RELEASE_API)
-            response.raise_for_status()
-            release = await response.json()
-        finally:
-            client.close()
-
-        assets = release.get("assets")
-        if not isinstance(assets, list):
-            raise RuntimeError("GitHub Release 返回了无效的 assets 数据")
-
-        asset = next((item for item in assets if target in item["name"]), None)
-        if asset is None:
-            raise RuntimeError(f"未找到适用于当前平台的 N_m3u8DL-RE 安装包: {target}")
-
-        url = asset["browser_download_url"].strip()
-        fileName = asset["name"].strip()
-        fileSize = asset["size"]
-        if not url or not fileName or fileSize <= 0:
-            raise RuntimeError("GitHub Release 返回了不完整的安装包信息")
 
         from app.services.feature_service import featureService
         from app.models.task import BinaryInstallOptions
 
+        extension = "zip" if sys.platform == "win32" else "tar.gz"
+        assetName = f"N_m3u8DL-RE_{RELEASE_TAG}_{target}_{RELEASE_DATE}.{extension}"
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
         return await featureService.parse(BinaryInstallOptions(
-            url=url,
+            url=f"{RELEASE_BASE}/{assetName}",
             outputFolder=Path(m3u8Config.installFolder.value),
             name=f"N_m3u8DL-RE 安装 ({target})",
             executableNames=(binaryName,),

@@ -11,6 +11,7 @@ from app.config.cfg import cfg, ConfigItem
 if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions
     from PySide6.QtWidgets import QWidget
+    from qfluentwidgets import FluentIcon
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
@@ -80,6 +81,11 @@ class PackConfig:
 class BinaryRuntime:
     name: str = ""
     canInstall: bool = False
+    # 自描述展示信息（title 用 QT_TRANSLATE_NOOP 声明原文，展示端 translate）
+    title: str = ""
+    description: str = ""
+    icon: FluentIcon | None = None
+    isRecommended: bool = False
 
     @property
     def runtimeId(self) -> str:

@@ -5,8 +5,9 @@ import platform
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from PySide6.QtWidgets import QWidget
-from qfluentwidgets import BoolValidator, ConfigItem, FolderValidator, OptionsConfigItem, OptionsValidator
+from qfluentwidgets import BoolValidator, ConfigItem, FluentIcon, FolderValidator, OptionsConfigItem, OptionsValidator
 
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
@@ -14,8 +15,7 @@ from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
 
 PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
-QJS_RELEASE_API = "https://api.github.com/repos/quickjs-ng/quickjs/releases/latest"
-QJS_RELEASE_HEADERS = {"accept": "application/vnd.github+json"}
+QJS_RELEASE_BASE = "https://github.com/quickjs-ng/quickjs/releases/latest/download"
 
 
 class YtDlpConfig(PackConfig):
@@ -92,6 +92,10 @@ ytDlpConfig = YtDlpConfig()
 class YouTubeRuntime(BinaryRuntime):
     name = "YouTube 运行环境"
     canInstall = True
+    title = N("BinaryRuntime", "YouTube 下载")
+    description = N("BinaryRuntime", "支持 YouTube、Twitter 等数百个视频网站")
+    icon = FluentIcon.GLOBE
+    isRecommended = True
 
     def path(self) -> str:
         folder = Path(ytDlpConfig.installFolder.value)
@@ -186,15 +190,23 @@ class YouTubeRuntime(BinaryRuntime):
             return task
 
         from disk_pack.task import BinaryInstallStep
+        from app.models.task import TaskOptions
+        from app.services.feature_service import featureService
 
-        qjsUrl, qjsSize, qjsAssetName = await self._fetchQjsAsset()
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
+        qjsDownload = await featureService.parse(TaskOptions(
+            url=f"{QJS_RELEASE_BASE}/{_qjsAssetName()}",
+            outputFolder=installFolder,
+        ))
+        qjsStep = qjsDownload.steps[0]
+        qjsStep.stepIndex = 2
+        qjsStep.outputFile = str(installFolder / qjsBinaryName)
 
         task = InstallTask(
             name="YouTube 运行环境安装",
             url=whlUrl,
             packId="disk",
-            fileSize=whlSize + qjsSize,
+            fileSize=whlSize + max(0, qjsDownload.fileSize),
             outputFolder=installFolder,
             installFolder=str(installFolder),
         )
@@ -207,15 +219,7 @@ class YouTubeRuntime(BinaryRuntime):
             canUseRangeRequests=True,
             outputFile=str(installFolder / archiveName),
         ))
-        task.addStep(HttpTaskStep(
-            stepIndex=2,
-            url=qjsUrl,
-            fileSize=qjsSize,
-            headers=dict(cfg.defaultRequestHeaders.value),
-            subworkerCount=cfg.preBlockNum.value,
-            canUseRangeRequests=True,
-            outputFile=str(installFolder / qjsBinaryName),
-        ))
+        task.addStep(qjsStep)
         task.addStep(ExtractStep(
             stepIndex=3,
             archivePath=str(installFolder / archiveName),
@@ -244,24 +248,6 @@ class YouTubeRuntime(BinaryRuntime):
             if entry.get("packagetype") == "bdist_wheel" and entry.get("filename", "").endswith(".whl"):
                 return entry["url"], entry.get("size") or 0
         raise RuntimeError("未找到 yt-dlp wheel 安装包")
-
-    async def _fetchQjsAsset(self) -> tuple[str, int, str]:
-        from app.client import buildClient
-
-        client = buildClient(timeout=15, headers=QJS_RELEASE_HEADERS)
-        try:
-            response = await client.get(QJS_RELEASE_API)
-            response.raise_for_status()
-            release = await response.json()
-        finally:
-            client.close()
-
-        assetName = _qjsAssetName()
-        for asset in release.get("assets") or []:
-            if asset.get("name") == assetName:
-                return asset["browser_download_url"], asset.get("size") or 0, assetName
-        raise RuntimeError(f"未找到适配当前平台的 qjs: {assetName}")
-
 
 def _qjsAssetName() -> str:
     machine = platform.machine().lower()

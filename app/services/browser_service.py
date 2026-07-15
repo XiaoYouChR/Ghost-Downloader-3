@@ -116,6 +116,7 @@ class BrowserService(QObject):
     taskDraftRequested = Signal(list)
     extensionUpdated = Signal(str)
     connectionChanged = Signal()
+    protocolMismatched = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -410,6 +411,7 @@ class BrowserService(QObject):
         if toInt(data, "protocolVersion", 0) != PROTOCOL_VERSION:
             self._sendError(session, "协议版本不匹配", requestId=requestId, code=ErrorCode.PROTOCOL_MISMATCH)
             session.socket.close()
+            self.protocolMismatched.emit()
             return
 
         if toStr(data, "token") != self.token:

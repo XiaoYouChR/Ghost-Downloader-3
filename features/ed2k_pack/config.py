@@ -4,14 +4,13 @@ import platform
 import sys
 from pathlib import Path
 
-from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.filesystem import findExecutable, toPosixPath
-from qfluentwidgets import ConfigItem, BoolValidator, RangeConfigItem, RangeValidator
+from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from qfluentwidgets import ConfigItem, BoolValidator, FluentIcon, RangeConfigItem, RangeValidator
 
-RELEASE_API = "https://api.github.com/repos/XiaoYouChR/Python-eD2k/releases/latest"
-RELEASE_HEADERS = {"accept": "application/vnd.github+json"}
+RELEASE_BASE = "https://github.com/XiaoYouChR/Python-eD2k/releases/latest/download"
 
 
 class ED2kConfig(PackConfig):
@@ -65,53 +64,42 @@ ed2kConfig = ED2kConfig()
 class ED2kRuntime(BinaryRuntime):
     name = "goed2kd"
     canInstall = True
+    title = N("BinaryRuntime", "eD2k / eMule")
+    description = N("BinaryRuntime", "支持电驴协议，适合下载经典资源")
+    icon = FluentIcon.BOOK_SHELF
+    isRecommended = False
 
     def path(self) -> str:
         return findExecutable(Path(ed2kConfig.installFolder.value), "goed2kd")
 
     async def installTask(self):
-        from app.client import buildClient
-        from app.update import Release
-        from http_pack.task import HttpTaskStep
+        from app.models.task import TaskOptions
+        from app.services.feature_service import featureService
         from disk_pack.task import InstallTask
         from .task import ED2kInstallStep
 
-        client = buildClient(headers=RELEASE_HEADERS)
-        try:
-            response = await client.get(RELEASE_API)
-            response.raise_for_status()
-            release = Release.fromResponse(await response.json())
-        finally:
-            client.close()
-
         assetName = _assetName()
-        asset = next((a for a in release.assets if a.name == assetName), None)
-        if asset is None:
-            raise RuntimeError(f"未找到适配当前平台的 goed2kd: {assetName}")
-        if not asset.downloadUrl or asset.size <= 0:
-            raise RuntimeError("GitHub Release 返回了不完整的安装包信息")
-
+        url = f"{RELEASE_BASE}/{assetName}"
         installFolder = Path(ed2kConfig.installFolder.value)
         binaryName = "goed2kd.exe" if sys.platform == "win32" else "goed2kd"
         binaryPath = toPosixPath(installFolder / binaryName)
 
+        download = await featureService.parse(
+            TaskOptions(url=url, outputFolder=installFolder)
+        )
+        downloadStep = download.steps[0]
+        downloadStep.stepIndex = 1
+        downloadStep.outputFile = binaryPath
+
         task = InstallTask(
             name=f"goed2kd 安装 ({assetName})",
-            url=asset.downloadUrl,
+            url=url,
             packId="ed2k",
-            fileSize=asset.size,
+            fileSize=download.fileSize,
             outputFolder=installFolder,
             installFolder=str(installFolder),
         )
-        task.addStep(HttpTaskStep(
-            stepIndex=1,
-            url=asset.downloadUrl,
-            fileSize=asset.size,
-            headers=dict(cfg.defaultRequestHeaders.value),
-            subworkerCount=cfg.preBlockNum.value,
-            canUseRangeRequests=True,
-            outputFile=binaryPath,
-        ))
+        task.addStep(downloadStep)
         task.addStep(ED2kInstallStep(stepIndex=2, binaryPath=binaryPath))
         return task
 

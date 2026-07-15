@@ -91,9 +91,9 @@ def startApp(application, isSilent=False):
     MainWindow.refreshThemeColor()
     window = MainWindow()
 
-    needsOobe = not cfg.hasCompletedOobe.value and not isSilent
+    shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
-    if not isSilent and not needsOobe:
+    if not isSilent and not shouldRunOobe:
         from qfluentwidgets import SplashScreen
         splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
         splash.raise_()
@@ -104,10 +104,10 @@ def startApp(application, isSilent=False):
     window.setupPacks()
     startEngine()
 
-    if not isSilent and not needsOobe:
+    if not isSilent and not shouldRunOobe:
         splash.finish()
 
-    if needsOobe:
+    if shouldRunOobe:
         # 首次启动：不显示主窗口，OOBE 完成后再进入
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow

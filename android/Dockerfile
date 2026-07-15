@@ -101,7 +101,7 @@ RUN git clone --depth 1 -b develop "${P4A_GIT_URL}" /opt/p4a \
 # replacing hzw1199's full build (~30MB). Pinned to a tag for reproducible APKs;
 # bump the tag to update. See https://github.com/XiaoYouChR/Ghost-Downloader-FFmpeg
 ARG FFMPEG_TARBALL=https://github.com/XiaoYouChR/Ghost-Downloader-FFmpeg/releases/download/n8.1.2-gd1/ffmpeg-android-arm64.tar.gz
-ARG NM3U8_URL=https://github.com/nilaoda/N_m3u8DL-RE/releases/download/v0.5.1-beta/N_m3u8DL-RE_v0.5.1-beta_android-bionic-arm64_20251029.tar.gz
+ARG NM3U8_URL=https://github.com/nilaoda/N_m3u8DL-RE/releases/download/v0.6.0-beta/N_m3u8DL-RE_v0.6.0-beta_android-bionic-arm64_20260629.tar.gz
 RUN mkdir -p /opt/gd3-ffmpeg && cd /opt/gd3-ffmpeg \
     && wget -q "${FFMPEG_TARBALL}" -O /tmp/ffmpeg.tar.gz \
     && tar -xzf /tmp/ffmpeg.tar.gz -C /tmp \
