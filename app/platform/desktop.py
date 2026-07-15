@@ -275,10 +275,16 @@ def startFileDrag(paths: list[Path], source: QWidget) -> None:
 
 
 def _startFileDragQt(paths: list[Path], source: QWidget) -> None:
+    from PySide6.QtCore import QFileInfo, QPoint
+    from PySide6.QtWidgets import QFileIconProvider
+
     mimeData = QMimeData()
     mimeData.setUrls([QUrl.fromLocalFile(str(p)) for p in paths])
     drag = QDrag(source)
     drag.setMimeData(mimeData)
+    pixmap = QFileIconProvider().icon(QFileInfo(str(paths[0]))).pixmap(32, 32)
+    drag.setPixmap(pixmap)
+    drag.setHotSpot(QPoint(pixmap.width() // 2, pixmap.height() // 2))
     drag.exec(Qt.DropAction.CopyAction | Qt.DropAction.MoveAction)
 
 
@@ -336,7 +342,12 @@ def _startFileDragWin32(paths: list[str], hwnd: int) -> None:
             )
             try:
                 dwEffect = ctypes.c_ulong(0)
-                shell32.SHDoDragDrop(hwnd, pDataObj, None, 7, ctypes.byref(dwEffect))
+                # 至此拖拽会话已托付给 Shell；失败不再上抛回退 Qt，
+                # 否则会在鼠标已松开后再启动一次幽灵拖拽
+                try:
+                    shell32.SHDoDragDrop(hwnd, pDataObj, None, 7, ctypes.byref(dwEffect))
+                except OSError as e:
+                    logger.opt(exception=e).debug("SHDoDragDrop failed")
             finally:
                 release(pDataObj)
         finally:
