@@ -49,6 +49,7 @@ class MainWindow(MSFluentWindow):
         self.setWindowTitle("Ghost Downloader")
         self.setMinimumSize(960, 540)
         self._refreshBackgroundEffect()
+        self.titleBar.hBoxLayout.insertSpacing(2, 6)
         if sys.platform == "darwin":
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
 

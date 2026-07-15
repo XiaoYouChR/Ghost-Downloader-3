@@ -8,7 +8,7 @@ from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
 from loguru import logger
 
-from .config import ytDlpConfig
+from .config import ytDlpConfig, youTubeRuntime
 from .task import YouTubeTask, buildStepGroup, probeFormats, probePlaylist
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
@@ -78,6 +78,9 @@ class YouTubePack(FeaturePack):
 
     def __init__(self):
         self.config = ytDlpConfig
+
+    def runtimes(self):
+        return [youTubeRuntime]
 
     def parsers(self):
         return [YouTubeParser()]

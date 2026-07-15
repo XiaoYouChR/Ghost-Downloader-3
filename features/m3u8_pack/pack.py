@@ -15,7 +15,7 @@ from app.config.cfg import cfg
 from app.models.pack import FeaturePack, TaskParser, FileType
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
-from .config import m3u8Config
+from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
 
 
@@ -246,6 +246,9 @@ class M3U8Pack(FeaturePack):
 
     def __init__(self):
         self.config = m3u8Config
+
+    def runtimes(self):
+        return [m3u8Runtime]
 
     def parsers(self):
         return [M3U8Parser()]

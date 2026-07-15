@@ -75,5 +75,8 @@ class FFmpegPack(FeaturePack):
     packId = "ffmpeg"
     config = ffmpegConfig
 
+    def runtimes(self):
+        return [ffmpegRuntime]
+
     def parsers(self):
         return [MergeParser()]

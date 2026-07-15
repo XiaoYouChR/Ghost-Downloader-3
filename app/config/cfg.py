@@ -225,7 +225,7 @@ class Config(QConfig):
     )
 
     # 浏览器扩展
-    isBrowserExtensionEnabled = ConfigItem("Browser", "EnableBrowserExtension", False, BoolValidator())
+    isBrowserExtensionEnabled = ConfigItem("Browser", "EnableBrowserExtension", True, BoolValidator())
     browserExtensionPairToken = ConfigItem("Browser", "BrowserExtensionPairToken", "")
     browserExtensionPort = RangeConfigItem("Browser", "Port", 14370, RangeValidator(1024, 65535))
     shouldDraftTakenDownload = ConfigItem(
@@ -268,6 +268,9 @@ class Config(QConfig):
     geometry = ConfigItem(
         "Software", "Geometry", QRect(0, 0, 0, 0), serializer=GeometrySerializer(),
     )
+
+    # OOBE
+    hasCompletedOobe = ConfigItem("Software", "HasCompletedOobe", False, BoolValidator())
 
     # UI 状态
     expandedSettingGroups = ConfigItem("UI", "ExpandedSettingGroups", [], StringListValidator())

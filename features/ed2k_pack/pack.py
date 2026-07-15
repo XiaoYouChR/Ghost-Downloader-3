@@ -3,7 +3,7 @@ from __future__ import annotations
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
-from .config import ed2kConfig
+from .config import ed2kConfig, ed2kRuntime
 from .task import ED2kTask, ED2kTaskStep, parseEd2kLink
 
 
@@ -31,6 +31,9 @@ class ED2kParser(TaskParser):
 class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
+
+    def runtimes(self):
+        return [ed2kRuntime]
 
     def parsers(self):
         return [ED2kParser()]

@@ -222,7 +222,7 @@ class HuggingFaceTokenCard(SettingCard):
 
 class HuggingFaceConfig(PackConfig):
     isEnabled = ConfigItem("HuggingFace", "Enabled", True, BoolValidator())
-    selectedSite = ConfigItem("HuggingFace", "SelectedSite", "", HuggingFaceProxySiteValidator())
+    selectedSite = ConfigItem("HuggingFace", "SelectedSite", HF_PROXY_SITES[0], HuggingFaceProxySiteValidator())
     customSite = ConfigItem("HuggingFace", "CustomSite", "", HuggingFaceProxySiteValidator())
     accessToken = ConfigItem("HuggingFace", "AccessToken", "")
 

@@ -197,7 +197,7 @@ class GitHubProxySiteCard(SettingCard):
 
 
 class GitHubConfig(PackConfig):
-    enabled = ConfigItem("GitHub", "Enabled", False, BoolValidator())
+    enabled = ConfigItem("GitHub", "Enabled", True, BoolValidator())
     selectedSite = ConfigItem("GitHub", "SelectedSite", GITHUB_PROXY_SITES[0], GitHubProxySiteValidator())
     customSite = ConfigItem("GitHub", "CustomSite", "", GitHubProxySiteValidator())
 

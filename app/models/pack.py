@@ -136,6 +136,9 @@ class FeaturePack:
     def editCards(self, task: Task, parent=None) -> list[QWidget]:
         return self.optionCards(task, parent)
 
+    def runtimes(self) -> list[BinaryRuntime]:
+        return []
+
     def fileTypes(self) -> list[FileType]:
         return []
 

@@ -91,7 +91,9 @@ def startApp(application, isSilent=False):
     MainWindow.refreshThemeColor()
     window = MainWindow()
 
-    if not isSilent:
+    needsOobe = not cfg.hasCompletedOobe.value and not isSilent
+
+    if not isSilent and not needsOobe:
         from qfluentwidgets import SplashScreen
         splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
         splash.raise_()
@@ -102,8 +104,35 @@ def startApp(application, isSilent=False):
     window.setupPacks()
     startEngine()
 
-    if not isSilent:
+    if not isSilent and not needsOobe:
         splash.finish()
+
+    if needsOobe:
+        # 首次启动：不显示主窗口，OOBE 完成后再进入
+        from PySide6.QtCore import QEventLoop
+        from app.view.windows.oobe_window import OobeWindow
+
+        if cfg.isBrowserExtensionEnabled.value:
+            browserService.start()  # 提前启动，OOBE 期间可完成扩展配对
+
+        oobe = OobeWindow()
+        browserService.pairRequested.connect(
+            oobe.browserExtensionPage.onPairRequested
+        )
+        oobe.show()
+
+        loop = QEventLoop()
+        oobe.finished.connect(loop.quit)
+        oobe.destroyed.connect(loop.quit)
+        loop.exec()
+
+        browserService.pairRequested.disconnect(
+            oobe.browserExtensionPage.onPairRequested
+        )
+        # 必须在主线程显式销毁：闭包连接使窗口陷入循环引用，若留给
+        # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
+        oobe.deleteLater()
+        window.show()
 
     from app.platform.windows import emptyWorkingSet
 

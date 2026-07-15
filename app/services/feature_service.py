@@ -103,6 +103,13 @@ class FeatureService(QObject):
                 groups.extend(pack.config.settingGroups(parent))
         return groups
 
+    def runtimes(self):
+        from app.models.pack import BinaryRuntime
+        result: list[BinaryRuntime] = []
+        for pack in self._packs:
+            result.extend(pack.runtimes())
+        return result
+
     def fileTypes(self) -> list[FileType]:
         types = []
         for pack in self._packs:
