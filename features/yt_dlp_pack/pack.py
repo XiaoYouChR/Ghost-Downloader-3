@@ -25,6 +25,11 @@ class YouTubeParser(TaskParser):
         url = options.url.strip()
         isPlaylist = bool(parse_qs(urlparse(url).query).get("list"))
 
+        cookieHeader = options.headers.get("cookie") or options.headers.get("Cookie")
+        if cookieHeader:
+            from .config import saveCookies
+            saveCookies(cookieHeader)
+
         title = await self._fetchTitle(url)
         name = toSafeFilename(title) if title else "YouTube 视频"
 

@@ -5,9 +5,13 @@ import platform
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N, Qt
 from PySide6.QtWidgets import QWidget
-from qfluentwidgets import BoolValidator, ConfigItem, FluentIcon, FolderValidator, OptionsConfigItem, OptionsValidator
+from qfluentwidgets import (
+    BoolValidator, CaptionLabel, ConfigItem, FluentIcon, FolderValidator,
+    OptionsConfigItem, OptionsValidator, PushButton, SettingCard,
+    ToolButton, ToolTipFilter,
+)
 
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
@@ -16,6 +20,35 @@ from app.platform.filesystem import findExecutable
 
 PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
 QJS_RELEASE_BASE = "https://github.com/quickjs-ng/quickjs/releases/latest/download"
+COOKIE_DOMAIN = ".youtube.com"
+
+
+def cookieFile() -> Path:
+    return Path(APP_DATA_DIR) / "YtDlp" / "cookies.txt"
+
+
+def hasCookieFile() -> bool:
+    path = cookieFile()
+    return path.is_file() and path.stat().st_size > 0
+
+
+def saveCookies(cookieString: str) -> None:
+    lines = ["# Netscape HTTP Cookie File"]
+    for pair in cookieString.split(";"):
+        pair = pair.strip()
+        if not pair or "=" not in pair:
+            continue
+        name, _, value = pair.partition("=")
+        lines.append(f"{COOKIE_DOMAIN}\tTRUE\t/\tTRUE\t0\t{name.strip()}\t{value.strip()}")
+    path = cookieFile()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def clearCookies() -> None:
+    path = cookieFile()
+    if path.is_file():
+        path.unlink()
 
 
 class YtDlpConfig(PackConfig):
@@ -56,6 +89,8 @@ class YtDlpConfig(PackConfig):
                 texts=[self.tr("不使用"), "Chrome", "Firefox", "Edge", "Safari"],
                 parent=group,
             ))
+
+            cards.append(CookieSettingCard(group))
 
         cards.extend([
             SwitchSettingCard(
@@ -259,6 +294,82 @@ def _qjsAssetName() -> str:
     else:
         arch = "aarch64" if machine in {"arm64", "aarch64"} else "x86_64"
         return f"qjs-linux-{arch}"
+
+
+class CookieSettingCard(SettingCard):
+
+    def __init__(self, parent=None):
+        super().__init__(
+            FluentIcon.CERTIFICATE,
+            QCoreApplication.translate("YtDlpConfig", "YouTube Cookie"),
+            self._statusText(),
+            parent,
+        )
+        self._importButton = PushButton(
+            QCoreApplication.translate("YtDlpConfig", "导入"),
+            self,
+        )
+        self._clearButton = ToolButton(FluentIcon.DELETE, self)
+        self._clearButton.setToolTip(
+            QCoreApplication.translate("YtDlpConfig", "清除 Cookie")
+        )
+        self._clearButton.installEventFilter(ToolTipFilter(self._clearButton))
+        self._clearButton.setVisible(hasCookieFile())
+
+        self.hBoxLayout.addWidget(self._importButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self._clearButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+
+        self._importButton.clicked.connect(self._onImportClicked)
+        self._clearButton.clicked.connect(self._onClearClicked)
+
+    def _statusText(self) -> str:
+        if hasCookieFile():
+            return QCoreApplication.translate("YtDlpConfig", "已导入")
+        return QCoreApplication.translate(
+            "YtDlpConfig", "粘贴 Cookie 用于下载需要登录的内容"
+        )
+
+    def _refresh(self) -> None:
+        self.setContent(self._statusText())
+        self._clearButton.setVisible(hasCookieFile())
+
+    def _onImportClicked(self) -> None:
+        from qfluentwidgets import MessageBoxBase, SubtitleLabel, PlainTextEdit
+
+        dialog = MessageBoxBase(self.window())
+        dialog.widget.setMinimumWidth(500)
+        dialog.viewLayout.addWidget(SubtitleLabel(
+            QCoreApplication.translate("YtDlpConfig", "导入 YouTube Cookie"),
+            dialog,
+        ))
+
+        label = CaptionLabel(
+            QCoreApplication.translate(
+                "YtDlpConfig",
+                "打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中"
+                "找到任意请求，复制其 Cookie 请求头的值并粘贴到下方",
+            ),
+            dialog,
+        )
+        label.setWordWrap(True)
+        dialog.viewLayout.addWidget(label)
+
+        editor = PlainTextEdit(dialog)
+        editor.setPlaceholderText("SID=xxx; HSID=xxx; ...")
+        editor.setMinimumHeight(120)
+        dialog.viewLayout.addWidget(editor)
+
+        if dialog.exec():
+            text = editor.toPlainText().strip()
+            if text:
+                saveCookies(text)
+                self._refresh()
+
+    def _onClearClicked(self) -> None:
+        clearCookies()
+        self._refresh()
 
 
 youTubeRuntime = YouTubeRuntime()

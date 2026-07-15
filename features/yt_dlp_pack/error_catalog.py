@@ -8,6 +8,8 @@ N("TaskErrors", "年龄限制视频，需要已登录账号的 Cookie（{detail}
 N("TaskErrors", "YouTube 需要人机验证，请在设置中配置 Cookie（{detail}）")
 N("TaskErrors", "请求的格式不可用，请稍后重试（{detail}）")
 N("TaskErrors", "下载被拒绝（403），链接可能已失效（{detail}）")
+N("TaskErrors", "浏览器 Cookie 解密失败，请在设置中手动导入 Cookie 或使用浏览器扩展（{detail}）")
+N("TaskErrors", "无法读取浏览器 Cookie 数据库，请关闭浏览器后重试或手动导入 Cookie（{detail}）")
 N("TaskErrors", "视频信息提取失败：{detail}")
 N("TaskErrors", "未找到可用的视频格式")
 N("TaskErrors", "{name} 未安装，请在设置中安装")
