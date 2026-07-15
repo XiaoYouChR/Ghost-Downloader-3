@@ -73,19 +73,16 @@ class HuggingFaceTaskCard(UniversalTaskCard):
 
     def refresh(self, force: bool = False) -> None:
         super().refresh(force=force)
-        if self.selectFilesButton is not None:
-            self.selectFilesButton.setEnabled(self._task.status != TaskStatus.RUNNING)
-
-        if self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and self.selectFilesButton is not None and not self._fileMissing:
+        if self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and self.selectFilesButton is not None and not self._isFileMissing:
             selected = sum(1 for f in self._task.files if f.selected)
             self.statusLabel.setText(self.tr("{0}/{1} 个文件").format(selected, len(self._task.files)))
 
     def _onSelectFilesClicked(self) -> None:
-        if self._task.status == TaskStatus.RUNNING:
-            return
+        from app.services.task_service import taskService
         dialog = FileSelectDialog(self._task, self.window())
         try:
             if dialog.exec():
-                self._task.setSelection(dialog.selectedIndexes())
+                taskService.applySelection(self._task, dialog.selectedIndexes())
+                self.refresh(force=True)
         finally:
             dialog.deleteLater()

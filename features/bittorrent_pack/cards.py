@@ -10,13 +10,13 @@ from app.view.dialogs.file_select import FileSelectDialog
 from .task import BTTask
 
 
-def openFileSelection(task: BTTask, parent) -> set[int] | None:
+def openFileSelection(task: BTTask, parent, apply=None) -> set[int] | None:
     dialog = TorrentFileSelectDialog(task, parent)
     try:
         if not dialog.exec():
             return None
         selectedIndexes = dialog.selectedIndexes()
-        task.setSelection(selectedIndexes)
+        (apply or task.setSelection)(selectedIndexes)
         return selectedIndexes
     finally:
         dialog.deleteLater()
@@ -134,12 +134,9 @@ class BTTaskCard(UniversalTaskCard):
             self.uploadLabel.hide()
             super().refresh(force)
             btStatus = self._seedingSummary(task)
-            if btStatus and not self._fileMissing:
+            if btStatus and not self._isFileMissing:
                 self.statusLabel.setText(btStatus)
 
-        self.selectFilesButton.setEnabled(
-            task.status != TaskStatus.COMPLETED or any(not f.selected for f in task.files)
-        )
 
     def _refreshDownloading(self, task: BTTask):
         self.statusLabel.hide()
@@ -187,5 +184,9 @@ class BTTaskCard(UniversalTaskCard):
         return " · ".join(parts)
 
     def _onSelectFilesClicked(self):
-        openFileSelection(self._task, self.window())
+        from app.services.task_service import taskService
+        openFileSelection(
+            self._task, self.window(),
+            apply=lambda indexes: taskService.applySelection(self._task, indexes),
+        )
         self.refresh(force=True)

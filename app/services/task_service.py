@@ -238,6 +238,37 @@ class TaskService(QObject):
         task.category = categoryId
         self._flushTimer.start()
 
+    def applySelection(self, task: Task, selectedIndexes: set[int]) -> None:
+        from app.models.task import TaskStatus
+
+        selectedSet = set(selectedIndexes)
+        wasCompleted = task.status == TaskStatus.COMPLETED
+
+        def apply():
+            task.setSelection(selectedSet)
+            if wasCompleted and task.files and any(f.selected and not f.completed for f in task.files):
+                task.completedAt = 0
+                self._unwatchFile(task)
+                self._schedule(task)
+            self._flushTimer.start()
+
+        # 正在下载的文件被取消勾选：暂停-重启一个来回，其余文件断点续传
+        if self._queue.isRunning(task.taskId) and self._isRunningStepDeselected(task, selectedSet):
+            def afterStopped():
+                apply()
+                self._schedule(task)
+            self._cancelRun(task, finished=afterStopped)
+            return
+        apply()
+
+    def _isRunningStepDeselected(self, task: Task, selectedSet: set[int]) -> bool:
+        from app.models.task import TaskStatus
+        for step in task.steps:
+            if step.status == TaskStatus.RUNNING:
+                fileIndex = getattr(step, "fileIndex", None)
+                return fileIndex is not None and fileIndex not in selectedSet
+        return False
+
     def startAll(self) -> None:
         from app.models.task import TaskStatus
         for task in self._store.tasks.values():

@@ -6,11 +6,12 @@ from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView
 from qfluentwidgets import (
     BodyLabel, ComboBox, FluentIcon, MessageBoxBase,
     PrimaryPushButton, PushButton, SubtitleLabel,
-    ToolTipFilter, TransparentToolButton,
+    ToolButton, ToolTipFilter, TransparentToolButton,
 )
 
 from app.format import toReadableSize
 from app.view.cards.draft_cards import UniversalDraftCard
+from app.view.cards.task_cards import UniversalTaskCard
 from app.view.components.tree_view import AutoSizingTreeView
 from .task import BilibiliTask, DownloadMode
 
@@ -97,6 +98,33 @@ class BilibiliDraftCard(UniversalDraftCard):
         self._subtitleButton.setVisible(not isCover)
         self._subtitleButton.setEnabled(bool(self._subtitleChoices))
 
+
+
+class BilibiliTaskCard(UniversalTaskCard):
+    def __init__(self, task: BilibiliTask, parent=None):
+        super().__init__(task, parent)
+        self.selectFilesButton = None
+        if task.mode != DownloadMode.COVER and task.files and len(task.files) > 1:
+            self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
+            self.hBoxLayout.insertWidget(
+                self.hBoxLayout.indexOf(self.verifyHashButton),
+                self.selectFilesButton,
+            )
+            self.selectFilesButton.setToolTip(self.tr("选择分P"))
+            self.selectFilesButton.installEventFilter(ToolTipFilter(self.selectFilesButton))
+            self.selectFilesButton.clicked.connect(self._onSelectPagesClicked)
+
+    def _onSelectPagesClicked(self) -> None:
+        from app.services.task_service import taskService
+        dialog = PageSelectDialog(self._task, self.window())
+        try:
+            if dialog.exec():
+                selected = dialog.selectedPageNumbers()
+                if selected:
+                    taskService.applySelection(self._task, {n - 1 for n in selected})
+                    self.refresh(force=True)
+        finally:
+            dialog.deleteLater()
 
 
 class SubtitleSelectDialog(MessageBoxBase):

@@ -9,13 +9,13 @@ from app.view.dialogs.file_select import FileSelectDialog
 from .task import FtpTask
 
 
-def openFileSelection(task: FtpTask, parent) -> set[int] | None:
+def openFileSelection(task: FtpTask, parent, apply=None) -> set[int] | None:
     dialog = FileSelectDialog(task, parent)
     try:
         if not dialog.exec():
             return None
         selectedIndexes = dialog.selectedIndexes()
-        task.setSelection(selectedIndexes)
+        (apply or task.setSelection)(selectedIndexes)
         return selectedIndexes
     finally:
         dialog.deleteLater()
@@ -68,24 +68,25 @@ class FtpDraftCard(UniversalDraftCard):
 class FtpTaskCard(UniversalTaskCard):
     def __init__(self, task: FtpTask, parent=None):
         super().__init__(task, parent)
-        self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
-        self.hBoxLayout.insertWidget(
-            self.hBoxLayout.indexOf(self.verifyHashButton),
-            self.selectFilesButton,
-        )
-        self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
+        self.selectFilesButton = None
+        if task.files and len(task.files) > 1:
+            self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
+            self.hBoxLayout.insertWidget(
+                self.hBoxLayout.indexOf(self.verifyHashButton),
+                self.selectFilesButton,
+            )
+            self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
     def refresh(self, force: bool = False) -> None:
         super().refresh(force=force)
-        hasMultipleFiles = bool(self.task.files and len(self.task.files) > 1)
-        self.selectFilesButton.setVisible(hasMultipleFiles)
-        self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
-
-        if self.task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and hasMultipleFiles and not self._fileMissing:
+        if self.task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and self.selectFilesButton is not None and not self._isFileMissing:
             selected = sum(1 for f in self.task.files if f.selected)
             self.statusLabel.setText(self.tr("{0}/{1} 个文件").format(selected, len(self.task.files)))
 
     def _onSelectFilesClicked(self):
-        if self.task.status == TaskStatus.RUNNING:
-            return
-        openFileSelection(self.task, self.window())
+        from app.services.task_service import taskService
+        openFileSelection(
+            self.task, self.window(),
+            apply=lambda indexes: taskService.applySelection(self.task, indexes),
+        )
+        self.refresh(force=True)

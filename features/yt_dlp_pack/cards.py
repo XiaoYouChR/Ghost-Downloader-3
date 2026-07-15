@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidg
 from qfluentwidgets import (
     BodyLabel, ComboBox, FluentIcon, IndeterminateProgressRing,
     MessageBoxBase, PrimaryPushButton, ProgressBar, PushButton, SubtitleLabel,
-    ToolTipFilter, TransparentToolButton,
+    ToolButton, ToolTipFilter, TransparentToolButton,
 )
 
 from app.format import toReadableSize
@@ -406,6 +406,29 @@ class VideoSelectDialog(MessageBoxBase):
 
 
 class YtDlpTaskCard(UniversalTaskCard):
+
+    def __init__(self, task: YouTubeTask, parent=None):
+        super().__init__(task, parent)
+        self.selectFilesButton = None
+        if task.files and len(task.files) > 1:
+            self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
+            self.hBoxLayout.insertWidget(
+                self.hBoxLayout.indexOf(self.verifyHashButton),
+                self.selectFilesButton,
+            )
+            self.selectFilesButton.setToolTip(self.tr("选择视频"))
+            self.selectFilesButton.installEventFilter(ToolTipFilter(self.selectFilesButton))
+            self.selectFilesButton.clicked.connect(self._onSelectVideosClicked)
+
+    def _onSelectVideosClicked(self) -> None:
+        from app.services.task_service import taskService
+        dialog = VideoSelectDialog(self._task.files, self.window())
+        try:
+            if dialog.exec():
+                taskService.applySelection(self._task, dialog.selectedIndices())
+                self.refresh(force=True)
+        finally:
+            dialog.deleteLater()
 
     def _buildProgressBar(self) -> QWidget:
         bar = ProgressBar(self)

@@ -90,6 +90,10 @@ class BTTask(Task):
             return
         self._fileSelectionVersion += 1
         self.fileSize = sum(f.size for f in self.files if f.selected)
+        # 完成后补选新文件：步骤打回 WAITING，等待重新调度补下
+        if self.step.status == TaskStatus.COMPLETED and any(f.selected and not f.completed for f in self.files):
+            self.step.setStatus(TaskStatus.WAITING, sync=False)
+            self.updateStatus()
 
     def deleteFiles(self):
         super().deleteFiles()

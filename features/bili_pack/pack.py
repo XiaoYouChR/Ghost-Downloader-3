@@ -292,6 +292,10 @@ class BilibiliPack(FeaturePack):
         from .cards import BilibiliDraftCard
         return BilibiliDraftCard(task, parent)
 
+    def taskCard(self, task, parent=None):
+        from .cards import BilibiliTaskCard
+        return BilibiliTaskCard(task, parent)
+
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
