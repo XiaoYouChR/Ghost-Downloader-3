@@ -228,7 +228,6 @@ class Task:
     fileSize: int = 0
     files: list[TaskFile] | None = None
     category: str | None = None
-    stepType: ClassVar[Type[TaskStep] | None] = None
 
     @property
     def outputPath(self) -> str:
@@ -282,22 +281,52 @@ class Task:
             step.moveFiles(oldFolder, newFolder)
         self.outputFolder = newFolder
 
+    def _isStepSelected(self, step: TaskStep) -> bool:
+        if not self.files:
+            return True
+        fileIndex = getattr(step, "fileIndex", None)
+        if fileIndex is None:
+            return True
+        for file in self.files:
+            if file.index == fileIndex:
+                return file.selected
+        return False
+
+    def _updateFilesFromSteps(self) -> None:
+        if not self.files:
+            return
+        received: dict[int, int] = {}
+        completed: dict[int, bool] = {}
+        for step in self.steps:
+            fileIndex = getattr(step, "fileIndex", None)
+            if fileIndex is None:
+                continue
+            received[fileIndex] = received.get(fileIndex, 0) + step.receivedBytes
+            completed[fileIndex] = completed.get(fileIndex, True) and step.status == TaskStatus.COMPLETED
+        for file in self.files:
+            if file.index in received:
+                file.downloadedBytes = received[file.index]
+                file.completed = completed[file.index]
+
     def currentSnapshot(self) -> tuple[float, int, int]:
-        if not self.steps:
+        steps = [s for s in self.steps if self._isStepSelected(s)]
+        if not steps:
             return 0.0, 0, 0
         progress = 0.0
         speed = 0
         receivedBytes = 0
-        for step in self.steps:
+        for step in steps:
             progress += step.progress
             speed += step.speed
             receivedBytes += step.receivedBytes
-        return progress / len(self.steps), speed, receivedBytes
+        return progress / len(steps), speed, receivedBytes
 
     def updateStatus(self) -> TaskStatus:
-        if not self.steps:
+        self._updateFilesFromSteps()
+        steps = [s for s in self.steps if self._isStepSelected(s)]
+        if not steps:
             return self.status
-        statuses = [step.status for step in self.steps]
+        statuses = [step.status for step in steps]
         if any(s == TaskStatus.FAILED for s in statuses):
             self.status = TaskStatus.FAILED
         elif all(s == TaskStatus.COMPLETED for s in statuses):
@@ -317,10 +346,11 @@ class Task:
         return self.status
 
     def setStatus(self, status: TaskStatus) -> TaskStatus:
-        if not self.steps:
+        steps = [s for s in self.steps if self._isStepSelected(s)]
+        if not steps:
             self.status = status
             return self.status
-        for step in self.steps:
+        for step in steps:
             if step.status == TaskStatus.COMPLETED:
                 continue
             if status == TaskStatus.RUNNING and step.status == TaskStatus.FAILED:
@@ -347,27 +377,11 @@ class Task:
         self.updateStatus()
 
     def setSelection(self, selectedIndexes: list[int]):
-        if self.files is None or self.stepType is None:
+        if self.files is None:
             return
         selectedSet = set(selectedIndexes)
         for file in self.files:
             file.selected = file.index in selectedSet
-        stepsToRemove = [
-            step for step in self.steps
-            if (fileIndex := getattr(step, "fileIndex", None)) is not None
-            and fileIndex not in selectedSet
-        ]
-        for step in stepsToRemove:
-            self.steps.remove(step)
-        existingFileIndexes = {
-            fileIndex
-            for step in self.steps
-            if (fileIndex := getattr(step, "fileIndex", None)) is not None
-        }
-        for file in self.files:
-            if file.selected and file.index not in existingFileIndexes:
-                newStep = self.stepType.fromFile(file, self)
-                self.addStep(newStep)
         self.fileSize = sum(f.size for f in self.files if f.selected)
         self.updateStatus()
 
@@ -376,6 +390,8 @@ class Task:
         for step in self.steps:
             if self.status != TaskStatus.RUNNING:
                 break
+            if not self._isStepSelected(step):
+                continue
             if step.status == TaskStatus.COMPLETED:
                 continue
             yield step

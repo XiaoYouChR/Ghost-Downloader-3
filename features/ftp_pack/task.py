@@ -496,12 +496,17 @@ class FtpTask(Task):
     fileType = FtpFile
     connectionInfo: FtpConnectionInfo
     sourceType: str = "file"
-    stepType = FtpStep
 
     def __post_init__(self):
         if isinstance(self.connectionInfo, dict):
             self.connectionInfo = FtpConnectionInfo(**self.connectionInfo)
         super().__post_init__()
+        # 旧存档中被取消勾选的文件没有 Step，按 files 补建
+        if self.files:
+            existing = {getattr(s, "fileIndex", None) for s in self.steps}
+            for file in self.files:
+                if file.index not in existing:
+                    self.addStep(FtpStep.fromFile(file, self))
 
     @property
     def isFolder(self) -> bool:
@@ -510,66 +515,6 @@ class FtpTask(Task):
     @property
     def countSelected(self) -> int:
         return sum(1 for file in self.files if file.selected)
-
-    def _updateFilesFromSteps(self) -> None:
-        if not self.files:
-            return
-        for step in self.steps:
-            fileIndex = getattr(step, "fileIndex", None)
-            if fileIndex is not None and fileIndex < len(self.files):
-                file = self.files[fileIndex]
-                file.downloadedBytes = step.receivedBytes
-                file.completed = step.status == TaskStatus.COMPLETED
-
-    def updateStatus(self) -> TaskStatus:
-        self._updateFilesFromSteps()
-        selected = [s for s in self.steps if self._isStepSelected(s)]
-        if not selected:
-            self.status = TaskStatus.COMPLETED
-            return self.status
-        statuses = [s.status for s in selected]
-        if any(s == TaskStatus.FAILED for s in statuses):
-            self.status = TaskStatus.FAILED
-        elif all(s == TaskStatus.COMPLETED for s in statuses):
-            self.status = TaskStatus.COMPLETED
-        elif any(s == TaskStatus.RUNNING for s in statuses):
-            self.status = TaskStatus.RUNNING
-        elif all(s == TaskStatus.PAUSED for s in statuses):
-            self.status = TaskStatus.PAUSED
-        else:
-            self.status = TaskStatus.WAITING
-        return self.status
-
-    def setStatus(self, status: TaskStatus) -> TaskStatus:
-        for step in self.steps:
-            if not self._isStepSelected(step):
-                continue
-            if step.status == TaskStatus.COMPLETED:
-                continue
-            if status == TaskStatus.RUNNING and step.status == TaskStatus.FAILED:
-                step.reset(sync=False)
-            step.setStatus(status, sync=False)
-        return self.updateStatus()
-
-    def pendingSteps(self):
-        self.steps.sort(key=lambda step: step.stepIndex)
-        for step in self.steps:
-            if self.status != TaskStatus.RUNNING:
-                break
-            if not self._isStepSelected(step):
-                continue
-            if step.status == TaskStatus.COMPLETED:
-                continue
-            yield step
-
-    def currentSnapshot(self) -> tuple[float, int, int]:
-        selected = [s for s in self.steps if self._isStepSelected(s)]
-        if not selected:
-            return 0.0, 0, 0
-        progress = sum(s.progress for s in selected) / len(selected)
-        speed = sum(s.speed for s in selected)
-        receivedBytes = sum(s.receivedBytes for s in selected)
-        return progress, speed, receivedBytes
 
     def deleteFiles(self):
         if self.isFolder:
@@ -580,13 +525,3 @@ class FtpTask(Task):
             deletePath(target)
             deletePath(Path(f"{target}.ghd"))
 
-    def _isStepSelected(self, step) -> bool:
-        if not self.files:
-            return True
-        fileIndex = getattr(step, "fileIndex", None)
-        if fileIndex is None:
-            return True
-        for file in self.files:
-            if file.index == fileIndex:
-                return file.selected
-        return False
