@@ -228,7 +228,7 @@ class Task:
     fileSize: int = 0
     files: list[TaskFile] | None = None
     category: str | None = None
-    stepType: Type[TaskStep] | None = field(default=None, repr=False)
+    stepType: ClassVar[Type[TaskStep] | None] = None
 
     @property
     def outputPath(self) -> str:

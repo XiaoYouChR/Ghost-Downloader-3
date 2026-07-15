@@ -62,20 +62,21 @@ class HuggingFaceDraftCard(UniversalDraftCard):
 class HuggingFaceTaskCard(UniversalTaskCard):
     def __init__(self, task: HuggingFaceTask, parent=None):
         super().__init__(task, parent)
-        self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
-        self.hBoxLayout.insertWidget(
-            self.hBoxLayout.indexOf(self.verifyHashButton),
-            self.selectFilesButton,
-        )
-        self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
+        self.selectFilesButton = None
+        if task.files and len(task.files) > 1:
+            self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
+            self.hBoxLayout.insertWidget(
+                self.hBoxLayout.indexOf(self.verifyHashButton),
+                self.selectFilesButton,
+            )
+            self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
     def refresh(self, force: bool = False) -> None:
         super().refresh(force=force)
-        hasMultipleFiles = self._task.files and len(self._task.files) > 1
-        self.selectFilesButton.setVisible(hasMultipleFiles)
-        self.selectFilesButton.setEnabled(self._task.status != TaskStatus.RUNNING)
+        if self.selectFilesButton is not None:
+            self.selectFilesButton.setEnabled(self._task.status != TaskStatus.RUNNING)
 
-        if self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and hasMultipleFiles and not self._fileMissing:
+        if self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED} and self.selectFilesButton is not None and not self._fileMissing:
             selected = sum(1 for f in self._task.files if f.selected)
             self.statusLabel.setText(self.tr("{0}/{1} 个文件").format(selected, len(self._task.files)))
 

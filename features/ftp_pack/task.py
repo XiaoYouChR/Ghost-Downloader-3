@@ -496,7 +496,7 @@ class FtpTask(Task):
     fileType = FtpFile
     connectionInfo: FtpConnectionInfo
     sourceType: str = "file"
-    stepType: type = field(default=FtpStep, repr=False)
+    stepType = FtpStep
 
     def __post_init__(self):
         if isinstance(self.connectionInfo, dict):

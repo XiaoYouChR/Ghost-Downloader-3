@@ -177,7 +177,8 @@ class HuggingFaceParser(TaskParser):
                     if entry.get("type") == "file":
                         entries.append(entry)
                     elif entry.get("type") == "directory":
-                        subUrl = f"{apiUrl}/{entry['path']}"
+                        dirName = entry['path'].rsplit('/', 1)[-1]
+                        subUrl = f"{apiUrl}/{dirName}"
                         subEntries = await self._fetchTree(client, subUrl)
                         entries.extend(subEntries)
                 break
