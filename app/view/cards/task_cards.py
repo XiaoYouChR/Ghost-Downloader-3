@@ -229,6 +229,7 @@ class UniversalTaskCard(TaskCard):
             self.progressBar.setError(False)
             if self.statusLabel.isVisible():
                 self.statusLabel.hide()
+                self.progressBar.show()
                 self.speedLabel.show()
                 self.etaLabel.show()
                 self.sizeLabel.show()
@@ -239,11 +240,11 @@ class UniversalTaskCard(TaskCard):
                 self.etaLabel.setText("--")
 
         elif task.status == TaskStatus.COMPLETED:
+            self.progressBar.pause()
+            self.progressBar.hide()
             if task.fileSize > 0:
-                self.progressBar.hide()
                 self.sizeLabel.setText(toReadableSize(task.fileSize))
             else:
-                self.progressBar.stop()
                 self.sizeLabel.hide()
             self._fileMissing = task.hasOutputFile and not Path(task.outputPath).exists()
             if self._fileMissing:
@@ -261,7 +262,7 @@ class UniversalTaskCard(TaskCard):
             self._refreshIcon()
 
         elif task.status == TaskStatus.FAILED:
-            self.progressBar.error()
+            self.progressBar.setError(True)
             error = task.lastError
             if error:
                 from PySide6.QtCore import QCoreApplication

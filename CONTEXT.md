@@ -714,3 +714,7 @@ initialized in `run()`, never serialized.
   built in unclear combination. Resolved: use the specific verb that names the
   actual operation (load, fetch, probe, parse, build, select, or a
   noun-returning method).
+- `fileSize == 0` means both "size unknown" (`SpecialFileSize.UNKNOWN`) and a
+  legitimately empty file — the model cannot tell them apart. Unresolved;
+  existing code works around it (`updateStatus` backfills only when
+  `receivedBytes > 0`; the HTTP probe treats sizes 0 and 1 as pseudo-unknown).

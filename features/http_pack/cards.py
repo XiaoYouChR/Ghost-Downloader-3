@@ -49,9 +49,6 @@ class SegmentedProgressBar(QWidget):
             self._isPaused = False
         self.update()
 
-    def error(self) -> bool:
-        return self._isError
-
     def pause(self):
         self._isPaused = True
         self.update()
@@ -97,6 +94,6 @@ class SegmentedProgressBar(QWidget):
 class HttpTaskCard(UniversalTaskCard):
     def _buildProgressBar(self) -> QWidget:
         step = self.task.steps[0] if self.task.steps else None
-        if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.subworkerCount > 1:
+        if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.fileSize > 0 and step.subworkerCount > 1:
             return SegmentedProgressBar(step, self)
         return super()._buildProgressBar()

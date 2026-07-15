@@ -77,7 +77,7 @@ class FtpTaskCard(UniversalTaskCard):
 
     def refresh(self, force: bool = False) -> None:
         super().refresh(force=force)
-        hasMultipleFiles = self.task.files and len(self.task.files) > 1
+        hasMultipleFiles = bool(self.task.files and len(self.task.files) > 1)
         self.selectFilesButton.setVisible(hasMultipleFiles)
         self.selectFilesButton.setEnabled(self.task.status != TaskStatus.RUNNING)
 
