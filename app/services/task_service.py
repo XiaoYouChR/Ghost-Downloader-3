@@ -252,22 +252,21 @@ class TaskService(QObject):
                 self._schedule(task)
             self._flushTimer.start()
 
-        # 正在下载的文件被取消勾选：暂停-重启一个来回，其余文件断点续传
-        if self._queue.isRunning(task.taskId) and self._isRunningStepDeselected(task, selectedSet):
+        isRunningDeselected = False
+        if self._queue.isRunning(task.taskId):
+            for step in task.steps:
+                if step.status == TaskStatus.RUNNING:
+                    fileIndex = getattr(step, "fileIndex", None)
+                    isRunningDeselected = fileIndex is not None and fileIndex not in selectedSet
+                    break
+
+        if isRunningDeselected:
             def afterStopped():
                 apply()
                 self._schedule(task)
             self._cancelRun(task, finished=afterStopped)
             return
         apply()
-
-    def _isRunningStepDeselected(self, task: Task, selectedSet: set[int]) -> bool:
-        from app.models.task import TaskStatus
-        for step in task.steps:
-            if step.status == TaskStatus.RUNNING:
-                fileIndex = getattr(step, "fileIndex", None)
-                return fileIndex is not None and fileIndex not in selectedSet
-        return False
 
     def startAll(self) -> None:
         from app.models.task import TaskStatus

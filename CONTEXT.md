@@ -94,7 +94,9 @@ _Avoid_: title, filename (keep `filename` only at the raw browser/protocol seam)
 The folder a Task downloads into.
 
 **Output Path**:
-The full path of a Task's finished file; equals `outputFolder / name`.
+The full path of a Task's finished output. For single-file Tasks, equals
+`outputFolder / name`; for multi-file Tasks (HuggingFace, Bilibili multi-P),
+a directory containing the individual files.
 
 **Task Options**:
 The app-owned options used to parse, create, or edit a Task. Frozen dataclass
