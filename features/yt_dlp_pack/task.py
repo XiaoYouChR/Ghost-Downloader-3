@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
-from app.models.task import Task, TaskError, TaskStep, TaskStatus
+from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus
 from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
 
 ERROR_HINTS = (
@@ -95,13 +95,19 @@ def probePlaylist(url: str) -> list[dict]:
     ]
 
 
-def buildStepGroup(groupIndex: int, videoUrl: str = "", videoStem: str = "") -> list[TaskStep]:
-    base = groupIndex * STEPS_PER_VIDEO
+@dataclass(kw_only=True)
+class YouTubeFile(TaskFile):
+    videoId: str = ""
+    duration: int = 0
+
+
+def buildStepGroup(fileIndex: int, videoUrl: str = "", videoStem: str = "") -> list[TaskStep]:
+    base = fileIndex * STEPS_PER_VIDEO
     return [
-        YouTubeExtractStep(stepIndex=base + 1, groupIndex=groupIndex, videoUrl=videoUrl),
-        YouTubeResourceStep(stepIndex=base + 2, groupIndex=groupIndex, videoStem=videoStem, role="video"),
-        YouTubeResourceStep(stepIndex=base + 3, groupIndex=groupIndex, videoStem=videoStem, role="audio"),
-        YouTubeMergeStep(stepIndex=base + 4, groupIndex=groupIndex, videoStem=videoStem),
+        YouTubeExtractStep(stepIndex=base + 1, fileIndex=fileIndex, videoUrl=videoUrl),
+        YouTubeResourceStep(stepIndex=base + 2, fileIndex=fileIndex, videoStem=videoStem, role="video"),
+        YouTubeResourceStep(stepIndex=base + 3, fileIndex=fileIndex, videoStem=videoStem, role="audio"),
+        YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoStem=videoStem),
     ]
 
 
@@ -109,46 +115,48 @@ def buildStepGroup(groupIndex: int, videoUrl: str = "", videoStem: str = "") -> 
 class YouTubeTask(Task):
     packId: str = "ytdlp"
     canEdit = True
+    fileType = YouTubeFile
     videoFormatFilter: str = ""
     subtitleLanguages: str = ""
     shouldIncludeAutoSubs: bool = False
     isPlaylist: bool = False
-    videos: list[dict] = field(default_factory=list)
 
     def setVideos(self, videos: list[dict]) -> None:
-        self.videos = videos
-        self._updateSteps()
-
-    def setSelectedVideos(self, indices: set[int]) -> None:
-        for i, video in enumerate(self.videos):
-            video["selected"] = i in indices
-        self._updateSteps()
-
-    def _updateSteps(self) -> None:
-        self.steps.clear()
-        if not self.videos:
-            for step in buildStepGroup(0):
-                self.addStep(step)
-            return
         from app.platform.filesystem import toSafeFilename
-        groupIndex = 0
-        for video in self.videos:
-            if not video.get("selected", True):
-                continue
-            videoUrl = f"https://www.youtube.com/watch?v={video['id']}"
-            videoStem = toSafeFilename(str(video.get("title") or f"视频 {groupIndex + 1}"))
-            for step in buildStepGroup(groupIndex, videoUrl=videoUrl, videoStem=videoStem):
+        self.files = [
+            YouTubeFile(
+                index=i,
+                relativePath=toSafeFilename(str(video.get("title") or f"视频 {i + 1}")),
+                videoId=str(video.get("id") or ""),
+                duration=int(video.get("duration") or 0),
+            )
+            for i, video in enumerate(videos)
+        ]
+        self.steps.clear()
+        for file in self.files:
+            videoUrl = f"https://www.youtube.com/watch?v={file.videoId}"
+            for step in buildStepGroup(file.index, videoUrl=videoUrl, videoStem=file.relativePath):
                 self.addStep(step)
-            groupIndex += 1
         if not self.steps:
             for step in buildStepGroup(0):
                 self.addStep(step)
+
+    def setSelection(self, selectedIndexes) -> None:
+        super().setSelection(selectedIndexes)
+        # 视频大小在 extract 前未知，files 的 size 恒为 0，改从资源步骤汇总
+        totalSize = sum(
+            s.fileSize for s in self.steps
+            if isinstance(s, FFmpegResourceStep) and self._isStepSelected(s)
+        )
+        self.fileSize = totalSize if totalSize > 0 else int(SpecialFileSize.UNKNOWN)
 
     def pendingSteps(self) -> Iterable[TaskStep]:
         self.steps.sort(key=lambda step: step.stepIndex)
         for step in self.steps:
             if self.status != TaskStatus.RUNNING:
                 break
+            if not self._isStepSelected(step):
+                continue
             if isinstance(step, YouTubeExtractStep):
                 yield step
                 continue
@@ -157,7 +165,10 @@ class YouTubeTask(Task):
             yield step
 
     def currentSnapshot(self) -> tuple[float, int, int]:
-        downloadSteps = [s for s in self.steps if not isinstance(s, YouTubeExtractStep)]
+        downloadSteps = [
+            s for s in self.steps
+            if not isinstance(s, YouTubeExtractStep) and self._isStepSelected(s)
+        ]
         if not downloadSteps:
             return 0.0, 0, 0
         completedCount = sum(1 for s in downloadSteps if s.status == TaskStatus.COMPLETED)
@@ -176,7 +187,7 @@ class YouTubeTask(Task):
 @dataclass(kw_only=True)
 class YouTubeExtractStep(TaskStep):
     canPause = False
-    groupIndex: int = 0
+    fileIndex: int = 0
     videoUrl: str = ""
 
     async def run(self) -> None:
@@ -215,11 +226,11 @@ class YouTubeExtractStep(TaskStep):
             from app.platform.filesystem import toSafeFilename
             safeName = toSafeFilename(title)
             if safeName:
-                if self.groupIndex == 0 and not self.task.isPlaylist:
+                if self.fileIndex == 0 and not self.task.isPlaylist:
                     ext = "m4a" if not videoFmt else "mp4"
                     self.task.setName(f"{safeName}.{ext}")
                 for step in self.task.steps:
-                    if getattr(step, "groupIndex", -1) == self.groupIndex and hasattr(step, "videoStem"):
+                    if getattr(step, "fileIndex", -1) == self.fileIndex and hasattr(step, "videoStem"):
                         step.videoStem = safeName
 
         self.setStatus(TaskStatus.COMPLETED)
@@ -227,7 +238,7 @@ class YouTubeExtractStep(TaskStep):
     def _hasFreshSiblingUrls(self) -> bool:
         now = time()
         for s in self.task.steps:
-            if not isinstance(s, YouTubeResourceStep) or s.groupIndex != self.groupIndex:
+            if not isinstance(s, YouTubeResourceStep) or s.fileIndex != self.fileIndex:
                 continue
             if not s.url:
                 continue
@@ -294,7 +305,7 @@ class YouTubeExtractStep(TaskStep):
         from .config import ytDlpConfig
 
         for step in self.task.steps:
-            if getattr(step, "groupIndex", -1) != self.groupIndex:
+            if getattr(step, "fileIndex", -1) != self.fileIndex:
                 continue
             if isinstance(step, FFmpegResourceStep):
                 fmt = videoFmt if step.role == "video" else audioFmt
@@ -316,13 +327,16 @@ class YouTubeExtractStep(TaskStep):
                 if ytDlpConfig.shouldEmbedChapters.value:
                     step.chapters = info.get("chapters") or []
 
-        totalSize = sum(s.fileSize for s in self.task.steps if isinstance(s, FFmpegResourceStep))
+        totalSize = sum(
+            s.fileSize for s in self.task.steps
+            if isinstance(s, FFmpegResourceStep) and self.task._isStepSelected(s)
+        )
         self.task.fileSize = totalSize if totalSize > 0 else 0
 
 
 @dataclass(kw_only=True)
 class YouTubeResourceStep(FFmpegResourceStep):
-    groupIndex: int = 0
+    fileIndex: int = 0
     videoStem: str = ""
 
     @property
@@ -340,7 +354,7 @@ class YouTubeResourceStep(FFmpegResourceStep):
 
 @dataclass(kw_only=True)
 class YouTubeMergeStep(FFmpegStep):
-    groupIndex: int = 0
+    fileIndex: int = 0
     videoStem: str = ""
     metadataTitle: str = ""
     metadataArtist: str = ""

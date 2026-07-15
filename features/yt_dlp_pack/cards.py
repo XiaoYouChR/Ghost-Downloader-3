@@ -182,7 +182,7 @@ class YtDlpDraftCard(UniversalDraftCard):
 
     def _onVideoSelectClicked(self) -> None:
         task: YouTubeTask = self._task
-        if not task.videos:
+        if not task.files:
             self._videoSelectButton.hide()
             self._playlistSpinner.show()
             from app.services.coroutine_runner import coroutineRunner
@@ -194,9 +194,9 @@ class YtDlpDraftCard(UniversalDraftCard):
                 failed=self._onPlaylistFailed,
             )
             return
-        dialog = VideoSelectDialog(task.videos, self.window())
+        dialog = VideoSelectDialog(task.files, self.window())
         if dialog.exec():
-            task.setSelectedVideos(dialog.selectedIndices())
+            task.setSelection(dialog.selectedIndices())
             self.nameLabel.setText(task.name)
 
     def _onPlaylistLoaded(self, videos: list[dict]) -> None:
@@ -304,9 +304,9 @@ class SubtitleSelectDialog(MessageBoxBase):
 
 class VideoSelectDialog(MessageBoxBase):
 
-    def __init__(self, videos: list[dict], parent=None):
+    def __init__(self, files: list, parent=None):
         super().__init__(parent)
-        self._videos = videos
+        self._files = files
 
         self.titleLabel = SubtitleLabel(self.tr("选择视频"), self)
         self.summaryLabel = BodyLabel("", self)
@@ -338,17 +338,17 @@ class VideoSelectDialog(MessageBoxBase):
         self.treeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
 
-        for i, video in enumerate(self._videos):
-            title = str(video.get("title") or f"视频 {i + 1}").strip()
-            duration = video.get("duration")
+        for file in self._files:
+            title = file.relativePath.strip() or f"视频 {file.index + 1}"
 
-            nameItem = QStandardItem(f"{i + 1}. {title}")
+            nameItem = QStandardItem(f"{file.index + 1}. {title}")
             nameItem.setCheckable(True)
-            nameItem.setCheckState(Qt.CheckState.Checked if video.get("selected", True) else Qt.CheckState.Unchecked)
+            nameItem.setCheckState(Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
+            nameItem.setData(file.index, Qt.ItemDataRole.UserRole)
 
             durationText = ""
-            if duration and isinstance(duration, (int, float)) and duration > 0:
-                minutes, seconds = divmod(int(duration), 60)
+            if file.duration > 0:
+                minutes, seconds = divmod(int(file.duration), 60)
                 durationText = f"{minutes}:{seconds:02d}"
             durationItem = QStandardItem(durationText)
             durationItem.setEditable(False)
@@ -399,7 +399,8 @@ class VideoSelectDialog(MessageBoxBase):
 
     def selectedIndices(self) -> set[int]:
         return {
-            row for row in range(self.treeModel.rowCount())
+            self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            for row in range(self.treeModel.rowCount())
             if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
         }
 
@@ -428,14 +429,14 @@ class YtDlpTaskCard(UniversalTaskCard):
         if not currentStep:
             return
 
-        groupIndex = getattr(currentStep, "groupIndex", 0)
-        stepInGroup = currentStep.stepIndex - groupIndex * STEPS_PER_VIDEO
+        fileIndex = getattr(currentStep, "fileIndex", 0)
+        stepInGroup = currentStep.stepIndex - fileIndex * STEPS_PER_VIDEO
         label = STEP_LABELS.get(stepInGroup, "")
 
         if task.isPlaylist:
             videoCount = len(task.steps) // STEPS_PER_VIDEO
             videoStem = getattr(currentStep, "videoStem", "") or task.name
             if label:
-                self.nameLabel.setText(f"{videoStem} ({groupIndex + 1}/{videoCount} · {label})")
+                self.nameLabel.setText(f"{videoStem} ({fileIndex + 1}/{videoCount} · {label})")
         elif label:
             self.nameLabel.setText(f"{task.name} ({label})")
