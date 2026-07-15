@@ -68,7 +68,7 @@ class BilibiliDraftCard(UniversalDraftCard):
         if dialog.exec():
             selected = dialog.selectedPageNumbers()
             if selected:
-                task.setPageSelection(selected)
+                task.setSelection({n - 1 for n in selected})
                 self._refreshSummary()
 
     def _refreshSummary(self) -> None:
@@ -79,8 +79,8 @@ class BilibiliDraftCard(UniversalDraftCard):
     def _buildSubtitleChoices(self) -> list[tuple[str, str]]:
         seen: set[str] = set()
         choices: list[tuple[str, str]] = []
-        for page in self.task.pages:
-            for sub in page.get("subtitles") or []:
+        for page in self.task.files or []:
+            for sub in page.subtitles:
                 lan = sub.get("lan", "")
                 if lan and lan not in seen:
                     seen.add(lan)
@@ -93,7 +93,7 @@ class BilibiliDraftCard(UniversalDraftCard):
     def _refreshButtonVisibility(self) -> None:
         task: BilibiliTask = self._task
         isCover = task.mode == DownloadMode.COVER
-        self._selectPagesButton.setVisible(not isCover and len(task.pages) > 1)
+        self._selectPagesButton.setVisible(not isCover and len(task.files or []) > 1)
         self._subtitleButton.setVisible(not isCover)
         self._subtitleButton.setEnabled(bool(self._subtitleChoices))
 
@@ -181,7 +181,7 @@ class PageSelectDialog(MessageBoxBase):
 
     def __init__(self, task: BilibiliTask, parent=None):
         super().__init__(parent)
-        self._pages = task.pages
+        self._pages = task.files or []
 
         self.titleLabel = SubtitleLabel(self.tr("选择分P"), self)
         self.summaryLabel = BodyLabel("", self)
@@ -214,11 +214,9 @@ class PageSelectDialog(MessageBoxBase):
         self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
 
         for page in self._pages:
-            pageNumber = page["pageNumber"]
-            pagePart = page.get("pagePart", "").strip()
-            videoSize = page.get("videoSize", 0)
-            audioSize = page.get("audioSize", 0)
-            totalSize = videoSize + audioSize
+            pageNumber = page.pageNumber
+            pagePart = page.pagePart.strip()
+            totalSize = page.videoSize + page.audioSize
 
             label = f"P{pageNumber}"
             if pagePart:
@@ -226,7 +224,7 @@ class PageSelectDialog(MessageBoxBase):
 
             nameItem = QStandardItem(label)
             nameItem.setCheckable(True)
-            nameItem.setCheckState(Qt.CheckState.Checked if page.get("selected", True) else Qt.CheckState.Unchecked)
+            nameItem.setCheckState(Qt.CheckState.Checked if page.selected else Qt.CheckState.Unchecked)
             nameItem.setData(pageNumber, Qt.ItemDataRole.UserRole)
 
             sizeItem = QStandardItem(toReadableSize(totalSize) if totalSize > 0 else "")

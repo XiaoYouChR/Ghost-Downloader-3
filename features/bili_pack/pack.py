@@ -13,7 +13,7 @@ from app.models.task import TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .account import bilibiliAccount
 from .config import bilibiliConfig
-from .task import BilibiliTask
+from .task import BiliPage, BilibiliTask
 
 
 class BilibiliParser(TaskParser):
@@ -158,15 +158,16 @@ class BilibiliParser(TaskParser):
 
                 subtitles = await self._fetchSubtitles(client, videoId, cid)
 
-                parsedPages.append({
-                    "pageNumber": pageNumber,
-                    "pagePart": pagePart,
-                    "videoUrl": videoUrl,
-                    "audioUrl": audioUrl,
-                    "videoSize": videoSize,
-                    "audioSize": audioSize,
-                    "subtitles": subtitles,
-                })
+                parsedPages.append(BiliPage(
+                    index=pageNumber - 1,
+                    relativePath=pagePart or f"P{pageNumber}",
+                    pagePart=pagePart,
+                    videoUrl=videoUrl,
+                    audioUrl=audioUrl,
+                    videoSize=videoSize,
+                    audioSize=audioSize,
+                    subtitles=subtitles,
+                ))
 
             coverUrl = str(viewData.get("pic") or "").strip()
             if coverUrl.startswith("http://"):
@@ -182,10 +183,10 @@ class BilibiliParser(TaskParser):
                 except Exception:
                     pass
 
-            for info in parsedPages:
-                info["headers"] = dict(downloadHeaders)
-                info["subworkerCount"] = subworkerCount
-                info["selected"] = info["pageNumber"] in selectedPages
+            for page in parsedPages:
+                page.headers = dict(downloadHeaders)
+                page.subworkerCount = subworkerCount
+                page.selected = page.pageNumber in selectedPages
 
             task = BilibiliTask(
                 name=taskName,
@@ -194,7 +195,7 @@ class BilibiliParser(TaskParser):
                 outputFolder=outputFolder,
                 coverUrl=coverUrl,
                 coverSize=coverSize,
-                pages=parsedPages,
+                files=parsedPages,
                 _baseName=baseName,
             )
             task._rebuildSteps()
