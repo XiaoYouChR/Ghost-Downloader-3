@@ -56,7 +56,7 @@ class M3U8LiveTaskCard(UniversalTaskCard):
                 self.sizeLabel.setText(self.tr("等待中"))
             else:
                 self.sizeLabel.setText(self.tr("录制中"))
-        elif self._task.status == TaskStatus.COMPLETED and not self._fileMissing:
+        elif self._task.status == TaskStatus.COMPLETED and not self._isFileMissing:
             self._showStatus(self.tr("录制已结束"))
 
     def _refreshButtons(self) -> None:

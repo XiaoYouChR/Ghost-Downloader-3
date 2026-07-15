@@ -19,7 +19,7 @@ class MobileTaskCardBase:
         self.hBoxLayout.addWidget(self.overflowButton)
         self.overflowButton.clicked.connect(self._showOverflowMenu)
 
-        self._longPressed = False
+        self._hasLongPressed = False
         self._longPressTimer = QTimer(self, singleShot=True)
         self._longPressTimer.setInterval(LONG_PRESS_MS)
         self._longPressTimer.timeout.connect(self._onLongPress)
@@ -55,15 +55,15 @@ class MobileTaskCardBase:
     def mousePressEvent(self, e) -> None:
         super().mousePressEvent(e)
         if e.button() == Qt.MouseButton.LeftButton:
-            self._longPressed = False
+            self._hasLongPressed = False
             self._longPressTimer.start()
 
     def mouseReleaseEvent(self, e) -> None:
         CardWidget.mouseReleaseEvent(self, e)  # 跳过桌面卡的「松手即选中」, 改走下面触屏语义
         self._longPressTimer.stop()
-        if e.button() != Qt.MouseButton.LeftButton or self._longPressed:
+        if e.button() != Qt.MouseButton.LeftButton or self._hasLongPressed:
             return
-        if self._selectionMode:
+        if self._isSelectionMode:
             self.selectionChanged.emit(not self.isChecked(), False)
         else:
             openFile(self.task.outputPath)
@@ -72,8 +72,8 @@ class MobileTaskCardBase:
         pass
 
     def _onLongPress(self) -> None:
-        self._longPressed = True
-        if self._selectionMode:
+        self._hasLongPressed = True
+        if self._isSelectionMode:
             self.selectionChanged.emit(not self.isChecked(), False)
         else:
             self.selectionChanged.emit(True, False)

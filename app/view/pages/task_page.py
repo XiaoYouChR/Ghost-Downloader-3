@@ -133,7 +133,7 @@ class TaskPage(QWidget):
         self._sortField = SortField.CREATED_AT
         self._sortAscending = False
         self._searchText = ""
-        self._selectionMode = False
+        self._isSelectionMode = False
         self._selectionAnchor: str | None = None
         self._liveCards: dict[str, TaskCard] = {}
         self._pendingUnmounts: list[TaskCard] = []
@@ -270,7 +270,7 @@ class TaskPage(QWidget):
 
         self.startAllButton.clicked.connect(self.startAll)
         self.pauseAllButton.clicked.connect(self.pauseAll)
-        self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self._selectionMode))
+        self.selectButton.clicked.connect(lambda: self.setSelectionMode(not self._isSelectionMode))
         self.planButton.clicked.connect(self._onPlanButtonClicked)
         self.rateLimitButton.clicked.connect(self._onRateLimitToggled)
 
@@ -357,9 +357,9 @@ class TaskPage(QWidget):
             card.setChecked(taskId in self._selectedIds)
 
     def setSelectionMode(self, enter: bool) -> None:
-        if self._selectionMode == enter:
+        if self._isSelectionMode == enter:
             return
-        self._selectionMode = enter
+        self._isSelectionMode = enter
         self._selectionAnchor = None
         if not enter:
             self._selectedIds.clear()
@@ -372,7 +372,7 @@ class TaskPage(QWidget):
             self.commandView.raise_()
 
     def _onCardSelectionChanged(self, taskId: str, checked: bool, extend: bool) -> None:
-        if not self._selectionMode:
+        if not self._isSelectionMode:
             self.setSelectionMode(True)
 
         if extend and self._selectionAnchor:
@@ -404,7 +404,7 @@ class TaskPage(QWidget):
 
     @property
     def isSelectionMode(self) -> bool:
-        return self._selectionMode
+        return self._isSelectionMode
 
     @property
     def isSortAscending(self) -> bool:
@@ -621,7 +621,7 @@ class TaskPage(QWidget):
                 card = self._createCard(task)
                 if card is None:
                     continue
-                card.setSelectionMode(self._selectionMode)
+                card.setSelectionMode(self._isSelectionMode)
                 if taskId in self._selectedIds:
                     card.setChecked(True)
                 card.selectionChanged.connect(
@@ -643,7 +643,7 @@ class TaskPage(QWidget):
     # ── band selection ──
 
     def _onBandDragStarted(self, shiftHeld: bool) -> None:
-        if not self._selectionMode:
+        if not self._isSelectionMode:
             self.setSelectionMode(True)
         self._bandSnapshot = set(self._selectedIds) if shiftHeld else set()
 
@@ -661,7 +661,7 @@ class TaskPage(QWidget):
 
     def _onCardDragRequested(self, taskId: str) -> None:
         from app.platform.desktop import startFileDrag
-        if self._selectionMode and taskId in self._selectedIds:
+        if self._isSelectionMode and taskId in self._selectedIds:
             paths = [
                 Path(task.outputPath)
                 for tid in self._selectedIds
@@ -679,7 +679,7 @@ class TaskPage(QWidget):
     # ── events ──
 
     def keyPressEvent(self, event) -> None:
-        if event.key() == Qt.Key.Key_Delete and self._selectionMode:
+        if event.key() == Qt.Key.Key_Delete and self._isSelectionMode:
             self._onDeleteSelected()
         else:
             super().keyPressEvent(event)

@@ -32,8 +32,8 @@ class TaskCard(CardWidget):
     def __init__(self, task: Task, parent=None):
         super().__init__(parent)
         self._task = task
-        self._selectionMode = False
-        self._fileMissing = False
+        self._isSelectionMode = False
+        self._isFileMissing = False
         self._isDragPending = False
         self._hasDragged = False
         self._dragStartPos = QPoint()
@@ -51,7 +51,7 @@ class TaskCard(CardWidget):
         pass
 
     def setSelectionMode(self, enter: bool) -> None:
-        self._selectionMode = enter
+        self._isSelectionMode = enter
         self.checkBox.setVisible(enter)
         if not enter:
             self.checkBox.setChecked(False)
@@ -130,7 +130,7 @@ class TaskCard(CardWidget):
         super().mouseReleaseEvent(e)
         if e.button() == Qt.MouseButton.LeftButton and not self._hasDragged:
             extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
-            checked = True if extend or not self._selectionMode else not self.isChecked()
+            checked = True if extend or not self._isSelectionMode else not self.isChecked()
             self.selectionChanged.emit(checked, extend)
 
     def mouseDoubleClickEvent(self, e) -> None:
@@ -144,7 +144,7 @@ class TaskCard(CardWidget):
         e.accept()
 
     def paintEvent(self, e) -> None:
-        if self._selectionMode and self.isChecked():
+        if self._isSelectionMode and self.isChecked():
             painter = QPainter(self)
             painter.setRenderHints(QPainter.RenderHint.Antialiasing)
             r = self.borderRadius
@@ -240,7 +240,7 @@ class UniversalTaskCard(TaskCard):
         if not force and self._lastStatus == self._task.status and self._task.status != TaskStatus.RUNNING:
             return
 
-        self._fileMissing = False
+        self._isFileMissing = False
         task = self._task
         progress, speed, receivedBytes = task.currentSnapshot()
 
@@ -272,8 +272,8 @@ class UniversalTaskCard(TaskCard):
                 self.sizeLabel.setText(toReadableSize(task.fileSize))
             else:
                 self.sizeLabel.hide()
-            self._fileMissing = task.hasOutputFile and not Path(task.outputPath).exists()
-            if self._fileMissing:
+            self._isFileMissing = task.hasOutputFile and not Path(task.outputPath).exists()
+            if self._isFileMissing:
                 statusText = self.tr("文件不存在")
             elif task.completedAt:
                 from datetime import datetime
@@ -282,7 +282,7 @@ class UniversalTaskCard(TaskCard):
             else:
                 statusText = self.tr("任务已经完成")
             self._showStatus(statusText)
-            if self._fileMissing:
+            if self._isFileMissing:
                 self.statusLabel.setTextColor(QColor(200, 160, 80), QColor(200, 170, 100))
             self.nameLabel.setText(task.name)
             self._refreshIcon()
@@ -345,8 +345,8 @@ class UniversalTaskCard(TaskCard):
 
         completed = self._task.status == TaskStatus.COMPLETED
         self.verifyHashButton.setVisible(completed)
-        self.verifyHashButton.setEnabled(completed and not self._fileMissing)
-        self.openFileButton.setEnabled(not completed or not self._fileMissing)
+        self.verifyHashButton.setEnabled(completed and not self._isFileMissing)
+        self.openFileButton.setEnabled(not completed or not self._isFileMissing)
 
     def _onToggleClicked(self) -> None:
         if self._task.status == TaskStatus.RUNNING:
