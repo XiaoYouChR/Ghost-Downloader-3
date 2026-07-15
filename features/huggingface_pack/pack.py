@@ -139,7 +139,20 @@ class HuggingFaceParser(TaskParser):
 
         repoName = toSafeFilename(repoId.replace("/", "_"), fallback="huggingface")
 
-        task = HuggingFaceTask(
+        steps = [
+            HuggingFaceStep(
+                stepIndex=file.index + 1,
+                url=file.downloadUrl,
+                fileSize=file.size,
+                headers=headers,
+                subworkerCount=cfg.preBlockNum.value,
+                canUseRangeRequests=file.size > 0,
+                fileIndex=file.index,
+            )
+            for file in files
+        ]
+
+        return HuggingFaceTask(
             name=repoName,
             url=options.url,
             fileSize=sum(f.size for f in files),
@@ -148,20 +161,8 @@ class HuggingFaceParser(TaskParser):
             repoType=repoType,
             revision=revision,
             files=files,
+            steps=steps,
         )
-
-        for file in files:
-            task.addStep(HuggingFaceStep(
-                stepIndex=file.index + 1,
-                url=file.downloadUrl,
-                fileSize=file.size,
-                headers=headers,
-                subworkerCount=cfg.preBlockNum.value,
-                canUseRangeRequests=file.size > 0,
-                fileIndex=file.index,
-            ))
-
-        return task
 
     async def _fetchTree(self, client, apiUrl: str) -> list[dict]:
         entries: list[dict] = []
