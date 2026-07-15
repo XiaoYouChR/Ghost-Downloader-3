@@ -23,7 +23,7 @@ class HuggingFaceStep(HttpTaskStep):
         if self.fileIndex >= 0 and self.task.files:
             for file in self.task.files:
                 if file.index == self.fileIndex:
-                    return str(self.task.outputFolder / file.relativePath)
+                    return str(self.task.outputFolder / self.task.name / file.relativePath)
         return super().outputPath
 
     def deleteFiles(self) -> None:
