@@ -54,10 +54,7 @@ class IconChip(QWidget):
         painter.drawRoundedRect(self.rect(), 8, 8)
         margin = round(self.width() * 0.25)
         iconRect = self.rect().adjusted(margin, margin, -margin, -margin)
-        try:
-            self._icon.render(painter, iconRect, fill=fg)
-        except TypeError:
-            self._icon.render(painter, iconRect)
+        self._icon.render(painter, iconRect, fill=fg)
 
 
 class ThemePreview(QWidget):
@@ -377,8 +374,7 @@ class BasicSettingsPage(QWidget):
         )
         if folder:
             cfg.set(cfg.downloadFolder, folder)
-            if hasattr(self._folderGroup, "setContent"):
-                self._folderGroup.setContent(folder)
+            self._folderGroup.setContent(folder)
 
 
 class BrowserExtensionPage(QWidget):
