@@ -17,7 +17,7 @@ from qfluentwidgets import (
     TitleLabel, TransparentPushButton, isDarkTheme, themeColor,
 )
 
-from app.config.cfg import cfg, Language
+from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
 )
@@ -294,6 +294,8 @@ class WelcomePage(QWidget):
 
 class BasicSettingsPage(QWidget):
 
+    languageChanged = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._initWidget()
@@ -317,12 +319,9 @@ class BasicSettingsPage(QWidget):
 
         self.langCombo = ComboBox(self)
         self.langCombo.setMinimumWidth(200)
-        for lang in Language:
-            if lang == Language.AUTO:
-                self.langCombo.addItem(self.tr("跟随系统"))
-            else:
-                self.langCombo.addItem(lang.value.nativeLanguageName())
-        self.langCombo.setCurrentIndex(list(Language).index(cfg.language.value))
+        for lang in cfg.language.options:
+            self.langCombo.addItem(LANGUAGE_TEXTS.get(lang, self.tr("使用系统设置")))
+        self.langCombo.setCurrentIndex(cfg.language.options.index(cfg.language.value))
 
         self.browseButton = PushButton(self.tr("浏览..."), self)
 
@@ -342,7 +341,7 @@ class BasicSettingsPage(QWidget):
 
         self.settingsCard.addGroup(
             FluentIcon.LANGUAGE, self.tr("界面语言"),
-            self.tr("重启后生效"), self.langCombo,
+            self.tr("更改立即生效"), self.langCombo,
         )
         self._folderGroup = self.settingsCard.addGroup(
             FluentIcon.FOLDER, self.tr("下载保存位置"),
@@ -367,9 +366,10 @@ class BasicSettingsPage(QWidget):
             card.setSelected(card.theme == current)
 
     def _onLanguageChanged(self, index: int) -> None:
-        languages = list(Language)
-        if 0 <= index < len(languages):
-            cfg.set(cfg.language, languages[index])
+        options = cfg.language.options
+        if 0 <= index < len(options) and options[index] != cfg.language.value:
+            cfg.set(cfg.language, options[index])
+            self.languageChanged.emit()
 
     def _onBrowseClicked(self) -> None:
         folder = QFileDialog.getExistingDirectory(
@@ -778,7 +778,9 @@ class OobeWindow(FluentWidget):
         self._currentIndex = 0
         self._isFinished = False
         self._queuedRuntimeIds: set[str] = set()
+        self._translator = None
         self._initWidget()
+        self._initContent()
         self._initLayout()
         self._bind()
         self._refreshNavigation()
@@ -794,6 +796,7 @@ class OobeWindow(FluentWidget):
         desktop = QApplication.primaryScreen().availableGeometry()
         self.move(desktop.center() - self.rect().center())
 
+    def _initContent(self) -> None:
         self.welcomePage = WelcomePage(self)
         self.basicSettingsPage = BasicSettingsPage(self)
         self.browserExtensionPage = BrowserExtensionPage(self)
@@ -844,10 +847,46 @@ class OobeWindow(FluentWidget):
 
     def _bind(self) -> None:
         self.welcomePage.startClicked.connect(self._onNextClicked)
+        self.basicSettingsPage.languageChanged.connect(self._onLanguageChanged)
         self.completePage.finishClicked.connect(self._finish)
         self.backButton.clicked.connect(self._onBackClicked)
         self.nextButton.clicked.connect(self._onNextClicked)
         self.skipButton.clicked.connect(self._finish)
+
+    def onPairRequested(self, request: dict) -> None:
+        self.browserExtensionPage.onPairRequested(request)
+
+    def _onLanguageChanged(self) -> None:
+        # 延迟到信号栈外重建：发出信号的下拉框会随内容区一起销毁
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self._reloadLanguage)
+
+    def _reloadLanguage(self) -> None:
+        from PySide6.QtCore import QTranslator
+        application = QApplication.instance()
+        if self._translator is not None:
+            application.removeTranslator(self._translator)
+        self._translator = QTranslator(application)
+        self._translator.load(cfg.language.value.value, "gd3", ".", ":/i18n")
+        application.installTranslator(self._translator)
+        self._rebuildContent()
+
+    def _rebuildContent(self) -> None:
+        index = self._currentIndex
+        for widget in [self.stackedWidget, self.backButton,
+                       self.skipButton, self.nextButton, self.pipsPager]:
+            widget.hide()
+            widget.deleteLater()
+        QWidget().setLayout(self.layout())
+
+        self._initContent()
+        self._initLayout()
+        self._bind()
+        self._currentIndex = index
+        self.stackedWidget.setAnimationEnabled(False)
+        self.stackedWidget.setCurrentIndex(index)
+        self.stackedWidget.setAnimationEnabled(True)
+        self._refreshNavigation()
 
     def _refreshNavigation(self) -> None:
         i = self._currentIndex

@@ -13,7 +13,7 @@ from qfluentwidgets import (
 
 from app.view.components.scroll_area import ScrollArea
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.platform.android import IS_ANDROID
 from app.config.constants import (
     AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
@@ -264,9 +264,8 @@ class SettingPage(ScrollArea):
         personalCards.append(
             ComboBoxSettingCard(cfg.language, FluentIcon.LANGUAGE, self.tr("语言"),
                                 self.tr("设置界面的首选语言"),
-                                texts=["简体中文 (中国大陆)", "正體中文 (台灣)", "粤语 (香港)",
-                                       "English (US)", "日本語 (日本)", "Русский (Россия)",
-                                       "Português (Brasil)", self.tr("使用系统设置")]),
+                                texts=[LANGUAGE_TEXTS.get(lang, self.tr("使用系统设置"))
+                                       for lang in cfg.language.options]),
         )
         self.personalGroup.addSettingCards(personalCards)
 

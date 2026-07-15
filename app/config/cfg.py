@@ -44,6 +44,18 @@ class Language(Enum):
     AUTO = QLocale()
 
 
+# 语言的展示标签，AUTO 由视图层翻译
+LANGUAGE_TEXTS = {
+    Language.CHINESE_SIMPLIFIED: "简体中文 (中国大陆)",
+    Language.CHINESE_TRADITIONAL: "正體中文 (台灣)",
+    Language.CANTONESE: "粤语 (香港)",
+    Language.ENGLISH_UNITED_STATES: "English (US)",
+    Language.JAPANESE: "日本語 (日本)",
+    Language.RUSSIAN: "Русский (Россия)",
+    Language.PORTUGUESE_BRAZIL: "Português (Brasil)",
+}
+
+
 class CloseMode(Enum):
     ASK = "Ask"
     BACKGROUND = "Background"
