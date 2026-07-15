@@ -38,5 +38,3 @@ browser_extension/firefox/
 *.jks
 *.keystore
 /config/
-
-tests/
