@@ -4,8 +4,9 @@ import sys
 from os import PathLike
 from pathlib import Path
 
-from PySide6.QtCore import QProcess, QUrl, Qt
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import QMimeData, QProcess, QUrl, Qt
+from PySide6.QtGui import QDesktopServices, QDrag
+from PySide6.QtWidgets import QWidget
 from loguru import logger
 
 
@@ -260,3 +261,86 @@ def raiseWindow(window) -> None:
                     win32process.AttachThreadInput(currentThreadId, foregroundThreadId, False)
         except Exception as e:
             logger.opt(exception=e).warning("Failed to raise window on Windows")
+
+
+def startFileDrag(paths: list[Path], source: QWidget) -> None:
+    if sys.platform == "win32":
+        try:
+            hwnd = int(source.window().winId())
+            _startFileDragWin32([str(p) for p in paths], hwnd)
+            return
+        except Exception as e:
+            logger.opt(exception=e).debug("COM drag failed, falling back to Qt")
+    _startFileDragQt(paths, source)
+
+
+def _startFileDragQt(paths: list[Path], source: QWidget) -> None:
+    mimeData = QMimeData()
+    mimeData.setUrls([QUrl.fromLocalFile(str(p)) for p in paths])
+    drag = QDrag(source)
+    drag.setMimeData(mimeData)
+    drag.exec(Qt.DropAction.CopyAction | Qt.DropAction.MoveAction)
+
+
+def _startFileDragWin32(paths: list[str], hwnd: int) -> None:
+    import ctypes
+    import uuid
+
+    shell32 = ctypes.windll.shell32
+    shell32.SHParseDisplayName.restype = ctypes.HRESULT
+    shell32.SHCreateShellItemArrayFromIDLists.restype = ctypes.HRESULT
+    shell32.SHDoDragDrop.restype = ctypes.HRESULT
+    shell32.SHDoDragDrop.argtypes = [
+        ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+        ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong),
+    ]
+
+    def toGuid(text: str) -> ctypes.Array:
+        return (ctypes.c_ubyte * 16).from_buffer_copy(uuid.UUID(text).bytes_le)
+
+    def release(pUnknown: ctypes.c_void_p) -> None:
+        vtable = ctypes.cast(
+            ctypes.cast(pUnknown, ctypes.POINTER(ctypes.c_void_p))[0],
+            ctypes.POINTER(ctypes.c_void_p),
+        )
+        ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)(vtable[2])(pUnknown)
+
+    # 拖拽图标与 DropDescription 靠 IDataObject::SetData 私有格式传递，
+    # 剪贴板数据对象不支持 SetData，必须从 shell item 构建数据对象
+    pidls: list[ctypes.c_void_p] = []
+    try:
+        for p in paths:
+            pidl = ctypes.c_void_p()
+            shell32.SHParseDisplayName(p, None, ctypes.byref(pidl), 0, None)
+            pidls.append(pidl)
+
+        pidlArray = (ctypes.c_void_p * len(pidls))(*(p.value for p in pidls))
+        pItemArray = ctypes.c_void_p()
+        shell32.SHCreateShellItemArrayFromIDLists(
+            len(pidls), pidlArray, ctypes.byref(pItemArray))
+        try:
+            vtable = ctypes.cast(
+                ctypes.cast(pItemArray, ctypes.POINTER(ctypes.c_void_p))[0],
+                ctypes.POINTER(ctypes.c_void_p),
+            )
+            BindToHandler = ctypes.WINFUNCTYPE(
+                ctypes.HRESULT, ctypes.c_void_p, ctypes.c_void_p,
+                ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p),
+            )(vtable[3])
+            pDataObj = ctypes.c_void_p()
+            BindToHandler(
+                pItemArray, None,
+                toGuid("B8C0BD9F-ED24-455C-83E6-D5390C4FE8C4"),  # BHID_DataObject
+                toGuid("0000010E-0000-0000-C000-000000000046"),  # IID_IDataObject
+                ctypes.byref(pDataObj),
+            )
+            try:
+                dwEffect = ctypes.c_ulong(0)
+                shell32.SHDoDragDrop(hwnd, pDataObj, None, 7, ctypes.byref(dwEffect))
+            finally:
+                release(pDataObj)
+        finally:
+            release(pItemArray)
+    finally:
+        for pidl in pidls:
+            shell32.ILFree(pidl)

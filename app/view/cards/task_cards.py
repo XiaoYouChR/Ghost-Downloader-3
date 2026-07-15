@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import QPoint, Signal, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QApplication
 from qfluentwidgets import (
@@ -27,12 +27,16 @@ if TYPE_CHECKING:
 class TaskCard(CardWidget):
     ROW_HEIGHT = 60
     selectionChanged = Signal(bool, bool)
+    dragRequested = Signal(str)
 
     def __init__(self, task: Task, parent=None):
         super().__init__(parent)
         self._task = task
         self._selectionMode = False
         self._fileMissing = False
+        self._isDragPending = False
+        self._hasDragged = False
+        self._dragStartPos = QPoint()
 
         self.checkBox = CheckBox(self)
         self.checkBox.setFixedSize(23, 23)
@@ -100,9 +104,31 @@ class TaskCard(CardWidget):
         LiveEditDialog(self._task, featureService.editCards(self._task, self.window()), self.window()).exec()
         self.refresh()
 
+    def _canDrag(self) -> bool:
+        return (self._task.status == TaskStatus.COMPLETED
+                and self._task.hasOutputFile
+                and Path(self._task.outputPath).exists())
+
+    def mousePressEvent(self, e) -> None:
+        super().mousePressEvent(e)
+        self._hasDragged = False
+        if e.button() == Qt.MouseButton.LeftButton and self._canDrag():
+            self._isDragPending = True
+            self._dragStartPos = e.position().toPoint()
+
+    def mouseMoveEvent(self, e) -> None:
+        if self._isDragPending:
+            if (e.position().toPoint() - self._dragStartPos).manhattanLength() >= QApplication.startDragDistance():
+                self._isDragPending = False
+                self._hasDragged = True
+                self.dragRequested.emit(self._task.taskId)
+                return
+        super().mouseMoveEvent(e)
+
     def mouseReleaseEvent(self, e) -> None:
+        self._isDragPending = False
         super().mouseReleaseEvent(e)
-        if e.button() == Qt.MouseButton.LeftButton:
+        if e.button() == Qt.MouseButton.LeftButton and not self._hasDragged:
             extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
             checked = True if extend or not self._selectionMode else not self.isChecked()
             self.selectionChanged.emit(checked, extend)
