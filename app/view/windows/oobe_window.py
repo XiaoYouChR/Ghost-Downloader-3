@@ -20,6 +20,7 @@ from qfluentwidgets import (
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
+    LATEST_EXTENSION_VERSION,
 )
 
 if TYPE_CHECKING:
@@ -503,16 +504,21 @@ class BrowserExtensionPage(QWidget):
                 ),
             )
 
+    def _setConnectedBanner(self, version: str) -> None:
+        if version:
+            text = self.tr("已连接扩展 v{}，最新版本为 v{}").format(
+                version, LATEST_EXTENSION_VERSION
+            )
+        else:
+            text = self.tr("已连接扩展，最新版本为 v{}").format(LATEST_EXTENSION_VERSION)
+        self._setBanner(InfoBarIcon.SUCCESS, text)
+
     def _onConnectionChanged(self) -> None:
         from app.services.browser_service import browserService
         installType, version = browserService.connectionSummary
         if installType or version:
             self._isPaired = True
-            if version:
-                text = self.tr("已连接扩展 v{}").format(version)
-            else:
-                text = self.tr("已连接扩展")
-            self._setBanner(InfoBarIcon.SUCCESS, text)
+            self._setConnectedBanner(version)
         else:
             self._isPaired = False
             self.refreshPortStatus()
@@ -548,12 +554,7 @@ class BrowserExtensionPage(QWidget):
         from app.services.browser_service import browserService
         browserService.approvePair(request["session"], request["requestId"])
         self._isPaired = True
-        version = request.get("extensionVersion", "")
-        if version:
-            text = self.tr("已连接扩展 v{}").format(version)
-        else:
-            text = self.tr("配对成功")
-        self._setBanner(InfoBarIcon.SUCCESS, text)
+        self._setConnectedBanner(request.get("extensionVersion", ""))
 
     def _onProtocolMismatched(self) -> None:
         self._setBanner(
