@@ -21,6 +21,10 @@ class MobileTaskPage(TaskPage):
         super().setSelectionMode(enter)
         self.selectionModeChanged.emit(enter)
 
+    def _bind(self) -> None:
+        super()._bind()
+        self._bandSelector.setEnabled(False)
+
     def _initWidget(self) -> None:
         super()._initWidget()
         # 桌面的文字按钮在窄屏太宽, 换图标按钮; 选择改长按触发, 收起 selectButton

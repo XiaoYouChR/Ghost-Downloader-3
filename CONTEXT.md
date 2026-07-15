@@ -59,6 +59,22 @@ state, because a Step may only learn its resumability after it was created.
 
 **Task Files**:
 The files and temporary progress state produced by a Task.
+_Avoid_: confusing with **Selectable File** (the checkable unit below)
+
+**Selectable File**:
+One checkable download unit inside a multi-file Task — a repository file, a
+playlist video, a multi-part page, or a torrent file. Identified by a stable
+index that never changes with selection.
+
+**File Selection**:
+Which Selectable Files a Task should download, expressed as flags on the
+files. Changing selection never creates or destroys Steps and is allowed in
+every Task status; deselected files keep their partial progress.
+
+**Revive**:
+A completed Task returning to downloading because newly selected files have
+pending work. Reviving clears the completion timestamp and starts the Task
+automatically.
 
 **Task Error**:
 A business exception raised by Step.run() with a user-facing English message
@@ -192,6 +208,10 @@ _Not_: delete (destructive)
 _Not_: remove (non-destructive), cleanup (vague)
 
 **clear**: empty a collection, input, selection, or cache.
+
+**mount / unmount**: create or retire a lazily-managed widget as it enters or
+leaves the viewport. Unmounting may defer actual destruction until safe.
+_Not_: remove (model detach), delete (destructive)
 
 **flush**: write buffered store state to disk. `flushSoon`, `flushNow`.
 
@@ -391,10 +411,14 @@ Notable pack-level actors:
 `TaskDraftDialog`. It does not own task lifecycle — it binds
 `draft.taskConfirmed → taskService.add`, which is the only task-creation path.
 
-**TaskPage** subscribes to `taskService.*` signals for card lifecycle. Virtual
-scroll: `_cards` dict, `_displayOrder` list, `_mounted` set. Three-layer
-refresh: `_rebuildList` (filter+sort) → `_refreshViewport` (mount/unmount
-visible range) → `_refreshVisibleCards` (1s timer repaint for progress text).
+**TaskPage** subscribes to `taskService.*` signals for card lifecycle. Lazy
+virtual scroll: `_liveCards` dict (viewport-only cards, created on enter,
+destroyed on leave), `_displayOrder` list, `_selectedIds` set (selection state
+lifted from cards). Three-layer refresh: `_refreshList` (filter+sort) →
+`_refreshViewport` (mount/unmount/position visible cards) →
+`_refreshVisibleCards` (periodic repaint for progress text). Band selection
+via `BandSelector` event filter on scrollWidget; Delete key shortcut in
+selection mode.
 
 **TaskDraftDialog** receives a `TaskDraft` in its constructor. It debounces URL
 changes, delegates parsing to `TaskDraft`, and renders draft cards from

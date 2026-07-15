@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from enum import IntEnum
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QSize, QTimer
+from PySide6.QtCore import Qt, QSize, QThread, QTimer
 from PySide6.QtGui import QActionGroup, QColor, QCursor, QPainter
 from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -13,6 +14,7 @@ from qfluentwidgets import (
     ToolButton, ToolTipFilter, isDarkTheme,
 )
 
+from app.view.components.band_selector import BandSelector
 from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg
@@ -133,13 +135,15 @@ class TaskPage(QWidget):
         self._searchText = ""
         self._selectionMode = False
         self._selectionAnchor: str | None = None
-        self._cards: dict[str, TaskCard] = {}
+        self._liveCards: dict[str, TaskCard] = {}
+        self._pendingUnmounts: list[TaskCard] = []
         self._displayOrder: list[str] = []
-        self._mounted: set[str] = set()
+        self._selectedIds: set[str] = set()
+        self._bandSnapshot: set[str] = set()
 
-        self._rebuildTimer = QTimer(self, singleShot=True)
-        self._rebuildTimer.setInterval(0)
-        self._rebuildTimer.timeout.connect(self._rebuildList)
+        self._refreshListTimer = QTimer(self, singleShot=True)
+        self._refreshListTimer.setInterval(0)
+        self._refreshListTimer.timeout.connect(self._refreshList)
 
         self.scrollArea = ScrollArea(self)
         self.scrollWidget = QWidget(self)
@@ -291,26 +295,33 @@ class TaskPage(QWidget):
         from app.services.category_service import categoryService
         categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
 
-        for task in taskService.tasks:
-            self._onTaskAdded(task)
+        self._bandSelector = BandSelector(
+            self.scrollArea, self.scrollWidget,
+            TaskCard.ROW_HEIGHT, self.ROW_SPACING, self
+        )
+        self._bandSelector.dragStarted.connect(self._onBandDragStarted)
+        self._bandSelector.bandChanged.connect(self._onBandChanged)
+        self._bandSelector.dragFinished.connect(self._onBandDragFinished)
+
+        self._refreshListTimer.start()
 
     # ── intent methods ──
 
     def setFilterMode(self, mode: FilterMode) -> None:
         self._filterMode = mode
-        self._rebuildList()
+        self._refreshList()
 
     def setCategoryFilter(self, categoryId: str) -> None:
         self._categoryFilter = categoryId
-        self._rebuildList()
+        self._refreshList()
 
     def setSortField(self, field: SortField) -> None:
         self._sortField = field
-        self._rebuildList()
+        self._refreshList()
 
     def setSortOrder(self, ascending: bool) -> None:
         self._sortAscending = ascending
-        self._rebuildList()
+        self._refreshList()
 
     @property
     def searchPlaceholder(self) -> str:
@@ -318,7 +329,7 @@ class TaskPage(QWidget):
 
     def setSearchText(self, text: str) -> None:
         self._searchText = text
-        self._rebuildList()
+        self._refreshList()
 
     def startAll(self) -> None:
         taskService.startAll()
@@ -327,29 +338,32 @@ class TaskPage(QWidget):
         taskService.pauseAll()
 
     def selectAll(self) -> None:
-        for taskId in self._displayOrder:
-            card = self._cards.get(taskId)
-            if card:
-                card.setChecked(True)
+        self._selectedIds.update(self._displayOrder)
+        for card in self._liveCards.values():
+            card.setChecked(True)
 
     def invertSelection(self) -> None:
-        for taskId in self._displayOrder:
-            card = self._cards.get(taskId)
-            if card:
-                card.setChecked(not card.isChecked())
+        self._selectedIds ^= set(self._displayOrder)
+        for taskId, card in self._liveCards.items():
+            card.setChecked(taskId in self._selectedIds)
 
     def selectMissing(self) -> None:
+        self._selectedIds.clear()
         for taskId in self._displayOrder:
-            card = self._cards.get(taskId)
-            if card:
-                card.setChecked(card._fileMissing)
+            task = taskService.taskById(taskId)
+            if task and task.hasOutputFile and not Path(task.outputPath).exists():
+                self._selectedIds.add(taskId)
+        for taskId, card in self._liveCards.items():
+            card.setChecked(taskId in self._selectedIds)
 
     def setSelectionMode(self, enter: bool) -> None:
         if self._selectionMode == enter:
             return
         self._selectionMode = enter
         self._selectionAnchor = None
-        for card in self._cards.values():
+        if not enter:
+            self._selectedIds.clear()
+        for card in self._liveCards.values():
             card.setSelectionMode(enter)
             if not enter:
                 card.setChecked(False)
@@ -367,16 +381,17 @@ class TaskPage(QWidget):
                 currentIdx = self._displayOrder.index(taskId)
             except ValueError:
                 return
-            for tid in self._displayOrder:
-                card = self._cards.get(tid)
-                if card:
-                    card.setChecked(False)
+            self._selectedIds.clear()
             for i in range(min(anchorIdx, currentIdx), max(anchorIdx, currentIdx) + 1):
-                card = self._cards.get(self._displayOrder[i])
-                if card:
-                    card.setChecked(True)
+                self._selectedIds.add(self._displayOrder[i])
+            for tid, card in self._liveCards.items():
+                card.setChecked(tid in self._selectedIds)
         else:
-            card = self._cards.get(taskId)
+            if checked:
+                self._selectedIds.add(taskId)
+            else:
+                self._selectedIds.discard(taskId)
+            card = self._liveCards.get(taskId)
             if card:
                 card.setChecked(checked)
             if checked:
@@ -384,7 +399,7 @@ class TaskPage(QWidget):
             elif taskId == self._selectionAnchor:
                 self._selectionAnchor = None
 
-        if not any(c.isChecked() for c in self._cards.values()):
+        if not self._selectedIds:
             self.setSelectionMode(False)
 
     @property
@@ -447,16 +462,17 @@ class TaskPage(QWidget):
 
         if self._categoryFilter not in validIds:
             self._categoryFilter = ""
-            self._rebuildList()
+            self._refreshList()
 
         if not self._categoryFilter:
             allAction.setChecked(True)
 
     def _onRedownloadSelected(self) -> None:
-        for taskId in list(self._displayOrder):
-            card = self._cards.get(taskId)
-            if card and card.isChecked():
-                taskService.redownload(card.task)
+        for taskId in self._displayOrder:
+            if taskId in self._selectedIds:
+                task = taskService.taskById(taskId)
+                if task:
+                    taskService.redownload(task)
         self.setSelectionMode(False)
 
     def _onDeleteSelected(self) -> None:
@@ -472,8 +488,8 @@ class TaskPage(QWidget):
     def _onMoveCategorySelected(self) -> None:
         from app.services.category_service import categoryService
         targets = [
-            card.task for taskId in self._displayOrder
-            if (card := self._cards.get(taskId)) and card.isChecked()
+            task for taskId in self._displayOrder
+            if taskId in self._selectedIds and (task := taskService.taskById(taskId))
         ]
         if not targets:
             return
@@ -482,7 +498,7 @@ class TaskPage(QWidget):
             for task in targets:
                 taskService.setCategory(task, categoryId)
             self.setSelectionMode(False)
-            self._rebuildList()
+            self._refreshList()
 
         popup = RoundMenu(parent=self)
         uncategorized = Action(FluentIcon.MORE, self.tr("未分类"), self)
@@ -497,11 +513,7 @@ class TaskPage(QWidget):
         popup.exec(QCursor.pos())
 
     def _onDeleteConfirmed(self, shouldDeleteFiles: bool) -> None:
-        toDelete = [
-            taskId for taskId in self._displayOrder
-            if (card := self._cards.get(taskId)) and card.isChecked()
-        ]
-        for taskId in toDelete:
+        for taskId in list(self._selectedIds & set(self._displayOrder)):
             task = taskService.taskById(taskId)
             if task:
                 taskService.delete(task, shouldDeleteFiles)
@@ -509,7 +521,7 @@ class TaskPage(QWidget):
 
     # ── list management ──
 
-    def _rebuildList(self) -> None:
+    def _refreshList(self) -> None:
         tasks = taskService.tasks
 
         if self._filterMode != FilterMode.ALL:
@@ -544,12 +556,13 @@ class TaskPage(QWidget):
         self.scrollWidget.setFixedHeight(
             count * stride - self.ROW_SPACING + self.BOTTOM_PADDING if count else 0
         )
+        self._bandSelector.setItemCount(count)
         self._refreshViewport()
 
         if self._displayOrder:
             self.emptyStatusWidget.hide()
         else:
-            if not self._cards:
+            if not taskService.tasks:
                 text = self.tr("暂无下载任务")
             elif self._searchText and (self._filterMode != FilterMode.ALL or self._categoryFilter):
                 text = self.tr("没有匹配筛选条件的任务")
@@ -567,7 +580,21 @@ class TaskPage(QWidget):
             self.emptyStatusWidget.adjustSize()
             self.emptyStatusWidget.show()
 
+    def _unmountCard(self, card: TaskCard) -> None:
+        card.hide()
+        # 嵌套事件循环（对话框 exec 等）可能正挂在卡片的栈帧上，
+        # 此刻销毁会让栈回退进已删控件；推迟到回到主循环后的下次刷新
+        if QThread.currentThread().loopLevel() > 1:
+            self._pendingUnmounts.append(card)
+        else:
+            card.deleteLater()
+
     def _refreshViewport(self) -> None:
+        if self._pendingUnmounts and QThread.currentThread().loopLevel() == 1:
+            for card in self._pendingUnmounts:
+                card.deleteLater()
+            self._pendingUnmounts.clear()
+
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         width = self.scrollWidget.width()
         count = len(self._displayOrder)
@@ -579,31 +606,83 @@ class TaskPage(QWidget):
         else:
             first, last = 0, -1
 
-        desired: set[str] = set()
+        desired: set[str] = {self._displayOrder[i] for i in range(first, last + 1)}
+
+        for taskId in list(self._liveCards.keys() - desired):
+            self._unmountCard(self._liveCards.pop(taskId))
+
         for idx in range(first, last + 1):
             taskId = self._displayOrder[idx]
-            card = self._cards.get(taskId)
+            card = self._liveCards.get(taskId)
             if card is None:
-                continue
-            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
-            if taskId not in self._mounted:
+                task = taskService.taskById(taskId)
+                if task is None:
+                    continue
+                card = self._createCard(task)
+                if card is None:
+                    continue
+                card.setSelectionMode(self._selectionMode)
+                if taskId in self._selectedIds:
+                    card.setChecked(True)
+                card.selectionChanged.connect(
+                    lambda checked, extend, tid=taskId: self._onCardSelectionChanged(tid, checked, extend)
+                )
+                # 队列投递：拖拽是阻塞式消息循环，不能挂在卡片的栈帧上
+                card.dragRequested.connect(
+                    self._onCardDragRequested, Qt.ConnectionType.QueuedConnection
+                )
+                self._liveCards[taskId] = card
                 card.refresh()
+            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
             card.show()
-            desired.add(taskId)
-
-        for taskId in self._mounted - desired:
-            card = self._cards.get(taskId)
-            if card is not None:
-                card.hide()
-        self._mounted = desired
 
     def _refreshVisibleCards(self) -> None:
-        for taskId in self._mounted:
-            card = self._cards.get(taskId)
-            if card is not None:
-                card.refresh()
+        for card in self._liveCards.values():
+            card.refresh()
+
+    # ── band selection ──
+
+    def _onBandDragStarted(self, shiftHeld: bool) -> None:
+        if not self._selectionMode:
+            self.setSelectionMode(True)
+        self._bandSnapshot = set(self._selectedIds) if shiftHeld else set()
+
+    def _onBandChanged(self, first: int, last: int) -> None:
+        bandIds = {self._displayOrder[i] for i in range(first, last + 1)} if first >= 0 else set()
+        self._selectedIds = self._bandSnapshot | bandIds
+        for taskId, card in self._liveCards.items():
+            card.setChecked(taskId in self._selectedIds)
+
+    def _onBandDragFinished(self) -> None:
+        if not self._selectedIds:
+            self.setSelectionMode(False)
+
+    # ── file drag ──
+
+    def _onCardDragRequested(self, taskId: str) -> None:
+        from app.platform.desktop import startFileDrag
+        if self._selectionMode and taskId in self._selectedIds:
+            paths = [
+                Path(task.outputPath)
+                for tid in self._selectedIds
+                if (task := taskService.taskById(tid))
+                and task.status == TaskStatus.COMPLETED
+                and task.hasOutputFile
+                and Path(task.outputPath).exists()
+            ]
+        else:
+            task = taskService.taskById(taskId)
+            paths = [Path(task.outputPath)] if task else []
+        if paths:
+            startFileDrag(paths, self)
 
     # ── events ──
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Delete and self._selectionMode:
+            self._onDeleteSelected()
+        else:
+            super().keyPressEvent(event)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -625,30 +704,18 @@ class TaskPage(QWidget):
         return featureService.taskCard(task, self.scrollWidget)
 
     def _onTaskAdded(self, task: Task) -> None:
-        if task.taskId in self._cards:
-            return
-        card = self._createCard(task)
-        if card is None:  # 该任务所属 pack 不可用, 跳过渲染
-            return
-        card.hide()
-        self._cards[task.taskId] = card
-        card.setSelectionMode(self._selectionMode)
-        card.selectionChanged.connect(
-            lambda checked, extend, tid=task.taskId: self._onCardSelectionChanged(tid, checked, extend)
-        )
-        self._rebuildTimer.start()
+        self._refreshListTimer.start()
 
     def _onTaskRemoved(self, taskId: str) -> None:
-        card = self._cards.pop(taskId, None)
+        card = self._liveCards.pop(taskId, None)
         if card is not None:
-            card.hide()
-            card.deleteLater()
-        self._mounted.discard(taskId)
+            self._unmountCard(card)
+        self._selectedIds.discard(taskId)
         if self._selectionAnchor == taskId:
             self._selectionAnchor = None
-        self._rebuildTimer.start()
+        self._refreshListTimer.start()
 
     def _onFileDisappeared(self, task: Task) -> None:
-        card = self._cards.get(task.taskId)
+        card = self._liveCards.get(task.taskId)
         if card is not None:
             card.refresh(force=True)
