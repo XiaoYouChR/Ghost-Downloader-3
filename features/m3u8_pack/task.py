@@ -35,6 +35,17 @@ class M3U8Task(Task):
     isLive: bool = False
     streams: list[dict] = field(default_factory=list)
 
+    def __post_init__(self):
+        super().__post_init__()
+        # 直播流不存在断点：PAUSED/RUNNING 只可能是退出竞争或崩溃残留，
+        # 录制在进程结束的一刻就已终结，加载时校正为已完成
+        if self.isLive and self.status in {TaskStatus.PAUSED, TaskStatus.RUNNING}:
+            for step in self.steps:
+                if isinstance(step, M3U8TaskStep) and step.status != TaskStatus.COMPLETED:
+                    step._findOutputFile()
+                    step.setStatus(TaskStatus.COMPLETED, sync=False)
+            self.updateStatus()
+
     def _move(self, newFolder: Path) -> None:
         from shutil import move
         oldTemp = self.outputFolder / ".gd3_m3u8" / self.taskId
