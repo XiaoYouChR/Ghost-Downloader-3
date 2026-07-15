@@ -89,36 +89,22 @@ def startApp(application, isSilent=False):
     loadEngine(application)
 
     MainWindow.refreshThemeColor()
-    window = MainWindow()
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
-    if not isSilent and not shouldRunOobe:
-        from qfluentwidgets import SplashScreen
-        splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
-        splash.raise_()
-        window.show()
-        application.processEvents()
-
-    loadPacks()
-    window.setupPacks()
-    startEngine()
-
-    if not isSilent and not shouldRunOobe:
-        splash.finish()
-
     if shouldRunOobe:
-        # 首次启动：不显示主窗口，OOBE 完成后再进入
+        # 首次启动：服务先就绪，主窗口等 OOBE 结束后按最终配置创建
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow
+
+        loadPacks()
+        startEngine()
 
         if cfg.isBrowserExtensionEnabled.value:
             browserService.start()  # 提前启动，OOBE 期间可完成扩展配对
 
         oobe = OobeWindow()
-        browserService.pairRequested.connect(
-            oobe.browserExtensionPage.onPairRequested
-        )
+        browserService.pairRequested.connect(oobe.onPairRequested)
         oobe.show()
 
         loop = QEventLoop()
@@ -126,13 +112,30 @@ def startApp(application, isSilent=False):
         oobe.destroyed.connect(loop.quit)
         loop.exec()
 
-        browserService.pairRequested.disconnect(
-            oobe.browserExtensionPage.onPairRequested
-        )
+        browserService.pairRequested.disconnect(oobe.onPairRequested)
         # 必须在主线程显式销毁：闭包连接使窗口陷入循环引用，若留给
         # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
         oobe.deleteLater()
+
+        window = MainWindow()
+        window.setupPacks()
         window.show()
+    else:
+        window = MainWindow()
+
+        if not isSilent:
+            from qfluentwidgets import SplashScreen
+            splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
+            splash.raise_()
+            window.show()
+            application.processEvents()
+
+        loadPacks()
+        window.setupPacks()
+        startEngine()
+
+        if not isSilent:
+            splash.finish()
 
     from app.platform.windows import emptyWorkingSet
 
