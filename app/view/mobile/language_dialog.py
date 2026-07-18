@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import (
     BodyLabel, CardWidget, FluentIcon, IconWidget, PrimaryPushButton,
-    RadioButton, TitleLabel, isDarkTheme, qconfig,
+    RadioButton, SubtitleLabel, isDarkTheme, qconfig,
 )
 
 from app.config.cfg import LANGUAGE_TEXTS, Language, cfg
@@ -62,7 +62,7 @@ class MobileLanguageDialog(QDialog):
         ]
 
         self.iconWidget = IconWidget(FluentIcon.LANGUAGE, self)
-        self.titleLabel = TitleLabel("Choose your language", self)
+        self.titleLabel = SubtitleLabel("Choose your language", self)
         self.descriptionLabel = BodyLabel(
             "Select the language used by Ghost Downloader. You can change it "
             "later in Settings.",
@@ -86,12 +86,20 @@ class MobileLanguageDialog(QDialog):
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
         self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
         self.contentWidget.setMaximumWidth(560)
+        self.contentWidget.setMinimumWidth(0)
         self.iconWidget.setFixedSize(42, 42)
+        self.titleLabel.setMinimumWidth(0)
+        self.titleLabel.setWordWrap(True)
+        self.descriptionLabel.setMinimumWidth(0)
         self.descriptionLabel.setWordWrap(True)
+        self.scrollArea.setMinimumWidth(0)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollWidget)
         self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
         self.scrollArea.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.scrollArea.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.scrollArea.setStyleSheet(
