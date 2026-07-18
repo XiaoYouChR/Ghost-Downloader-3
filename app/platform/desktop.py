@@ -190,6 +190,66 @@ def openChromiumUrl(url: str) -> bool:
     return False
 
 
+def findVlcBinary() -> str | None:
+    """Return the path to the VLC executable, or None if not found."""
+    import shutil
+    import subprocess
+
+    match sys.platform:
+        case "win32":
+            import winreg
+            for key_path in [
+                r"Software\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe",
+                r"Software\VideoLAN\VLC",
+            ]:
+                for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+                    try:
+                        with winreg.OpenKey(root, key_path) as key:
+                            path = winreg.QueryValue(key, None)
+                            if path and Path(path).is_file():
+                                return path
+                    except OSError:
+                        continue
+            # Fallback: common install locations
+            for candidate in [
+                r"C:\Program Files\VideoLAN\VLC\vlc.exe",
+                r"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe",
+            ]:
+                if Path(candidate).is_file():
+                    return candidate
+        case "darwin":
+            candidates = [
+                "/Applications/VLC.app/Contents/MacOS/VLC",
+                str(Path.home() / "Applications/VLC.app/Contents/MacOS/VLC"),
+            ]
+            for candidate in candidates:
+                if Path(candidate).is_file():
+                    return candidate
+            # Also check if `vlc` is on PATH
+            found = shutil.which("vlc")
+            if found:
+                return found
+        case _:
+            found = shutil.which("vlc")
+            if found:
+                return found
+    return None
+
+
+def playInVlc(filePath: str) -> None:
+    """Open *filePath* in VLC. Falls back to the OS default player if VLC is not found."""
+    import subprocess
+    vlc = findVlcBinary()
+    if vlc:
+        try:
+            subprocess.Popen([vlc, filePath])
+            return
+        except OSError as e:
+            logger.warning("playInVlc: failed to launch VLC ({}): {}", vlc, e)
+    # Fallback to system default association
+    openFile(filePath)
+
+
 def requestForeground() -> None:
     if sys.platform != "win32":
         return

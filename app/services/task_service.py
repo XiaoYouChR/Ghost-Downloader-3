@@ -306,8 +306,12 @@ class TaskService(QObject):
     def _dispatch(self, task: Task) -> None:
         from app.models.task import TaskStatus
         from app.services.coroutine_runner import coroutineRunner
+        from app.platform.wake_lock import acquireWakeLock
 
         task.setStatus(TaskStatus.RUNNING)
+        # Acquire wake lock when first task starts running
+        if self._queue.runningCount() == 0:
+            acquireWakeLock()
         workId = coroutineRunner.submit(
             task.run(),
             done=lambda _: self._onRunDone(task),
@@ -351,8 +355,11 @@ class TaskService(QObject):
         self.taskCompleted.emit(task)
         if task.hasOutputFile:
             self._watchFile(task)
+            self._maybeAutoExtract(task)
         self._pump()
         if self._queue.runningCount() == 0:
+            from app.platform.wake_lock import releaseWakeLock
+            releaseWakeLock()
             self.tasksAllCompleted.emit()
 
     def _onRunFailed(self, task: Task, error: str) -> None:
@@ -361,7 +368,32 @@ class TaskService(QObject):
         self.taskFailed.emit(task)
         self._pump()
         if self._queue.runningCount() == 0:
+            from app.platform.wake_lock import releaseWakeLock
+            releaseWakeLock()
             self.tasksAllCompleted.emit()
+
+    def _maybeAutoExtract(self, task: Task) -> None:
+        """Run archive auto-extraction in a background thread if enabled."""
+        import threading
+        from app.platform.extract_utils import canAutoExtract, autoExtract
+
+        if not cfg.shouldAutoExtract.value:
+            return
+        outputPath = task.outputPath
+        if not outputPath or not canAutoExtract(outputPath):
+            return
+
+        deleteAfter = cfg.shouldDeleteArchiveAfterExtract.value
+        outputFolder = str(task.outputFolder)
+
+        def _run():
+            try:
+                autoExtract(outputPath, outputFolder, deleteAfter=deleteAfter)
+                logger.info("Auto-extracted: {}", outputPath)
+            except Exception as e:
+                logger.opt(exception=e).warning("Auto-extraction failed for {}", outputPath)
+
+        threading.Thread(target=_run, daemon=True, name="auto-extract").start()
 
     def _watchFile(self, task: Task) -> None:
         path = task.outputPath

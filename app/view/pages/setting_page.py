@@ -110,6 +110,12 @@ class SettingPage(ScrollArea):
             self.clientProfileCard,
             DefaultHeadersSettingCard(FluentIcon.DICTIONARY, self.tr("默认请求头"),
                                       self.tr("设置默认 HTTP 请求头")),
+            SwitchSettingCard(FluentIcon.FOLDER, self.tr("下载完成后自动解压"),
+                              self.tr("任务完成时自动将 zip / tar / 7z 等压缩文件解压到同名子文件夹"),
+                              cfg.shouldAutoExtract),
+            SwitchSettingCard(FluentIcon.REMOVE, self.tr("解压后删除压缩包"),
+                              self.tr("自动解压成功后删除原始压缩文件（仅在启用自动解压时有效）"),
+                              cfg.shouldDeleteArchiveAfterExtract),
         ])
 
         self.categoryRulesCard = CategoryRulesCard()
