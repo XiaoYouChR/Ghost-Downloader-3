@@ -2,18 +2,27 @@
 from __future__ import annotations
 
 
-def loadEngine(application) -> None:
+def loadTranslation(application) -> None:
     from PySide6.QtCore import QTranslator
     from app.config.cfg import cfg
-    from app.services.coroutine_runner import coroutineRunner
 
     import app.assets.resources  # noqa: F401
+
+    previous = getattr(application, "_gd3Translator", None)
+    if previous is not None:
+        application.removeTranslator(previous)
 
     locale = cfg.language.value.value
     translator = QTranslator(application)
     translator.load(locale, "gd3", ".", ":/i18n")
     application.installTranslator(translator)
+    application._gd3Translator = translator
 
+
+def loadEngine(application) -> None:
+    from app.services.coroutine_runner import coroutineRunner
+
+    loadTranslation(application)
     coroutineRunner.start()
 
 

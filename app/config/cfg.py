@@ -283,6 +283,9 @@ class Config(QConfig):
 
     # OOBE
     hasCompletedOobe = ConfigItem("Software", "HasCompletedOobe", False, BoolValidator())
+    hasSelectedAndroidLanguage = ConfigItem(
+        "Software", "HasSelectedAndroidLanguage", False, BoolValidator()
+    )
 
     # UI 状态
     expandedSettingGroups = ConfigItem("UI", "ExpandedSettingGroups", [], StringListValidator())

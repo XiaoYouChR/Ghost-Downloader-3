@@ -52,7 +52,10 @@ def startApp(application):
     from app.services.browser_service import browserService
     from app.services.speed_meter import speedMeter
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import (
+        bindNotifications, checkUpdateAtStartup, loadEngine, loadPacks,
+        loadTranslation, startEngine, stopEngine,
+    )
     from app.view.mobile.device import setupTouchScrolling
     from app.view.mobile.window import MobileMainWindow
 
@@ -65,6 +68,17 @@ def startApp(application):
 
     loadEngine(application)
     loadPacks()
+
+    if not cfg.hasSelectedAndroidLanguage.value:
+        from app.view.mobile.language_dialog import MobileLanguageDialog
+
+        languageDialog = MobileLanguageDialog()
+        languageDialog.exec()
+        cfg.set(cfg.language, languageDialog.selectedLanguage())
+        cfg.set(cfg.hasSelectedAndroidLanguage, True)
+        loadTranslation(application)
+        languageDialog.deleteLater()
+        application.processEvents()
 
     mainWindow = MobileMainWindow()
     mainWindow.show()
