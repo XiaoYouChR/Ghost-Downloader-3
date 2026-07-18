@@ -86,10 +86,18 @@ class SettingPage(ScrollArea):
         self.downloadFolderCard.hBoxLayout.addWidget(self.downloadRestoreButton, 0, Qt.AlignmentFlag.AlignRight)
         self.downloadFolderCard.hBoxLayout.addSpacing(16)
         self.clientProfileCard = IdentitySettingCard()
+        self.vlcPathCard = LineEditSettingCard(
+            FluentIcon.PLAY, self.tr("VLC 路径"),
+            self.tr("自定义本地 VLC 播放器的可执行文件路径，若为空则自动检测"),
+            configItem=cfg.vlcPath,
+            placeholder=self.tr("自动检测"),
+        )
 
         self.generalGroup.addSettingCards([
+            self.vlcPathCard,
             RangeSettingCard(cfg.maxTaskNum, FluentIcon.TRAIN, self.tr("最大任务数"),
                              self.tr("最多能同时进行的任务数量")),
+
             RangeSettingCard(cfg.preBlockNum, FluentIcon.CLOUD, self.tr("预分配线程数"),
                              self.tr("线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险")),
             SwitchSettingCard(FluentIcon.SPEED_HIGH, self.tr("自动提速"),

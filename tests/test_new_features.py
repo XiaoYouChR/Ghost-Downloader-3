@@ -472,6 +472,7 @@ class TestTaskServiceWakeLock:
         svc._flushTimer = MagicMock()
         svc._fileWatcher = MagicMock()
         svc._watchedPaths = {}
+        svc._pump = MagicMock()
         for name in [
             "taskAdded", "taskRemoved", "taskStarted", "taskPaused",
             "taskCompleted", "taskFailed", "tasksAllCompleted",
@@ -486,27 +487,30 @@ class TestTaskServiceWakeLock:
 
         mock_task = MagicMock()
         mock_task.taskId = "task-1"
-        mock_task.run.return_value = asyncio.coroutine(lambda: None)()  # dummy coro
+        async def dummy_coro():
+            pass
+        mock_task.run.return_value = dummy_coro()  # dummy coro
 
         with patch("app.platform.wake_lock.acquireWakeLock") as mock_acquire:
-            with patch("app.services.task_service.coroutineRunner", MagicMock()):
-                svc = self._make_task_service()
-                svc._queue.runningCount.return_value = 0
-                svc.taskStarted = MagicMock()
+            svc = self._make_task_service()
+            svc._queue.runningCount.return_value = 0
+            svc.taskStarted = MagicMock()
 
-                from app.models.task import TaskStatus
-                with patch("app.services.coroutine_runner.coroutineRunner") as mock_runner:
-                    mock_runner.submit.return_value = "work-1"
-                    svc._dispatch(mock_task)
+            from app.models.task import TaskStatus
+            with patch("app.services.coroutine_runner.coroutineRunner") as mock_runner:
+                mock_runner.submit.return_value = "work-1"
+                svc._dispatch(mock_task)
 
-                mock_acquire.assert_called_once()
+            mock_acquire.assert_called_once()
 
     def test_acquire_not_called_when_already_running(self):
         from app.services.task_service import TaskService
 
         mock_task = MagicMock()
         mock_task.taskId = "task-2"
-        mock_task.run.return_value = asyncio.coroutine(lambda: None)()
+        async def dummy_coro():
+            pass
+        mock_task.run.return_value = dummy_coro()
 
         with patch("app.platform.wake_lock.acquireWakeLock") as mock_acquire:
             svc = self._make_task_service()
@@ -568,6 +572,7 @@ class TestTaskServiceAutoExtract:
         svc._flushTimer = MagicMock()
         svc._fileWatcher = MagicMock()
         svc._watchedPaths = {}
+        svc._pump = MagicMock()
         for name in [
             "taskAdded", "taskRemoved", "taskStarted", "taskPaused",
             "taskCompleted", "taskFailed", "tasksAllCompleted",

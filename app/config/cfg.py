@@ -232,6 +232,8 @@ class Config(QConfig):
     shouldDeleteArchiveAfterExtract = ConfigItem(
         "GeneralDownload", "DeleteArchiveAfterExtract", False, BoolValidator()
     )
+    vlcPath = ConfigItem("GeneralDownload", "VlcPath", "")
+
 
     # 分类
     isCategoryEnabled = ConfigItem("Category", "EnableCategory", False, BoolValidator())

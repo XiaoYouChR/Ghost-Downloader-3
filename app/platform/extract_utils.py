@@ -82,12 +82,30 @@ def autoExtract(archivePath: str, outputFolder: str, deleteAfter: bool = False) 
 
 def _extractZip(src: Path, dest: Path) -> None:
     with zipfile.ZipFile(src, "r") as zf:
-        zf.extractall(dest)
+        safe_members = []
+        dest_resolved = dest.resolve()
+        for member in zf.infolist():
+            # Resolve the path to ensure it is relative to the destination folder
+            target_path = (dest / member.filename).resolve()
+            if target_path.is_relative_to(dest_resolved):
+                safe_members.append(member)
+            else:
+                logger.warning("Unsafe zip member ignored: {}", member.filename)
+        zf.extractall(dest, members=safe_members)
 
 
 def _extractTar(src: Path, dest: Path) -> None:
     with tarfile.open(src, "r:*") as tf:
-        tf.extractall(dest)
+        safe_members = []
+        dest_resolved = dest.resolve()
+        for member in tf.getmembers():
+            target_path = (dest / member.name).resolve()
+            if target_path.is_relative_to(dest_resolved):
+                safe_members.append(member)
+            else:
+                logger.warning("Unsafe tar member ignored: {}", member.name)
+        tf.extractall(dest, members=safe_members)
+
 
 
 def _extractSevenZip(src: Path, dest: Path) -> None:

@@ -210,6 +210,25 @@ class TestAutoExtractZip:
         assert (dest / "hello.txt").read_text() == "Hello, World!"
         assert (dest / "sub" / "nested.txt").read_text() == "nested"
 
+    def test_zip_slip_prevention(self, tmp_path: Path):
+        from app.platform.extract_utils import autoExtract
+
+        archive = tmp_path / "unsafe.zip"
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("safe.txt", "safe file")
+            # Unsafe directory traversal paths
+            zf.writestr("../unsafe.txt", "unsafe parent")
+            zf.writestr("/absolute/unsafe.txt", "unsafe absolute")
+
+        autoExtract(str(archive), str(tmp_path))
+
+        dest = tmp_path / "unsafe"
+        assert dest.is_dir()
+        assert (dest / "safe.txt").exists()
+        assert not (dest / "../unsafe.txt").exists()
+        assert not Path("/absolute/unsafe.txt").exists()
+
+
     def test_subfolder_named_by_stem(self, tmp_path: Path):
         from app.platform.extract_utils import autoExtract
 
@@ -336,6 +355,18 @@ class TestFindVlcBinary:
         with patch("sys.platform", "linux"):
             with patch("shutil.which", return_value=None):
                 assert findVlcBinary() is None
+
+    def test_custom_vlc_path_config(self, tmp_path: Path, monkeypatch):
+        from app.platform.desktop import findVlcBinary
+        from app.config.cfg import cfg
+        custom_vlc = tmp_path / "my_custom_vlc.exe"
+        custom_vlc.touch()
+
+        # Patch the config item value
+        monkeypatch.setattr(cfg.vlcPath, "value", str(custom_vlc))
+        result = findVlcBinary()
+        assert result == str(custom_vlc)
+
 
     def test_linux_returns_vlc_path(self):
         from app.platform.desktop import findVlcBinary

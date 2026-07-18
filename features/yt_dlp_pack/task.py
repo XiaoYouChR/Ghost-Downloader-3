@@ -413,14 +413,11 @@ class YouTubeMergeStep(FFmpegStep):
             from .config import ytDlpConfig
             targetFmt = ytDlpConfig.audioOutputFormat.value
             if not hasVideo and targetFmt and targetFmt != "original":
-                # Move raw audio to a temporary path, then transcode
-                rawAudio = outputPath.with_suffix(f".raw{singleInput.suffix}")
-                shutil.move(str(singleInput), str(rawAudio))
+                # Transcode directly from singleInput (no rawAudio temp file)
+                await self._transcodeAudio(str(singleInput), targetFmt, str(outputPath.parent))
+                # Delete the downloaded raw audio files only after successful transcoding
+                singleInput.unlink(missing_ok=True)
                 Path(f"{singleInput}.ghd").unlink(missing_ok=True)
-                try:
-                    await self._transcodeAudio(str(rawAudio), targetFmt, str(outputPath.parent))
-                finally:
-                    rawAudio.unlink(missing_ok=True)
             else:
                 shutil.move(str(singleInput), str(outputPath))
                 Path(f"{singleInput}.ghd").unlink(missing_ok=True)
@@ -436,10 +433,13 @@ class YouTubeMergeStep(FFmpegStep):
             raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
 
         stem = Path(inputPath).stem
-        # Remove any .raw suffix we added
-        if stem.endswith(".raw"):
+        # Strip internal suffixes to get clean final output filename
+        if stem.endswith(".audio"):
+            stem = stem[:-6]
+        elif stem.endswith(".raw"):
             stem = stem[:-4]
         outputFile = str(Path(outputFolder) / f"{stem}.{targetFormat}")
+
 
         # Build codec args per format
         match targetFormat:

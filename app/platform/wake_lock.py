@@ -1,5 +1,5 @@
-from __future__ import annotations
-
+import atexit
+import os
 import subprocess
 import sys
 from typing import TYPE_CHECKING
@@ -11,6 +11,19 @@ if TYPE_CHECKING:
 
 _caffeinate_proc: subprocess.Popen | None = None
 _wake_lock_count: int = 0
+
+
+def _cleanupSubprocess() -> None:
+    global _caffeinate_proc
+    if _caffeinate_proc is not None:
+        try:
+            _caffeinate_proc.kill()
+            logger.debug("Wake lock child process cleaned up on exit")
+        except Exception:
+            pass
+        _caffeinate_proc = None
+
+atexit.register(_cleanupSubprocess)
 
 
 def acquireWakeLock() -> None:
@@ -33,8 +46,9 @@ def acquireWakeLock() -> None:
                 else:
                     logger.debug("Wake lock acquired (Windows)")
             case "darwin":
+                # -w <pid> makes caffeinate automatically exit when this python process exits
                 _caffeinate_proc = subprocess.Popen(
-                    ["caffeinate", "-i"],
+                    ["caffeinate", "-w", str(os.getpid()), "-i"],
                     stdin=subprocess.DEVNULL,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -87,3 +101,4 @@ def releaseWakeLock() -> None:
                     logger.debug("Wake lock released (caffeinate/systemd-inhibit killed)")
     except Exception as e:
         logger.opt(exception=e).warning("releaseWakeLock failed")
+

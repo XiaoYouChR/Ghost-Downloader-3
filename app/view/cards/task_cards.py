@@ -96,11 +96,15 @@ class TaskCard(CardWidget):
                 moveMenu.addAction(action)
             menu.addMenu(moveMenu)
 
-        # VLC playback — shown only when the file is complete and VLC is installed
+        # VLC playback — shown only when the file is complete, is a playable media file, and VLC is installed
         if (
             self._task.status == TaskStatus.COMPLETED
             and self._task.hasOutputFile
             and Path(self._task.outputPath).exists()
+            and Path(self._task.outputPath).suffix.lower() in {
+                ".mp4", ".mkv", ".avi", ".mov", ".mp3", ".wav", ".flac", ".ogg",
+                ".m4a", ".webm", ".ts", ".aac", ".3gp", ".wmv", ".flv"
+            }
             and findVlcBinary()
         ):
             menu.addSeparator()
@@ -108,6 +112,7 @@ class TaskCard(CardWidget):
             outputPath = self._task.outputPath
             vlcAction.triggered.connect(lambda: playInVlc(outputPath))
             menu.addAction(vlcAction)
+
 
         return menu
 
