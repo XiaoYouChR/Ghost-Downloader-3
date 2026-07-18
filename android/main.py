@@ -73,6 +73,8 @@ def startApp(application):
         from app.view.mobile.language_dialog import MobileLanguageDialog
 
         languageDialog = MobileLanguageDialog()
+        setupTouchScrolling(languageDialog)
+        languageDialog.showMaximized()
         languageDialog.exec()
         cfg.set(cfg.language, languageDialog.selectedLanguage())
         cfg.set(cfg.hasSelectedAndroidLanguage, True)
