@@ -331,7 +331,9 @@ class YouTubeExtractStep(TaskStep):
                 step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
                 step.extension = fmt.get("ext") or ("mp4" if step.role == "video" else "m4a")
                 step.canUseRangeRequests = True
-                step.subworkerCount = cfg.preBlockNum.value
+                # YouTube CDN returns 403 Forbidden under concurrent connection bursts.
+                # Start with 1 connection initially, and let autoSpeedUp scale it.
+                step.subworkerCount = 1
                 step.headers = dict(fmt.get("http_headers") or {})
             elif isinstance(step, YouTubeMergeStep):
                 step.videoExtension = videoFmt.get("ext", "mp4") if videoFmt else ""
