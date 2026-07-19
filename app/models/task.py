@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import auto, IntEnum
 from pathlib import Path
 from time import time
@@ -259,6 +259,32 @@ class Task:
     def setName(self, name: str):
         self.name = toSafeFilename(name, fallback=self.name or "download")
 
+    def updateName(self, name: str) -> None:
+        oldOutputPath = Path(self.outputPath)
+        self.setName(name)
+
+        from shutil import move
+        from app.platform.filesystem import deletePath
+
+        newOutputPath = Path(self.outputPath)
+        if oldOutputPath == newOutputPath:
+            return
+        oldRecordPath = Path(f"{oldOutputPath}.ghd")
+        newRecordPath = Path(f"{newOutputPath}.ghd")
+        try:
+            newOutputPath.parent.mkdir(parents=True, exist_ok=True)
+            if oldOutputPath.exists():
+                move(str(oldOutputPath), str(newOutputPath))
+            if oldRecordPath.exists():
+                move(str(oldRecordPath), str(newRecordPath))
+        except OSError:
+            for path in (oldOutputPath, oldRecordPath, newOutputPath, newRecordPath):
+                deletePath(path)
+            raise
+        for step in self.steps:
+            if getattr(step, "outputFile", "") == str(oldOutputPath):
+                step.outputFile = str(newOutputPath)
+
     def deduplicateFilename(self) -> None:
         from app.platform.filesystem import deduplicateName
         self.name = deduplicateName(self.outputFolder, self.name)
@@ -415,10 +441,10 @@ class Task:
         return False
 
     def replaceWith(self, newTask: Task) -> None:
-        self.url = newTask.url
-        self.name = newTask.name
-        self.fileSize = newTask.fileSize
-        self.steps = newTask.steps
+        retainedFields = {"taskId", "createdAt", "outputFolder", "category"}
+        for taskField in fields(newTask):
+            if taskField.name not in retainedFields:
+                setattr(self, taskField.name, getattr(newTask, taskField.name))
         for step in self.steps:
             step._bindTask(self)
         self.updateStatus()

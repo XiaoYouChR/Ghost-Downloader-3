@@ -104,10 +104,21 @@ class CoroutineRunner(QThread):
         return guarded
 
     def stop(self) -> None:
-        for task in list(self._running.values()):
-            task.cancel()
         if self._loop and self._loop.is_running():
+            async def stopRunningWork() -> None:
+                tasks = list(self._running.values())
+                for task in tasks:
+                    task.cancel()
+                if tasks:
+                    await asyncio.gather(*tasks, return_exceptions=True)
+
+            future = asyncio.run_coroutine_threadsafe(stopRunningWork(), self._loop)
+            try:
+                future.result(timeout=5)
+            except Exception as e:
+                logger.opt(exception=e).warning("timed out while stopping background work")
             self._loop.call_soon_threadsafe(self._loop.stop)
+            self.wait(5000)
         self._pending.clear()
         self._running.clear()
 

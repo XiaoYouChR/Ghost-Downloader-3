@@ -52,11 +52,13 @@ class HuggingFaceDraftCard(UniversalDraftCard):
         dialog = FileSelectDialog(self.task, self.window())
         try:
             if dialog.exec():
-                self.task.setSelection(dialog.selectedIndexes())
-                self._refreshSummary()
-                self.nameLabel.setText(self.task.name)
+                self.selectionSubmitted.emit(dialog.selectedIndexes())
         finally:
             dialog.deleteLater()
+
+    def refresh(self) -> None:
+        super().refresh()
+        self._refreshSummary()
 
 
 class HuggingFaceTaskCard(UniversalTaskCard):

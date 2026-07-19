@@ -525,3 +525,10 @@ class FtpTask(Task):
             deletePath(target)
             deletePath(Path(f"{target}.ghd"))
 
+    def canReuseProgress(self, newTask: Task) -> bool:
+        return (
+            isinstance(newTask, FtpTask)
+            and self.fileSize > 0
+            and self.fileSize == newTask.fileSize
+            and all(step.canPause for step in self.steps if step.receivedBytes > 0)
+        )
