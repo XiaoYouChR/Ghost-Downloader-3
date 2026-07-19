@@ -48,6 +48,7 @@ class HttpTask(Task):
             isinstance(newTask, HttpTask)
             and self.fileSize > 0
             and self.fileSize == newTask.fileSize
+            and all(step.canPause for step in self.steps if step.receivedBytes > 0)
         )
 
 

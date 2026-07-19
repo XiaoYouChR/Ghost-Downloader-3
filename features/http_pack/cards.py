@@ -26,10 +26,9 @@ class SegmentedProgressBar(QWidget):
 
     def _onFillTimeout(self):
         live = {sw.start: sw.position for sw in list(self._step.subworkers)}
-        fresh = not self._fillProgress
         settled = True
         for start, target in live.items():
-            shown = self._fillProgress.get(start, target if fresh else start)
+            shown = self._fillProgress.get(start, start)
             if target - shown > 1:
                 self._fillProgress[start] = shown + (target - shown) * FILL_EASING
                 settled = False

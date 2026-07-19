@@ -18,9 +18,11 @@ The current execution of a Task inside the download loop.
 The internal waiting/running set that limits concurrent Task Runs.
 
 **Task Service**:
-The app actor that owns user-visible Task workflow: add, pause, delete,
-redownload, edit, resumeSaved, stop. The single public door for all task
-actions. Internally holds Task Store and Task Queue — neither is public.
+The app actor that owns Task workflow: ahead download, add, pause, delete,
+redownload, edit, resumeSaved, stop. Ahead Downloads share its Task Queue but
+remain outside Task Store and public lifecycle signals until confirmation.
+The single public door for all task actions. Task Store and Task Queue are
+internal.
 
 **Task Store**:
 The internal part of Task Service that holds live Task objects and persists
@@ -108,12 +110,22 @@ _Avoid_: payload (keep only at raw transport seams)
 A FeaturePack-provided capability that turns Task Options into a Task.
 Declares a `priority` and a `match(options)` predicate.
 
-**Task Draft**:
-Unconfirmed task state before the user confirms it. Owns in-flight parses and
-late completion. Task Service does not understand draft state.
+**Task Setup**:
+Unconfirmed task configuration shown in the Add Task window, whether opened
+inside the app or by Browser Draft Mode.
+_Avoid_: draft (reserved for the browser setting and existing code identifiers)
 
-**Draft Item**:
-One URL entry inside a Task Draft, tracking its parse state and result.
+**Setup Item**:
+One URL entry inside Task Setup, tracking its parse state and result.
+
+**Ahead Download**:
+A hidden download started after a Setup Item parses, before the user confirms
+Task Setup. Confirmation publishes its current state; removal or rejection
+discards it and its files.
+
+**Browser Draft Mode**:
+The browser integration option that opens Task Setup for an intercepted
+download instead of creating the Task immediately.
 
 **Feature Service**:
 The app actor that owns pack discovery, parser priority routing, and pack
@@ -266,8 +278,8 @@ _Avoid_: `find*` for in-memory lookup (keep `find*` for disk/PATH search).
 
 ## Relationships
 
-- A **Task Draft** contains one or more **Draft Items** before the user
-  confirms them. Each Draft Item tracks a URL, its parse state, and
+- **Task Setup** contains one or more **Setup Items** before the user
+  confirms them. Each Setup Item tracks a URL, its parse state, and
   optionally a parsed Task.
 - **Task Options** are parsed by a **Task Parser** into a **Task**.
   `featureService.parse(options)` iterates parsers by priority; the first
@@ -329,7 +341,8 @@ and Task Queue. No caller reaches either directly.
 
 | State | Internal owner |
 |---|---|
-| Live Task objects | Task Store (inside Task Service) |
+| Live confirmed Task objects | Task Store (inside Task Service) |
+| Hidden Ahead Downloads | Task Service (outside Task Store) |
 | Durable Task Records (`tasks.jsonl`) | Task Store (inside Task Service) |
 | Category default folder, duplicate-name policy | Task Store (in `add`) |
 | Waiting order | Task Queue (inside Task Service) |
@@ -340,7 +353,8 @@ and Task Queue. No caller reaches either directly.
 **Task lifecycle signals are emitted by Task Service:**
 `taskAdded(Task)`, `taskRemoved(taskId)`, `taskStarted(Task)`,
 `taskPaused(Task)`, `taskCompleted(Task)`, `taskFailed(Task)`,
-`tasksAllCompleted()`.
+`tasksAllCompleted()`. Ahead Downloads do not emit these signals until
+`add(Task)` publishes them.
 
 **Speed Meter** owns aggregate download speed — separate from task
 orchestration. Download engines feed it bytes; it emits `speedChanged` per
@@ -362,7 +376,7 @@ coroutineRunner    knows nothing about Task
 speedMeter         knows nothing about Task; fed bytes by download engines
 taskService        uses coroutineRunner; internally holds TaskStore + TaskQueue
 featureService     holds packs + parsers; parse() returns Task
-taskDraft          uses coroutineRunner + featureService
+taskDraft          uses coroutineRunner + featureService + taskService
 browserService     uses taskService + featureService; emits signals for View
 categoryService    standalone; taskService calls matchByName on add
 View / Entry       binds everything; connects signals

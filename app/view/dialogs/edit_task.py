@@ -40,9 +40,8 @@ class EditTaskDialog(MessageBoxBase):
 
 class DraftEditDialog(EditTaskDialog):
 
-    def accept(self):
-        self._task.setOptions(self.cardGroup.options())
-        super().accept()
+    def options(self) -> dict:
+        return self.cardGroup.options()
 
 
 class LiveEditDialog(EditTaskDialog):

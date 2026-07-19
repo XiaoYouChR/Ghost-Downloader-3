@@ -53,15 +53,18 @@ class BilibiliDraftCard(UniversalDraftCard):
         self._selectPagesButton.clicked.connect(self._onSelectPagesClicked)
 
     def _onModeChanged(self, index: int) -> None:
-        task: BilibiliTask = self._task
-        task.setMode(DownloadMode(index))
-        self._refreshSummary()
+        replacement = self.taskCopy()
+        replacement.setMode(DownloadMode(index))
+        replacement.deduplicateFilename()
+        self.replacementSubmitted.emit(replacement)
 
     def _onSubtitleClicked(self) -> None:
         task: BilibiliTask = self._task
         dialog = SubtitleSelectDialog(self._subtitleChoices, task.subtitleLanguages, self.window())
         if dialog.exec():
-            task.setSubtitleLanguages(dialog.selectedLanguages())
+            replacement = self.taskCopy()
+            replacement.setSubtitleLanguages(dialog.selectedLanguages())
+            self.replacementSubmitted.emit(replacement)
 
     def _onSelectPagesClicked(self) -> None:
         task: BilibiliTask = self._task
@@ -69,8 +72,11 @@ class BilibiliDraftCard(UniversalDraftCard):
         if dialog.exec():
             selected = dialog.selectedPageNumbers()
             if selected:
-                task.setSelection({n - 1 for n in selected})
-                self._refreshSummary()
+                self.selectionSubmitted.emit({n - 1 for n in selected})
+
+    def refresh(self) -> None:
+        super().refresh()
+        self._refreshSummary()
 
     def _refreshSummary(self) -> None:
         self.sizeLabel.setText(toReadableSize(self._task.fileSize))

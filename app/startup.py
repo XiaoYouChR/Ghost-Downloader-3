@@ -65,8 +65,9 @@ def stopEngine() -> None:
     from app.services.task_service import taskService
 
     taskService.stop()
-    taskService.flush()
     browserService.stop()
     aria2RpcServer.stop()
     featureService.stop()
     coroutineRunner.stop()
+    taskService.deleteStoppedAheadDownloads()
+    taskService.flush()

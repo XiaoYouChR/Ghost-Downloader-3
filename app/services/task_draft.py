@@ -7,6 +7,9 @@ from typing import Any, TYPE_CHECKING
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
+from app.config.cfg import cfg
+from app.services.task_service import taskService
+
 if TYPE_CHECKING:
     from app.models.task import Task
 
@@ -32,6 +35,7 @@ class TaskDraft(QObject):
         super().__init__(parent)
         self._items: list[DraftItem] = []
         self._baseOptions: dict[str, Any] = {}
+        cfg.shouldStartAheadDownload.valueChanged.connect(self._onAheadDownloadSettingChanged)
 
     def urls(self) -> list[str]:
         return [item.url for item in self._items]
@@ -46,15 +50,21 @@ class TaskDraft(QObject):
         return any(item.parseId or item.task is not None for item in self._items)
 
     def setBaseOptions(self, options: dict) -> None:
+        if options == self._baseOptions:
+            return
         self._baseOptions = options
         for item in self._items:
             if item.task is not None:
-                item.task.setOptions(self._buildOptions(item))
+                task = item.task
+                nextOptions = self._buildOptions(item)
+                taskService.setAheadDownloadOptions(task, nextOptions)
 
     def setUrlCategory(self, url: str, categoryId: str) -> None:
         for item in self._items:
             if item.url == url:
                 item.categoryOverride = categoryId
+                if item.task is not None:
+                    taskService.setAheadDownloadCategory(item.task, categoryId)
                 break
 
     def setUrls(self, urls: list[str]) -> None:
@@ -75,6 +85,8 @@ class TaskDraft(QObject):
                 if item.parseId:
                     coroutineRunner.cancel(item.parseId)
                     item.parseId = ""
+                if item.task is not None:
+                    taskService.deleteAheadDownload(item.task)
             for url in urls[newStart:newEnd]:
                 item = DraftItem(url=url)
                 try:
@@ -123,6 +135,8 @@ class TaskDraft(QObject):
 
             task.setOptions(self._buildOptions(item))
             item.task = task
+            if cfg.shouldStartAheadDownload.value:
+                taskService.startAheadDownload(task)
             self.parseSucceeded.emit(url, task)
 
         self.parsingBusyChanged.emit(self._isParsing())
@@ -134,7 +148,6 @@ class TaskDraft(QObject):
 
         for item in self._items:
             if item.task is not None:
-                item.task.setOptions(self._buildOptions(item))
                 self.taskConfirmed.emit(item.task)
             elif item.parseId:
                 item.confirmedOptions = self._buildOptions(item)
@@ -154,6 +167,8 @@ class TaskDraft(QObject):
             if item.parseId:
                 coroutineRunner.cancel(item.parseId)
                 item.parseId = ""
+            if item.task is not None:
+                taskService.deleteAheadDownload(item.task)
         self._items.clear()
         self.itemsCleared.emit()
         self.parsingBusyChanged.emit(self._isParsing())
@@ -180,9 +195,20 @@ class TaskDraft(QObject):
         item.parseId = ""
         task.setOptions(self._buildOptions(item))
         item.task = task
+        if cfg.shouldStartAheadDownload.value:
+            taskService.startAheadDownload(task)
         self.parseSucceeded.emit(item.url, task)
         self.parsingBusyChanged.emit(self._isParsing())
         self.itemsChanged.emit()
+
+    def _onAheadDownloadSettingChanged(self, enabled: bool) -> None:
+        for item in self._items:
+            if item.task is None:
+                continue
+            if enabled:
+                taskService.startAheadDownload(item.task)
+            else:
+                taskService.deleteAheadDownload(item.task)
 
     def _onParseFailed(self, error: str, item: DraftItem) -> None:
         if item.confirmedOptions is not None:

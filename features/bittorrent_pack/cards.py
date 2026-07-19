@@ -66,8 +66,11 @@ class BTDraftCard(UniversalDraftCard):
         )
 
     def _onSelectFilesClicked(self):
-        if openFileSelection(self.task, self.window()) is not None:
-            self._refreshSummary()
+        openFileSelection(self.task, self.window(), apply=self.selectionSubmitted.emit)
+
+    def refresh(self) -> None:
+        super().refresh()
+        self._refreshSummary()
 
 
 class BTTaskCard(UniversalTaskCard):

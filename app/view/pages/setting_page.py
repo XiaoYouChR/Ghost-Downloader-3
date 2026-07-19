@@ -98,6 +98,12 @@ class SettingPage(ScrollArea):
             SpinBoxSettingCard(FluentIcon.LIBRARY, self.tr("最小再分配大小"),
                               self.tr("每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配"),
                               " KB", cfg.maxReassignSize, singleStep=64),
+            SwitchSettingCard(
+                FluentIcon.DOWNLOAD,
+                self.tr("提前开始下载"),
+                self.tr("链接解析成功后立即在后台开始下载；确认后显示任务，取消则删除已下载数据"),
+                cfg.shouldStartAheadDownload,
+            ),
             self.speedLimitationCard,
             SwitchSettingCard(FluentIcon.HISTORY, self.tr("保留文件修改时间"),
                               self.tr("下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值"),

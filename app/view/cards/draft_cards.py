@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 class DraftCard(QWidget):
     categoryPicked = Signal(str)
     editRequested = Signal()
+    nameSubmitted = Signal(str)
+    selectionSubmitted = Signal(object)
+    replacementSubmitted = Signal(object)
 
     def __init__(self, task: Task, parent=None):
         super().__init__(parent)
@@ -83,12 +86,16 @@ class DraftCard(QWidget):
     def _onNameEdited(self) -> None:
         newName = self.nameEdit.text().strip()
         if newName and newName != self._task.name:
-            self._task.setName(newName)
-            self.nameLabel.setText(self._task.name)
-            self.nameEdit.setText(self._task.name)
-            self._refreshFileIcon()
+            self.nameSubmitted.emit(newName)
         self.nameEdit.hide()
         self.nameLabel.show()
+
+    def refresh(self) -> None:
+        self.nameLabel.setText(self._task.name)
+        self.nameEdit.setText(self._task.name)
+        self.sizeLabel.setText(toReadableSize(self._task.fileSize) if self._task.fileSize > 0 else "")
+        self._refreshFileIcon()
+        self._refreshCategoryButton()
 
     def _refreshCategoryButton(self) -> None:
         if not cfg.isCategoryEnabled.value:
@@ -120,13 +127,15 @@ class DraftCard(QWidget):
         menu.exec(self.categoryButton.mapToGlobal(self.categoryButton.rect().bottomLeft()))
 
     def _onCategoryPicked(self, categoryId: str) -> None:
-        self._task.category = categoryId
-        self._refreshCategoryButton()
         self.categoryPicked.emit(categoryId)
 
     @property
     def task(self) -> Task:
         return self._task
+
+    def taskCopy(self) -> Task:
+        from app.models.task import Task
+        return Task.fromDict(self._task.toDict())
 
     def paintEvent(self, e) -> None:
         painter = QPainter(self)
