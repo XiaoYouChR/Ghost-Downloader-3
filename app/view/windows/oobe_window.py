@@ -14,8 +14,9 @@ from qfluentwidgets import (
     GroupHeaderCardWidget, HorizontalPipsPager, IconWidget, InfoBar,
     InfoBarIcon, InfoBarPosition, PipsScrollButtonDisplayMode,
     PrimaryPushButton, PushButton, SubtitleLabel, SwitchButton, Theme,
-    TitleLabel, TransparentPushButton, isDarkTheme, themeColor,
+    TitleLabel, TransparentPushButton, isDarkTheme, qconfig, themeColor,
 )
+from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.config.constants import (
@@ -356,6 +357,8 @@ class BasicSettingsPage(QWidget):
 
     def _onThemePicked(self, theme: Theme) -> None:
         cfg.set(cfg.themeMode, theme)
+        updateStyleSheet()
+        qconfig.themeChangedFinished.emit()
         self._refreshThemeCards()
 
     def _refreshThemeCards(self) -> None:
