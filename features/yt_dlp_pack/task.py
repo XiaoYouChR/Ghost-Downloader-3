@@ -32,6 +32,7 @@ ERROR_HINTS = (
 )
 
 STEPS_PER_VIDEO = 4
+AUTO_CAPTION_PREFIX = "auto:"
 
 _pathLock = threading.Lock()
 _pathInserted = False
@@ -135,6 +136,17 @@ class YouTubeTask(Task):
     subtitleLanguages: str = ""
     shouldIncludeAutoSubs: bool = False
     isPlaylist: bool = False
+
+    @property
+    def captionTracks(self) -> list[str]:
+        tracks = [track for track in self.subtitleLanguages.split(",") if track]
+        if self.shouldIncludeAutoSubs:
+            tracks += [f"{AUTO_CAPTION_PREFIX}{track}" for track in tracks]
+        return tracks
+
+    def setCaptionTracks(self, tracks: list[str]) -> None:
+        self.subtitleLanguages = ",".join(tracks)
+        self.shouldIncludeAutoSubs = False
 
     def setVideos(self, videos: list[dict]) -> None:
         from app.platform.filesystem import toSafeFilename
@@ -336,6 +348,7 @@ class YouTubeExtractStep(TaskStep):
             elif isinstance(step, YouTubeMergeStep):
                 step.videoExtension = videoFmt.get("ext", "mp4") if videoFmt else ""
                 step.audioExtension = audioFmt.get("ext", "m4a") if audioFmt else ""
+                step.captions = self._selectedCaptions(info)
                 if ytDlpConfig.shouldEmbedMetadata.value:
                     step.metadataTitle = info.get("title") or ""
                     step.metadataArtist = info.get("uploader") or info.get("channel") or ""
@@ -347,6 +360,18 @@ class YouTubeExtractStep(TaskStep):
             if isinstance(s, FFmpegResourceStep) and self.task._isStepSelected(s)
         )
         self.task.fileSize = totalSize if totalSize > 0 else 0
+
+    def _selectedCaptions(self, info: dict) -> dict[str, str]:
+        selected: dict[str, str] = {}
+        for selector in self.task.captionTracks:
+            isAutomatic = selector.startswith(AUTO_CAPTION_PREFIX)
+            language = selector.removeprefix(AUTO_CAPTION_PREFIX) if isAutomatic else selector
+            source = "automatic_captions" if isAutomatic else "subtitles"
+            formats = (info.get(source) or {}).get(language) or []
+            caption = next((f for f in formats if f.get("ext") == "json3" and f.get("url")), None)
+            if caption:
+                selected[selector] = caption["url"]
+        return selected
 
 
 @dataclass(kw_only=True)
@@ -374,6 +399,7 @@ class YouTubeMergeStep(FFmpegStep):
     metadataTitle: str = ""
     metadataArtist: str = ""
     chapters: list[dict] = field(default_factory=list)
+    captions: dict[str, str] = field(default_factory=dict)
 
     @property
     def outputFile(self) -> str:
@@ -393,7 +419,25 @@ class YouTubeMergeStep(FFmpegStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{stem}.audio{suffix}"
 
+    def _captionFiles(self) -> list[Path]:
+        outputFile = Path(self.outputFile)
+        return list(outputFile.parent.glob(f"{outputFile.stem}.*.srt"))
+
+    def deleteFiles(self) -> None:
+        for captionFile in self._captionFiles():
+            captionFile.unlink(missing_ok=True)
+
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        captions = self._captionFiles()
+        super().moveFiles(oldFolder, newFolder)
+        for captionFile in captions:
+            targetFile = newFolder / captionFile.relative_to(oldFolder)
+            targetFile.parent.mkdir(parents=True, exist_ok=True)
+            if captionFile.exists():
+                shutil.move(str(captionFile), str(targetFile))
+
     async def run(self) -> None:
+        await self._downloadCaptions()
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 
@@ -411,6 +455,58 @@ class YouTubeMergeStep(FFmpegStep):
             shutil.move(str(singleInput), str(outputPath))
             Path(f"{singleInput}.ghd").unlink(missing_ok=True)
         self.setStatus(TaskStatus.COMPLETED)
+
+    async def _downloadCaptions(self) -> None:
+        if not self.captions:
+            return
+
+        from app.client import buildClient
+        from app.platform.filesystem import toSafeFilename
+
+        outputFile = Path(self.outputFile)
+        client = buildClient()
+        try:
+            for selector, url in self.captions.items():
+                try:
+                    response = await client.get(url)
+                    response.raise_for_status()
+                    text = self._toSrt(await response.json())
+                    if not text:
+                        continue
+                    isAutomatic = selector.startswith(AUTO_CAPTION_PREFIX)
+                    language = selector.removeprefix(AUTO_CAPTION_PREFIX) if isAutomatic else selector
+                    language = toSafeFilename(language, fallback="subtitle")
+                    autoSuffix = ".auto" if isAutomatic else ""
+                    captionFile = outputFile.with_name(
+                        f"{outputFile.stem}.{language}{autoSuffix}.srt"
+                    )
+                    captionFile.write_text(text, encoding="utf-8")
+                except Exception:
+                    logger.opt(exception=True).debug("Caption download failed: {}", selector)
+        finally:
+            client.close()
+
+    @staticmethod
+    def _toSrt(payload: dict) -> str:
+        def toSrtTime(milliseconds: int) -> str:
+            hours, remainder = divmod(milliseconds // 1000, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds % 1000:03d}"
+
+        lines: list[str] = []
+        for event in payload.get("events") or []:
+            text = "".join(segment.get("utf8", "") for segment in event.get("segs") or []).strip()
+            if not text:
+                continue
+            start = int(event.get("tStartMs") or 0)
+            end = start + int(event.get("dDurationMs") or 0)
+            lines.extend([
+                str(len(lines) // 4 + 1),
+                f"{toSrtTime(start)} --> {toSrtTime(end)}",
+                text,
+                "",
+            ])
+        return "\n".join(lines)
 
     async def _runWithMetadata(self) -> None:
         from ffmpeg_pack.config import ffmpegRuntime
