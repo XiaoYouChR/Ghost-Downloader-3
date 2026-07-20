@@ -14,8 +14,7 @@ from app.models.task import TaskStatus
 from app.view.cards.draft_cards import UniversalDraftCard
 from app.view.cards.task_cards import UniversalTaskCard
 from app.view.components.tree_view import AutoSizingTreeView
-from .config import ytDlpConfig
-from .task import STEPS_PER_VIDEO, YouTubeTask
+from .task import AUTO_CAPTION_PREFIX, STEPS_PER_VIDEO, YouTubeTask
 
 
 def buildQualityTiers(mediaInfo: dict) -> list[tuple[str, str]]:
@@ -50,19 +49,15 @@ def buildQualityTiers(mediaInfo: dict) -> list[tuple[str, str]]:
     return result
 
 
-def buildSubtitleChoices(mediaInfo: dict) -> list[tuple[str, str, bool]]:
-    choices: list[tuple[str, str, bool]] = []
-    seen: set[str] = set()
-
-    for lang in (mediaInfo.get("subtitles") or {}):
-        if lang not in seen:
-            seen.add(lang)
-            choices.append((lang, lang, False))
-
-    for lang in (mediaInfo.get("automatic_captions") or {}):
-        if lang not in seen:
-            seen.add(lang)
-            choices.append((lang, f"{lang} (自动)", True))
+def buildSubtitleChoices(mediaInfo: dict) -> list[tuple[str, str]]:
+    choices: list[tuple[str, str]] = []
+    for source, prefix, suffix in (
+        ("subtitles", "", ""),
+        ("automatic_captions", AUTO_CAPTION_PREFIX, " (自动)"),
+    ):
+        for lang, formats in (mediaInfo.get(source) or {}).items():
+            if any(f.get("ext") == "json3" and f.get("url") for f in formats):
+                choices.append((f"{prefix}{lang}", f"{lang}{suffix}"))
 
     return choices
 
@@ -174,11 +169,10 @@ class YtDlpDraftCard(UniversalDraftCard):
             self._task.videoFormatFilter = self._qualityTiers[index][0]
 
     def _onSubtitleClicked(self) -> None:
-        dialog = SubtitleSelectDialog(self._subtitleChoices, self.window())
+        task: YouTubeTask = self._task
+        dialog = SubtitleSelectDialog(self._subtitleChoices, task.captionTracks, self.window())
         if dialog.exec():
-            langs, includeAuto = dialog.selectedLanguages()
-            self._task.subtitleLanguages = langs
-            self._task.shouldIncludeAutoSubs = includeAuto
+            task.setCaptionTracks(dialog.selectedTracks())
 
     def _onVideoSelectClicked(self) -> None:
         task: YouTubeTask = self._task
@@ -218,7 +212,7 @@ class YtDlpDraftCard(UniversalDraftCard):
 
 class SubtitleSelectDialog(MessageBoxBase):
 
-    def __init__(self, choices: list[tuple[str, str, bool]], parent=None):
+    def __init__(self, choices: list[tuple[str, str]], selected: list[str], parent=None):
         super().__init__(parent)
         self._choices = choices
 
@@ -231,12 +225,12 @@ class SubtitleSelectDialog(MessageBoxBase):
         self.treeView = AutoSizingTreeView(self, minimumVisibleRows=3, maximumVisibleRows=16)
         self.treeModel = QStandardItemModel(self.treeView)
 
-        self._initWidget()
+        self._initWidget(set(selected))
         self._initLayout()
         self._bind()
         self._refreshSummary()
 
-    def _initWidget(self) -> None:
+    def _initWidget(self, selected: set[str]) -> None:
         self.widget.setMinimumWidth(400)
         self.yesButton.setText(self.tr("确定"))
         self.cancelButton.setText(self.tr("取消"))
@@ -248,14 +242,11 @@ class SubtitleSelectDialog(MessageBoxBase):
 
         self.treeView.setModel(self.treeModel)
 
-        defaultLangs = {s.strip() for s in ytDlpConfig.subtitleLanguages.value.split(",") if s.strip()}
-
-        for langCode, label, _isAuto in self._choices:
+        for track, label in self._choices:
             item = QStandardItem(label)
             item.setCheckable(True)
-            item.setCheckState(Qt.CheckState.Checked if langCode in defaultLangs else Qt.CheckState.Unchecked)
-            item.setData(langCode, Qt.ItemDataRole.UserRole)
-            item.setData(_isAuto, Qt.ItemDataRole.UserRole + 1)
+            item.setCheckState(Qt.CheckState.Checked if track in selected else Qt.CheckState.Unchecked)
+            item.setData(track, Qt.ItemDataRole.UserRole)
             self.treeModel.appendRow(item)
 
     def _initLayout(self) -> None:
@@ -290,16 +281,13 @@ class SubtitleSelectDialog(MessageBoxBase):
         )
         self.summaryLabel.setText(self.tr("{0}/{1} 种语言").format(count, self.treeModel.rowCount()))
 
-    def selectedLanguages(self) -> tuple[str, bool]:
-        langs: list[str] = []
-        hasAuto = False
+    def selectedTracks(self) -> list[str]:
+        tracks: list[str] = []
         for row in range(self.treeModel.rowCount()):
             item = self.treeModel.item(row, 0)
             if item.checkState() == Qt.CheckState.Checked:
-                langs.append(item.data(Qt.ItemDataRole.UserRole))
-                if item.data(Qt.ItemDataRole.UserRole + 1):
-                    hasAuto = True
-        return ",".join(langs), hasAuto
+                tracks.append(item.data(Qt.ItemDataRole.UserRole))
+        return tracks
 
 
 class VideoSelectDialog(MessageBoxBase):

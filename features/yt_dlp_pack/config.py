@@ -57,7 +57,6 @@ class YtDlpConfig(PackConfig):
         "YtDlp", "LoginBrowser", "",
         OptionsValidator(["", "chrome", "firefox", "edge", "safari"]),
     )
-    subtitleLanguages = ConfigItem("YtDlp", "SubtitleLanguages", "en")
     shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
     shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
