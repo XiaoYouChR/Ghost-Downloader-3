@@ -190,6 +190,91 @@ def openChromiumUrl(url: str) -> bool:
     return False
 
 
+def findVlcBinary() -> str | None:
+    """Return the path to the VLC executable, or None if not found."""
+    import shutil
+    import subprocess
+    from app.config.cfg import cfg
+
+    if cfg.vlcPath.value and Path(cfg.vlcPath.value).is_file():
+        return cfg.vlcPath.value
+
+    match sys.platform:
+
+        case "win32":
+            import winreg
+            import os
+            # App Paths lookup
+            for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+                try:
+                    with winreg.OpenKey(root, r"Software\Microsoft\Windows\CurrentVersion\App Paths\vlc.exe") as key:
+                        path = winreg.QueryValue(key, None)
+                        if path and Path(path).is_file():
+                            return path
+                except OSError:
+                    pass
+
+            # VideoLAN registry lookup (path is in InstallDir value)
+            for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+                try:
+                    with winreg.OpenKey(root, r"Software\VideoLAN\VLC") as key:
+                        path, _ = winreg.QueryValueEx(key, "InstallDir")
+                        if path:
+                            candidate = Path(path) / "vlc.exe"
+                            if candidate.is_file():
+                                return str(candidate)
+                except OSError:
+                    pass
+
+            # Fallback: check standard environment variables
+            for env_var in ["ProgramFiles", "ProgramFiles(x86)", "LocalAppData"]:
+                base = os.environ.get(env_var)
+                if base:
+                    candidate = Path(base) / "VideoLAN" / "VLC" / "vlc.exe"
+                    if candidate.is_file():
+                        return str(candidate)
+
+            # hardcoded fallback
+            for candidate in [
+                r"C:\Program Files\VideoLAN\VLC\vlc.exe",
+                r"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe",
+            ]:
+                if Path(candidate).is_file():
+                    return candidate
+
+        case "darwin":
+            candidates = [
+                "/Applications/VLC.app/Contents/MacOS/VLC",
+                str(Path.home() / "Applications/VLC.app/Contents/MacOS/VLC"),
+            ]
+            for candidate in candidates:
+                if Path(candidate).is_file():
+                    return candidate
+            # Also check if `vlc` is on PATH
+            found = shutil.which("vlc")
+            if found:
+                return found
+        case _:
+            found = shutil.which("vlc")
+            if found:
+                return found
+    return None
+
+
+def playInVlc(filePath: str) -> None:
+    """Open *filePath* in VLC. Falls back to the OS default player if VLC is not found."""
+    import subprocess
+    vlc = findVlcBinary()
+    if vlc:
+        try:
+            subprocess.Popen([vlc, filePath])
+            return
+        except OSError as e:
+            logger.warning("playInVlc: failed to launch VLC ({}): {}", vlc, e)
+    # Fallback to system default association
+    openFile(filePath)
+
+
 def requestForeground() -> None:
     if sys.platform != "win32":
         return

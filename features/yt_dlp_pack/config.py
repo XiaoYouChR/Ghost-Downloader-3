@@ -61,6 +61,11 @@ class YtDlpConfig(PackConfig):
     shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
     shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
+    defaultToAudioOnly = ConfigItem("YtDlp", "DefaultToAudioOnly", False, BoolValidator())
+    audioOutputFormat = OptionsConfigItem(
+        "YtDlp", "AudioOutputFormat", "original",
+        OptionsValidator(["original", "mp3", "wav", "flac", "opus"]),
+    )
 
     def settingGroups(self, parent: QWidget) -> list:
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
@@ -113,6 +118,21 @@ class YtDlpConfig(PackConfig):
                 self.tr("下载完成后将章节标记嵌入文件"),
                 self.shouldEmbedChapters,
                 group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.MUSIC,
+                self.tr("默认仅下载音频"),
+                self.tr("新建 YouTube 下载任务时默认选择\"仅音频\"质量"),
+                self.defaultToAudioOnly,
+                group,
+            ),
+            ComboBoxSettingCard(
+                self.audioOutputFormat,
+                FluentIcon.SYNC,
+                self.tr("音频输出格式"),
+                self.tr("仅音频下载完成后转码为指定格式（需要 FFmpeg）"),
+                texts=[self.tr("保持原始格式"), "MP3", "WAV", "FLAC", "Opus"],
+                parent=group,
             ),
         ])
 

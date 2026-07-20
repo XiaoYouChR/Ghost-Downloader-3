@@ -331,7 +331,9 @@ class YouTubeExtractStep(TaskStep):
                 step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
                 step.extension = fmt.get("ext") or ("mp4" if step.role == "video" else "m4a")
                 step.canUseRangeRequests = True
-                step.subworkerCount = cfg.preBlockNum.value
+                # YouTube CDN returns 403 Forbidden under concurrent connection bursts.
+                # Start with 1 connection initially, and let autoSpeedUp scale it.
+                step.subworkerCount = 1
                 step.headers = dict(fmt.get("http_headers") or {})
             elif isinstance(step, YouTubeMergeStep):
                 step.videoExtension = videoFmt.get("ext", "mp4") if videoFmt else ""
@@ -408,9 +410,96 @@ class YouTubeMergeStep(FFmpegStep):
         if singleInput:
             outputPath = Path(self.outputFile)
             outputPath.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(singleInput), str(outputPath))
-            Path(f"{singleInput}.ghd").unlink(missing_ok=True)
+
+            # Check if the user wants audio transcoding (only applies to audio-only downloads)
+            from .config import ytDlpConfig
+            targetFmt = ytDlpConfig.audioOutputFormat.value
+            if not hasVideo and targetFmt and targetFmt != "original":
+                # Transcode directly from singleInput (no rawAudio temp file)
+                await self._transcodeAudio(str(singleInput), targetFmt, str(outputPath.parent))
+                # Delete the downloaded raw audio files only after successful transcoding
+                singleInput.unlink(missing_ok=True)
+                Path(f"{singleInput}.ghd").unlink(missing_ok=True)
+            else:
+                shutil.move(str(singleInput), str(outputPath))
+                Path(f"{singleInput}.ghd").unlink(missing_ok=True)
+
         self.setStatus(TaskStatus.COMPLETED)
+
+    async def _transcodeAudio(self, inputPath: str, targetFormat: str, outputFolder: str) -> None:
+        """Transcode an audio file to *targetFormat* using FFmpeg."""
+        from ffmpeg_pack.config import ffmpegRuntime
+
+        ffmpegPath = ffmpegRuntime.path()
+        if not ffmpegPath:
+            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
+
+        stem = Path(inputPath).stem
+        # Strip internal suffixes to get clean final output filename
+        if stem.endswith(".audio"):
+            stem = stem[:-6]
+        elif stem.endswith(".raw"):
+            stem = stem[:-4]
+        outputFile = str(Path(outputFolder) / f"{stem}.{targetFormat}")
+
+
+        # Build codec args per format
+        match targetFormat:
+            case "mp3":
+                codec_args = ["-codec:a", "libmp3lame", "-q:a", "2"]
+            case "wav":
+                codec_args = ["-codec:a", "pcm_s16le"]
+            case "flac":
+                codec_args = ["-codec:a", "flac"]
+            case "opus":
+                codec_args = ["-codec:a", "libopus", "-b:a", "128k"]
+            case _:
+                codec_args = []
+
+        args = [
+            ffmpegPath,
+            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
+            "-i", inputPath,
+            *codec_args,
+            outputFile,
+        ]
+
+        ffprobePath = ffmpegRuntime.ffprobePath()
+        totalDuration = await self._probeDuration(ffprobePath, Path(inputPath)) if ffprobePath else 0
+
+        process = await asyncio.create_subprocess_exec(
+            *args,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
+
+        try:
+            await process.wait()
+            await progressTask
+
+            if process.returncode != 0:
+                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
+                raise TaskError(
+                    "FFmpeg 转码失败（{code}）：{detail}",
+                    code=process.returncode,
+                    detail=stderr or "unknown error",
+                )
+
+            # Update the task name to reflect the transcoded format
+            self.task.setName(f"{stem}.{targetFormat}")
+        except asyncio.CancelledError:
+            self.setStatus(TaskStatus.PAUSED)
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            if not progressTask.done():
+                progressTask.cancel()
+                with suppress(asyncio.CancelledError):
+                    await progressTask
+            raise
+
 
     async def _runWithMetadata(self) -> None:
         from ffmpeg_pack.config import ffmpegRuntime

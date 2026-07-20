@@ -86,10 +86,18 @@ class SettingPage(ScrollArea):
         self.downloadFolderCard.hBoxLayout.addWidget(self.downloadRestoreButton, 0, Qt.AlignmentFlag.AlignRight)
         self.downloadFolderCard.hBoxLayout.addSpacing(16)
         self.clientProfileCard = IdentitySettingCard()
+        self.vlcPathCard = LineEditSettingCard(
+            FluentIcon.PLAY, self.tr("VLC 路径"),
+            self.tr("自定义本地 VLC 播放器的可执行文件路径，若为空则自动检测"),
+            configItem=cfg.vlcPath,
+            placeholder=self.tr("自动检测"),
+        )
 
         self.generalGroup.addSettingCards([
+            self.vlcPathCard,
             RangeSettingCard(cfg.maxTaskNum, FluentIcon.TRAIN, self.tr("最大任务数"),
                              self.tr("最多能同时进行的任务数量")),
+
             RangeSettingCard(cfg.preBlockNum, FluentIcon.CLOUD, self.tr("预分配线程数"),
                              self.tr("线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险")),
             SwitchSettingCard(FluentIcon.SPEED_HIGH, self.tr("自动提速"),
@@ -110,6 +118,12 @@ class SettingPage(ScrollArea):
             self.clientProfileCard,
             DefaultHeadersSettingCard(FluentIcon.DICTIONARY, self.tr("默认请求头"),
                                       self.tr("设置默认 HTTP 请求头")),
+            SwitchSettingCard(FluentIcon.FOLDER, self.tr("下载完成后自动解压"),
+                              self.tr("任务完成时自动将 zip / tar / 7z 等压缩文件解压到同名子文件夹"),
+                              cfg.shouldAutoExtract),
+            SwitchSettingCard(FluentIcon.REMOVE, self.tr("解压后删除压缩包"),
+                              self.tr("自动解压成功后删除原始压缩文件（仅在启用自动解压时有效）"),
+                              cfg.shouldDeleteArchiveAfterExtract),
         ])
 
         self.categoryRulesCard = CategoryRulesCard()

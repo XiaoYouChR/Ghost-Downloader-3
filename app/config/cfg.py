@@ -228,6 +228,12 @@ class Config(QConfig):
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 512, RangeValidator(64, 102400)
     )
+    shouldAutoExtract = ConfigItem("GeneralDownload", "AutoExtract", False, BoolValidator())
+    shouldDeleteArchiveAfterExtract = ConfigItem(
+        "GeneralDownload", "DeleteArchiveAfterExtract", False, BoolValidator()
+    )
+    vlcPath = ConfigItem("GeneralDownload", "VlcPath", "")
+
 
     # 分类
     isCategoryEnabled = ConfigItem("Category", "EnableCategory", False, BoolValidator())

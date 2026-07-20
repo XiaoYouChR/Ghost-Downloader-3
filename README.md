@@ -36,6 +36,12 @@
 * aria2-compatible RPC interface🔌 — third-party tools can push tasks directly
 * Tasks can be paused, edited✏️ (URL, headers, proxy) and resumed without losing progress
 * A complete Android version📱 with background downloading and completion notifications 🔔
+* Post-download audio transcoding (MP3, WAV, FLAC, Opus) for YouTube audio tasks 🎵
+* Default choice for YouTube tasks (e.g., auto-select "Audio Only" quality tier) 🎧
+* Play media in VLC player directly from the context menu 📺
+* Automatic extraction of downloaded archives (.zip, .tar, .7z, .rar) to subfolders 📦
+* System sleep prevention (wake lock) during active downloads to avoid interruption 🔒
+
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project

@@ -161,7 +161,12 @@ class YtDlpDraftCard(UniversalDraftCard):
         for _selector, label in self._qualityTiers:
             self._qualityCombo.addItem(label)
         if self._qualityTiers:
-            self._qualityCombo.setCurrentIndex(0)
+            # Pre-select audio-only if the default-to-audio-only setting is enabled
+            if ytDlpConfig.defaultToAudioOnly.value:
+                audioOnlyIndex = len(self._qualityTiers) - 1
+                self._qualityCombo.setCurrentIndex(audioOnlyIndex)
+            else:
+                self._qualityCombo.setCurrentIndex(0)
 
         self._subtitleChoices = buildSubtitleChoices(mediaInfo)
         self._subtitleButton.setEnabled(bool(self._subtitleChoices))

@@ -16,7 +16,7 @@ from qfluentwidgets import (
 from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
-from app.platform.desktop import openFile, revealInFolder
+from app.platform.desktop import findVlcBinary, openFile, playInVlc, revealInFolder
 from app.services.task_service import taskService
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 
@@ -95,6 +95,24 @@ class TaskCard(CardWidget):
                 action.triggered.connect(lambda checked=False, c=cid: taskService.setCategory(self._task, c))
                 moveMenu.addAction(action)
             menu.addMenu(moveMenu)
+
+        # VLC playback — shown only when the file is complete, is a playable media file, and VLC is installed
+        if (
+            self._task.status == TaskStatus.COMPLETED
+            and self._task.hasOutputFile
+            and Path(self._task.outputPath).exists()
+            and Path(self._task.outputPath).suffix.lower() in {
+                ".mp4", ".mkv", ".avi", ".mov", ".mp3", ".wav", ".flac", ".ogg",
+                ".m4a", ".webm", ".ts", ".aac", ".3gp", ".wmv", ".flv"
+            }
+            and findVlcBinary()
+        ):
+            menu.addSeparator()
+            vlcAction = Action(FluentIcon.PLAY, self.tr("在 VLC 中播放"), self)
+            outputPath = self._task.outputPath
+            vlcAction.triggered.connect(lambda: playInVlc(outputPath))
+            menu.addAction(vlcAction)
+
 
         return menu
 
