@@ -128,7 +128,7 @@ class TaskStep:
     def task(self) -> Task:
         return self._task
 
-    def setStatus(self, status: TaskStatus, sync: bool = True):
+    def _applyStatus(self, status: TaskStatus):
         self.status = status
         if status == TaskStatus.COMPLETED:
             self.progress = 100
@@ -140,23 +140,27 @@ class TaskStep:
         elif status == TaskStatus.FAILED:
             self.speed = 0
 
-        if sync and hasattr(self, "_task"):
+    def setStatus(self, status: TaskStatus):
+        self._applyStatus(status)
+        if hasattr(self, "_task"):
             self._task.updateStatus()
 
     def setError(self, error: StepError) -> None:
         self.error = error
-        self.status = TaskStatus.FAILED
-        self.speed = 0
+        self._applyStatus(TaskStatus.FAILED)
         if hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def reset(self, sync: bool = True):
+    def _applyReset(self):
         self.status = TaskStatus.WAITING
         self.progress = 0
         self.receivedBytes = 0
         self.speed = 0
         self.error = None
-        if sync and hasattr(self, "_task"):
+
+    def reset(self):
+        self._applyReset()
+        if hasattr(self, "_task"):
             self._task.updateStatus()
 
     def setOptions(self, options: dict) -> None:
@@ -354,8 +358,8 @@ class Task:
             if step.status == TaskStatus.COMPLETED:
                 continue
             if status == TaskStatus.RUNNING and step.status == TaskStatus.FAILED:
-                step.reset(sync=False)
-            step.setStatus(status, sync=False)
+                step._applyReset()
+            step._applyStatus(status)
         return self.updateStatus()
 
     def reset(self) -> TaskStatus:
@@ -364,7 +368,7 @@ class Task:
             self.status = TaskStatus.WAITING
             return self.status
         for step in self.steps:
-            step.reset(sync=False)
+            step._applyReset()
         return self.updateStatus()
 
     def addStep(self, step: TaskStep):
@@ -386,8 +390,7 @@ class Task:
         self.updateStatus()
 
     def pendingSteps(self) -> Iterable[TaskStep]:
-        self.steps.sort(key=lambda step: step.stepIndex)
-        for step in self.steps:
+        for step in sorted(self.steps, key=lambda step: step.stepIndex):
             if self.status != TaskStatus.RUNNING:
                 break
             if not self._isStepSelected(step):

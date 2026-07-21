@@ -141,10 +141,10 @@ class FtpStep(TaskStep):
         if "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
-    def setStatus(self, status: TaskStatus, sync: bool = True):
+    def setStatus(self, status: TaskStatus):
         if status == TaskStatus.COMPLETED:
             self.receivedBytes = self.fileSize
-        super().setStatus(status, sync=sync)
+        super().setStatus(status)
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> FtpStep:

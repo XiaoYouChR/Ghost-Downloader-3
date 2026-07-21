@@ -43,7 +43,7 @@ class M3U8Task(Task):
             for step in self.steps:
                 if isinstance(step, M3U8TaskStep) and step.status != TaskStatus.COMPLETED:
                     step._findOutputFile()
-                    step.setStatus(TaskStatus.COMPLETED, sync=False)
+                    step._applyStatus(TaskStatus.COMPLETED)
             self.updateStatus()
 
     def _move(self, newFolder: Path) -> None:
