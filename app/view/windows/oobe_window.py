@@ -14,8 +14,9 @@ from qfluentwidgets import (
     GroupHeaderCardWidget, HorizontalPipsPager, IconWidget, InfoBar,
     InfoBarIcon, InfoBarPosition, PipsScrollButtonDisplayMode,
     PrimaryPushButton, PushButton, SubtitleLabel, SwitchButton, Theme,
-    TitleLabel, TransparentPushButton, isDarkTheme, themeColor,
+    TitleLabel, TransparentPushButton, isDarkTheme, qconfig, themeColor,
 )
+from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
 from app.config.constants import (
@@ -356,6 +357,8 @@ class BasicSettingsPage(QWidget):
 
     def _onThemePicked(self, theme: Theme) -> None:
         cfg.set(cfg.themeMode, theme)
+        updateStyleSheet()
+        qconfig.themeChangedFinished.emit()
         self._refreshThemeCards()
 
     def _refreshThemeCards(self) -> None:
@@ -380,8 +383,10 @@ class BasicSettingsPage(QWidget):
 
 class BrowserExtensionPage(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, browserService, coroutineRunner, parent=None):
         super().__init__(parent)
+        self._browserService = browserService
+        self._coroutineRunner = coroutineRunner
         self._isPaired = False
         self._banner: InfoBar | None = None
         self._initWidget()
@@ -463,12 +468,11 @@ class BrowserExtensionPage(QWidget):
         layout.addStretch(1)
 
     def _bind(self) -> None:
-        from app.services.browser_service import browserService
         self.manualCard.clicked.connect(self._onManualInstallClicked)
         for card, url in self.storeCards:
             card.clicked.connect(lambda u=url: QDesktopServices.openUrl(QUrl(u)))
-        browserService.connectionChanged.connect(self._onConnectionChanged)
-        browserService.protocolMismatched.connect(self._onProtocolMismatched)
+        self._browserService.connectionChanged.connect(self._onConnectionChanged)
+        self._browserService.protocolMismatched.connect(self._onProtocolMismatched)
 
     def _setBanner(self, icon: InfoBarIcon, title: str) -> None:
         if self._banner is not None:
@@ -485,8 +489,7 @@ class BrowserExtensionPage(QWidget):
     def refreshPortStatus(self) -> None:
         if self._isPaired:
             return
-        from app.services.browser_service import browserService
-        if browserService.boundPort:
+        if self._browserService.boundPort:
             self._setBanner(
                 InfoBarIcon.INFORMATION,
                 self.tr("正在端口 {} 上等待扩展连接").format(browserService.boundPort),
@@ -514,8 +517,7 @@ class BrowserExtensionPage(QWidget):
         self._setBanner(InfoBarIcon.SUCCESS, text)
 
     def _onConnectionChanged(self) -> None:
-        from app.services.browser_service import browserService
-        installType, version = browserService.connectionSummary
+        installType, version = self._browserService.connectionSummary
         if installType or version:
             self._isPaired = True
             self._setConnectedBanner(version)
@@ -525,8 +527,7 @@ class BrowserExtensionPage(QWidget):
 
     def _onManualInstallClicked(self) -> None:
         from app.services.browser_service import extractBrowserExtension
-        from app.services.coroutine_runner import coroutineRunner
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             extractBrowserExtension(),
             done=self._onExtensionExtracted,
             failed=self._onExtensionExtractFailed,
@@ -551,8 +552,7 @@ class BrowserExtensionPage(QWidget):
         )
 
     def onPairRequested(self, request: dict) -> None:
-        from app.services.browser_service import browserService
-        browserService.approvePair(request["session"], request["requestId"])
+        self._browserService.approvePair(request["session"], request["requestId"])
         self._isPaired = True
         self._setConnectedBanner(request.get("extensionVersion", ""))
 
@@ -565,8 +565,9 @@ class BrowserExtensionPage(QWidget):
 
 class RuntimeInstallPage(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, featureService, parent=None):
         super().__init__(parent)
+        self._featureService = featureService
         self._checkBoxes: list[tuple[CheckBox, BinaryRuntime]] = []
         self._isMounted = False
         self._initWidget()
@@ -593,8 +594,7 @@ class RuntimeInstallPage(QWidget):
             return
         self._isMounted = True
 
-        from app.services.feature_service import featureService
-        entries = [rt for rt in featureService.runtimes() if rt.canInstall and rt.title]
+        entries = [rt for rt in self._featureService.runtimes() if rt.canInstall and rt.title]
         entries.sort(key=lambda rt: not rt.isRecommended)
 
         for runtime in entries:
@@ -630,8 +630,9 @@ class RuntimeInstallPage(QWidget):
 
 class AdvancedOptionsPage(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, featureService, parent=None):
         super().__init__(parent)
+        self._featureService = featureService
         self._initWidget()
         self._initLayout()
 
@@ -672,10 +673,9 @@ class AdvancedOptionsPage(QWidget):
         )
 
     def _isFileAssociationEnabled(self) -> bool:
-        from app.services.feature_service import featureService
         return any(
             pack.config.associateFileTypes.value
-            for pack in featureService.packs
+            for pack in self._featureService.packs
             if pack.config is not None and hasattr(pack.config, "associateFileTypes")
         )
 
@@ -697,8 +697,7 @@ class AdvancedOptionsPage(QWidget):
     def save(self) -> None:
         cfg.set(cfg.isCategoryEnabled, self.categoryCard.isChecked())
 
-        from app.services.feature_service import featureService
-        for pack in featureService.packs:
+        for pack in self._featureService.packs:
             config = pack.config
             if config is not None and hasattr(config, "associateFileTypes"):
                 cfg.set(config.associateFileTypes, self.fileAssocCard.isChecked())
@@ -770,8 +769,13 @@ class OobeWindow(FluentWidget):
 
     PAGE_COUNT = 6
 
-    def __init__(self, parent=None):
+    def __init__(self, browserService, coroutineRunner, featureService,
+                 taskService, parent=None):
         super().__init__(parent=parent)
+        self._browserService = browserService
+        self._coroutineRunner = coroutineRunner
+        self._featureService = featureService
+        self._taskService = taskService
         self._currentIndex = 0
         self._isFinished = False
         self._queuedRuntimeIds: set[str] = set()
@@ -796,9 +800,10 @@ class OobeWindow(FluentWidget):
     def _initContent(self) -> None:
         self.welcomePage = WelcomePage(self)
         self.basicSettingsPage = BasicSettingsPage(self)
-        self.browserExtensionPage = BrowserExtensionPage(self)
-        self.runtimeInstallPage = RuntimeInstallPage(self)
-        self.advancedOptionsPage = AdvancedOptionsPage(self)
+        self.browserExtensionPage = BrowserExtensionPage(
+            self._browserService, self._coroutineRunner, self)
+        self.runtimeInstallPage = RuntimeInstallPage(self._featureService, self)
+        self.advancedOptionsPage = AdvancedOptionsPage(self._featureService, self)
         self.completePage = CompletePage(self)
 
         self.stackedWidget = DrillInTransitionStackedWidget(self)
@@ -925,11 +930,11 @@ class OobeWindow(FluentWidget):
             return
 
         from loguru import logger
-        from app.services.task_service import taskService
-        from app.services.coroutine_runner import coroutineRunner
+
+        _taskService = self._taskService
 
         def onDone(task, name):
-            taskService.add(task)
+            _taskService.add(task)
 
         def onFailed(error, name):
             logger.error("OOBE 安装 {} 失败: {}", name, error)
@@ -938,7 +943,7 @@ class OobeWindow(FluentWidget):
             if runtime.path() or runtime.runtimeId in self._queuedRuntimeIds:
                 continue
             self._queuedRuntimeIds.add(runtime.runtimeId)
-            coroutineRunner.submit(
+            self._coroutineRunner.submit(
                 runtime.installTask(),
                 done=onDone,
                 failed=onFailed,

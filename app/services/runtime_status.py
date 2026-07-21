@@ -23,8 +23,9 @@ class RuntimeStatus:
 class RuntimeStatusService(QObject):
     statusChanged = Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, parent=None):
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
         self._statuses: dict[str, RuntimeStatus] = {}
         self._workIds: dict[str, str] = {}
 
@@ -35,8 +36,6 @@ class RuntimeStatusService(QObject):
         return RuntimeStatus(runtime.runtimeId, runtime.name, path=runtime.path())
 
     def refresh(self, runtime: BinaryRuntime, force: bool = False) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-
         runtimeId = runtime.runtimeId
         path = runtime.path()
         current = self._statuses.get(runtimeId)
@@ -48,7 +47,7 @@ class RuntimeStatusService(QObject):
         if workId:
             if not force:
                 return
-            coroutineRunner.cancel(workId)
+            self._coroutineRunner.cancel(workId)
             self._workIds.pop(runtimeId, None)
 
         if current is not None and not force and not current.isBusy:
@@ -59,7 +58,7 @@ class RuntimeStatusService(QObject):
         self.statusChanged.emit(status)
 
         try:
-            self._workIds[runtimeId] = coroutineRunner.submit(
+            self._workIds[runtimeId] = self._coroutineRunner.submit(
                 runtime.probeVersion(),
                 done=self._onProbeFinished,
                 failed=self._onProbeFailed,
@@ -83,5 +82,3 @@ class RuntimeStatusService(QObject):
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
-
-runtimeStatusService = RuntimeStatusService()

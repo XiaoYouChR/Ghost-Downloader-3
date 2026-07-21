@@ -32,15 +32,19 @@ class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
 
+    def bind(self, services):
+        super().bind(services)
+        from . import task as _task_mod
+        _task_mod._coroutineRunner = services.coroutineRunner
+
     def runtimes(self):
         return [ed2kRuntime]
 
     def parsers(self):
         return [ED2kParser()]
 
-    def stop(self):
+    async def deactivate(self):
         from .session import ed2kSession
         if ed2kSession._client is None:
             return
-        from app.services.coroutine_runner import coroutineRunner
-        coroutineRunner.submit(ed2kSession.close())
+        await ed2kSession.close()

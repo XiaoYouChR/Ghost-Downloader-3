@@ -212,5 +212,3 @@ class CategoryService(QObject):
         self._categories = reordered
         self._save()
 
-
-categoryService = CategoryService()

@@ -37,5 +37,3 @@ class SpeedMeter(QObject):
         self.speedChanged.emit(self._bytes)
         self._bytes = 0
 
-
-speedMeter = SpeedMeter()

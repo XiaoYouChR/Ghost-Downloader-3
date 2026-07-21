@@ -32,9 +32,16 @@ class FeatureService(QObject):
         for pack in loadPacks(executableDir / "features"):
             self._register(pack)
 
-    def start(self) -> None:
+    def bindServices(self, services) -> None:
         for pack in self._packs:
-            pack.start()
+            pack.bind(services)
+
+    def activate(self, coroutineRunner) -> None:
+        async def activateAll():
+            for pack in self._packs:
+                await pack.activate()
+
+        coroutineRunner.submit(activateAll())
 
     def _register(self, pack: FeaturePack) -> None:
         self._packs.append(pack)
@@ -63,9 +70,6 @@ class FeatureService(QObject):
         for parser in self._parsers:
             if parser.match(options):
                 task = await parser.parse(options)
-                if not task.category:
-                    from app.services.category_service import categoryService
-                    task.category = categoryService.categoryOf(task)
                 return task
         raise ValueError(f"No parser matched: {options.url}")
 
@@ -116,6 +120,19 @@ class FeatureService(QObject):
             types.extend(pack.fileTypes())
         return types
 
+    def isFileAssociationEnabled(self) -> bool:
+        return any(
+            pack.config.associateFileTypes.value
+            for pack in self._packs
+            if pack.config and hasattr(pack.config, "associateFileTypes")
+        )
+
+    def setFileAssociation(self, isEnabled: bool) -> None:
+        from app.config.cfg import cfg
+        for pack in self._packs:
+            if pack.config and hasattr(pack.config, "associateFileTypes"):
+                cfg.set(pack.config.associateFileTypes, isEnabled)
+
     def _registerFileAssociations(self) -> None:
         types = []
         for pack in self._packs:
@@ -124,9 +141,14 @@ class FeatureService(QObject):
             types.extend(pack.fileTypes())
         file_association.register(types)
 
-    def stop(self) -> None:
-        for pack in self._packs:
-            pack.stop()
+    def deactivate(self, coroutineRunner) -> None:
+        from PySide6.QtCore import QEventLoop
 
+        async def deactivateAll():
+            for pack in self._packs:
+                await pack.deactivate()
 
-featureService = FeatureService()
+        loop = QEventLoop()
+        coroutineRunner.submit(deactivateAll(), done=lambda _: loop.quit())
+        loop.exec()
+

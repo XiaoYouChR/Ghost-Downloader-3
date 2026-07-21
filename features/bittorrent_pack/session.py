@@ -12,7 +12,6 @@ from PySide6.QtCore import QObject, Signal
 
 from app.config.cfg import cfg, proxy
 from app.models.task import TaskError, TaskStatus
-from app.services.speed_meter import speedMeter
 
 from .config import bittorrentConfig
 
@@ -47,6 +46,7 @@ class _ActiveTorrent:
     handle: lt.torrent_handle
     done: asyncio.Future
     seedBase: int
+    reportSpeed: object = None
     seedStart: int | None = None
     appliedSelectionVersion: int = -1
     pollCount: int = 0
@@ -82,7 +82,7 @@ class BTSession(QObject):
 
     # ── public interface ──
 
-    async def run(self, task: BTTask, step: BTTaskStep) -> None:
+    async def run(self, task: BTTask, step: BTTaskStep, reportSpeed=None) -> None:
         self.open()
         handle = self._addTorrent(task)
 
@@ -95,6 +95,7 @@ class BTSession(QObject):
         entry = _ActiveTorrent(
             task=task, step=step, handle=handle,
             done=done, seedBase=task.seedingTimeSeconds,
+            reportSpeed=reportSpeed,
         )
         self._active[task.taskId] = entry
 
@@ -308,7 +309,8 @@ class BTSession(QObject):
         task.isSeeding = status.is_seeding
         task.downloadRate = status.download_rate
         task.uploadRate = status.upload_rate
-        speedMeter.addSpeed(status.download_rate)
+        if entry.reportSpeed is not None:
+            entry.reportSpeed(status.download_rate)
 
         downloaded = status.all_time_download or status.total_wanted_done or status.total_done
         task.shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0

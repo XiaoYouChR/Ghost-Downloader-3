@@ -4,14 +4,12 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
-from app.services.feature_service import featureService
-
-
 class ClipboardListener(QObject):
     urlsDetected = Signal(list)
 
-    def __init__(self, parent=None):
+    def __init__(self, matchPassive, parent=None):
         super().__init__(parent)
+        self._matchPassive = matchPassive
         self._clipboard = None
         self._enabled = False
         self._lastUrls: tuple[str, ...] = ()
@@ -55,6 +53,6 @@ class ClipboardListener(QObject):
                 continue
             if not parsed.scheme or parsed.geturl() != url:
                 continue
-            if featureService.matchPassive(url):
+            if self._matchPassive(url):
                 urls.append(url)
         return urls

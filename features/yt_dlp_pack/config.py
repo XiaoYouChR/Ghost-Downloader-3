@@ -69,7 +69,7 @@ class YtDlpConfig(PackConfig):
 
         group = CollapsibleSettingCardGroup(self.tr("YouTube 下载"), "ytdlp", parent)
 
-        runtimeCard = RuntimeCard(youTubeRuntime, group)
+        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, youTubeRuntime, group)
         cards = [runtimeCard]
 
         if not IS_ANDROID:
@@ -226,10 +226,9 @@ class YouTubeRuntime(BinaryRuntime):
 
         from disk_pack.task import BinaryInstallStep
         from app.models.task import TaskOptions
-        from app.services.feature_service import featureService
 
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
-        qjsDownload = await featureService.parse(TaskOptions(
+        qjsDownload = await self._services.featureService.parse(TaskOptions(
             url=f"{QJS_RELEASE_BASE}/{_qjsAssetName()}",
             outputFolder=installFolder,
         ))

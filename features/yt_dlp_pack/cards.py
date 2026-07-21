@@ -6,13 +6,13 @@ from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidg
 from qfluentwidgets import (
     BodyLabel, ComboBox, FluentIcon, IndeterminateProgressRing,
     MessageBoxBase, PrimaryPushButton, ProgressBar, PushButton, SubtitleLabel,
-    ToolButton, ToolTipFilter, TransparentToolButton,
+    ToolTipFilter, TransparentToolButton,
 )
 
 from app.format import toReadableSize
 from app.models.task import TaskStatus
-from app.view.cards.draft_cards import UniversalDraftCard
-from app.view.cards.task_cards import UniversalTaskCard
+from app.view.cards.draft_cards import DraftCard
+from app.view.cards.task_cards import MultiFileTaskCard
 from app.view.components.tree_view import AutoSizingTreeView
 from .config import ytDlpConfig
 from .task import STEPS_PER_VIDEO, YouTubeTask
@@ -75,7 +75,11 @@ STEP_LABELS = {
 }
 
 
-class YtDlpDraftCard(UniversalDraftCard):
+class YtDlpDraftCard(DraftCard):
+
+    def __init__(self, task, categoryService, *, coroutineRunner, parent=None):
+        self._coroutineRunner = coroutineRunner
+        super().__init__(task, categoryService, parent)
 
     def _initWidget(self) -> None:
         super()._initWidget()
@@ -131,10 +135,9 @@ class YtDlpDraftCard(UniversalDraftCard):
         self._videoSelectButton.clicked.connect(self._onVideoSelectClicked)
 
     def _startMediaInfoFetch(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
         from features.yt_dlp_pack.pack import YouTubeParser
         parser = YouTubeParser()
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             parser.fetchFormats(self._task.url),
             done=self._onMediaInfoLoaded,
             failed=self._onMediaInfoFailed,
@@ -185,10 +188,9 @@ class YtDlpDraftCard(UniversalDraftCard):
         if not task.files:
             self._videoSelectButton.hide()
             self._playlistSpinner.show()
-            from app.services.coroutine_runner import coroutineRunner
             from features.yt_dlp_pack.pack import YouTubeParser
             parser = YouTubeParser()
-            coroutineRunner.submit(
+            self._coroutineRunner.submit(
                 parser.fetchPlaylist(task.url),
                 done=self._onPlaylistLoaded,
                 failed=self._onPlaylistFailed,
@@ -405,27 +407,19 @@ class VideoSelectDialog(MessageBoxBase):
         }
 
 
-class YtDlpTaskCard(UniversalTaskCard):
+class YtDlpTaskCard(MultiFileTaskCard):
 
-    def __init__(self, task: YouTubeTask, parent=None):
-        super().__init__(task, parent)
-        self.selectFilesButton = None
-        if task.files and len(task.files) > 1:
-            self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
-            self.hBoxLayout.insertWidget(
-                self.hBoxLayout.indexOf(self.verifyHashButton),
-                self.selectFilesButton,
-            )
+    def __init__(self, task: YouTubeTask, taskService, categoryService, parent=None):
+        super().__init__(task, taskService, categoryService, parent)
+        if self.selectFilesButton:
             self.selectFilesButton.setToolTip(self.tr("选择视频"))
             self.selectFilesButton.installEventFilter(ToolTipFilter(self.selectFilesButton))
-            self.selectFilesButton.clicked.connect(self._onSelectVideosClicked)
 
-    def _onSelectVideosClicked(self) -> None:
-        from app.services.task_service import taskService
+    def _onSelectFilesClicked(self) -> None:
         dialog = VideoSelectDialog(self._task.files, self.window())
         try:
             if dialog.exec():
-                taskService.applySelection(self._task, dialog.selectedIndices())
+                self._taskService.applySelection(self._task, dialog.selectedIndices())
                 self.refresh(force=True)
         finally:
             dialog.deleteLater()

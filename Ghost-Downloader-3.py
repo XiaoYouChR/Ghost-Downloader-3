@@ -66,11 +66,9 @@ def setupEnvironment():
 def startApp(application, isSilent=False):
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
-    from app.services.browser_service import browserService
     from app.services.clipboard_listener import ClipboardListener
-    from app.services.task_service import taskService
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import loadEngine, loadPacks, createEngine, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -86,9 +84,14 @@ def startApp(application, isSilent=False):
         from app.view.shell.dock import setDockIconVisible
         setDockIconVisible(cfg.shouldShowDockIcon.value, activate=False)
 
-    loadEngine(application)
+    coroutineRunner, categoryService, speedMeter = loadEngine(application)
 
     MainWindow.refreshThemeColor()
+
+    featureService = loadPacks()
+    taskService, browserService, aria2RpcServer, runtimeStatusService = createEngine(
+        coroutineRunner, categoryService, speedMeter, featureService,
+    )
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
@@ -97,13 +100,12 @@ def startApp(application, isSilent=False):
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow
 
-        loadPacks()
-        startEngine()
+        startEngine(taskService, speedMeter, featureService, coroutineRunner, categoryService, runtimeStatusService)
 
         if cfg.isBrowserExtensionEnabled.value:
             browserService.start()  # 提前启动，OOBE 期间可完成扩展配对
 
-        oobe = OobeWindow()
+        oobe = OobeWindow(browserService, coroutineRunner, featureService, taskService)
         browserService.pairRequested.connect(oobe.onPairRequested)
         oobe.show()
 
@@ -117,11 +119,11 @@ def startApp(application, isSilent=False):
         # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
         oobe.deleteLater()
 
-        window = MainWindow()
+        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService)
         window.setupPacks()
         window.show()
     else:
-        window = MainWindow()
+        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService)
 
         if not isSilent:
             from qfluentwidgets import SplashScreen
@@ -130,9 +132,8 @@ def startApp(application, isSilent=False):
             window.show()
             application.processEvents()
 
-        loadPacks()
         window.setupPacks()
-        startEngine()
+        startEngine(taskService, speedMeter, featureService, coroutineRunner, categoryService, runtimeStatusService)
 
         if not isSilent:
             splash.finish()
@@ -153,7 +154,7 @@ def startApp(application, isSilent=False):
     def show() -> MainWindow:
         nonlocal window
         if window is None:
-            window = MainWindow()
+            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService)
             window.setupPacks()
             window.destroyed.connect(onWindowDestroyed)
         window.show()
@@ -164,7 +165,7 @@ def startApp(application, isSilent=False):
     def onBrowserDraft(tasks):
         nonlocal window
         if window is None:
-            window = MainWindow()
+            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService)
             window.setupPacks()
             window.destroyed.connect(onWindowDestroyed)
         window.addTasks(tasks)
@@ -172,7 +173,6 @@ def startApp(application, isSilent=False):
     signalBus.activationRequested.connect(show)
     signalBus.openFileRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().alertException(msg))
-    signalBus.updateAvailable.connect(lambda release: show()._onUpdateAvailable(release))
     browserService.taskDraftRequested.connect(onBrowserDraft)
     browserService.pairRequested.connect(lambda req: show().confirmPair(req))
 
@@ -187,14 +187,13 @@ def startApp(application, isSilent=False):
         browserService.start()
     cfg.isBrowserExtensionEnabled.valueChanged.connect(browserService.setEnabled)
 
-    from app.services.aria2_rpc import aria2RpcServer
     aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
     if cfg.isAria2RpcEnabled.value:
         aria2RpcServer.start()
     cfg.isAria2RpcEnabled.valueChanged.connect(aria2RpcServer.setEnabled)
     cfg.aria2RpcPort.valueChanged.connect(aria2RpcServer.setPort)
 
-    clipboardListener = ClipboardListener(parent=application)
+    clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
     cfg.isClipboardListenerEnabled.valueChanged.connect(clipboardListener.setEnabled)
     clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
     clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
@@ -202,32 +201,31 @@ def startApp(application, isSilent=False):
     if sys.platform == "darwin":
         from app.view.shell.mac_status_item import MacStatusItem
         from app.view.shell.dock import setupDock
-        from app.services.speed_meter import speedMeter
-        statusItem = MacStatusItem()
+        statusItem = MacStatusItem(taskService)
         statusItem.show()
         speedMeter.speedChanged.connect(statusItem.setSpeed)
         application.statusItem = statusItem
-        setupDock()
+        setupDock(speedMeter, taskService)
     else:
         from app.view.shell.tray import SystemTrayIcon
-        tray = SystemTrayIcon(QIcon(":/image/logo.png"), parent=application)
+        tray = SystemTrayIcon(taskService, speedMeter, QIcon(":/image/logo.png"), parent=application)
         tray.show()
 
     from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
-    from app.services.coroutine_runner import coroutineRunner
-    coroutineRunner.submit(init())
-    bindNotifications(notifyTaskCompleted, notifyDiskSpaceInsufficient)
+    coroutineRunner.submit(init(coroutineRunner.submit))
+    bindNotifications(taskService, notifyTaskCompleted, notifyDiskSpaceInsufficient)
 
-    from app.services.plan import plan
+    from app.services.plan import Plan
+    plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
     taskService.tasksAllCompleted.connect(emptyWorkingSetIfIdle)
 
     if isSilent:
         emptyWorkingSetIfIdle()
 
-    checkUpdateAtStartup()
+    checkUpdateAtStartup(coroutineRunner, onUpdateAvailable=lambda release: show()._onUpdateAvailable(release))
 
-    application.aboutToQuit.connect(stopEngine)
+    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner))
 
 
 if __name__ == "__main__":

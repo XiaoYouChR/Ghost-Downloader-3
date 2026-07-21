@@ -43,7 +43,10 @@ class M3U8Task(Task):
             for step in self.steps:
                 if isinstance(step, M3U8TaskStep) and step.status != TaskStatus.COMPLETED:
                     step._findOutputFile()
-                    step.setStatus(TaskStatus.COMPLETED, sync=False)
+                    step.status = TaskStatus.COMPLETED
+                    step.progress = 100
+                    step.speed = 0
+                    step.error = None
             self.updateStatus()
 
     def _move(self, newFolder: Path) -> None:
@@ -338,7 +341,7 @@ class M3U8TaskStep(TaskStep):
         if found.name != self.task.name:
             self.task.setName(found.name)
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         self._stopping = False
         self._process = None
 

@@ -13,9 +13,9 @@ from app.view.pages.task_page import TaskPage
 class MobileTaskPage(TaskPage):
     selectionModeChanged = Signal(bool)
 
-    def __init__(self, parent=None):
+    def __init__(self, taskService, featureService, categoryService, speedMeter, coroutineRunner, parent=None):
         self._mobileCardTypes: dict[type, type] = {}
-        super().__init__(parent)
+        super().__init__(taskService, featureService, categoryService, speedMeter, coroutineRunner, parent=parent)
 
     def setSelectionMode(self, enter: bool) -> None:
         super().setSelectionMode(enter)

@@ -285,20 +285,24 @@ class BilibiliPack(FeaturePack):
     packId = "bili"
     config = bilibiliConfig
 
+    def bind(self, services):
+        super().bind(services)
+        bilibiliAccount.bind(services.coroutineRunner)
+
     def parsers(self):
         return [BilibiliParser()]
 
     def draftCard(self, task, parent=None):
         from .cards import BilibiliDraftCard
-        return BilibiliDraftCard(task, parent)
+        return BilibiliDraftCard(task, self._services.categoryService, parent)
 
     def taskCard(self, task, parent=None):
         from .cards import BilibiliTaskCard
-        return BilibiliTaskCard(task, parent)
+        return BilibiliTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
 
-    def start(self):
+    async def activate(self):
         bilibiliAccount.fetchAccountInfo()

@@ -81,9 +81,8 @@ class CatalogPage(PackPage, ScrollArea):
         self._loadingWidget.retryRequested.connect(self._loadCatalog)
 
     def _loadCatalog(self):
-        from app.services.coroutine_runner import coroutineRunner
         self._loadingWidget.setLoading()
-        coroutineRunner.submit(
+        _services.coroutineRunner.submit(
             fetchCatalog(),
             done=self._onCatalogLoaded, failed=self._onCatalogFailed,
             owner=self,
@@ -251,9 +250,6 @@ class CatalogDownloadDialog(MessageBoxBase):
     def _onStartClicked(self):
         from qfluentwidgets import InfoBar, InfoBarPosition
         from app.models.task import ResourceTaskOptions
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
-        from app.services.task_service import taskService
 
         index = self._versionCard.comboBox.currentIndex()
         item = self._items[index]
@@ -264,14 +260,14 @@ class CatalogDownloadDialog(MessageBoxBase):
         def onParsed(task):
             for step in task.steps:
                 step.setOptions(options)
-            taskService.add(task)
+            _services.taskService.add(task)
 
         def onFailed(error):
             InfoBar.error(failedTitle, str(error), duration=-1,
                           position=InfoBarPosition.BOTTOM_RIGHT, parent=window)
 
-        coroutineRunner.submit(
-            featureService.parse(ResourceTaskOptions(
+        _services.coroutineRunner.submit(
+            _services.featureService.parse(ResourceTaskOptions(
                 url=item["Url"],
                 outputFolder=options.get("outputFolder", Path(cfg.downloadFolder.value)),
             )),
@@ -282,8 +278,16 @@ class CatalogDownloadDialog(MessageBoxBase):
         self.accept()
 
 
+_services = None
+
+
 class JackYaoPack(FeaturePack):
     packId = "jack_yao"
+
+    def bind(self, services):
+        super().bind(services)
+        global _services
+        _services = services
 
     def pages(self):
         return [CatalogPage]

@@ -127,8 +127,11 @@ class TaskService(QObject):
     fileDisappeared = Signal(object)
     diskSpaceInsufficient = Signal(int, int)
 
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, categoryService, speedMeter, parent=None):
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
+        self._categoryService = categoryService
+        self._speedMeter = speedMeter
         self._store = TaskStore()
         self._queue = TaskQueue()
         self._fileWatcher = QFileSystemWatcher(self)
@@ -171,11 +174,10 @@ class TaskService(QObject):
         if task.taskId in self._store.tasks:
             return
         if cfg.isCategoryEnabled.value:
-            from app.services.category_service import categoryService
             if task.category is None:
-                task.category = categoryService.categoryOf(task)
+                task.category = self._categoryService.categoryOf(task)
             if task.category and task.outputFolder == Path(cfg.downloadFolder.value):
-                folder = categoryService.folderOf(task.category)
+                folder = self._categoryService.folderOf(task.category)
                 if folder:
                     task.outputFolder = Path(folder)
         task.deduplicateFilename()
@@ -305,11 +307,10 @@ class TaskService(QObject):
 
     def _dispatch(self, task: Task) -> None:
         from app.models.task import TaskStatus
-        from app.services.coroutine_runner import coroutineRunner
 
         task.setStatus(TaskStatus.RUNNING)
-        workId = coroutineRunner.submit(
-            task.run(),
+        workId = self._coroutineRunner.submit(
+            task.run(self._speedMeter.addSpeed, self._speedMeter.waitForSpeedLimit),
             done=lambda _: self._onRunDone(task),
             failed=lambda error: self._onRunFailed(task, error),
         )
@@ -317,12 +318,10 @@ class TaskService(QObject):
         self.taskStarted.emit(task)
 
     def _cancelRun(self, task: Task, finished: Callable = None) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-
         workId = self._queue.workIdOf(task.taskId)
         self._queue.cancel(task.taskId)
         if workId is not None:
-            coroutineRunner.cancel(workId, finished=finished)
+            self._coroutineRunner.cancel(workId, finished=finished)
         elif finished is not None:
             finished()
 
@@ -383,5 +382,3 @@ class TaskService(QObject):
         if task is not None:
             self.fileDisappeared.emit(task)
 
-
-taskService = TaskService()

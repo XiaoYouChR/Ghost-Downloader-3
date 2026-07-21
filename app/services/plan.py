@@ -10,7 +10,8 @@ class PlanAction(IntEnum):
 
 class Plan:
 
-    def __init__(self):
+    def __init__(self, allCompleted):
+        self._allCompleted = allCompleted
         self.action: PlanAction | None = None
         self.filePath: str = ""
         self._onCleared = None
@@ -31,9 +32,7 @@ class Plan:
     def trigger(self) -> None:
         if self.action is None:
             return
-        from app.models.task import TaskStatus
-        from app.services.task_service import taskService
-        if any(t.status != TaskStatus.COMPLETED for t in taskService.tasks):
+        if not self._allCompleted():
             return
 
         from app.platform.desktop import openFile, restart, shutdown, sleep
@@ -50,6 +49,3 @@ class Plan:
             sleep()
         else:
             shutdown()
-
-
-plan = Plan()

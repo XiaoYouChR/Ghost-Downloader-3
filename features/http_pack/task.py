@@ -14,8 +14,6 @@ from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
-from app.services.speed_meter import speedMeter
-
 
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 
@@ -258,8 +256,8 @@ class HttpTaskStep(TaskStep):
                                 continue
                             pwrite(fd, chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
-                            speedMeter.addSpeed(len(chunk))
-                            await speedMeter.waitForSpeedLimit()
+                            self._reportSpeed(len(chunk))
+                            await self._waitForSpeedLimit()
                     finally:
                         response.close()
                     return
@@ -288,8 +286,8 @@ class HttpTaskStep(TaskStep):
                                 continue
                             pwrite(fd, chunk, subworker.receivedBytes)
                             subworker.receivedBytes += len(chunk)
-                            speedMeter.addSpeed(len(chunk))
-                            await speedMeter.waitForSpeedLimit()
+                            self._reportSpeed(len(chunk))
+                            await self._waitForSpeedLimit()
                     finally:
                         response.close()
                     ftruncate(fd, subworker.receivedBytes)
@@ -325,8 +323,8 @@ class HttpTaskStep(TaskStep):
                                 chunk = chunk[:remaining]
                             pwrite(fd, chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
-                            speedMeter.addSpeed(len(chunk))
-                            await speedMeter.waitForSpeedLimit()
+                            self._reportSpeed(len(chunk))
+                            await self._waitForSpeedLimit()
                             if subworker.position > subworker.end:
                                 break
                     finally:
@@ -345,7 +343,9 @@ class HttpTaskStep(TaskStep):
 
             self._reassignSubworker()
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        self._reportSpeed = reportSpeed
+        self._waitForSpeedLimit = waitForSpeedLimit
         self._taskGroup = TaskGroup()
         self._speedHistory: list[int] = []
         self._accelCheckTime = 0

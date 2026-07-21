@@ -264,7 +264,7 @@ class BilibiliSubtitleStep(TaskStep):
             if path.exists():
                 move(str(path), str(target))
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         from app.client import buildClient
 
         task: BilibiliTask = self.task

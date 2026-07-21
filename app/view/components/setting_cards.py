@@ -135,10 +135,11 @@ class LineEditSettingCard(SettingCard):
 
 class ProxySettingCard(CollapsibleSettingCard):
 
-    def __init__(self, configItem: ConfigItem, parent=None):
+    def __init__(self, configItem: ConfigItem, featureService=None, parent=None):
         super().__init__(FluentIcon.GLOBE, self.tr("代理"),
                          self.tr("设置下载时希望使用的代理"), parent=parent)
         self._configItem = configItem
+        self._featureService = featureService
 
         self.choiceLabel = BodyLabel(self)
         self.radioWidget = QWidget(self.view)
@@ -284,9 +285,8 @@ class ProxySettingCard(CollapsibleSettingCard):
         if scheme == "socks5h":
             scheme = "socks5"
         if scheme:
-            from app.services.feature_service import featureService
             incompatible = [
-                p.packId.upper() for p in featureService.packs
+                p.packId.upper() for p in self._featureService.packs
                 if p.proxySchemes is not None and scheme not in p.proxySchemes
             ]
             if incompatible:
@@ -669,10 +669,13 @@ class SelectFileCard(SettingCard):
 
 class RuntimeCard(SettingCard):
 
-    def __init__(self, runtime, parent=None):
+    def __init__(self, runtimeStatusService, coroutineRunner, taskService,
+                 runtime, parent=None):
         from app.models.pack import BinaryRuntime
-        from app.services.runtime_status import runtimeStatusService
 
+        self._runtimeStatusService = runtimeStatusService
+        self._coroutineRunner = coroutineRunner
+        self._taskService = taskService
         self._runtime: BinaryRuntime = runtime
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
@@ -682,7 +685,7 @@ class RuntimeCard(SettingCard):
         self._initWidget()
         self._initLayout()
         self._bind()
-        self.updateStatus(runtimeStatusService.status(runtime))
+        self.updateStatus(self._runtimeStatusService.status(runtime))
 
     def _initWidget(self) -> None:
         if not self._runtime.canInstall:
@@ -697,16 +700,12 @@ class RuntimeCard(SettingCard):
         self.hBoxLayout.addSpacing(16)
 
     def _bind(self) -> None:
-        from app.services.runtime_status import runtimeStatusService
-
-        runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
+        self._runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
         self.installButton.clicked.connect(self._onInstallClicked)
         self.refreshButton.clicked.connect(self._onRefreshClicked)
 
     def refreshStatus(self, force: bool = False) -> None:
-        from app.services.runtime_status import runtimeStatusService
-
-        runtimeStatusService.refresh(self._runtime, force=force)
+        self._runtimeStatusService.refresh(self._runtime, force=force)
 
     def updateStatus(self, status) -> None:
         self.refreshButton.setEnabled(not status.isBusy)
@@ -732,16 +731,14 @@ class RuntimeCard(SettingCard):
             self.updateStatus(status)
 
     def _onInstallClicked(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-
         self.installButton.setEnabled(False)
         cardRef = weakref.ref(self)
+        _taskService = self._taskService
 
         def onCreated(task) -> None:
             from shiboken6 import isValid
-            from app.services.task_service import taskService
 
-            taskService.add(task)
+            _taskService.add(task)
             card = cardRef()
             if card is not None and isValid(card):
                 card.installButton.setEnabled(True)
@@ -760,7 +757,7 @@ class RuntimeCard(SettingCard):
             if card is not None and isValid(card):
                 card._onInstallTaskFailed(error)
 
-        coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
+        self._coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
 
     def _onInstallTaskFailed(self, error: str) -> None:
         self.installButton.setEnabled(True)

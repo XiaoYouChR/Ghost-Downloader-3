@@ -111,5 +111,3 @@ class CoroutineRunner(QThread):
         self._pending.clear()
         self._running.clear()
 
-
-coroutineRunner = CoroutineRunner()

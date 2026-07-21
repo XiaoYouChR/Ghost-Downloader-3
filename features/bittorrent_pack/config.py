@@ -102,7 +102,7 @@ class BitTorrentConfig(PackConfig):
             SwitchSettingCard(FluentIcon.SYNC, self.tr("新建任务时刷新 Web Tracker"),
                 self.tr("创建新的 BT 任务时先从源地址拉取最新 Tracker"),
                 self.autoRefreshWebTrackers, btGroup),
-            WebTrackerCard(btGroup),
+            WebTrackerCard(self._services.coroutineRunner, btGroup),
         ]
         btGroup.addSettingCards(cards)
         return [btGroup]

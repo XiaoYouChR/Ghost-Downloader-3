@@ -55,7 +55,7 @@ class FFmpegStep(TaskStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{mediaStem(self.task)}.audio{suffix}"
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
 
         ffmpegPath = ffmpegRuntime.path()
         ffprobePath = ffmpegRuntime.ffprobePath()
