@@ -10,6 +10,12 @@ from app.config.cfg import cfg, ConfigItem
 
 if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.speed_meter import SpeedMeter
+    from app.services.task_service import TaskService
+    from app.services.runtime_status import RuntimeStatusService
     from PySide6.QtWidgets import QWidget
     from qfluentwidgets import FluentIcon
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -120,21 +126,39 @@ class PackPage:
     title: str = ""
 
 
+@dataclass(frozen=True)
+class PackServices:
+    coroutineRunner: CoroutineRunner
+    speedMeter: SpeedMeter
+    taskService: TaskService
+    featureService: FeatureService
+    categoryService: CategoryService
+    runtimeStatusService: RuntimeStatusService
+
+
 class FeaturePack:
     packId: str = ""
     config: PackConfig | None = None
     proxySchemes: set[str] | None = None
 
+    def __init__(self, services: PackServices):
+        self._services = services
+        if self.config is not None:
+            self.config._services = services
+        for runtime in self.runtimes():
+            runtime._services = services
+
     def parsers(self) -> list[TaskParser]:
         return []
 
     def taskCard(self, task: Task, parent=None):
-        from app.view.cards.task_cards import UniversalTaskCard
-        return UniversalTaskCard(task, parent)
+        from app.view.cards.task_cards import TaskCard
+        return TaskCard(task, self._services.taskService, self._services.featureService,
+                        self._services.categoryService, parent)
 
     def draftCard(self, task: Task, parent=None):
-        from app.view.cards.draft_cards import UniversalDraftCard
-        return UniversalDraftCard(task, parent)
+        from app.view.cards.draft_cards import DraftCard
+        return DraftCard(task, self._services.categoryService, parent)
 
     def optionCards(self, task: Task, parent=None) -> list[QWidget]:
         return []
@@ -151,10 +175,10 @@ class FeaturePack:
     def pages(self) -> list[type[PackPage]]:
         return []
 
-    def start(self):
+    async def activate(self):
         pass
 
-    def stop(self):
+    async def deactivate(self):
         pass
 
     def tr(self, text: str) -> str:

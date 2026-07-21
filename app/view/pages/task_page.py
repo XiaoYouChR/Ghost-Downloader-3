@@ -20,9 +20,6 @@ from app.view.components.scroll_area import ScrollArea
 from app.config.cfg import cfg
 from app.format import toReadableSize
 from app.models.task import TaskStatus
-from app.services.feature_service import featureService
-from app.services.speed_meter import speedMeter
-from app.services.task_service import taskService
 from app.view.cards.task_cards import TaskCard
 from app.view.components.labels import IconBodyLabel
 
@@ -126,8 +123,14 @@ class TaskPage(QWidget):
     BOTTOM_PADDING = 12
     VIEWPORT_BUFFER = 5
 
-    def __init__(self, parent=None):
+    def __init__(self, taskService, featureService, categoryService, speedMeter, coroutineRunner, plan=None, parent=None):
         super().__init__(parent)
+        self._taskService = taskService
+        self._featureService = featureService
+        self._categoryService = categoryService
+        self._speedMeter = speedMeter
+        self._coroutineRunner = coroutineRunner
+        self._plan = plan
         self._filterMode = FilterMode.ALL
         self._categoryFilter = ""
         self._sortField = SortField.CREATED_AT
@@ -140,10 +143,15 @@ class TaskPage(QWidget):
         self._displayOrder: list[str] = []
         self._selectedIds: set[str] = set()
         self._bandSnapshot: set[str] = set()
+        self._runningIds: set[str] = set()
 
         self._refreshListTimer = QTimer(self, singleShot=True)
         self._refreshListTimer.setInterval(0)
         self._refreshListTimer.timeout.connect(self._refreshList)
+
+        self._cardRefreshTimer = QTimer(self)
+        self._cardRefreshTimer.setInterval(1000)
+        self._cardRefreshTimer.timeout.connect(self._refreshRunningCards)
 
         self.scrollArea = ScrollArea(self)
         self.scrollWidget = QWidget(self)
@@ -259,13 +267,15 @@ class TaskPage(QWidget):
         layout.addWidget(self.scrollArea)
 
     def _bind(self) -> None:
-        taskService.taskAdded.connect(self._onTaskAdded)
-        taskService.taskRemoved.connect(self._onTaskRemoved)
-        for signal in (taskService.taskStarted, taskService.taskPaused,
-                       taskService.taskCompleted, taskService.taskFailed):
-            signal.connect(self._refreshVisibleCards)
-        taskService.fileDisappeared.connect(self._onFileDisappeared)
-        speedMeter.speedChanged.connect(self._onSpeedChanged)
+        self._taskService.taskAdded.connect(self._onTaskAdded)
+        self._taskService.taskRemoved.connect(self._onTaskRemoved)
+        self._taskService.taskStarted.connect(self._onTaskStarted)
+        self._taskService.taskPaused.connect(self._onTaskStopped)
+        self._taskService.taskCompleted.connect(self._onTaskStopped)
+        self._taskService.taskFailed.connect(self._onTaskStopped)
+        self._taskService.tasksAllCompleted.connect(self._onAllCompleted)
+        self._taskService.fileDisappeared.connect(self._onFileDisappeared)
+        self._speedMeter.speedChanged.connect(self._onSpeedChanged)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
         self.startAllButton.clicked.connect(self.startAll)
@@ -292,8 +302,7 @@ class TaskPage(QWidget):
         self.commandView.cancelAction.triggered.connect(lambda: self.setSelectionMode(False))
 
         cfg.isCategoryEnabled.valueChanged.connect(self._onCategoryEnabledChanged)
-        from app.services.category_service import categoryService
-        categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
+        self._categoryService.categoriesChanged.connect(self._rebuildCategoryFilterMenu)
 
         self._bandSelector = BandSelector(
             self.scrollArea, self.scrollWidget,
@@ -332,10 +341,10 @@ class TaskPage(QWidget):
         self._refreshList()
 
     def startAll(self) -> None:
-        taskService.startAll()
+        self._taskService.startAll()
 
     def pauseAll(self) -> None:
-        taskService.pauseAll()
+        self._taskService.pauseAll()
 
     def selectAll(self) -> None:
         self._selectedIds.update(self._displayOrder)
@@ -350,7 +359,7 @@ class TaskPage(QWidget):
     def selectMissing(self) -> None:
         self._selectedIds.clear()
         for taskId in self._displayOrder:
-            task = taskService.taskById(taskId)
+            task = self._taskService.taskById(taskId)
             if task and task.hasOutputFile and not Path(task.outputPath).exists():
                 self._selectedIds.add(taskId)
         for taskId, card in self._liveCards.items():
@@ -414,13 +423,14 @@ class TaskPage(QWidget):
 
     def _onSpeedChanged(self, speed: int) -> None:
         self.speedBadge.setText(f"{toReadableSize(speed)}/s")
-        self._refreshVisibleCards()
 
     def _onRateLimitToggled(self) -> None:
         cfg.set(cfg.isSpeedLimitEnabled, self.rateLimitButton.isChecked())
 
     def _onPlanButtonClicked(self) -> None:
-        from app.services.plan import plan
+        plan = self._plan
+        if plan is None:
+            return
         if self.planButton.isChecked():
             from app.view.dialogs.plan_task import PlanTaskDialog
             dialog = PlanTaskDialog(self.window())
@@ -437,7 +447,6 @@ class TaskPage(QWidget):
         self.categoryFilterButton.setVisible(bool(value))
 
     def _rebuildCategoryFilterMenu(self) -> None:
-        from app.services.category_service import categoryService
         self.categoryFilterMenu.clear()
         for action in self.categoryFilterGroup.actions():
             self.categoryFilterGroup.removeAction(action)
@@ -450,7 +459,7 @@ class TaskPage(QWidget):
         self.categoryFilterMenu.addSeparator()
 
         validIds: set[str] = {""}
-        for category in categoryService.categories():
+        for category in self._categoryService.categories():
             cid = category.categoryId
             validIds.add(cid)
             action = Action(category.toIcon(), category.name, self, checkable=True)
@@ -470,9 +479,9 @@ class TaskPage(QWidget):
     def _onRedownloadSelected(self) -> None:
         for taskId in self._displayOrder:
             if taskId in self._selectedIds:
-                task = taskService.taskById(taskId)
+                task = self._taskService.taskById(taskId)
                 if task:
-                    taskService.redownload(task)
+                    self._taskService.redownload(task)
         self.setSelectionMode(False)
 
     def _onDeleteSelected(self) -> None:
@@ -486,17 +495,16 @@ class TaskPage(QWidget):
             self._onDeleteConfirmed(deleteFiles.isChecked())
 
     def _onMoveCategorySelected(self) -> None:
-        from app.services.category_service import categoryService
         targets = [
             task for taskId in self._displayOrder
-            if taskId in self._selectedIds and (task := taskService.taskById(taskId))
+            if taskId in self._selectedIds and (task := self._taskService.taskById(taskId))
         ]
         if not targets:
             return
 
         def moveTo(categoryId):
             for task in targets:
-                taskService.setCategory(task, categoryId)
+                self._taskService.setCategory(task, categoryId)
             self.setSelectionMode(False)
             self._refreshList()
 
@@ -505,7 +513,7 @@ class TaskPage(QWidget):
         uncategorized.triggered.connect(lambda: moveTo(""))
         popup.addAction(uncategorized)
         popup.addSeparator()
-        for category in categoryService.categories():
+        for category in self._categoryService.categories():
             cid = category.categoryId
             action = Action(category.toIcon(), category.name, self)
             action.triggered.connect(lambda checked=False, c=cid: moveTo(c))
@@ -514,15 +522,15 @@ class TaskPage(QWidget):
 
     def _onDeleteConfirmed(self, shouldDeleteFiles: bool) -> None:
         for taskId in list(self._selectedIds & set(self._displayOrder)):
-            task = taskService.taskById(taskId)
+            task = self._taskService.taskById(taskId)
             if task:
-                taskService.delete(task, shouldDeleteFiles)
+                self._taskService.delete(task, shouldDeleteFiles)
         self.setSelectionMode(False)
 
     # ── list management ──
 
     def _refreshList(self) -> None:
-        tasks = taskService.tasks
+        tasks = self._taskService.tasks
 
         if self._filterMode != FilterMode.ALL:
             statuses = FILTER_TO_STATUSES.get(self._filterMode)
@@ -551,6 +559,11 @@ class TaskPage(QWidget):
             tasks.sort(key=lambda t: t.createdAt, reverse=not self._sortAscending)
 
         self._displayOrder = [t.taskId for t in tasks]
+        self._runningIds = {t.taskId for t in self._taskService.tasks if t.status == TaskStatus.RUNNING}
+        if self._runningIds and not self._cardRefreshTimer.isActive():
+            self._cardRefreshTimer.start()
+        elif not self._runningIds and self._cardRefreshTimer.isActive():
+            self._cardRefreshTimer.stop()
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         count = len(self._displayOrder)
         self.scrollWidget.setFixedHeight(
@@ -562,7 +575,7 @@ class TaskPage(QWidget):
         if self._displayOrder:
             self.emptyStatusWidget.hide()
         else:
-            if not taskService.tasks:
+            if not self._taskService.tasks:
                 text = self.tr("暂无下载任务")
             elif self._searchText and (self._filterMode != FilterMode.ALL or self._categoryFilter):
                 text = self.tr("没有匹配筛选条件的任务")
@@ -615,7 +628,7 @@ class TaskPage(QWidget):
             taskId = self._displayOrder[idx]
             card = self._liveCards.get(taskId)
             if card is None:
-                task = taskService.taskById(taskId)
+                task = self._taskService.taskById(taskId)
                 if task is None:
                     continue
                 card = self._createCard(task)
@@ -636,9 +649,31 @@ class TaskPage(QWidget):
             card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
             card.show()
 
-    def _refreshVisibleCards(self) -> None:
-        for card in self._liveCards.values():
+    def _refreshRunningCards(self) -> None:
+        for taskId in self._runningIds:
+            card = self._liveCards.get(taskId)
+            if card is not None:
+                card.refresh()
+
+    def _onTaskStarted(self, task: Task) -> None:
+        self._runningIds.add(task.taskId)
+        card = self._liveCards.get(task.taskId)
+        if card is not None:
             card.refresh()
+        if not self._cardRefreshTimer.isActive():
+            self._cardRefreshTimer.start()
+
+    def _onTaskStopped(self, task: Task) -> None:
+        self._runningIds.discard(task.taskId)
+        card = self._liveCards.get(task.taskId)
+        if card is not None:
+            card.refresh()
+        if not self._runningIds:
+            self._cardRefreshTimer.stop()
+
+    def _onAllCompleted(self) -> None:
+        self._runningIds.clear()
+        self._cardRefreshTimer.stop()
 
     # ── band selection ──
 
@@ -665,13 +700,13 @@ class TaskPage(QWidget):
             paths = [
                 Path(task.outputPath)
                 for tid in self._selectedIds
-                if (task := taskService.taskById(tid))
+                if (task := self._taskService.taskById(tid))
                 and task.status == TaskStatus.COMPLETED
                 and task.hasOutputFile
                 and Path(task.outputPath).exists()
             ]
         else:
-            task = taskService.taskById(taskId)
+            task = self._taskService.taskById(taskId)
             paths = [Path(task.outputPath)] if task else []
         if paths:
             startFileDrag(paths, self)
@@ -701,7 +736,7 @@ class TaskPage(QWidget):
         self._refreshViewport()
 
     def _createCard(self, task: Task) -> TaskCard | None:
-        return featureService.taskCard(task, self.scrollWidget)
+        return self._featureService.taskCard(task, self.scrollWidget)
 
     def _onTaskAdded(self, task: Task) -> None:
         self._refreshListTimer.start()
@@ -711,8 +746,11 @@ class TaskPage(QWidget):
         if card is not None:
             self._unmountCard(card)
         self._selectedIds.discard(taskId)
+        self._runningIds.discard(taskId)
         if self._selectionAnchor == taskId:
             self._selectionAnchor = None
+        if not self._runningIds:
+            self._cardRefreshTimer.stop()
         self._refreshListTimer.start()
 
     def _onFileDisappeared(self, task: Task) -> None:

@@ -3,7 +3,7 @@ from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import isDarkTheme, themeColor
 
-from app.view.cards.task_cards import UniversalTaskCard
+from app.view.cards.task_cards import TaskCard
 from .task import HttpTaskStep
 
 FILL_EASING = 0.25
@@ -91,7 +91,7 @@ class SegmentedProgressBar(QWidget):
             painter.drawRoundedRect(QRectF(x, 0, w, height), radius, radius)
 
 
-class HttpTaskCard(UniversalTaskCard):
+class HttpTaskCard(TaskCard):
     def _buildProgressBar(self) -> QWidget:
         step = self.task.steps[0] if self.task.steps else None
         if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.fileSize > 0 and step.subworkerCount > 1:

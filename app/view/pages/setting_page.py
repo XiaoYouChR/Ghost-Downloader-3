@@ -32,8 +32,12 @@ from app.view.components.editors import FolderPicker
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, parent=None):
+    def __init__(self, featureService, browserService, coroutineRunner, categoryService, parent=None):
         super().__init__(parent)
+        self._featureService = featureService
+        self._browserService = browserService
+        self._coroutineRunner = coroutineRunner
+        self._categoryService = categoryService
         self.container = QWidget()
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
@@ -106,13 +110,13 @@ class SettingPage(ScrollArea):
                               self.tr("文件无法下载时，可尝试关闭该选项"),
                               cfg.shouldVerifySsl),
             self.downloadFolderCard,
-            ProxySettingCard(cfg.proxyServer),
+            ProxySettingCard(cfg.proxyServer, featureService=self._featureService),
             self.clientProfileCard,
             DefaultHeadersSettingCard(FluentIcon.DICTIONARY, self.tr("默认请求头"),
                                       self.tr("设置默认 HTTP 请求头")),
         ])
 
-        self.categoryRulesCard = CategoryRulesCard()
+        self.categoryRulesCard = CategoryRulesCard(self._categoryService)
         self.categoryGroup.addSettingCards([
             SwitchSettingCard(FluentIcon.TAG, self.tr("启用下载分类"),
                               self.tr("根据扩展名将下载任务归类，便于筛选与分发到指定文件夹"),
@@ -342,17 +346,14 @@ class SettingPage(ScrollArea):
         self.addSettingGroup(self.aria2RpcGroup)
         self.addSettingGroup(self.personalGroup)
         self.addSettingGroup(self.softwareGroup)
-        from app.services.feature_service import featureService
-        for group in featureService.settingGroups(self.container):
+        for group in self._featureService.settingGroups(self.container):
             self.addSettingGroup(group)
         self.addSettingGroup(self.aboutGroup)
 
     def _bind(self) -> None:
-        from app.services.browser_service import browserService
-
         cfg.appRestartSig.connect(self._showRestartTooltip)
         cfg.browserExtensionPairToken.valueChanged.connect(self._refreshPairTokenCard)
-        browserService.connectionChanged.connect(self._refreshBrowserStatus)
+        self._browserService.connectionChanged.connect(self._refreshBrowserStatus)
         if sys.platform == "darwin":
             cfg.shouldShowDockIcon.valueChanged.connect(self.showDockSpeedCard.setEnabled)
 
@@ -383,12 +384,10 @@ class SettingPage(ScrollArea):
         InfoBar.success(self.tr("已配置"), self.tr("重启软件后生效"), duration=1500, parent=self)
 
     def _refreshPairTokenCard(self) -> None:
-        from app.services.browser_service import browserService
-        self.browserPairTokenCard.setContent(browserService.token)
+        self.browserPairTokenCard.setContent(self._browserService.token)
 
     def _onCopyTokenClicked(self) -> None:
-        from app.services.browser_service import browserService
-        token = browserService.token
+        token = self._browserService.token
         if not token:
             return
         QApplication.clipboard().setText(token)
@@ -396,17 +395,15 @@ class SettingPage(ScrollArea):
                         duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onRegenerateTokenClicked(self) -> None:
-        from app.services.browser_service import browserService
-        token = browserService.regenerateToken()
+        token = self._browserService.regenerateToken()
         QApplication.clipboard().setText(token)
         InfoBar.success(self.tr("已重新生成配对令牌"), self.tr("新令牌已复制到剪贴板"),
                         duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onChromiumInstallClicked(self) -> None:
         from app.services.browser_service import extractBrowserExtension, EXTENSION_UNPACK_DIR
-        from app.services.coroutine_runner import coroutineRunner
 
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             extractBrowserExtension(),
             done=self._onExtensionExtractDone,
             failed=self._onExtensionExtractFailed,
@@ -421,9 +418,8 @@ class SettingPage(ScrollArea):
                       duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _refreshBrowserStatus(self) -> None:
-        from app.services.browser_service import browserService
-        installType, version = browserService.connectionSummary
-        port = browserService.boundPort
+        installType, version = self._browserService.connectionSummary
+        port = self._browserService.boundPort
         if not installType:
             text = self.tr("未连接")
         elif installType == "development":
@@ -471,12 +467,11 @@ class SettingPage(ScrollArea):
         QApplication.instance().quit()
 
     def _onAboutCardClicked(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
         from app.update import fetchRelease
 
         InfoBar.info(self.tr("检查更新"), self.tr("正在检查更新..."),
                      duration=1500, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             fetchRelease(),
             done=self._onUpdateChecked, failed=self._onUpdateCheckFailed,
             owner=self,

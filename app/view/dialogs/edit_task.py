@@ -47,28 +47,28 @@ class DraftEditDialog(EditTaskDialog):
 
 class LiveEditDialog(EditTaskDialog):
 
-    def __init__(self, task: Task, cards: list[QWidget], parent=None):
+    def __init__(self, task: Task, cards: list[QWidget], coroutineRunner, featureService, taskService, parent=None):
         super().__init__(task, cards, parent)
+        self._coroutineRunner = coroutineRunner
+        self._featureService = featureService
+        self._taskService = taskService
         self._pendingParseId: str = ""
 
     def accept(self):
         from app.models.task import TaskOptions
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
 
         options = self.cardGroup.options()
         newUrl = options.pop("url", "").strip()
 
         if not newUrl or newUrl == self._task.url:
-            from app.services.task_service import taskService
-            taskService.edit(self._task, options)
+            self._taskService.edit(self._task, options)
             super().accept()
             return
 
         self._setInteractive(False)
         taskOptions = TaskOptions.fromOptions({**options, "url": newUrl})
-        self._pendingParseId = coroutineRunner.submit(
-            featureService.parse(taskOptions),
+        self._pendingParseId = self._coroutineRunner.submit(
+            self._featureService.parse(taskOptions),
             done=self._onReparsed,
             failed=self._onReparseFailed,
             options=options,
@@ -82,9 +82,7 @@ class LiveEditDialog(EditTaskDialog):
     def _cancelPendingParse(self, *_args) -> None:
         if not self._pendingParseId:
             return
-        from app.services.coroutine_runner import coroutineRunner
-
-        coroutineRunner.cancel(self._pendingParseId)
+        self._coroutineRunner.cancel(self._pendingParseId)
         self._pendingParseId = ""
 
     def _setInteractive(self, enabled: bool) -> None:
@@ -92,12 +90,10 @@ class LiveEditDialog(EditTaskDialog):
         self.yesButton.setEnabled(enabled)
 
     def _onReparsed(self, newTask: Task, options: dict) -> None:
-        from app.services.task_service import taskService
-
         self._pendingParseId = ""
 
         if self._task.canReuseProgress(newTask):
-            taskService.edit(self._task, options, newTask)
+            self._taskService.edit(self._task, options, newTask)
             super().accept()
             return
 
@@ -114,7 +110,7 @@ class LiveEditDialog(EditTaskDialog):
                 self._setInteractive(True)
                 return
 
-        taskService.edit(self._task, options, newTask)
+        self._taskService.edit(self._task, options, newTask)
         super().accept()
 
     def _onReparseFailed(self, error: str, **_) -> None:

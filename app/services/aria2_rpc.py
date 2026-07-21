@@ -23,8 +23,11 @@ JSONRPC_METHOD_NOT_FOUND = -32601
 class Aria2RpcServer(QObject):
     taskDraftRequested = Signal(list)
 
-    def __init__(self, parent: QObject | None = None) -> None:
+    def __init__(self, coroutineRunner, parse, addTask, parent: QObject | None = None) -> None:
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
+        self._parse = parse
+        self._addTask = addTask
         self._server = QTcpServer(self)
         self._buffers: dict[int, bytes] = {}
 
@@ -177,8 +180,6 @@ class Aria2RpcServer(QObject):
         self._respond(socket, rpcId, gid)
 
         from app.models.task import TaskOptions
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
 
         outputFolder = Path(directory) if directory else Path(cfg.downloadFolder.value)
         clientProfile = "" if cfg.aria2RpcEmulateFingerprint.value else "raw"
@@ -188,16 +189,14 @@ class Aria2RpcServer(QObject):
             outputFolder=outputFolder,
             clientProfile=clientProfile,
         )
-        coroutineRunner.submit(
-            featureService.parse(taskOptions),
+        self._coroutineRunner.submit(
+            self._parse(taskOptions),
             done=self._onTaskParsed,
             failed=self._onTaskParseFailed,
             filename=filename,
         )
 
     def _onTaskParsed(self, task: Task, filename: str = "") -> None:
-        from app.services.task_service import taskService
-
         if filename:
             task.setName(filename)
 
@@ -205,7 +204,7 @@ class Aria2RpcServer(QObject):
             self.taskDraftRequested.emit([task])
             return
 
-        taskService.add(task)
+        self._addTask(task)
 
     def _onTaskParseFailed(self, error: str) -> None:
         logger.warning("Aria2 RPC task parse failed: {}", error)
@@ -230,4 +229,3 @@ class Aria2RpcServer(QObject):
         socket.disconnectFromHost()
 
 
-aria2RpcServer = Aria2RpcServer()

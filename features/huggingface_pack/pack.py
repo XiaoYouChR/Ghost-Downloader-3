@@ -202,11 +202,11 @@ class HuggingFacePack(FeaturePack):
 
     def draftCard(self, task, parent=None):
         from .cards import HuggingFaceDraftCard
-        return HuggingFaceDraftCard(task, parent)
+        return HuggingFaceDraftCard(task, self._services.categoryService, parent)
 
     def taskCard(self, task, parent=None):
         from .cards import HuggingFaceTaskCard
-        return HuggingFaceTaskCard(task, parent)
+        return HuggingFaceTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard

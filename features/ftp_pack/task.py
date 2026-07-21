@@ -17,8 +17,6 @@ from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus, SpecialFileSize
 from app.platform.filesystem import deletePath, toPosixPath
 from app.platform.sysio import ftruncate, pwrite
-from app.services.speed_meter import speedMeter
-
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
 FTP_PATH_TIMEOUT = 30
@@ -141,10 +139,10 @@ class FtpStep(TaskStep):
         if "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
-    def setStatus(self, status: TaskStatus, sync: bool = True):
+    def setStatus(self, status: TaskStatus):
         if status == TaskStatus.COMPLETED:
             self.receivedBytes = self.fileSize
-        super().setStatus(status, sync=sync)
+        super().setStatus(status)
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> FtpStep:
@@ -329,8 +327,8 @@ class FtpStep(TaskStep):
                             return
                         pwrite(fd, chunk, subworker.position)
                         subworker.receivedBytes += len(chunk)
-                        speedMeter.addSpeed(len(chunk))
-                        await speedMeter.waitForSpeedLimit()
+                        self._reportSpeed(len(chunk))
+                        await self._waitForSpeedLimit()
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
                         raise CancelledError
@@ -355,8 +353,8 @@ class FtpStep(TaskStep):
                             return
                         pwrite(fd, chunk, subworker.receivedBytes)
                         subworker.receivedBytes += len(chunk)
-                        speedMeter.addSpeed(len(chunk))
-                        await speedMeter.waitForSpeedLimit()
+                        self._reportSpeed(len(chunk))
+                        await self._waitForSpeedLimit()
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
                         raise CancelledError
@@ -384,8 +382,8 @@ class FtpStep(TaskStep):
                         chunkSize = len(chunk)
                         subworker.receivedBytes += chunkSize
                         remaining -= chunkSize
-                        speedMeter.addSpeed(chunkSize)
-                        await speedMeter.waitForSpeedLimit()
+                        self._reportSpeed(chunkSize)
+                        await self._waitForSpeedLimit()
                     break
                 except Exception as e:
                     if self._stopping or self.task.status != TaskStatus.RUNNING:
@@ -420,7 +418,9 @@ class FtpStep(TaskStep):
                 with suppress(Exception, CancelledError):
                     t.result()
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        self._reportSpeed = reportSpeed
+        self._waitForSpeedLimit = waitForSpeedLimit
         self._subworkers: list[FtpSubworker] = []
         self._subworkerTasks: set[asyncio.Task] = set()
         self._speedHistory: list[int] = []

@@ -13,7 +13,6 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.services.category_service import categoryService
 from app.view.components.tree_view import AutoSizingTreeView
 
 if TYPE_CHECKING:
@@ -22,9 +21,10 @@ if TYPE_CHECKING:
 
 class FileSelectDialog(MessageBoxBase):
 
-    def __init__(self, task: Task, parent=None):
+    def __init__(self, task: Task, categoryService, parent=None):
         super().__init__(parent)
         self._task = task
+        self._categoryService = categoryService
         self._fileItems: dict[int, QStandardItem] = {}
 
         self.titleLabel = SubtitleLabel(self.tr("选择下载文件"), self)
@@ -128,12 +128,12 @@ class FileSelectDialog(MessageBoxBase):
     def _buildTypeMenu(self) -> None:
         counts: dict[str, int] = {}
         for file in self._task.files or []:
-            categoryId = categoryService.matchByName(file.relativePath)
+            categoryId = self._categoryService.matchByName(file.relativePath)
             if categoryId:
                 counts[categoryId] = counts.get(categoryId, 0) + 1
 
         for categoryId, count in counts.items():
-            category = categoryService.categoryById(categoryId)
+            category = self._categoryService.categoryById(categoryId)
             if category is None:
                 continue
             action = Action(
@@ -146,7 +146,7 @@ class FileSelectDialog(MessageBoxBase):
 
         uncategorized = sum(
             1 for f in self._task.files or []
-            if not categoryService.matchByName(f.relativePath)
+            if not self._categoryService.matchByName(f.relativePath)
         )
         if uncategorized > 0:
             action = Action(
@@ -225,7 +225,7 @@ class FileSelectDialog(MessageBoxBase):
     def _selectCategory(self, categoryId: str) -> None:
         self._setSelectedIndexes({
             f.index for f in self._task.files or []
-            if categoryService.matchByName(f.relativePath) == categoryId
+            if self._categoryService.matchByName(f.relativePath) == categoryId
         })
         self.treeView.viewport().update()
 

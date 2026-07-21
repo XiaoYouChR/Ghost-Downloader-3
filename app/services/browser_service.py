@@ -19,7 +19,6 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.config.paths import APP_DATA_DIR
-from app.services.task_service import taskService
 
 if TYPE_CHECKING:
     from PySide6.QtWebSockets import QWebSocket
@@ -118,8 +117,11 @@ class BrowserService(QObject):
     connectionChanged = Signal()
     protocolMismatched = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, taskService, parse, parent=None):
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
+        self._taskService = taskService
+        self._parse = parse
         self._server = QWebSocketServer(
             "Ghost Downloader Browser Socket Server",
             QWebSocketServer.SslMode.NonSecureMode,
@@ -335,7 +337,7 @@ class BrowserService(QObject):
     def _broadcastSnapshots(self) -> None:
         if not self._sessions:
             return
-        tasks = sorted(taskService.tasks, key=lambda t: t.createdAt, reverse=True)
+        tasks = sorted(self._taskService.tasks, key=lambda t: t.createdAt, reverse=True)
         snapshot = json.dumps({
             "type": MessageType.TASK_SNAPSHOT,
             "tasks": [self._toTaskSummary(t) for t in tasks],
@@ -439,8 +441,7 @@ class BrowserService(QObject):
                     < QVersionNumber.fromString(LATEST_EXTENSION_VERSION)
                 and not self._isUpdatingExtension):
             self._isUpdatingExtension = True
-            from app.services.coroutine_runner import coroutineRunner
-            coroutineRunner.submit(
+            self._coroutineRunner.submit(
                 extractBrowserExtension(),
                 done=self._onExtensionExtracted,
                 failed=self._onExtensionExtractFailed,
@@ -458,8 +459,6 @@ class BrowserService(QObject):
         logger.warning("Browser extension extract failed: {}", error)
 
     def _onCreateTask(self, session: BrowserClientSession, data: dict) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
 
         requestId = toStr(data, "requestId")
         payload = data.get("payload")
@@ -483,8 +482,8 @@ class BrowserService(QObject):
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.REJECTED, message=repr(e))
             return
 
-        coroutineRunner.submit(
-            featureService.parse(options),
+        self._coroutineRunner.submit(
+            self._parse(options),
             done=self._onTaskParsed,
             failed=self._onTaskParseFailed,
             session=session, requestId=requestId, title=title, draft=draft,
@@ -505,7 +504,7 @@ class BrowserService(QObject):
             self.taskDraftRequested.emit([task])
             return
 
-        taskService.add(task)
+        self._taskService.add(task)
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.CREATED, taskId=task.taskId)
         self._broadcastSnapshots()
 
@@ -530,7 +529,7 @@ class BrowserService(QObject):
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=False, message="不支持的操作")
             return
 
-        task = taskService.taskById(taskId)
+        task = self._taskService.taskById(taskId)
         if task is None:
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=False, message="任务不存在")
             return
@@ -542,19 +541,19 @@ class BrowserService(QObject):
                         self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId,
                                          ok=False, message="当前任务不支持暂停")
                         return
-                    taskService.pause(task)
+                    self._taskService.pause(task)
                 elif task.status == TaskStatus.COMPLETED:
                     self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId,
                                      ok=False, message="任务已完成")
                     return
                 else:
-                    taskService.start(task)
+                    self._taskService.start(task)
 
             elif action == TaskAction.CANCEL:
-                taskService.delete(task, shouldDeleteFiles=True)
+                self._taskService.delete(task, shouldDeleteFiles=True)
 
             elif action == TaskAction.REDOWNLOAD:
-                taskService.redownload(task)
+                self._taskService.redownload(task)
 
             elif action == TaskAction.OPEN_FILE:
                 path = Path(task.outputPath)
@@ -580,4 +579,3 @@ class BrowserService(QObject):
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=False, message=repr(e))
 
 
-browserService = BrowserService()

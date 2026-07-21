@@ -40,8 +40,9 @@ def _toQrPixmap(content: str, size: int = 240) -> QPixmap:
 
 
 class ScanLoginDialog(MessageBoxBase):
-    def __init__(self, parent=None):
+    def __init__(self, account, parent=None):
         super().__init__(parent)
+        self._account = account
         self._loginUrl = ""
 
 
@@ -98,19 +99,17 @@ class ScanLoginDialog(MessageBoxBase):
         self.viewLayout.addLayout(buttonLayout)
 
     def _bind(self):
-        from .account import bilibiliAccount
         self.refreshButton.clicked.connect(self.reloadQrCode)
         self.openBrowserButton.clicked.connect(self._onOpenBrowser)
-        bilibiliAccount.qrStateChanged.connect(self._onQrState)
+        self._account.qrStateChanged.connect(self._onQrState)
 
     def reloadQrCode(self):
-        from .account import bilibiliAccount
         self.qrLabel.setPixmap(QPixmap())
         self.qrLabel.setFixedSize(240, 240)
         self.statusLabel.setText(self.tr("正在获取二维码..."))
         self.openBrowserButton.setEnabled(False)
         self._loginUrl = ""
-        bilibiliAccount.startQrLogin()
+        self._account.startQrLogin()
 
     def _onQrState(self, statusCode: int, text: str):
         from .account import QR_EXPIRED, QR_LOGIN_SUCCESS, QR_UNSCANNED, QR_SCANNED
@@ -137,8 +136,7 @@ class ScanLoginDialog(MessageBoxBase):
             QDesktopServices.openUrl(QUrl(self._loginUrl))
 
     def done(self, code):
-        from .account import bilibiliAccount
-        bilibiliAccount.cancelQrLogin()
+        self._account.cancelQrLogin()
         super().done(code)
 
 
@@ -164,7 +162,8 @@ class EditCookieDialog(MessageBoxBase):
 
 
 class BilibiliLoginSettingCard(SettingCard):
-    def __init__(self, parent=None):
+    def __init__(self, account, parent=None):
+        self._account = account
         super().__init__(
             FluentIcon.VIEW, self.tr("账号登录"),
             self.tr("状态：未登录"), parent,
@@ -186,18 +185,16 @@ class BilibiliLoginSettingCard(SettingCard):
         self.hBoxLayout.addSpacing(16)
 
     def _bind(self):
-        from .account import bilibiliAccount
         self.scanButton.clicked.connect(self._onScanLogin)
         self.editButton.clicked.connect(self._onEditCookie)
         self.logoutButton.clicked.connect(self._onLogout)
-        bilibiliAccount.accountChanged.connect(self.refreshLoginInfo)
+        self._account.accountChanged.connect(self.refreshLoginInfo)
 
     def refreshLoginInfo(self):
-        from .account import bilibiliAccount
-        if bilibiliAccount.isLoggedIn:
-            uname = bilibiliAccount.username or "-"
-            mid = bilibiliAccount.mid or "-"
-            vip = bilibiliAccount.vip or "未开通"
+        if self._account.isLoggedIn:
+            uname = self._account.username or "-"
+            mid = self._account.mid or "-"
+            vip = self._account.vip or "未开通"
             self.setContent(
                 self.tr("状态：已登录 用户名：{0} UID：{1} 会员状态：{2}").format(uname, mid, vip)
             )
@@ -205,16 +202,16 @@ class BilibiliLoginSettingCard(SettingCard):
             self.setContent(self.tr("状态：未登录"))
         self.scanButton.setEnabled(True)
         self.editButton.setEnabled(True)
-        self.logoutButton.setEnabled(bilibiliAccount.isLoggedIn)
+        self.logoutButton.setEnabled(self._account.isLoggedIn)
 
     def _onScanLogin(self):
-        dialog = ScanLoginDialog(self.window())
+        dialog = ScanLoginDialog(self._account, self.window())
         dialog.exec()
         dialog.deleteLater()
 
     def _onEditCookie(self):
-        from .account import bilibiliAccount, toCookie
-        dialog = EditCookieDialog(self.window(), bilibiliAccount.cookie)
+        from .account import toCookie
+        dialog = EditCookieDialog(self.window(), self._account.cookie)
         if not dialog.exec():
             dialog.deleteLater()
             return
@@ -222,18 +219,17 @@ class BilibiliLoginSettingCard(SettingCard):
         newCookie = toCookie(dialog.cookieTextEdit.toPlainText())
         dialog.deleteLater()
         if not newCookie:
-            bilibiliAccount.setCookie("")
+            self._account.setCookie("")
             return
 
-        bilibiliAccount.setCookie(newCookie)
+        self._account.setCookie(newCookie)
 
     def _onLogout(self):
-        from .account import bilibiliAccount
         self.scanButton.setEnabled(False)
         self.editButton.setEnabled(False)
         self.logoutButton.setEnabled(False)
         self.setContent(self.tr("正在退出登录..."))
-        bilibiliAccount.logout()
+        self._account.logout()
 
 
 class BilibiliConfig(PackConfig):
@@ -254,7 +250,7 @@ class BilibiliConfig(PackConfig):
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
         biliGroup = CollapsibleSettingCardGroup(self.tr("Bilibili 下载"), "bilibili", parent)
-        loginCard = BilibiliLoginSettingCard(biliGroup)
+        loginCard = BilibiliLoginSettingCard(self._account, biliGroup)
         biliGroup.addSettingCards([
             loginCard,
             ComboBoxSettingCard(self.defaultQuality, FluentIcon.VIDEO, self.tr("默认画质"),

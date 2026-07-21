@@ -49,10 +49,8 @@ def startApp(application):
         notifyBrowserPaired, notifyBrowserTaskAdded, notifyDiskSpaceInsufficient,
         notifyTaskCompleted,
     )
-    from app.services.browser_service import browserService
-    from app.services.speed_meter import speedMeter
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.mobile.device import setupTouchScrolling
     from app.view.mobile.window import MobileMainWindow
 
@@ -63,26 +61,27 @@ def startApp(application):
 
     sys.excepthook = exceptionHook
 
-    loadEngine(application)
-    loadPacks()
+    coroutineRunner, categoryService, speedMeter = loadEngine(application)
+    featureService, taskService, browserService, aria2RpcServer, runtimeStatusService = createServices(
+        coroutineRunner, categoryService, speedMeter,
+    )
+    loadPacks(featureService, coroutineRunner, speedMeter, taskService, categoryService, runtimeStatusService)
 
-    mainWindow = MobileMainWindow()
+    mainWindow = MobileMainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner)
     mainWindow.show()
     setupTouchScrolling(mainWindow)
 
-    from app.services.task_service import taskService
     taskService.taskStarted.connect(lambda _: keepAlive.holdFor(REASON_DOWNLOAD))
     taskService.tasksAllCompleted.connect(lambda: keepAlive.release(REASON_DOWNLOAD))
     speedMeter.speedChanged.connect(keepAlive.setSpeed)
 
-    startEngine()
+    startEngine(taskService, speedMeter, featureService, coroutineRunner)
 
     signalBus.exceptionCaught.connect(mainWindow.alertException)
-    signalBus.updateAvailable.connect(mainWindow._onUpdateAvailable)
 
     requestIgnoreBatteryOptimizations()
 
-    bindNotifications(notifyTaskCompleted, notifyDiskSpaceInsufficient)
+    bindNotifications(taskService, notifyTaskCompleted, notifyDiskSpaceInsufficient)
 
     def onBrowserTaskDraftRequested(tasks):
         for task in tasks:
@@ -96,7 +95,6 @@ def startApp(application):
     browserService.taskDraftRequested.connect(onBrowserTaskDraftRequested)
     browserService.pairRequested.connect(onBrowserPairRequested)
 
-    from app.services.aria2_rpc import aria2RpcServer
     aria2RpcServer.taskDraftRequested.connect(onBrowserTaskDraftRequested)
     if cfg.isAria2RpcEnabled.value:
         aria2RpcServer.start()
@@ -115,9 +113,9 @@ def startApp(application):
         keepAlive.holdFor(REASON_BROWSER)
         browserService.start()
 
-    checkUpdateAtStartup()
+    checkUpdateAtStartup(coroutineRunner, onUpdateAvailable=mainWindow._onUpdateAvailable)
 
-    application.aboutToQuit.connect(stopEngine)
+    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner))
 
 
 if __name__ == "__main__":

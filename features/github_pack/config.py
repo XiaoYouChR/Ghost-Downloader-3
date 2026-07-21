@@ -84,7 +84,8 @@ class GitHubProxySiteValidator(ConfigValidator):
 
 
 class GitHubProxySiteCard(SettingCard):
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, parent=None):
+        self._coroutineRunner = coroutineRunner
         super().__init__(
             FluentIcon.GLOBE, self.tr("代理站"),
             self.tr("选择 GitHub 反向代理站，延迟仅供参考"), parent,
@@ -177,9 +178,7 @@ class GitHubProxySiteCard(SettingCard):
         self._latencies = {s: None for s in GITHUB_PROXY_SITES}
         self._refreshLatencyLabels()
         self.refreshButton.setEnabled(False)
-        from app.services.coroutine_runner import coroutineRunner
-
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             probeProxyLatencies(),
             done=self._onLatenciesDone, failed=self._onLatenciesFailed,
             owner=self,
@@ -211,7 +210,7 @@ class GitHubConfig(PackConfig):
             self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),
             self.enabled, githubGroup,
         )
-        proxySiteCard = GitHubProxySiteCard(githubGroup)
+        proxySiteCard = GitHubProxySiteCard(self._services.coroutineRunner, githubGroup)
 
         githubGroup.addSettingCards([enableCard, proxySiteCard])
         return [githubGroup]

@@ -205,7 +205,7 @@ class YouTubeExtractStep(TaskStep):
     fileIndex: int = 0
     videoUrl: str = ""
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         if self._hasFreshSiblingUrls():
             self.setStatus(TaskStatus.COMPLETED)
             return
@@ -360,7 +360,7 @@ class YouTubeResourceStep(FFmpegResourceStep):
         suffix = f".{self.extension}" if self.extension else ""
         return str(self.task.outputFolder / f"{stem}.{self.role}{suffix}")
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         if not self.url:
             self.setStatus(TaskStatus.COMPLETED)
             return
@@ -393,7 +393,7 @@ class YouTubeMergeStep(FFmpegStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{stem}.audio{suffix}"
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 

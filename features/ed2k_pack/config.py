@@ -32,7 +32,7 @@ class ED2kConfig(PackConfig):
             self.tr("goed2kd 安装目录"),
             group,
         )
-        runtimeCard = RuntimeCard(ed2kRuntime, group)
+        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, ed2kRuntime, group)
 
         installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
         group.addSettingCards([
@@ -74,7 +74,6 @@ class ED2kRuntime(BinaryRuntime):
 
     async def installTask(self):
         from app.models.task import TaskOptions
-        from app.services.feature_service import featureService
         from disk_pack.task import InstallTask
         from .task import ED2kInstallStep
 
@@ -84,7 +83,7 @@ class ED2kRuntime(BinaryRuntime):
         binaryName = "goed2kd.exe" if sys.platform == "win32" else "goed2kd"
         binaryPath = toPosixPath(installFolder / binaryName)
 
-        download = await featureService.parse(
+        download = await self._services.featureService.parse(
             TaskOptions(url=url, outputFolder=installFolder)
         )
         downloadStep = download.steps[0]

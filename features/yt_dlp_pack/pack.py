@@ -81,8 +81,9 @@ class YouTubeParser(TaskParser):
 class YouTubePack(FeaturePack):
     packId = "ytdlp"
 
-    def __init__(self):
+    def __init__(self, services):
         self.config = ytDlpConfig
+        super().__init__(services)
 
     def runtimes(self):
         return [youTubeRuntime]
@@ -92,11 +93,11 @@ class YouTubePack(FeaturePack):
 
     def taskCard(self, task, parent=None):
         from .cards import YtDlpTaskCard
-        return YtDlpTaskCard(task, parent)
+        return YtDlpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
     def draftCard(self, task, parent=None):
         from .cards import YtDlpDraftCard
-        return YtDlpDraftCard(task, parent)
+        return YtDlpDraftCard(task, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard

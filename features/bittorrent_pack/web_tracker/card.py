@@ -7,14 +7,14 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
-from app.services.coroutine_runner import coroutineRunner
 from ..config import bittorrentConfig
 from .service import trackerService
 
 
 class WebTrackerCard(SettingCard):
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, parent=None):
         super().__init__(FluentIcon.GLOBE, self.tr("Web Tracker"), "", parent)
+        self._coroutineRunner = coroutineRunner
         self.manageButton = PrimaryPushButton(self.tr("管理"), self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
         self._stateToolTip: StateToolTip | None = None
@@ -65,7 +65,7 @@ class WebTrackerCard(SettingCard):
         self._stateToolTip.move(self._stateToolTip.getSuitablePos())
         self._stateToolTip.show()
 
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             trackerService.refresh(),
             done=self._onRefreshDone, failed=self._onRefreshFailed,
             owner=self,

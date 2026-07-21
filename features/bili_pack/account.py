@@ -53,8 +53,9 @@ class BilibiliAccount(QObject):
     accountChanged = Signal()
     qrStateChanged = Signal(int, str)
 
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, parent=None):
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
         self._username = ""
         self._mid = ""
         self._vip = ""
@@ -104,20 +105,20 @@ class BilibiliAccount(QObject):
     # ── QR login (wreq via coroutineRunner) ──
 
     def startQrLogin(self):
-        from app.services.coroutine_runner import coroutineRunner
+
         self.cancelQrLogin()
-        self._qrWorkId = coroutineRunner.submit(
+        self._qrWorkId = self._coroutineRunner.submit(
             self._pollQrLogin(), done=self._onQrLoginDone, failed=self._onQrLoginFailed,
         )
 
     def cancelQrLogin(self):
         if self._qrWorkId:
-            from app.services.coroutine_runner import coroutineRunner
-            coroutineRunner.cancel(self._qrWorkId)
+    
+            self._coroutineRunner.cancel(self._qrWorkId)
             self._qrWorkId = ""
 
     async def _pollQrLogin(self) -> str:
-        from app.services.coroutine_runner import coroutineRunner
+
 
         client = buildClient()
         try:
@@ -133,7 +134,7 @@ class BilibiliAccount(QObject):
             if not loginUrl or not qrCodeKey:
                 raise ValueError("二维码接口返回了不完整的数据")
 
-            coroutineRunner.post(self.qrStateChanged.emit, 0, loginUrl)
+            self._coroutineRunner.post(self.qrStateChanged.emit, 0, loginUrl)
 
             while True:
                 await asyncio.sleep(QR_POLL_INTERVAL)
@@ -146,11 +147,11 @@ class BilibiliAccount(QObject):
                 statusMessage = str(data.get("message") or "")
 
                 if statusCode in {QR_UNSCANNED, QR_SCANNED}:
-                    coroutineRunner.post(self.qrStateChanged.emit, statusCode, statusMessage)
+                    self._coroutineRunner.post(self.qrStateChanged.emit, statusCode, statusMessage)
                     continue
 
                 if statusCode == QR_EXPIRED:
-                    coroutineRunner.post(self.qrStateChanged.emit, QR_EXPIRED, "")
+                    self._coroutineRunner.post(self.qrStateChanged.emit, QR_EXPIRED, "")
                     return ""
 
                 if statusCode == 0:
@@ -180,7 +181,7 @@ class BilibiliAccount(QObject):
 
     def setCookie(self, cookie: str):
         from app.config.cfg import cfg
-        from app.services.coroutine_runner import coroutineRunner
+
 
         cookie = toCookie(cookie)
         oldCookie = self.cookie
@@ -190,7 +191,7 @@ class BilibiliAccount(QObject):
                 self.accountChanged.emit()
                 if cookie:
                     self.fetchAccountInfo()
-            coroutineRunner.submit(self._logout(), done=onDone, failed=onDone)
+            self._coroutineRunner.submit(self._logout(), done=onDone, failed=onDone)
         else:
             cfg.set(bilibiliConfig.userCookie, cookie)
             self.accountChanged.emit()
@@ -198,12 +199,12 @@ class BilibiliAccount(QObject):
                 self.fetchAccountInfo()
 
     def logout(self):
-        from app.services.coroutine_runner import coroutineRunner
-        coroutineRunner.submit(self._logout(), done=self._onLogoutDone, failed=self._onLogoutFailed)
+
+        self._coroutineRunner.submit(self._logout(), done=self._onLogoutDone, failed=self._onLogoutFailed)
 
     def fetchAccountInfo(self):
-        from app.services.coroutine_runner import coroutineRunner
-        coroutineRunner.submit(self._fetchAccountInfo(), done=self._onAccountInfoDone)
+
+        self._coroutineRunner.submit(self._fetchAccountInfo(), done=self._onAccountInfoDone)
 
     async def fetchWbiKeys(self) -> None:
         if self._mixinKey:
@@ -316,4 +317,3 @@ class BilibiliAccount(QObject):
         self.accountChanged.emit()
 
 
-bilibiliAccount = BilibiliAccount()

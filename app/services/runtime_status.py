@@ -23,8 +23,9 @@ class RuntimeStatus:
 class RuntimeStatusService(QObject):
     statusChanged = Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, parent=None):
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
         self._statuses: dict[str, RuntimeStatus] = {}
         self._workIds: dict[str, str] = {}
 
@@ -34,42 +35,44 @@ class RuntimeStatusService(QObject):
             return status
         return RuntimeStatus(runtime.runtimeId, runtime.name, path=runtime.path())
 
-    def refresh(self, runtime: BinaryRuntime, force: bool = False) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-
+    def refreshStatus(self, runtime: BinaryRuntime) -> None:
         runtimeId = runtime.runtimeId
-        path = runtime.path()
         current = self._statuses.get(runtimeId)
+        if current is not None and not current.isBusy:
+            path = runtime.path()
+            if current.path == path:
+                return
+        self._probe(runtime)
 
-        if current is not None and current.path != path:
-            force = True
-
+    def invalidate(self, runtime: BinaryRuntime) -> None:
+        runtimeId = runtime.runtimeId
         workId = self._workIds.get(runtimeId)
         if workId:
-            if not force:
-                return
-            coroutineRunner.cancel(workId)
+            self._coroutineRunner.cancel(workId)
             self._workIds.pop(runtimeId, None)
+        self._probe(runtime)
 
-        if current is not None and not force and not current.isBusy:
-            return
+    def _probe(self, runtime: BinaryRuntime) -> None:
+        runtimeId = runtime.runtimeId
+        path = runtime.path()
+        name = runtime.name
 
-        status = RuntimeStatus(runtimeId, runtime.name, path=path, isBusy=True)
+        status = RuntimeStatus(runtimeId, name, path=path, isBusy=True)
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
         try:
-            self._workIds[runtimeId] = coroutineRunner.submit(
+            self._workIds[runtimeId] = self._coroutineRunner.submit(
                 runtime.probeVersion(),
                 done=self._onProbeFinished,
                 failed=self._onProbeFailed,
                 runtimeId=runtimeId,
-                name=runtime.name,
+                name=name,
                 path=path,
             )
         except Exception as e:
             logger.opt(exception=e).error("runtime probe submit failed: {}", runtimeId)
-            self._onProbeFailed(repr(e), runtimeId, runtime.name, path)
+            self._onProbeFailed(repr(e), runtimeId, name, path)
 
     def _onProbeFinished(self, version: str, runtimeId: str, name: str, path: str) -> None:
         self._workIds.pop(runtimeId, None)
@@ -83,5 +86,3 @@ class RuntimeStatusService(QObject):
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
-
-runtimeStatusService = RuntimeStatusService()

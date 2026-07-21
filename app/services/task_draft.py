@@ -28,8 +28,10 @@ class TaskDraft(QObject):
     itemsCleared = Signal()
     taskConfirmed = Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, featureService, parent=None):
         super().__init__(parent)
+        self._coroutineRunner = coroutineRunner
+        self._featureService = featureService
         self._items: list[DraftItem] = []
         self._baseOptions: dict[str, Any] = {}
 
@@ -59,8 +61,6 @@ class TaskDraft(QObject):
 
     def setUrls(self, urls: list[str]) -> None:
         from app.models.task import TaskOptions
-        from app.services.coroutine_runner import coroutineRunner
-        from app.services.feature_service import featureService
 
         previous = self._items
         previousUrls = [item.url for item in previous]
@@ -73,14 +73,14 @@ class TaskDraft(QObject):
                 continue
             for item in previous[oldStart:oldEnd]:
                 if item.parseId:
-                    coroutineRunner.cancel(item.parseId)
+                    self._coroutineRunner.cancel(item.parseId)
                     item.parseId = ""
             for url in urls[newStart:newEnd]:
                 item = DraftItem(url=url)
                 try:
                     options = TaskOptions.fromOptions({**self._baseOptions, "url": url})
-                    parseId = coroutineRunner.submit(
-                        featureService.parse(options),
+                    parseId = self._coroutineRunner.submit(
+                        self._featureService.parse(options),
                         done=self._onParsed,
                         failed=self._onParseFailed,
                         item=item,
@@ -98,8 +98,6 @@ class TaskDraft(QObject):
         self.itemsChanged.emit()
 
     def addParsedTasks(self, tasks: list[Task]) -> list[str]:
-        from app.services.coroutine_runner import coroutineRunner
-
         if not tasks:
             return []
 
@@ -113,7 +111,7 @@ class TaskDraft(QObject):
                 if item.task is not None:
                     continue
                 if item.parseId:
-                    coroutineRunner.cancel(item.parseId)
+                    self._coroutineRunner.cancel(item.parseId)
                     item.parseId = ""
             else:
                 newUrls.append(url)
@@ -130,8 +128,6 @@ class TaskDraft(QObject):
         return newUrls
 
     def confirm(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
-
         for item in self._items:
             if item.task is not None:
                 item.task.setOptions(self._buildOptions(item))
@@ -141,7 +137,7 @@ class TaskDraft(QObject):
 
         for item in self._items:
             if item.parseId and item.confirmedOptions is None:
-                coroutineRunner.cancel(item.parseId)
+                self._coroutineRunner.cancel(item.parseId)
                 item.parseId = ""
 
         self._items.clear()
@@ -149,10 +145,9 @@ class TaskDraft(QObject):
         self.itemsCleared.emit()
 
     def clear(self) -> None:
-        from app.services.coroutine_runner import coroutineRunner
         for item in self._items:
             if item.parseId:
-                coroutineRunner.cancel(item.parseId)
+                self._coroutineRunner.cancel(item.parseId)
                 item.parseId = ""
         self._items.clear()
         self.itemsCleared.emit()

@@ -1,10 +1,10 @@
-from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QVBoxLayout
-from qfluentwidgets import FluentIcon, ToolButton
+from PySide6.QtWidgets import QFileIconProvider
+from qfluentwidgets import FluentIcon
 
 from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus
-from app.view.cards.draft_cards import UniversalDraftCard
-from app.view.cards.task_cards import UniversalTaskCard
+from app.view.cards.draft_cards import MultiFileDraftCard
+from app.view.cards.task_cards import MultiFileTaskCard
 from app.view.components.labels import IconBodyLabel
 from app.view.dialogs.file_select import FileSelectDialog
 from .task import BTTask
@@ -27,7 +27,7 @@ class TorrentFileSelectDialog(FileSelectDialog):
         return self._task.toRelativePath(file)
 
 
-class BTDraftCard(UniversalDraftCard):
+class BTDraftCard(MultiFileDraftCard):
 
     @property
     def task(self) -> BTTask:
@@ -38,76 +38,29 @@ class BTDraftCard(UniversalDraftCard):
         icon = QFileIconProvider.IconType.File if self.task.isSingleFile else QFileIconProvider.IconType.Folder
         self.iconLabel.setImage(QFileIconProvider().icon(icon).pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
-        self._selectFilesButton = None
-        if len(self.task.files) > 1:
-            from qfluentwidgets import ToolTipFilter, TransparentToolButton
-            self._selectFilesButton = TransparentToolButton(FluentIcon.LIBRARY, self)
-            self._selectFilesButton.setFixedSize(28, 28)
-            self._selectFilesButton.setToolTip(self.tr("选择文件"))
-            self._selectFilesButton.installEventFilter(ToolTipFilter(self._selectFilesButton))
-
-    def _initLayout(self):
-        super()._initLayout()
-        if self._selectFilesButton is not None:
-            self.layout().addWidget(self._selectFilesButton)
-
-    def _bind(self):
-        super()._bind()
-        if self._selectFilesButton is not None:
-            self._selectFilesButton.clicked.connect(self._onSelectFilesClicked)
-
-    def _refreshSummary(self):
-        self.sizeLabel.setText(
-            self.tr("{0}/{1} 个文件 · {2}").format(
-                self.task.countSelected,
-                len(self.task.files),
-                toReadableSize(self.task.fileSize),
-            )
-        )
 
     def _onSelectFilesClicked(self):
         if openFileSelection(self.task, self.window()) is not None:
             self._refreshSummary()
 
 
-class BTTaskCard(UniversalTaskCard):
+class BTTaskCard(MultiFileTaskCard):
 
     def _initWidget(self):
         super()._initWidget()
         self.speedLabel.setIcon(FluentIcon.DOWNLOAD)
         self.uploadLabel = IconBodyLabel("", FluentIcon.SHARE, self)
         self.uploadLabel.hide()
-        self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
 
-    def _initLayout(self):
-        infoLayout = QHBoxLayout()
-        infoLayout.addWidget(self.speedLabel)
-        infoLayout.addWidget(self.uploadLabel)
-        infoLayout.addWidget(self.etaLabel)
-        infoLayout.addWidget(self.sizeLabel)
-        infoLayout.addWidget(self.statusLabel)
-        infoLayout.addStretch()
+    def _infoWidgets(self):
+        return [self.uploadLabel]
 
-        contentLayout = QVBoxLayout()
-        contentLayout.setContentsMargins(2, 8, 2, 8)
-        contentLayout.addWidget(self.nameLabel)
-        contentLayout.addLayout(infoLayout)
-
-        self.hBoxLayout = QHBoxLayout(self)
-        self.hBoxLayout.setContentsMargins(12, 0, 12, 0)
-        self.hBoxLayout.addWidget(self.checkBox)
-        self.hBoxLayout.addWidget(self.iconLabel)
-        self.hBoxLayout.addLayout(contentLayout, 1)
-        self.hBoxLayout.addWidget(self.toggleButton)
-        self.hBoxLayout.addWidget(self.verifyHashButton)
-        self.hBoxLayout.addWidget(self.selectFilesButton)
-        self.hBoxLayout.addWidget(self.openFileButton)
-        self.hBoxLayout.addWidget(self.openFolderButton)
-        self.hBoxLayout.addWidget(self.deleteButton)
-
-    def _bind(self):
-        super()._bind()
-        self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
+    def _onSelectFilesClicked(self):
+        openFileSelection(
+            self._task, self.window(),
+            apply=lambda indexes: self._taskService.applySelection(self._task, indexes),
+        )
+        self.refresh(force=True)
 
     def refresh(self, force=False):
         task: BTTask = self._task
@@ -136,7 +89,6 @@ class BTTaskCard(UniversalTaskCard):
             btStatus = self._seedingSummary(task)
             if btStatus and not self._isFileMissing:
                 self.statusLabel.setText(btStatus)
-
 
     def _refreshDownloading(self, task: BTTask):
         self.statusLabel.hide()
@@ -182,11 +134,3 @@ class BTTaskCard(UniversalTaskCard):
         if task.seedingTimeSeconds > 0:
             parts.append(self.tr("做种 {0}").format(toReadableTime(task.seedingTimeSeconds)))
         return " · ".join(parts)
-
-    def _onSelectFilesClicked(self):
-        from app.services.task_service import taskService
-        openFileSelection(
-            self._task, self.window(),
-            apply=lambda indexes: taskService.applySelection(self._task, indexes),
-        )
-        self.refresh(force=True)

@@ -233,4 +233,4 @@ class HttpPack(FeaturePack):
 
     def taskCard(self, task, parent=None):
         from .cards import HttpTaskCard
-        return HttpTaskCard(task, parent)
+        return HttpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)

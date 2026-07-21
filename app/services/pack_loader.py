@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class PackManifest:
     name: str
+    className: str
     entryPath: Path
     folder: Path
     dependencies: tuple[str, ...]
@@ -50,6 +51,11 @@ class PackManifest:
             logger.warning("入口文件不存在: {}", packDir / entry)
             return None
 
+        className = packSection.get("class")
+        if not isinstance(className, str) or not className.strip():
+            logger.warning("manifest 缺少 class 字段: {}", manifestPath)
+            return None
+
         deps = packSection.get("dependencies", [])
         if not isinstance(deps, list) or any(
             not isinstance(d, str) or not d for d in deps
@@ -59,13 +65,14 @@ class PackManifest:
 
         return cls(
             name=packDir.name,
+            className=className,
             entryPath=entryPath,
             folder=packDir,
             dependencies=tuple(deps),
         )
 
 
-def loadPacks(featuresDir: Path) -> list[FeaturePack]:
+def loadPacks(featuresDir: Path, services=None) -> list[FeaturePack]:
     if not featuresDir.exists():
         logger.warning("features 目录不存在: {}", featuresDir)
         return []
@@ -76,7 +83,7 @@ def loadPacks(featuresDir: Path) -> list[FeaturePack]:
         if (m := PackManifest.fromDir(p)) is not None
     ]
     ordered = orderedByDependency(manifests)
-    return [pack for m in ordered if (pack := loadManifest(m)) is not None]
+    return [pack for m in ordered if (pack := loadManifest(m, services)) is not None]
 
 
 def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
@@ -115,9 +122,7 @@ def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
     return [m for m in ordered if m.name not in skipped]
 
 
-def loadManifest(manifest: PackManifest) -> FeaturePack | None:
-    from app.models.pack import FeaturePack
-
+def loadManifest(manifest: PackManifest, services=None) -> FeaturePack | None:
     moduleName = manifest.name
     try:
         spec = importlib.util.spec_from_file_location(
@@ -137,20 +142,14 @@ def loadManifest(manifest: PackManifest) -> FeaturePack | None:
             sys.modules.pop(moduleName, None)
             raise
 
-        for attrName in dir(module):
-            attr = getattr(module, attrName)
-            if (
-                isinstance(attr, type)
-                and issubclass(attr, FeaturePack)
-                and attr is not FeaturePack
-                and attr.__module__ == moduleName
-            ):
-                pack = attr()
-                logger.success("加载 FeaturePack: {}", moduleName)
-                return pack
+        PackClass = getattr(module, manifest.className, None)
+        if PackClass is None:
+            logger.warning("未找到类 {}: {}", manifest.className, moduleName)
+            return None
 
-        logger.warning("未找到 FeaturePack 子类: {}", moduleName)
-        return None
+        pack = PackClass(services)
+        logger.success("加载 FeaturePack: {}", moduleName)
+        return pack
 
     except Exception as e:
         sys.modules.pop(moduleName, None)

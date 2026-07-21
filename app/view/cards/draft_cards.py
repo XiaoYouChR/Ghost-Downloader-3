@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, ImageLabel, LineEdit, RoundMenu,
-    TransparentToolButton, ToolTipFilter, isDarkTheme,
+    ToolTipFilter, TransparentToolButton, isDarkTheme,
 )
 
 from app.config.cfg import cfg
@@ -22,9 +22,10 @@ class DraftCard(QWidget):
     categoryPicked = Signal(str)
     editRequested = Signal()
 
-    def __init__(self, task: Task, parent=None):
+    def __init__(self, task: Task, categoryService, parent=None):
         super().__init__(parent)
         self._task = task
+        self._categoryService = categoryService
 
         self.iconLabel = ImageLabel(self)
         self.iconLabel.setImage(QFileIconProvider().icon(QFileInfo(task.name)).pixmap(16, 16))
@@ -94,8 +95,7 @@ class DraftCard(QWidget):
         if not cfg.isCategoryEnabled.value:
             self.categoryButton.hide()
             return
-        from app.services.category_service import categoryService
-        category = categoryService.categoryById(self._task.category)
+        category = self._categoryService.categoryById(self._task.category)
         if category:
             self.categoryButton.setIcon(category.toIcon())
             self.categoryButton.setToolTip(category.name)
@@ -105,13 +105,12 @@ class DraftCard(QWidget):
         self.categoryButton.show()
 
     def _showCategoryMenu(self) -> None:
-        from app.services.category_service import categoryService
         menu = RoundMenu(parent=self)
         uncategorized = Action(FluentIcon.TAG, self.tr("未分类"), self)
         uncategorized.triggered.connect(lambda: self._onCategoryPicked(""))
         menu.addAction(uncategorized)
         menu.addSeparator()
-        for category in categoryService.categories():
+        for category in self._categoryService.categories():
             cid = category.categoryId
             icon = category.toIcon()
             action = Action(icon, category.name, self)
@@ -133,5 +132,38 @@ class DraftCard(QWidget):
         painter.fillRect(0, 0, self.width(), 1, QColor(0, 0, 0, 96 if isDarkTheme() else 24))
 
 
-class UniversalDraftCard(DraftCard):
-    pass
+class MultiFileDraftCard(DraftCard):
+
+    def _initWidget(self) -> None:
+        super()._initWidget()
+        self._selectFilesButton = None
+        if self._task.files and len(self._task.files) > 1:
+            self._selectFilesButton = TransparentToolButton(FluentIcon.LIBRARY, self)
+            self._selectFilesButton.setFixedSize(28, 28)
+            self._selectFilesButton.setToolTip(self.tr("选择文件"))
+            self._selectFilesButton.installEventFilter(ToolTipFilter(self._selectFilesButton))
+        self._refreshSummary()
+
+    def _initLayout(self) -> None:
+        super()._initLayout()
+        if self._selectFilesButton is not None:
+            self.layout().addWidget(self._selectFilesButton)
+
+    def _bind(self) -> None:
+        super()._bind()
+        if self._selectFilesButton is not None:
+            self._selectFilesButton.clicked.connect(self._onSelectFilesClicked)
+
+    def _onSelectFilesClicked(self) -> None:
+        raise NotImplementedError
+
+    def _refreshSummary(self) -> None:
+        if not self._task.files or len(self._task.files) <= 1:
+            self.sizeLabel.setText(toReadableSize(self._task.fileSize))
+            return
+        selected = sum(1 for f in self._task.files if f.selected)
+        self.sizeLabel.setText(
+            self.tr("{0}/{1} 个文件 · {2}").format(
+                selected, len(self._task.files), toReadableSize(self._task.fileSize)
+            )
+        )

@@ -10,8 +10,6 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.services.speed_meter import speedMeter
-from app.services.task_service import taskService
 from app.signal_bus import signalBus
 
 
@@ -171,17 +169,19 @@ else:
 class SystemTrayIcon(QSystemTrayIcon):
     NAME = "Ghost Downloader"
 
-    def __init__(self, icon: QIcon, parent=None):
+    def __init__(self, taskService, speedMeter, icon: QIcon, parent=None):
         super().__init__(icon, parent)
+        self._taskService = taskService
+        self._speedMeter = speedMeter
         self.setToolTip(self.NAME)
 
         self._menu = TrayMenu()
         self._menu.addAction(Action(GhostIcon.GHOST, self.tr("仪表盘"), self._menu,
                                     triggered=lambda: signalBus.activationRequested.emit()))
         self._menu.addAction(Action(FluentIcon.PLAY, self.tr("全部开始"), self._menu,
-                                    triggered=taskService.startAll))
+                                    triggered=self._taskService.startAll))
         self._menu.addAction(Action(FluentIcon.PAUSE, self.tr("全部暂停"), self._menu,
-                                    triggered=taskService.pauseAll))
+                                    triggered=self._taskService.pauseAll))
         self._menu.addSeparator()
         self._menu.addAction(Action(FluentIcon.CLOSE, self.tr("退出程序"), self._menu,
                                     triggered=QApplication.instance().quit))
@@ -190,7 +190,7 @@ class SystemTrayIcon(QSystemTrayIcon):
 
         self.activated.connect(self._onActivated)
         self.messageClicked.connect(signalBus.activationRequested)
-        speedMeter.speedChanged.connect(self._onSpeedChanged)
+        self._speedMeter.speedChanged.connect(self._onSpeedChanged)
 
     def _onActivated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.Trigger:

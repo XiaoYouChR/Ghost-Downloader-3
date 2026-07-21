@@ -7,7 +7,7 @@ from qfluentwidgets import (
 
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
-from app.services.category_service import Category, categoryService
+from app.services.category_service import Category
 
 
 class CategoryRowWidget(QWidget):
@@ -62,13 +62,14 @@ class CategoryRowWidget(QWidget):
 
 class CategoryRulesCard(CollapsibleSettingCard):
 
-    def __init__(self, parent=None):
+    def __init__(self, categoryService, parent=None):
         super().__init__(
             FluentIcon.TAG,
             self.tr("下载分类规则"),
             self.tr("根据扩展名自动归类，可为分类指定下载文件夹"),
             parent,
         )
+        self._categoryService = categoryService
         self._rowWidgets: list[CategoryRowWidget] = []
         self.buttonContainer = QWidget(self.view)
         self.buttonLayout = QHBoxLayout(self.buttonContainer)
@@ -90,7 +91,7 @@ class CategoryRulesCard(CollapsibleSettingCard):
     def _bind(self) -> None:
         self.addButton.clicked.connect(self._onAddClicked)
         self.resetButton.clicked.connect(self._onResetClicked)
-        categoryService.categoriesChanged.connect(self._reload)
+        self._categoryService.categoriesChanged.connect(self._reload)
 
     def _reload(self) -> None:
         for row in self._rowWidgets:
@@ -99,7 +100,7 @@ class CategoryRulesCard(CollapsibleSettingCard):
         self._rowWidgets.clear()
         self.viewLayout.removeWidget(self.buttonContainer)
 
-        for category in categoryService.categories():
+        for category in self._categoryService.categories():
             row = CategoryRowWidget(category, self.view)
             row.editRequested.connect(self._onEditClicked)
             row.removeRequested.connect(self._onRemoveClicked)
@@ -113,19 +114,19 @@ class CategoryRulesCard(CollapsibleSettingCard):
         from app.view.dialogs.category_edit import CategoryEditDialog
         dialog = CategoryEditDialog(self.window())
         if dialog.exec():
-            categoryService.addCategory(dialog.category())
+            self._categoryService.addCategory(dialog.category())
 
     def _onEditClicked(self, categoryId: str) -> None:
-        category = categoryService.categoryById(categoryId)
+        category = self._categoryService.categoryById(categoryId)
         if category is None:
             return
         from app.view.dialogs.category_edit import CategoryEditDialog
         dialog = CategoryEditDialog(self.window(), category=category)
         if dialog.exec():
-            categoryService.updateCategory(dialog.category())
+            self._categoryService.updateCategory(dialog.category())
 
     def _onRemoveClicked(self, categoryId: str) -> None:
-        categoryService.removeCategory(categoryId)
+        self._categoryService.removeCategory(categoryId)
 
     def _onResetClicked(self) -> None:
-        categoryService.reset()
+        self._categoryService.reset()

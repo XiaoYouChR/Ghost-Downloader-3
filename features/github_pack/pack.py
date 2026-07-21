@@ -44,6 +44,9 @@ def isGitHubFileUrl(url: str) -> bool:
 class GitHubParser(TaskParser):
     priority = 90
 
+    def __init__(self, pack):
+        self._pack = pack
+
     def match(self, options: TaskOptions) -> bool:
         return (
             githubConfig.enabled.value
@@ -53,10 +56,9 @@ class GitHubParser(TaskParser):
 
     async def parse(self, options: TaskOptions) -> Task:
         from dataclasses import replace
-        from app.services.feature_service import featureService
 
         proxiedUrl = f"{selectedProxySite().rstrip('/')}/{options.url.lstrip('/')}"
-        task = await featureService.parse(replace(options, url=proxiedUrl))
+        task = await self._pack._services.featureService.parse(replace(options, url=proxiedUrl))
         task.url = options.url
         task.packId = "github"
         return task
@@ -67,7 +69,7 @@ class GitHubPack(FeaturePack):
     config = githubConfig
 
     def parsers(self):
-        return [GitHubParser()]
+        return [GitHubParser(self)]
 
     def optionCards(self, task, parent=None):
         from http_pack.pack import HttpPack
@@ -79,4 +81,4 @@ class GitHubPack(FeaturePack):
 
     def taskCard(self, task, parent=None):
         from http_pack.cards import HttpTaskCard
-        return HttpTaskCard(task, parent)
+        return HttpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)

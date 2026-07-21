@@ -12,7 +12,6 @@ from app.config.cfg import cfg
 from app.platform.android import clearShare, isStorageGranted, requestStoragePermission, sharedText, toTaskUrls
 from app.platform.android_notification import isNotificationEnabled, requestNotificationPermission
 from app.services.task_draft import TaskDraft
-from app.services.task_service import taskService
 from app.view.dialogs.task_draft import TaskDraftDialog
 from app.view.mobile.device import setupAccentColor
 from app.view.mobile.navigation import BottomNavigationBar
@@ -24,8 +23,14 @@ TASK_PAGE_INDEX = 0
 
 
 class MobileMainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner):
         super().__init__(parent=None)
+        self._taskService = taskService
+        self._featureService = featureService
+        self._browserService = browserService
+        self._categoryService = categoryService
+        self._speedMeter = speedMeter
+        self._coroutineRunner = coroutineRunner
         setupAccentColor()
 
         self.stackedWidget = QStackedWidget(self)
@@ -36,15 +41,15 @@ class MobileMainWindow(QWidget):
             text=self.tr("未开启通知权限，下载完成后将无法提醒"),
             parent=self,
         )
-        self.taskPage = MobileTaskPage(self)
-        self.settingPage = MobileSettingPage(self)
+        self.taskPage = MobileTaskPage(taskService, featureService, categoryService, speedMeter, coroutineRunner, parent=self)
+        self.settingPage = MobileSettingPage(featureService, browserService, coroutineRunner, categoryService, parent=self)
         self.searchEdit = SearchLineEdit(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
         self.vBoxLayout = QVBoxLayout(self)
 
-        self._draft = TaskDraft(parent=self)
-        self._draftDialog = TaskDraftDialog(self._draft, parent=self)
-        self._shareDraft = TaskDraft(parent=self)
+        self._draft = TaskDraft(coroutineRunner, featureService, parent=self)
+        self._draftDialog = TaskDraftDialog(self._draft, featureService, categoryService, parent=self)
+        self._shareDraft = TaskDraft(coroutineRunner, featureService, parent=self)
 
         self._initWidget()
         self._initLayout()
@@ -88,8 +93,8 @@ class MobileMainWindow(QWidget):
         self.searchEdit.textChanged.connect(self._onSearchTextChanged)
         self.taskPage.selectionModeChanged.connect(lambda *_: self._updateAddButtonVisibility())
         self.addButton.clicked.connect(self._showAddTaskDialog)
-        self._draft.taskConfirmed.connect(taskService.add)
-        self._shareDraft.taskConfirmed.connect(taskService.add)
+        self._draft.taskConfirmed.connect(self._taskService.add)
+        self._shareDraft.taskConfirmed.connect(self._taskService.add)
         QApplication.instance().applicationStateChanged.connect(self._onApplicationStateChanged)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)

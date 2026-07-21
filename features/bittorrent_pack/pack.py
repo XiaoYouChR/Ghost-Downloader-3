@@ -103,16 +103,20 @@ class BitTorrentPack(FeaturePack):
     config = bittorrentConfig
     proxySchemes = {"socks5"}
 
+    def __init__(self, services):
+        super().__init__(services)
+        btSession.setReportSpeed(services.speedMeter.addSpeed)
+
     def parsers(self):
         return [TorrentParser()]
 
     def taskCard(self, task, parent=None):
         from .cards import BTTaskCard
-        return BTTaskCard(task, parent)
+        return BTTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
     def draftCard(self, task, parent=None):
         from .cards import BTDraftCard
-        return BTDraftCard(task, parent)
+        return BTDraftCard(task, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard
@@ -128,6 +132,5 @@ class BitTorrentPack(FeaturePack):
             ),
         ]
 
-    def stop(self):
-        from app.services.coroutine_runner import coroutineRunner
-        coroutineRunner.submit(btSession.close())
+    async def deactivate(self):
+        await btSession.close()

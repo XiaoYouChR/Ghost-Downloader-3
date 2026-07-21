@@ -14,9 +14,12 @@ if TYPE_CHECKING:
     from desktop_notifier import DesktopNotifier
 
 notifier: DesktopNotifier | None = None
+_submit = None
 
 
-async def init() -> None:
+async def init(submit) -> None:
+    global _submit
+    _submit = submit
     from desktop_notifier import DesktopNotifier as DN, Icon
 
     iconPath = Path(QStandardPaths.writableLocation(
@@ -35,8 +38,7 @@ def notifyDiskSpaceInsufficient(free: int, needed: int) -> None:
     if notifier is None:
         return
     from app.format import toReadableSize
-    from app.services.coroutine_runner import coroutineRunner
-    coroutineRunner.submit(notifier.send(
+    _submit(notifier.send(
         title=QCoreApplication.translate("Notifications", "磁盘空间不足"),
         message=QCoreApplication.translate("Notifications", "剩余 {0}，需要 {1}，任务未自动开始").format(
             toReadableSize(free), toReadableSize(needed)),
@@ -65,9 +67,8 @@ def notifyTaskCompleted(task: Task) -> None:
         logger.debug("提取文件图标失败: {}", e)
 
     from desktop_notifier import Icon, Button
-    from app.services.coroutine_runner import coroutineRunner
 
-    coroutineRunner.submit(notifier.send(
+    _submit(notifier.send(
         title=QCoreApplication.translate("Notifications", "下载完成"),
         message=task.name,
         buttons=[

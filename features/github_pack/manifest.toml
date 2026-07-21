@@ -1,3 +1,4 @@
 [pack]
 entry = "pack.py"
+class = "GitHubPack"
 dependencies = ["http_pack"]

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QPoint, Signal, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QApplication
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QApplication, QWidget
 from qfluentwidgets import (
     Action, CardWidget, CheckBox, FluentIcon, ImageLabel,
     IndeterminateProgressBar, PrimaryToolButton, ProgressBar,
@@ -17,7 +17,6 @@ from app.config.cfg import cfg
 from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
-from app.services.task_service import taskService
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 
 if TYPE_CHECKING:
@@ -29,138 +28,26 @@ class TaskCard(CardWidget):
     selectionChanged = Signal(bool, bool)
     dragRequested = Signal(str)
 
-    def __init__(self, task: Task, parent=None):
+    def __init__(self, task: Task, taskService, featureService, categoryService, parent=None):
         super().__init__(parent)
         self._task = task
+        self._taskService = taskService
+        self._featureService = featureService
+        self._categoryService = categoryService
         self._isSelectionMode = False
         self._isFileMissing = False
         self._isDragPending = False
         self._hasDragged = False
         self._dragStartPos = QPoint()
+        self._lastStatus: TaskStatus | None = None
+        self._hashDigest: str = ""
+
+        self.setFixedHeight(self.ROW_HEIGHT)
 
         self.checkBox = CheckBox(self)
         self.checkBox.setFixedSize(23, 23)
         self.checkBox.setVisible(False)
         self.checkBox.clicked.connect(lambda checked: self.selectionChanged.emit(checked, False))
-
-    @property
-    def task(self) -> Task:
-        return self._task
-
-    def refresh(self, force: bool = False) -> None:
-        pass
-
-    def setSelectionMode(self, enter: bool) -> None:
-        self._isSelectionMode = enter
-        self.checkBox.setVisible(enter)
-        if not enter:
-            self.checkBox.setChecked(False)
-        self.update()
-
-    def isChecked(self) -> bool:
-        return self.checkBox.isChecked()
-
-    def setChecked(self, checked: bool) -> None:
-        if checked != self.isChecked():
-            self.checkBox.setChecked(checked)
-            self.update()
-
-    def buildContextMenu(self) -> RoundMenu:
-        menu = RoundMenu(parent=self)
-
-        copyUrl = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
-        copyUrl.triggered.connect(lambda: QApplication.clipboard().setText(self._task.url))
-        menu.addAction(copyUrl)
-
-        if self._task.canEdit and self._task.status != TaskStatus.COMPLETED:
-            edit = Action(FluentIcon.EDIT, self.tr("编辑任务参数..."), self)
-            edit.triggered.connect(self._onEditClicked)
-            menu.addAction(edit)
-
-        redownload = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
-        redownload.triggered.connect(lambda: taskService.redownload(self._task))
-        menu.addAction(redownload)
-
-        if cfg.isCategoryEnabled.value:
-            from app.services.category_service import categoryService
-            moveMenu = RoundMenu(self.tr("移动到分类"), self)
-            moveMenu.setIcon(FluentIcon.TAG)
-            uncategorized = Action(FluentIcon.MORE, self.tr("未分类"), self)
-            uncategorized.triggered.connect(lambda: taskService.setCategory(self._task, ""))
-            moveMenu.addAction(uncategorized)
-            moveMenu.addSeparator()
-            for category in categoryService.categories():
-                cid = category.categoryId
-                action = Action(category.toIcon(), category.name, self)
-                action.triggered.connect(lambda checked=False, c=cid: taskService.setCategory(self._task, c))
-                moveMenu.addAction(action)
-            menu.addMenu(moveMenu)
-
-        return menu
-
-    def _onEditClicked(self) -> None:
-        from app.services.feature_service import featureService
-        from app.view.dialogs.edit_task import LiveEditDialog
-        LiveEditDialog(self._task, featureService.editCards(self._task, self.window()), self.window()).exec()
-        self.refresh()
-
-    def _canDrag(self) -> bool:
-        return (self._task.status == TaskStatus.COMPLETED
-                and self._task.hasOutputFile
-                and Path(self._task.outputPath).exists())
-
-    def mousePressEvent(self, e) -> None:
-        super().mousePressEvent(e)
-        self._hasDragged = False
-        if e.button() == Qt.MouseButton.LeftButton and self._canDrag():
-            self._isDragPending = True
-            self._dragStartPos = e.position().toPoint()
-
-    def mouseMoveEvent(self, e) -> None:
-        if self._isDragPending:
-            if (e.position().toPoint() - self._dragStartPos).manhattanLength() >= QApplication.startDragDistance():
-                self._isDragPending = False
-                self._hasDragged = True
-                self.dragRequested.emit(self._task.taskId)
-                return
-        super().mouseMoveEvent(e)
-
-    def mouseReleaseEvent(self, e) -> None:
-        self._isDragPending = False
-        super().mouseReleaseEvent(e)
-        if e.button() == Qt.MouseButton.LeftButton and not self._hasDragged:
-            extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
-            checked = True if extend or not self._isSelectionMode else not self.isChecked()
-            self.selectionChanged.emit(checked, extend)
-
-    def mouseDoubleClickEvent(self, e) -> None:
-        super().mouseDoubleClickEvent(e)
-        if e.button() == Qt.MouseButton.LeftButton:
-            openFile(self._task.outputPath)
-
-    def contextMenuEvent(self, e) -> None:
-        menu = self.buildContextMenu()
-        menu.exec(e.globalPos())
-        e.accept()
-
-    def paintEvent(self, e) -> None:
-        if self._isSelectionMode and self.isChecked():
-            painter = QPainter(self)
-            painter.setRenderHints(QPainter.RenderHint.Antialiasing)
-            r = self.borderRadius
-            painter.setPen(QPen(themeColor(), 2))
-            painter.setBrush(QColor(255, 255, 255, 15) if isDarkTheme() else QColor(0, 0, 0, 8))
-            painter.drawRoundedRect(self.rect().adjusted(2, 2, -2, -2), r, r)
-        super().paintEvent(e)
-
-
-class UniversalTaskCard(TaskCard):
-
-    def __init__(self, task: Task, parent=None):
-        super().__init__(task, parent)
-        self.setFixedHeight(self.ROW_HEIGHT)
-        self._lastStatus: TaskStatus | None = None
-        self._hashDigest: str = ""
 
         self.iconLabel = ImageLabel(self)
         self.nameLabel = IconStrongBodyLabel(task.name, self)
@@ -182,12 +69,19 @@ class UniversalTaskCard(TaskCard):
         self._refreshIcon()
         self._refreshCategoryIcon()
 
+    @property
+    def task(self) -> Task:
+        return self._task
+
     def _buildProgressBar(self) -> QWidget:
         if self._task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
             return IndeterminateProgressBar(self)
         bar = ProgressBar(self)
         bar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         return bar
+
+    def _infoWidgets(self) -> list[QWidget]:
+        return []
 
     def _initWidget(self) -> None:
         from PySide6.QtWidgets import QSizePolicy
@@ -204,6 +98,8 @@ class UniversalTaskCard(TaskCard):
     def _initLayout(self) -> None:
         infoLayout = QHBoxLayout()
         infoLayout.addWidget(self.speedLabel)
+        for widget in self._infoWidgets():
+            infoLayout.addWidget(widget)
         infoLayout.addWidget(self.etaLabel)
         infoLayout.addWidget(self.sizeLabel)
         infoLayout.addWidget(self.statusLabel)
@@ -232,9 +128,8 @@ class UniversalTaskCard(TaskCard):
         self.openFolderButton.clicked.connect(lambda: revealInFolder(self._task.outputPath))
         self.deleteButton.clicked.connect(self._onDeleteClicked)
 
-        from app.services.category_service import categoryService
         cfg.isCategoryEnabled.valueChanged.connect(self._refreshCategoryIcon)
-        categoryService.categoriesChanged.connect(self._refreshCategoryIcon)
+        self._categoryService.categoriesChanged.connect(self._refreshCategoryIcon)
 
     def refresh(self, force: bool = False) -> None:
         if not force and self._lastStatus == self._task.status and self._task.status != TaskStatus.RUNNING:
@@ -253,12 +148,11 @@ class UniversalTaskCard(TaskCard):
 
         if task.status == TaskStatus.RUNNING:
             self.progressBar.setError(False)
-            if self.statusLabel.isVisible():
-                self.statusLabel.hide()
-                self.progressBar.show()
-                self.speedLabel.show()
-                self.etaLabel.show()
-                self.sizeLabel.show()
+            self.statusLabel.hide()
+            self.progressBar.show()
+            self.speedLabel.show()
+            self.etaLabel.show()
+            self.sizeLabel.show()
             self.speedLabel.setText(f"{toReadableSize(speed)}/s")
             if task.fileSize > 0 and speed > 0:
                 self.etaLabel.setText(toReadableTime(int((task.fileSize - receivedBytes) / speed)))
@@ -325,8 +219,7 @@ class UniversalTaskCard(TaskCard):
         if not cfg.isCategoryEnabled.value or not self._task.category:
             self.nameLabel.setIcon(None)
             return
-        from app.services.category_service import categoryService
-        category = categoryService.categoryById(self._task.category)
+        category = self._categoryService.categoryById(self._task.category)
         if category is None:
             self.nameLabel.setIcon(None)
             return
@@ -350,9 +243,9 @@ class UniversalTaskCard(TaskCard):
 
     def _onToggleClicked(self) -> None:
         if self._task.status == TaskStatus.RUNNING:
-            taskService.pause(self._task)
+            self._taskService.pause(self._task)
         else:
-            taskService.start(self._task)
+            self._taskService.start(self._task)
         self.refresh()
 
     def _onDeleteClicked(self) -> None:
@@ -363,7 +256,7 @@ class UniversalTaskCard(TaskCard):
         dialog.textLayout.addWidget(deleteFiles)
         if dialog.exec():
             cfg.set(cfg.shouldDeleteFilesOnRemove, deleteFiles.isChecked())
-            taskService.delete(self._task, deleteFiles.isChecked())
+            self._taskService.delete(self._task, deleteFiles.isChecked())
 
     def _onVerifyHashClicked(self) -> None:
         if not Path(self._task.outputPath).is_file():
@@ -379,14 +272,139 @@ class UniversalTaskCard(TaskCard):
         self._hashDigest = f"{algorithm}: {digest}"
         self._showStatus(self._hashDigest)
 
+    def _onEditClicked(self) -> None:
+        from app.view.dialogs.edit_task import LiveEditDialog
+        LiveEditDialog(self._task, self._featureService.editCards(self._task, self.window()), self.window()).exec()
+        self.refresh()
+
+    def setSelectionMode(self, enter: bool) -> None:
+        self._isSelectionMode = enter
+        self.checkBox.setVisible(enter)
+        if not enter:
+            self.checkBox.setChecked(False)
+        self.update()
+
+    def isChecked(self) -> bool:
+        return self.checkBox.isChecked()
+
+    def setChecked(self, checked: bool) -> None:
+        if checked != self.isChecked():
+            self.checkBox.setChecked(checked)
+            self.update()
+
     def buildContextMenu(self) -> RoundMenu:
-        menu = super().buildContextMenu()
+        menu = RoundMenu(parent=self)
+
+        copyUrl = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
+        copyUrl.triggered.connect(lambda: QApplication.clipboard().setText(self._task.url))
+        menu.addAction(copyUrl)
+
         if self._hashDigest:
             copyHash = Action(FluentIcon.FINGERPRINT, self.tr("复制校验值"), self)
             copyHash.triggered.connect(lambda: QApplication.clipboard().setText(self._hashDigest))
-            menu.insertAction(menu.actions()[1], copyHash)
+            menu.addAction(copyHash)
+
+        if self._task.canEdit and self._task.status != TaskStatus.COMPLETED:
+            edit = Action(FluentIcon.EDIT, self.tr("编辑任务参数..."), self)
+            edit.triggered.connect(self._onEditClicked)
+            menu.addAction(edit)
+
+        redownload = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
+        redownload.triggered.connect(lambda: self._taskService.redownload(self._task))
+        menu.addAction(redownload)
+
+        if cfg.isCategoryEnabled.value:
+            moveMenu = RoundMenu(self.tr("移动到分类"), self)
+            moveMenu.setIcon(FluentIcon.TAG)
+            uncategorized = Action(FluentIcon.MORE, self.tr("未分类"), self)
+            uncategorized.triggered.connect(lambda: self._taskService.setCategory(self._task, ""))
+            moveMenu.addAction(uncategorized)
+            moveMenu.addSeparator()
+            for category in self._categoryService.categories():
+                cid = category.categoryId
+                action = Action(category.toIcon(), category.name, self)
+                action.triggered.connect(lambda checked=False, c=cid: self._taskService.setCategory(self._task, c))
+                moveMenu.addAction(action)
+            menu.addMenu(moveMenu)
+
         return menu
+
+    def _canDrag(self) -> bool:
+        return (self._task.status == TaskStatus.COMPLETED
+                and self._task.hasOutputFile
+                and Path(self._task.outputPath).exists())
+
+    def mousePressEvent(self, e) -> None:
+        super().mousePressEvent(e)
+        self._hasDragged = False
+        if e.button() == Qt.MouseButton.LeftButton and self._canDrag():
+            self._isDragPending = True
+            self._dragStartPos = e.position().toPoint()
+
+    def mouseMoveEvent(self, e) -> None:
+        if self._isDragPending:
+            if (e.position().toPoint() - self._dragStartPos).manhattanLength() >= QApplication.startDragDistance():
+                self._isDragPending = False
+                self._hasDragged = True
+                self.dragRequested.emit(self._task.taskId)
+                return
+        super().mouseMoveEvent(e)
+
+    def mouseReleaseEvent(self, e) -> None:
+        self._isDragPending = False
+        super().mouseReleaseEvent(e)
+        if e.button() == Qt.MouseButton.LeftButton and not self._hasDragged:
+            extend = bool(e.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+            checked = True if extend or not self._isSelectionMode else not self.isChecked()
+            self.selectionChanged.emit(checked, extend)
+
+    def mouseDoubleClickEvent(self, e) -> None:
+        super().mouseDoubleClickEvent(e)
+        if e.button() == Qt.MouseButton.LeftButton:
+            openFile(self._task.outputPath)
+
+    def contextMenuEvent(self, e) -> None:
+        menu = self.buildContextMenu()
+        menu.exec(e.globalPos())
+        e.accept()
+
+    def paintEvent(self, e) -> None:
+        if self._isSelectionMode and self.isChecked():
+            painter = QPainter(self)
+            painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+            r = self.borderRadius
+            painter.setPen(QPen(themeColor(), 2))
+            painter.setBrush(QColor(255, 255, 255, 15) if isDarkTheme() else QColor(0, 0, 0, 8))
+            painter.drawRoundedRect(self.rect().adjusted(2, 2, -2, -2), r, r)
+        super().paintEvent(e)
 
     def resizeEvent(self, e) -> None:
         self.progressBar.setGeometry(4, self.height() - 4, self.width() - 8, 4)
         super().resizeEvent(e)
+
+
+class MultiFileTaskCard(TaskCard):
+
+    def __init__(self, task: Task, parent=None):
+        super().__init__(task, parent)
+        self.selectFilesButton = None
+        if task.files and len(task.files) > 1:
+            self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)
+            self.hBoxLayout.insertWidget(
+                self.hBoxLayout.indexOf(self.verifyHashButton),
+                self.selectFilesButton,
+            )
+            self.selectFilesButton.clicked.connect(self._onSelectFilesClicked)
+
+    def _onSelectFilesClicked(self) -> None:
+        raise NotImplementedError
+
+    def refresh(self, force: bool = False) -> None:
+        super().refresh(force=force)
+        if (self._task.files and self.selectFilesButton is not None
+                and not self._isFileMissing
+                and self._task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED}):
+            selected = sum(1 for f in self._task.files if f.selected)
+            self.statusLabel.setText(
+                self.tr("{0}/{1} 个文件").format(selected, len(self._task.files))
+            )

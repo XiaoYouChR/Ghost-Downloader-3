@@ -14,7 +14,6 @@ from qfluentwidgets import (
 )
 
 from app.platform.android import IS_ANDROID
-from app.services.feature_service import featureService
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
@@ -62,10 +61,12 @@ class StandaloneWrapper(FramelessDialog):
 
 class TaskDraftDialog(MessageBoxBase):
 
-    def __init__(self, draft: TaskDraft, parent=None):
+    def __init__(self, draft: TaskDraft, featureService, categoryService, parent=None):
         self._isDragEnabled = not IS_ANDROID
         super().__init__(parent)
         self._draft = draft
+        self._featureService = featureService
+        self._categoryService = categoryService
         self._parseTimer = QTimer(self, singleShot=True)
         self._standaloneWrapper = StandaloneWrapper(self)
         self.destroyed.connect(self._standaloneWrapper.deleteLater)
@@ -97,7 +98,7 @@ class TaskDraftDialog(MessageBoxBase):
         self.urlEdit.setPlaceholderText(self.tr("添加多个下载链接时，请确保每行只有一个下载链接"))
         self.urlEdit.setWordWrapMode(QTextOption.WrapMode.NoWrap)
         self.progressBar.hide()
-        self._fileTypes = featureService.fileTypes()
+        self._fileTypes = self._featureService.fileTypes()
         self.importButton.setVisible(bool(self._fileTypes))
 
         self.optionGroup.addCard(OutputFolderCard(self.optionGroup))
@@ -243,7 +244,7 @@ class TaskDraftDialog(MessageBoxBase):
         self._draft.setUrls(self._urls())
 
     def _onParseSucceeded(self, url: str, task: Task) -> None:
-        card = featureService.draftCard(task, self.draftGroup)
+        card = self._featureService.draftCard(task, self.draftGroup)
         card.categoryPicked.connect(lambda cid: self._draft.setUrlCategory(url, cid))
         card.editRequested.connect(lambda u=url: self._onEditRequested(u))
         self.draftGroup.addCard(url, card)
@@ -256,7 +257,7 @@ class TaskDraftDialog(MessageBoxBase):
         task = self._draft.taskByUrl(url)
         if task is None:
             return
-        dialog = DraftEditDialog(task, featureService.optionCards(task, self.window()), self.window())
+        dialog = DraftEditDialog(task, self._featureService.optionCards(task, self.window()), self.window())
         dialog.exec()
 
     def _onParseFailed(self, url: str, error: str) -> None:

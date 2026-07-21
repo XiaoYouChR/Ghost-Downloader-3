@@ -1,3 +1,4 @@
 [pack]
 entry = "pack.py"
+class = "FFmpegPack"
 dependencies = ["http_pack", "disk_pack"]

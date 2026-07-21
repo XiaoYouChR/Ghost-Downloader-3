@@ -92,7 +92,11 @@ class BTTask(Task):
         self.fileSize = sum(f.size for f in self.files if f.selected)
         # 完成后补选新文件：步骤打回 WAITING，等待重新调度补下
         if self.step.status == TaskStatus.COMPLETED and any(f.selected and not f.completed for f in self.files):
-            self.step.setStatus(TaskStatus.WAITING, sync=False)
+            self.step.status = TaskStatus.WAITING
+            self.step.progress = 0
+            self.step.receivedBytes = 0
+            self.step.speed = 0
+            self.step.error = None
             self.updateStatus()
 
     def deleteFiles(self):
@@ -129,7 +133,7 @@ class BTTaskStep(TaskStep):
     def outputPath(self) -> str:
         return self.task.outputPath
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         from .session import btSession
 
         task: BTTask = self.task

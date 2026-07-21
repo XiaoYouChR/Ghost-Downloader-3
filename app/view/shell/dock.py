@@ -9,7 +9,6 @@ from Foundation import NSData
 
 from app.config.cfg import cfg
 from app.format import toDockSpeed
-from app.services.speed_meter import speedMeter
 
 
 def setDockIconVisible(visible: bool, activate: bool) -> None:
@@ -21,9 +20,7 @@ def setDockIconVisible(visible: bool, activate: bool) -> None:
         app.activateIgnoringOtherApps_(True)
 
 
-def setupDock() -> None:
-    from app.services.task_service import taskService
-
+def setupDock(speedMeter, taskService) -> None:
     baseIcon = None
     container = None
     imageView = None

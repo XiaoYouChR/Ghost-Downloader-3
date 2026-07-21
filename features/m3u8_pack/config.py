@@ -74,7 +74,7 @@ class M3U8Config(PackConfig):
             self.tr("N_m3u8DL-RE 安装目录"),
             m3u8Group,
         )
-        runtimeCard = RuntimeCard(m3u8Runtime, m3u8Group)
+        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, m3u8Runtime, m3u8Group)
 
         cards = [installFolderCard, runtimeCard]
         if sys.platform != "darwin":
@@ -181,13 +181,12 @@ class M3U8Runtime(BinaryRuntime):
         else:
             raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
 
-        from app.services.feature_service import featureService
         from app.models.task import BinaryInstallOptions
 
         extension = "zip" if sys.platform == "win32" else "tar.gz"
         assetName = f"N_m3u8DL-RE_{RELEASE_TAG}_{target}_{RELEASE_DATE}.{extension}"
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
-        return await featureService.parse(BinaryInstallOptions(
+        return await self._services.featureService.parse(BinaryInstallOptions(
             url=f"{RELEASE_BASE}/{assetName}",
             outputFolder=Path(m3u8Config.installFolder.value),
             name=f"N_m3u8DL-RE 安装 ({target})",

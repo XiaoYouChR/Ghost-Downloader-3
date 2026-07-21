@@ -9,7 +9,8 @@ from urllib.parse import unquote
 from loguru import logger
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
-from app.services.speed_meter import speedMeter
+
+_coroutineRunner = None
 
 
 @dataclass(kw_only=True, eq=False)
@@ -22,11 +23,10 @@ class ED2kTask(Task):
         return super().reset()
 
     def deleteFiles(self):
-        if self.fileHash:
-            from app.services.coroutine_runner import coroutineRunner
+        if self.fileHash and _coroutineRunner is not None:
             from .session import ed2kSession
             try:
-                coroutineRunner.submit(ed2kSession.client().remove(self.fileHash, deleteFile=True))
+                _coroutineRunner.submit(ed2kSession.client().remove(self.fileHash, deleteFile=True))
             except Exception:
                 pass
         super().deleteFiles()
@@ -34,7 +34,7 @@ class ED2kTask(Task):
 
 @dataclass(kw_only=True)
 class ED2kTaskStep(TaskStep):
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         from .python_ed2k import TransferState
         from .python_ed2k.errors import ErrorCode, Error
         from .session import ed2kSession
@@ -65,7 +65,7 @@ class ED2kTaskStep(TaskStep):
                         continue
                     self.receivedBytes = t.received
                     self.speed = t.downloadRate
-                    speedMeter.addSpeed(t.downloadRate)
+                    reportSpeed(t.downloadRate)
                     if t.size > 0:
                         task.fileSize = t.size
                         self.progress = min(99.9, t.received / t.size * 100)
@@ -88,7 +88,7 @@ class ED2kInstallStep(TaskStep):
     canPause = False
     binaryPath: str = ""
 
-    async def run(self) -> None:
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         path = Path(self.binaryPath)
         if not path.is_file():
             raise TaskError("{name} 未安装，请在设置中安装", name="goed2kd")

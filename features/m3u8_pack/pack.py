@@ -244,8 +244,9 @@ class M3U8Parser(TaskParser):
 class M3U8Pack(FeaturePack):
     packId = "m3u8"
 
-    def __init__(self):
+    def __init__(self, services):
         self.config = m3u8Config
+        super().__init__(services)
 
     def runtimes(self):
         return [m3u8Runtime]
@@ -256,12 +257,12 @@ class M3U8Pack(FeaturePack):
     def taskCard(self, task, parent=None):
         from .cards import M3U8TaskCard, M3U8LiveTaskCard
         if getattr(task, "isLive", False):
-            return M3U8LiveTaskCard(task, parent)
-        return M3U8TaskCard(task, parent)
+            return M3U8LiveTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
+        return M3U8TaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
     def draftCard(self, task, parent=None):
         from .cards import M3U8DraftCard
-        return M3U8DraftCard(task, parent)
+        return M3U8DraftCard(task, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import HeadersEditCard, OutputFolderCard

@@ -37,4 +37,4 @@ browser_extension/firefox/
 .playwright-mcp
 *.jks
 *.keystore
-/config/
+/config/docs/research/

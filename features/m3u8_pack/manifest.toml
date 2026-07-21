@@ -1,3 +1,4 @@
 [pack]
 entry = "pack.py"
+class = "M3U8Pack"
 dependencies = ["http_pack", "disk_pack", "ffmpeg_pack"]

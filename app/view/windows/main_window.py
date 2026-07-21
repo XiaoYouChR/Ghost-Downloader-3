@@ -15,7 +15,6 @@ from qfluentwidgets import (
 from app.config.cfg import CloseMode, cfg
 from app.config.constants import AUTHOR_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
-from app.services.task_service import taskService
 from app.signal_bus import signalBus
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
@@ -23,22 +22,48 @@ from app.view.pages.task_page import TaskPage
 if TYPE_CHECKING:
     from qfluentwidgets import FluentIconBase
     from app.models.task import Task
+    from app.services.browser_service import BrowserService
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.speed_meter import SpeedMeter
+    from app.services.feature_service import FeatureService
+    from app.services.runtime_status import RuntimeStatusService
+    from app.services.task_service import TaskService
     from app.view.dialogs.task_draft import TaskDraftDialog
 
 
 class MainWindow(MSFluentWindow):
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        taskService: TaskService,
+        featureService: FeatureService,
+        browserService: BrowserService,
+        categoryService: CategoryService,
+        speedMeter: SpeedMeter,
+        coroutineRunner: CoroutineRunner,
+        runtimeStatusService: RuntimeStatusService,
+        plan,
+        parent=None,
+    ):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self.searchEdit = None
         super().__init__(parent)
+        self._taskService = taskService
+        self._featureService = featureService
+        self._browserService = browserService
+        self._categoryService = categoryService
+        self._coroutineRunner = coroutineRunner
+        self._runtimeStatusService = runtimeStatusService
+        self._speedMeter = speedMeter
+        self._plan = plan
         self.setMicaEffectEnabled(False)
         if sys.platform != "darwin":
             self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._pages: dict[str, QWidget] = {}
-        self._draft = TaskDraft(parent=self)
+        self._draft = TaskDraft(self._coroutineRunner, self._featureService, parent=self)
         self.searchEdit = SearchLineEdit(self.titleBar)
 
         self._initWidget()
@@ -74,8 +99,7 @@ class MainWindow(MSFluentWindow):
         self._showPage(TaskPage)
 
     def setupPacks(self) -> None:
-        from app.services.feature_service import featureService
-        for PageClass in featureService.pages():
+        for PageClass in self._featureService.pages():
             self._addPage(PageClass, PageClass.icon, PageClass.title,
                           NavigationItemPosition.TOP)
 
@@ -99,7 +123,7 @@ class MainWindow(MSFluentWindow):
         routeKey = pageClass.__name__
         page = self._pages.get(routeKey)
         if page is None:
-            page = pageClass(self)
+            page = self._createPage(pageClass)
             page.setObjectName(routeKey)
             self.stackedWidget.addWidget(page)
             self._pages[routeKey] = page
@@ -110,6 +134,19 @@ class MainWindow(MSFluentWindow):
         self.switchTo(page)
         self.navigationInterface.setCurrentItem(routeKey)
         self._updateSearchTarget(page)
+
+    def _createPage(self, pageClass: type[QWidget]) -> QWidget:
+        if pageClass is TaskPage:
+            return TaskPage(
+                self._taskService, self._featureService,
+                self._categoryService, self._speedMeter, self._coroutineRunner, self._plan, parent=self,
+            )
+        if pageClass is SettingPage:
+            return SettingPage(
+                self._featureService, self._browserService,
+                self._coroutineRunner, self._categoryService, parent=self,
+            )
+        return pageClass(self)
 
     def _onSearchTextChanged(self, text: str) -> None:
         page = self.stackedWidget.currentWidget()
@@ -139,7 +176,7 @@ class MainWindow(MSFluentWindow):
             self.searchEdit.selectAll()
 
     def _bind(self) -> None:
-        self._draft.taskConfirmed.connect(taskService.add)
+        self._draft.taskConfirmed.connect(self._taskService.add)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)
@@ -177,11 +214,12 @@ class MainWindow(MSFluentWindow):
     @cached_property
     def _draftDialog(self) -> TaskDraftDialog:
         from app.view.dialogs.task_draft import TaskDraftDialog
-        return TaskDraftDialog(self._draft, parent=self)
+        return TaskDraftDialog(
+            self._draft, self._featureService, self._categoryService,
+            parent=self,
+        )
 
     def confirmPair(self, request) -> None:
-        from app.services.browser_service import browserService
-
         session = request["session"]
         requestId = request["requestId"]
         peerAddress = request.get("peerAddress", "")
@@ -200,9 +238,9 @@ class MainWindow(MSFluentWindow):
         dialog.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         if dialog.exec():
-            browserService.approvePair(session, requestId)
+            self._browserService.approvePair(session, requestId)
         else:
-            browserService.rejectPair(session, requestId)
+            self._browserService.rejectPair(session, requestId)
 
     def _onUpdateAvailable(self, release) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton

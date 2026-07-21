@@ -83,7 +83,8 @@ class HuggingFaceProxySiteValidator(ConfigValidator):
 
 
 class HuggingFaceProxySiteCard(SettingCard):
-    def __init__(self, parent=None):
+    def __init__(self, coroutineRunner, parent=None):
+        self._coroutineRunner = coroutineRunner
         super().__init__(
             FluentIcon.GLOBE, self.tr("镜像站"),
             self.tr("选择 HuggingFace 镜像站，延迟仅供参考"), parent,
@@ -176,8 +177,7 @@ class HuggingFaceProxySiteCard(SettingCard):
         self._latencies = {s: None for s in HF_PROXY_SITES}
         self._refreshLatencyLabels()
         self.refreshButton.setEnabled(False)
-        from app.services.coroutine_runner import coroutineRunner
-        coroutineRunner.submit(
+        self._coroutineRunner.submit(
             probeProxyLatencies(),
             done=self._onLatenciesDone, failed=self._onLatenciesFailed,
             owner=self,
@@ -237,7 +237,7 @@ class HuggingFaceConfig(PackConfig):
                 self.tr("命中 HuggingFace 链接时，自动改写为所选镜像站"),
                 self.isEnabled, group,
             ),
-            HuggingFaceProxySiteCard(group),
+            HuggingFaceProxySiteCard(self._services.coroutineRunner, group),
             HuggingFaceTokenCard(group),
         ])
         return [group]

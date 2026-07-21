@@ -12,7 +12,6 @@ from PySide6.QtCore import QObject, Signal
 
 from app.config.cfg import cfg, proxy
 from app.models.task import TaskError, TaskStatus
-from app.services.speed_meter import speedMeter
 
 from .config import bittorrentConfig
 
@@ -41,7 +40,7 @@ _RESUME_SAVE_INTERVAL = 30
 
 
 @dataclass(eq=False)
-class _ActiveTorrent:
+class ActiveTorrent:
     task: BTTask
     step: BTTaskStep
     handle: lt.torrent_handle
@@ -70,7 +69,8 @@ class BTSession(QObject):
         super().__init__(parent)
         self._session: lt.session | None = None
         self._poller: asyncio.Task | None = None
-        self._active: dict[str, _ActiveTorrent] = {}
+        self._active: dict[str, ActiveTorrent] = {}
+        self._reportSpeed = None
         for item in (
             bittorrentConfig.maxUploadSpeed,
             bittorrentConfig.maxConnections,
@@ -82,6 +82,9 @@ class BTSession(QObject):
 
     # ── public interface ──
 
+    def setReportSpeed(self, reportSpeed):
+        self._reportSpeed = reportSpeed
+
     async def run(self, task: BTTask, step: BTTaskStep) -> None:
         self.open()
         handle = self._addTorrent(task)
@@ -92,7 +95,7 @@ class BTSession(QObject):
             handle.force_dht_announce()
 
         done = asyncio.get_running_loop().create_future()
-        entry = _ActiveTorrent(
+        entry = ActiveTorrent(
             task=task, step=step, handle=handle,
             done=done, seedBase=task.seedingTimeSeconds,
         )
@@ -216,7 +219,7 @@ class BTSession(QObject):
 
         return handle
 
-    async def _saveResumeAndRemove(self, entry: _ActiveTorrent) -> None:
+    async def _saveResumeAndRemove(self, entry: ActiveTorrent) -> None:
         try:
             entry.handle.save_resume_data(
                 lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
@@ -297,7 +300,7 @@ class BTSession(QObject):
 
         self.alertReceived.emit(alert)
 
-    def _updateTorrent(self, entry: _ActiveTorrent) -> None:
+    def _updateTorrent(self, entry: ActiveTorrent) -> None:
         task = entry.task
         step = entry.step
         status = entry.handle.status()
@@ -308,7 +311,8 @@ class BTSession(QObject):
         task.isSeeding = status.is_seeding
         task.downloadRate = status.download_rate
         task.uploadRate = status.upload_rate
-        speedMeter.addSpeed(status.download_rate)
+        if self._reportSpeed is not None:
+            self._reportSpeed(status.download_rate)
 
         downloaded = status.all_time_download or status.total_wanted_done or status.total_done
         task.shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0

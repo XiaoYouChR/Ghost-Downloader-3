@@ -24,5 +24,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "aiohttp>=3.14.2",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "types-libtorrent>=2.0.11.20250816",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"

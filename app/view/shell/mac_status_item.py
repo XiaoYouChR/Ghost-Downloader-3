@@ -32,12 +32,10 @@ class MenuTarget(NSObject):
         signalBus.activationRequested.emit()
 
     def startAll_(self, sender):
-        from app.services.task_service import taskService
-        taskService.startAll()
+        self.owner._taskService.startAll()
 
     def pauseAll_(self, sender):
-        from app.services.task_service import taskService
-        taskService.pauseAll()
+        self.owner._taskService.pauseAll()
 
     def quitApp_(self, sender):
         QApplication.instance().quit()
@@ -46,7 +44,8 @@ class MenuTarget(NSObject):
 class MacStatusItem:
     ICON_SIZE = 16
 
-    def __init__(self):
+    def __init__(self, taskService):
+        self._taskService = taskService
         self._statusItem = NSStatusBar.systemStatusBar().statusItemWithLength_(
             NSVariableStatusItemLength
         )
@@ -93,9 +92,8 @@ class MacStatusItem:
 
     def _refreshMenuItems(self) -> None:
         from app.models.task import TaskStatus
-        from app.services.task_service import taskService
 
-        tasks = taskService.tasks
+        tasks = self._taskService.tasks
         self._startAllItem.setEnabled_(
             any(t.status in {TaskStatus.PAUSED, TaskStatus.FAILED, TaskStatus.WAITING} for t in tasks)
         )

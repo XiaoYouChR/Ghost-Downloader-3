@@ -127,11 +127,11 @@ class FtpPack(FeaturePack):
 
     def taskCard(self, task, parent=None):
         from .cards import FtpTaskCard
-        return FtpTaskCard(task, parent)
+        return FtpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
     def draftCard(self, task, parent=None):
         from .cards import FtpDraftCard
-        return FtpDraftCard(task, parent)
+        return FtpDraftCard(task, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard

@@ -8,8 +8,8 @@ from qfluentwidgets import BodyLabel, ComboBox, CompactSpinBox, FluentIcon, Tool
 
 from app.format import toReadableSize
 from app.models.task import TaskStatus
-from app.view.cards.draft_cards import UniversalDraftCard
-from app.view.cards.task_cards import UniversalTaskCard
+from app.view.cards.draft_cards import DraftCard
+from app.view.cards.task_cards import TaskCard
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.option_cards import OptionCard
 
@@ -17,11 +17,11 @@ if TYPE_CHECKING:
     from .task import M3U8TaskStep
 
 
-class M3U8DraftCard(UniversalDraftCard):
+class M3U8DraftCard(DraftCard):
     pass
 
 
-class M3U8TaskCard(UniversalTaskCard):
+class M3U8TaskCard(TaskCard):
 
     def refresh(self, force: bool = False) -> None:
         super().refresh(force=force)
@@ -37,7 +37,7 @@ class M3U8TaskCard(UniversalTaskCard):
         return self._task.steps[0] if self._task.steps else None
 
 
-class M3U8LiveTaskCard(UniversalTaskCard):
+class M3U8LiveTaskCard(TaskCard):
 
     def _initWidget(self) -> None:
         super()._initWidget()
@@ -75,8 +75,7 @@ class M3U8LiveTaskCard(UniversalTaskCard):
             if step is not None:
                 step.terminate()
         else:
-            from app.services.task_service import taskService
-            taskService.start(self._task)
+            self._taskService.start(self._task)
             self.refresh()
 
     def _step(self) -> M3U8TaskStep | None:

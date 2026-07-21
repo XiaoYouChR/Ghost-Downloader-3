@@ -1,3 +1,4 @@
 [pack]
 entry = "pack.py"
+class = "BilibiliPack"
 dependencies = ["http_pack", "ffmpeg_pack"]
