@@ -34,7 +34,8 @@ class MainWindow(MSFluentWindow):
         self.searchEdit = None
         super().__init__(parent)
         self.setMicaEffectEnabled(False)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        if sys.platform != "darwin":
+            self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._pages: dict[str, QWidget] = {}
         self._draft = TaskDraft(parent=self)
@@ -271,6 +272,13 @@ class MainWindow(MSFluentWindow):
             return
 
         mode = cfg.closeMode.value
+
+        if sys.platform == "darwin" and mode != CloseMode.QUIT:
+            if not self.isMaximized():
+                cfg.set(cfg.geometry, self.geometry())
+            self.hide()
+            return
+
         if mode == CloseMode.ASK:
             from qfluentwidgets import CheckBox
             dialog = MessageBox(
