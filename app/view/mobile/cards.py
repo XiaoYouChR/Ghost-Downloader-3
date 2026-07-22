@@ -25,11 +25,10 @@ class MobileTaskCardBase:
         self._longPressTimer.timeout.connect(self._onLongPress)
 
     def _refreshButtons(self) -> None:
-        super()._refreshButtons()
-        self.verifyHashButton.hide()
+        super()._refreshButtons(names={"toggle", "selectFiles"})
 
     def _showOverflowMenu(self) -> None:
-        menu = self.buildContextMenu()
+        menu = self.createContextMenu()
         menu.addSeparator()
 
         openFileAction = Action(FluentIcon.LINK, self.tr("打开文件"), self)
@@ -42,12 +41,12 @@ class MobileTaskCardBase:
 
         if self.task.status == TaskStatus.COMPLETED:
             verifyAction = Action(FluentIcon.FINGERPRINT, self.tr("校验哈希"), self)
-            verifyAction.triggered.connect(self.verifyHashButton.click)
+            verifyAction.triggered.connect(self._onVerifyHashClicked)
             menu.addAction(verifyAction)
 
         menu.addSeparator()
         deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
-        deleteAction.triggered.connect(self.deleteButton.click)
+        deleteAction.triggered.connect(self._onDeleteClicked)
         menu.addAction(deleteAction)
 
         menu.exec(self.overflowButton.mapToGlobal(self.overflowButton.rect().bottomLeft()))
