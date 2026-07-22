@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QCoreApplication
 
 from app.platform.android_notification import notify
@@ -11,11 +13,11 @@ KEEPALIVE_NOTIF_ID = 0x47443301
 
 
 class BackgroundKeepAlive:
-    def __init__(self):
+    def __init__(self) -> None:
         self._activeReasons: set[str] = set()
-        self._running = False
-        self._statusMessage = ""
-        self._speed = 0
+        self._running: bool = False
+        self._statusMessage: str = ""
+        self._speed: int = 0
         self._wakeLock = None
 
     def holdFor(self, reason: str) -> None:

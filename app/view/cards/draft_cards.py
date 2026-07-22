@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QFileInfo, Signal, Qt
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, ImageLabel, LineEdit, RoundMenu,
     ToolTipFilter, TransparentToolButton, isDarkTheme,
@@ -16,13 +16,14 @@ from app.view.components.labels import EditableLabel
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.category_service import CategoryService
 
 
 class DraftCard(QWidget):
     categoryPicked = Signal(str)
     editRequested = Signal()
 
-    def __init__(self, task: Task, categoryService, parent=None):
+    def __init__(self, task: Task, categoryService: CategoryService, parent: QWidget | None = None):
         super().__init__(parent)
         self._task = task
         self._categoryService = categoryService
@@ -43,7 +44,6 @@ class DraftCard(QWidget):
         self._bind()
 
     def _initWidget(self) -> None:
-        from PySide6.QtWidgets import QSizePolicy
         self.setFixedHeight(35)
         self.nameLabel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.nameEdit.setText(self._task.name)

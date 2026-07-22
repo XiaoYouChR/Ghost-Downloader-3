@@ -8,8 +8,14 @@ from urllib.parse import urlparse
 import libtorrent as lt
 from loguru import logger
 
-from app.models.pack import FeaturePack, TaskParser, FileType
+from typing import TYPE_CHECKING
+
+from app.models.pack import FeaturePack, FileType, TaskParser
 from app.models.task import Task, TaskOptions
+
+if TYPE_CHECKING:
+    from app.models.pack import PackServices
+    from PySide6.QtWidgets import QWidget
 from app.platform.filesystem import localFilePath, toSafeFilename
 
 from .config import bittorrentConfig
@@ -103,22 +109,22 @@ class BitTorrentPack(FeaturePack):
     config = bittorrentConfig
     proxySchemes = {"socks5"}
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [TorrentParser()]
 
-    def taskCard(self, task, parent=None):
+    def taskCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import BTTaskCard
         return BTTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
-    def draftCard(self, task, parent=None):
+    def draftCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import BTDraftCard
         return BTDraftCard(task, self._services.categoryService, parent)
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
 
-    def fileTypes(self):
+    def fileTypes(self) -> list[FileType]:
         return [
             FileType(
                 extensions=(".torrent",),
@@ -128,5 +134,5 @@ class BitTorrentPack(FeaturePack):
             ),
         ]
 
-    async def deactivate(self):
+    async def deactivate(self) -> None:
         await btSession.close()

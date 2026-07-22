@@ -13,6 +13,9 @@ from app.view.components.card_groups import OptionCardGroup
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.task_service import TaskService
 
 
 class EditTaskDialog(MessageBoxBase):
@@ -47,7 +50,15 @@ class DraftEditDialog(EditTaskDialog):
 
 class LiveEditDialog(EditTaskDialog):
 
-    def __init__(self, task: Task, cards: list[QWidget], coroutineRunner, featureService, taskService, parent=None):
+    def __init__(
+        self,
+        task: Task,
+        cards: list[QWidget],
+        coroutineRunner: CoroutineRunner,
+        featureService: FeatureService,
+        taskService: TaskService,
+        parent: QWidget | None = None,
+    ):
         super().__init__(task, cards, parent)
         self._coroutineRunner = coroutineRunner
         self._featureService = featureService

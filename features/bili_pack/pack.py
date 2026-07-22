@@ -8,8 +8,15 @@ from loguru import logger
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
+from typing import TYPE_CHECKING
+
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import TaskOptions
+
+if TYPE_CHECKING:
+    from app.models.pack import PackServices
+    from app.models.task import Task
+    from PySide6.QtWidgets import QWidget
 from app.platform.filesystem import toSafeFilename
 from .account import bilibiliAccount
 from .config import bilibiliConfig
@@ -285,24 +292,24 @@ class BilibiliPack(FeaturePack):
     packId = "bili"
     config = bilibiliConfig
 
-    def bind(self, services):
-        super().bind(services)
+    def __init__(self, services: PackServices) -> None:
+        super().__init__(services)
         bilibiliAccount.bind(services.coroutineRunner)
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [BilibiliParser()]
 
-    def draftCard(self, task, parent=None):
+    def draftCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import BilibiliDraftCard
         return BilibiliDraftCard(task, self._services.categoryService, parent)
 
-    def taskCard(self, task, parent=None):
+    def taskCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import BilibiliTaskCard
         return BilibiliTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
 
-    async def activate(self):
+    async def activate(self) -> None:
         bilibiliAccount.fetchAccountInfo()

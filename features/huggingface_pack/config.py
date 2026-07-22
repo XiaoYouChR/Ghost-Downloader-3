@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from app.client import buildClient
@@ -9,6 +10,10 @@ from qfluentwidgets import (
     BoolValidator, ComboBox, ConfigValidator, FluentIcon, HyperlinkButton,
     LineEdit, PasswordLineEdit, SettingCard, ToolButton, ToolTipFilter,
 )
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 HF_PROXY_SITES = (
     "https://hf-mirror.com",

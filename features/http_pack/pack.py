@@ -11,12 +11,17 @@ from loguru import logger
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
+from typing import TYPE_CHECKING
+
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import (
     Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
 )
 from app.platform.filesystem import toSafeFilename
 from .task import HttpTask, HttpTaskStep
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 
 DOWNLOADABLE_EXTENSIONS = frozenset({
@@ -207,10 +212,10 @@ class HttpParser(TaskParser):
 class HttpPack(FeaturePack):
     packId = "http"
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [HttpParser()]
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from app.view.components.option_cards import (
             ClientProfileCard, HeadersEditCard, OutputFolderCard, SubworkerCountCard,
         )
@@ -224,13 +229,13 @@ class HttpPack(FeaturePack):
             SubworkerCountCard(parent, initial=step.subworkerCount),
         ]
 
-    def editCards(self, task, parent=None):
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from app.view.components.option_cards import UrlEditCard
         return [
             UrlEditCard(parent, initial=task.url),
             *self.optionCards(task, parent),
         ]
 
-    def taskCard(self, task, parent=None):
+    def taskCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import HttpTaskCard
         return HttpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)

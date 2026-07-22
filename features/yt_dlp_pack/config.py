@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from typing import TYPE_CHECKING
 import platform
 import sys
 from pathlib import Path
@@ -17,6 +18,9 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
+
+if TYPE_CHECKING:
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
 QJS_RELEASE_BASE = "https://github.com/quickjs-ng/quickjs/releases/latest/download"
@@ -62,7 +66,7 @@ class YtDlpConfig(PackConfig):
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
     shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
 
-    def settingGroups(self, parent: QWidget) -> list:
+    def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard

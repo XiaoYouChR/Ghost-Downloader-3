@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 import hashlib
 import shutil
@@ -12,6 +14,9 @@ from time import perf_counter
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 CHUNK_SIZE = 1 << 20
 
@@ -108,7 +113,7 @@ class ExtractStep(TaskStep):
                             speedBytes, speedTime = extractedBytes, now
                             await asyncio.sleep(0)
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         archive = Path(self.archivePath)
         if not archive.is_file():
             raise TaskError("压缩包未找到：{path}", path=str(archive))
@@ -140,7 +145,7 @@ class InstallStep(TaskStep):
     shouldDeleteSource: bool = True
     executableNames: list[str] = field(default_factory=list)
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         sourceFolder = Path(self.sourceFolder)
         installFolder = Path(self.installFolder)
         archive = Path(self.archivePath) if self.archivePath else None
@@ -193,7 +198,7 @@ class ChecksumStep(TaskStep):
     targetFile: str
     sha256File: str
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         text = Path(self.sha256File).read_text(encoding="utf-8", errors="ignore").strip()
         expected = text.split()[0].lower() if text else ""
         if not expected:
@@ -218,7 +223,7 @@ class BinaryInstallStep(TaskStep):
 
     binaryPath: str
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         path = Path(self.binaryPath)
         if not path.is_file():
             raise TaskError("下载的文件未找到：{path}", path=str(path))

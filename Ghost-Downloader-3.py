@@ -1,15 +1,21 @@
+from __future__ import annotations
+
 import os
 import sys
 import traceback
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from app.config.paths import APP_DATA_DIR
 
+if TYPE_CHECKING:
+    from app.platform.application import SingletonApplication
+
 logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB")
 
 
-def _exceptionHook(exceptionType, value, tb):
+def _exceptionHook(exceptionType: type, value: BaseException, tb: object) -> None:
     info = (exceptionType, value, tb)
     logger.opt(exception=info).error("Unhandled application exception")
     if "__compiled__" not in globals():
@@ -19,7 +25,7 @@ def _exceptionHook(exceptionType, value, tb):
 sys.excepthook = _exceptionHook
 
 
-def setupEnvironment():
+def setupEnvironment() -> None:
     from app.config.cfg import cfg
     from app.config.constants import VERSION
     from app.platform.hidden_subprocess import setupHiddenSubprocess
@@ -63,12 +69,12 @@ def setupEnvironment():
     logger.info("Ghost Downloader v{} launched", VERSION)
 
 
-def startApp(application, isSilent=False):
+def startApp(application: SingletonApplication, isSilent: bool = False) -> None:
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
     from app.services.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, createEngine, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -88,10 +94,10 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
 
-    featureService = loadPacks()
-    taskService, browserService, aria2RpcServer, runtimeStatusService = createEngine(
-        coroutineRunner, categoryService, speedMeter, featureService,
+    featureService, taskService, browserService, aria2RpcServer, runtimeStatusService = createServices(
+        coroutineRunner, categoryService, speedMeter,
     )
+    loadPacks(featureService, coroutineRunner, speedMeter, taskService, categoryService, runtimeStatusService)
 
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
@@ -100,7 +106,7 @@ def startApp(application, isSilent=False):
         from PySide6.QtCore import QEventLoop
         from app.view.windows.oobe_window import OobeWindow
 
-        startEngine(taskService, speedMeter, featureService, coroutineRunner, categoryService, runtimeStatusService)
+        startEngine(taskService, speedMeter, featureService, coroutineRunner)
 
         if cfg.isBrowserExtensionEnabled.value:
             browserService.start()  # 提前启动，OOBE 期间可完成扩展配对
@@ -133,7 +139,7 @@ def startApp(application, isSilent=False):
             application.processEvents()
 
         window.setupPacks()
-        startEngine(taskService, speedMeter, featureService, coroutineRunner, categoryService, runtimeStatusService)
+        startEngine(taskService, speedMeter, featureService, coroutineRunner)
 
         if not isSilent:
             splash.finish()

@@ -4,9 +4,14 @@ import json
 from base64 import b64decode
 from pathlib import Path
 
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import QCoreApplication, Qt, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+
+if TYPE_CHECKING:
+    from app.models.pack import PackPage, PackServices
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
@@ -284,10 +289,10 @@ _services = None
 class JackYaoPack(FeaturePack):
     packId = "jack_yao"
 
-    def bind(self, services):
-        super().bind(services)
+    def __init__(self, services: PackServices) -> None:
+        super().__init__(services)
         global _services
         _services = services
 
-    def pages(self):
+    def pages(self) -> list[type[PackPage]]:
         return [CatalogPage]

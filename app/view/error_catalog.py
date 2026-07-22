@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 
 N("TaskErrors", "{name} 未安装，请在设置中安装")

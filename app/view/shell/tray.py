@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from enum import Enum
 
@@ -11,6 +13,14 @@ from qfluentwidgets import (
 
 from app.format import toReadableSize
 from app.signal_bus import signalBus
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PySide6.QtGui import QAction
+    from PySide6.QtWidgets import QWidget
+    from app.services.speed_meter import SpeedMeter
+    from app.services.task_service import TaskService
 
 
 class GhostIcon(FluentIconBase, Enum):
@@ -35,16 +45,11 @@ class GhostIcon(FluentIconBase, Enum):
 
 
 if sys.platform == "win32":
-    from typing import TYPE_CHECKING
-
     from PySide6.QtWidgets import QProxyStyle, QStyle, QStyleFactory
     from app.platform.windows import isGreaterEqualWin11
     from qfluentwidgets.common.screen import getCurrentScreenGeometry
     from qfluentwidgets.components.widgets.menu import MenuActionListWidget
     from qframelesswindow import WindowEffect
-
-    if TYPE_CHECKING:
-        from PySide6.QtGui import QAction
 
     class MenuStyle(QProxyStyle):
 
@@ -169,7 +174,7 @@ else:
 class SystemTrayIcon(QSystemTrayIcon):
     NAME = "Ghost Downloader"
 
-    def __init__(self, taskService, speedMeter, icon: QIcon, parent=None):
+    def __init__(self, taskService: TaskService, speedMeter: SpeedMeter, icon: QIcon, parent: QWidget | None = None):
         super().__init__(icon, parent)
         self._taskService = taskService
         self._speedMeter = speedMeter

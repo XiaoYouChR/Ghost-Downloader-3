@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, QFileInfo, QStandardPaths, Qt
 from PySide6.QtWidgets import QFileIconProvider
@@ -14,10 +14,10 @@ if TYPE_CHECKING:
     from desktop_notifier import DesktopNotifier
 
 notifier: DesktopNotifier | None = None
-_submit = None
+_submit: Callable | None = None
 
 
-async def init(submit) -> None:
+async def init(submit: Callable) -> None:
     global _submit
     _submit = submit
     from desktop_notifier import DesktopNotifier as DN, Icon

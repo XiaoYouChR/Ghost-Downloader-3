@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 import os
 import ssl
@@ -17,6 +19,9 @@ from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus, SpecialFileSize
 from app.platform.filesystem import deletePath, toPosixPath
 from app.platform.sysio import ftruncate, pwrite
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 FTP_CONNECTION_TIMEOUT = 15
 FTP_SOCKET_TIMEOUT = 30
 FTP_PATH_TIMEOUT = 30
@@ -418,7 +423,7 @@ class FtpStep(TaskStep):
                 with suppress(Exception, CancelledError):
                     t.result()
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         self._reportSpeed = reportSpeed
         self._waitForSpeedLimit = waitForSpeedLimit
         self._subworkers: list[FtpSubworker] = []

@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def setupAndroid() -> None:
     from .device import setupFont, setupTheme
     from .patches import (

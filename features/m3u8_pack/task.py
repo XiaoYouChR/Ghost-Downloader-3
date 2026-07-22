@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 import os
 import re
@@ -12,6 +14,9 @@ from app.format import toBytes
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath, toPosixPath
 from .config import m3u8Runtime
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 VOD_PROGRESS_PATTERN = re.compile(
     r"(\d+)/(\d+)\s+(\d+\.\d+)%\s+(\d+\.\d+)(KB|MB|GB|B)/(\d+\.\d+)(KB|MB|GB|B)\s+(\d+\.\d+)(GBps|MBps|KBps|Bps)\s+(.+)"
@@ -341,7 +346,7 @@ class M3U8TaskStep(TaskStep):
         if found.name != self.task.name:
             self.task.setName(found.name)
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         self._stopping = False
         self._process = None
 

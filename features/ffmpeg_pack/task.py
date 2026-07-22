@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 from contextlib import suppress
 from dataclasses import dataclass
@@ -12,8 +14,12 @@ from app.platform.filesystem import deletePath
 from http_pack.task import HttpTaskStep
 from .config import ffmpegRuntime
 
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+    from app.models.task import Task
 
-def mediaStem(task) -> str:
+
+def mediaStem(task: Task) -> str:
     name = task.name
     return name.rsplit(".", 1)[0] if "." in name else name
 
@@ -55,7 +61,7 @@ class FFmpegStep(TaskStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{mediaStem(self.task)}.audio{suffix}"
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
 
         ffmpegPath = ffmpegRuntime.path()
         ffprobePath = ffmpegRuntime.ffprobePath()

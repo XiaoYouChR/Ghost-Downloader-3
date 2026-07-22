@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt, QUrl

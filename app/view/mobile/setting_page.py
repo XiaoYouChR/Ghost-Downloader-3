@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
@@ -6,11 +10,24 @@ from qfluentwidgets import SettingCard, SwitchButton, isDarkTheme, qconfig
 from app.view.components.setting_card_group import CollapsibleSettingCard, CollapsibleSettingCardGroup
 from app.view.pages.setting_page import SettingPage
 
+if TYPE_CHECKING:
+    from app.services.browser_service import BrowserService
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+
 QWIDGETSIZE_MAX = (1 << 24) - 1
 
 
 class MobileSettingPage(SettingPage):
-    def __init__(self, featureService, browserService, coroutineRunner, categoryService, parent=None):
+    def __init__(
+        self,
+        featureService: FeatureService,
+        browserService: BrowserService,
+        coroutineRunner: CoroutineRunner,
+        categoryService: CategoryService,
+        parent: QWidget | None = None,
+    ):
         super().__init__(featureService, browserService, coroutineRunner, categoryService, parent=parent)
         self._setScrollContentOpaque()
 

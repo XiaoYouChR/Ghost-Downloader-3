@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
+
+if TYPE_CHECKING:
+    from app.models.pack import BinaryRuntime, PackServices
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, ed2kRuntime
 from .task import ED2kTask, ED2kTaskStep, parseEd2kLink
@@ -32,18 +37,18 @@ class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
 
-    def bind(self, services):
-        super().bind(services)
+    def __init__(self, services: PackServices) -> None:
+        super().__init__(services)
         from . import task as _task_mod
         _task_mod._coroutineRunner = services.coroutineRunner
 
-    def runtimes(self):
+    def runtimes(self) -> list[BinaryRuntime]:
         return [ed2kRuntime]
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [ED2kParser()]
 
-    async def deactivate(self):
+    async def deactivate(self) -> None:
         from .session import ed2kSession
         if ed2kSession._client is None:
             return

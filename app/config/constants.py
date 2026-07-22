@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
 VERSION = "4.1.1"

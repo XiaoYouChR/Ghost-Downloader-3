@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 import os
 from asyncio import TaskGroup, CancelledError
@@ -14,6 +16,9 @@ from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 
@@ -343,7 +348,7 @@ class HttpTaskStep(TaskStep):
 
             self._reassignSubworker()
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         self._reportSpeed = reportSpeed
         self._waitForSpeedLimit = waitForSpeedLimit
         self._taskGroup = TaskGroup()

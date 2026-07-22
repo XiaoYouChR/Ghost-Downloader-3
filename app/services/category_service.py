@@ -10,6 +10,7 @@ from PySide6.QtCore import QObject, Signal
 from app.config.cfg import cfg
 
 if TYPE_CHECKING:
+    from qfluentwidgets import FluentIcon
     from app.models.task import Task
 
 
@@ -106,7 +107,7 @@ class Category:
     extensions: list[str] = field(default_factory=list)
     folder: str | None = None
 
-    def toIcon(self):
+    def toIcon(self) -> FluentIcon:
         from qfluentwidgets import FluentIcon
         return getattr(FluentIcon, self.icon, FluentIcon.TAG)
 

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from enum import IntEnum
+from typing import Callable
 
 
 class PlanAction(IntEnum):
@@ -10,13 +13,14 @@ class PlanAction(IntEnum):
 
 class Plan:
 
-    def __init__(self, allCompleted):
+    def __init__(self, allCompleted: Callable[[], bool]) -> None:
         self._allCompleted = allCompleted
         self.action: PlanAction | None = None
         self.filePath: str = ""
-        self._onCleared = None
+        self._onCleared: Callable | None = None
 
-    def set(self, action: PlanAction, filePath: str = "", onCleared=None) -> None:
+    def set(self, action: PlanAction, filePath: str = "",
+            onCleared: Callable | None = None) -> None:
         self.action = action
         self.filePath = filePath
         self._onCleared = onCleared

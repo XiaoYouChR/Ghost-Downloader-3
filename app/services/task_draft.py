@@ -5,6 +5,8 @@ from difflib import SequenceMatcher
 from typing import Any, TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal
+
+from app.models.task import TaskOptions
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -28,7 +30,8 @@ class TaskDraft(QObject):
     itemsCleared = Signal()
     taskConfirmed = Signal(object)
 
-    def __init__(self, coroutineRunner, featureService, parent=None):
+    def __init__(self, coroutineRunner: object, featureService: object,
+                 parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._coroutineRunner = coroutineRunner
         self._featureService = featureService
@@ -60,8 +63,6 @@ class TaskDraft(QObject):
                 break
 
     def setUrls(self, urls: list[str]) -> None:
-        from app.models.task import TaskOptions
-
         previous = self._items
         previousUrls = [item.url for item in previous]
         nextItems: list[DraftItem] = []

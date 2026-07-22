@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
@@ -29,10 +30,23 @@ from app.view.components.setting_cards import (
 )
 from app.view.components.editors import FolderPicker
 
+if TYPE_CHECKING:
+    from app.services.browser_service import BrowserService
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, featureService, browserService, coroutineRunner, categoryService, parent=None):
+    def __init__(
+        self,
+        featureService: FeatureService,
+        browserService: BrowserService,
+        coroutineRunner: CoroutineRunner,
+        categoryService: CategoryService,
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self._featureService = featureService
         self._browserService = browserService

@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 import os
 import sys
 import traceback
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from app.config.paths import APP_DATA_DIR
 
+if TYPE_CHECKING:
+    from app.platform.application import SingletonApplication
+
 Path(APP_DATA_DIR).mkdir(parents=True, exist_ok=True)
 logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB")
 
 
-def _exceptionHook(exceptionType, value, tb):
+def _exceptionHook(exceptionType: type, value: BaseException, tb: object) -> None:
     info = (exceptionType, value, tb)
     logger.opt(exception=info).error("Unhandled application exception")
 
@@ -19,7 +25,7 @@ def _exceptionHook(exceptionType, value, tb):
 sys.excepthook = _exceptionHook
 
 
-def setupEnvironment():
+def setupEnvironment() -> None:
     import warnings
     from qfluentwidgets import qconfig
     from app.config.cfg import cfg
@@ -42,7 +48,7 @@ def setupEnvironment():
     nativeLibraryDir()
 
 
-def startApp(application):
+def startApp(application: SingletonApplication) -> None:
     from app.config.cfg import cfg
     from app.platform.android_keepalive import keepAlive, REASON_DOWNLOAD, REASON_BROWSER, requestIgnoreBatteryOptimizations
     from app.platform.android_notification import (
@@ -50,7 +56,7 @@ def startApp(application):
         notifyTaskCompleted,
     )
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, loadPacks, createEngine, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.mobile.device import setupTouchScrolling
     from app.view.mobile.window import MobileMainWindow
 
@@ -62,8 +68,10 @@ def startApp(application):
     sys.excepthook = exceptionHook
 
     coroutineRunner, categoryService, speedMeter = loadEngine(application)
-    featureService = loadPacks()
-    taskService, browserService, aria2RpcServer, runtimeStatusService = createEngine(coroutineRunner, categoryService, speedMeter, featureService)
+    featureService, taskService, browserService, aria2RpcServer, runtimeStatusService = createServices(
+        coroutineRunner, categoryService, speedMeter,
+    )
+    loadPacks(featureService, coroutineRunner, speedMeter, taskService, categoryService, runtimeStatusService)
 
     mainWindow = MobileMainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner)
     mainWindow.show()
@@ -73,7 +81,7 @@ def startApp(application):
     taskService.tasksAllCompleted.connect(lambda: keepAlive.release(REASON_DOWNLOAD))
     speedMeter.speedChanged.connect(keepAlive.setSpeed)
 
-    startEngine(taskService, speedMeter, featureService, coroutineRunner, categoryService, runtimeStatusService)
+    startEngine(taskService, speedMeter, featureService, coroutineRunner)
 
     signalBus.exceptionCaught.connect(mainWindow.alertException)
 

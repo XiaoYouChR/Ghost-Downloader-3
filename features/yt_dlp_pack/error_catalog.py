@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 
 N("TaskErrors", "该视频在您所在地区不可用，请尝试配置代理（{detail}）")

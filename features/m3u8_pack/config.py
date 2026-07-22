@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+from typing import TYPE_CHECKING
 import sys
 from pathlib import Path
 
@@ -21,6 +22,10 @@ from app.models.pack import BinaryRuntime, PackConfig
 from app.models.task import Task
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 RELEASE_TAG = "v0.6.0-beta"
 RELEASE_DATE = "20260629"

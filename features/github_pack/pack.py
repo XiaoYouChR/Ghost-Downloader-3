@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
 from .config import githubConfig, selectedProxySite
+
+if TYPE_CHECKING:
+    from app.models.pack import PackServices
+    from PySide6.QtWidgets import QWidget
 
 GITHUB_HOSTS = {
     "api.github.com",
@@ -68,17 +75,17 @@ class GitHubPack(FeaturePack):
     packId = "github"
     config = githubConfig
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [GitHubParser(self)]
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from http_pack.pack import HttpPack
         return HttpPack.optionCards(self, task, parent)
 
-    def editCards(self, task, parent=None):
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from http_pack.pack import HttpPack
         return HttpPack.editCards(self, task, parent)
 
-    def taskCard(self, task, parent=None):
+    def taskCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from http_pack.cards import HttpTaskCard
         return HttpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)

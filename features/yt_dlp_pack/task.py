@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 import importlib
 import re
@@ -17,6 +19,9 @@ from loguru import logger
 
 from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus
 from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 ERROR_HINTS = (
     ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理（{detail}）"),
@@ -205,7 +210,7 @@ class YouTubeExtractStep(TaskStep):
     fileIndex: int = 0
     videoUrl: str = ""
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         if self._hasFreshSiblingUrls():
             self.setStatus(TaskStatus.COMPLETED)
             return
@@ -360,7 +365,7 @@ class YouTubeResourceStep(FFmpegResourceStep):
         suffix = f".{self.extension}" if self.extension else ""
         return str(self.task.outputFolder / f"{stem}.{self.role}{suffix}")
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         if not self.url:
             self.setStatus(TaskStatus.COMPLETED)
             return
@@ -393,7 +398,7 @@ class YouTubeMergeStep(FFmpegStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{stem}.audio{suffix}"
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 

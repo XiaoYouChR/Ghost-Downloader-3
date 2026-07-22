@@ -20,6 +20,8 @@ from app.view.components.option_cards import OutputFolderCard, SubworkerCountCar
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.category_service import CategoryService
+    from app.services.feature_service import FeatureService
     from app.services.task_draft import TaskDraft
 
 
@@ -61,7 +63,7 @@ class StandaloneWrapper(FramelessDialog):
 
 class TaskDraftDialog(MessageBoxBase):
 
-    def __init__(self, draft: TaskDraft, featureService, categoryService, parent=None):
+    def __init__(self, draft: TaskDraft, featureService: FeatureService, categoryService: CategoryService, parent: QWidget | None = None):
         self._isDragEnabled = not IS_ANDROID
         super().__init__(parent)
         self._draft = draft

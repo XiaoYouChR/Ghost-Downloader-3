@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from shutil import disk_usage
 from typing import TYPE_CHECKING, Callable
 
 from PySide6.QtCore import QFileSystemWatcher, QObject, QTimer, Signal
@@ -9,13 +10,16 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.paths import APP_DATA_DIR
+from app.models.task import Task, TaskStatus
 
 if TYPE_CHECKING:
-    from app.models.task import Task
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.category_service import CategoryService
+    from app.services.speed_meter import SpeedMeter
 
 
 class TaskStore:
-    def __init__(self):
+    def __init__(self) -> None:
         self._tasks: dict[str, Task] = {}
         self._loaded = False
         self._path = Path(APP_DATA_DIR) / "tasks.jsonl"
@@ -54,8 +58,6 @@ class TaskStore:
             logger.opt(exception=e).error("failed to write tasks.jsonl")
 
     def loadSaved(self) -> list[Task]:
-        from app.models.task import Task
-
         tasks: list[Task] = []
         if not self._path.exists():
             self._loaded = True
@@ -78,7 +80,7 @@ class TaskStore:
 
 
 class TaskQueue:
-    def __init__(self):
+    def __init__(self) -> None:
         self._waiting: list[str] = []
         self._running: dict[str, str] = {}
 
@@ -127,7 +129,8 @@ class TaskService(QObject):
     fileDisappeared = Signal(object)
     diskSpaceInsufficient = Signal(int, int)
 
-    def __init__(self, coroutineRunner, categoryService, speedMeter, parent=None):
+    def __init__(self, coroutineRunner: CoroutineRunner, categoryService: CategoryService,
+                 speedMeter: SpeedMeter, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._coroutineRunner = coroutineRunner
         self._categoryService = categoryService
@@ -156,7 +159,6 @@ class TaskService(QObject):
         return self._queue.runningCount()
 
     def runningProgress(self) -> float:
-        from app.models.task import TaskStatus
         totalReceived = 0
         totalSize = 0
         for task in self._store.tasks.values():
@@ -185,7 +187,6 @@ class TaskService(QObject):
         self._flushTimer.start()
         self.taskAdded.emit(task)
         if task.fileSize > 0:
-            from shutil import disk_usage
             try:
                 free = disk_usage(task.outputFolder).free
                 if free < task.fileSize:
@@ -201,7 +202,6 @@ class TaskService(QObject):
         self._schedule(task)
 
     def pause(self, task: Task) -> None:
-        from app.models.task import TaskStatus
         self._cancelRun(task)
         task.setStatus(TaskStatus.PAUSED)
         self._flushTimer.start()
@@ -217,7 +217,7 @@ class TaskService(QObject):
 
     def redownload(self, task: Task) -> None:
         self._unwatchFile(task)
-        def afterStopped():
+        def afterStopped() -> None:
             task.deleteFiles()
             task.reset()
             self._flushTimer.start()
@@ -226,7 +226,7 @@ class TaskService(QObject):
 
     def edit(self, task: Task, options: dict, newTask: Task | None = None) -> None:
         needsDelete = newTask is not None and not task.canReuseProgress(newTask)
-        def afterStopped():
+        def afterStopped() -> None:
             if needsDelete:
                 task.deleteFiles()
             if newTask is not None:
@@ -241,12 +241,10 @@ class TaskService(QObject):
         self._flushTimer.start()
 
     def applySelection(self, task: Task, selectedIndexes: set[int]) -> None:
-        from app.models.task import TaskStatus
-
         selectedSet = set(selectedIndexes)
         wasCompleted = task.status == TaskStatus.COMPLETED
 
-        def apply():
+        def apply() -> None:
             task.setSelection(selectedSet)
             if wasCompleted and task.files and any(f.selected and not f.completed for f in task.files):
                 task.completedAt = 0
@@ -263,7 +261,7 @@ class TaskService(QObject):
                     break
 
         if isRunningDeselected:
-            def afterStopped():
+            def afterStopped() -> None:
                 apply()
                 self._schedule(task)
             self._cancelRun(task, finished=afterStopped)
@@ -271,7 +269,6 @@ class TaskService(QObject):
         apply()
 
     def startAll(self) -> None:
-        from app.models.task import TaskStatus
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.PAUSED, TaskStatus.WAITING, TaskStatus.FAILED}:
                 self._schedule(task)
@@ -282,7 +279,6 @@ class TaskService(QObject):
                 self.pause(task)
 
     def resumeSaved(self) -> None:
-        from app.models.task import TaskStatus
         for task in self._store.loadSaved():
             self.taskAdded.emit(task)
             if task.status == TaskStatus.COMPLETED and task.hasOutputFile and Path(task.outputPath).exists():
@@ -292,7 +288,6 @@ class TaskService(QObject):
                 self._schedule(task)
 
     def stop(self) -> None:
-        from app.models.task import TaskStatus
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 task.setStatus(TaskStatus.PAUSED)
@@ -306,8 +301,6 @@ class TaskService(QObject):
         self._pump()
 
     def _dispatch(self, task: Task) -> None:
-        from app.models.task import TaskStatus
-
         task.setStatus(TaskStatus.RUNNING)
         workId = self._coroutineRunner.submit(
             task.run(self._speedMeter.addSpeed, self._speedMeter.waitForSpeedLimit),
@@ -317,7 +310,7 @@ class TaskService(QObject):
         self._queue.run(task.taskId, workId)
         self.taskStarted.emit(task)
 
-    def _cancelRun(self, task: Task, finished: Callable = None) -> None:
+    def _cancelRun(self, task: Task, finished: Callable | None = None) -> None:
         workId = self._queue.workIdOf(task.taskId)
         self._queue.cancel(task.taskId)
         if workId is not None:
@@ -326,7 +319,6 @@ class TaskService(QObject):
             finished()
 
     def _rebalance(self) -> None:
-        from app.models.task import TaskStatus
         for taskId in self._queue.runningIds()[cfg.maxTaskNum.value:]:
             task = self._store.taskById(taskId)
             if task is not None and task.canPause:
@@ -381,4 +373,3 @@ class TaskService(QObject):
         task = self._store.taskById(taskId)
         if task is not None:
             self.fileDisappeared.emit(task)
-

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap
@@ -23,6 +24,10 @@ from qfluentwidgets import (
 
 from app.config.cfg import ConfigItem
 from app.models.pack import PackConfig
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
 def _toQrPixmap(content: str, size: int = 240) -> QPixmap:
@@ -249,7 +254,7 @@ class BilibiliConfig(PackConfig):
     shouldIncludeHdr = ConfigItem("Bilibili", "ParseHDR", False, BoolValidator())
     shouldIncludeDolby = ConfigItem("Bilibili", "ParseDolby", False, BoolValidator())
 
-    def settingGroups(self, parent):
+    def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 

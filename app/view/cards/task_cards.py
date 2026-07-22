@@ -3,9 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QPoint, Signal, Qt
+from datetime import datetime
+
+from PySide6.QtCore import QCoreApplication, QFileInfo, QPoint, Signal, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QApplication, QWidget
+from PySide6.QtWidgets import (
+    QFileIconProvider, QHBoxLayout, QSizePolicy, QVBoxLayout, QApplication, QWidget,
+)
 from qfluentwidgets import (
     Action, CardWidget, CheckBox, FluentIcon, ImageLabel,
     IndeterminateProgressBar, PrimaryToolButton, ProgressBar,
@@ -21,6 +25,9 @@ from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.category_service import CategoryService
+    from app.services.feature_service import FeatureService
+    from app.services.task_service import TaskService
 
 
 class TaskCard(CardWidget):
@@ -28,7 +35,14 @@ class TaskCard(CardWidget):
     selectionChanged = Signal(bool, bool)
     dragRequested = Signal(str)
 
-    def __init__(self, task: Task, taskService, featureService, categoryService, parent=None):
+    def __init__(
+        self,
+        task: Task,
+        taskService: TaskService,
+        featureService: FeatureService,
+        categoryService: CategoryService,
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self._task = task
         self._taskService = taskService
@@ -84,7 +98,6 @@ class TaskCard(CardWidget):
         return []
 
     def _initWidget(self) -> None:
-        from PySide6.QtWidgets import QSizePolicy
         self.iconLabel.setFixedSize(48, 48)
         self.nameLabel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         for btn, tip in (
@@ -170,7 +183,6 @@ class TaskCard(CardWidget):
             if self._isFileMissing:
                 statusText = self.tr("文件不存在")
             elif task.completedAt:
-                from datetime import datetime
                 statusText = self.tr("完成于 {}").format(
                     datetime.fromtimestamp(task.completedAt).strftime("%Y-%m-%d %H:%M:%S"))
             else:
@@ -185,7 +197,6 @@ class TaskCard(CardWidget):
             self.progressBar.setError(True)
             error = task.lastError
             if error:
-                from PySide6.QtCore import QCoreApplication
                 text = QCoreApplication.translate("TaskErrors", error.message)
                 self._showStatus(text.format_map(error.params) if error.params else text)
             else:
@@ -210,8 +221,6 @@ class TaskCard(CardWidget):
         self.statusLabel.show()
 
     def _refreshIcon(self) -> None:
-        from PySide6.QtCore import QFileInfo
-        from PySide6.QtWidgets import QFileIconProvider
         self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(self._task.outputPath)).pixmap(48, 48))
         self.iconLabel.setFixedSize(48, 48)
 
@@ -385,8 +394,15 @@ class TaskCard(CardWidget):
 
 class MultiFileTaskCard(TaskCard):
 
-    def __init__(self, task: Task, parent=None):
-        super().__init__(task, parent)
+    def __init__(
+        self,
+        task: Task,
+        taskService: TaskService,
+        featureService: FeatureService,
+        categoryService: CategoryService,
+        parent: QWidget | None = None,
+    ):
+        super().__init__(task, taskService, featureService, categoryService, parent)
         self.selectFilesButton = None
         if task.files and len(task.files) > 1:
             self.selectFilesButton = ToolButton(FluentIcon.LIBRARY, self)

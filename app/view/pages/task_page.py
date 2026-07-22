@@ -25,6 +25,12 @@ from app.view.components.labels import IconBodyLabel
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.speed_meter import SpeedMeter
+    from app.services.task_service import TaskService
+    from app.services.plan import Plan
 
 
 class FilterMode(IntEnum):
@@ -123,7 +129,16 @@ class TaskPage(QWidget):
     BOTTOM_PADDING = 12
     VIEWPORT_BUFFER = 5
 
-    def __init__(self, taskService, featureService, categoryService, speedMeter, coroutineRunner, plan=None, parent=None):
+    def __init__(
+        self,
+        taskService: TaskService,
+        featureService: FeatureService,
+        categoryService: CategoryService,
+        speedMeter: SpeedMeter,
+        coroutineRunner: CoroutineRunner,
+        plan: Plan | None = None,
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self._taskService = taskService
         self._featureService = featureService

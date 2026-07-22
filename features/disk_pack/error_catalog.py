@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 
 N("TaskErrors", "压缩包包含不安全路径：{path}")

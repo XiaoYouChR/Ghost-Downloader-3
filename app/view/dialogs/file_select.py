@@ -17,11 +17,12 @@ from app.view.components.tree_view import AutoSizingTreeView
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.services.category_service import CategoryService
 
 
 class FileSelectDialog(MessageBoxBase):
 
-    def __init__(self, task: Task, categoryService, parent=None):
+    def __init__(self, task: Task, categoryService: CategoryService, parent: QWidget | None = None):
         super().__init__(parent)
         self._task = task
         self._categoryService = categoryService

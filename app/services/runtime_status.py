@@ -23,7 +23,7 @@ class RuntimeStatus:
 class RuntimeStatusService(QObject):
     statusChanged = Signal(object)
 
-    def __init__(self, coroutineRunner, parent=None):
+    def __init__(self, coroutineRunner: object, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._coroutineRunner = coroutineRunner
         self._statuses: dict[str, RuntimeStatus] = {}

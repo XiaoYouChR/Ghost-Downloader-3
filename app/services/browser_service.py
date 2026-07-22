@@ -9,7 +9,7 @@ from enum import StrEnum
 from io import BytesIO
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 from PySide6.QtCore import QObject, QResource, QTimer, QVersionNumber, Signal, Slot
 from PySide6.QtNetwork import QHostAddress
@@ -22,7 +22,7 @@ from app.config.paths import APP_DATA_DIR
 
 if TYPE_CHECKING:
     from PySide6.QtWebSockets import QWebSocket
-    from app.models.task import Task, TaskOptions, ResourceTaskOptions
+    from app.models.task import Task, TaskOptions
 
 EXTENSION_UNPACK_DIR = Path(APP_DATA_DIR) / "browser_extension"
 
@@ -117,7 +117,8 @@ class BrowserService(QObject):
     connectionChanged = Signal()
     protocolMismatched = Signal()
 
-    def __init__(self, coroutineRunner, taskService, parse, parent=None):
+    def __init__(self, coroutineRunner: object, taskService: object, parse: Callable,
+                 parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService

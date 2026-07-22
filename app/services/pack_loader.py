@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 if TYPE_CHECKING:
-    from app.models.pack import FeaturePack
+    from app.models.pack import FeaturePack, PackServices
 
 
 @dataclass(frozen=True)
@@ -65,7 +65,7 @@ class PackManifest:
         )
 
 
-def loadPacks(featuresDir: Path) -> list[FeaturePack]:
+def loadPacks(featuresDir: Path, services: PackServices | None = None) -> list[FeaturePack]:
     if not featuresDir.exists():
         logger.warning("features 目录不存在: {}", featuresDir)
         return []
@@ -76,7 +76,7 @@ def loadPacks(featuresDir: Path) -> list[FeaturePack]:
         if (m := PackManifest.fromDir(p)) is not None
     ]
     ordered = orderedByDependency(manifests)
-    return [pack for m in ordered if (pack := loadManifest(m)) is not None]
+    return [pack for m in ordered if (pack := loadManifest(m, services)) is not None]
 
 
 def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
@@ -86,7 +86,7 @@ def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
     ordered: list[PackManifest] = []
     skipped: set[str] = set()
 
-    def visit(name: str):
+    def visit(name: str) -> None:
         if name in visited:
             return
         if name in skipped:
@@ -115,7 +115,7 @@ def orderedByDependency(manifests: list[PackManifest]) -> list[PackManifest]:
     return [m for m in ordered if m.name not in skipped]
 
 
-def loadManifest(manifest: PackManifest) -> FeaturePack | None:
+def loadManifest(manifest: PackManifest, services: PackServices | None = None) -> FeaturePack | None:
     from app.models.pack import FeaturePack
 
     moduleName = manifest.name
@@ -145,7 +145,7 @@ def loadManifest(manifest: PackManifest) -> FeaturePack | None:
                 and attr is not FeaturePack
                 and attr.__module__ == moduleName
             ):
-                pack = attr()
+                pack = attr(services)
                 logger.success("加载 FeaturePack: {}", moduleName)
                 return pack
 

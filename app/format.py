@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def toDockSpeed(bytesPerSec: int) -> str:
     if bytesPerSec < 1024:
         return f"{bytesPerSec} B/s"

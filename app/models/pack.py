@@ -140,9 +140,8 @@ class FeaturePack:
     packId: str = ""
     config: PackConfig | None = None
     proxySchemes: set[str] | None = None
-    _services: PackServices | None = None
 
-    def bind(self, services: PackServices):
+    def __init__(self, services: PackServices):
         self._services = services
         if self.config is not None:
             self.config._services = services

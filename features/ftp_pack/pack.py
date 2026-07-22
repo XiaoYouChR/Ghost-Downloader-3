@@ -5,8 +5,14 @@ from urllib.parse import unquote, urlparse
 
 from loguru import logger
 
+from typing import TYPE_CHECKING
+
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
+
+if TYPE_CHECKING:
+    from app.models.pack import PackServices
+    from PySide6.QtWidgets import QWidget
 from app.platform.filesystem import toPosixPath, toSafeFilename
 from .task import (
     FTP_DEFAULT_PORT,
@@ -122,18 +128,18 @@ class FtpPack(FeaturePack):
     packId = "ftp"
     proxySchemes = {"socks4", "socks5"}
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [FtpParser()]
 
-    def taskCard(self, task, parent=None):
+    def taskCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import FtpTaskCard
         return FtpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
 
-    def draftCard(self, task, parent=None):
+    def draftCard(self, task: Task, parent: QWidget | None = None) -> QWidget:
         from .cards import FtpDraftCard
         return FtpDraftCard(task, self._services.categoryService, parent)
 
-    def optionCards(self, task, parent=None):
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
         step = task.steps[0] if task.steps else None
         if step is None:

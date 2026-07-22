@@ -7,18 +7,20 @@ from urllib.parse import urlparse
 from PySide6.QtCore import QObject
 
 from app.config.paths import executableDir
+from app.models.pack import BinaryRuntime
+from app.models.task import TaskOptions
 from app.platform import file_association
 from app.services.pack_loader import loadPacks
 
 if TYPE_CHECKING:
-    from app.models.pack import FeaturePack, TaskParser, FileType, PackPage
-    from app.models.task import Task, TaskOptions
+    from app.models.pack import FeaturePack, FileType, PackPage, PackServices, TaskParser
+    from app.models.task import Task
     from PySide6.QtWidgets import QWidget
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
 class FeatureService(QObject):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._packs: list[FeaturePack] = []
         self._parsers: list[TaskParser] = []
@@ -28,16 +30,12 @@ class FeatureService(QObject):
     def packs(self) -> list[FeaturePack]:
         return self._packs
 
-    def load(self) -> None:
-        for pack in loadPacks(executableDir / "features"):
+    def load(self, services: PackServices | None = None) -> None:
+        for pack in loadPacks(executableDir / "features", services):
             self._register(pack)
 
-    def bindServices(self, services) -> None:
-        for pack in self._packs:
-            pack.bind(services)
-
-    def activate(self, coroutineRunner) -> None:
-        async def activateAll():
+    def activate(self, coroutineRunner: object) -> None:
+        async def activateAll() -> None:
             for pack in self._packs:
                 await pack.activate()
 
@@ -74,48 +72,46 @@ class FeatureService(QObject):
         raise ValueError(f"No parser matched: {options.url}")
 
     def matchPassive(self, url: str) -> bool:
-        from app.models.task import TaskOptions
         options = TaskOptions(url=url)
         return any(parser.matchPassive(options) for parser in self._parsers)
 
-    def optionCards(self, task: Task, parent=None) -> list[QWidget]:
+    def optionCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         pack = self._packByPackId.get(task.packId)
         return pack.optionCards(task, parent) if pack else []
 
-    def editCards(self, task: Task, parent=None) -> list[QWidget]:
+    def editCards(self, task: Task, parent: QWidget | None = None) -> list[QWidget]:
         pack = self._packByPackId.get(task.packId)
         return pack.editCards(task, parent) if pack else []
 
-    def taskCard(self, task: Task, parent=None):
+    def taskCard(self, task: Task, parent: QWidget | None = None) -> QWidget | None:
         pack = self._packByPackId.get(task.packId)
         return pack.taskCard(task, parent) if pack else None
 
-    def draftCard(self, task: Task, parent=None):
+    def draftCard(self, task: Task, parent: QWidget | None = None) -> QWidget | None:
         pack = self._packByPackId.get(task.packId)
         return pack.draftCard(task, parent) if pack else None
 
     def pages(self) -> list[type[PackPage]]:
-        result = []
+        result: list[type[PackPage]] = []
         for pack in self._packs:
             result.extend(pack.pages())
         return result
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
-        groups = []
+        groups: list[CollapsibleSettingCardGroup] = []
         for pack in self._packs:
             if pack.config:
                 groups.extend(pack.config.settingGroups(parent))
         return groups
 
-    def runtimes(self):
-        from app.models.pack import BinaryRuntime
+    def runtimes(self) -> list[BinaryRuntime]:
         result: list[BinaryRuntime] = []
         for pack in self._packs:
             result.extend(pack.runtimes())
         return result
 
     def fileTypes(self) -> list[FileType]:
-        types = []
+        types: list[FileType] = []
         for pack in self._packs:
             types.extend(pack.fileTypes())
         return types
@@ -134,21 +130,20 @@ class FeatureService(QObject):
                 cfg.set(pack.config.associateFileTypes, isEnabled)
 
     def _registerFileAssociations(self) -> None:
-        types = []
+        types: list[FileType] = []
         for pack in self._packs:
             if pack.config and not pack.config.isFileAssociationEnabled():
                 continue
             types.extend(pack.fileTypes())
         file_association.register(types)
 
-    def deactivate(self, coroutineRunner) -> None:
+    def deactivate(self, coroutineRunner: object) -> None:
         from PySide6.QtCore import QEventLoop
 
-        async def deactivateAll():
+        async def deactivateAll() -> None:
             for pack in self._packs:
                 await pack.deactivate()
 
         loop = QEventLoop()
         coroutineRunner.submit(deactivateAll(), done=lambda _: loop.quit())
         loop.exec()
-

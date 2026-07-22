@@ -1,13 +1,18 @@
+from __future__ import annotations
+
+from typing import Callable
 from urllib.parse import urlparse
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 from loguru import logger
 
+
 class ClipboardListener(QObject):
     urlsDetected = Signal(list)
 
-    def __init__(self, matchPassive, parent=None):
+    def __init__(self, matchPassive: Callable[[str], bool],
+                 parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._matchPassive = matchPassive
         self._clipboard = None

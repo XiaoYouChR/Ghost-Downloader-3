@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
@@ -19,11 +21,27 @@ from app.view.mobile.permission import PermissionBanner
 from app.view.mobile.setting_page import MobileSettingPage
 from app.view.mobile.task_page import MobileTaskPage
 
+if TYPE_CHECKING:
+    from app.services.browser_service import BrowserService
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.speed_meter import SpeedMeter
+    from app.services.task_service import TaskService
+
 TASK_PAGE_INDEX = 0
 
 
 class MobileMainWindow(QWidget):
-    def __init__(self, taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner):
+    def __init__(
+        self,
+        taskService: TaskService,
+        featureService: FeatureService,
+        browserService: BrowserService,
+        categoryService: CategoryService,
+        speedMeter: SpeedMeter,
+        coroutineRunner: CoroutineRunner,
+    ):
         super().__init__(parent=None)
         self._taskService = taskService
         self._featureService = featureService

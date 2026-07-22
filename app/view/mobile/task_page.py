@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import FluentIcon, PrimaryToolButton, ToolButton
@@ -9,11 +11,26 @@ from app.view.cards.task_cards import TaskCard
 from app.view.mobile.cards import MobileTaskCardBase
 from app.view.pages.task_page import TaskPage
 
+if TYPE_CHECKING:
+    from app.services.category_service import CategoryService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.speed_meter import SpeedMeter
+    from app.services.task_service import TaskService
+
 
 class MobileTaskPage(TaskPage):
     selectionModeChanged = Signal(bool)
 
-    def __init__(self, taskService, featureService, categoryService, speedMeter, coroutineRunner, parent=None):
+    def __init__(
+        self,
+        taskService: TaskService,
+        featureService: FeatureService,
+        categoryService: CategoryService,
+        speedMeter: SpeedMeter,
+        coroutineRunner: CoroutineRunner,
+        parent: QWidget | None = None,
+    ):
         self._mobileCardTypes: dict[type, type] = {}
         super().__init__(taskService, featureService, categoryService, speedMeter, coroutineRunner, parent=parent)
 

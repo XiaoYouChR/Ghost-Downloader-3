@@ -3,8 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlparse
 
+from typing import TYPE_CHECKING
+
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import MergeTaskOptions, Task, TaskOptions
+
+if TYPE_CHECKING:
+    from app.models.pack import BinaryRuntime, PackServices
 from app.platform.filesystem import toSafeFilename
 from .config import ffmpegConfig, ffmpegRuntime
 from .task import FFmpegResourceStep, FFmpegStep
@@ -77,8 +82,8 @@ class FFmpegPack(FeaturePack):
     packId = "ffmpeg"
     config = ffmpegConfig
 
-    def runtimes(self):
+    def runtimes(self) -> list[BinaryRuntime]:
         return [ffmpegRuntime]
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [MergeParser(self)]

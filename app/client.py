@@ -13,7 +13,7 @@ from wreq.redirect import Policy
 from app.config.cfg import cfg, proxy
 
 if TYPE_CHECKING:
-    from wreq import ClientConfig3
+    from wreq import ClientConfig3 as ClientConfig
 
 FALLBACK_PROFILE = "chrome"
 

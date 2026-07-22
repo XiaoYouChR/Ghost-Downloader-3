@@ -220,7 +220,7 @@ def requestForeground() -> None:
         pass
 
 
-def raiseWindow(window) -> None:
+def raiseWindow(window: QWidget) -> None:
     window.show()
     window.setWindowState(
         (window.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive

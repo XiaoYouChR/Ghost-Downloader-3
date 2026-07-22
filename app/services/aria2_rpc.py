@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from secrets import token_hex
-from typing import TYPE_CHECKING, Any
+from typing import Any, Callable, TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtNetwork import QHostAddress, QTcpServer, QTcpSocket
@@ -11,6 +11,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
+from app.models.task import TaskOptions
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -23,7 +24,8 @@ JSONRPC_METHOD_NOT_FOUND = -32601
 class Aria2RpcServer(QObject):
     taskDraftRequested = Signal(list)
 
-    def __init__(self, coroutineRunner, parse, addTask, parent: QObject | None = None) -> None:
+    def __init__(self, coroutineRunner: object, parse: Callable, addTask: Callable,
+                 parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._coroutineRunner = coroutineRunner
         self._parse = parse
@@ -178,8 +180,6 @@ class Aria2RpcServer(QObject):
 
         gid = token_hex(8)
         self._respond(socket, rpcId, gid)
-
-        from app.models.task import TaskOptions
 
         outputFolder = Path(directory) if directory else Path(cfg.downloadFolder.value)
         clientProfile = "" if cfg.aria2RpcEmulateFingerprint.value else "raw"

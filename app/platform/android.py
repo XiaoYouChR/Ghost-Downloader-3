@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import sys
 from functools import lru_cache
@@ -81,7 +83,7 @@ def _launchView(path: str, mimeType: str) -> None:
         logger.opt(exception=error).info("打开失败, 放弃: {} ({})", path, mimeType)
 
 
-def openFile(filePath) -> None:
+def openFile(filePath: str) -> None:
     from jnius import autoclass
     text = str(filePath)
     extension = text.rsplit(".", 1)[-1].lower() if "." in text else ""
@@ -89,7 +91,7 @@ def openFile(filePath) -> None:
     _launchView(text, mimeType)
 
 
-def openFolder(folder) -> None:
+def openFolder(folder: str) -> None:
     _launchView(str(folder), "vnd.android.document/directory")
 
 

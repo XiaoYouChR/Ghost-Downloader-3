@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import QCoreApplication, QResource
 from PySide6.QtWidgets import QApplication
 
@@ -15,6 +19,9 @@ from Foundation import NSData
 from app.config.cfg import cfg
 from app.format import toReadableSize
 from app.signal_bus import signalBus
+
+if TYPE_CHECKING:
+    from app.services.task_service import TaskService
 
 
 def tr(text: str) -> str:
@@ -44,7 +51,7 @@ class MenuTarget(NSObject):
 class MacStatusItem:
     ICON_SIZE = 16
 
-    def __init__(self, taskService):
+    def __init__(self, taskService: TaskService):
         self._taskService = taskService
         self._statusItem = NSStatusBar.systemStatusBar().statusItemWithLength_(
             NSVariableStatusItemLength

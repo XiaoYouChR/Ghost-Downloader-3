@@ -3,8 +3,13 @@ from __future__ import annotations
 from pathlib import PurePosixPath
 from urllib.parse import urlparse
 
+from typing import TYPE_CHECKING
+
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import BinaryInstallOptions, Task, TaskOptions
+
+if TYPE_CHECKING:
+    from app.models.pack import PackServices
 from app.platform.filesystem import toPosixPath
 from .task import BinaryInstallStep, ChecksumStep, ExtractStep, InstallStep, InstallTask
 
@@ -101,5 +106,5 @@ class InstallParser(TaskParser):
 class DiskPack(FeaturePack):
     packId = "disk"
 
-    def parsers(self):
+    def parsers(self) -> list[TaskParser]:
         return [InstallParser(self)]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QBuffer, QByteArray, Qt
 from PySide6.QtGui import QColor, QFontMetricsF, QPainter, QPainterPath, QPen, QPixmap
 

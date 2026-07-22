@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Callable
+from typing import Any, Callable
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, QThread, QTimer
@@ -12,25 +12,25 @@ from loguru import logger
 
 class CoroutineRunner(QThread):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
-        self._pending: dict[str, tuple] = {}
+        self._pending: dict[str, tuple[Callable | None, Callable | None, tuple, dict]] = {}
         self._running: dict[str, asyncio.Task] = {}
 
-    def run(self):
+    def run(self) -> None:
         asyncio.set_event_loop(self._loop)
         self._loop.run_forever()
         self._loop.close()
 
     def submit(
         self,
-        work,
-        done: Callable = None,
-        failed: Callable = None,
-        *args,
-        owner: QObject = None,
-        **kwargs,
+        work: Any,
+        done: Callable | None = None,
+        failed: Callable | None = None,
+        *args: Any,
+        owner: QObject | None = None,
+        **kwargs: Any,
     ) -> str:
         workId = f"wrk_{uuid4().hex}"
         if owner is not None:
@@ -38,7 +38,7 @@ class CoroutineRunner(QThread):
             owner.destroyed.connect(lambda *_: self.cancel(workId))
         self._pending[workId] = (done, failed, args, kwargs)
 
-        async def execute():
+        async def execute() -> None:
             result, error = None, None
             try:
                 result = await work
@@ -60,17 +60,17 @@ class CoroutineRunner(QThread):
             elif failed:
                 self.post(failed, error, *args, **kwargs)
 
-        def schedule():
+        def schedule() -> None:
             self._running[workId] = self._loop.create_task(execute())
 
         self._loop.call_soon_threadsafe(schedule)
         return workId
 
-    def cancel(self, workId: str, finished: Callable = None) -> bool:
+    def cancel(self, workId: str, finished: Callable | None = None) -> bool:
         self._pending.pop(workId, None)
         task = self._running.pop(workId, None)
         if task is not None:
-            def scheduleCancel():
+            def scheduleCancel() -> None:
                 if finished is not None:
                     task.add_done_callback(lambda _: self.post(finished))
                 task.cancel()
@@ -80,8 +80,8 @@ class CoroutineRunner(QThread):
             finished()
         return False
 
-    def post(self, callback: Callable, *args, **kwargs) -> None:
-        def wrapper():
+    def post(self, callback: Callable, *args: Any, **kwargs: Any) -> None:
+        def wrapper() -> None:
             try:
                 callback(*args, **kwargs)
             except Exception as e:
@@ -93,11 +93,11 @@ class CoroutineRunner(QThread):
         else:
             wrapper()
 
-    def _guard(self, owner: QObject, callback: Callable) -> Callable | None:
+    def _guard(self, owner: QObject, callback: Callable | None) -> Callable | None:
         if callback is None:
             return None
 
-        def guarded(*args, **kwargs):
+        def guarded(*args: Any, **kwargs: Any) -> None:
             if isValid(owner):
                 callback(*args, **kwargs)
 
@@ -110,4 +110,3 @@ class CoroutineRunner(QThread):
             self._loop.call_soon_threadsafe(self._loop.stop)
         self._pending.clear()
         self._running.clear()
-

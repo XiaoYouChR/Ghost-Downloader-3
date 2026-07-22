@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Final
 
 from PySide6.QtCore import QRectF, QSize, Qt, Signal

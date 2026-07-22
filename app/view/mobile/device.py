@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def setupAccentColor() -> None:
     from PySide6.QtGui import QPalette
     from PySide6.QtWidgets import QApplication

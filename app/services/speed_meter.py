@@ -10,7 +10,7 @@ from app.config.cfg import cfg
 class SpeedMeter(QObject):
     speedChanged = Signal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._bytes = 0
         self._timer = QTimer(self)

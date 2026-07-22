@@ -7,6 +7,9 @@ from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.task_service import TaskService
 
 from PySide6.QtCore import QVersionNumber
 
@@ -151,14 +154,14 @@ def assetScore(name: str) -> int:
     return score
 
 
-def showReleaseDialog(release: Release, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
+def showReleaseDialog(release: Release, parent: QWidget, coroutineRunner: CoroutineRunner, featureService: FeatureService, taskService: TaskService) -> None:
     from app.view.dialogs.release_info import ReleaseInfoDialog
     dialog = ReleaseInfoDialog(release, parent)
     dialog.accepted.connect(lambda: addAssetTask(dialog.selectedAsset(), parent, coroutineRunner, featureService, taskService))
     dialog.open()
 
 
-def addBestAssetTask(release: Release, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
+def addBestAssetTask(release: Release, parent: QWidget, coroutineRunner: CoroutineRunner, featureService: FeatureService, taskService: TaskService) -> None:
     from qfluentwidgets import InfoBar, InfoBarPosition
     asset = bestAsset(release)
     if asset is None:
@@ -172,7 +175,7 @@ def addBestAssetTask(release: Release, parent: QWidget, coroutineRunner, feature
     addAssetTask(asset, parent, coroutineRunner, featureService, taskService)
 
 
-def addAssetTask(asset: ReleaseAsset, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
+def addAssetTask(asset: ReleaseAsset, parent: QWidget, coroutineRunner: CoroutineRunner, featureService: FeatureService, taskService: TaskService) -> None:
     from qfluentwidgets import InfoBar, InfoBarPosition
     from app.models.task import TaskOptions
     coroutineRunner.submit(

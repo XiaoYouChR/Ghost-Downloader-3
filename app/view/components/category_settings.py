@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
@@ -8,6 +10,11 @@ from qfluentwidgets import (
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.services.category_service import Category
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.services.category_service import CategoryService
 
 
 class CategoryRowWidget(QWidget):
@@ -62,7 +69,7 @@ class CategoryRowWidget(QWidget):
 
 class CategoryRulesCard(CollapsibleSettingCard):
 
-    def __init__(self, categoryService, parent=None):
+    def __init__(self, categoryService: CategoryService, parent: QWidget | None = None):
         super().__init__(
             FluentIcon.TAG,
             self.tr("下载分类规则"),

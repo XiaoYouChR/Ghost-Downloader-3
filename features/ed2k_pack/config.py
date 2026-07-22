@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+from typing import TYPE_CHECKING
 import sys
 from pathlib import Path
 
@@ -9,6 +10,10 @@ from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.filesystem import findExecutable, toPosixPath
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from qfluentwidgets import ConfigItem, BoolValidator, FluentIcon, RangeConfigItem, RangeValidator
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 RELEASE_BASE = "https://github.com/XiaoYouChR/Python-eD2k/releases/latest/download"
 

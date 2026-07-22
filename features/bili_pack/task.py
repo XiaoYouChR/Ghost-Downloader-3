@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
@@ -10,6 +12,9 @@ from app.models.task import Task, TaskFile, TaskStep, TaskStatus
 from app.platform.filesystem import toSafeFilename
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.task import FFmpegStep
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 STEPS_PER_PAGE = 4
 
@@ -264,7 +269,7 @@ class BilibiliSubtitleStep(TaskStep):
             if path.exists():
                 move(str(path), str(target))
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         from app.client import buildClient
 
         task: BilibiliTask = self.task

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from base64 import b64decode
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
@@ -7,6 +9,9 @@ from pathlib import Path, PurePosixPath
 from app.models.task import Task, TaskError, TaskStep, TaskFile, TaskStatus
 from app.platform.filesystem import deletePath, toPosixPath
 from .config import bittorrentConfig
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 
 @dataclass(kw_only=True)
@@ -133,7 +138,7 @@ class BTTaskStep(TaskStep):
     def outputPath(self) -> str:
         return self.task.outputPath
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         from .session import btSession
 
         task: BTTask = self.task

@@ -26,6 +26,10 @@ from app.config.constants import (
 
 if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
+    from app.services.browser_service import BrowserService
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.task_service import TaskService
 
 WINDOW_SIZE = QSize(960, 600)
 PREVIEW_GIF = ":/res/install_chrome_extension_guidance.webp"
@@ -383,7 +387,7 @@ class BasicSettingsPage(QWidget):
 
 class BrowserExtensionPage(QWidget):
 
-    def __init__(self, browserService, coroutineRunner, parent=None):
+    def __init__(self, browserService: BrowserService, coroutineRunner: CoroutineRunner, parent: QWidget | None = None):
         super().__init__(parent)
         self._browserService = browserService
         self._coroutineRunner = coroutineRunner
@@ -565,7 +569,7 @@ class BrowserExtensionPage(QWidget):
 
 class RuntimeInstallPage(QWidget):
 
-    def __init__(self, featureService, parent=None):
+    def __init__(self, featureService: FeatureService, parent: QWidget | None = None):
         super().__init__(parent)
         self._featureService = featureService
         self._checkBoxes: list[tuple[CheckBox, BinaryRuntime]] = []
@@ -630,7 +634,7 @@ class RuntimeInstallPage(QWidget):
 
 class AdvancedOptionsPage(QWidget):
 
-    def __init__(self, featureService, parent=None):
+    def __init__(self, featureService: FeatureService, parent: QWidget | None = None):
         super().__init__(parent)
         self._featureService = featureService
         self._initWidget()
@@ -769,8 +773,14 @@ class OobeWindow(FluentWidget):
 
     PAGE_COUNT = 6
 
-    def __init__(self, browserService, coroutineRunner, featureService,
-                 taskService, parent=None):
+    def __init__(
+        self,
+        browserService: BrowserService,
+        coroutineRunner: CoroutineRunner,
+        featureService: FeatureService,
+        taskService: TaskService,
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent=parent)
         self._browserService = browserService
         self._coroutineRunner = coroutineRunner

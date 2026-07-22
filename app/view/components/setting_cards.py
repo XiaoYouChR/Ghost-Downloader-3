@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from re import compile
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 import weakref
 
@@ -22,6 +23,13 @@ from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.config.cfg import cfg, proxy, BASE_HEADERS
 from app.view.components.banners import WarningBanner
+
+if TYPE_CHECKING:
+    from app.models.pack import BinaryRuntime
+    from app.services.coroutine_runner import CoroutineRunner
+    from app.services.feature_service import FeatureService
+    from app.services.runtime_status import RuntimeStatusService
+    from app.services.task_service import TaskService
 
 HOST_PATTERN = compile(
     r"^(?:(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)"
@@ -135,7 +143,7 @@ class LineEditSettingCard(SettingCard):
 
 class ProxySettingCard(CollapsibleSettingCard):
 
-    def __init__(self, configItem: ConfigItem, featureService=None, parent=None):
+    def __init__(self, configItem: ConfigItem, featureService: FeatureService | None = None, parent: QWidget | None = None):
         super().__init__(FluentIcon.GLOBE, self.tr("代理"),
                          self.tr("设置下载时希望使用的代理"), parent=parent)
         self._configItem = configItem
@@ -669,14 +677,18 @@ class SelectFileCard(SettingCard):
 
 class RuntimeCard(SettingCard):
 
-    def __init__(self, runtimeStatusService, coroutineRunner, taskService,
-                 runtime, parent=None):
-        from app.models.pack import BinaryRuntime
-
+    def __init__(
+        self,
+        runtimeStatusService: RuntimeStatusService,
+        coroutineRunner: CoroutineRunner,
+        taskService: TaskService,
+        runtime: BinaryRuntime,
+        parent: QWidget | None = None,
+    ):
         self._runtimeStatusService = runtimeStatusService
         self._coroutineRunner = coroutineRunner
         self._taskService = taskService
-        self._runtime: BinaryRuntime = runtime
+        self._runtime = runtime
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import asyncio
 import sys
 from dataclasses import dataclass
@@ -9,6 +11,9 @@ from urllib.parse import unquote
 from loguru import logger
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 _coroutineRunner = None
 
@@ -34,7 +39,7 @@ class ED2kTask(Task):
 
 @dataclass(kw_only=True)
 class ED2kTaskStep(TaskStep):
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         from .python_ed2k import TransferState
         from .python_ed2k.errors import ErrorCode, Error
         from .session import ed2kSession
@@ -88,7 +93,7 @@ class ED2kInstallStep(TaskStep):
     canPause = False
     binaryPath: str = ""
 
-    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+    async def run(self, reportSpeed: Callable[[int], None], waitForSpeedLimit: Callable[[], Awaitable[None]]) -> None:
         path = Path(self.binaryPath)
         if not path.is_file():
             raise TaskError("{name} 未安装，请在设置中安装", name="goed2kd")
