@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout
 from qfluentwidgets import BodyLabel, ComboBox, CompactSpinBox, FluentIcon, ToolTipFilter, TransparentToolButton
@@ -9,77 +8,80 @@ from qfluentwidgets import BodyLabel, ComboBox, CompactSpinBox, FluentIcon, Tool
 from app.format import toReadableSize
 from app.models.task import TaskStatus
 from app.view.cards.draft_cards import DraftCard
-from app.view.cards.task_cards import TaskCard
+from app.view.cards.task_cards import (
+    TaskCard, FieldSpec, ButtonSpec, ButtonState, SPEED_FIELD, ETA_FIELD,
+)
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.option_cards import OptionCard
-
-if TYPE_CHECKING:
-    from .task import M3U8TaskStep
 
 
 class M3U8DraftCard(DraftCard):
     pass
 
 
+def toM3u8SizeText(task, speed: int, received: int) -> str | None:
+    if task.status == TaskStatus.COMPLETED:
+        return toReadableSize(task.fileSize) if task.fileSize > 0 else None
+    if task.fileSize > 1:
+        return f"{toReadableSize(received)}/{toReadableSize(task.fileSize)}"
+    step = task.steps[0] if task.steps else None
+    if step is not None and task.status == TaskStatus.RUNNING:
+        return f"{toReadableSize(step.receivedBytes)} / {step.progress:.1f}%"
+    return f"{toReadableSize(received)}/--"
+
+
+M3U8_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toM3u8SizeText})
+
+
 class M3U8TaskCard(TaskCard):
+    infoFields = [SPEED_FIELD, ETA_FIELD, M3U8_SIZE_FIELD]
 
-    def refresh(self, force: bool = False) -> None:
-        super().refresh(force=force)
-        if self._task.status == TaskStatus.RUNNING and self._task.fileSize <= 1:
-            step = self._step()
-            if step is not None:
-                progress = step.progress
-                self.sizeLabel.setText(
-                    f"{toReadableSize(step.receivedBytes)} / {progress:.1f}%"
-                )
 
-    def _step(self) -> M3U8TaskStep | None:
-        return self._task.steps[0] if self._task.steps else None
+def toLiveEtaText(task, speed: int, received: int) -> str:
+    step = task.steps[0] if task.steps else None
+    if step is None:
+        return "--"
+    elapsed = step.liveElapsed or "00m00s"
+    return f"{elapsed} / {step.recordLimit}" if step.recordLimit else elapsed
+
+
+def toLiveSizeText(task, speed: int, received: int) -> str:
+    step = task.steps[0] if task.steps else None
+    if step is None:
+        return "--"
+    from PySide6.QtCore import QCoreApplication
+    if step.liveStatus == "Waiting":
+        return QCoreApplication.translate("M3U8LiveTaskCard", "等待中")
+    return QCoreApplication.translate("M3U8LiveTaskCard", "录制中")
+
+
+LIVE_ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toLiveEtaText})
+LIVE_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {TaskStatus.RUNNING: toLiveSizeText})
+
+LIVE_TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, "停止并定案", states={
+    TaskStatus.RUNNING: lambda t: ButtonState(icon=FluentIcon.ACCEPT),
+    TaskStatus.COMPLETED: lambda t: ButtonState(icon=FluentIcon.ACCEPT, enabled=False),
+})
 
 
 class M3U8LiveTaskCard(TaskCard):
-
-    def _initWidget(self) -> None:
-        super()._initWidget()
-        self.toggleButton.installEventFilter(ToolTipFilter(self.toggleButton))
-
-    def refresh(self, force: bool = False) -> None:
-        super().refresh(force=force)
-        step = self._step()
-        if step is None:
-            return
-        if self._task.status == TaskStatus.RUNNING:
-            elapsed = step.liveElapsed or "00m00s"
-            timeText = f"{elapsed} / {step.recordLimit}" if step.recordLimit else elapsed
-            self.etaLabel.setText(timeText)
-            if step.liveStatus == "Waiting":
-                self.sizeLabel.setText(self.tr("等待中"))
-            else:
-                self.sizeLabel.setText(self.tr("录制中"))
-        elif self._task.status == TaskStatus.COMPLETED and not self._isFileMissing:
-            self._showStatus(self.tr("录制已结束"))
-
-    def _refreshButtons(self) -> None:
-        super()._refreshButtons()
-        if self._task.status == TaskStatus.RUNNING:
-            self.toggleButton.setIcon(FluentIcon.ACCEPT)
-            self.toggleButton.setToolTip(self.tr("停止并定案"))
-            self.toggleButton.setEnabled(True)
-        elif self._task.status == TaskStatus.COMPLETED:
-            self.toggleButton.setIcon(FluentIcon.ACCEPT)
+    infoFields = [SPEED_FIELD, LIVE_ETA_FIELD, LIVE_SIZE_FIELD]
+    buttons = [LIVE_TOGGLE_BUTTON if b.name == "toggle" else b for b in TaskCard.buttons]
 
     def _onToggleClicked(self) -> None:
         if self._task.status == TaskStatus.RUNNING:
             self.toggleButton.setEnabled(False)
-            step = self._step()
+            step = self._task.steps[0] if self._task.steps else None
             if step is not None:
                 step.terminate()
         else:
             self._taskService.start(self._task)
             self.refresh()
 
-    def _step(self) -> M3U8TaskStep | None:
-        return self._task.steps[0] if self._task.steps else None
+    def _refreshForStatus(self, task) -> None:
+        super()._refreshForStatus(task)
+        if task.status == TaskStatus.COMPLETED and not self._isFileMissing:
+            self._setStatus(self.tr("录制已结束"))
 
 
 class StreamSelectCard(OptionCard):

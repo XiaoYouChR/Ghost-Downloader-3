@@ -12,7 +12,7 @@ from qfluentwidgets import (
 from app.format import toReadableSize
 from app.models.task import TaskStatus
 from app.view.cards.draft_cards import DraftCard
-from app.view.cards.task_cards import MultiFileTaskCard
+from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, SPEED_FIELD, ETA_FIELD
 from app.view.components.tree_view import AutoSizingTreeView
 from .config import ytDlpConfig
 from .task import STEPS_PER_VIDEO, YouTubeTask
@@ -75,11 +75,227 @@ STEP_LABELS = {
 }
 
 
-class YtDlpDraftCard(DraftCard):
+def toYtDlpSizeText(task: YouTubeTask, speed: int, received: int) -> str | None:
+    if task.status == TaskStatus.COMPLETED:
+        if task.isPlaylist:
+            from PySide6.QtCore import QCoreApplication
+            videoCount = len(task.steps) // STEPS_PER_VIDEO
+            totalReceived = sum(s.receivedBytes for s in task.steps)
+            return QCoreApplication.translate("YtDlpTaskCard", "{0} 个视频 · {1}").format(
+                videoCount, toReadableSize(totalReceived))
+        return toReadableSize(task.fileSize) if task.fileSize > 0 else None
+    if task.fileSize > 0:
+        return f"{toReadableSize(received)}/{toReadableSize(task.fileSize)}"
+    return f"{toReadableSize(received)}/--"
 
-    def __init__(self, task, categoryService, *, coroutineRunner, parent=None):
-        self._coroutineRunner = coroutineRunner
-        super().__init__(task, categoryService, parent)
+
+YTDLP_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toYtDlpSizeText})
+
+
+def toYtDlpNameText(task: YouTubeTask, speed: int, received: int) -> str | None:
+    currentStep = next((s for s in task.steps if s.status == TaskStatus.RUNNING), None)
+    if not currentStep:
+        return None
+    fileIndex = currentStep.fileIndex or 0
+    stepInGroup = currentStep.stepIndex - fileIndex * STEPS_PER_VIDEO
+    label = STEP_LABELS.get(stepInGroup, "")
+    if task.isPlaylist:
+        videoCount = len(task.steps) // STEPS_PER_VIDEO
+        videoStem = getattr(currentStep, "videoStem", "") or task.name
+        return f"{videoStem} ({fileIndex + 1}/{videoCount} · {label})" if label else None
+    return f"{task.name} ({label})" if label else None
+
+
+class SubtitleSelectDialog(MessageBoxBase):
+
+    def __init__(self, choices: list[tuple[str, str, bool]], parent=None):
+        super().__init__(parent)
+        self._choices = choices
+
+        self.titleLabel = SubtitleLabel(self.tr("选择字幕语言"), self)
+        self.summaryLabel = BodyLabel("", self)
+
+        self.selectAllButton = PrimaryPushButton(self.tr("全选"), self)
+        self.clearButton = PushButton(self.tr("全不选"), self)
+
+        self.treeView = AutoSizingTreeView(self, minimumVisibleRows=3, maximumVisibleRows=16)
+        self.treeModel = QStandardItemModel(self.treeView)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+        self._refreshSummary()
+
+    def _initWidget(self) -> None:
+        self.widget.setMinimumWidth(400)
+        self.yesButton.setText(self.tr("确定"))
+        self.cancelButton.setText(self.tr("取消"))
+
+        self.treeView.setRootIsDecorated(False)
+        self.treeView.setUniformRowHeights(True)
+        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.treeView.setHeaderHidden(True)
+
+        self.treeView.setModel(self.treeModel)
+
+        defaultLangs = {s.strip() for s in ytDlpConfig.subtitleLanguages.value.split(",") if s.strip()}
+
+        for langCode, label, _isAuto in self._choices:
+            item = QStandardItem(label)
+            item.setCheckable(True)
+            item.setCheckState(Qt.CheckState.Checked if langCode in defaultLangs else Qt.CheckState.Unchecked)
+            item.setData(langCode, Qt.ItemDataRole.UserRole)
+            item.setData(_isAuto, Qt.ItemDataRole.UserRole + 1)
+            self.treeModel.appendRow(item)
+
+    def _initLayout(self) -> None:
+        actionsLayout = QHBoxLayout()
+        actionsLayout.setContentsMargins(0, 0, 0, 0)
+        actionsLayout.setSpacing(8)
+        actionsLayout.addWidget(self.selectAllButton)
+        actionsLayout.addWidget(self.clearButton)
+        actionsLayout.addStretch(1)
+        actionsLayout.addWidget(self.summaryLabel)
+
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(8)
+        self.viewLayout.addWidget(self.treeView)
+        self.viewLayout.addSpacing(4)
+        self.viewLayout.addLayout(actionsLayout)
+
+    def _bind(self) -> None:
+        self.selectAllButton.clicked.connect(lambda: self._setAll(True))
+        self.clearButton.clicked.connect(lambda: self._setAll(False))
+        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
+
+    def _setAll(self, checked: bool) -> None:
+        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
+        for row in range(self.treeModel.rowCount()):
+            self.treeModel.item(row, 0).setCheckState(state)
+
+    def _refreshSummary(self) -> None:
+        count = sum(
+            1 for row in range(self.treeModel.rowCount())
+            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
+        )
+        self.summaryLabel.setText(self.tr("{0}/{1} 种语言").format(count, self.treeModel.rowCount()))
+
+    def selectedLanguages(self) -> tuple[str, bool]:
+        langs: list[str] = []
+        hasAuto = False
+        for row in range(self.treeModel.rowCount()):
+            item = self.treeModel.item(row, 0)
+            if item.checkState() == Qt.CheckState.Checked:
+                langs.append(item.data(Qt.ItemDataRole.UserRole))
+                if item.data(Qt.ItemDataRole.UserRole + 1):
+                    hasAuto = True
+        return ",".join(langs), hasAuto
+
+
+class VideoSelectDialog(MessageBoxBase):
+
+    def __init__(self, task, parent=None):
+        super().__init__(parent)
+        self._files = task.files or []
+
+        self.titleLabel = SubtitleLabel(self.tr("选择视频"), self)
+        self.summaryLabel = BodyLabel("", self)
+
+        self.selectAllButton = PrimaryPushButton(self.tr("全选"), self)
+        self.clearButton = PushButton(self.tr("全不选"), self)
+        self.invertButton = PushButton(self.tr("反选"), self)
+
+        self.treeView = AutoSizingTreeView(self, minimumVisibleRows=3, maximumVisibleRows=16)
+        self.treeModel = QStandardItemModel(self.treeView)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+        self._refreshSummary()
+
+    def _initWidget(self) -> None:
+        self.widget.setMinimumWidth(550)
+        self.yesButton.setText(self.tr("确定"))
+        self.cancelButton.setText(self.tr("取消"))
+
+        self.treeView.setRootIsDecorated(False)
+        self.treeView.setUniformRowHeights(True)
+        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+
+        self.treeModel.setHorizontalHeaderLabels([self.tr("标题"), self.tr("时长")])
+        self.treeView.setModel(self.treeModel)
+        self.treeView.header().setStretchLastSection(False)
+        self.treeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+
+        for file in self._files:
+            title = file.relativePath.strip() or f"视频 {file.index + 1}"
+
+            nameItem = QStandardItem(f"{file.index + 1}. {title}")
+            nameItem.setCheckable(True)
+            nameItem.setCheckState(Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
+            nameItem.setData(file.index, Qt.ItemDataRole.UserRole)
+
+            durationText = ""
+            if file.duration > 0:
+                minutes, seconds = divmod(int(file.duration), 60)
+                durationText = f"{minutes}:{seconds:02d}"
+            durationItem = QStandardItem(durationText)
+            durationItem.setEditable(False)
+
+            self.treeModel.appendRow([nameItem, durationItem])
+
+    def _initLayout(self) -> None:
+        actionsLayout = QHBoxLayout()
+        actionsLayout.setContentsMargins(0, 0, 0, 0)
+        actionsLayout.setSpacing(8)
+        actionsLayout.addWidget(self.selectAllButton)
+        actionsLayout.addWidget(self.clearButton)
+        actionsLayout.addWidget(self.invertButton)
+        actionsLayout.addStretch(1)
+        actionsLayout.addWidget(self.summaryLabel)
+
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(8)
+        self.viewLayout.addWidget(self.treeView)
+        self.viewLayout.addSpacing(4)
+        self.viewLayout.addLayout(actionsLayout)
+
+    def _bind(self) -> None:
+        self.selectAllButton.clicked.connect(lambda: self._setAll(True))
+        self.clearButton.clicked.connect(lambda: self._setAll(False))
+        self.invertButton.clicked.connect(self._onInvert)
+        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
+
+    def _setAll(self, checked: bool) -> None:
+        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
+        for row in range(self.treeModel.rowCount()):
+            self.treeModel.item(row, 0).setCheckState(state)
+
+    def _onInvert(self) -> None:
+        for row in range(self.treeModel.rowCount()):
+            item = self.treeModel.item(row, 0)
+            item.setCheckState(
+                Qt.CheckState.Unchecked if item.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
+            )
+
+    def _refreshSummary(self) -> None:
+        count = sum(
+            1 for row in range(self.treeModel.rowCount())
+            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
+        )
+        self.summaryLabel.setText(self.tr("{0}/{1} 个视频").format(count, self.treeModel.rowCount()))
+        self.yesButton.setEnabled(count > 0)
+
+    def selectedIndexes(self) -> set[int]:
+        return {
+            self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            for row in range(self.treeModel.rowCount())
+            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
+        }
+
+
+class YtDlpDraftCard(DraftCard):
 
     def _initWidget(self) -> None:
         super()._initWidget()
@@ -196,9 +412,9 @@ class YtDlpDraftCard(DraftCard):
                 failed=self._onPlaylistFailed,
             )
             return
-        dialog = VideoSelectDialog(task.files, self.window())
+        dialog = VideoSelectDialog(task, self.window())
         if dialog.exec():
-            task.setSelection(dialog.selectedIndices())
+            task.setSelection(dialog.selectedIndexes())
             self.nameLabel.setText(task.name)
 
     def _onPlaylistLoaded(self, videos: list[dict]) -> None:
@@ -218,242 +434,12 @@ class YtDlpDraftCard(DraftCard):
         self._videoSelectButton.setToolTip(self.tr("加载播放列表失败"))
 
 
-class SubtitleSelectDialog(MessageBoxBase):
-
-    def __init__(self, choices: list[tuple[str, str, bool]], parent=None):
-        super().__init__(parent)
-        self._choices = choices
-
-        self.titleLabel = SubtitleLabel(self.tr("选择字幕语言"), self)
-        self.summaryLabel = BodyLabel("", self)
-
-        self.selectAllButton = PrimaryPushButton(self.tr("全选"), self)
-        self.clearButton = PushButton(self.tr("全不选"), self)
-
-        self.treeView = AutoSizingTreeView(self, minimumVisibleRows=3, maximumVisibleRows=16)
-        self.treeModel = QStandardItemModel(self.treeView)
-
-        self._initWidget()
-        self._initLayout()
-        self._bind()
-        self._refreshSummary()
-
-    def _initWidget(self) -> None:
-        self.widget.setMinimumWidth(400)
-        self.yesButton.setText(self.tr("确定"))
-        self.cancelButton.setText(self.tr("取消"))
-
-        self.treeView.setRootIsDecorated(False)
-        self.treeView.setUniformRowHeights(True)
-        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.treeView.setHeaderHidden(True)
-
-        self.treeView.setModel(self.treeModel)
-
-        defaultLangs = {s.strip() for s in ytDlpConfig.subtitleLanguages.value.split(",") if s.strip()}
-
-        for langCode, label, _isAuto in self._choices:
-            item = QStandardItem(label)
-            item.setCheckable(True)
-            item.setCheckState(Qt.CheckState.Checked if langCode in defaultLangs else Qt.CheckState.Unchecked)
-            item.setData(langCode, Qt.ItemDataRole.UserRole)
-            item.setData(_isAuto, Qt.ItemDataRole.UserRole + 1)
-            self.treeModel.appendRow(item)
-
-    def _initLayout(self) -> None:
-        actionsLayout = QHBoxLayout()
-        actionsLayout.setContentsMargins(0, 0, 0, 0)
-        actionsLayout.setSpacing(8)
-        actionsLayout.addWidget(self.selectAllButton)
-        actionsLayout.addWidget(self.clearButton)
-        actionsLayout.addStretch(1)
-        actionsLayout.addWidget(self.summaryLabel)
-
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addSpacing(8)
-        self.viewLayout.addWidget(self.treeView)
-        self.viewLayout.addSpacing(4)
-        self.viewLayout.addLayout(actionsLayout)
-
-    def _bind(self) -> None:
-        self.selectAllButton.clicked.connect(lambda: self._setAll(True))
-        self.clearButton.clicked.connect(lambda: self._setAll(False))
-        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
-
-    def _setAll(self, checked: bool) -> None:
-        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        for row in range(self.treeModel.rowCount()):
-            self.treeModel.item(row, 0).setCheckState(state)
-
-    def _refreshSummary(self) -> None:
-        count = sum(
-            1 for row in range(self.treeModel.rowCount())
-            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
-        )
-        self.summaryLabel.setText(self.tr("{0}/{1} 种语言").format(count, self.treeModel.rowCount()))
-
-    def selectedLanguages(self) -> tuple[str, bool]:
-        langs: list[str] = []
-        hasAuto = False
-        for row in range(self.treeModel.rowCount()):
-            item = self.treeModel.item(row, 0)
-            if item.checkState() == Qt.CheckState.Checked:
-                langs.append(item.data(Qt.ItemDataRole.UserRole))
-                if item.data(Qt.ItemDataRole.UserRole + 1):
-                    hasAuto = True
-        return ",".join(langs), hasAuto
-
-
-class VideoSelectDialog(MessageBoxBase):
-
-    def __init__(self, files: list, parent=None):
-        super().__init__(parent)
-        self._files = files
-
-        self.titleLabel = SubtitleLabel(self.tr("选择视频"), self)
-        self.summaryLabel = BodyLabel("", self)
-
-        self.selectAllButton = PrimaryPushButton(self.tr("全选"), self)
-        self.clearButton = PushButton(self.tr("全不选"), self)
-        self.invertButton = PushButton(self.tr("反选"), self)
-
-        self.treeView = AutoSizingTreeView(self, minimumVisibleRows=3, maximumVisibleRows=16)
-        self.treeModel = QStandardItemModel(self.treeView)
-
-        self._initWidget()
-        self._initLayout()
-        self._bind()
-        self._refreshSummary()
-
-    def _initWidget(self) -> None:
-        self.widget.setMinimumWidth(550)
-        self.yesButton.setText(self.tr("确定"))
-        self.cancelButton.setText(self.tr("取消"))
-
-        self.treeView.setRootIsDecorated(False)
-        self.treeView.setUniformRowHeights(True)
-        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
-        self.treeModel.setHorizontalHeaderLabels([self.tr("标题"), self.tr("时长")])
-        self.treeView.setModel(self.treeModel)
-        self.treeView.header().setStretchLastSection(False)
-        self.treeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-
-        for file in self._files:
-            title = file.relativePath.strip() or f"视频 {file.index + 1}"
-
-            nameItem = QStandardItem(f"{file.index + 1}. {title}")
-            nameItem.setCheckable(True)
-            nameItem.setCheckState(Qt.CheckState.Checked if file.selected else Qt.CheckState.Unchecked)
-            nameItem.setData(file.index, Qt.ItemDataRole.UserRole)
-
-            durationText = ""
-            if file.duration > 0:
-                minutes, seconds = divmod(int(file.duration), 60)
-                durationText = f"{minutes}:{seconds:02d}"
-            durationItem = QStandardItem(durationText)
-            durationItem.setEditable(False)
-
-            self.treeModel.appendRow([nameItem, durationItem])
-
-    def _initLayout(self) -> None:
-        actionsLayout = QHBoxLayout()
-        actionsLayout.setContentsMargins(0, 0, 0, 0)
-        actionsLayout.setSpacing(8)
-        actionsLayout.addWidget(self.selectAllButton)
-        actionsLayout.addWidget(self.clearButton)
-        actionsLayout.addWidget(self.invertButton)
-        actionsLayout.addStretch(1)
-        actionsLayout.addWidget(self.summaryLabel)
-
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addSpacing(8)
-        self.viewLayout.addWidget(self.treeView)
-        self.viewLayout.addSpacing(4)
-        self.viewLayout.addLayout(actionsLayout)
-
-    def _bind(self) -> None:
-        self.selectAllButton.clicked.connect(lambda: self._setAll(True))
-        self.clearButton.clicked.connect(lambda: self._setAll(False))
-        self.invertButton.clicked.connect(self._onInvert)
-        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
-
-    def _setAll(self, checked: bool) -> None:
-        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        for row in range(self.treeModel.rowCount()):
-            self.treeModel.item(row, 0).setCheckState(state)
-
-    def _onInvert(self) -> None:
-        for row in range(self.treeModel.rowCount()):
-            item = self.treeModel.item(row, 0)
-            item.setCheckState(
-                Qt.CheckState.Unchecked if item.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
-            )
-
-    def _refreshSummary(self) -> None:
-        count = sum(
-            1 for row in range(self.treeModel.rowCount())
-            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
-        )
-        self.summaryLabel.setText(self.tr("{0}/{1} 个视频").format(count, self.treeModel.rowCount()))
-        self.yesButton.setEnabled(count > 0)
-
-    def selectedIndices(self) -> set[int]:
-        return {
-            self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            for row in range(self.treeModel.rowCount())
-            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
-        }
-
-
 class YtDlpTaskCard(MultiFileTaskCard):
+    fileSelectDialog = VideoSelectDialog
+    infoFields = [SPEED_FIELD, ETA_FIELD, YTDLP_SIZE_FIELD]
+    nameFormats = {TaskStatus.RUNNING: toYtDlpNameText}
 
-    def __init__(self, task: YouTubeTask, taskService, categoryService, parent=None):
-        super().__init__(task, taskService, categoryService, parent)
-        if self.selectFilesButton:
-            self.selectFilesButton.setToolTip(self.tr("选择视频"))
-            self.selectFilesButton.installEventFilter(ToolTipFilter(self.selectFilesButton))
-
-    def _onSelectFilesClicked(self) -> None:
-        dialog = VideoSelectDialog(self._task.files, self.window())
-        try:
-            if dialog.exec():
-                self._taskService.applySelection(self._task, dialog.selectedIndices())
-                self.refresh(force=True)
-        finally:
-            dialog.deleteLater()
-
-    def _buildProgressBar(self) -> QWidget:
+    def _createProgressBar(self) -> QWidget:
         bar = ProgressBar(self)
         bar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))
         return bar
-
-    def refresh(self, force: bool = False) -> None:
-        super().refresh(force=force)
-        task: YouTubeTask = self._task
-        if task.status != TaskStatus.RUNNING:
-            if task.status == TaskStatus.COMPLETED and task.isPlaylist:
-                videoCount = len(task.steps) // STEPS_PER_VIDEO
-                receivedBytes = sum(s.receivedBytes for s in task.steps)
-                self.sizeLabel.setText(
-                    self.tr("{0} 个视频 · {1}").format(videoCount, toReadableSize(receivedBytes))
-                )
-                self.sizeLabel.show()
-            return
-
-        currentStep = next((s for s in task.steps if s.status == TaskStatus.RUNNING), None)
-        if not currentStep:
-            return
-
-        fileIndex = getattr(currentStep, "fileIndex", 0)
-        stepInGroup = currentStep.stepIndex - fileIndex * STEPS_PER_VIDEO
-        label = STEP_LABELS.get(stepInGroup, "")
-
-        if task.isPlaylist:
-            videoCount = len(task.steps) // STEPS_PER_VIDEO
-            videoStem = getattr(currentStep, "videoStem", "") or task.name
-            if label:
-                self.nameLabel.setText(f"{videoStem} ({fileIndex + 1}/{videoCount} · {label})")
-        elif label:
-            self.nameLabel.setText(f"{task.name} ({label})")

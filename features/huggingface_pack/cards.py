@@ -24,12 +24,4 @@ class HuggingFaceDraftCard(MultiFileDraftCard):
 
 
 class HuggingFaceTaskCard(MultiFileTaskCard):
-
-    def _onSelectFilesClicked(self) -> None:
-        dialog = FileSelectDialog(self._task, self.window())
-        try:
-            if dialog.exec():
-                self._taskService.applySelection(self._task, dialog.selectedIndexes())
-                self.refresh(force=True)
-        finally:
-            dialog.deleteLater()
+    fileSelectDialog = FileSelectDialog
