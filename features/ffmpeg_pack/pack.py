@@ -13,9 +13,6 @@ from .task import FFmpegResourceStep, FFmpegStep
 class MergeParser(TaskParser):
     priority = 60
 
-    def __init__(self, pack):
-        self._pack = pack
-
     def match(self, options: TaskOptions) -> bool:
         return isinstance(options, MergeTaskOptions)
 
@@ -25,9 +22,8 @@ class MergeParser(TaskParser):
         if not ffmpegRuntime.path() or not ffmpegRuntime.ffprobePath():
             raise RuntimeError("未找到可用的 ffmpeg 和 ffprobe，请先在设置中安装或配置 FFmpeg")
 
-        parse = self._pack._services.featureService.parse
-        videoTask = await parse(options.video)
-        audioTask = await parse(options.audio)
+        videoTask = await self.delegate(options.video)
+        audioTask = await self.delegate(options.audio)
 
         videoStep = videoTask.steps[0]
         audioStep = audioTask.steps[0]
@@ -76,9 +72,7 @@ class MergeParser(TaskParser):
 class FFmpegPack(FeaturePack):
     packId = "ffmpeg"
     config = ffmpegConfig
+    parsers = [MergeParser]
 
     def runtimes(self):
         return [ffmpegRuntime]
-
-    def parsers(self):
-        return [MergeParser(self)]

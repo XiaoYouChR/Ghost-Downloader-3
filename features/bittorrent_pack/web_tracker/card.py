@@ -12,9 +12,9 @@ from .service import trackerService
 
 
 class WebTrackerCard(SettingCard):
-    def __init__(self, coroutineRunner, parent=None):
+    def __init__(self, submit, parent=None):
         super().__init__(FluentIcon.GLOBE, self.tr("Web Tracker"), "", parent)
-        self._coroutineRunner = coroutineRunner
+        self._submit = submit
         self.manageButton = PrimaryPushButton(self.tr("管理"), self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
         self._stateToolTip: StateToolTip | None = None
@@ -65,7 +65,7 @@ class WebTrackerCard(SettingCard):
         self._stateToolTip.move(self._stateToolTip.getSuitablePos())
         self._stateToolTip.show()
 
-        self._coroutineRunner.submit(
+        self._submit(
             trackerService.refresh(),
             done=self._onRefreshDone, failed=self._onRefreshFailed,
             owner=self,

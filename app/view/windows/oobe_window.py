@@ -676,7 +676,7 @@ class AdvancedOptionsPage(QWidget):
         return any(
             pack.config.associateFileTypes.value
             for pack in self._featureService.packs
-            if pack.config is not None and hasattr(pack.config, "associateFileTypes")
+            if pack.config is not None and pack.config.associateFileTypes is not None
         )
 
     def _initLayout(self) -> None:
@@ -699,7 +699,7 @@ class AdvancedOptionsPage(QWidget):
 
         for pack in self._featureService.packs:
             config = pack.config
-            if config is not None and hasattr(config, "associateFileTypes"):
+            if config is not None and config.associateFileTypes is not None:
                 cfg.set(config.associateFileTypes, self.fileAssocCard.isChecked())
 
         if self.urlSchemeCard.isChecked() != cfg.isUrlSchemeRegistered.value:

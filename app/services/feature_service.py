@@ -18,11 +18,16 @@ if TYPE_CHECKING:
 
 
 class FeatureService(QObject):
-    def __init__(self, parent=None):
+    def __init__(self, taskService, categoryService, coroutineRunner, runtimeStatusService, parent=None):
         super().__init__(parent)
+        self._taskService = taskService
+        self._categoryService = categoryService
+        self._coroutineRunner = coroutineRunner
+        self._runtimeStatusService = runtimeStatusService
         self._packs: list[FeaturePack] = []
         self._parsers: list[TaskParser] = []
         self._packByPackId: dict[str, FeaturePack] = {}
+        self._pagePackMap: dict[type, FeaturePack] = {}
 
     @property
     def packs(self) -> list[FeaturePack]:
@@ -42,9 +47,27 @@ class FeatureService(QObject):
     def _register(self, pack: FeaturePack) -> None:
         self._packs.append(pack)
         self._packByPackId[pack.packId] = pack
-        self._parsers.extend(pack.parsers())
+
+        pack.parse = self.parse
+        pack.addTask = self._taskService.add
+        pack.submit = self._coroutineRunner.submit
+
+        for PageClass in pack.pages():
+            self._pagePackMap[PageClass] = pack
+
+        for ParserClass in pack.parsers:
+            parser = ParserClass()
+            parser.pack = pack
+            parser.delegate = self.parse
+            self._parsers.append(parser)
         self._parsers.sort(key=lambda p: p.priority)
+
+        for runtime in pack.runtimes():
+            runtime.parse = self.parse
+
         if pack.config:
+            pack.config.createRuntimeCard = self._createRuntimeCard
+            pack.config.submit = self._coroutineRunner.submit
             toggle = pack.config.fileAssociationToggle()
             if toggle:
                 toggle.connect(self._registerFileAssociations)
@@ -74,6 +97,29 @@ class FeatureService(QObject):
         options = TaskOptions(url=url)
         return any(parser.matchPassive(options) for parser in self._parsers)
 
+    # ── Card construction (the seam) ──
+
+    def taskCard(self, task: Task, parent=None):
+        from app.view.cards.task_cards import TaskCard
+        pack = self._packByPackId.get(task.packId)
+        if not pack:
+            return None
+        CardClass = pack.taskCardClass(task) or TaskCard
+        return CardClass(task, self._taskService, self, self._categoryService, parent)
+
+    def draftCard(self, task: Task, parent=None):
+        from app.view.cards.draft_cards import DraftCard
+        pack = self._packByPackId.get(task.packId)
+        if not pack:
+            return None
+        CardClass = pack.draftCardClass(task) or DraftCard
+        return CardClass(task, self._categoryService, self._coroutineRunner, parent)
+
+    def createEditDialog(self, task: Task, parent=None):
+        from app.view.dialogs.edit_task import LiveEditDialog
+        editCards = self.editCards(task, parent)
+        return LiveEditDialog(task, editCards, self._coroutineRunner, self, self._taskService, parent)
+
     def optionCards(self, task: Task, parent=None) -> list[QWidget]:
         pack = self._packByPackId.get(task.packId)
         return pack.optionCards(task, parent) if pack else []
@@ -82,13 +128,20 @@ class FeatureService(QObject):
         pack = self._packByPackId.get(task.packId)
         return pack.editCards(task, parent) if pack else []
 
-    def taskCard(self, task: Task, parent=None):
-        pack = self._packByPackId.get(task.packId)
-        return pack.taskCard(task, parent) if pack else None
+    # ── RuntimeCard factory ──
 
-    def draftCard(self, task: Task, parent=None):
-        pack = self._packByPackId.get(task.packId)
-        return pack.draftCard(task, parent) if pack else None
+    def _createRuntimeCard(self, runtime, parent):
+        from app.view.components.setting_cards import RuntimeCard
+        return RuntimeCard(self._runtimeStatusService, self._coroutineRunner,
+                           self._taskService, runtime, parent)
+
+    # ── Aggregation ──
+
+    def createPage(self, pageClass, parent=None):
+        pack = self._pagePackMap.get(pageClass)
+        if pack:
+            return pageClass(pack, parent)
+        return pageClass(parent)
 
     def pages(self) -> list[type[PackPage]]:
         result = []
@@ -120,13 +173,13 @@ class FeatureService(QObject):
         return any(
             pack.config.associateFileTypes.value
             for pack in self._packs
-            if pack.config and hasattr(pack.config, "associateFileTypes")
+            if pack.config and pack.config.associateFileTypes is not None
         )
 
     def setFileAssociation(self, isEnabled: bool) -> None:
         from app.config.cfg import cfg
         for pack in self._packs:
-            if pack.config and hasattr(pack.config, "associateFileTypes"):
+            if pack.config and pack.config.associateFileTypes is not None:
                 cfg.set(pack.config.associateFileTypes, isEnabled)
 
     def _registerFileAssociations(self) -> None:
@@ -147,4 +200,3 @@ class FeatureService(QObject):
         loop = QEventLoop()
         coroutineRunner.submit(deactivateAll(), done=lambda _: loop.quit())
         loop.exec()
-

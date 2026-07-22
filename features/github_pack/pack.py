@@ -2,6 +2,8 @@ from urllib.parse import urlparse
 
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions
+from http_pack.cards import HttpTaskCard
+from http_pack.task import HttpTask
 from .config import githubConfig, selectedProxySite
 
 GITHUB_HOSTS = {
@@ -44,9 +46,6 @@ def isGitHubFileUrl(url: str) -> bool:
 class GitHubParser(TaskParser):
     priority = 90
 
-    def __init__(self, pack):
-        self._pack = pack
-
     def match(self, options: TaskOptions) -> bool:
         return (
             githubConfig.enabled.value
@@ -58,7 +57,7 @@ class GitHubParser(TaskParser):
         from dataclasses import replace
 
         proxiedUrl = f"{selectedProxySite().rstrip('/')}/{options.url.lstrip('/')}"
-        task = await self._pack._services.featureService.parse(replace(options, url=proxiedUrl))
+        task = await self.delegate(replace(options, url=proxiedUrl))
         task.url = options.url
         task.packId = "github"
         return task
@@ -67,9 +66,8 @@ class GitHubParser(TaskParser):
 class GitHubPack(FeaturePack):
     packId = "github"
     config = githubConfig
-
-    def parsers(self):
-        return [GitHubParser(self)]
+    parsers = [GitHubParser]
+    taskCards = {HttpTask: HttpTaskCard}
 
     def optionCards(self, task, parent=None):
         from http_pack.pack import HttpPack
@@ -78,7 +76,3 @@ class GitHubPack(FeaturePack):
     def editCards(self, task, parent=None):
         from http_pack.pack import HttpPack
         return HttpPack.editCards(self, task, parent)
-
-    def taskCard(self, task, parent=None):
-        from http_pack.cards import HttpTaskCard
-        return HttpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)

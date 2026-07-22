@@ -65,7 +65,7 @@ class M3U8Config(PackConfig):
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, RangeSettingCard, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import (
-            SelectFolderSettingCard, LineEditSettingCard, RuntimeCard, SelectFileCard, SpinBoxSettingCard,
+            SelectFolderSettingCard, LineEditSettingCard, SelectFileCard, SpinBoxSettingCard,
         )
 
         m3u8Group = CollapsibleSettingCardGroup(self.tr("M3U8 下载"), "m3u8", parent)
@@ -74,7 +74,7 @@ class M3U8Config(PackConfig):
             self.tr("N_m3u8DL-RE 安装目录"),
             m3u8Group,
         )
-        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, m3u8Runtime, m3u8Group)
+        runtimeCard = self.createRuntimeCard(m3u8Runtime, m3u8Group)
 
         cards = [installFolderCard, runtimeCard]
         if sys.platform != "darwin":
@@ -186,7 +186,7 @@ class M3U8Runtime(BinaryRuntime):
         extension = "zip" if sys.platform == "win32" else "tar.gz"
         assetName = f"N_m3u8DL-RE_{RELEASE_TAG}_{target}_{RELEASE_DATE}.{extension}"
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
-        return await self._services.featureService.parse(BinaryInstallOptions(
+        return await self.parse(BinaryInstallOptions(
             url=f"{RELEASE_BASE}/{assetName}",
             outputFolder=Path(m3u8Config.installFolder.value),
             name=f"N_m3u8DL-RE 安装 ({target})",

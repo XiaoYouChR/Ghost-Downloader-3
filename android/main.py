@@ -62,10 +62,10 @@ def startApp(application):
     sys.excepthook = exceptionHook
 
     coroutineRunner, categoryService, speedMeter = loadEngine(application)
-    featureService, taskService, browserService, aria2RpcServer, runtimeStatusService = createServices(
+    featureService, taskService, browserService, aria2RpcServer = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
-    loadPacks(featureService, coroutineRunner, speedMeter, taskService, categoryService, runtimeStatusService)
+    loadPacks(featureService, coroutineRunner, speedMeter)
 
     mainWindow = MobileMainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner)
     mainWindow.show()

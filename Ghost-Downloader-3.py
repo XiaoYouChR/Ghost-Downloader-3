@@ -88,10 +88,10 @@ def startApp(application, isSilent=False):
 
     MainWindow.refreshThemeColor()
 
-    featureService, taskService, browserService, aria2RpcServer, runtimeStatusService = createServices(
+    featureService, taskService, browserService, aria2RpcServer = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
-    loadPacks(featureService, coroutineRunner, speedMeter, taskService, categoryService, runtimeStatusService)
+    loadPacks(featureService, coroutineRunner, speedMeter)
 
     from app.services.plan import Plan
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
@@ -123,11 +123,11 @@ def startApp(application, isSilent=False):
         # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
         oobe.deleteLater()
 
-        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService, plan)
+        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
         window.setupPacks()
         window.show()
     else:
-        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService, plan)
+        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
 
         if not isSilent:
             from qfluentwidgets import SplashScreen
@@ -158,7 +158,7 @@ def startApp(application, isSilent=False):
     def show() -> MainWindow:
         nonlocal window
         if window is None:
-            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService, plan)
+            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
             window.setupPacks()
             window.destroyed.connect(onWindowDestroyed)
         window.show()
@@ -169,7 +169,7 @@ def startApp(application, isSilent=False):
     def onBrowserDraft(tasks):
         nonlocal window
         if window is None:
-            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, runtimeStatusService, plan)
+            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
             window.setupPacks()
             window.destroyed.connect(onWindowDestroyed)
         window.addTasks(tasks)

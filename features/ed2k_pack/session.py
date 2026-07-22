@@ -13,6 +13,15 @@ class ED2kSession:
 
     def __init__(self):
         self._client: Client | None = None
+        self.submit = None
+
+    def removeHash(self, fileHash: str) -> None:
+        if self._client is None or self.submit is None:
+            return
+        try:
+            self.submit(self._client.remove(fileHash, deleteFile=True))
+        except Exception:
+            pass
 
     def client(self) -> Client:
         if self._client is None:

@@ -36,7 +36,7 @@ class FFmpegConfig(PackConfig):
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from app.view.components.setting_cards import RuntimeCard, SelectFolderSettingCard
+        from app.view.components.setting_cards import SelectFolderSettingCard
 
         ffmpegGroup = CollapsibleSettingCardGroup(self.tr("FFmpeg"), "ffmpeg", parent)
         installFolderCard = SelectFolderSettingCard(
@@ -44,7 +44,7 @@ class FFmpegConfig(PackConfig):
             self.tr("FFmpeg 安装目录"),
             ffmpegGroup,
         )
-        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, ffmpegRuntime, ffmpegGroup)
+        runtimeCard = self.createRuntimeCard(ffmpegRuntime, ffmpegGroup)
 
         installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
         ffmpegGroup.addSettingCards([installFolderCard, runtimeCard])
@@ -107,7 +107,7 @@ class FFmpegRuntime(BinaryRuntime):
             ("ffmpeg.exe", "ffprobe.exe") if sys.platform == "win32"
             else ("ffmpeg", "ffprobe")
         )
-        return await self._services.featureService.parse(BinaryInstallOptions(
+        return await self.parse(BinaryInstallOptions(
             url=url,
             outputFolder=Path(ffmpegConfig.installFolder.value),
             name=f"FFmpeg 安装 ({target})",

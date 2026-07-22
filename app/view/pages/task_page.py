@@ -123,13 +123,12 @@ class TaskPage(QWidget):
     BOTTOM_PADDING = 12
     VIEWPORT_BUFFER = 5
 
-    def __init__(self, taskService, featureService, categoryService, speedMeter, coroutineRunner, plan=None, parent=None):
+    def __init__(self, taskService, featureService, categoryService, speedMeter, plan=None, parent=None):
         super().__init__(parent)
         self._taskService = taskService
         self._featureService = featureService
         self._categoryService = categoryService
         self._speedMeter = speedMeter
-        self._coroutineRunner = coroutineRunner
         self._plan = plan
         self._filterMode = FilterMode.ALL
         self._categoryFilter = ""

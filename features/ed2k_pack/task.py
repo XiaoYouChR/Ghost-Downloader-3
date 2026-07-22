@@ -10,9 +10,6 @@ from loguru import logger
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 
-_coroutineRunner = None
-
-
 @dataclass(kw_only=True, eq=False)
 class ED2kTask(Task):
     packId: str = "ed2k"
@@ -23,12 +20,9 @@ class ED2kTask(Task):
         return super().reset()
 
     def deleteFiles(self):
-        if self.fileHash and _coroutineRunner is not None:
+        if self.fileHash:
             from .session import ed2kSession
-            try:
-                _coroutineRunner.submit(ed2kSession.client().remove(self.fileHash, deleteFile=True))
-            except Exception:
-                pass
+            ed2kSession.removeHash(self.fileHash)
         super().deleteFiles()
 
 

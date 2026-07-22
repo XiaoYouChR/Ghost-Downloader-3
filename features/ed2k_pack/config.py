@@ -24,7 +24,7 @@ class ED2kConfig(PackConfig):
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard, SpinBoxSettingCard
+        from app.view.components.setting_cards import SelectFolderSettingCard, SpinBoxSettingCard
 
         group = CollapsibleSettingCardGroup(self.tr("eD2k 下载"), "ed2k", parent)
         installFolderCard = SelectFolderSettingCard(
@@ -32,7 +32,7 @@ class ED2kConfig(PackConfig):
             self.tr("goed2kd 安装目录"),
             group,
         )
-        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, ed2kRuntime, group)
+        runtimeCard = self.createRuntimeCard(ed2kRuntime, group)
 
         installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
         group.addSettingCards([
@@ -83,7 +83,7 @@ class ED2kRuntime(BinaryRuntime):
         binaryName = "goed2kd.exe" if sys.platform == "win32" else "goed2kd"
         binaryPath = toPosixPath(installFolder / binaryName)
 
-        download = await self._services.featureService.parse(
+        download = await self.parse(
             TaskOptions(url=url, outputFolder=installFolder)
         )
         downloadStep = download.steps[0]

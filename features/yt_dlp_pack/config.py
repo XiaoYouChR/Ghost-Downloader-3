@@ -65,11 +65,11 @@ class YtDlpConfig(PackConfig):
     def settingGroups(self, parent: QWidget) -> list:
         from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from app.view.components.setting_cards import SelectFolderSettingCard, RuntimeCard
+        from app.view.components.setting_cards import SelectFolderSettingCard
 
         group = CollapsibleSettingCardGroup(self.tr("YouTube 下载"), "ytdlp", parent)
 
-        runtimeCard = RuntimeCard(self._services.runtimeStatusService, self._services.coroutineRunner, self._services.taskService, youTubeRuntime, group)
+        runtimeCard = self.createRuntimeCard(youTubeRuntime, group)
         cards = [runtimeCard]
 
         if not IS_ANDROID:
@@ -228,7 +228,7 @@ class YouTubeRuntime(BinaryRuntime):
         from app.models.task import TaskOptions
 
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
-        qjsDownload = await self._services.featureService.parse(TaskOptions(
+        qjsDownload = await self.parse(TaskOptions(
             url=f"{QJS_RELEASE_BASE}/{_qjsAssetName()}",
             outputFolder=installFolder,
         ))

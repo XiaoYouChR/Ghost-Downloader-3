@@ -258,7 +258,7 @@ class TaskService(QObject):
         if self._queue.isRunning(task.taskId):
             for step in task.steps:
                 if step.status == TaskStatus.RUNNING:
-                    fileIndex = getattr(step, "fileIndex", None)
+                    fileIndex = step.fileIndex
                     isRunningDeselected = fileIndex is not None and fileIndex not in selectedSet
                     break
 

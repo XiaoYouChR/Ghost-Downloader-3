@@ -32,25 +32,21 @@ def createServices(coroutineRunner, categoryService, speedMeter):
     from app.services.runtime_status import RuntimeStatusService
     from app.services.task_service import TaskService
 
-    featureService = FeatureService()
     taskService = TaskService(coroutineRunner, categoryService, speedMeter)
+    runtimeStatusService = RuntimeStatusService(coroutineRunner)
+    featureService = FeatureService(taskService, categoryService, coroutineRunner, runtimeStatusService)
     browserService = BrowserService(coroutineRunner, taskService, parse=featureService.parse)
     aria2RpcServer = Aria2RpcServer(coroutineRunner, parse=featureService.parse, addTask=taskService.add)
-    runtimeStatusService = RuntimeStatusService(coroutineRunner)
 
-    return featureService, taskService, browserService, aria2RpcServer, runtimeStatusService
+    return featureService, taskService, browserService, aria2RpcServer
 
 
-def loadPacks(featureService, coroutineRunner, speedMeter, taskService, categoryService, runtimeStatusService):
+def loadPacks(featureService, coroutineRunner, speedMeter):
     from app.models.pack import PackConfig, PackServices
 
     services = PackServices(
         coroutineRunner=coroutineRunner,
         speedMeter=speedMeter,
-        taskService=taskService,
-        featureService=featureService,
-        categoryService=categoryService,
-        runtimeStatusService=runtimeStatusService,
     )
     featureService.load(services)
     PackConfig.load()

@@ -114,6 +114,7 @@ class TaskStep:
         TaskStep._registry[cls.__name__] = cls
 
     stepIndex: int
+    fileIndex: int | None = None
     stepId: str = field(default_factory=lambda: f"stp_{uuid4().hex}")
     status: TaskStatus = TaskStatus.WAITING
     progress: float = 0
@@ -284,7 +285,7 @@ class Task:
     def _isStepSelected(self, step: TaskStep) -> bool:
         if not self.files:
             return True
-        fileIndex = getattr(step, "fileIndex", None)
+        fileIndex = step.fileIndex
         if fileIndex is None:
             return True
         for file in self.files:
@@ -298,7 +299,7 @@ class Task:
         received: dict[int, int] = {}
         completed: dict[int, bool] = {}
         for step in self.steps:
-            fileIndex = getattr(step, "fileIndex", None)
+            fileIndex = step.fileIndex
             if fileIndex is None:
                 continue
             received[fileIndex] = received.get(fileIndex, 0) + step.receivedBytes

@@ -106,14 +106,6 @@ class StubSpeedMeter:
         return self._obj.speedChanged
 
 
-class StubCoroutineRunner:
-    def submit(self, *a, **kw):
-        return "work_1"
-
-    def cancel(self, *a, **kw):
-        pass
-
-
 class TestRunningIds:
 
     @pytest.fixture
@@ -125,7 +117,6 @@ class TestRunningIds:
             featureService=StubFeatureService(),
             categoryService=StubCategoryService(),
             speedMeter=StubSpeedMeter(),
-            coroutineRunner=StubCoroutineRunner(),
         )
         return page, ts
 

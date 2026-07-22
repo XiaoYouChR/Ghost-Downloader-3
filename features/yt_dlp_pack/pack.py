@@ -8,6 +8,7 @@ from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
 from loguru import logger
 
+from .cards import YtDlpDraftCard, YtDlpTaskCard
 from .config import ytDlpConfig, youTubeRuntime
 from .task import YouTubeTask, buildStepGroup, probeFormats, probePlaylist
 
@@ -80,6 +81,9 @@ class YouTubeParser(TaskParser):
 
 class YouTubePack(FeaturePack):
     packId = "ytdlp"
+    parsers = [YouTubeParser]
+    taskCards = {YouTubeTask: YtDlpTaskCard}
+    draftCards = {YouTubeTask: YtDlpDraftCard}
 
     def __init__(self, services):
         self.config = ytDlpConfig
@@ -87,17 +91,6 @@ class YouTubePack(FeaturePack):
 
     def runtimes(self):
         return [youTubeRuntime]
-
-    def parsers(self):
-        return [YouTubeParser()]
-
-    def taskCard(self, task, parent=None):
-        from .cards import YtDlpTaskCard
-        return YtDlpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
-
-    def draftCard(self, task, parent=None):
-        from .cards import YtDlpDraftCard
-        return YtDlpDraftCard(task, self._services.categoryService, parent)
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard

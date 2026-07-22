@@ -22,10 +22,11 @@ class DraftCard(QWidget):
     categoryPicked = Signal(str)
     editRequested = Signal()
 
-    def __init__(self, task: Task, categoryService, parent=None):
+    def __init__(self, task: Task, categoryService, coroutineRunner, parent=None):
         super().__init__(parent)
         self._task = task
         self._categoryService = categoryService
+        self._coroutineRunner = coroutineRunner
 
         self.iconLabel = ImageLabel(self)
         self.iconLabel.setImage(QFileIconProvider().icon(QFileInfo(task.name)).pixmap(16, 16))

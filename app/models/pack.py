@@ -9,13 +9,10 @@ from PySide6.QtCore import QCoreApplication, Signal
 from app.config.cfg import cfg, ConfigItem
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
     from app.models.task import Task, TaskOptions
-    from app.services.category_service import CategoryService
     from app.services.coroutine_runner import CoroutineRunner
-    from app.services.feature_service import FeatureService
     from app.services.speed_meter import SpeedMeter
-    from app.services.task_service import TaskService
-    from app.services.runtime_status import RuntimeStatusService
     from PySide6.QtWidgets import QWidget
     from qfluentwidgets import FluentIcon
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -31,6 +28,8 @@ class FileType:
 
 class TaskParser:
     priority: int = 100
+    pack: FeaturePack | None = None
+    delegate: Callable[[TaskOptions], Awaitable[Task]] | None = None
 
     def match(self, options: TaskOptions) -> bool:
         raise NotImplementedError
@@ -43,6 +42,9 @@ class TaskParser:
 
 
 class PackConfig:
+    createRuntimeCard: Callable[..., QWidget] | None = None
+    submit: Callable[..., str] | None = None
+    associateFileTypes: ConfigItem | None = None
     _items: dict[str, ConfigItem] = {}
 
     def __init_subclass__(cls, **kwargs):
@@ -85,6 +87,7 @@ class PackConfig:
 
 
 class BinaryRuntime:
+    parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
     name: str = ""
     canInstall: bool = False
     # 自描述展示信息（title 用 QT_TRANSLATE_NOOP 声明原文，展示端 translate）
@@ -130,10 +133,6 @@ class PackPage:
 class PackServices:
     coroutineRunner: CoroutineRunner
     speedMeter: SpeedMeter
-    taskService: TaskService
-    featureService: FeatureService
-    categoryService: CategoryService
-    runtimeStatusService: RuntimeStatusService
 
 
 class FeaturePack:
@@ -141,24 +140,21 @@ class FeaturePack:
     config: PackConfig | None = None
     proxySchemes: set[str] | None = None
 
+    parsers: list[type[TaskParser]] = []
+    taskCards: dict = {}
+    draftCards: dict = {}
+    parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
+    addTask: Callable[[Task], None] | None = None
+    submit: Callable[..., str] | None = None
+
     def __init__(self, services: PackServices):
         self._services = services
-        if self.config is not None:
-            self.config._services = services
-        for runtime in self.runtimes():
-            runtime._services = services
 
-    def parsers(self) -> list[TaskParser]:
-        return []
+    def taskCardClass(self, task: Task):
+        return self.taskCards.get(type(task))
 
-    def taskCard(self, task: Task, parent=None):
-        from app.view.cards.task_cards import TaskCard
-        return TaskCard(task, self._services.taskService, self._services.featureService,
-                        self._services.categoryService, parent)
-
-    def draftCard(self, task: Task, parent=None):
-        from app.view.cards.draft_cards import DraftCard
-        return DraftCard(task, self._services.categoryService, parent)
+    def draftCardClass(self, task: Task):
+        return self.draftCards.get(type(task))
 
     def optionCards(self, task: Task, parent=None) -> list[QWidget]:
         return []

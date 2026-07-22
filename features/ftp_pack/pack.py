@@ -8,6 +8,7 @@ from loguru import logger
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toPosixPath, toSafeFilename
+from .cards import FtpDraftCard, FtpTaskCard
 from .task import (
     FTP_DEFAULT_PORT,
     FtpConnectionInfo,
@@ -121,17 +122,9 @@ class FtpParser(TaskParser):
 class FtpPack(FeaturePack):
     packId = "ftp"
     proxySchemes = {"socks4", "socks5"}
-
-    def parsers(self):
-        return [FtpParser()]
-
-    def taskCard(self, task, parent=None):
-        from .cards import FtpTaskCard
-        return FtpTaskCard(task, self._services.taskService, self._services.featureService, self._services.categoryService, parent)
-
-    def draftCard(self, task, parent=None):
-        from .cards import FtpDraftCard
-        return FtpDraftCard(task, self._services.categoryService, parent)
+    parsers = [FtpParser]
+    taskCards = {FtpTask: FtpTaskCard}
+    draftCards = {FtpTask: FtpDraftCard}
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard

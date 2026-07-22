@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from app.services.coroutine_runner import CoroutineRunner
     from app.services.speed_meter import SpeedMeter
     from app.services.feature_service import FeatureService
-    from app.services.runtime_status import RuntimeStatusService
     from app.services.task_service import TaskService
     from app.view.dialogs.task_draft import TaskDraftDialog
 
@@ -42,7 +41,6 @@ class MainWindow(MSFluentWindow):
         categoryService: CategoryService,
         speedMeter: SpeedMeter,
         coroutineRunner: CoroutineRunner,
-        runtimeStatusService: RuntimeStatusService,
         plan,
         parent=None,
     ):
@@ -55,7 +53,6 @@ class MainWindow(MSFluentWindow):
         self._browserService = browserService
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
-        self._runtimeStatusService = runtimeStatusService
         self._speedMeter = speedMeter
         self._plan = plan
         self.setMicaEffectEnabled(False)
@@ -139,23 +136,23 @@ class MainWindow(MSFluentWindow):
         if pageClass is TaskPage:
             return TaskPage(
                 self._taskService, self._featureService,
-                self._categoryService, self._speedMeter, self._coroutineRunner, self._plan, parent=self,
+                self._categoryService, self._speedMeter, self._plan, parent=self,
             )
         if pageClass is SettingPage:
             return SettingPage(
                 self._featureService, self._browserService,
                 self._coroutineRunner, self._categoryService, parent=self,
             )
-        return pageClass(self)
+        return self._featureService.createPage(pageClass, parent=self)
 
     def _onSearchTextChanged(self, text: str) -> None:
         page = self.stackedWidget.currentWidget()
-        if hasattr(page, 'setSearchText'):
+        if isinstance(page, TaskPage):
             page.setSearchText(text)
 
     def _updateSearchTarget(self, page: QWidget) -> None:
         self.searchEdit.clear()
-        if hasattr(page, 'setSearchText'):
+        if isinstance(page, TaskPage):
             self.searchEdit.setPlaceholderText(page.searchPlaceholder)
             self.searchEdit.show()
         else:

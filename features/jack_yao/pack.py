@@ -51,8 +51,9 @@ class CatalogPage(PackPage, ScrollArea):
     icon = FluentIcon.CLOUD_DOWNLOAD
     title = QCoreApplication.translate("CatalogPage", "资源下载")
 
-    def __init__(self, parent=None):
+    def __init__(self, pack, parent=None):
         super().__init__(parent)
+        self._pack = pack
         self.setObjectName("CatalogPage")
         self._cards: list[CatalogCard] = []
 
@@ -82,7 +83,7 @@ class CatalogPage(PackPage, ScrollArea):
 
     def _loadCatalog(self):
         self._loadingWidget.setLoading()
-        _services.coroutineRunner.submit(
+        self._pack.submit(
             fetchCatalog(),
             done=self._onCatalogLoaded, failed=self._onCatalogFailed,
             owner=self,
@@ -100,6 +101,7 @@ class CatalogPage(PackPage, ScrollArea):
 
         for item in items:
             card = CatalogCard(item, self._scrollWidget)
+            card.downloadRequested.connect(self._onDownloadRequested)
             self._layout.addWidget(card)
             self._cards.append(card)
 
@@ -107,6 +109,9 @@ class CatalogPage(PackPage, ScrollArea):
 
     def _onCatalogFailed(self, error: str):
         self._loadingWidget.setError(self.tr("加载失败，请检查网络后重试\n") + str(error))
+
+    def _onDownloadRequested(self, items: list[dict]):
+        CatalogDownloadDialog(self._pack, self.window(), items).exec()
 
 
 class LoadingWidget(QWidget):
@@ -152,6 +157,8 @@ class LoadingWidget(QWidget):
 
 
 class CatalogCard(SimpleCardWidget):
+    downloadRequested = Signal(list)
+
     def __init__(self, item: dict, parent=None):
         super().__init__(parent)
         self._catalogItems: list[dict] = item["List"]
@@ -199,12 +206,12 @@ class CatalogCard(SimpleCardWidget):
         self._videoButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self._videoUrl)))
 
     def _onDownloadClicked(self):
-        dialog = CatalogDownloadDialog(self.window(), self._catalogItems)
-        dialog.exec()
+        self.downloadRequested.emit(self._catalogItems)
 
 
 class CatalogDownloadDialog(MessageBoxBase):
-    def __init__(self, parent=None, catalogItems: list[dict] | None = None):
+    def __init__(self, pack, parent=None, catalogItems: list[dict] | None = None):
+        self._pack = pack
         from app.view.components.card_groups import OptionCardGroup
         from app.view.components.editors import AutoSizingEdit
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
@@ -260,14 +267,14 @@ class CatalogDownloadDialog(MessageBoxBase):
         def onParsed(task):
             for step in task.steps:
                 step.setOptions(options)
-            _services.taskService.add(task)
+            self._pack.addTask(task)
 
         def onFailed(error):
             InfoBar.error(failedTitle, str(error), duration=-1,
                           position=InfoBarPosition.BOTTOM_RIGHT, parent=window)
 
-        _services.coroutineRunner.submit(
-            _services.featureService.parse(ResourceTaskOptions(
+        self._pack.submit(
+            self._pack.parse(ResourceTaskOptions(
                 url=item["Url"],
                 outputFolder=options.get("outputFolder", Path(cfg.downloadFolder.value)),
             )),
@@ -278,16 +285,8 @@ class CatalogDownloadDialog(MessageBoxBase):
         self.accept()
 
 
-_services = None
-
-
 class JackYaoPack(FeaturePack):
     packId = "jack_yao"
-
-    def __init__(self, services):
-        super().__init__(services)
-        global _services
-        _services = services
 
     def pages(self):
         return [CatalogPage]

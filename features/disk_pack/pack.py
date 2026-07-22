@@ -23,19 +23,14 @@ def assetNameFromUrl(url: str) -> str:
 class InstallParser(TaskParser):
     priority = 55
 
-    def __init__(self, pack):
-        self._pack = pack
-
     def match(self, options: TaskOptions) -> bool:
         return isinstance(options, BinaryInstallOptions)
 
     async def parse(self, options: BinaryInstallOptions) -> Task:
-        parse = self._pack._services.featureService.parse
-
         installFolder = options.outputFolder
         assetName = assetNameFromUrl(options.url)
 
-        download = await parse(
+        download = await self.delegate(
             TaskOptions(url=options.url, outputFolder=installFolder)
         )
         downloadStep = download.steps[0]
@@ -62,7 +57,7 @@ class InstallParser(TaskParser):
         stepIndex += 1
 
         if options.sha256Url:
-            checksumDownload = await parse(
+            checksumDownload = await self.delegate(
                 TaskOptions(url=options.sha256Url, outputFolder=installFolder)
             )
             checksumStep = checksumDownload.steps[0]
@@ -100,6 +95,4 @@ class InstallParser(TaskParser):
 
 class DiskPack(FeaturePack):
     packId = "disk"
-
-    def parsers(self):
-        return [InstallParser(self)]
+    parsers = [InstallParser]
