@@ -27,13 +27,13 @@ if __name__ == "__main__":
     from app.view.mobile import setupAndroid
     setupAndroid()
 
-    from app.startup import createEngine
+    from app.startup import createServices, loadPacks, startEngine, stopEngine
 
     coroutineRunner, categoryService, speedMeter = loadEngine(app)
-    featureService = loadPacks()
-    taskService, browserService, aria2RpcServer, runtimeStatusService = createEngine(
-        coroutineRunner, categoryService, speedMeter, featureService,
+    featureService, taskService, browserService, aria2RpcServer = createServices(
+        coroutineRunner, categoryService, speedMeter,
     )
+    loadPacks(featureService, coroutineRunner, speedMeter)
 
     from app.view.mobile.window import MobileMainWindow
     from app.view.mobile.device import setupTouchScrolling
@@ -42,6 +42,6 @@ if __name__ == "__main__":
     window.show()
     setupTouchScrolling(window)
 
-    startEngine(taskService, speedMeter, featureService, coroutineRunner, categoryService, runtimeStatusService)
+    startEngine(taskService, speedMeter, featureService, coroutineRunner)
     app.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner))
     sys.exit(app.exec())
