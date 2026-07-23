@@ -11,8 +11,10 @@ from qfluentwidgets import (
 from app.config.cfg import cfg
 
 PROFILE_FAMILY_LABELS = {
-    "chrome": "Chrome", "edge": "Edge", "firefox": "Firefox",
-    "safari": "Safari", "okhttp": "OkHttp",
+    "chrome": "Chrome", "edge": "Edge",
+    "firefox": "Firefox", "firefox-android": "Firefox Android",
+    "safari": "Safari", "safari-ios": "Safari iOS", "safari-ipad": "Safari iPad",
+    "okhttp": "OkHttp",
 }
 
 

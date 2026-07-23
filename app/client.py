@@ -135,7 +135,10 @@ def buildClient(
 
 
 def profileFamilies() -> list[str]:
-    return [f for f in ("chrome", "edge", "firefox", "safari", "okhttp") if f in PROFILES_BY_FAMILY]
+    return [f for f in (
+        "chrome", "edge", "firefox", "firefox-android",
+        "safari", "safari-ios", "safari-ipad", "okhttp",
+    ) if f in PROFILES_BY_FAMILY]
 
 
 def profileVersions(family: str) -> list[str]:
@@ -173,8 +176,11 @@ def matchEmulation(userAgent: str, host: Platform) -> Emulation | None:
             platform = host
 
         resolved = family
-        if family == "safari" and platform == Platform.IOS and "safari-ios" in PROFILES_BY_FAMILY:
-            resolved = "safari-ios"
+        if family == "safari" and platform == Platform.IOS:
+            if "iPad" in userAgent and "safari-ipad" in PROFILES_BY_FAMILY:
+                resolved = "safari-ipad"
+            elif "safari-ios" in PROFILES_BY_FAMILY:
+                resolved = "safari-ios"
         elif family == "firefox" and platform == Platform.Android and "firefox-android" in PROFILES_BY_FAMILY:
             resolved = "firefox-android"
 

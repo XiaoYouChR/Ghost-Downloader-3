@@ -205,6 +205,162 @@ class TestEffectiveHeaders:
 
 
 # ===========================================================================
+# E1. toEmulation — profile selection (real wreq)
+# ===========================================================================
+
+
+class TestToEmulation:
+
+    @pytest.fixture(autouse=True)
+    def _fresh_client(self):
+        if "app.client" in sys.modules:
+            del sys.modules["app.client"]
+
+    def test_raw_returns_none(self):
+        from app.client import toEmulation
+        assert toEmulation("raw") is None
+
+    def test_auto_empty_ua_returns_emulation(self):
+        from app.client import toEmulation
+        result = toEmulation("auto", "")
+        assert result is not None
+
+    def test_auto_with_chrome_ua(self):
+        from app.client import toEmulation
+        result = toEmulation("auto", "Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0 Safari/537.36")
+        assert result is not None
+
+    def test_known_family_chrome(self):
+        from app.client import toEmulation
+        assert toEmulation("chrome") is not None
+
+    def test_known_family_firefox(self):
+        from app.client import toEmulation
+        assert toEmulation("firefox") is not None
+
+    def test_unknown_profile_falls_back(self):
+        from app.client import toEmulation
+        result = toEmulation("nonexistent_browser_xyz")
+        assert result is not None
+
+    def test_profile_families_includes_mobile(self):
+        from app.client import profileFamilies, PROFILES_BY_FAMILY
+        families = profileFamilies()
+        for mobile in ("firefox-android", "safari-ios", "safari-ipad"):
+            if mobile in PROFILES_BY_FAMILY:
+                assert mobile in families, f"{mobile} missing from profileFamilies()"
+
+
+# ===========================================================================
+# E2. matchEmulation — UA parsing + version matching (real wreq)
+# ===========================================================================
+
+
+class TestMatchEmulation:
+
+    @pytest.fixture(autouse=True)
+    def _fresh_client(self):
+        if "app.client" in sys.modules:
+            del sys.modules["app.client"]
+
+    @pytest.fixture(autouse=True)
+    def _platform(self):
+        from wreq.emulation import Platform
+        self.host = Platform.Windows
+
+    def test_empty_ua_returns_none(self):
+        from app.client import matchEmulation
+        assert matchEmulation("", self.host) is None
+
+    def test_chrome_ua_matches(self):
+        from app.client import matchEmulation
+        result = matchEmulation(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            self.host,
+        )
+        assert result is not None
+
+    def test_edge_ua_takes_priority_over_chrome(self):
+        from app.client import matchEmulation
+        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+        result = matchEmulation(ua, self.host)
+        assert result is not None
+
+    def test_safari_iphone_matches(self):
+        from app.client import matchEmulation
+        from wreq.emulation import Platform
+        ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1"
+        result = matchEmulation(ua, Platform.MacOS)
+        assert result is not None
+
+    def test_firefox_android_matches(self):
+        from app.client import matchEmulation
+        from wreq.emulation import Platform
+        ua = "Mozilla/5.0 (Android 13; Mobile; rv:119.0) Gecko/119.0 Firefox/119.0"
+        result = matchEmulation(ua, Platform.Linux)
+        assert result is not None
+
+    def test_safari_ipad_uses_ipad_family(self):
+        from app.client import matchEmulation, PROFILES_BY_FAMILY
+        from wreq.emulation import Platform
+        ua = "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1"
+        result = matchEmulation(ua, Platform.MacOS)
+        assert result is not None
+        if "safari-ipad" in PROFILES_BY_FAMILY:
+            iphone_ua = ua.replace("iPad", "iPhone")
+            iphone_result = matchEmulation(iphone_ua, Platform.MacOS)
+            assert iphone_result is not None
+
+    def test_unknown_ua_returns_none(self):
+        from app.client import matchEmulation
+        assert matchEmulation("curl/7.88.1", self.host) is None
+
+
+# ===========================================================================
+# E3. buildClient header filtering (real wreq, mock Client constructor)
+# ===========================================================================
+
+
+class TestBuildClientHeaderFiltering:
+
+    @pytest.fixture(autouse=True)
+    def _mock_client_only(self, monkeypatch):
+        if "app.client" in sys.modules:
+            del sys.modules["app.client"]
+        import app.client
+        self._client_cls = MagicMock(return_value=MagicMock())
+        monkeypatch.setattr(app.client, "Client", self._client_cls)
+
+    def test_emulation_strips_useragent_from_headers(self):
+        from app.client import buildClient, toEmulation
+        emulation = toEmulation("chrome")
+        buildClient(emulation=emulation, headers={"user-agent": "custom", "accept": "text/html"})
+        headers = self._client_cls.call_args[1].get("headers", {})
+        assert "user-agent" not in headers
+        assert headers.get("accept") == "text/html"
+
+    def test_emulation_strips_sec_ch_ua_headers(self):
+        from app.client import buildClient, toEmulation
+        emulation = toEmulation("chrome")
+        buildClient(emulation=emulation, headers={
+            "sec-ch-ua": '"Chromium";v="120"',
+            "sec-ch-ua-platform": '"Windows"',
+            "accept": "text/html",
+        })
+        headers = self._client_cls.call_args[1].get("headers", {})
+        assert "sec-ch-ua" not in headers
+        assert "sec-ch-ua-platform" not in headers
+        assert headers.get("accept") == "text/html"
+
+    def test_no_emulation_adds_default_ua_when_missing(self):
+        from app.client import buildClient
+        buildClient(emulation=None, headers={"accept": "text/html"})
+        headers = self._client_cls.call_args[1].get("headers", {})
+        assert "user-agent" in headers
+        assert "Chrome" in headers["user-agent"]
+
+
+# ===========================================================================
 # F. Preset field interactions in featureService.parse()
 # ===========================================================================
 
