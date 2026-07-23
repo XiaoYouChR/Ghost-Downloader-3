@@ -311,6 +311,12 @@ class TestMatchEmulation:
             iphone_result = matchEmulation(iphone_ua, Platform.MacOS)
             assert iphone_result is not None
 
+    def test_opera_ua_takes_priority_over_chrome(self):
+        from app.client import matchEmulation
+        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36 OPR/120.0.0.0"
+        result = matchEmulation(ua, self.host)
+        assert result is not None
+
     def test_unknown_ua_returns_none(self):
         from app.client import matchEmulation
         assert matchEmulation("curl/7.88.1", self.host) is None

@@ -18,7 +18,8 @@ if TYPE_CHECKING:
 FALLBACK_PROFILE = "chrome"
 
 FAMILY_BY_PREFIX = {
-    "Chrome": "chrome", "Edge": "edge", "Firefox": "firefox", "Safari": "safari", "OkHttp": "okhttp",
+    "Chrome": "chrome", "Edge": "edge", "Firefox": "firefox", "Opera": "opera",
+    "Safari": "safari", "OkHttp": "okhttp",
     "FirefoxAndroid": "firefox-android", "SafariIos": "safari-ios",
     "SafariIPad": "safari-ipad", "SafariIpad": "safari-ipad",
 }
@@ -136,7 +137,7 @@ def buildClient(
 
 def profileFamilies() -> list[str]:
     return [f for f in (
-        "chrome", "edge", "firefox", "firefox-android",
+        "chrome", "edge", "firefox", "firefox-android", "opera",
         "safari", "safari-ios", "safari-ipad", "okhttp",
     ) if f in PROFILES_BY_FAMILY]
 
@@ -151,6 +152,7 @@ def matchEmulation(userAgent: str, host: Platform) -> Emulation | None:
 
     for family, pattern in (
         ("edge", r"Edg(?:e|A|iOS)?/(\d+)"),
+        ("opera", r"OPR/(\d+)"),
         ("okhttp", r"(?i)okhttp/(\d+)"),
         ("firefox", r"Firefox/(\d+)"),
         ("chrome", r"Chrome/(\d+)"),
