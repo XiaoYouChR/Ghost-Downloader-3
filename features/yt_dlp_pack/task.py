@@ -245,7 +245,7 @@ class YouTubeExtractStep(TaskStep):
                     ext = "m4a" if not videoFmt else "mp4"
                     self.task.setName(f"{safeName}.{ext}")
                 for step in self.task.steps:
-                    if getattr(step, "fileIndex", -1) == self.fileIndex and hasattr(step, "videoStem"):
+                    if step.fileIndex == self.fileIndex and hasattr(step, "videoStem"):
                         step.videoStem = safeName
 
         self.setStatus(TaskStatus.COMPLETED)
@@ -320,7 +320,7 @@ class YouTubeExtractStep(TaskStep):
         from .config import ytDlpConfig
 
         for step in self.task.steps:
-            if getattr(step, "fileIndex", -1) != self.fileIndex:
+            if step.fileIndex != self.fileIndex:
                 continue
             if isinstance(step, FFmpegResourceStep):
                 fmt = videoFmt if step.role == "video" else audioFmt

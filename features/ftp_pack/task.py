@@ -503,7 +503,7 @@ class FtpTask(Task):
         super().__post_init__()
         # 旧存档中被取消勾选的文件没有 Step，按 files 补建
         if self.files:
-            existing = {getattr(s, "fileIndex", None) for s in self.steps}
+            existing = {s.fileIndex for s in self.steps}
             for file in self.files:
                 if file.index not in existing:
                     self.addStep(FtpStep.fromFile(file, self))
