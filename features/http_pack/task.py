@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import os
 from asyncio import TaskGroup, CancelledError
 from contextlib import suppress
@@ -16,12 +17,17 @@ from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSi
 from app.platform.sysio import ftruncate, pwrite
 
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
+FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO, 39, 112})
 
 
 class PermanentDownloadError(Exception):
     def __init__(self, status: int):
         super().__init__(f"HTTP {status}")
         self.status = status
+
+
+class RangeNotSupportedError(Exception):
+    pass
 
 
 @dataclass
@@ -143,14 +149,11 @@ class HttpTaskStep(TaskStep):
         except Exception as e:
             logger.opt(exception=e).error("删除进度文件失败 {}", target)
 
-    def _reassignSubworker(self) -> None:
-        if self.fileSize <= 0:
-            return
-
+    def _splitSlowest(self) -> HttpSubworker | None:
         slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
         remainingBytes = slowest.end - slowest.position + 1
-        if remainingBytes < cfg.maxReassignSize.value * 1024:
-            return
+        if remainingBytes < 2:
+            return None
 
         base = remainingBytes // 2
         remainder = remainingBytes % 2
@@ -163,7 +166,17 @@ class HttpTaskStep(TaskStep):
             end=oldEnd,
         )
         self.subworkers.insert(self.subworkers.index(slowest) + 1, newSubworker)
-        self._taskGroup.create_task(self._runSubworker(newSubworker, self._fd))
+        return newSubworker
+
+    def _reassignSubworker(self) -> None:
+        if self.fileSize <= 0:
+            return
+        slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
+        if slowest.end - slowest.position + 1 < cfg.maxReassignSize.value * 1024:
+            return
+        newSw = self._splitSlowest()
+        if newSw:
+            self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
     def _autoSpeedUp(self) -> None:
         if self.isAccelerated or not cfg.autoSpeedUp.value:
@@ -249,6 +262,8 @@ class HttpTaskStep(TaskStep):
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
                             raise PermanentDownloadError(status)
+                        if status == 200:
+                            raise RangeNotSupportedError()
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
                         async for chunk in response.stream():
@@ -263,9 +278,11 @@ class HttpTaskStep(TaskStep):
                     return
                 except CancelledError:
                     raise
-                except PermanentDownloadError:
+                except (PermanentDownloadError, RangeNotSupportedError):
                     raise
                 except Exception as e:
+                    if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
+                        raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
 
@@ -297,6 +314,8 @@ class HttpTaskStep(TaskStep):
                 except PermanentDownloadError:
                     raise
                 except Exception as e:
+                    if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
+                        raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
 
@@ -304,7 +323,7 @@ class HttpTaskStep(TaskStep):
             while subworker.position <= subworker.end:
                 try:
                     headers = {
-                        **self.headers,
+                        **self._effectiveHeaders,
                         "range": f"bytes={subworker.position}-{subworker.end}",
                         "accept-encoding": "identity",
                     }
@@ -313,6 +332,8 @@ class HttpTaskStep(TaskStep):
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
                             raise PermanentDownloadError(status)
+                        if status == 200:
+                            raise RangeNotSupportedError()
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
                         async for chunk in response.stream():
@@ -335,9 +356,11 @@ class HttpTaskStep(TaskStep):
 
                 except CancelledError:
                     raise
-                except PermanentDownloadError:
+                except (PermanentDownloadError, RangeNotSupportedError):
                     raise
                 except Exception as e:
+                    if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
+                        raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
 
@@ -346,10 +369,8 @@ class HttpTaskStep(TaskStep):
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         self._reportSpeed = reportSpeed
         self._waitForSpeedLimit = waitForSpeedLimit
-        self._taskGroup = TaskGroup()
         self._speedHistory: list[int] = []
         self._accelCheckTime = 0
-        self.subworkers = []
         shouldDeleteRecord = False
 
         Path(self.outputPath).parent.mkdir(parents=True, exist_ok=True)
@@ -372,6 +393,11 @@ class HttpTaskStep(TaskStep):
             if not self.canUseRangeRequests:
                 self._deleteRecord()
             self.subworkers = self._buildSubworkers()
+        elif self.fileSize > 0:
+            target = min(self.subworkerCount, self.fileSize)
+            while len(self.subworkers) < target:
+                if not self._splitSlowest():
+                    break
 
         openMode = os.O_RDWR | os.O_CREAT
         if not self.canUseRangeRequests:
@@ -384,28 +410,46 @@ class HttpTaskStep(TaskStep):
             except Exception as e:
                 logger.opt(exception=e).error("{} 预分配文件大小失败", self.outputPath)
 
-        supervisor = asyncio.create_task(self._supervise())
-
         try:
-            async with self._taskGroup:
-                for subworker in self.subworkers:
-                    self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+            while True:
+                supervisor = asyncio.create_task(self._supervise())
+                try:
+                    self._taskGroup = TaskGroup()
+                    async with self._taskGroup:
+                        for subworker in self.subworkers:
+                            self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
 
-            self.setStatus(TaskStatus.COMPLETED)
-            shouldDeleteRecord = True
-        except CancelledError:
-            self.setStatus(TaskStatus.PAUSED)
-            raise
-        except ExceptionGroup as eg:
-            cause = eg.exceptions[0]
-            if isinstance(cause, PermanentDownloadError):
-                raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
-            raise cause from eg
+                    self.setStatus(TaskStatus.COMPLETED)
+                    shouldDeleteRecord = True
+                    break
+                except CancelledError:
+                    self.setStatus(TaskStatus.PAUSED)
+                    raise
+                except ExceptionGroup as eg:
+                    if self.canUseRangeRequests and any(
+                        isinstance(e, RangeNotSupportedError) for e in eg.exceptions
+                    ):
+                        logger.warning("服务器不支持范围请求，降级为单流下载 {}", self.outputPath)
+                        self.canUseRangeRequests = False
+                        self.subworkers = self._buildSubworkers()
+                        ftruncate(self._fd, 0)
+                        self._deleteRecord()
+                        self._speedHistory.clear()
+                        self._accelCheckTime = 0
+                        continue
+
+                    cause = eg.exceptions[0]
+                    if isinstance(cause, PermanentDownloadError):
+                        raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
+                    if isinstance(cause, OSError) and cause.errno in FATAL_IO_ERRNO:
+                        raise TaskError("磁盘空间不足") from eg
+                    raise cause from eg
+                finally:
+                    if not supervisor.done():
+                        supervisor.cancel()
+                        with suppress(CancelledError):
+                            await supervisor
         finally:
-            if not supervisor.done():
-                supervisor.cancel()
-                with suppress(CancelledError):
-                    await supervisor
             os.close(self._fd)
             self._client.close()
             if shouldDeleteRecord:
