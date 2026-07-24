@@ -82,7 +82,7 @@ class YtDlpConfig(PackConfig):
             installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
             cards.insert(0, installFolderCard)
 
-            cards.append(CookieSettingCard(group))
+        cards.append(CookieSettingCard(group))
 
         cards.extend([
             SwitchSettingCard(
