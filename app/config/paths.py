@@ -4,8 +4,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QStandardPaths
 
-from app.platform.android import IS_ANDROID
-
 executableDir = (
     Path(sys.executable).resolve().parent
     if "__compiled__" in globals()
@@ -13,9 +11,7 @@ executableDir = (
 )
 
 APP_DATA_DIR: str = (
-    f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)}/GhostDownloader"
-    if IS_ANDROID
-    else str(executableDir / "GhostDownloader")
+    str(executableDir / "GhostDownloader")
     if (executableDir / "GhostDownloader").is_dir()
     else f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
 )
