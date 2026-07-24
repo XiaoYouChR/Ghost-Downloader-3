@@ -9,8 +9,7 @@ from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N, Qt
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import (
     BoolValidator, CaptionLabel, ConfigItem, FluentIcon, FolderValidator,
-    OptionsConfigItem, OptionsValidator, PushButton, SettingCard,
-    ToolButton, ToolTipFilter,
+    PushButton, SettingCard, ToolButton, ToolTipFilter,
 )
 
 from app.config.paths import APP_DATA_DIR
@@ -21,6 +20,7 @@ from app.platform.filesystem import findExecutable
 PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
 QJS_RELEASE_BASE = "https://github.com/quickjs-ng/quickjs/releases/latest/download"
 COOKIE_DOMAIN = ".youtube.com"
+AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
 
 
 def cookieFile() -> Path:
@@ -45,6 +45,11 @@ def saveCookies(cookieString: str) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def saveCookiesIfBetter(cookieString: str) -> None:
+    if any(name in cookieString for name in AUTH_COOKIE_NAMES):
+        saveCookies(cookieString)
+
+
 def clearCookies() -> None:
     path = cookieFile()
     if path.is_file():
@@ -53,17 +58,13 @@ def clearCookies() -> None:
 
 class YtDlpConfig(PackConfig):
     installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", FolderValidator())
-    loginBrowser = OptionsConfigItem(
-        "YtDlp", "LoginBrowser", "",
-        OptionsValidator(["", "chrome", "firefox", "edge", "safari"]),
-    )
     subtitleLanguages = ConfigItem("YtDlp", "SubtitleLanguages", "en")
     shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
     shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
     shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
 
     def settingGroups(self, parent: QWidget) -> list:
-        from qfluentwidgets import ComboBoxSettingCard, FluentIcon, SwitchSettingCard
+        from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
         from app.view.components.setting_cards import SelectFolderSettingCard
 
@@ -80,15 +81,6 @@ class YtDlpConfig(PackConfig):
             )
             installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
             cards.insert(0, installFolderCard)
-
-            cards.append(ComboBoxSettingCard(
-                self.loginBrowser,
-                FluentIcon.PEOPLE,
-                self.tr("登录浏览器"),
-                self.tr("从指定浏览器读取 YouTube 登录状态，用于下载需要登录的内容"),
-                texts=[self.tr("不使用"), "Chrome", "Firefox", "Edge", "Safari"],
-                parent=group,
-            ))
 
             cards.append(CookieSettingCard(group))
 
@@ -329,6 +321,10 @@ class CookieSettingCard(SettingCard):
         return QCoreApplication.translate(
             "YtDlpConfig", "粘贴 Cookie 用于下载需要登录的内容"
         )
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._refresh()
 
     def _refresh(self) -> None:
         self.setContent(self._statusText())

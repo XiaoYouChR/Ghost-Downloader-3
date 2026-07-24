@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import io
 import re
 import shutil
 import tempfile
@@ -21,14 +22,12 @@ from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
 ERROR_HINTS = (
     ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理（{detail}）"),
     ("video unavailable", "视频不可用，可能已被删除或设为私密（{detail}）"),
-    ("private video", "私密视频，需要已授权账号的 Cookie（{detail}）"),
-    ("members-only", "会员专属视频，需要会员账号的 Cookie（{detail}）"),
-    ("confirm your age", "年龄限制视频，需要已登录账号的 Cookie（{detail}）"),
-    ("confirm you're not a bot", "YouTube 需要人机验证，请在设置中配置 Cookie（{detail}）"),
+    ("private video", "私密视频，需要已授权账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
+    ("members-only", "会员专属视频，需要会员账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
+    ("confirm your age", "年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
+    ("confirm you're not a bot", "YouTube 需要人机验证。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）"),
     ("requested format is not available", "请求的格式不可用，请稍后重试（{detail}）"),
     ("http error 403", "下载被拒绝（403），链接可能已失效（{detail}）"),
-    ("decrypt", "浏览器 Cookie 解密失败，请在设置中手动导入 Cookie 或使用浏览器扩展（{detail}）"),
-    ("could not copy", "无法读取浏览器 Cookie 数据库，请关闭浏览器后重试或手动导入 Cookie（{detail}）"),
 )
 
 STEPS_PER_VIDEO = 4
@@ -53,13 +52,14 @@ def loadYtDlpToPath() -> None:
 
 
 def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
-    from .config import cookieFile, hasCookieFile, youTubeRuntime, ytDlpConfig
+    from .config import cookieFile, hasCookieFile, youTubeRuntime
     from app.config.cfg import proxy
 
     opts: dict = {
         "quiet": True,
         "no_warnings": True,
         "allowed_extractors": ["youtube.*"],
+        "remote_components": {"ejs:github"},
     }
     if noplaylist:
         opts["noplaylist"] = True
@@ -70,11 +70,7 @@ def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
     if proxyUrl:
         opts["proxy"] = proxyUrl
     if hasCookieFile():
-        opts["cookiefile"] = str(cookieFile())
-    else:
-        browser = ytDlpConfig.loginBrowser.value
-        if browser:
-            opts["cookiesfrombrowser"] = (browser,)
+        opts["cookiefile"] = io.StringIO(cookieFile().read_text(encoding="utf-8"))
     return opts
 
 
@@ -82,18 +78,8 @@ def probeFormats(url: str) -> dict:
     loadYtDlpToPath()
     yt_dlp = importlib.import_module("yt_dlp")
     opts = buildYtDlpOptions()
-    hasCookie = "cookiefile" in opts or "cookiesfrombrowser" in opts
-    try:
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            return ydl.extract_info(url, download=False)
-    except Exception:
-        if not hasCookie:
-            raise
-        logger.info("retrying without cookies for {}", url)
-        opts.pop("cookiefile", None)
-        opts.pop("cookiesfrombrowser", None)
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            return ydl.extract_info(url, download=False)
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        return ydl.extract_info(url, download=False)
 
 
 def probePlaylist(url: str) -> list[dict]:
@@ -364,7 +350,7 @@ class YouTubeResourceStep(FFmpegResourceStep):
         if not self.url:
             self.setStatus(TaskStatus.COMPLETED)
             return
-        await super().run()
+        await super().run(reportSpeed, waitForSpeedLimit)
 
 
 @dataclass(kw_only=True)
@@ -401,7 +387,7 @@ class YouTubeMergeStep(FFmpegStep):
             if self.metadataTitle or self.chapters:
                 await self._runWithMetadata()
             else:
-                await super().run()
+                await super().run(reportSpeed, waitForSpeedLimit)
             return
 
         singleInput = self._videoPath if hasVideo else self._audioPath if hasAudio else None
