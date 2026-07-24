@@ -147,12 +147,12 @@ class MainWindow(MSFluentWindow):
 
     def _onSearchTextChanged(self, text: str) -> None:
         page = self.stackedWidget.currentWidget()
-        if isinstance(page, TaskPage):
+        if hasattr(page, 'setSearchText'):
             page.setSearchText(text)
 
     def _updateSearchTarget(self, page: QWidget) -> None:
         self.searchEdit.clear()
-        if isinstance(page, TaskPage):
+        if hasattr(page, 'setSearchText'):
             self.searchEdit.setPlaceholderText(page.searchPlaceholder)
             self.searchEdit.show()
         else:
