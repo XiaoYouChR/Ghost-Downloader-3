@@ -122,7 +122,7 @@ class MediaAttribution {
   private sessionCounter = 0;
   // The only way to definitively bind a URL to a specific <video>: lock the most recent
   // unlocked fetch to whichever session consumed it via appendBuffer.
-  private readonly recentFetches: Array<{ url: string; capturedAt: number }> = [];
+  private readonly recentFetches: Array<{ url: string; capturedAt: number; idHints: ReadonlySet<string> }> = [];
 
   start(): void {
     document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((element) => {
@@ -239,11 +239,6 @@ class MediaAttribution {
     for (const mediaSourceId of previous.mediaSourceIds) {
       this.sessionByMediaSourceId.delete(mediaSourceId);
     }
-    for (const [objectUrl, mediaSourceId] of this.mediaSourceIdByObjectUrl) {
-      if (previous.mediaSourceIds.has(mediaSourceId)) {
-        this.mediaSourceIdByObjectUrl.delete(objectUrl);
-      }
-    }
     if (this.lastBoundSession?.id === previous.id) {
       this.lastBoundSession = null;
     }
@@ -350,7 +345,7 @@ class MediaAttribution {
   // get spuriously locked to the active session.
   private recordFetch(url: string, contentType: string): void {
     if (!this.isMediaUrl(url, contentType)) { return; }
-    this.recentFetches.push({ url, capturedAt: performance.now() });
+    this.recentFetches.push({ url, capturedAt: performance.now(), idHints: urlIdHints(url) });
     if (this.recentFetches.length > RECENT_FETCHES_CAP) {
       this.recentFetches.shift();
     }
@@ -372,13 +367,23 @@ class MediaAttribution {
         if (meta) { this.upgradeTrackMime(meta, sourceBufferMime); }
         continue;
       }
+      if (entry.idHints.size > 0 && session.idHints.size > 0) {
+        let overlaps = false;
+        for (const h of entry.idHints) {
+          if (session.idHints.has(h)) { overlaps = true; break; }
+        }
+        if (!overlaps) { continue; }
+      }
       const claim = this.ledger.claim(entry.url, session.id, "mse", now, true);
       if (claim.moved || claim.ownerId === session.id) {
         if (!session.attributedUrls.has(entry.url)) {
           this.handoffUrl(entry.url, session, sourceBufferMime);
         } else {
           const meta = session.attributedUrls.get(entry.url);
-          if (meta) { this.upgradeTrackMime(meta, sourceBufferMime); }
+          if (meta) {
+            meta.lockedByMse = true;
+            this.upgradeTrackMime(meta, sourceBufferMime);
+          }
           for (const d of urlIdHints(entry.url)) { session.idHints.add(d); }
         }
         console.log(`${LOG_PREFIX} ${session.id} attributed buffer-append → ${entry.url} via ${sourceBufferMime}`);
