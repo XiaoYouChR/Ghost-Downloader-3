@@ -321,6 +321,18 @@ chrome.webNavigation.onCommitted.addListener((details) => {
   featureBridge.onNavigationCommitted(details);
 });
 
+chrome.webNavigation.onCompleted.addListener((details) => {
+  if (ffmpegCache.tab && details.tabId === ffmpegCache.tab) {
+    self.setTimeout(() => {
+      for (const item of ffmpegCache.data) {
+        chrome.tabs.sendMessage(details.tabId, item);
+      }
+      ffmpegCache.data = [];
+      ffmpegCache.tab = 0;
+    }, 500);
+  }
+});
+
 chrome.webRequest.onSendHeaders.addListener(
   (details) => {
     resourceBridge.onRequestHeaders(details);
@@ -341,6 +353,9 @@ chrome.webRequest.onResponseStarted.addListener(
 let bypassNextDownload = false;
 let bypassTimer = 0;
 let autoLaunchPending = false;
+
+const FFMPEG_ONLINE_URL = "https://ffmpeg.bmmmd.com/";
+const ffmpegCache: { tab: number; data: Record<string, unknown>[] } = { tab: 0, data: [] };
 
 async function takeBrowserDownload(
   downloadItem: chrome.downloads.DownloadItem,
@@ -519,6 +534,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       mime: message.mime,
       ext: message.extraExt,
       requestHeaders: message.requestHeaders,
+    });
+    sendResponse("ok");
+    return true;
+  }
+
+  if (message.Message === "catCatchFFmpeg") {
+    const data = { ...message, Message: "ffmpeg", tabId: message.tabId ?? sender.tab?.id };
+    chrome.tabs.query({ url: FFMPEG_ONLINE_URL + "*" }, (tabs) => {
+      if (chrome.runtime.lastError || !tabs?.length) {
+        chrome.tabs.create({ url: FFMPEG_ONLINE_URL, active: message.active ?? true }, (tab) => {
+          if (chrome.runtime.lastError || !tab) { return; }
+          ffmpegCache.tab = tab.id!;
+          ffmpegCache.data.push(data);
+        });
+        return;
+      }
+      if (tabs[0].status === "complete") {
+        chrome.tabs.sendMessage(tabs[0].id!, data);
+      } else {
+        ffmpegCache.tab = tabs[0].id!;
+        ffmpegCache.data.push(data);
+      }
     });
     sendResponse("ok");
     return true;
