@@ -83,4 +83,5 @@ def stopEngine(taskService, browserService, aria2RpcServer, featureService, coro
     browserService.stop()
     aria2RpcServer.stop()
     featureService.deactivate(coroutineRunner)
+    taskService.flush()
     coroutineRunner.stop()

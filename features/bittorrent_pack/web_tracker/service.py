@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from time import time
 from urllib.parse import urlsplit
 
 from app.client import buildClient
@@ -10,8 +11,17 @@ from ..config import bittorrentConfig
 
 TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
 
+_REFRESH_TTL = 3600
+
 
 class TrackerService:
+    def __init__(self):
+        self._lastRefreshTime: float = 0
+        self._refreshing = False
+
+    def isStale(self) -> bool:
+        return time() - self._lastRefreshTime > _REFRESH_TTL
+
     def mergedTrackers(self) -> list[str]:
         cache = dict(bittorrentConfig.webTrackerSourceCache.value)
         customText = bittorrentConfig.webTrackerCustomList.value
@@ -27,6 +37,13 @@ class TrackerService:
         ))
 
     async def refresh(self) -> tuple[int, int]:
+        self._refreshing = True
+        try:
+            return await self._doRefresh()
+        finally:
+            self._refreshing = False
+
+    async def _doRefresh(self) -> tuple[int, int]:
         urls = list(bittorrentConfig.webTrackerSources.value)
         if not urls:
             return 0, 0
@@ -68,6 +85,8 @@ class TrackerService:
                 successCount += 1
 
         cfg.set(bittorrentConfig.webTrackerSourceCache, newCache)
+        if successCount > 0:
+            self._lastRefreshTime = time()
         return successCount, len(urls)
 
 

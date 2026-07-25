@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from base64 import b64decode
+import asyncio
+from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
@@ -26,7 +27,6 @@ class BTTask(Task):
     torrentData: str = ""
     resumeData: str = ""
     trackers: list[str] = field(default_factory=list)
-    shouldSeed: bool = True
     shareRatioPercent: float = 0
     seedingTimeSeconds: int = 0
     isSeeding: bool = False
@@ -90,7 +90,10 @@ class BTTask(Task):
             return
         self._fileSelectionVersion += 1
         self.fileSize = sum(f.size for f in self.files if f.selected)
-        # 完成后补选新文件：步骤打回 WAITING，等待重新调度补下
+
+        from .session import btSession
+        btSession.updatePriorities(self.taskId, self.priorities())
+
         if self.step.status == TaskStatus.COMPLETED and any(f.selected and not f.completed for f in self.files):
             self.step.status = TaskStatus.WAITING
             self.step.progress = 0
@@ -113,7 +116,6 @@ class BTTask(Task):
     def reset(self) -> TaskStatus:
         result = super().reset()
         self.resumeData = ""
-        self.shouldSeed = True
         self.shareRatioPercent = 0
         self.seedingTimeSeconds = 0
         self.isSeeding = False
@@ -134,7 +136,7 @@ class BTTaskStep(TaskStep):
         return self.task.outputPath
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        from .session import btSession
+        from .session import btSession, TorrentParams, TorrentProgress
 
         task: BTTask = self.task
 
@@ -153,5 +155,63 @@ class BTTaskStep(TaskStep):
                 from loguru import logger
                 logger.opt(exception=e).warning("保存 magnet 种子文件失败 {}", task.name)
 
-        await btSession.run(task, self)
+        fileRenames = {}
+        for f in task.files:
+            mapped = task.toRelativePath(f)
+            if mapped != f.relativePath:
+                fileRenames[f.index] = mapped
+
+        params = TorrentParams(
+            torrentData=b64decode(task.torrentData),
+            savePath=str(task.outputFolder),
+            resumeData=b64decode(task.resumeData) if task.resumeData else b"",
+            trackers=task.trackers.copy(),
+            filePriorities=task.priorities(),
+            fileRenames=fileRenames,
+            seedingTimeSeconds=task.seedingTimeSeconds,
+        )
+
+        def onProgress(p: TorrentProgress):
+            task.stateText = p.stateText
+            task.peerCount = p.peerCount
+            task.seedCount = p.seedCount
+            task.isSeeding = p.isSeeding
+            task.downloadRate = p.downloadRate
+            task.uploadRate = p.uploadRate
+            task.shareRatioPercent = p.shareRatioPercent
+            task.seedingTimeSeconds = p.seedingTimeSeconds
+            if p.totalWanted > 0:
+                task.fileSize = p.totalWanted
+
+            self.speed = p.downloadRate
+            self.receivedBytes = p.receivedBytes
+            self.progress = p.progress
+
+            reportSpeed(p.downloadRate)
+
+            for f in task.files:
+                if not f.selected:
+                    f.downloadedBytes = 0
+                    f.completed = False
+                    continue
+                dl = p.fileProgress[f.index] if f.index < len(p.fileProgress) else 0
+                f.downloadedBytes = dl
+                f.completed = f.size > 0 and dl >= f.size
+
+        try:
+            resumeData = await btSession.run(task.taskId, params, onProgress=onProgress)
+            task.resumeData = b64encode(resumeData).decode()
+        except asyncio.CancelledError:
+            cached = btSession.lastResumeData(task.taskId)
+            if cached:
+                task.resumeData = b64encode(cached).decode()
+            task.stateText = "已暂停做种" if task.isSeeding else "已暂停下载"
+            task.isSeeding = False
+            raise
+        except Exception:
+            cached = btSession.lastResumeData(task.taskId)
+            if cached:
+                task.resumeData = b64encode(cached).decode()
+            raise
+
         self.setStatus(TaskStatus.COMPLETED)

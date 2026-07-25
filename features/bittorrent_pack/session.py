@@ -3,20 +3,22 @@ from __future__ import annotations
 import asyncio
 from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from pathlib import Path
+from tempfile import gettempdir
+from typing import TYPE_CHECKING, Callable
 from urllib.parse import urlsplit
 
 import libtorrent as lt
 from loguru import logger
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject
 
 from app.config.cfg import cfg, proxy
-from app.models.task import TaskError, TaskStatus
+from app.models.task import TaskError
 
 from .config import bittorrentConfig
 
 if TYPE_CHECKING:
-    from .task import BTTask, BTTaskStep
+    pass
 
 _STATE_TEXT = {
     "checking_files": "校验已有文件",
@@ -39,17 +41,43 @@ _ERROR_ALERTS = (
 _RESUME_SAVE_INTERVAL = 30
 
 
+@dataclass(frozen=True)
+class TorrentParams:
+    torrentData: bytes
+    savePath: str
+    resumeData: bytes = b""
+    trackers: list[str] = field(default_factory=list)
+    filePriorities: list[int] = field(default_factory=list)
+    fileRenames: dict[int, str] = field(default_factory=dict)
+    seedingTimeSeconds: int = 0
+
+
+@dataclass(frozen=True)
+class TorrentProgress:
+    stateText: str
+    peerCount: int
+    seedCount: int
+    isSeeding: bool
+    downloadRate: int
+    uploadRate: int
+    shareRatioPercent: float
+    seedingTimeSeconds: int
+    progress: float
+    receivedBytes: int
+    totalWanted: int
+    fileProgress: list[int]
+
+
 @dataclass(eq=False)
 class ActiveTorrent:
-    task: BTTask
-    step: BTTaskStep
     handle: lt.torrent_handle
     done: asyncio.Future
+    onProgress: Callable[[TorrentProgress], None] | None
     seedBase: int
     seedStart: int | None = None
-    appliedSelectionVersion: int = -1
     pollCount: int = 0
     resumeWaiter: asyncio.Future | None = None
+    pendingPriorities: list[int] | None = None
 
     def seedingElapsed(self, isSeeding: bool, sessionSeconds: int) -> int:
         if isSeeding:
@@ -63,14 +91,14 @@ class ActiveTorrent:
 
 
 class BTSession(QObject):
-    alertReceived = Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._session: lt.session | None = None
         self._poller: asyncio.Task | None = None
         self._active: dict[str, ActiveTorrent] = {}
-        self._reportSpeed = None
+        self._metadataWaiters: dict[int, tuple[lt.torrent_handle, asyncio.Future]] = {}
+        self._resumeCache: dict[str, bytes] = {}
         for item in (
             bittorrentConfig.maxUploadSpeed,
             bittorrentConfig.maxConnections,
@@ -82,12 +110,10 @@ class BTSession(QObject):
 
     # ── public interface ──
 
-    def setReportSpeed(self, reportSpeed):
-        self._reportSpeed = reportSpeed
-
-    async def run(self, task: BTTask, step: BTTaskStep) -> None:
-        self.open()
-        handle = self._addTorrent(task)
+    async def run(self, taskId: str, params: TorrentParams,
+                  onProgress: Callable[[TorrentProgress], None] | None = None) -> bytes:
+        self._open()
+        handle = self._addTorrent(params)
 
         handle.resume()
         handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
@@ -96,43 +122,94 @@ class BTSession(QObject):
 
         done = asyncio.get_running_loop().create_future()
         entry = ActiveTorrent(
-            task=task, step=step, handle=handle,
-            done=done, seedBase=task.seedingTimeSeconds,
+            handle=handle, done=done, onProgress=onProgress,
+            seedBase=params.seedingTimeSeconds,
         )
-        self._active[task.taskId] = entry
+        self._active[taskId] = entry
 
         cancelled = False
         try:
             await done
         except asyncio.CancelledError:
             cancelled = True
-            task.stateText = "已暂停做种" if task.isSeeding else "已暂停下载"
-            task.isSeeding = False
             raise
         finally:
             if cancelled:
-                self._active.pop(task.taskId, None)
+                self._active.pop(taskId, None)
                 try:
-                    self._session.remove_torrent(handle)
+                    if self._session is not None:
+                        self._session.remove_torrent(handle)
                 except Exception:
                     pass
             else:
-                await self._saveResumeAndRemove(entry)
-                self._active.pop(task.taskId, None)
+                await self._saveResumeAndRemove(entry, taskId)
+                self._active.pop(taskId, None)
 
-    def stop(self, taskId: str) -> None:
+        return self._resumeCache.pop(taskId, b"")
+
+    async def fetchMetadata(self, magnetUri: str, trackers: list[str]) -> bytes:
+        self._open()
+
+        params = lt.parse_magnet_uri(magnetUri)
+        params.trackers = list(dict.fromkeys(
+            t for g in (params.trackers, trackers) for t in g if t
+        ))
+        tempDir = Path(gettempdir()) / "ghost_downloader_bt_metadata"
+        tempDir.mkdir(parents=True, exist_ok=True)
+        params.save_path = str(tempDir)
+        params.storage_mode = lt.storage_mode_t.storage_mode_sparse
+        params.flags |= lt.torrent_flags.default_dont_download | lt.torrent_flags.update_subscribe
+
+        hashes = params.info_hashes if params.ti is None else params.ti.info_hashes()
+        if hashes.has_v1() and self._session.find_torrent(hashes.v1).is_valid():
+            raise TaskError("该种子已在下载中")
+        if hashes.has_v2() and self._session.find_torrent(hashes.v2).is_valid():
+            raise TaskError("该种子已在下载中")
+
+        handle = self._session.add_torrent(params)
+        handle.force_reannounce(0, -1, lt.reannounce_flags_t.ignore_min_interval)
+        if bittorrentConfig.enableDht.value:
+            handle.force_dht_announce()
+
+        waiter: asyncio.Future[lt.torrent_info] = asyncio.get_running_loop().create_future()
+        self._metadataWaiters[id(handle)] = (handle, waiter)
+
+        try:
+            ti = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
+            return lt.bencode(lt.create_torrent(ti).generate())
+        except asyncio.TimeoutError:
+            raise TimeoutError("等待 magnet 元数据超时")
+        finally:
+            self._metadataWaiters.pop(id(handle), None)
+            try:
+                self._session.remove_torrent(handle)
+            except Exception:
+                pass
+
+    def updatePriorities(self, taskId: str, priorities: list[int]) -> None:
         entry = self._active.get(taskId)
-        if entry is None or entry.done.done():
+        if entry is None:
             return
-        entry.task.shouldSeed = False
-        entry.task.isSeeding = False
-        entry.task.stateText = "已停止做种"
-        entry.done.set_result(None)
+        entry.pendingPriorities = priorities
 
-    def session(self) -> lt.session | None:
-        return self._session
+    def lastResumeData(self, taskId: str) -> bytes | None:
+        return self._resumeCache.pop(taskId, None)
 
     async def close(self) -> None:
+        waiters = []
+        for entry in list(self._active.values()):
+            try:
+                entry.handle.save_resume_data(
+                    lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
+                )
+                entry.resumeWaiter = asyncio.get_running_loop().create_future()
+                waiters.append(entry.resumeWaiter)
+            except Exception:
+                pass
+
+        if waiters:
+            await asyncio.wait(waiters, timeout=5)
+
         for entry in list(self._active.values()):
             if not entry.done.done():
                 entry.done.cancel()
@@ -141,6 +218,15 @@ class BTSession(QObject):
             except Exception:
                 pass
         self._active.clear()
+
+        for _key, (handle, waiter) in list(self._metadataWaiters.items()):
+            if not waiter.done():
+                waiter.cancel()
+            try:
+                self._session.remove_torrent(handle)
+            except Exception:
+                pass
+        self._metadataWaiters.clear()
 
         if self._poller is not None:
             self._poller.cancel()
@@ -153,7 +239,7 @@ class BTSession(QObject):
 
     # ── session lifecycle ──
 
-    def open(self) -> None:
+    def _open(self) -> None:
         if self._session is None:
             from app.config.constants import VERSION
             self._session = lt.session({
@@ -174,52 +260,53 @@ class BTSession(QObject):
 
     # ── torrent management ──
 
-    def _addTorrent(self, task: BTTask) -> lt.torrent_handle:
-        params = None
-        if task.resumeData:
+    def _addTorrent(self, params: TorrentParams) -> lt.torrent_handle:
+        ltParams = None
+        if params.resumeData:
             try:
-                params = lt.read_resume_data(b64decode(task.resumeData))
+                ltParams = lt.read_resume_data(params.resumeData)
             except Exception as e:
-                logger.opt(exception=e).warning("读取 BitTorrent resume 数据失败 {}", task.name)
+                logger.opt(exception=e).warning("读取 BitTorrent resume 数据失败")
 
-        if params is None:
-            params = lt.add_torrent_params()
-            params.ti = lt.torrent_info(b64decode(task.torrentData))
-            params.flags |= lt.torrent_flags.update_subscribe
+        if ltParams is None:
+            ltParams = lt.add_torrent_params()
+            ltParams.ti = lt.torrent_info(params.torrentData)
+            ltParams.flags |= lt.torrent_flags.update_subscribe
 
-        params.save_path = str(task.outputFolder)
-        params.storage_mode = (
+        ltParams.save_path = params.savePath
+        ltParams.storage_mode = (
             lt.storage_mode_t.storage_mode_allocate
             if bittorrentConfig.storageMode.value == "allocate"
             else lt.storage_mode_t.storage_mode_sparse
         )
-        params.file_priorities = task.priorities()
+        ltParams.file_priorities = params.filePriorities
         if bittorrentConfig.enableSequentialDownload.value:
-            params.flags |= lt.torrent_flags.sequential_download
+            ltParams.flags |= lt.torrent_flags.sequential_download
         else:
-            params.flags &= ~lt.torrent_flags.sequential_download
-        if task.trackers:
-            params.trackers = task.trackers.copy()
+            ltParams.flags &= ~lt.torrent_flags.sequential_download
+        if params.trackers:
+            ltParams.trackers = list(params.trackers)
 
-        hashes = params.ti.info_hashes() if params.ti is not None else params.info_hashes
+        hashes = ltParams.ti.info_hashes() if ltParams.ti is not None else ltParams.info_hashes
         stale = None
         if hashes.has_v1():
             stale = self._session.find_torrent(hashes.v1)
         if (stale is None or not stale.is_valid()) and hashes.has_v2():
             stale = self._session.find_torrent(hashes.v2)
         if stale is not None and stale.is_valid():
+            for entry in self._active.values():
+                if entry.handle == stale:
+                    raise TaskError("该种子已在下载中")
             self._session.remove_torrent(stale)
 
-        handle = self._session.add_torrent(params)
+        handle = self._session.add_torrent(ltParams)
 
-        for f in task.files:
-            mapped = task.toRelativePath(f)
-            if mapped != f.relativePath:
-                handle.rename_file(f.index, mapped)
+        for index, newPath in params.fileRenames.items():
+            handle.rename_file(index, newPath)
 
         return handle
 
-    async def _saveResumeAndRemove(self, entry: ActiveTorrent) -> None:
+    async def _saveResumeAndRemove(self, entry: ActiveTorrent, taskId: str) -> None:
         try:
             entry.handle.save_resume_data(
                 lt.save_resume_flags_t.flush_disk_cache | lt.save_resume_flags_t.save_info_dict
@@ -235,7 +322,7 @@ class BTSession(QObject):
         try:
             await asyncio.wait_for(entry.resumeWaiter, timeout=10)
         except asyncio.TimeoutError:
-            logger.warning("等待 BitTorrent resume 数据超时 {}", entry.task.name)
+            logger.warning("等待 BitTorrent resume 数据超时")
         finally:
             entry.resumeWaiter = None
             try:
@@ -251,42 +338,33 @@ class BTSession(QObject):
                 for alert in self._session.pop_alerts():
                     self._routeAlert(alert)
                 for entry in list(self._active.values()):
-                    self._updateTorrent(entry)
+                    self._updateEntry(entry)
             except Exception as e:
                 logger.opt(exception=e).error("BitTorrent poll 异常")
             await asyncio.sleep(1)
 
     def _routeAlert(self, alert) -> None:
         if not hasattr(alert, "handle"):
-            self.alertReceived.emit(alert)
             return
 
-        for entry in self._active.values():
+        for taskId, entry in self._active.items():
             if alert.handle != entry.handle:
                 continue
 
             if isinstance(alert, lt.save_resume_data_alert):
-                entry.task.resumeData = b64encode(lt.write_resume_data_buf(alert.params)).decode()
+                self._resumeCache[taskId] = lt.write_resume_data_buf(alert.params)
                 if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
                     entry.resumeWaiter.set_result(True)
                 return
 
             if isinstance(alert, lt.save_resume_data_failed_alert):
-                entry.task.resumeData = ""
+                self._resumeCache.pop(taskId, None)
                 if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
                     entry.resumeWaiter.set_result(False)
                 return
 
-            if isinstance(alert, lt.file_completed_alert):
-                for f in entry.task.files:
-                    if f.index == alert.index:
-                        f.completed = True
-                        f.downloadedBytes = f.size
-                        break
-                return
-
             if isinstance(alert, lt.fastresume_rejected_alert):
-                entry.task.resumeData = ""
+                self._resumeCache.pop(taskId, None)
                 return
 
             if isinstance(alert, _ERROR_ALERTS):
@@ -298,61 +376,60 @@ class BTSession(QObject):
 
             return
 
-        self.alertReceived.emit(alert)
+        for key, (handle, waiter) in list(self._metadataWaiters.items()):
+            if alert.handle != handle:
+                continue
+            if isinstance(alert, lt.metadata_received_alert):
+                ti = handle.torrent_file()
+                if ti is not None and ti.is_valid() and not waiter.done():
+                    waiter.set_result(ti)
+            elif isinstance(alert, (lt.metadata_failed_alert, lt.torrent_error_alert)):
+                if not waiter.done():
+                    waiter.set_exception(RuntimeError(alert.message()))
+            return
 
-    def _updateTorrent(self, entry: ActiveTorrent) -> None:
-        task = entry.task
-        step = entry.step
+    def _updateEntry(self, entry: ActiveTorrent) -> None:
         status = entry.handle.status()
 
-        task.stateText = _STATE_TEXT.get(status.state.name, status.state.name)
-        task.peerCount = status.num_peers
-        task.seedCount = status.num_seeds
-        task.isSeeding = status.is_seeding
-        task.downloadRate = status.download_rate
-        task.uploadRate = status.upload_rate
-        if self._reportSpeed is not None:
-            self._reportSpeed(status.download_rate)
+        stateText = _STATE_TEXT.get(status.state.name, status.state.name)
+        isSeeding = status.is_seeding
+        downloadRate = status.download_rate
+        uploadRate = status.upload_rate
 
         downloaded = status.all_time_download or status.total_wanted_done or status.total_done
-        task.shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0
-        task.seedingTimeSeconds = entry.seedingElapsed(
-            status.is_seeding, int(status.seeding_duration.total_seconds())
+        shareRatioPercent = (status.all_time_upload / downloaded * 100) if downloaded > 0 else 0.0
+        seedingTimeSeconds = entry.seedingElapsed(
+            isSeeding, int(status.seeding_duration.total_seconds())
         )
 
-        step.speed = status.download_rate
-        step.receivedBytes = status.total_wanted_done
-        if status.total_wanted > 0:
-            task.fileSize = status.total_wanted
-            step.progress = status.total_wanted_done / status.total_wanted * 100
-        elif task.fileSize > 0:
-            step.progress = step.receivedBytes / task.fileSize * 100
-        else:
-            step.progress = 0
+        receivedBytes = status.total_wanted_done
+        totalWanted = status.total_wanted
+        progress = (receivedBytes / totalWanted * 100) if totalWanted > 0 else 0
 
-        fileBytes = entry.handle.file_progress()
-        for f in task.files:
-            if not f.selected:
-                f.downloadedBytes = 0
-                f.completed = False
-                continue
-            dl = fileBytes[f.index] if f.index < len(fileBytes) else 0
-            f.downloadedBytes = dl
-            f.completed = f.size > 0 and dl >= f.size
+        if entry.onProgress is not None:
+            entry.onProgress(TorrentProgress(
+                stateText=stateText,
+                peerCount=status.num_peers,
+                seedCount=status.num_seeds,
+                isSeeding=isSeeding,
+                downloadRate=downloadRate,
+                uploadRate=uploadRate,
+                shareRatioPercent=shareRatioPercent,
+                seedingTimeSeconds=seedingTimeSeconds,
+                progress=progress,
+                receivedBytes=receivedBytes,
+                totalWanted=totalWanted,
+                fileProgress=list(entry.handle.file_progress()),
+            ))
 
-        if entry.appliedSelectionVersion != task._fileSelectionVersion:
-            entry.handle.prioritize_files(task.priorities())
-            entry.appliedSelectionVersion = task._fileSelectionVersion
+        if entry.pendingPriorities is not None:
+            entry.handle.prioritize_files(entry.pendingPriorities)
+            entry.pendingPriorities = None
 
-        if status.is_seeding and not entry.done.done():
-            if not task.shouldSeed:
-                entry.done.set_result(None)
-            elif self._isSeedingLimitReached(task):
-                logger.info("{} 自动暂停做种: 分享率 {:.2f}%, 做种时间 {}s",
-                            task.name, task.shareRatioPercent, task.seedingTimeSeconds)
-                task.stateText = "已自动暂停做种"
-                task.shouldSeed = False
-                task.isSeeding = False
+        if isSeeding and not entry.done.done():
+            if self._isSeedingLimitReached(shareRatioPercent, seedingTimeSeconds):
+                logger.info("自动暂停做种: 分享率 {:.2f}%, 做种时间 {}s",
+                            shareRatioPercent, seedingTimeSeconds)
                 entry.done.set_result(None)
 
         entry.pollCount += 1
@@ -364,12 +441,12 @@ class BTSession(QObject):
             except Exception:
                 pass
 
-    def _isSeedingLimitReached(self, task: BTTask) -> bool:
+    def _isSeedingLimitReached(self, shareRatioPercent: float, seedingTimeSeconds: int) -> bool:
         ratioLimit = bittorrentConfig.seedingRatioLimit.value
-        if ratioLimit > 0 and task.shareRatioPercent >= ratioLimit:
+        if ratioLimit > 0 and shareRatioPercent >= ratioLimit:
             return True
         timeLimitMinutes = bittorrentConfig.seedingTimeLimit.value
-        if timeLimitMinutes > 0 and task.seedingTimeSeconds >= timeLimitMinutes * 60:
+        if timeLimitMinutes > 0 and seedingTimeSeconds >= timeLimitMinutes * 60:
             return True
         return False
 

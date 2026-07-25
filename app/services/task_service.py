@@ -206,6 +206,7 @@ class TaskService(QObject):
         task.setStatus(TaskStatus.PAUSED)
         self._flushTimer.start()
         self.taskPaused.emit(task)
+        self._pump()
 
     def delete(self, task: Task, shouldDeleteFiles: bool) -> None:
         self._unwatchFile(task)

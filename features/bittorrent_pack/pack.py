@@ -33,7 +33,7 @@ class TorrentParser(TaskParser):
         outputFolder = options.outputFolder
 
         if bittorrentConfig.enableWebTrackers.value:
-            if bittorrentConfig.autoRefreshWebTrackers.value:
+            if bittorrentConfig.autoRefreshWebTrackers.value and trackerService.isStale():
                 try:
                     await trackerService.refresh()
                 except Exception as e:
@@ -48,9 +48,8 @@ class TorrentParser(TaskParser):
             sourceType, sourceUrl = "torrent", str(localPath.resolve())
 
         elif urlparse(url).scheme.lower() == "magnet":
-            from .metadata import fetchTorrentBytes
             magnetTrackers = list(lt.parse_magnet_uri(url).trackers)
-            torrentBytes = await fetchTorrentBytes(url, webTrackers)
+            torrentBytes = await btSession.fetchMetadata(url, webTrackers)
             sourceType, sourceUrl = "magnet", url
 
         else:
@@ -107,10 +106,6 @@ class BitTorrentPack(FeaturePack):
     taskCards = {BTTask: BTTaskCard}
     draftCards = {BTTask: BTDraftCard}
 
-    def __init__(self, services):
-        super().__init__(services)
-        btSession.setReportSpeed(services.speedMeter.addSpeed)
-
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard
         return [OutputFolderCard(parent, initial=task.outputFolder)]
@@ -124,6 +119,9 @@ class BitTorrentPack(FeaturePack):
                 icon="torrent",
             ),
         ]
+
+    async def activate(self):
+        pass
 
     async def deactivate(self):
         await btSession.close()
