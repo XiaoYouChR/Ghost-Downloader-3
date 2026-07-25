@@ -237,6 +237,13 @@ class SettingPage(ScrollArea):
             ComboBoxSettingCard(cfg.themeMode, FluentIcon.BRUSH, self.tr("应用主题"),
                                 self.tr("更改应用程序的外观"),
                                 texts=[self.tr("浅色"), self.tr("深色"), self.tr("跟随系统设置")]),
+            ComboBoxSettingCard(
+                cfg.downloadProgressBarStyle,
+                FluentIcon.SPEED_HIGH,
+                self.tr("下载进度条样式"),
+                self.tr("设置多线程 HTTP 下载的进度条显示方式"),
+                texts=[self.tr("分段"), self.tr("经典")],
+            ),
         ]
         if sys.platform == "win32":
             personalCards.append(
