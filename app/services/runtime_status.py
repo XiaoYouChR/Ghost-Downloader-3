@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal
@@ -16,6 +16,7 @@ class RuntimeStatus:
     name: str
     path: str = ""
     version: str = ""
+    latestVersion: str = ""
     error: str = ""
     isBusy: bool = False
 
@@ -28,6 +29,7 @@ class RuntimeStatusService(QObject):
         self._coroutineRunner = coroutineRunner
         self._statuses: dict[str, RuntimeStatus] = {}
         self._workIds: dict[str, str] = {}
+        self._runtimes: dict[str, BinaryRuntime] = {}
 
     def status(self, runtime: BinaryRuntime) -> RuntimeStatus:
         status = self._statuses.get(runtime.runtimeId)
@@ -50,12 +52,14 @@ class RuntimeStatusService(QObject):
         if workId:
             self._coroutineRunner.cancel(workId)
             self._workIds.pop(runtimeId, None)
+        self._runtimes.pop(runtimeId, None)
         self._probe(runtime)
 
     def _probe(self, runtime: BinaryRuntime) -> None:
         runtimeId = runtime.runtimeId
         path = runtime.path()
         name = runtime.name
+        self._runtimes[runtimeId] = runtime
 
         status = RuntimeStatus(runtimeId, name, path=path, isBusy=True)
         self._statuses[runtimeId] = status
@@ -80,9 +84,41 @@ class RuntimeStatusService(QObject):
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
+        runtime = self._runtimes.get(runtimeId)
+        if runtime and runtime.isAppManaged():
+            self._fetchLatest(runtime)
+        else:
+            self._runtimes.pop(runtimeId, None)
+
     def _onProbeFailed(self, error: str, runtimeId: str, name: str, path: str) -> None:
         self._workIds.pop(runtimeId, None)
+        self._runtimes.pop(runtimeId, None)
         status = RuntimeStatus(runtimeId, name, path=path, error=error)
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
+    def _fetchLatest(self, runtime: BinaryRuntime) -> None:
+        runtimeId = runtime.runtimeId
+        try:
+            self._workIds[runtimeId] = self._coroutineRunner.submit(
+                runtime.fetchLatestVersion(),
+                done=self._onFetchFinished,
+                failed=self._onFetchFailed,
+                runtimeId=runtimeId,
+            )
+        except Exception as e:
+            logger.opt(exception=e).debug("runtime fetch latest submit failed: {}", runtimeId)
+            self._runtimes.pop(runtimeId, None)
+
+    def _onFetchFinished(self, latestVersion: str, runtimeId: str) -> None:
+        self._workIds.pop(runtimeId, None)
+        self._runtimes.pop(runtimeId, None)
+        current = self._statuses.get(runtimeId)
+        if current and latestVersion:
+            status = replace(current, latestVersion=latestVersion)
+            self._statuses[runtimeId] = status
+            self.statusChanged.emit(status)
+
+    def _onFetchFailed(self, error: str, runtimeId: str) -> None:
+        self._workIds.pop(runtimeId, None)
+        self._runtimes.pop(runtimeId, None)

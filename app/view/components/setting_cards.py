@@ -681,6 +681,7 @@ class RuntimeCard(SettingCard):
 
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+        self.deleteButton = ToolButton(FluentIcon.DELETE, self)
 
         self._initWidget()
         self._initLayout()
@@ -690,6 +691,9 @@ class RuntimeCard(SettingCard):
     def _initWidget(self) -> None:
         if not self._runtime.canInstall:
             self.installButton.hide()
+        self.deleteButton.hide()
+        self.deleteButton.setToolTip(self.tr("卸载"))
+        self.deleteButton.installEventFilter(ToolTipFilter(self.deleteButton))
         self.refreshButton.setToolTip(self.tr("刷新"))
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
 
@@ -697,11 +701,14 @@ class RuntimeCard(SettingCard):
         self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(16)
 
     def _bind(self) -> None:
         self._runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
         self.installButton.clicked.connect(self._onInstallClicked)
+        self.deleteButton.clicked.connect(self._onDeleteClicked)
         self.refreshButton.clicked.connect(self._onRefreshClicked)
 
     def refreshStatus(self) -> None:
@@ -709,16 +716,46 @@ class RuntimeCard(SettingCard):
 
     def updateStatus(self, status) -> None:
         self.refreshButton.setEnabled(not status.isBusy)
+        isInstalled = bool(status.path)
+        isManaged = self._runtime.isAppManaged()
+        isUpdateAvailable = (
+            isInstalled and isManaged
+            and status.latestVersion
+            and (not status.version or self._runtime.isNewer(status.version, status.latestVersion))
+        )
+
         if status.isBusy:
             self.setContent(self.tr("正在检测运行时..."))
-        elif status.error:
+            self.installButton.hide()
+            self.deleteButton.hide()
+            return
+
+        if status.error:
             self.setContent(self.tr("检测运行时失败"))
-        elif status.version and status.path:
-            self.setContent(self.tr("版本: {0}\n路径: {1}").format(status.version, status.path))
-        elif status.path:
-            self.setContent(self.tr("路径: {0}").format(status.path))
+        elif isInstalled:
+            if status.version and status.latestVersion:
+                line1 = self.tr("版本: {0}（最新: {1}）").format(status.version, status.latestVersion)
+            elif status.version:
+                line1 = self.tr("版本: {0}").format(status.version)
+            elif status.latestVersion:
+                line1 = self.tr("最新版本: {0}").format(status.latestVersion)
+            else:
+                line1 = ""
+            line2 = self.tr("路径: {0}").format(status.path)
+            self.setContent(f"{line1}\n{line2}" if line1 else line2)
         else:
             self.setContent(self.tr("未检测到可用的 {0}").format(status.name))
+
+        if isUpdateAvailable:
+            self.installButton.setText(self.tr("更新到 {0}").format(status.latestVersion))
+            self.installButton.setVisible(True)
+        elif not isInstalled or not isManaged:
+            self.installButton.setText(self.tr("一键安装"))
+            self.installButton.setVisible(self._runtime.canInstall)
+        else:
+            self.installButton.hide()
+
+        self.deleteButton.setVisible(isInstalled and isManaged)
 
     def _onRefreshClicked(self, *_args) -> None:
         self._runtimeStatusService.invalidate(self._runtime)
@@ -768,3 +805,23 @@ class RuntimeCard(SettingCard):
             position=InfoBarPosition.TOP,
             parent=self.window(),
         )
+
+    def _onDeleteClicked(self) -> None:
+        from qfluentwidgets import MessageBox
+
+        dialog = MessageBox(
+            self.tr("确认卸载"),
+            self.tr("确定要卸载 {0} 吗？").format(self._runtime.name),
+            self.window(),
+        )
+        if not dialog.exec():
+            return
+        try:
+            self._runtime.delete()
+        except Exception as e:
+            InfoBar.error(
+                self.tr("卸载失败"), str(e),
+                duration=-1, position=InfoBarPosition.TOP, parent=self.window(),
+            )
+            return
+        self._runtimeStatusService.invalidate(self._runtime)

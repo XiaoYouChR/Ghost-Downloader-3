@@ -4,7 +4,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QCoreApplication, Signal
+from PySide6.QtCore import QCoreApplication, QVersionNumber, Signal
 
 from app.config.cfg import cfg, ConfigItem
 
@@ -119,6 +119,22 @@ class BinaryRuntime:
             return ""
         lines = stdout.decode("utf-8", errors="ignore").splitlines()
         return lines[0].strip() if lines else ""
+
+    def isAppManaged(self) -> bool:
+        return False
+
+    async def fetchLatestVersion(self) -> str:
+        return ""
+
+    def isNewer(self, installed: str, latest: str) -> bool:
+        if not installed or not latest:
+            return False
+        v1 = QVersionNumber.fromString(installed.lstrip("vV"))
+        v2 = QVersionNumber.fromString(latest.lstrip("vV"))
+        return v2 > v1
+
+    def delete(self) -> None:
+        raise NotImplementedError
 
     async def installTask(self) -> Task:
         raise NotImplementedError

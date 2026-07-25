@@ -74,6 +74,17 @@ async def fetchRelease() -> Release:
         client.close()
 
 
+async def fetchGitHubLatestTag(repo: str) -> str:
+    client = buildClient(headers={"accept": "application/vnd.github+json"}, timeout=15)
+    try:
+        resp = await client.get(f"https://api.github.com/repos/{repo}/releases/latest")
+        resp.raise_for_status()
+        data = await resp.json()
+        return data.get("tag_name", "")
+    finally:
+        client.close()
+
+
 def isOutdated(release: Release) -> bool:
     current = QVersionNumber.fromString(VERSION.lstrip("vV"))
     latest = QVersionNumber.fromString(release.version.lstrip("vV"))

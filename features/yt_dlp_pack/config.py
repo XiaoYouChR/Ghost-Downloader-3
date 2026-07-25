@@ -130,6 +130,10 @@ class YouTubeRuntime(BinaryRuntime):
             return ""
         return self.qjsPath()
 
+    def isAppManaged(self) -> bool:
+        folder = Path(ytDlpConfig.installFolder.value)
+        return (folder / "yt_dlp" / "__init__.py").is_file()
+
     def ytDlpFolder(self) -> Path:
         return Path(ytDlpConfig.installFolder.value)
 
@@ -176,8 +180,37 @@ class YouTubeRuntime(BinaryRuntime):
         if ytDlpVersion:
             parts.append(f"yt-dlp {ytDlpVersion}")
         if isQjsOk:
-            parts.append("qjs ✓")
+            parts.append("QuickJS ✓")
         return " | ".join(parts) if parts else ""
+
+    async def fetchLatestVersion(self) -> str:
+        from app.client import buildClient
+        client = buildClient(timeout=15)
+        try:
+            resp = await client.get(PYPI_API)
+            resp.raise_for_status()
+            data = await resp.json()
+            return data.get("info", {}).get("version", "")
+        finally:
+            client.close()
+
+    def isNewer(self, installed: str, latest: str) -> bool:
+        if not installed or not latest:
+            return False
+        prefix = "yt-dlp "
+        if prefix not in installed:
+            return False
+        from PySide6.QtCore import QVersionNumber
+        current = installed.split(prefix, 1)[1].split(" ", 1)[0].split("|", 1)[0].strip()
+        v1 = QVersionNumber.fromString(current)
+        v2 = QVersionNumber.fromString(latest)
+        return v2 > v1
+
+    def delete(self) -> None:
+        import shutil
+        folder = Path(ytDlpConfig.installFolder.value)
+        if folder.exists():
+            shutil.rmtree(folder)
 
     async def installTask(self):
         from app.config.cfg import cfg

@@ -72,6 +72,10 @@ class FFmpegRuntime(BinaryRuntime):
             return str(binary) if binary.exists() else ""
         return findExecutable(Path(ffmpegConfig.installFolder.value), "ffmpeg", "bin")
 
+    def isAppManaged(self) -> bool:
+        p = self.path()
+        return bool(p) and Path(p).is_relative_to(Path(ffmpegConfig.installFolder.value))
+
     def ffprobePath(self) -> str:
         if IS_ANDROID:
             nativeDir = nativeLibraryDir()
@@ -96,6 +100,16 @@ class FFmpegRuntime(BinaryRuntime):
             return ""
         line = stdout.decode("utf-8", errors="ignore").splitlines()[0].strip()
         return line.removeprefix("ffmpeg version ").split(" Copyright", 1)[0].strip() or line
+
+    async def fetchLatestVersion(self) -> str:
+        from app.update import fetchGitHubLatestTag
+        return await fetchGitHubLatestTag("XiaoYouChR/Ghost-Downloader-FFmpeg")
+
+    def delete(self) -> None:
+        import shutil
+        folder = Path(ffmpegConfig.installFolder.value)
+        if folder.exists():
+            shutil.rmtree(folder)
 
     async def installTask(self) -> Task:
         from app.models.task import BinaryInstallOptions

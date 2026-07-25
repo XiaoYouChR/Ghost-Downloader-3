@@ -72,6 +72,20 @@ class ED2kRuntime(BinaryRuntime):
     def path(self) -> str:
         return findExecutable(Path(ed2kConfig.installFolder.value), "goed2kd")
 
+    def isAppManaged(self) -> bool:
+        p = self.path()
+        return bool(p) and Path(p).is_relative_to(Path(ed2kConfig.installFolder.value))
+
+    async def fetchLatestVersion(self) -> str:
+        from app.update import fetchGitHubLatestTag
+        return await fetchGitHubLatestTag("XiaoYouChR/Python-eD2k")
+
+    def delete(self) -> None:
+        import shutil
+        folder = Path(ed2kConfig.installFolder.value)
+        if folder.exists():
+            shutil.rmtree(folder)
+
     async def installTask(self):
         from app.models.task import TaskOptions
         from disk_pack.task import InstallTask

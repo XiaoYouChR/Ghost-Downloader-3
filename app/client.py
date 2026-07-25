@@ -194,3 +194,5 @@ def matchEmulation(userAgent: str, host: Platform) -> Emulation | None:
         return Emulation(profile=profile, platform=platform)
 
     return None
+
+
