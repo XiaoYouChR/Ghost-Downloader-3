@@ -60,6 +60,7 @@ class BilibiliTask(Task):
         return self.outputFolder
 
     def setMode(self, mode: DownloadMode) -> None:
+        self._baseName = Path(self.name).stem
         self.mode = mode
         self._rebuildSteps()
 
