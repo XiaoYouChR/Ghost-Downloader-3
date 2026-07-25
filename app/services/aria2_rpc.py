@@ -269,7 +269,8 @@ class Aria2RpcServer(QObject):
 
         _, speed, receivedBytes = task.currentSnapshot()
         status = _TASK_STATUS_TO_ARIA2[task.status]
-        totalLength = str(task.fileSize)
+        # fileSize 可能是 SpecialFileSize 哨兵值（UNKNOWN=0 / NOT_SUPPORTED=-1），aria2 语义均为 "0"
+        totalLength = str(max(task.fileSize, 0))
         completedLength = str(receivedBytes)
         result = {
             "gid": gid,

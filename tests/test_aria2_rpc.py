@@ -177,6 +177,20 @@ class TestTellStatus:
             "completedLength": "50",
         }]
 
+    def test_sentinel_file_size_reports_zero_total(self, server):
+        srv, runner, _ = server
+        gid, _ = addUri(srv)
+        task = makeTask()
+        task.fileSize = -1  # SpecialFileSize.NOT_SUPPORTED
+        step = task.steps[0]
+        step.status = TaskStatus.RUNNING
+        task.updateStatus()
+        runner.done(task)
+
+        result = tellStatus(srv, gid)["result"]
+        assert result["totalLength"] == "0"
+        assert result["files"][0]["length"] == "0"
+
     def test_completed_task_is_complete(self, server):
         srv, runner, _ = server
         gid, _ = addUri(srv)
