@@ -353,6 +353,8 @@ async function takeBrowserDownload(
   }
 
   const finalUrl = downloadItem.finalUrl || downloadItem.url;
+  await ready;
+
   if (!shouldTakeDownloads || !/^https?:/i.test(finalUrl)) {
     return;
   }
@@ -593,4 +595,4 @@ chrome.runtime.onSuspend.addListener(() => {
   void resourceBridge.flushState();
 });
 
-await setupBackground();
+const ready = setupBackground();
