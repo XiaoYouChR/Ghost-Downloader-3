@@ -1,22 +1,8 @@
 import {installCatCatchBridge} from "./cat-catch-bridge";
 import {startMediaAttribution} from "./page-media/attribution/attribution";
-import {MEDIA_SIGNAL_KEY} from "./page-media/attribution/attribution-signal";
 
 installCatCatchBridge();
 startMediaAttribution();
-
-window.addEventListener("message", (event) => {
-  const data = event.data;
-  if (!data || data[MEDIA_SIGNAL_KEY] !== true || data.kind !== "media_metadata") { return; }
-  chrome.runtime.sendMessage({
-    type: "media_metadata",
-    urls: data.urls,
-    duration: data.duration,
-    videoWidth: data.videoWidth,
-    videoHeight: data.videoHeight,
-    posterUrl: data.posterUrl,
-  });
-});
 
 function sendPagePoster(): void {
   const ogImage = document.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content?.trim();

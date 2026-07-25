@@ -4,7 +4,7 @@ import {instagramAssetId, isInstagramCdnUrl} from "../resolution/url-classify";
 
 import {AttributionLedger} from "./attribution-ledger";
 import {selectMediaForPage} from "../resolution/strategy";
-import {isMediaSignal, postMediaSignal} from "./attribution-signal";
+import {isMediaSignal} from "./attribution-signal";
 import type {AttributedUrlView, FindUrlsByIdHint, SessionSnapshot, ResolveContext, ResolveHints} from "../resolution/strategy";
 import type {
   AttributionTier,
@@ -214,14 +214,16 @@ class MediaAttribution {
       urls.push(element.currentSrc);
     }
     if (urls.length === 0) { return; }
-    postMediaSignal({
-      kind: "media_metadata",
-      urls,
-      duration: Number.isFinite(element.duration) ? element.duration : 0,
-      videoWidth: element instanceof HTMLVideoElement ? element.videoWidth : 0,
-      videoHeight: element instanceof HTMLVideoElement ? element.videoHeight : 0,
-      posterUrl: element instanceof HTMLVideoElement ? (element.poster || "") : "",
-    });
+    try {
+      chrome.runtime.sendMessage({
+        type: "media_metadata",
+        urls,
+        duration: Number.isFinite(element.duration) ? element.duration : 0,
+        videoWidth: element instanceof HTMLVideoElement ? element.videoWidth : 0,
+        videoHeight: element instanceof HTMLVideoElement ? element.videoHeight : 0,
+        posterUrl: element instanceof HTMLVideoElement ? (element.poster || "") : "",
+      });
+    } catch { /* Extension context invalidated. */ }
   }
 
   private onMediaEmptied(element: HTMLMediaElement): void {

@@ -25,8 +25,7 @@ export type MseAttributionSignal =
   | { kind: "mse_objecturl"; mediaSourceId: string; objectUrl: string }
   | { kind: "mse_source_buffer_added"; mediaSourceId: string; mimeType: string }
   | { kind: "mse_buffer_appended"; mediaSourceId: string; mimeType: string }
-  | { kind: "request_completed"; url: string; contentType: string }
-  | { kind: "media_metadata"; urls: string[]; duration: number; videoWidth: number; videoHeight: number; posterUrl: string };
+  | { kind: "request_completed"; url: string; contentType: string };
 
 export type VideoSession = {
   id: string;
