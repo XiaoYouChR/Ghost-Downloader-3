@@ -31,6 +31,7 @@ ERROR_HINTS = (
 )
 
 STEPS_PER_VIDEO = 4
+AUTO_SUBTITLE_PREFIX = "auto:"
 
 _pathLock = threading.Lock()
 _pathInserted = False
@@ -96,6 +97,28 @@ def probePlaylist(url: str) -> list[dict]:
     ]
 
 
+def toSrt(payload: dict) -> str:
+    def toSrtTime(milliseconds: int) -> str:
+        hours, remainder = divmod(milliseconds // 1000, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds % 1000:03d}"
+
+    lines: list[str] = []
+    for event in payload.get("events") or []:
+        text = "".join(segment.get("utf8", "") for segment in event.get("segs") or []).strip()
+        if not text:
+            continue
+        start = int(event.get("tStartMs") or 0)
+        end = start + int(event.get("dDurationMs") or 0)
+        lines.extend([
+            str(len(lines) // 4 + 1),
+            f"{toSrtTime(start)} --> {toSrtTime(end)}",
+            text,
+            "",
+        ])
+    return "\n".join(lines)
+
+
 @dataclass(kw_only=True)
 class YouTubeFile(TaskFile):
     videoId: str = ""
@@ -108,7 +131,7 @@ def buildStepGroup(fileIndex: int, videoUrl: str = "", videoStem: str = "") -> l
         YouTubeExtractStep(stepIndex=base + 1, fileIndex=fileIndex, videoUrl=videoUrl),
         YouTubeResourceStep(stepIndex=base + 2, fileIndex=fileIndex, videoStem=videoStem, role="video"),
         YouTubeResourceStep(stepIndex=base + 3, fileIndex=fileIndex, videoStem=videoStem, role="audio"),
-        YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoStem=videoStem),
+        YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoUrl=videoUrl, videoStem=videoStem),
     ]
 
 
@@ -118,8 +141,7 @@ class YouTubeTask(Task):
     canEdit = True
     fileType = YouTubeFile
     videoFormatFilter: str = ""
-    subtitleLanguages: str = ""
-    shouldIncludeAutoSubs: bool = False
+    subtitleTracks: list[str] = field(default_factory=list)
     isPlaylist: bool = False
 
     def setVideos(self, videos: list[dict]) -> None:
@@ -356,10 +378,12 @@ class YouTubeResourceStep(FFmpegResourceStep):
 @dataclass(kw_only=True)
 class YouTubeMergeStep(FFmpegStep):
     fileIndex: int = 0
+    videoUrl: str = ""
     videoStem: str = ""
     metadataTitle: str = ""
     metadataArtist: str = ""
     chapters: list[dict] = field(default_factory=list)
+    subtitleFilenames: list[str] = field(default_factory=list)
 
     @property
     def outputFile(self) -> str:
@@ -379,7 +403,24 @@ class YouTubeMergeStep(FFmpegStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{stem}.audio{suffix}"
 
+    def deleteFiles(self) -> None:
+        for filename in self.subtitleFilenames:
+            (self.task.outputFolder / filename).unlink(missing_ok=True)
+
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        super().moveFiles(oldFolder, newFolder)
+        for filename in self.subtitleFilenames:
+            subtitleFile = oldFolder / filename
+            targetFile = newFolder / filename
+            targetFile.parent.mkdir(parents=True, exist_ok=True)
+            if subtitleFile.exists():
+                shutil.move(str(subtitleFile), str(targetFile))
+
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        try:
+            await self._createSubtitleFiles()
+        except Exception:
+            logger.opt(exception=True).debug("Subtitle download failed")
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 
@@ -397,6 +438,48 @@ class YouTubeMergeStep(FFmpegStep):
             shutil.move(str(singleInput), str(outputPath))
             Path(f"{singleInput}.ghd").unlink(missing_ok=True)
         self.setStatus(TaskStatus.COMPLETED)
+
+    async def _createSubtitleFiles(self) -> None:
+        if not self.task.subtitleTracks:
+            return
+
+        from app.client import buildClient
+        from app.platform.filesystem import toSafeFilename
+
+        info = await asyncio.to_thread(probeFormats, self.videoUrl or self.task.url)
+        outputFile = Path(self.outputFile)
+        outputFile.parent.mkdir(parents=True, exist_ok=True)
+        client = buildClient()
+        try:
+            for track in self.task.subtitleTracks:
+                try:
+                    isAutomatic = track.startswith(AUTO_SUBTITLE_PREFIX)
+                    language = track.removeprefix(AUTO_SUBTITLE_PREFIX) if isAutomatic else track
+                    source = "automatic_captions" if isAutomatic else "subtitles"
+                    formats = (info.get(source) or {}).get(language) or []
+                    subtitle = next(
+                        (f for f in formats if f.get("ext") == "json3" and f.get("url")),
+                        None,
+                    )
+                    if not subtitle:
+                        continue
+                    response = await client.get(subtitle["url"])
+                    response.raise_for_status()
+                    text = toSrt(await response.json())
+                    if not text:
+                        continue
+                    language = toSafeFilename(language, fallback="subtitle")
+                    autoSuffix = ".auto" if isAutomatic else ""
+                    subtitleFile = outputFile.with_name(
+                        f"{outputFile.stem}.{language}{autoSuffix}.srt"
+                    )
+                    subtitleFile.write_text(text, encoding="utf-8")
+                    if subtitleFile.name not in self.subtitleFilenames:
+                        self.subtitleFilenames.append(subtitleFile.name)
+                except Exception:
+                    logger.opt(exception=True).debug("Subtitle download failed: {}", track)
+        finally:
+            client.close()
 
     async def _runWithMetadata(self) -> None:
         from ffmpeg_pack.config import ffmpegRuntime
