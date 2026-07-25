@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from secrets import token_hex
@@ -12,6 +13,7 @@ from loguru import logger
 
 from app.config.cfg import cfg
 from app.config.constants import VERSION
+from app.models.task import TaskStatus
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -19,6 +21,21 @@ if TYPE_CHECKING:
 JSONRPC_PARSE_ERROR = -32700
 JSONRPC_INVALID_REQUEST = -32600
 JSONRPC_METHOD_NOT_FOUND = -32601
+
+_TASK_STATUS_TO_ARIA2 = {
+    TaskStatus.WAITING: "waiting",
+    TaskStatus.RUNNING: "active",
+    TaskStatus.PAUSED: "paused",
+    TaskStatus.COMPLETED: "complete",
+    TaskStatus.FAILED: "error",
+}
+
+
+@dataclass
+class _GidRecord:
+    # task 与 error 均为空表示仍在解析
+    task: Task | None = None
+    error: str = ""
 
 
 class Aria2RpcServer(QObject):
@@ -31,6 +48,7 @@ class Aria2RpcServer(QObject):
         self._addTask = addTask
         self._server = QTcpServer(self)
         self._buffers: dict[int, bytes] = {}
+        self._gidRecords: dict[str, _GidRecord] = {}
 
         self._server.newConnection.connect(self._onNewConnection)
 
@@ -143,6 +161,8 @@ class Aria2RpcServer(QObject):
 
         if method == "aria2.addUri":
             self._addUri(socket, rpcId, params)
+        elif method == "aria2.tellStatus":
+            self._tellStatus(socket, rpcId, params)
         elif method == "aria2.getVersion":
             self._respond(socket, rpcId, {"version": VERSION, "enabledFeatures": ["HTTPS"]})
         else:
@@ -179,6 +199,7 @@ class Aria2RpcServer(QObject):
 
         gid = token_hex(8)
         self._respond(socket, rpcId, gid)
+        self._gidRecords[gid] = _GidRecord()
 
         from app.models.task import TaskOptions
 
@@ -194,11 +215,13 @@ class Aria2RpcServer(QObject):
         # filename 只绑定到 done，避免 failed 收到多余关键字参数（#645）
         self._coroutineRunner.submit(
             self._parse(taskOptions),
-            done=partial(self._onTaskParsed, filename=filename),
-            failed=self._onTaskParseFailed,
+            done=partial(self._onTaskParsed, gid, filename=filename),
+            failed=partial(self._onTaskParseFailed, gid),
         )
 
-    def _onTaskParsed(self, task: Task, filename: str = "") -> None:
+    def _onTaskParsed(self, gid: str, task: Task, filename: str = "") -> None:
+        self._gidRecords[gid].task = task
+
         if filename:
             task.setName(filename)
 
@@ -208,8 +231,63 @@ class Aria2RpcServer(QObject):
 
         self._addTask(task)
 
-    def _onTaskParseFailed(self, error: str) -> None:
+    def _onTaskParseFailed(self, gid: str, error: str) -> None:
+        self._gidRecords[gid].error = error
         logger.warning("Aria2 RPC task parse failed: {}", error)
+
+    def _tellStatus(self, socket: QTcpSocket, rpcId: Any, params: list) -> None:
+        gid = params[0] if params and isinstance(params[0], str) else ""
+        record = self._gidRecords.get(gid)
+        if record is None:
+            self._respondError(socket, rpcId, 1, f"No such download for GID#{gid}")
+            return
+        self._respond(socket, rpcId, self._buildStatus(gid, record))
+
+    def _buildStatus(self, gid: str, record: _GidRecord) -> dict:
+        # aria2 响应中所有值都是字符串
+        if record.error:
+            return {
+                "gid": gid,
+                "status": "error",
+                "totalLength": "0",
+                "completedLength": "0",
+                "downloadSpeed": "0",
+                "errorMessage": record.error,
+                "files": [],
+            }
+
+        task = record.task
+        if task is None:
+            return {
+                "gid": gid,
+                "status": "waiting",
+                "totalLength": "0",
+                "completedLength": "0",
+                "downloadSpeed": "0",
+                "files": [],
+            }
+
+        _, speed, receivedBytes = task.currentSnapshot()
+        status = _TASK_STATUS_TO_ARIA2[task.status]
+        totalLength = str(task.fileSize)
+        completedLength = str(receivedBytes)
+        result = {
+            "gid": gid,
+            "status": status,
+            "totalLength": totalLength,
+            "completedLength": completedLength,
+            "downloadSpeed": str(speed),
+            "files": [{
+                "index": "1",
+                "path": task.outputPath,
+                "length": totalLength,
+                "completedLength": completedLength,
+            }],
+        }
+        if status == "error":
+            error = task.lastError
+            result["errorMessage"] = str(error) if error else ""
+        return result
 
     def _respond(self, socket: QTcpSocket, rpcId: Any, result: Any) -> None:
         self._sendJson(socket, {"jsonrpc": "2.0", "id": rpcId, "result": result})

@@ -128,3 +128,99 @@ class TestParseCallbackBinding:
         runner.done(task)
         assert task.name == "renamed.zip"
         assert added == [task]
+
+
+# ── aria2.tellStatus ──
+
+
+def tellStatus(srv, gid: str, rpcId: int = 2) -> dict:
+    socket = StubSocket()
+    srv._dispatchRpc(socket, json.dumps({
+        "jsonrpc": "2.0", "id": rpcId, "method": "aria2.tellStatus", "params": [gid],
+    }).encode())
+    return socket.response()
+
+
+class TestTellStatus:
+    def test_parse_pending_is_waiting(self, server):
+        srv, _, _ = server
+        gid, _ = addUri(srv)
+        result = tellStatus(srv, gid)["result"]
+        assert result["gid"] == gid
+        assert result["status"] == "waiting"
+        assert result["totalLength"] == "0"
+        assert result["completedLength"] == "0"
+        assert result["downloadSpeed"] == "0"
+
+    def test_running_task_is_active(self, server, tmp_path):
+        srv, runner, _ = server
+        gid, _ = addUri(srv)
+        task = makeTask()
+        task.outputFolder = tmp_path
+        task.fileSize = 200
+        step = task.steps[0]
+        step.status = TaskStatus.RUNNING
+        step.speed = 100
+        step.receivedBytes = 50
+        task.updateStatus()
+        runner.done(task)
+
+        result = tellStatus(srv, gid)["result"]
+        assert result["status"] == "active"
+        assert result["totalLength"] == "200"
+        assert result["completedLength"] == "50"
+        assert result["downloadSpeed"] == "100"
+        assert result["files"] == [{
+            "index": "1",
+            "path": str(tmp_path / "test.zip"),
+            "length": "200",
+            "completedLength": "50",
+        }]
+
+    def test_completed_task_is_complete(self, server):
+        srv, runner, _ = server
+        gid, _ = addUri(srv)
+        task = makeTask()
+        task.fileSize = 200
+        step = task.steps[0]
+        step.receivedBytes = 200
+        step.setStatus(TaskStatus.COMPLETED)
+        runner.done(task)
+
+        result = tellStatus(srv, gid)["result"]
+        assert result["status"] == "complete"
+        assert result["completedLength"] == "200"
+        assert result["downloadSpeed"] == "0"
+
+    def test_parse_failure_is_error_with_message(self, server):
+        srv, runner, _ = server
+        gid, _ = addUri(srv)
+        runner.failed("no parser matched")
+
+        result = tellStatus(srv, gid)["result"]
+        assert result["status"] == "error"
+        assert result["errorMessage"] == "no parser matched"
+
+    def test_all_values_are_strings(self, server):
+        srv, runner, _ = server
+        gid, _ = addUri(srv)
+        task = makeTask()
+        task.fileSize = 200
+        step = task.steps[0]
+        step.status = TaskStatus.RUNNING
+        step.speed = 100
+        step.receivedBytes = 50
+        task.updateStatus()
+        runner.done(task)
+
+        result = tellStatus(srv, gid)["result"]
+        for key in ("gid", "status", "totalLength", "completedLength", "downloadSpeed"):
+            assert isinstance(result[key], str), key
+        for key in ("index", "path", "length", "completedLength"):
+            assert isinstance(result["files"][0][key], str), key
+
+    def test_unknown_gid_error(self, server):
+        srv, _, _ = server
+        response = tellStatus(srv, "deadbeef")
+        assert response["error"]["code"] == 1
+        assert response["error"]["message"] == "No such download for GID#deadbeef"
