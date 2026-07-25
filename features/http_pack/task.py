@@ -253,11 +253,18 @@ class HttpTaskStep(TaskStep):
                 recordFile.close()
 
     async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
+        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None)
+        try:
+            await self._runSubworkerWith(subworker, fd, client)
+        finally:
+            client.close()
+
+    async def _runSubworkerWith(self, subworker: HttpSubworker, fd: int, client) -> None:
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 try:
                     headers = {**self._effectiveHeaders, "range": f"bytes={subworker.position}-", "accept-encoding": "identity"}
-                    response = await self._client.get(self.url, headers=headers)
+                    response = await client.get(self.url, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -291,7 +298,7 @@ class HttpTaskStep(TaskStep):
                 try:
                     ftruncate(fd, 0)
                     subworker.receivedBytes = 0
-                    response = await self._client.get(self.url, headers=dict(self._effectiveHeaders))
+                    response = await client.get(self.url, headers=dict(self._effectiveHeaders))
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -327,7 +334,7 @@ class HttpTaskStep(TaskStep):
                         "range": f"bytes={subworker.position}-{subworker.end}",
                         "accept-encoding": "identity",
                     }
-                    response = await self._client.get(self.url, headers=headers)
+                    response = await client.get(self.url, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -379,8 +386,7 @@ class HttpTaskStep(TaskStep):
         if self.userAgent and not any(k.lower() == "user-agent" for k in self.headers):
             self._effectiveHeaders["user-agent"] = self.userAgent
 
-        emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
-        self._client = buildClient(emulation=emulation, userAgent=self.userAgent or None)
+        self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
 
         restored = False
         if self.canUseRangeRequests:
@@ -451,7 +457,6 @@ class HttpTaskStep(TaskStep):
                             await supervisor
         finally:
             os.close(self._fd)
-            self._client.close()
             if shouldDeleteRecord:
                 self._deleteRecord()
                 if cfg.shouldPreserveLastModified.value and self.lastModified:
