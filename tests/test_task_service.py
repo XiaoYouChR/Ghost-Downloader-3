@@ -28,6 +28,8 @@ class StubCoroutineRunner:
     def __init__(self):
         self.submitted: list[tuple[str, object]] = []
         self.cancelled: list[str] = []
+        self.cancelFinished = []
+        self.shouldDeferCancel = False
         self._counter = 0
 
     def submit(self, work, done=None, failed=None, **kwargs) -> str:
@@ -39,8 +41,14 @@ class StubCoroutineRunner:
     def cancel(self, workId: str, finished=None) -> bool:
         self.cancelled.append(workId)
         if finished is not None:
-            finished()
+            if self.shouldDeferCancel:
+                self.cancelFinished.append(finished)
+            else:
+                finished()
         return True
+
+    def runCancel(self, index=0):
+        self.cancelFinished.pop(index)()
 
     def addSpeed(self, n):
         pass
@@ -140,6 +148,36 @@ class TestAdd:
         svc.add(task)
         assert svc.taskById("stored") is task
 
+    def test_add_running_task_does_not_submit_twice(self, service):
+        svc, runner = service
+        task = makeTask("running")
+        svc.start(task)
+        svc.add(task)
+        assert len(runner.submitted) == 1
+        assert svc.taskById("running") is task
+
+    def test_add_completed_task_emits_completion(self, service):
+        svc, runner = service
+        task = makeTask("completed")
+        svc.start(task)
+        task.setStatus(TaskStatus.COMPLETED)
+        _, done, _ = runner.submitted[-1]
+        done(None)
+        spy = MagicMock()
+        svc.taskCompleted.connect(spy)
+        svc.add(task)
+        spy.assert_called_once_with(task)
+
+    def test_add_failed_task_emits_failure(self, service):
+        svc, runner = service
+        task = makeTask("failed")
+        task.setStatus(TaskStatus.FAILED)
+        spy = MagicMock()
+        svc.taskFailed.connect(spy)
+        svc.add(task)
+        spy.assert_called_once_with(task)
+        assert runner.submitted == []
+
 
 # ── S7: pause ──
 
@@ -170,6 +208,17 @@ class TestPause:
         svc.pause(task)
         assert task.status == TaskStatus.PAUSED
 
+    def test_resume_during_cancel_runs_after_stop(self, service):
+        svc, runner = service
+        task = makeTask("p4")
+        svc.add(task)
+        runner.shouldDeferCancel = True
+        svc.pause(task)
+        svc.start(task)
+        assert len(runner.submitted) == 1
+        runner.runCancel()
+        assert len(runner.submitted) == 2
+
 
 # ── S7: delete ──
 
@@ -191,6 +240,41 @@ class TestDelete:
         svc.add(task)
         svc.delete(task, shouldDeleteFiles=False)
         assert svc.taskById("d2") is None
+
+    def test_delete_cancels_pending_resume_and_deletes_files(self, service):
+        svc, runner = service
+        task = makeTask("d3")
+        task.deleteFiles = MagicMock()
+        svc.add(task)
+        runner.shouldDeferCancel = True
+
+        svc.pause(task)
+        svc.start(task)
+        svc.delete(task, shouldDeleteFiles=True)
+        runner.runCancel()
+        runner.runCancel()
+
+        assert len(runner.submitted) == 1
+        task.deleteFiles.assert_called_once()
+
+    @pytest.mark.parametrize(
+        ("restart", "firstCallback"), [("redownload", 0), ("edit", -1)],
+    )
+    def test_delete_supersedes_pending_restart(self, service, restart, firstCallback):
+        svc, runner = service
+        task = makeTask(f"d-{restart}")
+        svc.add(task)
+        runner.shouldDeferCancel = True
+
+        if restart == "redownload":
+            svc.redownload(task)
+        else:
+            svc.edit(task, {})
+        svc.delete(task, shouldDeleteFiles=False)
+        runner.runCancel(firstCallback)
+        runner.runCancel()
+
+        assert len(runner.submitted) == 1
 
 
 # ── S7: queue ──
@@ -231,6 +315,19 @@ class TestQueue:
         _, done, _ = runner.submitted[-1]
         done(None)
         spy.assert_called_once()
+
+    def test_stale_done_does_not_remove_new_run(self, service):
+        svc, runner = service
+        task = makeTask("stale")
+        svc.start(task)
+        _, oldDone, _ = runner.submitted[-1]
+        svc.cancel(task)
+        svc.start(task)
+
+        oldDone(None)
+
+        assert svc.runningCount() == 1
+        assert len(runner.submitted) == 2
 
 
 # ── S7: redownload ──

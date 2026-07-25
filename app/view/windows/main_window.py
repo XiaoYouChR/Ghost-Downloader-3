@@ -60,7 +60,10 @@ class MainWindow(MSFluentWindow):
             self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         self._pages: dict[str, QWidget] = {}
-        self._draft = TaskDraft(self._coroutineRunner, self._featureService, parent=self)
+        self._draft = TaskDraft(
+            self._coroutineRunner, self._featureService, self._taskService,
+            self._categoryService, cfg, parent=self,
+        )
         self.searchEdit = SearchLineEdit(self.titleBar)
 
         self._initWidget()
@@ -174,6 +177,7 @@ class MainWindow(MSFluentWindow):
 
     def _bind(self) -> None:
         self._draft.taskConfirmed.connect(self._taskService.add)
+        QApplication.instance().aboutToQuit.connect(self._draft.clear)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)

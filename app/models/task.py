@@ -428,6 +428,15 @@ class Task:
     def canReuseProgress(self, newTask: Task) -> bool:
         return False
 
+    def canReuseOptions(self, options: dict) -> bool:
+        for name, value in options.items():
+            if name in {"outputFolder", "category"}:
+                continue
+            current = [getattr(step, name) for step in self.steps if hasattr(step, name)]
+            if any(item != value for item in current):
+                return False
+        return True
+
     def replaceWith(self, newTask: Task) -> None:
         self.url = newTask.url
         self.name = newTask.name

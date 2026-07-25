@@ -68,6 +68,7 @@ class TaskDraftDialog(MessageBoxBase):
         self._featureService = featureService
         self._categoryService = categoryService
         self._parseTimer = QTimer(self, singleShot=True)
+        self._optionsTimer = QTimer(self, singleShot=True)
         self._standaloneWrapper = StandaloneWrapper(self)
         self.destroyed.connect(self._standaloneWrapper.deleteLater)
         self._isStandalone = False
@@ -101,8 +102,10 @@ class TaskDraftDialog(MessageBoxBase):
         self._fileTypes = self._featureService.fileTypes()
         self.importButton.setVisible(bool(self._fileTypes))
 
-        self.optionGroup.addCard(OutputFolderCard(self.optionGroup))
-        self.optionGroup.addCard(SubworkerCountCard(self.optionGroup))
+        self._outputFolderCard = OutputFolderCard(self.optionGroup)
+        self._subworkerCountCard = SubworkerCountCard(self.optionGroup)
+        self.optionGroup.addCard(self._outputFolderCard)
+        self.optionGroup.addCard(self._subworkerCountCard)
 
     def _initLayout(self) -> None:
         self.headerLayout.addWidget(self.titleLabel)
@@ -119,12 +122,17 @@ class TaskDraftDialog(MessageBoxBase):
         self._parseTimer.setInterval(1000)
         self._parseTimer.timeout.connect(self._onParseNeeded)
         self.urlEdit.textChanged.connect(self._parseTimer.start)
+        self._optionsTimer.setInterval(200)
+        self._optionsTimer.timeout.connect(self._onOptionsChanged)
+        self._outputFolderCard.folderPicker.pathChanged.connect(lambda *_: self._optionsTimer.start())
+        self._subworkerCountCard.slider.valueChanged.connect(lambda *_: self._optionsTimer.start())
 
         self._draft.parsingBusyChanged.connect(self.progressBar.setVisible)
         self._draft.parseSucceeded.connect(self._onParseSucceeded)
         self._draft.parseFailed.connect(self._onParseFailed)
         self._draft.itemsChanged.connect(self._onItemsChanged)
         self._draft.itemsCleared.connect(self._onCleared)
+        self._draft.taskUpdated.connect(self._onTaskUpdated)
 
         self.batchButton.clicked.connect(self._onBatchClicked)
         self.importButton.clicked.connect(self._onImportClicked)
@@ -186,6 +194,7 @@ class TaskDraftDialog(MessageBoxBase):
         self.urlEdit.clear()
         self.optionGroup.reset()
         self._parseTimer.stop()
+        self._optionsTimer.stop()
         self._cardByUrl.clear()
         self._failCount = 0
         self.draftGroup.clear()
@@ -240,25 +249,41 @@ class TaskDraftDialog(MessageBoxBase):
         self._isStandalone = False
 
     def _onParseNeeded(self) -> None:
+        self._optionsTimer.stop()
         self._draft.setBaseOptions(self.optionGroup.options())
         self._draft.setUrls(self._urls())
+
+    def _onOptionsChanged(self) -> None:
+        self._draft.setBaseOptions(self.optionGroup.options())
 
     def _onParseSucceeded(self, url: str, task: Task) -> None:
         card = self._featureService.draftCard(task, self.draftGroup)
         card.categoryPicked.connect(lambda cid: self._draft.setUrlCategory(url, cid))
         card.editRequested.connect(lambda u=url: self._onEditRequested(u))
+        card.changeRequested.connect(
+            lambda change, shouldDeleteFiles, u=url: self._draft.update(
+                u, change, shouldDeleteFiles
+            )
+        )
         self.draftGroup.addCard(url, card)
         self._cardByUrl[url] = card
         self._refreshStats()
 
     def _onEditRequested(self, url: str) -> None:
-        from app.view.dialogs.edit_task import DraftEditDialog
+        from app.view.dialogs.edit_task import EditTaskDialog
 
         task = self._draft.taskByUrl(url)
         if task is None:
             return
-        dialog = DraftEditDialog(task, self._featureService.optionCards(task, self.window()), self.window())
-        dialog.exec()
+        dialog = EditTaskDialog(task, self._featureService.optionCards(task, self.window()), self.window())
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._draft.setOptions(url, dialog.cardGroup.options())
+
+    def _onTaskUpdated(self, url: str, task: Task) -> None:
+        card = self._cardByUrl.get(url)
+        if card is not None:
+            card.refresh()
+            self._refreshStats()
 
     def _onParseFailed(self, url: str, error: str) -> None:
         self._failCount += 1

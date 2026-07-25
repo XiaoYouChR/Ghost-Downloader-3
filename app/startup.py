@@ -84,3 +84,5 @@ def stopEngine(taskService, browserService, aria2RpcServer, featureService, coro
     aria2RpcServer.stop()
     featureService.deactivate(coroutineRunner)
     coroutineRunner.stop()
+    from PySide6.QtWidgets import QApplication
+    QApplication.processEvents()

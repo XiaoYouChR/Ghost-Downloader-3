@@ -122,6 +122,17 @@ class YouTubeTask(Task):
     shouldIncludeAutoSubs: bool = False
     isPlaylist: bool = False
 
+    def setFormat(self, videoFormatFilter: str) -> None:
+        self.videoFormatFilter = videoFormatFilter
+        for step in self.steps:
+            if isinstance(step, YouTubeResourceStep):
+                step.url = ""
+                step.fileSize = 0
+
+    def setSubtitles(self, languages: list[str], shouldIncludeAuto: bool) -> None:
+        self.subtitleLanguages = languages
+        self.shouldIncludeAutoSubs = shouldIncludeAuto
+
     def setVideos(self, videos: list[dict]) -> None:
         from app.platform.filesystem import toSafeFilename
         self.files = [

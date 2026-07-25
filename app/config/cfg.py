@@ -228,6 +228,9 @@ class Config(QConfig):
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 512, RangeValidator(64, 102400)
     )
+    shouldStartAheadDownload = ConfigItem(
+        "GeneralDownload", "StartAheadDownload", True, BoolValidator()
+    )
 
     # 分类
     isCategoryEnabled = ConfigItem("Category", "EnableCategory", False, BoolValidator())

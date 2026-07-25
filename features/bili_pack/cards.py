@@ -237,8 +237,8 @@ class BilibiliDraftCard(MultiFileDraftCard):
 
     def _onModeChanged(self, index: int) -> None:
         task: BilibiliTask = self._task
-        task.setMode(DownloadMode(index))
-        self._refreshSummary()
+        mode = DownloadMode(index)
+        self.changeRequested.emit(lambda: task.setMode(mode), True)
 
     def _onSelectFilesClicked(self) -> None:
         task: BilibiliTask = self._task
@@ -246,14 +246,15 @@ class BilibiliDraftCard(MultiFileDraftCard):
         if dialog.exec():
             selected = dialog.selectedPageNumbers()
             if selected:
-                task.setSelection({n - 1 for n in selected})
-                self._refreshSummary()
+                indexes = {n - 1 for n in selected}
+                self.changeRequested.emit(lambda: task.setSelection(indexes), False)
 
     def _onSubtitleClicked(self) -> None:
         task: BilibiliTask = self._task
         dialog = SubtitleSelectDialog(self._subtitleChoices, task.subtitleLanguages, self.window())
         if dialog.exec():
-            task.setSubtitleLanguages(dialog.selectedLanguages())
+            languages = dialog.selectedLanguages()
+            self.changeRequested.emit(lambda: task.setSubtitleLanguages(languages), True)
 
     def _refreshSummary(self) -> None:
         self.sizeLabel.setText(toReadableSize(self._task.fileSize))
