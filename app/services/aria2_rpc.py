@@ -271,7 +271,8 @@ class Aria2RpcServer(QObject):
         status = _TASK_STATUS_TO_ARIA2[task.status]
         # fileSize 可能是 SpecialFileSize 哨兵值（UNKNOWN=0 / NOT_SUPPORTED=-1），aria2 语义均为 "0"
         totalLength = str(max(task.fileSize, 0))
-        completedLength = str(receivedBytes)
+        # 完成后 step 的 receivedBytes 停留在最后一次采样值，可能小于 fileSize
+        completedLength = totalLength if task.status == TaskStatus.COMPLETED else str(receivedBytes)
         result = {
             "gid": gid,
             "status": status,

@@ -197,7 +197,8 @@ class TestTellStatus:
         task = makeTask()
         task.fileSize = 200
         step = task.steps[0]
-        step.receivedBytes = 200
+        # 完成后 receivedBytes 停留在最后一次采样值（真实下载中常小于 fileSize）
+        step.receivedBytes = 150
         step.setStatus(TaskStatus.COMPLETED)
         runner.done(task)
 
