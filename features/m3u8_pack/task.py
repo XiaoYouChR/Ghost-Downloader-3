@@ -14,7 +14,9 @@ from app.platform.filesystem import deletePath, toPosixPath
 from .config import m3u8Runtime
 
 VOD_PROGRESS_PATTERN = re.compile(
-    r"(\d+)/(\d+)\s+(\d+\.\d+)%\s+(\d+\.\d+)(KB|MB|GB|B)/(\d+\.\d+)(KB|MB|GB|B)\s+(\d+\.\d+)(GBps|MBps|KBps|Bps)\s+(.+)"
+    r"(\d+)/(\d+)\s+(\d+\.\d+)%\s+"
+    r"(?:(?:(\d+\.\d+)(KB|MB|GB|B)/(\d+\.\d+)(KB|MB|GB|B))|-)?\s*"
+    r"(\d+\.\d+)(GBps|MBps|KBps|Bps)"
 )
 LIVE_PROGRESS_PATTERN = re.compile(
     r"(\d{2}m\d{2}s)/(\d{2}m\d{2}s)\s+\d+/\d+\s+(Recording|Waiting)\s+(\d+)%\s+(-|(\d+\.\d+)(GBps|MBps|KBps|Bps))"
@@ -278,11 +280,12 @@ class M3U8TaskStep(TaskStep):
         vodMatch = VOD_PROGRESS_PATTERN.search(text)
         if vodMatch:
             self.progress = float(vodMatch.group(3))
-            self.receivedBytes = toBytes(vodMatch.group(4), vodMatch.group(5))
+            if vodMatch.group(4):
+                self.receivedBytes = toBytes(vodMatch.group(4), vodMatch.group(5))
+                totalSize = toBytes(vodMatch.group(6), vodMatch.group(7))
+                if totalSize > 0:
+                    self.task.fileSize = totalSize
             self.speed = toBytes(vodMatch.group(8), vodMatch.group(9))
-            totalSize = toBytes(vodMatch.group(6), vodMatch.group(7))
-            if totalSize > 0:
-                self.task.fileSize = totalSize
             return
 
         liveMatch = LIVE_PROGRESS_PATTERN.search(text)
