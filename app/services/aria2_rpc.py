@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import partial
 from pathlib import Path
 from secrets import token_hex
 from typing import TYPE_CHECKING, Any
@@ -189,11 +190,12 @@ class Aria2RpcServer(QObject):
             outputFolder=outputFolder,
             clientProfile=clientProfile,
         )
+        # CoroutineRunner 会把 kwargs 同时传给 done 和 failed，
+        # filename 只绑定到 done，避免 failed 收到多余关键字参数（#645）
         self._coroutineRunner.submit(
             self._parse(taskOptions),
-            done=self._onTaskParsed,
+            done=partial(self._onTaskParsed, filename=filename),
             failed=self._onTaskParseFailed,
-            filename=filename,
         )
 
     def _onTaskParsed(self, task: Task, filename: str = "") -> None:
