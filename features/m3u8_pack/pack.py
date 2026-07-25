@@ -55,7 +55,8 @@ class M3U8Parser(TaskParser):
                 options.sourceUserAgent,
             )
             client = buildClient(emulation=emulation, headers=headers,
-                                 userAgent=options.userAgent or None)
+                                 userAgent=options.userAgent or None,
+                                 sourceUserAgent=options.sourceUserAgent)
             try:
                 response = await client.get(url)
                 response.raise_for_status()
@@ -87,7 +88,8 @@ class M3U8Parser(TaskParser):
                         variantClient = buildClient(emulation=toEmulation(
                             options.clientProfile or cfg.clientProfile.value,
                             options.sourceUserAgent,
-                        ), headers=headers, userAgent=options.userAgent or None)
+                        ), headers=headers, userAgent=options.userAgent or None,
+                            sourceUserAgent=options.sourceUserAgent)
                         try:
                             variantResponse = await variantClient.get(variantUrl)
                             variantResponse.raise_for_status()
@@ -276,6 +278,25 @@ class M3U8Pack(FeaturePack):
         ]
         if len(task.streams) > 1:
             cards.append(StreamSelectCard(parent, streams=task.streams, initial=step.selectVideo))
+        if task.isLive:
+            cards.append(RecordLimitCard(parent, initial=step.recordLimit))
+        cards.append(DecryptionKeyCard(parent, keys=step.decryptionKeys, keyTextFile=step.decryptionKeyFile))
+        cards.append(MuxImportCard(parent, initial=step.muxImports))
+        return cards
+
+    def editCards(self, task, parent=None):
+        from app.view.components.option_cards import HeadersEditCard, OutputFolderCard
+        from .cards import RecordLimitCard, DecryptionKeyCard, MuxImportCard
+        from .task import M3U8TaskStep
+
+        step = task.steps[0] if task.steps else None
+        if not isinstance(step, M3U8TaskStep):
+            return []
+
+        cards = [
+            OutputFolderCard(parent, initial=task.outputFolder),
+            HeadersEditCard(parent, initial=step.headers),
+        ]
         if task.isLive:
             cards.append(RecordLimitCard(parent, initial=step.recordLimit))
         cards.append(DecryptionKeyCard(parent, keys=step.decryptionKeys, keyTextFile=step.decryptionKeyFile))
