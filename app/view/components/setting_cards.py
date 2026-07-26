@@ -913,6 +913,7 @@ class RuntimeCard(SettingCard):
                     duration=3000,
                     position=InfoBarPosition.TOP,
                     parent=card.window(),
+                    card._watchInstallTask(task)
                 )
 
         def onFailed(error: str) -> None:
@@ -923,6 +924,14 @@ class RuntimeCard(SettingCard):
                 card._onInstallTaskFailed(error)
 
         self._coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
+
+    def _watchInstallTask(self, task) -> None:
+        def _onCompleted(completed) -> None:
+            if completed is task:
+                self._taskService.taskCompleted.disconnect(_onCompleted)
+                self.refreshStatus()
+
+        self._taskService.taskCompleted.connect(_onCompleted)
 
     def _onInstallTaskFailed(self, error: str) -> None:
         self.installButton.setEnabled(True)
