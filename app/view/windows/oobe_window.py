@@ -492,7 +492,7 @@ class BrowserExtensionPage(QWidget):
         if self._browserService.boundPort:
             self._setBanner(
                 InfoBarIcon.INFORMATION,
-                self.tr("正在端口 {} 上等待扩展连接").format(browserService.boundPort),
+                self.tr("正在端口 {} 上等待扩展连接").format(self._browserService.boundPort),
             )
         elif not cfg.isBrowserExtensionEnabled.value:
             self._setBanner(
@@ -641,6 +641,16 @@ class AdvancedOptionsPage(QWidget):
             self.tr("更多选项"),
             self.tr("按需开启以下功能，也可以稍后在设置中修改"), self,
         )
+        self.runAtLoginCard = OptionCard(
+            FluentIcon.POWER_BUTTON, self.tr("开机自启"),
+            self.tr("登录系统时自动在后台启动，随时接管下载"),
+            isChecked=cfg.shouldRunAtLogin.value, parent=self,
+        )
+        self.clipboardCard = OptionCard(
+            FluentIcon.PASTE, self.tr("剪贴板监听"),
+            self.tr("复制下载链接时自动弹出新任务提示"),
+            isChecked=cfg.isClipboardListenerEnabled.value, parent=self,
+        )
         self.categoryCard = OptionCard(
             FluentIcon.TAG, self.tr("自动分类保存"),
             self.tr("按文件类型自动保存到 视频、音频、文档 等子文件夹"),
@@ -661,16 +671,6 @@ class AdvancedOptionsPage(QWidget):
             self.tr("让支持 Aria2 的工具和网站把下载任务发给 Ghost Downloader"),
             isChecked=cfg.isAria2RpcEnabled.value, parent=self,
         )
-        self.runAtLoginCard = OptionCard(
-            FluentIcon.POWER_BUTTON, self.tr("开机自启"),
-            self.tr("登录系统时自动在后台启动，随时接管下载"),
-            isChecked=cfg.shouldRunAtLogin.value, parent=self,
-        )
-        self.clipboardCard = OptionCard(
-            FluentIcon.PASTE, self.tr("剪贴板监听"),
-            self.tr("复制下载链接时自动弹出新任务提示"),
-            isChecked=cfg.isClipboardListenerEnabled.value, parent=self,
-        )
 
     def _isFileAssociationEnabled(self) -> bool:
         return any(
@@ -688,13 +688,20 @@ class AdvancedOptionsPage(QWidget):
 
         listLayout = QVBoxLayout()
         listLayout.setSpacing(8)
-        for card in [self.categoryCard, self.fileAssocCard, self.urlSchemeCard,
-                     self.aria2Card, self.runAtLoginCard, self.clipboardCard]:
+        for card in [self.runAtLoginCard, self.clipboardCard, self.categoryCard,
+                     self.fileAssocCard, self.urlSchemeCard, self.aria2Card]:
             listLayout.addWidget(card)
         layout.addLayout(listLayout)
         layout.addStretch(1)
 
     def save(self) -> None:
+        if self.runAtLoginCard.isChecked() != cfg.shouldRunAtLogin.value:
+            from app.platform.run_at_login import setRunAtLogin
+            setRunAtLogin(self.runAtLoginCard.isChecked())
+            cfg.set(cfg.shouldRunAtLogin, self.runAtLoginCard.isChecked())
+
+        cfg.set(cfg.isClipboardListenerEnabled, self.clipboardCard.isChecked())
+
         cfg.set(cfg.isCategoryEnabled, self.categoryCard.isChecked())
 
         for pack in self._featureService.packs:
@@ -711,13 +718,6 @@ class AdvancedOptionsPage(QWidget):
             cfg.set(cfg.isUrlSchemeRegistered, self.urlSchemeCard.isChecked())
 
         cfg.set(cfg.isAria2RpcEnabled, self.aria2Card.isChecked())
-
-        if self.runAtLoginCard.isChecked() != cfg.shouldRunAtLogin.value:
-            from app.platform.run_at_login import setRunAtLogin
-            setRunAtLogin(self.runAtLoginCard.isChecked())
-            cfg.set(cfg.shouldRunAtLogin, self.runAtLoginCard.isChecked())
-
-        cfg.set(cfg.isClipboardListenerEnabled, self.clipboardCard.isChecked())
 
 
 class CompletePage(QWidget):
