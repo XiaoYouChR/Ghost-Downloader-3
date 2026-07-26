@@ -149,9 +149,9 @@ class HttpParser(TaskParser):
                     msg["Content-Disposition"] = cd
                     params = msg.get_params(header="Content-Disposition")
                     paramDict = {k.lower(): v for k, v in params}
-                    name = collapse_rfc2231_value(
+                    name = unquote(collapse_rfc2231_value(
                         paramDict.get("filename") or paramDict.get("filename*") or ""
-                    ).strip("\"' ")
+                    )).strip("\"' ")
 
                 if not name and "content-location" in responseHeaders:
                     cl = responseHeaders["content-location"]
