@@ -2,6 +2,9 @@
   <a href="README_zh.md">简体中文</a> | English
 </h4>
 
+> [!TIP]
+> Join the Ghost Downloader community on Discord: [discord.gg/fKfhkPumEM](https://discord.gg/fKfhkPumEM)
+
 <!-- PROJECT LOGO -->
 <div align="center">
 
@@ -17,6 +20,7 @@
 [![Release][release-shield]][release-url]
 [![Downloads][downloads-shield]][release-url]
 [![QQGroup](https://img.shields.io/badge/QQ_Group-756042420-blue.svg?color=blue&style=for-the-badge)](https://qm.qq.com/q/gPk6FR1Hby)
+[![Discord](https://img.shields.io/discord/1527965717973176391?style=for-the-badge&logo=discord&logoColor=white&label=Discord&color=%235865F2)](https://discord.gg/fKfhkPumEM)
 
 ##### [Documentation](https://gd.xychr.com/en/docs/) · [Report Bug](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=bug_report.yml) · [Request Feature](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/new?template=feature_request.yml)
 
