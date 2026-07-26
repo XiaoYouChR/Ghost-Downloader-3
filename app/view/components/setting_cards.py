@@ -15,7 +15,7 @@ from qfluentwidgets import (
     ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
     PrimaryPushButton, InfoBar, InfoBarPosition,
-    IconWidget, TransparentToolButton,
+    IconWidget,
 )
 
 from app.view.components.setting_card_group import CollapsibleSettingCard
@@ -603,33 +603,32 @@ class DefaultHeadersSettingCard(PushSettingCard):
         self.clicked.connect(self._onClicked)
 
     def _onClicked(self) -> None:
-        from qfluentwidgets import MessageBoxBase, SubtitleLabel, TransparentToolButton
-        from app.view.components.editors import HeadersEditor
+        from qfluentwidgets import MessageBoxBase, SubtitleLabel
+        from app.view.components.headers_editor import HeadersEditor
+        from app.view.components.scroll_area import ScrollArea
 
         dialog = MessageBoxBase(self.window())
         dialog.widget.setMinimumWidth(500)
 
+        editor = HeadersEditor(dialog, defaults=BASE_HEADERS)
+        editor.setHeaders(cfg.defaultRequestHeaders.value)
+
+        # toolbar 先进标题行，此后它归弹窗所有，不会被卷进滚动区
         titleRow = QHBoxLayout()
         titleRow.addWidget(SubtitleLabel(self.tr("编辑默认请求头"), dialog))
         titleRow.addStretch(1)
-        resetButton = TransparentToolButton(FluentIcon.HISTORY, dialog)
-        resetButton.setToolTip(self.tr("恢复默认"))
-        resetButton.installEventFilter(ToolTipFilter(resetButton))
-        titleRow.addWidget(resetButton)
+        titleRow.addWidget(editor.toolbar)
         dialog.viewLayout.addLayout(titleRow)
 
-        editor = HeadersEditor(dialog)
-        editor.setHeaders(dict(cfg.defaultRequestHeaders.value))
-        dialog.viewLayout.addWidget(editor)
-
-        resetButton.clicked.connect(
-            lambda: editor.setHeaders(dict(BASE_HEADERS))
-        )
+        scrollArea = ScrollArea(dialog.widget)
+        scrollArea.setWidget(editor)
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scrollArea.enableTransparentBackground()
+        dialog.viewLayout.addWidget(scrollArea)
 
         if dialog.exec():
-            headers = editor.headers()
-            if headers:
-                cfg.set(cfg.defaultRequestHeaders, headers)
+            cfg.set(cfg.defaultRequestHeaders, editor.headers())
 
 
 class SelectFileCard(SettingCard):

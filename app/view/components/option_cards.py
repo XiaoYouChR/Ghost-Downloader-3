@@ -5,7 +5,7 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
     Action, BodyLabel, FluentIcon, IconWidget, LineEdit, RoundMenu, Slider,
-    ToolTipFilter, TransparentToolButton, isDarkTheme,
+    isDarkTheme,
 )
 
 from app.config.cfg import cfg
@@ -260,46 +260,43 @@ class UrlEditCard(OptionCard):
 class HeadersEditCard(OptionCard):
 
     def __init__(self, parent=None, *, initial: dict[str, str] | None = None):
-        from app.view.components.editors import HeadersEditor
+        from app.view.components.headers_editor import HeadersEditor
 
         super().__init__(parent)
         self.iconWidget = IconWidget(FluentIcon.GLOBE, self)
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("请求标头"), self)
-        self.resetButton = TransparentToolButton(FluentIcon.SYNC, self)
-        self.headersEditor = HeadersEditor(self)
+        self.headersEditor = HeadersEditor(
+            self, defaults=cfg.defaultRequestHeaders.value)
 
         self.vBoxLayout = QVBoxLayout(self)
         self.titleRowLayout = QHBoxLayout()
 
         self._initWidget()
         self._initLayout()
-        self._bind()
 
-        self.headersEditor.setHeaders(initial or dict(cfg.defaultRequestHeaders.value))
+        if initial is None:
+            self.headersEditor.reset()
+        else:
+            self.headersEditor.setHeaders(initial)
 
     def _initWidget(self) -> None:
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.resetButton.setToolTip(self.tr("恢复默认请求标头"))
-        self.resetButton.installEventFilter(ToolTipFilter(self.resetButton))
 
     def _initLayout(self) -> None:
         self.titleRowLayout.setSpacing(15)
         self.titleRowLayout.addWidget(self.iconWidget)
         self.titleRowLayout.addWidget(self.titleLabel)
         self.titleRowLayout.addStretch(1)
-        self.titleRowLayout.addWidget(self.resetButton)
+        self.titleRowLayout.addWidget(self.headersEditor.toolbar)
 
         self.vBoxLayout.setContentsMargins(24, 10, 24, 12)
         self.vBoxLayout.setSpacing(10)
         self.vBoxLayout.addLayout(self.titleRowLayout)
         self.vBoxLayout.addWidget(self.headersEditor)
 
-    def _bind(self) -> None:
-        self.resetButton.clicked.connect(self.reset)
-
     def options(self) -> dict:
         return {"headers": self.headersEditor.headers()}
 
     def reset(self) -> None:
-        self.headersEditor.setHeaders(dict(cfg.defaultRequestHeaders.value))
+        self.headersEditor.reset()

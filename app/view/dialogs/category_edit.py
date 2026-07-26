@@ -9,7 +9,7 @@ from qfluentwidgets import (
 )
 
 from app.services.category_service import Category
-from app.view.components.editors import TokenLineEdit
+from app.view.components.token_line_edit import TokenLineEdit
 
 
 class CategoryEditDialog(MessageBoxBase):

@@ -188,7 +188,7 @@ class IdentityPresetListValidator(ConfigValidator):
 
 class HeadersValidator(ConfigValidator):
     def validate(self, value) -> bool:
-        return isinstance(value, dict) and bool(value) and all(
+        return isinstance(value, dict) and all(
             isinstance(k, str) and isinstance(v, str) for k, v in value.items()
         )
 

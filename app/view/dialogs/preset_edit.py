@@ -7,7 +7,7 @@ from qfluentwidgets import (
     TransparentToolButton,
 )
 
-from app.view.components.editors import TokenLineEdit
+from app.view.components.token_line_edit import TokenLineEdit
 
 
 class PresetEditDialog(MessageBoxBase):
