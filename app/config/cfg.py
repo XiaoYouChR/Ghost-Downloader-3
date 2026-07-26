@@ -334,11 +334,24 @@ def currentHeaders() -> dict:
     return dict(cfg.headersPresets.value[currentHeadersPresetIndex()]["headers"])
 
 
+def toProxyUrl(url: str) -> str:
+    if "://" not in url:
+        return "http://" + url
+    if url.startswith("socks://"):
+        return "socks5://" + url[len("socks://"):]
+    return url
+
+
 def proxy() -> str | None:
     if cfg.proxyServer.value == "Off":
         return None
     if cfg.proxyServer.value == "Auto":
         system = getproxies()
-        return next((v for v in system.values() if v), None) if system else None
+        if not system:
+            return None
+        for key in ("http", "https", "socks"):
+            if url := system.get(key):
+                return toProxyUrl(url)
+        return None
     server = str(cfg.proxyServer.value).strip()
-    return server or None
+    return toProxyUrl(server) if server else None
