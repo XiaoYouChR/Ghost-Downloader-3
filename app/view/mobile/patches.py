@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def patchFileDialogs() -> None:
     from urllib.parse import unquote
 

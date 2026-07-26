@@ -4,7 +4,7 @@ import asyncio
 import json
 import struct
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from io import BytesIO
 from pathlib import Path
@@ -19,6 +19,8 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.config.paths import APP_DATA_DIR
+
+from app.models.task import MergeTaskOptions, PageTaskOptions
 
 if TYPE_CHECKING:
     from PySide6.QtWebSockets import QWebSocket
@@ -211,9 +213,6 @@ class BrowserService(QObject):
         )
 
     def _toTaskOptions(self, source: TaskSource, payload: dict) -> TaskOptions:
-        from dataclasses import replace
-        from app.models.task import MergeTaskOptions, PageTaskOptions
-
         rawPath = payload.get("path")
         outputFolder = Path(rawPath) if rawPath else Path(cfg.downloadFolder.value)
 

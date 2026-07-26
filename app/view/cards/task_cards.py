@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from PySide6.QtCore import QPoint, Signal, Qt
+from PySide6.QtCore import QCoreApplication, QFileInfo, QPoint, Signal, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QApplication, QWidget, QSizePolicy
+from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QVBoxLayout, QApplication, QWidget, QSizePolicy
 from qfluentwidgets import (
     Action, CardWidget, CheckBox, FluentIcon, ImageLabel,
     IndeterminateProgressBar, PrimaryToolButton, ProgressBar,
@@ -255,7 +256,6 @@ class TaskCard(CardWidget):
                 self._setStatus(self.tr("文件不存在"))
                 self.statusLabel.setTextColor(QColor(200, 160, 80), QColor(200, 170, 100))
             elif task.completedAt:
-                from datetime import datetime
                 self._setStatus(self.tr("完成于 {}").format(
                     datetime.fromtimestamp(task.completedAt).strftime("%Y-%m-%d %H:%M:%S")))
             else:
@@ -267,7 +267,6 @@ class TaskCard(CardWidget):
             self.progressBar.setError(True)
             error = task.lastError
             if error:
-                from PySide6.QtCore import QCoreApplication
                 text = QCoreApplication.translate("TaskErrors", error.message)
                 self._setStatus(text.format_map(error.params) if error.params else text)
             else:
@@ -287,8 +286,6 @@ class TaskCard(CardWidget):
         self.statusLabel.show()
 
     def _refreshIcon(self) -> None:
-        from PySide6.QtCore import QFileInfo
-        from PySide6.QtWidgets import QFileIconProvider
         self.iconLabel.setPixmap(QFileIconProvider().icon(QFileInfo(self._task.outputPath)).pixmap(48, 48))
         self.iconLabel.setFixedSize(48, 48)
 

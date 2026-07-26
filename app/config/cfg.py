@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import json
 import sys
 from enum import Enum
 from re import compile
@@ -143,11 +146,9 @@ class JsonConfigSerializer(ConfigSerializer):
         self._fallback = fallback
 
     def serialize(self, value) -> str:
-        import json
         return json.dumps(value, ensure_ascii=False)
 
     def deserialize(self, value: str):
-        import json
         try:
             result = json.loads(value)
             return result if isinstance(result, self._expected) else self._fallback()

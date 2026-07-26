@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -58,7 +59,6 @@ class PackConfig:
     def load(cls) -> None:
         if not cls._items:
             return
-        import json
         try:
             with open(cfg.file, encoding="utf-8") as f:
                 data = json.load(f)

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import re
 import shutil
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 INVALID_FILENAME_PATTERN = re.compile(r'[\x00-\x1f\x7f<>:"/\\|?*]+')
 WINDOWS_RESERVED_FILENAMES = {
@@ -60,8 +64,6 @@ def toPosixPath(path) -> str:
 
 
 def localFilePath(url: str, validSuffixes: set[str] | None = None) -> Path | None:
-    from urllib.parse import urlparse
-    from urllib.request import url2pathname
     parsed = urlparse(url)
     if parsed.scheme != "file":
         return None

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from shutil import disk_usage
 from typing import TYPE_CHECKING, Callable
 
 from PySide6.QtCore import QFileSystemWatcher, QObject, QTimer, Signal
@@ -185,7 +186,6 @@ class TaskService(QObject):
         self._flushTimer.start()
         self.taskAdded.emit(task)
         if task.fileSize > 0:
-            from shutil import disk_usage
             try:
                 free = disk_usage(task.outputFolder).free
                 if free < task.fileSize:

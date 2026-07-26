@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from shlex import split as splitShellTokens
 from typing import Final
 

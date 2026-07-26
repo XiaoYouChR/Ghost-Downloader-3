@@ -4,6 +4,7 @@ import asyncio
 from dataclasses import dataclass, field
 from enum import auto, IntEnum
 from pathlib import Path
+from shutil import move
 from time import time
 from typing import ClassVar, Type, Iterable
 from uuid import uuid4
@@ -172,7 +173,6 @@ class TaskStep:
         pass
 
     def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        from shutil import move
         rawPath = self.outputPath
         if not rawPath:
             return

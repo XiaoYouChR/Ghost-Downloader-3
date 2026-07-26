@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import QCoreApplication
 
 from app.platform.android_notification import notify
