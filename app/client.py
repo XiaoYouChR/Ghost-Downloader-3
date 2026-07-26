@@ -13,7 +13,7 @@ from wreq.redirect import Policy
 from app.config.cfg import cfg, proxy
 
 if TYPE_CHECKING:
-    from wreq import ClientConfig3
+    from wreq import ClientConfig
 
 FALLBACK_PROFILE = "chrome"
 
@@ -95,6 +95,7 @@ def buildClient(
     emulation: Emulation | None = ...,
     headers: dict | None = None,
     userAgent: str | None = None,
+    sourceUserAgent: str = "",
     timeout: int | None = None,
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
@@ -109,13 +110,16 @@ def buildClient(
 
     if headers:
         if resolved is not None:
-            filtered = {
-                k: v for k, v in headers.items()
-                if k.lower() != "user-agent" and not k.lower().startswith("sec-ch-ua")
-            }
-            if userAgent:
-                filtered["user-agent"] = userAgent
-            config["headers"] = filtered
+            if sourceUserAgent and not userAgent:
+                config["headers"] = dict(headers)
+            else:
+                filtered = {
+                    k: v for k, v in headers.items()
+                    if k.lower() != "user-agent" and not k.lower().startswith("sec-ch-ua")
+                }
+                if userAgent:
+                    filtered["user-agent"] = userAgent
+                config["headers"] = filtered
         else:
             if userAgent:
                 headers = {**headers, "user-agent": userAgent}

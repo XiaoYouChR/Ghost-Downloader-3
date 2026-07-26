@@ -199,12 +199,14 @@ class BrowserService(QObject):
 
     def _toResourceTaskOptions(self, resource: dict) -> ResourceTaskOptions:
         from app.models.task import ResourceTaskOptions
+        hdrs = resource.get("headers") or {}
         return ResourceTaskOptions(
             url=toStr(resource, "url"),
             name=toStr(resource, "filename"),
             size=toInt(resource, "size", 0),
             canUseRangeRequests=bool(resource.get("supportsRange")),
-            headers=resource.get("headers") or {},
+            headers=hdrs,
+            sourceUserAgent=hdrs.get("user-agent", ""),
         )
 
     def _toTaskOptions(self, source: TaskSource, payload: dict) -> TaskOptions:
@@ -226,12 +228,14 @@ class BrowserService(QObject):
                     audio=audio,
                 )
             case TaskSource.PAGE_MEDIA:
+                hdrs = payload.get("headers") or {}
                 return PageTaskOptions(
                     url=toStr(payload, "url"),
                     outputFolder=outputFolder,
                     pageUrl=toStr(payload, "pageUrl"),
                     pageTitle=toStr(payload, "pageTitle"),
-                    headers=payload.get("headers") or {},
+                    headers=hdrs,
+                    sourceUserAgent=hdrs.get("user-agent", ""),
                 )
             case TaskSource.RESOURCE | TaskSource.DOWNLOAD:
                 return replace(
