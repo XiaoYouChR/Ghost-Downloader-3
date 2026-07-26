@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout
-from qfluentwidgets import BodyLabel, ComboBox, CompactSpinBox, FluentIcon, ToolTipFilter, TransparentToolButton
+from qfluentwidgets import (
+    BodyLabel, ComboBox, CompactSpinBox, FluentIcon, PrimaryToolButton, ToolTipFilter, TransparentToolButton,
+)
 
 from app.format import toReadableSize
 from app.models.task import TaskStatus
@@ -58,7 +60,7 @@ def toLiveSizeText(task, speed: int, received: int) -> str:
 LIVE_ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toLiveEtaText})
 LIVE_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {TaskStatus.RUNNING: toLiveSizeText})
 
-LIVE_TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, "停止并定案", states={
+LIVE_TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, "停止并定案", PrimaryToolButton, states={
     TaskStatus.RUNNING: lambda t: ButtonState(icon=FluentIcon.ACCEPT),
     TaskStatus.COMPLETED: lambda t: ButtonState(icon=FluentIcon.ACCEPT, enabled=False),
 })
