@@ -215,6 +215,10 @@ def startApp(application, isSilent=False):
         tray = SystemTrayIcon(taskService, speedMeter, QIcon(":/image/logo.png"), parent=application)
         tray.show()
 
+    from app.platform.desktop_keepalive import hold, release
+    taskService.taskStarted.connect(hold)
+    taskService.tasksAllCompleted.connect(release)
+
     from app.platform.desktop_notification import init, notifyTaskCompleted, notifyDiskSpaceInsufficient
     coroutineRunner.submit(init(coroutineRunner.submit))
     bindNotifications(taskService, notifyTaskCompleted, notifyDiskSpaceInsufficient)
