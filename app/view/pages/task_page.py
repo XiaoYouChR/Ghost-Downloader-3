@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QSize, QThread, QTimer
 from PySide6.QtGui import QActionGroup, QColor, QCursor, QPainter
-from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
     FluentIcon, IconWidget, MenuIndicatorType, PushButton,
@@ -58,6 +58,7 @@ class TaskCommandBarView(CommandBarView):
         super().__init__(parent)
         self.redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
+        self.copyUrlAction = Action(FluentIcon.COPY, self.tr("复制链接"), self)
         self.moveCategoryAction = Action(FluentIcon.TAG, self.tr("移动到分类"), self)
         self.selectAllAction = Action(FluentIcon.CLEAR_SELECTION, self.tr("全选"), self)
         self.selectMissingAction = Action(FluentIcon.REMOVE, self.tr("选择缺失"), self)
@@ -68,6 +69,7 @@ class TaskCommandBarView(CommandBarView):
         self.setIconSize(QSize(18, 18))
         self.addAction(self.redownloadAction)
         self.addAction(self.deleteAction)
+        self.addAction(self.copyUrlAction)
         self.addAction(self.moveCategoryAction)
         self.addSeparator()
         self.addAction(self.selectAllAction)
@@ -295,6 +297,7 @@ class TaskPage(QWidget):
 
         self.commandView.redownloadAction.triggered.connect(self._onRedownloadSelected)
         self.commandView.deleteAction.triggered.connect(self._onDeleteSelected)
+        self.commandView.copyUrlAction.triggered.connect(self._onCopyUrlSelected)
         self.commandView.moveCategoryAction.triggered.connect(self._onMoveCategorySelected)
         self.commandView.selectAllAction.triggered.connect(self.selectAll)
         self.commandView.selectMissingAction.triggered.connect(self.selectMissing)
@@ -475,6 +478,13 @@ class TaskPage(QWidget):
 
         if not self._categoryFilter:
             allAction.setChecked(True)
+
+    def _onCopyUrlSelected(self) -> None:
+        urls = [
+            task.url for taskId in self._displayOrder
+            if taskId in self._selectedIds and (task := self._taskService.taskById(taskId))
+        ]
+        QApplication.clipboard().setText("\n".join(urls))
 
     def _onRedownloadSelected(self) -> None:
         for taskId in self._displayOrder:
