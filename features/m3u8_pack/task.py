@@ -18,8 +18,13 @@ VOD_PROGRESS_PATTERN = re.compile(
     r"(?:(?:(\d+\.\d+)(KB|MB|GB|B)/(\d+\.\d+)(KB|MB|GB|B))|-)?\s*"
     r"(\d+\.\d+)(GBps|MBps|KBps|Bps)"
 )
+_DURATION = r"(?:\d{2}h)?\d{2}m\d{2}s"
+_SPEED = r"(\d+\.\d+)(GBps|MBps|KBps|Bps)"
 LIVE_PROGRESS_PATTERN = re.compile(
-    r"(\d{2}m\d{2}s)/(\d{2}m\d{2}s)\s+\d+/\d+\s+(Recording|Waiting)\s+(\d+)%\s+(-|(\d+\.\d+)(GBps|MBps|KBps|Bps))"
+    rf"({_DURATION})/({_DURATION})\s+\d+/\d+\s+(Recording|Waiting)\s+(\d+)%\s+(-|{_SPEED})"
+)
+LIVE_RECORD_PATTERN = re.compile(
+    rf"({_DURATION})/({_DURATION})\s+\d+\.\d+(?:KB|MB|GB|B)\s+\d+/\d+\s+(Recording|Waiting)\s+(-|{_SPEED})"
 )
 IGNORED_OUTPUT_SUFFIXES = {".json", ".txt", ".log", ".tmp", ".ghd"}
 DECRYPTION_ENGINES = {
@@ -275,9 +280,11 @@ class M3U8TaskStep(TaskStep):
         if not text:
             return
 
-        self.lastMessage = text[:1000]
+        self.lastMessage = text[-1000:]
 
-        vodMatch = VOD_PROGRESS_PATTERN.search(text)
+        vodMatch = None
+        for m in VOD_PROGRESS_PATTERN.finditer(text):
+            vodMatch = m
         if vodMatch:
             self.progress = float(vodMatch.group(3))
             if vodMatch.group(4):
@@ -288,13 +295,25 @@ class M3U8TaskStep(TaskStep):
             self.speed = toBytes(vodMatch.group(8), vodMatch.group(9))
             return
 
-        liveMatch = LIVE_PROGRESS_PATTERN.search(text)
+        liveMatch = None
+        for m in LIVE_PROGRESS_PATTERN.finditer(text):
+            liveMatch = m
         if liveMatch:
             self.liveElapsed = liveMatch.group(1)
             self.liveTotal = liveMatch.group(2)
             self.liveStatus = liveMatch.group(3)
             self.progress = float(liveMatch.group(4))
             self.speed = 0 if liveMatch.group(5) == "-" else toBytes(liveMatch.group(6), liveMatch.group(7))
+            return
+
+        recordMatch = None
+        for m in LIVE_RECORD_PATTERN.finditer(text):
+            recordMatch = m
+        if recordMatch:
+            self.liveElapsed = recordMatch.group(1)
+            self.liveTotal = recordMatch.group(2)
+            self.liveStatus = recordMatch.group(3)
+            self.speed = 0 if recordMatch.group(4) == "-" else toBytes(recordMatch.group(5), recordMatch.group(6))
 
     async def _readOutput(self, stream: asyncio.StreamReader):
         buffer = ""
@@ -308,6 +327,10 @@ class M3U8TaskStep(TaskStep):
             buffer = lines.pop()
             for line in lines:
                 self._parseOutputLine(line)
+            # NonAnsiWriter 可能剥掉换行符，进度更新堆积在 buffer 里
+            self._parseOutputLine(buffer)
+            if len(buffer) > 8192:
+                buffer = buffer[-4096:]
         if buffer.strip():
             self._parseOutputLine(buffer)
 

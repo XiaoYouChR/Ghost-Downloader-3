@@ -77,3 +77,91 @@ class TestVodProgressLegacy:
         assert step.speed == toBytes("1.23", "MBps")
         assert step.receivedBytes == toBytes("12.34", "MB")
         assert step.task.fileSize == toBytes("56.78", "MB")
+
+
+class TestConcatenatedBuffer:
+    """NonAnsiWriter 剥掉换行符后，多条进度拼成一串——取最后一条。"""
+
+    def test_takes_last_vod_match(self):
+        step = makeStep()
+        blob = (
+            "Vid 1280x720 | 1650 Kbps | 30 ━━━━━━ 3/155 1.94% -0.00Bps00:00:37"
+            "Vid 1280x720 | 1650 Kbps | 30 ━━━━━━ 35/155 22.58% 30.99MB/137.26MB28.45MBps00:00:06"
+            "Vid 1280x720 | 1650 Kbps | 30 ━━━━━━ 100/155 64.52% 71.82MB/148.43MB40.83MBps00:00:02"
+        )
+        step._parseOutputLine(blob)
+        assert step.progress == pytest.approx(64.52)
+        assert step.speed == toBytes("40.83", "MBps")
+        assert step.receivedBytes == toBytes("71.82", "MB")
+        assert step.task.fileSize == toBytes("148.43", "MB")
+
+    def test_last_message_takes_tail(self):
+        step = makeStep()
+        filler = "x" * 2000
+        step._parseOutputLine(filler)
+        assert step.lastMessage == filler[-1000:]
+
+
+class TestLiveProgress:
+    """SimpleLiveRecordManager2 的直播进度格式。"""
+
+    def test_basic(self):
+        step = makeStep()
+        step._parseOutputLine(
+            "Vid ━━━━━━ 01m30s/02m00s 125/250 Recording 50% 1.55MBps"
+        )
+        assert step.liveElapsed == "01m30s"
+        assert step.liveTotal == "02m00s"
+        assert step.liveStatus == "Recording"
+        assert step.progress == pytest.approx(50)
+        assert step.speed == toBytes("1.55", "MBps")
+
+    def test_over_one_hour(self):
+        step = makeStep()
+        step._parseOutputLine(
+            "Vid ━━━━━━ 01h05m30s/01h30m00s 3000/4500 Recording 66% 2.10MBps"
+        )
+        assert step.liveElapsed == "01h05m30s"
+        assert step.liveTotal == "01h30m00s"
+        assert step.progress == pytest.approx(66)
+
+    def test_waiting_with_dash_speed(self):
+        step = makeStep()
+        step._parseOutputLine(
+            "Vid ━━━━━━ 00m00s/00m00s 0/0 Waiting 0% -"
+        )
+        assert step.liveStatus == "Waiting"
+        assert step.progress == pytest.approx(0)
+        assert step.speed == 0
+
+
+class TestLiveRecordProgress:
+    """HTTPLiveRecordManager 的直播录制格式——无百分比。"""
+
+    def test_basic(self):
+        step = makeStep()
+        step._parseOutputLine(
+            "Vid ━━━━━━ 01m30s/02m00s 130.00MB 125/250 Recording 1.55MBps"
+        )
+        assert step.liveElapsed == "01m30s"
+        assert step.liveTotal == "02m00s"
+        assert step.liveStatus == "Recording"
+        assert step.speed == toBytes("1.55", "MBps")
+        assert step.progress == 0
+
+    def test_over_one_hour(self):
+        step = makeStep()
+        step._parseOutputLine(
+            "Vid ━━━━━━ 02h10m00s/02h15m30s 5.12GB 9000/9500 Recording 30.00MBps"
+        )
+        assert step.liveElapsed == "02h10m00s"
+        assert step.liveTotal == "02h15m30s"
+        assert step.speed == toBytes("30.00", "MBps")
+
+    def test_dash_speed(self):
+        step = makeStep()
+        step._parseOutputLine(
+            "Vid ━━━━━━ 00m10s/00m30s 0.50MB 5/15 Recording -"
+        )
+        assert step.liveStatus == "Recording"
+        assert step.speed == 0
