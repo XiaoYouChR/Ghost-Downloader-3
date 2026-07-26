@@ -24,7 +24,7 @@ from app.view.components.setting_card_group import (
     CollapsibleSettingCard, CollapsibleSettingCardGroup, QWIDGETSIZE_MAX,
 )
 from app.view.components.setting_cards import (
-    DefaultHeadersSettingCard, IdentitySettingCard, LineEditSettingCard,
+    HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
 from app.view.components.editors import FolderPicker
@@ -112,8 +112,7 @@ class SettingPage(ScrollArea):
             self.downloadFolderCard,
             ProxySettingCard(cfg.proxyServer, featureService=self._featureService),
             self.clientProfileCard,
-            DefaultHeadersSettingCard(FluentIcon.DICTIONARY, self.tr("默认请求头"),
-                                      self.tr("设置默认 HTTP 请求头")),
+            HeadersPresetSettingCard(),
         ])
 
         self.categoryRulesCard = CategoryRulesCard(self._categoryService)

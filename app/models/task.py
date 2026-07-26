@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, currentHeaders
 from app.platform.filesystem import toSafeFilename
 
 
@@ -54,9 +54,7 @@ class StepError:
 class TaskOptions:
     url: str
     outputFolder: Path = field(default_factory=lambda: Path(cfg.downloadFolder.value))
-    headers: dict[str, str] = field(
-        default_factory=lambda: dict(cfg.defaultRequestHeaders.value)
-    )
+    headers: dict[str, str] = field(default_factory=currentHeaders)
     clientProfile: str = ""
     userAgent: str = ""
     sourceUserAgent: str = ""

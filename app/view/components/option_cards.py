@@ -8,7 +8,7 @@ from qfluentwidgets import (
     isDarkTheme,
 )
 
-from app.config.cfg import cfg
+from app.config.cfg import cfg, currentHeaders
 
 PROFILE_FAMILY_LABELS = {
     "chrome": "Chrome", "edge": "Edge",
@@ -266,8 +266,7 @@ class HeadersEditCard(OptionCard):
         self.iconWidget = IconWidget(FluentIcon.GLOBE, self)
         self.iconWidget.setFixedSize(16, 16)
         self.titleLabel = BodyLabel(self.tr("请求标头"), self)
-        self.headersEditor = HeadersEditor(
-            self, defaults=cfg.defaultRequestHeaders.value)
+        self.headersEditor = HeadersEditor(self, defaults=currentHeaders())
 
         self.vBoxLayout = QVBoxLayout(self)
         self.titleRowLayout = QHBoxLayout()
