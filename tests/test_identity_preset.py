@@ -28,9 +28,10 @@ def _mock_cfg(monkeypatch):
          "hosts": ["*.pcs.baidu.com"], "isEnabled": True},
     ])
     monkeypatch.setattr(cfg.clientProfile, "value", "auto")
-    monkeypatch.setattr(cfg.defaultRequestHeaders, "value", {
-        "accept-encoding": "deflate, br, gzip",
-    })
+    monkeypatch.setattr(cfg.headersPresets, "value", [
+        {"name": "默认", "headers": {"accept-encoding": "deflate, br, gzip"}},
+    ])
+    monkeypatch.setattr(cfg.currentHeadersPreset, "value", 0)
 
 
 # ===========================================================================

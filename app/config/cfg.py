@@ -196,6 +196,23 @@ class HeadersValidator(ConfigValidator):
         return value if self.validate(value) else dict(BASE_HEADERS)
 
 
+class HeadersPresetListValidator(ConfigValidator):
+    def _isValid(self, item) -> bool:
+        return (
+            isinstance(item, dict)
+            and {"name", "headers"} <= item.keys()
+            and isinstance(item["name"], str)
+            and HeadersValidator().validate(item["headers"])
+        )
+
+    def validate(self, value) -> bool:
+        return isinstance(value, list) and bool(value) and all(map(self._isValid, value))
+
+    def correct(self, value) -> list:
+        presets = [i for i in value if self._isValid(i)] if isinstance(value, list) else []
+        return presets or [{"name": "默认", "headers": dict(BASE_HEADERS)}]
+
+
 class Config(QConfig):
 
     # 覆盖 QConfig.themeMode，让 QConfig.load() 自动用正确的 key 和 default
@@ -290,9 +307,12 @@ class Config(QConfig):
 
     # 网络
     clientProfile = ConfigItem("Network", "ClientProfile", "auto", ClientProfileValidator())
-    defaultRequestHeaders = ConfigItem(
-        "Network", "DefaultHeaders", dict(BASE_HEADERS),
-        HeadersValidator(), JsonConfigSerializer(dict, lambda: dict(BASE_HEADERS)),
+    headersPresets = ConfigItem(
+        "Network", "HeadersPresets", [],
+        HeadersPresetListValidator(), JsonConfigSerializer(list, list),
+    )
+    currentHeadersPreset = RangeConfigItem(
+        "Network", "CurrentHeadersPreset", 0, RangeValidator(0, 99)
     )
     identityPresets = ConfigItem(
         "Network", "IdentityPresets",
@@ -304,6 +324,14 @@ class Config(QConfig):
 
 
 cfg = Config()
+
+
+def currentHeadersPresetIndex() -> int:
+    return min(cfg.currentHeadersPreset.value, len(cfg.headersPresets.value) - 1)
+
+
+def currentHeaders() -> dict:
+    return dict(cfg.headersPresets.value[currentHeadersPresetIndex()]["headers"])
 
 
 def proxy() -> str | None:

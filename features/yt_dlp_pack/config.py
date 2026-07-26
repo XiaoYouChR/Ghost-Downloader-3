@@ -213,7 +213,7 @@ class YouTubeRuntime(BinaryRuntime):
             shutil.rmtree(folder)
 
     async def installTask(self):
-        from app.config.cfg import cfg
+        from app.config.cfg import cfg, currentHeaders
         from disk_pack.task import ExtractStep, InstallTask
         from http_pack.task import HttpTaskStep
 
@@ -236,7 +236,7 @@ class YouTubeRuntime(BinaryRuntime):
                 stepIndex=1,
                 url=whlUrl,
                 fileSize=whlSize,
-                headers=dict(cfg.defaultRequestHeaders.value),
+                headers=currentHeaders(),
                 subworkerCount=cfg.preBlockNum.value,
                 canUseRangeRequests=True,
                 outputFile=str(installFolder / archiveName),
@@ -273,7 +273,7 @@ class YouTubeRuntime(BinaryRuntime):
             stepIndex=1,
             url=whlUrl,
             fileSize=whlSize,
-            headers=dict(cfg.defaultRequestHeaders.value),
+            headers=currentHeaders(),
             subworkerCount=cfg.preBlockNum.value,
             canUseRangeRequests=True,
             outputFile=str(installFolder / archiveName),

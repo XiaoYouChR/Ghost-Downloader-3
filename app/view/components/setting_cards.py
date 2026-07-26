@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QSpacerItem, QSizePolicy, QFileDialog,
 )
 from qfluentwidgets import (
-    SettingCard, PushSettingCard, RangeConfigItem, SpinBox, DoubleSpinBox,
+    SettingCard, RangeConfigItem, SpinBox, DoubleSpinBox,
     ConfigItem, FluentIcon, BodyLabel, CaptionLabel,
     RadioButton, ComboBox, LineEdit, ToolButton, ToolTipFilter,
     PrimaryPushButton, InfoBar, InfoBarPosition,
@@ -20,7 +20,7 @@ from qfluentwidgets import (
 
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
-from app.config.cfg import cfg, proxy, BASE_HEADERS
+from app.config.cfg import cfg, proxy, currentHeaders, currentHeadersPresetIndex
 from app.view.components.banners import WarningBanner
 
 HOST_PATTERN = compile(
@@ -434,7 +434,7 @@ class PresetRowWidget(QWidget):
         textLayout.addLayout(self.descLayout)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(48, 8, 24, 8)
+        layout.setContentsMargins(48, 12, 24, 12)
         layout.setSpacing(12)
         layout.addWidget(self.iconWidget)
         layout.addLayout(textLayout, 1)
@@ -597,38 +597,134 @@ class IdentitySettingCard(CollapsibleSettingCard):
         self._reload()
 
 
-class DefaultHeadersSettingCard(PushSettingCard):
-    def __init__(self, icon, title: str, content: str = "", parent=None):
-        super().__init__(self.tr("编辑"), icon, title, content, parent)
-        self.clicked.connect(self._onClicked)
+class HeadersPresetRow(QWidget):
 
-    def _onClicked(self) -> None:
-        from qfluentwidgets import MessageBoxBase, SubtitleLabel
-        from app.view.components.headers_editor import HeadersEditor
-        from app.view.components.scroll_area import ScrollArea
+    def __init__(self, index: int, preset: dict, parent=None, *,
+                 isCurrent: bool, canRemove: bool, onPick, onEdit, onRemove):
+        from qfluentwidgets import PrimaryToolButton
+        super().__init__(parent)
+        self._index = index
+        self._onPick = onPick
+        self._onEdit = onEdit
+        self._onRemove = onRemove
 
-        dialog = MessageBoxBase(self.window())
-        dialog.widget.setMinimumWidth(500)
+        self.radioButton = RadioButton(preset["name"], self)
+        self.countLabel = CaptionLabel(
+            self.tr("{0} 条标头").format(len(preset["headers"])), self)
+        self.editButton = PrimaryToolButton(FluentIcon.EDIT, self)
+        self.removeButton = ToolButton(FluentIcon.DELETE, self)
 
-        editor = HeadersEditor(dialog, defaults=BASE_HEADERS)
-        editor.setHeaders(cfg.defaultRequestHeaders.value)
+        self._initWidget(isCurrent, canRemove)
+        self._initLayout()
+        self._bind()
 
-        # toolbar 先进标题行，此后它归弹窗所有，不会被卷进滚动区
-        titleRow = QHBoxLayout()
-        titleRow.addWidget(SubtitleLabel(self.tr("编辑默认请求头"), dialog))
-        titleRow.addStretch(1)
-        titleRow.addWidget(editor.toolbar)
-        dialog.viewLayout.addLayout(titleRow)
+    def _initWidget(self, isCurrent: bool, canRemove: bool) -> None:
+        self.radioButton.setChecked(isCurrent)
+        self.editButton.setToolTip(self.tr("编辑"))
+        self.editButton.installEventFilter(ToolTipFilter(self.editButton))
+        self.removeButton.setToolTip(self.tr("删除"))
+        self.removeButton.installEventFilter(ToolTipFilter(self.removeButton))
+        self.removeButton.setEnabled(canRemove)
 
-        scrollArea = ScrollArea(dialog.widget)
-        scrollArea.setWidget(editor)
-        scrollArea.setWidgetResizable(True)
-        scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scrollArea.enableTransparentBackground()
-        dialog.viewLayout.addWidget(scrollArea)
+    def _initLayout(self) -> None:
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(48, 12, 24, 12)
+        layout.setSpacing(12)
+        layout.addWidget(self.radioButton)
+        layout.addStretch(1)
+        layout.addWidget(self.countLabel)
+        layout.addWidget(self.editButton)
+        layout.addWidget(self.removeButton)
 
+    def _bind(self) -> None:
+        self.radioButton.clicked.connect(lambda: self._onPick(self._index))
+        self.editButton.clicked.connect(lambda: self._onEdit(self._index))
+        self.removeButton.clicked.connect(lambda: self._onRemove(self._index))
+
+
+class HeadersPresetSettingCard(CollapsibleSettingCard):
+
+    def __init__(self, parent=None):
+        super().__init__(FluentIcon.DICTIONARY, self.tr("请求标头预设"),
+                         self.tr("新建任务的标头起点"), parent=parent)
+        self._rowWidgets: list[HeadersPresetRow] = []
+
+        self.choiceLabel = BodyLabel(self)
+        self.buttonContainer = QWidget(self.view)
+        self.buttonLayout = QHBoxLayout(self.buttonContainer)
+        self.addButton = PrimaryPushButton(
+            FluentIcon.ADD, self.tr("添加预设"), self.buttonContainer)
+
+        self._initLayout()
+        self._bind()
+        self._reload()
+
+    def _initLayout(self) -> None:
+        self.addWidget(self.choiceLabel)
+
+        self.buttonLayout.setContentsMargins(48, 8, 24, 8)
+        self.buttonLayout.addStretch(1)
+        self.buttonLayout.addWidget(self.addButton)
+
+        self.viewLayout.setSpacing(0)
+        self.viewLayout.setContentsMargins(0, 0, 0, 0)
+
+    def _bind(self) -> None:
+        self.addButton.clicked.connect(self._onAddClicked)
+
+    def _reload(self) -> None:
+        for row in self._rowWidgets:
+            self.viewLayout.removeWidget(row)
+            row.deleteLater()
+        self._rowWidgets.clear()
+        self.viewLayout.removeWidget(self.buttonContainer)
+
+        presets = cfg.headersPresets.value
+        current = currentHeadersPresetIndex()
+        for i, preset in enumerate(presets):
+            row = HeadersPresetRow(
+                i, preset, self.view,
+                isCurrent=i == current, canRemove=len(presets) > 1,
+                onPick=self._onPick, onEdit=self._onEditClicked,
+                onRemove=self._onRemoveClicked,
+            )
+            self.viewLayout.addWidget(row)
+            self._rowWidgets.append(row)
+
+        self.viewLayout.addWidget(self.buttonContainer)
+        self.choiceLabel.setText(presets[current]["name"])
+
+    def _onPick(self, index: int) -> None:
+        cfg.set(cfg.currentHeadersPreset, index)
+        self._reload()
+
+    def _onAddClicked(self) -> None:
+        from app.view.dialogs.headers_preset_edit import HeadersPresetEditDialog
+        dialog = HeadersPresetEditDialog(
+            self.window(), preset={"name": "", "headers": currentHeaders()})
         if dialog.exec():
-            cfg.set(cfg.defaultRequestHeaders, editor.headers())
+            cfg.set(cfg.headersPresets, [*cfg.headersPresets.value, dialog.preset()])
+            self._reload()
+            if not self.isExpand:
+                self.setExpand(True)
+
+    def _onEditClicked(self, index: int) -> None:
+        from app.view.dialogs.headers_preset_edit import HeadersPresetEditDialog
+        presets = list(cfg.headersPresets.value)
+        dialog = HeadersPresetEditDialog(self.window(), preset=presets[index])
+        if dialog.exec():
+            presets[index] = dialog.preset()
+            cfg.set(cfg.headersPresets, presets)
+            self._reload()
+
+    def _onRemoveClicked(self, index: int) -> None:
+        presets = list(cfg.headersPresets.value)
+        presets.pop(index)
+        cfg.set(cfg.headersPresets, presets)
+        current = cfg.currentHeadersPreset.value
+        if index <= current:
+            cfg.set(cfg.currentHeadersPreset, max(0, current - 1))
+        self._reload()
 
 
 class SelectFileCard(SettingCard):
