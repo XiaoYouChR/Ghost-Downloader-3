@@ -18,13 +18,15 @@ class ED2kConfig(PackConfig):
     enableDht = ConfigItem("ED2k", "EnableDHT", True, BoolValidator())
     enableUpnp = ConfigItem("ED2k", "EnableUPnP", True, BoolValidator())
     listenPort = RangeConfigItem("ED2k", "ListenPort", 0, RangeValidator(0, 65535))
-    serverMetSource = ConfigItem("ED2k", "ServerMetSource", "")
-    nodesDatSource = ConfigItem("ED2k", "NodesDatSource", "")
+    serverMetSource = ConfigItem("ED2k", "ServerMetSource", "http://upd.emule-security.org/server.met")
+    nodesDatSource = ConfigItem("ED2k", "NodesDatSource", "http://upd.emule-security.org/nodes.dat")
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
         from app.view.components.setting_card_group import CollapsibleSettingCardGroup
-        from app.view.components.setting_cards import SelectFolderSettingCard, SpinBoxSettingCard
+        from app.view.components.setting_cards import (
+            LineEditSettingCard, SelectFolderSettingCard, SpinBoxSettingCard,
+        )
 
         group = CollapsibleSettingCardGroup(self.tr("eD2k 下载"), "ed2k", parent)
         installFolderCard = SelectFolderSettingCard(
@@ -38,6 +40,16 @@ class ED2kConfig(PackConfig):
         group.addSettingCards([
             installFolderCard,
             runtimeCard,
+            LineEditSettingCard(
+                FluentIcon.GLOBE, self.tr("服务器列表源"),
+                self.tr("eD2k server.met 文件的 URL，留空则不引导"),
+                self.serverMetSource, group,
+            ),
+            LineEditSettingCard(
+                FluentIcon.GLOBE, self.tr("DHT 节点源"),
+                self.tr("KAD nodes.dat 文件的 URL，留空则不引导"),
+                self.nodesDatSource, group,
+            ),
             SwitchSettingCard(
                 FluentIcon.WIFI, self.tr("启用 DHT"),
                 self.tr("通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器"),
