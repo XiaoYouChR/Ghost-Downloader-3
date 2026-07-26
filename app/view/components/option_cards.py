@@ -200,10 +200,7 @@ class ClientProfileCard(OptionCard):
         layout.addWidget(self.button)
 
     def options(self) -> dict:
-        result = {"clientProfile": self._value}
-        if self._userAgent:
-            result["userAgent"] = self._userAgent
-        return result
+        return {"clientProfile": self._value, "userAgent": self._userAgent}
 
     def reset(self) -> None:
         self._value = ""

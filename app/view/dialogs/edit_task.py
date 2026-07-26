@@ -38,13 +38,6 @@ class EditTaskDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.cardGroup)
 
 
-class DraftEditDialog(EditTaskDialog):
-
-    def accept(self):
-        self._task.setOptions(self.cardGroup.options())
-        super().accept()
-
-
 class LiveEditDialog(EditTaskDialog):
 
     def __init__(self, task: Task, cards: list[QWidget], coroutineRunner, featureService, taskService, parent=None):

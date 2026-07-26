@@ -79,40 +79,46 @@ class TaskStore:
 
 class TaskQueue:
     def __init__(self):
-        self._waiting: list[str] = []
-        self._running: dict[str, str] = {}
+        self._waiting: list[Task] = []
+        self._running: dict[Task, str] = {}
 
-    def wait(self, taskId: str) -> None:
-        if taskId not in self._waiting:
-            self._waiting.append(taskId)
+    def wait(self, task: Task) -> None:
+        if task not in self._waiting:
+            self._waiting.append(task)
 
-    def cancel(self, taskId: str) -> None:
-        if taskId in self._waiting:
-            self._waiting.remove(taskId)
-        self._running.pop(taskId, None)
+    def removeWaiting(self, task: Task) -> None:
+        if task in self._waiting:
+            self._waiting.remove(task)
 
-    def run(self, taskId: str, workId: str) -> None:
-        self._running[taskId] = workId
+    def cancel(self, task: Task) -> None:
+        self.removeWaiting(task)
+        self._running.pop(task, None)
 
-    def done(self, taskId: str) -> None:
-        self._running.pop(taskId, None)
+    def run(self, task: Task, workId: str) -> None:
+        self._running[task] = workId
 
-    def workIdOf(self, taskId: str) -> str | None:
-        return self._running.get(taskId)
+    def done(self, task: Task, workId: str) -> bool:
+        if self._running.get(task) != workId:
+            return False
+        self._running.pop(task)
+        return True
 
-    def isRunning(self, taskId: str) -> bool:
-        return taskId in self._running
+    def workIdOf(self, task: Task) -> str | None:
+        return self._running.get(task)
 
-    def isWaiting(self, taskId: str) -> bool:
-        return taskId in self._waiting
+    def isRunning(self, task: Task) -> bool:
+        return task in self._running
+
+    def isWaiting(self, task: Task) -> bool:
+        return task in self._waiting
 
     def runningCount(self) -> int:
         return len(self._running)
 
-    def runningIds(self) -> list[str]:
+    def runningTasks(self) -> list[Task]:
         return list(self._running)
 
-    def nextWaiting(self) -> str | None:
+    def nextWaiting(self) -> Task | None:
         return self._waiting.pop(0) if self._waiting else None
 
 
@@ -123,6 +129,7 @@ class TaskService(QObject):
     taskPaused = Signal(object)
     taskCompleted = Signal(object)
     taskFailed = Signal(object)
+    taskCancelled = Signal(object)
     tasksAllCompleted = Signal()
     fileDisappeared = Signal(object)
     diskSpaceInsufficient = Signal(int, int)
@@ -134,6 +141,8 @@ class TaskService(QObject):
         self._speedMeter = speedMeter
         self._store = TaskStore()
         self._queue = TaskQueue()
+        self._cancelVersions: dict[Task, int] = {}
+        self._isStopping = False
         self._fileWatcher = QFileSystemWatcher(self)
         self._watchedPaths: dict[str, str] = {}
         self._fileWatcher.fileChanged.connect(self._onWatchedFileChanged)
@@ -173,17 +182,33 @@ class TaskService(QObject):
     def add(self, task: Task) -> None:
         if task.taskId in self._store.tasks:
             return
-        if cfg.isCategoryEnabled.value:
-            if task.category is None:
-                task.category = self._categoryService.categoryOf(task)
-            if task.category and task.outputFolder == Path(cfg.downloadFolder.value):
-                folder = self._categoryService.folderOf(task.category)
-                if folder:
-                    task.outputFolder = Path(folder)
-        task.deduplicateFilename()
+        from app.models.task import TaskStatus
+
+        isScheduled = self._queue.isRunning(task) or self._queue.isWaiting(task)
+        if not isScheduled and task.status == TaskStatus.WAITING:
+            if cfg.isCategoryEnabled.value:
+                if task.category is None:
+                    task.category = self._categoryService.categoryOf(task)
+                if task.category and task.outputFolder == Path(cfg.downloadFolder.value):
+                    folder = self._categoryService.folderOf(task.category)
+                    if folder:
+                        task.setOptions({"outputFolder": Path(folder)})
+            task.deduplicateFilename()
         self._store.add(task)
         self._flushTimer.start()
         self.taskAdded.emit(task)
+        if isScheduled:
+            return
+        if task.status == TaskStatus.COMPLETED:
+            self.taskCompleted.emit(task)
+            if task.hasOutputFile:
+                self._watchFile(task)
+            if self._queue.runningCount() == 0:
+                self.tasksAllCompleted.emit()
+            return
+        if task.status == TaskStatus.FAILED:
+            self.taskFailed.emit(task)
+            return
         if task.fileSize > 0:
             from shutil import disk_usage
             try:
@@ -196,13 +221,18 @@ class TaskService(QObject):
         self._schedule(task)
 
     def start(self, task: Task) -> None:
-        if self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId):
+        from app.models.task import TaskStatus
+        if self._queue.isRunning(task):
+            if task.status == TaskStatus.PAUSED:
+                self._queue.wait(task)
+            return
+        if self._queue.isWaiting(task):
             return
         self._schedule(task)
 
     def pause(self, task: Task) -> None:
         from app.models.task import TaskStatus
-        self._cancelRun(task)
+        self._cancel(task)
         task.setStatus(TaskStatus.PAUSED)
         self._flushTimer.start()
         self.taskPaused.emit(task)
@@ -210,11 +240,10 @@ class TaskService(QObject):
 
     def delete(self, task: Task, shouldDeleteFiles: bool) -> None:
         self._unwatchFile(task)
-        self._cancelRun(task, finished=task.deleteFiles if shouldDeleteFiles else None)
+        self._cancel(task, finished=task.deleteFiles if shouldDeleteFiles else None)
         self._store.remove(task.taskId)
         self._flushTimer.start()
         self.taskRemoved.emit(task.taskId)
-        self._pump()
 
     def redownload(self, task: Task) -> None:
         self._unwatchFile(task)
@@ -223,7 +252,7 @@ class TaskService(QObject):
             task.reset()
             self._flushTimer.start()
             self._schedule(task)
-        self._cancelRun(task, finished=afterStopped)
+        self._cancel(task, finished=afterStopped)
 
     def edit(self, task: Task, options: dict, newTask: Task | None = None) -> None:
         needsDelete = newTask is not None and not task.canReuseProgress(newTask)
@@ -235,7 +264,7 @@ class TaskService(QObject):
             task.setOptions(options)
             self._flushTimer.start()
             self._schedule(task)
-        self._cancelRun(task, finished=afterStopped)
+        self._cancel(task, finished=afterStopped)
 
     def setCategory(self, task: Task, categoryId: str) -> None:
         task.category = categoryId
@@ -256,7 +285,7 @@ class TaskService(QObject):
             self._flushTimer.start()
 
         isRunningDeselected = False
-        if self._queue.isRunning(task.taskId):
+        if self._queue.isRunning(task):
             for step in task.steps:
                 if step.status == TaskStatus.RUNNING:
                     fileIndex = step.fileIndex
@@ -267,7 +296,7 @@ class TaskService(QObject):
             def afterStopped():
                 apply()
                 self._schedule(task)
-            self._cancelRun(task, finished=afterStopped)
+            self._cancel(task, finished=afterStopped)
             return
         apply()
 
@@ -279,7 +308,7 @@ class TaskService(QObject):
 
     def pauseAll(self) -> None:
         for task in list(self._store.tasks.values()):
-            if self._queue.isRunning(task.taskId) or self._queue.isWaiting(task.taskId):
+            if self._queue.isRunning(task) or self._queue.isWaiting(task):
                 self.pause(task)
 
     def resumeSaved(self) -> None:
@@ -294,6 +323,7 @@ class TaskService(QObject):
 
     def stop(self) -> None:
         from app.models.task import TaskStatus
+        self._isStopping = True
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 task.setStatus(TaskStatus.PAUSED)
@@ -303,7 +333,7 @@ class TaskService(QObject):
         self._store.flush()
 
     def _schedule(self, task: Task) -> None:
-        self._queue.wait(task.taskId)
+        self._queue.wait(task)
         self._pump()
 
     def _dispatch(self, task: Task) -> None:
@@ -312,56 +342,87 @@ class TaskService(QObject):
         task.setStatus(TaskStatus.RUNNING)
         workId = self._coroutineRunner.submit(
             task.run(self._speedMeter.addSpeed, self._speedMeter.waitForSpeedLimit),
-            done=lambda _: self._onRunDone(task),
-            failed=lambda error: self._onRunFailed(task, error),
+            done=lambda _: self._onRunDone(task, workId),
+            failed=lambda error: self._onRunFailed(task, workId, error),
         )
-        self._queue.run(task.taskId, workId)
-        self.taskStarted.emit(task)
+        self._queue.run(task, workId)
+        if self._isStored(task):
+            self.taskStarted.emit(task)
+        else:
+            self._speedMeter.start()
 
-    def _cancelRun(self, task: Task, finished: Callable = None) -> None:
-        workId = self._queue.workIdOf(task.taskId)
-        self._queue.cancel(task.taskId)
-        if workId is not None:
-            self._coroutineRunner.cancel(workId, finished=finished)
-        elif finished is not None:
-            finished()
+    def cancel(self, task: Task) -> None:
+        self._cancel(task, finished=lambda: self.taskCancelled.emit(task))
+
+    def _cancel(self, task: Task, finished: Callable = None) -> None:
+        version = self._cancelVersions.get(task, 0) + 1
+        self._cancelVersions[task] = version
+        workId = self._queue.workIdOf(task)
+        self._queue.removeWaiting(task)
+        if workId is None:
+            self._queue.cancel(task)
+            if self._cancelVersions.pop(task, None) == version and finished is not None:
+                finished()
+            self._pump()
+            return
+
+        def afterStopped() -> None:
+            isCurrent = self._queue.done(task, workId)
+            try:
+                isLatest = self._cancelVersions.get(task) == version
+                if isLatest:
+                    self._cancelVersions.pop(task)
+                if isLatest and finished is not None:
+                    finished()
+            finally:
+                if isCurrent:
+                    self._pump()
+
+        self._coroutineRunner.cancel(workId, finished=afterStopped)
 
     def _rebalance(self) -> None:
         from app.models.task import TaskStatus
-        for taskId in self._queue.runningIds()[cfg.maxTaskNum.value:]:
-            task = self._store.taskById(taskId)
-            if task is not None and task.canPause:
-                self._cancelRun(task)
-                task.setStatus(TaskStatus.WAITING)
-                self._queue.wait(taskId)
+        for task in self._queue.runningTasks()[cfg.maxTaskNum.value:]:
+            if task.canPause:
+                def setWaiting(task=task):
+                    task.setStatus(TaskStatus.WAITING)
+                    self._queue.wait(task)
+                self._cancel(task, finished=setWaiting)
         self._pump()
 
     def _pump(self) -> None:
+        if self._isStopping:
+            return
         while self._queue.runningCount() < cfg.maxTaskNum.value:
-            taskId = self._queue.nextWaiting()
-            if taskId is None:
+            task = self._queue.nextWaiting()
+            if task is None:
                 break
-            task = self._store.taskById(taskId)
-            if task is not None:
-                self._dispatch(task)
+            self._dispatch(task)
 
-    def _onRunDone(self, task: Task) -> None:
-        self._queue.done(task.taskId)
-        self._flushTimer.start()
-        self.taskCompleted.emit(task)
-        if task.hasOutputFile:
-            self._watchFile(task)
+    def _onRunDone(self, task: Task, workId: str) -> None:
+        if not self._queue.done(task, workId):
+            return
+        if self._isStored(task):
+            self._flushTimer.start()
+            self.taskCompleted.emit(task)
+            if task.hasOutputFile:
+                self._watchFile(task)
         self._pump()
         if self._queue.runningCount() == 0:
             self.tasksAllCompleted.emit()
 
-    def _onRunFailed(self, task: Task, error: str) -> None:
-        self._queue.done(task.taskId)
-        self._flushTimer.start()
-        self.taskFailed.emit(task)
+    def _onRunFailed(self, task: Task, workId: str, error: str) -> None:
+        if not self._queue.done(task, workId):
+            return
+        if self._isStored(task):
+            self._flushTimer.start()
+            self.taskFailed.emit(task)
         self._pump()
         if self._queue.runningCount() == 0:
             self.tasksAllCompleted.emit()
+
+    def _isStored(self, task: Task) -> bool:
+        return self._store.taskById(task.taskId) is task
 
     def _watchFile(self, task: Task) -> None:
         path = task.outputPath

@@ -16,9 +16,9 @@ class HuggingFaceDraftCard(MultiFileDraftCard):
         dialog = FileSelectDialog(self.task, self.window())
         try:
             if dialog.exec():
-                self.task.setSelection(dialog.selectedIndexes())
-                self._refreshSummary()
-                self.nameLabel.setText(self.task.name)
+                task = self.task
+                selected = dialog.selectedIndexes()
+                self.changeRequested.emit(lambda: task.setSelection(selected), False)
         finally:
             dialog.deleteLater()
 

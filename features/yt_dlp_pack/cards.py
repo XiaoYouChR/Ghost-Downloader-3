@@ -10,7 +10,7 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
-from app.models.task import TaskStatus
+from app.models.task import Task, TaskStatus
 from app.view.cards.draft_cards import DraftCard
 from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, SPEED_FIELD, ETA_FIELD
 from app.view.components.tree_view import AutoSizingTreeView
@@ -376,11 +376,13 @@ class YtDlpDraftCard(DraftCard):
             self.sizeLabel.setText(toReadableSize(fileSize))
 
         self._qualityTiers = buildQualityTiers(mediaInfo)
+        self._qualityCombo.blockSignals(True)
         self._qualityCombo.clear()
         for _selector, label in self._qualityTiers:
             self._qualityCombo.addItem(label)
         if self._qualityTiers:
             self._qualityCombo.setCurrentIndex(0)
+        self._qualityCombo.blockSignals(False)
 
         self._subtitleChoices = buildSubtitleChoices(mediaInfo)
         self._subtitleButton.setEnabled(bool(self._subtitleChoices))
@@ -390,14 +392,18 @@ class YtDlpDraftCard(DraftCard):
 
     def _onQualityChanged(self, index: int) -> None:
         if 0 <= index < len(self._qualityTiers):
-            self._task.videoFormatFilter = self._qualityTiers[index][0]
+            task: YouTubeTask = self._task
+            videoFormatFilter = self._qualityTiers[index][0]
+            if task.videoFormatFilter != videoFormatFilter:
+                self.changeRequested.emit(lambda: task.setFormat(videoFormatFilter), True)
 
     def _onSubtitleClicked(self) -> None:
         dialog = SubtitleSelectDialog(self._subtitleChoices, self.window())
         if dialog.exec():
             langs, includeAuto = dialog.selectedLanguages()
-            self._task.subtitleLanguages = langs
-            self._task.shouldIncludeAutoSubs = includeAuto
+            task: YouTubeTask = self._task
+            if task.subtitleLanguages != langs or task.shouldIncludeAutoSubs != includeAuto:
+                self.changeRequested.emit(lambda: task.setSubtitles(langs, includeAuto), False)
 
     def _onVideoSelectClicked(self) -> None:
         task: YouTubeTask = self._task
@@ -414,16 +420,28 @@ class YtDlpDraftCard(DraftCard):
             return
         dialog = VideoSelectDialog(task, self.window())
         if dialog.exec():
-            task.setSelection(dialog.selectedIndexes())
-            self.nameLabel.setText(task.name)
+            selected = dialog.selectedIndexes()
+            self.changeRequested.emit(lambda: task.setSelection(selected), False)
 
     def _onPlaylistLoaded(self, videos: list[dict]) -> None:
         self._playlistSpinner.hide()
         self._videoSelectButton.show()
         task: YouTubeTask = self._task
         if videos:
-            task.setVideos(videos)
-            self._onVideoSelectClicked()
+            preview: YouTubeTask = Task.fromDict(task.toDict())
+            preview.setVideos(videos)
+            dialog = VideoSelectDialog(preview, self.window())
+            selected = (
+                dialog.selectedIndexes()
+                if dialog.exec()
+                else {file.index for file in preview.files or [] if file.selected}
+            )
+
+            def setVideos() -> None:
+                task.setVideos(videos)
+                task.setSelection(selected)
+
+            self.changeRequested.emit(setVideos, True)
         else:
             self._videoSelectButton.setEnabled(False)
             self._videoSelectButton.setToolTip(self.tr("未找到播放列表"))

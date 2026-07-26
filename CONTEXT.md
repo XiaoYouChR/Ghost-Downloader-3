@@ -53,6 +53,7 @@ FeaturePack 提供的能力，将 Task Options 转为 Task。
 用户确认前的未确认任务状态。内含一个或多个 Draft Item，每个 Draft Item 跟踪一条 URL，
 处于三个状态之一：Parsing（解析中）、Resolved（解析成功，持有 Task）、Failed（解析失败）。
 用户确认时尚在解析的 item 会在后台等待解析完成后自动提交（延迟确认）。
+启用提前开始下载时，Resolved Task 可在确认前拥有 Task Run，但不会进入 Task Store；Task Draft 负责同步修改、取消或确认发布。
 Task Service 不理解 draft 状态。
 _Avoid_: pending task、unconfirmed task
 
@@ -79,7 +80,7 @@ _Avoid_: worker、thread、chunk
 
 **Task Service**:
 拥有用户可见任务工作流的唯一公共入口：add、start、pause、delete、
-redownload、edit、setCategory、applySelection、resumeSaved、stop。
+redownload、edit、setCategory、applySelection、cancel、resumeSaved、stop。
 _Avoid_: 直接操作 Task 的状态转换
 
 **Feature Service**:

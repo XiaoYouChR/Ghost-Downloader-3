@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 import pytest
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 from app.models.task import Task, TaskStep, TaskStatus
@@ -69,15 +70,61 @@ class StubFeatureService:
         return stubTask(url=options.url)
 
 
+class StubTaskService(QObject):
+    taskCancelled = Signal(object)
+
+    def __init__(self):
+        super().__init__()
+        self.started = []
+        self.cancelled = []
+        self.finished = []
+        self.shouldDeferCancel = False
+
+    def start(self, task):
+        self.started.append(task)
+
+    def cancel(self, task):
+        self.cancelled.append(task)
+        if self.shouldDeferCancel:
+            self.finished.append(lambda: self.taskCancelled.emit(task))
+        else:
+            self.taskCancelled.emit(task)
+
+    def runCancel(self):
+        self.finished.pop(0)()
+
+
+class StubCategoryService:
+    def categoryOf(self, task):
+        return None
+
+    def folderOf(self, categoryId):
+        return None
+
+
 @pytest.fixture
 def runner():
     return StubCoroutineRunner()
 
 
 @pytest.fixture
-def draft(qapp, runner):
+def taskService():
+    return StubTaskService()
+
+
+@pytest.fixture
+def draft(qapp, runner, taskService, monkeypatch):
+    from app.config.cfg import cfg
     from app.services.task_draft import TaskDraft
-    return TaskDraft(runner, StubFeatureService())
+    monkeypatch.setattr(cfg.shouldStartAheadDownload, "value", True)
+    monkeypatch.setattr(cfg.isCategoryEnabled, "value", False)
+    return TaskDraft(
+        runner,
+        StubFeatureService(),
+        taskService,
+        StubCategoryService(),
+        cfg,
+    )
 
 
 # ── Tests ──
@@ -110,6 +157,13 @@ class TestSetUrls:
 
 
 class TestParseCallbacks:
+
+    def test_success_starts_task(self, draft, runner, taskService):
+        draft.setUrls(["http://a.com/file.zip"])
+        workId = list(runner._pending.keys())[0]
+        task = stubTask("http://a.com/file.zip")
+        runner.resolve(workId, task)
+        assert taskService.started == [task]
 
     def test_success_emits_parseSucceeded(self, draft, runner):
         received = []
@@ -214,6 +268,48 @@ class TestClear:
         draft.setUrls(["http://a.com/1"])
         draft.clear()
         assert draft.urls() == []
+
+    def test_resolved_task_is_cancelled(self, draft, runner, taskService):
+        draft.setUrls(["http://a.com/1"])
+        workId = list(runner._pending.keys())[0]
+        task = stubTask("http://a.com/1")
+        runner.resolve(workId, task)
+        draft.clear()
+        assert taskService.cancelled == [task]
+
+
+class TestUpdate:
+
+    def test_confirm_waits_for_pending_change(self, draft, runner, taskService):
+        confirmed = []
+        draft.taskConfirmed.connect(confirmed.append)
+        draft.setUrls(["http://a.com/1"])
+        workId = list(runner._pending.keys())[0]
+        task = stubTask("http://a.com/1")
+        runner.resolve(workId, task)
+        taskService.shouldDeferCancel = True
+
+        draft.update(task.url, lambda: task.setName("new.zip"), True)
+        draft.confirm()
+        assert confirmed == []
+
+        taskService.runCancel()
+        assert confirmed == [task]
+        assert task.name == "new.zip"
+
+    def test_discard_during_change_does_not_restart(self, draft, runner, taskService):
+        draft.setUrls(["http://a.com/1"])
+        workId = list(runner._pending.keys())[0]
+        task = stubTask("http://a.com/1")
+        runner.resolve(workId, task)
+        taskService.shouldDeferCancel = True
+
+        draft.update(task.url, lambda: task.setName("new.zip"), True)
+        draft.clear()
+        taskService.runCancel()
+
+        assert task.name == "file.zip"
+        assert taskService.started == [task]
 
 
 class TestCanConfirm:

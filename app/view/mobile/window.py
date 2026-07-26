@@ -48,7 +48,10 @@ class MobileMainWindow(QWidget):
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
         self.vBoxLayout = QVBoxLayout(self)
 
-        self._draft = TaskDraft(coroutineRunner, featureService, parent=self)
+        self._draft = TaskDraft(
+            coroutineRunner, featureService, taskService,
+            categoryService, cfg, parent=self,
+        )
         self._draftDialog = TaskDraftDialog(self._draft, featureService, categoryService, parent=self)
 
         self._initWidget()
@@ -94,6 +97,7 @@ class MobileMainWindow(QWidget):
         self.taskPage.selectionModeChanged.connect(lambda *_: self._updateAddButtonVisibility())
         self.addButton.clicked.connect(self._showAddTaskDialog)
         self._draft.taskConfirmed.connect(self._taskService.add)
+        QApplication.instance().aboutToQuit.connect(self._draft.clear)
         QApplication.instance().applicationStateChanged.connect(self._onApplicationStateChanged)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
