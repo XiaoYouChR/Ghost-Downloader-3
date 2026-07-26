@@ -108,7 +108,7 @@ def buildStepGroup(fileIndex: int, videoUrl: str = "", videoStem: str = "") -> l
         YouTubeExtractStep(stepIndex=base + 1, fileIndex=fileIndex, videoUrl=videoUrl),
         YouTubeResourceStep(stepIndex=base + 2, fileIndex=fileIndex, videoStem=videoStem, role="video"),
         YouTubeResourceStep(stepIndex=base + 3, fileIndex=fileIndex, videoStem=videoStem, role="audio"),
-        YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoStem=videoStem),
+        YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoUrl=videoUrl, videoStem=videoStem),
     ]
 
 
@@ -356,6 +356,7 @@ class YouTubeResourceStep(FFmpegResourceStep):
 @dataclass(kw_only=True)
 class YouTubeMergeStep(FFmpegStep):
     fileIndex: int = 0
+    videoUrl: str = ""
     videoStem: str = ""
     metadataTitle: str = ""
     metadataArtist: str = ""
@@ -379,7 +380,26 @@ class YouTubeMergeStep(FFmpegStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{stem}.audio{suffix}"
 
+    def deleteFiles(self) -> None:
+        stem = self.videoStem or mediaStem(self.task)
+        for path in self.task.outputFolder.glob(f"{stem}.*.vtt"):
+            path.unlink(missing_ok=True)
+
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        super().moveFiles(oldFolder, newFolder)
+        stem = self.videoStem or mediaStem(self.task)
+        for path in oldFolder.glob(f"{stem}.*.vtt"):
+            target = newFolder / path.name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if path.exists():
+                shutil.move(str(path), str(target))
+
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        try:
+            await self._createSubtitleFiles()
+        except Exception:
+            logger.opt(exception=True).debug("Subtitle download failed")
+
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 
@@ -473,6 +493,47 @@ class YouTubeMergeStep(FFmpegStep):
         finally:
             if chaptersFile:
                 Path(chaptersFile).unlink(missing_ok=True)
+
+    async def _createSubtitleFiles(self) -> None:
+        if not self.task.subtitleLanguages:
+            return
+
+        from app.client import buildClient
+        from app.platform.filesystem import toSafeFilename
+
+        info = await asyncio.to_thread(probeFormats, self.videoUrl or self.task.url)
+        languages = [s.strip() for s in self.task.subtitleLanguages.split(",") if s.strip()]
+        stem = self.videoStem or mediaStem(self.task)
+        outputFolder = self.task.outputFolder
+        outputFolder.mkdir(parents=True, exist_ok=True)
+
+        client = buildClient()
+        try:
+            for lang in languages:
+                try:
+                    formats = (info.get("subtitles") or {}).get(lang)
+                    isAuto = False
+                    if not formats and self.task.shouldIncludeAutoSubs:
+                        formats = (info.get("automatic_captions") or {}).get(lang)
+                        isAuto = True
+                    if not formats:
+                        continue
+                    subtitle = next(
+                        (f for f in formats if f.get("ext") == "vtt" and f.get("url")),
+                        None,
+                    )
+                    if not subtitle:
+                        continue
+                    response = await client.get(subtitle["url"])
+                    response.raise_for_status()
+                    safeLang = toSafeFilename(lang, fallback="subtitle")
+                    autoSuffix = ".auto" if isAuto else ""
+                    vttFile = outputFolder / f"{stem}.{safeLang}{autoSuffix}.vtt"
+                    vttFile.write_bytes(await response.read())
+                except Exception:
+                    logger.opt(exception=True).debug("Subtitle download failed: {}", lang)
+        finally:
+            client.close()
 
     def _createChaptersFile(self) -> str:
         lines = [";FFMETADATA1"]
