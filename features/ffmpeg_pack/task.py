@@ -13,6 +13,9 @@ from http_pack.task import HttpTaskStep
 from .config import ffmpegRuntime
 
 
+ISOBMFF_BOX_TYPES = {b'ftyp', b'styp', b'moof', b'moov', b'free', b'skip', b'mdat', b'pdin'}
+
+
 def mediaStem(task) -> str:
     name = task.name
     return name.rsplit(".", 1)[0] if "." in name else name
@@ -85,6 +88,15 @@ class FFmpegStep(TaskStep):
 
             if process.returncode != 0:
                 stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
+                for inputPath in (self._videoPath, self._audioPath):
+                    if inputPath.exists():
+                        with open(inputPath, "rb") as f:
+                            boxType = f.read(8)[4:8]
+                        if boxType not in ISOBMFF_BOX_TYPES:
+                            raise TaskError(
+                                "文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}",
+                                name=inputPath.name,
+                            )
                 raise TaskError(
                     "FFmpeg 合并失败（{code}）：{detail}",
                     code=process.returncode,
