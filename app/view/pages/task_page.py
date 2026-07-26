@@ -576,7 +576,7 @@ class TaskPage(QWidget):
             self._cardRefreshTimer.stop()
         stride = TaskCard.ROW_HEIGHT + self.ROW_SPACING
         count = len(self._displayOrder)
-        self.scrollWidget.setFixedHeight(
+        self.scrollWidget.setMinimumHeight(
             count * stride - self.ROW_SPACING + self.BOTTOM_PADDING if count else 0
         )
         self._bandSelector.setItemCount(count)
