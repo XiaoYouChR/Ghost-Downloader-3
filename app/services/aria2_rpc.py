@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import partial
 from pathlib import Path
 from secrets import token_hex
 from typing import TYPE_CHECKING, Any
@@ -191,9 +192,8 @@ class Aria2RpcServer(QObject):
         )
         self._coroutineRunner.submit(
             self._parse(taskOptions),
-            done=self._onTaskParsed,
+            done=partial(self._onTaskParsed, filename=filename),
             failed=self._onTaskParseFailed,
-            filename=filename,
         )
 
     def _onTaskParsed(self, task: Task, filename: str = "") -> None:

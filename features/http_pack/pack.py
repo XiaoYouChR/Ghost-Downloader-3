@@ -66,7 +66,7 @@ class HttpParser(TaskParser):
                 options.clientProfile or cfg.clientProfile.value,
                 options.sourceUserAgent,
             )
-            client = buildClient(emulation=emulation, userAgent=userAgent or None)
+            client = buildClient(emulation=emulation, userAgent=userAgent or None, timeout=30)
 
             def rangeTotal(h: dict) -> int:
                 cr = h.get("content-range", "")
