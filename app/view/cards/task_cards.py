@@ -307,8 +307,7 @@ class TaskCard(CardWidget):
             button = getattr(self, f"{spec.name}Button")
             fn = spec.states.get(self._task.status) or spec.states.get(None)
             state = fn(self._task) if fn else spec.default
-            if state.icon is not None:
-                button.setIcon(state.icon)
+            button.setIcon(state.icon if state.icon is not None else spec.icon)
             button.setVisible(state.visible)
             button.setEnabled(state.enabled)
 
