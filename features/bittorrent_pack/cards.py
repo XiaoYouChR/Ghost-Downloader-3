@@ -39,12 +39,6 @@ BT_ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toBt
 BT_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toBtSizeText})
 
 
-def toBtNameText(task: BTTask, speed: int, received: int) -> str | None:
-    if not task.isSeeding and task.stateText:
-        return f"{task.name} ({task.stateText})"
-    return None
-
-
 class BTDraftCard(MultiFileDraftCard):
 
     @property
@@ -71,7 +65,6 @@ class BTTaskCard(MultiFileTaskCard):
     uploadLabel: IconBodyLabel
     fileSelectDialog = TorrentFileSelectDialog
     infoFields = [BT_SPEED_FIELD, BT_UPLOAD_FIELD, BT_ETA_FIELD, BT_SIZE_FIELD]
-    nameFormats = {TaskStatus.RUNNING: toBtNameText}
 
     def _refreshForStatus(self, task):
         super()._refreshForStatus(task)
@@ -85,6 +78,9 @@ class BTTaskCard(MultiFileTaskCard):
             if task.peerCount > 0:
                 parts.append(self.tr("{0} peers").format(task.peerCount))
             self._setStatus(self.tr("做种中") + "  " + " · ".join(parts))
+        elif task.status == TaskStatus.RUNNING and task.stateText and task.stateText != "下载中":
+            self.progressBar.hide()
+            self._setStatus(task.stateText)
         elif task.status != TaskStatus.RUNNING:
             parts = []
             if task.stateText and task.stateText not in (
