@@ -99,7 +99,6 @@ class ExtensionInstallDialog(MessageBoxBase):
         scrollArea = ScrollArea(self.widget)
         scrollArea.setWidgetResizable(True)
         scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scrollArea.enableTransparentBackground()
 
         scrollWidget = QWidget()
         scrollLayout = QVBoxLayout(scrollWidget)
@@ -112,6 +111,7 @@ class ExtensionInstallDialog(MessageBoxBase):
         scrollLayout.addWidget(self.stepsWidget)
 
         scrollArea.setWidget(scrollWidget)
+        scrollArea.enableTransparentBackground()
         self.viewLayout.addWidget(scrollArea)
 
     def _bind(self) -> None:
