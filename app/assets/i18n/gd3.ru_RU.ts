@@ -1041,7 +1041,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="52"/>
         <source>资源下载</source>
-        <translation>Загрузка ресурсов</translation>
+        <translation>Ресурсы</translation>
     </message>
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="110"/>
