@@ -352,7 +352,7 @@ class CookieSettingCard(SettingCard):
         if hasCookieFile():
             return QCoreApplication.translate("YtDlpConfig", "已导入")
         return QCoreApplication.translate(
-            "YtDlpConfig", "粘贴 Cookie 用于下载需要登录的内容"
+            "YtDlpConfig", "下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入"
         )
 
     def showEvent(self, event) -> None:
@@ -376,8 +376,9 @@ class CookieSettingCard(SettingCard):
         label = CaptionLabel(
             QCoreApplication.translate(
                 "YtDlpConfig",
-                "打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中"
-                "找到任意请求，复制其 Cookie 请求头的值并粘贴到下方",
+                "安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。\n"
+                "如需手动导入：打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中"
+                "找到任意请求，复制其 Cookie 请求头的值并粘贴到下方。",
             ),
             dialog,
         )
