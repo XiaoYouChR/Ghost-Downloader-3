@@ -51,10 +51,7 @@ class ED2kSession:
     async def close(self) -> None:
         if self._client is None:
             return
-        try:
-            await self._client.close()
-        except Exception as e:
-            logger.opt(exception=e).warning("关闭 goed2kd 失败")
+        await self._client.close()
         self._client = None
 
 

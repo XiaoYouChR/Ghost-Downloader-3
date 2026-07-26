@@ -124,8 +124,27 @@ class Client:
         if process is None or process.returncode is not None:
             return
         self._closing = True
-        await self._request("close")
-        await process.wait()
+        if process.stdin is not None and self._writeLock is not None:
+            requestId = self._nextId
+            self._nextId += 1
+            message = json.dumps(
+                {"version": RPC_VERSION, "id": requestId, "method": "close", "params": {}},
+                separators=(",", ":"),
+            ).encode() + b"\n"
+            try:
+                async with self._writeLock:
+                    process.stdin.write(message)
+                    await process.stdin.drain()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+        try:
+            await asyncio.wait_for(process.wait(), timeout=15)
+        except asyncio.TimeoutError:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+            await process.wait()
         await self._setStopped(process)
         if self._process is process:
             self._process = None
