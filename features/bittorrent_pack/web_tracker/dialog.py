@@ -16,7 +16,7 @@ from qfluentwidgets import (
 from app.config.cfg import cfg
 from app.view.components.editors import AutoSizingEdit
 from ..config import bittorrentConfig
-from .schema import DEFAULT_WEB_TRACKER_SOURCE
+from .schema import DEFAULT_WEB_TRACKER_SOURCES
 
 
 TRACKER_SCHEMES = {"http", "https", "udp", "ws", "wss"}
@@ -54,7 +54,7 @@ class WebTrackerSourceCard(QWidget):
 
     def _initWidget(self, url: str, cachedCount: int | None):
         self.urlEdit.setText(url)
-        self.urlEdit.setPlaceholderText(DEFAULT_WEB_TRACKER_SOURCE)
+        self.urlEdit.setPlaceholderText(DEFAULT_WEB_TRACKER_SOURCES[0])
         self.setCachedCount(cachedCount)
 
     def _initLayout(self):

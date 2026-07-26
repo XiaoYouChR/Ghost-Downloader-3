@@ -11,7 +11,7 @@ from qfluentwidgets import (
 )
 
 from .web_tracker.schema import (
-    DEFAULT_WEB_TRACKER_SOURCE,
+    DEFAULT_WEB_TRACKER_SOURCES,
     SourceCacheSerializer,
     SourceCacheValidator,
 )
@@ -45,7 +45,7 @@ class BitTorrentConfig(PackConfig):
     )
     associateFileTypes = ConfigItem("BitTorrent", "AssociateFileTypes", False, BoolValidator())
     webTrackerSources = ConfigItem(
-        "BitTorrent", "WebTrackerSources", [DEFAULT_WEB_TRACKER_SOURCE], StringListValidator(),
+        "BitTorrent", "WebTrackerSources", DEFAULT_WEB_TRACKER_SOURCES, StringListValidator(),
     )
     webTrackerSourceCache = ConfigItem(
         "BitTorrent", "WebTrackerSourceCache", {}, SourceCacheValidator(), SourceCacheSerializer(),
