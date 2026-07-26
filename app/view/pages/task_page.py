@@ -639,10 +639,7 @@ class TaskPage(QWidget):
                 card.selectionChanged.connect(
                     lambda checked, extend, tid=taskId: self._onCardSelectionChanged(tid, checked, extend)
                 )
-                # 队列投递：拖拽是阻塞式消息循环，不能挂在卡片的栈帧上
-                card.dragRequested.connect(
-                    self._onCardDragRequested, Qt.ConnectionType.QueuedConnection
-                )
+                card.dragRequested.connect(self._onCardDragRequested)
                 self._liveCards[taskId] = card
                 card.refresh()
             card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
