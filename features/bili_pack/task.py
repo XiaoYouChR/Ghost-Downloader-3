@@ -59,6 +59,10 @@ class BilibiliTask(Task):
             return Path(self.outputPath)
         return self.outputFolder
 
+    def setName(self, name: str):
+        super().setName(name)
+        self._baseName = Path(self.name).stem
+
     def setMode(self, mode: DownloadMode) -> None:
         self.mode = mode
         self._rebuildSteps()

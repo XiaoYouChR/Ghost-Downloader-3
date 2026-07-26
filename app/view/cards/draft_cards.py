@@ -78,6 +78,7 @@ class DraftCard(QWidget):
 
     def _onNameEditRequested(self) -> None:
         self.nameLabel.hide()
+        self.nameEdit.setText(self._task.name)
         self.nameEdit.show()
         self.nameEdit.setFocus()
         self.nameEdit.selectAll()

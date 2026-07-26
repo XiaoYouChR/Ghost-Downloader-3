@@ -239,6 +239,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
         task: BilibiliTask = self._task
         task.setMode(DownloadMode(index))
         self._refreshSummary()
+        self._refreshButtonVisibility()
 
     def _onSelectFilesClicked(self) -> None:
         task: BilibiliTask = self._task
@@ -258,7 +259,6 @@ class BilibiliDraftCard(MultiFileDraftCard):
     def _refreshSummary(self) -> None:
         self.sizeLabel.setText(toReadableSize(self._task.fileSize))
         self.nameLabel.setText(self._task.name)
-        self._refreshButtonVisibility()
 
     def _buildSubtitleChoices(self) -> list[tuple[str, str]]:
         seen: set[str] = set()
