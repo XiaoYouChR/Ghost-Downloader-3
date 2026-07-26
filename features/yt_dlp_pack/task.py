@@ -30,7 +30,7 @@ ERROR_HINTS = (
     ("http error 403", "下载被拒绝（403），链接可能已失效（{detail}）"),
 )
 
-STEPS_PER_VIDEO = 4
+STEPS_PER_VIDEO = 5
 
 _pathLock = threading.Lock()
 _pathInserted = False
@@ -109,6 +109,7 @@ def buildStepGroup(fileIndex: int, videoUrl: str = "", videoStem: str = "") -> l
         YouTubeResourceStep(stepIndex=base + 2, fileIndex=fileIndex, videoStem=videoStem, role="video"),
         YouTubeResourceStep(stepIndex=base + 3, fileIndex=fileIndex, videoStem=videoStem, role="audio"),
         YouTubeMergeStep(stepIndex=base + 4, fileIndex=fileIndex, videoUrl=videoUrl, videoStem=videoStem),
+        YouTubeSubtitleStep(stepIndex=base + 5, fileIndex=fileIndex, videoUrl=videoUrl, videoStem=videoStem),
     ]
 
 
@@ -354,6 +355,91 @@ class YouTubeResourceStep(FFmpegResourceStep):
 
 
 @dataclass(kw_only=True)
+class YouTubeSubtitleStep(TaskStep):
+    fileIndex: int = 0
+    videoUrl: str = ""
+    videoStem: str = ""
+
+    @property
+    def outputPath(self) -> str:
+        return ""
+
+    def deleteFiles(self) -> None:
+        stem = self.videoStem or mediaStem(self.task)
+        for path in self.task.outputFolder.glob(f"{stem}.*.vtt"):
+            path.unlink(missing_ok=True)
+
+    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
+        stem = self.videoStem or mediaStem(self.task)
+        for path in oldFolder.glob(f"{stem}.*.vtt"):
+            target = newFolder / path.name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if path.exists():
+                shutil.move(str(path), str(target))
+
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        if not self.task.subtitleLanguages:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+
+        from app.client import buildClient
+        from app.platform.filesystem import toSafeFilename
+        from .config import loadCookieHeader
+
+        info = await asyncio.to_thread(probeFormats, self.videoUrl or self.task.url)
+        languages = [s.strip() for s in self.task.subtitleLanguages.split(",") if s.strip()]
+        stem = self.videoStem or mediaStem(self.task)
+        outputFolder = self.task.outputFolder
+        outputFolder.mkdir(parents=True, exist_ok=True)
+
+        downloads = []
+        for lang in languages:
+            formats = (info.get("subtitles") or {}).get(lang)
+            isAuto = False
+            if not formats and self.task.shouldIncludeAutoSubs:
+                formats = (info.get("automatic_captions") or {}).get(lang)
+                isAuto = True
+            if not formats:
+                continue
+            subtitle = next(
+                (f for f in formats if f.get("ext") == "vtt" and f.get("url")),
+                None,
+            )
+            if not subtitle:
+                continue
+            safeLang = toSafeFilename(lang, fallback="subtitle")
+            autoSuffix = ".auto" if isAuto else ""
+            vttFile = outputFolder / f"{stem}.{safeLang}{autoSuffix}.vtt"
+            downloads.append((lang, subtitle["url"], vttFile))
+
+        if not downloads:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+
+        cookieHeader = loadCookieHeader()
+        client = buildClient(headers={"cookie": cookieHeader} if cookieHeader else None)
+        try:
+            for i, (lang, url, vttFile) in enumerate(downloads):
+                if vttFile.exists():
+                    self.progress = (i + 1) / len(downloads) * 100
+                    continue
+                try:
+                    response = await client.get(url)
+                    try:
+                        response.raise_for_status()
+                        vttFile.write_bytes(await response.bytes())
+                    finally:
+                        response.close()
+                except Exception:
+                    logger.opt(exception=True).debug("Subtitle download failed: {}", lang)
+                self.progress = (i + 1) / len(downloads) * 100
+        finally:
+            client.close()
+
+        self.setStatus(TaskStatus.COMPLETED)
+
+
+@dataclass(kw_only=True)
 class YouTubeMergeStep(FFmpegStep):
     fileIndex: int = 0
     videoUrl: str = ""
@@ -380,26 +466,7 @@ class YouTubeMergeStep(FFmpegStep):
         suffix = f".{self.audioExtension}" if self.audioExtension else ""
         return self.task.outputFolder / f"{stem}.audio{suffix}"
 
-    def deleteFiles(self) -> None:
-        stem = self.videoStem or mediaStem(self.task)
-        for path in self.task.outputFolder.glob(f"{stem}.*.vtt"):
-            path.unlink(missing_ok=True)
-
-    def moveFiles(self, oldFolder: Path, newFolder: Path) -> None:
-        super().moveFiles(oldFolder, newFolder)
-        stem = self.videoStem or mediaStem(self.task)
-        for path in oldFolder.glob(f"{stem}.*.vtt"):
-            target = newFolder / path.name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            if path.exists():
-                shutil.move(str(path), str(target))
-
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        try:
-            await self._createSubtitleFiles()
-        except Exception:
-            logger.opt(exception=True).debug("Subtitle download failed")
-
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
 
@@ -493,52 +560,6 @@ class YouTubeMergeStep(FFmpegStep):
         finally:
             if chaptersFile:
                 Path(chaptersFile).unlink(missing_ok=True)
-
-    async def _createSubtitleFiles(self) -> None:
-        if not self.task.subtitleLanguages:
-            return
-
-        from app.client import buildClient
-        from app.platform.filesystem import toSafeFilename
-        from .config import loadCookieHeader
-
-        info = await asyncio.to_thread(probeFormats, self.videoUrl or self.task.url)
-        languages = [s.strip() for s in self.task.subtitleLanguages.split(",") if s.strip()]
-        stem = self.videoStem or mediaStem(self.task)
-        outputFolder = self.task.outputFolder
-        outputFolder.mkdir(parents=True, exist_ok=True)
-
-        cookieHeader = loadCookieHeader()
-        client = buildClient(headers={"cookie": cookieHeader} if cookieHeader else None)
-        try:
-            for lang in languages:
-                try:
-                    formats = (info.get("subtitles") or {}).get(lang)
-                    isAuto = False
-                    if not formats and self.task.shouldIncludeAutoSubs:
-                        formats = (info.get("automatic_captions") or {}).get(lang)
-                        isAuto = True
-                    if not formats:
-                        continue
-                    subtitle = next(
-                        (f for f in formats if f.get("ext") == "vtt" and f.get("url")),
-                        None,
-                    )
-                    if not subtitle:
-                        continue
-                    response = await client.get(subtitle["url"])
-                    try:
-                        response.raise_for_status()
-                        safeLang = toSafeFilename(lang, fallback="subtitle")
-                        autoSuffix = ".auto" if isAuto else ""
-                        vttFile = outputFolder / f"{stem}.{safeLang}{autoSuffix}.vtt"
-                        vttFile.write_bytes(await response.bytes())
-                    finally:
-                        response.close()
-                except Exception:
-                    logger.opt(exception=True).debug("Subtitle download failed: {}", lang)
-        finally:
-            client.close()
 
     def _createChaptersFile(self) -> str:
         lines = [";FFMETADATA1"]
