@@ -5123,4 +5123,39 @@ FFmpeg: {2}</translation>
         <translation>タスクを追加</translation>
     </message>
 </context>
+<context>
+    <name>CategoryService</name>
+    <message>
+        <source>视频</source>
+        <translation>動画</translation>
+    </message>
+    <message>
+        <source>音频</source>
+        <translation>音声</translation>
+    </message>
+    <message>
+        <source>图片</source>
+        <translation>画像</translation>
+    </message>
+    <message>
+        <source>字幕</source>
+        <translation>字幕</translation>
+    </message>
+    <message>
+        <source>文档</source>
+        <translation>ドキュメント</translation>
+    </message>
+    <message>
+        <source>压缩包</source>
+        <translation>アーカイブ</translation>
+    </message>
+    <message>
+        <source>程序</source>
+        <translation>プログラム</translation>
+    </message>
+    <message>
+        <source>其他</source>
+        <translation>その他</translation>
+    </message>
+</context>
 </TS>

@@ -13,10 +13,9 @@ if TYPE_CHECKING:
     from app.models.task import Task
 
 
-DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
+CATEGORY_PRESETS: list[dict[str, Any]] = [
     {
         "categoryId": "cat_video",
-        "name": "视频",
         "icon": "VIDEO",
         "folder": "{default}/Video",
         "extensions": [
@@ -27,7 +26,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_audio",
-        "name": "音频",
         "icon": "MUSIC",
         "folder": "{default}/Audio",
         "extensions": [
@@ -37,7 +35,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_image",
-        "name": "图片",
         "icon": "PHOTO",
         "folder": "{default}/Images",
         "extensions": [
@@ -47,7 +44,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_subtitle",
-        "name": "字幕",
         "icon": "CHAT",
         "folder": "{default}/Subtitles",
         "extensions": [
@@ -57,7 +53,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_document",
-        "name": "文档",
         "icon": "DOCUMENT",
         "folder": "{default}/Documents",
         "extensions": [
@@ -68,7 +63,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_archive",
-        "name": "压缩包",
         "icon": "ZIP_FOLDER",
         "folder": "{default}/Archives",
         "extensions": [
@@ -80,7 +74,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_program",
-        "name": "程序",
         "icon": "APPLICATION",
         "folder": "{default}/Programs",
         "extensions": [
@@ -91,7 +84,6 @@ DEFAULT_CATEGORY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "categoryId": "cat_other",
-        "name": "其他",
         "icon": "HELP",
         "extensions": [],
     },
@@ -135,10 +127,26 @@ class CategoryService(QObject):
         self._categories: list[Category] = []
         self._load()
 
+    def _buildDefaults(self) -> list[Category]:
+        names = {
+            "cat_video": self.tr("视频"),
+            "cat_audio": self.tr("音频"),
+            "cat_image": self.tr("图片"),
+            "cat_subtitle": self.tr("字幕"),
+            "cat_document": self.tr("文档"),
+            "cat_archive": self.tr("压缩包"),
+            "cat_program": self.tr("程序"),
+            "cat_other": self.tr("其他"),
+        }
+        return [
+            Category.fromDict({**p, "name": names[p["categoryId"]]})
+            for p in CATEGORY_PRESETS
+        ]
+
     def _load(self) -> None:
         raw = cfg.categoryRules.value
         if not raw:
-            self._categories = [Category.fromDict(data) for data in DEFAULT_CATEGORY_PRESETS]
+            self._categories = self._buildDefaults()
             self._save()
             return
         self._categories = [Category.fromDict(data) for data in raw]
@@ -201,7 +209,7 @@ class CategoryService(QObject):
             self._save()
 
     def reset(self) -> None:
-        self._categories = [Category.fromDict(data) for data in DEFAULT_CATEGORY_PRESETS]
+        self._categories = self._buildDefaults()
         self._save()
 
     def reorder(self, categoryIds: list[str]) -> None:

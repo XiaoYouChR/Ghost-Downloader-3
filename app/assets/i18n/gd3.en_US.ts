@@ -5123,4 +5123,39 @@ The next steps will help you complete the basic setup.</translation>
         <translation>Add Task</translation>
     </message>
 </context>
+<context>
+    <name>CategoryService</name>
+    <message>
+        <source>视频</source>
+        <translation>Video</translation>
+    </message>
+    <message>
+        <source>音频</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <source>图片</source>
+        <translation>Images</translation>
+    </message>
+    <message>
+        <source>字幕</source>
+        <translation>Subtitles</translation>
+    </message>
+    <message>
+        <source>文档</source>
+        <translation>Documents</translation>
+    </message>
+    <message>
+        <source>压缩包</source>
+        <translation>Archives</translation>
+    </message>
+    <message>
+        <source>程序</source>
+        <translation>Programs</translation>
+    </message>
+    <message>
+        <source>其他</source>
+        <translation>Other</translation>
+    </message>
+</context>
 </TS>

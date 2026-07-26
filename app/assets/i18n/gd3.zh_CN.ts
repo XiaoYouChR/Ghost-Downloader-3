@@ -3972,4 +3972,39 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
+<context>
+    <name>CategoryService</name>
+    <message>
+        <source>视频</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>音频</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>图片</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>字幕</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>文档</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>压缩包</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>程序</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>其他</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
 </TS>

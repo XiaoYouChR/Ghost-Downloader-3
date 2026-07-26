@@ -5123,4 +5123,39 @@ FFmpeg: {2}</translation>
         <translation>Добавить задачу</translation>
     </message>
 </context>
+<context>
+    <name>CategoryService</name>
+    <message>
+        <source>视频</source>
+        <translation>Видео</translation>
+    </message>
+    <message>
+        <source>音频</source>
+        <translation>Аудио</translation>
+    </message>
+    <message>
+        <source>图片</source>
+        <translation>Изображения</translation>
+    </message>
+    <message>
+        <source>字幕</source>
+        <translation>Субтитры</translation>
+    </message>
+    <message>
+        <source>文档</source>
+        <translation>Документы</translation>
+    </message>
+    <message>
+        <source>压缩包</source>
+        <translation>Архивы</translation>
+    </message>
+    <message>
+        <source>程序</source>
+        <translation>Программы</translation>
+    </message>
+    <message>
+        <source>其他</source>
+        <translation>Другое</translation>
+    </message>
+</context>
 </TS>

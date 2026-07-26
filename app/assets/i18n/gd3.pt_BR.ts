@@ -4164,4 +4164,39 @@ As próximas etapas ajudarão você a concluir a configuração básica.</transl
         <translation>Adicionar tarefa</translation>
     </message>
 </context>
+<context>
+    <name>CategoryService</name>
+    <message>
+        <source>视频</source>
+        <translation>Vídeos</translation>
+    </message>
+    <message>
+        <source>音频</source>
+        <translation>Áudio</translation>
+    </message>
+    <message>
+        <source>图片</source>
+        <translation>Imagens</translation>
+    </message>
+    <message>
+        <source>字幕</source>
+        <translation>Legendas</translation>
+    </message>
+    <message>
+        <source>文档</source>
+        <translation>Documentos</translation>
+    </message>
+    <message>
+        <source>压缩包</source>
+        <translation>Arquivos compactados</translation>
+    </message>
+    <message>
+        <source>程序</source>
+        <translation>Programas</translation>
+    </message>
+    <message>
+        <source>其他</source>
+        <translation>Outros</translation>
+    </message>
+</context>
 </TS>
