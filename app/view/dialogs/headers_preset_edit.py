@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout
-from qfluentwidgets import LineEdit, MessageBoxBase
+from qfluentwidgets import InfoBar, LineEdit, MessageBoxBase
 
 from app.config.cfg import BASE_HEADERS
 from app.view.components.headers_editor import HeadersEditor
@@ -40,6 +40,16 @@ class HeadersPresetEditDialog(MessageBoxBase):
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scrollArea.enableTransparentBackground()
         self.viewLayout.addWidget(self.scrollArea)
+
+    def validate(self) -> bool:
+        if self.nameEdit.text().strip():
+            return True
+        InfoBar.warning(
+            self.tr("请输入预设名称"),
+            self.tr("预设名称不能为空"),
+            parent=self,
+        )
+        return False
 
     def preset(self) -> dict:
         return {

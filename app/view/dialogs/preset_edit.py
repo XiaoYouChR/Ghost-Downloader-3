@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QHBoxLayout
 from qfluentwidgets import (
-    BodyLabel, DropDownPushButton, FluentIcon, LineEdit,
+    BodyLabel, DropDownPushButton, FluentIcon, InfoBar, LineEdit,
     MessageBoxBase, SubtitleLabel, TeachingTip, TeachingTipTailPosition,
     TransparentToolButton,
 )
@@ -99,6 +99,16 @@ class PresetEditDialog(MessageBoxBase):
             self.profileButton.setText(toProfileLabel(self._profileValue))
         else:
             self.profileButton.setText(self.tr("跟随全局默认"))
+
+    def validate(self) -> bool:
+        if self.hostsEdit.tokens():
+            return True
+        InfoBar.warning(
+            self.tr("请添加匹配 Host"),
+            self.tr("预设需要至少一个 Host 才能匹配请求"),
+            parent=self,
+        )
+        return False
 
     def preset(self) -> dict:
         result = {

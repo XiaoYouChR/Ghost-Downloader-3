@@ -27,7 +27,7 @@ class IconLabelBase:
     def _initIcon(self, icon: FluentIconBase | None, size: int) -> None:
         self.iconSize = size
         self.icon = None
-        self.setMinimumHeight(size)
+        self.setMinimumHeight(max(size, self.fontMetrics().height()))
         self.setIcon(icon)
 
     def setIcon(self, icon: FluentIconBase | None) -> None:

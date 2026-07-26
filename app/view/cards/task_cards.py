@@ -185,6 +185,7 @@ class TaskCard(CardWidget):
 
         contentLayout = QVBoxLayout()
         contentLayout.setContentsMargins(2, 8, 2, 8)
+        contentLayout.setSpacing(0)
         contentLayout.addWidget(self.nameLabel)
         contentLayout.addLayout(infoLayout)
 

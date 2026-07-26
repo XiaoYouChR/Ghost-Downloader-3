@@ -589,12 +589,26 @@ class IdentitySettingCard(CollapsibleSettingCard):
         cfg.set(cfg.identityPresets, presets)
 
     def _onRemoveClicked(self, index: int) -> None:
+        from qfluentwidgets import MessageBox
         presets = list(cfg.identityPresets.value)
         if index < 0 or index >= len(presets):
             return
+        name = presets[index].get("name", self.tr("未命名预设"))
+        dialog = MessageBox(
+            self.tr("删除预设"),
+            self.tr("确定要删除 {0} 吗？").format(name),
+            self.window(),
+        )
+        if not dialog.exec():
+            return
+        row = self._rowWidgets.pop(index)
+        self.viewLayout.removeWidget(row)
+        row.deleteLater()
+        for i in range(index, len(self._rowWidgets)):
+            self._rowWidgets[i]._index = i
         presets.pop(index)
         cfg.set(cfg.identityPresets, presets)
-        self._reload()
+        self._refreshChoiceLabel()
 
 
 class HeadersPresetRow(QWidget):
@@ -718,13 +732,32 @@ class HeadersPresetSettingCard(CollapsibleSettingCard):
             self._reload()
 
     def _onRemoveClicked(self, index: int) -> None:
+        from qfluentwidgets import MessageBox
         presets = list(cfg.headersPresets.value)
+        name = presets[index].get("name", self.tr("未命名预设"))
+        dialog = MessageBox(
+            self.tr("删除预设"),
+            self.tr("确定要删除 {0} 吗？").format(name),
+            self.window(),
+        )
+        if not dialog.exec():
+            return
+        row = self._rowWidgets.pop(index)
+        self.viewLayout.removeWidget(row)
+        row.deleteLater()
+        for i in range(index, len(self._rowWidgets)):
+            self._rowWidgets[i]._index = i
         presets.pop(index)
         cfg.set(cfg.headersPresets, presets)
         current = cfg.currentHeadersPreset.value
         if index <= current:
             cfg.set(cfg.currentHeadersPreset, max(0, current - 1))
-        self._reload()
+        newCurrent = currentHeadersPresetIndex()
+        canRemove = len(self._rowWidgets) > 1
+        for i, r in enumerate(self._rowWidgets):
+            r.radioButton.setChecked(i == newCurrent)
+            r.removeButton.setEnabled(canRemove)
+        self.choiceLabel.setText(presets[newCurrent]["name"])
 
 
 class SelectFileCard(SettingCard):
