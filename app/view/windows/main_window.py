@@ -449,6 +449,20 @@ class MainWindow(MSFluentWindow):
                 self.titleBar.maxBtn.show()
 
 
+if sys.platform == "darwin":
+    import Cocoa
+    from qframelesswindow.mac import MacFramelessWindowBase
+
+    def _updateSystemTitleBar(self):
+        self._extendTitleBarToClientArea()
+        self.setSystemTitleBarButtonVisible(self.isSystemButtonVisible())
+        nsWindow = self._MacFramelessWindowBase__nsWindow
+        nsWindow.setMovableByWindowBackground_(False)
+        nsWindow.setMovable_(False)
+        nsWindow.setTitleVisibility_(Cocoa.NSWindowTitleHidden)
+
+    MacFramelessWindowBase._updateSystemTitleBar = _updateSystemTitleBar
+
 if sys.platform == "win32":
     from app.platform.windows import isWin10
 
