@@ -500,6 +500,7 @@ class YouTubeMergeStep(FFmpegStep):
 
         from app.client import buildClient
         from app.platform.filesystem import toSafeFilename
+        from .config import loadCookieHeader
 
         info = await asyncio.to_thread(probeFormats, self.videoUrl or self.task.url)
         languages = [s.strip() for s in self.task.subtitleLanguages.split(",") if s.strip()]
@@ -507,7 +508,8 @@ class YouTubeMergeStep(FFmpegStep):
         outputFolder = self.task.outputFolder
         outputFolder.mkdir(parents=True, exist_ok=True)
 
-        client = buildClient()
+        cookieHeader = loadCookieHeader()
+        client = buildClient(headers={"cookie": cookieHeader} if cookieHeader else None)
         try:
             for lang in languages:
                 try:
@@ -525,11 +527,14 @@ class YouTubeMergeStep(FFmpegStep):
                     if not subtitle:
                         continue
                     response = await client.get(subtitle["url"])
-                    response.raise_for_status()
-                    safeLang = toSafeFilename(lang, fallback="subtitle")
-                    autoSuffix = ".auto" if isAuto else ""
-                    vttFile = outputFolder / f"{stem}.{safeLang}{autoSuffix}.vtt"
-                    vttFile.write_bytes(await response.read())
+                    try:
+                        response.raise_for_status()
+                        safeLang = toSafeFilename(lang, fallback="subtitle")
+                        autoSuffix = ".auto" if isAuto else ""
+                        vttFile = outputFolder / f"{stem}.{safeLang}{autoSuffix}.vtt"
+                        vttFile.write_bytes(await response.bytes())
+                    finally:
+                        response.close()
                 except Exception:
                     logger.opt(exception=True).debug("Subtitle download failed: {}", lang)
         finally:

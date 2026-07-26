@@ -50,6 +50,21 @@ def saveCookiesIfBetter(cookieString: str) -> None:
         saveCookies(cookieString)
 
 
+def loadCookieHeader() -> str:
+    path = cookieFile()
+    if not path.is_file():
+        return ""
+    pairs = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 7:
+            pairs.append(f"{parts[5]}={parts[6]}")
+    return "; ".join(pairs)
+
+
 def clearCookies() -> None:
     path = cookieFile()
     if path.is_file():
