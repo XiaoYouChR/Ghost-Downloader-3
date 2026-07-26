@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QApplication, QRubberBand, QScrollArea, QWidget
 
 class BandSelector(QObject):
 
-    dragStarted = Signal(bool)
+    dragStarted = Signal(Qt.KeyboardModifiers)
     bandChanged = Signal(int, int)
     dragFinished = Signal()
 
@@ -26,7 +26,7 @@ class BandSelector(QObject):
         self._startY = 0
         self._lastX = 0
         self._lastViewportY = 0
-        self._isShiftHeld = False
+        self._modifiers = Qt.KeyboardModifier(0)
         self._scrollDelta = 0
 
         self._band = QRubberBand(QRubberBand.Shape.Rectangle, scrollWidget)
@@ -64,7 +64,7 @@ class BandSelector(QObject):
             self._startY = self._pressPos.y()
             self._lastX = self._startX
             self._lastViewportY = self._startY - self._scrollArea.verticalScrollBar().value()
-            self._isShiftHeld = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+            self._modifiers = event.modifiers()
             return False
 
         if t == QEvent.Type.MouseMove and (self._isPending or self._isDragging):
@@ -78,7 +78,7 @@ class BandSelector(QObject):
                 self._isDragging = True
                 self._isPending = False
                 self._band.show()
-                self.dragStarted.emit(self._isShiftHeld)
+                self.dragStarted.emit(self._modifiers)
 
             self._updateBand(self._lastX, pos.y())
             return True

@@ -142,6 +142,7 @@ class TaskPage(QWidget):
         self._displayOrder: list[str] = []
         self._selectedIds: set[str] = set()
         self._bandSnapshot: set[str] = set()
+        self._bandMerge = set.__or__
         self._runningIds: set[str] = set()
 
         self._refreshListTimer = QTimer(self, singleShot=True)
@@ -673,14 +674,16 @@ class TaskPage(QWidget):
 
     # ── band selection ──
 
-    def _onBandDragStarted(self, shiftHeld: bool) -> None:
+    def _onBandDragStarted(self, modifiers: Qt.KeyboardModifiers) -> None:
         if not self._isSelectionMode:
             self.setSelectionMode(True)
-        self._bandSnapshot = set(self._selectedIds) if shiftHeld else set()
+        keepExisting = modifiers & (Qt.KeyboardModifier.ShiftModifier | Qt.KeyboardModifier.ControlModifier)
+        self._bandSnapshot = set(self._selectedIds) if keepExisting else set()
+        self._bandMerge = set.__xor__ if modifiers & Qt.KeyboardModifier.ControlModifier else set.__or__
 
     def _onBandChanged(self, first: int, last: int) -> None:
         bandIds = {self._displayOrder[i] for i in range(first, last + 1)} if first >= 0 else set()
-        self._selectedIds = self._bandSnapshot | bandIds
+        self._selectedIds = self._bandMerge(self._bandSnapshot, bandIds)
         for taskId, card in self._liveCards.items():
             card.setChecked(taskId in self._selectedIds)
 
