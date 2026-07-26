@@ -234,7 +234,7 @@ class HeadersEditor(QWidget):
         self.textEdit.hide()
         self.textEdit.setPlaceholderText(
             self.tr("每行一个 名称: 值，或直接粘贴 cURL 命令"))
-        self.helpButton.setToolTip(self.tr("请求标头帮助"))
+        self.helpButton.setToolTip(self.tr("使用帮助"))
         self.modeButton.setToolTip(self.tr("切换到文本视图"))
         self.resetButton.setToolTip(self.tr("恢复默认请求标头"))
         for button in (self.helpButton, self.modeButton, self.resetButton):
@@ -310,17 +310,13 @@ class HeadersEditor(QWidget):
     def _onHelpClicked(self) -> None:
         TeachingTip.create(
             self.helpButton,
-            self.tr("请求标头"),
+            self.tr("使用帮助"),
             self.tr(
-                "直接粘贴即可识别：\n"
-                "  cURL 命令（浏览器开发者工具的 Copy as cURL）\n"
-                "  名称: 值（每行一个）\n"
+                "粘贴即可识别 cURL 或 名称: 值（每行一个）\n"
+                "多条 cURL 只取第一条\n"
                 "\n"
-                "一份标头属于一个请求。粘贴「复制全部为 cURL」时，"
-                "只取第一个请求的标头。\n"
-                "\n"
-                "开启「模拟身份」时，User-Agent 与 sec-ch-ua 可能由模拟身份接管。"
-                "要让这里填写的值原样发送，请将模拟身份设为「不模拟」。"
+                "模拟身份开启时 User-Agent 和 sec-ch-ua 不生效，\n"
+                "设为不模拟可原样发送"
             ),
             tailPosition=TeachingTipTailPosition.BOTTOM,
             isClosable=True,
