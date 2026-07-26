@@ -6,10 +6,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget,
 )
 from qfluentwidgets import (
-    FlowLayout, FluentIcon, TransparentToolButton, isDarkTheme,
+    FlowLayout, FluentIcon, TransparentToolButton, isDarkTheme, qconfig,
 )
 from qfluentwidgets.common.color import autoFallbackThemeColor
 from qfluentwidgets.common.font import setFont
+from qfluentwidgets.common.style_sheet import (
+    CustomStyleSheet, addStyleSheet,
+)
 
 
 class TokenWidget(QWidget):
@@ -67,7 +70,12 @@ class TokenInput(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFrame(False)
-        self.setStyleSheet("QLineEdit { background: transparent; border: none; }")
+        cs = CustomStyleSheet(self)
+        cs.setCustomStyleSheet(
+            "TokenInput { background: transparent; border: none; color: black; }",
+            "TokenInput { background: transparent; border: none; color: white; }",
+        )
+        addStyleSheet(self, cs)
         setFont(self)
         self.setMinimumWidth(60)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -102,11 +110,36 @@ class TokenLineEdit(QWidget):
         self._bind()
 
     def _initWidget(self) -> None:
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setCursor(Qt.CursorShape.IBeamCursor)
         self.setMinimumHeight(33)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.lineEdit.setPlaceholderText(self.tr("添加..."))
         self.lineEdit.installEventFilter(self)
+        cs = CustomStyleSheet(self)
+        cs.setCustomStyleSheet(
+            "TokenLineEdit {"
+            "  background-color: rgba(255, 255, 255, 0.7);"
+            "  border: 1px solid rgba(0, 0, 0, 13);"
+            "  border-bottom: 1px solid rgba(0, 0, 0, 100);"
+            "  border-radius: 5px;"
+            "}"
+            "TokenLineEdit:hover {"
+            "  background-color: rgba(249, 249, 249, 0.5);"
+            "  border: 1px solid rgba(0, 0, 0, 13);"
+            "  border-bottom: 1px solid rgba(0, 0, 0, 100);"
+            "}",
+            "TokenLineEdit {"
+            "  background-color: rgba(255, 255, 255, 0.0605);"
+            "  border: 1px solid rgba(255, 255, 255, 0.08);"
+            "  border-bottom: 1px solid rgba(255, 255, 255, 0.5442);"
+            "  border-radius: 5px;"
+            "}"
+            "TokenLineEdit:hover {"
+            "  background-color: rgba(255, 255, 255, 0.0837);"
+            "}",
+        )
+        addStyleSheet(self, cs)
 
     def _initLayout(self) -> None:
         self.flowLayout.setContentsMargins(4, 4, 4, 4)
@@ -116,6 +149,7 @@ class TokenLineEdit(QWidget):
 
     def _bind(self) -> None:
         self.lineEdit.submitted.connect(self._addToken)
+        qconfig.themeChanged.connect(self._onThemeChanged)
 
     def tokens(self) -> list[str]:
         return list(self._tokens)
@@ -216,31 +250,22 @@ class TokenLineEdit(QWidget):
                     self.lineEdit.clear()
         return super().eventFilter(obj, event)
 
+    def _onThemeChanged(self) -> None:
+        for w in self._tokenWidgets:
+            w.update()
+
     def paintEvent(self, event) -> None:
+        if not self._hasFocus:
+            return
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        bgColor = QColor(255, 255, 255, 13 if isDarkTheme() else 170)
-        borderColor = QColor(255, 255, 255, 18) if isDarkTheme() else QColor(0, 0, 0, 22)
+        painter.setPen(Qt.PenStyle.NoPen)
 
         w, h = self.width(), self.height()
-        path = QPainterPath()
-        path.addRoundedRect(QRectF(0.5, 0.5, w - 1, h - 1), 4, 4)
-
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(bgColor)
-        painter.drawPath(path)
-
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.setPen(borderColor)
-        painter.drawPath(path)
-
-        if self._hasFocus:
-            accentColor = autoFallbackThemeColor(QColor(), QColor())
-            barPath = QPainterPath()
-            barPath.addRoundedRect(QRectF(0, h - 10, w, 10), 5, 5)
-            rectPath = QPainterPath()
-            rectPath.addRect(0, h - 10, w, 8)
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(accentColor)
-            painter.drawPath(barPath.subtracted(rectPath))
+        barPath = QPainterPath()
+        barPath.addRoundedRect(QRectF(0, h - 10, w, 10), 5, 5)
+        rectPath = QPainterPath()
+        rectPath.addRect(0, h - 10, w, 8)
+        painter.setBrush(autoFallbackThemeColor(QColor(), QColor()))
+        painter.drawPath(barPath.subtracted(rectPath))
