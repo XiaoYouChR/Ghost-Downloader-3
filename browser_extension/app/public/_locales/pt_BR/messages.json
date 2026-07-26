@@ -501,6 +501,9 @@
   "redownload": {
     "message": "Baixar novamente"
   },
+  "removeTask": {
+    "message": "Remover da lista"
+  },
   "reloadRequired": {
     "message": "Recarregar necessário"
   },

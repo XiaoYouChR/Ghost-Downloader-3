@@ -1,5 +1,5 @@
 export type PopupView = "tasks" | "resources" | "images" | "advanced" | "settings";
-export type TaskAction = "toggle_pause" | "redownload" | "open_file" | "open_folder" | "cancel" | "open_when_done";
+export type TaskAction = "toggle_pause" | "redownload" | "open_file" | "open_folder" | "cancel" | "remove" | "open_when_done";
 export type MediaAction =
   | "toggle_play"
   | "set_speed"

@@ -1,6 +1,8 @@
-import {Avatar, Button, Caption1, Card, makeStyles, ProgressBar, tokens} from "@fluentui/react-components";
+import {useState} from "react";
+import {Avatar, Button, Caption1, Card, makeStyles, MenuItem, MenuList, ProgressBar, tokens} from "@fluentui/react-components";
 import {
     ArrowClockwiseRegular,
+    DeleteRegular,
     DismissRegular,
     FolderOpenRegular,
     OpenRegular,
@@ -69,6 +71,20 @@ const useStyles = makeStyles({
     right: 0,
     borderRadius: 0,
   },
+  contextOverlay: {
+    position: "fixed",
+    inset: "0",
+    zIndex: 1000,
+  },
+  contextMenu: {
+    position: "fixed",
+    zIndex: 1001,
+    backgroundColor: tokens.colorNeutralBackground1,
+    boxShadow: tokens.shadow16,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    padding: "4px",
+  },
 });
 
 function metaText(task: TaskSummary): string {
@@ -119,6 +135,7 @@ export function TaskCard({
   onAction: (action: TaskAction) => void;
 }) {
   const styles = useStyles();
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const visual = taskVisual(task);
   const TaskIcon = visualIcon(visual.kind);
   const isCompleted = task.status === "completed";
@@ -133,98 +150,126 @@ export function TaskCard({
     : styles.meta;
 
   return (
-    <Card
-      appearance="filled-alternative"
-      className={`${styles.root}${isCompleted && task.canOpenFile ? ` ${styles.clickable}` : ""}`}
-      onClick={isCompleted && task.canOpenFile && !busy ? () => onAction("open_file") : undefined}
-    >
-      <div className={styles.row}>
-        <Avatar
-          color="colorful"
-          icon={<TaskIcon />}
-          idForColor={task.taskId}
-          shape="square"
-          size={24}
-        />
+    <>
+      <Card
+        appearance="filled-alternative"
+        className={`${styles.root}${isCompleted && task.canOpenFile ? ` ${styles.clickable}` : ""}`}
+        onClick={isCompleted && task.canOpenFile && !busy ? () => onAction("open_file") : undefined}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setContextMenu({ x: e.clientX, y: e.clientY });
+        }}
+      >
+        <div className={styles.row}>
+          <Avatar
+            color="colorful"
+            icon={<TaskIcon />}
+            idForColor={task.taskId}
+            shape="square"
+            size={24}
+          />
 
-        <div className={styles.body}>
-          <div className={styles.title}>{task.name}</div>
-          <Caption1
-            className={metaClassName}
-            onClick={isActive ? () => onAction("open_when_done") : undefined}
-          >
-            {metaText(task)}
-          </Caption1>
-        </div>
+          <div className={styles.body}>
+            <div className={styles.title}>{task.name}</div>
+            <Caption1
+              className={metaClassName}
+              onClick={isActive ? () => onAction("open_when_done") : undefined}
+            >
+              {metaText(task)}
+            </Caption1>
+          </div>
 
-        <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
-          {isCompleted && (
-            <>
+          <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
+            {isCompleted && (
+              <>
+                <Button
+                  appearance="subtle"
+                  disabled={busy}
+                  icon={<ArrowClockwiseRegular />}
+                  aria-label={chrome.i18n.getMessage("redownload")}
+                  size="small"
+                  onClick={() => onAction("redownload")}
+                />
+                <Button
+                  appearance="subtle"
+                  disabled={busy || !task.canOpenFile}
+                  icon={<OpenRegular />}
+                  aria-label={chrome.i18n.getMessage("openFile")}
+                  size="small"
+                  onClick={() => onAction("open_file")}
+                />
+                <Button
+                  appearance="subtle"
+                  disabled={busy || !task.canOpenFolder}
+                  icon={<FolderOpenRegular />}
+                  aria-label={chrome.i18n.getMessage("openFolder")}
+                  size="small"
+                  onClick={() => onAction("open_folder")}
+                />
+              </>
+            )}
+            {isRunning && (
+              <Button
+                appearance="subtle"
+                disabled={busy || !task.canPause}
+                icon={<PauseRegular />}
+                aria-label={chrome.i18n.getMessage("pause")}
+                size="small"
+                onClick={() => onAction("toggle_pause")}
+              />
+            )}
+            {isPausedOrFailed && (
               <Button
                 appearance="subtle"
                 disabled={busy}
-                icon={<ArrowClockwiseRegular />}
-                aria-label={chrome.i18n.getMessage("redownload")}
+                icon={<PlayRegular />}
+                aria-label={chrome.i18n.getMessage("resume")}
                 size="small"
-                onClick={() => onAction("redownload")}
+                onClick={() => onAction("toggle_pause")}
               />
-              <Button
-                appearance="subtle"
-                disabled={busy || !task.canOpenFile}
-                icon={<OpenRegular />}
-                aria-label={chrome.i18n.getMessage("openFile")}
-                size="small"
-                onClick={() => onAction("open_file")}
-              />
-              <Button
-                appearance="subtle"
-                disabled={busy || !task.canOpenFolder}
-                icon={<FolderOpenRegular />}
-                aria-label={chrome.i18n.getMessage("openFolder")}
-                size="small"
-                onClick={() => onAction("open_folder")}
-              />
-            </>
-          )}
-          {isRunning && (
-            <Button
-              appearance="subtle"
-              disabled={busy || !task.canPause}
-              icon={<PauseRegular />}
-              aria-label={chrome.i18n.getMessage("pause")}
-              size="small"
-              onClick={() => onAction("toggle_pause")}
-            />
-          )}
-          {isPausedOrFailed && (
+            )}
             <Button
               appearance="subtle"
               disabled={busy}
-              icon={<PlayRegular />}
-              aria-label={chrome.i18n.getMessage("resume")}
+              icon={<DismissRegular />}
+              aria-label={chrome.i18n.getMessage("cancel")}
               size="small"
-              onClick={() => onAction("toggle_pause")}
+              onClick={() => onAction("cancel")}
             />
-          )}
-          <Button
-            appearance="subtle"
-            disabled={busy}
-            icon={<DismissRegular />}
-            aria-label={chrome.i18n.getMessage("cancel")}
-            size="small"
-            onClick={() => onAction("cancel")}
-          />
+          </div>
         </div>
-      </div>
 
-      {showProgress && (
-        <ProgressBar
-          className={styles.progress}
-          color={progressColor(task.status)}
-          thickness="medium"
-          value={progressValue}
-        />
+        {showProgress && (
+          <ProgressBar
+            className={styles.progress}
+            color={progressColor(task.status)}
+            thickness="medium"
+            value={progressValue}
+          />
+        )}
+      </Card>
+
+      {contextMenu && (
+        <>
+          <div
+            className={styles.contextOverlay}
+            onClick={() => setContextMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
+          />
+          <MenuList
+            className={styles.contextMenu}
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <MenuItem
+              icon={<DeleteRegular />}
+              disabled={busy}
+              onClick={() => { onAction("remove"); setContextMenu(null); }}
+            >
+              {chrome.i18n.getMessage("removeTask")}
+            </MenuItem>
+          </MenuList>
+        </>
       )}
-    </Card>
+    </>
   );
 }

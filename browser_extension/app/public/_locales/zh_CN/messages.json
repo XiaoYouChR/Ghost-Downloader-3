@@ -579,6 +579,9 @@
   "redownload": {
     "message": "重新下载"
   },
+  "removeTask": {
+    "message": "仅移除任务"
+  },
   "reloadRequired": {
     "message": "需刷新"
   },

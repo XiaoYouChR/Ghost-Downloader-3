@@ -501,6 +501,9 @@
   "redownload": {
     "message": "Redownload"
   },
+  "removeTask": {
+    "message": "Remove from List"
+  },
   "reloadRequired": {
     "message": "Reload required"
   },

@@ -79,6 +79,7 @@ class ErrorCode(StrEnum):
 class TaskAction(StrEnum):
     TOGGLE_PAUSE = "toggle_pause"
     CANCEL = "cancel"
+    REMOVE = "remove"
     REDOWNLOAD = "redownload"
     OPEN_FILE = "open_file"
     OPEN_FOLDER = "open_folder"
@@ -555,6 +556,9 @@ class BrowserService(QObject):
 
             elif action == TaskAction.CANCEL:
                 self._taskService.delete(task, shouldDeleteFiles=True)
+
+            elif action == TaskAction.REMOVE:
+                self._taskService.delete(task, shouldDeleteFiles=False)
 
             elif action == TaskAction.REDOWNLOAD:
                 self._taskService.redownload(task)

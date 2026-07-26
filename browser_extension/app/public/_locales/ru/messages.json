@@ -501,6 +501,9 @@
   "redownload": {
     "message": "Загрузить заново"
   },
+  "removeTask": {
+    "message": "Удалить из списка"
+  },
   "reloadRequired": {
     "message": "Требуется обновление"
   },

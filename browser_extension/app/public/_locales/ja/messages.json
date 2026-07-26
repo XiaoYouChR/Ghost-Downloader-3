@@ -501,6 +501,9 @@
   "redownload": {
     "message": "再ダウンロード"
   },
+  "removeTask": {
+    "message": "リストから削除"
+  },
   "reloadRequired": {
     "message": "更新が必要"
   },

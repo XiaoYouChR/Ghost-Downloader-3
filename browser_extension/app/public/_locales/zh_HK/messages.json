@@ -501,6 +501,9 @@
   "redownload": {
     "message": "重新下載"
   },
+  "removeTask": {
+    "message": "僅移除任務"
+  },
   "reloadRequired": {
     "message": "需重新整理"
   },
