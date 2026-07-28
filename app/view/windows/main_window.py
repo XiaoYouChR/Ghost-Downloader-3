@@ -9,11 +9,11 @@ from PySide6.QtGui import QColor, QIcon, QDesktopServices, QPalette
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
-    SearchLineEdit, setThemeColor,
+    CaptionLabel, SearchLineEdit, setThemeColor,
 )
 
 from app.config.cfg import CloseMode, cfg
-from app.config.constants import AUTHOR_URL, FEEDBACK_URL
+from app.config.constants import AUTHOR_URL, FEEDBACK_URL, VERSION
 from app.services.task_draft import TaskDraft
 from app.signal_bus import signalBus
 from app.view.pages.setting_page import SettingPage
@@ -47,6 +47,7 @@ class MainWindow(MSFluentWindow):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self.searchEdit = None
+        self.subtitleLabel = None
         super().__init__(parent)
         self._taskService = taskService
         self._featureService = featureService
@@ -73,6 +74,12 @@ class MainWindow(MSFluentWindow):
         self.setMinimumSize(960, 540)
         self._refreshBackgroundEffect()
         self.titleBar.hBoxLayout.insertSpacing(2, 6)
+        titleLabel = self.titleBar.titleLabel
+        titleLabel.setContentsMargins(titleLabel.contentsMargins().left(), 0, 0, 0)
+        titleLabel.adjustSize()
+        self.subtitleLabel = CaptionLabel(f" v{VERSION}", self.titleBar)
+        self.subtitleLabel.setTextColor("#9E000000", "#C5FFFFFF")
+        self.titleBar.hBoxLayout.insertWidget(self.titleBar.hBoxLayout.indexOf(titleLabel) + 1, self.subtitleLabel)
         if sys.platform == "darwin":
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
 
@@ -365,6 +372,9 @@ class MainWindow(MSFluentWindow):
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
+        if event.type() == QEvent.Type.ActivationChange and self.subtitleLabel is not None:
+            subtitleColors = ("#9E000000", "#C5FFFFFF") if self.isActiveWindow() else ("#72000000", "#87FFFFFF")
+            self.subtitleLabel.setTextColor(*subtitleColors)
         if event.type() == QEvent.Type.PaletteChange:
             self.refreshThemeColor()
         if self._isBackgroundEffectDirty and event.type() == QEvent.Type.ThemeChange:
