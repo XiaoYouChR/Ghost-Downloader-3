@@ -44,6 +44,9 @@ class TaskDraft(QObject):
                 return item.task
         return None
 
+    def failCount(self) -> int:
+        return sum(1 for item in self._items if not item.parseId and item.task is None)
+
     def canConfirm(self) -> bool:
         return any(item.parseId or item.task is not None for item in self._items)
 
@@ -62,9 +65,13 @@ class TaskDraft(QObject):
     def setUrls(self, urls: list[str]) -> None:
         from app.models.task import TaskOptions
 
+        seen: set[str] = set()
+        urls = [u for u in urls if u not in seen and not seen.add(u)]
+
         previous = self._items
         previousUrls = [item.url for item in previous]
         nextItems: list[DraftItem] = []
+        submitErrors: list[tuple[str, str]] = []
         matcher = SequenceMatcher(a=previousUrls, b=urls, autojunk=False)
 
         for tag, oldStart, oldEnd, newStart, newEnd in matcher.get_opcodes():
@@ -87,7 +94,7 @@ class TaskDraft(QObject):
                     )
                 except Exception as e:
                     logger.opt(exception=e).error("提交解析请求失败 {}", url)
-                    self.parseFailed.emit(url, str(e) or repr(e))
+                    submitErrors.append((url, str(e) or repr(e)))
                     nextItems.append(item)
                     continue
                 item.parseId = parseId
@@ -95,6 +102,8 @@ class TaskDraft(QObject):
 
         self._items = nextItems
         self.parsingBusyChanged.emit(self._isParsing())
+        for url, error in submitErrors:
+            self.parseFailed.emit(url, error)
         self.itemsChanged.emit()
 
     def addParsedTasks(self, tasks: list[Task]) -> list[str]:

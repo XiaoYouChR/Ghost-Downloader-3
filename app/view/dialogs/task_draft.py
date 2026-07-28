@@ -72,9 +72,6 @@ class TaskDraftDialog(MessageBoxBase):
         self.destroyed.connect(self._standaloneWrapper.deleteLater)
         self._isStandalone = False
         self._dragPos = QPoint()
-        self._cardByUrl: dict[str, object] = {}
-        self._failCount = 0
-
         self.titleLabel = SubtitleLabel(self.tr("添加任务"), self)
         self.urlEdit = AutoSizingEdit(self)
         self.progressBar = IndeterminateProgressBar(self)
@@ -186,8 +183,6 @@ class TaskDraftDialog(MessageBoxBase):
         self.urlEdit.clear()
         self.optionGroup.reset()
         self._parseTimer.stop()
-        self._cardByUrl.clear()
-        self._failCount = 0
         self.draftGroup.clear()
         self.draftGroup.updateStats(0, 0, 0)
 
@@ -248,7 +243,6 @@ class TaskDraftDialog(MessageBoxBase):
         card.categoryPicked.connect(lambda cid: self._draft.setUrlCategory(url, cid))
         card.editRequested.connect(lambda u=url: self._onEditRequested(u))
         self.draftGroup.addCard(url, card)
-        self._cardByUrl[url] = card
         self._refreshStats()
 
     def _onEditRequested(self, url: str) -> None:
@@ -261,7 +255,6 @@ class TaskDraftDialog(MessageBoxBase):
         dialog.exec()
 
     def _onParseFailed(self, url: str, error: str) -> None:
-        self._failCount += 1
         self._refreshStats()
         displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
         InfoBar.error(
@@ -277,8 +270,6 @@ class TaskDraftDialog(MessageBoxBase):
         self._refreshStats()
 
     def _onCleared(self) -> None:
-        self._cardByUrl.clear()
-        self._failCount = 0
         self.draftGroup.clear()
         self.draftGroup.updateStats(0, 0, 0)
 
@@ -286,7 +277,7 @@ class TaskDraftDialog(MessageBoxBase):
         tasks = [self._draft.taskByUrl(url) for url in self._draft.urls()]
         successCount = sum(1 for t in tasks if t is not None)
         totalSize = sum(t.fileSize for t in tasks if t is not None and t.fileSize > 0)
-        self.draftGroup.updateStats(successCount, self._failCount, totalSize)
+        self.draftGroup.updateStats(successCount, self._draft.failCount(), totalSize)
 
     def _urls(self) -> list[str]:
         text = self.urlEdit.toPlainText()

@@ -106,6 +106,10 @@ class DraftCardGroup(TitledCardGroup):
             self._sizeLabel.hide()
 
     def addCard(self, url: str, card: QWidget) -> None:
+        old = self._cardByUrl.get(url)
+        if old is not None:
+            self.scrollLayout.removeWidget(old)
+            old.deleteLater()
         self._cardByUrl[url] = card
         super().addCard(card)
         self.updateGeometry()
