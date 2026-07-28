@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -379,9 +380,11 @@ class M3U8TaskStep(TaskStep):
         Path(self._tempFolder).mkdir(parents=True, exist_ok=True)
         Path(f"{self.outputPath}.ghd").touch(exist_ok=True)
 
-        env = None
+        env = dict(os.environ)
+        if sys.platform != "win32":
+            env.setdefault("TERM", "dumb")
         if self.shouldKeepImageSegments:
-            env = {**os.environ, "RE_KEEP_IMAGE_SEGMENTS": "1"}
+            env["RE_KEEP_IMAGE_SEGMENTS"] = "1"
 
         outputTask = None
         try:
