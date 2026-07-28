@@ -264,7 +264,7 @@ class HttpTaskStep(TaskStep):
             while True:
                 try:
                     headers = {**self._effectiveHeaders, "range": f"bytes={subworker.position}-", "accept-encoding": "identity"}
-                    response = await client.get(self.url, headers=headers)
+                    response = await client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -298,7 +298,7 @@ class HttpTaskStep(TaskStep):
                 try:
                     ftruncate(fd, 0)
                     subworker.receivedBytes = 0
-                    response = await client.get(self.url, headers=dict(self._effectiveHeaders))
+                    response = await client.get(self._effectiveUrl, headers=dict(self._effectiveHeaders))
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -334,7 +334,7 @@ class HttpTaskStep(TaskStep):
                         "range": f"bytes={subworker.position}-{subworker.end}",
                         "accept-encoding": "identity",
                     }
-                    response = await client.get(self.url, headers=headers)
+                    response = await client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -387,6 +387,15 @@ class HttpTaskStep(TaskStep):
             self._effectiveHeaders["user-agent"] = self.userAgent
 
         self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
+
+        probeHeaders = {**self._effectiveHeaders, "range": "bytes=0-0", "accept-encoding": "identity"}
+        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, timeout=30)
+        try:
+            response = await client.get(self.url, headers=probeHeaders)
+            self._effectiveUrl = str(response.url)
+            response.close()
+        finally:
+            client.close()
 
         restored = False
         if self.canUseRangeRequests:
