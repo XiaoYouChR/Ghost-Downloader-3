@@ -36,7 +36,7 @@
 * Parses YouTube▶️ and Bilibili videos — playlists, up to 4K/HDR, subtitles and login supported
 * Dedicated parsers for GitHub🐙 releases and HuggingFace🤗 models with mirror acceleration
 * Records M3U8 live streams📺 with real-time decryption🔓, fully supported on Android as well
-* The companion browser extension🦊 sniffs page media, takes over browser downloads, and controls tasks without leaving the browser
+* The companion browser extension🦊 sniffs page media at IDM-level coverage with no quality cap, takes over browser downloads, and controls tasks without leaving the browser
 * aria2-compatible RPC interface🔌 — third-party tools can push tasks directly
 * Tasks can be paused, edited✏️ (URL, headers, proxy) and resumed without losing progress
 * A complete Android version📱 with background downloading and completion notifications 🔔
