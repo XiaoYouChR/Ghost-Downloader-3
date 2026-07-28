@@ -75,9 +75,9 @@ class MainWindow(MSFluentWindow):
         self._refreshBackgroundEffect()
         self.titleBar.hBoxLayout.insertSpacing(2, 6)
         titleLabel = self.titleBar.titleLabel
-        titleWidth = titleLabel.contentsMargins().left() + titleLabel.fontMetrics().horizontalAdvance(titleLabel.text())
-        titleLabel.setFixedWidth(titleWidth)
-        self.subtitleLabel = CaptionLabel(f"v{VERSION}", self.titleBar)
+        titleLabel.setContentsMargins(titleLabel.contentsMargins().left(), 0, 0, 0)
+        titleLabel.adjustSize()
+        self.subtitleLabel = CaptionLabel(f" v{VERSION}", self.titleBar)
         self.subtitleLabel.setTextColor("#9E000000", "#C5FFFFFF")
         self.titleBar.hBoxLayout.insertWidget(self.titleBar.hBoxLayout.indexOf(titleLabel) + 1, self.subtitleLabel)
         if sys.platform == "darwin":
