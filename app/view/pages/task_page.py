@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QSize, QThread, QTimer
-from PySide6.QtGui import QActionGroup, QColor, QCursor, QPainter
+from PySide6.QtGui import QActionGroup, QColor, QCursor, QKeySequence, QPainter
 from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
@@ -723,7 +723,10 @@ class TaskPage(QWidget):
     # ── events ──
 
     def keyPressEvent(self, event) -> None:
-        if event.key() == Qt.Key.Key_Delete and self._isSelectionMode:
+        if event.matches(QKeySequence.StandardKey.SelectAll) and self._displayOrder:
+            self.setSelectionMode(True)
+            self.selectAll()
+        elif event.key() == Qt.Key.Key_Delete and self._isSelectionMode:
             self._onDeleteSelected()
         else:
             super().keyPressEvent(event)
