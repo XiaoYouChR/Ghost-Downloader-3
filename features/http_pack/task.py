@@ -16,6 +16,7 @@ from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
 
+STREAM_READ_TIMEOUT = 30
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO, 39, 112})
 
@@ -253,7 +254,7 @@ class HttpTaskStep(TaskStep):
                 recordFile.close()
 
     async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None)
+        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
         try:
             await self._runSubworkerWith(subworker, fd, client)
         finally:

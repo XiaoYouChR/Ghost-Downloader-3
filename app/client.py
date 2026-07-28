@@ -97,6 +97,7 @@ def buildClient(
     userAgent: str | None = None,
     sourceUserAgent: str = "",
     timeout: int | None = None,
+    readTimeout: int | None = None,
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
     config: ClientConfig = {"tls_verify": cfg.shouldVerifySsl.value, "redirect": Policy.limited(10)}
@@ -136,6 +137,8 @@ def buildClient(
 
     if timeout is not None:
         config["timeout"] = timedelta(seconds=timeout)
+    if readTimeout is not None:
+        config["read_timeout"] = timedelta(seconds=readTimeout)
     return Client(**config)
 
 
