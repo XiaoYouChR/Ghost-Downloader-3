@@ -10,9 +10,11 @@ import {
     Select,
     SpinButton,
     Switch,
+    Tag,
+    TagGroup,
 } from "@fluentui/react-components";
 import type {SpinButtonOnChangeData, SwitchOnChangeData} from "@fluentui/react-components";
-import {ArrowClockwiseRegular, ClipboardPasteRegular, PlugConnectedRegular,} from "@fluentui/react-icons";
+import {AddRegular, ArrowClockwiseRegular, ClipboardPasteRegular, PlugConnectedRegular,} from "@fluentui/react-icons";
 import {useCallback, useEffect, useState} from "react";
 
 import {DEFAULT_SERVER_URL, EXTENSION_VERSION} from "../../shared/constants";
@@ -20,6 +22,8 @@ import {
     BYPASS_MODIFIER_KEY,
     MIN_TAKE_SIZE_KB_KEY,
     SKIP_EXTENSIONS_KEY,
+    SKIP_DOMAINS_KEY,
+    SHOULD_OPEN_POPUP_ON_SENT_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
 } from "../../background/constants";
 import type {ThemePreference} from "../../shared/types";
@@ -80,6 +84,7 @@ export function SettingsPage({
   onRequestPairing,
   themePreference,
   onThemePreferenceChange,
+  activePageDomain,
 }: {
   desktopVersion: string;
   token: string;
@@ -94,6 +99,7 @@ export function SettingsPage({
   onRequestPairing: () => Promise<boolean>;
   themePreference: ThemePreference;
   onThemePreferenceChange: (nextPreference: ThemePreference) => void;
+  activePageDomain: string;
 }) {
   const styles = useStyles();
   const [tokenDraft, setTokenDraft] = useState(token);
@@ -103,6 +109,8 @@ export function SettingsPage({
   const [minSizeKB, setMinSizeKB] = useState(0);
   const [takeUnknownSize, setInterceptUnknown] = useState(true);
   const [skipExtensionsRaw, setSkipExtensionsRaw] = useState("");
+  const [skipDomains, setSkipDomains] = useState<string[]>([]);
+  const [openPopupOnSent, setOpenPopupOnSent] = useState(true);
   const [bypassModifier, setBypassModifier] = useState("alt");
   const [installType, setInstallType] = useState("");
 
@@ -124,11 +132,15 @@ export function SettingsPage({
       [MIN_TAKE_SIZE_KB_KEY]: 0,
       [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
       [SKIP_EXTENSIONS_KEY]: "",
+      [SKIP_DOMAINS_KEY]: [],
+      [SHOULD_OPEN_POPUP_ON_SENT_KEY]: true,
       [BYPASS_MODIFIER_KEY]: "alt",
     }, (result) => {
       setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
       setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
       setSkipExtensionsRaw(String(result[SKIP_EXTENSIONS_KEY] ?? ""));
+      setSkipDomains(Array.isArray(result[SKIP_DOMAINS_KEY]) ? result[SKIP_DOMAINS_KEY] : []);
+      setOpenPopupOnSent(Boolean(result[SHOULD_OPEN_POPUP_ON_SENT_KEY] ?? true));
       setBypassModifier(String(result[BYPASS_MODIFIER_KEY] || "alt"));
     });
   }, []);
@@ -277,6 +289,46 @@ export function SettingsPage({
               void chrome.storage.local.set({ [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: data.checked });
             }}
           />
+        </Field>
+
+        <Field label={chrome.i18n.getMessage("openPopupOnSent")}>
+          <Switch
+            checked={openPopupOnSent}
+            onChange={(_event, data: SwitchOnChangeData) => {
+              setOpenPopupOnSent(data.checked);
+              void chrome.storage.local.set({ [SHOULD_OPEN_POPUP_ON_SENT_KEY]: data.checked });
+            }}
+          />
+        </Field>
+
+        <Field label={chrome.i18n.getMessage("skipDomains")} hint={chrome.i18n.getMessage("skipDomainsHint")}>
+          <Button
+            size="small"
+            icon={<AddRegular />}
+            disabled={!activePageDomain || skipDomains.includes(activePageDomain)}
+            onClick={() => {
+              if (!activePageDomain || skipDomains.includes(activePageDomain)) { return; }
+              const next = [...skipDomains, activePageDomain];
+              setSkipDomains(next);
+              void chrome.storage.local.set({ [SKIP_DOMAINS_KEY]: next });
+            }}
+          >
+            {chrome.i18n.getMessage("addCurrentSite")}{activePageDomain ? ` (${activePageDomain})` : ""}
+          </Button>
+          {skipDomains.length > 0 && (
+            <TagGroup
+              onDismiss={(_event, { value }) => {
+                const next = skipDomains.filter((d) => d !== value);
+                setSkipDomains(next);
+                void chrome.storage.local.set({ [SKIP_DOMAINS_KEY]: next });
+              }}
+              style={{ marginTop: "8px", flexWrap: "wrap", gap: "4px" }}
+            >
+              {skipDomains.map((domain) => (
+                <Tag key={domain} dismissible value={domain}>{domain}</Tag>
+              ))}
+            </TagGroup>
+          )}
         </Field>
 
         <Field label={chrome.i18n.getMessage("skipExtensions")} hint={chrome.i18n.getMessage("skipExtensionsHint")}>

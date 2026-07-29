@@ -123,6 +123,7 @@ export function App({
             onRequestPairing={bridge.requestPairing}
             themePreference={themePreference}
             onThemePreferenceChange={onThemePreferenceChange}
+            activePageDomain={bridge.activePageDomain}
           />
         ) : null}
       </main>

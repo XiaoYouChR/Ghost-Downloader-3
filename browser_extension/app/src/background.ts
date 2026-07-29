@@ -14,6 +14,8 @@ import {
     IS_MEDIA_BUTTON_ENABLED_KEY,
     MIN_TAKE_SIZE_KB_KEY,
     SKIP_EXTENSIONS_KEY,
+    SKIP_DOMAINS_KEY,
+    SHOULD_OPEN_POPUP_ON_SENT_KEY,
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
     SHOULD_TAKE_DOWNLOADS_KEY,
 } from "./background/constants";
@@ -26,6 +28,7 @@ import {
     queryTabs,
 } from "./background/chrome-helpers";
 import {onSendHeadersExtraInfoSpec, supportsDownloadDeterminingFilename,} from "./shared/browser";
+import {domainFromUrl} from "./shared/utils";
 import {loadBaseIcons, updateIconForTasks} from "./background/icon-progress";
 import {enqueue, flush, pendingCount} from "./background/task-queue";
 
@@ -40,7 +43,7 @@ function parseExtensions(raw: string): Set<string> {
 
 async function flushQueue(): Promise<void> {
   const sent = await flush((payload) => desktopBridge.sendRequest(payload));
-  if (sent > 0) {
+  if (sent > 0 && shouldOpenPopupOnSent) {
     await openActionPopup();
   }
 }
@@ -90,6 +93,8 @@ let isMediaButtonEnabled = true;
 let minTakeSizeKB = 0;
 let shouldTakeUnknownSize = true;
 let skipExtensions: Set<string> = new Set();
+let skipDomains: Set<string> = new Set();
+let shouldOpenPopupOnSent = true;
 
 function imageFilename(url: string, alt: string): string {
   try {
@@ -191,12 +196,16 @@ async function setupBackground() {
     [MIN_TAKE_SIZE_KB_KEY]: number;
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: boolean;
     [SKIP_EXTENSIONS_KEY]: string;
+    [SKIP_DOMAINS_KEY]: string[];
+    [SHOULD_OPEN_POPUP_ON_SENT_KEY]: boolean;
   }>({
     [SHOULD_TAKE_DOWNLOADS_KEY]: true,
     [IS_MEDIA_BUTTON_ENABLED_KEY]: true,
     [MIN_TAKE_SIZE_KB_KEY]: 0,
     [SHOULD_TAKE_UNKNOWN_SIZE_KEY]: true,
     [SKIP_EXTENSIONS_KEY]: "",
+    [SKIP_DOMAINS_KEY]: [],
+    [SHOULD_OPEN_POPUP_ON_SENT_KEY]: true,
   });
 
   shouldTakeDownloads = Boolean(localState[SHOULD_TAKE_DOWNLOADS_KEY] ?? true);
@@ -204,6 +213,8 @@ async function setupBackground() {
   minTakeSizeKB = Number(localState[MIN_TAKE_SIZE_KB_KEY]) || 0;
   shouldTakeUnknownSize = Boolean(localState[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true);
   skipExtensions = parseExtensions(String(localState[SKIP_EXTENSIONS_KEY] ?? ""));
+  skipDomains = new Set(localState[SKIP_DOMAINS_KEY] ?? []);
+  shouldOpenPopupOnSent = Boolean(localState[SHOULD_OPEN_POPUP_ON_SENT_KEY] ?? true);
 
   try {
     const selfInfo = await chrome.management.getSelf();
@@ -258,7 +269,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
     title: "",
     payload: { url, headers, filename: "", size: 0, supportsRange: false },
   }).then((result) => {
-    if (result.ok) { void openActionPopup(); }
+    if (result.ok && shouldOpenPopupOnSent) { void openActionPopup(); }
   });
 });
 
@@ -291,6 +302,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
   if (changes[SKIP_EXTENSIONS_KEY]) {
     skipExtensions = parseExtensions(String(changes[SKIP_EXTENSIONS_KEY].newValue ?? ""));
+  }
+  if (changes[SKIP_DOMAINS_KEY]) {
+    skipDomains = new Set((changes[SKIP_DOMAINS_KEY].newValue as string[]) ?? []);
+  }
+  if (changes[SHOULD_OPEN_POPUP_ON_SENT_KEY]) {
+    shouldOpenPopupOnSent = Boolean(changes[SHOULD_OPEN_POPUP_ON_SENT_KEY].newValue ?? true);
   }
 });
 
@@ -372,6 +389,11 @@ async function takeBrowserDownload(
 
   if (!shouldTakeDownloads || !/^https?:/i.test(finalUrl)) {
     return;
+  }
+
+  if (skipDomains.size > 0 && downloadItem.referrer) {
+    const referrerDomain = domainFromUrl(downloadItem.referrer);
+    if (referrerDomain && skipDomains.has(referrerDomain)) { return; }
   }
 
   if (skipExtensions.size > 0) {

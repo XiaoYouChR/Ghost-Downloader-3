@@ -16,6 +16,8 @@ export const MIN_TAKE_SIZE_KB_KEY = "minTakeSizeKB";
 export const SHOULD_TAKE_UNKNOWN_SIZE_KEY = "shouldTakeUnknownSize";
 export const BYPASS_MODIFIER_KEY = "bypassModifier";
 export const SKIP_EXTENSIONS_KEY = "skipExtensions";
+export const SKIP_DOMAINS_KEY = "skipDomains";
+export const SHOULD_OPEN_POPUP_ON_SENT_KEY = "shouldOpenPopupOnSent";
 export const FEATURE_TAB_STATE_KEY = "featureTabState";
 
 export const BRIDGE_RESOURCE_CACHE_KEY = "bridgeResourceCacheByTab";
