@@ -50,12 +50,14 @@ class SortField(IntEnum):
     NAME = 1
     SIZE = 2
     COMPLETED_AT = 3
+    QUEUE_POSITION = 4
 
 
 class TaskCommandBarView(CommandBarView):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.moveToFrontAction = Action(FluentIcon.UP, self.tr("移到最前"), self)
         self.redownloadAction = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         self.deleteAction = Action(FluentIcon.DELETE, self.tr("删除"), self)
         self.copyUrlAction = Action(FluentIcon.COPY, self.tr("复制链接"), self)
@@ -67,6 +69,7 @@ class TaskCommandBarView(CommandBarView):
 
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         self.setIconSize(QSize(18, 18))
+        self.addAction(self.moveToFrontAction)
         self.addAction(self.redownloadAction)
         self.addAction(self.deleteAction)
         self.addAction(self.copyUrlAction)
@@ -178,6 +181,7 @@ class TaskPage(QWidget):
         self.completedAtSortAction = Action(FluentIcon.HISTORY, self.tr("按完成时间"), self, checkable=True)
         self.nameSortAction = Action(FluentIcon.FONT, self.tr("按名称排序"), self, checkable=True)
         self.sizeSortAction = Action(FluentIcon.LIBRARY, self.tr("按大小排序"), self, checkable=True)
+        self.queuePositionSortAction = Action(FluentIcon.SCROLL, self.tr("按队列顺序"), self, checkable=True)
         self.ascendingAction = Action(FluentIcon.UP, self.tr("顺序"), self, checkable=True)
         self.descendingAction = Action(FluentIcon.DOWN, self.tr("倒序"), self, checkable=True)
 
@@ -206,12 +210,14 @@ class TaskPage(QWidget):
         self.sortFieldGroup.addAction(self.completedAtSortAction)
         self.sortFieldGroup.addAction(self.nameSortAction)
         self.sortFieldGroup.addAction(self.sizeSortAction)
+        self.sortFieldGroup.addAction(self.queuePositionSortAction)
         self.sortOrderGroup.addAction(self.ascendingAction)
         self.sortOrderGroup.addAction(self.descendingAction)
         self.sortMenu.addAction(self.createdAtSortAction)
         self.sortMenu.addAction(self.completedAtSortAction)
         self.sortMenu.addAction(self.nameSortAction)
         self.sortMenu.addAction(self.sizeSortAction)
+        self.sortMenu.addAction(self.queuePositionSortAction)
         self.sortMenu.addSeparator()
         self.sortMenu.addAction(self.ascendingAction)
         self.sortMenu.addAction(self.descendingAction)
@@ -276,6 +282,7 @@ class TaskPage(QWidget):
         self._taskService.taskCompleted.connect(self._onTaskStopped)
         self._taskService.taskFailed.connect(self._onTaskStopped)
         self._taskService.tasksAllCompleted.connect(self._onAllCompleted)
+        self._taskService.queueChanged.connect(self._onQueueChanged)
         self._taskService.fileDisappeared.connect(self._onFileDisappeared)
         self._speedMeter.speedChanged.connect(self._onSpeedChanged)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
@@ -290,11 +297,13 @@ class TaskPage(QWidget):
         self.completedAtSortAction.triggered.connect(lambda: self.setSortField(SortField.COMPLETED_AT))
         self.nameSortAction.triggered.connect(lambda: self.setSortField(SortField.NAME))
         self.sizeSortAction.triggered.connect(lambda: self.setSortField(SortField.SIZE))
+        self.queuePositionSortAction.triggered.connect(lambda: self.setSortField(SortField.QUEUE_POSITION))
         self.ascendingAction.triggered.connect(lambda: self.setSortOrder(True))
         self.descendingAction.triggered.connect(lambda: self.setSortOrder(False))
 
         self.filterSegment.currentItemChanged.connect(lambda key: self.setFilterMode(ROUTE_TO_FILTER[key]))
 
+        self.commandView.moveToFrontAction.triggered.connect(self._onMoveToFrontSelected)
         self.commandView.redownloadAction.triggered.connect(self._onRedownloadSelected)
         self.commandView.deleteAction.triggered.connect(self._onDeleteSelected)
         self.commandView.copyUrlAction.triggered.connect(self._onCopyUrlSelected)
@@ -479,6 +488,16 @@ class TaskPage(QWidget):
         if not self._categoryFilter:
             allAction.setChecked(True)
 
+    def _onMoveToFrontSelected(self) -> None:
+        self._taskService.moveToFront(
+            [tid for tid in self._displayOrder if tid in self._selectedIds]
+        )
+        self.setSelectionMode(False)
+
+    def _onQueueChanged(self) -> None:
+        if self._sortField == SortField.QUEUE_POSITION:
+            self._refreshListTimer.start()
+
     def _onCopyUrlSelected(self) -> None:
         urls = [
             task.url for taskId in self._displayOrder
@@ -554,7 +573,20 @@ class TaskPage(QWidget):
             lower = self._searchText.lower()
             tasks = [t for t in tasks if lower in t.name.lower() or lower in t.url.lower()]
 
-        if self._sortField == SortField.NAME:
+        if self._sortField == SortField.QUEUE_POSITION:
+            waitingIndex = {tid: i for i, tid in enumerate(self._taskService.waitingOrder())}
+            running, waiting, rest = [], [], []
+            for t in tasks:
+                if t.status == TaskStatus.RUNNING:
+                    running.append(t)
+                elif t.taskId in waitingIndex:
+                    waiting.append(t)
+                else:
+                    rest.append(t)
+            waiting.sort(key=lambda t: waitingIndex[t.taskId])
+            rest.sort(key=lambda t: t.createdAt, reverse=True)
+            tasks = running + waiting + rest if not self._sortAscending else rest + waiting + running
+        elif self._sortField == SortField.NAME:
             tasks.sort(key=lambda t: t.name.lower(), reverse=not self._sortAscending)
         elif self._sortField == SortField.SIZE:
             tasks.sort(key=lambda t: t.fileSize, reverse=not self._sortAscending)
@@ -669,6 +701,7 @@ class TaskPage(QWidget):
             card.refresh()
         if not self._cardRefreshTimer.isActive():
             self._cardRefreshTimer.start()
+        self._onQueueChanged()
 
     def _onTaskStopped(self, task: Task) -> None:
         self._runningIds.discard(task.taskId)
@@ -677,6 +710,7 @@ class TaskPage(QWidget):
             card.refresh()
         if not self._runningIds:
             self._cardRefreshTimer.stop()
+        self._onQueueChanged()
 
     def _onAllCompleted(self) -> None:
         self._runningIds.clear()

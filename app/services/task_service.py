@@ -107,6 +107,18 @@ class TaskQueue:
     def isWaiting(self, taskId: str) -> bool:
         return taskId in self._waiting
 
+    def waitingOrder(self) -> list[str]:
+        return list(self._waiting)
+
+    def moveToFront(self, taskIds: list[str]) -> bool:
+        targets = [tid for tid in self._waiting if tid in set(taskIds)]
+        if not targets:
+            return False
+        for tid in targets:
+            self._waiting.remove(tid)
+        self._waiting[:0] = targets
+        return True
+
     def runningCount(self) -> int:
         return len(self._running)
 
@@ -125,6 +137,7 @@ class TaskService(QObject):
     taskCompleted = Signal(object)
     taskFailed = Signal(object)
     tasksAllCompleted = Signal()
+    queueChanged = Signal()
     fileDisappeared = Signal(object)
     diskSpaceInsufficient = Signal(int, int)
 
@@ -171,7 +184,7 @@ class TaskService(QObject):
             return -1.0
         return min(100.0, totalReceived / totalSize * 100)
 
-    def add(self, task: Task) -> None:
+    def add(self, task: Task, autoStart=True) -> None:
         if task.taskId in self._store.tasks:
             return
         if cfg.isCategoryEnabled.value:
@@ -185,6 +198,8 @@ class TaskService(QObject):
         self._store.add(task)
         self._flushTimer.start()
         self.taskAdded.emit(task)
+        if not autoStart:
+            return
         if task.fileSize > 0:
             try:
                 free = disk_usage(task.outputFolder).free
@@ -297,6 +312,13 @@ class TaskService(QObject):
         for task in self._store.tasks.values():
             if task.status in {TaskStatus.RUNNING, TaskStatus.WAITING}:
                 task.setStatus(TaskStatus.PAUSED)
+
+    def waitingOrder(self) -> list[str]:
+        return self._queue.waitingOrder()
+
+    def moveToFront(self, taskIds: list[str]) -> None:
+        if self._queue.moveToFront(taskIds):
+            self.queueChanged.emit()
 
     def flush(self) -> None:
         self._flushTimer.stop()

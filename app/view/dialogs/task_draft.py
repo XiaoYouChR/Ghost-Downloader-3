@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QEvent, QPoint, Qt, QTimer
 from PySide6.QtGui import QColor, QTextOption
-from PySide6.QtWidgets import QDialog, QFileDialog, QHBoxLayout, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QFileDialog, QHBoxLayout, QSizePolicy, QVBoxLayout
 from qframelesswindow import FramelessDialog
 from qfluentwidgets import (
     FluentIcon, FluentStyleSheet, FluentTitleBar,
     IndeterminateProgressBar, InfoBar, InfoBarPosition,
-    MessageBoxBase, PushButton, SubtitleLabel,
+    MessageBoxBase, PrimarySplitPushButton, PushButton, SubtitleLabel,
+    ToolTipFilter,
 )
 
 from app.platform.android import IS_ANDROID
@@ -98,6 +99,20 @@ class TaskDraftDialog(MessageBoxBase):
         self._fileTypes = self._featureService.fileTypes()
         self.importButton.setVisible(bool(self._fileTypes))
 
+        self.buttonLayout.removeWidget(self.yesButton)
+        self.yesButton.hide()
+        self.yesButton.deleteLater()
+        self.yesButton = None
+        self.downloadButton = PrimarySplitPushButton(self.tr("下载"), self.buttonGroup)
+        self.downloadButton.setDropIcon(FluentIcon.HISTORY)
+        self.downloadButton.dropButton.setToolTip(self.tr("稍后下载"))
+        self.downloadButton.dropButton.installEventFilter(ToolTipFilter(self.downloadButton.dropButton))
+        self.downloadButton.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.downloadButton.button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.downloadButton.hBoxLayout.setAlignment(self.downloadButton.button, Qt.AlignmentFlag(0))
+        self.buttonLayout.insertWidget(0, self.downloadButton, 1, Qt.AlignmentFlag.AlignVCenter)
+        self.cancelButton.setText(self.tr("取消"))
+
         self.optionGroup.addCard(OutputFolderCard(self.optionGroup))
         self.optionGroup.addCard(SubworkerCountCard(self.optionGroup))
 
@@ -123,6 +138,8 @@ class TaskDraftDialog(MessageBoxBase):
         self._draft.itemsChanged.connect(self._onItemsChanged)
         self._draft.itemsCleared.connect(self._onCleared)
 
+        self.downloadButton.clicked.connect(self._accept)
+        self.downloadButton.dropDownClicked.connect(lambda: self._accept(autoStart=False))
         self.batchButton.clicked.connect(self._onBatchClicked)
         self.importButton.clicked.connect(self._onImportClicked)
 
@@ -174,9 +191,9 @@ class TaskDraftDialog(MessageBoxBase):
             self.urlEdit.appendPlainText("\n".join(newUrls))
         self._parseTimer.stop()
 
-    def done(self, code: int) -> None:
+    def done(self, code: int, autoStart=True) -> None:
         if code == QDialog.DialogCode.Accepted:
-            self._draft.confirm()
+            self._draft.confirm(autoStart=autoStart)
         else:
             self._draft.clear()
 
@@ -233,6 +250,10 @@ class TaskDraftDialog(MessageBoxBase):
         self._hBoxLayout.addWidget(self.widget, 1, Qt.AlignmentFlag.AlignCenter)
         self.widget.show()
         self._isStandalone = False
+
+    def _accept(self, autoStart=True) -> None:
+        if self.validate():
+            self.done(QDialog.DialogCode.Accepted, autoStart=autoStart)
 
     def _onParseNeeded(self) -> None:
         self._draft.setBaseOptions(self.optionGroup.options())

@@ -18,6 +18,7 @@ class DraftItem:
     task: Task | None = None
     categoryOverride: str | None = None
     confirmedOptions: dict | None = None
+    confirmedAutoStart: bool = True
 
 
 class TaskDraft(QObject):
@@ -26,7 +27,7 @@ class TaskDraft(QObject):
     parseFailed = Signal(str, str)
     itemsChanged = Signal()
     itemsCleared = Signal()
-    taskConfirmed = Signal(object)
+    taskConfirmed = Signal(object, bool)
 
     def __init__(self, coroutineRunner, featureService, parent=None):
         super().__init__(parent)
@@ -136,13 +137,14 @@ class TaskDraft(QObject):
         self.itemsChanged.emit()
         return newUrls
 
-    def confirm(self) -> None:
+    def confirm(self, autoStart=True) -> None:
         for item in self._items:
             if item.task is not None:
                 item.task.setOptions(self._buildOptions(item))
-                self.taskConfirmed.emit(item.task)
+                self.taskConfirmed.emit(item.task, autoStart)
             elif item.parseId:
                 item.confirmedOptions = self._buildOptions(item)
+                item.confirmedAutoStart = autoStart
 
         for item in self._items:
             if item.parseId and item.confirmedOptions is None:
@@ -175,7 +177,7 @@ class TaskDraft(QObject):
         if item.confirmedOptions is not None:
             task.setOptions(item.confirmedOptions)
             item.confirmedOptions = None
-            self.taskConfirmed.emit(task)
+            self.taskConfirmed.emit(task, item.confirmedAutoStart)
             return
 
         if not item.parseId:

@@ -381,6 +381,10 @@ class TaskCard(CardWidget):
             edit.triggered.connect(self._onEditClicked)
             menu.addAction(edit)
 
+        moveToFront = Action(FluentIcon.UP, self.tr("移到最前"), self)
+        moveToFront.triggered.connect(lambda: self._taskService.moveToFront([self._task.taskId]))
+        menu.addAction(moveToFront)
+
         redownload = Action(FluentIcon.UPDATE, self.tr("重新下载"), self)
         redownload.triggered.connect(lambda: self._taskService.redownload(self._task))
         menu.addAction(redownload)
