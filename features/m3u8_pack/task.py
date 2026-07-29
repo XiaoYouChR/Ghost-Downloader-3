@@ -335,18 +335,18 @@ class M3U8TaskStep(TaskStep):
         if buffer.strip():
             self._parseOutputLine(buffer)
 
-    def _findOutputFile(self):
+    def _findOutputFile(self) -> bool:
         Path(f"{self.outputPath}.ghd").unlink(missing_ok=True)
         target = Path(self.outputPath)
         if target.is_file() and target.stat().st_size > 0:
             self.actualExtension = target.suffix.lstrip(".")
             self.task.fileSize = max(self.task.fileSize, target.stat().st_size)
-            return
+            return True
         target.unlink(missing_ok=True)
 
         outputDir = self.task.outputFolder
         if not outputDir.is_dir():
-            return
+            return False
 
         fallbackExt = "ts" if self.task.isLive else self.outputFormat
         expectedSuffix = f".{self.actualExtension or fallbackExt}"
@@ -359,7 +359,7 @@ class M3U8TaskStep(TaskStep):
             and c.name.lower().startswith(prefix)
         ]
         if not candidates:
-            return
+            return False
 
         candidates.sort(key=lambda p: (p.suffix.lower() != expectedSuffix, -p.stat().st_mtime))
         found = candidates[0]
@@ -367,6 +367,7 @@ class M3U8TaskStep(TaskStep):
         self.task.fileSize = max(self.task.fileSize, found.stat().st_size)
         if found.name != self.task.name:
             self.task.setName(found.name)
+        return True
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         self._stopping = False
@@ -409,7 +410,11 @@ class M3U8TaskStep(TaskStep):
                     detail=self.lastMessage or "N_m3u8DL-RE",
                 )
 
-            self._findOutputFile()
+            if not self._findOutputFile():
+                raise TaskError(
+                    "未找到输出文件：{detail}",
+                    detail=self.lastMessage[-200:] if self.lastMessage else "",
+                )
             self.setStatus(TaskStatus.COMPLETED)
         except asyncio.CancelledError:
             if self._process is not None and self._process.returncode is None:
