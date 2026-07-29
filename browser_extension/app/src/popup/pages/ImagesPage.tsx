@@ -200,6 +200,12 @@ export function ImagesPage({
     });
   }, [filteredImages]);
 
+  function updateDimensions(src: string, w: number, h: number) {
+    setImages((prev) => prev.map((img) =>
+      img.src === src ? { ...img, naturalWidth: w, naturalHeight: h } : img,
+    ));
+  }
+
   function toggleImage(src: string) {
     setSelectedSrcs((current) => {
       const next = new Set(current);
@@ -349,6 +355,7 @@ export function ImagesPage({
               ext={image.ext}
               selected={selectedSrcs.has(image.src)}
               onSelectedChange={() => toggleImage(image.src)}
+              onDimensionsLoaded={updateDimensions}
             />
           ))}
         </div>

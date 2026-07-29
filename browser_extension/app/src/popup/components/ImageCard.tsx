@@ -51,13 +51,16 @@ export function ImageCard({
   ext,
   selected,
   onSelectedChange,
+  onDimensionsLoaded,
 }: {
   image: ScannedImage;
   ext: string;
   selected?: boolean;
   onSelectedChange?: (checked: boolean) => void;
+  onDimensionsLoaded?: (src: string, w: number, h: number) => void;
 }) {
   const styles = useStyles();
+  const hasDimensions = image.naturalWidth > 0 && image.naturalHeight > 0;
 
   return (
     <div
@@ -69,6 +72,12 @@ export function ImageCard({
         className={styles.thumbnail}
         loading="lazy"
         src={image.src}
+        onLoad={hasDimensions ? undefined : (e) => {
+          const el = e.currentTarget;
+          if (el.naturalWidth > 0 && el.naturalHeight > 0) {
+            onDimensionsLoaded?.(image.src, el.naturalWidth, el.naturalHeight);
+          }
+        }}
       />
       <Checkbox
         checked={selected}
@@ -76,7 +85,9 @@ export function ImageCard({
         onChange={(e) => e.stopPropagation()}
       />
       <div className={styles.info}>
-        {`${image.naturalWidth}×${image.naturalHeight} · ${ext}`}
+        {hasDimensions
+          ? `${image.naturalWidth}×${image.naturalHeight} · ${ext}`
+          : ext}
       </div>
     </div>
   );
