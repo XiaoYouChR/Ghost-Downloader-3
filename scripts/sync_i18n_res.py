@@ -7,6 +7,13 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR"]
+LANGUAGE_FAMILY_FALLBACKS = {
+    "zh": "zh_CN",
+    "en": "en_US",
+    "ja": "ja_JP",
+    "ru": "ru_RU",
+    "pt": "pt_BR",
+}
 ASSETS_DIR = REPO / "app" / "assets"
 I18N_DIR = ASSETS_DIR / "i18n"
 QRC_PATH = ASSETS_DIR / "resources.qrc"
@@ -61,10 +68,12 @@ def updateQrcI18n() -> None:
         r'\s*<qresource prefix="i18n">.*?</qresource>',
         '', text, flags=re.DOTALL,
     )
-    entries = "\n".join(
-        f'    <file alias="gd3.{l}.qm">i18n/gd3.{l}.qm</file>'
-        for l in LANGUAGES
-    )
+    lines = []
+    for locale in LANGUAGES:
+        lines.append(f'    <file alias="gd3.{locale}.qm">i18n/gd3.{locale}.qm</file>')
+    for lang, fallback in LANGUAGE_FAMILY_FALLBACKS.items():
+        lines.append(f'    <file alias="gd3.{lang}.qm">i18n/gd3.{fallback}.qm</file>')
+    entries = "\n".join(lines)
     section = f'\n  <qresource prefix="i18n">\n{entries}\n  </qresource>'
     text = text.replace("</RCC>", f"{section}\n</RCC>")
     QRC_PATH.write_text(text, encoding="utf-8")

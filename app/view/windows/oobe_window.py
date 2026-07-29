@@ -779,7 +779,6 @@ class OobeWindow(FluentWidget):
         self._currentIndex = 0
         self._isFinished = False
         self._queuedRuntimeIds: set[str] = set()
-        self._translator = None
         self._initWidget()
         self._initContent()
         self._initLayout()
@@ -849,7 +848,7 @@ class OobeWindow(FluentWidget):
 
     def _bind(self) -> None:
         self.welcomePage.startClicked.connect(self._onNextClicked)
-        self.basicSettingsPage.languageChanged.connect(self._onLanguageChanged)
+        self.basicSettingsPage.languageChanged.connect(self._rebuildContent)
         self.completePage.finishClicked.connect(self._finish)
         self.backButton.clicked.connect(self._onBackClicked)
         self.nextButton.clicked.connect(self._onNextClicked)
@@ -857,21 +856,6 @@ class OobeWindow(FluentWidget):
 
     def onPairRequested(self, request: dict) -> None:
         self.browserExtensionPage.onPairRequested(request)
-
-    def _onLanguageChanged(self) -> None:
-        # 延迟到信号栈外重建：发出信号的下拉框会随内容区一起销毁
-        from PySide6.QtCore import QTimer
-        QTimer.singleShot(0, self._reloadLanguage)
-
-    def _reloadLanguage(self) -> None:
-        from PySide6.QtCore import QTranslator
-        application = QApplication.instance()
-        if self._translator is not None:
-            application.removeTranslator(self._translator)
-        self._translator = QTranslator(application)
-        self._translator.load(cfg.language.value.value, "gd3", ".", ":/i18n")
-        application.installTranslator(self._translator)
-        self._rebuildContent()
 
     def _rebuildContent(self) -> None:
         index = self._currentIndex

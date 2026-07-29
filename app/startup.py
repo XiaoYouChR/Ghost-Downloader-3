@@ -2,19 +2,31 @@
 from __future__ import annotations
 
 
-def loadEngine(application):
+def loadTranslators(application):
     from PySide6.QtCore import QTranslator
     from app.config.cfg import cfg
+
+    translator = QTranslator(application)
+
+    def setLocale():
+        locale = cfg.language.value.value
+        application.removeTranslator(translator)
+        if locale.name() != "zh_CN":
+            if translator.load(locale, "gd3", ".", ":/i18n") or translator.load("gd3.en_US", ":/i18n"):
+                application.installTranslator(translator)
+
+    setLocale()
+    cfg.language.valueChanged.connect(setLocale)
+
+
+def loadEngine(application):
     from app.services.category_service import CategoryService
     from app.services.coroutine_runner import CoroutineRunner
     from app.services.speed_meter import SpeedMeter
 
     import app.assets.resources  # noqa: F401
 
-    locale = cfg.language.value.value
-    translator = QTranslator(application)
-    translator.load(locale, "gd3", ".", ":/i18n")
-    application.installTranslator(translator)
+    loadTranslators(application)
 
     coroutineRunner = CoroutineRunner(parent=application)
     categoryService = CategoryService()
