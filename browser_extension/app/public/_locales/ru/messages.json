@@ -49,6 +49,9 @@
   "completed": {
     "message": "Завершено"
   },
+  "fileMissing": {
+    "message": "Удалено"
+  },
   "confirmPairing": {
     "message": "Подтвердите сопряжение"
   },
@@ -679,5 +682,17 @@
   },
   "waitingForXMasterPlaylist": {
     "message": "Ожидание основного плейлиста X"
+  },
+  "skipDomains": {
+    "message": "Пропускаемые домены"
+  },
+  "skipDomainsHint": {
+    "message": "Загрузки с этих сайтов не будут перехватываться"
+  },
+  "addCurrentSite": {
+    "message": "Добавить текущий сайт"
+  },
+  "openPopupOnSent": {
+    "message": "Открывать всплывающее окно при отправке задачи"
   }
 }

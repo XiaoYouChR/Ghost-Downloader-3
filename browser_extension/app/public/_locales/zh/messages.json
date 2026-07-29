@@ -49,6 +49,9 @@
   "completed": {
     "message": "已完成"
   },
+  "fileMissing": {
+    "message": "已删除"
+  },
   "confirmPairing": {
     "message": "请确认配对"
   },
@@ -785,5 +788,17 @@
   },
   "waitingForXMasterPlaylist": {
     "message": "等待 X 主播放清单"
+  },
+  "skipDomains": {
+    "message": "跳过接管的域名"
+  },
+  "skipDomainsHint": {
+    "message": "来自这些网站的下载不会被接管"
+  },
+  "addCurrentSite": {
+    "message": "添加当前网站"
+  },
+  "openPopupOnSent": {
+    "message": "发送任务后弹出扩展窗口"
   }
 }

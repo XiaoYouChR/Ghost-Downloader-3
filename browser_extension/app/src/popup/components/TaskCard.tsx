@@ -43,6 +43,9 @@ const useStyles = makeStyles({
     fontSize: "13px",
     lineHeight: "18px",
   },
+  titleStrikethrough: {
+    textDecoration: "line-through",
+  },
   meta: {
     overflow: "hidden",
     whiteSpace: "nowrap",
@@ -108,7 +111,7 @@ function metaText(task: TaskSummary): string {
     case "failed":
       return [chrome.i18n.getMessage("failed"), sizePart].filter(Boolean).join(" · ");
     case "completed":
-      return [chrome.i18n.getMessage("completed"), task.fileSize > 0 ? formatBytes(task.fileSize) : ""].filter(Boolean).join(" · ");
+      return [chrome.i18n.getMessage(task.canOpenFile ? "completed" : "fileMissing"), task.fileSize > 0 ? formatBytes(task.fileSize) : ""].filter(Boolean).join(" · ");
     default:
       return task.status;
   }
@@ -170,7 +173,7 @@ export function TaskCard({
           />
 
           <div className={styles.body}>
-            <div className={styles.title}>{task.name}</div>
+            <div className={`${styles.title}${isCompleted && !task.canOpenFile ? ` ${styles.titleStrikethrough}` : ""}`}>{task.name}</div>
             <Caption1
               className={metaClassName}
               onClick={isActive ? () => onAction("open_when_done") : undefined}
@@ -182,14 +185,6 @@ export function TaskCard({
           <div className={styles.actions} onClick={(event) => event.stopPropagation()}>
             {isCompleted && (
               <>
-                <Button
-                  appearance="subtle"
-                  disabled={busy}
-                  icon={<ArrowClockwiseRegular />}
-                  aria-label={chrome.i18n.getMessage("redownload")}
-                  size="small"
-                  onClick={() => onAction("redownload")}
-                />
                 <Button
                   appearance="subtle"
                   disabled={busy || !task.canOpenFile}
@@ -260,6 +255,13 @@ export function TaskCard({
             className={styles.contextMenu}
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
+            <MenuItem
+              icon={<ArrowClockwiseRegular />}
+              disabled={busy}
+              onClick={() => { onAction("redownload"); setContextMenu(null); }}
+            >
+              {chrome.i18n.getMessage("redownload")}
+            </MenuItem>
             <MenuItem
               icon={<DeleteRegular />}
               disabled={busy}

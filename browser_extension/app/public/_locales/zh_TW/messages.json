@@ -49,6 +49,9 @@
   "completed": {
     "message": "已完成"
   },
+  "fileMissing": {
+    "message": "已刪除"
+  },
   "confirmPairing": {
     "message": "請確認配對"
   },
@@ -340,7 +343,7 @@
     "message": "跳過接管的副檔名"
   },
   "skipExtensionsHint": {
-    "message": "填寫不需要接管的檔案副檔名，用逗號分隔"
+    "message": "填寫不需要攔截的副檔名，以逗號分隔"
   },
   "catImages": {
     "message": "圖片"
@@ -679,5 +682,17 @@
   },
   "waitingForXMasterPlaylist": {
     "message": "等待 X 主播放清單"
+  },
+  "skipDomains": {
+    "message": "跳過接管的網域"
+  },
+  "skipDomainsHint": {
+    "message": "來自這些網站的下載不會被攔截"
+  },
+  "addCurrentSite": {
+    "message": "新增目前網站"
+  },
+  "openPopupOnSent": {
+    "message": "傳送任務後彈出擴充功能視窗"
   }
 }

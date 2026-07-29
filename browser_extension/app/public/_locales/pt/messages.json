@@ -49,6 +49,9 @@
   "completed": {
     "message": "Concluído"
   },
+  "fileMissing": {
+    "message": "Excluído"
+  },
   "confirmPairing": {
     "message": "Confirme o emparelhamento"
   },
@@ -340,7 +343,7 @@
     "message": "Extensões para pular"
   },
   "skipExtensionsHint": {
-    "message": "Extensões de arquivo para pular, separadas por vírgulas"
+    "message": "Extensões de arquivo para ignorar, separadas por vírgulas"
   },
   "catImages": {
     "message": "Imagens"
@@ -679,5 +682,17 @@
   },
   "waitingForXMasterPlaylist": {
     "message": "Aguardando playlist mestre X"
+  },
+  "skipDomains": {
+    "message": "Domínios ignorados"
+  },
+  "skipDomainsHint": {
+    "message": "Downloads destes sites não serão interceptados"
+  },
+  "addCurrentSite": {
+    "message": "Adicionar site atual"
+  },
+  "openPopupOnSent": {
+    "message": "Abrir popup ao enviar tarefa"
   }
 }

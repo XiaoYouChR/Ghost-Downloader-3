@@ -49,6 +49,9 @@
   "completed": {
     "message": "完了"
   },
+  "fileMissing": {
+    "message": "削除済み"
+  },
   "confirmPairing": {
     "message": "ペアリングを確認してください"
   },
@@ -679,5 +682,17 @@
   },
   "waitingForXMasterPlaylist": {
     "message": "X マスタープレイリストを待機中"
+  },
+  "skipDomains": {
+    "message": "スキップするドメイン"
+  },
+  "skipDomainsHint": {
+    "message": "これらのサイトからのダウンロードはインターセプトされません"
+  },
+  "addCurrentSite": {
+    "message": "現在のサイトを追加"
+  },
+  "openPopupOnSent": {
+    "message": "タスク送信時にポップアップを開く"
   }
 }

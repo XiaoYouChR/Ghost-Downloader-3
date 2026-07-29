@@ -49,6 +49,9 @@
   "completed": {
     "message": "Completed"
   },
+  "fileMissing": {
+    "message": "Deleted"
+  },
   "confirmPairing": {
     "message": "Confirm Pairing"
   },
@@ -679,5 +682,17 @@
   },
   "waitingForXMasterPlaylist": {
     "message": "Waiting for X master playlist"
+  },
+  "skipDomains": {
+    "message": "Skip domains"
+  },
+  "skipDomainsHint": {
+    "message": "Downloads from these sites will not be intercepted"
+  },
+  "addCurrentSite": {
+    "message": "Add current site"
+  },
+  "openPopupOnSent": {
+    "message": "Open popup when task sent"
   }
 }
