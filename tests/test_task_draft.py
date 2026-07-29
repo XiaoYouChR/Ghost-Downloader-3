@@ -145,7 +145,7 @@ class TestConfirm:
 
     def test_emits_taskConfirmed_for_completed(self, draft, runner):
         confirmed = []
-        draft.taskConfirmed.connect(confirmed.append)
+        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
         draft.setUrls(["http://a.com/1"])
         workId = list(runner._pending.keys())[0]
         task = stubTask("http://a.com/1")
@@ -156,7 +156,7 @@ class TestConfirm:
 
     def test_pending_parse_auto_confirms_on_completion(self, draft, runner):
         confirmed = []
-        draft.taskConfirmed.connect(confirmed.append)
+        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
         draft.setUrls(["http://a.com/1"])
         workId = list(runner._pending.keys())[0]
         draft.confirm()
@@ -168,13 +168,13 @@ class TestConfirm:
 
     def test_confirm_skips_items_without_task_or_parse(self, draft, runner):
         confirmed = []
-        draft.taskConfirmed.connect(confirmed.append)
+        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
         draft.confirm()
         assert len(confirmed) == 0
 
     def test_confirm_applies_base_options(self, draft, runner):
         confirmed = []
-        draft.taskConfirmed.connect(confirmed.append)
+        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
         draft.setBaseOptions({"subworkerCount": 8})
         draft.setUrls(["http://a.com/1"])
         workId = list(runner._pending.keys())[0]
@@ -183,9 +183,31 @@ class TestConfirm:
         draft.confirm()
         assert len(confirmed) == 1
 
+    def test_deferred_confirm_emits_autoStart_false(self, draft, runner):
+        received = []
+        draft.taskConfirmed.connect(lambda task, autoStart: received.append((task, autoStart)))
+        draft.setUrls(["http://a.com/1"])
+        workId = list(runner._pending.keys())[0]
+        task = stubTask("http://a.com/1")
+        runner.resolve(workId, task)
+        draft.confirm(autoStart=False)
+        assert len(received) == 1
+        assert received[0] == (task, False)
+
+    def test_deferred_pending_parse_emits_autoStart_false(self, draft, runner):
+        received = []
+        draft.taskConfirmed.connect(lambda task, autoStart: received.append((task, autoStart)))
+        draft.setUrls(["http://a.com/1"])
+        workId = list(runner._pending.keys())[0]
+        draft.confirm(autoStart=False)
+        task = stubTask("http://a.com/1")
+        runner.resolve(workId, task)
+        assert len(received) == 1
+        assert received[0][1] is False
+
     def test_confirm_applies_category_override(self, draft, runner):
         confirmed = []
-        draft.taskConfirmed.connect(confirmed.append)
+        draft.taskConfirmed.connect(lambda task, _: confirmed.append(task))
         draft.setUrls(["http://a.com/1"])
         workId = list(runner._pending.keys())[0]
         task = stubTask("http://a.com/1")

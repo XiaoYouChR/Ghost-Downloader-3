@@ -47,6 +47,7 @@ class StubTaskService:
             taskCompleted = Signal(object)
             taskFailed = Signal(object)
             tasksAllCompleted = Signal()
+            queueChanged = Signal()
             fileDisappeared = Signal(object)
             diskSpaceInsufficient = Signal(int, int)
         self._signals = _Signals()

@@ -631,5 +631,76 @@ class TestDiskFull:
             await runStep(step)
 
 
+# ── S13g: Stall recovery ──
+
+
+class TestStallRecovery:
+
+    async def test_stalled_stream_recovers_and_completes(self, server, tmpdir, monkeypatch):
+        """Stream stalls mid-transfer; read_timeout triggers retry, download completes."""
+        content = makeFileContent(500)
+        hasStalled = False
+        releaseHang = asyncio.Event()
+
+        async def stallOnce(request: web.Request) -> web.StreamResponse:
+            nonlocal hasStalled
+            rangeHeader = request.headers.get("Range")
+            if rangeHeader is None:
+                return web.Response(
+                    body=content,
+                    headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
+                )
+            rangeSpec = rangeHeader.replace("bytes=", "")
+            parts = rangeSpec.split("-")
+            start = int(parts[0])
+            end = int(parts[1]) if parts[1] else len(content) - 1
+            body = content[start:end + 1]
+
+            if not hasStalled and end > start:
+                hasStalled = True
+                resp = web.StreamResponse(
+                    status=206,
+                    headers={
+                        "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                        "Content-Length": str(len(body)),
+                    },
+                )
+                await resp.prepare(request)
+                await resp.write(body[:len(body) // 2])
+                try:
+                    await releaseHang.wait()
+                except asyncio.CancelledError:
+                    pass
+                return resp
+
+            return web.Response(
+                status=206,
+                body=body,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                    "Content-Length": str(len(body)),
+                },
+            )
+
+        monkeypatch.setattr("features.http_pack.task.STREAM_READ_TIMEOUT", 1)
+
+        _real_sleep = asyncio.sleep
+
+        async def fast_sleep(n):
+            await _real_sleep(0 if n >= 5 else min(n, 0.01))
+
+        monkeypatch.setattr(asyncio, "sleep", fast_sleep)
+
+        url = await server(stallOnce)
+        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=1)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await asyncio.wait_for(runStep(step), timeout=10)
+
+        assert (tmpdir / "test.bin").read_bytes() == content
+        assert hasStalled
+        releaseHang.set()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
