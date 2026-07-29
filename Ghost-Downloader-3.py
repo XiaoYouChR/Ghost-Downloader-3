@@ -6,7 +6,7 @@ from loguru import logger
 
 from app.config.paths import APP_DATA_DIR
 
-logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB")
+logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=5)
 
 
 def _exceptionHook(exceptionType, value, tb):
