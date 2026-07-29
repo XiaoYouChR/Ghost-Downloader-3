@@ -95,22 +95,81 @@ def openFolder(folder) -> None:
     _launchView(str(folder), "vnd.android.document/directory")
 
 
-def toTaskUrls(text: str) -> list[str]:
-    matches = re.findall(r'(?i)(?:https?|ftp)://[^\s"\'<>，。！？、；：）》】」]+', text)
-    return [url.rstrip(".,!?;:)]}>") for url in matches]
-
-
-def sharedText() -> str | None:
+def toFileUri(activity: "JavaObject", contentUri: "JavaObject") -> str | None:
+    from pathlib import Path
     from jnius import autoclass
+
+    try:
+        resolver = activity.getContentResolver()
+
+        displayName = "shared"
+        cursor = resolver.query(contentUri, None, None, None, None)
+        if cursor is not None:
+            try:
+                if cursor.moveToFirst():
+                    idx = cursor.getColumnIndex("_display_name")
+                    if idx >= 0:
+                        displayName = cursor.getString(idx) or displayName
+            finally:
+                cursor.close()
+
+        cacheDir = Path(activity.getCacheDir().getAbsolutePath()) / "shared"
+        cacheDir.mkdir(parents=True, exist_ok=True)
+        dest = cacheDir / displayName
+
+        inputStream = resolver.openInputStream(contentUri)
+        if inputStream is None:
+            return None
+        try:
+            Files = autoclass("java.nio.file.Files")
+            Paths = autoclass("java.nio.file.Paths")
+            if dest.exists():
+                dest.unlink()
+            Files.copy(inputStream, Paths.get(str(dest)))
+        finally:
+            inputStream.close()
+
+        return dest.as_uri()
+
+    except Exception as error:
+        from loguru import logger
+        logger.opt(exception=error).warning("content:// 拷贝失败")
+        return None
+
+
+def parseShare() -> list[str] | None:
+    from jnius import autoclass, cast
     Intent = autoclass("android.content.Intent")
     activity = autoclass("org.kivy.android.PythonActivity").mActivity
     intent = activity.getIntent()
-    if intent is None or intent.getAction() != Intent.ACTION_SEND:
+    if intent is None:
         return None
-    text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)  # 用 CharSequence 版: getStringExtra 对带样式文本返回 null
+
+    action = intent.getAction()
+    if action not in (Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE):
+        return None
+
+    if action == Intent.ACTION_SEND_MULTIPLE:
+        streams = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+        if not streams:
+            return []
+        return [fileUri for i in range(streams.size())
+                if (fileUri := toFileUri(activity, cast("android.net.Uri", streams.get(i))))]
+
+    stream = intent.getParcelableExtra(Intent.EXTRA_STREAM)
+    if stream is not None:
+        uri = toFileUri(activity, cast("android.net.Uri", stream))
+        return [uri] if uri else []
+
+    # 文本分享（ACTION_SEND 且无 EXTRA_STREAM）
+    text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
     if text is None:
-        return ""
-    return text if isinstance(text, str) else text.toString()  # pyjnius 把 String 转 str, 带样式 CharSequence 才是包装对象
+        return []
+    text = text if isinstance(text, str) else text.toString()
+
+    standard = re.findall(r'(?i)(?:https?|ftps?|ed2k)://[^\s"\'<>，。！？、；：）》】」]+', text)
+    magnets = re.findall(r'(?i)magnet:\?[^\s"\'<>，。！？、；：）》】」]+', text)
+    return [url.rstrip(".,!?;:)]}>") for url in standard + magnets]
 
 
 def clearShare() -> None:

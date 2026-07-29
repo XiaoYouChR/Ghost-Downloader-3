@@ -161,13 +161,17 @@ RUN QTMAN=/opt/p4a/pythonforandroid/bootstraps/qt/build/templates/AndroidManifes
     && sed -i '/<\/application>/i\        <service android:name="org.ghostdownloader.KeepAliveService" android:exported="false" android:foregroundServiceType="dataSync" />' "$QTMAN" \
     && sed -i '0,/<\/activity>/{s##            <meta-data android:name="android.app.background_running" android:value="true" />\n        </activity>#}' "$QTMAN" \
     && sed -i '0,/<\/activity>/{s##            <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="text/plain" />\n            </intent-filter>\n        </activity>#}' "$QTMAN" \
+    && sed -i '0,/<\/activity>/{s##            <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="application/x-bittorrent" />\n                <data android:mimeType="audio/x-mpegurl" />\n                <data android:mimeType="audio/mpegurl" />\n                <data android:mimeType="application/vnd.apple.mpegurl" />\n                <data android:mimeType="application/dash+xml" />\n            </intent-filter>\n        </activity>#}' "$QTMAN" \
+    && sed -i '0,/<\/activity>/{s##            <intent-filter>\n                <action android:name="android.intent.action.SEND_MULTIPLE" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="application/x-bittorrent" />\n                <data android:mimeType="audio/x-mpegurl" />\n                <data android:mimeType="audio/mpegurl" />\n                <data android:mimeType="application/vnd.apple.mpegurl" />\n                <data android:mimeType="application/dash+xml" />\n            </intent-filter>\n        </activity>#}' "$QTMAN" \
     && sed -i 's/<application /<application android:requestLegacyExternalStorage="true" /' "$QTMAN" \
     && grep -q 'KeepAliveService' "$QTMAN" \
     && grep -q 'background_running' "$QTMAN" \
     && grep -q 'requestLegacyExternalStorage' "$QTMAN" \
     && grep -q 'android.intent.action.SEND' "$QTMAN" \
+    && grep -q 'android.intent.action.SEND_MULTIPLE' "$QTMAN" \
+    && grep -q 'application/x-bittorrent' "$QTMAN" \
     && chown -R builder:builder /opt/p4a/pythonforandroid/bootstraps/common/build/src/main/java/org/ghostdownloader \
-    && echo "[patch] KeepAliveService + background_running + requestLegacyExternalStorage + SEND intent-filter(分享入口) 注入 OK"
+    && echo "[patch] KeepAliveService + background_running + requestLegacyExternalStorage + SEND/SEND_MULTIPLE intent-filter(文本+文件分享入口) 注入 OK"
 
 # 隔离的新版 cmake 专供 wreq 的 btls-sys/BoringSSL（系统 cmake 3.25 在 NDK toolchain 下 FindThreads 会炸）
 RUN python3 -m venv /opt/cmake4 \

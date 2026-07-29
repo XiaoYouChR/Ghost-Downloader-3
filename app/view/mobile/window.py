@@ -10,7 +10,7 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import cfg
-from app.platform.android import clearShare, isStorageGranted, requestStoragePermission, sharedText, toTaskUrls
+from app.platform.android import clearShare, isStorageGranted, parseShare, requestStoragePermission
 from app.platform.android_notification import isNotificationEnabled, requestNotificationPermission
 from app.services.task_draft import TaskDraft
 from app.view.dialogs.task_draft import TaskDraftDialog
@@ -146,19 +146,18 @@ class MobileMainWindow(QWidget):
             self._addSharedTasks()
 
     def _addSharedTasks(self) -> None:
-        text = sharedText()
-        if text is None:
+        uris = parseShare()
+        if uris is None:
             return
         clearShare()
-        urls = toTaskUrls(text)
-        if not urls:
+        if not uris:
             return
         if cfg.shouldDraftTakenDownload.value or not isStorageGranted():
-            self._draftDialog.addUrls(urls)
+            self._draftDialog.addUrls(uris)
             self._draftDialog.showMask()
             return
         self.navigationBar.setCurrentIndex(TASK_PAGE_INDEX)
-        self._autoAddUrls(urls)
+        self._autoAddUrls(uris)
 
     def _autoAddUrls(self, urls: list[str]) -> None:
         from app.models.task import TaskOptions
