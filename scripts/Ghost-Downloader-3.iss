@@ -73,5 +73,8 @@ Root: HKCU; Subkey: "Software\Classes\ed2k"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\ftp"; Flags: dontcreatekey uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\ftps"; Flags: dontcreatekey uninsdeletekey
 
+[UninstallDelete]
+Type: filesandordirs; Name: "{localappdata}\GhostDownloader"
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

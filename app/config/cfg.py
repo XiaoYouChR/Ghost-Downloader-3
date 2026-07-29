@@ -261,7 +261,7 @@ class Config(QConfig):
     shouldDraftTakenDownload = ConfigItem(
         "Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator()
     )
-    isUrlSchemeRegistered = ConfigItem("Browser", "UrlSchemeRegistered", False, BoolValidator())
+    isUrlSchemeRegistered = ConfigItem("Browser", "UrlSchemeRegistered", True, BoolValidator())
 
     # Aria2 RPC 兼容
     isAria2RpcEnabled = ConfigItem("Aria2Rpc", "Enabled", False, BoolValidator())

@@ -716,7 +716,7 @@ class AdvancedOptionsPage(QWidget):
                 if config is not None and config.associateUriSchemes is not None:
                     cfg.set(config.associateUriSchemes, self.uriSchemeCard.isChecked())
 
-        if self.urlSchemeCard is not None and self.urlSchemeCard.isChecked() != cfg.isUrlSchemeRegistered.value:
+        if self.urlSchemeCard is not None:
             from app.platform.url_scheme import registerUrlScheme, unregisterUrlScheme
             if self.urlSchemeCard.isChecked():
                 registerUrlScheme()
@@ -897,8 +897,6 @@ class OobeWindow(FluentWidget):
 
         if self._currentIndex == 3:
             self._installSelectedRuntimes()
-        if self._currentIndex == 4:
-            self.advancedOptionsPage.save()
 
         self._currentIndex += 1
         self.stackedWidget.setCurrentIndex(self._currentIndex)
@@ -945,6 +943,7 @@ class OobeWindow(FluentWidget):
         if self._isFinished:
             return
         self._isFinished = True
+        self.advancedOptionsPage.save()
         cfg.set(cfg.hasCompletedOobe, True)
         self.finished.emit()
         self.close()
