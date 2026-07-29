@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QCoreApplication, QRectF, QSize, QUrl, Signal
+from PySide6.QtCore import Qt, QCoreApplication, QRect, QRectF, QSize, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QIcon, QMovie, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import (
     QApplication, QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget,
@@ -798,10 +799,15 @@ class OobeWindow(FluentWidget):
         self.setWindowTitle("Ghost Downloader")
         self.setWindowIcon(QIcon(":/image/logo.png"))
         self.titleBar.hBoxLayout.insertSpacing(2, 6)
+        if sys.platform == "darwin":
+            self.titleBar.hBoxLayout.insertSpacing(0, 60)
         self.titleBar.maxBtn.hide()
         self.setFixedSize(WINDOW_SIZE)
         desktop = QApplication.primaryScreen().availableGeometry()
         self.move(desktop.center() - self.rect().center())
+
+    def systemTitleBarRect(self, size) -> QRect:
+        return QRect(0, 10, 75, size.height())
 
     def _initContent(self) -> None:
         self.welcomePage = WelcomePage(self)
