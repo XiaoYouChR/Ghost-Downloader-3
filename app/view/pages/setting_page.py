@@ -44,7 +44,8 @@ class SettingPage(ScrollArea):
 
         self.generalGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
         self.categoryGroup = CollapsibleSettingCardGroup(self.tr("下载分类"), "category", self.container)
-        self.associationGroup = CollapsibleSettingCardGroup(self.tr("关联设置"), "association", self.container)
+        if sys.platform != "darwin":
+            self.associationGroup = CollapsibleSettingCardGroup(self.tr("关联设置"), "association", self.container)
         self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
         self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
         self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
@@ -193,17 +194,13 @@ class SettingPage(ScrollArea):
         ]
         self.browserGroup.addSettingCards(browserCards)
 
-        associationCards = []
         if sys.platform != "darwin":
             self.urlSchemeCard = SwitchSettingCard(
                 FluentIcon.LINK, self.tr("允许浏览器扩展唤醒"),
                 self.tr("浏览器扩展可通过 ghostdownloader:// 协议启动桌面端"),
                 cfg.isUrlSchemeRegistered,
             )
-            associationCards.append(self.urlSchemeCard)
-        else:
-            self.urlSchemeCard = None
-        if sys.platform != "darwin":
+            associationCards = [self.urlSchemeCard]
             for pack in self._featureService.packs:
                 if pack.config is None:
                     continue
@@ -223,10 +220,7 @@ class SettingPage(ScrollArea):
                         self.tr("点击 {0} 链接时唤起 Ghost Downloader").format(schemeText),
                         pack.config.associateUriSchemes,
                     ))
-        if associationCards:
             self.associationGroup.addSettingCards(associationCards)
-        else:
-            self.associationGroup = None
 
         self.aria2RpcGroup.addSettingCards([
             SwitchSettingCard(
@@ -368,7 +362,7 @@ class SettingPage(ScrollArea):
     def _initLayout(self) -> None:
         self.addSettingGroup(self.generalGroup)
         self.addSettingGroup(self.categoryGroup)
-        if self.associationGroup:
+        if sys.platform != "darwin":
             self.addSettingGroup(self.associationGroup)
         self.addSettingGroup(self.browserGroup)
         self.addSettingGroup(self.aria2RpcGroup)
@@ -395,7 +389,7 @@ class SettingPage(ScrollArea):
         self.regenerateTokenButton.clicked.connect(self._onRegenerateTokenClicked)
         self.chromiumInstallCard.clicked.connect(self._onChromiumInstallClicked)
         self.exportExtensionButton.clicked.connect(self._onExportExtensionClicked)
-        if self.urlSchemeCard:
+        if sys.platform != "darwin":
             self.urlSchemeCard.checkedChanged.connect(self._onUrlSchemeChanged)
         self.autoRunCard.checkedChanged.connect(self._onRunAtLoginChanged)
         self.aboutCard.clicked.connect(self._onAboutCardClicked)
