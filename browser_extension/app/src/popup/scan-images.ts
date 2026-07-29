@@ -2,10 +2,6 @@ import type {ScannedImage} from "../shared/types";
 
 const IMAGE_REFERER_RULE_ID = 9999;
 
-const IMAGE_EXT_RE = /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico|avif|heic|tif|tiff|apng|jfif)(\?.*)?$/i;
-const URL_RE = /https?:\/\/[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*/gi;
-const BG_URL_RE = /url\(\s*['"]?\s*(\S+?)\s*['"]?\s*\)/i;
-
 function scanPageImages(): ScannedImage[] {
   const seen = new Set<string>();
   const results: ScannedImage[] = [];
@@ -22,22 +18,25 @@ function scanPageImages(): ScannedImage[] {
     add(src, img.naturalWidth, img.naturalHeight, img.alt || "");
   }
 
+  const bgUrlRe = /url\(\s*['"]?\s*(\S+?)\s*['"]?\s*\)/i;
   const pseudos: (string | null)[] = [null, "::before", "::after"];
   for (const el of Array.from(document.querySelectorAll("*"))) {
     for (const pseudo of pseudos) {
       const bg = getComputedStyle(el, pseudo).getPropertyValue("background-image");
       if (bg === "none" || !bg) continue;
-      const m = BG_URL_RE.exec(bg);
+      const m = bgUrlRe.exec(bg);
       if (m?.[1]) add(m[1], 0, 0, "");
     }
   }
 
+  const urlRe = /https?:\/\/[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b[-a-zA-Z0-9@:%_+.~#?&/=]*/gi;
+  const imageExtRe = /\.(png|jpg|jpeg|gif|webp|svg|bmp|ico|avif|heic|tif|tiff|apng|jfif)(\?.*)?$/i;
   const html = document.documentElement.outerHTML;
-  const urls = html.match(URL_RE);
+  const urls = html.match(urlRe);
   if (urls) {
     for (const raw of new Set(urls)) {
       const cleaned = raw.replace(/&(quot|lt|gt|amp);?$/i, "");
-      if (IMAGE_EXT_RE.test(cleaned)) add(cleaned, 0, 0, "");
+      if (imageExtRe.test(cleaned)) add(cleaned, 0, 0, "");
     }
   }
 

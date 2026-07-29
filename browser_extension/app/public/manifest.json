@@ -3,7 +3,7 @@
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "permissions": [
     "alarms",
     "contextMenus",
