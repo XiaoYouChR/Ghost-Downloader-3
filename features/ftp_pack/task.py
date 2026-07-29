@@ -70,14 +70,21 @@ class FtpConnectionInfo:
 
         lastError: Exception | None = None
         for index, (port, mode) in enumerate(attempts):
+            if mode != "plain":
+                sslCtx = ssl.create_default_context()
+                if not cfg.shouldVerifySsl.value:
+                    sslCtx.check_hostname = False
+                    sslCtx.verify_mode = ssl.CERT_NONE
+            else:
+                sslCtx = None
             client = aioftp.Client(
                 **kwargs,
-                ssl=ssl.create_default_context() if mode == "implicit" else None,
+                ssl=sslCtx if mode == "implicit" else None,
             )
             try:
                 await client.connect(self.host, port)
                 if mode == "explicit":
-                    await client.upgrade_to_tls()
+                    await client.upgrade_to_tls(sslCtx)
                 await client.login(self.username, self.password)
                 return client
             except Exception as e:

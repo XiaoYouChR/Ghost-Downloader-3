@@ -20,6 +20,9 @@ sys.excepthook = _exceptionHook
 
 
 def setupEnvironment():
+    import certifi
+    os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+
     import warnings
     from qfluentwidgets import qconfig
     from app.config.cfg import cfg

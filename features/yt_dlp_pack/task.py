@@ -53,13 +53,14 @@ def loadYtDlpToPath() -> None:
 
 def buildYtDlpOptions(*, noplaylist: bool = True) -> dict:
     from .config import cookieFile, hasCookieFile, youTubeRuntime
-    from app.config.cfg import proxy
+    from app.config.cfg import cfg, proxy
 
     opts: dict = {
         "quiet": True,
         "no_warnings": True,
         "allowed_extractors": ["youtube.*"],
         "remote_components": {"ejs:github"},
+        "nocheckcertificate": not cfg.shouldVerifySsl.value,
     }
     if noplaylist:
         opts["noplaylist"] = True
