@@ -41,22 +41,14 @@ def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> s
     return candidate
 
 
-def deduplicateName(folder: Path, name: str) -> str:
-    folder = Path(folder)
-
-    def taken(candidate: str) -> bool:
-        target = folder / candidate
-        return target.exists() or (folder / f"{candidate}.ghd").exists()
-
-    if not taken(name):
-        return name
-
-    suffixes = "".join(Path(name).suffixes)
-    stem = name[: -len(suffixes)] if suffixes else name
-    index = 1
-    while taken(f"{stem}({index}){suffixes}"):
-        index += 1
-    return f"{stem}({index}){suffixes}"
+def splitStemExt(name: str) -> tuple[str, str]:
+    m = re.search(r'\.[A-Za-z0-9]{1,4}\.(?:bz2?|gz|lzma|lzo|xz|z|zst)$', name, re.IGNORECASE)
+    if m:
+        return name[: m.start()], name[m.start():]
+    dot = name.rfind(".")
+    if dot <= 0:
+        return name, ""
+    return name[:dot], name[dot:]
 
 
 def toPosixPath(path) -> str:

@@ -258,10 +258,6 @@ class Task:
     def setName(self, name: str):
         self.name = toSafeFilename(name, fallback=self.name or "download")
 
-    def deduplicateFilename(self) -> None:
-        from app.platform.filesystem import deduplicateName
-        self.name = deduplicateName(self.outputFolder, self.name)
-
     def setOptions(self, options: dict) -> None:
         newFolder = options.get("outputFolder")
         if isinstance(newFolder, (str, Path)):

@@ -71,37 +71,6 @@ class BilibiliTask(Task):
         self.subtitleLanguages = languages
         self._rebuildSteps()
 
-    def deduplicateFilename(self) -> None:
-        if len(self.files or []) <= 1:
-            super().deduplicateFilename()
-            return
-
-        folder = self.outputFolder
-
-        def anyOutputExists() -> bool:
-            for step in self.steps:
-                outputFile = getattr(step, "outputFile", "")
-                if not outputFile:
-                    continue
-                path = Path(outputFile)
-                if path.exists() or Path(f"{outputFile}.ghd").exists():
-                    return True
-            return False
-
-        if not anyOutputExists():
-            return
-
-        stem = self._baseName
-        suffixes = "".join(Path(self.name).suffixes)
-        index = 1
-        while True:
-            self._baseName = f"{stem}({index})"
-            self.name = toSafeFilename(f"{self._baseName}{suffixes}", fallback=self.name)
-            self._rebuildSteps()
-            if not anyOutputExists():
-                break
-            index += 1
-
     def _rebuildSteps(self) -> None:
         self.steps.clear()
         files: list[BiliPage] = self.files or []

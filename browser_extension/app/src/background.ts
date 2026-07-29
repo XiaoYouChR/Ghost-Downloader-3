@@ -98,10 +98,12 @@ let shouldOpenPopupOnSent = true;
 
 function imageFilename(url: string, alt: string): string {
   try {
-    const pathname = new URL(url).pathname;
-    const basename = decodeURIComponent(pathname.split("/").pop() || "");
+    const segments = new URL(url).pathname.split("/").filter(Boolean).map(decodeURIComponent);
+    const basename = segments.pop() || "";
     if (basename && /\.\w{2,5}$/.test(basename)) {
-      return basename.slice(0, 160);
+      const parent = segments.pop();
+      const name = parent ? `${parent}_${basename}` : basename;
+      return name.slice(0, 160);
     }
   } catch { /* invalid URL */ }
   const safe = (alt || "image").replace(/[<>:"/\\|?*\x00-\x1f]+/g, " ").trim().slice(0, 120);
