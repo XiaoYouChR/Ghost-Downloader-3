@@ -225,7 +225,7 @@ def patchInfoPlist() -> None:
     plist["CFBundleIdentifier"] = DESKTOP_ID
     plist["CFBundleURLTypes"] = [{
         "CFBundleURLName": DESKTOP_ID,
-        "CFBundleURLSchemes": ["ghostdownloader"],
+        "CFBundleURLSchemes": ["ghostdownloader", "magnet", "ed2k", "ftp", "ftps"],
     }]
     with open(plistPath, "wb") as f:
         plistlib.dump(plist, f)

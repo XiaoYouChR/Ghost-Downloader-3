@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import libtorrent as lt
 from loguru import logger
 
-from app.models.pack import FeaturePack, TaskParser, FileType
+from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 
@@ -119,6 +119,9 @@ class BitTorrentPack(FeaturePack):
                 icon="torrent",
             ),
         ]
+
+    def uriSchemes(self) -> list[UriScheme]:
+        return [UriScheme("magnet", "Magnet")]
 
     async def activate(self):
         pass

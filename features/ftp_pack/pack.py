@@ -5,7 +5,8 @@ from urllib.parse import unquote, urlparse
 
 from loguru import logger
 
-from app.models.pack import FeaturePack, TaskParser
+from app.models.pack import FeaturePack, TaskParser, UriScheme
+from .config import ftpConfig
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toPosixPath, toSafeFilename
 from .cards import FtpDraftCard, FtpTaskCard
@@ -121,10 +122,14 @@ class FtpParser(TaskParser):
 
 class FtpPack(FeaturePack):
     packId = "ftp"
+    config = ftpConfig
     proxySchemes = {"socks4", "socks5"}
     parsers = [FtpParser]
     taskCards = {FtpTask: FtpTaskCard}
     draftCards = {FtpTask: FtpDraftCard}
+
+    def uriSchemes(self) -> list[UriScheme]:
+        return [UriScheme("ftp", "FTP"), UriScheme("ftps", "FTPS")]
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard

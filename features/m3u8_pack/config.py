@@ -74,14 +74,7 @@ class M3U8Config(PackConfig):
         )
         runtimeCard = self.createRuntimeCard(m3u8Runtime, m3u8Group)
 
-        cards = [installFolderCard, runtimeCard]
-        if sys.platform != "darwin":
-            cards.append(SwitchSettingCard(
-                FluentIcon.LINK, self.tr("关联 M3U8/MPD 文件"),
-                self.tr("把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader"),
-                self.associateFileTypes, m3u8Group,
-            ))
-        cards += [
+        cards = [installFolderCard, runtimeCard] + [
             ComboBoxSettingCard(self.outputFormat, FluentIcon.VIDEO, self.tr("输出容器"),
                 self.tr("点播下载完成后优先使用 ffmpeg 混流为指定容器"), texts=["MP4", "MKV"], parent=m3u8Group),
             RangeSettingCard(self.threadCount, FluentIcon.CLOUD, self.tr("分片线程数"),

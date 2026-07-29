@@ -66,6 +66,12 @@ Root: HKCU; Subkey: "Software\Classes\.torrent\OpenWithProgids"; ValueType: none
 Root: HKCU; Subkey: "Software\Classes\.m3u8\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.m3u8"; Flags: dontcreatekey uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\.m3u\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.m3u"; Flags: dontcreatekey uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\.mpd\OpenWithProgids"; ValueType: none; ValueName: "GhostDownloader.mpd"; Flags: dontcreatekey uninsdeletevalue
+; URI scheme handlers registered at runtime
+Root: HKCU; Subkey: "Software\Classes\ghostdownloader"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\magnet"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\ed2k"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\ftp"; Flags: dontcreatekey uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\ftps"; Flags: dontcreatekey uninsdeletekey
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

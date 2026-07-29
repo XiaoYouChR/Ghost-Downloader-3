@@ -27,6 +27,12 @@ class FileType:
     icon: str
 
 
+@dataclass(frozen=True)
+class UriScheme:
+    scheme: str
+    displayName: str
+
+
 class TaskParser:
     priority: int = 100
     pack: FeaturePack | None = None
@@ -46,6 +52,7 @@ class PackConfig:
     createRuntimeCard: Callable[..., QWidget] | None = None
     submit: Callable[..., str] | None = None
     associateFileTypes: ConfigItem | None = None
+    associateUriSchemes: ConfigItem | None = None
     _items: dict[str, ConfigItem] = {}
 
     def __init_subclass__(cls, **kwargs):
@@ -77,9 +84,23 @@ class PackConfig:
         return []
 
     def isFileAssociationEnabled(self) -> bool:
+        if self.associateFileTypes is not None:
+            return self.associateFileTypes.value
+        return True
+
+    def isUriSchemeAssociationEnabled(self) -> bool:
+        if self.associateUriSchemes is not None:
+            return self.associateUriSchemes.value
         return True
 
     def fileAssociationToggle(self) -> Signal | None:
+        if self.associateFileTypes is not None:
+            return self.associateFileTypes.valueChanged
+        return None
+
+    def uriSchemeAssociationToggle(self) -> Signal | None:
+        if self.associateUriSchemes is not None:
+            return self.associateUriSchemes.valueChanged
         return None
 
     def tr(self, text: str) -> str:
@@ -182,6 +203,9 @@ class FeaturePack:
         return []
 
     def fileTypes(self) -> list[FileType]:
+        return []
+
+    def uriSchemes(self) -> list[UriScheme]:
         return []
 
     def pages(self) -> list[type[PackPage]]:

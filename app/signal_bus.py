@@ -3,7 +3,7 @@ from PySide6.QtCore import QObject, Signal
 
 class SignalBus(QObject):
     activationRequested = Signal()
-    openFileRequested = Signal(list)
+    openUriRequested = Signal(list)
     exceptionCaught = Signal(str)
 
 

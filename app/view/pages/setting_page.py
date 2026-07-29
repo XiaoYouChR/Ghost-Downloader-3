@@ -44,6 +44,7 @@ class SettingPage(ScrollArea):
 
         self.generalGroup = CollapsibleSettingCardGroup(self.tr("综合下载设置"), "general", self.container)
         self.categoryGroup = CollapsibleSettingCardGroup(self.tr("下载分类"), "category", self.container)
+        self.associationGroup = CollapsibleSettingCardGroup(self.tr("关联设置"), "association", self.container)
         self.browserGroup = CollapsibleSettingCardGroup(self.tr("浏览器扩展"), "browser", self.container)
         self.aria2RpcGroup = CollapsibleSettingCardGroup(self.tr("Aria2 RPC 兼容"), "aria2rpc", self.container)
         self.personalGroup = CollapsibleSettingCardGroup(self.tr("个性化"), "personalization", self.container)
@@ -180,12 +181,6 @@ class SettingPage(ScrollArea):
             cfg.isBrowserExtensionEnabled,
         )
 
-        self.urlSchemeCard = SwitchSettingCard(
-            FluentIcon.LINK, self.tr("注册 URL 协议"),
-            self.tr("注册 ghostdownloader:// 协议，允许浏览器扩展启动桌面端"),
-            cfg.isUrlSchemeRegistered,
-        ) if sys.platform != "darwin" else None
-
         browserCards = [
             self.browserEnableCard,
             SwitchSettingCard(FluentIcon.CHAT, self.tr("接管下载时进入草稿模式"),
@@ -196,10 +191,42 @@ class SettingPage(ScrollArea):
             self.chromiumInstallCard,
             self.browserPortCard,
         ]
-        if self.urlSchemeCard:
-            browserCards.insert(2, self.urlSchemeCard)
-
         self.browserGroup.addSettingCards(browserCards)
+
+        associationCards = []
+        if sys.platform != "darwin":
+            self.urlSchemeCard = SwitchSettingCard(
+                FluentIcon.LINK, self.tr("允许浏览器扩展唤醒"),
+                self.tr("浏览器扩展可通过 ghostdownloader:// 协议启动桌面端"),
+                cfg.isUrlSchemeRegistered,
+            )
+            associationCards.append(self.urlSchemeCard)
+        else:
+            self.urlSchemeCard = None
+        if sys.platform != "darwin":
+            for pack in self._featureService.packs:
+                if pack.config is None:
+                    continue
+                fileTypes = pack.fileTypes()
+                if fileTypes and pack.config.associateFileTypes is not None:
+                    extensions = "/".join(ext for ft in fileTypes for ext in ft.extensions)
+                    associationCards.append(SwitchSettingCard(
+                        FluentIcon.DOCUMENT, self.tr("关联 {0} 文件").format(extensions),
+                        self.tr("双击 {0} 文件时用 Ghost Downloader 打开").format(extensions),
+                        pack.config.associateFileTypes,
+                    ))
+                schemes = pack.uriSchemes()
+                if schemes and pack.config.associateUriSchemes is not None:
+                    schemeText = "/".join(s.displayName for s in schemes)
+                    associationCards.append(SwitchSettingCard(
+                        FluentIcon.LINK, self.tr("处理 {0} 链接").format(schemeText),
+                        self.tr("点击 {0} 链接时唤起 Ghost Downloader").format(schemeText),
+                        pack.config.associateUriSchemes,
+                    ))
+        if associationCards:
+            self.associationGroup.addSettingCards(associationCards)
+        else:
+            self.associationGroup = None
 
         self.aria2RpcGroup.addSettingCards([
             SwitchSettingCard(
@@ -341,6 +368,8 @@ class SettingPage(ScrollArea):
     def _initLayout(self) -> None:
         self.addSettingGroup(self.generalGroup)
         self.addSettingGroup(self.categoryGroup)
+        if self.associationGroup:
+            self.addSettingGroup(self.associationGroup)
         self.addSettingGroup(self.browserGroup)
         self.addSettingGroup(self.aria2RpcGroup)
         self.addSettingGroup(self.personalGroup)

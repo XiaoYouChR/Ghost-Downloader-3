@@ -15,14 +15,18 @@ from app.platform.url_scheme import isLaunchUri
 from app.signal_bus import signalBus
 
 
-def fileUrisFromArgv(argv: list[str]) -> list[str]:
+def urisFromArgv(argv: list[str]) -> list[str]:
     uris = []
     for arg in argv[1:]:
         if arg.startswith("-") or isLaunchUri(arg):
             continue
-        path = Path(arg)
-        if path.is_file():
-            uris.append(path.resolve().as_uri())
+        colon = arg.find(":")
+        if colon > 1:
+            uris.append(arg)
+        else:
+            path = Path(arg)
+            if path.is_file():
+                uris.append(path.resolve().as_uri())
     return uris
 
 
@@ -60,7 +64,7 @@ class SingletonApplication(QApplication):
             if uri and isLaunchUri(uri):
                 signalBus.activationRequested.emit()
             elif uri:
-                signalBus.openFileRequested.emit([uri])
+                signalBus.openUriRequested.emit([uri])
             return True
 
         if sys.platform == "darwin" and e.type() == QEvent.Type.ApplicationActivate:
@@ -157,7 +161,7 @@ if sys.platform == "win32":
             raw = ctypes.string_at(payload.lpData, payload.cbData)
             uris = [line for line in raw.decode("utf-16-le").rstrip("\x00").split("\n") if line]
             if uris:
-                signalBus.openFileRequested.emit(uris)
+                signalBus.openUriRequested.emit(uris)
         return 1
 
     _IPC_MESSAGE_MAP = {
@@ -182,7 +186,7 @@ if sys.platform == "win32":
         hWnd = win32gui.FindWindow(IPC_CLASS_NAME, None)
         if not hWnd:
             return
-        uris = fileUrisFromArgv(sys.argv)
+        uris = urisFromArgv(sys.argv)
         if uris:
             blob = "\n".join(uris).encode("utf-16-le") + b"\x00\x00"
             data = ctypes.create_string_buffer(blob, len(blob))
@@ -205,7 +209,7 @@ if sys.platform == "linux":
                 return
             uris = [uri for uri in uris if uri]
             if uris:
-                signalBus.openFileRequested.emit(uris)
+                signalBus.openUriRequested.emit(uris)
 
         @Slot("QVariantMap")
         def Activate(self, platformData):
@@ -214,7 +218,7 @@ if sys.platform == "linux":
     def _sendToRunningLinux() -> None:
         from PySide6.QtDBus import QDBusConnection, QDBusInterface
 
-        uris = fileUrisFromArgv(sys.argv)
+        uris = urisFromArgv(sys.argv)
         interface = QDBusInterface(
             DESKTOP_ID, DESKTOP_OBJECT_PATH,
             "org.freedesktop.Application",

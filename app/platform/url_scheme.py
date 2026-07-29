@@ -8,24 +8,24 @@ from PySide6.QtCore import QCoreApplication
 URL_SCHEME = "ghostdownloader"
 
 
-def registerUrlScheme() -> None:
+def registerUrlScheme(scheme: str = URL_SCHEME) -> None:
     try:
         if sys.platform == "win32":
-            _registerWindows()
+            _registerWindows(scheme)
         elif sys.platform == "linux":
-            _registerLinux()
+            _registerLinux(scheme)
     except Exception as e:
-        logger.opt(exception=e).error("URL scheme 注册失败")
+        logger.opt(exception=e).error("URL scheme 注册失败: {}", scheme)
 
 
-def unregisterUrlScheme() -> None:
+def unregisterUrlScheme(scheme: str = URL_SCHEME) -> None:
     try:
         if sys.platform == "win32":
-            _unregisterWindows()
+            _unregisterWindows(scheme)
         elif sys.platform == "linux":
-            _unregisterLinux()
+            _unregisterLinux(scheme)
     except Exception as e:
-        logger.opt(exception=e).error("URL scheme 注销失败")
+        logger.opt(exception=e).error("URL scheme 注销失败: {}", scheme)
 
 
 def isLaunchUri(uri: str) -> bool:
@@ -35,22 +35,22 @@ def isLaunchUri(uri: str) -> bool:
 if sys.platform == "win32":
     import winreg
 
-    _REG_ROOT = rf"Software\Classes\{URL_SCHEME}"
-
-    def _registerWindows() -> None:
+    def _registerWindows(scheme: str) -> None:
+        regRoot = rf"Software\Classes\{scheme}"
         command = f'"{QCoreApplication.applicationFilePath().replace("/", chr(92))}" "%1"'
-        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _REG_ROOT) as key:
-            winreg.SetValueEx(key, "", 0, winreg.REG_SZ, "Ghost Downloader URL")
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, regRoot) as key:
+            winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f"Ghost Downloader URL ({scheme})")
             winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
-        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"{_REG_ROOT}\shell\open\command") as key:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"{regRoot}\shell\open\command") as key:
             winreg.SetValueEx(key, "", 0, winreg.REG_SZ, command)
 
-    def _unregisterWindows() -> None:
+    def _unregisterWindows(scheme: str) -> None:
+        regRoot = rf"Software\Classes\{scheme}"
         try:
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, rf"{_REG_ROOT}\shell\open\command")
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, rf"{_REG_ROOT}\shell\open")
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, rf"{_REG_ROOT}\shell")
-            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, _REG_ROOT)
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, rf"{regRoot}\shell\open\command")
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, rf"{regRoot}\shell\open")
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, rf"{regRoot}\shell")
+            winreg.DeleteKey(winreg.HKEY_CURRENT_USER, regRoot)
         except FileNotFoundError:
             pass
 
@@ -61,10 +61,10 @@ if sys.platform == "linux":
 
     from app.config.constants import DESKTOP_ID
 
-    def _registerLinux() -> None:
+    def _registerLinux(scheme: str) -> None:
         desktopDir = Path.home() / ".local/share/applications"
         desktopFile = desktopDir / f"{DESKTOP_ID}.desktop"
-        mime = f"x-scheme-handler/{URL_SCHEME}"
+        mime = f"x-scheme-handler/{scheme}"
 
         if desktopFile.exists():
             content = desktopFile.read_text(encoding="utf-8")
@@ -97,14 +97,13 @@ if sys.platform == "linux":
             pass
         try:
             subprocess.run(
-                ["xdg-mime", "default", f"{DESKTOP_ID}.desktop",
-                 f"x-scheme-handler/{URL_SCHEME}"],
+                ["xdg-mime", "default", f"{DESKTOP_ID}.desktop", mime],
                 check=False, capture_output=True,
             )
         except FileNotFoundError:
             pass
 
-    def _unregisterLinux() -> None:
+    def _unregisterLinux(scheme: str) -> None:
         desktopDir = Path.home() / ".local/share/applications"
         desktopFile = desktopDir / f"{DESKTOP_ID}.desktop"
 
@@ -112,7 +111,7 @@ if sys.platform == "linux":
             return
 
         content = desktopFile.read_text(encoding="utf-8")
-        mime = f"x-scheme-handler/{URL_SCHEME}"
+        mime = f"x-scheme-handler/{scheme}"
         if mime in content:
             content = content.replace(f"{mime};", "").replace(mime, "")
             desktopFile.write_text(content, encoding="utf-8")

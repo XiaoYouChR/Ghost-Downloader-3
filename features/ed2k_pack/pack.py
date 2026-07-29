@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.pack import FeaturePack, TaskParser
+from app.models.pack import FeaturePack, TaskParser, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, ed2kRuntime
@@ -32,6 +32,9 @@ class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
     parsers = [ED2kParser]
+
+    def uriSchemes(self) -> list[UriScheme]:
+        return [UriScheme("ed2k", "eD2k")]
 
     def runtimes(self):
         return [ed2kRuntime]

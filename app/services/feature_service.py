@@ -8,10 +8,11 @@ from PySide6.QtCore import QObject
 
 from app.config.paths import executableDir
 from app.platform import file_association
+from app.platform import url_scheme
 from app.services.pack_loader import loadPacks
 
 if TYPE_CHECKING:
-    from app.models.pack import FeaturePack, TaskParser, FileType, PackPage
+    from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme, PackPage
     from app.models.task import Task, TaskOptions
     from PySide6.QtWidgets import QWidget
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -68,9 +69,12 @@ class FeatureService(QObject):
         if pack.config:
             pack.config.createRuntimeCard = self._createRuntimeCard
             pack.config.submit = self._coroutineRunner.submit
-            toggle = pack.config.fileAssociationToggle()
-            if toggle:
-                toggle.connect(self._registerFileAssociations)
+            fileToggle = pack.config.fileAssociationToggle()
+            if fileToggle:
+                fileToggle.connect(self._registerAssociations)
+            schemeToggle = pack.config.uriSchemeAssociationToggle()
+            if schemeToggle:
+                schemeToggle.connect(self._registerAssociations)
 
     async def parse(self, options: TaskOptions) -> Task:
         if not options.clientProfile:
@@ -169,11 +173,24 @@ class FeatureService(QObject):
             types.extend(pack.fileTypes())
         return types
 
+    def uriSchemes(self) -> list[UriScheme]:
+        schemes = []
+        for pack in self._packs:
+            schemes.extend(pack.uriSchemes())
+        return schemes
+
     def isFileAssociationEnabled(self) -> bool:
         return any(
             pack.config.associateFileTypes.value
             for pack in self._packs
             if pack.config and pack.config.associateFileTypes is not None
+        )
+
+    def isUriSchemeAssociationEnabled(self) -> bool:
+        return any(
+            pack.config.associateUriSchemes.value
+            for pack in self._packs
+            if pack.config and pack.config.associateUriSchemes is not None
         )
 
     def setFileAssociation(self, isEnabled: bool) -> None:
@@ -182,13 +199,22 @@ class FeatureService(QObject):
             if pack.config and pack.config.associateFileTypes is not None:
                 cfg.set(pack.config.associateFileTypes, isEnabled)
 
-    def _registerFileAssociations(self) -> None:
+    def _registerAssociations(self) -> None:
         types = []
+        enabledSchemes = []
+        disabledSchemes = []
         for pack in self._packs:
-            if pack.config and not pack.config.isFileAssociationEnabled():
-                continue
-            types.extend(pack.fileTypes())
+            if not pack.config or pack.config.isFileAssociationEnabled():
+                types.extend(pack.fileTypes())
+            if not pack.config or pack.config.isUriSchemeAssociationEnabled():
+                enabledSchemes.extend(pack.uriSchemes())
+            elif pack.uriSchemes():
+                disabledSchemes.extend(pack.uriSchemes())
         file_association.register(types)
+        for s in disabledSchemes:
+            url_scheme.unregisterUrlScheme(s.scheme)
+        for s in enabledSchemes:
+            url_scheme.registerUrlScheme(s.scheme)
 
     def deactivate(self, coroutineRunner) -> None:
         from PySide6.QtCore import QEventLoop

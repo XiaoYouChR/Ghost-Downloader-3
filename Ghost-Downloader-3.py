@@ -175,7 +175,7 @@ def startApp(application, isSilent=False):
         window.addTasks(tasks)
 
     signalBus.activationRequested.connect(show)
-    signalBus.openFileRequested.connect(lambda uris: show().addUrls(uris))
+    signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().alertException(msg))
     browserService.taskDraftRequested.connect(onBrowserDraft)
     browserService.pairRequested.connect(lambda req: show().confirmPair(req))

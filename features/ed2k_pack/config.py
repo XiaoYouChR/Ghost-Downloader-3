@@ -14,6 +14,7 @@ RELEASE_BASE = "https://github.com/XiaoYouChR/Python-eD2k/releases/latest/downlo
 
 
 class ED2kConfig(PackConfig):
+    associateUriSchemes = ConfigItem("ED2k", "AssociateUriSchemes", False, BoolValidator())
     installFolder = ConfigItem("ED2k", "InstallFolder", f"{APP_DATA_DIR}/goed2kd")
     enableDht = ConfigItem("ED2k", "EnableDHT", True, BoolValidator())
     enableUpnp = ConfigItem("ED2k", "EnableUPnP", True, BoolValidator())

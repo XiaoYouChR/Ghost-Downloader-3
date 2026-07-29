@@ -44,6 +44,7 @@ class BitTorrentConfig(PackConfig):
         "BitTorrent", "StorageMode", "sparse", OptionsValidator(["sparse", "allocate"]),
     )
     associateFileTypes = ConfigItem("BitTorrent", "AssociateFileTypes", False, BoolValidator())
+    associateUriSchemes = ConfigItem("BitTorrent", "AssociateUriSchemes", False, BoolValidator())
     webTrackerSources = ConfigItem(
         "BitTorrent", "WebTrackerSources", DEFAULT_WEB_TRACKER_SOURCES, StringListValidator(),
     )
@@ -61,14 +62,7 @@ class BitTorrentConfig(PackConfig):
 
         btGroup = CollapsibleSettingCardGroup(self.tr("BitTorrent 下载"), "bittorrent", parent)
 
-        cards = []
-        if sys.platform != "darwin":
-            cards.append(SwitchSettingCard(
-                FluentIcon.LINK, self.tr("关联 .torrent 文件"),
-                self.tr("把 .torrent 文件的打开方式设为 Ghost Downloader"),
-                self.associateFileTypes, btGroup,
-            ))
-        cards += [
+        cards = [
             SpinBoxSettingCard(FluentIcon.GLOBE, self.tr("监听端口"),
                 self.tr("0 表示交给系统自动分配可用端口"), "", self.listenPort, btGroup, 1),
             SpinBoxSettingCard(FluentIcon.HISTORY, self.tr("元数据超时"),
