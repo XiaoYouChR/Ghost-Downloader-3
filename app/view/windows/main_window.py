@@ -13,7 +13,7 @@ from qfluentwidgets import (
 )
 
 from app.config.cfg import CloseMode, cfg
-from app.config.constants import AUTHOR_URL, FEEDBACK_URL
+from app.config.constants import DONATE_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
 from app.signal_bus import signalBus
 from app.view.pages.setting_page import SettingPage
@@ -260,7 +260,7 @@ class MainWindow(MSFluentWindow):
         detailButton.clicked.connect(lambda: showReleaseDialog(release, self))
         infoBar.addWidget(detailButton)
         sponsorButton = PushButton(FluentIcon.HEART, self.tr("请作者喝咖啡"))
-        sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
+        sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(DONATE_URL)))
         infoBar.addWidget(sponsorButton)
         infoBar.show()
 

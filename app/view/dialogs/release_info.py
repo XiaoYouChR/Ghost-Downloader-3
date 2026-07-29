@@ -10,7 +10,7 @@ from qfluentwidgets import (
     PrimaryToolButton, SubtitleLabel, ToolButton, ToolTipFilter,
 )
 
-from app.config.constants import AUTHOR_URL
+from app.config.constants import DONATE_URL
 from app.format import toReadableSize
 from app.view.components.markdown_viewer import MarkdownViewer
 from app.view.components.tree_view import AutoSizingTreeView
@@ -97,7 +97,7 @@ class ReleaseInfoDialog(MessageBoxBase):
 
     def _bind(self) -> None:
         self.detailButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self._release.pageUrl)))
-        self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(AUTHOR_URL)))
+        self.sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(DONATE_URL)))
 
     def selectedAsset(self) -> ReleaseAsset | None:
         index = self.assetView.currentIndex()
