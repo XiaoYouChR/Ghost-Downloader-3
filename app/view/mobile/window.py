@@ -13,6 +13,7 @@ from app.config.cfg import cfg
 from app.platform.android import clearShare, isStorageGranted, parseShare, requestStoragePermission
 from app.platform.android_notification import isNotificationEnabled, requestNotificationPermission
 from app.services.task_draft import TaskDraft
+from app.update import addBestAssetTask, showReleaseDialog
 from app.view.dialogs.task_draft import TaskDraftDialog
 from app.view.mobile.device import setupAccentColor
 from app.view.mobile.navigation import BottomNavigationBar
@@ -43,7 +44,7 @@ class MobileMainWindow(QWidget):
             parent=self,
         )
         self.taskPage = MobileTaskPage(taskService, featureService, categoryService, speedMeter, parent=self)
-        self.settingPage = MobileSettingPage(featureService, browserService, coroutineRunner, categoryService, parent=self)
+        self.settingPage = MobileSettingPage(featureService, browserService, coroutineRunner, categoryService, taskService, parent=self)
         self.searchEdit = SearchLineEdit(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
         self.vBoxLayout = QVBoxLayout(self)
@@ -200,7 +201,6 @@ class MobileMainWindow(QWidget):
 
     def _onUpdateAvailable(self, release) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
-        from app.update import addBestAssetTask, showReleaseDialog
 
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
@@ -213,10 +213,10 @@ class MobileMainWindow(QWidget):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self))
+        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self, self._coroutineRunner, self._featureService, self._taskService))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
-        detailButton.clicked.connect(lambda: showReleaseDialog(release, self))
+        detailButton.clicked.connect(lambda: showReleaseDialog(release, self, self._coroutineRunner, self._featureService, self._taskService))
         infoBar.addWidget(detailButton)
         infoBar.show()
 

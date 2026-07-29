@@ -27,17 +27,19 @@ from app.view.components.setting_cards import (
     HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
+from app.update import fetchRelease, isOutdated, showReleaseDialog
 from app.view.components.editors import FolderPicker
 
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, featureService, browserService, coroutineRunner, categoryService, parent=None):
+    def __init__(self, featureService, browserService, coroutineRunner, categoryService, taskService, parent=None):
         super().__init__(parent)
         self._featureService = featureService
         self._browserService = browserService
         self._coroutineRunner = coroutineRunner
         self._categoryService = categoryService
+        self._taskService = taskService
         self.container = QWidget()
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
@@ -489,8 +491,6 @@ class SettingPage(ScrollArea):
         QApplication.instance().quit()
 
     def _onAboutCardClicked(self) -> None:
-        from app.update import fetchRelease
-
         InfoBar.info(self.tr("检查更新"), self.tr("正在检查更新..."),
                      duration=1500, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
         self._coroutineRunner.submit(
@@ -500,17 +500,13 @@ class SettingPage(ScrollArea):
         )
 
     def _onUpdateChecked(self, release) -> None:
-        from app.config.constants import VERSION
-        from app.update import isOutdated
-
         if not isOutdated(release):
             InfoBar.success(self.tr("当前已是最新版本"),
                             self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, release.version),
                             duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
             return
 
-        from app.update import showReleaseDialog
-        showReleaseDialog(release, self.window())
+        showReleaseDialog(release, self.window(), self._coroutineRunner, self._featureService, self._taskService)
 
     def _onUpdateCheckFailed(self, error: str) -> None:
         InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),

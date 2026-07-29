@@ -12,8 +12,8 @@ QWIDGETSIZE_MAX = (1 << 24) - 1
 
 
 class MobileSettingPage(SettingPage):
-    def __init__(self, featureService, browserService, coroutineRunner, categoryService, parent=None):
-        super().__init__(featureService, browserService, coroutineRunner, categoryService, parent=parent)
+    def __init__(self, featureService, browserService, coroutineRunner, categoryService, taskService, parent=None):
+        super().__init__(featureService, browserService, coroutineRunner, categoryService, taskService, parent=parent)
         self._setScrollContentOpaque()
 
     def showEvent(self, event):
