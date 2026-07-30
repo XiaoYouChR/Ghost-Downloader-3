@@ -132,7 +132,11 @@ ytDlpConfig = YtDlpConfig()
 
 
 class YouTubeRuntime(BinaryRuntime):
-    name = "YouTube 运行环境"
+    @property
+    def name(self) -> str:
+        return QCoreApplication.translate("BinaryRuntime", "YouTube 运行环境")
+
+#    name = N("BinaryRuntime", "YouTube 运行环境")
     canInstall = True
     title = N("BinaryRuntime", "YouTube 下载")
     description = N("BinaryRuntime", "支持 YouTube、Twitter 等数百个视频网站")

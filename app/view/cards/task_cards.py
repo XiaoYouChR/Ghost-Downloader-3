@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from PySide6.QtCore import QCoreApplication, QFileInfo, QPoint, Signal, Qt
+from PySide6.QtCore import QCoreApplication, QFileInfo, QPoint, Signal, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QVBoxLayout, QApplication, QWidget, QSizePolicy
 from qfluentwidgets import (
@@ -74,28 +74,28 @@ SPEED_FIELD = FieldSpec("speed", FluentIcon.SPEED_HIGH, {
 ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toEtaText})
 SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toSizeText})
 
-TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, "暂停/继续", PrimaryToolButton, states={
+TOGGLE_BUTTON = ButtonSpec("toggle", FluentIcon.PLAY, N("TaskCard", "暂停/继续"), PrimaryToolButton, states={
     TaskStatus.RUNNING: lambda t: ButtonState(icon=FluentIcon.PAUSE, enabled=t.canPause),
     TaskStatus.COMPLETED: lambda t: ButtonState(enabled=False),
 })
 
-SELECT_FILES_BUTTON = ButtonSpec("selectFiles", FluentIcon.LIBRARY, "选择文件",
+SELECT_FILES_BUTTON = ButtonSpec("selectFiles", FluentIcon.LIBRARY, N("TaskCard", "选择文件"),
     states={None: lambda t: ButtonState(visible=bool(t.files) and len(t.files) > 1)})
 
-VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, "校验文件哈希",
+VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, N("TaskCard", "校验文件哈希"),
     default=BUTTON_HIDDEN,
     states={
         TaskStatus.COMPLETED: lambda t: ButtonState(
             enabled=t.hasOutputFile and Path(t.outputPath).exists()),
     })
 
-OPEN_FILE_BUTTON = ButtonSpec("openFile", FluentIcon.LINK, "打开文件", states={
+OPEN_FILE_BUTTON = ButtonSpec("openFile", FluentIcon.LINK, N("TaskCard", "打开文件"), states={
     TaskStatus.COMPLETED: lambda t: ButtonState(
         enabled=not t.hasOutputFile or Path(t.outputPath).exists()),
 })
 
-OPEN_FOLDER_BUTTON = ButtonSpec("openFolder", FluentIcon.FOLDER, "打开文件夹")
-DELETE_BUTTON = ButtonSpec("delete", FluentIcon.CLOSE, "删除", TransparentToolButton)
+OPEN_FOLDER_BUTTON = ButtonSpec("openFolder", FluentIcon.FOLDER, N("TaskCard", "打开文件夹"))
+DELETE_BUTTON = ButtonSpec("delete", FluentIcon.CLOSE, N("TaskCard", "删除"), TransparentToolButton)
 
 
 class TaskCard(CardWidget):

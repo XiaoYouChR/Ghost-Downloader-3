@@ -72,14 +72,14 @@ class BTTaskCard(MultiFileTaskCard):
             self._setStatus(self.tr("做种中") + "  " + " · ".join(parts))
         elif task.status == TaskStatus.RUNNING and task.stateText and task.stateText != "下载中":
             self.progressBar.hide()
-            self._setStatus(task.stateText)
+            self._setStatus(self.tr(task.stateText))
         elif task.status != TaskStatus.RUNNING:
             parts = []
             if task.stateText and task.stateText not in (
                 "下载中", "做种中", "检查续传状态", "校验已有文件",
                 "获取元数据", "分配文件中", "等待校验", "下载完成",
             ):
-                parts.append(task.stateText)
+                parts.append(self.tr(task.stateText))
             if task.shareRatioPercent > 0:
                 parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
             if task.seedingTimeSeconds > 0:
