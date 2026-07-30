@@ -277,7 +277,6 @@ class WelcomePage(QWidget):
 
     def _initLayout(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(8)
         layout.addStretch(3)
         layout.addWidget(self.iconLabel, 0, Qt.AlignmentFlag.AlignCenter)
@@ -756,7 +755,6 @@ class CompletePage(QWidget):
 
     def _initLayout(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(8)
         layout.addStretch(3)
         layout.addWidget(self.checkIcon, 0, Qt.AlignmentFlag.AlignCenter)
@@ -803,6 +801,7 @@ class OobeWindow(FluentWidget):
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
         self.titleBar.maxBtn.hide()
         self.setFixedSize(WINDOW_SIZE)
+        self.setResizeEnabled(False)
         desktop = QApplication.primaryScreen().availableGeometry()
         self.move(desktop.center() - self.rect().center())
 
