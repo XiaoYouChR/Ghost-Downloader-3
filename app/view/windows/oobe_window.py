@@ -25,6 +25,13 @@ from app.config.constants import (
     LATEST_EXTENSION_VERSION,
 )
 
+if sys.platform == "win32":
+    from ctypes import cast, POINTER
+    from ctypes.wintypes import MSG
+
+    import win32con
+    from qframelesswindow.windows.c_structures import PWINDOWPOS
+
 if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
 
@@ -277,7 +284,6 @@ class WelcomePage(QWidget):
 
     def _initLayout(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(8)
         layout.addStretch(3)
         layout.addWidget(self.iconLabel, 0, Qt.AlignmentFlag.AlignCenter)
@@ -756,7 +762,6 @@ class CompletePage(QWidget):
 
     def _initLayout(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(8)
         layout.addStretch(3)
         layout.addWidget(self.checkIcon, 0, Qt.AlignmentFlag.AlignCenter)
@@ -803,6 +808,7 @@ class OobeWindow(FluentWidget):
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
         self.titleBar.maxBtn.hide()
         self.setFixedSize(WINDOW_SIZE)
+        self.setResizeEnabled(False)
         desktop = QApplication.primaryScreen().availableGeometry()
         self.move(desktop.center() - self.rect().center())
 
@@ -953,6 +959,18 @@ class OobeWindow(FluentWidget):
         cfg.set(cfg.hasCompletedOobe, True)
         self.finished.emit()
         self.close()
+
+    def nativeEvent(self, eventType, message):
+        # Win10 WS_THICKFRAME 拖动时会短暂注入错误高度
+        if sys.platform == "win32":
+            msg = MSG.from_address(message.__int__())
+            if msg.message == win32con.WM_WINDOWPOSCHANGING:
+                pos = cast(msg.lParam, POINTER(PWINDOWPOS)).contents
+                if not (pos.flags & win32con.SWP_NOSIZE):
+                    dpr = self.devicePixelRatio()
+                    pos.cx = int(WINDOW_SIZE.width() * dpr)
+                    pos.cy = int(WINDOW_SIZE.height() * dpr)
+        return super().nativeEvent(eventType, message)
 
     def closeEvent(self, event) -> None:
         # 用户直接关窗视为"跳过全部"
