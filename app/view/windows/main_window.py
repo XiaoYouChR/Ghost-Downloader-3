@@ -416,7 +416,7 @@ class MainWindow(MSFluentWindow):
         if sys.platform == "win32":
             self._setBackgroundEffect(cfg.backgroundEffect.value)
 
-    def _setBackgroundEffect(self, value) -> None:
+    def _setBackgroundEffect(self, value: str) -> None:
         if sys.platform != "win32":
             return
         from qfluentwidgets import isDarkTheme
@@ -435,14 +435,16 @@ class MainWindow(MSFluentWindow):
         elif value == "Aero":
             self.setStyleSheet("background-color: transparent")
             self.windowEffect.setAeroEffect(self.winId())
-            from app.platform.windows import isLessThanWin10
             if isLessThanWin10():
                 self.titleBar.closeBtn.hide()
                 self.titleBar.minBtn.hide()
                 self.titleBar.maxBtn.hide()
         elif value == "None":
+            if isWin10():
+                self.windowEffect.accentPolicy.AccentState = ACCENT_STATE.ACCENT_ENABLE_GRADIENT.value
+                self.windowEffect.winCompAttrData.Attribute = WINDOWCOMPOSITIONATTRIB.WCA_ACCENT_POLICY.value
+                self.windowEffect.SetWindowCompositionAttribute(int(self.winId()), pointer(self.windowEffect.winCompAttrData))
             self.setStyleSheet("")
-            from app.platform.windows import isLessThanWin10
             if isLessThanWin10():
                 self.titleBar.closeBtn.show()
                 self.titleBar.minBtn.show()
@@ -464,7 +466,7 @@ if sys.platform == "darwin":
     MacFramelessWindowBase._updateSystemTitleBar = _updateSystemTitleBar
 
 if sys.platform == "win32":
-    from app.platform.windows import isWin10
+    from app.platform.windows import isLessThanWin10, isWin10
 
     if isWin10():
         from ctypes import pointer
