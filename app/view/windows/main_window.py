@@ -420,6 +420,7 @@ class MainWindow(MSFluentWindow):
         if sys.platform != "win32":
             return
         from qfluentwidgets import isDarkTheme
+        from app.platform.windows import isWin10, isLessThanWin10
         self.windowEffect.removeBackgroundEffect(self.winId())
         isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
 
@@ -435,14 +436,14 @@ class MainWindow(MSFluentWindow):
         elif value == "Aero":
             self.setStyleSheet("background-color: transparent")
             self.windowEffect.setAeroEffect(self.winId())
-            from app.platform.windows import isLessThanWin10
             if isLessThanWin10():
                 self.titleBar.closeBtn.hide()
                 self.titleBar.minBtn.hide()
                 self.titleBar.maxBtn.hide()
         elif value == "None":
+            if isWin10():
+                self.windowEffect.setAeroEffect(self.winId())
             self.setStyleSheet("")
-            from app.platform.windows import isLessThanWin10
             if isLessThanWin10():
                 self.titleBar.closeBtn.show()
                 self.titleBar.minBtn.show()
