@@ -155,11 +155,15 @@ class BilibiliAccount(QObject):
                     return ""
 
                 if statusCode == 0:
-                    successUrl = str(data.get("url") or "")
                     items: dict[str, str] = {}
-                    for name, value in parse_qsl(urlparse(successUrl).query, keep_blank_values=False):
-                        if name in COOKIE_ORDER and value:
-                            items[name] = value
+                    for c in response.cookies:
+                        if c.name in COOKIE_ORDER and c.value:
+                            items[c.name] = c.value
+                    if not any(n in items for n in COOKIE_ORDER):
+                        successUrl = str(data.get("url") or "")
+                        for name, value in parse_qsl(urlparse(successUrl).query, keep_blank_values=False):
+                            if name in COOKIE_ORDER and value:
+                                items[name] = value
                     if items:
                         return toCookie("; ".join(f"{k}={v}" for k, v in items.items()))
 
@@ -172,6 +176,8 @@ class BilibiliAccount(QObject):
         if cookie:
             self.setCookie(cookie)
             self.qrStateChanged.emit(QR_LOGIN_SUCCESS, "")
+        else:
+            self.qrStateChanged.emit(-1, "登录成功，但未能提取到有效 Cookie")
 
     def _onQrLoginFailed(self, error: str):
         self._qrWorkId = ""
