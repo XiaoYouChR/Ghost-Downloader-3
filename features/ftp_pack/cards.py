@@ -5,19 +5,11 @@ from .task import FtpTask
 
 
 class FtpDraftCard(MultiFileDraftCard):
+    fileSelectDialog = FileSelectDialog
 
     @property
     def task(self) -> FtpTask:
         return self._task
-
-    def _onSelectFilesClicked(self):
-        dialog = FileSelectDialog(self.task, self.window())
-        try:
-            if dialog.exec():
-                self.task.setSelection(dialog.selectedIndexes())
-                self._refreshSummary()
-        finally:
-            dialog.deleteLater()
 
 
 class FtpTaskCard(MultiFileTaskCard):

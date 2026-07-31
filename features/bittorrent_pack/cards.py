@@ -40,6 +40,7 @@ BT_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toBtSizeText})
 
 
 class BTDraftCard(MultiFileDraftCard):
+    fileSelectDialog = TorrentFileSelectDialog
 
     @property
     def task(self) -> BTTask:
@@ -50,15 +51,6 @@ class BTDraftCard(MultiFileDraftCard):
         icon = QFileIconProvider.IconType.File if self.task.isSingleFile else QFileIconProvider.IconType.Folder
         self.iconLabel.setImage(QFileIconProvider().icon(icon).pixmap(16, 16))
         self.iconLabel.setFixedSize(16, 16)
-
-    def _onSelectFilesClicked(self):
-        dialog = TorrentFileSelectDialog(self.task, self.window())
-        try:
-            if dialog.exec():
-                self.task.setSelection(dialog.selectedIndexes())
-                self._refreshSummary()
-        finally:
-            dialog.deleteLater()
 
 
 class BTTaskCard(MultiFileTaskCard):

@@ -17,6 +17,7 @@ from app.view.components.labels import EditableLabel
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from app.view.dialogs.file_select import FileSelectDialog
 
 
 class DraftCard(QWidget):
@@ -137,6 +138,7 @@ class DraftCard(QWidget):
 
 
 class MultiFileDraftCard(DraftCard):
+    fileSelectDialog: type[FileSelectDialog] | None = None
 
     def _initWidget(self) -> None:
         super()._initWidget()
@@ -159,7 +161,13 @@ class MultiFileDraftCard(DraftCard):
             self._selectFilesButton.clicked.connect(self._onSelectFilesClicked)
 
     def _onSelectFilesClicked(self) -> None:
-        raise NotImplementedError
+        dialog = self.fileSelectDialog(self.task, self._categoryService, self.window())
+        try:
+            if dialog.exec():
+                self.task.setSelection(dialog.selectedIndexes())
+                self._refreshSummary()
+        finally:
+            dialog.deleteLater()
 
     def _refreshSummary(self) -> None:
         if not self._task.files or len(self._task.files) <= 1:

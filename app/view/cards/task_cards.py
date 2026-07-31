@@ -23,6 +23,7 @@ from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 
 if TYPE_CHECKING:
     from app.models.task import Task
+    from qfluentwidgets import MessageBoxBase
 
 
 @dataclass(frozen=True)
@@ -460,12 +461,12 @@ class TaskCard(CardWidget):
 
 
 class MultiFileTaskCard(TaskCard):
-    fileSelectDialog: type | None = None
+    fileSelectDialog: type[MessageBoxBase] | None = None
 
     def _onSelectFilesClicked(self) -> None:
         if self.fileSelectDialog is None:
             return
-        dialog = self.fileSelectDialog(self._task, self.window())
+        dialog = self.fileSelectDialog(self._task, self._categoryService, self.window())
         try:
             if dialog.exec():
                 self._taskService.applySelection(self._task, dialog.selectedIndexes())

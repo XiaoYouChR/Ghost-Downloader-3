@@ -440,6 +440,15 @@ class YtDlpTaskCard(MultiFileTaskCard):
     infoFields = [SPEED_FIELD, ETA_FIELD, YTDLP_SIZE_FIELD]
     nameFormats = {TaskStatus.RUNNING: toYtDlpNameText}
 
+    def _onSelectFilesClicked(self) -> None:
+        dialog = VideoSelectDialog(self._task, self.window())
+        try:
+            if dialog.exec():
+                self._taskService.applySelection(self._task, dialog.selectedIndexes())
+                self.refresh(force=True)
+        finally:
+            dialog.deleteLater()
+
     def _createProgressBar(self) -> QWidget:
         bar = ProgressBar(self)
         bar.setCustomBackgroundColor(QColor(0, 0, 0, 0), QColor(0, 0, 0, 0))

@@ -286,6 +286,15 @@ class BilibiliDraftCard(MultiFileDraftCard):
 class BilibiliTaskCard(MultiFileTaskCard):
     fileSelectDialog = PageSelectDialog
 
+    def _onSelectFilesClicked(self) -> None:
+        dialog = PageSelectDialog(self._task, self.window())
+        try:
+            if dialog.exec():
+                self._taskService.applySelection(self._task, dialog.selectedIndexes())
+                self.refresh(force=True)
+        finally:
+            dialog.deleteLater()
+
     def _initWidget(self) -> None:
         super()._initWidget()
         task: BilibiliTask = self._task
