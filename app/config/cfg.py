@@ -274,7 +274,7 @@ class Config(QConfig):
         from app.platform.windows import isWin10
         backgroundEffect = OptionsConfigItem(
             "Personalization", "BackgroundEffect",
-            "Acrylic" if isWin10() else "Mica",
+            "None" if isWin10() else "Mica",
             OptionsValidator(["Acrylic", "Mica", "MicaAlt", "Aero", "None"]),
         )
     dpiScale = RangeConfigItem("Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True)
