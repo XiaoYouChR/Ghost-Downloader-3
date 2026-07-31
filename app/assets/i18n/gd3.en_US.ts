@@ -1059,7 +1059,7 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="52"/>
         <source>资源下载</source>
-        <translation>Resource Downloads</translation>
+        <translation>Resource</translation>
     </message>
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="111"/>

@@ -1059,7 +1059,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="52"/>
         <source>资源下载</source>
-        <translation>リソースダウンロード</translation>
+        <translation>リソース</translation>
     </message>
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="111"/>
