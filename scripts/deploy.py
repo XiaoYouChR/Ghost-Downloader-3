@@ -40,12 +40,31 @@ EXTRA_INCLUDE_MODULES = [
 ]
 
 
+def _isTypeCheckingGuard(test: ast.expr) -> bool:
+    return (isinstance(test, ast.Name) and test.id == "TYPE_CHECKING") or (
+        isinstance(test, ast.Attribute) and test.attr == "TYPE_CHECKING"
+    )
+
+
+def _typeCheckingImportIds(tree: ast.Module) -> set[int]:
+    ids: set[int] = set()
+    for stmt in tree.body:
+        if isinstance(stmt, ast.If) and _isTypeCheckingGuard(stmt.test):
+            for node in ast.walk(stmt):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    ids.add(id(node))
+    return ids
+
+
 def findImports(files: Iterable[Path]) -> tuple[set[str], set[str]]:
     appModules: set[str] = set()
     thirdParty: set[str] = set()
     for source in files:
         tree = ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+        typeCheckingIds = _typeCheckingImportIds(tree)
         for node in ast.walk(tree):
+            if id(node) in typeCheckingIds:
+                continue
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     dotted = alias.name
