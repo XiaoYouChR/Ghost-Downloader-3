@@ -329,7 +329,7 @@ def _qjsAssetName() -> str:
         arch = "x86" if machine in {"x86", "i386", "i686"} else "x86_64"
         return f"qjs-windows-{arch}.exe"
     elif sys.platform == "darwin":
-        return "qjs-darwin"
+        return f"qjs-darwin-{machine}"
     else:
         arch = "aarch64" if machine in {"arm64", "aarch64"} else "x86_64"
         return f"qjs-linux-{arch}"
