@@ -1,5 +1,5 @@
 <h4 align="right">
-  <a href="README_zh.md">简体中文</a> | English
+  <a href="README_zh.md">简体中文</a> | <a href="README_ar.md">العربية</a> | English
 </h4>
 
 > [!TIP]
