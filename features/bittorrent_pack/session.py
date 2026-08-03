@@ -266,6 +266,13 @@ class BTSession(QObject):
                 "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
                 "enable_dht": bittorrentConfig.enableDht.value,
                 "enable_lsd": bittorrentConfig.enableLsd.value,
+                # libtorrent 2.0.13 默认只有 dht.libtorrent.org:25401 一个 bootstrap
+                # 节点，部分网络下不可达会导致 DHT 无法收敛（元数据只能靠 tracker）。
+                # 显式配置多节点，与 qBittorrent 对齐。
+                "dht_bootstrap_nodes": (
+                    "router.bittorrent.com:6881, router.utorrent.com:6881, "
+                    "dht.transmissionbt.com:6881, dht.libtorrent.org:25401"
+                ),
                 "announce_to_all_trackers": True,
                 "announce_to_all_tiers": True,
                 "enable_upnp": True,
