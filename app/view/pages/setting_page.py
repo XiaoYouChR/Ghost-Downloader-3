@@ -115,6 +115,9 @@ class SettingPage(ScrollArea):
                               cfg.shouldVerifySsl),
             self.downloadFolderCard,
             ProxySettingCard(cfg.proxyServer, featureService=self._featureService),
+            SwitchSettingCard(FluentIcon.GLOBE, self.tr("使用系统 DNS"),
+                              self.tr("开启后直连使用系统 DNS，TUN 模式下可正常解析域名"),
+                              cfg.shouldUseSystemDns),
             self.clientProfileCard,
             HeadersPresetSettingCard(),
         ])
