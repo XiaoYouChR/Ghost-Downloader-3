@@ -908,8 +908,8 @@ class RuntimeCard(SettingCard):
             if card is not None and isValid(card):
                 card.installButton.setEnabled(True)
                 InfoBar.success(
-                    card.tr("安装任务已创建"),
-                    card.tr("请前往任务页查看安装进度"),
+                    self.tr("安装任务已创建"),
+                    self.tr("请前往任务页查看安装进度"),
                     duration=3000,
                     position=InfoBarPosition.TOP,
                     parent=card.window(),

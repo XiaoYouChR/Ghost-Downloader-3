@@ -200,7 +200,7 @@ class YouTubeExtractStep(TaskStep):
 
         from .config import youTubeRuntime
         if not youTubeRuntime.path():
-            raise TaskError("{name} 未安装，请在设置中安装", name="YouTube 运行环境")
+            raise TaskError("{name} 未安装，请在设置中安装", name=youTubeRuntime.name)
 
         url = self.videoUrl or self.task.url
         try:

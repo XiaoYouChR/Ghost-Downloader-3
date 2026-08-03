@@ -132,7 +132,7 @@ ytDlpConfig = YtDlpConfig()
 
 
 class YouTubeRuntime(BinaryRuntime):
-    name = "YouTube 运行环境"
+    name = "YouTube Env"
     canInstall = True
     title = N("BinaryRuntime", "YouTube 下载")
     description = N("BinaryRuntime", "支持 YouTube、Twitter 等数百个视频网站")

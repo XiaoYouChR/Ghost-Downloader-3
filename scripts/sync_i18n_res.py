@@ -45,7 +45,9 @@ def updateTsFiles(sources: list[str]) -> None:
     lupdate = findTool("pyside6-lupdate")
     for locale in LANGUAGES:
         subprocess.run([
-            lupdate, "-no-ui-lines",
+            lupdate, 
+            "-tr-function-alias", "QT_TRANSLATE_NOOP+=N",
+            "-no-ui-lines",
             "-source-language", "zh_CN",
             "-target-language", locale,
             *sources,

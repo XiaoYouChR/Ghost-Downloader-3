@@ -152,94 +152,82 @@
 <context>
     <name>AdvancedOptionsPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="642"/>
+        <location filename="../../view/windows/oobe_window.py" line="648"/>
         <source>更多选项</source>
         <translation>More Options</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="643"/>
+        <location filename="../../view/windows/oobe_window.py" line="649"/>
         <source>按需开启以下功能，也可以稍后在设置中修改</source>
         <translation>Enable the following features as needed; you can change them later in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="656"/>
+        <location filename="../../view/windows/oobe_window.py" line="662"/>
         <source>自动分类保存</source>
-        <translation>Auto Categorize Downloads</translation>
+        <translation>Download Categorization</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="657"/>
+        <location filename="../../view/windows/oobe_window.py" line="663"/>
         <source>按文件类型自动保存到 视频、音频、文档 等子文件夹</source>
         <translation>Automatically save files to subfolders (Videos, Audio, Documents, etc.) based on file type</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="662"/>
+        <location filename="../../view/windows/oobe_window.py" line="668"/>
         <source>关联文件类型</source>
         <translation>Associate File Types</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="663"/>
+        <location filename="../../view/windows/oobe_window.py" line="669"/>
         <source>双击 .torrent 等文件时用 Ghost Downloader 打开</source>
-        <translation>Open .torrent and other supported files with Ghost Downloader when double-clicked</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="667"/>
-        <source>处理协议链接</source>
-        <translation>Process protocol links</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="668"/>
-        <source>点击 Magnet/eD2k/FTP 链接时唤起 Ghost Downloader</source>
-        <translation>Launch Ghost Downloader when clicking Magnet/eD2k/FTP links</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="672"/>
-        <source>允许浏览器扩展唤醒</source>
-        <translation>Allow browser extension to wake the desktop client</translation>
+        <translation>Open .torrent and other supported files with Ghost Downloader</translation>
     </message>
     <message>
         <location filename="../../view/windows/oobe_window.py" line="673"/>
+        <source>处理协议链接</source>
+        <translation>Associate Special Protocol URLs</translation>
+    </message>
+    <message>
+        <location filename="../../view/windows/oobe_window.py" line="674"/>
+        <source>点击 Magnet/eD2k/FTP 链接时唤起 Ghost Downloader</source>
+        <translation>Open Magnet/eD2k/FTP links with Ghost Downloader</translation>
+    </message>
+    <message>
+        <location filename="../../view/windows/oobe_window.py" line="678"/>
+        <source>允许浏览器扩展唤醒</source>
+        <translation>Allow Launching From Browser Extension</translation>
+    </message>
+    <message>
+        <location filename="../../view/windows/oobe_window.py" line="679"/>
         <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-        <translation>Browser extension can launch the desktop client via ghostdownloader:// protocol</translation>
+        <translation>The browser extension may launch the program via ghostdownloader:// URL scheme</translation>
     </message>
     <message>
-        <source>双击 .torrent 等文件时自动用 Ghost Downloader 打开</source>
-        <translation type="vanished">Automatically open .torrent and other supported files with Ghost Downloader</translation>
-    </message>
-    <message>
-        <source>注册 URL 协议</source>
-        <translation type="vanished">Register URL Protocol</translation>
-    </message>
-    <message>
-        <source>允许网页通过 ghostdownloader:// 链接唤起本应用</source>
-        <translation type="vanished">Allow web pages to launch this app via ghostdownloader:// links</translation>
-    </message>
-    <message>
-        <location filename="../../view/windows/oobe_window.py" line="681"/>
+        <location filename="../../view/windows/oobe_window.py" line="687"/>
         <source>Aria2 RPC 兼容</source>
-        <translation>Aria2 RPC Compatibility</translation>
+        <translation>Aria2 RPC Support</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="682"/>
+        <location filename="../../view/windows/oobe_window.py" line="688"/>
         <source>让支持 Aria2 的工具和网站把下载任务发给 Ghost Downloader</source>
-        <translation>Let Aria2-compatible tools and websites send download tasks to Ghost Downloader</translation>
+        <translation>Allow Aria2-compatible tools and websites send download tasks to Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="646"/>
+        <location filename="../../view/windows/oobe_window.py" line="652"/>
         <source>开机自启</source>
         <translation>Start on Boot</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="647"/>
+        <location filename="../../view/windows/oobe_window.py" line="653"/>
         <source>登录系统时自动在后台启动，随时接管下载</source>
         <translation>Run automatically at system startup to take over downloads anytime</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="651"/>
+        <location filename="../../view/windows/oobe_window.py" line="657"/>
         <source>剪贴板监听</source>
         <translation>Monitor Clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="652"/>
+        <location filename="../../view/windows/oobe_window.py" line="658"/>
         <source>复制下载链接时自动弹出新任务提示</source>
         <translation>Automatically show new task prompt when a download link is copied</translation>
     </message>
@@ -262,8 +250,8 @@
         <translation type="vanished">Seed Ratio: {0:.2f}%</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="77"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="94"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="69"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="86"/>
         <source>做种 {0}</source>
         <translation>Seeded for {0}</translation>
     </message>
@@ -272,81 +260,127 @@
         <translation type="vanished">Peers {0}/Seeds {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="75"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="92"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="67"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="84"/>
         <source>分享率 {0}</source>
         <translation>Seed Ratio: {0}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="79"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="71"/>
         <source>{0} peers</source>
         <translation>{0} Peers</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="80"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="72"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="10"/>
         <source>做种中</source>
         <translation>Seeding</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="5"/>
+        <source>校验已有文件</source>
+        <translation>Checking Existing Files</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="6"/>
+        <source>检查续传状态</source>
+        <translation>Checking Resume Data</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="7"/>
+        <source>获取元数据</source>
+        <translation>Downloading Metadata</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="8"/>
+        <source>下载中</source>
+        <translation>Downloading</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="9"/>
+        <source>下载完成</source>
+        <translation>Download Complete</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="11"/>
+        <source>分配文件中</source>
+        <translation>Allocating Files</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="12"/>
+        <source>等待校验</source>
+        <translation>Queued for Checks</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="13"/>
+        <source>已暂停做种</source>
+        <translation>Seeding Paused</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="14"/>
+        <source>已暂停下载</source>
+        <translation>Download Paused</translation>
     </message>
 </context>
 <context>
     <name>BasicSettingsPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="307"/>
+        <location filename="../../view/windows/oobe_window.py" line="313"/>
         <source>基本设置</source>
         <translation>Basic Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="308"/>
+        <location filename="../../view/windows/oobe_window.py" line="314"/>
         <source>选择你喜欢的外观，设置下载文件的保存位置</source>
         <translation>Choose your preferred appearance and set the download location</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="312"/>
+        <location filename="../../view/windows/oobe_window.py" line="318"/>
         <source>浅色</source>
         <translation>Light</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="313"/>
+        <location filename="../../view/windows/oobe_window.py" line="319"/>
         <source>深色</source>
         <translation>Dark</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="314"/>
+        <location filename="../../view/windows/oobe_window.py" line="320"/>
         <source>跟随系统</source>
         <translation>Follow System</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="318"/>
+        <location filename="../../view/windows/oobe_window.py" line="324"/>
         <source>偏好</source>
         <translation>Preferences</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="323"/>
+        <location filename="../../view/windows/oobe_window.py" line="329"/>
         <source>使用系统设置</source>
         <translation>Use System Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="326"/>
+        <location filename="../../view/windows/oobe_window.py" line="332"/>
         <source>浏览...</source>
         <translation>Browse...</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="343"/>
+        <location filename="../../view/windows/oobe_window.py" line="349"/>
         <source>界面语言</source>
         <translation>Interface Language</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="344"/>
+        <location filename="../../view/windows/oobe_window.py" line="350"/>
         <source>更改立即生效</source>
         <translation>Changes take effect immediately</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="347"/>
+        <location filename="../../view/windows/oobe_window.py" line="353"/>
         <source>下载保存位置</source>
         <translation>Download Location</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="378"/>
+        <location filename="../../view/windows/oobe_window.py" line="384"/>
         <source>选择下载目录</source>
         <translation>Choose Download Directory</translation>
     </message>
@@ -427,7 +461,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="252"/>
         <source>Bilibili 下载</source>
-        <translation>Bilibili Download</translation>
+        <translation>Bilibili</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="256"/>
@@ -447,7 +481,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="262"/>
         <source>当选择的画质不可用时的替代策略</source>
-        <translation>Fallback strategy when selected quality is unavailable</translation>
+        <translation>Fallback logic when selected quality is unavailable</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="263"/>
@@ -551,9 +585,57 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliTaskCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="294"/>
+        <location filename="../../../features/bili_pack/cards.py" line="303"/>
         <source>选择分P</source>
         <translation>Select Parts</translation>
+    </message>
+</context>
+<context>
+    <name>BinaryRuntime</name>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="137"/>
+        <source>YouTube 运行环境</source>
+        <translation>YouTube Support Runtime</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="141"/>
+        <source>YouTube 下载</source>
+        <translation>YouTube Download</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="142"/>
+        <source>支持 YouTube、Twitter 等数百个视频网站</source>
+        <translation>Support for hundreds of video sites including YouTube and Twitter</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="80"/>
+        <source>eD2k / eMule</source>
+        <translation>eD2k/eMule</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
+        <source>支持电驴协议，适合下载经典资源</source>
+        <translation>Support for the eDonky network, enable downloading of archaic resources</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="61"/>
+        <source>视频合并</source>
+        <translation>Video Muxing</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="62"/>
+        <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
+        <translation>Required for downloading videos from Bilibili, YouTube, and more sites; allow combining audio and video tracks</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/config.py" line="145"/>
+        <source>M3U8 / 直播下载</source>
+        <translation>M3U8 &amp; Live Stream Download</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/config.py" line="146"/>
+        <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
+        <translation>Support for live streaming protocols including HLS and DASH, enable live stream recording</translation>
     </message>
 </context>
 <context>
@@ -561,7 +643,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="63"/>
         <source>BitTorrent 下载</source>
-        <translation>BitTorrent Download</translation>
+        <translation>BitTorrent</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="66"/>
@@ -576,7 +658,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="68"/>
         <source>元数据超时</source>
-        <translation>Metadata Timeout</translation>
+        <translation>Metadata Download Timeout</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="69"/>
@@ -594,13 +676,9 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>Maximum connections per BT task session</translation>
     </message>
     <message>
-        <source>下载限速</source>
-        <translation type="vanished">Download Speed Limit</translation>
-    </message>
-    <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="72"/>
         <source>上传限速</source>
-        <translation>Upload Speed Limit</translation>
+        <translation>Seeding Upload Speed Limit</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/config.py" line="73"/>
@@ -790,92 +868,93 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BrowserExtensionPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="399"/>
+        <location filename="../../view/windows/oobe_window.py" line="405"/>
         <source>安装浏览器扩展</source>
         <translation>Install Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="400"/>
+        <location filename="../../view/windows/oobe_window.py" line="406"/>
         <source>让浏览器中的下载自动接管到 Ghost Downloader</source>
         <translation>Automatically take over downloads from your browser to Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="412"/>
+        <location filename="../../view/windows/oobe_window.py" line="418"/>
         <source>安装教程动图</source>
         <translation>Installation Tutorial (GIF)</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="422"/>
+        <location filename="../../view/windows/oobe_window.py" line="428"/>
         <source>手动安装</source>
         <translation>Manual Install</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="423"/>
+        <location filename="../../view/windows/oobe_window.py" line="429"/>
         <source>随桌面端自动更新，适用于所有 Chromium 浏览器</source>
         <translation>Updates automatically with the desktop client; works with all Chromium-based browsers</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="428"/>
+        <location filename="../../view/windows/oobe_window.py" line="434"/>
         <source>Chrome 商店</source>
         <translation>Chrome Store</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="429"/>
+        <location filename="../../view/windows/oobe_window.py" line="435"/>
         <source>Edge 商店</source>
         <translation>Edge Store</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="430"/>
+        <location filename="../../view/windows/oobe_window.py" line="436"/>
         <source>Firefox 商店</source>
         <translation>Firefox Store</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="434"/>
+        <location filename="../../view/windows/oobe_window.py" line="440"/>
         <source>商店版更新需等待审核，可能滞后于桌面端</source>
-        <translation>Store versions need to pass review before updates; may lag behind the desktop client</translation>
+        <translation>Store versions need to pass review before updates;
+may lag behind the desktop client</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="496"/>
+        <location filename="../../view/windows/oobe_window.py" line="502"/>
         <source>正在端口 {} 上等待扩展连接</source>
         <translation>Waiting for extension connection on port {}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="501"/>
+        <location filename="../../view/windows/oobe_window.py" line="507"/>
         <source>浏览器扩展未启用，可稍后在设置中开启</source>
         <translation>Browser extension is not enabled; you can turn it on later in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="506"/>
+        <location filename="../../view/windows/oobe_window.py" line="512"/>
         <source>端口 {} 被占用，请在设置中更换端口</source>
         <translation>Port {} is in use; please change the port in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="513"/>
+        <location filename="../../view/windows/oobe_window.py" line="519"/>
         <source>已连接扩展 v{}，最新版本为 v{}</source>
         <translation>Extension v{} connected; latest version is v{}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="517"/>
+        <location filename="../../view/windows/oobe_window.py" line="523"/>
         <source>已连接扩展，最新版本为 v{}</source>
         <translation>Extension connected; latest version is v{}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="544"/>
+        <location filename="../../view/windows/oobe_window.py" line="550"/>
         <source>请手动打开浏览器</source>
         <translation>Please manually open your browser</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="545"/>
+        <location filename="../../view/windows/oobe_window.py" line="551"/>
         <source>chrome://extensions 已复制到剪贴板</source>
         <translation>chrome://extensions has been copied to clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="551"/>
+        <location filename="../../view/windows/oobe_window.py" line="557"/>
         <source>解包失败</source>
         <translation>Unpack failed</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="563"/>
+        <location filename="../../view/windows/oobe_window.py" line="569"/>
         <source>协议版本不匹配，商店版可能滞后，请尝试手动安装</source>
         <translation>Protocol version mismatch; the store version may be outdated, please try manual installation</translation>
     </message>
@@ -1059,7 +1138,7 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="52"/>
         <source>资源下载</source>
-        <translation>Resource Downloads</translation>
+        <translation>Resources</translation>
     </message>
     <message>
         <location filename="../../../features/jack_yao/pack.py" line="111"/>
@@ -1285,19 +1364,19 @@ Only allow this request if you have requested &quot;Automatic Pair&quot; from th
 <context>
     <name>CompletePage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="744"/>
+        <location filename="../../view/windows/oobe_window.py" line="750"/>
         <source>一切就绪</source>
         <translation>All Set</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="748"/>
+        <location filename="../../view/windows/oobe_window.py" line="754"/>
         <source>Ghost Downloader 已准备好为你工作。
 你可以随时在设置中调整所有选项。</source>
-        <translation>Ghost Downloader is ready to work for you.
-You can adjust all options in Settings at any time.</translation>
+        <translation>Ghost Downloader is now ready!
+You can adjust options in Settings at any time.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="754"/>
+        <location filename="../../view/windows/oobe_window.py" line="760"/>
         <source>开始使用</source>
         <translation>Get Started</translation>
     </message>
@@ -1375,13 +1454,13 @@ You can adjust all options in Settings at any time.</translation>
 <context>
     <name>DraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="56"/>
+        <location filename="../../view/cards/draft_cards.py" line="57"/>
         <source>编辑任务参数</source>
         <translation>Edit Task Options</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="108"/>
-        <location filename="../../view/cards/draft_cards.py" line="113"/>
+        <location filename="../../view/cards/draft_cards.py" line="109"/>
+        <location filename="../../view/cards/draft_cards.py" line="114"/>
         <source>未分类</source>
         <translation>Uncategorized</translation>
     </message>
@@ -1404,7 +1483,7 @@ You can adjust all options in Settings at any time.</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="32"/>
         <source>eD2k 下载</source>
-        <translation>eD2k Download</translation>
+        <translation>eD2k</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="35"/>
@@ -1801,7 +1880,7 @@ Install Location: {1}</translation>
     <message>
         <location filename="../../view/dialogs/file_select.py" line="247"/>
         <source>至少选择一个文件</source>
-        <translation>At least one file must be selected</translation>
+        <translation>At least one file is required</translation>
     </message>
     <message>
         <location filename="../../view/dialogs/file_select.py" line="248"/>
@@ -1864,30 +1943,11 @@ Install Location: {1}</translation>
     </message>
 </context>
 <context>
-    <name>GitHubAgreementDialog</name>
-    <message>
-        <source>GitHub 加速用户协议</source>
-        <translation type="vanished">GitHub Acceleration User Agreement</translation>
-    </message>
-    <message>
-        <source>同意并启用</source>
-        <translation type="vanished">Agree and Enable</translation>
-    </message>
-    <message>
-        <source>取消</source>
-        <translation type="vanished">Cancel</translation>
-    </message>
-    <message>
-        <source>关闭</source>
-        <translation type="vanished">Close</translation>
-    </message>
-</context>
-<context>
     <name>GitHubConfig</name>
     <message>
         <location filename="../../../features/github_pack/config.py" line="207"/>
         <source>GitHub 加速</source>
-        <translation>GitHub Acceleration</translation>
+        <translation>GitHub</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="209"/>
@@ -1897,7 +1957,7 @@ Install Location: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="210"/>
         <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation>Automatically change GitHub file links to download through selected proxy</translation>
+        <translation>Automatically rewrite GitHub file links to download through selected proxy</translation>
     </message>
     <message>
         <source>查看协议</source>
@@ -1914,7 +1974,7 @@ Install Location: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="91"/>
         <source>选择 GitHub 反向代理站，延迟仅供参考</source>
-        <translation>Select GitHub reverse proxy site, latency is for reference only</translation>
+        <translation>Select GitHub reverse proxy site; latency is for reference only</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="108"/>
@@ -2121,7 +2181,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="237"/>
         <source>命中 HuggingFace 链接时，自动改写为所选镜像站</source>
-        <translation>Automatically rewrite HuggingFace links to use selected mirror site</translation>
+        <translation>Automatically rewrite HuggingFace links to download through selected mirror site</translation>
     </message>
 </context>
 <context>
@@ -2145,7 +2205,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="90"/>
         <source>选择 HuggingFace 镜像站，延迟仅供参考</source>
-        <translation>Select HuggingFace mirror site, latency is for reference only</translation>
+        <translation>Select HuggingFace mirror site; latency is for reference only</translation>
     </message>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="107"/>
@@ -2319,7 +2379,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="79"/>
         <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
-        <translation>After VOD download, prefer using FFmpeg to remux to specified container</translation>
+        <translation>Prefered container format for ffmpeg to remux to after VOD download completion</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="80"/>
@@ -2363,7 +2423,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="69"/>
         <source>M3U8 下载</source>
-        <translation>M3U8 Download</translation>
+        <translation>M3U8 Playlist</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="87"/>
@@ -2413,7 +2473,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="96"/>
         <source>直播保留原始分片</source>
-        <translation>Keep original segments for live streams</translation>
+        <translation>Keep Original Live Stream Segments</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="97"/>
@@ -2438,7 +2498,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="102"/>
         <source>直播刷新等待时间</source>
-        <translation>Live refresh wait time</translation>
+        <translation>Live Refresh Interval</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="103"/>
@@ -2448,7 +2508,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="104"/>
         <source>直播每次取片数</source>
-        <translation>Live segment fetch count</translation>
+        <translation>Live Segments Per Fetch</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="105"/>
@@ -2468,7 +2528,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="108"/>
         <source>解密引擎二进制路径</source>
-        <translation>Decryption engine binary path</translation>
+        <translation>Decryption Engine Binary Location</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="109"/>
@@ -2502,7 +2562,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="114"/>
         <source>最大下载速度，-1 为不限速</source>
-        <translation>Max download speed, -1 for unlimited</translation>
+        <translation>Maximum download speed, -1 for unlimited</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="115"/>
@@ -2542,7 +2602,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="121"/>
         <source>不写入日期信息</source>
-        <translation>Do not write date info</translation>
+        <translation>Omit Date Info</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="122"/>
@@ -2552,7 +2612,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="123"/>
         <source>保留图形分片</source>
-        <translation>Keep graphical segments</translation>
+        <translation>Keep Graphical Segments</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="124"/>
@@ -2562,17 +2622,17 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="125"/>
         <source>完成后删除临时文件</source>
-        <translation>Delete temp files after completion</translation>
+        <translation>Delete Temp Files After Completion</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="126"/>
         <source>下载完成后删除分片临时目录</source>
-        <translation>Delete segment temp directory after download</translation>
+        <translation>Delete temporary segment storage directory after download</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/config.py" line="127"/>
         <source>下载全部音轨与字幕</source>
-        <translation>Download all audio tracks and subtitles</translation>
+        <translation>Download All Audio And Subtitles Tracks</translation>
     </message>
     <message>
         <source>默认拉取全部音频与字幕轨道，而非仅最佳</source>
@@ -2744,32 +2804,32 @@ Click the “Document” icon to open the program log
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="84"/>
+        <location filename="../../view/windows/main_window.py" line="85"/>
         <source>下载任务</source>
         <translation>Tasks</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="88"/>
+        <location filename="../../view/windows/main_window.py" line="89"/>
         <source>新建任务</source>
         <translation>New Task</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="94"/>
+        <location filename="../../view/windows/main_window.py" line="95"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="223"/>
+        <location filename="../../view/windows/main_window.py" line="224"/>
         <source>未知</source>
         <translation>Unknown</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="224"/>
+        <location filename="../../view/windows/main_window.py" line="225"/>
         <source>浏览器扩展</source>
         <translation>Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="227"/>
+        <location filename="../../view/windows/main_window.py" line="228"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -2786,17 +2846,17 @@ Extension Version: {2}
 Only allow this request if you have requested &quot;Auto Pair&quot; from the extension.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="232"/>
+        <location filename="../../view/windows/main_window.py" line="233"/>
         <source>浏览器扩展配对请求</source>
         <translation>Browser Extension Pairing Request</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="233"/>
+        <location filename="../../view/windows/main_window.py" line="234"/>
         <source>允许配对</source>
         <translation>Allow</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="234"/>
+        <location filename="../../view/windows/main_window.py" line="235"/>
         <source>拒绝</source>
         <translation>Decline</translation>
     </message>
@@ -2944,27 +3004,27 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>MobileMainWindow</name>
     <message>
-        <location filename="../../view/mobile/window.py" line="42"/>
+        <location filename="../../view/mobile/window.py" line="43"/>
         <source>未开启通知权限，下载完成后将无法提醒</source>
         <translation>Notification permission not enabled, you will not be notified when downloads complete</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="71"/>
+        <location filename="../../view/mobile/window.py" line="72"/>
         <source>任务</source>
         <translation>Tasks</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="72"/>
+        <location filename="../../view/mobile/window.py" line="73"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="187"/>
+        <location filename="../../view/mobile/window.py" line="188"/>
         <source>需要存储权限</source>
         <translation>Storage permission required</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="188"/>
+        <location filename="../../view/mobile/window.py" line="189"/>
         <source>请授予存储权限后再新建任务</source>
         <translation>Grant storage permission before creating a new task</translation>
     </message>
@@ -3047,12 +3107,12 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>MultiFileDraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="147"/>
+        <location filename="../../view/cards/draft_cards.py" line="149"/>
         <source>选择文件</source>
         <translation>Select Files</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="170"/>
+        <location filename="../../view/cards/draft_cards.py" line="178"/>
         <source>{0}/{1} 个文件 · {2}</source>
         <translation>{0}/{1} Files · {2}</translation>
     </message>
@@ -3060,7 +3120,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="483"/>
+        <location filename="../../view/cards/task_cards.py" line="484"/>
         <source>{0}/{1} 个文件</source>
         <translation>{0}/{1} Files</translation>
     </message>
@@ -3135,17 +3195,17 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>OobeWindow</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="829"/>
+        <location filename="../../view/windows/oobe_window.py" line="835"/>
         <source>上一步</source>
         <translation>Previous</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="830"/>
+        <location filename="../../view/windows/oobe_window.py" line="836"/>
         <source>跳过全部</source>
         <translation>Skip All</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="831"/>
+        <location filename="../../view/windows/oobe_window.py" line="837"/>
         <source>下一步</source>
         <translation>Next</translation>
     </message>
@@ -3255,7 +3315,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     <message>
         <location filename="../../view/dialogs/plan_task.py" line="18"/>
         <source>所有任务完成后执行以下操作：</source>
-        <translation>Perform the following after all tasks are completed:</translation>
+        <translation>Perform the following after completing all tasks:</translation>
     </message>
     <message>
         <location filename="../../view/dialogs/plan_task.py" line="20"/>
@@ -3600,6 +3660,16 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Latest version: {0}</translation>
     </message>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="911"/>
+        <source>安装任务已创建</source>
+        <translation>Installation Task Created</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="912"/>
+        <source>请前往任务页查看安装进度</source>
+        <translation>Check installation progress in Tasks page</translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="941"/>
         <source>确认卸载</source>
         <translation>Confirm Uninstall</translation>
@@ -3644,22 +3714,22 @@ Path: {1}</translation>
 <context>
     <name>RuntimeInstallPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="579"/>
+        <location filename="../../view/windows/oobe_window.py" line="585"/>
         <source>安装推荐组件</source>
         <translation>Install Recommended Components</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="580"/>
+        <location filename="../../view/windows/oobe_window.py" line="586"/>
         <source>点击下一步将自动安装勾选的组件，稍后可在设置中管理</source>
         <translation>Click Next to install the selected components; you can manage them later in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="582"/>
+        <location filename="../../view/windows/oobe_window.py" line="588"/>
         <source>推荐组件</source>
         <translation>Recommended Components</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="612"/>
+        <location filename="../../view/windows/oobe_window.py" line="618"/>
         <source>已安装</source>
         <translation>Installed</translation>
     </message>
@@ -3791,97 +3861,93 @@ Path: {1}</translation>
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="45"/>
+        <location filename="../../view/pages/setting_page.py" line="47"/>
         <source>综合下载设置</source>
-        <translation>General Download Settings</translation>
+        <translation>General</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="46"/>
+        <location filename="../../view/pages/setting_page.py" line="48"/>
         <source>下载分类</source>
         <translation>Download Categorization</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="47"/>
+        <location filename="../../view/pages/setting_page.py" line="50"/>
         <source>关联设置</source>
-        <translation>Association Settings</translation>
+        <translation>Integration</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="48"/>
+        <location filename="../../view/pages/setting_page.py" line="51"/>
         <source>浏览器扩展</source>
         <translation>Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="50"/>
+        <location filename="../../view/pages/setting_page.py" line="53"/>
         <source>个性化</source>
         <translation>Personalization</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="51"/>
+        <location filename="../../view/pages/setting_page.py" line="54"/>
         <source>应用</source>
         <translation>Application</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="52"/>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
+        <location filename="../../view/pages/setting_page.py" line="55"/>
+        <location filename="../../view/pages/setting_page.py" line="353"/>
         <source>关于</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="96"/>
+        <location filename="../../view/pages/setting_page.py" line="99"/>
         <source>最大任务数</source>
         <translation>Maximum Concurrent Tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="97"/>
+        <location filename="../../view/pages/setting_page.py" line="100"/>
         <source>最多能同时进行的任务数量</source>
         <translation>Maximum number of simultaneous transfers</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="98"/>
+        <location filename="../../view/pages/setting_page.py" line="101"/>
         <source>预分配线程数</source>
         <translation>Pre-allocated Threads</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="99"/>
+        <location filename="../../view/pages/setting_page.py" line="102"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
         <translation>More threads speed up downloads. Over 64 threads may trigger anti-scraping and corrupt files</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="100"/>
+        <location filename="../../view/pages/setting_page.py" line="103"/>
         <source>自动提速</source>
         <translation>Auto Boost</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="101"/>
-        <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
-        <translation>Monitor thread efficiencies with AI and auto-increase number of threads to boost download speed</translation>
-    </message>
-    <message>
-        <source>最大重新分配大小 (MB)</source>
-        <translation type="vanished">Maximum Redistribution Size (MB)</translation>
-    </message>
-    <message>
         <location filename="../../view/pages/setting_page.py" line="104"/>
-        <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
-        <translation>If threads&apos; workload surpasses this value, redistribution will trigger when a thread completes or Auto Boost is enabled</translation>
+        <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
+        <translation>Intelligently monitor thread efficiencies and automatically increase the number of threads to boost download speed</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="76"/>
+        <location filename="../../view/pages/setting_page.py" line="107"/>
+        <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
+        <translation>If threads&apos; workload exceeds this value, redistribution will trigger when a thread completes or Auto Boost is enabled</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="79"/>
         <source>下载限速</source>
         <translation>Download Speed Limit</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="77"/>
+        <location filename="../../view/pages/setting_page.py" line="80"/>
         <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
         <translation>If the speed limit switch is enabled on the download tasks page, all tasks will be limited according to this value</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="110"/>
+        <location filename="../../view/pages/setting_page.py" line="113"/>
         <source>下载时验证 SSL 证书</source>
         <translation>Verify SSL Certificates</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="111"/>
+        <location filename="../../view/pages/setting_page.py" line="114"/>
         <source>文件无法下载时，可尝试关闭该选项</source>
         <translation>Try disabling if files fail to download</translation>
     </message>
@@ -3890,22 +3956,22 @@ Path: {1}</translation>
         <translation type="vanished">Default HTTP Request Headers</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="121"/>
+        <location filename="../../view/pages/setting_page.py" line="124"/>
         <source>启用下载分类</source>
         <translation>Enable Categorization</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="122"/>
+        <location filename="../../view/pages/setting_page.py" line="125"/>
         <source>根据扩展名将下载任务归类，便于筛选与分发到指定文件夹</source>
         <translation>Categorize downloads by file extensions for easier filtering and management</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="179"/>
+        <location filename="../../view/pages/setting_page.py" line="182"/>
         <source>启用浏览器扩展</source>
         <translation>Enable Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="180"/>
+        <location filename="../../view/pages/setting_page.py" line="183"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>Receive downloads from browser - extension installation required</translation>
     </message>
@@ -3918,17 +3984,17 @@ Path: {1}</translation>
         <translation type="vanished">Popup window for adjusting download parameters</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="128"/>
+        <location filename="../../view/pages/setting_page.py" line="131"/>
         <source>复制令牌</source>
         <translation>Copy</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="128"/>
+        <location filename="../../view/pages/setting_page.py" line="131"/>
         <source>配对令牌</source>
         <translation>Pairing Token</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="132"/>
+        <location filename="../../view/pages/setting_page.py" line="135"/>
         <source>重新生成令牌</source>
         <translation>Regenerate</translation>
     </message>
@@ -3965,76 +4031,72 @@ Path: {1}</translation>
         <translation type="vanished">Troubleshoot common installation issues</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="263"/>
+        <location filename="../../view/pages/setting_page.py" line="259"/>
         <source>应用主题</source>
         <translation>Application Theme</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="264"/>
+        <location filename="../../view/pages/setting_page.py" line="260"/>
         <source>更改应用程序的外观</source>
         <translation>Change application appearance</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
+        <location filename="../../view/pages/setting_page.py" line="261"/>
         <source>浅色</source>
         <translation>Light</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
+        <location filename="../../view/pages/setting_page.py" line="261"/>
         <source>深色</source>
         <translation>Dark</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
+        <location filename="../../view/pages/setting_page.py" line="261"/>
         <source>跟随系统设置</source>
         <translation>Follow System Settings</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="270"/>
+        <location filename="../../view/pages/setting_page.py" line="266"/>
         <source>窗口背景透明材质</source>
         <translation>Window Transparency</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="271"/>
+        <location filename="../../view/pages/setting_page.py" line="267"/>
         <source>设置窗口背景透明效果和透明材质</source>
         <translation>Set window transparency effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="257"/>
+        <location filename="../../view/pages/setting_page.py" line="253"/>
         <source>界面缩放</source>
         <translation>UI Scaling</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="49"/>
+        <location filename="../../view/pages/setting_page.py" line="52"/>
         <source>Aria2 RPC 兼容</source>
-        <translation>Aria2 RPC Compatibility</translation>
+        <translation>Aria2 RPC Support</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="82"/>
+        <location filename="../../view/pages/setting_page.py" line="85"/>
         <source>下载路径</source>
         <translation>Download Path</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="82"/>
+        <location filename="../../view/pages/setting_page.py" line="85"/>
         <source>文件默认保存位置</source>
         <translation>Default file save location</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="85"/>
+        <location filename="../../view/pages/setting_page.py" line="88"/>
         <source>恢复默认路径</source>
         <translation>Restore Default Path</translation>
     </message>
     <message>
-        <source>最小再分配大小 (KB)</source>
-        <translation type="vanished">Minimum Redistribution Size (KB)</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="107"/>
+        <location filename="../../view/pages/setting_page.py" line="110"/>
         <source>保留文件修改时间</source>
-        <translation>Preserve file modification time</translation>
+        <translation>Preserve File Modification Timestamp</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="108"/>
+        <location filename="../../view/pages/setting_page.py" line="111"/>
         <source>下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值</source>
         <translation>Set file modification time to server&apos;s Last-Modified value after download</translation>
     </message>
@@ -4047,32 +4109,32 @@ Path: {1}</translation>
         <translation type="vanished">Set default HTTP request headers; User-Agent is controlled by client profile (except when sending as-is)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="145"/>
+        <location filename="../../view/pages/setting_page.py" line="148"/>
         <source>Edge 商店</source>
         <translation>Edge Store</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="141"/>
+        <location filename="../../view/pages/setting_page.py" line="144"/>
         <source>从商店安装扩展</source>
-        <translation>Install extension from store</translation>
+        <translation>Install Extension From Store</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="142"/>
+        <location filename="../../view/pages/setting_page.py" line="145"/>
         <source>商店版扩展需等待审核后才能获得更新</source>
         <translation>Store version requires review before receiving updates</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="153"/>
+        <location filename="../../view/pages/setting_page.py" line="156"/>
         <source>Chrome 商店</source>
         <translation>Chrome Store</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="140"/>
+        <location filename="../../view/pages/setting_page.py" line="143"/>
         <source>Firefox 商店</source>
         <translation>Firefox Store</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="55"/>
+        <location filename="../../view/pages/setting_page.py" line="58"/>
         <source>未找到匹配的设置项</source>
         <translation>No matching settings found</translation>
     </message>
@@ -4085,253 +4147,253 @@ Path: {1}</translation>
         <translation type="vanished">Default check &apos;Also delete downloaded files&apos; in confirmation dialog</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="161"/>
+        <location filename="../../view/pages/setting_page.py" line="164"/>
         <source>一键安装</source>
         <translation>Install</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="162"/>
+        <location filename="../../view/pages/setting_page.py" line="165"/>
         <source>安装到 Chromium 浏览器</source>
         <translation>Install to Chromium Browser</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="163"/>
+        <location filename="../../view/pages/setting_page.py" line="166"/>
         <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
         <translation>Auto-unpack extension and guide loading (Chrome/Brave etc.), extension auto-updates with the desktop client</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="166"/>
+        <location filename="../../view/pages/setting_page.py" line="169"/>
         <source>导出 CRX</source>
         <translation>Export CRX</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="173"/>
+        <location filename="../../view/pages/setting_page.py" line="176"/>
         <source>服务端口</source>
         <translation>Service Port</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="174"/>
+        <location filename="../../view/pages/setting_page.py" line="177"/>
         <source>浏览器扩展连接使用的端口</source>
         <translation>Port used for browser extension connection</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="186"/>
+        <location filename="../../view/pages/setting_page.py" line="189"/>
         <source>接管下载时进入草稿模式</source>
-        <translation>Enter draft mode when intercepting downloads</translation>
+        <translation>Create Draft When Intercepting Download</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="187"/>
+        <location filename="../../view/pages/setting_page.py" line="190"/>
         <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
         <translation>Enter draft mode when automatically intercepting browser downloads to adjust download path and file name</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="199"/>
+        <location filename="../../view/pages/setting_page.py" line="201"/>
         <source>允许浏览器扩展唤醒</source>
-        <translation>Allow browser extension to wake the desktop client</translation>
+        <translation>Allow Launching From Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="200"/>
+        <location filename="../../view/pages/setting_page.py" line="202"/>
         <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-        <translation>Browser extension can launch the desktop client via ghostdownloader:// protocol</translation>
+        <translation>The browser extension may launch the program via ghostdownloader:// URL scheme</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="213"/>
+        <source>关联 {0} 文件</source>
+        <translation>Associate {0} Files</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="214"/>
-        <source>关联 {0} 文件</source>
-        <translation>Associate {0} files</translation>
+        <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
+        <translation>Open {0} files with Ghost Downloader automatically</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="215"/>
-        <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
-        <translation>Open {0} files with Ghost Downloader when double-clicked</translation>
+        <location filename="../../view/pages/setting_page.py" line="221"/>
+        <source>处理 {0} 链接</source>
+        <translation>Associate {0} Links</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="222"/>
-        <source>处理 {0} 链接</source>
-        <translation>Process {0} links</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="223"/>
         <source>点击 {0} 链接时唤起 Ghost Downloader</source>
-        <translation>Launch Ghost Downloader when clicking {0} links</translation>
+        <translation>Open {0} links with Ghost Downloader automatically</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="233"/>
+        <location filename="../../view/pages/setting_page.py" line="229"/>
         <source>启用 Aria2 RPC 兼容</source>
-        <translation>Enable Aria2 RPC Compatibility</translation>
+        <translation>Enable Aria2 RPC Support</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="230"/>
+        <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
+        <translation>Support for the Aria2 JSON-RPC protocol, enable receiving download links from external tools</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="234"/>
-        <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
-        <translation>Compatible with Aria2 JSON-RPC protocol, able to receive download links from external tools</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="238"/>
         <source>监听端口</source>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="239"/>
+        <location filename="../../view/pages/setting_page.py" line="235"/>
         <source>Aria2 RPC 默认端口为 16800</source>
         <translation>Default Aria2 RPC port is 16800</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="243"/>
+        <location filename="../../view/pages/setting_page.py" line="239"/>
         <source>令牌</source>
-        <translation>Token</translation>
+        <translation>Authentication Token</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="244"/>
+        <location filename="../../view/pages/setting_page.py" line="240"/>
         <source>若设置，客户端需传入 token 才可创建任务</source>
         <translation>If set, client must provide token to create tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="246"/>
+        <location filename="../../view/pages/setting_page.py" line="242"/>
         <source>可选</source>
         <translation>Optional</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="250"/>
+        <location filename="../../view/pages/setting_page.py" line="246"/>
         <source>模拟浏览器指纹</source>
         <translation>Spoof Browser Fingerprint</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="251"/>
+        <location filename="../../view/pages/setting_page.py" line="247"/>
         <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
         <translation>Attach Browser TLS Fingerprint and Request Headers to tasks received via Aria2 RPC</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="258"/>
+        <location filename="../../view/pages/setting_page.py" line="254"/>
         <source>改变应用程序界面的缩放比例, 0% 为自动</source>
         <translation>Adjust UI scaling (0% for auto)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="277"/>
+        <location filename="../../view/pages/setting_page.py" line="273"/>
         <source>在 Dock 栏中显示程序</source>
         <translation>Show App Icon in Dock</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="278"/>
+        <location filename="../../view/pages/setting_page.py" line="274"/>
         <source>关闭后可通过菜单栏图标继续使用程序</source>
         <translation>If disabled, use the menu bar item to open this window</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="282"/>
+        <location filename="../../view/pages/setting_page.py" line="278"/>
         <source>在 Dock 图标上显示实时速度</source>
-        <translation>Show real-time speed on Dock icon</translation>
+        <translation>Show Real-time Speed on Dock Icon</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="283"/>
+        <location filename="../../view/pages/setting_page.py" line="279"/>
         <source>下载时在程序坞图标上叠加当前速度</source>
         <translation>Overlay current download speed on Dock icon</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="290"/>
+        <location filename="../../view/pages/setting_page.py" line="286"/>
         <source>在菜单栏显示实时速度</source>
-        <translation>Show real-time speed in menu bar</translation>
+        <translation>Show Real-time Speed in Menu Bar</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="291"/>
+        <location filename="../../view/pages/setting_page.py" line="287"/>
         <source>下载时在菜单栏图标旁显示当前速度</source>
         <translation>Show current download speed next to menu bar icon</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="295"/>
+        <location filename="../../view/pages/setting_page.py" line="291"/>
         <source>语言</source>
         <translation>Language</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="296"/>
+        <location filename="../../view/pages/setting_page.py" line="292"/>
         <source>设置界面的首选语言</source>
         <translation>Set the preferred language for the interface</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="297"/>
+        <location filename="../../view/pages/setting_page.py" line="293"/>
         <source>使用系统设置</source>
         <translation>Use System Settings</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="310"/>
+        <location filename="../../view/pages/setting_page.py" line="306"/>
         <source>切换到用户模式</source>
         <translation>Switch to User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="311"/>
-        <location filename="../../view/pages/setting_page.py" line="317"/>
+        <location filename="../../view/pages/setting_page.py" line="307"/>
+        <location filename="../../view/pages/setting_page.py" line="313"/>
         <source>数据存储模式</source>
         <translation>Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="312"/>
+        <location filename="../../view/pages/setting_page.py" line="308"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation>Currently in Portable mode, data stored next to app: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="316"/>
+        <location filename="../../view/pages/setting_page.py" line="312"/>
         <source>切换到 Portable 模式</source>
         <translation>Switch to Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <location filename="../../view/pages/setting_page.py" line="314"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation>Currently in User mode, data stored at: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="322"/>
+        <location filename="../../view/pages/setting_page.py" line="318"/>
         <source>在应用程序启动时检查更新</source>
-        <translation>Check for updates on startup</translation>
+        <translation>Check For Updates on Startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
+        <location filename="../../view/pages/setting_page.py" line="319"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>Get more features and improved stability with new versions</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="331"/>
+        <location filename="../../view/pages/setting_page.py" line="327"/>
         <source>关闭主窗口时</source>
-        <translation>When closing the main window</translation>
+        <translation>Main Window Closing Behavior</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="332"/>
+        <location filename="../../view/pages/setting_page.py" line="328"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation>Choose whether to continue running in background or exit when closing the main window</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="329"/>
         <source>关闭时询问</source>
         <translation>Ask when closing</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="329"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="329"/>
         <source>退出程序</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="348"/>
+        <location filename="../../view/pages/setting_page.py" line="344"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Help improve Ghost Downloader by providing feedback, or view logs to troubleshoot issues</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="485"/>
+        <location filename="../../view/pages/setting_page.py" line="481"/>
         <source>用户模式</source>
         <translation>User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="485"/>
+        <location filename="../../view/pages/setting_page.py" line="481"/>
         <source>Portable 模式</source>
         <translation>Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="487"/>
+        <location filename="../../view/pages/setting_page.py" line="483"/>
         <source>切换数据存储模式</source>
         <translation>Switch Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="488"/>
+        <location filename="../../view/pages/setting_page.py" line="484"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4340,78 +4402,78 @@ Path: {1}</translation>
 Data will be copied to new location and the program will then exit. Please manually restart.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
+        <location filename="../../view/pages/setting_page.py" line="494"/>
         <source>正在检查更新...</source>
         <translation>Checking for updates...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="513"/>
+        <location filename="../../view/pages/setting_page.py" line="504"/>
         <source>当前已是最新版本</source>
         <translation>You&apos;re running the latest version</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="514"/>
+        <location filename="../../view/pages/setting_page.py" line="505"/>
         <source>当前版本 {0}，最新版本 {1}</source>
         <translation>Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="512"/>
         <source>检查更新失败</source>
         <translation>Failed to check update</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="512"/>
         <source>无法获取最新版本信息</source>
         <translation>Unable to get the latest version information</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="532"/>
+        <location filename="../../view/pages/setting_page.py" line="522"/>
         <source>搜索设置</source>
         <translation>Search settings</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="303"/>
+        <location filename="../../view/pages/setting_page.py" line="299"/>
         <source>开机启动</source>
         <translation>Start on Boot</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="304"/>
+        <location filename="../../view/pages/setting_page.py" line="300"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation>Run Ghost Downloader silently at system startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="337"/>
+        <location filename="../../view/pages/setting_page.py" line="333"/>
         <source>剪贴板监听</source>
         <translation>Monitor Clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="338"/>
+        <location filename="../../view/pages/setting_page.py" line="334"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>Automatically detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="362"/>
+        <location filename="../../view/pages/setting_page.py" line="358"/>
         <source>打开作者的个人空间</source>
         <translation>Open Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="359"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="359"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="346"/>
-        <location filename="../../view/pages/setting_page.py" line="347"/>
+        <location filename="../../view/pages/setting_page.py" line="342"/>
+        <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="103"/>
+        <location filename="../../view/pages/setting_page.py" line="106"/>
         <source>最小再分配大小</source>
         <translation>Minimum Redistribution Size</translation>
     </message>
@@ -4428,63 +4490,63 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation type="vanished">Help improve Ghost Downloader by providing feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="350"/>
+        <location filename="../../view/pages/setting_page.py" line="346"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
+        <location filename="../../view/pages/setting_page.py" line="353"/>
+        <location filename="../../view/pages/setting_page.py" line="494"/>
         <source>检查更新</source>
         <translation>Check for Updates</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="412"/>
+        <location filename="../../view/pages/setting_page.py" line="408"/>
         <source>已配置</source>
         <translation>Configuration Saved</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="412"/>
+        <location filename="../../view/pages/setting_page.py" line="408"/>
         <source>重启软件后生效</source>
         <translation>Restart required to take effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="422"/>
+        <location filename="../../view/pages/setting_page.py" line="418"/>
         <source>已复制配对令牌</source>
         <translation>Token Copied</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="428"/>
+        <location filename="../../view/pages/setting_page.py" line="424"/>
         <source>已重新生成配对令牌</source>
         <translation>Token Regenerated</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="428"/>
+        <location filename="../../view/pages/setting_page.py" line="424"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Copied new token to clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="441"/>
         <source>解包失败</source>
         <translation>Unpack failed</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="452"/>
+        <location filename="../../view/pages/setting_page.py" line="448"/>
         <source>未连接</source>
         <translation>Not Connected</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="454"/>
+        <location filename="../../view/pages/setting_page.py" line="450"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Connected v{} (Desktop-managed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="456"/>
+        <location filename="../../view/pages/setting_page.py" line="452"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Connected v{} (Store-installed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="462"/>
+        <location filename="../../view/pages/setting_page.py" line="458"/>
         <source>选择导出路径</source>
         <translation>Select Export Path</translation>
     </message>
@@ -4586,87 +4648,117 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>TaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="255"/>
+        <location filename="../../view/cards/task_cards.py" line="77"/>
+        <source>暂停/继续</source>
+        <translation>Pause/Resume</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="82"/>
+        <source>选择文件</source>
+        <translation>Select Files</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="85"/>
+        <source>校验文件哈希</source>
+        <translation>Verify File Hash</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="92"/>
+        <source>打开文件</source>
+        <translation>Open File</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="97"/>
+        <source>打开文件夹</source>
+        <translation>Open Folder</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="98"/>
+        <source>删除</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="256"/>
         <source>文件不存在</source>
         <translation>File does not exist</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="258"/>
+        <location filename="../../view/cards/task_cards.py" line="259"/>
         <source>完成于 {}</source>
         <translation>Completed at {}</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="261"/>
+        <location filename="../../view/cards/task_cards.py" line="262"/>
         <source>任务已经完成</source>
         <translation>Task Completed</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="272"/>
+        <location filename="../../view/cards/task_cards.py" line="273"/>
         <source>下载过程中发生错误，请稍后重试</source>
         <translation>An error occurred during download, please try again later</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="278"/>
+        <location filename="../../view/cards/task_cards.py" line="279"/>
         <source>任务已经暂停</source>
         <translation>Task Paused</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="280"/>
+        <location filename="../../view/cards/task_cards.py" line="281"/>
         <source>任务正在等待</source>
         <translation>Task Pending</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="326"/>
+        <location filename="../../view/cards/task_cards.py" line="327"/>
         <source>删除任务</source>
         <translation>Delete Task</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="326"/>
+        <location filename="../../view/cards/task_cards.py" line="327"/>
         <source>确定要删除这个下载任务吗？</source>
         <translation>Are you sure you want to delete this download task?</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="327"/>
+        <location filename="../../view/cards/task_cards.py" line="328"/>
         <source>同时删除已下载的文件</source>
         <translation>Also delete downloaded files</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="336"/>
+        <location filename="../../view/cards/task_cards.py" line="337"/>
         <source>文件不存在，无法校验</source>
         <translation>Cannot verify nonexistent file</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="370"/>
+        <location filename="../../view/cards/task_cards.py" line="371"/>
         <source>复制下载链接</source>
         <translation>Copy Download Link</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="375"/>
+        <location filename="../../view/cards/task_cards.py" line="376"/>
         <source>复制校验值</source>
         <translation>Copy Checksum</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="380"/>
+        <location filename="../../view/cards/task_cards.py" line="381"/>
         <source>编辑任务参数...</source>
         <translation>Edit Task Options...</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="384"/>
+        <location filename="../../view/cards/task_cards.py" line="385"/>
         <source>移到最前</source>
-        <translation>Bring to Front</translation>
+        <translation>Move To Top</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="388"/>
+        <location filename="../../view/cards/task_cards.py" line="389"/>
         <source>重新下载</source>
-        <translation>Redownload</translation>
+        <translation>Restart Download</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="393"/>
+        <location filename="../../view/cards/task_cards.py" line="394"/>
         <source>移动到分类</source>
         <translation>Assign Category</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="395"/>
+        <location filename="../../view/cards/task_cards.py" line="396"/>
         <source>未分类</source>
         <translation>Uncategorized</translation>
     </message>
@@ -4676,7 +4768,7 @@ Data will be copied to new location and the program will then exit. Please manua
     <message>
         <location filename="../../view/pages/task_page.py" line="60"/>
         <source>移到最前</source>
-        <translation>Bring to Front</translation>
+        <translation>Move To Top</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="61"/>
@@ -4766,6 +4858,155 @@ Data will be copied to new location and the program will then exit. Please manua
         <location filename="../../view/dialogs/task_draft.py" line="319"/>
         <source>所有可导入文件 ({0})</source>
         <translation>All Supported Formats ({0})</translation>
+    </message>
+</context>
+<context>
+    <name>TaskErrors</name>
+    <message>
+        <location filename="../../view/error_catalog.py" line="3"/>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="13"/>
+        <source>{name} 未安装，请在设置中安装</source>
+        <translation>{name} is not installed, please install it in Settings</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="4"/>
+        <source>服务器返回了错误（{status}）</source>
+        <translation>Server returned an error ({status})</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="5"/>
+        <source>无法建立 FTP 连接</source>
+        <translation>FTP connection failed</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="6"/>
+        <source>进程异常退出（{code}）：{detail}</source>
+        <translation>Process terminated abnormally ({code}): {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="7"/>
+        <source>发生了意外错误：{detail}</source>
+        <translation>Unexpected error: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="3"/>
+        <source>该种子已在下载中</source>
+        <translation>This torrent is already being downloaded</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="4"/>
+        <source>至少需要选择一个文件</source>
+        <translation>At least one file is required</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="5"/>
+        <source>BitTorrent 错误：{detail}</source>
+        <translation>BitTorrent error: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="6"/>
+        <source>BitTorrent 会话启动失败：{detail}</source>
+        <translation>BitTorrent session start failed</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="3"/>
+        <source>压缩包包含不安全路径：{path}</source>
+        <translation>Archive contains unsafe path: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="4"/>
+        <source>压缩包未找到：{path}</source>
+        <translation>Archive file not found: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="5"/>
+        <source>不支持的压缩格式：{name}</source>
+        <translation>Unsupported archive format: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="6"/>
+        <source>解压后未找到可执行文件：{name}</source>
+        <translation>No executables found in archive: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="7"/>
+        <source>无法读取校验文件：{path}</source>
+        <translation>Unable to read checksum file: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="8"/>
+        <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
+        <translation>SHA256 checksum failure: Expected {expected}, Actual {actual}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="9"/>
+        <source>下载的文件未找到：{path}</source>
+        <translation>Downloaded file not found: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="3"/>
+        <source>ED2k 错误：{detail}</source>
+        <translation>ED2k error: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>
+        <source>FFmpeg 合并失败（{code}）：{detail}</source>
+        <translation>FFmpeg muxing failed ({code}): {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="4"/>
+        <source>文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</source>
+        <translation>File is not a valid media file, might be DRM protected or incomplete: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="3"/>
+        <source>该视频在您所在地区不可用，请尝试配置代理（{detail}）</source>
+        <translation>Video is unavailable in your region, please try using a proxy: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="4"/>
+        <source>视频不可用，可能已被删除或设为私密（{detail}）</source>
+        <translation>Video is unavailable, might be deleted or private: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="5"/>
+        <source>私密视频，需要已授权账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>Private video requires Cookies from an authorised account; download through the browser extension or import Cookies in Settings: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="6"/>
+        <source>会员专属视频，需要会员账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>Members only video requires Cookies from a member account; download through the browser extension or import Cookies in Setting: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="7"/>
+        <source>年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>Age-restricted video requires an account; download through the browser extension or import Cookies in Settings: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="8"/>
+        <source>YouTube 需要人机验证。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>Blocked by YouTube Captcha; download through the browser extension or import Cookies in Settings: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="9"/>
+        <source>请求的格式不可用，请稍后重试（{detail}）</source>
+        <translation>Requested format unavailable, please try again later: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="10"/>
+        <source>下载被拒绝（403），链接可能已失效（{detail}）</source>
+        <translation>Request refused (403), link might have expired: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="11"/>
+        <source>视频信息提取失败：{detail}</source>
+        <translation>Video metadata extraction failed: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="12"/>
+        <source>未找到可用的视频格式</source>
+        <translation>No available video format found</translation>
     </message>
 </context>
 <context>
@@ -4863,7 +5104,7 @@ Data will be copied to new location and the program will then exit. Please manua
     <message>
         <location filename="../../view/pages/task_page.py" line="245"/>
         <source>限速</source>
-        <translation>Speed Limit</translation>
+        <translation>Toggle Speed Limit</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="349"/>
@@ -5204,19 +5445,19 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>WelcomePage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="266"/>
+        <location filename="../../view/windows/oobe_window.py" line="273"/>
         <source>欢迎使用 Ghost Downloader</source>
         <translation>Welcome to Ghost Downloader</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="270"/>
+        <location filename="../../view/windows/oobe_window.py" line="277"/>
         <source>快速、智能的下载管理器。
 接下来的几步将帮助你完成基本配置。</source>
         <translation>A fast, smart download manager.
-The next steps will help you complete the basic setup.</translation>
+The next steps will guide you through the basic setup.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="275"/>
+        <location filename="../../view/windows/oobe_window.py" line="282"/>
         <source>开始配置</source>
         <translation>Start Setup</translation>
     </message>
@@ -5226,7 +5467,7 @@ The next steps will help you complete the basic setup.</translation>
     <message>
         <location filename="../../../features/yt_dlp_pack/config.py" line="86"/>
         <source>YouTube 下载</source>
-        <translation>YouTube Download</translation>
+        <translation>YouTube</translation>
     </message>
     <message>
         <source>yt-dlp 安装目录</source>
@@ -5243,7 +5484,7 @@ The next steps will help you complete the basic setup.</translation>
     <message>
         <location filename="../../../features/yt_dlp_pack/config.py" line="94"/>
         <source>运行环境安装目录</source>
-        <translation>Runtime install directory</translation>
+        <translation>Runtime Install Location</translation>
     </message>
     <message>
         <source>登录浏览器</source>
@@ -5278,32 +5519,32 @@ The next steps will help you complete the basic setup.</translation>
         <translation>Embed chapter markers into file after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="343"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="347"/>
         <source>YouTube Cookie</source>
         <translation>YouTube Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="348"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="352"/>
         <source>导入</source>
         <translation>Import</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="353"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="357"/>
         <source>清除 Cookie</source>
         <translation>Clear Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="368"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="372"/>
         <source>已导入</source>
         <translation>Imported</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="369"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="373"/>
         <source>下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入</source>
-        <translation>A cookie is required to download content that requires login. It is recommended to automatically import it using the browser extension.</translation>
+        <translation>A Cookie is required to download content that requires an account. It is recommended to automatically import it using the browser extension.</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="392"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="396"/>
         <source>安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。
 如需手动导入：打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中找到任意请求，复制其 Cookie 请求头的值并粘贴到下方。</source>
         <translation>After installing the browser extension, login information will be automatically included when downloading YouTube videos, with no manual steps required.
@@ -5314,7 +5555,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Paste Cookie to download content that requires login</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="387"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="391"/>
         <source>导入 YouTube Cookie</source>
         <translation>Import YouTube Cookie</translation>
     </message>
@@ -5452,19 +5693,6 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
     <message>
         <source>删除</source>
         <translation type="vanished">Delete</translation>
-    </message>
-</context>
-<context>
-    <name>card</name>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="911"/>
-        <source>安装任务已创建</source>
-        <translation>Installation task created</translation>
-    </message>
-    <message>
-        <location filename="../../view/components/setting_cards.py" line="912"/>
-        <source>请前往任务页查看安装进度</source>
-        <translation>Please go to Tasks page to check installation progress</translation>
     </message>
 </context>
 <context>
