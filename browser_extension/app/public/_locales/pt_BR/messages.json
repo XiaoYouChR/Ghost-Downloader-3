@@ -33,6 +33,9 @@
   "bypassShortcutKeyHint": {
     "message": "Mantenha pressionada esta tecla ao clicar no link de download para ignorar a intercepção e baixar pelo navegador"
   },
+  "pressShortcutKey": {
+    "message": "Pressione a tecla de atalho..."
+  },
   "cacheCapture": {
     "message": "Captura de cache"
   },

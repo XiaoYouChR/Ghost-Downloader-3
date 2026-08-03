@@ -1,5 +1,11 @@
 import {installCatCatchBridge} from "./cat-catch-bridge";
 import {startMediaAttribution} from "./page-media/attribution/attribution";
+import {
+  type BypassShortcut,
+  DEFAULT_BYPASS_SHORTCUT,
+  parseBypassShortcut,
+} from "./shared/bypass-shortcut";
+import {BYPASS_SHORTCUT_KEY} from "./background/constants";
 
 installCatCatchBridge();
 startMediaAttribution();
@@ -34,23 +40,56 @@ if (document.readyState === "loading") {
   sendPagePoster();
 }
 
-let bypassModifier: "alt" | "ctrl" | "shift" = "alt";
+let bypassShortcut: BypassShortcut = DEFAULT_BYPASS_SHORTCUT;
+let isBypassHeld = false;
 
-chrome.storage.local.get({ bypassModifier: "alt" }, (result) => {
-  bypassModifier = (result.bypassModifier as typeof bypassModifier) || "alt";
+chrome.storage.local.get({ [BYPASS_SHORTCUT_KEY]: null }, (result) => {
+  bypassShortcut = parseBypassShortcut(result[BYPASS_SHORTCUT_KEY]);
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.bypassModifier) {
-    bypassModifier = (changes.bypassModifier.newValue as typeof bypassModifier) || "alt";
+  if (areaName === "local" && changes[BYPASS_SHORTCUT_KEY]) {
+    bypassShortcut = parseBypassShortcut(changes[BYPASS_SHORTCUT_KEY].newValue);
   }
 });
 
-document.addEventListener("click", (event) => {
-  const isHeld = bypassModifier === "alt" ? event.altKey
-    : bypassModifier === "ctrl" ? event.ctrlKey
-    : event.shiftKey;
-  if (isHeld) {
-    chrome.runtime.sendMessage({ type: "bypass_next_download" });
+function shortcutMatchesEvent(event: KeyboardEvent): boolean {
+  if (bypassShortcut.ctrlKey !== event.ctrlKey) return false;
+  if (bypassShortcut.altKey !== event.altKey) return false;
+  if (bypassShortcut.shiftKey !== event.shiftKey) return false;
+  if (bypassShortcut.metaKey !== event.metaKey) return false;
+  if (bypassShortcut.code && event.code !== bypassShortcut.code) return false;
+  return true;
+}
+
+function sendBypassState(pressed: boolean): void {
+  chrome.runtime.sendMessage({ type: "bypass_key_state", pressed });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (!isBypassHeld && shortcutMatchesEvent(event)) {
+    isBypassHeld = true;
+    sendBypassState(true);
   }
 }, true);
+
+document.addEventListener("keyup", (event) => {
+  if (!isBypassHeld) return;
+  const isModifierReleased =
+    (bypassShortcut.ctrlKey && !event.ctrlKey) ||
+    (bypassShortcut.altKey && !event.altKey) ||
+    (bypassShortcut.shiftKey && !event.shiftKey) ||
+    (bypassShortcut.metaKey && !event.metaKey);
+  const isKeyReleased = bypassShortcut.code !== "" && event.code === bypassShortcut.code;
+  if (isModifierReleased || isKeyReleased) {
+    isBypassHeld = false;
+    sendBypassState(false);
+  }
+}, true);
+
+window.addEventListener("blur", () => {
+  if (isBypassHeld) {
+    isBypassHeld = false;
+    sendBypassState(false);
+  }
+});

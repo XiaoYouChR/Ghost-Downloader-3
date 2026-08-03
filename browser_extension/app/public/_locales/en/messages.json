@@ -33,6 +33,9 @@
   "bypassShortcutKeyHint": {
     "message": "Hold this key while clicking a download link to skip interception and download via browser"
   },
+  "pressShortcutKey": {
+    "message": "Press shortcut key..."
+  },
   "cacheCapture": {
     "message": "Cache Capture"
   },

@@ -33,6 +33,9 @@
   "bypassShortcutKeyHint": {
     "message": "按住此键点击下载链接，跳过接管由浏览器下载"
   },
+  "pressShortcutKey": {
+    "message": "请按下快捷键..."
+  },
   "cacheCapture": {
     "message": "缓存捕捉"
   },

@@ -10,7 +10,6 @@ import {createFeatureBridge} from "./background/feature-bridge";
 import {createMediaBridge} from "./background/media-bridge";
 import {createResourceBridge} from "./background/resource-bridge";
 import {
-    BYPASS_MODIFIER_KEY,
     IS_MEDIA_BUTTON_ENABLED_KEY,
     MIN_TAKE_SIZE_KB_KEY,
     SKIP_EXTENSIONS_KEY,
@@ -371,20 +370,30 @@ chrome.webRequest.onResponseStarted.addListener(
   ["responseHeaders"],
 );
 
-let bypassNextDownload = false;
-let bypassTimer = 0;
+let isBypassKeyHeld = false;
+let hasBypassBeenPressed = false;
+const BYPASS_TS_KEY = "bypassTs";
 let autoLaunchPending = false;
 
 const FFMPEG_ONLINE_URL = "https://ffmpeg.bmmmd.com/";
 const ffmpegCache: { tab: number; data: Record<string, unknown>[] } = { tab: 0, data: [] };
 
+async function shouldBypassDownload(): Promise<boolean> {
+  if (isBypassKeyHeld) return true;
+  if (hasBypassBeenPressed) return false;
+  try {
+    const result = await chrome.storage.session.get(BYPASS_TS_KEY);
+    return typeof result[BYPASS_TS_KEY] === "number" && Date.now() - result[BYPASS_TS_KEY] < 2000;
+  } catch {
+    return false;
+  }
+}
+
 async function takeBrowserDownload(
   downloadItem: chrome.downloads.DownloadItem,
   options: { eraseFromHistory?: boolean } = {},
 ) {
-  if (bypassNextDownload) {
-    bypassNextDownload = false;
-    clearTimeout(bypassTimer);
+  if (await shouldBypassDownload()) {
     return;
   }
 
@@ -624,10 +633,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return;
   }
 
-  if (message.type === "bypass_next_download") {
-    bypassNextDownload = true;
-    clearTimeout(bypassTimer);
-    bypassTimer = self.setTimeout(() => { bypassNextDownload = false; }, 3000);
+  if (message.type === "bypass_key_state") {
+    isBypassKeyHeld = Boolean(message.pressed);
+    hasBypassBeenPressed = true;
+    if (message.pressed) {
+      void chrome.storage.session.set({ [BYPASS_TS_KEY]: Date.now() });
+    }
     return;
   }
 

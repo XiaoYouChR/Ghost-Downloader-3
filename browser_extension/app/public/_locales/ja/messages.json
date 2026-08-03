@@ -33,6 +33,9 @@
   "bypassShortcutKeyHint": {
     "message": "このキーを押しながらダウンロードリンクをクリックすると、インターセプトをスキップしてブラウザでダウンロードします"
   },
+  "pressShortcutKey": {
+    "message": "ショートカットキーを押してください..."
+  },
   "cacheCapture": {
     "message": "キャッシュキャプチャ"
   },

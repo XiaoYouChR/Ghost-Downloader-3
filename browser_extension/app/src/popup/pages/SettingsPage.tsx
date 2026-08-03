@@ -15,11 +15,11 @@ import {
 } from "@fluentui/react-components";
 import type {SpinButtonOnChangeData, SwitchOnChangeData} from "@fluentui/react-components";
 import {AddRegular, ArrowClockwiseRegular, ClipboardPasteRegular, PlugConnectedRegular,} from "@fluentui/react-icons";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 
 import {DEFAULT_SERVER_URL, EXTENSION_VERSION} from "../../shared/constants";
 import {
-    BYPASS_MODIFIER_KEY,
+    BYPASS_SHORTCUT_KEY,
     MIN_TAKE_SIZE_KB_KEY,
     SKIP_EXTENSIONS_KEY,
     SKIP_DOMAINS_KEY,
@@ -27,6 +27,13 @@ import {
     SHOULD_TAKE_UNKNOWN_SIZE_KEY,
 } from "../../background/constants";
 import type {ThemePreference} from "../../shared/types";
+import {
+  type BypassShortcut,
+  DEFAULT_BYPASS_SHORTCUT,
+  parseBypassShortcut,
+  toBypassShortcut,
+  toShortcutLabel,
+} from "../../shared/bypass-shortcut";
 
 const SKIP_CATEGORIES = [
   { key: "catImages", extensions: ["jpg", "jpeg", "png", "gif", "webp", "svg", "avif", "bmp", "ico"] },
@@ -111,7 +118,17 @@ export function SettingsPage({
   const [skipExtensionsRaw, setSkipExtensionsRaw] = useState("");
   const [skipDomains, setSkipDomains] = useState<string[]>([]);
   const [openPopupOnSent, setOpenPopupOnSent] = useState(true);
-  const [bypassModifier, setBypassModifier] = useState("alt");
+  const [bypassShortcut, setBypassShortcut] = useState<BypassShortcut>(DEFAULT_BYPASS_SHORTCUT);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDraft, setRecordingDraft] = useState<BypassShortcut | null>(null);
+  const recorderRef = useRef<HTMLButtonElement>(null);
+
+  const saveShortcut = useCallback((next: BypassShortcut) => {
+    setBypassShortcut(next);
+    setRecordingDraft(null);
+    setIsRecording(false);
+    void chrome.storage.local.set({ [BYPASS_SHORTCUT_KEY]: next });
+  }, []);
   const [installType, setInstallType] = useState("");
 
   const installLabel = useCallback(() => {
@@ -134,14 +151,14 @@ export function SettingsPage({
       [SKIP_EXTENSIONS_KEY]: "",
       [SKIP_DOMAINS_KEY]: [],
       [SHOULD_OPEN_POPUP_ON_SENT_KEY]: true,
-      [BYPASS_MODIFIER_KEY]: "alt",
+      [BYPASS_SHORTCUT_KEY]: null,
     }, (result) => {
       setMinSizeKB(Number(result[MIN_TAKE_SIZE_KB_KEY]) || 0);
       setInterceptUnknown(Boolean(result[SHOULD_TAKE_UNKNOWN_SIZE_KEY] ?? true));
       setSkipExtensionsRaw(String(result[SKIP_EXTENSIONS_KEY] ?? ""));
       setSkipDomains(Array.isArray(result[SKIP_DOMAINS_KEY]) ? result[SKIP_DOMAINS_KEY] : []);
       setOpenPopupOnSent(Boolean(result[SHOULD_OPEN_POPUP_ON_SENT_KEY] ?? true));
-      setBypassModifier(String(result[BYPASS_MODIFIER_KEY] || "alt"));
+      setBypassShortcut(parseBypassShortcut(result[BYPASS_SHORTCUT_KEY]));
     });
   }, []);
 
@@ -369,18 +386,45 @@ export function SettingsPage({
         </Field>
 
         <Field label={chrome.i18n.getMessage("bypassShortcutKey")} hint={chrome.i18n.getMessage("bypassShortcutKeyHint")}>
-          <Select
-            value={bypassModifier}
-            onChange={(_event, data) => {
-              const value = data.value;
-              setBypassModifier(value);
-              void chrome.storage.local.set({ [BYPASS_MODIFIER_KEY]: value });
+          <Button
+            ref={recorderRef}
+            appearance={isRecording ? "primary" : "subtle"}
+            style={{ fontFamily: "monospace" }}
+            onClick={() => {
+              setIsRecording(true);
+              setRecordingDraft(null);
+              recorderRef.current?.focus();
+            }}
+            onKeyDown={(event) => {
+              if (!isRecording) return;
+              event.preventDefault();
+              event.stopPropagation();
+              const next = toBypassShortcut(event.nativeEvent);
+              if (next.code) {
+                saveShortcut(next);
+              } else {
+                setRecordingDraft(next);
+              }
+            }}
+            onKeyUp={(event) => {
+              if (!isRecording || !recordingDraft) return;
+              const noModifiers = !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey;
+              if (noModifiers) {
+                saveShortcut(recordingDraft);
+              }
+            }}
+            onBlur={() => {
+              if (recordingDraft) {
+                saveShortcut(recordingDraft);
+              } else {
+                setIsRecording(false);
+              }
             }}
           >
-            <option value="alt">Alt / Option</option>
-            <option value="ctrl">Ctrl</option>
-            <option value="shift">Shift</option>
-          </Select>
+            {isRecording
+              ? (recordingDraft ? toShortcutLabel(recordingDraft) : chrome.i18n.getMessage("pressShortcutKey"))
+              : toShortcutLabel(bypassShortcut)}
+          </Button>
         </Field>
 
         <Field label={chrome.i18n.getMessage("theme")}>
