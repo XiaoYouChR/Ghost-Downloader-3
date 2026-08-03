@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+import sys
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -361,8 +362,15 @@ class M3U8TaskStep(TaskStep):
         expectedSuffix = f".{self.actualExtension or fallbackExt}"
         prefix = self._saveName.lower()
 
+        try:
+            entries = list(outputDir.iterdir())
+        except PermissionError:
+            if sys.platform == "darwin":
+                raise TaskError("macOS 阻止了访问下载目录，请在 系统设置 > 隐私与安全性 > 完全磁盘访问权限 中添加 Ghost Downloader")
+            raise TaskError("无权限访问下载目录：{folder}", folder=outputDir)
+
         candidates = [
-            c for c in outputDir.iterdir()
+            c for c in entries
             if c.is_file()
             and c.suffix.lower() not in IGNORED_OUTPUT_SUFFIXES
             and c.name.lower().startswith(prefix)
