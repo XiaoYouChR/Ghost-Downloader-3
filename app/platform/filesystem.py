@@ -98,4 +98,7 @@ def deletePath(path: Path) -> None:
     if path.is_dir() and not path.is_symlink():
         shutil.rmtree(path, ignore_errors=True)
     else:
-        path.unlink(missing_ok=True)
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass

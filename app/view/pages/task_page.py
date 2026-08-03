@@ -4,12 +4,12 @@ from enum import IntEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QSize, QThread, QTimer
-from PySide6.QtGui import QActionGroup, QColor, QCursor, QKeySequence, QPainter
+from PySide6.QtCore import Qt, QSize, QThread, QTimer, QUrl
+from PySide6.QtGui import QActionGroup, QColor, QCursor, QDesktopServices, QKeySequence, QPainter
 from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
-    FluentIcon, IconWidget, MenuIndicatorType, PushButton,
+    FluentIcon, IconWidget, InfoBar, InfoBarPosition, MenuIndicatorType, PushButton,
     RoundMenu, SegmentedToggleToolWidget, ToggleToolButton,
     ToolButton, ToolTipFilter, isDarkTheme,
 )
@@ -284,6 +284,7 @@ class TaskPage(QWidget):
         self._taskService.tasksAllCompleted.connect(self._onAllCompleted)
         self._taskService.queueChanged.connect(self._onQueueChanged)
         self._taskService.fileDisappeared.connect(self._onFileDisappeared)
+        self._taskService.fileDeleteDenied.connect(self._onFileDeleteDenied)
         self._speedMeter.speedChanged.connect(self._onSpeedChanged)
         self.scrollArea.verticalScrollBar().valueChanged.connect(self._refreshViewport)
 
@@ -803,3 +804,17 @@ class TaskPage(QWidget):
         card = self._liveCards.get(task.taskId)
         if card is not None:
             card.refresh(force=True)
+
+    def _onFileDeleteDenied(self) -> None:
+        bar = InfoBar.warning(
+            self.tr("文件删除受限"),
+            self.tr("macOS 阻止了文件删除，请在 系统设置 > 隐私与安全性 > 完全磁盘访问权限 中添加 Ghost Downloader"),
+            duration=-1,
+            position=InfoBarPosition.TOP,
+            parent=self.window(),
+        )
+        button = PushButton(self.tr("前往设置"))
+        button.clicked.connect(lambda: QDesktopServices.openUrl(
+            QUrl("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
+        ))
+        bar.addWidget(button)

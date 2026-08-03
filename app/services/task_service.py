@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from shutil import disk_usage
 from typing import TYPE_CHECKING, Callable
@@ -140,6 +141,7 @@ class TaskService(QObject):
     tasksAllCompleted = Signal()
     queueChanged = Signal()
     fileDisappeared = Signal(object)
+    fileDeleteDenied = Signal()
     diskSpaceInsufficient = Signal(int, int)
 
     def __init__(self, coroutineRunner, categoryService, speedMeter, parent=None):
@@ -152,6 +154,7 @@ class TaskService(QObject):
         self._fileWatcher = QFileSystemWatcher(self)
         self._watchedPaths: dict[str, str] = {}
         self._fileWatcher.fileChanged.connect(self._onWatchedFileChanged)
+        self._hasNotifiedDeleteDenied = False
 
         self._flushTimer = QTimer(self)
         self._flushTimer.setSingleShot(True)
@@ -244,7 +247,11 @@ class TaskService(QObject):
 
     def delete(self, task: Task, shouldDeleteFiles: bool) -> None:
         self._unwatchFile(task)
-        self._cancelRun(task, finished=task.deleteFiles if shouldDeleteFiles else None)
+        canDelete = shouldDeleteFiles and self._canDeleteIn(task.outputFolder)
+        if shouldDeleteFiles and not canDelete and not self._hasNotifiedDeleteDenied:
+            self._hasNotifiedDeleteDenied = True
+            self.fileDeleteDenied.emit()
+        self._cancelRun(task, finished=task.deleteFiles if canDelete else None)
         self._store.remove(task.taskId)
         self._flushTimer.start()
         self.taskRemoved.emit(task.taskId)
@@ -358,6 +365,17 @@ class TaskService(QObject):
         )
         self._queue.run(task.taskId, workId)
         self.taskStarted.emit(task)
+
+    def _canDeleteIn(self, folder: Path) -> bool:
+        if sys.platform != "darwin":
+            return True
+        try:
+            next(folder.iterdir(), None)
+            return True
+        except PermissionError:
+            return False
+        except OSError:
+            return True
 
     def _cancelRun(self, task: Task, finished: Callable = None) -> None:
         workId = self._queue.workIdOf(task.taskId)
