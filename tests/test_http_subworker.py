@@ -581,6 +581,41 @@ def ignoreRangeHandler(content: bytes):
 
 class TestRangeFallback:
 
+    async def test_oversized_body_falls_back_to_single_stream(self, server, tmpdir):
+        """Server returns 206 with correct Content-Range but sends more bytes than declared."""
+        content = makeFileContent(500)
+
+        async def oversizedRange(request: web.Request) -> web.Response:
+            rangeHeader = request.headers.get("Range")
+            if rangeHeader is None:
+                return web.Response(
+                    body=content,
+                    headers={"Content-Length": str(len(content))},
+                )
+            rangeSpec = rangeHeader.replace("bytes=", "")
+            parts = rangeSpec.split("-")
+            start = int(parts[0])
+            end = int(parts[1]) if parts[1] else len(content) - 1
+            body = content[start:end + 1]
+            # Send 2x the declared range — simulates CDN decompression bug
+            return web.Response(
+                status=206,
+                body=body + body,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                },
+            )
+
+        url = await server(oversizedRange)
+        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=2,
+                              canUseRangeRequests=True)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert not step.canUseRangeRequests
+        assert (tmpdir / "test.bin").read_bytes() == content
+
     async def test_200_for_range_falls_back_to_single_stream(self, server, tmpdir):
         """Server returns 200 for Range requests. Should fallback and complete."""
         content = makeFileContent(500)

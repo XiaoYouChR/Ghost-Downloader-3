@@ -344,9 +344,14 @@ class HttpTaskStep(TaskStep):
                             raise RangeNotSupportedError()
                         if status != 206:
                             raise Exception(f"服务器拒绝了范围请求，状态码：{status}")
+                        expectedBytes = subworker.end - subworker.position + 1
+                        rawReceived = 0
                         async for chunk in response.stream():
                             if not chunk:
                                 continue
+                            rawReceived += len(chunk)
+                            if rawReceived > expectedBytes:
+                                raise RangeNotSupportedError()
                             remaining = subworker.end - subworker.position + 1
                             if len(chunk) > remaining:
                                 chunk = chunk[:remaining]
