@@ -53,9 +53,6 @@ def setupEnvironment():
         os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
         os.environ["QT_SCALE_FACTOR"] = str(cfg.dpiScale.value)
 
-    if sys.platform != "win32":
-        os.environ.setdefault("TERM", "dumb")
-
     if sys.platform == "win32":
         from PySide6.QtGui import QFont
         from PySide6.QtWidgets import QApplication
