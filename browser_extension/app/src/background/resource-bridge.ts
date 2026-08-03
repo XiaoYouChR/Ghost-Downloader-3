@@ -308,7 +308,10 @@ export function createResourceBridge(options: {
       headers: bridgeState[BRIDGE_HEADER_SNAPSHOTS_KEY] ?? [],
     });
 
-    lastActiveTabId = Number(bridgeState[BRIDGE_LAST_ACTIVE_TAB_KEY] ?? 0) || null;
+    const storedTabId = Number(bridgeState[BRIDGE_LAST_ACTIVE_TAB_KEY] ?? 0) || null;
+    if (lastActiveTabId === null) {
+      lastActiveTabId = storedTabId;
+    }
     loadedFromStorage = true;
   }
 

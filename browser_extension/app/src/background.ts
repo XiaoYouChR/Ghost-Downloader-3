@@ -257,22 +257,24 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info) => {
-  const url = info.linkUrl || info.srcUrl;
-  if (!url) { return; }
-  const draft = info.menuItemId === "gd-save-as";
-  const headers = resourceBridge.headersForPage(info.pageUrl ?? "");
-  if (!headers.referer && info.pageUrl) {
-    headers.referer = info.pageUrl;
-  }
-  void sendTaskOrEnqueue({
-    type: "create_task",
-    source: "download",
-    draft,
-    title: "",
-    payload: { url, headers, filename: "", size: 0, supportsRange: false },
-  }).then((result) => {
+  void (async () => {
+    await ready;
+    const url = info.linkUrl || info.srcUrl;
+    if (!url) { return; }
+    const draft = info.menuItemId === "gd-save-as";
+    const headers = resourceBridge.headersForPage(info.pageUrl ?? "");
+    if (!headers.referer && info.pageUrl) {
+      headers.referer = info.pageUrl;
+    }
+    const result = await sendTaskOrEnqueue({
+      type: "create_task",
+      source: "download",
+      draft,
+      title: "",
+      payload: { url, headers, filename: "", size: 0, supportsRange: false },
+    });
     if (result.ok && shouldOpenPopupOnSent) { void openActionPopup(); }
-  });
+  })();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {

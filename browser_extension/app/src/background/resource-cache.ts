@@ -373,6 +373,12 @@ export class ResourceCache {
   }
 
   load(snapshot: ResourceCacheSnapshot): void {
+    // Event handlers (onSendHeaders, onResponseStarted) may have written to the
+    // cache between service-worker start and this load call. Preserve those
+    // in-flight entries — they are always fresher than stored data.
+    const inFlightResources = new Map(this.resourcesById);
+    const inFlightHeaders = new Map(this.headerSnapshotsByUrl);
+
     this.resourcesByTab.clear();
     this.resourcesById.clear();
     for (const [tabIdText, resources] of Object.entries(snapshot.resources ?? {})) {
@@ -388,6 +394,19 @@ export class ResourceCache {
       this.resourcesByTab.set(tabId, resourceMap);
     }
 
+    for (const [id, inFlight] of inFlightResources) {
+      const stored = this.resourcesById.get(id);
+      if (!stored || inFlight.capturedAt > stored.capturedAt) {
+        let tabMap = this.resourcesByTab.get(inFlight.tabId);
+        if (!tabMap) {
+          tabMap = new Map<string, Resource>();
+          this.resourcesByTab.set(inFlight.tabId, tabMap);
+        }
+        tabMap.set(id, inFlight);
+        this.resourcesById.set(id, inFlight);
+      }
+    }
+
     this.headerSnapshotsByUrl.clear();
     for (const snapshotHeader of snapshot.headers ?? []) {
       const normalized = headerSnapshotFromStorage(snapshotHeader);
@@ -396,6 +415,14 @@ export class ResourceCache {
       }
       this.headerSnapshotsByUrl.set(normalized.url, normalized);
     }
+
+    for (const [url, inFlight] of inFlightHeaders) {
+      const stored = this.headerSnapshotsByUrl.get(url);
+      if (!stored || inFlight.capturedAt > stored.capturedAt) {
+        this.headerSnapshotsByUrl.set(url, inFlight);
+      }
+    }
+
     this.removeStaleHeaders();
   }
 
