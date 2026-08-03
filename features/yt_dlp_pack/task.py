@@ -229,7 +229,7 @@ class YouTubeExtractStep(TaskStep):
             from app.platform.filesystem import toSafeFilename
             safeName = toSafeFilename(title)
             if safeName:
-                if self.fileIndex == 0 and not self.task.isPlaylist:
+                if self.fileIndex == 0 and self.task.files is None:
                     ext = "m4a" if not videoFmt else "mp4"
                     self.task.setName(f"{safeName}.{ext}")
                 for step in self.task.steps:
