@@ -124,7 +124,10 @@ class BitTorrentPack(FeaturePack):
         return [UriScheme("magnet", "Magnet")]
 
     async def activate(self):
-        pass
+        # 预热 BT session：提前创建 session 让 DHT/LSD 尽早 bootstrap。
+        # 否则用户首次解析 magnet 时 DHT 冷启动（路由表为空），
+        # 元数据只能依赖 tracker，成功率低。
+        btSession._open()
 
     async def deactivate(self):
         await btSession.close()
