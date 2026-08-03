@@ -38,6 +38,22 @@ _ERROR_ALERTS = (
     lt.hash_failed_alert,
 )
 
+# libtorrent 的代理类型按 scheme 映射。socks4 协议不支持用户名密码认证。
+# https 代理 libtorrent 没有对应类型，按 http（CONNECT 隧道）处理。
+_PROXY_TYPES = {
+    "http": lt.proxy_type_t.http,
+    "https": lt.proxy_type_t.http,
+    "socks4": lt.proxy_type_t.socks4,
+    "socks5": lt.proxy_type_t.socks5,
+    "socks5h": lt.proxy_type_t.socks5,
+}
+_PROXY_TYPES_PW = {
+    "http": lt.proxy_type_t.http_pw,
+    "https": lt.proxy_type_t.http_pw,
+    "socks5": lt.proxy_type_t.socks5_pw,
+    "socks5h": lt.proxy_type_t.socks5_pw,
+}
+
 _RESUME_SAVE_INTERVAL = 30
 
 
@@ -252,6 +268,8 @@ class BTSession(QObject):
                 "enable_lsd": bittorrentConfig.enableLsd.value,
                 "announce_to_all_trackers": True,
                 "announce_to_all_tiers": True,
+                "enable_upnp": True,
+                "enable_natpmp": True,
                 "alert_mask": lt.alert.category_t.all_categories,
                 **self._proxySettings(),
             })
@@ -479,11 +497,16 @@ class BTSession(QObject):
         if not url:
             return {}
         parsed = urlsplit(url)
-        if parsed.scheme.lower() not in {"socks5", "socks5h"} or not parsed.hostname or not parsed.port:
+        scheme = parsed.scheme.lower()
+        if scheme not in _PROXY_TYPES or not parsed.hostname or not parsed.port:
             return {}
         hasCredentials = bool(parsed.username or parsed.password)
+        if scheme == "socks4":
+            proxyType = lt.proxy_type_t.socks4
+        else:
+            proxyType = _PROXY_TYPES_PW[scheme] if hasCredentials else _PROXY_TYPES[scheme]
         return {
-            "proxy_type": lt.proxy_type_t.socks5_pw if hasCredentials else lt.proxy_type_t.socks5,
+            "proxy_type": proxyType,
             "proxy_hostname": parsed.hostname,
             "proxy_port": parsed.port,
             "proxy_username": parsed.username or "",

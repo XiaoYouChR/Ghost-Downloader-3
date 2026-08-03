@@ -38,7 +38,7 @@ class BitTorrentConfig(PackConfig):
     maxConnections = RangeConfigItem("BitTorrent", "ConnectionsLimit", 500, RangeValidator(20, 2000))
     maxUploadSpeed = RangeConfigItem("BitTorrent", "UploadRateLimit", 0, RangeValidator(0, 1024 * 1024 * 100))
     listenPort = RangeConfigItem("BitTorrent", "ListenPort", 0, RangeValidator(0, 65535))
-    metadataTimeout = RangeConfigItem("BitTorrent", "MetadataTimeout", 30, RangeValidator(5, 300))
+    metadataTimeout = RangeConfigItem("BitTorrent", "MetadataTimeout", 120, RangeValidator(5, 300))
     enableSequentialDownload = ConfigItem("BitTorrent", "SequentialDownload", False, BoolValidator())
     storageMode = OptionsConfigItem(
         "BitTorrent", "StorageMode", "sparse", OptionsValidator(["sparse", "allocate"]),

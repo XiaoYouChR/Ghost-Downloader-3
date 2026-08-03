@@ -3,8 +3,9 @@ import json
 from qfluentwidgets import ConfigSerializer, ConfigValidator
 
 DEFAULT_WEB_TRACKER_SOURCES = [
+    "https://cf.trackerslist.com/all.txt",
     "https://cf.trackerslist.com/best.txt",
-    "https://cdn.jsdelivr.net/gh/XIU2/TrackersListCollection/best.txt",
+    "https://cdn.jsdelivr.net/gh/XIU2/TrackersListCollection/all.txt",
 ]
 
 
