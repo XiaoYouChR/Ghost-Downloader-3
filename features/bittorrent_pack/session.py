@@ -31,13 +31,6 @@ _STATE_TEXT = {
     "queued_for_checking": "等待校验",
 }
 
-_ERROR_ALERTS = (
-    lt.file_error_alert,
-    lt.metadata_failed_alert,
-    lt.torrent_error_alert,
-    lt.hash_failed_alert,
-)
-
 # libtorrent 的代理类型按 scheme 映射。socks4 协议不支持用户名密码认证。
 # https 代理 libtorrent 没有对应类型，按 http（CONNECT 隧道）处理。
 _PROXY_TYPES = {
@@ -194,6 +187,14 @@ class BTSession(QObject):
             ti = await asyncio.wait_for(waiter, timeout=bittorrentConfig.metadataTimeout.value)
             return lt.bencode(lt.create_torrent(ti).generate())
         except asyncio.TimeoutError:
+            try:
+                st = handle.status()
+                logger.warning("magnet 元数据超时: state={} peers={} seeds={} "
+                               "trackers={} dhtNodes={}",
+                               st.state, st.num_peers, st.num_seeds,
+                               len(st.trackers), self._dhtNodeCount())
+            except Exception:
+                pass
             raise TimeoutError("等待 magnet 元数据超时")
         finally:
             self._metadataWaiters.pop(id(handle), None)
@@ -258,7 +259,7 @@ class BTSession(QObject):
     def _open(self) -> None:
         if self._session is None:
             from app.config.constants import VERSION
-            self._session = lt.session({
+            settings = {
                 "user_agent": f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}",
                 "listen_interfaces": f"0.0.0.0:{bittorrentConfig.listenPort.value}",
                 "connections_limit": bittorrentConfig.maxConnections.value,
@@ -277,11 +278,28 @@ class BTSession(QObject):
                 "announce_to_all_tiers": True,
                 "enable_upnp": True,
                 "enable_natpmp": True,
-                "alert_mask": lt.alert.category_t.all_categories,
+                # 精选 alert 类别：只保留影响任务状态的关键 alert。
+                # all_categories 会收到 tracker_announce/tracker_error 等
+                # 高频噪音（数百 tracker 每轮 announce 产生上千条），
+                # Python 层逐条处理会积压队列，导致 metadata_received_alert
+                # 处理延迟超过 wait_for 超时。
+                # error|port_mapping|storage|status 覆盖：
+                # metadata_received/failed(status)、save_resume_data(storage)、
+                # fastresume_rejected/state_changed(status)、
+                # torrent_error/file_error/hash_failed(error|status)。
+                "alert_mask": (
+                    lt.alert.category_t.error_notification
+                    | lt.alert.category_t.port_mapping_notification
+                    | lt.alert.category_t.storage_notification
+                    | lt.alert.category_t.status_notification
+                ),
                 **self._proxySettings(),
-            })
+            }
+            logger.info("BT session 创建: {}", settings)
+            self._session = lt.session(settings)
         if self._poller is None or self._poller.done():
             self._poller = asyncio.get_running_loop().create_task(self._supervise())
+            logger.info("BT session poller 已启动")
 
     # ── torrent management ──
 
@@ -358,59 +376,72 @@ class BTSession(QObject):
     # ── poll loop ──
 
     async def _supervise(self) -> None:
+        ticks = 0
         while self._session is not None:
             try:
+                alertCount = 0
                 for alert in self._session.pop_alerts():
+                    alertCount += 1
                     self._routeAlert(alert)
                 for entry in list(self._active.values()):
                     self._updateEntry(entry)
+                ticks += 1
+                if ticks % 30 == 0:
+                    logger.info("BT poll 心跳: ticks={} alerts={} active={} waiters={}",
+                                ticks, alertCount, len(self._active), len(self._metadataWaiters))
             except Exception as e:
                 logger.opt(exception=e).error("BitTorrent poll 异常")
             await asyncio.sleep(1)
 
     def _routeAlert(self, alert) -> None:
-        if not hasattr(alert, "handle"):
+        # 先按类型分流：只有会影响任务状态的 alert 才遍历查找对应 torrent，
+        # 高频噪音 alert（tracker 状态、peer 连接等）直接丢弃，
+        # 避免 alert 风暴（数百 tracker 每轮 announce 产生上千条）拖慢 metadata 处理。
+        if isinstance(alert, lt.metadata_received_alert):
+            for key, (handle, waiter) in list(self._metadataWaiters.items()):
+                if alert.handle != handle:
+                    continue
+                ti = handle.torrent_file()
+                if ti is not None and ti.is_valid() and not waiter.done():
+                    waiter.set_result(ti)
+                return
             return
 
-        for taskId, entry in self._active.items():
-            if alert.handle != entry.handle:
-                continue
-
-            if isinstance(alert, lt.save_resume_data_alert):
-                self._resumeCache[taskId] = lt.write_resume_data_buf(alert.params)
-                if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
-                    entry.resumeWaiter.set_result(True)
+        if isinstance(alert, lt.metadata_failed_alert):
+            for key, (handle, waiter) in list(self._metadataWaiters.items()):
+                if alert.handle != handle:
+                    continue
+                if not waiter.done():
+                    waiter.set_exception(RuntimeError(alert.message()))
                 return
+            return
 
-            if isinstance(alert, lt.save_resume_data_failed_alert):
-                self._resumeCache.pop(taskId, None)
-                if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
-                    entry.resumeWaiter.set_result(False)
-                return
-
-            if isinstance(alert, lt.fastresume_rejected_alert):
-                self._resumeCache.pop(taskId, None)
-                return
-
-            if isinstance(alert, _ERROR_ALERTS):
+        if isinstance(alert, (lt.torrent_error_alert, lt.file_error_alert, lt.hash_failed_alert)):
+            for taskId, entry in self._active.items():
+                if alert.handle != entry.handle:
+                    continue
                 if not entry.done.done():
                     entry.done.set_exception(
                         TaskError("BitTorrent 错误：{detail}", detail=alert.message())
                     )
                 return
-
             return
 
-        for key, (handle, waiter) in list(self._metadataWaiters.items()):
-            if alert.handle != handle:
-                continue
-            if isinstance(alert, lt.metadata_received_alert):
-                ti = handle.torrent_file()
-                if ti is not None and ti.is_valid() and not waiter.done():
-                    waiter.set_result(ti)
-            elif isinstance(alert, (lt.metadata_failed_alert, lt.torrent_error_alert)):
-                if not waiter.done():
-                    waiter.set_exception(RuntimeError(alert.message()))
+        if isinstance(alert, (lt.save_resume_data_alert, lt.save_resume_data_failed_alert, lt.fastresume_rejected_alert)):
+            for taskId, entry in self._active.items():
+                if alert.handle != entry.handle:
+                    continue
+                if isinstance(alert, lt.save_resume_data_alert):
+                    self._resumeCache[taskId] = lt.write_resume_data_buf(alert.params)
+                    if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
+                        entry.resumeWaiter.set_result(True)
+                elif isinstance(alert, lt.save_resume_data_failed_alert):
+                    self._resumeCache.pop(taskId, None)
+                    if entry.resumeWaiter is not None and not entry.resumeWaiter.done():
+                        entry.resumeWaiter.set_result(False)
+                else:  # fastresume_rejected_alert
+                    self._resumeCache.pop(taskId, None)
+                return
             return
 
     def _updateEntry(self, entry: ActiveTorrent) -> None:
@@ -498,6 +529,13 @@ class BTSession(QObject):
         if not cfg.isSpeedLimitEnabled.value:
             return 0
         return int(cfg.speedLimitation.value)
+
+    def _dhtNodeCount(self) -> int:
+        try:
+            st = self._session.dht_state()
+            return len(st.nodes) if st is not None and st.nodes else 0
+        except Exception:
+            return -1
 
     def _proxySettings(self) -> dict:
         url = proxy()
