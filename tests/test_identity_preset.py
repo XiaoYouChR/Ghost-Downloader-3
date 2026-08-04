@@ -139,10 +139,12 @@ class TestBuildClientUserAgent:
         wreq_mock.emulation.Platform = MagicMock()
         wreq_mock.emulation.Profile = type(profile_mock)
         wreq_mock.redirect.Policy = MagicMock()
+        wreq_mock.dns.DnsOptions = MagicMock(return_value=MagicMock())
 
         monkeypatch.setitem(sys.modules, "wreq", wreq_mock)
         monkeypatch.setitem(sys.modules, "wreq.emulation", wreq_mock.emulation)
         monkeypatch.setitem(sys.modules, "wreq.redirect", wreq_mock.redirect)
+        monkeypatch.setitem(sys.modules, "wreq.dns", wreq_mock.dns)
 
         if "app.client" in sys.modules:
             del sys.modules["app.client"]
@@ -164,6 +166,23 @@ class TestBuildClientUserAgent:
         buildClient(emulation=None, headers=None, userAgent=None)
         call_kwargs = wreq.Client.call_args[1]
         assert "headers" not in call_kwargs or "user-agent" not in call_kwargs.get("headers", {})
+
+
+    def test_c11_build_client_uses_system_dns(self):
+        from app.client import buildClient
+        import wreq
+        buildClient(emulation=None, headers=None, userAgent=None)
+        wreq.dns.DnsOptions.assert_called_once_with(system_dns=True)
+        call_kwargs = wreq.Client.call_args[1]
+        assert call_kwargs["dns_options"] is wreq.dns.DnsOptions.return_value
+
+    def test_c12_build_client_skips_system_dns_when_disabled(self, monkeypatch):
+        from app.client import buildClient
+        from app.config.cfg import cfg
+        import wreq
+        monkeypatch.setattr(cfg.shouldUseSystemDns, "value", False)
+        buildClient(emulation=None, headers=None, userAgent=None)
+        assert "dns_options" not in wreq.Client.call_args[1]
 
 
 # ===========================================================================

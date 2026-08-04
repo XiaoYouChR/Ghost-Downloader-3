@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 from wreq import Client, Emulation, Proxy
+from wreq.dns import DnsOptions
 from wreq.emulation import Platform, Profile
 from wreq.redirect import Policy
 
@@ -101,6 +102,8 @@ def buildClient(
 ) -> Client:
     resolved = toEmulation("") if emulation is ... else emulation
     config: ClientConfig = {"tls_verify": cfg.shouldVerifySsl.value, "redirect": Policy.limited(10)}
+    if cfg.shouldUseSystemDns.value:
+        config["dns_options"] = DnsOptions(system_dns=True)
 
     url = proxy()
     if url:
