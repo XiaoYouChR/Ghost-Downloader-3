@@ -124,7 +124,7 @@ class BitTorrentPack(FeaturePack):
         return [UriScheme("magnet", "Magnet")]
 
     async def activate(self):
-        pass
+        btSession.open()
 
     async def deactivate(self):
         await btSession.close()
