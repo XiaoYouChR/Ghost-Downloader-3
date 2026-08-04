@@ -272,52 +272,52 @@
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="72"/>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="10"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="8"/>
         <source>做种中</source>
         <translation>Seeding</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="5"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="3"/>
         <source>校验已有文件</source>
         <translation>Checking Existing Files</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="6"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="4"/>
         <source>检查续传状态</source>
         <translation>Checking Resume Data</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="7"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="5"/>
         <source>获取元数据</source>
         <translation>Downloading Metadata</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="8"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="6"/>
         <source>下载中</source>
         <translation>Downloading</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="9"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="7"/>
         <source>下载完成</source>
         <translation>Download Complete</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="11"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="9"/>
         <source>分配文件中</source>
         <translation>Allocating Files</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="12"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="10"/>
         <source>等待校验</source>
         <translation>Queued for Checks</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="13"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="11"/>
         <source>已暂停做种</source>
         <translation>Seeding Paused</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="14"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="12"/>
         <source>已暂停下载</source>
         <translation>Download Paused</translation>
     </message>
@@ -593,17 +593,16 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BinaryRuntime</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="137"/>
         <source>YouTube 运行环境</source>
-        <translation>YouTube Support Runtime</translation>
+        <translation type="vanished">YouTube Support Runtime</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="141"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="137"/>
         <source>YouTube 下载</source>
         <translation>YouTube Download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="142"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="138"/>
         <source>支持 YouTube、Twitter 等数百个视频网站</source>
         <translation>Support for hundreds of video sites including YouTube and Twitter</translation>
     </message>
@@ -5070,9 +5069,24 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>Completed Tasks</translation>
     </message>
     <message>
+        <location filename="../../view/pages/task_page.py" line="810"/>
+        <source>文件删除受限</source>
+        <translation>File Operation Restricted</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/task_page.py" line="811"/>
+        <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
+        <translation>macOS has denied file deletion; please add Ghost Downloader into System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/task_page.py" line="816"/>
+        <source>前往设置</source>
+        <translation>Open Settings</translation>
+    </message>
+    <message>
         <location filename="../../view/pages/task_page.py" line="163"/>
-        <location filename="../../view/pages/task_page.py" line="621"/>
-        <location filename="../../view/pages/task_page.py" line="633"/>
+        <location filename="../../view/pages/task_page.py" line="622"/>
+        <location filename="../../view/pages/task_page.py" line="634"/>
         <source>暂无下载任务</source>
         <translation>No download tasks</translation>
     </message>
@@ -5107,7 +5121,7 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>Toggle Speed Limit</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="349"/>
+        <location filename="../../view/pages/task_page.py" line="350"/>
         <source>搜索任务</source>
         <translation>Search Tasks</translation>
     </message>
@@ -5120,52 +5134,52 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation type="vanished">Free space: {}, required: {}, task did not start automatically</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="518"/>
+        <location filename="../../view/pages/task_page.py" line="519"/>
         <source>删除任务</source>
         <translation>Delete Task</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="518"/>
+        <location filename="../../view/pages/task_page.py" line="519"/>
         <source>确定要删除选中的下载任务吗？</source>
         <translation>Are you sure you want to delete the selected download task(s)?</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="519"/>
+        <location filename="../../view/pages/task_page.py" line="520"/>
         <source>同时删除已下载的文件</source>
         <translation>Also delete downloaded files</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="623"/>
+        <location filename="../../view/pages/task_page.py" line="624"/>
         <source>没有匹配筛选条件的任务</source>
         <translation>No tasks match the current filters</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="625"/>
+        <location filename="../../view/pages/task_page.py" line="626"/>
         <source>没有匹配的任务</source>
         <translation>No matching tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="627"/>
+        <location filename="../../view/pages/task_page.py" line="628"/>
         <source>该分类下暂无任务</source>
         <translation>No tasks under this category</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="629"/>
+        <location filename="../../view/pages/task_page.py" line="630"/>
         <source>暂无活动任务</source>
         <translation>No active tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="631"/>
+        <location filename="../../view/pages/task_page.py" line="632"/>
         <source>暂无完成任务</source>
         <translation>No completed tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="467"/>
+        <location filename="../../view/pages/task_page.py" line="468"/>
         <source>全部分类</source>
         <translation>All Categories</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="541"/>
+        <location filename="../../view/pages/task_page.py" line="542"/>
         <source>未分类</source>
         <translation>Uncategorized</translation>
     </message>
@@ -5519,32 +5533,32 @@ The next steps will guide you through the basic setup.</translation>
         <translation>Embed chapter markers into file after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="347"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="343"/>
         <source>YouTube Cookie</source>
         <translation>YouTube Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="352"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="348"/>
         <source>导入</source>
         <translation>Import</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="357"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="353"/>
         <source>清除 Cookie</source>
         <translation>Clear Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="372"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="368"/>
         <source>已导入</source>
         <translation>Imported</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="373"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="369"/>
         <source>下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入</source>
         <translation>A Cookie is required to download content that requires an account. It is recommended to automatically import it using the browser extension.</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="396"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="392"/>
         <source>安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。
 如需手动导入：打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中找到任意请求，复制其 Cookie 请求头的值并粘贴到下方。</source>
         <translation>After installing the browser extension, login information will be automatically included when downloading YouTube videos, with no manual steps required.
@@ -5555,7 +5569,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Paste Cookie to download content that requires login</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="391"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="387"/>
         <source>导入 YouTube Cookie</source>
         <translation>Import YouTube Cookie</translation>
     </message>
