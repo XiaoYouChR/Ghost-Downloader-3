@@ -101,7 +101,7 @@ class TorrentParser(TaskParser):
 class BitTorrentPack(FeaturePack):
     packId = "bt"
     config = bittorrentConfig
-    proxySchemes = {"socks5"}
+    proxySchemes = {"http", "https", "socks4", "socks5"}
     parsers = [TorrentParser]
     taskCards = {BTTask: BTTaskCard}
     draftCards = {BTTask: BTDraftCard}
