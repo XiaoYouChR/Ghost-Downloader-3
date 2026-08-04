@@ -1,70 +1,145 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidget
 from qfluentwidgets import (
-    BodyLabel, ComboBox, FluentIcon, IndeterminateProgressRing,
+    BodyLabel, FluentIcon, IndeterminateProgressRing,
     MessageBoxBase, PrimaryPushButton, ProgressBar, PushButton, SubtitleLabel,
     ToolTipFilter, TransparentToolButton,
 )
 
 from app.format import toReadableSize
 from app.models.task import TaskStatus
+from app.platform.filesystem import toSafeFilename
 from app.view.cards.draft_cards import DraftCard
 from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, SPEED_FIELD, ETA_FIELD
+from app.view.components.track_bar import TrackBar
 from app.view.components.tree_view import AutoSizingTreeView
+from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .config import ytDlpConfig
-from .task import STEPS_PER_VIDEO, YouTubeTask
+from .task import STEPS_PER_VIDEO, YouTubeCoverStep, YouTubeTask, buildFormatPair
 
 
-def buildQualityTiers(mediaInfo: dict) -> list[tuple[str, str]]:
+def toCodecName(codec: str) -> str:
+    if not codec or codec == "none":
+        return ""
+    c = codec.lower()
+    if c.startswith("av01"):
+        return "AV1"
+    if c.startswith("vp9") or c.startswith("vp09"):
+        return "VP9"
+    if c.startswith("avc") or c.startswith("h264"):
+        return "H.264"
+    if c.startswith("hev") or c.startswith("hvc") or c.startswith("h265"):
+        return "H.265"
+    if c == "opus":
+        return "Opus"
+    if c.startswith("mp4a"):
+        return "AAC"
+    return ""
+
+
+def toCodecLabel(fmt: dict) -> str:
+    codec = toCodecName(fmt.get("vcodec", "")) or toCodecName(fmt.get("acodec", ""))
+    br = fmt.get("vbr") or fmt.get("abr") or fmt.get("tbr") or 0
+    parts = []
+    if codec:
+        parts.append(codec)
+    if br >= 1000:
+        parts.append(f"{br / 1000:.1f}Mbps")
+    elif br > 0:
+        parts.append(f"{int(br)}Kbps")
+    return ", ".join(parts)
+
+
+def buildVideoTiers(mediaInfo: dict) -> list[tuple[str, str]]:
     formats = mediaInfo.get("formats") or []
-    seen: set[tuple[int, int]] = set()
-    tiers: list[tuple[int, int]] = []
+    best: dict[int, dict] = {}
 
     for f in formats:
         if f.get("vcodec") in (None, "none"):
             continue
         height = f.get("height") or 0
-        fps = f.get("fps") or 0
         if height <= 0:
             continue
-        key = (height, 60 if fps > 30 else 0)
-        if key not in seen:
-            seen.add(key)
-            tiers.append(key)
+        vbr = f.get("vbr") or f.get("tbr") or 0
+        if height not in best or vbr > (best[height].get("vbr") or best[height].get("tbr") or 0):
+            best[height] = f
 
-    tiers.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    tiers = sorted(best.keys(), reverse=True)
 
     result: list[tuple[str, str]] = []
     if tiers:
-        bestH, bestFps = tiers[0]
-        result.append(("bv*+ba/b", f"最佳画质 ({bestH}p{'60' if bestFps else ''})"))
+        fmt = best[tiers[0]]
+        fps = fmt.get("fps") or 0
+        fpsLabel = "60" if fps > 30 else ""
+        info = toCodecLabel(fmt)
+        label = f"最佳画质 ({tiers[0]}p{fpsLabel}, {info})" if info else f"最佳画质 ({tiers[0]}p{fpsLabel})"
+        result.append(("0", label))
 
-    for height, fps in tiers:
-        fpsLabel = "60" if fps else ""
-        result.append((f"bv*[height<={height}]+ba/b", f"{height}p{fpsLabel}"))
+    for height in tiers:
+        fmt = best[height]
+        fps = fmt.get("fps") or 0
+        fpsLabel = "60" if fps > 30 else ""
+        info = toCodecLabel(fmt)
+        label = f"{height}p{fpsLabel} ({info})" if info else f"{height}p{fpsLabel}"
+        result.append((str(height), label))
 
-    result.append(("ba/b", "仅音频"))
     return result
 
 
-def buildSubtitleChoices(mediaInfo: dict) -> list[tuple[str, str, bool]]:
-    choices: list[tuple[str, str, bool]] = []
+def buildAudioTiers(mediaInfo: dict) -> list[tuple[str, str]]:
+    formats = mediaInfo.get("formats") or []
+    best: dict[int, dict] = {}
+
+    for f in formats:
+        if f.get("acodec") in (None, "none"):
+            continue
+        if f.get("vcodec", "none") != "none":
+            continue
+        abr = int(f.get("abr") or f.get("tbr") or 0)
+        if abr <= 0:
+            continue
+        bucket = round(abr / 16) * 16
+        if bucket not in best or abr > int(best[bucket].get("abr") or best[bucket].get("tbr") or 0):
+            best[bucket] = f
+
+    tiers = sorted(best.keys(), reverse=True)
+
+    result: list[tuple[str, str]] = []
+    if tiers:
+        info = toCodecLabel(best[tiers[0]])
+        result.append(("0", f"最佳音质 ({info})" if info else "最佳音质"))
+    for bucket in tiers:
+        fmt = best[bucket]
+        abr = int(fmt.get("abr") or fmt.get("tbr") or 0)
+        codec = toCodecName(fmt.get("acodec", ""))
+        label = f"{abr}Kbps ({codec})" if codec else f"{abr}Kbps"
+        result.append((str(abr), label))
+
+    return result
+
+
+def buildSubtitleChoices(mediaInfo: dict) -> tuple[list[tuple[str, str]], set[str]]:
+    choices: list[tuple[str, str]] = []
+    autoLangs: set[str] = set()
     seen: set[str] = set()
 
     for lang in (mediaInfo.get("subtitles") or {}):
         if lang not in seen:
             seen.add(lang)
-            choices.append((lang, lang, False))
+            choices.append((lang, lang))
 
     for lang in (mediaInfo.get("automatic_captions") or {}):
         if lang not in seen:
             seen.add(lang)
-            choices.append((lang, f"{lang} (自动)", True))
+            autoLangs.add(lang)
+            choices.append((lang, f"{lang} (自动)"))
 
-    return choices
+    return choices, autoLangs
 
 
 STEP_LABELS = {
@@ -105,92 +180,6 @@ def toYtDlpNameText(task: YouTubeTask, speed: int, received: int) -> str | None:
         videoStem = getattr(currentStep, "videoStem", "") or task.name
         return f"{videoStem} ({fileIndex + 1}/{videoCount} · {label})" if label else None
     return f"{task.name} ({label})" if label else None
-
-
-class SubtitleSelectDialog(MessageBoxBase):
-
-    def __init__(self, choices: list[tuple[str, str, bool]], parent=None):
-        super().__init__(parent)
-        self._choices = choices
-
-        self.titleLabel = SubtitleLabel(self.tr("选择字幕语言"), self)
-        self.summaryLabel = BodyLabel("", self)
-
-        self.selectAllButton = PrimaryPushButton(self.tr("全选"), self)
-        self.clearButton = PushButton(self.tr("全不选"), self)
-
-        self.treeView = AutoSizingTreeView(self, minimumVisibleRows=3, maximumVisibleRows=16)
-        self.treeModel = QStandardItemModel(self.treeView)
-
-        self._initWidget()
-        self._initLayout()
-        self._bind()
-        self._refreshSummary()
-
-    def _initWidget(self) -> None:
-        self.widget.setMinimumWidth(400)
-        self.yesButton.setText(self.tr("确定"))
-        self.cancelButton.setText(self.tr("取消"))
-
-        self.treeView.setRootIsDecorated(False)
-        self.treeView.setUniformRowHeights(True)
-        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.treeView.setHeaderHidden(True)
-
-        self.treeView.setModel(self.treeModel)
-
-        defaultLangs = {s.strip() for s in ytDlpConfig.subtitleLanguages.value.split(",") if s.strip()}
-
-        for langCode, label, _isAuto in self._choices:
-            item = QStandardItem(label)
-            item.setCheckable(True)
-            item.setCheckState(Qt.CheckState.Checked if langCode in defaultLangs else Qt.CheckState.Unchecked)
-            item.setData(langCode, Qt.ItemDataRole.UserRole)
-            item.setData(_isAuto, Qt.ItemDataRole.UserRole + 1)
-            self.treeModel.appendRow(item)
-
-    def _initLayout(self) -> None:
-        actionsLayout = QHBoxLayout()
-        actionsLayout.setContentsMargins(0, 0, 0, 0)
-        actionsLayout.setSpacing(8)
-        actionsLayout.addWidget(self.selectAllButton)
-        actionsLayout.addWidget(self.clearButton)
-        actionsLayout.addStretch(1)
-        actionsLayout.addWidget(self.summaryLabel)
-
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addSpacing(8)
-        self.viewLayout.addWidget(self.treeView)
-        self.viewLayout.addSpacing(4)
-        self.viewLayout.addLayout(actionsLayout)
-
-    def _bind(self) -> None:
-        self.selectAllButton.clicked.connect(lambda: self._setAll(True))
-        self.clearButton.clicked.connect(lambda: self._setAll(False))
-        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
-
-    def _setAll(self, checked: bool) -> None:
-        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        for row in range(self.treeModel.rowCount()):
-            self.treeModel.item(row, 0).setCheckState(state)
-
-    def _refreshSummary(self) -> None:
-        count = sum(
-            1 for row in range(self.treeModel.rowCount())
-            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
-        )
-        self.summaryLabel.setText(self.tr("{0}/{1} 种语言").format(count, self.treeModel.rowCount()))
-
-    def selectedLanguages(self) -> tuple[str, bool]:
-        langs: list[str] = []
-        hasAuto = False
-        for row in range(self.treeModel.rowCount()):
-            item = self.treeModel.item(row, 0)
-            if item.checkState() == Qt.CheckState.Checked:
-                langs.append(item.data(Qt.ItemDataRole.UserRole))
-                if item.data(Qt.ItemDataRole.UserRole + 1):
-                    hasAuto = True
-        return ",".join(langs), hasAuto
 
 
 class VideoSelectDialog(MessageBoxBase):
@@ -304,27 +293,30 @@ class YtDlpDraftCard(DraftCard):
         mediaInfo: dict = getattr(task, "_mediaInfo", {})
         hasMediaInfo = bool(mediaInfo.get("formats"))
 
-        self._qualityTiers = buildQualityTiers(mediaInfo) if hasMediaInfo else [("bv*+ba/b", self.tr("最佳画质"))]
-        self._subtitleChoices = buildSubtitleChoices(mediaInfo) if hasMediaInfo else []
+        self._trackBar = TrackBar(self)
+        self._subtitleChoices: list[tuple[str, str]] = []
+        self._autoLangs: set[str] = set()
 
-        self._mediaSpinner = IndeterminateProgressRing(self)
-        self._mediaSpinner.setFixedSize(20, 20)
-        self._mediaSpinner.setStrokeWidth(3)
-        self._mediaSpinner.setVisible(not hasMediaInfo)
-
-        self._qualityCombo = ComboBox(self)
-        self._qualityCombo.setMinimumWidth(160)
-        for _selector, label in self._qualityTiers:
-            self._qualityCombo.addItem(label)
-        if self._qualityTiers:
-            self._qualityCombo.setCurrentIndex(0)
-
-        self._subtitleButton = TransparentToolButton(FluentIcon.LANGUAGE, self)
-        self._subtitleButton.installEventFilter(ToolTipFilter(self._subtitleButton))
-        self._subtitleButton.setToolTip(self.tr("选择字幕"))
-        self._subtitleButton.setEnabled(bool(self._subtitleChoices))
+        if hasMediaInfo:
+            self._trackBar.videoButton.setOptions(buildVideoTiers(mediaInfo))
+            self._trackBar.audioButton.setOptions(buildAudioTiers(mediaInfo))
+            choices, autoLangs = buildSubtitleChoices(mediaInfo)
+            self._subtitleChoices = choices
+            self._autoLangs = autoLangs
+            self._trackBar.subtitleButton.setTrackEnabled(bool(choices))
+            thumbnailUrl = mediaInfo.get("thumbnail") or ""
+            if thumbnailUrl:
+                task.setCoverUrl(thumbnailUrl)
+                self._trackBar.coverButton.setTrackEnabled(True)
+        else:
+            self._trackBar.videoButton.setOptions([("0", self.tr("最佳画质"))])
+            self._trackBar.audioButton.setOptions([("0", self.tr("最佳音质"))])
+            self._trackBar.subtitleButton.setTrackEnabled(False)
+            self._trackBar.coverButton.setTrackEnabled(False)
+            self._trackBar.spinner.show()
 
         self._videoSelectButton = TransparentToolButton(FluentIcon.LIBRARY, self)
+        self._videoSelectButton.setFixedSize(28, 28)
         self._videoSelectButton.installEventFilter(ToolTipFilter(self._videoSelectButton))
         self._videoSelectButton.setToolTip(self.tr("选择视频"))
         self._videoSelectButton.setVisible(task.isPlaylist)
@@ -339,17 +331,65 @@ class YtDlpDraftCard(DraftCard):
 
     def _initLayout(self) -> None:
         super()._initLayout()
-        self.layout().addWidget(self._mediaSpinner)
-        self.layout().addWidget(self._qualityCombo)
-        self.layout().addWidget(self._subtitleButton)
+        self.layout().addWidget(self._trackBar)
         self.layout().addWidget(self._videoSelectButton)
         self.layout().addWidget(self._playlistSpinner)
 
     def _bind(self) -> None:
         super()._bind()
-        self._qualityCombo.currentIndexChanged.connect(self._onQualityChanged)
-        self._subtitleButton.clicked.connect(self._onSubtitleClicked)
+        self._trackBar.videoButton.optionPicked.connect(self._onVideoQualityPicked)
+        self._trackBar.videoButton.toggled.connect(self._onTrackToggled)
+        self._trackBar.audioButton.optionPicked.connect(self._onAudioQualityPicked)
+        self._trackBar.audioButton.toggled.connect(self._onTrackToggled)
+        self._trackBar.subtitleButton.clicked.connect(self._onSubtitleClicked)
+        self._trackBar.coverButton.clicked.connect(
+            lambda: self._trackBar.coverButton.setChecked(not self._trackBar.coverButton.isChecked())
+        )
+        self._trackBar.coverButton.toggled.connect(self._onTrackToggled)
         self._videoSelectButton.clicked.connect(self._onVideoSelectClicked)
+
+    def _onTrackToggled(self) -> None:
+        task: YouTubeTask = self._task
+        task.isVideoEnabled = self._trackBar.videoButton.isChecked()
+        task.isAudioEnabled = self._trackBar.audioButton.isChecked()
+        task.isCoverEnabled = self._trackBar.coverButton.isChecked()
+
+        stem = Path(task.name).stem
+        if task.isVideoEnabled:
+            task.setName(f"{stem}.mp4")
+        elif task.isAudioEnabled:
+            task.setName(f"{stem}.m4a")
+        elif task.isCoverEnabled:
+            task.setName(f"{stem}.jpg")
+
+        self._refreshSummary()
+
+        hasMedia = task.isVideoEnabled or task.isAudioEnabled
+        subtitleEnabled = hasMedia and bool(self._subtitleChoices)
+        self._trackBar.subtitleButton.setTrackEnabled(subtitleEnabled)
+        if subtitleEnabled:
+            self._trackBar.subtitleButton.setChecked(bool(task.subtitleLanguages.strip()))
+        self._videoSelectButton.setVisible(hasMedia and task.isPlaylist)
+
+    def _onVideoQualityPicked(self, value: str) -> None:
+        self._task.maxVideoHeight = int(value)
+        self._refreshSummary()
+
+    def _onAudioQualityPicked(self, value: str) -> None:
+        self._task.maxAudioBitrate = int(value)
+        self._refreshSummary()
+
+    def _refreshSummary(self) -> None:
+        task: YouTubeTask = self._task
+        mediaInfo = getattr(task, "_mediaInfo", None)
+        if mediaInfo:
+            videoFmt, audioFmt = buildFormatPair(mediaInfo, task)
+            videoSize = int(videoFmt.get("filesize") or videoFmt.get("filesize_approx") or 0) if videoFmt else 0
+            audioSize = int(audioFmt.get("filesize") or audioFmt.get("filesize_approx") or 0) if audioFmt else 0
+            task.fileSize = videoSize + audioSize
+        self.sizeLabel.setText(toReadableSize(task.fileSize) if task.fileSize > 0 else "")
+        self.nameLabel.setText(task.name)
+        self._refreshFileIcon()
 
     def _startMediaInfoFetch(self) -> None:
         from features.yt_dlp_pack.pack import YouTubeParser
@@ -362,43 +402,45 @@ class YtDlpDraftCard(DraftCard):
         )
 
     def _onMediaInfoLoaded(self, mediaInfo: dict) -> None:
-        self._mediaSpinner.hide()
+        self._trackBar.spinner.hide()
         if not mediaInfo:
             return
         task: YouTubeTask = self._task
         task._mediaInfo = mediaInfo
 
-        try:
-            fileSize = int(float(mediaInfo.get("filesize_approx") or 0))
-        except (TypeError, ValueError):
-            fileSize = 0
-        if fileSize:
-            task.fileSize = fileSize
-            self.sizeLabel.setText(toReadableSize(fileSize))
+        title = mediaInfo.get("title") or ""
+        if title:
+            ext = "mp4" if task.isVideoEnabled else "m4a" if task.isAudioEnabled else "jpg"
+            task.setName(toSafeFilename(f"{title}.{ext}"))
 
-        self._qualityTiers = buildQualityTiers(mediaInfo)
-        self._qualityCombo.clear()
-        for _selector, label in self._qualityTiers:
-            self._qualityCombo.addItem(label)
-        if self._qualityTiers:
-            self._qualityCombo.setCurrentIndex(0)
+        self._trackBar.videoButton.setOptions(buildVideoTiers(mediaInfo))
+        self._trackBar.audioButton.setOptions(buildAudioTiers(mediaInfo))
 
-        self._subtitleChoices = buildSubtitleChoices(mediaInfo)
-        self._subtitleButton.setEnabled(bool(self._subtitleChoices))
+        choices, autoLangs = buildSubtitleChoices(mediaInfo)
+        self._subtitleChoices = choices
+        self._autoLangs = autoLangs
+        self._trackBar.subtitleButton.setTrackEnabled(bool(choices))
+        thumbnailUrl = mediaInfo.get("thumbnail") or ""
+        if thumbnailUrl:
+            task.setCoverUrl(thumbnailUrl)
+            self._trackBar.coverButton.setTrackEnabled(True)
+
+        self._refreshSummary()
 
     def _onMediaInfoFailed(self, error: str) -> None:
-        self._mediaSpinner.hide()
-
-    def _onQualityChanged(self, index: int) -> None:
-        if 0 <= index < len(self._qualityTiers):
-            self._task.videoFormatFilter = self._qualityTiers[index][0]
+        self._trackBar.spinner.hide()
 
     def _onSubtitleClicked(self) -> None:
-        dialog = SubtitleSelectDialog(self._subtitleChoices, self.window())
-        if dialog.exec():
-            langs, includeAuto = dialog.selectedLanguages()
-            self._task.subtitleLanguages = langs
-            self._task.shouldIncludeAutoSubs = includeAuto
+        currentLangs = [s.strip() for s in self._task.subtitleLanguages.split(",") if s.strip()]
+        dialog = SubtitleSelectDialog(self._subtitleChoices, currentLangs, self.window())
+        try:
+            if dialog.exec():
+                selected = dialog.selectedLanguages()
+                self._task.subtitleLanguages = ",".join(selected)
+                self._task.shouldIncludeAutoSubs = bool(self._autoLangs & set(selected))
+                self._trackBar.subtitleButton.setChecked(bool(selected))
+        finally:
+            dialog.deleteLater()
 
     def _onVideoSelectClicked(self) -> None:
         task: YouTubeTask = self._task
@@ -414,9 +456,12 @@ class YtDlpDraftCard(DraftCard):
             )
             return
         dialog = VideoSelectDialog(task, self.window())
-        if dialog.exec():
-            task.setSelection(dialog.selectedIndexes())
-            self.nameLabel.setText(task.name)
+        try:
+            if dialog.exec():
+                task.setSelection(dialog.selectedIndexes())
+                self.nameLabel.setText(task.name)
+        finally:
+            dialog.deleteLater()
 
     def _onPlaylistLoaded(self, videos: list[dict]) -> None:
         self._playlistSpinner.hide()

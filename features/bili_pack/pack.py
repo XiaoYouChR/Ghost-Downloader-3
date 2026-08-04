@@ -14,7 +14,7 @@ from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
 from .cards import BilibiliDraftCard, BilibiliTaskCard
 from .config import bilibiliConfig
-from .task import BiliPage, BilibiliTask
+from .task import BiliPage, BilibiliTask, streamUrl
 
 
 class BilibiliParser(TaskParser):
@@ -121,6 +121,8 @@ class BilibiliParser(TaskParser):
 
             totalSize = 0
             parsedPages = []
+            acceptQuality = []
+            acceptDescription = []
 
             for pageNumber in range(1, len(pages) + 1):
                 page = pages[pageNumber - 1]
@@ -142,16 +144,22 @@ class BilibiliParser(TaskParser):
                     raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
 
                 pageData = playPayload.get("data") or {}
+                dash = pageData.get("dash") or {}
+                videoStreams = dash.get("video") or []
+                audioStreams = dash.get("audio") or []
+
                 videoUrl = self._selectStream(
-                    pageData.get("dash", {}).get("video") or [],
+                    videoStreams,
                     requestedQuality,
                     list(pageData.get("accept_quality") or []),
                 )
-                audioUrl = self._selectStream(
-                    pageData.get("dash", {}).get("audio") or [],
-                )
+                audioUrl = self._selectStream(audioStreams)
                 if not videoUrl or not audioUrl:
                     raise ValueError("未能解析出完整的音视频下载链接")
+
+                if not parsedPages:
+                    acceptQuality = list(pageData.get("accept_quality") or [])
+                    acceptDescription = list(pageData.get("accept_description") or [])
 
                 videoSize = await self._fetchSize(client, videoUrl, downloadHeaders)
                 audioSize = await self._fetchSize(client, audioUrl, downloadHeaders)
@@ -168,6 +176,9 @@ class BilibiliParser(TaskParser):
                     videoSize=videoSize,
                     audioSize=audioSize,
                     subtitles=subtitles,
+                    _duration=int(page.get("duration") or 0),
+                    _videoStreams=videoStreams,
+                    _audioStreams=audioStreams,
                 ))
 
             coverUrl = str(viewData.get("pic") or "").strip()
@@ -198,6 +209,8 @@ class BilibiliParser(TaskParser):
                 coverSize=coverSize,
                 files=parsedPages,
                 _baseName=baseName,
+                _acceptQualities=acceptQuality,
+                _qualityLabels=acceptDescription,
             )
             task._rebuildSteps()
 
@@ -241,17 +254,6 @@ class BilibiliParser(TaskParser):
     ) -> str:
         if not streams:
             raise ValueError("Bilibili 返回结果中不存在可用的媒体流")
-
-        def streamUrl(s: dict) -> str:
-            url = s.get("baseUrl") or s.get("base_url")
-            if isinstance(url, str) and url:
-                return url
-            backup = s.get("backupUrl") or s.get("backup_url") or []
-            if isinstance(backup, list):
-                for item in backup:
-                    if isinstance(item, str) and item:
-                        return item
-            return ""
 
         if quality is not None and acceptQuality:
             targetQuality = quality

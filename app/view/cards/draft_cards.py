@@ -77,6 +77,7 @@ class DraftCard(QWidget):
 
     def _refreshFileIcon(self) -> None:
         self.iconLabel.setImage(QFileIconProvider().icon(QFileInfo(self._task.name)).pixmap(16, 16))
+        self.iconLabel.setFixedSize(16, 16)
 
     def _onNameEditRequested(self) -> None:
         self.nameLabel.hide()

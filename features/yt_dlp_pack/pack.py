@@ -70,13 +70,16 @@ class YouTubeParser(TaskParser):
     async def _fetchTitle(self, url: str) -> str:
         from app.client import buildClient
         oembedUrl = f"https://www.youtube.com/oembed?url={quote(url, safe='')}&format=json"
+        client = buildClient(timeout=5)
         try:
-            client = buildClient(timeout=5)
             response = await client.get(oembedUrl)
             data = await response.json()
             return str(data.get("title") or "")
         except Exception:
+            logger.opt(exception=True).debug("_fetchTitle failed for {}", url)
             return ""
+        finally:
+            client.close()
 
 
 class YouTubePack(FeaturePack):

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import importlib
 import io
-import re
 import shutil
 import tempfile
 import threading
@@ -18,6 +17,7 @@ from loguru import logger
 
 from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus
 from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
+from http_pack.task import HttpTaskStep
 
 ERROR_HINTS = (
     ("is not available in your country", "该视频在您所在地区不可用，请尝试配置代理（{detail}）"),
@@ -97,6 +97,60 @@ def probePlaylist(url: str) -> list[dict]:
     ]
 
 
+def buildFormatPair(info: dict, task: YouTubeTask) -> tuple[dict | None, dict | None]:
+    from .config import ytDlpConfig
+    formats = info.get("formats") or []
+    shouldPreferMp4 = ytDlpConfig.shouldPreferMp4.value
+
+    audioFormats = [
+        f for f in formats
+        if f.get("acodec", "none") != "none"
+        and f.get("vcodec", "none") == "none"
+    ]
+
+    if task.maxAudioBitrate > 0:
+        audioFormats = [f for f in audioFormats
+                       if (f.get("abr") or f.get("tbr") or 0) <= task.maxAudioBitrate]
+
+    audioFormats.sort(
+        key=lambda f: (shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"), f.get("abr") or f.get("tbr") or 0),
+        reverse=True,
+    )
+    audioFmt = audioFormats[0] if audioFormats else None
+
+    if not task.isVideoEnabled:
+        return None, audioFmt if task.isAudioEnabled else None
+
+    if not task.isAudioEnabled:
+        audioFmt = None
+
+    videoFormats = [
+        f for f in formats
+        if f.get("vcodec", "none") != "none"
+        and f.get("acodec", "none") == "none"
+    ]
+
+    if task.maxVideoHeight > 0:
+        videoFormats = [f for f in videoFormats if (f.get("height") or 0) <= task.maxVideoHeight]
+
+    videoFormats.sort(
+        key=lambda f: (shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"), f.get("height") or 0, f.get("tbr") or 0),
+        reverse=True,
+    )
+    videoFmt = videoFormats[0] if videoFormats else None
+
+    if not videoFmt:
+        combined = [f for f in formats if f.get("vcodec", "none") != "none"]
+        combined.sort(
+            key=lambda f: (f.get("height") or 0, f.get("tbr") or 0),
+            reverse=True,
+        )
+        if combined:
+            videoFmt = combined[0]
+
+    return videoFmt, audioFmt
+
+
 @dataclass(kw_only=True)
 class YouTubeFile(TaskFile):
     videoId: str = ""
@@ -119,10 +173,31 @@ class YouTubeTask(Task):
     packId: str = "ytdlp"
     canEdit = True
     fileType = YouTubeFile
-    videoFormatFilter: str = ""
+    maxVideoHeight: int = 0
+    maxAudioBitrate: int = 0
+    isVideoEnabled: bool = True
+    isAudioEnabled: bool = True
     subtitleLanguages: str = ""
     shouldIncludeAutoSubs: bool = False
+    coverUrl: str = ""
+    isCoverEnabled: bool = False
     isPlaylist: bool = False
+
+    def setCoverUrl(self, url: str) -> None:
+        if not url:
+            return
+        self.coverUrl = url
+        if any(isinstance(s, YouTubeCoverStep) for s in self.steps):
+            return
+        stepIndex = max((s.stepIndex for s in self.steps), default=0) + 1
+        self.addStep(YouTubeCoverStep(
+            stepIndex=stepIndex,
+            url=url,
+            fileSize=0,
+            headers={},
+            canUseRangeRequests=False,
+            subworkerCount=1,
+        ))
 
     def setVideos(self, videos: list[dict]) -> None:
         from app.platform.filesystem import toSafeFilename
@@ -143,6 +218,8 @@ class YouTubeTask(Task):
         if not self.steps:
             for step in buildStepGroup(0):
                 self.addStep(step)
+        if self.coverUrl:
+            self.setCoverUrl(self.coverUrl)
 
     def setSelection(self, selectedIndexes) -> None:
         super().setSelection(selectedIndexes)
@@ -194,6 +271,10 @@ class YouTubeExtractStep(TaskStep):
     videoUrl: str = ""
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        if not self.task.isVideoEnabled and not self.task.isAudioEnabled:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+
         if self._hasFreshSiblingUrls():
             self.setStatus(TaskStatus.COMPLETED)
             return
@@ -214,7 +295,7 @@ class YouTubeExtractStep(TaskStep):
                 raise TaskError(hint, detail=detail)
             raise TaskError("视频信息提取失败：{detail}", detail=detail or "unknown")
 
-        videoFmt, audioFmt = self._buildFormatPair(info)
+        videoFmt, audioFmt = buildFormatPair(info, self.task)
         if not videoFmt and not audioFmt:
             logger.warning("no formats found for {} (formats count: {})", url, len(info.get("formats") or []))
             raise TaskError("未找到可用的视频格式")
@@ -252,56 +333,6 @@ class YouTubeExtractStep(TaskStep):
             except (ValueError, IndexError):
                 continue
         return False
-
-    def _buildFormatPair(self, info: dict) -> tuple[dict | None, dict | None]:
-        from .config import ytDlpConfig
-        formats = info.get("formats") or []
-        shouldPreferMp4 = ytDlpConfig.shouldPreferMp4.value
-        filterStr = self.task.videoFormatFilter
-        isAudioOnly = filterStr and "bv" not in filterStr
-
-        audioFormats = [
-            f for f in formats
-            if f.get("acodec", "none") != "none"
-            and f.get("vcodec", "none") == "none"
-        ]
-
-        audioFormats.sort(
-            key=lambda f: (shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"), f.get("abr") or f.get("tbr") or 0),
-            reverse=True,
-        )
-        audioFmt = audioFormats[0] if audioFormats else None
-
-        if isAudioOnly:
-            return None, audioFmt
-
-        videoFormats = [
-            f for f in formats
-            if f.get("vcodec", "none") != "none"
-            and f.get("acodec", "none") == "none"
-        ]
-
-        heightMatch = re.search(r"height<=(\d+)", filterStr) if filterStr else None
-        if heightMatch:
-            maxHeight = int(heightMatch.group(1))
-            videoFormats = [f for f in videoFormats if (f.get("height") or 0) <= maxHeight]
-
-        videoFormats.sort(
-            key=lambda f: (shouldPreferMp4 and f.get("ext") in ("mp4", "m4a"), f.get("height") or 0, f.get("tbr") or 0),
-            reverse=True,
-        )
-        videoFmt = videoFormats[0] if videoFormats else None
-
-        if not videoFmt:
-            combined = [f for f in formats if f.get("vcodec", "none") != "none"]
-            combined.sort(
-                key=lambda f: (f.get("height") or 0, f.get("tbr") or 0),
-                reverse=True,
-            )
-            if combined:
-                videoFmt = combined[0]
-
-        return videoFmt, audioFmt
 
     def _updateSiblingSteps(self, videoFmt: dict | None, audioFmt: dict | None, info: dict) -> None:
         from app.config.cfg import cfg
@@ -379,7 +410,9 @@ class YouTubeSubtitleStep(TaskStep):
                 shutil.move(str(path), str(target))
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        if not self.task.subtitleLanguages:
+        if not self.task.subtitleLanguages or (
+            not self.task.isVideoEnabled and not self.task.isAudioEnabled
+        ):
             self.setStatus(TaskStatus.COMPLETED)
             return
 
@@ -479,12 +512,92 @@ class YouTubeMergeStep(FFmpegStep):
             return
 
         singleInput = self._videoPath if hasVideo else self._audioPath if hasAudio else None
-        if singleInput:
+        if not singleInput:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+
+        if self.metadataTitle or self.chapters:
+            await self._runSingleWithMetadata(singleInput)
+        else:
             outputPath = Path(self.outputFile)
             outputPath.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(singleInput), str(outputPath))
             Path(f"{singleInput}.ghd").unlink(missing_ok=True)
-        self.setStatus(TaskStatus.COMPLETED)
+            self.setStatus(TaskStatus.COMPLETED)
+
+    async def _runSingleWithMetadata(self, inputPath: Path) -> None:
+        from ffmpeg_pack.config import ffmpegRuntime
+        from app.platform.filesystem import deletePath
+
+        ffmpegPath = ffmpegRuntime.path()
+        ffprobePath = ffmpegRuntime.ffprobePath()
+        if not ffmpegPath or not ffprobePath:
+            raise TaskError("{name} 未安装，请在设置中安装", name="FFmpeg")
+
+        Path(self.outputFile).parent.mkdir(parents=True, exist_ok=True)
+        totalDuration = await self._probeDuration(ffprobePath, inputPath)
+
+        args = [
+            ffmpegPath,
+            "-y", "-v", "error", "-nostats", "-progress", "pipe:1",
+            "-i", str(inputPath),
+        ]
+
+        chaptersFile = None
+        if self.chapters:
+            chaptersFile = self._createChaptersFile()
+            args.extend(["-f", "ffmetadata", "-i", chaptersFile])
+
+        args.extend(["-c", "copy"])
+
+        if self.chapters and chaptersFile:
+            args.extend(["-map", "0", "-map_metadata", "1"])
+
+        if self.metadataTitle:
+            args.extend(["-metadata", f"title={self.metadataTitle}"])
+        if self.metadataArtist:
+            args.extend(["-metadata", f"artist={self.metadataArtist}"])
+
+        args.append(self.outputFile)
+
+        process = await asyncio.create_subprocess_exec(
+            *args,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        progressTask = asyncio.create_task(self._readProgress(process.stdout, totalDuration))
+
+        try:
+            await process.wait()
+            await progressTask
+
+            if process.returncode != 0:
+                stderr = (await process.stderr.read()).decode("utf-8", errors="ignore").strip()
+                raise TaskError(
+                    "FFmpeg 写入元数据失败（{code}）：{detail}",
+                    code=process.returncode,
+                    detail=stderr or "unknown error",
+                )
+
+            self.setStatus(TaskStatus.COMPLETED)
+
+            if self.shouldDeleteSource:
+                deletePath(inputPath)
+                deletePath(Path(f"{inputPath}.ghd"))
+        except asyncio.CancelledError:
+            self.setStatus(TaskStatus.PAUSED)
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+            if not progressTask.done():
+                progressTask.cancel()
+                with suppress(asyncio.CancelledError):
+                    await progressTask
+            raise
+        finally:
+            if chaptersFile:
+                Path(chaptersFile).unlink(missing_ok=True)
 
     async def _runWithMetadata(self) -> None:
         from ffmpeg_pack.config import ffmpegRuntime
@@ -577,3 +690,18 @@ class YouTubeMergeStep(FFmpegStep):
         with open(fd, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
         return path
+
+
+@dataclass(kw_only=True)
+class YouTubeCoverStep(HttpTaskStep):
+
+    @property
+    def outputPath(self) -> str:
+        stem = Path(self.task.name).stem
+        return str(self.task.outputFolder / f"{stem}.jpg")
+
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        if not self.task.isCoverEnabled:
+            self.setStatus(TaskStatus.COMPLETED)
+            return
+        await super().run(reportSpeed, waitForSpeedLimit)

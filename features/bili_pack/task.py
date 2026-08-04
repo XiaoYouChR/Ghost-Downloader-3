@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import IntEnum
 from pathlib import Path
 
 from loguru import logger
@@ -11,13 +10,17 @@ from app.platform.filesystem import toSafeFilename
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.task import FFmpegStep
 
-STEPS_PER_PAGE = 4
+AUDIO_QUALITY_LABELS = {30216: "64K", 30232: "132K", 30280: "192K", 30250: "杜比全景声", 30251: "Hi-Res"}
 
 
-class DownloadMode(IntEnum):
-    VIDEO = 0
-    AUDIO = 1
-    COVER = 2
+def streamUrl(s: dict) -> str:
+    url = s.get("baseUrl") or ""
+    if url:
+        return url
+    for item in (s.get("backupUrl") or []):
+        if item:
+            return item
+    return ""
 
 
 @dataclass(kw_only=True)
@@ -30,6 +33,9 @@ class BiliPage(TaskFile):
     headers: dict = field(default_factory=dict)
     subworkerCount: int = 8
     subtitles: list[dict] = field(default_factory=list)
+    _duration: int = field(default=0, repr=False)
+    _videoStreams: list[dict] = field(default_factory=list, repr=False)
+    _audioStreams: list[dict] = field(default_factory=list, repr=False)
 
     @property
     def pageNumber(self) -> int:
@@ -43,9 +49,13 @@ class BilibiliTask(Task):
     fileType = BiliPage
     coverUrl: str = ""
     coverSize: int = 0
-    mode: DownloadMode = DownloadMode.VIDEO
+    isVideoEnabled: bool = True
+    isAudioEnabled: bool = True
+    isCoverEnabled: bool = False
     subtitleLanguages: list[str] = field(default_factory=list)
     _baseName: str = ""
+    _acceptQualities: list[int] = field(default_factory=list, repr=False)
+    _qualityLabels: list[str] = field(default_factory=list, repr=False)
 
     @property
     def outputPath(self) -> str:
@@ -59,12 +69,29 @@ class BilibiliTask(Task):
             return Path(self.outputPath)
         return self.outputFolder
 
+    def setSelection(self, selectedIndexes) -> None:
+        super().setSelection(selectedIndexes)
+        if self.isCoverEnabled:
+            self.fileSize += self.coverSize
+
     def setName(self, name: str):
         super().setName(name)
         self._baseName = Path(self.name).stem
 
-    def setMode(self, mode: DownloadMode) -> None:
-        self.mode = mode
+    def setVideoQuality(self, qn: int, codecid: int) -> None:
+        for page in (self.files or []):
+            stream = next((s for s in page._videoStreams if s["id"] == qn and s["codecid"] == codecid), None)
+            if stream and streamUrl(stream):
+                page.videoUrl = streamUrl(stream)
+                page.videoSize = stream["bandwidth"] * page._duration // 8
+        self._rebuildSteps()
+
+    def setAudioQuality(self, qn: int) -> None:
+        for page in (self.files or []):
+            stream = next((s for s in page._audioStreams if s["id"] == qn), None)
+            if stream and streamUrl(stream):
+                page.audioUrl = streamUrl(stream)
+                page.audioSize = stream["bandwidth"] * page._duration // 8
         self._rebuildSteps()
 
     def setSubtitleLanguages(self, languages: list[str]) -> None:
@@ -75,30 +102,43 @@ class BilibiliTask(Task):
         self.steps.clear()
         files: list[BiliPage] = self.files or []
         hasSubs = bool(self.subtitleLanguages)
+        needsMerge = self.isVideoEnabled and self.isAudioEnabled
 
-        if self.mode == DownloadMode.COVER:
+        if self.isVideoEnabled:
+            self.name = toSafeFilename(f"{self._baseName}.mp4", fallback="video.mp4")
+        elif self.isAudioEnabled:
+            self.name = toSafeFilename(f"{self._baseName}.m4a", fallback="audio.m4a")
+        elif self.isCoverEnabled:
             self.name = toSafeFilename(f"{self._baseName}.jpg", fallback="cover.jpg")
-            self.fileSize = self.coverSize
-            self.addStep(HttpTaskStep(
-                stepIndex=1,
-                url=self.coverUrl,
-                fileSize=self.coverSize,
-                headers={},
-                canUseRangeRequests=self.coverSize > 0,
-                subworkerCount=1,
-            ))
+        else:
+            for file in files:
+                file.size = 0
+            self.fileSize = 0
             return
 
-        if self.mode == DownloadMode.AUDIO:
-            self.name = toSafeFilename(f"{self._baseName}.m4a", fallback="audio.m4a")
-            for file in files:
-                file.size = file.audioSize
-            self.fileSize = sum(f.size for f in files if f.selected)
-            for file in files:
-                base = file.index * STEPS_PER_PAGE
-                pageSuffix = self._pageSuffix(file)
+        for file in files:
+            file.size = (file.videoSize if self.isVideoEnabled else 0) + (file.audioSize if self.isAudioEnabled else 0)
+        self.fileSize = sum(f.size for f in files if f.selected) + (self.coverSize if self.isCoverEnabled else 0)
+
+        stepIndex = 0
+        for file in files:
+            pageSuffix = self._pageSuffix(file)
+            if self.isVideoEnabled:
+                stepIndex += 1
+                self.addStep(BilibiliVideoStep(
+                    stepIndex=stepIndex,
+                    url=file.videoUrl,
+                    fileSize=file.videoSize,
+                    headers=dict(file.headers),
+                    subworkerCount=file.subworkerCount,
+                    canUseRangeRequests=True,
+                    fileIndex=file.index,
+                    pageSuffix=pageSuffix,
+                ))
+            if self.isAudioEnabled:
+                stepIndex += 1
                 self.addStep(BilibiliAudioStep(
-                    stepIndex=base + 1,
+                    stepIndex=stepIndex,
                     url=file.audioUrl,
                     fileSize=file.audioSize,
                     headers=dict(file.headers),
@@ -107,53 +147,32 @@ class BilibiliTask(Task):
                     fileIndex=file.index,
                     pageSuffix=pageSuffix,
                 ))
-                if hasSubs and file.subtitles:
-                    self.addStep(BilibiliSubtitleStep(
-                        stepIndex=base + 2,
-                        fileIndex=file.index,
-                        pageSuffix=pageSuffix,
-                    ))
-            return
-
-        # VIDEO mode
-        self.name = toSafeFilename(f"{self._baseName}.mp4", fallback="video.mp4")
-        for file in files:
-            file.size = file.videoSize + file.audioSize
-        self.fileSize = sum(f.size for f in files if f.selected)
-        for file in files:
-            base = file.index * STEPS_PER_PAGE
-            pageSuffix = self._pageSuffix(file)
-            self.addStep(BilibiliVideoStep(
-                stepIndex=base + 1,
-                url=file.videoUrl,
-                fileSize=file.videoSize,
-                headers=dict(file.headers),
-                subworkerCount=file.subworkerCount,
-                canUseRangeRequests=True,
-                fileIndex=file.index,
-                pageSuffix=pageSuffix,
-            ))
-            self.addStep(BilibiliAudioStep(
-                stepIndex=base + 2,
-                url=file.audioUrl,
-                fileSize=file.audioSize,
-                headers=dict(file.headers),
-                subworkerCount=file.subworkerCount,
-                canUseRangeRequests=True,
-                fileIndex=file.index,
-                pageSuffix=pageSuffix,
-            ))
-            self.addStep(BilibiliMergeStep(
-                stepIndex=base + 3,
-                fileIndex=file.index,
-                pageSuffix=pageSuffix,
-            ))
-            if hasSubs and file.subtitles:
-                self.addStep(BilibiliSubtitleStep(
-                    stepIndex=base + 4,
+            if needsMerge:
+                stepIndex += 1
+                self.addStep(BilibiliMergeStep(
+                    stepIndex=stepIndex,
                     fileIndex=file.index,
                     pageSuffix=pageSuffix,
                 ))
+            if hasSubs and file.subtitles and (self.isVideoEnabled or self.isAudioEnabled):
+                stepIndex += 1
+                self.addStep(BilibiliSubtitleStep(
+                    stepIndex=stepIndex,
+                    fileIndex=file.index,
+                    pageSuffix=pageSuffix,
+                ))
+
+        if self.isCoverEnabled and self.coverUrl:
+            stepIndex += 1
+            self.addStep(HttpTaskStep(
+                stepIndex=stepIndex,
+                url=self.coverUrl,
+                fileSize=self.coverSize,
+                headers={},
+                canUseRangeRequests=self.coverSize > 0,
+                subworkerCount=1,
+                outputFile=str(self.filesFolder / f"{self._baseName}.jpg"),
+            ))
 
     def _pageSuffix(self, page: BiliPage) -> str:
         # 后缀跟总分P数走，与选择解耦，保证文件名稳定
@@ -178,7 +197,10 @@ class BilibiliVideoStep(HttpTaskStep):
 
     @property
     def outputPath(self) -> str:
-        return str(self.task.filesFolder / f"{pageStem(self.task.name, self.pageSuffix)}.video.m4s")
+        stem = pageStem(self.task.name, self.pageSuffix)
+        if self.task.isAudioEnabled:
+            return str(self.task.filesFolder / f"{stem}.video.m4s")
+        return str(self.task.filesFolder / f"{stem}.mp4")
 
 
 @dataclass(kw_only=True)
@@ -189,8 +211,9 @@ class BilibiliAudioStep(HttpTaskStep):
     @property
     def outputPath(self) -> str:
         stem = pageStem(self.task.name, self.pageSuffix)
-        ext = ".m4a" if self.task.mode == DownloadMode.AUDIO else ".audio.m4s"
-        return str(self.task.filesFolder / f"{stem}{ext}")
+        if self.task.isVideoEnabled:
+            return str(self.task.filesFolder / f"{stem}.audio.m4s")
+        return str(self.task.filesFolder / f"{stem}.m4a")
 
 
 @dataclass(kw_only=True)
