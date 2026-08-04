@@ -9,7 +9,11 @@ Seam S13e: 请求构造（_effectiveHeaders 一致性）
 from __future__ import annotations
 
 import asyncio
+import brotli
+import gzip
 import os
+import zlib
+import zstandard
 import tempfile
 from pathlib import Path
 
@@ -700,6 +704,187 @@ class TestStallRecovery:
         assert (tmpdir / "test.bin").read_bytes() == content
         assert hasStalled
         releaseHang.set()
+
+
+# ── S13a/S13c: Compressed range ──
+
+
+ENCODINGS = {
+    "gzip": lambda data: gzip.compress(data),
+    "deflate": lambda data: zlib.compress(data),
+    "br": lambda data: brotli.compress(data),
+    "zstd": lambda data: zstandard.compress(data),
+}
+
+
+def compressedRangeHandler(content: bytes, encoding: str):
+    """Server that compresses each range response with the given encoding."""
+    compress = ENCODINGS[encoding]
+
+    async def handler(request: web.Request) -> web.Response:
+        rangeHeader = request.headers.get("Range")
+        if rangeHeader is None:
+            return web.Response(
+                body=content,
+                headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
+            )
+        rangeSpec = rangeHeader.replace("bytes=", "")
+        parts = rangeSpec.split("-")
+        start = int(parts[0])
+        end = int(parts[1]) if parts[1] else len(content) - 1
+        body = content[start:end + 1]
+        compressed = compress(body)
+        return web.Response(
+            status=206,
+            body=compressed,
+            headers={
+                "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                "Content-Encoding": encoding,
+                "Content-Length": str(len(compressed)),
+            },
+        )
+    return handler
+
+
+def brokenEncodingRangeHandler(content: bytes, encoding: str):
+    """Server claims encoding for ranges but sends raw bytes. Full requests are correct."""
+    async def handler(request: web.Request) -> web.Response:
+        rangeHeader = request.headers.get("Range")
+        if rangeHeader is None:
+            return web.Response(
+                body=content,
+                headers={"Content-Length": str(len(content))},
+            )
+        rangeSpec = rangeHeader.replace("bytes=", "")
+        parts = rangeSpec.split("-")
+        start = int(parts[0])
+        end = int(parts[1]) if parts[1] else len(content) - 1
+        body = content[start:end + 1]
+        return web.Response(
+            status=206,
+            body=body,
+            headers={
+                "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                "Content-Encoding": encoding,
+            },
+        )
+    return handler
+
+
+class TestCompressedRange:
+
+    @pytest.mark.parametrize("encoding", list(ENCODINGS))
+    async def test_compressed_range_produces_correct_file(self, server, tmpdir, encoding):
+        content = makeFileContent(1000)
+        url = await server(compressedRangeHandler(content, encoding))
+        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmpdir / "test.bin").read_bytes() == content
+
+    @pytest.mark.parametrize("encoding", list(ENCODINGS))
+    async def test_broken_encoding_falls_back_to_single_stream(self, server, tmpdir, monkeypatch, encoding):
+        content = makeFileContent(500)
+
+        _real_sleep = asyncio.sleep
+
+        async def fast_sleep(n):
+            await _real_sleep(0 if n >= 5 else min(n, 0.01))
+
+        monkeypatch.setattr(asyncio, "sleep", fast_sleep)
+
+        url = await server(brokenEncodingRangeHandler(content, encoding))
+        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=2,
+                              canUseRangeRequests=True)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await asyncio.wait_for(runStep(step), timeout=15)
+
+        assert not step.canUseRangeRequests
+        assert (tmpdir / "test.bin").read_bytes() == content
+
+    async def test_mixed_encodings_across_subworkers(self, server, tmpdir):
+        """Different subworkers get different Content-Encoding (CDN edge variance)."""
+        content = makeFileContent(1000)
+        encodingNames = list(ENCODINGS)
+        requestIndex = 0
+
+        async def handler(request: web.Request) -> web.Response:
+            nonlocal requestIndex
+            rangeHeader = request.headers.get("Range")
+            if rangeHeader is None:
+                return web.Response(
+                    body=content,
+                    headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
+                )
+            rangeSpec = rangeHeader.replace("bytes=", "")
+            parts = rangeSpec.split("-")
+            start = int(parts[0])
+            end = int(parts[1]) if parts[1] else len(content) - 1
+            body = content[start:end + 1]
+            encoding = encodingNames[requestIndex % len(encodingNames)]
+            requestIndex += 1
+            compressed = ENCODINGS[encoding](body)
+            return web.Response(
+                status=206,
+                body=compressed,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                    "Content-Encoding": encoding,
+                    "Content-Length": str(len(compressed)),
+                },
+            )
+
+        url = await server(handler)
+        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=4)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmpdir / "test.bin").read_bytes() == content
+
+    async def test_reassignment_with_compressed_range(self, server, tmpdir):
+        """_splitSlowest during compressed streaming: clamp on decompressed bytes, new subworker gets correct compressed range."""
+        content = makeFileContent(2_000_000)
+        requestCount = 0
+
+        compress = ENCODINGS["gzip"]
+
+        async def handler(request: web.Request) -> web.Response:
+            nonlocal requestCount
+            requestCount += 1
+            rangeHeader = request.headers.get("Range")
+            if rangeHeader is None:
+                return web.Response(
+                    body=content,
+                    headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
+                )
+            rangeSpec = rangeHeader.replace("bytes=", "")
+            parts = rangeSpec.split("-")
+            start = int(parts[0])
+            end = int(parts[1]) if parts[1] else len(content) - 1
+            body = content[start:end + 1]
+            compressed = compress(body)
+            return web.Response(
+                status=206,
+                body=compressed,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                    "Content-Encoding": "gzip",
+                    "Content-Length": str(len(compressed)),
+                },
+            )
+
+        url = await server(handler)
+        task, step = makeStep(url, tmpdir, fileSize=2_000_000, subworkerCount=2)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmpdir / "test.bin").read_bytes() == content
+        assert requestCount > 2
 
 
 if __name__ == "__main__":
