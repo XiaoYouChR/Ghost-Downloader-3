@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QColor, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidget
 from qfluentwidgets import (
@@ -56,7 +56,7 @@ def toCodecLabel(fmt: dict) -> str:
     return ", ".join(parts)
 
 
-def buildVideoTiers(mediaInfo: dict) -> list[tuple[str, str]]:
+def buildVideoTiers(mediaInfo: dict, bestLabel: str) -> list[tuple[str, str]]:
     formats = mediaInfo.get("formats") or []
     best: dict[int, dict] = {}
 
@@ -78,7 +78,7 @@ def buildVideoTiers(mediaInfo: dict) -> list[tuple[str, str]]:
         fps = fmt.get("fps") or 0
         fpsLabel = "60" if fps > 30 else ""
         info = toCodecLabel(fmt)
-        label = f"最佳画质 ({tiers[0]}p{fpsLabel}, {info})" if info else f"最佳画质 ({tiers[0]}p{fpsLabel})"
+        label = bestLabel + (f" ({tiers[0]}p{fpsLabel}, {info})" if info else f" ({tiers[0]}p{fpsLabel})")
         result.append(("0", label))
 
     for height in tiers:
@@ -92,7 +92,7 @@ def buildVideoTiers(mediaInfo: dict) -> list[tuple[str, str]]:
     return result
 
 
-def buildAudioTiers(mediaInfo: dict) -> list[tuple[str, str]]:
+def buildAudioTiers(mediaInfo: dict, bestLabel: str) -> list[tuple[str, str]]:
     formats = mediaInfo.get("formats") or []
     best: dict[int, dict] = {}
 
@@ -113,7 +113,7 @@ def buildAudioTiers(mediaInfo: dict) -> list[tuple[str, str]]:
     result: list[tuple[str, str]] = []
     if tiers:
         info = toCodecLabel(best[tiers[0]])
-        result.append(("0", f"最佳音质 ({info})" if info else "最佳音质"))
+        result.append(("0", bestLabel + f" ({info})" if info else bestLabel))
     for bucket in tiers:
         fmt = best[bucket]
         abr = int(fmt.get("abr") or fmt.get("tbr") or 0)
@@ -124,7 +124,7 @@ def buildAudioTiers(mediaInfo: dict) -> list[tuple[str, str]]:
     return result
 
 
-def buildSubtitleChoices(mediaInfo: dict) -> tuple[list[tuple[str, str]], set[str]]:
+def buildSubtitleChoices(mediaInfo: dict, automaticLabel: str) -> tuple[list[tuple[str, str]], set[str]]:
     choices: list[tuple[str, str]] = []
     autoLangs: set[str] = set()
     seen: set[str] = set()
@@ -138,7 +138,7 @@ def buildSubtitleChoices(mediaInfo: dict) -> tuple[list[tuple[str, str]], set[st
         if lang not in seen:
             seen.add(lang)
             autoLangs.add(lang)
-            choices.append((lang, f"{lang} (自动)"))
+            choices.append((lang, f"{lang} ({automaticLabel})"))
 
     return choices, autoLangs
 
@@ -155,7 +155,6 @@ STEP_LABELS = {
 def toYtDlpSizeText(task: YouTubeTask, speed: int, received: int) -> str | None:
     if task.status == TaskStatus.COMPLETED:
         if task.isPlaylist:
-            from PySide6.QtCore import QCoreApplication
             videoCount = len(task.steps) // STEPS_PER_VIDEO
             totalReceived = sum(s.receivedBytes for s in task.steps)
             return QCoreApplication.translate("YtDlpTaskCard", "{0} 个视频 · {1}").format(
@@ -175,7 +174,8 @@ def toYtDlpNameText(task: YouTubeTask, speed: int, received: int) -> str | None:
         return None
     fileIndex = currentStep.fileIndex or 0
     stepInGroup = currentStep.stepIndex - fileIndex * STEPS_PER_VIDEO
-    label = STEP_LABELS.get(stepInGroup, "")
+    sourceLabel = STEP_LABELS.get(stepInGroup, "")
+    label = QCoreApplication.translate("YtDlpTaskCard", sourceLabel) if sourceLabel else ""
     if task.isPlaylist:
         videoCount = len(task.steps) // STEPS_PER_VIDEO
         videoStem = getattr(currentStep, "videoStem", "") or task.name
@@ -352,9 +352,9 @@ class YtDlpDraftCard(DraftCard):
         self._autoLangs: set[str] = set()
 
         if hasMediaInfo:
-            self._trackBar.videoButton.setOptions(buildVideoTiers(mediaInfo))
-            self._trackBar.audioButton.setOptions(buildAudioTiers(mediaInfo))
-            choices, autoLangs = buildSubtitleChoices(mediaInfo)
+            self._trackBar.videoButton.setOptions(buildVideoTiers(mediaInfo, self.tr("最佳画质")))
+            self._trackBar.audioButton.setOptions(buildAudioTiers(mediaInfo, self.tr("最佳音质")))
+            choices, autoLangs = buildSubtitleChoices(mediaInfo, self.tr("自动"))
             self._subtitleChoices = choices
             self._autoLangs = autoLangs
             self._trackBar.subtitleButton.setTrackEnabled(bool(choices))
@@ -519,10 +519,10 @@ class YtDlpDraftCard(DraftCard):
             ext = "mp4" if task.isVideoEnabled else "m4a" if task.isAudioEnabled else "jpg"
             task.setName(toSafeFilename(f"{title}.{ext}"))
 
-        self._trackBar.videoButton.setOptions(buildVideoTiers(mediaInfo))
-        self._trackBar.audioButton.setOptions(buildAudioTiers(mediaInfo))
+        self._trackBar.videoButton.setOptions(buildVideoTiers(mediaInfo, self.tr("最佳画质")))
+        self._trackBar.audioButton.setOptions(buildAudioTiers(mediaInfo, self.tr("最佳音质")))
 
-        choices, autoLangs = buildSubtitleChoices(mediaInfo)
+        choices, autoLangs = buildSubtitleChoices(mediaInfo, self.tr("自动"))
         self._subtitleChoices = choices
         self._autoLangs = autoLangs
         self._trackBar.subtitleButton.setTrackEnabled(bool(choices))

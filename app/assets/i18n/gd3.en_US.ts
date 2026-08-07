@@ -113,7 +113,7 @@
     </message>
     <message>
         <source>选择下载路径</source>
-        <translation type="vanished">Choose Download Path</translation>
+        <translation type="vanished">Select Download Location</translation>
     </message>
     <message>
         <source>预分配线程数</source>
@@ -529,10 +529,6 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliDraftCard</name>
     <message>
-        <source>选择字幕</source>
-        <translation type="vanished">Select Subtitles</translation>
-    </message>
-    <message>
         <location filename="../../../features/bili_pack/cards.py" line="199"/>
         <source>最佳画质</source>
         <translation>Best Quality</translation>
@@ -540,12 +536,12 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="200"/>
         <source>最佳音质</source>
-        <translation>Best Audio Quality</translation>
+        <translation>Best Quality</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="239"/>
         <source>截取片段</source>
-        <translation>Trim Segment</translation>
+        <translation>Cut Video</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/cards.py" line="255"/>
@@ -1978,11 +1974,7 @@ Install Location: {1}</translation>
     <message>
         <location filename="../../../features/github_pack/config.py" line="210"/>
         <source>优先使用所选代理站，不可用时自动切换其他站点或直连</source>
-        <translation>Prefer the selected proxy site; auto switch to other sites or direct connection when unavailable</translation>
-    </message>
-    <message>
-        <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation type="vanished">Automatically rewrite GitHub file links to download through selected proxy</translation>
+        <translation>Priortize selected proxy site; switch to other sites or access directly if unavailable</translation>
     </message>
     <message>
         <source>查看协议</source>
@@ -3031,7 +3023,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     <message>
         <location filename="../../view/components/track_bar.py" line="62"/>
         <source>不下载</source>
-        <translation>Don&apos;t Download</translation>
+        <translation>Do Not Download</translation>
     </message>
 </context>
 <context>
@@ -3039,7 +3031,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     <message>
         <location filename="../../view/mobile/window.py" line="43"/>
         <source>未开启通知权限，下载完成后将无法提醒</source>
-        <translation>Notification permission not enabled, you will not be notified when downloads complete</translation>
+        <translation>Notification permission is disabled, download completion notifications will not be sent</translation>
     </message>
     <message>
         <location filename="../../view/mobile/window.py" line="72"/>
@@ -3260,7 +3252,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     <message>
         <location filename="../../view/components/option_cards.py" line="94"/>
         <source>选择下载路径</source>
-        <translation>Choose Download Path</translation>
+        <translation>Select Download Location</translation>
     </message>
 </context>
 <context>
@@ -4363,12 +4355,12 @@ Path: {1}</translation>
         <location filename="../../view/pages/setting_page.py" line="310"/>
         <location filename="../../view/pages/setting_page.py" line="316"/>
         <source>数据存储模式</source>
-        <translation>Data Storage Mode</translation>
+        <translation>Configuration Data Storage Mode</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="311"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
-        <translation>Currently in Portable mode, data stored next to app: {0}</translation>
+        <translation>Currently in Portable mode, configuration stored next to the app: {0}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="315"/>
@@ -4378,7 +4370,7 @@ Path: {1}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="317"/>
         <source>当前为用户模式，数据保存在: {0}</source>
-        <translation>Currently in User mode, data stored at: {0}</translation>
+        <translation>Currently in User mode, configuration stored at: {0}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="321"/>
@@ -4472,7 +4464,7 @@ Data will be copied to new location and the program will then exit. Please manua
     <message>
         <location filename="../../view/pages/setting_page.py" line="525"/>
         <source>搜索设置</source>
-        <translation>Search settings</translation>
+        <translation>Search Settings</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="302"/>
@@ -4480,19 +4472,19 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>Start on Boot</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="118"/>
+        <location filename="../../view/pages/setting_page.py" line="117"/>
         <source>使用系统 DNS</source>
         <translation>Use System DNS</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="119"/>
+        <location filename="../../view/pages/setting_page.py" line="118"/>
         <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
-        <translation>Use the operating system&apos;s DNS resolver for compatibility with TUN, VPN, and proxy network environments</translation>
+        <translation>Use the system DNS resolver for better compatibility with TUN/VPN/Proxies</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="303"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
-        <translation>Run Ghost Downloader silently at system startup</translation>
+        <translation>Start Ghost Downloader minimized on system startup</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="336"/>
@@ -5245,22 +5237,22 @@ Data will be copied to new location and the program will then exit. Please manua
     <message>
         <location filename="../../view/components/track_bar.py" line="96"/>
         <source>视频</source>
-        <translation>Video</translation>
+        <translation>Download Video</translation>
     </message>
     <message>
         <location filename="../../view/components/track_bar.py" line="98"/>
         <source>音频</source>
-        <translation>Audio</translation>
+        <translation>Download Audio</translation>
     </message>
     <message>
         <location filename="../../view/components/track_bar.py" line="100"/>
         <source>字幕</source>
-        <translation>Subtitles</translation>
+        <translation>Download Subtitles</translation>
     </message>
     <message>
         <location filename="../../view/components/track_bar.py" line="102"/>
         <source>封面</source>
-        <translation>Cover</translation>
+        <translation>Download Thumbnail</translation>
     </message>
 </context>
 <context>
@@ -5579,7 +5571,7 @@ The next steps will guide you through the basic setup.</translation>
     <message>
         <location filename="../../../features/yt_dlp_pack/config.py" line="94"/>
         <source>运行环境安装目录</source>
-        <translation>Runtime Install Location</translation>
+        <translation>Runtime Environment Install Location</translation>
     </message>
     <message>
         <source>登录浏览器</source>
@@ -5688,7 +5680,9 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
 <context>
     <name>YtDlpDraftCard</name>
     <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="355"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="366"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="522"/>
         <source>最佳画质</source>
         <translation>Best Quality</translation>
     </message>
@@ -5697,14 +5691,22 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Select Subtitles</translation>
     </message>
     <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="356"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="367"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="523"/>
         <source>最佳音质</source>
-        <translation>Best Audio Quality</translation>
+        <translation>Best Quality</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="357"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="525"/>
+        <source>自动</source>
+        <translation>auto</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="373"/>
         <source>截取片段</source>
-        <translation>Trim Segment</translation>
+        <translation>Cut Video</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="391"/>
@@ -5729,9 +5731,34 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Select Video</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="161"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="160"/>
         <source>{0} 个视频 · {1}</source>
         <translation>{0} Videos · {1}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="3"/>
+        <source>提取信息</source>
+        <translation>Extracting metadata</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="4"/>
+        <source>下载视频</source>
+        <translation>Downloading video track</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="5"/>
+        <source>下载音频</source>
+        <translation>Downloading audio track</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="6"/>
+        <source>合并</source>
+        <translation>Muxing</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="7"/>
+        <source>下载字幕</source>
+        <translation>Downloading subtitles</translation>
     </message>
 </context>
 <context>

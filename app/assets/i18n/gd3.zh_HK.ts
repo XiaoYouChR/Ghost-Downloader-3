@@ -4518,12 +4518,12 @@ FFmpeg: {2}</translation>
         <translation>開機啟動</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="118"/>
+        <location filename="../../view/pages/setting_page.py" line="117"/>
         <source>使用系统 DNS</source>
         <translation>使用系統 DNS</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="119"/>
+        <location filename="../../view/pages/setting_page.py" line="118"/>
         <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
         <translation>使用作業系統嘅 DNS 解析，相容 TUN、VPN 同代理等網絡環境</translation>
     </message>
@@ -5726,7 +5726,9 @@ FFmpeg: {2}</translation>
 <context>
     <name>YtDlpDraftCard</name>
     <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="355"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="366"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="522"/>
         <source>最佳画质</source>
         <translation>最佳畫質</translation>
     </message>
@@ -5735,9 +5737,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">選擇字幕</translation>
     </message>
     <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="356"/>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="367"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="523"/>
         <source>最佳音质</source>
         <translation>最佳音質</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="357"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="525"/>
+        <source>自动</source>
+        <translation>自動</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/cards.py" line="373"/>
@@ -5767,9 +5777,34 @@ FFmpeg: {2}</translation>
         <translation type="vanished">選擇影片</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="161"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="160"/>
         <source>{0} 个视频 · {1}</source>
         <translation>{0} 個影片 · {1}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="3"/>
+        <source>提取信息</source>
+        <translation>擷取資訊</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="4"/>
+        <source>下载视频</source>
+        <translation>下載影片</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="5"/>
+        <source>下载音频</source>
+        <translation>下載音訊</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="6"/>
+        <source>合并</source>
+        <translation>合併</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/label_catalog.py" line="7"/>
+        <source>下载字幕</source>
+        <translation>下載字幕</translation>
     </message>
 </context>
 <context>
