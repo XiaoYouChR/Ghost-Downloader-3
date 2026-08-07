@@ -8,11 +8,6 @@ Seam S-GH2: GitHubParser.parse() — parse-time fallback chain
 from __future__ import annotations
 
 import socket
-import sys
-import tempfile
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "features"))
 
 import pytest
 from aiohttp import web
@@ -20,66 +15,12 @@ from aiohttp import web
 from github_pack.pack import GitHubHttpTaskStep, GitHubParser
 from http_pack.task import HttpTask, HttpTaskStep
 from app.models.task import TaskOptions, ResourceTaskOptions, TaskStatus, TaskError
-
-
-def makeFileContent(size: int) -> bytes:
-    return bytes(i % 256 for i in range(size))
-
-
-def rangeHandler(content: bytes):
-    async def handler(request: web.Request) -> web.Response:
-        rangeHeader = request.headers.get("Range")
-        if rangeHeader is None:
-            return web.Response(
-                body=content,
-                headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
-            )
-        rangeSpec = rangeHeader.replace("bytes=", "")
-        parts = rangeSpec.split("-")
-        start = int(parts[0])
-        end = int(parts[1]) if parts[1] else len(content) - 1
-        body = content[start:end + 1]
-        return web.Response(
-            status=206,
-            body=body,
-            headers={
-                "Content-Range": f"bytes {start}-{end}/{len(content)}",
-                "Content-Length": str(len(body)),
-            },
-        )
-    return handler
+from tests.helpers import buildFileContent, buildRangeHandler, runStep
 
 
 @pytest.fixture(autouse=True)
 def noProxy(monkeypatch):
     monkeypatch.setattr("app.client.proxy", lambda: None)
-
-
-@pytest.fixture
-async def tmpdir():
-    with tempfile.TemporaryDirectory() as d:
-        yield Path(d)
-
-
-@pytest.fixture
-async def server():
-    runners = []
-
-    async def start(handler):
-        app = web.Application()
-        app.router.add_get("/file", handler)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        runners.append(runner)
-        site = web.TCPSite(runner, "127.0.0.1", 0)
-        await site.start()
-        port = site._server.sockets[0].getsockname()[1]
-        return f"http://127.0.0.1:{port}/file"
-
-    yield start
-
-    for runner in runners:
-        await runner.cleanup()
 
 
 def closedPort() -> str:
@@ -95,7 +36,7 @@ def deadUrl():
     return closedPort()
 
 
-def makeGitHubStep(url, tmpdir, *, fileSize, fallbackUrls=None,
+def makeGitHubStep(url, tmp_path, *, fileSize, fallbackUrls=None,
                    subworkerCount=2, canUseRangeRequests=True):
     step = GitHubHttpTaskStep(
         stepIndex=0,
@@ -109,7 +50,7 @@ def makeGitHubStep(url, tmpdir, *, fileSize, fallbackUrls=None,
     task = HttpTask(
         name="test.bin",
         url="https://github.com/example/repo/releases/download/v1.0/file.zip",
-        outputFolder=tmpdir,
+        outputFolder=tmp_path,
         fileSize=fileSize,
         steps=[step],
     )
@@ -117,69 +58,59 @@ def makeGitHubStep(url, tmpdir, *, fileSize, fallbackUrls=None,
     return task, step
 
 
-async def runStep(step):
-    speeds = []
-    def reportSpeed(n):
-        speeds.append(n)
-    async def waitForSpeedLimit():
-        pass
-    await step.run(reportSpeed, waitForSpeedLimit)
-    return speeds
-
-
 # ── S-GH1: Download-time fallback ──
 
 
 class TestDownloadTimeFallback:
 
-    async def test_fallback_on_connection_refused(self, server, tmpdir, deadUrl):
-        content = makeFileContent(1000)
-        okUrl = await server(rangeHandler(content))
+    async def test_fallback_on_connection_refused(self, server, tmp_path, deadUrl):
+        content = buildFileContent(1000)
+        okUrl = await server(buildRangeHandler(content))
 
         task, step = makeGitHubStep(
-            deadUrl, tmpdir, fileSize=1000, fallbackUrls=[okUrl],
+            deadUrl, tmp_path, fileSize=1000, fallbackUrls=[okUrl],
         )
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
         assert step.url == okUrl
 
-    async def test_no_fallback_on_permanent_error(self, server, tmpdir):
-        content = makeFileContent(100)
+    async def test_no_fallback_on_permanent_error(self, server, tmp_path):
+        content = buildFileContent(100)
 
         async def forbidden(request):
             return web.Response(status=403, text="Forbidden")
 
         forbiddenUrl = await server(forbidden)
-        okUrl = await server(rangeHandler(content))
+        okUrl = await server(buildRangeHandler(content))
 
         task, step = makeGitHubStep(
-            forbiddenUrl, tmpdir, fileSize=100, fallbackUrls=[okUrl],
+            forbiddenUrl, tmp_path, fileSize=100, fallbackUrls=[okUrl],
         )
         task.setStatus(TaskStatus.RUNNING)
 
         with pytest.raises(TaskError, match="403"):
             await runStep(step)
 
-    async def test_fallback_chain_tries_each(self, server, tmpdir, deadUrl):
-        content = makeFileContent(500)
-        okUrl = await server(rangeHandler(content))
+    async def test_fallback_chain_tries_each(self, server, tmp_path, deadUrl):
+        content = buildFileContent(500)
+        okUrl = await server(buildRangeHandler(content))
 
         task, step = makeGitHubStep(
-            deadUrl, tmpdir, fileSize=500, fallbackUrls=[closedPort(), okUrl],
+            deadUrl, tmp_path, fileSize=500, fallbackUrls=[closedPort(), okUrl],
         )
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
         assert step.url == okUrl
 
-    async def test_all_fallbacks_exhausted(self, tmpdir, deadUrl):
+    async def test_all_fallbacks_exhausted(self, tmp_path, deadUrl):
         task, step = makeGitHubStep(
-            deadUrl, tmpdir, fileSize=100,
+            deadUrl, tmp_path, fileSize=100,
             fallbackUrls=[closedPort()],
         )
         task.setStatus(TaskStatus.RUNNING)

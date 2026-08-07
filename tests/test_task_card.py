@@ -11,13 +11,6 @@ import pytest
 from app.models.task import Task, TaskStep, TaskStatus, StepError
 
 
-@pytest.fixture(scope="session")
-def qapp():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication.instance() or QApplication([])
-    yield app
-
-
 @dataclass(kw_only=True)
 class StubStep(TaskStep):
     stepIndex: int = 0

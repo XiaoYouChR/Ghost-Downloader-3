@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -72,13 +71,6 @@ class StubSpeedMeter:
 
 
 # ── Fixtures ──
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication.instance() or QApplication([])
-    yield app
 
 
 @pytest.fixture()
@@ -239,13 +231,12 @@ class TestDeduplicateOutput:
 
 class TestAdd:
 
-    def test_add_emits_signal(self, service):
+    def test_add_emits_signal(self, service, qtbot):
         svc, runner = service
-        spy = MagicMock()
-        svc.taskAdded.connect(spy)
-        task = makeTask()
-        svc.add(task)
-        spy.assert_called_once_with(task)
+        with qtbot.waitSignal(svc.taskAdded, timeout=1000) as blocker:
+            task = makeTask()
+            svc.add(task)
+        assert blocker.args == [task]
 
     def test_add_schedules_task(self, service):
         svc, runner = service
@@ -253,14 +244,12 @@ class TestAdd:
         svc.add(task)
         assert len(runner.submitted) == 1
 
-    def test_add_duplicate_rejected(self, service):
+    def test_add_duplicate_rejected(self, service, qtbot):
         svc, runner = service
         task = makeTask("dup")
         svc.add(task)
-        spy = MagicMock()
-        svc.taskAdded.connect(spy)
-        svc.add(task)
-        spy.assert_not_called()
+        with qtbot.assertNotEmitted(svc.taskAdded):
+            svc.add(task)
 
     def test_task_in_store_after_add(self, service):
         svc, runner = service
@@ -281,14 +270,13 @@ class TestAdd:
 
 class TestPause:
 
-    def test_pause_emits_signal(self, service):
+    def test_pause_emits_signal(self, service, qtbot):
         svc, runner = service
         task = makeTask("p1")
         svc.add(task)
-        spy = MagicMock()
-        svc.taskPaused.connect(spy)
-        svc.pause(task)
-        spy.assert_called_once_with(task)
+        with qtbot.waitSignal(svc.taskPaused, timeout=1000) as blocker:
+            svc.pause(task)
+        assert blocker.args == [task]
 
     def test_pause_cancels_work(self, service):
         svc, runner = service
@@ -311,14 +299,13 @@ class TestPause:
 
 class TestDelete:
 
-    def test_delete_emits_signal(self, service):
+    def test_delete_emits_signal(self, service, qtbot):
         svc, runner = service
         task = makeTask("d1")
         svc.add(task)
-        spy = MagicMock()
-        svc.taskRemoved.connect(spy)
-        svc.delete(task, shouldDeleteFiles=False)
-        spy.assert_called_once_with("d1")
+        with qtbot.waitSignal(svc.taskRemoved, timeout=1000) as blocker:
+            svc.delete(task, shouldDeleteFiles=False)
+        assert blocker.args == ["d1"]
 
     def test_delete_removes_from_store(self, service):
         svc, runner = service
@@ -355,17 +342,15 @@ class TestQueue:
         assert svc.runningCount() == 1
         assert len(runner.submitted) == 2
 
-    def test_all_completed_signal(self, service, monkeypatch):
+    def test_all_completed_signal(self, service, monkeypatch, qtbot):
         from app.config.cfg import cfg
         svc, runner = service
         monkeypatch.setattr(cfg.maxTaskNum, "value", 1)
         task = makeTask("ac1")
         svc.add(task)
-        spy = MagicMock()
-        svc.tasksAllCompleted.connect(spy)
-        _, done, _ = runner.submitted[-1]
-        done(None)
-        spy.assert_called_once()
+        with qtbot.waitSignal(svc.tasksAllCompleted, timeout=1000):
+            _, done, _ = runner.submitted[-1]
+            done(None)
 
 
 # ── S7: TaskQueue.moveToFront ──
@@ -432,7 +417,7 @@ class TestTaskQueueMoveToFront:
 
 class TestMoveToFront:
 
-    def test_emits_queueChanged(self, service, monkeypatch):
+    def test_emits_queueChanged(self, service, monkeypatch, qtbot):
         from app.config.cfg import cfg
         svc, runner = service
         monkeypatch.setattr(cfg.maxTaskNum, "value", 1)
@@ -442,18 +427,14 @@ class TestMoveToFront:
         svc.add(t1)
         svc.add(t2)
         svc.add(t3)
-        spy = MagicMock()
-        svc.queueChanged.connect(spy)
-        svc.moveToFront(["mf3"])
-        spy.assert_called_once()
+        with qtbot.waitSignal(svc.queueChanged, timeout=1000):
+            svc.moveToFront(["mf3"])
 
-    def test_no_signal_when_none_in_queue(self, service):
+    def test_no_signal_when_none_in_queue(self, service, qtbot):
         svc, runner = service
         svc.add(makeTask("ns1"))
-        spy = MagicMock()
-        svc.queueChanged.connect(spy)
-        svc.moveToFront(["nonexistent"])
-        spy.assert_not_called()
+        with qtbot.assertNotEmitted(svc.queueChanged):
+            svc.moveToFront(["nonexistent"])
 
     def test_next_dispatched_is_moved_task(self, service, monkeypatch):
         from app.config.cfg import cfg
@@ -495,16 +476,14 @@ class TestMoveToFront:
         svc.moveToFront(["mx1", "mx4"])
         assert svc.waitingOrder() == ["mx4", "mx3"]
 
-    def test_all_running_no_signal(self, service, monkeypatch):
+    def test_all_running_no_signal(self, service, monkeypatch, qtbot):
         from app.config.cfg import cfg
         svc, runner = service
         monkeypatch.setattr(cfg.maxTaskNum, "value", 3)
         svc.add(makeTask("ar1"))
         svc.add(makeTask("ar2"))
-        spy = MagicMock()
-        svc.queueChanged.connect(spy)
-        svc.moveToFront(["ar1", "ar2"])
-        spy.assert_not_called()
+        with qtbot.assertNotEmitted(svc.queueChanged):
+            svc.moveToFront(["ar1", "ar2"])
 
 
 # ── S7: redownload ──

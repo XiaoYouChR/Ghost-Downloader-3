@@ -14,7 +14,6 @@ import gzip
 import os
 import zlib
 import zstandard
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -22,69 +21,10 @@ from aiohttp import web
 
 from features.http_pack.task import HttpTask, HttpTaskStep, HttpSubworker, PermanentDownloadError, RangeNotSupportedError
 from app.models.task import TaskStatus, TaskError
+from tests.helpers import buildFileContent, buildRangeHandler, runStep
 
 
-# ── Test server ──
-
-
-def makeFileContent(size: int) -> bytes:
-    return bytes(i % 256 for i in range(size))
-
-
-def rangeHandler(content: bytes):
-    """Standard HTTP range server."""
-    async def handler(request: web.Request) -> web.Response:
-        rangeHeader = request.headers.get("Range")
-        if rangeHeader is None:
-            return web.Response(
-                body=content,
-                headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
-            )
-        rangeSpec = rangeHeader.replace("bytes=", "")
-        parts = rangeSpec.split("-")
-        start = int(parts[0])
-        end = int(parts[1]) if parts[1] else len(content) - 1
-        body = content[start:end + 1]
-        return web.Response(
-            status=206,
-            body=body,
-            headers={
-                "Content-Range": f"bytes {start}-{end}/{len(content)}",
-                "Content-Length": str(len(body)),
-            },
-        )
-    return handler
-
-
-@pytest.fixture
-async def tmpdir():
-    with tempfile.TemporaryDirectory() as d:
-        yield Path(d)
-
-
-@pytest.fixture
-async def server():
-    """Yields a factory: call with a handler to get a base URL."""
-    runners = []
-
-    async def start(handler):
-        app = web.Application()
-        app.router.add_get("/file", handler)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        runners.append(runner)
-        site = web.TCPSite(runner, "127.0.0.1", 0)
-        await site.start()
-        port = site._server.sockets[0].getsockname()[1]
-        return f"http://127.0.0.1:{port}/file"
-
-    yield start
-
-    for runner in runners:
-        await runner.cleanup()
-
-
-def makeStep(url: str, tmpdir: Path, *, fileSize: int, subworkerCount: int = 2,
+def makeStep(url: str, tmp_path: Path, *, fileSize: int, subworkerCount: int = 2,
              canUseRangeRequests: bool = True, userAgent: str = "",
              clientProfile: str = "raw") -> tuple[HttpTask, HttpTaskStep]:
     step = HttpTaskStep(
@@ -99,26 +39,12 @@ def makeStep(url: str, tmpdir: Path, *, fileSize: int, subworkerCount: int = 2,
     task = HttpTask(
         name="test.bin",
         url=url,
-        outputFolder=tmpdir,
+        outputFolder=tmp_path,
         fileSize=fileSize,
         steps=[step],
     )
     step._bindTask(task)
     return task, step
-
-
-async def runStep(step: HttpTaskStep) -> list[int]:
-    """Run a step, collect reported speeds, return them."""
-    speeds = []
-
-    def reportSpeed(n):
-        speeds.append(n)
-
-    async def waitForSpeedLimit():
-        pass
-
-    await step.run(reportSpeed, waitForSpeedLimit)
-    return speeds
 
 
 # ── S13a: Range correctness ──
@@ -168,36 +94,36 @@ class TestRangeCorrectness:
         assert len(sws) == 1
         assert sws[0].end == -1
 
-    async def test_download_produces_correct_file(self, server, tmpdir):
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2)
+    async def test_download_produces_correct_file(self, server, tmp_path):
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        result = (tmpdir / "test.bin").read_bytes()
+        result = (tmp_path / "test.bin").read_bytes()
         assert result == content
 
-    async def test_single_subworker_correct(self, server, tmpdir):
-        content = makeFileContent(500)
-        url = await server(rangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=1)
+    async def test_single_subworker_correct(self, server, tmp_path):
+        content = buildFileContent(500)
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
-    async def test_many_subworkers_correct(self, server, tmpdir):
-        content = makeFileContent(100)
-        url = await server(rangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=100, subworkerCount=10)
+    async def test_many_subworkers_correct(self, server, tmp_path):
+        content = buildFileContent(100)
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=100, subworkerCount=10)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
 
 # ── S13c: Server degradation ──
@@ -205,18 +131,18 @@ class TestRangeCorrectness:
 
 class TestServerDegradation:
 
-    async def test_403_raises_permanent_error(self, server, tmpdir):
+    async def test_403_raises_permanent_error(self, server, tmp_path):
         async def forbidden(request):
             return web.Response(status=403, text="Forbidden")
 
         url = await server(forbidden)
-        task, step = makeStep(url, tmpdir, fileSize=100, subworkerCount=1)
+        task, step = makeStep(url, tmp_path, fileSize=100, subworkerCount=1)
         task.setStatus(TaskStatus.RUNNING)
 
         with pytest.raises(TaskError, match="403"):
             await runStep(step)
 
-    async def test_cloudflare_mitigated_raises_permanent(self, server, tmpdir):
+    async def test_cloudflare_mitigated_raises_permanent(self, server, tmp_path):
         async def cfMitigated(request):
             return web.Response(
                 status=403,
@@ -225,15 +151,15 @@ class TestServerDegradation:
             )
 
         url = await server(cfMitigated)
-        task, step = makeStep(url, tmpdir, fileSize=100, subworkerCount=1)
+        task, step = makeStep(url, tmp_path, fileSize=100, subworkerCount=1)
         task.setStatus(TaskStatus.RUNNING)
 
         with pytest.raises(TaskError):
             await runStep(step)
 
-    async def test_no_range_support_downloads_full(self, server, tmpdir):
+    async def test_no_range_support_downloads_full(self, server, tmp_path):
         """Server doesn't support ranges — step falls back to single full download."""
-        content = makeFileContent(500)
+        content = buildFileContent(500)
 
         async def noRange(request):
             return web.Response(
@@ -242,12 +168,12 @@ class TestServerDegradation:
             )
 
         url = await server(noRange)
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=1,
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1,
                               canUseRangeRequests=False)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
 
 # ── S13e: Request construction ──
@@ -255,14 +181,14 @@ class TestServerDegradation:
 
 class TestRequestConstruction:
 
-    async def test_effective_headers_include_user_agent(self, server, tmpdir):
+    async def test_effective_headers_include_user_agent(self, server, tmp_path):
         """All subworker paths should send the configured User-Agent."""
         receivedHeaders: list[dict] = []
 
         async def captureHeaders(request):
             receivedHeaders.append(dict(request.headers))
             rangeHeader = request.headers.get("Range")
-            content = makeFileContent(100)
+            content = buildFileContent(100)
             if rangeHeader:
                 parts = rangeHeader.replace("bytes=", "").split("-")
                 start = int(parts[0])
@@ -278,7 +204,7 @@ class TestRequestConstruction:
             return web.Response(body=content, headers={"Content-Length": str(len(content))})
 
         url = await server(captureHeaders)
-        task, step = makeStep(url, tmpdir, fileSize=100, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=100, subworkerCount=2,
                               userAgent="GhostTest/1.0")
         task.setStatus(TaskStatus.RUNNING)
 
@@ -291,10 +217,10 @@ class TestRequestConstruction:
                 f"User-Agent missing from request headers: {hdrs}"
             )
 
-    async def test_speed_reported_for_every_chunk(self, server, tmpdir):
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2)
+    async def test_speed_reported_for_every_chunk(self, server, tmp_path):
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2)
         task.setStatus(TaskStatus.RUNNING)
 
         speeds = await runStep(step)
@@ -377,9 +303,9 @@ class TestReassignment:
 
         assert len(step.subworkers) == 1
 
-    async def test_reassignment_during_download(self, server, tmpdir):
+    async def test_reassignment_during_download(self, server, tmp_path):
         """When a fast subworker finishes, it steals from the slowest."""
-        content = makeFileContent(2_000_000)
+        content = buildFileContent(2_000_000)
 
         request_count = 0
 
@@ -407,12 +333,12 @@ class TestReassignment:
             )
 
         url = await server(slowForSecondHalf)
-        task, step = makeStep(url, tmpdir, fileSize=2_000_000, subworkerCount=2)
+        task, step = makeStep(url, tmp_path, fileSize=2_000_000, subworkerCount=2)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
         # Reassignment should have created extra requests (more than the initial 2)
         assert request_count >= 2
 
@@ -422,13 +348,13 @@ class TestReassignment:
 
 class TestResume:
 
-    async def test_resume_sw0_done_sw1_pending(self, server, tmpdir):
+    async def test_resume_sw0_done_sw1_pending(self, server, tmp_path):
         """Resume with sw0 completed, sw1 not yet started."""
         from struct import pack as struct_pack
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
 
-        filepath = tmpdir / "test.bin"
+        filepath = tmp_path / "test.bin"
         with open(filepath, "wb") as f:
             f.write(content[:500])
             f.write(b'\x00' * 500)
@@ -437,7 +363,7 @@ class TestResume:
             f.write(struct_pack("<QQQ", 0, 500, 499))
             f.write(struct_pack("<QQQ", 500, 500, 999))
 
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
@@ -446,13 +372,13 @@ class TestResume:
         assert filepath.read_bytes() == content
         assert not Path(str(filepath) + ".ghd").exists()
 
-    async def test_resume_sw1_partial(self, server, tmpdir):
+    async def test_resume_sw1_partial(self, server, tmp_path):
         """Resume with sw1 partially downloaded (200 of 500 bytes)."""
         from struct import pack as struct_pack
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
 
-        filepath = tmpdir / "test.bin"
+        filepath = tmp_path / "test.bin"
         with open(filepath, "wb") as f:
             f.write(content[:700])
             f.write(b'\x00' * 300)
@@ -461,7 +387,7 @@ class TestResume:
             f.write(struct_pack("<QQQ", 0, 500, 499))
             f.write(struct_pack("<QQQ", 500, 700, 999))
 
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
@@ -469,13 +395,13 @@ class TestResume:
 
         assert filepath.read_bytes() == content
 
-    async def test_resume_with_increased_thread_count(self, server, tmpdir):
+    async def test_resume_with_increased_thread_count(self, server, tmp_path):
         """User raised subworkerCount from 2 to 4 via EditDialog. Resume should split."""
         from struct import pack as struct_pack
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
 
-        filepath = tmpdir / "test.bin"
+        filepath = tmp_path / "test.bin"
         with open(filepath, "wb") as f:
             f.write(content[:500])
             f.write(b'\x00' * 500)
@@ -484,7 +410,7 @@ class TestResume:
             f.write(struct_pack("<QQQ", 0, 500, 499))
             f.write(struct_pack("<QQQ", 500, 500, 999))
 
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=4,
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=4,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
@@ -493,13 +419,13 @@ class TestResume:
         assert filepath.read_bytes() == content
         assert len(step.subworkers) >= 4
 
-    async def test_resume_decreased_thread_count_is_noop(self, server, tmpdir):
+    async def test_resume_decreased_thread_count_is_noop(self, server, tmp_path):
         """User reduced subworkerCount. Existing subworkers should not be removed."""
         from struct import pack as struct_pack
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
 
-        filepath = tmpdir / "test.bin"
+        filepath = tmp_path / "test.bin"
         filepath.write_bytes(b'\x00' * 1000)
 
         with open(str(filepath) + ".ghd", "wb") as f:
@@ -508,7 +434,7 @@ class TestResume:
             f.write(struct_pack("<QQQ", 500, 500, 749))
             f.write(struct_pack("<QQQ", 750, 750, 999))
 
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
@@ -516,18 +442,18 @@ class TestResume:
 
         assert filepath.read_bytes() == content
 
-    async def test_corrupt_record_starts_fresh(self, server, tmpdir):
+    async def test_corrupt_record_starts_fresh(self, server, tmp_path):
         """Corrupt .ghd file — should discard and start fresh."""
-        content = makeFileContent(1000)
-        url = await server(rangeHandler(content))
+        content = buildFileContent(1000)
+        url = await server(buildRangeHandler(content))
 
-        filepath = tmpdir / "test.bin"
+        filepath = tmp_path / "test.bin"
         filepath.write_bytes(b'\x00' * 1000)
 
         with open(str(filepath) + ".ghd", "wb") as f:
             f.write(b'\xff' * 7)
 
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
@@ -541,9 +467,9 @@ class TestResume:
 
 class TestTransientRetry:
 
-    async def test_500_retries_then_succeeds(self, server, tmpdir, monkeypatch):
+    async def test_500_retries_then_succeeds(self, server, tmp_path, monkeypatch):
         """Server returns 500 once, then 206. Download should complete."""
-        content = makeFileContent(500)
+        content = buildFileContent(500)
         fail_count = 0
 
         async def failOnce(request: web.Request) -> web.Response:
@@ -551,7 +477,7 @@ class TestTransientRetry:
             fail_count += 1
             if fail_count <= 1:
                 return web.Response(status=500, text="Internal Server Error")
-            return await rangeHandler(content)(request)
+            return await buildRangeHandler(content)(request)
 
         _real_sleep = asyncio.sleep
 
@@ -561,12 +487,12 @@ class TestTransientRetry:
         monkeypatch.setattr(asyncio, "sleep", fast_sleep)
 
         url = await server(failOnce)
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=1)
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
         assert fail_count >= 2
 
 
@@ -585,31 +511,31 @@ def ignoreRangeHandler(content: bytes):
 
 class TestRangeFallback:
 
-    async def test_200_for_range_falls_back_to_single_stream(self, server, tmpdir):
+    async def test_200_for_range_falls_back_to_single_stream(self, server, tmp_path):
         """Server returns 200 for Range requests. Should fallback and complete."""
-        content = makeFileContent(500)
+        content = buildFileContent(500)
         url = await server(ignoreRangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=2,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
         assert not step.canUseRangeRequests
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
-    async def test_200_for_range_single_subworker(self, server, tmpdir):
+    async def test_200_for_range_single_subworker(self, server, tmp_path):
         """Same fallback with only 1 subworker."""
-        content = makeFileContent(200)
+        content = buildFileContent(200)
         url = await server(ignoreRangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=200, subworkerCount=1,
+        task, step = makeStep(url, tmp_path, fileSize=200, subworkerCount=1,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
         assert not step.canUseRangeRequests
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
 
 # ── S13c: Disk full ──
@@ -617,13 +543,13 @@ class TestRangeFallback:
 
 class TestDiskFull:
 
-    async def test_enospc_raises_task_error(self, server, tmpdir, monkeypatch):
+    async def test_enospc_raises_task_error(self, server, tmp_path, monkeypatch):
         """pwrite raises ENOSPC — should bubble as TaskError, not retry."""
         import errno as errno_mod
 
-        content = makeFileContent(500)
-        url = await server(rangeHandler(content))
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=1)
+        content = buildFileContent(500)
+        url = await server(buildRangeHandler(content))
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
         task.setStatus(TaskStatus.RUNNING)
 
         def failing_pwrite(fd, data, offset):
@@ -640,9 +566,9 @@ class TestDiskFull:
 
 class TestStallRecovery:
 
-    async def test_stalled_stream_recovers_and_completes(self, server, tmpdir, monkeypatch):
+    async def test_stalled_stream_recovers_and_completes(self, server, tmp_path, monkeypatch):
         """Stream stalls mid-transfer; read_timeout triggers retry, download completes."""
-        content = makeFileContent(500)
+        content = buildFileContent(500)
         hasStalled = False
         releaseHang = asyncio.Event()
 
@@ -696,12 +622,12 @@ class TestStallRecovery:
         monkeypatch.setattr(asyncio, "sleep", fast_sleep)
 
         url = await server(stallOnce)
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=1)
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=1)
         task.setStatus(TaskStatus.RUNNING)
 
         await asyncio.wait_for(runStep(step), timeout=10)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
         assert hasStalled
         releaseHang.set()
 
@@ -774,19 +700,19 @@ def brokenEncodingRangeHandler(content: bytes, encoding: str):
 class TestCompressedRange:
 
     @pytest.mark.parametrize("encoding", list(ENCODINGS))
-    async def test_compressed_range_produces_correct_file(self, server, tmpdir, encoding):
-        content = makeFileContent(1000)
+    async def test_compressed_range_produces_correct_file(self, server, tmp_path, encoding):
+        content = buildFileContent(1000)
         url = await server(compressedRangeHandler(content, encoding))
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=2)
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=2)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
     @pytest.mark.parametrize("encoding", list(ENCODINGS))
-    async def test_broken_encoding_falls_back_to_single_stream(self, server, tmpdir, monkeypatch, encoding):
-        content = makeFileContent(500)
+    async def test_broken_encoding_falls_back_to_single_stream(self, server, tmp_path, monkeypatch, encoding):
+        content = buildFileContent(500)
 
         _real_sleep = asyncio.sleep
 
@@ -796,18 +722,18 @@ class TestCompressedRange:
         monkeypatch.setattr(asyncio, "sleep", fast_sleep)
 
         url = await server(brokenEncodingRangeHandler(content, encoding))
-        task, step = makeStep(url, tmpdir, fileSize=500, subworkerCount=2,
+        task, step = makeStep(url, tmp_path, fileSize=500, subworkerCount=2,
                               canUseRangeRequests=True)
         task.setStatus(TaskStatus.RUNNING)
 
         await asyncio.wait_for(runStep(step), timeout=15)
 
         assert not step.canUseRangeRequests
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
-    async def test_mixed_encodings_across_subworkers(self, server, tmpdir):
+    async def test_mixed_encodings_across_subworkers(self, server, tmp_path):
         """Different subworkers get different Content-Encoding (CDN edge variance)."""
-        content = makeFileContent(1000)
+        content = buildFileContent(1000)
         encodingNames = list(ENCODINGS)
         requestIndex = 0
 
@@ -838,16 +764,16 @@ class TestCompressedRange:
             )
 
         url = await server(handler)
-        task, step = makeStep(url, tmpdir, fileSize=1000, subworkerCount=4)
+        task, step = makeStep(url, tmp_path, fileSize=1000, subworkerCount=4)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
 
-    async def test_reassignment_with_compressed_range(self, server, tmpdir):
+    async def test_reassignment_with_compressed_range(self, server, tmp_path):
         """_splitSlowest during compressed streaming: clamp on decompressed bytes, new subworker gets correct compressed range."""
-        content = makeFileContent(2_000_000)
+        content = buildFileContent(2_000_000)
         requestCount = 0
 
         compress = ENCODINGS["gzip"]
@@ -878,12 +804,12 @@ class TestCompressedRange:
             )
 
         url = await server(handler)
-        task, step = makeStep(url, tmpdir, fileSize=2_000_000, subworkerCount=2)
+        task, step = makeStep(url, tmp_path, fileSize=2_000_000, subworkerCount=2)
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
 
-        assert (tmpdir / "test.bin").read_bytes() == content
+        assert (tmp_path / "test.bin").read_bytes() == content
         assert requestCount > 2
 
 

@@ -5,18 +5,9 @@ Seam S11: taskStarted/Stopped → 精确刷新 running cards。
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from unittest.mock import MagicMock
-
 import pytest
 
 from app.models.task import Task, TaskStep, TaskStatus
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication.instance() or QApplication([])
-    yield app
 
 
 @dataclass(kw_only=True)
@@ -49,6 +40,7 @@ class StubTaskService:
             tasksAllCompleted = Signal()
             queueChanged = Signal()
             fileDisappeared = Signal(object)
+            fileDeleteDenied = Signal(object)
             diskSpaceInsufficient = Signal(int, int)
         self._signals = _Signals()
         self.tasks = []

@@ -86,13 +86,6 @@ class StubOptionCard(QWidget):
         return dict(self._opts)
 
 
-@pytest.fixture(scope="session")
-def qapp():
-    from PySide6.QtWidgets import QApplication
-    app = QApplication.instance() or QApplication([])
-    yield app
-
-
 @pytest.fixture()
 def parentWindow(qapp):
     from PySide6.QtWidgets import QWidget

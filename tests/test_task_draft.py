@@ -8,15 +8,8 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
 from app.models.task import Task, TaskStep, TaskStatus
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    app = QApplication.instance() or QApplication([])
-    yield app
 
 
 # ── Stubs ──
