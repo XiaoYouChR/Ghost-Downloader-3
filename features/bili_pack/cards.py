@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections import namedtuple
+from urllib.parse import urlparse
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView
@@ -12,12 +15,40 @@ from qfluentwidgets import (
 from app.format import toReadableSize
 from app.view.cards.draft_cards import MultiFileDraftCard
 from app.view.cards.task_cards import MultiFileTaskCard
-from app.view.components.track_bar import TrackBar
+from app.view.components.range_slider import RangeSlider
+from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .task import AUDIO_QUALITY_LABELS, BilibiliTask, streamUrl
 
 CODEC_NAMES = {7: "H.264", 12: "H.265", 13: "AV1"}
+
+StoryboardData = namedtuple("StoryboardData", ["sheets", "timestamps", "columns", "rows"])
+
+COL_START = 2
+COL_END = 3
+
+
+def parseTimeInput(text: str) -> int:
+    text = text.strip()
+    if not text:
+        return 0
+    parts = text.split(":")
+    try:
+        if len(parts) == 2:
+            return int(parts[0]) * 60 + int(parts[1])
+        if len(parts) == 3:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        return int(text)
+    except ValueError:
+        return 0
+
+
+def toTimeText(seconds: int) -> str:
+    if seconds <= 0:
+        return ""
+    m, s = divmod(seconds, 60)
+    return f"{m}:{s:02d}"
 
 
 class PageSelectDialog(MessageBoxBase):
@@ -42,19 +73,23 @@ class PageSelectDialog(MessageBoxBase):
         self._refreshSummary()
 
     def _initWidget(self) -> None:
-        self.widget.setMinimumWidth(500)
+        self.widget.setMinimumWidth(600)
         self.yesButton.setText(self.tr("确定"))
         self.cancelButton.setText(self.tr("取消"))
 
         self.treeView.setRootIsDecorated(False)
         self.treeView.setUniformRowHeights(True)
-        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
 
-        self.treeModel.setHorizontalHeaderLabels([self.tr("分P"), self.tr("大小")])
+        self.treeModel.setHorizontalHeaderLabels([
+            self.tr("分P"), self.tr("大小"), self.tr("开始"), self.tr("结束"),
+        ])
         self.treeView.setModel(self.treeModel)
         self.treeView.header().setStretchLastSection(False)
         self.treeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.treeView.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self.treeView.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
         for page in self._pages:
             pageNumber = page.pageNumber
@@ -73,7 +108,12 @@ class PageSelectDialog(MessageBoxBase):
             sizeItem = QStandardItem(toReadableSize(totalSize) if totalSize > 0 else "")
             sizeItem.setEditable(False)
 
-            self.treeModel.appendRow([nameItem, sizeItem])
+            startItem = QStandardItem(toTimeText(page.startTime))
+            startItem.setData(pageNumber, Qt.ItemDataRole.UserRole)
+            endItem = QStandardItem(toTimeText(page.endTime))
+            endItem.setData(pageNumber, Qt.ItemDataRole.UserRole)
+
+            self.treeModel.appendRow([nameItem, sizeItem, startItem, endItem])
 
     def _initLayout(self) -> None:
         actionsLayout = QHBoxLayout()
@@ -95,7 +135,14 @@ class PageSelectDialog(MessageBoxBase):
         self.selectAllButton.clicked.connect(lambda: self._setAll(True))
         self.clearButton.clicked.connect(lambda: self._setAll(False))
         self.invertButton.clicked.connect(self._onInvert)
-        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
+        self.treeModel.itemChanged.connect(self._onItemChanged)
+
+    def _onItemChanged(self, item: QStandardItem) -> None:
+        if item.column() in (COL_START, COL_END):
+            formatted = toTimeText(parseTimeInput(item.text()))
+            if item.text() != formatted:
+                item.setText(formatted)
+        self._refreshSummary()
 
     def _setAll(self, checked: bool) -> None:
         state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
@@ -127,11 +174,24 @@ class PageSelectDialog(MessageBoxBase):
     def selectedIndexes(self) -> set[int]:
         return {n - 1 for n in self.selectedPageNumbers()}
 
+    def timeRanges(self) -> dict[int, tuple[int, int]]:
+        result: dict[int, tuple[int, int]] = {}
+        for row in range(self.treeModel.rowCount()):
+            pageNumber = self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            startText = self.treeModel.item(row, COL_START).text() if self.treeModel.item(row, COL_START) else ""
+            endText = self.treeModel.item(row, COL_END).text() if self.treeModel.item(row, COL_END) else ""
+            start = parseTimeInput(startText)
+            end = parseTimeInput(endText)
+            if start or end:
+                result[pageNumber] = (start, end)
+        return result
+
 
 class BilibiliDraftCard(MultiFileDraftCard):
 
     def _initWidget(self) -> None:
         self._isSizeEstimated = False
+        self._storyboardLoaded = False
         super()._initWidget()
         task: BilibiliTask = self._task
         self._trackBar = TrackBar(self)
@@ -175,6 +235,22 @@ class BilibiliDraftCard(MultiFileDraftCard):
         self._trackBar.subtitleButton.setTrackEnabled(bool(self._subtitleChoices))
         self._trackBar.coverButton.setTrackEnabled(bool(self._task.coverUrl))
 
+        self._trimButton = TrackButton(FluentIcon.CUT, self)
+        self._trimButton.setToolTip(self.tr("截取片段"))
+        self._trimButton.setChecked(False)
+
+        self._rangeSlider = RangeSlider(
+            self,
+            formatter=lambda s: f"{s // 60}:{s % 60:02d}",
+            parser=parseTimeInput,
+        )
+        self._rangeSlider.hide()
+        if task.files and len(task.files) == 1:
+            page = task.files[0]
+            if page._duration > 0:
+                self._rangeSlider.setRange(0, page._duration)
+                self._rangeSlider.setValues(0, page._duration)
+
         if self._selectFilesButton is not None:
             self._selectFilesButton.setToolTip(self.tr("选择分P"))
         self._refreshButtonVisibility()
@@ -186,6 +262,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
             layout.insertWidget(layout.indexOf(self._selectFilesButton), self._trackBar)
         else:
             layout.addWidget(self._trackBar)
+        layout.addWidget(self._trimButton)
 
     def _bind(self) -> None:
         super()._bind()
@@ -198,6 +275,8 @@ class BilibiliDraftCard(MultiFileDraftCard):
             lambda: self._trackBar.coverButton.setChecked(not self._trackBar.coverButton.isChecked())
         )
         self._trackBar.coverButton.toggled.connect(self._onTrackToggled)
+        self._trimButton.clicked.connect(self._onTrimToggled)
+        self._rangeSlider.rangeChanged.connect(self._onRangeChanged)
 
     def _onVideoQualityPicked(self, value: str) -> None:
         if value != "best":
@@ -229,6 +308,40 @@ class BilibiliDraftCard(MultiFileDraftCard):
         self._refreshSummary()
         self._refreshButtonVisibility()
 
+    def _onTrimToggled(self) -> None:
+        checked = not self._trimButton.isChecked()
+        self._trimButton.setChecked(checked)
+        self._rangeSlider.setVisible(checked)
+        if checked:
+            self.setFixedHeight(87)
+            self.layout().setContentsMargins(10, 2, 10, 54)
+            if not self._storyboardLoaded:
+                self._fetchStoryboard()
+        else:
+            self.setFixedHeight(35)
+            self.layout().setContentsMargins(10, 2, 10, 2)
+            self._rangeSlider.clear()
+            file = self._task.files[0] if self._task.files else None
+            if file:
+                file.startTime = 0
+                file.endTime = 0
+                self._task._rebuildSteps()
+        w = self
+        while w := w.parentWidget():
+            w.updateGeometry()
+
+    def _onRangeChanged(self, start: int, end: int) -> None:
+        file = self._task.files[0] if self._task.files else None
+        if file:
+            file.startTime = start
+            file.endTime = end
+            self._task._rebuildSteps()
+            self._refreshSummary()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._rangeSlider.setGeometry(10, 37, self.width() - 20, 50)
+
     def _onSelectFilesClicked(self) -> None:
         task: BilibiliTask = self._task
         dialog = PageSelectDialog(task, self.window())
@@ -236,7 +349,14 @@ class BilibiliDraftCard(MultiFileDraftCard):
             if dialog.exec():
                 selected = dialog.selectedPageNumbers()
                 if selected:
+                    for page in task.files or []:
+                        ranges = dialog.timeRanges()
+                        if page.pageNumber in ranges:
+                            page.startTime, page.endTime = ranges[page.pageNumber]
+                        else:
+                            page.startTime = page.endTime = 0
                     task.setSelection({n - 1 for n in selected})
+                    task._rebuildSteps()
                     self._refreshSummary()
         finally:
             dialog.deleteLater()
@@ -251,6 +371,99 @@ class BilibiliDraftCard(MultiFileDraftCard):
                 self._trackBar.subtitleButton.setChecked(bool(selected))
         finally:
             dialog.deleteLater()
+
+    def _fetchStoryboard(self) -> None:
+        import re
+        import urllib.parse
+
+        task: BilibiliTask = self._task
+        page = task.files[0] if task.files else None
+        if not page or not page.cid:
+            return
+
+        videoIdMatch = re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", urlparse(task.url).path)
+        if not videoIdMatch:
+            return
+        videoId = videoIdMatch.group(1)
+
+        params: dict = {"cid": page.cid, "index": 1}
+        if videoId.startswith("av"):
+            params["aid"] = videoId[2:]
+        else:
+            params["bvid"] = videoId
+
+        apiUrl = f"https://api.bilibili.com/x/player/videoshot?{urllib.parse.urlencode(params)}"
+        cookie = task.files[0].headers.get("cookie", "") if task.files else ""
+
+        async def download():
+            from PySide6.QtGui import QPixmap
+            from app.client import buildClient
+
+            client = buildClient(headers={"cookie": cookie} if cookie else None)
+            try:
+                response = await client.get(apiUrl)
+                response.raise_for_status()
+                payload = await response.json()
+                data = payload.get("data") or {}
+
+                imageUrls = data.get("image") or []
+                timestamps = data.get("index") or []
+                columns = data.get("img_x_len") or 10
+                rows = data.get("img_y_len") or 10
+
+                if not imageUrls or not timestamps:
+                    return None
+
+                sheets = []
+                for imgUrl in imageUrls:
+                    if imgUrl.startswith("//"):
+                        imgUrl = "https:" + imgUrl
+                    resp = await client.get(imgUrl)
+                    try:
+                        imgData = await resp.bytes()
+                    finally:
+                        resp.close()
+                    pm = QPixmap()
+                    pm.loadFromData(imgData)
+                    if not pm.isNull():
+                        sheets.append(pm)
+
+                return StoryboardData(sheets, timestamps, columns, rows)
+            finally:
+                client.close()
+
+        self._coroutineRunner.submit(
+            download(),
+            done=self._onStoryboardLoaded,
+            owner=self,
+        )
+
+    def _onStoryboardLoaded(self, result: StoryboardData | None) -> None:
+        self._storyboardLoaded = True
+        if not result:
+            return
+        framesPerSheet = result.columns * result.rows
+
+        sheets = result.sheets
+        timestamps = result.timestamps
+        columns = result.columns
+        rows = result.rows
+
+        def provider(value: int):
+            from bisect import bisect_right
+            frameIndex = max(0, bisect_right(timestamps, value) - 1)
+            sheetIdx = frameIndex // framesPerSheet
+            if sheetIdx >= len(sheets):
+                return None
+            sheet = sheets[sheetIdx]
+            local = frameIndex % framesPerSheet
+            col = local % columns
+            row = local // columns
+            frameW = sheet.width() // columns
+            frameH = sheet.height() // rows
+            return sheet.copy(col * frameW, row * frameH, frameW, frameH)
+
+        self._rangeSlider.setPreviewProvider(provider)
 
     def _refreshSummary(self) -> None:
         size = toReadableSize(self._task.fileSize)
@@ -291,6 +504,12 @@ class BilibiliTaskCard(MultiFileTaskCard):
         dialog = PageSelectDialog(self._task, self.window())
         try:
             if dialog.exec():
+                ranges = dialog.timeRanges()
+                for page in self._task.files or []:
+                    if page.pageNumber in ranges:
+                        page.startTime, page.endTime = ranges[page.pageNumber]
+                    else:
+                        page.startTime = page.endTime = 0
                 self._taskService.applySelection(self._task, dialog.selectedIndexes())
                 self.refresh(force=True)
         finally:

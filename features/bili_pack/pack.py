@@ -170,6 +170,7 @@ class BilibiliParser(TaskParser):
                 parsedPages.append(BiliPage(
                     index=pageNumber - 1,
                     relativePath=pagePart or f"P{pageNumber}",
+                    cid=cid,
                     pagePart=pagePart,
                     videoUrl=videoUrl,
                     audioUrl=audioUrl,

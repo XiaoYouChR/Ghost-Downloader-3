@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from features.yt_dlp_pack.container import buildMp4SegmentRange
+from app.container import buildMp4SegmentRange
 
 VIDEO_URL = "https://www.youtube.com/watch?v=uG44DZMMDtw"
 START_TIME = 60
