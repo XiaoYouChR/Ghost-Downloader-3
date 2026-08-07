@@ -150,8 +150,8 @@ class BinaryRuntime:
     def isNewer(self, installed: str, latest: str) -> bool:
         if not installed or not latest:
             return False
-        v1 = QVersionNumber.fromString(installed.lstrip("vV"))
-        v2 = QVersionNumber.fromString(latest.lstrip("vV"))
+        v1 = QVersionNumber.fromString(installed.lstrip("vVn"))
+        v2 = QVersionNumber.fromString(latest.lstrip("vVn"))
         return v2 > v1
 
     def delete(self) -> None:

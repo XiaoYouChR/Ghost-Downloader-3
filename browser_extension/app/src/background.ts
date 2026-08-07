@@ -628,6 +628,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return;
   }
 
+  if (message.type === "request_tab_video_resources") {
+    const tabId = sender.tab?.id;
+    sendResponse({ urls: tabId ? resourceBridge.videoResourcesByTab(tabId) : [] });
+    return true;
+  }
+
   if (message.type === "page_poster" && message.posterUrl && sender.tab?.id) {
     resourceBridge.enrichTabPoster(sender.tab.id, String(message.posterUrl));
     return;

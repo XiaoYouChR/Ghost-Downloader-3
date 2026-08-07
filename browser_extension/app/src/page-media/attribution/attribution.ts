@@ -1,6 +1,6 @@
 import {isCatCatchMedia} from "../../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
-import {instagramAssetId, isInstagramCdnUrl} from "../resolution/url-classify";
+import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, urlIdHints} from "../resolution/url-classify";
 
 import {AttributionLedger} from "./attribution-ledger";
 import {selectMediaForPage} from "../resolution/strategy";
@@ -17,7 +17,6 @@ import type {
 } from "../types";
 
 const LOG_PREFIX = "[GD Media]";
-const VIDEO_ID_QUERY_KEYS = ["__vid", "v", "modal_id", "video_id", "id", "bvid", "aid"];
 // Budget from the FIRST Pending — not per re-eval.
 const WAIT_FOR_TIMEOUT_MS = 8000;
 // Matches the download-button status toast — auto-reset and toast fade on the same clock.
@@ -28,38 +27,6 @@ type ResolveStateListener = (state: VideoSessionState, reason: string) => void;
 // mse_buffer_appended usually follows fetch_completed within tens of ms; slow CPUs stretch.
 const FETCH_BUFFER_CORRELATION_MS = 2500;
 const RECENT_FETCHES_CAP = 16;
-
-function looksLikeVideoIdSegment(segment: string): boolean {
-  if (segment.length < 10) { return false; }
-  if (!/^[A-Za-z0-9_-]+$/.test(segment)) { return false; }
-  let longestRun = 0;
-  for (const run of segment.split(/[-_]+/)) {
-    if (run.length > longestRun) { longestRun = run.length; }
-  }
-  return longestRun >= 10;
-}
-
-function urlIdHints(url: string): Set<string> {
-  const result = new Set<string>();
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return result;
-  }
-  for (const segment of parsed.pathname.split("/")) {
-    if (looksLikeVideoIdSegment(segment)) { result.add(segment); }
-  }
-  for (const key of VIDEO_ID_QUERY_KEYS) {
-    const value = parsed.searchParams.get(key);
-    if (value && value.length >= 4) { result.add(`${key}=${value}`); }
-  }
-  if (isInstagramCdnUrl(url)) {
-    const assetId = instagramAssetId(url);
-    if (assetId) { result.add(`xpv_asset_id=${assetId}`); }
-  }
-  return result;
-}
 
 function toFormKind(mimeTypes: Set<string>): VideoSessionFormKind {
   if (mimeTypes.size === 0) { return "unknown"; }
@@ -169,14 +136,14 @@ class MediaAttribution {
     element.addEventListener("emptied", () => this.onMediaEmptied(element));
 
     const initialSrc = element.currentSrc || element.src || "";
-    if (initialSrc) {
+    if (initialSrc || element.srcObject) {
       this.openSessionFor(element);
     }
   }
 
   private onMediaLoadStart(element: HTMLMediaElement): void {
     const src = element.currentSrc || element.src || "";
-    if (!src) { return; }
+    if (!src && !element.srcObject) { return; }
     const existing = this.sessionsByElement.get(element);
     if (!existing) {
       this.openSessionFor(element);
@@ -192,7 +159,7 @@ class MediaAttribution {
     let session = this.sessionsByElement.get(element);
     if (!session) {
       const src = element.currentSrc || element.src || "";
-      if (!src) { return; }
+      if (!src && !element.srcObject) { return; }
       session = this.openSessionFor(element);
     }
     this.transition(session, "armed", "loadedmetadata");
@@ -488,8 +455,6 @@ class MediaAttribution {
       }
     }
 
-    // Provisional — recordAttribution will refuse to add prefetch URLs to
-    // lastBoundSession.idHints so they don't poison tier-1 for the next session.
     if (this.lastBoundSession && this.sessionsById.has(this.lastBoundSession.id)) {
       return { session: this.lastBoundSession, tier: 2 };
     }
@@ -582,6 +547,11 @@ class MediaAttribution {
     if (!session) {
       return { kind: "refused", message: chrome.i18n.getMessage("errorMediaSourceUnrecognized") };
     }
+
+    if (session.attributedUrls.size === 0) {
+      await this.fetchUrlsFromBackground(session);
+    }
+
     const pageUrl = new URL(location.href);
     const findUrlsByIdHint: FindUrlsByIdHint = (idHint) => this.lookupByIdHint(idHint);
 
@@ -648,6 +618,56 @@ class MediaAttribution {
       }
     }
     return matches;
+  }
+
+  // Worker-based MediaSourceHandle bypasses the MSE probe — the probe only patches
+  // main-thread MediaSource/fetch/XHR. Combine two fallback sources:
+  // 1. Background's webRequest captures (URLs the player already fetched)
+  // 2. Page's embedded JSON data (all quality levels from the DASH manifest)
+  private async fetchUrlsFromBackground(session: VideoSession): Promise<void> {
+    const element = session.elementRef.deref();
+    const videoDuration = element instanceof HTMLVideoElement && Number.isFinite(element.duration) ? element.duration : 0;
+    const now = performance.now();
+
+    const addUrl = (url: string, mime: string, capturedAt: number): void => {
+      if (session.attributedUrls.has(url)) { return; }
+      const urlDuration = fbCdnDuration(url);
+      if (videoDuration > 0 && urlDuration > 0 && Math.abs(videoDuration - urlDuration) > 2) { return; }
+      session.attributedUrls.set(url, { contentType: mime, capturedAt, tier: 0, lockedByMse: false });
+    };
+
+    try {
+      const response = await chrome.runtime.sendMessage({ type: "request_tab_video_resources" });
+      if (Array.isArray(response?.urls)) {
+        for (const entry of response.urls) { addUrl(entry.url, entry.mime || "", entry.capturedAt || now); }
+      }
+    } catch { /* Extension context invalidated. */ }
+
+    // Page's embedded JSON often contains higher-quality DASH representation URLs that
+    // the adaptive player hasn't fetched yet.
+    for (const url of this.parseFbCdnUrlsFromPage()) { addUrl(url, "", now); }
+
+    if (session.attributedUrls.size > 0) {
+      console.log(`${LOG_PREFIX} ${session.id} populated ${session.attributedUrls.size} url(s) from background`);
+    }
+  }
+
+  private parseFbCdnUrlsFromPage(): string[] {
+    const results: string[] = [];
+    for (const script of document.querySelectorAll<HTMLScriptElement>('script[type="application/json"]')) {
+      const text = script.textContent;
+      if (!text || !text.includes("fbcdn")) { continue; }
+      const regex = /https?:(?:\\\/){2}[^"]*\.fbcdn\.net[^"]*\.mp4\?(?:[^"\\]|\\u[0-9a-fA-F]{4}|\\[/\\])*/g;
+      let m;
+      while ((m = regex.exec(text)) !== null) {
+        const url = m[0]
+          .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+          .replace(/\\\//g, "/")
+          .replace(/&amp;/g, "&");
+        if (isInstagramCdnUrl(url)) { results.push(url); }
+      }
+    }
+    return results;
   }
 
   private applyResolutionToState(session: VideoSession, resolution: Resolution): void {

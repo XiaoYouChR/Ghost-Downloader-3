@@ -89,6 +89,11 @@ class FFmpegRuntime(BinaryRuntime):
         path = self.path()
         if not path:
             return ""
+        versionFile = Path(ffmpegConfig.installFolder.value) / "VERSION"
+        if versionFile.is_file():
+            tag = versionFile.read_text().strip()
+            if tag:
+                return tag
         process = await asyncio.create_subprocess_exec(
             path, "-version",
             stdin=asyncio.subprocess.DEVNULL,

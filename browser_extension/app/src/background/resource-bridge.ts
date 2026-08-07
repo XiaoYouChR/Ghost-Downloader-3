@@ -529,7 +529,9 @@ export function createResourceBridge(options: {
     }
 
     const snapshot = cache.headerSnapshotByUrl(url);
-    const headers: Record<string, string> = { ...(snapshot?.headers ?? {}) };
+    const headers: Record<string, string> = {
+      ...(snapshot?.headers ?? cache.headersForPage(url)),
+    };
     const referer = headers.referer || fallbackPageUrl;
     if (referer) { headers.referer = referer; }
     const synthesized: Resource = {
@@ -721,6 +723,12 @@ export function createResourceBridge(options: {
     cache.setHeaderSnapshot(details.url, headers, details.tabId > 0 ? details.tabId : lastActiveTabId, supportsRange);
   }
 
+  function videoResourcesByTab(tabId: number): Array<{ url: string; mime: string; capturedAt: number }> {
+    return cache.resourcesForTab(tabId)
+      .filter((r) => isCatCatchMedia(fileExtension(filenameFromUrl(r.url)), r.mime))
+      .map((r) => ({ url: r.url, mime: r.mime, capturedAt: r.capturedAt }));
+  }
+
   return {
     buildPopupStateData,
     captureNetworkResource,
@@ -743,5 +751,6 @@ export function createResourceBridge(options: {
     mergeResources,
     sendResource,
     setLastActiveTab,
+    videoResourcesByTab,
   };
 }

@@ -61,7 +61,8 @@ class HttpParser(TaskParser):
             name = toSafeFilename(options.name, fallback=f"file_{time_ns()}")
             fileSize = options.size if options.size > 0 else SpecialFileSize.UNKNOWN
             canUseRangeRequests = options.canUseRangeRequests
-        else:
+
+        if fileSize == SpecialFileSize.UNKNOWN:
             emulation = toEmulation(
                 options.clientProfile or cfg.clientProfile.value,
                 options.sourceUserAgent,
@@ -143,44 +144,46 @@ class HttpParser(TaskParser):
                                 if fileSize == SpecialFileSize.UNKNOWN and fbStatus == 416:
                                     fileSize = rangeTotal(fbHeaders)
 
-                cd = responseHeaders.get("content-disposition", "")
-                if cd:
-                    msg = Message()
-                    msg["Content-Disposition"] = cd
-                    params = msg.get_params(header="Content-Disposition")
-                    paramDict = {k.lower(): v for k, v in params}
-                    name = unquote(collapse_rfc2231_value(
-                        paramDict.get("filename") or paramDict.get("filename*") or ""
-                    )).strip("\"' ")
-
-                if not name and "content-location" in responseHeaders:
-                    cl = responseHeaders["content-location"]
-                    name = unquote(urlparse(cl).path.split("/")[-1])
-
                 if not name:
-                    queryParams = parse_qs(urlparse(finalUrl).query)
-                    rcd = queryParams.get("response-content-disposition", [""])[0]
-                    if "filename=" in rcd.lower():
-                        m = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', rcd, re.IGNORECASE)
-                        if m:
-                            name = unquote(m.group(1)).strip("\"' ")
+                    cd = responseHeaders.get("content-disposition", "")
+                    if cd:
+                        msg = Message()
+                        msg["Content-Disposition"] = cd
+                        params = msg.get_params(header="Content-Disposition")
+                        paramDict = {k.lower(): v for k, v in params}
+                        name = unquote(collapse_rfc2231_value(
+                            paramDict.get("filename") or paramDict.get("filename*") or ""
+                        )).strip("\"' ")
 
-                if not name:
-                    path = urlparse(finalUrl).path
-                    if path and "/" in path:
-                        cleanPath = path.split(";")[0]
-                        name = unquote(cleanPath.split("/")[-1])
+                    if not name and "content-location" in responseHeaders:
+                        cl = responseHeaders["content-location"]
+                        name = unquote(urlparse(cl).path.split("/")[-1])
 
-                contentType = responseHeaders.get("content-type", "").split(";", 1)[0].lower().strip()
-                standardExt = guess_extension(contentType) if contentType else ""
-                standardExt = standardExt or ""
+                    if not name:
+                        queryParams = parse_qs(urlparse(finalUrl).query)
+                        rcd = queryParams.get("response-content-disposition", [""])[0]
+                        if "filename=" in rcd.lower():
+                            m = re.search(r'filename\s*=\s*["\']?([^"\';]+)["\']?', rcd, re.IGNORECASE)
+                            if m:
+                                name = unquote(m.group(1)).strip("\"' ")
 
-                if not name:
-                    name = f"file_{time_ns()}{standardExt}"
-                elif "." not in name and standardExt:
-                    name = f"{name}{standardExt}"
+                    if not name:
+                        path = urlparse(finalUrl).path
+                        if path and "/" in path:
+                            cleanPath = path.split(";")[0]
+                            name = unquote(cleanPath.split("/")[-1])
 
-                name = toSafeFilename(name, fallback=f"file_{time_ns()}")
+                    contentType = responseHeaders.get("content-type", "").split(";", 1)[0].lower().strip()
+                    standardExt = guess_extension(contentType) if contentType else ""
+                    standardExt = standardExt or ""
+
+                    if not name:
+                        name = f"file_{time_ns()}{standardExt}"
+                    elif "." not in name and standardExt:
+                        name = f"{name}{standardExt}"
+
+                    name = toSafeFilename(name, fallback=f"file_{time_ns()}")
+
                 lastModified = responseHeaders.get("last-modified", "")
             finally:
                 client.close()

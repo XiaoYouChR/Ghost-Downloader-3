@@ -83,12 +83,60 @@ export function instagramAssetId(url: string): string {
   return "";
 }
 
+export function fbCdnBitrate(url: string): number {
+  const efg = parseEfg(url);
+  if (!efg || typeof efg !== "object") { return 0; }
+  const br = (efg as Record<string, unknown>).bitrate;
+  return typeof br === "number" && br > 0 ? br : 0;
+}
+
+export function fbCdnDuration(url: string): number {
+  const efg = parseEfg(url);
+  if (!efg || typeof efg !== "object") { return 0; }
+  const dur = (efg as Record<string, unknown>).duration_s;
+  return typeof dur === "number" && dur > 0 ? dur : 0;
+}
+
 export function instagramKindOf(url: string): "video" | "audio" | "" {
   const tag = instagramVencodeTag(url);
   if (!tag) { return ""; }
   if (tag.includes("_audio")) { return "audio"; }
   if (tag.includes("dash_")) { return "video"; }
   return "";
+}
+
+const VIDEO_ID_QUERY_KEYS = ["__vid", "v", "modal_id", "video_id", "id", "bvid", "aid"];
+
+function looksLikeVideoIdSegment(segment: string): boolean {
+  if (segment.length < 10) { return false; }
+  if (!/^[A-Za-z0-9_-]+$/.test(segment)) { return false; }
+  let longestRun = 0;
+  for (const run of segment.split(/[-_]+/)) {
+    if (run.length > longestRun) { longestRun = run.length; }
+  }
+  return longestRun >= 10;
+}
+
+export function urlIdHints(url: string): Set<string> {
+  const result = new Set<string>();
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return result;
+  }
+  for (const segment of parsed.pathname.split("/")) {
+    if (looksLikeVideoIdSegment(segment)) { result.add(segment); }
+  }
+  for (const key of VIDEO_ID_QUERY_KEYS) {
+    const value = parsed.searchParams.get(key);
+    if (value && value.length >= 4) { result.add(`${key}=${value}`); }
+  }
+  if (isInstagramCdnUrl(url)) {
+    const assetId = instagramAssetId(url);
+    if (assetId) { result.add(`xpv_asset_id=${assetId}`); }
+  }
+  return result;
 }
 
 export function classifyTrackRole(url: string, contentType: string): TrackRole {

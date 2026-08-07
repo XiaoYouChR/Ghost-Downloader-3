@@ -1,6 +1,6 @@
 import {selectDouyin} from "./strategies/douyin";
 import {selectGeneric} from "./strategies/generic";
-import {selectInstagram} from "./strategies/instagram";
+import {selectMeta} from "./strategies/instagram";
 import {selectX} from "./strategies/x";
 import {selectYouTube} from "./strategies/youtube";
 import type {Resolution, VideoSessionFormKind} from "../types";
@@ -45,8 +45,10 @@ export function selectMediaForPage(ctx: ResolveContext, findUrlsByIdHint: FindUr
   if (host === "www.douyin.com" || host.endsWith(".douyin.com")) {
     return selectDouyin(ctx, findUrlsByIdHint);
   }
-  if (host === "www.instagram.com" || host.endsWith(".instagram.com")) {
-    return selectInstagram(ctx, findUrlsByIdHint);
+  // Instagram and Facebook share the same CDN format (fbcdn.net, efg/vencode_tag/xpv_asset_id).
+  if (host === "www.instagram.com" || host.endsWith(".instagram.com")
+    || host === "www.facebook.com" || host.endsWith(".facebook.com")) {
+    return selectMeta(ctx, findUrlsByIdHint);
   }
   if (host === "youtube.com" || host.endsWith(".youtube.com") || host === "youtu.be") {
     return selectYouTube(ctx);
