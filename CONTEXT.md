@@ -100,6 +100,11 @@ FeaturePack 可探测或提供安装任务的外部可执行文件家族。
 **Clipboard Listener**:
 剪贴板监听器。监控剪贴板变化，过滤出 URL 后发出通知。
 
+**Download Progress Bar Style**:
+An app-wide Settings choice for rendering Task progress. **Segmented** shows
+the byte ranges of eligible multi-subworker HTTP transfers; **Classic** shows
+one overall progress fill and is the fallback for every other Task.
+
 **Category**:
 下载分类和目标目录规则。将文件扩展名匹配到分类并解析下载目录。
 _Avoid_: group、tag、type
