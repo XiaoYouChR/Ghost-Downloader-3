@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QEvent, QRect, QUrl, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QDesktopServices, QPalette
+from PySide6.QtGui import QColor, QIcon, QDesktopServices, QPainter, QPalette
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
@@ -30,6 +30,39 @@ if TYPE_CHECKING:
     from app.services.feature_service import FeatureService
     from app.services.task_service import TaskService
     from app.view.dialogs.task_draft import TaskDraftDialog
+
+
+class DropOverlay(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._initWidget()
+
+    def _initWidget(self):
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.hide()
+
+    def paintEvent(self, event):
+        from qfluentwidgets import isDarkTheme
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        bgColor = QColor(0, 0, 0, 128) if isDarkTheme() else QColor(255, 255, 255, 180)
+        painter.fillRect(self.rect(), bgColor)
+
+        cx, cy = self.width() // 2, self.height() // 2
+        iconSize = 48
+        iconRect = QRect(cx - iconSize // 2, cy - iconSize - 4, iconSize, iconSize)
+        FluentIcon.FOLDER_ADD.render(painter, iconRect)
+
+        textColor = QColor(255, 255, 255, 200) if isDarkTheme() else QColor(0, 0, 0, 180)
+        painter.setPen(textColor)
+        font = self.font()
+        font.setPixelSize(16)
+        painter.setFont(font)
+        textRect = QRect(0, cy + 4, self.width(), 30)
+        painter.drawText(textRect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
+                         self.tr("松开以添加任务"))
 
 
 class MainWindow(MSFluentWindow):
@@ -80,6 +113,9 @@ class MainWindow(MSFluentWindow):
         self.searchEdit.setClearButtonEnabled(True)
         self.searchEdit.hide()
         self.searchEdit.raise_()
+
+        self.setAcceptDrops(True)
+        self._dropOverlay = DropOverlay(self)
 
     def _initLayout(self) -> None:
         self._addPage(TaskPage, FluentIcon.DOWNLOAD, self.tr("下载任务"),
@@ -333,8 +369,35 @@ class MainWindow(MSFluentWindow):
         if mode == CloseMode.QUIT:
             QApplication.quit()
 
+    def dragEnterEvent(self, event) -> None:
+        if not event.mimeData().hasUrls():
+            event.ignore()
+            return
+        from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
+        if any(d.isVisible() for d in self.findChildren(MaskDialogBase)):
+            event.ignore()
+            return
+        event.acceptProposedAction()
+        self._dropOverlay.setGeometry(self.rect())
+        self._dropOverlay.show()
+        self._dropOverlay.raise_()
+
+    def dragMoveEvent(self, event) -> None:
+        event.acceptProposedAction()
+
+    def dragLeaveEvent(self, event) -> None:
+        self._dropOverlay.hide()
+
+    def dropEvent(self, event) -> None:
+        self._dropOverlay.hide()
+        urls = [u.toString() for u in event.mimeData().urls()]
+        if urls:
+            self.addUrls(urls)
+
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        if self._dropOverlay.isVisible():
+            self._dropOverlay.setGeometry(self.rect())
         if self.searchEdit is not None and self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
 
