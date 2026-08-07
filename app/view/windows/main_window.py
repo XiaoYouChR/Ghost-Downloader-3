@@ -81,6 +81,7 @@ class MainWindow(MSFluentWindow):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
         self.searchEdit = None
+        self._dropOverlay = None
         super().__init__(parent)
         self._taskService = taskService
         self._featureService = featureService
@@ -396,7 +397,7 @@ class MainWindow(MSFluentWindow):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        if self._dropOverlay.isVisible():
+        if self._dropOverlay is not None and self._dropOverlay.isVisible():
             self._dropOverlay.setGeometry(self.rect())
         if self.searchEdit is not None and self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
