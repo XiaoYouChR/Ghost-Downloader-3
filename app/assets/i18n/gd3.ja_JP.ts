@@ -152,52 +152,52 @@
 <context>
     <name>AdvancedOptionsPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="642"/>
+        <location filename="../../view/windows/oobe_window.py" line="648"/>
         <source>更多选项</source>
         <translation>より多くのオプション</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="643"/>
+        <location filename="../../view/windows/oobe_window.py" line="649"/>
         <source>按需开启以下功能，也可以稍后在设置中修改</source>
         <translation>必要に応じて以下の機能をオンにしてください。後で設定から変更も可能です</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="656"/>
+        <location filename="../../view/windows/oobe_window.py" line="662"/>
         <source>自动分类保存</source>
         <translation>自動分類保存</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="657"/>
+        <location filename="../../view/windows/oobe_window.py" line="663"/>
         <source>按文件类型自动保存到 视频、音频、文档 等子文件夹</source>
         <translation>ファイルの種類に応じて自動的に 動画、音声、ドキュメント などのサブフォルダに保存します</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="662"/>
+        <location filename="../../view/windows/oobe_window.py" line="668"/>
         <source>关联文件类型</source>
         <translation>ファイルの種類を関連付け</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="663"/>
+        <location filename="../../view/windows/oobe_window.py" line="669"/>
         <source>双击 .torrent 等文件时用 Ghost Downloader 打开</source>
         <translation>.torrent などのファイルをダブルクリックした時に Ghost Downloader で開く</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="667"/>
+        <location filename="../../view/windows/oobe_window.py" line="673"/>
         <source>处理协议链接</source>
         <translation>プロトコルリンクを処理</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="668"/>
+        <location filename="../../view/windows/oobe_window.py" line="674"/>
         <source>点击 Magnet/eD2k/FTP 链接时唤起 Ghost Downloader</source>
         <translation>Magnet/eD2k/FTP リンクをクリックした時に Ghost Downloader を起動</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="672"/>
+        <location filename="../../view/windows/oobe_window.py" line="678"/>
         <source>允许浏览器扩展唤醒</source>
         <translation>ブラウザ拡張からの起動を許可</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="673"/>
+        <location filename="../../view/windows/oobe_window.py" line="679"/>
         <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
         <translation>ブラウザ拡張は ghostdownloader:// プロトコルでデスクトップアプリを起動できます</translation>
     </message>
@@ -214,32 +214,32 @@
         <translation type="vanished">ウェブページが ghostdownloader:// リンクから本アプリを起動できるようにします</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="681"/>
+        <location filename="../../view/windows/oobe_window.py" line="687"/>
         <source>Aria2 RPC 兼容</source>
         <translation>Aria2 RPC 互換</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="682"/>
+        <location filename="../../view/windows/oobe_window.py" line="688"/>
         <source>让支持 Aria2 的工具和网站把下载任务发给 Ghost Downloader</source>
         <translation>Aria2 に対応したツールやウェブサイトが Ghost Downloader にダウンロードタスクを送信できるようにします</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="646"/>
+        <location filename="../../view/windows/oobe_window.py" line="652"/>
         <source>开机自启</source>
         <translation>起動時に開始</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="647"/>
+        <location filename="../../view/windows/oobe_window.py" line="653"/>
         <source>登录系统时自动在后台启动，随时接管下载</source>
         <translation>システムログイン時に自動的にバックグラウンドで起動し、いつでもダウンロードを引き継ぎます</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="651"/>
+        <location filename="../../view/windows/oobe_window.py" line="657"/>
         <source>剪贴板监听</source>
         <translation>クリップボード監視</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="652"/>
+        <location filename="../../view/windows/oobe_window.py" line="658"/>
         <source>复制下载链接时自动弹出新任务提示</source>
         <translation>ダウンロードリンクをコピーすると自動的に新規タスクのヒントが表示されます</translation>
     </message>
@@ -262,8 +262,8 @@
         <translation type="obsolete">分享率 {0:.2f}%</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="77"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="94"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="69"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="86"/>
         <source>做种 {0}</source>
         <translation>シード {0}</translation>
     </message>
@@ -272,81 +272,127 @@
         <translation type="obsolete">Peers {0} / Seeds {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="75"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="92"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="67"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="84"/>
         <source>分享率 {0}</source>
         <translation>共有率 {0}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="79"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="71"/>
         <source>{0} peers</source>
         <translation>{0} peers</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="80"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="72"/>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="8"/>
         <source>做种中</source>
         <translation>シード中</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="3"/>
+        <source>校验已有文件</source>
+        <translation>既存ファイルの検証</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="4"/>
+        <source>检查续传状态</source>
+        <translation>レジューム状態の確認</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="5"/>
+        <source>获取元数据</source>
+        <translation>メタデータの取得</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="6"/>
+        <source>下载中</source>
+        <translation>ダウンロード中</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="7"/>
+        <source>下载完成</source>
+        <translation>ダウンロード完了</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="9"/>
+        <source>分配文件中</source>
+        <translation>ファイル割り当て中</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="10"/>
+        <source>等待校验</source>
+        <translation>検証待ち</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="11"/>
+        <source>已暂停做种</source>
+        <translation>シード一時停止中</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/state_catalog.py" line="12"/>
+        <source>已暂停下载</source>
+        <translation>ダウンロード一時停止中</translation>
     </message>
 </context>
 <context>
     <name>BasicSettingsPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="307"/>
+        <location filename="../../view/windows/oobe_window.py" line="313"/>
         <source>基本设置</source>
         <translation>基本設定</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="308"/>
+        <location filename="../../view/windows/oobe_window.py" line="314"/>
         <source>选择你喜欢的外观，设置下载文件的保存位置</source>
         <translation>好みの外観を選び、ダウンロードファイルの保存先を設定してください</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="312"/>
+        <location filename="../../view/windows/oobe_window.py" line="318"/>
         <source>浅色</source>
         <translation>ライト</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="313"/>
+        <location filename="../../view/windows/oobe_window.py" line="319"/>
         <source>深色</source>
         <translation>ダーク</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="314"/>
+        <location filename="../../view/windows/oobe_window.py" line="320"/>
         <source>跟随系统</source>
         <translation>システムに従う</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="318"/>
+        <location filename="../../view/windows/oobe_window.py" line="324"/>
         <source>偏好</source>
         <translation>一般</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="323"/>
+        <location filename="../../view/windows/oobe_window.py" line="329"/>
         <source>使用系统设置</source>
         <translation>システム設定を使用</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="326"/>
+        <location filename="../../view/windows/oobe_window.py" line="332"/>
         <source>浏览...</source>
         <translation>参照...</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="343"/>
+        <location filename="../../view/windows/oobe_window.py" line="349"/>
         <source>界面语言</source>
         <translation>インターフェース言語</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="344"/>
+        <location filename="../../view/windows/oobe_window.py" line="350"/>
         <source>更改立即生效</source>
         <translation>変更はすぐに反映されます</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="347"/>
+        <location filename="../../view/windows/oobe_window.py" line="353"/>
         <source>下载保存位置</source>
         <translation>ダウンロード保存先</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="378"/>
+        <location filename="../../view/windows/oobe_window.py" line="384"/>
         <source>选择下载目录</source>
         <translation>ダウンロードフォルダを選択</translation>
     </message>
@@ -495,12 +541,26 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliDraftCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="221"/>
         <source>选择字幕</source>
-        <translation>字幕を選択</translation>
+        <translation type="vanished">字幕を選択</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="225"/>
+        <location filename="../../../features/bili_pack/cards.py" line="199"/>
+        <source>最佳画质</source>
+        <translation>最適画質</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="200"/>
+        <source>最佳音质</source>
+        <translation>最適音質</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="239"/>
+        <source>截取片段</source>
+        <translation>クリップを切り取り</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="255"/>
         <source>选择分P</source>
         <translation>パートを選択</translation>
     </message>
@@ -551,9 +611,52 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliTaskCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="294"/>
+        <location filename="../../../features/bili_pack/cards.py" line="523"/>
         <source>选择分P</source>
         <translation>パートを選択</translation>
+    </message>
+</context>
+<context>
+    <name>BinaryRuntime</name>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="80"/>
+        <source>eD2k / eMule</source>
+        <translation>eD2k / eMule</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
+        <source>支持电驴协议，适合下载经典资源</source>
+        <translation>eDonkeyプロトコルをサポート、クラシックなリソースのダウンロードに最適</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="61"/>
+        <source>视频合并</source>
+        <translation>動画マージ</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="62"/>
+        <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
+        <translation>ビリビリ、YouTubeなどの動画ダウンロードに必須、A/Vトラックを完全なファイルにマージ</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/config.py" line="145"/>
+        <source>M3U8 / 直播下载</source>
+        <translation>M3U8 / ライブダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/config.py" line="146"/>
+        <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
+        <translation>HLS、DASHなどのストリーミングプロトコルをサポート、ライブストリーム録画可能</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="137"/>
+        <source>YouTube 下载</source>
+        <translation>YouTube ダウンロード</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="138"/>
+        <source>支持 YouTube、Twitter 等数百个视频网站</source>
+        <translation>YouTube、Twitterなど数百の動画サイトをサポート</translation>
     </message>
 </context>
 <context>
@@ -790,92 +893,92 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BrowserExtensionPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="399"/>
+        <location filename="../../view/windows/oobe_window.py" line="405"/>
         <source>安装浏览器扩展</source>
         <translation>ブラウザ拡張をインストール</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="400"/>
+        <location filename="../../view/windows/oobe_window.py" line="406"/>
         <source>让浏览器中的下载自动接管到 Ghost Downloader</source>
         <translation>ブラウザ内のダウンロードを自動的に Ghost Downloader に引き継ぎます</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="412"/>
+        <location filename="../../view/windows/oobe_window.py" line="418"/>
         <source>安装教程动图</source>
         <translation>インストールチュートリアルGIF</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="422"/>
+        <location filename="../../view/windows/oobe_window.py" line="428"/>
         <source>手动安装</source>
         <translation>手動インストール</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="423"/>
+        <location filename="../../view/windows/oobe_window.py" line="429"/>
         <source>随桌面端自动更新，适用于所有 Chromium 浏览器</source>
         <translation>デスクトップアプリと一緒に自動更新、すべての Chromium ブラウザに対応</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="428"/>
+        <location filename="../../view/windows/oobe_window.py" line="434"/>
         <source>Chrome 商店</source>
         <translation>Chrome ストア</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="429"/>
+        <location filename="../../view/windows/oobe_window.py" line="435"/>
         <source>Edge 商店</source>
         <translation>Edge ストア</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="430"/>
+        <location filename="../../view/windows/oobe_window.py" line="436"/>
         <source>Firefox 商店</source>
         <translation>Firefox ストア</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="434"/>
+        <location filename="../../view/windows/oobe_window.py" line="440"/>
         <source>商店版更新需等待审核，可能滞后于桌面端</source>
         <translation>ストア版の更新は審査を待つ必要があり、デスクトップアプリより遅れる可能性があります</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="496"/>
+        <location filename="../../view/windows/oobe_window.py" line="502"/>
         <source>正在端口 {} 上等待扩展连接</source>
         <translation>ポート {} で拡張機能の接続を待っています</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="501"/>
+        <location filename="../../view/windows/oobe_window.py" line="507"/>
         <source>浏览器扩展未启用，可稍后在设置中开启</source>
         <translation>ブラウザ拡張が有効になっていません。後で設定から有効にできます</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="506"/>
+        <location filename="../../view/windows/oobe_window.py" line="512"/>
         <source>端口 {} 被占用，请在设置中更换端口</source>
         <translation>ポート {} は使用中です。設定でポートを変更してください</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="513"/>
+        <location filename="../../view/windows/oobe_window.py" line="519"/>
         <source>已连接扩展 v{}，最新版本为 v{}</source>
         <translation>拡張機能 v{} に接続しました、最新バージョンは v{} です</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="517"/>
+        <location filename="../../view/windows/oobe_window.py" line="523"/>
         <source>已连接扩展，最新版本为 v{}</source>
         <translation>拡張機能に接続しました、最新バージョンは v{} です</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="544"/>
+        <location filename="../../view/windows/oobe_window.py" line="550"/>
         <source>请手动打开浏览器</source>
         <translation>ブラウザを手動で開いてください</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="545"/>
+        <location filename="../../view/windows/oobe_window.py" line="551"/>
         <source>chrome://extensions 已复制到剪贴板</source>
         <translation>chrome://extensions をクリップボードにコピーしました</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="551"/>
+        <location filename="../../view/windows/oobe_window.py" line="557"/>
         <source>解包失败</source>
         <translation>解凍に失敗</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="563"/>
+        <location filename="../../view/windows/oobe_window.py" line="569"/>
         <source>协议版本不匹配，商店版可能滞后，请尝试手动安装</source>
         <translation>プロトコルバージョンが一致しません。ストア版が古い可能性があるため、手動インストールをお試しください</translation>
     </message>
@@ -1285,19 +1388,19 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>CompletePage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="744"/>
+        <location filename="../../view/windows/oobe_window.py" line="750"/>
         <source>一切就绪</source>
         <translation>すべての準備が整いました</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="748"/>
+        <location filename="../../view/windows/oobe_window.py" line="754"/>
         <source>Ghost Downloader 已准备好为你工作。
 你可以随时在设置中调整所有选项。</source>
         <translation>Ghost Downloader は作業を開始する準備ができました。
 いつでも設定ですべてのオプションを調整できます。</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="754"/>
+        <location filename="../../view/windows/oobe_window.py" line="760"/>
         <source>开始使用</source>
         <translation>使用開始</translation>
     </message>
@@ -1375,13 +1478,13 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>DraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="56"/>
+        <location filename="../../view/cards/draft_cards.py" line="57"/>
         <source>编辑任务参数</source>
         <translation>タスクパラメータを編集</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="108"/>
-        <location filename="../../view/cards/draft_cards.py" line="113"/>
+        <location filename="../../view/cards/draft_cards.py" line="110"/>
+        <location filename="../../view/cards/draft_cards.py" line="115"/>
         <source>未分类</source>
         <translation>未分類</translation>
     </message>
@@ -1397,6 +1500,14 @@ http://example.com/{mp4,mkv}/video</translation>
         <location filename="../../view/components/card_groups.py" line="103"/>
         <source>{0} 个任务</source>
         <translation>{0} 件のタスク</translation>
+    </message>
+</context>
+<context>
+    <name>DropOverlay</name>
+    <message>
+        <location filename="../../view/windows/main_window.py" line="65"/>
+        <source>松开以添加任务</source>
+        <translation>離してタスクを追加</translation>
     </message>
 </context>
 <context>
@@ -1896,8 +2007,12 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
         <location filename="../../../features/github_pack/config.py" line="210"/>
+        <source>优先使用所选代理站，不可用时自动切换其他站点或直连</source>
+        <translation>選択したプロキシサイトを優先的に使用し、利用不可の場合は他のサイトまたは直リンクに自動切替</translation>
+    </message>
+    <message>
         <source>命中 GitHub 文件链接时，自动改写为所选反向代理站</source>
-        <translation>GitHub ファイルリンク命中時は選択したリバースプロキシに自動書き換え</translation>
+        <translation type="vanished">GitHub ファイルリンク命中時は選択したリバースプロキシに自動書き換え</translation>
     </message>
     <message>
         <source>查看协议</source>
@@ -2731,7 +2846,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="271"/>
+        <location filename="../../view/windows/main_window.py" line="307"/>
         <source>程序发生异常</source>
         <translation>プログラムで例外が発生しました</translation>
     </message>
@@ -2744,32 +2859,32 @@ FFmpeg: {2}</translation>
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="84"/>
+        <location filename="../../view/windows/main_window.py" line="121"/>
         <source>下载任务</source>
         <translation>ダウンロードタスク</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="88"/>
+        <location filename="../../view/windows/main_window.py" line="125"/>
         <source>新建任务</source>
         <translation>新規タスク</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="94"/>
+        <location filename="../../view/windows/main_window.py" line="131"/>
         <source>设置</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="223"/>
+        <location filename="../../view/windows/main_window.py" line="260"/>
         <source>未知</source>
         <translation>不明</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="224"/>
+        <location filename="../../view/windows/main_window.py" line="261"/>
         <source>浏览器扩展</source>
         <translation>ブラウザ拡張</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="227"/>
+        <location filename="../../view/windows/main_window.py" line="264"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -2786,47 +2901,47 @@ FFmpeg: {2}</translation>
 拡張機能内で「自動ペアリング」をクリックした場合のみ許可してください。</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="232"/>
+        <location filename="../../view/windows/main_window.py" line="269"/>
         <source>浏览器扩展配对请求</source>
         <translation>ブラウザ拡張ペアリングリクエスト</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="233"/>
+        <location filename="../../view/windows/main_window.py" line="270"/>
         <source>允许配对</source>
         <translation>ペアリングを許可</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="234"/>
+        <location filename="../../view/windows/main_window.py" line="271"/>
         <source>拒绝</source>
         <translation>拒否</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="259"/>
+        <location filename="../../view/windows/main_window.py" line="295"/>
         <source>查看详情</source>
         <translation>詳細を表示</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="320"/>
+        <location filename="../../view/windows/main_window.py" line="356"/>
         <source>是否完全退出程序？</source>
         <translation>プログラムを完全に終了しますか？</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="321"/>
+        <location filename="../../view/windows/main_window.py" line="357"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation>バックグラウンド実行時はシステムトレイアイコンから再表示できます。</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="324"/>
+        <location filename="../../view/windows/main_window.py" line="360"/>
         <source>退出程序</source>
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="325"/>
+        <location filename="../../view/windows/main_window.py" line="361"/>
         <source>继续在后台运行</source>
         <translation>引き続きバックグラウンドで実行</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="326"/>
+        <location filename="../../view/windows/main_window.py" line="362"/>
         <source>记住我的选择</source>
         <translation>選択を記憶</translation>
     </message>
@@ -2835,7 +2950,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">バージョン詳細で手動選択してください</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="272"/>
+        <location filename="../../view/windows/main_window.py" line="308"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2844,7 +2959,7 @@ FFmpeg: {2}</translation>
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="276"/>
+        <location filename="../../view/windows/main_window.py" line="312"/>
         <source>查看日志</source>
         <translation>ログを表示</translation>
     </message>
@@ -2873,17 +2988,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">現在のバージョン {0}、最新バージョン {1}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="248"/>
+        <location filename="../../view/windows/main_window.py" line="284"/>
         <source>检测到新版本</source>
         <translation>新しいバージョンを検出</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="249"/>
+        <location filename="../../view/windows/main_window.py" line="285"/>
         <source>最新版本: {0}</source>
         <translation>最新バージョン: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="256"/>
+        <location filename="../../view/windows/main_window.py" line="292"/>
         <source>立即下载</source>
         <translation>今すぐダウンロード</translation>
     </message>
@@ -2892,7 +3007,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">リリース詳細を表示</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="262"/>
+        <location filename="../../view/windows/main_window.py" line="298"/>
         <source>请作者喝咖啡</source>
         <translation>作者にコーヒーをごちそうする</translation>
     </message>
@@ -2942,29 +3057,37 @@ FFmpeg: {2}</translation>
     </message>
 </context>
 <context>
+    <name>MenuTrackButton</name>
+    <message>
+        <location filename="../../view/components/track_bar.py" line="62"/>
+        <source>不下载</source>
+        <translation>ダウンロードしない</translation>
+    </message>
+</context>
+<context>
     <name>MobileMainWindow</name>
     <message>
-        <location filename="../../view/mobile/window.py" line="42"/>
+        <location filename="../../view/mobile/window.py" line="43"/>
         <source>未开启通知权限，下载完成后将无法提醒</source>
         <translation>通知権限が有効になっていないため、ダウンロード完了後に通知できません</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="71"/>
+        <location filename="../../view/mobile/window.py" line="72"/>
         <source>任务</source>
         <translation>タスク</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="72"/>
+        <location filename="../../view/mobile/window.py" line="73"/>
         <source>设置</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="187"/>
+        <location filename="../../view/mobile/window.py" line="188"/>
         <source>需要存储权限</source>
         <translation>ストレージ権限が必要</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="188"/>
+        <location filename="../../view/mobile/window.py" line="189"/>
         <source>请授予存储权限后再新建任务</source>
         <translation>ストレージ権限を許可してからタスクを作成してください</translation>
     </message>
@@ -3047,12 +3170,12 @@ FFmpeg: {2}</translation>
 <context>
     <name>MultiFileDraftCard</name>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="147"/>
+        <location filename="../../view/cards/draft_cards.py" line="150"/>
         <source>选择文件</source>
         <translation>ファイルを選択</translation>
     </message>
     <message>
-        <location filename="../../view/cards/draft_cards.py" line="170"/>
+        <location filename="../../view/cards/draft_cards.py" line="179"/>
         <source>{0}/{1} 个文件 · {2}</source>
         <translation>{0}/{1} ファイル · {2}</translation>
     </message>
@@ -3060,7 +3183,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="483"/>
+        <location filename="../../view/cards/task_cards.py" line="484"/>
         <source>{0}/{1} 个文件</source>
         <translation>{0}/{1} ファイル</translation>
     </message>
@@ -3135,17 +3258,17 @@ FFmpeg: {2}</translation>
 <context>
     <name>OobeWindow</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="829"/>
+        <location filename="../../view/windows/oobe_window.py" line="835"/>
         <source>上一步</source>
         <translation>戻る</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="830"/>
+        <location filename="../../view/windows/oobe_window.py" line="836"/>
         <source>跳过全部</source>
         <translation>すべてスキップ</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="831"/>
+        <location filename="../../view/windows/oobe_window.py" line="837"/>
         <source>下一步</source>
         <translation>次へ</translation>
     </message>
@@ -3173,47 +3296,57 @@ FFmpeg: {2}</translation>
 <context>
     <name>PageSelectDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="105"/>
+        <location filename="../../../features/bili_pack/cards.py" line="60"/>
         <source>选择分P</source>
         <translation>パートを選択</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="108"/>
+        <location filename="../../../features/bili_pack/cards.py" line="63"/>
         <source>全选</source>
         <translation>すべて選択</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="109"/>
+        <location filename="../../../features/bili_pack/cards.py" line="64"/>
         <source>全不选</source>
         <translation>すべて選択解除</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="110"/>
+        <location filename="../../../features/bili_pack/cards.py" line="65"/>
         <source>反选</source>
         <translation>選択を反転</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="122"/>
+        <location filename="../../../features/bili_pack/cards.py" line="77"/>
         <source>确定</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="123"/>
+        <location filename="../../../features/bili_pack/cards.py" line="78"/>
         <source>取消</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="129"/>
+        <location filename="../../../features/bili_pack/cards.py" line="85"/>
         <source>分P</source>
         <translation>パート</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="129"/>
+        <location filename="../../../features/bili_pack/cards.py" line="85"/>
         <source>大小</source>
         <translation>サイズ</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="193"/>
+        <location filename="../../../features/bili_pack/cards.py" line="85"/>
+        <source>开始</source>
+        <translation>開始</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="85"/>
+        <source>结束</source>
+        <translation>終了</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="164"/>
         <source>{0}/{1} 个分P</source>
         <translation>{0}/{1} パート</translation>
     </message>
@@ -3600,6 +3733,16 @@ FFmpeg: {2}</translation>
         <translation>最新バージョン: {0}</translation>
     </message>
     <message>
+        <location filename="../../view/components/setting_cards.py" line="911"/>
+        <source>安装任务已创建</source>
+        <translation>インストールタスクが作成されました</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/setting_cards.py" line="912"/>
+        <source>请前往任务页查看安装进度</source>
+        <translation>タスクページでインストールの進行状況を確認してください</translation>
+    </message>
+    <message>
         <location filename="../../view/components/setting_cards.py" line="941"/>
         <source>确认卸载</source>
         <translation>アンインストールの確認</translation>
@@ -3644,22 +3787,22 @@ FFmpeg: {2}</translation>
 <context>
     <name>RuntimeInstallPage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="579"/>
+        <location filename="../../view/windows/oobe_window.py" line="585"/>
         <source>安装推荐组件</source>
         <translation>推奨コンポーネントのインストール</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="580"/>
+        <location filename="../../view/windows/oobe_window.py" line="586"/>
         <source>点击下一步将自动安装勾选的组件，稍后可在设置中管理</source>
         <translation>「次へ」をクリックするとチェックしたコンポーネントが自動インストールされます。後で設定から管理できます</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="582"/>
+        <location filename="../../view/windows/oobe_window.py" line="588"/>
         <source>推荐组件</source>
         <translation>推奨コンポーネント</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="612"/>
+        <location filename="../../view/windows/oobe_window.py" line="618"/>
         <source>已安装</source>
         <translation>インストール済み</translation>
     </message>
@@ -3791,68 +3934,68 @@ FFmpeg: {2}</translation>
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="45"/>
+        <location filename="../../view/pages/setting_page.py" line="47"/>
         <source>综合下载设置</source>
         <translation>総合ダウンロード設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="46"/>
+        <location filename="../../view/pages/setting_page.py" line="48"/>
         <source>下载分类</source>
         <translation>ダウンロードカテゴリ</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="47"/>
+        <location filename="../../view/pages/setting_page.py" line="50"/>
         <source>关联设置</source>
         <translation>関連設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="48"/>
+        <location filename="../../view/pages/setting_page.py" line="51"/>
         <source>浏览器扩展</source>
         <translation>ブラウザ拡張</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="50"/>
+        <location filename="../../view/pages/setting_page.py" line="53"/>
         <source>个性化</source>
         <translation>個人設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="51"/>
+        <location filename="../../view/pages/setting_page.py" line="54"/>
         <source>应用</source>
         <translation>適用</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="52"/>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
+        <location filename="../../view/pages/setting_page.py" line="55"/>
+        <location filename="../../view/pages/setting_page.py" line="356"/>
         <source>关于</source>
         <translation>について</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="96"/>
+        <location filename="../../view/pages/setting_page.py" line="99"/>
         <source>最大任务数</source>
         <translation>最大タスク数</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="97"/>
+        <location filename="../../view/pages/setting_page.py" line="100"/>
         <source>最多能同时进行的任务数量</source>
         <translation>同時に実行できる最大タスク数</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="98"/>
+        <location filename="../../view/pages/setting_page.py" line="101"/>
         <source>预分配线程数</source>
         <translation>事前割り当てスレッド数</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="99"/>
+        <location filename="../../view/pages/setting_page.py" line="102"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
         <translation>スレッド数が多いほどダウンロードは速くなりますが、64を超えるとクローラー対策が発動しファイルが破損するリスクがあります</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="100"/>
+        <location filename="../../view/pages/setting_page.py" line="103"/>
         <source>自动提速</source>
         <translation>自動高速化</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="101"/>
+        <location filename="../../view/pages/setting_page.py" line="104"/>
         <source>AI 实时检测各线程效率并自动增加线程数以提高下载速度</source>
         <translation>AIがスレッド効率をリアルタイム監視し、スレッド数を自動増加してダウンロード速度を向上</translation>
     </message>
@@ -3861,27 +4004,27 @@ FFmpeg: {2}</translation>
         <translation type="vanished">最大再割り当てサイズ (MB)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="104"/>
+        <location filename="../../view/pages/setting_page.py" line="107"/>
         <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
         <translation>スレッドの残量がこの値を超えると、スレッド完了時または自動高速化条件満たした際に再割り当てが発生</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="76"/>
+        <location filename="../../view/pages/setting_page.py" line="79"/>
         <source>下载限速</source>
         <translation>ダウンロード速度制限</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="77"/>
+        <location filename="../../view/pages/setting_page.py" line="80"/>
         <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
         <translation>ダウンロードタスク画面で速度制限を有効にすると、すべてのタスクにこの値が適用されます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="110"/>
+        <location filename="../../view/pages/setting_page.py" line="113"/>
         <source>下载时验证 SSL 证书</source>
         <translation>SSL証明書を検証</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="111"/>
+        <location filename="../../view/pages/setting_page.py" line="114"/>
         <source>文件无法下载时，可尝试关闭该选项</source>
         <translation>ファイルがダウンロードできない場合、このオプションをオフにしてみてください</translation>
     </message>
@@ -3890,22 +4033,22 @@ FFmpeg: {2}</translation>
         <translation type="vanished">デフォルト HTTP リクエストヘッダーを設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="121"/>
+        <location filename="../../view/pages/setting_page.py" line="127"/>
         <source>启用下载分类</source>
         <translation>ダウンロードカテゴリを有効化</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="122"/>
+        <location filename="../../view/pages/setting_page.py" line="128"/>
         <source>根据扩展名将下载任务归类，便于筛选与分发到指定文件夹</source>
         <translation>拡張子に基づいてタスクを分類し、フィルターや指定フォルダへの振り分けを容易にします</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="179"/>
+        <location filename="../../view/pages/setting_page.py" line="185"/>
         <source>启用浏览器扩展</source>
         <translation>ブラウザ拡張を有効化</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="180"/>
+        <location filename="../../view/pages/setting_page.py" line="186"/>
         <source>接收来自浏览器的下载信息，请安装浏览器扩展后使用</source>
         <translation>ブラウザからのダウンロード情報を受信するには、ブラウザ拡張をインストールしてください</translation>
     </message>
@@ -3918,17 +4061,17 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ダウンロードパラメータを調整しやすいように、ダウンロード情報受信時にポップアップ表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="128"/>
+        <location filename="../../view/pages/setting_page.py" line="134"/>
         <source>复制令牌</source>
         <translation>トークンをコピー</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="128"/>
+        <location filename="../../view/pages/setting_page.py" line="134"/>
         <source>配对令牌</source>
         <translation>ペアリングトークン</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="132"/>
+        <location filename="../../view/pages/setting_page.py" line="138"/>
         <source>重新生成令牌</source>
         <translation>トークンを再生成</translation>
     </message>
@@ -3965,62 +4108,62 @@ FFmpeg: {2}</translation>
         <translation type="vanished">ブラウザ拡張インストール時の一般的な問題を解決</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="263"/>
+        <location filename="../../view/pages/setting_page.py" line="262"/>
         <source>应用主题</source>
         <translation>アプリケーションテーマ</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="264"/>
+        <location filename="../../view/pages/setting_page.py" line="263"/>
         <source>更改应用程序的外观</source>
         <translation>アプリケーションの外観を変更</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
+        <location filename="../../view/pages/setting_page.py" line="264"/>
         <source>浅色</source>
         <translation>ライト</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
+        <location filename="../../view/pages/setting_page.py" line="264"/>
         <source>深色</source>
         <translation>ダーク</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="265"/>
+        <location filename="../../view/pages/setting_page.py" line="264"/>
         <source>跟随系统设置</source>
         <translation>システム設定に従う</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="270"/>
+        <location filename="../../view/pages/setting_page.py" line="269"/>
         <source>窗口背景透明材质</source>
         <translation>ウィンドウ背景透過効果</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="271"/>
+        <location filename="../../view/pages/setting_page.py" line="270"/>
         <source>设置窗口背景透明效果和透明材质</source>
         <translation>ウィンドウ背景の透過効果を設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="257"/>
+        <location filename="../../view/pages/setting_page.py" line="256"/>
         <source>界面缩放</source>
         <translation>UIスケーリング</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="49"/>
+        <location filename="../../view/pages/setting_page.py" line="52"/>
         <source>Aria2 RPC 兼容</source>
         <translation>Aria2 RPC 互換</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="82"/>
+        <location filename="../../view/pages/setting_page.py" line="85"/>
         <source>下载路径</source>
         <translation>ダウンロードパス</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="82"/>
+        <location filename="../../view/pages/setting_page.py" line="85"/>
         <source>文件默认保存位置</source>
         <translation>ファイルのデフォルト保存場所</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="85"/>
+        <location filename="../../view/pages/setting_page.py" line="88"/>
         <source>恢复默认路径</source>
         <translation>デフォルトパスに戻す</translation>
     </message>
@@ -4029,12 +4172,12 @@ FFmpeg: {2}</translation>
         <translation type="vanished">最小再割り当てサイズ (KB)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="107"/>
+        <location filename="../../view/pages/setting_page.py" line="110"/>
         <source>保留文件修改时间</source>
         <translation>ファイルの更新日時を保持</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="108"/>
+        <location filename="../../view/pages/setting_page.py" line="111"/>
         <source>下载完成后将文件的修改时间设为服务器提供的 Last-Modified 值</source>
         <translation>ダウンロード完了後、ファイルの更新日時をサーバー提供の Last-Modified に設定</translation>
     </message>
@@ -4047,32 +4190,32 @@ FFmpeg: {2}</translation>
         <translation type="vanished">デフォルトの HTTP リクエストヘッダーを設定。User-Agent はシミュレート ID で制御（そのまま送信選択時を除く）</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="145"/>
+        <location filename="../../view/pages/setting_page.py" line="151"/>
         <source>Edge 商店</source>
         <translation>Edge ストア</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="141"/>
+        <location filename="../../view/pages/setting_page.py" line="147"/>
         <source>从商店安装扩展</source>
         <translation>ストアから拡張機能をインストール</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="142"/>
+        <location filename="../../view/pages/setting_page.py" line="148"/>
         <source>商店版扩展需等待审核后才能获得更新</source>
         <translation>ストア版拡張機能は審査後に更新されます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="153"/>
+        <location filename="../../view/pages/setting_page.py" line="159"/>
         <source>Chrome 商店</source>
         <translation>Chrome ストア</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="140"/>
+        <location filename="../../view/pages/setting_page.py" line="146"/>
         <source>Firefox 商店</source>
         <translation>Firefox ストア</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="55"/>
+        <location filename="../../view/pages/setting_page.py" line="58"/>
         <source>未找到匹配的设置项</source>
         <translation>一致する設定項目が見つかりません</translation>
     </message>
@@ -4085,253 +4228,253 @@ FFmpeg: {2}</translation>
         <translation type="vanished">タスク削除確認ダイアログで、ダウンロード済みファイルの同時削除をデフォルトでチェック</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="161"/>
+        <location filename="../../view/pages/setting_page.py" line="167"/>
         <source>一键安装</source>
         <translation>ワンクリックインストール</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="162"/>
+        <location filename="../../view/pages/setting_page.py" line="168"/>
         <source>安装到 Chromium 浏览器</source>
         <translation>Chromium ブラウザにインストール</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="163"/>
+        <location filename="../../view/pages/setting_page.py" line="169"/>
         <source>自动解包扩展并引导加载（Chrome / Brave 等），扩展随桌面端更新自动升级</source>
         <translation>拡張機能を自動解凍してロードを案内（Chrome / Brave 等）、デスクトップアプリ更新で自動アップグレード</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="166"/>
+        <location filename="../../view/pages/setting_page.py" line="172"/>
         <source>导出 CRX</source>
         <translation>CRX をエクスポート</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="173"/>
+        <location filename="../../view/pages/setting_page.py" line="179"/>
         <source>服务端口</source>
         <translation>サービスポート</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="174"/>
+        <location filename="../../view/pages/setting_page.py" line="180"/>
         <source>浏览器扩展连接使用的端口</source>
         <translation>ブラウザ拡張接続が使用するポート</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="186"/>
+        <location filename="../../view/pages/setting_page.py" line="192"/>
         <source>接管下载时进入草稿模式</source>
         <translation>ダウンロード引き継ぎ時に下書きモードに入る</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="187"/>
+        <location filename="../../view/pages/setting_page.py" line="193"/>
         <source>自动接管浏览器下载时先进入草稿，方便您调整下载路径和文件名</source>
         <translation>ブラウザのダウンロードを自動引き継ぎする際、まず下書きに入り、ダウンロードパスとファイル名を調整しやすくします</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="199"/>
+        <location filename="../../view/pages/setting_page.py" line="204"/>
         <source>允许浏览器扩展唤醒</source>
         <translation>ブラウザ拡張からの起動を許可</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="200"/>
+        <location filename="../../view/pages/setting_page.py" line="205"/>
         <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
         <translation>ブラウザ拡張は ghostdownloader:// プロトコルでデスクトップアプリを起動できます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="214"/>
+        <location filename="../../view/pages/setting_page.py" line="216"/>
         <source>关联 {0} 文件</source>
         <translation>{0} ファイルを関連付け</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="215"/>
+        <location filename="../../view/pages/setting_page.py" line="217"/>
         <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
         <translation>{0} ファイルをダブルクリックした時に Ghost Downloader で開く</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="222"/>
+        <location filename="../../view/pages/setting_page.py" line="224"/>
         <source>处理 {0} 链接</source>
         <translation>{0} リンクを処理</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="223"/>
+        <location filename="../../view/pages/setting_page.py" line="225"/>
         <source>点击 {0} 链接时唤起 Ghost Downloader</source>
         <translation>{0} リンクをクリックした時に Ghost Downloader を起動</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="233"/>
+        <location filename="../../view/pages/setting_page.py" line="232"/>
         <source>启用 Aria2 RPC 兼容</source>
         <translation>Aria2 RPC 互換を有効化</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="234"/>
+        <location filename="../../view/pages/setting_page.py" line="233"/>
         <source>兼容 Aria2 JSON-RPC 协议，可接收外部工具发送的下载链接</source>
         <translation>Aria2 JSON-RPC プロトコルと互換し、外部ツールからのダウンロードリンクを受信可能</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="238"/>
+        <location filename="../../view/pages/setting_page.py" line="237"/>
         <source>监听端口</source>
         <translation>リッスンポート</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="239"/>
+        <location filename="../../view/pages/setting_page.py" line="238"/>
         <source>Aria2 RPC 默认端口为 16800</source>
         <translation>Aria2 RPC のデフォルトポートは 16800</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="243"/>
+        <location filename="../../view/pages/setting_page.py" line="242"/>
         <source>令牌</source>
         <translation>トークン</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="244"/>
+        <location filename="../../view/pages/setting_page.py" line="243"/>
         <source>若设置，客户端需传入 token 才可创建任务</source>
         <translation>設定した場合、クライアントは token を送信しないとタスクを作成できません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="246"/>
+        <location filename="../../view/pages/setting_page.py" line="245"/>
         <source>可选</source>
         <translation>任意</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="250"/>
+        <location filename="../../view/pages/setting_page.py" line="249"/>
         <source>模拟浏览器指纹</source>
         <translation>ブラウザフィンガープリントをシミュレート</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="251"/>
+        <location filename="../../view/pages/setting_page.py" line="250"/>
         <source>为通过 Aria2 RPC 接收的任务附加浏览器 TLS 指纹与请求头</source>
         <translation>Aria2 RPC 経由で受信したタスクにブラウザの TLS フィンガープリントとリクエストヘッダーを付加します</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="258"/>
+        <location filename="../../view/pages/setting_page.py" line="257"/>
         <source>改变应用程序界面的缩放比例, 0% 为自动</source>
         <translation>アプリケーションUIのスケーリングを変更 (0%で自動)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="277"/>
+        <location filename="../../view/pages/setting_page.py" line="276"/>
         <source>在 Dock 栏中显示程序</source>
         <translation>Dock にアプリを表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="278"/>
+        <location filename="../../view/pages/setting_page.py" line="277"/>
         <source>关闭后可通过菜单栏图标继续使用程序</source>
         <translation>閉じた後もメニューバーアイコンからアプリを使い続けられます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="282"/>
+        <location filename="../../view/pages/setting_page.py" line="281"/>
         <source>在 Dock 图标上显示实时速度</source>
         <translation>Dock アイコンにリアルタイム速度を表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="283"/>
+        <location filename="../../view/pages/setting_page.py" line="282"/>
         <source>下载时在程序坞图标上叠加当前速度</source>
         <translation>ダウンロード時に Dock アイコンに現在の速度を重ねて表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="290"/>
+        <location filename="../../view/pages/setting_page.py" line="289"/>
         <source>在菜单栏显示实时速度</source>
         <translation>メニューバーにリアルタイム速度を表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="291"/>
+        <location filename="../../view/pages/setting_page.py" line="290"/>
         <source>下载时在菜单栏图标旁显示当前速度</source>
         <translation>ダウンロード時にメニューバーアイコンの横に現在の速度を表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="295"/>
+        <location filename="../../view/pages/setting_page.py" line="294"/>
         <source>语言</source>
         <translation>言語</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="296"/>
+        <location filename="../../view/pages/setting_page.py" line="295"/>
         <source>设置界面的首选语言</source>
         <translation>インターフェースの優先言語を設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="297"/>
+        <location filename="../../view/pages/setting_page.py" line="296"/>
         <source>使用系统设置</source>
         <translation>システム設定を使用</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="310"/>
+        <location filename="../../view/pages/setting_page.py" line="309"/>
         <source>切换到用户模式</source>
         <translation>ユーザーモードに切り替え</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="311"/>
-        <location filename="../../view/pages/setting_page.py" line="317"/>
+        <location filename="../../view/pages/setting_page.py" line="310"/>
+        <location filename="../../view/pages/setting_page.py" line="316"/>
         <source>数据存储模式</source>
         <translation>データストレージモード</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="312"/>
+        <location filename="../../view/pages/setting_page.py" line="311"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation>現在は Portable モード、データはアプリの隣に保存: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="316"/>
+        <location filename="../../view/pages/setting_page.py" line="315"/>
         <source>切换到 Portable 模式</source>
         <translation>Portable モードに切り替え</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <location filename="../../view/pages/setting_page.py" line="317"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation>現在はユーザーモード、データは保存先: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="322"/>
+        <location filename="../../view/pages/setting_page.py" line="321"/>
         <source>在应用程序启动时检查更新</source>
         <translation>アプリ起動時に更新を確認</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
+        <location filename="../../view/pages/setting_page.py" line="322"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>新しいバージョンはより安定し、より多くの機能を備えています</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="331"/>
+        <location filename="../../view/pages/setting_page.py" line="330"/>
         <source>关闭主窗口时</source>
         <translation>メインウィンドウを閉じたときの動作</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="332"/>
+        <location filename="../../view/pages/setting_page.py" line="331"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation>メインウィンドウを閉じた後、バックグラウンドで実行し続けるか終了するかを設定</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="332"/>
         <source>关闭时询问</source>
         <translation>閉じるときに確認</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="332"/>
         <source>继续在后台运行</source>
         <translation>引き続きバックグラウンドで実行</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="333"/>
+        <location filename="../../view/pages/setting_page.py" line="332"/>
         <source>退出程序</source>
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="348"/>
+        <location filename="../../view/pages/setting_page.py" line="347"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>フィードバックを提供して Ghost Downloader の改善にご協力ください。ログを確認して問題を調査することもできます</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="485"/>
+        <location filename="../../view/pages/setting_page.py" line="484"/>
         <source>用户模式</source>
         <translation>ユーザーモード</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="485"/>
+        <location filename="../../view/pages/setting_page.py" line="484"/>
         <source>Portable 模式</source>
         <translation>Portable モード</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="487"/>
+        <location filename="../../view/pages/setting_page.py" line="486"/>
         <source>切换数据存储模式</source>
         <translation>データストレージモードを切り替え</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="488"/>
+        <location filename="../../view/pages/setting_page.py" line="487"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4340,78 +4483,88 @@ FFmpeg: {2}</translation>
 データは新しい場所にコピーされ、プログラムは終了します。手動で再起動してください。</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
+        <location filename="../../view/pages/setting_page.py" line="497"/>
         <source>正在检查更新...</source>
         <translation>更新を確認中...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="513"/>
+        <location filename="../../view/pages/setting_page.py" line="507"/>
         <source>当前已是最新版本</source>
         <translation>現在のバージョンが最新です</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="514"/>
+        <location filename="../../view/pages/setting_page.py" line="508"/>
         <source>当前版本 {0}，最新版本 {1}</source>
         <translation>現在のバージョン {0}、最新バージョン {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="515"/>
         <source>检查更新失败</source>
         <translation>更新チェックに失敗</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="515"/>
         <source>无法获取最新版本信息</source>
         <translation>最新バージョン情報を取得できません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="532"/>
+        <location filename="../../view/pages/setting_page.py" line="525"/>
         <source>搜索设置</source>
         <translation>設定を検索</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="303"/>
+        <location filename="../../view/pages/setting_page.py" line="302"/>
         <source>开机启动</source>
         <translation>起動時に開始</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="304"/>
+        <location filename="../../view/pages/setting_page.py" line="118"/>
+        <source>使用系统 DNS</source>
+        <translation>システムDNSを使用</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="119"/>
+        <source>使用操作系统的 DNS 解析，兼容 TUN、VPN 和代理等网络环境</source>
+        <translation>OSのDNS解決を使用し、TUN、VPN、プロキシなどのネットワーク環境に対応</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="303"/>
         <source>在系统启动时静默运行 Ghost Downloader</source>
         <translation>システム起動時にGhost Downloaderをサイレント実行</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="337"/>
+        <location filename="../../view/pages/setting_page.py" line="336"/>
         <source>剪贴板监听</source>
         <translation>クリップボード監視</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="338"/>
+        <location filename="../../view/pages/setting_page.py" line="337"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>クリップボード内のリンクを自動検出し、ダウンロードタスクを追加</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="362"/>
+        <location filename="../../view/pages/setting_page.py" line="361"/>
         <source>打开作者的个人空间</source>
         <translation>作者のプロフィールを開く</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="362"/>
         <source>了解作者</source>
         <translation>作者について</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="362"/>
         <source>发现更多 {} 的作品</source>
         <translation>{} の他の作品を見つける</translation>
     </message>
     <message>
+        <location filename="../../view/pages/setting_page.py" line="345"/>
         <location filename="../../view/pages/setting_page.py" line="346"/>
-        <location filename="../../view/pages/setting_page.py" line="347"/>
         <source>提供反馈</source>
         <translation>フィードバックを提供</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="103"/>
+        <location filename="../../view/pages/setting_page.py" line="106"/>
         <source>最小再分配大小</source>
         <translation>最小再割り当てサイズ</translation>
     </message>
@@ -4428,63 +4581,63 @@ FFmpeg: {2}</translation>
         <translation type="vanished">フィードバックを提供してGhost Downloaderの改善に協力</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="350"/>
+        <location filename="../../view/pages/setting_page.py" line="349"/>
         <source>查看日志</source>
         <translation>ログを表示</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
+        <location filename="../../view/pages/setting_page.py" line="356"/>
+        <location filename="../../view/pages/setting_page.py" line="497"/>
         <source>检查更新</source>
         <translation>更新を確認</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="412"/>
+        <location filename="../../view/pages/setting_page.py" line="411"/>
         <source>已配置</source>
         <translation>設定済み</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="412"/>
+        <location filename="../../view/pages/setting_page.py" line="411"/>
         <source>重启软件后生效</source>
         <translation>再起動後に有効になります</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="422"/>
+        <location filename="../../view/pages/setting_page.py" line="421"/>
         <source>已复制配对令牌</source>
         <translation>ペアリングトークンをコピーしました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="428"/>
+        <location filename="../../view/pages/setting_page.py" line="427"/>
         <source>已重新生成配对令牌</source>
         <translation>ペアリングトークンを再生成しました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="428"/>
+        <location filename="../../view/pages/setting_page.py" line="427"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>新しいトークンがクリップボードにコピーされました</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="444"/>
         <source>解包失败</source>
         <translation>解凍に失敗</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="452"/>
+        <location filename="../../view/pages/setting_page.py" line="451"/>
         <source>未连接</source>
         <translation>未接続</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="454"/>
+        <location filename="../../view/pages/setting_page.py" line="453"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>接続済み v{} (デスクトップアプリ自己管理)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="456"/>
+        <location filename="../../view/pages/setting_page.py" line="455"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>接続済み v{} (ストアインストール)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="462"/>
+        <location filename="../../view/pages/setting_page.py" line="461"/>
         <source>选择导出路径</source>
         <translation>エクスポート先を選択</translation>
     </message>
@@ -4516,38 +4669,32 @@ FFmpeg: {2}</translation>
 <context>
     <name>SubtitleSelectDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="27"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="116"/>
+        <location filename="../../view/dialogs/subtitle_select.py" line="19"/>
         <source>选择字幕语言</source>
         <translation>字幕言語を選択</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="30"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="119"/>
+        <location filename="../../view/dialogs/subtitle_select.py" line="22"/>
         <source>全选</source>
         <translation>すべて選択</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="31"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="120"/>
+        <location filename="../../view/dialogs/subtitle_select.py" line="23"/>
         <source>全不选</source>
         <translation>すべて選択解除</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="43"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="132"/>
+        <location filename="../../view/dialogs/subtitle_select.py" line="35"/>
         <source>确定</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="44"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="133"/>
+        <location filename="../../view/dialogs/subtitle_select.py" line="36"/>
         <source>取消</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="89"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="182"/>
+        <location filename="../../view/dialogs/subtitle_select.py" line="81"/>
         <source>{0}/{1} 种语言</source>
         <translation>{0}/{1} 言語</translation>
     </message>
@@ -4586,87 +4733,117 @@ FFmpeg: {2}</translation>
 <context>
     <name>TaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="255"/>
+        <location filename="../../view/cards/task_cards.py" line="77"/>
+        <source>暂停/继续</source>
+        <translation>一時停止/再開</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="82"/>
+        <source>选择文件</source>
+        <translation>ファイルを選択</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="85"/>
+        <source>校验文件哈希</source>
+        <translation>ファイルハッシュを検証</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="92"/>
+        <source>打开文件</source>
+        <translation>ファイルを開く</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="97"/>
+        <source>打开文件夹</source>
+        <translation>フォルダを開く</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="98"/>
+        <source>删除</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <location filename="../../view/cards/task_cards.py" line="256"/>
         <source>文件不存在</source>
         <translation>ファイルが存在しません</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="258"/>
+        <location filename="../../view/cards/task_cards.py" line="259"/>
         <source>完成于 {}</source>
         <translation>{} に完了</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="261"/>
+        <location filename="../../view/cards/task_cards.py" line="262"/>
         <source>任务已经完成</source>
         <translation>タスクは完了しました</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="272"/>
+        <location filename="../../view/cards/task_cards.py" line="273"/>
         <source>下载过程中发生错误，请稍后重试</source>
         <translation>ダウンロード中にエラーが発生しました。しばらくしてから再試行してください</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="278"/>
+        <location filename="../../view/cards/task_cards.py" line="279"/>
         <source>任务已经暂停</source>
         <translation>タスクは一時停止中です</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="280"/>
+        <location filename="../../view/cards/task_cards.py" line="281"/>
         <source>任务正在等待</source>
         <translation>タスクは待機中です</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="326"/>
+        <location filename="../../view/cards/task_cards.py" line="327"/>
         <source>删除任务</source>
         <translation>タスクを削除</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="326"/>
+        <location filename="../../view/cards/task_cards.py" line="327"/>
         <source>确定要删除这个下载任务吗？</source>
         <translation>このダウンロードタスクを削除してもよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="327"/>
+        <location filename="../../view/cards/task_cards.py" line="328"/>
         <source>同时删除已下载的文件</source>
         <translation>ダウンロードしたファイルも同時に削除</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="336"/>
+        <location filename="../../view/cards/task_cards.py" line="337"/>
         <source>文件不存在，无法校验</source>
         <translation>ファイルが存在しないため検証できません</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="370"/>
+        <location filename="../../view/cards/task_cards.py" line="371"/>
         <source>复制下载链接</source>
         <translation>ダウンロードリンクをコピー</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="375"/>
+        <location filename="../../view/cards/task_cards.py" line="376"/>
         <source>复制校验值</source>
         <translation>検証値をコピー</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="380"/>
+        <location filename="../../view/cards/task_cards.py" line="381"/>
         <source>编辑任务参数...</source>
         <translation>タスクパラメータを編集...</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="384"/>
+        <location filename="../../view/cards/task_cards.py" line="385"/>
         <source>移到最前</source>
         <translation>最前面に移動</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="388"/>
+        <location filename="../../view/cards/task_cards.py" line="389"/>
         <source>重新下载</source>
         <translation>再ダウンロード</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="393"/>
+        <location filename="../../view/cards/task_cards.py" line="394"/>
         <source>移动到分类</source>
         <translation>カテゴリに移動</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="395"/>
+        <location filename="../../view/cards/task_cards.py" line="396"/>
         <source>未分类</source>
         <translation>未分類</translation>
     </message>
@@ -4769,6 +4946,155 @@ FFmpeg: {2}</translation>
     </message>
 </context>
 <context>
+    <name>TaskErrors</name>
+    <message>
+        <location filename="../../view/error_catalog.py" line="3"/>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="13"/>
+        <source>{name} 未安装，请在设置中安装</source>
+        <translation>{name} がインストールされていません。設定でインストールしてください</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="4"/>
+        <source>服务器返回了错误（{status}）</source>
+        <translation>サーバーがエラーを返しました（{status}）</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="5"/>
+        <source>无法建立 FTP 连接</source>
+        <translation>FTP接続を確立できません</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="6"/>
+        <source>进程异常退出（{code}）：{detail}</source>
+        <translation>プロセスが異常終了しました（{code}）: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../view/error_catalog.py" line="7"/>
+        <source>发生了意外错误：{detail}</source>
+        <translation>予期せぬエラーが発生しました: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="3"/>
+        <source>该种子已在下载中</source>
+        <translation>このトレントは既にダウンロード中です</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="4"/>
+        <source>至少需要选择一个文件</source>
+        <translation>少なくとも1つのファイルを選択する必要があります</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="5"/>
+        <source>BitTorrent 错误：{detail}</source>
+        <translation>BitTorrent エラー: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/error_catalog.py" line="6"/>
+        <source>BitTorrent 会话启动失败：{detail}</source>
+        <translation>BitTorrent セッション起動失敗: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="3"/>
+        <source>压缩包包含不安全路径：{path}</source>
+        <translation>アーカイブに安全でないパスが含まれています: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="4"/>
+        <source>压缩包未找到：{path}</source>
+        <translation>アーカイブが見つかりません: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="5"/>
+        <source>不支持的压缩格式：{name}</source>
+        <translation>サポートされていない圧縮形式: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="6"/>
+        <source>解压后未找到可执行文件：{name}</source>
+        <translation>解凍後に実行可能ファイルが見つかりません: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="7"/>
+        <source>无法读取校验文件：{path}</source>
+        <translation>検証ファイルを読み取れません: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="8"/>
+        <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
+        <translation>SHA256 検証失敗: 期待値 {expected}, 実際 {actual}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/disk_pack/error_catalog.py" line="9"/>
+        <source>下载的文件未找到：{path}</source>
+        <translation>ダウンロードされたファイルが見つかりません: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="3"/>
+        <source>ED2k 错误：{detail}</source>
+        <translation>ED2k エラー: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>
+        <source>FFmpeg 合并失败（{code}）：{detail}</source>
+        <translation>FFmpeg マージ失敗（{code}）: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="4"/>
+        <source>文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</source>
+        <translation>ファイルは有効なメディア形式ではありません。DRM保護またはダウンロード不完全の可能性: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="3"/>
+        <source>该视频在您所在地区不可用，请尝试配置代理（{detail}）</source>
+        <translation>この動画はあなたの地域では利用できません。プロキシを設定してください（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="4"/>
+        <source>视频不可用，可能已被删除或设为私密（{detail}）</source>
+        <translation>動画は利用できません。削除されたか非公開に設定された可能性があります（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="5"/>
+        <source>私密视频，需要已授权账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>非公開動画、認証済みアカウントのCookieが必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="6"/>
+        <source>会员专属视频，需要会员账号的 Cookie。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>メンバー限定動画、会員アカウントのCookieが必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="7"/>
+        <source>年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>年齢制限動画、ログインが必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="8"/>
+        <source>YouTube 需要人机验证。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</source>
+        <translation>YouTube のボット検証が必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="9"/>
+        <source>请求的格式不可用，请稍后重试（{detail}）</source>
+        <translation>リクエストされた形式は利用できません。後でもう一度お試しください（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="10"/>
+        <source>下载被拒绝（403），链接可能已失效（{detail}）</source>
+        <translation>ダウンロードが拒否されました（403）、リンクが無効になっている可能性があります（{detail}）</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="11"/>
+        <source>视频信息提取失败：{detail}</source>
+        <translation>動画情報の抽出に失敗: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="12"/>
+        <source>未找到可用的视频格式</source>
+        <translation>利用可能な動画形式が見つかりません</translation>
+    </message>
+</context>
+<context>
     <name>TaskPage</name>
     <message>
         <location filename="../../view/pages/task_page.py" line="167"/>
@@ -4829,9 +5155,24 @@ FFmpeg: {2}</translation>
         <translation>完了したタスク</translation>
     </message>
     <message>
+        <location filename="../../view/pages/task_page.py" line="810"/>
+        <source>文件删除受限</source>
+        <translation>ファイル削除が制限されています</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/task_page.py" line="811"/>
+        <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
+        <translation>macOS がファイル削除をブロックしました。システム設定 &gt; プライバシーとセキュリティ &gt; フルディスクアクセス で Ghost Downloader を追加してください</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/task_page.py" line="816"/>
+        <source>前往设置</source>
+        <translation>設定に移動</translation>
+    </message>
+    <message>
         <location filename="../../view/pages/task_page.py" line="163"/>
-        <location filename="../../view/pages/task_page.py" line="621"/>
-        <location filename="../../view/pages/task_page.py" line="633"/>
+        <location filename="../../view/pages/task_page.py" line="622"/>
+        <location filename="../../view/pages/task_page.py" line="634"/>
         <source>暂无下载任务</source>
         <translation>ダウンロードタスクはありません</translation>
     </message>
@@ -4866,7 +5207,7 @@ FFmpeg: {2}</translation>
         <translation>速度制限</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="349"/>
+        <location filename="../../view/pages/task_page.py" line="350"/>
         <source>搜索任务</source>
         <translation>タスクを検索</translation>
     </message>
@@ -4879,52 +5220,52 @@ FFmpeg: {2}</translation>
         <translation type="vanished">残り {}、必要 {}、タスクは自動開始されませんでした</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="518"/>
+        <location filename="../../view/pages/task_page.py" line="519"/>
         <source>删除任务</source>
         <translation>タスクを削除</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="518"/>
+        <location filename="../../view/pages/task_page.py" line="519"/>
         <source>确定要删除选中的下载任务吗？</source>
         <translation>選択したダウンロードタスクを削除してもよろしいですか？</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="519"/>
+        <location filename="../../view/pages/task_page.py" line="520"/>
         <source>同时删除已下载的文件</source>
         <translation>ダウンロードしたファイルも同時に削除</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="623"/>
+        <location filename="../../view/pages/task_page.py" line="624"/>
         <source>没有匹配筛选条件的任务</source>
         <translation>フィルター条件に一致するタスクがありません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="625"/>
+        <location filename="../../view/pages/task_page.py" line="626"/>
         <source>没有匹配的任务</source>
         <translation>一致するタスクがありません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="627"/>
+        <location filename="../../view/pages/task_page.py" line="628"/>
         <source>该分类下暂无任务</source>
         <translation>このカテゴリにはタスクがありません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="629"/>
+        <location filename="../../view/pages/task_page.py" line="630"/>
         <source>暂无活动任务</source>
         <translation>進行中のタスクはありません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="631"/>
+        <location filename="../../view/pages/task_page.py" line="632"/>
         <source>暂无完成任务</source>
         <translation>完了したタスクはありません</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="467"/>
+        <location filename="../../view/pages/task_page.py" line="468"/>
         <source>全部分类</source>
         <translation>すべてのカテゴリ</translation>
     </message>
     <message>
-        <location filename="../../view/pages/task_page.py" line="541"/>
+        <location filename="../../view/pages/task_page.py" line="542"/>
         <source>未分类</source>
         <translation>未分類</translation>
     </message>
@@ -4935,6 +5276,29 @@ FFmpeg: {2}</translation>
         <location filename="../../view/components/token_line_edit.py" line="119"/>
         <source>添加...</source>
         <translation>追加...</translation>
+    </message>
+</context>
+<context>
+    <name>TrackBar</name>
+    <message>
+        <location filename="../../view/components/track_bar.py" line="96"/>
+        <source>视频</source>
+        <translation>動画</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/track_bar.py" line="98"/>
+        <source>音频</source>
+        <translation>音声</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/track_bar.py" line="100"/>
+        <source>字幕</source>
+        <translation>字幕</translation>
+    </message>
+    <message>
+        <location filename="../../view/components/track_bar.py" line="102"/>
+        <source>封面</source>
+        <translation>カバー</translation>
     </message>
 </context>
 <context>
@@ -5053,47 +5417,57 @@ FFmpeg: {2}</translation>
 <context>
     <name>VideoSelectDialog</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="202"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="218"/>
         <source>选择视频</source>
         <translation>動画を選択</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="205"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="221"/>
         <source>全选</source>
         <translation>すべて選択</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="206"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="222"/>
         <source>全不选</source>
         <translation>すべて選択解除</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="207"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="223"/>
         <source>反选</source>
         <translation>選択を反転</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="219"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="235"/>
         <source>确定</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="220"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="236"/>
         <source>取消</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="226"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
         <source>标题</source>
         <translation>タイトル</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="226"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
         <source>时长</source>
         <translation>再生時間</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="288"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
+        <source>开始</source>
+        <translation>開始</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
+        <source>结束</source>
+        <translation>終了</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="320"/>
         <source>{0}/{1} 个视频</source>
         <translation>{0}/{1} 動画</translation>
     </message>
@@ -5204,19 +5578,19 @@ FFmpeg: {2}</translation>
 <context>
     <name>WelcomePage</name>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="266"/>
+        <location filename="../../view/windows/oobe_window.py" line="273"/>
         <source>欢迎使用 Ghost Downloader</source>
         <translation>Ghost Downloader へようこそ</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="270"/>
+        <location filename="../../view/windows/oobe_window.py" line="277"/>
         <source>快速、智能的下载管理器。
 接下来的几步将帮助你完成基本配置。</source>
         <translation>高速でスマートなダウンロードマネージャー。
 次のステップで基本設定を行います。</translation>
     </message>
     <message>
-        <location filename="../../view/windows/oobe_window.py" line="275"/>
+        <location filename="../../view/windows/oobe_window.py" line="282"/>
         <source>开始配置</source>
         <translation>設定を開始</translation>
     </message>
@@ -5352,27 +5726,36 @@ FFmpeg: {2}</translation>
 <context>
     <name>YtDlpDraftCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="307"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="366"/>
         <source>最佳画质</source>
         <translation>最適画質</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="324"/>
         <source>选择字幕</source>
-        <translation>字幕を選択</translation>
+        <translation type="vanished">字幕を選択</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="329"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="367"/>
+        <source>最佳音质</source>
+        <translation>最適音質</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="373"/>
+        <source>截取片段</source>
+        <translation>クリップを切り取り</translation>
+    </message>
+    <message>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="391"/>
         <source>选择视频</source>
         <translation>動画を選択</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="430"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="656"/>
         <source>未找到播放列表</source>
         <translation>プレイリストが見つかりません</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="435"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="661"/>
         <source>加载播放列表失败</source>
         <translation>プレイリストの読み込みに失敗</translation>
     </message>
@@ -5384,7 +5767,7 @@ FFmpeg: {2}</translation>
         <translation type="vanished">動画を選択</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="85"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="161"/>
         <source>{0} 个视频 · {1}</source>
         <translation>{0} 件の動画 · {1}</translation>
     </message>
@@ -5457,14 +5840,12 @@ FFmpeg: {2}</translation>
 <context>
     <name>card</name>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="911"/>
         <source>安装任务已创建</source>
-        <translation>インストールタスクが作成されました</translation>
+        <translation type="vanished">インストールタスクが作成されました</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="912"/>
         <source>请前往任务页查看安装进度</source>
-        <translation>タスクページでインストールの進行状況を確認してください</translation>
+        <translation type="vanished">タスクページでインストールの進行状況を確認してください</translation>
     </message>
 </context>
 <context>
