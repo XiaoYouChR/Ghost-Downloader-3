@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QEvent, QRect, QUrl, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QDesktopServices, QPainter, QPalette
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
-    SearchLineEdit, setThemeColor,
+    SearchLineEdit, setThemeColor, IconWidget, SubtitleLabel, isDarkTheme,
 )
 
 from app.config.cfg import CloseMode, cfg
@@ -37,32 +37,31 @@ class DropOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._initWidget()
+        self._initLayout()
 
     def _initWidget(self):
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self._icon = IconWidget(FluentIcon.FOLDER_ADD, self)
+        self._icon.setFixedSize(48, 48)
+        self._icon.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        self._label = SubtitleLabel(self.tr("松开以添加任务"), self)
+        self._label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
         self.hide()
 
-    def paintEvent(self, event):
-        from qfluentwidgets import isDarkTheme
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    def _initLayout(self):
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._icon, 0, Qt.AlignmentFlag.AlignCenter)
+        layout.addSpacing(8)
+        layout.addWidget(self._label, 0, Qt.AlignmentFlag.AlignCenter)
 
+    def paintEvent(self, event):
+        painter = QPainter(self)
         bgColor = QColor(0, 0, 0, 128) if isDarkTheme() else QColor(255, 255, 255, 180)
         painter.fillRect(self.rect(), bgColor)
-
-        cx, cy = self.width() // 2, self.height() // 2
-        iconSize = 48
-        iconRect = QRect(cx - iconSize // 2, cy - iconSize - 4, iconSize, iconSize)
-        FluentIcon.FOLDER_ADD.render(painter, iconRect)
-
-        textColor = QColor(255, 255, 255, 200) if isDarkTheme() else QColor(0, 0, 0, 180)
-        painter.setPen(textColor)
-        font = self.font()
-        font.setPixelSize(16)
-        painter.setFont(font)
-        textRect = QRect(0, cy + 4, self.width(), 30)
-        painter.drawText(textRect, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
-                         self.tr("松开以添加任务"))
 
 
 class MainWindow(MSFluentWindow):
