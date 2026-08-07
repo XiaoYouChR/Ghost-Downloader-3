@@ -498,7 +498,7 @@ class YtDlpDraftCard(DraftCard):
         self._refreshFileIcon()
 
     def _startMediaInfoFetch(self) -> None:
-        from features.yt_dlp_pack.pack import YouTubeParser
+        from .pack import YouTubeParser
         parser = YouTubeParser()
         self._coroutineRunner.submit(
             parser.fetchFormats(self._task.url),
@@ -626,7 +626,7 @@ class YtDlpDraftCard(DraftCard):
         if not task.files:
             self._videoSelectButton.hide()
             self._playlistSpinner.show()
-            from features.yt_dlp_pack.pack import YouTubeParser
+            from .pack import YouTubeParser
             parser = YouTubeParser()
             self._coroutineRunner.submit(
                 parser.fetchPlaylist(task.url),
