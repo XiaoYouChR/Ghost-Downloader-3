@@ -207,7 +207,7 @@ class GitHubConfig(PackConfig):
         githubGroup = CollapsibleSettingCardGroup(self.tr("GitHub 加速"), "github", parent)
         enableCard = SwitchSettingCard(
             FluentIcon.LINK, self.tr("启用 GitHub 加速"),
-            self.tr("命中 GitHub 文件链接时，自动改写为所选反向代理站"),
+            self.tr("优先使用所选代理站，不可用时自动切换其他站点或直连"),
             self.enabled, githubGroup,
         )
         proxySiteCard = GitHubProxySiteCard(self.submit, githubGroup)
