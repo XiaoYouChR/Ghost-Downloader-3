@@ -57,10 +57,13 @@ class PackConfig:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        for attrName, attrValue in cls.__dict__.items():
+        for attrName, attrValue in list(cls.__dict__.items()):
             if isinstance(attrValue, ConfigItem):
-                setattr(cfg.__class__, f"pack_{cls.__name__}_{attrName}", attrValue)
-                PackConfig._items[attrValue.key] = attrValue
+                # Reuse the registered item so a second import cannot reset
+                # its value to the default
+                item = PackConfig._items.setdefault(attrValue.key, attrValue)
+                setattr(cls, attrName, item)
+                setattr(cfg.__class__, f"pack_{cls.__name__}_{attrName}", item)
 
     @classmethod
     def load(cls) -> None:
