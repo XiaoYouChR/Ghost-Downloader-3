@@ -66,6 +66,7 @@ class HttpTaskStep(TaskStep):
     userAgent: str = ""
     subworkerCount: int = 8
     canUseRangeRequests: bool = False
+    httpByteOffset: int = 0
     lastModified: str = ""
     isAccelerated: bool = False
     outputFile: str = ""
@@ -265,7 +266,8 @@ class HttpTaskStep(TaskStep):
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 try:
-                    headers = {**self._effectiveHeaders, "range": f"bytes={subworker.position}-"}
+                    httpPos = self.httpByteOffset + subworker.position
+                    headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-"}
                     response = await client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
@@ -335,9 +337,11 @@ class HttpTaskStep(TaskStep):
         else:
             while subworker.position <= subworker.end:
                 try:
+                    httpPos = self.httpByteOffset + subworker.position
+                    httpEnd = self.httpByteOffset + subworker.end
                     headers = {
                         **self._effectiveHeaders,
-                        "range": f"bytes={subworker.position}-{subworker.end}",
+                        "range": f"bytes={httpPos}-{httpEnd}",
                     }
                     response = await client.get(self._effectiveUrl, headers=headers)
                     try:

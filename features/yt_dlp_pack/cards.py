@@ -16,7 +16,8 @@ from app.models.task import TaskStatus
 from app.platform.filesystem import toSafeFilename
 from app.view.cards.draft_cards import DraftCard
 from app.view.cards.task_cards import MultiFileTaskCard, FieldSpec, SPEED_FIELD, ETA_FIELD
-from app.view.components.track_bar import TrackBar
+from app.view.components.range_slider import RangeSlider
+from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .config import ytDlpConfig
@@ -182,6 +183,32 @@ def toYtDlpNameText(task: YouTubeTask, speed: int, received: int) -> str | None:
     return f"{task.name} ({label})" if label else None
 
 
+def parseTimeInput(text: str) -> int:
+    text = text.strip()
+    if not text:
+        return 0
+    parts = text.split(":")
+    try:
+        if len(parts) == 2:
+            return int(parts[0]) * 60 + int(parts[1])
+        if len(parts) == 3:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        return int(text)
+    except ValueError:
+        return 0
+
+
+def toTimeText(seconds: int) -> str:
+    if seconds <= 0:
+        return ""
+    m, s = divmod(seconds, 60)
+    return f"{m}:{s:02d}"
+
+
+COL_START = 2
+COL_END = 3
+
+
 class VideoSelectDialog(MessageBoxBase):
 
     def __init__(self, task, parent=None):
@@ -204,19 +231,23 @@ class VideoSelectDialog(MessageBoxBase):
         self._refreshSummary()
 
     def _initWidget(self) -> None:
-        self.widget.setMinimumWidth(550)
+        self.widget.setMinimumWidth(650)
         self.yesButton.setText(self.tr("确定"))
         self.cancelButton.setText(self.tr("取消"))
 
         self.treeView.setRootIsDecorated(False)
         self.treeView.setUniformRowHeights(True)
-        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
 
-        self.treeModel.setHorizontalHeaderLabels([self.tr("标题"), self.tr("时长")])
+        self.treeModel.setHorizontalHeaderLabels([
+            self.tr("标题"), self.tr("时长"), self.tr("开始"), self.tr("结束"),
+        ])
         self.treeView.setModel(self.treeModel)
         self.treeView.header().setStretchLastSection(False)
         self.treeView.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.treeView.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self.treeView.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
         for file in self._files:
             title = file.relativePath.strip() or f"视频 {file.index + 1}"
@@ -233,7 +264,12 @@ class VideoSelectDialog(MessageBoxBase):
             durationItem = QStandardItem(durationText)
             durationItem.setEditable(False)
 
-            self.treeModel.appendRow([nameItem, durationItem])
+            startItem = QStandardItem(toTimeText(file.startTime))
+            startItem.setData(file.index, Qt.ItemDataRole.UserRole)
+            endItem = QStandardItem(toTimeText(file.endTime))
+            endItem.setData(file.index, Qt.ItemDataRole.UserRole)
+
+            self.treeModel.appendRow([nameItem, durationItem, startItem, endItem])
 
     def _initLayout(self) -> None:
         actionsLayout = QHBoxLayout()
@@ -255,7 +291,14 @@ class VideoSelectDialog(MessageBoxBase):
         self.selectAllButton.clicked.connect(lambda: self._setAll(True))
         self.clearButton.clicked.connect(lambda: self._setAll(False))
         self.invertButton.clicked.connect(self._onInvert)
-        self.treeModel.itemChanged.connect(lambda _: self._refreshSummary())
+        self.treeModel.itemChanged.connect(self._onItemChanged)
+
+    def _onItemChanged(self, item: QStandardItem) -> None:
+        if item.column() in (COL_START, COL_END):
+            formatted = toTimeText(parseTimeInput(item.text()))
+            if item.text() != formatted:
+                item.setText(formatted)
+        self._refreshSummary()
 
     def _setAll(self, checked: bool) -> None:
         state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
@@ -283,6 +326,17 @@ class VideoSelectDialog(MessageBoxBase):
             for row in range(self.treeModel.rowCount())
             if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
         }
+
+    def updateTimeRanges(self, files) -> None:
+        for row in range(self.treeModel.rowCount()):
+            fileIndex = self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            startText = self.treeModel.item(row, COL_START).text() if self.treeModel.item(row, COL_START) else ""
+            endText = self.treeModel.item(row, COL_END).text() if self.treeModel.item(row, COL_END) else ""
+            for f in files:
+                if f.index == fileIndex:
+                    f.startTime = parseTimeInput(startText)
+                    f.endTime = parseTimeInput(endText)
+                    break
 
 
 class YtDlpDraftCard(DraftCard):
@@ -315,6 +369,22 @@ class YtDlpDraftCard(DraftCard):
             self._trackBar.coverButton.setTrackEnabled(False)
             self._trackBar.spinner.show()
 
+        self._trimButton = TrackButton(FluentIcon.CUT, self)
+        self._trimButton.setToolTip(self.tr("截取片段"))
+        self._trimButton.setChecked(False)
+
+        self._rangeSlider = RangeSlider(
+            self,
+            formatter=lambda s: f"{s // 60}:{s % 60:02d}",
+            parser=parseTimeInput,
+        )
+        self._rangeSlider.hide()
+        if hasMediaInfo:
+            duration = int(mediaInfo.get("duration", 0))
+            if duration > 0:
+                self._rangeSlider.setRange(0, duration)
+                self._rangeSlider.setValues(0, duration)
+
         self._videoSelectButton = TransparentToolButton(FluentIcon.LIBRARY, self)
         self._videoSelectButton.setFixedSize(28, 28)
         self._videoSelectButton.installEventFilter(ToolTipFilter(self._videoSelectButton))
@@ -332,6 +402,7 @@ class YtDlpDraftCard(DraftCard):
     def _initLayout(self) -> None:
         super()._initLayout()
         self.layout().addWidget(self._trackBar)
+        self.layout().addWidget(self._trimButton)
         self.layout().addWidget(self._videoSelectButton)
         self.layout().addWidget(self._playlistSpinner)
 
@@ -346,6 +417,8 @@ class YtDlpDraftCard(DraftCard):
             lambda: self._trackBar.coverButton.setChecked(not self._trackBar.coverButton.isChecked())
         )
         self._trackBar.coverButton.toggled.connect(self._onTrackToggled)
+        self._trimButton.clicked.connect(self._onTrimToggled)
+        self._rangeSlider.rangeChanged.connect(self._onRangeChanged)
         self._videoSelectButton.clicked.connect(self._onVideoSelectClicked)
 
     def _onTrackToggled(self) -> None:
@@ -370,6 +443,39 @@ class YtDlpDraftCard(DraftCard):
         if subtitleEnabled:
             self._trackBar.subtitleButton.setChecked(bool(task.subtitleLanguages.strip()))
         self._videoSelectButton.setVisible(hasMedia and task.isPlaylist)
+
+    def _onTrimToggled(self) -> None:
+        checked = not self._trimButton.isChecked()
+        self._trimButton.setChecked(checked)
+        self._rangeSlider.setVisible(checked)
+        if checked:
+            self.setFixedHeight(87)
+            self.layout().setContentsMargins(10, 2, 10, 54)
+            task: YouTubeTask = self._task
+            if not task.files:
+                from .task import YouTubeFile
+                task.files = [YouTubeFile(index=0, relativePath="")]
+        else:
+            self.setFixedHeight(35)
+            self.layout().setContentsMargins(10, 2, 10, 2)
+            self._rangeSlider.clear()
+            file = self._task.files[0] if self._task.files else None
+            if file:
+                file.startTime = 0
+                file.endTime = 0
+        w = self
+        while w := w.parentWidget():
+            w.updateGeometry()
+
+    def _onRangeChanged(self, start: int, end: int) -> None:
+        file = self._task.files[0] if self._task.files else None
+        if file:
+            file.startTime = start
+            file.endTime = end
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._rangeSlider.setGeometry(10, 37, self.width() - 20, 50)
 
     def _onVideoQualityPicked(self, value: str) -> None:
         self._task.maxVideoHeight = int(value)
@@ -425,7 +531,80 @@ class YtDlpDraftCard(DraftCard):
             task.setCoverUrl(thumbnailUrl)
             self._trackBar.coverButton.setTrackEnabled(True)
 
+        duration = int(mediaInfo.get("duration", 0))
+        if duration > 0:
+            self._rangeSlider.setRange(0, duration)
+            self._rangeSlider.setValues(0, duration)
+
+        storyboardCandidates = [
+            f for f in (mediaInfo.get("formats") or [])
+            if f.get("format_note") == "storyboard" and f.get("columns") and f.get("rows")
+        ]
+        storyboardFmt = max(storyboardCandidates, key=lambda f: f.get("width", 0), default=None)
+        if storyboardFmt:
+            self._fetchStoryboard(storyboardFmt)
+
         self._refreshSummary()
+
+    def _fetchStoryboard(self, fmt: dict) -> None:
+        fragments = fmt.get("fragments") or []
+        if not fragments:
+            return
+        columns = fmt.get("columns", 5)
+        rows = fmt.get("rows", 5)
+        framesPerSheet = columns * rows
+        firstDuration = fragments[0].get("duration", 5.0)
+        interval = firstDuration / framesPerSheet
+
+        async def download():
+            from PySide6.QtGui import QPixmap
+            from app.client import buildClient
+            client = buildClient()
+            try:
+                sheets: list[QPixmap] = []
+                for frag in fragments:
+                    url = frag.get("url") or frag.get("path", "")
+                    if not url:
+                        continue
+                    response = await client.get(url)
+                    try:
+                        data = await response.bytes()
+                    finally:
+                        response.close()
+                    pm = QPixmap()
+                    pm.loadFromData(data)
+                    if not pm.isNull():
+                        sheets.append(pm)
+                return sheets
+            finally:
+                client.close()
+
+        self._coroutineRunner.submit(
+            download(),
+            done=lambda sheets: self._onStoryboardLoaded(sheets, interval, columns, rows),
+            owner=self,
+        )
+
+    def _onStoryboardLoaded(self, sheets, interval, columns, rows) -> None:
+        if not sheets:
+            return
+        framesPerSheet = columns * rows
+
+        def provider(value: int):
+            from PySide6.QtGui import QPixmap
+            frameIndex = int(value / interval)
+            sheetIdx = frameIndex // framesPerSheet
+            if sheetIdx >= len(sheets):
+                return None
+            sheet = sheets[sheetIdx]
+            local = frameIndex % framesPerSheet
+            col = local % columns
+            row = local // columns
+            frameW = sheet.width() // columns
+            frameH = sheet.height() // rows
+            return sheet.copy(col * frameW, row * frameH, frameW, frameH)
+
+        self._rangeSlider.setPreviewProvider(provider)
 
     def _onMediaInfoFailed(self, error: str) -> None:
         self._trackBar.spinner.hide()
@@ -453,11 +632,13 @@ class YtDlpDraftCard(DraftCard):
                 parser.fetchPlaylist(task.url),
                 done=self._onPlaylistLoaded,
                 failed=self._onPlaylistFailed,
+                owner=self,
             )
             return
         dialog = VideoSelectDialog(task, self.window())
         try:
             if dialog.exec():
+                dialog.updateTimeRanges(task.files)
                 task.setSelection(dialog.selectedIndexes())
                 self.nameLabel.setText(task.name)
         finally:
@@ -489,6 +670,7 @@ class YtDlpTaskCard(MultiFileTaskCard):
         dialog = VideoSelectDialog(self._task, self.window())
         try:
             if dialog.exec():
+                dialog.updateTimeRanges(self._task.files)
                 self._taskService.applySelection(self._task, dialog.selectedIndexes())
                 self.refresh(force=True)
         finally:
