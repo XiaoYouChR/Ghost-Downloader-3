@@ -107,7 +107,10 @@ class ProgressToast(InfoBar):
             self._barColor = barColor(UpdateState.FAILED)
             self.iconWidget.icon = InfoBarIcon.ERROR
             self.title = self.tr("下载更新失败")
-            self.content = info.error or self.tr("未知错误")
+            self.content = (
+                QCoreApplication.translate("UpdateErrors", info.error)
+                if info.error else self.tr("未知错误")
+            )
             self._retryButton.show()
             self._restartButton.hide()
             self._fillTimer.stop()
