@@ -269,7 +269,12 @@ class TaskCard(CardWidget):
             error = task.lastError
             if error:
                 text = QCoreApplication.translate("TaskErrors", error.message)
-                self._setStatus(text.format_map(error.params) if error.params else text)
+                params = {
+                    key: QCoreApplication.translate("TaskErrors", value)
+                    if key == "detail" and isinstance(value, str) else value
+                    for key, value in error.params.items()
+                }
+                self._setStatus(text.format_map(params) if params else text)
             else:
                 self._setStatus(self.tr("下载过程中发生错误，请稍后重试"))
 

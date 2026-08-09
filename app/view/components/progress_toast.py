@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QRectF, QSize, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import QColor, QPainter, QPainterPath
 from qfluentwidgets import (
     FluentIcon, FluentStyleSheet, InfoBar, InfoBarIcon, InfoBarPosition,
@@ -111,7 +111,10 @@ class ProgressToast(InfoBar):
             self._barColor = barColor(UpdateState.FAILED)
             self.iconWidget.icon = InfoBarIcon.ERROR
             self.title = self.tr("下载更新失败")
-            self.content = info.error or self.tr("未知错误")
+            self.content = (
+                QCoreApplication.translate("UpdateErrors", info.error)
+                if info.error else self.tr("未知错误")
+            )
             self._retryButton.show()
             self._stopDismissTimer()
             self._fillTimer.stop()
