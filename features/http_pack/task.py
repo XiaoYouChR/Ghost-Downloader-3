@@ -12,7 +12,6 @@ from struct import unpack, pack
 from loguru import logger
 
 from app.client import buildClient, toEmulation
-from wreq.exceptions import DecodingError as WreqDecodingError, RequestError as WreqRequestError
 from app.config.cfg import cfg
 from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
@@ -267,7 +266,7 @@ class HttpTaskStep(TaskStep):
             while True:
                 try:
                     httpPos = self.httpByteOffset + subworker.position
-                    headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-"}
+                    headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-", "accept-encoding": "identity"}
                     response = await client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
@@ -291,10 +290,6 @@ class HttpTaskStep(TaskStep):
                     raise
                 except (PermanentDownloadError, RangeNotSupportedError):
                     raise
-                except (WreqDecodingError, WreqRequestError):
-                    # CDN 只存了 Brotli 压缩版，range 切的是压缩流中间，无法解压
-                    # TODO: 并发下载压缩流 + 下载后统一解压，避免降级丢失并发速度
-                    raise RangeNotSupportedError()
                 except Exception as e:
                     if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
                         raise
@@ -342,6 +337,7 @@ class HttpTaskStep(TaskStep):
                     headers = {
                         **self._effectiveHeaders,
                         "range": f"bytes={httpPos}-{httpEnd}",
+                        "accept-encoding": "identity",
                     }
                     response = await client.get(self._effectiveUrl, headers=headers)
                     try:
@@ -374,10 +370,6 @@ class HttpTaskStep(TaskStep):
                     raise
                 except (PermanentDownloadError, RangeNotSupportedError):
                     raise
-                except (WreqDecodingError, WreqRequestError):
-                    # CDN 只存了 Brotli 压缩版，range 切的是压缩流中间，无法解压
-                    # TODO: 并发下载压缩流 + 下载后统一解压，避免降级丢失并发速度
-                    raise RangeNotSupportedError()
                 except Exception as e:
                     if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
                         raise
