@@ -1,92 +1,107 @@
 name: Bug 报告
-description: 如果你在使用过程中遇到了问题，请按照下面的模板提交一个 Bug 报告，我们会尽快调查并修复这个问题。
-title: "[Bug] 我的标题"
-assignees: XiaoYouChR
+description: 提交 Bug 报告
+title: "[Bug] "
 labels:
   - "🐛Bug"
 body:
-- type: markdown
+- type: checkboxes
+  id: no-duplicate
   attributes:
-    value: |
-      ## 写在开头
-      🚨 请务必完整填写下面的内容，如果缺少必要的信息，开发者可能会在未调查的情况下直接关闭问题 🚨
+    label: 检查清单
+    options:
+      - label: 我已搜索现有 Issue，确认没有重复
+        required: true
 
 - type: textarea
   id: description
+  attributes:
+    label: 描述
+    description: 简述你遇到的问题
   validations:
     required: true
-  attributes:
-     label: Bug 描述
-     description: 请简短的描述你遇到的问题
 
 - type: textarea
   id: repro-steps
+  attributes:
+    label: 复现步骤
+    render: markdown
+    placeholder: |
+      1. 打开应用
+      2. 进入 '...'
+      3. 点击 '...'
+      4. 出现问题
   validations:
     required: true
-  attributes:
-     label: 复现问题的步骤
-     render: markdown
-     description: 请提供复现问题的步骤，如果不能，请写明原因
-     placeholder: |
-        干净清晰的复现步骤有助于开发者更快定位问题所在，你所遇到的问题也会获得更高的优先级.
 
-        示例步骤:
-        1. 打开应用
-        2. 进入 '...'
-        3. 点击 '....'
-        4. 滚动至 '....'
-        5. 发现问题
+- type: input
+  id: source-url
+  attributes:
+    label: 复现源链接
+    description: 触发此问题的下载链接，与链接无关填 N/A
+    placeholder: "https://example.com/file.zip 或 N/A"
+  validations:
+    required: true
 
 - type: textarea
   id: expected-behavior
-  validations:
-    required: false
   attributes:
-     label: 预期行为
-     description: 简要描述你希望看到什么样的结果
-     render: markdown
+    label: 预期行为
+    render: markdown
 
 - type: textarea
   id: screenshots
   attributes:
-     label: 截图
-     description: 如果可以，提交截图更有助于我们分析问题
-
-- type: checkboxes
-  id: environment-app-target-version
-  attributes:
-     label: 系统版本
-     description: 选择一个你发现问题的系统版本
-     options:
-       - label: Windows 10 2004 - 22H2 (Build 19041 - 19045)
-       - label: Windows 11 21H2 (Build 22000)
-       - label: Windows 11 22H2 (Build 22621)
-       - label: Windows 11 23H2 (Build 22631)
-       - label: Windows 11 24H2 (Build 26100)
-       - label: Windows 11 25H2 (Build 26200)
-       - label: 其它 (macOS 或 Linux, 请在下方备注系统版本)
+    label: 截图
 
 - type: input
-  id: environment-app-target-other-version
+  id: gd-version
   attributes:
-     label: 其它系统版本
-     description: 如果你是在特别的系统版本中运行应用，请注明系统版本
+    label: Ghost Downloader 版本
+    placeholder: "例: v4.2.6"
+  validations:
+    required: true
 
 - type: input
-  id: form-factor
+  id: extension-version
   attributes:
-      label: 处理器型号
-      description: 处理器架构和指令集信息有助于我们分析问题
+    label: 浏览器扩展版本
+    description: 与扩展无关填 N/A
+    placeholder: "例: 1.2.0 或 N/A"
+  validations:
+    required: true
+
+- type: dropdown
+  id: os
+  attributes:
+    label: 操作系统
+    options:
+      - Windows 10
+      - Windows 11
+      - macOS
+      - Linux
+      - Android
+  validations:
+    required: true
+
+- type: input
+  id: os-detail
+  attributes:
+    label: 系统版本详情
+    description: Windows 请运行 winver，Linux 请附带 glibc 版本（运行 ldd --version），Android 请注明版本、设备和 ROM 名称
+    placeholder: "例: 24H2 Build 26200 / macOS 15.1 / Fedora 44 glibc 2.41 / Android 16 OPPO Find X8s ColorOS 16"
+  validations:
+    required: true
 
 - type: textarea
   id: log-info
   attributes:
-     label: 日志记录
-     description: 请`粘贴报错时自动复制的报错内容`或者打开软件后依次点击`设置->关于->提供反馈->查看日志`后上传`GhostDownloader.log`文件
+    label: 日志
+    description: 粘贴报错内容，或 设置→关于→提供反馈→查看日志 后上传 GhostDownloader.log
+  validations:
+    required: true
 
 - type: textarea
   id: additional-context
   attributes:
-     label: 备注
-     description: 添加你认为必要的其他信息, 比如是否愿意提交 Pull Request 来修复这个问题
-     render: markdown
+    label: 备注
+    render: markdown

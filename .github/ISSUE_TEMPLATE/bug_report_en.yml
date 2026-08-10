@@ -1,92 +1,107 @@
-name: Bug report (EN)
-description: If you encountered a problem while using the app, please submit a bug report with the form below. We will investigate and fix it as soon as possible.
-title: "[Bug] My title"
-assignees: XiaoYouChR
+name: Bug Report (EN)
+description: Submit a bug report
+title: "[Bug] "
 labels:
   - "🐛Bug"
 body:
-- type: markdown
+- type: checkboxes
+  id: no-duplicate
   attributes:
-    value: |
-      ## Before you start
-      🚨 Please fill out the form below as completely as possible. If key details are missing, the issue may be closed before investigation. 🚨
+    label: Checklist
+    options:
+      - label: I have searched existing issues and confirmed this is not a duplicate
+        required: true
 
 - type: textarea
   id: description
+  attributes:
+    label: Description
+    description: Briefly describe the problem
   validations:
     required: true
-  attributes:
-     label: Bug description
-     description: Briefly describe the problem you encountered
 
 - type: textarea
   id: repro-steps
+  attributes:
+    label: Steps to reproduce
+    render: markdown
+    placeholder: |
+      1. Open the app
+      2. Go to '...'
+      3. Click '...'
+      4. Issue appears
   validations:
     required: true
-  attributes:
-     label: Steps to reproduce
-     render: markdown
-     description: Provide the steps to reproduce the issue. If you cannot reproduce it consistently, please explain why
-     placeholder: |
-        Clear reproduction steps help us locate the problem faster and give your report a higher priority.
 
-        Example steps:
-        1. Open the app
-        2. Go to '...'
-        3. Click '....'
-        4. Scroll to '....'
-        5. Notice the issue
+- type: input
+  id: source-url
+  attributes:
+    label: Source URL
+    description: The download link that triggered this issue. Enter N/A if not link-related
+    placeholder: "https://example.com/file.zip or N/A"
+  validations:
+    required: true
 
 - type: textarea
   id: expected-behavior
-  validations:
-    required: false
   attributes:
-     label: Expected behavior
-     description: Briefly describe what you expected to happen
-     render: markdown
+    label: Expected behavior
+    render: markdown
 
 - type: textarea
   id: screenshots
   attributes:
-     label: Screenshots
-     description: If possible, attach screenshots to help us analyze the issue
-
-- type: checkboxes
-  id: environment-app-target-version
-  attributes:
-     label: Operating system version
-     description: Select the system version where you encountered the issue
-     options:
-       - label: Windows 10 2004 - 22H2 (Build 19041 - 19045)
-       - label: Windows 11 21H2 (Build 22000)
-       - label: Windows 11 22H2 (Build 22621)
-       - label: Windows 11 23H2 (Build 22631)
-       - label: Windows 11 24H2 (Build 26100)
-       - label: Windows 11 25H2 (Build 26200)
-       - label: Other (macOS or Linux, please specify below)
+    label: Screenshots
 
 - type: input
-  id: environment-app-target-other-version
+  id: gd-version
   attributes:
-     label: Other system version
-     description: If you are running the app on a different or special system version, please specify it here
+    label: Ghost Downloader version
+    placeholder: "e.g. v4.2.6"
+  validations:
+    required: true
 
 - type: input
-  id: form-factor
+  id: extension-version
   attributes:
-      label: Processor model
-      description: CPU architecture and instruction set details help us analyze the issue
+    label: Browser extension version
+    description: Enter N/A if not extension-related
+    placeholder: "e.g. 1.2.0 or N/A"
+  validations:
+    required: true
+
+- type: dropdown
+  id: os
+  attributes:
+    label: Operating system
+    options:
+      - Windows 10
+      - Windows 11
+      - macOS
+      - Linux
+      - Android
+  validations:
+    required: true
+
+- type: input
+  id: os-detail
+  attributes:
+    label: OS version details
+    description: Windows run winver, Linux include glibc version (run ldd --version), Android include version, device and ROM name
+    placeholder: "e.g. 24H2 Build 26200 / macOS 15.1 / Fedora 44 glibc 2.41 / Android 16 OPPO Find X8s ColorOS 16"
+  validations:
+    required: true
 
 - type: textarea
   id: log-info
   attributes:
-     label: Logs
-     description: Please `paste the copied error message` or open the app and go to `Settings -> About -> Provide feedback -> View logs`, then upload the `GhostDownloader.log` file
+    label: Logs
+    description: Paste the error message, or go to Settings → About → Feedback → View logs and upload GhostDownloader.log
+  validations:
+    required: true
 
 - type: textarea
   id: additional-context
   attributes:
-     label: Additional context
-     description: Add any other information you think is helpful, such as whether you would like to submit a pull request to fix this issue
-     render: markdown
+    label: Additional context
+    render: markdown
