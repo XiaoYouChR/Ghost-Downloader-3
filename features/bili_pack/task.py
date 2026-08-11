@@ -377,9 +377,6 @@ class BilibiliMergeStep(FFmpegStep):
                     f.write(header)
                     with open(path, "rb") as seg:
                         shutil.copyfileobj(seg, f)
-                # Path.rename cannot replace an existing file on Windows.
-                # The segment download already created the target, so use
-                # replace semantics when installing the patched header.
                 tmp.replace(path)
 
         hasVideo = self._videoPath.exists()
