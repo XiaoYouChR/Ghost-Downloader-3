@@ -377,7 +377,7 @@ class BilibiliMergeStep(FFmpegStep):
                     f.write(header)
                     with open(path, "rb") as seg:
                         shutil.copyfileobj(seg, f)
-                tmp.rename(path)
+                tmp.replace(path)
 
         hasVideo = self._videoPath.exists()
         hasAudio = self._audioPath.exists()
