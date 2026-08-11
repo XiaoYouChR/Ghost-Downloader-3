@@ -270,6 +270,13 @@ class SettingPage(ScrollArea):
                                     self.tr("设置窗口背景透明效果和透明材质"),
                                     texts=["Acrylic", "Mica", "MicaAlt", "Aero", "None"]),
             )
+        elif sys.platform == "darwin":
+            personalCards.append(
+                ComboBoxSettingCard(cfg.backgroundEffect, FluentIcon.TRANSPARENT,
+                                    self.tr("窗口背景透明材质"),
+                                    self.tr("设置窗口背景透明效果和透明材质"),
+                                    texts=["Acrylic", "None"]),
+            )
         personalCards.append(self.zoomCard)
         if sys.platform == "darwin":
             self.showDockIconCard = SwitchSettingCard(

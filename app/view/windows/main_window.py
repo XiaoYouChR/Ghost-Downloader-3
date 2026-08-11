@@ -79,6 +79,7 @@ class MainWindow(MSFluentWindow):
     ):
         self._isGeometryRestored = False
         self._isBackgroundEffectDirty = False
+        self._macVisualEffectView = None
         self.searchEdit = None
         self._dropOverlay = None
         super().__init__(parent)
@@ -105,7 +106,10 @@ class MainWindow(MSFluentWindow):
         self.setWindowIcon(QIcon(":/image/logo.png"))
         self.setWindowTitle("Ghost Downloader")
         self.setMinimumSize(960, 540)
-        self._refreshBackgroundEffect()
+        if sys.platform == "win32":
+            self._refreshBackgroundEffect()
+        elif sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
+            self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.titleBar.hBoxLayout.insertSpacing(2, 6)
         if sys.platform == "darwin":
             self.titleBar.hBoxLayout.insertSpacing(0, 60)
@@ -141,7 +145,10 @@ class MainWindow(MSFluentWindow):
         return QRect(0, 10, 75, size.height())
 
     def _normalBackgroundColor(self):
-        from qfluentwidgets import isDarkTheme
+        if sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
+            if isDarkTheme():
+                return QColor(0, 0, 0, 48)
+            return QColor(255, 255, 255, 48)
         if self.styleSheet() == "":
             return self._darkBackgroundColor if isDarkTheme() else self._lightBackgroundColor
         return QColor(0, 0, 0, 0)
@@ -221,9 +228,11 @@ class MainWindow(MSFluentWindow):
         QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
 
         if sys.platform == "win32":
-            cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffect)
-        if sys.platform == "darwin":
+            cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectWin)
+        elif sys.platform == "darwin":
+            cfg.backgroundEffect.valueChanged.connect(self._setBackgroundEffectMac)
             QShortcut(QKeySequence.StandardKey.Close, self).activated.connect(self._onCloseClicked)
+
 
     def addUrls(self, urls: list[str]) -> None:
         dialog = self._draftDialog
@@ -425,6 +434,8 @@ class MainWindow(MSFluentWindow):
                 self.move(desktop.center() - self.rect().center())
         if self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
+        if sys.platform == "darwin":
+            self._refreshBackgroundEffect()
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
@@ -462,7 +473,7 @@ class MainWindow(MSFluentWindow):
             self._isBackgroundEffectDirty = True
             return
         self._isBackgroundEffectDirty = False
-        if sys.platform == "win32":
+        if sys.platform in ("win32", "darwin"):
             self._refreshBackgroundEffect()
 
     def _onSystemColorSchemeChanged(self, colorScheme) -> None:
@@ -477,12 +488,11 @@ class MainWindow(MSFluentWindow):
 
     def _refreshBackgroundEffect(self) -> None:
         if sys.platform == "win32":
-            self._setBackgroundEffect(cfg.backgroundEffect.value)
+            self._setBackgroundEffectWin(cfg.backgroundEffect.value)
+        elif sys.platform == "darwin":
+            self._setBackgroundEffectMac(cfg.backgroundEffect.value)
 
-    def _setBackgroundEffect(self, value: str) -> None:
-        if sys.platform != "win32":
-            return
-        from qfluentwidgets import isDarkTheme
+    def _setBackgroundEffectWin(self, value: str) -> None:
         self.windowEffect.removeBackgroundEffect(self.winId())
         isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
 
@@ -513,6 +523,80 @@ class MainWindow(MSFluentWindow):
                 self.titleBar.minBtn.show()
                 self.titleBar.maxBtn.show()
 
+    def paintEvent(self, e):
+        if self._macVisualEffectView is not None:
+            painter = QPainter(self)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+            painter.fillRect(self.rect(), self.backgroundColor)
+            # Source fill skips FluentWidget→MacFramelessWindow paint; re-apply traffic lights
+            self._updateSystemTitleBar()
+            return
+        super().paintEvent(e)
+
+    def _setBackgroundEffectMac(self, value: str) -> None:
+        if value == "None":
+            self._removeMacAcrylicEffect()
+            return
+
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        if not self.isVisible():
+            self.backgroundColorAni.stop()
+            self.setBackgroundColor(self._normalBackgroundColor())
+            return
+
+        if self._macVisualEffectView is not None:
+            self._setMacAcrylicAppearance()
+            self.backgroundColorAni.stop()
+            self.setBackgroundColor(self._normalBackgroundColor())
+            return
+
+        import Cocoa
+        from qframelesswindow.utils.mac_utils import getNSWindow
+
+        nsWindow = getNSWindow(self.winId())
+        contentView = nsWindow.contentView()
+        superview = contentView.superview() if contentView is not None else None
+        if contentView is None or superview is None:
+            return
+
+        visualEffectView = Cocoa.NSVisualEffectView.new()
+        visualEffectView.setAutoresizingMask_(Cocoa.NSViewWidthSizable | Cocoa.NSViewHeightSizable)
+        visualEffectView.setFrame_(contentView.frame())
+        visualEffectView.setState_(Cocoa.NSVisualEffectStateActive)
+        visualEffectView.setMaterial_(Cocoa.NSVisualEffectMaterialUnderWindowBackground)
+        visualEffectView.setBlendingMode_(Cocoa.NSVisualEffectBlendingModeBehindWindow)
+        superview.addSubview_positioned_relativeTo_(
+            visualEffectView, Cocoa.NSWindowBelow, contentView)
+
+        nsWindow.setOpaque_(False)
+        nsWindow.setBackgroundColor_(Cocoa.NSColor.clearColor())
+        self._macVisualEffectView = visualEffectView
+        self._setMacAcrylicAppearance()
+        self.backgroundColorAni.stop()
+        self.setBackgroundColor(self._normalBackgroundColor())
+        self._updateSystemTitleBar()
+
+    def _removeMacAcrylicEffect(self) -> None:
+        if self._macVisualEffectView is not None:
+            import Cocoa
+            from qframelesswindow.utils.mac_utils import getNSWindow
+
+            self._macVisualEffectView.removeFromSuperview()
+            self._macVisualEffectView = None
+            nsWindow = getNSWindow(self.winId())
+            nsWindow.setOpaque_(True)
+            nsWindow.setBackgroundColor_(Cocoa.NSColor.windowBackgroundColor())
+
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.backgroundColorAni.stop()
+        self.setBackgroundColor(self._normalBackgroundColor())
+        if self.isVisible():
+            self._updateSystemTitleBar()
+
+    def _setMacAcrylicAppearance(self) -> None:
+        import Cocoa
+        name = Cocoa.NSAppearanceNameDarkAqua if isDarkTheme() else Cocoa.NSAppearanceNameAqua
+        self._macVisualEffectView.setAppearance_(Cocoa.NSAppearance.appearanceNamed_(name))
 
 if sys.platform == "darwin":
     import Cocoa
@@ -527,6 +611,7 @@ if sys.platform == "darwin":
         nsWindow.setTitleVisibility_(Cocoa.NSWindowTitleHidden)
 
     MacFramelessWindowBase._updateSystemTitleBar = _updateSystemTitleBar
+
 
 if sys.platform == "win32":
     from app.platform.windows import isLessThanWin10, isWin10

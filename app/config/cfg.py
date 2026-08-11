@@ -277,6 +277,12 @@ class Config(QConfig):
             "None" if isWin10() else "Mica",
             OptionsValidator(["Acrylic", "Mica", "MicaAlt", "Aero", "None"]),
         )
+    elif sys.platform == "darwin":
+        backgroundEffect = OptionsConfigItem(
+            "Personalization", "BackgroundEffect",
+            "Acrylic",
+            OptionsValidator(["Acrylic", "None"]),
+        )
     dpiScale = RangeConfigItem("Personalization", "DpiScale", 0, RangeValidator(0, 5), restart=True)
     if sys.platform == "darwin":
         shouldShowDockIcon = ConfigItem("Personalization", "ShowDockIcon", True, BoolValidator())
