@@ -38,3 +38,6 @@ browser_extension/firefox/
 *.jks
 *.keystore
 /config/docs/research/
+
+# Marketing screenshot portable profile (scripts/marketing_shots.py)
+/GhostDownloader/
