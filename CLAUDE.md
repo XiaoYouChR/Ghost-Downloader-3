@@ -56,6 +56,7 @@
 | `reveal` | 在文件管理器中显示 |
 | `run` | 执行当前 actor 拥有的工作流步骤 |
 | `supervise` | worker 内部监管器：采样进度、存恢复数据 |
+| `patch` | 对已有二进制结构做定点修改。非 update |
 | `install` | 将运行时或二进制放到磁盘 |
 | `send` | 向另一系统推送数据，单向无响应 |
 | `request` | 请求另一 actor 执行动作 |

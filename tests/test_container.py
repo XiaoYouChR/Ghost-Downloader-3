@@ -14,8 +14,8 @@ import pytest
 from app.container import (
     SegmentRange,
     buildMp4SegmentRange,
-    _parseMp4Boxes,
-    _parseSidx,
+    parseMp4Boxes,
+    parseSidx,
 )
 
 FIXTURE = Path(__file__).parent / "fixtures" / "youtube_video_header.bin"
@@ -29,36 +29,36 @@ def video_header() -> bytes:
 class TestParseMp4Boxes:
 
     def test_finds_required_boxes(self, video_header):
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         assert "ftyp" in boxes
         assert "moov" in boxes
         assert "sidx" in boxes
 
     def test_box_order_ftyp_moov_sidx(self, video_header):
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         assert boxes["ftyp"][0] < boxes["moov"][0] < boxes["sidx"][0]
 
 
 class TestParseSidx:
 
     def test_reference_count(self, video_header):
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         offset, size = boxes["sidx"]
-        refs = _parseSidx(video_header, offset, size)
+        refs = parseSidx(video_header, offset, size)
         assert len(refs) == 146
 
     def test_references_cover_full_duration(self, video_header):
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         offset, size = boxes["sidx"]
-        refs = _parseSidx(video_header, offset, size)
+        refs = parseSidx(video_header, offset, size)
         totalDuration = sum(dur for dur, _ in refs)
         assert abs(totalDuration - 730.93) < 0.1
 
     def test_references_cover_full_filesize(self, video_header):
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         sidxOffset, sidxSize = boxes["sidx"]
         headerSize = sidxOffset + sidxSize
-        refs = _parseSidx(video_header, sidxOffset, sidxSize)
+        refs = parseSidx(video_header, sidxOffset, sidxSize)
         totalBytes = headerSize + sum(size for _, size in refs)
         assert totalBytes == 6744153
 
@@ -74,10 +74,10 @@ class TestBuildMp4SegmentRange:
 
     def test_segment_covers_requested_time(self, video_header):
         """segStart 对应的 reference 起始时间 <= startTime"""
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         sidxOffset, sidxSize = boxes["sidx"]
         headerSize = sidxOffset + sidxSize
-        refs = _parseSidx(video_header, sidxOffset, sidxSize)
+        refs = parseSidx(video_header, sidxOffset, sidxSize)
 
         seg = buildMp4SegmentRange(video_header, 60, 65)
 
@@ -103,21 +103,21 @@ class TestBuildMp4SegmentRange:
         seg = buildMp4SegmentRange(video_header, 60, 65)
         assert seg.patchedHeader[:4] == b'\x00\x00\x00\x1c'  # ftyp size=28
         assert seg.patchedHeader[4:8] == b'ftyp'
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         moovEnd = boxes["moov"][0] + boxes["moov"][1]
         assert len(seg.patchedHeader) == moovEnd
 
     def test_full_video_returns_full_range(self, video_header):
         """startTime=0 endTime=731 should cover the entire file"""
         seg = buildMp4SegmentRange(video_header, 0, 731)
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         dataStart = boxes["sidx"][0] + boxes["sidx"][1]
         assert seg.segStart == dataStart
         assert seg.segEnd == 6744153
 
     def test_first_5_seconds(self, video_header):
         seg = buildMp4SegmentRange(video_header, 0, 5)
-        boxes = _parseMp4Boxes(video_header)
+        boxes = parseMp4Boxes(video_header)
         dataStart = boxes["sidx"][0] + boxes["sidx"][1]
         assert seg.segStart == dataStart
         assert seg.segEnd - seg.segStart < 100_000

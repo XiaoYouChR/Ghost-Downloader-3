@@ -1,40 +1,37 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from struct import pack, unpack, unpack_from
+from struct import pack, unpack_from
 
 SegmentRange = namedtuple("SegmentRange", ["patchedHeader", "segStart", "segEnd", "segStartTime", "segDuration"])
 
 
 def buildMp4SegmentRange(headerData: bytes, startTime: int, endTime: int) -> SegmentRange:
-    boxes = _parseMp4Boxes(headerData)
+    boxes = parseMp4Boxes(headerData)
     moovOffset, moovSize = boxes.get("moov", (0, 0))
     sidxOffset, sidxSize = boxes.get("sidx", (0, 0))
     if not sidxSize:
         raise ValueError("sidx box not found")
 
     dataStart = sidxOffset + sidxSize
-    references = _parseSidx(headerData, sidxOffset, sidxSize)
+    references = parseSidx(headerData, sidxOffset, sidxSize)
 
-    segStart, segEnd, segStartTime, segDuration = _findByteRange(references, dataStart, startTime, endTime)
+    segStart, segEnd, segStartTime, segDuration = buildByteRange(references, dataStart, startTime, endTime)
 
     # ftyp + moov only — strip sidx (its byte offsets are invalid for the partial file;
     # fMP4 moof boxes are self-describing, ffmpeg reads them sequentially)
     initEnd = moovOffset + moovSize
     patched = bytearray(headerData[:initEnd])
     moovData = headerData[moovOffset:initEnd]
-    _patchStco(patched, moovOffset, moovData, initEnd - segStart)
-    _patchMoovDuration(patched, moovOffset, moovData, segDuration)
+    patchChunkOffsets(patched, moovOffset, moovData, 0, len(moovData), initEnd - segStart)
+    patchMoovDuration(patched, moovOffset, moovData, segDuration)
 
     return SegmentRange(bytes(patched), segStart, segEnd, segStartTime, segDuration)
 
 
 def buildWebmSegmentRange(headerData: bytes, startTime: int, endTime: int) -> SegmentRange:
-    segmentDataOffset, cues = _parseWebmCues(headerData)
-    headerSize = segmentDataOffset + cues[-1][1] if cues else len(headerData)
+    segmentDataOffset, cues = parseWebmCues(headerData)
 
-    # Cues 用相对偏移, 不需要 patch
-    # 找到覆盖 [startTime, endTime] 的 cluster 范围
     startMs = startTime * 1000
     endMs = endTime * 1000
 
@@ -64,7 +61,7 @@ def buildWebmSegmentRange(headerData: bytes, startTime: int, endTime: int) -> Se
 # ── MP4 box parsing ─────────────────────────────────────────────
 
 
-def _parseMp4Boxes(data: bytes) -> dict[str, tuple[int, int]]:
+def parseMp4Boxes(data: bytes) -> dict[str, tuple[int, int]]:
     boxes: dict[str, tuple[int, int]] = {}
     pos = 0
     while pos + 8 <= len(data):
@@ -77,7 +74,7 @@ def _parseMp4Boxes(data: bytes) -> dict[str, tuple[int, int]]:
     return boxes
 
 
-def _parseSidx(data: bytes, offset: int, size: int) -> list[tuple[int, int]]:
+def parseSidx(data: bytes, offset: int, size: int) -> list[tuple[int, int]]:
     pos = offset + 8
     version = data[pos]
     pos += 4  # version + flags
@@ -106,7 +103,7 @@ def _parseSidx(data: bytes, offset: int, size: int) -> list[tuple[int, int]]:
     return references
 
 
-def _findByteRange(
+def buildByteRange(
     references: list[tuple[float, int]], headerSize: int, startTime: int, endTime: int
 ) -> tuple[int, int, float, float]:
     bytePos = headerSize
@@ -139,15 +136,10 @@ def _findByteRange(
     return segStart, segEnd, segStartTime, segEndTime - segStartTime
 
 
-def _patchStco(header: bytearray, moovOffset: int, moovData: bytes, delta: int) -> None:
-    _walkAndPatchOffsets(header, moovOffset, moovData, 0, len(moovData), delta)
-
-
-def _patchMoovDuration(header: bytearray, moovOffset: int, moovData: bytes, segDuration: float) -> None:
+def patchMoovDuration(header: bytearray, moovOffset: int, moovData: bytes, segDuration: float) -> None:
     movieTimescale = 0
     pos = 8
     end = len(moovData)
-    # First pass: find mvhd timescale
     while pos + 8 <= end:
         size = unpack_from(">I", moovData, pos)[0]
         boxType = moovData[pos + 4:pos + 8]
@@ -169,7 +161,6 @@ def _patchMoovDuration(header: bytearray, moovOffset: int, moovData: bytes, segD
     if not movieTimescale:
         return
 
-    # Second pass: patch trak durations
     pos = 8
     while pos + 8 <= end:
         size = unpack_from(">I", moovData, pos)[0]
@@ -177,11 +168,11 @@ def _patchMoovDuration(header: bytearray, moovOffset: int, moovData: bytes, segD
         if size < 8 or pos + size > end:
             break
         if boxType == b"trak":
-            _patchTrackDuration(header, moovOffset, moovData, pos + 8, pos + size, segDuration, movieTimescale)
+            patchTrackDuration(header, moovOffset, moovData, pos + 8, pos + size, segDuration, movieTimescale)
         pos += size
 
 
-def _patchTrackDuration(
+def patchTrackDuration(
     header: bytearray, moovOffset: int, data: bytes, start: int, end: int,
     segDuration: float, movieTimescale: int,
 ) -> None:
@@ -201,11 +192,11 @@ def _patchTrackDuration(
                 absOff = moovOffset + pos + 36
                 header[absOff:absOff + 8] = pack(">q", newDur)
         elif boxType == b"mdia":
-            _patchMdhd(header, moovOffset, data, pos + 8, pos + size, segDuration)
+            patchMdhdDuration(header, moovOffset, data, pos + 8, pos + size, segDuration)
         pos += size
 
 
-def _patchMdhd(
+def patchMdhdDuration(
     header: bytearray, moovOffset: int, data: bytes, start: int, end: int, segDuration: float,
 ) -> None:
     pos = start
@@ -230,7 +221,7 @@ def _patchMdhd(
         pos += size
 
 
-def _walkAndPatchOffsets(
+def patchChunkOffsets(
     header: bytearray, baseOffset: int, data: bytes, start: int, end: int, delta: int
 ) -> None:
     CONTAINER_BOXES = {b"moov", b"trak", b"mdia", b"minf", b"stbl"}
@@ -241,15 +232,15 @@ def _walkAndPatchOffsets(
         if size < 8 or pos + size > end:
             break
         if boxType in CONTAINER_BOXES:
-            _walkAndPatchOffsets(header, baseOffset, data, pos + 8, pos + size, delta)
+            patchChunkOffsets(header, baseOffset, data, pos + 8, pos + size, delta)
         elif boxType == b"stco":
-            _patchStcoBox(header, baseOffset + pos, data, pos, size, delta, 4)
+            patchOffsetEntries(header, baseOffset + pos, data, pos, size, delta, 4)
         elif boxType == b"co64":
-            _patchStcoBox(header, baseOffset + pos, data, pos, size, delta, 8)
+            patchOffsetEntries(header, baseOffset + pos, data, pos, size, delta, 8)
         pos += size
 
 
-def _patchStcoBox(
+def patchOffsetEntries(
     header: bytearray, absOffset: int, data: bytes, pos: int, size: int,
     delta: int, entrySize: int,
 ) -> None:
@@ -274,7 +265,7 @@ def _patchStcoBox(
 # ── WebM / EBML parsing ─────────────────────────────────────────
 
 
-def _readEbmlVarInt(data: bytes, pos: int) -> tuple[int, int]:
+def parseEbmlVarInt(data: bytes, pos: int) -> tuple[int, int]:
     if pos >= len(data):
         raise ValueError("unexpected end of EBML data")
     first = data[pos]
@@ -293,7 +284,7 @@ def _readEbmlVarInt(data: bytes, pos: int) -> tuple[int, int]:
     return value, pos + length
 
 
-def _readEbmlElementId(data: bytes, pos: int) -> tuple[int, int]:
+def parseEbmlElementId(data: bytes, pos: int) -> tuple[int, int]:
     if pos >= len(data):
         raise ValueError("unexpected end of EBML data")
     first = data[pos]
@@ -312,7 +303,7 @@ def _readEbmlElementId(data: bytes, pos: int) -> tuple[int, int]:
     return value, pos + length
 
 
-def _readEbmlUint(data: bytes, pos: int, size: int) -> int:
+def parseEbmlUint(data: bytes, pos: int, size: int) -> int:
     value = 0
     for i in range(size):
         value = (value << 8) | data[pos + i]
@@ -329,34 +320,31 @@ EBML_ID_CUE_CLUSTER_POSITION = 0xF1
 EBML_MASTER_IDS = {EBML_ID_SEGMENT, EBML_ID_CUES, EBML_ID_CUE_POINT, EBML_ID_CUE_TRACK_POSITIONS}
 
 
-def _parseWebmCues(data: bytes) -> tuple[int, list[tuple[int, int]]]:
+def parseWebmCues(data: bytes) -> tuple[int, list[tuple[int, int]]]:
     pos = 0
 
-    # Skip EBML header
-    elemId, pos = _readEbmlElementId(data, pos)
-    elemSize, pos = _readEbmlVarInt(data, pos)
+    elemId, pos = parseEbmlElementId(data, pos)
+    elemSize, pos = parseEbmlVarInt(data, pos)
     pos += elemSize
 
-    # Segment
-    elemId, pos = _readEbmlElementId(data, pos)
+    elemId, pos = parseEbmlElementId(data, pos)
     if elemId != EBML_ID_SEGMENT:
         raise ValueError("expected Segment element")
-    _, pos = _readEbmlVarInt(data, pos)
+    _, pos = parseEbmlVarInt(data, pos)
     segmentDataOffset = pos
 
-    # Scan for Cues inside Segment
     cues: list[tuple[int, int]] = []
     limit = min(len(data), segmentDataOffset + 65536)
 
     while pos < limit:
         try:
-            elemId, nextPos = _readEbmlElementId(data, pos)
-            elemSize, nextPos = _readEbmlVarInt(data, nextPos)
+            elemId, nextPos = parseEbmlElementId(data, pos)
+            elemSize, nextPos = parseEbmlVarInt(data, nextPos)
         except ValueError:
             break
 
         if elemId == EBML_ID_CUES:
-            cues = _parseCuesElement(data, nextPos, nextPos + elemSize)
+            cues = parseCuesElement(data, nextPos, nextPos + elemSize)
             break
         elif elemId in EBML_MASTER_IDS:
             pos = nextPos
@@ -366,50 +354,50 @@ def _parseWebmCues(data: bytes) -> tuple[int, list[tuple[int, int]]]:
     return segmentDataOffset, cues
 
 
-def _parseCuesElement(data: bytes, start: int, end: int) -> list[tuple[int, int]]:
+def parseCuesElement(data: bytes, start: int, end: int) -> list[tuple[int, int]]:
     cues: list[tuple[int, int]] = []
     pos = start
     while pos < end:
         try:
-            elemId, nextPos = _readEbmlElementId(data, pos)
-            elemSize, nextPos = _readEbmlVarInt(data, nextPos)
+            elemId, nextPos = parseEbmlElementId(data, pos)
+            elemSize, nextPos = parseEbmlVarInt(data, nextPos)
         except ValueError:
             break
         if elemId == EBML_ID_CUE_POINT:
-            cueTime, cuePos = _parseCuePoint(data, nextPos, nextPos + elemSize)
+            cueTime, cuePos = parseCuePoint(data, nextPos, nextPos + elemSize)
             if cueTime >= 0 and cuePos >= 0:
                 cues.append((cueTime, cuePos))
         pos = nextPos + elemSize
     return cues
 
 
-def _parseCuePoint(data: bytes, start: int, end: int) -> tuple[int, int]:
+def parseCuePoint(data: bytes, start: int, end: int) -> tuple[int, int]:
     cueTime = -1
     clusterPos = -1
     pos = start
     while pos < end:
         try:
-            elemId, nextPos = _readEbmlElementId(data, pos)
-            elemSize, nextPos = _readEbmlVarInt(data, nextPos)
+            elemId, nextPos = parseEbmlElementId(data, pos)
+            elemSize, nextPos = parseEbmlVarInt(data, nextPos)
         except ValueError:
             break
         if elemId == EBML_ID_CUE_TIME:
-            cueTime = _readEbmlUint(data, nextPos, elemSize)
+            cueTime = parseEbmlUint(data, nextPos, elemSize)
         elif elemId == EBML_ID_CUE_TRACK_POSITIONS:
-            clusterPos = _parseCueTrackPositions(data, nextPos, nextPos + elemSize)
+            clusterPos = parseCueTrackPositions(data, nextPos, nextPos + elemSize)
         pos = nextPos + elemSize
     return cueTime, clusterPos
 
 
-def _parseCueTrackPositions(data: bytes, start: int, end: int) -> int:
+def parseCueTrackPositions(data: bytes, start: int, end: int) -> int:
     pos = start
     while pos < end:
         try:
-            elemId, nextPos = _readEbmlElementId(data, pos)
-            elemSize, nextPos = _readEbmlVarInt(data, nextPos)
+            elemId, nextPos = parseEbmlElementId(data, pos)
+            elemSize, nextPos = parseEbmlVarInt(data, nextPos)
         except ValueError:
             break
         if elemId == EBML_ID_CUE_CLUSTER_POSITION:
-            return _readEbmlUint(data, nextPos, elemSize)
+            return parseEbmlUint(data, nextPos, elemSize)
         pos = nextPos + elemSize
     return -1
