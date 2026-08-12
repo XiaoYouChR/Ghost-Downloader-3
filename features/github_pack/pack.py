@@ -8,6 +8,7 @@ from app.client import buildClient
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskError, TaskOptions, ResourceTaskOptions
 from http_pack.cards import HttpTaskCard
+from http_pack.pack import HttpParser
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
 
@@ -64,8 +65,6 @@ class GitHubHttpTaskStep(HttpTaskStep):
                 return
             except CancelledError:
                 raise
-            except TaskError:
-                raise
             except Exception:
                 if not self.fallbackUrls:
                     raise
@@ -77,17 +76,17 @@ class GitHubHttpTaskStep(HttpTaskStep):
                 self.progress = 0
                 self.speed = 0
                 self.error = None
+                self.canUseRangeRequests = True
+                self.isAccelerated = False
                 self._deleteRecord()
 
 
 class GitHubParser(TaskParser):
     priority = 90
-    _isFallingBack = False
 
     def match(self, options: TaskOptions) -> bool:
         return (
-            not self._isFallingBack
-            and githubConfig.enabled.value
+            githubConfig.enabled.value
             and bool(selectedProxySite())
             and isGitHubFileUrl(options.url)
         )
@@ -103,8 +102,10 @@ class GitHubParser(TaskParser):
                 if isResourceWithName and not isDirectUrl:
                     await self._probeProxy(url, options.headers)
 
-                self._isFallingBack = isDirectUrl
-                task = await self.delegate(replace(options, url=url))
+                if isDirectUrl:
+                    task = await HttpParser().parse(options)
+                else:
+                    task = await self.delegate(replace(options, url=url))
 
                 remaining = fallbackUrls[i + 1:]
                 if remaining:
@@ -120,8 +121,6 @@ class GitHubParser(TaskParser):
             except Exception as e:
                 lastError = e
                 logger.warning("GitHub proxy 不可用 {}: {}", url, e)
-            finally:
-                self._isFallingBack = False
 
         raise lastError
 

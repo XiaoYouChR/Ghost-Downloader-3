@@ -77,7 +77,7 @@ class TestDownloadTimeFallback:
         assert (tmp_path / "test.bin").read_bytes() == content
         assert step.url == okUrl
 
-    async def test_no_fallback_on_permanent_error(self, server, tmp_path):
+    async def test_fallback_on_proxy_http_error(self, server, tmp_path):
         content = buildFileContent(100)
 
         async def forbidden(request):
@@ -88,6 +88,22 @@ class TestDownloadTimeFallback:
 
         task, step = makeGitHubStep(
             forbiddenUrl, tmp_path, fileSize=100, fallbackUrls=[okUrl],
+        )
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        assert step.url == okUrl
+
+    async def test_permanent_error_without_fallback(self, server, tmp_path):
+        async def forbidden(request):
+            return web.Response(status=403, text="Forbidden")
+
+        forbiddenUrl = await server(forbidden)
+
+        task, step = makeGitHubStep(
+            forbiddenUrl, tmp_path, fileSize=100,
         )
         task.setStatus(TaskStatus.RUNNING)
 
@@ -107,6 +123,29 @@ class TestDownloadTimeFallback:
 
         assert (tmp_path / "test.bin").read_bytes() == content
         assert step.url == okUrl
+
+    async def test_fallback_restores_range_support(self, server, tmp_path):
+        content = buildFileContent(200)
+
+        async def rangeDegradeThenReject(request):
+            if request.headers.get("Range"):
+                return web.Response(status=200, body=b"x")
+            return web.Response(status=403, text="Forbidden")
+
+        firstUrl = await server(rangeDegradeThenReject)
+        okUrl = await server(buildRangeHandler(content))
+
+        task, step = makeGitHubStep(
+            firstUrl, tmp_path, fileSize=200,
+            fallbackUrls=[okUrl], canUseRangeRequests=True,
+        )
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        assert step.url == okUrl
+        assert step.canUseRangeRequests is True
 
     async def test_all_fallbacks_exhausted(self, tmp_path, deadUrl):
         task, step = makeGitHubStep(
@@ -166,6 +205,35 @@ class TestParseTimeFallback:
         assert len(step.fallbackUrls) == 2
         assert "proxy2.com" in step.fallbackUrls[0]
         assert step.fallbackUrls[1] == options.url
+
+    async def test_direct_url_bypasses_delegate(self, monkeypatch):
+        from http_pack.pack import HttpParser
+
+        parser = GitHubParser()
+
+        delegateUrls = []
+        async def trackingDelegate(options):
+            delegateUrls.append(options.url)
+            if "dead-proxy.com" in options.url:
+                raise ConnectionError("refused")
+            return await passThroughDelegate(options)
+
+        parser.delegate = trackingDelegate
+        monkeypatch.setattr("github_pack.pack.selectedProxySite", lambda: "https://dead-proxy.com")
+        monkeypatch.setattr("github_pack.pack.GITHUB_PROXY_SITES", ("https://dead-proxy.com",))
+
+        async def fakeHttpParse(self, options):
+            return await passThroughDelegate(options)
+        monkeypatch.setattr(HttpParser, "parse", fakeHttpParse)
+
+        options = TaskOptions(url="https://github.com/user/repo/releases/download/v1.0/file.zip")
+        task = await parser.parse(options)
+
+        assert task.packId == "github"
+        assert task.url == options.url
+        assert all("dead-proxy.com" in u for u in delegateUrls), (
+            "direct URL should not go through delegate"
+        )
 
     async def test_resource_options_probes_proxy(self, monkeypatch):
         parser = GitHubParser()
