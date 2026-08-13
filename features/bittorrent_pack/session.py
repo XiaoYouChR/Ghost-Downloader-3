@@ -277,7 +277,10 @@ class BTSession(QObject):
             params = self._loadDhtState()
             params.settings = {
                 "user_agent": f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}",
-                "listen_interfaces": f"0.0.0.0:{bittorrentConfig.listenPort.value}",
+                "listen_interfaces": (
+                    f"0.0.0.0:{bittorrentConfig.listenPort.value},"
+                    f"[::]:{bittorrentConfig.listenPort.value}"
+                ),
                 "connections_limit": bittorrentConfig.maxConnections.value,
                 "download_rate_limit": self._downloadLimit(),
                 "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
