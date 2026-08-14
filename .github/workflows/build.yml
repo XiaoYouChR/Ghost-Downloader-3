@@ -86,7 +86,11 @@ jobs:
             if [ -n "$PREV_TAG" ]; then
               BODY="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
             fi
-            gh release create "$TAG" --title "$TAG" --notes "$BODY" --latest
+            PRERELEASE_FLAG=""
+            if [[ "$VERSION" == *-* ]]; then
+              PRERELEASE_FLAG="--prerelease"
+            fi
+            gh release create "$TAG" --title "$TAG" --notes "$BODY" --latest $PRERELEASE_FLAG
           fi
 
   build-windows:
@@ -133,12 +137,12 @@ jobs:
           Copy-Item hdiffpatch/${hdiffArch}/hpatchz.exe dist/Ghost-Downloader-3.dist/
 
       - name: Prepare For Sign
-        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
+        if: ${{ github.event.inputs.sign_artifact == 'true' }}
         run: |
           mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
 
       - name: upload-unsigned-artifact
-        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
+        if: ${{ github.event.inputs.sign_artifact == 'true' }}
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v7
         with:
@@ -146,7 +150,7 @@ jobs:
           path: dist/Ghost-Downloader-3-Unsigned.dist
 
       - name: Sign
-        if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
+        if: ${{ github.event.inputs.sign_artifact == 'true' }}
         uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
