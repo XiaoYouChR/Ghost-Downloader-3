@@ -681,6 +681,7 @@ jobs:
           git push
 
       - name: Mirror to GitCode
+        continue-on-error: true
         env:
           GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
           VERSION: ${{ needs.prepare.outputs.version }}
@@ -692,14 +693,14 @@ jobs:
           TAG="v${VERSION}"
           AUTH="access_token=${GITCODE_TOKEN}"
 
-          RELEASE=$(curl -sf "${API}/repos/${REPO}/releases/tags/${TAG}?${AUTH}" || echo "")
+          RELEASE=$(curl -f "${API}/repos/${REPO}/releases/tags/${TAG}?${AUTH}" || echo "")
           if [ -z "$RELEASE" ]; then
-            curl -sf -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
+            curl -f -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
               -H "Content-Type: application/json" \
               -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"${TAG}\"}"
           fi
 
-          curl -sf -X PATCH "${API}/repos/${REPO}/releases/${TAG}?${AUTH}" \
+          curl -f -X PATCH "${API}/repos/${REPO}/releases/${TAG}?${AUTH}" \
             -H "Content-Type: application/json" \
             -d '{"release_status":"latest"}'
 
@@ -707,14 +708,14 @@ jobs:
             local file="$1"
             local name=$(basename "$file")
 
-            local upload_info=$(curl -sf "${API}/repos/${REPO}/releases/${TAG}/upload_url?${AUTH}&file_name=${name}")
+            local upload_info=$(curl -f "${API}/repos/${REPO}/releases/${TAG}/upload_url?${AUTH}&file_name=${name}")
             local url=$(echo "$upload_info" | jq -r '.url')
             local content_type=$(echo "$upload_info" | jq -r '.headers["Content-Type"]')
             local meta_project=$(echo "$upload_info" | jq -r '.headers["x-obs-meta-project-id"]')
             local obs_acl=$(echo "$upload_info" | jq -r '.headers["x-obs-acl"]')
             local obs_callback=$(echo "$upload_info" | jq -r '.headers["x-obs-callback"]')
 
-            curl -sf -X PUT "$url" \
+            curl -f -X PUT "$url" \
               -H "Content-Type: ${content_type}" \
               -H "x-obs-meta-project-id: ${meta_project}" \
               -H "x-obs-acl: ${obs_acl}" \
