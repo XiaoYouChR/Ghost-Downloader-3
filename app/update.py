@@ -5,7 +5,15 @@ import sys
 from dataclasses import dataclass
 from typing import Any
 
+from PySide6.QtCore import QVersionNumber
+
 from app.client import buildClient
+
+
+def isNewer(current: str, latest: str) -> bool:
+    v1 = QVersionNumber.fromString(current.lstrip("vV"))
+    v2 = QVersionNumber.fromString(latest.lstrip("vV"))
+    return v2 > v1
 
 RELEASE_API = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 

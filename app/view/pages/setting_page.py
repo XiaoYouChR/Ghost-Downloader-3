@@ -510,10 +510,8 @@ class SettingPage(ScrollArea):
         )
 
     def _onUpdateChecked(self, release) -> None:
-        from PySide6.QtCore import QVersionNumber
-        current = QVersionNumber.fromString(VERSION.lstrip("vV"))
-        latest = QVersionNumber.fromString(release.version.lstrip("vV"))
-        if current >= latest:
+        from app.update import isNewer
+        if not isNewer(VERSION, release.version):
             InfoBar.success(self.tr("当前已是最新版本"),
                             self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, release.version),
                             duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())

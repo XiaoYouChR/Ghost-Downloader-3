@@ -13,7 +13,7 @@ from enum import auto, IntEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject, QVersionNumber, Signal
+from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
 from app.client import buildClient, fetchFile
@@ -21,6 +21,7 @@ from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, executableDir
 from app.platform.filesystem import matchChecksum
 from app.services.pack_loader import PackManifest
+from app.update import isNewer
 
 if TYPE_CHECKING:
     from app.services.coroutine_runner import CoroutineRunner
@@ -46,12 +47,6 @@ MACHINE_MAP = {"AMD64": "x86_64", "x86_64": "x86_64", "aarch64": "arm64", "arm64
 
 def buildPlatformKey() -> str:
     return f"{OS_MAP[sys.platform]}-{MACHINE_MAP[platform.machine()]}"
-
-
-def isNewer(current: str, latest: str) -> bool:
-    v1 = QVersionNumber.fromString(current.lstrip("vV"))
-    v2 = QVersionNumber.fromString(latest.lstrip("vV"))
-    return v2 > v1
 
 
 def buildAssetUrl(source: str, version: str, assetName: str) -> str:
@@ -265,9 +260,9 @@ class UpdateService(QObject):
                         onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
         if sha and not matchChecksum(archivePath, sha):
-                archivePath.unlink(missing_ok=True)
-                self._emit("app", UpdateState.FAILED, error="校验失败")
-                return
+            archivePath.unlink(missing_ok=True)
+            self._emit("app", UpdateState.FAILED, error="校验失败")
+            return
 
         appDir = executableDir.parent.parent if sys.platform == "darwin" else executableDir
         newDir = appDir.parent / f"{appDir.name}_new"
@@ -294,9 +289,9 @@ class UpdateService(QObject):
 
         expectedSha = packData.get("sha256", "")
         if expectedSha and not matchChecksum(outputPath, expectedSha):
-                outputPath.unlink(missing_ok=True)
-                self._emit(packId, UpdateState.FAILED, error="校验失败")
-                return
+            outputPath.unlink(missing_ok=True)
+            self._emit(packId, UpdateState.FAILED, error="校验失败")
+            return
 
         self._emit(packId, UpdateState.READY)
 
