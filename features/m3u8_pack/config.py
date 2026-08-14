@@ -160,10 +160,13 @@ class M3U8Runtime(BinaryRuntime):
         return findExecutable(self.installFolder(), "N_m3u8DL-RE")
 
     async def fetchLatestVersion(self) -> str:
-        from app.update import fetchGitHubLatestTag
-        return await fetchGitHubLatestTag(M3U8_REPO)
+        from app.sources import fetchLatestTag
+        tag, _ = await fetchLatestTag(M3U8_REPO)
+        return tag
 
     async def createInstallTask(self):
+        from app.sources import fetchLatestRelease
+
         machine = platform.machine().lower()
         if sys.platform == "win32":
             if machine in {"amd64", "x86_64"}:
@@ -179,35 +182,24 @@ class M3U8Runtime(BinaryRuntime):
         else:
             raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
 
-        url, tag = await self._fetchAssetUrl(target)
+        release, _ = await fetchLatestRelease(M3U8_REPO)
+        extension = ".zip" if sys.platform == "win32" else ".tar.gz"
+        url = ""
+        for asset in release.assets:
+            if target in asset.name and asset.name.endswith(extension):
+                url = asset.downloadUrl
+                break
+        if not url:
+            raise RuntimeError(f"未找到适配 {target} 的 N_m3u8DL-RE 安装包")
 
         from app.install import createInstallTask
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
         return createInstallTask(
             url=url,
             outputFolder=self.installFolder(),
-            name=f"N_m3u8DL-RE {tag} ({target})",
+            name=f"N_m3u8DL-RE {release.version} ({target})",
             executableNames=(binaryName,),
         )
-
-    async def _fetchAssetUrl(self, target: str) -> tuple[str, str]:
-        from app.client import buildClient
-        url = f"https://api.github.com/repos/{M3U8_REPO}/releases/latest"
-        client = buildClient(headers={"accept": "application/vnd.github+json"}, timeout=15)
-        try:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            data = await resp.json()
-        finally:
-            client.close()
-
-        tag = data.get("tag_name", "")
-        extension = ".zip" if sys.platform == "win32" else ".tar.gz"
-        for asset in data.get("assets", []):
-            name = asset.get("name", "")
-            if target in name and name.endswith(extension):
-                return asset["browser_download_url"], tag
-        raise RuntimeError(f"未找到适配 {target} 的 N_m3u8DL-RE 安装包")
 
 
 m3u8Runtime = M3U8Runtime()

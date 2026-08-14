@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import platform
 import sys
-from dataclasses import dataclass
-from typing import Any
 
 from PySide6.QtCore import QVersionNumber
 
-from app.client import buildClient
+from app.sources import Release, ReleaseAsset, fetchLatestRelease
+
+APP_REPO = "XiaoYouChR/Ghost-Downloader-3"
 
 
 def isNewer(current: str, latest: str) -> bool:
@@ -15,75 +15,10 @@ def isNewer(current: str, latest: str) -> bool:
     v2 = QVersionNumber.fromString(latest.lstrip("vV"))
     return v2 > v1
 
-RELEASE_API = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
-
-
-@dataclass(frozen=True)
-class ReleaseAsset:
-    name: str
-    size: int
-    downloadCount: int
-    downloadUrl: str
-
-
-@dataclass(frozen=True)
-class Release:
-    version: str
-    publishedAt: str
-    body: str
-    pageUrl: str
-    prerelease: bool
-    assets: list[ReleaseAsset]
-
-    @classmethod
-    def fromResponse(cls, data: dict[str, Any]) -> Release:
-        version = ""
-        for key in ("tag_name", "name"):
-            value = str(data.get(key) or "").strip()
-            if value:
-                version = value
-                break
-
-        assets = [
-            ReleaseAsset(
-                name=a.get("name", ""),
-                size=a.get("size", 0),
-                downloadCount=a.get("download_count", 0),
-                downloadUrl=a.get("browser_download_url", ""),
-            )
-            for a in data.get("assets", [])
-        ]
-
-        return cls(
-            version=version or "Unknown",
-            publishedAt=data.get("published_at", ""),
-            body=data.get("body", ""),
-            pageUrl=data.get("html_url", ""),
-            prerelease=data.get("prerelease", False),
-            assets=assets,
-        )
-
 
 async def fetchRelease() -> Release:
-    client = buildClient(headers={"accept": "application/vnd.github+json"})
-    try:
-        response = await client.get(RELEASE_API)
-        response.raise_for_status()
-        data = await response.json()
-        return Release.fromResponse(data)
-    finally:
-        client.close()
-
-
-async def fetchGitHubLatestTag(repo: str) -> str:
-    client = buildClient(headers={"accept": "application/vnd.github+json"}, timeout=15)
-    try:
-        resp = await client.get(f"https://api.github.com/repos/{repo}/releases/latest")
-        resp.raise_for_status()
-        data = await resp.json()
-        return data.get("tag_name", "")
-    finally:
-        client.close()
+    release, _ = await fetchLatestRelease(APP_REPO)
+    return release
 
 
 def bestAsset(release: Release) -> ReleaseAsset | None:

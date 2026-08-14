@@ -16,7 +16,7 @@ from app.view.components.markdown_viewer import MarkdownViewer
 from app.view.components.tree_view import AutoSizingTreeView
 
 if TYPE_CHECKING:
-    from app.update import Release, ReleaseAsset
+    from app.sources import Release, ReleaseAsset
 
 
 class ReleaseInfoDialog(MessageBoxBase):

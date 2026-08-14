@@ -18,7 +18,7 @@ from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
 
 PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
-QJS_RELEASE_BASE = "https://github.com/quickjs-ng/quickjs/releases/latest/download"
+QJS_REPO = "quickjs-ng/quickjs"
 COOKIE_DOMAIN = ".youtube.com"
 AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
 
@@ -238,8 +238,11 @@ class YouTubeRuntime(BinaryRuntime):
             ))
             return task
 
+        from app.sources import buildDownloadUrl, fetchLatestTag
+
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
-        qjsUrl = f"{QJS_RELEASE_BASE}/{_qjsAssetName()}"
+        qjsTag, qjsSource = await fetchLatestTag(QJS_REPO)
+        qjsUrl = buildDownloadUrl(QJS_REPO, qjsTag, _qjsAssetName(), source=qjsSource)
 
         task = InstallTask(
             name="YouTube 运行环境安装",

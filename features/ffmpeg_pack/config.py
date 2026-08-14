@@ -15,7 +15,7 @@ from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
 
 
-RELEASE_BASE = "https://github.com/XiaoYouChR/Ghost-Downloader-FFmpeg"
+FFMPEG_REPO = "XiaoYouChR/Ghost-Downloader-FFmpeg"
 
 
 def ffmpegAssetTarget() -> str:
@@ -106,15 +106,19 @@ class FFmpegRuntime(BinaryRuntime):
         return VersionInfo(version)
 
     async def fetchLatestVersion(self) -> str:
-        from app.update import fetchGitHubLatestTag
-        return await fetchGitHubLatestTag("XiaoYouChR/Ghost-Downloader-FFmpeg")
+        from app.sources import fetchLatestTag
+        tag, _ = await fetchLatestTag(FFMPEG_REPO)
+        return tag
 
     async def createInstallTask(self):
         from app.install import createInstallTask
+        from app.sources import buildDownloadUrl, fetchLatestTag
 
+        tag, source = await fetchLatestTag(FFMPEG_REPO)
         target = ffmpegAssetTarget()
         extension = "zip" if sys.platform == "win32" else "tar.gz"
-        url = f"{RELEASE_BASE}/releases/latest/download/ffmpeg-{target}.{extension}"
+        asset = f"ffmpeg-{target}.{extension}"
+        url = buildDownloadUrl(FFMPEG_REPO, tag, asset, source=source)
         executableNames = (
             ("ffmpeg.exe", "ffprobe.exe") if sys.platform == "win32"
             else ("ffmpeg", "ffprobe")
@@ -124,7 +128,7 @@ class FFmpegRuntime(BinaryRuntime):
             outputFolder=self.installFolder(),
             name=f"FFmpeg 安装 ({target})",
             executableNames=executableNames,
-            sha256Url=f"{url}.sha256",
+            sha256Url=buildDownloadUrl(FFMPEG_REPO, tag, f"{asset}.sha256", source=source),
         )
 
 

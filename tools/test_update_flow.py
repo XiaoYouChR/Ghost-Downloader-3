@@ -163,8 +163,10 @@ def main():
     print(f"Local server: {base}")
 
     import app.services.update_service as us
+    import app.sources as sources
 
-    original_sources = us.SOURCES.copy()
+    original_sources = sources.SOURCES.copy()
+    original_order = sources.SOURCE_ORDER
     original_staging = us.STAGING_DIR
     original_exec_dir = us.executableDir
     original_fetchFile = us.fetchFile
@@ -172,11 +174,13 @@ def main():
     original_extractDmg = us.extractDmg
     original_extractTarXz = us.extractTarXz
 
-    us.SOURCES["github"] = {
-        "versions": f"{base}/versions.json",
-        "raw": base,
-        "release": f"{base}/releases",
-    }
+    sources.SOURCES["github"] = sources.SourceEndpoints(
+        api=f"http://127.0.0.1:{port}/api",
+        download=f"http://127.0.0.1:{port}",
+        raw=f"http://127.0.0.1:{port}",
+        rawInfix="/",
+    )
+    sources.SOURCE_ORDER = ("github",)
     us.STAGING_DIR = FAKE_STAGING
     us.executableDir = FAKE_EXEC_DIR
 
@@ -221,8 +225,10 @@ def main():
 
     from app.services.update_service import (
         UpdateService, UpdateState, installPendingPacks,
-        buildAssetUrl, buildPlatformKey,
+        buildPlatformKey,
     )
+    from app.sources import buildDownloadUrl
+    from app.update import APP_REPO
 
     class FakeCoroutineRunner:
         def submit(self, coro, **kwargs):
@@ -303,10 +309,10 @@ def main():
             manifest = tomllib.load(f)
         check("version updated to 2.0.0", manifest.get("pack", {}).get("version") == "2.0.0")
 
-        # ── Test 6: buildAssetUrl ──
-        print("\n[Test 6] buildAssetUrl uses SOURCES table")
-        url = buildAssetUrl("github", "4.3.0", "Ghost-Downloader-v4.3.0-Windows-x86_64.zip")
-        check("URL correct", url == f"{base}/releases/v4.3.0/Ghost-Downloader-v4.3.0-Windows-x86_64.zip")
+        # ── Test 6: buildDownloadUrl ──
+        print("\n[Test 6] buildDownloadUrl uses sources module")
+        url = buildDownloadUrl(APP_REPO, "v4.3.0", "Ghost-Downloader-v4.3.0-Windows-x86_64.zip", source="github")
+        check("URL contains repo and version", f"{APP_REPO}/releases/download/v4.3.0/" in url)
 
         # ── Test 7: _downloadApp full release ──
         print("\n[Test 7] _downloadApp full release")
@@ -418,7 +424,8 @@ def main():
             print("ALL TESTS PASSED")
 
     finally:
-        us.SOURCES = original_sources
+        sources.SOURCES.update(original_sources)
+        sources.SOURCE_ORDER = original_order
         us.STAGING_DIR = original_staging
         us.executableDir = original_exec_dir
         us.fetchFile = original_fetchFile

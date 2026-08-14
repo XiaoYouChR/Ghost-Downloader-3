@@ -16,30 +16,18 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
-from app.client import buildClient, fetchFile
+from app.client import fetchFile
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, executableDir
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
-from app.update import isNewer
+from app.sources import buildDownloadUrl, buildRawUrl, fetchJson
+from app.update import APP_REPO, isNewer
 
 if TYPE_CHECKING:
     from app.services.coroutine_runner import CoroutineRunner
 
 STAGING_DIR = Path(APP_DATA_DIR) / "update_staging"
-
-SOURCES = {
-    "github": {
-        "versions": "https://raw.githubusercontent.com/XiaoYouChR/Ghost-Downloader-3/main/versions.json",
-        "raw": "https://raw.githubusercontent.com/XiaoYouChR/Ghost-Downloader-3/main",
-        "release": "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/download",
-    },
-    "gitcode": {
-        "versions": "https://raw.gitcode.com/XiaoYouChR/Ghost-Downloader-3/raw/main/versions.json",
-        "raw": "https://raw.gitcode.com/XiaoYouChR/Ghost-Downloader-3/raw/main",
-        "release": "https://gitcode.com/XiaoYouChR/Ghost-Downloader-3/releases/download",
-    },
-}
 
 OS_MAP = {"win32": "Windows", "darwin": "macOS", "linux": "Linux"}
 MACHINE_MAP = {"AMD64": "x86_64", "x86_64": "x86_64", "aarch64": "arm64", "arm64": "arm64"}
@@ -47,10 +35,6 @@ MACHINE_MAP = {"AMD64": "x86_64", "x86_64": "x86_64", "aarch64": "arm64", "arm64
 
 def buildPlatformKey() -> str:
     return f"{OS_MAP[sys.platform]}-{MACHINE_MAP[platform.machine()]}"
-
-
-def buildAssetUrl(source: str, version: str, assetName: str) -> str:
-    return f"{SOURCES[source]['release']}/v{version}/{assetName}"
 
 
 def extractZip(archivePath: Path, targetDir: Path) -> None:
@@ -189,22 +173,11 @@ class UpdateService(QObject):
                             latestVersion=remoteVersion)
 
     async def _fetchVersions(self) -> dict | None:
-        sources = [self._source] if self._source else list(SOURCES)
-        for sourceName in sources:
-            try:
-                client = buildClient(timeout=15)
-                try:
-                    resp = await client.get(SOURCES[sourceName]["versions"])
-                    resp.raise_for_status()
-                    result = await resp.json()
-                    self._source = sourceName
-                    return result
-                finally:
-                    client.close()
-            except Exception as e:
-                logger.debug("从 {} 获取版本信息失败: {}", sourceName, repr(e))
-                continue
-        return None
+        try:
+            data, self._source = await fetchJson(APP_REPO, "main", "versions.json")
+            return data
+        except RuntimeError:
+            return None
 
     async def _download(self, targetId: str) -> None:
         info = self._infos.get(targetId)
@@ -232,7 +205,7 @@ class UpdateService(QObject):
         patch = patches.get(platformKey)
 
         if patch and patch.get("from") == VERSION:
-            url = buildAssetUrl(self._source, version, patch["file"])
+            url = buildDownloadUrl(APP_REPO, f"v{version}", patch["file"], source=self._source)
             sha = patch.get("sha256", "")
             outputPath = STAGING_DIR / "patch.hdiff"
 
@@ -256,7 +229,7 @@ class UpdateService(QObject):
         archivePath = STAGING_DIR / full["file"]
         sha = full.get("sha256", "")
 
-        await fetchFile(buildAssetUrl(self._source, version, full["file"]), archivePath,
+        await fetchFile(buildDownloadUrl(APP_REPO, f"v{version}", full["file"], source=self._source), archivePath,
                         onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
         if sha and not matchChecksum(archivePath, sha):
@@ -282,7 +255,7 @@ class UpdateService(QObject):
     async def _downloadPack(self, packId: str, info: UpdateInfo) -> None:
         packData = self._versionsData.get("packs", {}).get(packId, {})
         filename = packData.get("file", f"{packId}.zip")
-        url = f"{SOURCES[self._source]['raw']}/dist/packs/{filename}"
+        url = buildRawUrl(APP_REPO, "main", f"dist/packs/{filename}", source=self._source)
         outputPath = STAGING_DIR / f"{packId}.zip"
 
         await fetchFile(url, outputPath, onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))
