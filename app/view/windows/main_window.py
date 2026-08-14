@@ -222,6 +222,7 @@ class MainWindow(MSFluentWindow):
 
     def _bind(self) -> None:
         self._draft.taskConfirmed.connect(self._taskService.add)
+        self._draft.taskConfirmed.connect(self._onTaskConfirmed)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
         self.titleBar.closeBtn.clicked.disconnect(self.close)
@@ -259,6 +260,12 @@ class MainWindow(MSFluentWindow):
             dialog.showMask()
         else:
             dialog.showStandalone()
+
+    def _onTaskConfirmed(self, task: Task, autoStart: bool) -> None:
+        if not cfg.shouldShowWindowOnTaskAdded.value:
+            return
+        from app.platform.desktop import raiseWindow
+        raiseWindow(self)
 
     @cached_property
     def _draftDialog(self) -> TaskDraftDialog:

@@ -243,6 +243,7 @@ class Config(QConfig):
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     shouldPreserveLastModified = ConfigItem("GeneralDownload", "PreserveLastModified", False, BoolValidator())
     shouldDeleteFilesOnRemove = ConfigItem("GeneralDownload", "DeleteFilesOnRemove", False, BoolValidator())
+    shouldShowWindowOnTaskAdded = ConfigItem("GeneralDownload", "ShowWindowOnTaskAdded", False, BoolValidator())
     maxReassignSize = RangeConfigItem(
         "GeneralDownload", "MaxReassignSize", 512, RangeValidator(64, 102400)
     )
