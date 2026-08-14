@@ -129,6 +129,19 @@ async def fetchJson(repo: str, branch: str, path: str) -> tuple[dict, str]:
     raise RuntimeError(f"无法获取 {repo}/{branch}/{path}")
 
 
+PYPI_MIRRORS = {
+    "gitcode": "https://mirrors.bfsu.edu.cn/pypi/web/json",
+    "github": "https://pypi.org/pypi",
+}
+
+
+def buildPypiUrl(package: str, *, source: str) -> str:
+    base = PYPI_MIRRORS.get(source, PYPI_MIRRORS["github"])
+    if source == "gitcode":
+        return f"{base}/{package}"
+    return f"{base}/{package}/json"
+
+
 def buildDownloadUrl(repo: str, tag: str, asset: str, *, source: str) -> str:
     mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
     endpoints = SOURCES[source]

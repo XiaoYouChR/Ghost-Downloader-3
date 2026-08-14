@@ -17,7 +17,6 @@ from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
 
-PYPI_API = "https://pypi.org/pypi/yt-dlp/json"
 QJS_REPO = "quickjs-ng/quickjs"
 COOKIE_DOMAIN = ".youtube.com"
 AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
@@ -199,9 +198,11 @@ class YouTubeRuntime(BinaryRuntime):
 
     async def fetchLatestVersion(self) -> str:
         from app.client import buildClient
+        from app.sources import SOURCE_ORDER, buildPypiUrl
+        url = buildPypiUrl("yt-dlp", source=SOURCE_ORDER[0])
         client = buildClient(timeout=15)
         try:
-            resp = await client.get(PYPI_API)
+            resp = await client.get(url)
             resp.raise_for_status()
             data = await resp.json()
             return data.get("info", {}).get("version", "")
@@ -274,10 +275,12 @@ class YouTubeRuntime(BinaryRuntime):
 
     async def _fetchWhlAsset(self) -> tuple[str, int]:
         from app.client import buildClient
+        from app.sources import SOURCE_ORDER, buildPypiUrl
 
+        url = buildPypiUrl("yt-dlp", source=SOURCE_ORDER[0])
         client = buildClient(timeout=15)
         try:
-            response = await client.get(PYPI_API)
+            response = await client.get(url)
             response.raise_for_status()
             data = await response.json()
         finally:
