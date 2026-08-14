@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sys
 from datetime import timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -14,6 +15,7 @@ from wreq.redirect import Policy
 from app.config.cfg import cfg, proxy
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from wreq import ClientConfig
 
 FALLBACK_PROFILE = "chrome"
@@ -154,6 +156,27 @@ def profileFamilies() -> list[str]:
 
 def profileVersions(family: str) -> list[str]:
     return [name for name, _ver, _profile in PROFILES_BY_FAMILY.get(family, [])]
+
+
+async def fetchFile(
+    url: str,
+    outputPath: Path,
+    onProgress: Callable[[float], None] | None = None,
+) -> None:
+    client = buildClient()
+    try:
+        async with client.stream("GET", url) as response:
+            response.raise_for_status()
+            total = int(response.headers.get("content-length", 0))
+            received = 0
+            with open(outputPath, "wb") as f:
+                async for chunk in response.aiter_bytes():
+                    f.write(chunk)
+                    received += len(chunk)
+                    if onProgress and total:
+                        onProgress(received / total * 100)
+    finally:
+        client.close()
 
 
 def matchEmulation(userAgent: str, host: Platform) -> Emulation | None:

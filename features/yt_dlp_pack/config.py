@@ -229,7 +229,7 @@ class YouTubeRuntime(BinaryRuntime):
 
     async def installTask(self):
         from app.config.cfg import cfg, currentHeaders
-        from disk_pack.task import ExtractStep, InstallTask
+        from app.install import ExtractStep, InstallTask
         from http_pack.task import HttpTaskStep
 
         whlUrl, whlSize = await self._fetchWhlAsset()
@@ -264,7 +264,7 @@ class YouTubeRuntime(BinaryRuntime):
             ))
             return task
 
-        from disk_pack.task import BinaryInstallStep
+        from app.install import BinaryInstallStep
         from app.models.task import TaskOptions
 
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"

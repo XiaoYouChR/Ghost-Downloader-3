@@ -2,3 +2,5 @@
 entry = "pack.py"
 class = "HuggingFacePack"
 dependencies = ["http_pack"]
+version = "1.0.0"
+gdMinVersion = "4.2.0"

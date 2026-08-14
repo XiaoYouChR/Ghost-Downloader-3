@@ -8,6 +8,17 @@ if TYPE_CHECKING:
     from app.models.task import Task, TaskStep
 
 
+def _typeByName(registry: dict[str, type], typeName: str, fallback: type) -> type:
+    found = registry.get(typeName)
+    if found is not None:
+        return found
+    # 向后兼容：旧 tasks.jsonl 用裸类名（如 "BilibiliTask"），扫描 registry 匹配
+    for cls in registry.values():
+        if cls.__name__ == typeName:
+            return cls
+    return fallback
+
+
 def toDict(obj: Any) -> Any:
     from app.models.task import Task, TaskStep, TaskStatus
 
@@ -20,9 +31,10 @@ def toDict(obj: Any) -> Any:
             f.name: toDict(getattr(obj, f.name))
             for f in dataclass_fields(obj) if f.repr
         }
+        cls = type(obj)
         baseName = "TaskStep" if isinstance(obj, TaskStep) else "Task"
-        if type(obj).__name__ != baseName:
-            result["type"] = type(obj).__name__
+        if cls.__name__ != baseName:
+            result["type"] = f"{cls.__module__}.{cls.__name__}"
         return result
     if is_dataclass(obj):
         return {
@@ -48,9 +60,9 @@ def fromDict(data: Any, cls: type) -> Any:
     typeName = obj.pop("type", None)
     if isinstance(typeName, str):
         if issubclass(cls, TaskStep):
-            targetCls = TaskStep._registry.get(typeName, cls)
+            targetCls = _typeByName(TaskStep._registry, typeName, cls)
         elif issubclass(cls, Task):
-            targetCls = Task._registry.get(typeName, cls)
+            targetCls = _typeByName(Task._registry, typeName, cls)
         else:
             targetCls = cls
     else:

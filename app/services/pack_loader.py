@@ -20,6 +20,8 @@ class PackManifest:
     entryPath: Path
     folder: Path
     dependencies: tuple[str, ...]
+    version: str
+    gdMinVersion: str
 
     @classmethod
     def fromDir(cls, packDir: Path) -> PackManifest | None:
@@ -63,25 +65,49 @@ class PackManifest:
             logger.warning("manifest dependencies 无效: {}", manifestPath)
             return None
 
+        version = packSection.get("version", "")
+        if not isinstance(version, str):
+            version = ""
+
+        gdMinVersion = packSection.get("gdMinVersion", "")
+        if not isinstance(gdMinVersion, str):
+            gdMinVersion = ""
+
         return cls(
             name=packDir.name,
             className=className,
             entryPath=entryPath,
             folder=packDir,
             dependencies=tuple(deps),
+            version=version,
+            gdMinVersion=gdMinVersion,
         )
 
 
 def loadPacks(featuresDir: Path, services=None) -> list[FeaturePack]:
+    from PySide6.QtCore import QVersionNumber
+    from app.config.constants import VERSION
+
     if not featuresDir.exists():
         logger.warning("features 目录不存在: {}", featuresDir)
         return []
 
-    manifests = [
-        m for p in sorted(featuresDir.iterdir())
-        if p.is_dir() and not p.name.startswith(".")
-        if (m := PackManifest.fromDir(p)) is not None
-    ]
+    appVersion = QVersionNumber.fromString(VERSION)
+
+    manifests = []
+    for p in sorted(featuresDir.iterdir()):
+        if not p.is_dir() or p.name.startswith("."):
+            continue
+        m = PackManifest.fromDir(p)
+        if m is None:
+            continue
+        if m.gdMinVersion:
+            required = QVersionNumber.fromString(m.gdMinVersion)
+            if appVersion < required:
+                logger.warning("跳过 FeaturePack {}：需要 GD ≥ {}，当前 {}", m.name, m.gdMinVersion, VERSION)
+                continue
+        manifests.append(m)
+
     ordered = orderedByDependency(manifests)
     return [pack for m in ordered if (pack := loadManifest(m, services)) is not None]
 

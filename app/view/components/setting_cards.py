@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from re import compile
 from urllib.parse import urlsplit
-import weakref
 
 from PySide6.QtCore import Qt, QEvent, QRectF, Signal
 from PySide6.QtGui import QPainter, QPainterPath
@@ -797,13 +796,10 @@ class SelectFileCard(SettingCard):
 
 class RuntimeCard(SettingCard):
 
-    def __init__(self, runtimeStatusService, coroutineRunner, taskService,
-                 runtime, parent=None):
+    def __init__(self, runtimeStatusService, runtime, parent=None):
         from app.models.pack import BinaryRuntime
 
         self._runtimeStatusService = runtimeStatusService
-        self._coroutineRunner = coroutineRunner
-        self._taskService = taskService
         self._runtime: BinaryRuntime = runtime
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
@@ -843,7 +839,7 @@ class RuntimeCard(SettingCard):
         self._runtimeStatusService.refreshStatus(self._runtime)
 
     def updateStatus(self, status) -> None:
-        self.refreshButton.setEnabled(not status.isBusy)
+        self.refreshButton.setEnabled(not status.isBusy and not status.isInstalling)
         isInstalled = bool(status.path)
         isManaged = self._runtime.isAppManaged()
         isUpdateAvailable = (
@@ -851,6 +847,12 @@ class RuntimeCard(SettingCard):
             and status.latestVersion
             and (not status.version or self._runtime.isNewer(status.version, status.latestVersion))
         )
+
+        if status.isInstalling:
+            self.setContent(self.tr("正在安装..."))
+            self.installButton.hide()
+            self.deleteButton.hide()
+            return
 
         if status.isBusy:
             self.setContent(self.tr("正在检测运行时..."))
@@ -896,43 +898,7 @@ class RuntimeCard(SettingCard):
             self.updateStatus(status)
 
     def _onInstallClicked(self) -> None:
-        self.installButton.setEnabled(False)
-        cardRef = weakref.ref(self)
-        _taskService = self._taskService
-
-        def onCreated(task) -> None:
-            from shiboken6 import isValid
-
-            _taskService.add(task)
-            card = cardRef()
-            if card is not None and isValid(card):
-                card.installButton.setEnabled(True)
-                InfoBar.success(
-                    self.tr("安装任务已创建"),
-                    self.tr("请前往任务页查看安装进度"),
-                    duration=3000,
-                    position=InfoBarPosition.TOP,
-                    parent=card.window(),
-                )
-
-        def onFailed(error: str) -> None:
-            from shiboken6 import isValid
-
-            card = cardRef()
-            if card is not None and isValid(card):
-                card._onInstallTaskFailed(error)
-
-        self._coroutineRunner.submit(self._runtime.installTask(), done=onCreated, failed=onFailed)
-
-    def _onInstallTaskFailed(self, error: str) -> None:
-        self.installButton.setEnabled(True)
-        InfoBar.error(
-            self.tr("安装失败"),
-            error,
-            duration=-1,
-            position=InfoBarPosition.TOP,
-            parent=self.window(),
-        )
+        self._runtimeStatusService.install(self._runtime)
 
     def _onDeleteClicked(self) -> None:
         from qfluentwidgets import MessageBox

@@ -3,16 +3,9 @@ from __future__ import annotations
 import platform
 import sys
 from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from PySide6.QtWidgets import QWidget
-
-from PySide6.QtCore import QVersionNumber
+from typing import Any
 
 from app.client import buildClient
-from app.config.cfg import cfg, proxy
-from app.config.constants import VERSION
 
 RELEASE_API = "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest"
 
@@ -85,12 +78,6 @@ async def fetchGitHubLatestTag(repo: str) -> str:
         client.close()
 
 
-def isOutdated(release: Release) -> bool:
-    current = QVersionNumber.fromString(VERSION.lstrip("vV"))
-    latest = QVersionNumber.fromString(release.version.lstrip("vV"))
-    return current < latest
-
-
 def bestAsset(release: Release) -> ReleaseAsset | None:
     best, bestScore = None, -1
     for asset in release.assets:
@@ -160,40 +147,3 @@ def assetScore(name: str) -> int:
             score += 50
 
     return score
-
-
-def showReleaseDialog(release: Release, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
-    from app.view.dialogs.release_info import ReleaseInfoDialog
-    dialog = ReleaseInfoDialog(release, parent)
-    dialog.accepted.connect(lambda: addAssetTask(dialog.selectedAsset(), parent, coroutineRunner, featureService, taskService))
-    dialog.open()
-
-
-def addBestAssetTask(release: Release, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
-    from qfluentwidgets import InfoBar, InfoBarPosition
-    asset = bestAsset(release)
-    if asset is None:
-        InfoBar.warning(
-            parent.tr("未找到适配的安装包"),
-            parent.tr("请在版本详情中手动选择"),
-            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
-        )
-        showReleaseDialog(release, parent, coroutineRunner, featureService, taskService)
-        return
-    addAssetTask(asset, parent, coroutineRunner, featureService, taskService)
-
-
-def addAssetTask(asset: ReleaseAsset, parent: QWidget, coroutineRunner, featureService, taskService) -> None:
-    from qfluentwidgets import InfoBar, InfoBarPosition
-    from app.models.task import TaskOptions
-    coroutineRunner.submit(
-        featureService.parse(TaskOptions(url=asset.downloadUrl)),
-        done=taskService.add,
-        failed=lambda e: InfoBar.error(
-            parent.tr("创建下载任务失败"), str(e),
-            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=parent,
-        ),
-        owner=parent,
-    )
-
-

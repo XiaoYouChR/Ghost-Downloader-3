@@ -7,24 +7,25 @@ import sys
 import tarfile
 import zipfile
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import perf_counter
+from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
-from app.platform.filesystem import deletePath
+from app.platform.filesystem import deletePath, toPosixPath
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+    from app.models.task import TaskOptions
 
 CHUNK_SIZE = 1 << 20
+ARCHIVE_SUFFIXES = (".zip", ".tar.gz")
 
 
-# Disabled: our own HTTP client doesn't set com.apple.quarantine, so for one-click
-# install this is a no-op. Kept (commented) in case a future install source is
-# quarantined (e.g. a user-supplied, browser-downloaded archive). To re-enable,
-# uncomment this plus the two call sites below and restore `import os` / suppress.
-# def removeQuarantine(path: Path) -> None:
-#     if sys.platform != "darwin":
-#         return
-#     with suppress(OSError):
-#         os.removexattr(str(path), "com.apple.quarantine")
+def isArchive(name: str) -> bool:
+    lower = name.lower()
+    return any(lower.endswith(suffix) for suffix in ARCHIVE_SUFFIXES)
 
 
 @dataclass(kw_only=True, eq=False)
@@ -175,7 +176,6 @@ class InstallStep(TaskStep):
                     raise TaskError("解压后未找到可执行文件：{name}", name=name)
                 if sys.platform != "win32":
                     executable.chmod(executable.stat().st_mode | 0o755)
-                # removeQuarantine(executable)  # disabled — see removeQuarantine note
 
             if self.shouldDeleteSource and archive is not None and archive.exists():
                 archive.unlink()
@@ -224,5 +224,77 @@ class BinaryInstallStep(TaskStep):
             raise TaskError("下载的文件未找到：{path}", path=str(path))
         if sys.platform != "win32":
             path.chmod(path.stat().st_mode | 0o755)
-        # removeQuarantine(path)  # disabled — see removeQuarantine note
         self.setStatus(TaskStatus.COMPLETED)
+
+
+async def createInstallTask(
+    delegate: Callable[[TaskOptions], Awaitable[Task]],
+    url: str,
+    outputFolder: Path,
+    name: str = "",
+    executableNames: tuple[str, ...] = (),
+    sha256Url: str = "",
+) -> InstallTask:
+    from app.models.task import TaskOptions
+
+    assetName = PurePosixPath(urlparse(url).path).name
+
+    download = await delegate(TaskOptions(url=url, outputFolder=outputFolder))
+    downloadStep = download.steps[0]
+
+    archive = isArchive(assetName)
+    if archive:
+        targetPath = toPosixPath(outputFolder / assetName)
+    else:
+        binaryName = executableNames[0] if executableNames else assetName
+        targetPath = toPosixPath(outputFolder / binaryName)
+    downloadStep.outputFile = targetPath
+
+    task = InstallTask(
+        name=name or assetName,
+        url=url,
+        packId="install",
+        fileSize=download.fileSize,
+        outputFolder=outputFolder,
+        installFolder=str(outputFolder),
+    )
+    stepIndex = 1
+    downloadStep.stepIndex = stepIndex
+    task.addStep(downloadStep)
+    stepIndex += 1
+
+    if sha256Url:
+        checksumDownload = await delegate(
+            TaskOptions(url=sha256Url, outputFolder=outputFolder)
+        )
+        checksumStep = checksumDownload.steps[0]
+        sha256Path = toPosixPath(outputFolder / PurePosixPath(urlparse(sha256Url).path).name)
+        checksumStep.outputFile = sha256Path
+        checksumStep.stepIndex = stepIndex
+        task.addStep(checksumStep)
+        stepIndex += 1
+        task.addStep(ChecksumStep(
+            stepIndex=stepIndex, targetFile=targetPath, sha256File=sha256Path,
+        ))
+        stepIndex += 1
+
+    if archive:
+        extractFolder = toPosixPath(outputFolder / ".extracting")
+        task.addStep(ExtractStep(
+            stepIndex=stepIndex,
+            archivePath=targetPath,
+            outputFolder=extractFolder,
+            archiveSize=download.fileSize,
+        ))
+        stepIndex += 1
+        task.addStep(InstallStep(
+            stepIndex=stepIndex,
+            sourceFolder=extractFolder,
+            installFolder=toPosixPath(outputFolder),
+            archivePath=targetPath,
+            executableNames=list(executableNames),
+        ))
+    else:
+        task.addStep(BinaryInstallStep(stepIndex=stepIndex, binaryPath=targetPath))
+
+    return task

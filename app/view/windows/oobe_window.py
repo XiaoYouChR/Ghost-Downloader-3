@@ -783,15 +783,14 @@ class OobeWindow(FluentWidget):
     PAGE_COUNT = 6
 
     def __init__(self, browserService, coroutineRunner, featureService,
-                 taskService, parent=None):
+                 runtimeStatusService, parent=None):
         super().__init__(parent=parent)
         self._browserService = browserService
         self._coroutineRunner = coroutineRunner
         self._featureService = featureService
-        self._taskService = taskService
+        self._runtimeStatusService = runtimeStatusService
         self._currentIndex = 0
         self._isFinished = False
-        self._queuedRuntimeIds: set[str] = set()
         self._initWidget()
         self._initContent()
         self._initLayout()
@@ -930,26 +929,10 @@ class OobeWindow(FluentWidget):
         if not runtimes:
             return
 
-        from loguru import logger
-
-        _taskService = self._taskService
-
-        def onDone(task, name):
-            _taskService.add(task)
-
-        def onFailed(error, name):
-            logger.error("OOBE 安装 {} 失败: {}", name, error)
-
         for runtime in runtimes:
-            if runtime.path() or runtime.runtimeId in self._queuedRuntimeIds:
+            if runtime.path():
                 continue
-            self._queuedRuntimeIds.add(runtime.runtimeId)
-            self._coroutineRunner.submit(
-                runtime.installTask(),
-                done=onDone,
-                failed=onFailed,
-                name=runtime.name,
-            )
+            self._runtimeStatusService.install(runtime)
 
     def _finish(self) -> None:
         if self._isFinished:

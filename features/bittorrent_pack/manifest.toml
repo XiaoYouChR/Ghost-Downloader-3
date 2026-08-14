@@ -2,3 +2,5 @@
 entry = "pack.py"
 class = "BitTorrentPack"
 dependencies = []
+version = "1.0.0"
+gdMinVersion = "4.2.0"

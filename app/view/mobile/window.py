@@ -13,7 +13,7 @@ from app.config.cfg import cfg
 from app.platform.android import clearShare, isStorageGranted, parseShare, requestStoragePermission
 from app.platform.android_notification import isNotificationEnabled, requestNotificationPermission
 from app.services.task_draft import TaskDraft
-from app.update import addBestAssetTask, showReleaseDialog
+from app.services.update_service import UpdateState
 from app.view.dialogs.task_draft import TaskDraftDialog
 from app.view.mobile.device import setupAccentColor
 from app.view.mobile.navigation import BottomNavigationBar
@@ -25,7 +25,7 @@ TASK_PAGE_INDEX = 0
 
 
 class MobileMainWindow(QWidget):
-    def __init__(self, taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner):
+    def __init__(self, taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, updateService=None):
         super().__init__(parent=None)
         self._taskService = taskService
         self._featureService = featureService
@@ -33,6 +33,7 @@ class MobileMainWindow(QWidget):
         self._categoryService = categoryService
         self._speedMeter = speedMeter
         self._coroutineRunner = coroutineRunner
+        self._updateService = updateService
         setupAccentColor()
 
         self.stackedWidget = QStackedWidget(self)
@@ -199,13 +200,13 @@ class MobileMainWindow(QWidget):
             return
         self._draftDialog.showMask()
 
-    def _onUpdateAvailable(self, release) -> None:
+    def _onUpdateAvailable(self, info) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
 
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
             title=self.tr("检测到新版本"),
-            content=self.tr("最新版本: {0}").format(release.version),
+            content=self.tr("最新版本: {0}").format(info.latestVersion),
             orient=Qt.Orientation.Vertical,
             isClosable=True,
             duration=-1,
@@ -213,12 +214,28 @@ class MobileMainWindow(QWidget):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self, self._coroutineRunner, self._featureService, self._taskService))
+        downloadButton.clicked.connect(lambda: self._updateService.download("app"))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
-        detailButton.clicked.connect(lambda: showReleaseDialog(release, self, self._coroutineRunner, self._featureService, self._taskService))
+        detailButton.clicked.connect(self._showReleaseDetails)
         infoBar.addWidget(detailButton)
         infoBar.show()
+
+    def _showReleaseDetails(self) -> None:
+        from app.models.task import TaskOptions
+        from app.update import fetchRelease
+        from app.view.dialogs.release_info import ReleaseInfoDialog
+
+        def onFetched(release):
+            dialog = ReleaseInfoDialog(release, self)
+            dialog.accepted.connect(lambda: self._coroutineRunner.submit(
+                self._featureService.parse(TaskOptions(url=dialog.selectedAsset().downloadUrl)),
+                done=self._taskService.add,
+                owner=self,
+            ))
+            dialog.open()
+
+        self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)
 
     def alertException(self, message: str) -> None:
         from PySide6.QtCore import QUrl

@@ -16,7 +16,7 @@ from app.config.cfg import CloseMode, cfg
 from app.config.constants import DONATE_URL, FEEDBACK_URL
 from app.services.task_draft import TaskDraft
 from app.signal_bus import signalBus
-from app.update import addBestAssetTask, showReleaseDialog
+from app.services.update_service import UpdateState
 from app.view.pages.setting_page import SettingPage
 from app.view.pages.task_page import TaskPage
 
@@ -75,6 +75,7 @@ class MainWindow(MSFluentWindow):
         speedMeter: SpeedMeter,
         coroutineRunner: CoroutineRunner,
         plan,
+        updateService=None,
         parent=None,
     ):
         self._isGeometryRestored = False
@@ -89,6 +90,7 @@ class MainWindow(MSFluentWindow):
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
         self._speedMeter = speedMeter
+        self._updateService = updateService
         self._plan = plan
         self.setMicaEffectEnabled(False)
         if sys.platform != "darwin":
@@ -285,13 +287,13 @@ class MainWindow(MSFluentWindow):
         else:
             self._browserService.rejectPair(session, requestId)
 
-    def _onUpdateAvailable(self, release) -> None:
+    def _onUpdateAvailable(self, info) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
 
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
             title=self.tr("检测到新版本"),
-            content=self.tr("最新版本: {0}").format(release.version),
+            content=self.tr("最新版本: {0}").format(info.latestVersion),
             orient=Qt.Orientation.Horizontal,
             isClosable=True,
             duration=-1,
@@ -299,15 +301,31 @@ class MainWindow(MSFluentWindow):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: addBestAssetTask(release, self, self._coroutineRunner, self._featureService, self._taskService))
+        downloadButton.clicked.connect(lambda: self._updateService.download("app"))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
-        detailButton.clicked.connect(lambda: showReleaseDialog(release, self, self._coroutineRunner, self._featureService, self._taskService))
+        detailButton.clicked.connect(self._showReleaseDetails)
         infoBar.addWidget(detailButton)
         sponsorButton = PushButton(FluentIcon.HEART, self.tr("请作者喝咖啡"))
         sponsorButton.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(DONATE_URL)))
         infoBar.addWidget(sponsorButton)
         infoBar.show()
+
+    def _showReleaseDetails(self) -> None:
+        from app.models.task import TaskOptions
+        from app.update import fetchRelease
+        from app.view.dialogs.release_info import ReleaseInfoDialog
+
+        def onFetched(release):
+            dialog = ReleaseInfoDialog(release, self)
+            dialog.accepted.connect(lambda: self._coroutineRunner.submit(
+                self._featureService.parse(TaskOptions(url=dialog.selectedAsset().downloadUrl)),
+                done=self._taskService.add,
+                owner=self,
+            ))
+            dialog.open()
+
+        self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)
 
     def alertException(self, message: str) -> None:
         from qfluentwidgets import TransparentToolButton, ToolTipFilter

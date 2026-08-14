@@ -43,18 +43,24 @@ def createServices(coroutineRunner, categoryService, speedMeter):
     from app.services.feature_service import FeatureService
     from app.services.runtime_status import RuntimeStatusService
     from app.services.task_service import TaskService
+    from app.services.update_service import UpdateService
 
     taskService = TaskService(coroutineRunner, categoryService, speedMeter)
     runtimeStatusService = RuntimeStatusService(coroutineRunner)
     featureService = FeatureService(taskService, categoryService, coroutineRunner, runtimeStatusService)
     browserService = BrowserService(coroutineRunner, taskService, parse=featureService.parse)
     aria2RpcServer = Aria2RpcServer(coroutineRunner, parse=featureService.parse, addTask=taskService.add)
+    updateService = UpdateService(coroutineRunner)
 
-    return featureService, taskService, browserService, aria2RpcServer
+    return featureService, taskService, browserService, aria2RpcServer, updateService, runtimeStatusService
 
 
 def loadPacks(featureService, coroutineRunner, speedMeter):
     from app.models.pack import PackConfig, PackServices
+    from app.services.update_service import installPendingPacks
+    from app.config.paths import executableDir
+
+    installPendingPacks(executableDir / "features")
 
     services = PackServices(
         coroutineRunner=coroutineRunner,
@@ -76,24 +82,20 @@ def bindNotifications(taskService, notifyCompleted, notifyDiskSpace):
     taskService.diskSpaceInsufficient.connect(notifyDiskSpace)
 
 
-def checkUpdateAtStartup(coroutineRunner, onUpdateAvailable):
+def checkUpdateAtStartup(updateService):
     from app.config.cfg import cfg
     if not cfg.shouldCheckUpdateAtStartup.value:
         return
-    from app.update import fetchRelease, isOutdated
-
-    def _onFetched(release):
-        if isOutdated(release):
-            onUpdateAvailable(release)
-
-    coroutineRunner.submit(fetchRelease(), done=_onFetched)
+    updateService.check()
 
 
-def stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner):
+def stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, updateService=None):
     taskService.stop()
     taskService.flush()
     browserService.stop()
     aria2RpcServer.stop()
     featureService.deactivate(coroutineRunner)
     taskService.flush()
+    if updateService is not None:
+        updateService.apply()
     coroutineRunner.stop()

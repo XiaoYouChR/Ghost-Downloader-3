@@ -26,11 +26,12 @@ if TYPE_CHECKING:
     from qfluentwidgets import MessageBoxBase
 
 
+
 @dataclass(frozen=True)
 class FieldSpec:
     name: str
     icon: FluentIcon
-    formats: dict[TaskStatus | None, Callable]
+    formats: dict[TaskStatus | None, Callable[[Task, int, int], str | None]]
 
 
 @dataclass(frozen=True)

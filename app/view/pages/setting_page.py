@@ -27,7 +27,7 @@ from app.view.components.setting_cards import (
     HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
-from app.update import fetchRelease, isOutdated, showReleaseDialog
+from app.update import fetchRelease
 from app.view.components.editors import FolderPicker
 
 
@@ -510,13 +510,25 @@ class SettingPage(ScrollArea):
         )
 
     def _onUpdateChecked(self, release) -> None:
-        if not isOutdated(release):
+        from PySide6.QtCore import QVersionNumber
+        current = QVersionNumber.fromString(VERSION.lstrip("vV"))
+        latest = QVersionNumber.fromString(release.version.lstrip("vV"))
+        if current >= latest:
             InfoBar.success(self.tr("当前已是最新版本"),
                             self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, release.version),
                             duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
             return
 
-        showReleaseDialog(release, self.window(), self._coroutineRunner, self._featureService, self._taskService)
+        from app.models.task import TaskOptions
+        from app.view.dialogs.release_info import ReleaseInfoDialog
+        parent = self.window()
+        dialog = ReleaseInfoDialog(release, parent)
+        dialog.accepted.connect(lambda: self._coroutineRunner.submit(
+            self._featureService.parse(TaskOptions(url=dialog.selectedAsset().downloadUrl)),
+            done=self._taskService.add,
+            owner=parent,
+        ))
+        dialog.open()
 
     def _onUpdateCheckFailed(self, error: str) -> None:
         InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),

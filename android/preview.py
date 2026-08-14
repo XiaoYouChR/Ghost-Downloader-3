@@ -30,7 +30,7 @@ if __name__ == "__main__":
     from app.startup import createServices, loadPacks, startEngine, stopEngine
 
     coroutineRunner, categoryService, speedMeter = loadEngine(app)
-    featureService, taskService, browserService, aria2RpcServer = createServices(
+    featureService, taskService, browserService, aria2RpcServer, updateService, runtimeStatusService = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
     loadPacks(featureService, coroutineRunner, speedMeter)

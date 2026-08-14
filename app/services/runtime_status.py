@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
@@ -19,6 +20,7 @@ class RuntimeStatus:
     latestVersion: str = ""
     error: str = ""
     isBusy: bool = False
+    isInstalling: bool = False
 
 
 class RuntimeStatusService(QObject):
@@ -30,6 +32,7 @@ class RuntimeStatusService(QObject):
         self._statuses: dict[str, RuntimeStatus] = {}
         self._workIds: dict[str, str] = {}
         self._runtimes: dict[str, BinaryRuntime] = {}
+        self._installingIds: set[str] = set()
 
     def status(self, runtime: BinaryRuntime) -> RuntimeStatus:
         status = self._statuses.get(runtime.runtimeId)
@@ -54,6 +57,52 @@ class RuntimeStatusService(QObject):
             self._workIds.pop(runtimeId, None)
         self._runtimes.pop(runtimeId, None)
         self._probe(runtime)
+
+    def install(self, runtime: BinaryRuntime) -> None:
+        runtimeId = runtime.runtimeId
+        if runtimeId in self._installingIds:
+            return
+        workId = self._workIds.pop(runtimeId, None)
+        if workId:
+            self._coroutineRunner.cancel(workId)
+
+        self._installingIds.add(runtimeId)
+        self._runtimes[runtimeId] = runtime
+
+        status = RuntimeStatus(runtimeId, runtime.name, isInstalling=True)
+        self._statuses[runtimeId] = status
+        self.statusChanged.emit(status)
+
+        self._workIds[runtimeId] = self._coroutineRunner.submit(
+            self._runInstall(runtime),
+            done=self._onInstallFinished,
+            failed=self._onInstallFailed,
+            runtimeId=runtimeId,
+        )
+
+    async def _runInstall(self, runtime: BinaryRuntime) -> None:
+        from app.models.task import TaskStatus
+
+        task = await runtime.installTask()
+        task.setStatus(TaskStatus.RUNNING)
+        await task.run(lambda *a: None, lambda: asyncio.sleep(0))
+
+    def _onInstallFinished(self, _, runtimeId: str) -> None:
+        self._installingIds.discard(runtimeId)
+        self._workIds.pop(runtimeId, None)
+        runtime = self._runtimes.get(runtimeId)
+        if runtime:
+            self.invalidate(runtime)
+
+    def _onInstallFailed(self, error: str, runtimeId: str) -> None:
+        self._installingIds.discard(runtimeId)
+        self._workIds.pop(runtimeId, None)
+        self._runtimes.pop(runtimeId, None)
+        current = self._statuses.get(runtimeId)
+        if current:
+            status = replace(current, isInstalling=False, error=error)
+            self._statuses[runtimeId] = status
+            self.statusChanged.emit(status)
 
     def _probe(self, runtime: BinaryRuntime) -> None:
         runtimeId = runtime.runtimeId

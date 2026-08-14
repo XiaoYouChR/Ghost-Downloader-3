@@ -188,14 +188,15 @@ class M3U8Runtime(BinaryRuntime):
 
         url, tag = await self._fetchAssetUrl(target)
 
-        from app.models.task import BinaryInstallOptions
+        from app.install import createInstallTask
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
-        return await self.parse(BinaryInstallOptions(
+        return await createInstallTask(
+            self.parse,
             url=url,
             outputFolder=Path(m3u8Config.installFolder.value),
             name=f"N_m3u8DL-RE {tag} ({target})",
             executableNames=(binaryName,),
-        ))
+        )
 
     async def _fetchAssetUrl(self, target: str) -> tuple[str, str]:
         from app.client import buildClient

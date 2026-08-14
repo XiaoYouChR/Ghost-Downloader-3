@@ -1,3 +1,0 @@
-[pack]
-entry = "pack.py"
-class = "DiskPack"

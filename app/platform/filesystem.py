@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 import sys
@@ -92,6 +93,14 @@ def findExecutable(installFolder: Path, name: str, *subdirs: str) -> str:
         return toPosixPath(candidate)
     found = shutil.which(name)
     return toPosixPath(found) if found else ""
+
+
+def matchChecksum(filePath: Path, expectedHex: str) -> bool:
+    digest = hashlib.sha256()
+    with filePath.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest().lower() == expectedHex.lower()
 
 
 def deletePath(path: Path) -> None:

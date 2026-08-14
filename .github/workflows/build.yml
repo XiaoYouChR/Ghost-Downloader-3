@@ -116,6 +116,22 @@ jobs:
           (Get-Content scripts/Ghost-Downloader-3.iss) -replace 'APPLICATION_VERSION', '${{ needs.prepare.outputs.version }}' | Set-Content scripts/Ghost-Downloader-3.iss
           uv run scripts/deploy.py
 
+      - name: Build updater
+        shell: pwsh
+        run: |
+          $arch = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
+          cmake -B build-updater -G "Visual Studio 17 2022" -A $arch tools/updater
+          cmake --build build-updater --config Release
+          Copy-Item build-updater/Release/updater.exe dist/Ghost-Downloader-3.dist/
+
+      - name: Download HDiffPatch
+        shell: pwsh
+        run: |
+          $hdiffArch = if ("${{ matrix.architecture }}" -eq "arm64") { "windows_arm64" } else { "windows64" }
+          Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_${hdiffArch}.zip" -OutFile hdiffpatch.zip
+          Expand-Archive hdiffpatch.zip -DestinationPath hdiffpatch
+          Copy-Item hdiffpatch/${hdiffArch}/hpatchz.exe dist/Ghost-Downloader-3.dist/
+
       - name: Prepare For Sign
         if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.sign_artifact == 'true' }}
         run: |
@@ -170,15 +186,54 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'true' }}
         shell: pwsh
         run: |
-          7z a -tzip -mx=9 -m0=LZMA Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip dist/Ghost-Downloader-3.dist/*
+          Push-Location dist/Ghost-Downloader-3.dist
+          7z a -tzip -mx=9 -m0=LZMA "$env:GITHUB_WORKSPACE/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip" *
+          Pop-Location
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
+
+      - name: Generate delta patch
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $hdiffArch = if ("${{ matrix.architecture }}" -eq "arm64") { "windows_arm64" } else { "windows64" }
+          $prevTag = gh release list --limit 2 --json tagName --jq '.[1].tagName'
+          if (-not $prevTag) { Write-Output "No previous release, skipping delta"; exit 0 }
+          $prevVer = $prevTag -replace '^v', ''
+
+          New-Item -ItemType Directory -Path prev -Force
+          gh release download $prevTag -p "*Windows-${{ matrix.architecture }}.zip" -D prev/ 2>$null
+          $prevZip = Get-ChildItem prev/*.zip | Select-Object -First 1
+          if (-not $prevZip) { Write-Output "No previous asset for this architecture"; exit 0 }
+
+          New-Item -ItemType Directory -Path prev-extracted -Force
+          Push-Location prev-extracted
+          7z x $prevZip.FullName
+          Pop-Location
+
+          if (Test-Path "prev-extracted/dist/Ghost-Downloader-3.dist") {
+            $oldDir = "prev-extracted/dist/Ghost-Downloader-3.dist"
+          } else {
+            $oldDir = "prev-extracted"
+          }
+
+          $patchFile = "patch-Windows-${{ matrix.architecture }}-${prevVer}-to-${{ env.VERSION }}.hdiff"
+          & "hdiffpatch/${hdiffArch}/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
+          echo "PATCH_FILE=$patchFile" >> $env:GITHUB_ENV
 
       - name: Upload to release
         if: ${{ github.event.inputs.create_release == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: pwsh
         run: |
-          gh release upload "v${{ env.VERSION }}" "Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip" "dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe" --clobber
+          $files = @(
+            "Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip",
+            "dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe"
+          )
+          if ($env:PATCH_FILE -and (Test-Path $env:PATCH_FILE)) { $files += $env:PATCH_FILE }
+          gh release upload "v${{ env.VERSION }}" @files --clobber
 
       - name: Upload artifacts
         if: ${{ github.event.inputs.create_release == 'false' }}
@@ -235,6 +290,19 @@ jobs:
           mv "app/assets/修复软件损坏" "dist/修复软件损坏"
           chmod +x "dist/修复软件损坏"
 
+      - name: Build updater
+        run: |
+          cmake -B build-updater -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }} tools/updater
+          cmake --build build-updater
+          cp build-updater/updater "dist/Ghost Downloader.app/Contents/MacOS/"
+
+      - name: Download HDiffPatch
+        run: |
+          curl -fL "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_macos.zip" -o hdiffpatch.zip
+          unzip -q hdiffpatch.zip
+          cp macos/hpatchz "dist/Ghost Downloader.app/Contents/MacOS/"
+          chmod +x "dist/Ghost Downloader.app/Contents/MacOS/hpatchz"
+
       - name: Reinstall openssl libs
         if: ${{ matrix.openssl_workaround == 'true' }}
         run: |
@@ -271,12 +339,39 @@ jobs:
             "$DMG_NAME" \
             "$DMG_SOURCE_DIR"
 
+      - name: Generate delta patch
+        if: ${{ github.event.inputs.create_release == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          chmod +x macos/hdiffz
+          PREV_TAG=$(gh release list --limit 2 --json tagName --jq '.[1].tagName')
+          if [ -z "$PREV_TAG" ]; then echo "No previous release, skipping delta"; exit 0; fi
+          PREV_VER=${PREV_TAG#v}
+
+          mkdir -p prev-download
+          gh release download "$PREV_TAG" -p "*macOS-${{ matrix.architecture }}.dmg" -D prev-download/ 2>/dev/null || true
+          PREV_DMG=$(ls prev-download/*.dmg 2>/dev/null | head -1)
+          if [ -z "$PREV_DMG" ]; then echo "No previous asset for this architecture"; exit 0; fi
+
+          mkdir -p prev-mount
+          hdiutil attach "$PREV_DMG" -mountpoint prev-mount -nobrowse -quiet
+          OLD_APP=$(find prev-mount -maxdepth 1 -name "*.app" | head -1)
+
+          PATCH_FILE="patch-macOS-${{ matrix.architecture }}-${PREV_VER}-to-${{ env.VERSION }}.hdiff"
+          macos/hdiffz -f "$OLD_APP" "dist/Ghost Downloader.app" "$PATCH_FILE"
+
+          hdiutil detach prev-mount -quiet
+          echo "PATCH_FILE=$PATCH_FILE" >> "$GITHUB_ENV"
+
       - name: Upload to release
         if: ${{ github.event.inputs.create_release == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "v${{ env.VERSION }}" "Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg" --clobber
+          FILES=("Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg")
+          if [ -n "$PATCH_FILE" ] && [ -f "$PATCH_FILE" ]; then FILES+=("$PATCH_FILE"); fi
+          gh release upload "v${{ env.VERSION }}" "${FILES[@]}" --clobber
 
       - name: Upload artifacts
         if: ${{ github.event.inputs.create_release == 'false' }}
@@ -498,3 +593,119 @@ jobs:
           name: Ghost-Downloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a
           path: ${{ env.APK_FILE }}
           if-no-files-found: error
+
+  finalize:
+    needs: [prepare, build-windows, build-macos]
+    if: ${{ github.event.inputs.create_release == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python
+        run: uv python install 3.11
+
+      - name: Generate versions.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          PREV_TAG=$(gh release list --repo ${{ github.repository }} --limit 2 --json tagName --jq '.[1].tagName' 2>/dev/null || echo "")
+          export PREV_VER=${PREV_TAG#v}
+
+          mkdir -p assets
+          gh release download "v${VERSION}" --repo ${{ github.repository }} -p "*.hdiff" -p "*.zip" -p "*.dmg" -D assets/ 2>/dev/null || true
+
+          uv run --no-project python3 << 'PYEOF'
+          import hashlib, json, os
+
+          version = os.environ["VERSION"]
+          prev_ver = os.environ.get("PREV_VER", "")
+          assets_dir = "assets"
+
+          def sha256of(path):
+              h = hashlib.sha256()
+              with open(path, "rb") as f:
+                  for chunk in iter(lambda: f.read(1 << 20), b""):
+                      h.update(chunk)
+              return h.hexdigest()
+
+          platforms = ["Windows-x86_64", "Windows-arm64", "macOS-arm64", "macOS-x86_64"]
+          patches = {}
+          full = {}
+
+          for p in platforms:
+              for f in os.listdir(assets_dir):
+                  if f.startswith(f"patch-{p}-") and f.endswith(".hdiff"):
+                      path = os.path.join(assets_dir, f)
+                      patches[p] = {"from": prev_ver, "file": f, "sha256": sha256of(path), "size": os.path.getsize(path)}
+                      break
+
+              ext = ".zip" if p.startswith("Windows") else ".dmg"
+              full_name = f"Ghost-Downloader-v{version}-{p}{ext}"
+              full_path = os.path.join(assets_dir, full_name)
+              if os.path.isfile(full_path):
+                  full[p] = {"file": full_name, "sha256": sha256of(full_path), "size": os.path.getsize(full_path)}
+
+          data = {"app": {"version": version, "patches": patches, "full": full}, "packs": {}}
+
+          with open("versions.json", "w") as f:
+              json.dump(data, f, indent=2)
+          print(json.dumps(data, indent=2))
+          PYEOF
+
+          gh release upload "v${VERSION}" versions.json --repo ${{ github.repository }} --clobber
+
+      - name: Mirror to GitCode
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          if [ -z "$GITCODE_TOKEN" ]; then echo "No GITCODE_TOKEN, skipping mirror"; exit 0; fi
+
+          API="https://api.gitcode.com/api/v5"
+          REPO="XiaoYouChR/Ghost-Downloader-3"
+          TAG="v${VERSION}"
+          AUTH="access_token=${GITCODE_TOKEN}"
+
+          RELEASE=$(curl -sf "${API}/repos/${REPO}/releases/tags/${TAG}?${AUTH}" || echo "")
+          if [ -z "$RELEASE" ]; then
+            curl -sf -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
+              -H "Content-Type: application/json" \
+              -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"${TAG}\"}"
+          fi
+
+          curl -sf -X PATCH "${API}/repos/${REPO}/releases/${TAG}?${AUTH}" \
+            -H "Content-Type: application/json" \
+            -d '{"release_status":"latest"}'
+
+          upload_file() {
+            local file="$1"
+            local name=$(basename "$file")
+
+            local upload_info=$(curl -sf "${API}/repos/${REPO}/releases/${TAG}/upload_url?${AUTH}&file_name=${name}")
+            local url=$(echo "$upload_info" | jq -r '.url')
+            local content_type=$(echo "$upload_info" | jq -r '.headers["Content-Type"]')
+            local meta_project=$(echo "$upload_info" | jq -r '.headers["x-obs-meta-project-id"]')
+            local obs_acl=$(echo "$upload_info" | jq -r '.headers["x-obs-acl"]')
+            local obs_callback=$(echo "$upload_info" | jq -r '.headers["x-obs-callback"]')
+
+            curl -sf -X PUT "$url" \
+              -H "Content-Type: ${content_type}" \
+              -H "x-obs-meta-project-id: ${meta_project}" \
+              -H "x-obs-acl: ${obs_acl}" \
+              -H "x-obs-callback: ${obs_callback}" \
+              --data-binary "@${file}"
+
+            echo "uploaded: $name"
+          }
+
+          upload_file versions.json
+
+          for f in assets/patch-*.hdiff; do
+            [ -f "$f" ] && upload_file "$f"
+          done
+
+          for f in assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
+            [ -f "$f" ] && upload_file "$f"
+          done

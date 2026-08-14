@@ -64,8 +64,10 @@ def setupEnvironment():
 
 
 def startApp(application, isSilent=False):
+    import shutil
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
+    from app.config.paths import executableDir
     from app.services.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
     from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
@@ -86,9 +88,14 @@ def startApp(application, isSilent=False):
 
     coroutineRunner, categoryService, speedMeter = loadEngine(application)
 
+    appDir = executableDir.parent.parent if sys.platform == "darwin" else executableDir
+    backupDir = appDir.parent / f"{appDir.name}_backup"
+    if backupDir.is_dir():
+        shutil.rmtree(backupDir, ignore_errors=True)
+
     MainWindow.refreshThemeColor()
 
-    featureService, taskService, browserService, aria2RpcServer = createServices(
+    featureService, taskService, browserService, aria2RpcServer, updateService, runtimeStatusService = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
     loadPacks(featureService, coroutineRunner, speedMeter)
@@ -109,7 +116,7 @@ def startApp(application, isSilent=False):
         if cfg.isBrowserExtensionEnabled.value:
             browserService.start()  # 提前启动，OOBE 期间可完成扩展配对
 
-        oobe = OobeWindow(browserService, coroutineRunner, featureService, taskService)
+        oobe = OobeWindow(browserService, coroutineRunner, featureService, runtimeStatusService)
         browserService.pairRequested.connect(oobe.onPairRequested)
         oobe.show()
 
@@ -123,11 +130,11 @@ def startApp(application, isSilent=False):
         # Python GC 会在任意工作线程 delete，主线程定时器表悬空 → 闪退
         oobe.deleteLater()
 
-        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
+        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
         window.setupPacks()
         window.show()
     else:
-        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
+        window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
 
         if not isSilent:
             from qfluentwidgets import SplashScreen
@@ -158,7 +165,7 @@ def startApp(application, isSilent=False):
     def show() -> MainWindow:
         nonlocal window
         if window is None:
-            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
+            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
             window.setupPacks()
             window.destroyed.connect(onWindowDestroyed)
         window.show()
@@ -169,7 +176,7 @@ def startApp(application, isSilent=False):
     def onBrowserDraft(tasks):
         nonlocal window
         if window is None:
-            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan)
+            window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
             window.setupPacks()
             window.destroyed.connect(onWindowDestroyed)
         window.addTasks(tasks)
@@ -228,9 +235,14 @@ def startApp(application, isSilent=False):
     if isSilent:
         emptyWorkingSetIfIdle()
 
-    checkUpdateAtStartup(coroutineRunner, onUpdateAvailable=lambda release: show()._onUpdateAvailable(release))
+    from app.services.update_service import UpdateState
+    def onUpdateChanged(info):
+        if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
+            show()._onUpdateAvailable(info)
+    updateService.changed.connect(onUpdateChanged)
+    checkUpdateAtStartup(updateService)
 
-    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner))
+    application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, updateService))
 
 
 if __name__ == "__main__":

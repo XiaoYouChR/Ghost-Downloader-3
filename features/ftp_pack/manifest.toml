@@ -1,3 +1,5 @@
 [pack]
 entry = "pack.py"
 class = "FtpPack"
+version = "1.0.0"
+gdMinVersion = "4.2.0"

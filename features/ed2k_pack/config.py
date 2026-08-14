@@ -101,7 +101,7 @@ class ED2kRuntime(BinaryRuntime):
 
     async def installTask(self):
         from app.models.task import TaskOptions
-        from disk_pack.task import InstallTask
+        from app.install import InstallTask
         from .task import ED2kInstallStep
 
         assetName = _assetName()

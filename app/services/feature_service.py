@@ -136,8 +136,7 @@ class FeatureService(QObject):
 
     def _createRuntimeCard(self, runtime, parent):
         from app.view.components.setting_cards import RuntimeCard
-        return RuntimeCard(self._runtimeStatusService, self._coroutineRunner,
-                           self._taskService, runtime, parent)
+        return RuntimeCard(self._runtimeStatusService, runtime, parent)
 
     # ── Aggregation ──
 

@@ -65,12 +65,12 @@ def startApp(application):
     sys.excepthook = exceptionHook
 
     coroutineRunner, categoryService, speedMeter = loadEngine(application)
-    featureService, taskService, browserService, aria2RpcServer = createServices(
+    featureService, taskService, browserService, aria2RpcServer, updateService, runtimeStatusService = createServices(
         coroutineRunner, categoryService, speedMeter,
     )
     loadPacks(featureService, coroutineRunner, speedMeter)
 
-    mainWindow = MobileMainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner)
+    mainWindow = MobileMainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, updateService)
     mainWindow.show()
     setupTouchScrolling(mainWindow)
 
@@ -116,7 +116,12 @@ def startApp(application):
         keepAlive.holdFor(REASON_BROWSER)
         browserService.start()
 
-    checkUpdateAtStartup(coroutineRunner, onUpdateAvailable=mainWindow._onUpdateAvailable)
+    from app.services.update_service import UpdateState
+    def onUpdateChanged(info):
+        if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
+            mainWindow._onUpdateAvailable(info)
+    updateService.changed.connect(onUpdateChanged)
+    checkUpdateAtStartup(updateService)
 
     application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner))
 

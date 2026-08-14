@@ -86,13 +86,6 @@ class MergeTaskOptions(TaskOptions):
     audio: ResourceTaskOptions | None = None
 
 
-@dataclass(frozen=True)
-class BinaryInstallOptions(TaskOptions):
-    name: str = ""
-    executableNames: tuple[str, ...] = ()
-    sha256Url: str = ""
-
-
 @dataclass(kw_only=True)
 class TaskFile:
     index: int
@@ -110,7 +103,7 @@ class TaskStep:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        TaskStep._registry[cls.__name__] = cls
+        TaskStep._registry[f"{cls.__module__}.{cls.__name__}"] = cls
 
     stepIndex: int
     fileIndex: int | None = None
@@ -213,7 +206,7 @@ class Task:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        Task._registry[cls.__name__] = cls
+        Task._registry[f"{cls.__module__}.{cls.__name__}"] = cls
 
     name: str
     url: str
