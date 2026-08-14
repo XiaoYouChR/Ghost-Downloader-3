@@ -188,7 +188,8 @@ class MainWindow(MSFluentWindow):
         if pageClass is SettingPage:
             return SettingPage(
                 self._featureService, self._browserService,
-                self._coroutineRunner, self._categoryService, self._taskService, parent=self,
+                self._coroutineRunner, self._categoryService, self._taskService,
+                self._updateService, parent=self,
             )
         return self._featureService.createPage(pageClass, parent=self)
 

@@ -46,7 +46,7 @@ class MobileMainWindow(QWidget):
             parent=self,
         )
         self.taskPage = MobileTaskPage(taskService, featureService, categoryService, speedMeter, parent=self)
-        self.settingPage = MobileSettingPage(featureService, browserService, coroutineRunner, categoryService, taskService, parent=self)
+        self.settingPage = MobileSettingPage(featureService, browserService, coroutineRunner, categoryService, taskService, updateService, parent=self)
         self.searchEdit = SearchLineEdit(self)
         self.addButton = PrimaryToolButton(FluentIcon.ADD, self)
         self.vBoxLayout = QVBoxLayout(self)

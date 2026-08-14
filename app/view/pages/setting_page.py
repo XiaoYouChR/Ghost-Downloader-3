@@ -33,13 +33,14 @@ from app.view.components.editors import FolderPicker
 
 class SettingPage(ScrollArea):
 
-    def __init__(self, featureService, browserService, coroutineRunner, categoryService, taskService, parent=None):
+    def __init__(self, featureService, browserService, coroutineRunner, categoryService, taskService, updateService, parent=None):
         super().__init__(parent)
         self._featureService = featureService
         self._browserService = browserService
         self._coroutineRunner = coroutineRunner
         self._categoryService = categoryService
         self._taskService = taskService
+        self._updateService = updateService
         self.container = QWidget()
         self.vBoxLayout = QVBoxLayout(self.container)
         self.vBoxLayout.addStretch(1)
@@ -359,6 +360,10 @@ class SettingPage(ScrollArea):
             7, self.openLogButton, 0, Qt.AlignmentFlag.AlignRight,
         )
 
+        self.packInfoCard = PushSettingCard(
+            self.tr("查看详情"), FluentIcon.IOT, self.tr("功能包"),
+            self.tr("管理已安装的功能包"),
+        )
         self.aboutCard = PrimaryPushSettingCard(
             self.tr("检查更新"), FluentIcon.INFO, self.tr("关于"),
             f"© Copyright {YEAR}, {AUTHOR}. Version {VERSION}",
@@ -368,6 +373,7 @@ class SettingPage(ScrollArea):
             HyperlinkCard(AUTHOR_URL, self.tr("打开作者的个人空间"), FluentIcon.PROJECTOR,
                           self.tr("了解作者"), self.tr("发现更多 {} 的作品").format(AUTHOR)),
             self.feedbackCard,
+            self.packInfoCard,
             self.aboutCard,
         ])
 
@@ -404,6 +410,7 @@ class SettingPage(ScrollArea):
         if sys.platform != "darwin":
             self.urlSchemeCard.checkedChanged.connect(self._onUrlSchemeChanged)
         self.autoRunCard.checkedChanged.connect(self._onRunAtLoginChanged)
+        self.packInfoCard.clicked.connect(self._onPackInfoClicked)
         self.aboutCard.clicked.connect(self._onAboutCardClicked)
         self.feedbackCard.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(FEEDBACK_URL)))
         self.openLogButton.clicked.connect(self._onOpenLogClicked)
@@ -499,6 +506,11 @@ class SettingPage(ScrollArea):
 
         QApplication.instance().aboutToQuit.connect(lambda: migrate(target))
         QApplication.instance().quit()
+
+    def _onPackInfoClicked(self) -> None:
+        from app.view.dialogs.pack_info import PackInfoDialog
+        dialog = PackInfoDialog(self._featureService.packs, self._updateService, self.window())
+        dialog.exec()
 
     def _onAboutCardClicked(self) -> None:
         InfoBar.info(self.tr("检查更新"), self.tr("正在检查更新..."),

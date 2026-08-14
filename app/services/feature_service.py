@@ -9,7 +9,7 @@ from PySide6.QtCore import QObject
 from app.config.paths import executableDir
 from app.platform import file_association
 from app.platform import url_scheme
-from app.services.pack_loader import loadPacks
+from app.loader import loadPacks
 
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme, PackPage
@@ -62,9 +62,6 @@ class FeatureService(QObject):
             parser.delegate = self.parse
             self._parsers.append(parser)
         self._parsers.sort(key=lambda p: p.priority)
-
-        for runtime in pack.runtimes():
-            runtime.parse = self.parse
 
         if pack.config:
             pack.config.createRuntimeCard = self._createRuntimeCard

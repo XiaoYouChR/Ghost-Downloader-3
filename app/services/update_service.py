@@ -20,7 +20,7 @@ from app.client import buildClient, fetchFile
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, executableDir
 from app.platform.filesystem import matchChecksum
-from app.services.pack_loader import PackManifest
+from app.models.pack import PackManifest
 from app.update import isNewer
 
 if TYPE_CHECKING:
@@ -184,7 +184,7 @@ class UpdateService(QObject):
                     logger.debug("跳过 Pack 更新 {}：需要 GD ≥ {}", manifest.name, remoteGdMin)
                     continue
                 self._emit(manifest.name, UpdateState.AVAILABLE,
-                            label=f"{manifest.name} {remoteVersion}",
+                            label=f"{manifest.className} {remoteVersion}",
                             currentVersion=manifest.version,
                             latestVersion=remoteVersion)
 

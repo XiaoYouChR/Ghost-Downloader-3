@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
+import tomllib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QCoreApplication, QVersionNumber, Signal
+from PySide6.QtCore import QCoreApplication, Signal
+from loguru import logger
+
 
 from app.config.cfg import cfg, ConfigItem
+from app.platform.filesystem import findExecutable
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -107,9 +113,15 @@ class PackConfig:
         return QCoreApplication.translate(self.__class__.__name__, text)
 
 
+@dataclass(frozen=True)
+class VersionInfo:
+    version: str
+    detail: str = ""
+
+
 class BinaryRuntime:
-    parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
     name: str = ""
+    binaryName: str = ""
     canInstall: bool = False
     # 自描述展示信息（title 用 QT_TRANSLATE_NOOP 声明原文，展示端 translate）
     title: str = ""
@@ -122,13 +134,22 @@ class BinaryRuntime:
         cls = type(self)
         return f"{cls.__module__}.{cls.__qualname__}"
 
-    def path(self) -> str:
+    # ── Discovery ──
+
+    def installFolder(self) -> Path:
         raise NotImplementedError
 
-    async def probeVersion(self) -> str:
+    def path(self) -> str:
+        return findExecutable(self.installFolder(), self.binaryName or self.name)
+
+    def isAppManaged(self) -> bool:
+        p = self.path()
+        return bool(p) and Path(p).is_relative_to(self.installFolder())
+
+    async def probeVersion(self) -> VersionInfo:
         path = self.path()
         if not path:
-            return ""
+            return VersionInfo("")
         process = await asyncio.create_subprocess_exec(
             path, "--version",
             stdin=asyncio.subprocess.DEVNULL,
@@ -137,27 +158,23 @@ class BinaryRuntime:
         )
         stdout, _ = await process.communicate()
         if process.returncode != 0:
-            return ""
+            return VersionInfo("")
         lines = stdout.decode("utf-8", errors="ignore").splitlines()
-        return lines[0].strip() if lines else ""
+        return VersionInfo(lines[0].strip() if lines else "")
 
-    def isAppManaged(self) -> bool:
-        return False
+    # ── Version ──
 
     async def fetchLatestVersion(self) -> str:
         return ""
 
-    def isNewer(self, installed: str, latest: str) -> bool:
-        if not installed or not latest:
-            return False
-        v1 = QVersionNumber.fromString(installed.lstrip("vVn"))
-        v2 = QVersionNumber.fromString(latest.lstrip("vVn"))
-        return v2 > v1
+    # ── Lifecycle ──
 
     def delete(self) -> None:
-        raise NotImplementedError
+        folder = self.installFolder()
+        if folder.exists():
+            shutil.rmtree(folder)
 
-    async def installTask(self) -> Task:
+    async def createInstallTask(self) -> Task:
         raise NotImplementedError
 
 
@@ -172,8 +189,80 @@ class PackServices:
     speedMeter: SpeedMeter
 
 
+@dataclass(frozen=True)
+class PackManifest:
+    name: str
+    className: str
+    entryPath: Path
+    folder: Path
+    dependencies: tuple[str, ...]
+    version: str
+    gdMinVersion: str
+
+    @classmethod
+    def fromDir(cls, packDir: Path) -> PackManifest | None:
+        manifestPath = packDir / "manifest.toml"
+        if not manifestPath.exists():
+            logger.warning("FeaturePack 缺少 manifest.toml: {}", packDir)
+            return None
+
+        try:
+            raw = tomllib.loads(manifestPath.read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.warning("无法读取 manifest {}: {}", manifestPath, repr(e))
+            return None
+
+        packSection = raw.get("pack")
+        if not isinstance(packSection, dict):
+            logger.warning("manifest 缺少 [pack] 节: {}", manifestPath)
+            return None
+
+        entry = packSection.get("entry", "pack.py")
+        if not isinstance(entry, str) or not entry.strip():
+            logger.warning("manifest entry 无效: {}", manifestPath)
+            return None
+
+        entryPath = packDir / entry
+        if not entryPath.exists() and entry.endswith(".py"):
+            entryPath = packDir / (entry[:-3] + ".pyc")
+        if not entryPath.exists():
+            logger.warning("入口文件不存在: {}", packDir / entry)
+            return None
+
+        className = packSection.get("class")
+        if not isinstance(className, str) or not className.strip():
+            logger.warning("manifest 缺少 class 字段: {}", manifestPath)
+            return None
+
+        deps = packSection.get("dependencies", [])
+        if not isinstance(deps, list) or any(
+            not isinstance(d, str) or not d for d in deps
+        ):
+            logger.warning("manifest dependencies 无效: {}", manifestPath)
+            return None
+
+        version = packSection.get("version", "")
+        if not isinstance(version, str):
+            version = ""
+
+        gdMinVersion = packSection.get("gdMinVersion", "")
+        if not isinstance(gdMinVersion, str):
+            gdMinVersion = ""
+
+        return cls(
+            name=packDir.name,
+            className=className,
+            entryPath=entryPath,
+            folder=packDir,
+            dependencies=tuple(deps),
+            version=version,
+            gdMinVersion=gdMinVersion,
+        )
+
+
 class FeaturePack:
     packId: str = ""
+    manifest: PackManifest | None = None
     config: PackConfig | None = None
     proxySchemes: set[str] | None = None
 

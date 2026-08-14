@@ -2,86 +2,15 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-import tomllib
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from app.models.pack import PackManifest
+
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack
-
-
-@dataclass(frozen=True)
-class PackManifest:
-    name: str
-    className: str
-    entryPath: Path
-    folder: Path
-    dependencies: tuple[str, ...]
-    version: str
-    gdMinVersion: str
-
-    @classmethod
-    def fromDir(cls, packDir: Path) -> PackManifest | None:
-        manifestPath = packDir / "manifest.toml"
-        if not manifestPath.exists():
-            logger.warning("FeaturePack 缺少 manifest.toml: {}", packDir)
-            return None
-
-        try:
-            raw = tomllib.loads(manifestPath.read_text(encoding="utf-8"))
-        except Exception as e:
-            logger.warning("无法读取 manifest {}: {}", manifestPath, repr(e))
-            return None
-
-        packSection = raw.get("pack")
-        if not isinstance(packSection, dict):
-            logger.warning("manifest 缺少 [pack] 节: {}", manifestPath)
-            return None
-
-        entry = packSection.get("entry", "pack.py")
-        if not isinstance(entry, str) or not entry.strip():
-            logger.warning("manifest entry 无效: {}", manifestPath)
-            return None
-
-        entryPath = packDir / entry
-        if not entryPath.exists() and entry.endswith(".py"):
-            entryPath = packDir / (entry[:-3] + ".pyc")
-        if not entryPath.exists():
-            logger.warning("入口文件不存在: {}", packDir / entry)
-            return None
-
-        className = packSection.get("class")
-        if not isinstance(className, str) or not className.strip():
-            logger.warning("manifest 缺少 class 字段: {}", manifestPath)
-            return None
-
-        deps = packSection.get("dependencies", [])
-        if not isinstance(deps, list) or any(
-            not isinstance(d, str) or not d for d in deps
-        ):
-            logger.warning("manifest dependencies 无效: {}", manifestPath)
-            return None
-
-        version = packSection.get("version", "")
-        if not isinstance(version, str):
-            version = ""
-
-        gdMinVersion = packSection.get("gdMinVersion", "")
-        if not isinstance(gdMinVersion, str):
-            gdMinVersion = ""
-
-        return cls(
-            name=packDir.name,
-            className=className,
-            entryPath=entryPath,
-            folder=packDir,
-            dependencies=tuple(deps),
-            version=version,
-            gdMinVersion=gdMinVersion,
-        )
 
 
 def loadPacks(featuresDir: Path, services=None) -> list[FeaturePack]:
@@ -174,6 +103,7 @@ def loadManifest(manifest: PackManifest, services=None) -> FeaturePack | None:
             return None
 
         pack = PackClass(services)
+        pack.manifest = manifest
         logger.success("加载 FeaturePack: {}", moduleName)
         return pack
 
