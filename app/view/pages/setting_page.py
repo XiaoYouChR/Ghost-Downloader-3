@@ -360,7 +360,7 @@ class SettingPage(ScrollArea):
             7, self.openLogButton, 0, Qt.AlignmentFlag.AlignRight,
         )
 
-        self.packInfoCard = PushSettingCard(
+        self.packInfoCard = PrimaryPushSettingCard(
             self.tr("查看详情"), FluentIcon.IOT, self.tr("功能包"),
             self.tr("管理已安装的功能包"),
         )

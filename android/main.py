@@ -125,7 +125,7 @@ def startApp(application):
         elif info.targetId != "app" and info.state == UpdateState.READY:
             from qfluentwidgets import InfoBar, InfoBarPosition
             InfoBar.success(
-                mainWindow.tr("Pack 更新"),
+                mainWindow.tr("功能包更新"),
                 mainWindow.tr("{0} 将在下次启动时生效").format(info.label),
                 duration=5000,
                 position=InfoBarPosition.BOTTOM_RIGHT,

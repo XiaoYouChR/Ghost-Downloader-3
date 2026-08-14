@@ -826,13 +826,14 @@ class RuntimeCard(SettingCard):
         self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
 
     def _initLayout(self) -> None:
-        self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.cancelButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignRight)
+        self._buttonLayout = QHBoxLayout()
+        self._buttonLayout.setContentsMargins(0, 0, 0, 0)
+        self._buttonLayout.setSpacing(8)
+        self._buttonLayout.addWidget(self.installButton)
+        self._buttonLayout.addWidget(self.cancelButton)
+        self._buttonLayout.addWidget(self.refreshButton)
+        self._buttonLayout.addWidget(self.deleteButton)
+        self.hBoxLayout.addLayout(self._buttonLayout)
         self.hBoxLayout.addSpacing(16)
 
     def _bind(self) -> None:

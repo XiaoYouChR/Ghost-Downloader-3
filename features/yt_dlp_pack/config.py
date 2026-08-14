@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N, Qt
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
     BoolValidator, CaptionLabel, ConfigItem, FluentIcon, FolderValidator,
     PushButton, SettingCard, ToolButton, ToolTipFilter,
@@ -318,9 +318,12 @@ class CookieSettingCard(SettingCard):
         self._clearButton.installEventFilter(ToolTipFilter(self._clearButton))
         self._clearButton.setVisible(hasCookieFile())
 
-        self.hBoxLayout.addWidget(self._importButton, 0, Qt.AlignmentFlag.AlignRight)
-        self.hBoxLayout.addSpacing(8)
-        self.hBoxLayout.addWidget(self._clearButton, 0, Qt.AlignmentFlag.AlignRight)
+        buttonLayout = QHBoxLayout()
+        buttonLayout.setContentsMargins(0, 0, 0, 0)
+        buttonLayout.setSpacing(8)
+        buttonLayout.addWidget(self._importButton)
+        buttonLayout.addWidget(self._clearButton)
+        self.hBoxLayout.addLayout(buttonLayout)
         self.hBoxLayout.addSpacing(16)
 
         self._importButton.clicked.connect(self._onImportClicked)

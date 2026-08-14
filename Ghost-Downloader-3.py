@@ -245,7 +245,7 @@ def startApp(application, isSilent=False):
             if window is not None:
                 from qfluentwidgets import InfoBar, InfoBarPosition
                 InfoBar.success(
-                    window.tr("Pack 更新"),
+                    window.tr("功能包更新"),
                     window.tr("{0} 将在下次启动时生效").format(info.label),
                     duration=5000,
                     position=InfoBarPosition.BOTTOM_RIGHT,
