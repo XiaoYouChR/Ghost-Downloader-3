@@ -1,11 +1,4 @@
 {
   "app": {},
-  "packs": {
-    "http_pack": {
-      "version": "1.0.0",
-      "file": "http_pack.zip",
-      "sha256": "e79d7004982deab4341890f1e46e4e36204ca7ce2ba9aca4aa2d6e5922055a4a",
-      "gdMinVersion": "4.2.0"
-    }
-  }
+  "packs": {}
 }

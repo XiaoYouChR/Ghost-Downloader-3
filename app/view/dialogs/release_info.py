@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QStandardItem, QStandardItemModel
+from PySide6.QtGui import QDesktopServices, QStandardItem, QStandardItemModel, QTextCursor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QHBoxLayout, QSizePolicy
 from qfluentwidgets import (
     CaptionLabel, FluentIcon, MessageBoxBase,
@@ -50,6 +50,7 @@ class ReleaseInfoDialog(MessageBoxBase):
         self.sponsorButton.installEventFilter(ToolTipFilter(self.sponsorButton))
 
         self.descriptionEdit.setMarkdown(self._release.body or self.tr("暂无更新说明"))
+        self.descriptionEdit.moveCursor(QTextCursor.MoveOperation.Start)
 
         self.assetView.setRootIsDecorated(False)
         self.assetView.setUniformRowHeights(True)
@@ -75,6 +76,15 @@ class ReleaseInfoDialog(MessageBoxBase):
             self.assetModel.appendRow(row)
 
         self.assetView.setVisible(bool(self._release.assets))
+
+        from app.update import bestAsset
+        best = bestAsset(self._release)
+        if best is not None:
+            for row in range(self.assetModel.rowCount()):
+                item = self.assetModel.item(row, 0)
+                if item and item.data(Qt.ItemDataRole.UserRole) is best:
+                    self.assetView.setCurrentIndex(self.assetModel.index(row, 0))
+                    break
 
         if self._release.assets:
             needed = sum(self.assetView.sizeHintForColumn(i) for i in range(self.assetModel.columnCount()))

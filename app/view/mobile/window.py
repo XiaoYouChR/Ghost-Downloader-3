@@ -221,12 +221,29 @@ class MobileMainWindow(QWidget):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: (infoBar.close(), self._updateService.download("app")))
+        downloadButton.clicked.connect(lambda: (infoBar.close(), self._downloadBestAsset()))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
         detailButton.clicked.connect(self._showReleaseDetails)
         infoBar.addWidget(detailButton)
         infoBar.show()
+
+    def _downloadBestAsset(self) -> None:
+        from app.models.task import TaskOptions
+        from app.update import fetchRelease, bestAsset
+
+        def onFetched(release):
+            asset = bestAsset(release)
+            if asset is None:
+                self._showReleaseDetails()
+                return
+            self._coroutineRunner.submit(
+                self._featureService.parse(TaskOptions(url=asset.downloadUrl)),
+                done=self._taskService.add,
+                owner=self,
+            )
+
+        self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)
 
     def _onUpdateChanged(self, info) -> None:
         if info.targetId != "app":
