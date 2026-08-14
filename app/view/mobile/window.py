@@ -34,6 +34,7 @@ class MobileMainWindow(QWidget):
         self._speedMeter = speedMeter
         self._coroutineRunner = coroutineRunner
         self._updateService = updateService
+        self._progressToast = None
         setupAccentColor()
 
         self.stackedWidget = QStackedWidget(self)
@@ -96,6 +97,8 @@ class MobileMainWindow(QWidget):
         self.taskPage.selectionModeChanged.connect(lambda *_: self._updateAddButtonVisibility())
         self.addButton.clicked.connect(self._showAddTaskDialog)
         self._draft.taskConfirmed.connect(self._taskService.add)
+        if self._updateService is not None:
+            self._updateService.changed.connect(self._onUpdateChanged)
         QApplication.instance().applicationStateChanged.connect(self._onApplicationStateChanged)
         cfg.themeChanged.connect(self._setTheme)
         QApplication.instance().styleHints().colorSchemeChanged.connect(self._onSystemColorSchemeChanged)
@@ -203,6 +206,10 @@ class MobileMainWindow(QWidget):
     def _onUpdateAvailable(self, info) -> None:
         from qfluentwidgets import PrimaryPushButton, PushButton
 
+        if self._progressToast is not None:
+            self._progressToast.deleteLater()
+            self._progressToast = None
+
         infoBar = InfoBar(
             icon=FluentIcon.CLOUD,
             title=self.tr("检测到新版本"),
@@ -214,12 +221,25 @@ class MobileMainWindow(QWidget):
             parent=self,
         )
         downloadButton = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("立即下载"))
-        downloadButton.clicked.connect(lambda: self._updateService.download("app"))
+        downloadButton.clicked.connect(lambda: (infoBar.close(), self._updateService.download("app")))
         infoBar.addWidget(downloadButton)
         detailButton = PushButton(FluentIcon.CHAT, self.tr("查看详情"))
         detailButton.clicked.connect(self._showReleaseDetails)
         infoBar.addWidget(detailButton)
         infoBar.show()
+
+    def _onUpdateChanged(self, info) -> None:
+        if info.targetId != "app":
+            return
+        if info.state not in (UpdateState.DOWNLOADING, UpdateState.READY, UpdateState.FAILED):
+            return
+        if self._progressToast is None:
+            from app.view.components.progress_toast import ProgressToast
+            self._progressToast = ProgressToast(
+                onRetry=lambda: self._updateService.download("app"),
+                parent=self,
+            )
+        self._progressToast.setInfo(info)
 
     def _showReleaseDetails(self) -> None:
         from app.models.task import TaskOptions
