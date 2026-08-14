@@ -98,8 +98,12 @@ jobs:
     if: ${{ github.event.inputs.build_target == 'windows' || github.event.inputs.build_target == 'all' }}
     strategy:
       matrix:
-        architecture: [ x86_64, arm64 ]
-    runs-on: windows-2022
+        include:
+          - architecture: x86_64
+            runner: windows-2022
+          - architecture: arm64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -131,15 +135,10 @@ jobs:
       - name: Download HDiffPatch
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_windows64.zip" -OutFile hdiffpatch.zip
+          $hdiffArch = if ("${{ matrix.architecture }}" -eq "arm64") { "windows_arm64" } else { "windows64" }
+          Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_${hdiffArch}.zip" -OutFile hdiffpatch.zip
           Expand-Archive hdiffpatch.zip -DestinationPath hdiffpatch
-          if ("${{ matrix.architecture }}" -eq "arm64") {
-            Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_windows_arm64.zip" -OutFile hdiffpatch-arm64.zip
-            Expand-Archive hdiffpatch-arm64.zip -DestinationPath hdiffpatch
-            Copy-Item hdiffpatch/windows_arm64/hpatchz.exe dist/Ghost-Downloader-3.dist/
-          } else {
-            Copy-Item hdiffpatch/windows64/hpatchz.exe dist/Ghost-Downloader-3.dist/
-          }
+          Copy-Item hdiffpatch/${hdiffArch}/hpatchz.exe dist/Ghost-Downloader-3.dist/
 
       - name: Prepare For Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
@@ -226,8 +225,9 @@ jobs:
             $oldDir = "prev-extracted"
           }
 
+          $hdiffArch = if ("${{ matrix.architecture }}" -eq "arm64") { "windows_arm64" } else { "windows64" }
           $patchFile = "patch-Windows-${{ matrix.architecture }}-${prevVer}-to-${{ env.VERSION }}.hdiff"
-          & "hdiffpatch/windows64/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
+          & "hdiffpatch/${hdiffArch}/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
           echo "PATCH_FILE=$patchFile" >> $env:GITHUB_ENV
 
       - name: Upload to release
