@@ -3,10 +3,10 @@ from __future__ import annotations
 
 
 def loadTranslators(application):
-    from PySide6.QtCore import QTranslator
     from app.config.cfg import cfg
+    from app.translator import FallbackTranslator
 
-    translator = QTranslator(application)
+    translator = FallbackTranslator(application)
 
     def setLocale():
         locale = cfg.language.value.value
