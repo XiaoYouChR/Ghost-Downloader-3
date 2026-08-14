@@ -255,11 +255,69 @@ static int startApp(const char *exe) {
 #endif
 }
 
+#ifdef _WIN32
+static int relaunchFromTemp(const char *appDir, int argc, char *argv[]) {
+    char exePath[PATH_BUF], longExe[PATH_BUF], longApp[PATH_BUF];
+    GetModuleFileNameA(NULL, exePath, sizeof(exePath));
+    GetLongPathNameA(exePath, longExe, sizeof(longExe));
+
+    char appDirClean[PATH_BUF];
+    strncpy(appDirClean, appDir, sizeof(appDirClean) - 1);
+    appDirClean[sizeof(appDirClean) - 1] = '\0';
+    size_t len = strlen(appDirClean);
+    while (len > 0 && (appDirClean[len - 1] == '\\' || appDirClean[len - 1] == '/'))
+        appDirClean[--len] = '\0';
+    GetLongPathNameA(appDirClean, longApp, sizeof(longApp));
+    len = strlen(longApp);
+
+    if (_strnicmp(longExe, longApp, len) != 0)
+        return 0;
+    char c = longExe[len];
+    if (c != '\\' && c != '/')
+        return 0;
+
+    char tempDir[PATH_BUF];
+    GetTempPathA(sizeof(tempDir), tempDir);
+    strncat(tempDir, "gd_updater", sizeof(tempDir) - strlen(tempDir) - 1);
+    CreateDirectoryA(tempDir, NULL);
+
+    char srcHpatchz[PATH_BUF], dstUpdater[PATH_BUF], dstHpatchz[PATH_BUF];
+    snprintf(dstUpdater, sizeof(dstUpdater), "%s\\updater.exe", tempDir);
+    snprintf(srcHpatchz, sizeof(srcHpatchz), "%s\\hpatchz.exe", appDirClean);
+    snprintf(dstHpatchz, sizeof(dstHpatchz), "%s\\hpatchz.exe", tempDir);
+
+    if (!CopyFileA(exePath, dstUpdater, FALSE) ||
+        !CopyFileA(srcHpatchz, dstHpatchz, FALSE))
+        return 0;
+
+    char cmd[PATH_BUF * 4];
+    int pos = snprintf(cmd, sizeof(cmd), "\"%s\"", dstUpdater);
+    for (int i = 1; i < argc; i++)
+        pos += snprintf(cmd + pos, sizeof(cmd) - pos, " \"%s\"", argv[i]);
+
+    STARTUPINFOA si = { .cb = sizeof(si) };
+    PROCESS_INFORMATION pi = {0};
+    if (!CreateProcessA(NULL, cmd, NULL, NULL, FALSE,
+                        DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,
+                        NULL, NULL, &si, &pi))
+        return 0;
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    return 1;
+}
+#endif
+
 int main(int argc, char *argv[]) {
     if (argc < 4 || argc > 5) {
         fprintf(stderr, "usage: updater <appPID> <appDir> <appExe> [patchFile]\n");
         return EXIT_BAD_ARGS;
     }
+
+#ifdef _WIN32
+    if (relaunchFromTemp(argv[2], argc, argv))
+        return EXIT_OK;
+#endif
 
     unsigned long appPid = strtoul(argv[1], NULL, 10);
     const char   *appDir    = argv[2];
