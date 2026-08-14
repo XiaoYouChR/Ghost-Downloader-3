@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QEvent, QRect, QUrl, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QDesktopServices, QPainter, QPalette
+from PySide6.QtGui import QColor, QIcon, QDesktopServices, QKeySequence, QPainter, QPalette, QShortcut
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
@@ -227,7 +227,6 @@ class MainWindow(MSFluentWindow):
         self.titleBar.closeBtn.clicked.connect(self._onCloseClicked)
         self.searchEdit.textChanged.connect(self._onSearchTextChanged)
 
-        from PySide6.QtGui import QKeySequence, QShortcut
         QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
 
         if self._updateService is not None:

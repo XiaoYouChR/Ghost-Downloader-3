@@ -22,7 +22,8 @@ log/
 
 # 忽略构建文件
 build/
-dist/
+dist/*
+!dist/packs/
 output/
 *.spec
 

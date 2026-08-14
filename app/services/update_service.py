@@ -29,12 +29,14 @@ STAGING_DIR = Path(APP_DATA_DIR) / "update_staging"
 
 SOURCES = {
     "github": {
-        "api": "https://api.github.com/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest",
-        "headers": {"accept": "application/vnd.github+json"},
+        "versions": "https://raw.githubusercontent.com/XiaoYouChR/Ghost-Downloader-3/main/versions.json",
+        "raw": "https://raw.githubusercontent.com/XiaoYouChR/Ghost-Downloader-3/main",
+        "release": "https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/download",
     },
     "gitcode": {
-        "api": "https://gitcode.com/api/v5/repos/XiaoYouChR/Ghost-Downloader-3/releases/latest",
-        "headers": {},
+        "versions": "https://raw.gitcode.com/XiaoYouChR/Ghost-Downloader-3/raw/main/versions.json",
+        "raw": "https://raw.gitcode.com/XiaoYouChR/Ghost-Downloader-3/raw/main",
+        "release": "https://gitcode.com/XiaoYouChR/Ghost-Downloader-3/releases/download",
     },
 }
 
@@ -53,9 +55,7 @@ def isNewer(current: str, latest: str) -> bool:
 
 
 def buildAssetUrl(source: str, version: str, assetName: str) -> str:
-    if source == "gitcode":
-        return f"https://gitcode.com/XiaoYouChR/Ghost-Downloader-3/releases/download/v{version}/{assetName}"
-    return f"https://github.com/XiaoYouChR/Ghost-Downloader-3/releases/download/v{version}/{assetName}"
+    return f"{SOURCES[source]['release']}/v{version}/{assetName}"
 
 
 def extractZip(archivePath: Path, targetDir: Path) -> None:
@@ -197,22 +197,13 @@ class UpdateService(QObject):
         sources = [self._source] if self._source else list(SOURCES)
         for sourceName in sources:
             try:
-                source = SOURCES[sourceName]
-                client = buildClient(headers=source["headers"] or None, timeout=15)
+                client = buildClient(timeout=15)
                 try:
-                    resp = await client.get(source["api"])
+                    resp = await client.get(SOURCES[sourceName]["versions"])
                     resp.raise_for_status()
-                    data = await resp.json()
-                    for asset in data.get("assets", []):
-                        if asset.get("name") == "versions.json":
-                            url = asset.get("browser_download_url", "")
-                            if not url:
-                                continue
-                            response = await client.get(url)
-                            response.raise_for_status()
-                            result = await response.json()
-                            self._source = sourceName
-                            return result
+                    result = await resp.json()
+                    self._source = sourceName
+                    return result
                 finally:
                     client.close()
             except Exception as e:
@@ -294,9 +285,9 @@ class UpdateService(QObject):
         self._emit("app", UpdateState.READY)
 
     async def _downloadPack(self, packId: str, info: UpdateInfo) -> None:
-        appVersion = self._versionsData.get("app", {}).get("version", "")
         packData = self._versionsData.get("packs", {}).get(packId, {})
-        url = buildAssetUrl(self._source, appVersion, packData.get("file", f"{packId}-{info.latestVersion}.zip"))
+        filename = packData.get("file", f"{packId}.zip")
+        url = f"{SOURCES[self._source]['raw']}/dist/packs/{filename}"
         outputPath = STAGING_DIR / f"{packId}.zip"
 
         await fetchFile(url, outputPath, onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))

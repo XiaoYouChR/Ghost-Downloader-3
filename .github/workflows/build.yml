@@ -599,11 +599,16 @@ jobs:
     if: ${{ github.event.inputs.create_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
 
       - name: Install Python
         run: uv python install 3.11
+
+      - name: Build pack zips
+        run: uv run --no-project python3 scripts/build_pack.py --all
 
       - name: Generate versions.json
         env:
@@ -647,14 +652,25 @@ jobs:
               if os.path.isfile(full_path):
                   full[p] = {"file": full_name, "sha256": sha256of(full_path), "size": os.path.getsize(full_path)}
 
-          data = {"app": {"version": version, "patches": patches, "full": full}, "packs": {}}
+          with open("versions.json") as f:
+              data = json.load(f)
+
+          data["app"] = {"version": version, "patches": patches, "full": full}
 
           with open("versions.json", "w") as f:
               json.dump(data, f, indent=2)
           print(json.dumps(data, indent=2))
           PYEOF
 
-          gh release upload "v${VERSION}" versions.json --repo ${{ github.repository }} --clobber
+      - name: Commit versions.json
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add versions.json dist/packs/
+          git diff --staged --quiet || git commit -m "chore: update versions.json for v${VERSION} [skip ci]"
+          git push
 
       - name: Mirror to GitCode
         env:
@@ -699,8 +715,6 @@ jobs:
 
             echo "uploaded: $name"
           }
-
-          upload_file versions.json
 
           for f in assets/patch-*.hdiff; do
             [ -f "$f" ] && upload_file "$f"
