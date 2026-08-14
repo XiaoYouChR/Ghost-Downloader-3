@@ -13,7 +13,7 @@ from qfluentwidgets import (
 )
 
 from app.config.paths import APP_DATA_DIR
-from app.models.pack import BinaryRuntime, PackConfig
+from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
 
@@ -139,31 +139,32 @@ class YouTubeRuntime(BinaryRuntime):
     icon = FluentIcon.GLOBE
     isRecommended = True
 
+    def installFolder(self) -> Path:
+        return Path(ytDlpConfig.installFolder.value)
+
     def path(self) -> str:
-        folder = Path(ytDlpConfig.installFolder.value)
+        folder = self.installFolder()
         if not (folder / "yt_dlp" / "__init__.py").is_file():
             return ""
         return self.qjsPath()
 
     def isAppManaged(self) -> bool:
-        folder = Path(ytDlpConfig.installFolder.value)
-        return (folder / "yt_dlp" / "__init__.py").is_file()
+        return (self.installFolder() / "yt_dlp" / "__init__.py").is_file()
 
     def ytDlpFolder(self) -> Path:
-        return Path(ytDlpConfig.installFolder.value)
+        return self.installFolder()
 
     def qjsPath(self) -> str:
         if IS_ANDROID:
             from app.platform.android import nativeLibraryDir
             binary = Path(nativeLibraryDir()) / "libqjs.so"
             return str(binary) if binary.is_file() else ""
-        return findExecutable(Path(ytDlpConfig.installFolder.value), "qjs")
+        return findExecutable(self.installFolder(), "qjs")
 
-    async def probeVersion(self) -> str:
-        ytDlpDir = Path(ytDlpConfig.installFolder.value) / "yt_dlp"
-        versionFile = ytDlpDir / "version.py"
+    async def probeVersion(self) -> VersionInfo:
+        versionFile = self.installFolder() / "yt_dlp" / "version.py"
         if not versionFile.is_file():
-            return ""
+            return VersionInfo("")
 
         ytDlpVersion = ""
         try:
@@ -191,12 +192,10 @@ class YouTubeRuntime(BinaryRuntime):
         else:
             isQjsOk = False
 
-        parts = []
-        if ytDlpVersion:
-            parts.append(f"yt-dlp {ytDlpVersion}")
-        if isQjsOk:
-            parts.append("QuickJS ✓")
-        return " | ".join(parts) if parts else ""
+        return VersionInfo(
+            version=ytDlpVersion,
+            detail="QuickJS ✓" if isQjsOk else "",
+        )
 
     async def fetchLatestVersion(self) -> str:
         from app.client import buildClient
@@ -209,33 +208,13 @@ class YouTubeRuntime(BinaryRuntime):
         finally:
             client.close()
 
-    def isNewer(self, installed: str, latest: str) -> bool:
-        if not installed or not latest:
-            return False
-        prefix = "yt-dlp "
-        if prefix not in installed:
-            return False
-        from PySide6.QtCore import QVersionNumber
-        current = installed.split(prefix, 1)[1].split(" ", 1)[0].split("|", 1)[0].strip()
-        v1 = QVersionNumber.fromString(current)
-        v2 = QVersionNumber.fromString(latest)
-        return v2 > v1
-
-    def delete(self) -> None:
-        import shutil
-        folder = Path(ytDlpConfig.installFolder.value)
-        if folder.exists():
-            shutil.rmtree(folder)
-
-    async def installTask(self):
-        from app.config.cfg import cfg, currentHeaders
-        from app.install import ExtractStep, InstallTask
-        from http_pack.task import HttpTaskStep
+    async def createInstallTask(self):
+        from app.install import BinaryInstallStep, ExtractStep, FetchStep, InstallTask
 
         whlUrl, whlSize = await self._fetchWhlAsset()
 
-        installFolder = Path(ytDlpConfig.installFolder.value)
-        installFolder.mkdir(parents=True, exist_ok=True)
+        folder = self.installFolder()
+        folder.mkdir(parents=True, exist_ok=True)
         archiveName = "yt_dlp.zip"
 
         if IS_ANDROID:
@@ -244,65 +223,49 @@ class YouTubeRuntime(BinaryRuntime):
                 url=whlUrl,
                 packId="disk",
                 fileSize=whlSize,
-                outputFolder=installFolder,
-                installFolder=str(installFolder),
+                outputFolder=folder,
+                installFolder=str(folder),
             )
-            task.addStep(HttpTaskStep(
-                stepIndex=1,
-                url=whlUrl,
-                fileSize=whlSize,
-                headers=currentHeaders(),
-                subworkerCount=cfg.preBlockNum.value,
-                canUseRangeRequests=True,
-                outputFile=str(installFolder / archiveName),
+            task.addStep(FetchStep(
+                stepIndex=1, url=whlUrl,
+                outputFile=str(folder / archiveName),
             ))
             task.addStep(ExtractStep(
                 stepIndex=2,
-                archivePath=str(installFolder / archiveName),
-                outputFolder=str(installFolder),
+                archivePath=str(folder / archiveName),
+                outputFolder=str(folder),
                 archiveSize=whlSize,
             ))
             return task
 
-        from app.install import BinaryInstallStep
-        from app.models.task import TaskOptions
-
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
-        qjsDownload = await self.parse(TaskOptions(
-            url=f"{QJS_RELEASE_BASE}/{_qjsAssetName()}",
-            outputFolder=installFolder,
-        ))
-        qjsStep = qjsDownload.steps[0]
-        qjsStep.stepIndex = 2
-        qjsStep.outputFile = str(installFolder / qjsBinaryName)
+        qjsUrl = f"{QJS_RELEASE_BASE}/{_qjsAssetName()}"
 
         task = InstallTask(
             name="YouTube 运行环境安装",
             url=whlUrl,
             packId="disk",
-            fileSize=whlSize + max(0, qjsDownload.fileSize),
-            outputFolder=installFolder,
-            installFolder=str(installFolder),
+            fileSize=0,
+            outputFolder=folder,
+            installFolder=str(folder),
         )
-        task.addStep(HttpTaskStep(
-            stepIndex=1,
-            url=whlUrl,
-            fileSize=whlSize,
-            headers=currentHeaders(),
-            subworkerCount=cfg.preBlockNum.value,
-            canUseRangeRequests=True,
-            outputFile=str(installFolder / archiveName),
+        task.addStep(FetchStep(
+            stepIndex=1, url=whlUrl,
+            outputFile=str(folder / archiveName),
         ))
-        task.addStep(qjsStep)
+        task.addStep(FetchStep(
+            stepIndex=2, url=qjsUrl,
+            outputFile=str(folder / qjsBinaryName),
+        ))
         task.addStep(ExtractStep(
             stepIndex=3,
-            archivePath=str(installFolder / archiveName),
-            outputFolder=str(installFolder),
+            archivePath=str(folder / archiveName),
+            outputFolder=str(folder),
             archiveSize=whlSize,
         ))
         task.addStep(BinaryInstallStep(
             stepIndex=4,
-            binaryPath=str(installFolder / qjsBinaryName),
+            binaryPath=str(folder / qjsBinaryName),
         ))
         return task
 

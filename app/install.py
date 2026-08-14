@@ -9,15 +9,10 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from time import perf_counter
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
 from app.platform.filesystem import deletePath, toPosixPath
-
-if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-    from app.models.task import TaskOptions
 
 CHUNK_SIZE = 1 << 20
 ARCHIVE_SUFFIXES = (".zip", ".tar.gz")
@@ -227,20 +222,31 @@ class BinaryInstallStep(TaskStep):
         self.setStatus(TaskStatus.COMPLETED)
 
 
-async def createInstallTask(
-    delegate: Callable[[TaskOptions], Awaitable[Task]],
+@dataclass(kw_only=True)
+class FetchStep(TaskStep):
+    canPause = False
+    url: str
+    outputFile: str = ""
+
+    async def run(self, reportSpeed, waitForSpeedLimit) -> None:
+        from app.client import fetchFile
+
+        def onProgress(p):
+            self.progress = p
+            reportSpeed()
+
+        await fetchFile(self.url, Path(self.outputFile), onProgress=onProgress)
+        self.setStatus(TaskStatus.COMPLETED)
+
+
+def createInstallTask(
     url: str,
     outputFolder: Path,
     name: str = "",
     executableNames: tuple[str, ...] = (),
     sha256Url: str = "",
 ) -> InstallTask:
-    from app.models.task import TaskOptions
-
     assetName = PurePosixPath(urlparse(url).path).name
-
-    download = await delegate(TaskOptions(url=url, outputFolder=outputFolder))
-    downloadStep = download.steps[0]
 
     archive = isArchive(assetName)
     if archive:
@@ -248,30 +254,22 @@ async def createInstallTask(
     else:
         binaryName = executableNames[0] if executableNames else assetName
         targetPath = toPosixPath(outputFolder / binaryName)
-    downloadStep.outputFile = targetPath
 
     task = InstallTask(
         name=name or assetName,
         url=url,
         packId="install",
-        fileSize=download.fileSize,
+        fileSize=0,
         outputFolder=outputFolder,
         installFolder=str(outputFolder),
     )
     stepIndex = 1
-    downloadStep.stepIndex = stepIndex
-    task.addStep(downloadStep)
+    task.addStep(FetchStep(stepIndex=stepIndex, url=url, outputFile=targetPath))
     stepIndex += 1
 
     if sha256Url:
-        checksumDownload = await delegate(
-            TaskOptions(url=sha256Url, outputFolder=outputFolder)
-        )
-        checksumStep = checksumDownload.steps[0]
         sha256Path = toPosixPath(outputFolder / PurePosixPath(urlparse(sha256Url).path).name)
-        checksumStep.outputFile = sha256Path
-        checksumStep.stepIndex = stepIndex
-        task.addStep(checksumStep)
+        task.addStep(FetchStep(stepIndex=stepIndex, url=sha256Url, outputFile=sha256Path))
         stepIndex += 1
         task.addStep(ChecksumStep(
             stepIndex=stepIndex, targetFile=targetPath, sha256File=sha256Path,
@@ -284,7 +282,6 @@ async def createInstallTask(
             stepIndex=stepIndex,
             archivePath=targetPath,
             outputFolder=extractFolder,
-            archiveSize=download.fileSize,
         ))
         stepIndex += 1
         task.addStep(InstallStep(

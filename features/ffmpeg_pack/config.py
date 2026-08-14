@@ -10,8 +10,7 @@ from qfluentwidgets import FluentIcon
 
 from app.config.cfg import ConfigItem
 from app.config.paths import APP_DATA_DIR
-from app.models.pack import BinaryRuntime, PackConfig
-from app.models.task import Task
+from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
 
@@ -63,6 +62,9 @@ class FFmpegRuntime(BinaryRuntime):
     icon = FluentIcon.VIDEO
     isRecommended = True
 
+    def installFolder(self) -> Path:
+        return Path(ffmpegConfig.installFolder.value)
+
     def path(self) -> str:
         if IS_ANDROID:
             nativeDir = nativeLibraryDir()
@@ -70,11 +72,7 @@ class FFmpegRuntime(BinaryRuntime):
                 return ""
             binary = Path(nativeDir) / "libffmpeg.so"
             return str(binary) if binary.exists() else ""
-        return findExecutable(Path(ffmpegConfig.installFolder.value), "ffmpeg", "bin")
-
-    def isAppManaged(self) -> bool:
-        p = self.path()
-        return bool(p) and Path(p).is_relative_to(Path(ffmpegConfig.installFolder.value))
+        return findExecutable(self.installFolder(), "ffmpeg", "bin")
 
     def ffprobePath(self) -> str:
         if IS_ANDROID:
@@ -83,17 +81,17 @@ class FFmpegRuntime(BinaryRuntime):
                 return ""
             binary = Path(nativeDir) / "libffprobe.so"
             return str(binary) if binary.exists() else ""
-        return findExecutable(Path(ffmpegConfig.installFolder.value), "ffprobe", "bin")
+        return findExecutable(self.installFolder(), "ffprobe", "bin")
 
-    async def probeVersion(self) -> str:
+    async def probeVersion(self) -> VersionInfo:
         path = self.path()
         if not path:
-            return ""
-        versionFile = Path(ffmpegConfig.installFolder.value) / "VERSION"
+            return VersionInfo("")
+        versionFile = self.installFolder() / "VERSION"
         if versionFile.is_file():
             tag = versionFile.read_text().strip()
             if tag:
-                return tag
+                return VersionInfo(tag)
         process = await asyncio.create_subprocess_exec(
             path, "-version",
             stdin=asyncio.subprocess.DEVNULL,
@@ -102,21 +100,16 @@ class FFmpegRuntime(BinaryRuntime):
         )
         stdout, _ = await process.communicate()
         if process.returncode != 0:
-            return ""
+            return VersionInfo("")
         line = stdout.decode("utf-8", errors="ignore").splitlines()[0].strip()
-        return line.removeprefix("ffmpeg version ").split(" Copyright", 1)[0].strip() or line
+        version = line.removeprefix("ffmpeg version ").split(" Copyright", 1)[0].strip() or line
+        return VersionInfo(version)
 
     async def fetchLatestVersion(self) -> str:
         from app.update import fetchGitHubLatestTag
         return await fetchGitHubLatestTag("XiaoYouChR/Ghost-Downloader-FFmpeg")
 
-    def delete(self) -> None:
-        import shutil
-        folder = Path(ffmpegConfig.installFolder.value)
-        if folder.exists():
-            shutil.rmtree(folder)
-
-    async def installTask(self) -> Task:
+    async def createInstallTask(self):
         from app.install import createInstallTask
 
         target = ffmpegAssetTarget()
@@ -126,10 +119,9 @@ class FFmpegRuntime(BinaryRuntime):
             ("ffmpeg.exe", "ffprobe.exe") if sys.platform == "win32"
             else ("ffmpeg", "ffprobe")
         )
-        return await createInstallTask(
-            self.parse,
+        return createInstallTask(
             url=url,
-            outputFolder=Path(ffmpegConfig.installFolder.value),
+            outputFolder=self.installFolder(),
             name=f"FFmpeg 安装 ({target})",
             executableNames=executableNames,
             sha256Url=f"{url}.sha256",

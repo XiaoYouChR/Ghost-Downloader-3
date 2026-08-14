@@ -804,6 +804,7 @@ class RuntimeCard(SettingCard):
         super().__init__(FluentIcon.INFO, runtime.name, self.tr("正在检测运行时..."), parent)
 
         self.installButton = PrimaryPushButton(self.tr("一键安装"), self)
+        self.cancelButton = ToolButton(FluentIcon.CLOSE, self)
         self.refreshButton = ToolButton(FluentIcon.SYNC, self)
         self.deleteButton = ToolButton(FluentIcon.DELETE, self)
 
@@ -815,6 +816,9 @@ class RuntimeCard(SettingCard):
     def _initWidget(self) -> None:
         if not self._runtime.canInstall:
             self.installButton.hide()
+        self.cancelButton.hide()
+        self.cancelButton.setToolTip(self.tr("取消安装"))
+        self.cancelButton.installEventFilter(ToolTipFilter(self.cancelButton))
         self.deleteButton.hide()
         self.deleteButton.setToolTip(self.tr("卸载"))
         self.deleteButton.installEventFilter(ToolTipFilter(self.deleteButton))
@@ -824,6 +828,8 @@ class RuntimeCard(SettingCard):
     def _initLayout(self) -> None:
         self.hBoxLayout.addWidget(self.installButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.cancelButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.refreshButton, 0, Qt.AlignmentFlag.AlignRight)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.deleteButton, 0, Qt.AlignmentFlag.AlignRight)
@@ -832,6 +838,7 @@ class RuntimeCard(SettingCard):
     def _bind(self) -> None:
         self._runtimeStatusService.statusChanged.connect(self._onRuntimeStatusChanged)
         self.installButton.clicked.connect(self._onInstallClicked)
+        self.cancelButton.clicked.connect(self._onCancelClicked)
         self.deleteButton.clicked.connect(self._onDeleteClicked)
         self.refreshButton.clicked.connect(self._onRefreshClicked)
 
@@ -839,34 +846,46 @@ class RuntimeCard(SettingCard):
         self._runtimeStatusService.refreshStatus(self._runtime)
 
     def updateStatus(self, status) -> None:
+        from app.update import isNewer
+
         self.refreshButton.setEnabled(not status.isBusy and not status.isInstalling)
         isInstalled = bool(status.path)
         isManaged = self._runtime.isAppManaged()
         isUpdateAvailable = (
             isInstalled and isManaged
             and status.latestVersion
-            and (not status.version or self._runtime.isNewer(status.version, status.latestVersion))
+            and (not status.version or isNewer(status.version, status.latestVersion))
         )
 
         if status.isInstalling:
-            self.setContent(self.tr("正在安装..."))
+            if status.progress > 0:
+                self.setContent(self.tr("正在安装... {0}%").format(f"{status.progress:.0f}"))
+            else:
+                self.setContent(self.tr("正在安装..."))
             self.installButton.hide()
+            self.cancelButton.setVisible(self._runtime.canInstall)
             self.deleteButton.hide()
             return
 
         if status.isBusy:
             self.setContent(self.tr("正在检测运行时..."))
             self.installButton.hide()
+            self.cancelButton.hide()
             self.deleteButton.hide()
             return
+
+        self.cancelButton.hide()
 
         if status.error:
             self.setContent(self.tr("检测运行时失败"))
         elif isInstalled:
-            if status.version and status.latestVersion:
-                line1 = self.tr("版本: {0}（最新: {1}）").format(status.version, status.latestVersion)
-            elif status.version:
-                line1 = self.tr("版本: {0}").format(status.version)
+            versionDisplay = status.version
+            if status.detail:
+                versionDisplay = f"{versionDisplay} | {status.detail}" if versionDisplay else status.detail
+            if versionDisplay and status.latestVersion:
+                line1 = self.tr("版本: {0}（最新: {1}）").format(versionDisplay, status.latestVersion)
+            elif versionDisplay:
+                line1 = self.tr("版本: {0}").format(versionDisplay)
             elif status.latestVersion:
                 line1 = self.tr("最新版本: {0}").format(status.latestVersion)
             else:
@@ -899,6 +918,9 @@ class RuntimeCard(SettingCard):
 
     def _onInstallClicked(self) -> None:
         self._runtimeStatusService.install(self._runtime)
+
+    def _onCancelClicked(self) -> None:
+        self._runtimeStatusService.cancelInstall(self._runtime)
 
     def _onDeleteClicked(self) -> None:
         from qfluentwidgets import MessageBox

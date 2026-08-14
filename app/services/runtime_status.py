@@ -17,10 +17,12 @@ class RuntimeStatus:
     name: str
     path: str = ""
     version: str = ""
+    detail: str = ""
     latestVersion: str = ""
     error: str = ""
     isBusy: bool = False
     isInstalling: bool = False
+    progress: float = 0
 
 
 class RuntimeStatusService(QObject):
@@ -80,12 +82,36 @@ class RuntimeStatusService(QObject):
             runtimeId=runtimeId,
         )
 
+    def cancelInstall(self, runtime: BinaryRuntime) -> None:
+        runtimeId = runtime.runtimeId
+        if runtimeId not in self._installingIds:
+            return
+        workId = self._workIds.pop(runtimeId, None)
+        if workId:
+            self._coroutineRunner.cancel(workId)
+        self._installingIds.discard(runtimeId)
+        self._runtimes.pop(runtimeId, None)
+        status = RuntimeStatus(runtimeId, runtime.name, path=runtime.path())
+        self._statuses[runtimeId] = status
+        self.statusChanged.emit(status)
+
     async def _runInstall(self, runtime: BinaryRuntime) -> None:
         from app.models.task import TaskStatus
 
-        task = await runtime.installTask()
+        task = await runtime.createInstallTask()
         task.setStatus(TaskStatus.RUNNING)
-        await task.run(lambda *a: None, lambda: asyncio.sleep(0))
+
+        def reportProgress(*_args):
+            step = next((s for s in task.steps if s.progress > 0), None)
+            if step:
+                runtimeId = runtime.runtimeId
+                current = self._statuses.get(runtimeId)
+                if current and current.isInstalling and current.progress != step.progress:
+                    status = replace(current, progress=step.progress)
+                    self._statuses[runtimeId] = status
+                    self.statusChanged.emit(status)
+
+        await task.run(reportProgress, lambda: asyncio.sleep(0))
 
     def _onInstallFinished(self, _, runtimeId: str) -> None:
         self._installingIds.discard(runtimeId)
@@ -95,6 +121,8 @@ class RuntimeStatusService(QObject):
             self.invalidate(runtime)
 
     def _onInstallFailed(self, error: str, runtimeId: str) -> None:
+        if runtimeId not in self._installingIds:
+            return
         self._installingIds.discard(runtimeId)
         self._workIds.pop(runtimeId, None)
         self._runtimes.pop(runtimeId, None)
@@ -127,9 +155,12 @@ class RuntimeStatusService(QObject):
             logger.opt(exception=e).error("runtime probe submit failed: {}", runtimeId)
             self._onProbeFailed(repr(e), runtimeId, name, path)
 
-    def _onProbeFinished(self, version: str, runtimeId: str, name: str, path: str) -> None:
+    def _onProbeFinished(self, versionInfo, runtimeId: str, name: str, path: str) -> None:
         self._workIds.pop(runtimeId, None)
-        status = RuntimeStatus(runtimeId, name, path=path, version=version)
+        status = RuntimeStatus(
+            runtimeId, name, path=path,
+            version=versionInfo.version, detail=versionInfo.detail,
+        )
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 

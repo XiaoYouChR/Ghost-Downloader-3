@@ -18,7 +18,6 @@ from qfluentwidgets import (
 
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
-from app.models.task import Task
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
 
@@ -141,11 +140,15 @@ m3u8Config = M3U8Config()
 
 class M3U8Runtime(BinaryRuntime):
     name = "N_m3u8DL-RE"
+    binaryName = "N_m3u8DL-RE"
     canInstall = not IS_ANDROID
     title = N("BinaryRuntime", "M3U8 / 直播下载")
     description = N("BinaryRuntime", "支持 HLS、DASH 等流媒体协议，可录制直播流")
     icon = FluentIcon.MEDIA
     isRecommended = True
+
+    def installFolder(self) -> Path:
+        return Path(m3u8Config.installFolder.value)
 
     def path(self) -> str:
         if IS_ANDROID:
@@ -154,23 +157,13 @@ class M3U8Runtime(BinaryRuntime):
                 return ""
             binary = Path(nativeDir) / "libnm3u8dlre.so"
             return str(binary) if binary.exists() else ""
-        return findExecutable(Path(m3u8Config.installFolder.value), "N_m3u8DL-RE")
-
-    def isAppManaged(self) -> bool:
-        p = self.path()
-        return bool(p) and Path(p).is_relative_to(Path(m3u8Config.installFolder.value))
+        return findExecutable(self.installFolder(), "N_m3u8DL-RE")
 
     async def fetchLatestVersion(self) -> str:
         from app.update import fetchGitHubLatestTag
         return await fetchGitHubLatestTag(M3U8_REPO)
 
-    def delete(self) -> None:
-        import shutil
-        folder = Path(m3u8Config.installFolder.value)
-        if folder.exists():
-            shutil.rmtree(folder)
-
-    async def installTask(self) -> Task:
+    async def createInstallTask(self):
         machine = platform.machine().lower()
         if sys.platform == "win32":
             if machine in {"amd64", "x86_64"}:
@@ -190,10 +183,9 @@ class M3U8Runtime(BinaryRuntime):
 
         from app.install import createInstallTask
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
-        return await createInstallTask(
-            self.parse,
+        return createInstallTask(
             url=url,
-            outputFolder=Path(m3u8Config.installFolder.value),
+            outputFolder=self.installFolder(),
             name=f"N_m3u8DL-RE {tag} ({target})",
             executableNames=(binaryName,),
         )

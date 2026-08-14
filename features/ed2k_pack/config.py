@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
-from app.platform.filesystem import findExecutable, toPosixPath
+from app.platform.filesystem import toPosixPath
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from qfluentwidgets import ConfigItem, BoolValidator, FluentIcon, RangeConfigItem, RangeValidator
 
@@ -80,52 +80,33 @@ class ED2kRuntime(BinaryRuntime):
     title = N("BinaryRuntime", "eD2k / eMule")
     description = N("BinaryRuntime", "支持电驴协议，适合下载经典资源")
     icon = FluentIcon.BOOK_SHELF
-    isRecommended = False
 
-    def path(self) -> str:
-        return findExecutable(Path(ed2kConfig.installFolder.value), "goed2kd")
-
-    def isAppManaged(self) -> bool:
-        p = self.path()
-        return bool(p) and Path(p).is_relative_to(Path(ed2kConfig.installFolder.value))
+    def installFolder(self) -> Path:
+        return Path(ed2kConfig.installFolder.value)
 
     async def fetchLatestVersion(self) -> str:
         from app.update import fetchGitHubLatestTag
         return await fetchGitHubLatestTag("XiaoYouChR/Python-eD2k")
 
-    def delete(self) -> None:
-        import shutil
-        folder = Path(ed2kConfig.installFolder.value)
-        if folder.exists():
-            shutil.rmtree(folder)
-
-    async def installTask(self):
-        from app.models.task import TaskOptions
-        from app.install import InstallTask
+    async def createInstallTask(self):
+        from app.install import FetchStep, InstallTask
         from .task import ED2kInstallStep
 
         assetName = _assetName()
         url = f"{RELEASE_BASE}/{assetName}"
-        installFolder = Path(ed2kConfig.installFolder.value)
+        folder = self.installFolder()
         binaryName = "goed2kd.exe" if sys.platform == "win32" else "goed2kd"
-        binaryPath = toPosixPath(installFolder / binaryName)
-
-        download = await self.parse(
-            TaskOptions(url=url, outputFolder=installFolder)
-        )
-        downloadStep = download.steps[0]
-        downloadStep.stepIndex = 1
-        downloadStep.outputFile = binaryPath
+        binaryPath = toPosixPath(folder / binaryName)
 
         task = InstallTask(
             name=f"goed2kd 安装 ({assetName})",
             url=url,
             packId="ed2k",
-            fileSize=download.fileSize,
-            outputFolder=installFolder,
-            installFolder=str(installFolder),
+            fileSize=0,
+            outputFolder=folder,
+            installFolder=str(folder),
         )
-        task.addStep(downloadStep)
+        task.addStep(FetchStep(stepIndex=1, url=url, outputFile=binaryPath))
         task.addStep(ED2kInstallStep(stepIndex=2, binaryPath=binaryPath))
         return task
 

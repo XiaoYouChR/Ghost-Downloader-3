@@ -165,16 +165,22 @@ async def fetchFile(
 ) -> None:
     client = buildClient()
     try:
-        async with client.stream("GET", url) as response:
+        outputPath.parent.mkdir(parents=True, exist_ok=True)
+        response = await client.get(url)
+        try:
             response.raise_for_status()
-            total = int(response.headers.get("content-length", 0))
+            total = int(response.headers.get("content-length", b"0"))
             received = 0
             with open(outputPath, "wb") as f:
-                async for chunk in response.aiter_bytes():
+                async for chunk in response.stream():
+                    if not chunk:
+                        continue
                     f.write(chunk)
                     received += len(chunk)
                     if onProgress and total:
                         onProgress(received / total * 100)
+        finally:
+            response.close()
     finally:
         client.close()
 
