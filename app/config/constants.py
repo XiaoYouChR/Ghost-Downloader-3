@@ -1,6 +1,7 @@
 YEAR = 2026
 AUTHOR = "XiaoYouChR"
 VERSION = "4.3.0-rc1"
+BUILD_VERSION = VERSION.split("-")[0]
 DESKTOP_ID = "io.github.xiaoyouchr.GhostDownloader"
 DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")
 LATEST_EXTENSION_VERSION = "2.1.3"

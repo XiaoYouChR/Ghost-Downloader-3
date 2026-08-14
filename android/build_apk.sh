@@ -39,7 +39,8 @@ export GD3_APP_TITLE="${GD3_APP_TITLE:-Ghost Downloader}"
 export GD3_PKG_NAME="${GD3_PKG_NAME:-ghostdownloader}"
 export GD3_PKG_DOMAIN="${GD3_PKG_DOMAIN:-io.github.xiaoyouchr}"
 
-export GD3_VERSION="${GD3_VERSION:-$(grep -oP '^VERSION = "\K[^"]+' "$REPO/app/config/constants.py")}"
+RAW_VERSION=$(grep -oP '^VERSION = "\K[^"]+' "$REPO/app/config/constants.py")
+export GD3_VERSION="${GD3_VERSION:-${RAW_VERSION%%-*}}"
 
 export GD3_QT_MODULES="${GD3_QT_MODULES:-Core,Gui,Widgets,Network,Svg,SvgWidgets,WebSockets,Xml}"
 echo "[build] STAGE=$STAGE"
