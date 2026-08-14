@@ -12,6 +12,8 @@ sys.path.insert(0, str(REPO))
 
 from app.config.constants import VERSION, YEAR, AUTHOR, DESKTOP_ID
 
+FILE_VERSION = VERSION.split("-")[0]
+
 MACOS_DOCUMENT_TYPES = [
     {"name": "种子文件", "extensions": ["torrent"], "icon": "torrent"},
     {"name": "M3U8 播放列表", "extensions": ["m3u8", "m3u"], "icon": "m3u8"},
@@ -138,8 +140,8 @@ def buildArgs() -> list[str]:
             '--include-data-dir=app/assets/file_icons=app/assets/file_icons',
             '--company-name=XiaoYouChR',
             '--product-name="Ghost Downloader"',
-            f'--file-version={VERSION}',
-            f'--product-version={VERSION}',
+            f'--file-version={FILE_VERSION}',
+            f'--product-version={FILE_VERSION}',
             '--file-description="Ghost Downloader"',
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
@@ -156,7 +158,7 @@ def buildArgs() -> list[str]:
             "--macos-create-app-bundle",
             "--assume-yes-for-downloads",
             "--macos-app-mode=gui",
-            f"--macos-app-version={VERSION}",
+            f"--macos-app-version={FILE_VERSION}",
             "--macos-app-icon=app/assets/logo.icns",
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
