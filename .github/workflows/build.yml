@@ -266,6 +266,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Download HDiffPatch
+        run: |
+          curl -fL "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_macos.zip" -o hdiffpatch.zip
+          unzip -q hdiffpatch.zip
+
       - name: Remove problematic brew libs
         if: ${{ matrix.openssl_workaround == 'true' }}
         run: |
@@ -299,11 +304,6 @@ jobs:
           cmake -B build-updater -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }} tools/updater
           cmake --build build-updater
           cp build-updater/updater "dist/Ghost Downloader.app/Contents/MacOS/"
-
-      - name: Download HDiffPatch
-        run: |
-          curl -fL "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_macos.zip" -o hdiffpatch.zip
-          unzip -q hdiffpatch.zip
           cp macos/hpatchz "dist/Ghost Downloader.app/Contents/MacOS/"
           chmod +x "dist/Ghost Downloader.app/Contents/MacOS/hpatchz"
 
