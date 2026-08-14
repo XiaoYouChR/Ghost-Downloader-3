@@ -127,5 +127,66 @@ class TestRefreshNoCrash:
         assert card.progressBar.isHidden()
 
 
+class TestCanOpenFile:
+    """Issue #452: 下载中的任务不能被「打开文件」按钮打开。
+
+    纯谓词测试，不需要 QApplication。
+    """
+
+    def makeTask(self, status, folder, exists=True):
+        from app.models.task import Task
+        step = StubStep(stepIndex=0, status=status)
+        task = Task(name="test.txt", url="http://test", packId="test",
+                    steps=[step], fileSize=1000, outputFolder=folder)
+        step._bindTask(task)
+        task.status = status
+        if exists:
+            (folder / task.name).write_bytes(b"x")
+        return task
+
+    @pytest.mark.parametrize("status", [s for s in ALL_STATUSES if s != TaskStatus.COMPLETED],
+                             ids=lambda s: s.name)
+    def test_unfinished_cannot_open(self, tmp_path, status):
+        from app.view.cards.task_cards import canOpenFile
+        assert canOpenFile(self.makeTask(status, tmp_path)) is False
+
+    def test_completed_can_open(self, tmp_path):
+        from app.view.cards.task_cards import canOpenFile
+        assert canOpenFile(self.makeTask(TaskStatus.COMPLETED, tmp_path)) is True
+
+    def test_completed_but_file_missing_cannot_open(self, tmp_path):
+        from app.view.cards.task_cards import canOpenFile
+        assert canOpenFile(self.makeTask(TaskStatus.COMPLETED, tmp_path, exists=False)) is False
+
+
+class TestOpenFileButtonEnabled:
+
+    @pytest.mark.parametrize("status", [s for s in ALL_STATUSES if s != TaskStatus.COMPLETED],
+                             ids=lambda s: s.name)
+    def test_disabled_while_unfinished(self, qapp, status):
+        card = makeCard(qapp, status)
+        assert not card.openFileButton.isEnabled()
+        card.refresh()
+        assert not card.openFileButton.isEnabled()
+
+    def test_enabled_when_task_finishes(self, qapp, tmp_path):
+        card = makeCard(qapp, TaskStatus.RUNNING)
+        card.refresh()
+        assert not card.openFileButton.isEnabled()
+
+        card.task.outputFolder = tmp_path
+        (tmp_path / card.task.name).write_bytes(b"x")
+        card.task.status = TaskStatus.COMPLETED
+        card.refresh()
+        assert card.openFileButton.isEnabled()
+
+    def test_enabled_on_restored_completed_card(self, qapp, tmp_path):
+        card = makeCard(qapp, TaskStatus.COMPLETED)
+        card.task.outputFolder = tmp_path
+        (tmp_path / card.task.name).write_bytes(b"x")
+        card.refresh(force=True)
+        assert card.openFileButton.isEnabled()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

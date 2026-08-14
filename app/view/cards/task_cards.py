@@ -90,10 +90,15 @@ VERIFY_HASH_BUTTON = ButtonSpec("verifyHash", FluentIcon.FINGERPRINT, N("TaskCar
             enabled=t.hasOutputFile and Path(t.outputPath).exists()),
     })
 
-OPEN_FILE_BUTTON = ButtonSpec("openFile", FluentIcon.LINK, N("TaskCard", "打开文件"), states={
-    TaskStatus.COMPLETED: lambda t: ButtonState(
-        enabled=not t.hasOutputFile or Path(t.outputPath).exists()),
-})
+def canOpenFile(task: Task) -> bool:
+    # 未完成的任务文件仍在写入，打开它只会拿到半个文件
+    if task.status != TaskStatus.COMPLETED:
+        return False
+    return not task.hasOutputFile or Path(task.outputPath).exists()
+
+
+OPEN_FILE_BUTTON = ButtonSpec("openFile", FluentIcon.LINK, N("TaskCard", "打开文件"),
+    states={None: lambda t: ButtonState(enabled=canOpenFile(t))})
 
 OPEN_FOLDER_BUTTON = ButtonSpec("openFolder", FluentIcon.FOLDER, N("TaskCard", "打开文件夹"))
 DELETE_BUTTON = ButtonSpec("delete", FluentIcon.CLOSE, N("TaskCard", "删除"), TransparentToolButton)
@@ -156,6 +161,8 @@ class TaskCard(CardWidget):
         self._bind()
         self._refreshIcon()
         self._refreshCategoryIcon()
+        # 卡片可能在首次 refresh() 之前就被看到（恢复的已完成任务、滚动挂载）
+        self._refreshButtons()
 
     @property
     def task(self) -> Task:
@@ -433,7 +440,7 @@ class TaskCard(CardWidget):
 
     def mouseDoubleClickEvent(self, e) -> None:
         super().mouseDoubleClickEvent(e)
-        if e.button() == Qt.MouseButton.LeftButton:
+        if e.button() == Qt.MouseButton.LeftButton and canOpenFile(self._task):
             openFile(self._task.outputPath)
 
     def contextMenuEvent(self, e) -> None:
