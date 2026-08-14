@@ -127,5 +127,45 @@ class TestRefreshNoCrash:
         assert card.progressBar.isHidden()
 
 
+class TestSubclassTranslation:
+    """各 pack 的卡片继承 TaskCard，基类字符串必须跟着翻译 — #693。"""
+
+    @pytest.fixture
+    def russian(self, qapp):
+        from pathlib import Path
+
+        from PySide6.QtCore import QTranslator
+
+        qmFile = Path(__file__).resolve().parent.parent / "app/assets/i18n/gd3.ru_RU.qm"
+        translator = QTranslator()
+        assert translator.load(str(qmFile))
+        qapp.installTranslator(translator)
+        yield
+        qapp.removeTranslator(translator)
+
+    def makeCards(self):
+        from app.view.cards.task_cards import TaskCard, MultiFileTaskCard
+
+        class PackTaskCard(MultiFileTaskCard):
+            pass
+
+        return (TaskCard.__new__(TaskCard),
+                MultiFileTaskCard.__new__(MultiFileTaskCard),
+                PackTaskCard.__new__(PackTaskCard))
+
+    def test_base_string_translated_for_every_subclass(self, russian):
+        for card in self.makeCards():
+            assert card.tr("打开文件") == "Открыть файл"
+
+    def test_own_context_still_wins(self, russian):
+        _, multiFile, packCard = self.makeCards()
+        assert multiFile.tr("{0}/{1} 个文件") == "{0}/{1} файлов"
+        assert packCard.tr("{0}/{1} 个文件") == "{0}/{1} файлов"
+
+    def test_unknown_string_falls_back_to_source(self, russian):
+        for card in self.makeCards():
+            assert card.tr("没有这个字符串") == "没有这个字符串"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

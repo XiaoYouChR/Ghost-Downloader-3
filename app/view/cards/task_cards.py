@@ -161,6 +161,15 @@ class TaskCard(CardWidget):
     def task(self) -> Task:
         return self._task
 
+    def tr(self, text: str) -> str:
+        # 各 pack 的卡片都继承本类，而 QObject.tr() 用实例的类名做 context，
+        # 子类 context 里没有基类字符串，所以沿 MRO 回退到声明它的那个 context
+        for cls in type(self).__mro__:
+            translated = QCoreApplication.translate(cls.__name__, text)
+            if translated != text:
+                return translated
+        return text
+
     def _createProgressBar(self) -> QWidget:
         if self._task.fileSize in {SpecialFileSize.UNKNOWN, SpecialFileSize.NOT_SUPPORTED}:
             return IndeterminateProgressBar(self)
