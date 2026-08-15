@@ -4257,57 +4257,57 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>VideoSelectDialog</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="218"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="219"/>
         <source>选择视频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="221"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="222"/>
         <source>全选</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="222"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="223"/>
         <source>全不选</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="223"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="224"/>
         <source>反选</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="235"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="236"/>
         <source>确定</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="236"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="237"/>
         <source>取消</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="244"/>
         <source>标题</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="244"/>
         <source>时长</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="244"/>
         <source>开始</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="243"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="244"/>
         <source>结束</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="320"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="321"/>
         <source>{0}/{1} 个视频</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4512,42 +4512,42 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>YtDlpDraftCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="355"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="366"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="522"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="356"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="367"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="521"/>
         <source>最佳画质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="356"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="367"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="523"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="357"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="368"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="522"/>
         <source>最佳音质</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="357"/>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="525"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="358"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="524"/>
         <source>自动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="373"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="374"/>
         <source>截取片段</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="391"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="392"/>
         <source>选择视频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="656"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="653"/>
         <source>未找到播放列表</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="661"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="658"/>
         <source>加载播放列表失败</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4555,32 +4555,32 @@ http://example.com/{mp4,mkv}/video</source>
 <context>
     <name>YtDlpTaskCard</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="160"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="161"/>
         <source>{0} 个视频 · {1}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="147"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="148"/>
         <source>提取信息</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="148"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="149"/>
         <source>下载视频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="149"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="150"/>
         <source>下载音频</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="150"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="151"/>
         <source>合并</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/cards.py" line="151"/>
+        <location filename="../../../features/yt_dlp_pack/cards.py" line="152"/>
         <source>下载字幕</source>
         <translation type="unfinished"></translation>
     </message>

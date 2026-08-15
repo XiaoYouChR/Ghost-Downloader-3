@@ -6,13 +6,14 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR"]
+LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR", "es_ES"]
 LANGUAGE_FAMILY_FALLBACKS = {
     "zh": "zh_CN",
     "en": "en_US",
     "ja": "ja_JP",
     "ru": "ru_RU",
     "pt": "pt_BR",
+    "es": "es_ES",
 }
 ASSETS_DIR = REPO / "app" / "assets"
 I18N_DIR = ASSETS_DIR / "i18n"
