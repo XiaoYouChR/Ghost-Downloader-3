@@ -5,6 +5,7 @@ from pathlib import Path
 from loguru import logger
 
 from app.config.paths import APP_DATA_DIR
+from app.models.task import TaskError
 from .config import ed2kConfig, ed2kRuntime
 from .python_ed2k import Client, Settings
 
@@ -25,7 +26,7 @@ class ED2kSession:
 
     def client(self) -> Client:
         if self._client is None:
-            raise RuntimeError("ED2kSession 未启动")
+            raise TaskError("ED2kSession 未启动")
         return self._client
 
     async def open(self) -> None:
@@ -33,7 +34,9 @@ class ED2kSession:
             return
         path = ed2kRuntime.path()
         if not path:
-            raise RuntimeError("未找到 goed2kd，请先在设置中安装")
+            raise TaskError(
+                "{name} 未安装，请在设置中安装", name=ed2kRuntime.name
+            )
         client = Client(Path(path), Path(APP_DATA_DIR) / "ed2k_data")
         try:
             await client.start(Settings(
