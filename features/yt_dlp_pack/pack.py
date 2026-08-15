@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from urllib.parse import urlparse, parse_qs, quote
 
 from app.models.pack import FeaturePack, TaskParser
@@ -10,7 +9,7 @@ from loguru import logger
 
 from .cards import YtDlpDraftCard, YtDlpTaskCard
 from .config import ytDlpConfig, youTubeRuntime
-from .task import YouTubeTask, buildStepGroup, probeFormats, probePlaylist
+from .task import YouTubeTask, buildStepGroup
 
 YOUTUBE_HOSTS = ("youtube.com", "youtu.be")
 
@@ -44,28 +43,6 @@ class YouTubeParser(TaskParser):
         for step in buildStepGroup(0):
             task.addStep(step)
         return task
-
-    async def fetchFormats(self, url: str) -> dict:
-        from .config import youTubeRuntime
-        runtimePath = youTubeRuntime.path()
-        if not runtimePath:
-            logger.warning("fetchFormats skipped: runtime not found (installFolder={})", youTubeRuntime.ytDlpFolder())
-            return {}
-        try:
-            return await asyncio.to_thread(probeFormats, url)
-        except Exception as e:
-            logger.opt(exception=e).warning("fetchFormats failed for {}", url)
-            return {}
-
-    async def fetchPlaylist(self, url: str) -> list[dict]:
-        from .config import youTubeRuntime
-        if not youTubeRuntime.path():
-            return []
-        try:
-            return await asyncio.to_thread(probePlaylist, url)
-        except Exception as e:
-            logger.opt(exception=e).warning("fetchPlaylist failed for {}", url)
-            return []
 
     async def _fetchTitle(self, url: str) -> str:
         from app.client import buildClient
