@@ -20,8 +20,8 @@ SOURCES = {
     "gitcode": SourceEndpoints(
         api="https://api.gitcode.com/api/v5/repos",
         download="https://gitcode.com",
-        raw="https://raw.gitcode.com",
-        rawInfix="/raw/",
+        raw="https://cdn.jsdelivr.net/gh",
+        rawInfix="@",
     ),
     "github": SourceEndpoints(
         api="https://api.github.com/repos",
