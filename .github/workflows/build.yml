@@ -764,10 +764,7 @@ jobs:
             echo "uploaded: $name"
           }
 
-          for f in assets/patch-*.hdiff; do
-            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; }
+          for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
+            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; } &
           done
-
-          for f in assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
-            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; }
-          done
+          wait
