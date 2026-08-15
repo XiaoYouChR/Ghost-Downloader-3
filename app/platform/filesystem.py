@@ -74,7 +74,10 @@ def localFilePath(url: str, validSuffixes: set[str] | None = None) -> Path | Non
         else:
             return None
 
-    path = Path(url2pathname(rawPath))
+    try:
+        path = Path(url2pathname(rawPath))
+    except OSError:
+        return None
     if not path.is_file():
         return None
     if validSuffixes is not None and path.suffix.lower() not in validSuffixes:
