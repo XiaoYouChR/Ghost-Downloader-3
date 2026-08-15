@@ -312,7 +312,7 @@ def main():
         # ── Test 6: buildDownloadUrl ──
         print("\n[Test 6] buildDownloadUrl uses sources module")
         url = buildDownloadUrl(APP_REPO, "v4.3.0", "Ghost-Downloader-v4.3.0-Windows-x86_64.zip", source="github")
-        check("URL contains repo and version", f"{APP_REPO}/releases/download/v4.3.0/" in url)
+        check("URL contains repo and version", f"{APP_REPO.name}/releases/download/v4.3.0/" in url)
 
         # ── Test 7: _downloadApp full release ──
         print("\n[Test 7] _downloadApp full release")

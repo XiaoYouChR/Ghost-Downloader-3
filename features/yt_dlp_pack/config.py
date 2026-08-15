@@ -16,8 +16,9 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
+from app.sources import Repo
 
-QJS_REPO = "quickjs-ng/quickjs"
+QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
 COOKIE_DOMAIN = ".youtube.com"
 AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
 

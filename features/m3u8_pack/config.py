@@ -20,8 +20,9 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
+from app.sources import Repo
 
-M3U8_REPO = "nilaoda/N_m3u8DL-RE"
+M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE", mirrors={"gitcode": "XiaoYouChR/N_m3u8DL-RE-mirror"})
 
 
 class M3U8Config(PackConfig):

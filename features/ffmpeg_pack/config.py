@@ -13,9 +13,10 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
+from app.sources import Repo
 
 
-FFMPEG_REPO = "XiaoYouChR/Ghost-Downloader-FFmpeg"
+FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg")
 
 
 def ffmpegAssetTarget() -> str:

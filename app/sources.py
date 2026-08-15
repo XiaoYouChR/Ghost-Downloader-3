@@ -1,12 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
 from loguru import logger
 
 from app.client import buildClient, fetchFile
+
+
+@dataclass(frozen=True)
+class Repo:
+    name: str
+    mirrors: dict[str, str] = field(default_factory=dict)
+
+    def forSource(self, source: str) -> str:
+        return self.mirrors.get(source, self.name)
 
 
 @dataclass(frozen=True)
@@ -33,11 +42,6 @@ SOURCES = {
 }
 
 SOURCE_ORDER = ("gitcode", "github")
-
-GITCODE_REPOS = {
-    "nilaoda/N_m3u8DL-RE": "XiaoYouChR/N_m3u8DL-RE-mirror",
-    "quickjs-ng/quickjs": "XiaoYouChR/quickjs-mirror",
-}
 
 
 @dataclass(frozen=True)
@@ -86,11 +90,10 @@ class Release:
         )
 
 
-async def fetchLatestRelease(repo: str) -> tuple[Release, str]:
+async def fetchLatestRelease(repo: Repo) -> tuple[Release, str]:
     for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
         endpoints = SOURCES[source]
-        url = f"{endpoints.api}/{mapped}/releases/latest"
+        url = f"{endpoints.api}/{repo.forSource(source)}/releases/latest"
         headers = {"accept": "application/vnd.github+json"} if source == "github" else {}
         client = buildClient(headers=headers, timeout=15)
         try:
@@ -99,23 +102,22 @@ async def fetchLatestRelease(repo: str) -> tuple[Release, str]:
             data = await resp.json()
             return Release.fromResponse(data), source
         except Exception as e:
-            logger.debug("从 {} 获取 {} release 失败: {}", source, repo, repr(e))
+            logger.debug("从 {} 获取 {} release 失败: {}", source, repo.name, repr(e))
             continue
         finally:
             client.close()
-    raise RuntimeError(f"无法获取 {repo} 的最新 release")
+    raise RuntimeError(f"无法获取 {repo.name} 的最新 release")
 
 
-async def fetchLatestTag(repo: str) -> tuple[str, str]:
+async def fetchLatestTag(repo: Repo) -> tuple[str, str]:
     release, source = await fetchLatestRelease(repo)
     return release.version, source
 
 
-async def fetchJson(repo: str, branch: str, path: str) -> tuple[dict, str]:
+async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
     for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
         endpoints = SOURCES[source]
-        url = f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+        url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
         client = buildClient(timeout=15)
         try:
             resp = await client.get(url)
@@ -123,45 +125,43 @@ async def fetchJson(repo: str, branch: str, path: str) -> tuple[dict, str]:
             result = await resp.json()
             return result, source
         except Exception as e:
-            logger.debug("从 {} 获取 {}/{} 失败: {}", source, repo, path, repr(e))
+            logger.debug("从 {} 获取 {}/{} 失败: {}", source, repo.name, path, repr(e))
             continue
         finally:
             client.close()
-    raise RuntimeError(f"无法获取 {repo}/{branch}/{path}")
+    raise RuntimeError(f"无法获取 {repo.name}/{branch}/{path}")
 
 
 async def fetchRawFile(
-    repo: str, branch: str, path: str, outputPath: Path,
+    repo: Repo, branch: str, path: str, outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> str:
     for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
         endpoints = SOURCES[source]
-        url = f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+        url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
         try:
             await fetchFile(url, outputPath, onProgress=onProgress)
             return source
         except Exception as e:
-            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo, path, repr(e))
+            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo.name, path, repr(e))
             continue
-    raise RuntimeError(f"无法下载 {repo}/{branch}/{path}")
+    raise RuntimeError(f"无法下载 {repo.name}/{branch}/{path}")
 
 
 async def fetchReleaseAsset(
-    repo: str, tag: str, asset: str, outputPath: Path,
+    repo: Repo, tag: str, asset: str, outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> str:
     for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
         endpoints = SOURCES[source]
-        url = f"{endpoints.download}/{mapped}/releases/download/{tag}/{asset}"
+        url = f"{endpoints.download}/{repo.forSource(source)}/releases/download/{tag}/{asset}"
         try:
             await fetchFile(url, outputPath, onProgress=onProgress)
             return source
         except Exception as e:
-            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo, asset, repr(e))
+            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo.name, asset, repr(e))
             continue
-    raise RuntimeError(f"无法下载 {repo}/{tag}/{asset}")
+    raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
 
 
 PYPI_MIRRORS = {
@@ -193,13 +193,11 @@ async def fetchPypiJson(package: str) -> dict:
     raise RuntimeError(f"无法获取 PyPI 包信息: {package}")
 
 
-def buildDownloadUrl(repo: str, tag: str, asset: str, *, source: str) -> str:
-    mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+def buildDownloadUrl(repo: Repo, tag: str, asset: str, *, source: str) -> str:
     endpoints = SOURCES[source]
-    return f"{endpoints.download}/{mapped}/releases/download/{tag}/{asset}"
+    return f"{endpoints.download}/{repo.forSource(source)}/releases/download/{tag}/{asset}"
 
 
-def buildRawUrl(repo: str, branch: str, path: str, *, source: str) -> str:
-    mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+def buildRawUrl(repo: Repo, branch: str, path: str, *, source: str) -> str:
     endpoints = SOURCES[source]
-    return f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+    return f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"

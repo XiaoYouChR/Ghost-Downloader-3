@@ -7,10 +7,11 @@ from pathlib import Path
 from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.filesystem import toPosixPath
+from app.sources import Repo
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from qfluentwidgets import ConfigItem, BoolValidator, FluentIcon, RangeConfigItem, RangeValidator
 
-ED2K_REPO = "XiaoYouChR/Python-eD2k"
+ED2K_REPO = Repo("XiaoYouChR/Python-eD2k")
 
 
 class ED2kConfig(PackConfig):

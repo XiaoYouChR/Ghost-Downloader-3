@@ -5,9 +5,9 @@ import sys
 
 from PySide6.QtCore import QVersionNumber
 
-from app.sources import Release, ReleaseAsset, fetchLatestRelease
+from app.sources import Release, ReleaseAsset, Repo, fetchLatestRelease
 
-APP_REPO = "XiaoYouChR/Ghost-Downloader-3"
+APP_REPO = Repo("XiaoYouChR/Ghost-Downloader-3")
 
 
 def isNewer(current: str, latest: str) -> bool:
