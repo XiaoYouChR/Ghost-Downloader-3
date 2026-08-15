@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio.staggered import staggered_race
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -41,7 +42,8 @@ SOURCES = {
     ),
 }
 
-SOURCE_ORDER = ("gitcode", "github")
+SOURCE_ORDER = ("github", "gitcode")
+STAGGER_DELAY = 0.3
 
 
 @dataclass(frozen=True)
@@ -91,7 +93,7 @@ class Release:
 
 
 async def fetchLatestRelease(repo: Repo) -> tuple[Release, str]:
-    for source in SOURCE_ORDER:
+    async def attempt(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.api}/{repo.forSource(source)}/releases/latest"
         headers = {"accept": "application/vnd.github+json"} if source == "github" else {}
@@ -103,9 +105,14 @@ async def fetchLatestRelease(repo: Repo) -> tuple[Release, str]:
             return Release.fromResponse(data), source
         except Exception as e:
             logger.debug("从 {} 获取 {} release 失败: {}", source, repo.name, repr(e))
-            continue
+            raise
         finally:
             client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is not None:
+        return result
     raise RuntimeError(f"无法获取 {repo.name} 的最新 release")
 
 
@@ -115,7 +122,7 @@ async def fetchLatestTag(repo: Repo) -> tuple[str, str]:
 
 
 async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
-    for source in SOURCE_ORDER:
+    async def attempt(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
         client = buildClient(timeout=15)
@@ -126,9 +133,14 @@ async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
             return result, source
         except Exception as e:
             logger.debug("从 {} 获取 {}/{} 失败: {}", source, repo.name, path, repr(e))
-            continue
+            raise
         finally:
             client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is not None:
+        return result
     raise RuntimeError(f"无法获取 {repo.name}/{branch}/{path}")
 
 
@@ -136,32 +148,60 @@ async def fetchRawFile(
     repo: Repo, branch: str, path: str, outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> str:
-    for source in SOURCE_ORDER:
+    async def probe(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
+        client = buildClient(timeout=10)
         try:
-            await fetchFile(url, outputPath, onProgress=onProgress)
-            return source
+            resp = await client.get(url)
+            try:
+                resp.raise_for_status()
+                return url, source
+            finally:
+                resp.close()
         except Exception as e:
             logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo.name, path, repr(e))
-            continue
-    raise RuntimeError(f"无法下载 {repo.name}/{branch}/{path}")
+            raise
+        finally:
+            client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is None:
+        raise RuntimeError(f"无法下载 {repo.name}/{branch}/{path}")
+    url, source = result
+    await fetchFile(url, outputPath, onProgress=onProgress)
+    return source
 
 
 async def fetchReleaseAsset(
     repo: Repo, tag: str, asset: str, outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> str:
-    for source in SOURCE_ORDER:
+    async def probe(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.download}/{repo.forSource(source)}/releases/download/{tag}/{asset}"
+        client = buildClient(timeout=10)
         try:
-            await fetchFile(url, outputPath, onProgress=onProgress)
-            return source
+            resp = await client.get(url)
+            try:
+                resp.raise_for_status()
+                return url, source
+            finally:
+                resp.close()
         except Exception as e:
             logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo.name, asset, repr(e))
-            continue
-    raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
+            raise
+        finally:
+            client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is None:
+        raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
+    url, source = result
+    await fetchFile(url, outputPath, onProgress=onProgress)
+    return source
 
 
 PYPI_MIRRORS = {
@@ -178,7 +218,7 @@ def buildPypiUrl(package: str, *, source: str) -> str:
 
 
 async def fetchPypiJson(package: str) -> dict:
-    for source in SOURCE_ORDER:
+    async def attempt(source):
         url = buildPypiUrl(package, source=source)
         client = buildClient(timeout=15)
         try:
@@ -187,9 +227,14 @@ async def fetchPypiJson(package: str) -> dict:
             return await resp.json()
         except Exception as e:
             logger.debug("从 {} 获取 PyPI {} 失败: {}", source, package, repr(e))
-            continue
+            raise
         finally:
             client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is not None:
+        return result
     raise RuntimeError(f"无法获取 PyPI 包信息: {package}")
 
 
