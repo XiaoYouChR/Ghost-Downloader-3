@@ -88,7 +88,9 @@ _Avoid_: 直接操作 Task 的状态转换
 此失败发生在 Task 创建之前，不属于 Task Error。
 
 **FeaturePack**:
-插件包。可提供 task parser、card、file type、binary runtime、page 或 setting group。
+全栈垂直切片——从 parser 到 card 自包含。可提供 task parser、card、file type、binary runtime、page 或 setting group。
+Pack 内部依赖方向：cards（View）可 import task/config/session，反过来不行。engine 代码不知道 View 存在。
+用户可见文本的 i18n 归 View 层——model 存机器可读 key，View 映射到翻译文本。error_catalog 是给 lupdate 的声明文件，不参与运行时。
 _Avoid_: module、extension
 
 **Binary Runtime**:
