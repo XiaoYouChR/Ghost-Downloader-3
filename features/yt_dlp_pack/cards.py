@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, Qt
+from PySide6.QtCore import QCoreApplication, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidget
 from qfluentwidgets import (
@@ -144,11 +144,11 @@ def buildSubtitleChoices(mediaInfo: dict, automaticLabel: str) -> tuple[list[tup
 
 
 STEP_LABELS = {
-    1: "提取信息",
-    2: "下载视频",
-    3: "下载音频",
-    4: "合并",
-    5: "下载字幕",
+    1: N("YtDlpTaskCard", "提取信息"),
+    2: N("YtDlpTaskCard", "下载视频"),
+    3: N("YtDlpTaskCard", "下载音频"),
+    4: N("YtDlpTaskCard", "合并"),
+    5: N("YtDlpTaskCard", "下载字幕"),
 }
 
 
