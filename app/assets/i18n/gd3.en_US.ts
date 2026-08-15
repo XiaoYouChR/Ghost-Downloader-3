@@ -3004,12 +3004,14 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Download task added</translation>
     </message>
     <message>
+        <location filename="../../view/notification_catalog.py" line="3"/>
         <source>功能包更新</source>
-        <translation type="vanished">Feature Pack Update</translation>
+        <translation>Feature Pack Update</translation>
     </message>
     <message>
+        <location filename="../../view/notification_catalog.py" line="4"/>
         <source>{0} 将在下次启动时生效</source>
-        <translation type="vanished">{0} will take effect on next launch</translation>
+        <translation>{0} will take effect on next launch</translation>
     </message>
 </context>
 <context>
@@ -3546,11 +3548,7 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
     <message>
         <location filename="../../view/components/progress_toast.py" line="99"/>
         <source>重启后生效</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>下次启动时生效</source>
-        <translation type="vanished">Will take effect on next launch</translation>
+        <translation>Applies after app restart</translation>
     </message>
     <message>
         <location filename="../../view/components/progress_toast.py" line="109"/>
@@ -4994,6 +4992,7 @@ Data will be copied to new location and the program will then exit. Please manua
     <name>TaskErrors</name>
     <message>
         <location filename="../../view/error_catalog.py" line="3"/>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="4"/>
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="13"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} is not installed, please install it in Settings</translation>
@@ -5072,12 +5071,9 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>ED2k error: {detail}</translation>
     </message>
     <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="5"/>
         <source>ED2kSession 未启动</source>
-        <translation type="vanished"> ED2k session not started</translation>
-    </message>
-    <message>
-        <source>未找到 goed2kd，请先在设置中安装</source>
-        <translation type="vanished">goed2kd is not installed, please install it in Settings</translation>
+        <translation>ED2k session not started</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>
