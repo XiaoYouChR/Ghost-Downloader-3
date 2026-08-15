@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
+from typing import Any, Callable
 
 from loguru import logger
 
-from app.client import buildClient
+from app.client import buildClient, fetchFile
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,40 @@ async def fetchJson(repo: str, branch: str, path: str) -> tuple[dict, str]:
         finally:
             client.close()
     raise RuntimeError(f"无法获取 {repo}/{branch}/{path}")
+
+
+async def fetchRawFile(
+    repo: str, branch: str, path: str, outputPath: Path,
+    onProgress: Callable[[float], None] | None = None,
+) -> str:
+    for source in SOURCE_ORDER:
+        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+        endpoints = SOURCES[source]
+        url = f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+        try:
+            await fetchFile(url, outputPath, onProgress=onProgress)
+            return source
+        except Exception as e:
+            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo, path, repr(e))
+            continue
+    raise RuntimeError(f"无法下载 {repo}/{branch}/{path}")
+
+
+async def fetchReleaseAsset(
+    repo: str, tag: str, asset: str, outputPath: Path,
+    onProgress: Callable[[float], None] | None = None,
+) -> str:
+    for source in SOURCE_ORDER:
+        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+        endpoints = SOURCES[source]
+        url = f"{endpoints.download}/{mapped}/releases/download/{tag}/{asset}"
+        try:
+            await fetchFile(url, outputPath, onProgress=onProgress)
+            return source
+        except Exception as e:
+            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo, asset, repr(e))
+            continue
+    raise RuntimeError(f"无法下载 {repo}/{tag}/{asset}")
 
 
 PYPI_MIRRORS = {

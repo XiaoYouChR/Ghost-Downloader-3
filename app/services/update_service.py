@@ -16,12 +16,11 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
-from app.client import fetchFile
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, executableDir
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
-from app.sources import buildDownloadUrl, buildRawUrl, fetchJson
+from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
 from app.update import APP_REPO, isNewer
 
 if TYPE_CHECKING:
@@ -113,7 +112,6 @@ class UpdateService(QObject):
         super().__init__(parent)
         self._coroutineRunner = coroutineRunner
         self._infos: dict[str, UpdateInfo] = {}
-        self._source = ""
         self._versionsData: dict = {}
 
     def check(self) -> None:
@@ -174,7 +172,7 @@ class UpdateService(QObject):
 
     async def _fetchVersions(self) -> dict | None:
         try:
-            data, self._source = await fetchJson(APP_REPO, "main", "versions.json")
+            data, _ = await fetchJson(APP_REPO, "main", "versions.json")
             return data
         except RuntimeError:
             return None
@@ -199,24 +197,23 @@ class UpdateService(QObject):
     async def _downloadApp(self, info: UpdateInfo) -> None:
         appData = self._versionsData.get("app", {})
         version = appData.get("version", "")
+        tag = f"v{version}"
         platformKey = buildPlatformKey()
 
         patches = appData.get("patches", {})
         patch = patches.get(platformKey)
 
         if patch and patch.get("from") == VERSION:
-            url = buildDownloadUrl(APP_REPO, f"v{version}", patch["file"], source=self._source)
             sha = patch.get("sha256", "")
             outputPath = STAGING_DIR / "patch.hdiff"
 
-            await fetchFile(url, outputPath,
-                            onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
+            await fetchReleaseAsset(APP_REPO, tag, patch["file"], outputPath,
+                                    onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
-            if sha:
-                if not matchChecksum(outputPath, sha):
-                    outputPath.unlink(missing_ok=True)
-                    self._emit("app", UpdateState.FAILED, error="校验失败")
-                    return
+            if sha and not matchChecksum(outputPath, sha):
+                outputPath.unlink(missing_ok=True)
+                self._emit("app", UpdateState.FAILED, error="校验失败")
+                return
 
             self._emit("app", UpdateState.READY)
             return
@@ -229,8 +226,8 @@ class UpdateService(QObject):
         archivePath = STAGING_DIR / full["file"]
         sha = full.get("sha256", "")
 
-        await fetchFile(buildDownloadUrl(APP_REPO, f"v{version}", full["file"], source=self._source), archivePath,
-                        onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
+        await fetchReleaseAsset(APP_REPO, tag, full["file"], archivePath,
+                                onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
 
         if sha and not matchChecksum(archivePath, sha):
             archivePath.unlink(missing_ok=True)
@@ -255,10 +252,10 @@ class UpdateService(QObject):
     async def _downloadPack(self, packId: str, info: UpdateInfo) -> None:
         packData = self._versionsData.get("packs", {}).get(packId, {})
         filename = packData.get("file", f"{packId}.zip")
-        url = buildRawUrl(APP_REPO, "main", f"dist/packs/{filename}", source=self._source)
         outputPath = STAGING_DIR / f"{packId}.zip"
 
-        await fetchFile(url, outputPath, onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))
+        await fetchRawFile(APP_REPO, "main", f"dist/packs/{filename}", outputPath,
+                           onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))
 
         expectedSha = packData.get("sha256", "")
         if expectedSha and not matchChecksum(outputPath, expectedSha):
