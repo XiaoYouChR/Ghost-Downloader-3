@@ -13,6 +13,7 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     #include <shellapi.h>
+    #include <shlobj.h>
     #include <wchar.h>
     typedef wchar_t pchar;
     #define PFMT "%ls"
@@ -20,13 +21,16 @@
 #else
     #include <errno.h>
     #include <ftw.h>
+    #include <pwd.h>
     #include <signal.h>
     #include <spawn.h>
+    #include <sys/stat.h>
     #include <sys/wait.h>
     #include <unistd.h>
     extern char **environ;
     #ifdef __APPLE__
         #include <mach-o/dyld.h>
+        #include <sysdir.h>
     #endif
     typedef char pchar;
     #define PFMT "%s"
@@ -64,26 +68,65 @@ static void toDirname(pchar *path) {
 #endif
 }
 
-static void openLog(const pchar *appDir) {
+static void openLog(void) {
 #ifdef _WIN32
-    wcsncpy(g_logPath, appDir, PATH_BUF - 1);
-    g_logPath[PATH_BUF - 1] = L'\0';
-    toDirname(g_logPath);
+    wchar_t dir[MAX_PATH];
+    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, dir)))
+        return;
+    wsnprintf(g_logPath, PATH_BUF, L"%ls\\GhostDownloader", dir);
+    CreateDirectoryW(g_logPath, NULL);
     size_t dirLen = wcslen(g_logPath);
-    if (dirLen > 0)
-        wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
-    else
-        wsnprintf(g_logPath, PATH_BUF, L"updater.log");
+    wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
     g_log = _wfopen(g_logPath, L"a");
-#else
-    strncpy(g_logPath, appDir, PATH_BUF - 1);
-    g_logPath[PATH_BUF - 1] = '\0';
-    toDirname(g_logPath);
+#elif defined(__APPLE__)
+    char rawPath[PATH_BUF];
+    sysdir_search_path_enumeration_state state =
+        sysdir_start_search_path_enumeration(
+            SYSDIR_DIRECTORY_APPLICATION_SUPPORT,
+            SYSDIR_DOMAIN_MASK_USER);
+    sysdir_get_next_search_path_enumeration(state, rawPath);
+    if (rawPath[0] == '\0') return;
+
+    char dir[PATH_BUF];
+    if (rawPath[0] == '~') {
+        struct passwd pw, *result;
+        char pwBuf[4096];
+        if (getpwuid_r(getuid(), &pw, pwBuf, sizeof(pwBuf), &result) != 0
+            || !result)
+            return;
+        snprintf(dir, sizeof(dir), "%s%s", result->pw_dir, rawPath + 1);
+    } else {
+        snprintf(dir, sizeof(dir), "%s", rawPath);
+    }
+
+    snprintf(g_logPath, PATH_BUF, "%s/GhostDownloader", dir);
+    mkdir(g_logPath, 0755);
     size_t dirLen = strlen(g_logPath);
-    if (dirLen > 0)
-        snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
-    else
-        snprintf(g_logPath, PATH_BUF, "updater.log");
+    snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
+    g_log = fopen(g_logPath, "a");
+#else
+    const char *base = getenv("XDG_STATE_HOME");
+    char dir[PATH_BUF];
+    if (base && base[0] == '/') {
+        snprintf(dir, sizeof(dir), "%s", base);
+    } else {
+        const char *home = getenv("HOME");
+        if (!home || home[0] != '/') {
+            struct passwd pw, *result;
+            char pwBuf[4096];
+            if (getpwuid_r(getuid(), &pw, pwBuf, sizeof(pwBuf), &result) != 0
+                || !result)
+                return;
+            home = result->pw_dir;
+        }
+        snprintf(dir, sizeof(dir), "%s/.local/state", home);
+    }
+
+    mkdir(dir, 0755);
+    snprintf(g_logPath, PATH_BUF, "%s/GhostDownloader", dir);
+    mkdir(g_logPath, 0755);
+    size_t dirLen = strlen(g_logPath);
+    snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
     g_log = fopen(g_logPath, "a");
 #endif
 }
@@ -386,7 +429,7 @@ int main(int argc, char *argv[]) {
 #endif
     findExeDir(updaterDir, PATH_BUF);
 
-    openLog(appDir);
+    openLog();
     logMsg("   __________     __  ______  ____  ___  ________________");
     logMsg("  / ____/ __ \\   / / / / __ \\/ __ \\/   |/_  __/ ____/ __ \\");
     logMsg(" / / __/ / / /  / / / / /_/ / / / / /| | / / / __/ / /_/ /");
