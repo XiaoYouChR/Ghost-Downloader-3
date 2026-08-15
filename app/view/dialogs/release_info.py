@@ -23,6 +23,7 @@ class ReleaseInfoDialog(MessageBoxBase):
     def __init__(self, release: Release, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self._release = release
 
         self.versionLabel = SubtitleLabel(release.version, self)
