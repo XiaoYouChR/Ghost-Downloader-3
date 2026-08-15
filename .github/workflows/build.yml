@@ -608,6 +608,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
@@ -680,7 +682,18 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update versions.json for v${VERSION} [skip ci]"
           git push
 
-      - name: Mirror to GitCode
+      - name: Push to GitCode
+        continue-on-error: true
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          if [ -z "$GITCODE_TOKEN" ]; then echo "No GITCODE_TOKEN, skipping"; exit 0; fi
+          git fetch origin tag "v${VERSION}"
+          REMOTE="https://XiaoYouChR:${GITCODE_TOKEN}@gitcode.com/XiaoYouChR/Ghost-Downloader-3.git"
+          git push "$REMOTE" main "v${VERSION}" 2>&1 | sed "s/${GITCODE_TOKEN}/****/g" || true
+
+      - name: Mirror release to GitCode
         continue-on-error: true
         env:
           GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
@@ -693,16 +706,14 @@ jobs:
           TAG="v${VERSION}"
           AUTH="access_token=${GITCODE_TOKEN}"
 
-          RELEASE=$(curl -f "${API}/repos/${REPO}/releases/tags/${TAG}?${AUTH}" || echo "")
-          if [ -z "$RELEASE" ]; then
-            curl -f -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
-              -H "Content-Type: application/json" \
-              -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"${TAG}\"}"
-          fi
+          curl -f -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"${TAG}\"}" \
+            2>/dev/null || echo "Release already exists"
 
           curl -f -X PATCH "${API}/repos/${REPO}/releases/${TAG}?${AUTH}" \
             -H "Content-Type: application/json" \
-            -d '{"release_status":"latest"}'
+            -d '{"release_status":"latest"}' || true
 
           upload_file() {
             local file="$1"
@@ -726,9 +737,9 @@ jobs:
           }
 
           for f in assets/patch-*.hdiff; do
-            [ -f "$f" ] && upload_file "$f"
+            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; }
           done
 
           for f in assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
-            [ -f "$f" ] && upload_file "$f"
+            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; }
           done
