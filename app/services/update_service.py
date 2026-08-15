@@ -135,7 +135,8 @@ class UpdateService(QObject):
 
         data = await self._fetchVersions()
         if data is None:
-            self._emit("app", UpdateState.FAILED, error="无法获取版本信息")
+            logger.debug("检查更新失败，将在下次启动时重试")
+            self._emit("app", UpdateState.IDLE)
             return
         self._versionsData = data
 
