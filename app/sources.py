@@ -177,6 +177,22 @@ def buildPypiUrl(package: str, *, source: str) -> str:
     return f"{base}/{package}/json"
 
 
+async def fetchPypiJson(package: str) -> dict:
+    for source in SOURCE_ORDER:
+        url = buildPypiUrl(package, source=source)
+        client = buildClient(timeout=15)
+        try:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return await resp.json()
+        except Exception as e:
+            logger.debug("从 {} 获取 PyPI {} 失败: {}", source, package, repr(e))
+            continue
+        finally:
+            client.close()
+    raise RuntimeError(f"无法获取 PyPI 包信息: {package}")
+
+
 def buildDownloadUrl(repo: str, tag: str, asset: str, *, source: str) -> str:
     mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
     endpoints = SOURCES[source]

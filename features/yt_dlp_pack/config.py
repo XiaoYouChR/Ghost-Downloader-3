@@ -197,17 +197,9 @@ class YouTubeRuntime(BinaryRuntime):
         )
 
     async def fetchLatestVersion(self) -> str:
-        from app.client import buildClient
-        from app.sources import SOURCE_ORDER, buildPypiUrl
-        url = buildPypiUrl("yt-dlp", source=SOURCE_ORDER[0])
-        client = buildClient(timeout=15)
-        try:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            data = await resp.json()
-            return data.get("info", {}).get("version", "")
-        finally:
-            client.close()
+        from app.sources import fetchPypiJson
+        data = await fetchPypiJson("yt-dlp")
+        return data.get("info", {}).get("version", "")
 
     async def createInstallTask(self):
         from app.install import BinaryInstallStep, ExtractStep, FetchStep, InstallTask
@@ -274,17 +266,8 @@ class YouTubeRuntime(BinaryRuntime):
         return task
 
     async def _fetchWhlAsset(self) -> tuple[str, int]:
-        from app.client import buildClient
-        from app.sources import SOURCE_ORDER, buildPypiUrl
-
-        url = buildPypiUrl("yt-dlp", source=SOURCE_ORDER[0])
-        client = buildClient(timeout=15)
-        try:
-            response = await client.get(url)
-            response.raise_for_status()
-            data = await response.json()
-        finally:
-            client.close()
+        from app.sources import fetchPypiJson
+        data = await fetchPypiJson("yt-dlp")
 
         urls = data.get("urls") or []
         for entry in urls:
