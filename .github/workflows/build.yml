@@ -704,6 +704,17 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update versions.json for v${VERSION} [skip ci]"
           git push
 
+      - name: Push to CNB
+        continue-on-error: true
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          if [ -z "$CNB_TOKEN" ]; then echo "No CNB_TOKEN, skipping"; exit 0; fi
+          git fetch origin tag "v${VERSION}"
+          REMOTE="https://cnb:${CNB_TOKEN}@cnb.cool/XiaoYouChR/Ghost-Downloader-3"
+          git push "$REMOTE" main 2>&1 | sed "s/${CNB_TOKEN}/****/g" || true
+
       - name: Push to GitCode
         continue-on-error: true
         env:
@@ -763,8 +774,3 @@ jobs:
           done
           wait
 
-      - name: Purge jsDelivr cache
-        run: |
-          for f in versions.json dist/packs/*.zip; do
-            curl -s "https://purge.jsdelivr.net/gh/XiaoYouChR/Ghost-Downloader-3@main/${f}" || true
-          done

@@ -31,8 +31,8 @@ SOURCES = {
     "gitcode": SourceEndpoints(
         api="https://api.gitcode.com/api/v5/repos",
         download="https://gitcode.com",
-        raw="https://cdn.jsdelivr.net/gh",
-        rawInfix="@",
+        raw="https://cnb.cool",
+        rawInfix="/-/git/raw/",
     ),
     "github": SourceEndpoints(
         api="https://api.github.com/repos",
@@ -43,7 +43,7 @@ SOURCES = {
 }
 
 SOURCE_ORDER = ("github", "gitcode")
-STAGGER_DELAY = 0.3
+STAGGER_DELAY = 0
 
 
 @dataclass(frozen=True)

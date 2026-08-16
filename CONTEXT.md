@@ -126,6 +126,18 @@ _Avoid_: group、tag、type
 应用级用户配置。
 _Avoid_: options（options 是每个 Task 的输入，不是应用配置）
 
+
+### 更新分发
+
+**Origin**:
+应用更新与附属二进制的权威托管方。构建、打 tag、发布资产以 Origin 为准。当前是 GitHub。
+_Avoid_: source of truth 单独当术语；不叫 primary / 主镜像
+
+**Source**:
+客户端竞速拉取更新元数据和资产的一个托管端点。当前集合是 github 与 gitcode。
+_Avoid_: Mirror、CDN、channel；CNB 不是 Source
+
+
 ## Example dialogue
 
 > **Dev:** "用户按暂停时，我们删除 Task 吗？"
