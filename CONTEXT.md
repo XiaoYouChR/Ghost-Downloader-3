@@ -124,6 +124,40 @@ _Avoid_: group、tag、type
 应用级用户配置。
 _Avoid_: options（options 是每个 Task 的输入，不是应用配置）
 
+### 应用更新
+
+**App Dir**:
+正在使用的安装目录。
+_Avoid_: install dir、program folder
+
+**Patch**:
+一份目录级增量文件。
+_Avoid_: delta、diff
+
+**Staging**:
+更新下载物的落地目录。
+_Avoid_: cache、temp
+
+**New Dir**:
+App Dir 旁已经打好的新树。
+_Avoid_: dest、out
+
+**Backup Dir**:
+App Dir 改名让出后的旧树。
+_Avoid_: old、prev
+
+**Updater**:
+进程外的更新程序：等应用退出后做 Patch 与 Install。
+_Avoid_: helper、installer
+
+**Apply**:
+退出时把已就绪的更新交出去：Pack 就地暂存，应用则启动 Updater。
+_Avoid_: install、commit
+
+**Install**:
+Updater 把 New Dir 换成 App Dir。
+_Avoid_: swap、rename、deploy
+
 ## Example dialogue
 
 > **Dev:** "用户按暂停时，我们删除 Task 吗？"

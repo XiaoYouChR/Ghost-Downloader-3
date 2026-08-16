@@ -21,6 +21,7 @@
     #include <errno.h>
     #include <ftw.h>
     #include <signal.h>
+    #include <sys/stat.h>
     #include <spawn.h>
     #include <sys/wait.h>
     #include <unistd.h>
@@ -66,14 +67,18 @@ static void toDirname(pchar *path) {
 
 static void openLog(const pchar *appDir) {
 #ifdef _WIN32
-    wcsncpy(g_logPath, appDir, PATH_BUF - 1);
-    g_logPath[PATH_BUF - 1] = L'\0';
-    toDirname(g_logPath);
-    size_t dirLen = wcslen(g_logPath);
-    if (dirLen > 0)
-        wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
-    else
-        wsnprintf(g_logPath, PATH_BUF, L"updater.log");
+    /* Program Files is not writable; keep the log next to user data. */
+    (void)appDir;
+    wchar_t localApp[PATH_BUF];
+    DWORD n = GetEnvironmentVariableW(L"LOCALAPPDATA", localApp, PATH_BUF);
+    if (n == 0 || n >= PATH_BUF) {
+        g_log = NULL;
+        return;
+    }
+    wchar_t dir[PATH_BUF];
+    wsnprintf(dir, PATH_BUF, L"%ls\\GhostDownloader", localApp);
+    CreateDirectoryW(dir, NULL);
+    wsnprintf(g_logPath, PATH_BUF, L"%ls\\updater.log", dir);
     g_log = _wfopen(g_logPath, L"a");
 #else
     strncpy(g_logPath, appDir, PATH_BUF - 1);
@@ -137,6 +142,65 @@ static void findExeDir(pchar *buf, size_t len) {
 }
 
 #ifdef _WIN32
+static int isElevated(void) {
+    HANDLE token = NULL;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token))
+        return 0;
+    TOKEN_ELEVATION elev = {0};
+    DWORD n = 0;
+    int ok = GetTokenInformation(token, TokenElevation, &elev, sizeof(elev), &n)
+             && elev.TokenIsElevated;
+    CloseHandle(token);
+    return ok;
+}
+
+static int canWriteDir(const wchar_t *dir) {
+    wchar_t probe[PATH_BUF];
+    wsnprintf(probe, PATH_BUF, L"%ls\\.gd_write_probe", dir);
+    HANDLE h = CreateFileW(probe, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS,
+                           FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return 0;
+    CloseHandle(h);
+    return 1;
+}
+
+static int restartElevated(int wargc, wchar_t **wargv) {
+    wchar_t exePath[PATH_BUF];
+    if (!GetModuleFileNameW(NULL, exePath, PATH_BUF))
+        return -1;
+    exePath[PATH_BUF - 1] = L'\0';
+
+    wchar_t params[PATH_BUF * 4];
+    size_t cap = PATH_BUF * 4;
+    int pos = 0;
+    params[0] = L'\0';
+    for (int i = 1; i < wargc; i++) {
+        int n = _snwprintf(params + pos, cap - pos,
+                           pos ? L" \"%ls\"" : L"\"%ls\"", wargv[i]);
+        if (n < 0 || (size_t)pos + (size_t)n >= cap)
+            return -1;
+        pos += n;
+    }
+
+    wchar_t cwd[PATH_BUF];
+    findExeDir(cwd, PATH_BUF);
+
+    SHELLEXECUTEINFOW sei = {0};
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    sei.lpVerb = L"runas";
+    sei.lpFile = exePath;
+    sei.lpParameters = params;
+    sei.lpDirectory = cwd[0] ? cwd : NULL;
+    sei.nShow = SW_HIDE;
+    if (!ShellExecuteExW(&sei))
+        return -1;
+    if (sei.hProcess)
+        CloseHandle(sei.hProcess);
+    return 0;
+}
+
 static int waitForProcessExit(unsigned long pid, int timeoutMs) {
     HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, pid);
     if (!h) return 0;
@@ -223,13 +287,23 @@ static int runHpatchz(const pchar *dir, const pchar *oldDir,
 #endif
 }
 
+static int hasDir(const pchar *dir) {
+#ifdef _WIN32
+    DWORD attr = GetFileAttributesW(dir);
+    return attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY);
+#else
+    struct stat st;
+    return stat(dir, &st) == 0 && S_ISDIR(st.st_mode);
+#endif
+}
+
 static int moveDir(const pchar *from, const pchar *to) {
 #ifdef _WIN32
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 8; i++) {
         if (MoveFileW(from, to)) return 0;
         logMsg("rename \"" PFMT "\" -> \"" PFMT "\" failed (err=%lu), retry %d",
                from, to, GetLastError(), i + 1);
-        Sleep(100u << i);
+        Sleep(200u << (i < 5 ? i : 5));
     }
     return -1;
 #else
@@ -263,8 +337,47 @@ static void deleteDir(const char *dir) {
 }
 #endif
 
+#ifdef _WIN32
+static int startAppAsUser(const wchar_t *exe) {
+    HWND tray = FindWindowW(L"Shell_TrayWnd", NULL);
+    if (!tray) return -1;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(tray, &pid);
+    if (!pid) return -1;
+
+    HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+    if (!hProc) return -1;
+
+    HANDLE hToken = NULL, hPrimary = NULL;
+    int ok = -1;
+    if (OpenProcessToken(hProc, TOKEN_DUPLICATE, &hToken) &&
+        DuplicateTokenEx(hToken,
+                         TOKEN_ASSIGN_PRIMARY | TOKEN_DUPLICATE | TOKEN_QUERY |
+                         TOKEN_ADJUST_DEFAULT | TOKEN_ADJUST_SESSIONID,
+                         NULL, SecurityImpersonation, TokenPrimary, &hPrimary)) {
+        wchar_t cmd[PATH_BUF];
+        wsnprintf(cmd, PATH_BUF, L"\"%ls\"", exe);
+        STARTUPINFOW si = { .cb = sizeof(si) };
+        PROCESS_INFORMATION pi = {0};
+        if (CreateProcessAsUserW(hPrimary, NULL, cmd, NULL, NULL, FALSE,
+                                 0, NULL, NULL, &si, &pi)) {
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            ok = 0;
+        }
+    }
+    if (hPrimary) CloseHandle(hPrimary);
+    if (hToken) CloseHandle(hToken);
+    CloseHandle(hProc);
+    return ok;
+}
+#endif
+
 static int startApp(const pchar *exe) {
 #ifdef _WIN32
+    if (isElevated() && startAppAsUser(exe) == 0)
+        return 0;
+
     wchar_t cmd[PATH_BUF];
     wsnprintf(cmd, PATH_BUF, L"\"%ls\"", exe);
 
@@ -310,7 +423,7 @@ static int restartFromTemp(const wchar_t *appDir, int wargc, wchar_t **wargv) {
 
     wchar_t tempDir[PATH_BUF];
     if (!GetTempPathW(PATH_BUF, tempDir))
-        return 0;
+        return -1;
     size_t tempLen = wcslen(tempDir);
     if (tempLen < PATH_BUF - 11)
         wcsncat(tempDir, L"gd_updater", PATH_BUF - tempLen - 1);
@@ -323,12 +436,12 @@ static int restartFromTemp(const wchar_t *appDir, int wargc, wchar_t **wargv) {
 
     if (!CopyFileW(exePath, dstUpdater, FALSE) ||
         !CopyFileW(srcHpatchz, dstHpatchz, FALSE))
-        return 0;
+        return -1;
 
     wchar_t cmd[PATH_BUF * 4];
     size_t cmdSize = PATH_BUF * 4;
     int pos = _snwprintf(cmd, cmdSize, L"\"%ls\"", dstUpdater);
-    if (pos < 0 || (size_t)pos >= cmdSize) return 0;
+    if (pos < 0 || (size_t)pos >= cmdSize) return -1;
     int truncated = 0;
     for (int i = 1; i < wargc && (size_t)pos < cmdSize; i++) {
         int n = _snwprintf(cmd + pos, cmdSize - pos, L" \"%ls\"", wargv[i]);
@@ -336,14 +449,14 @@ static int restartFromTemp(const wchar_t *appDir, int wargc, wchar_t **wargv) {
         pos += n;
     }
     cmd[cmdSize - 1] = L'\0';
-    if (truncated) return 0;
+    if (truncated) return -1;
 
     STARTUPINFOW si = { .cb = sizeof(si) };
     PROCESS_INFORMATION pi = {0};
     if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE,
                         DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,
-                        NULL, NULL, &si, &pi))
-        return 0;
+                        NULL, tempDir, &si, &pi))
+        return -1;
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
@@ -362,7 +475,8 @@ int main(int argc, char *argv[]) {
     wchar_t **wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
     if (!wargv || wargc < 4) return EXIT_BAD_ARGS;
 
-    if (restartFromTemp(wargv[2], wargc, wargv))
+    int relocated = restartFromTemp(wargv[2], wargc, wargv);
+    if (relocated > 0)
         return EXIT_OK;
 
     unsigned long appPid = wcstoul(wargv[1], NULL, 10);
@@ -387,6 +501,17 @@ int main(int argc, char *argv[]) {
     findExeDir(updaterDir, PATH_BUF);
 
     openLog(appDir);
+#ifdef _WIN32
+    if (relocated < 0) {
+        logMsg("cannot copy updater out of appDir");
+        closeLog();
+        return EXIT_RENAME_FAILED;
+    }
+    /* Windows locks the process cwd against MoveFile. */
+    if (updaterDir[0] && !SetCurrentDirectoryW(updaterDir))
+        logMsg("SetCurrentDirectory \"" PFMT "\" failed (err=%lu)",
+               updaterDir, GetLastError());
+#endif
     logMsg("   __________     __  ______  ____  ___  ________________");
     logMsg("  / ____/ __ \\   / / / / __ \\/ __ \\/   |/_  __/ ____/ __ \\");
     logMsg(" / / __/ / / /  / / / / /_/ / / / / /| | / / / __/ / /_/ /");
@@ -408,17 +533,34 @@ int main(int argc, char *argv[]) {
     }
     logMsg("app exited");
 
+#ifdef _WIN32
+    if (!canWriteDir(appDir)) {
+        if (!isElevated()) {
+            logMsg("appDir not writable, elevating");
+            closeLog();
+            int elevated = restartElevated(wargc, wargv);
+            LocalFree(wargv);
+            return elevated == 0 ? EXIT_OK : EXIT_RENAME_FAILED;
+        }
+        logMsg("appDir not writable after elevation");
+        closeLog();
+        return EXIT_RENAME_FAILED;
+    }
+#endif
+
     deleteDir(backupDir);
 
     if (patchFile) {
-        deleteDir(newDir);
-        if (runHpatchz(updaterDir, appDir, patchFile, newDir) != 0) {
+        if (hasDir(newDir)) {
+            logMsg("reusing " PFMT, newDir);
+        } else if (runHpatchz(updaterDir, appDir, patchFile, newDir) != 0) {
             logMsg("hpatchz failed");
             deleteDir(newDir);
             closeLog();
             return EXIT_PATCH_FAILED;
+        } else {
+            logMsg("patch applied");
         }
-        logMsg("patch applied");
     }
 
     int swapOk = 0;
@@ -433,13 +575,11 @@ int main(int argc, char *argv[]) {
 #endif
     if (!swapOk) {
         if (moveDir(appDir, backupDir) != 0) {
-            deleteDir(newDir);
             closeLog();
             return EXIT_RENAME_FAILED;
         }
         if (moveDir(newDir, appDir) != 0) {
             moveDir(backupDir, appDir);
-            deleteDir(newDir);
             closeLog();
             return EXIT_RENAME_FAILED;
         }

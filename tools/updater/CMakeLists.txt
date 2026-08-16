@@ -11,5 +11,5 @@ add_executable(updater updater.c)
 
 if(WIN32)
     set_property(TARGET updater PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
-    target_link_libraries(updater PRIVATE shell32)
+    target_link_libraries(updater PRIVATE shell32 advapi32 user32)
 endif()
