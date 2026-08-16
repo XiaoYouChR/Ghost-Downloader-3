@@ -745,34 +745,37 @@ jobs:
           TAG="v${VERSION}"
           AUTH="access_token=${GITCODE_TOKEN}"
 
-          curl -f -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
+          curl -fsS -X POST "${API}/repos/${REPO}/releases?${AUTH}" \
             -H "Content-Type: application/json" \
             -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"body\":\"${TAG}\"}" \
-            2>/dev/null || echo "Release already exists"
+            -o /dev/null || echo "Release already exists"
 
-          curl -f -X PATCH "${API}/repos/${REPO}/releases/${TAG}?${AUTH}" \
+          curl -fsS -X PATCH "${API}/repos/${REPO}/releases/${TAG}?${AUTH}" \
             -H "Content-Type: application/json" \
-            -d '{"release_status":"latest"}' || true
+            -d '{"release_status":"latest"}' \
+            -o /dev/null || true
 
           upload_file() {
             local file="$1"
             local name=$(basename "$file")
+            echo "uploading: $name"
 
-            local upload_info=$(curl -f "${API}/repos/${REPO}/releases/${TAG}/upload_url?${AUTH}&file_name=${name}")
+            local upload_info
+            upload_info=$(curl -fsS "${API}/repos/${REPO}/releases/${TAG}/upload_url?${AUTH}&file_name=${name}")
             local url=$(echo "$upload_info" | jq -r '.url')
             local content_type=$(echo "$upload_info" | jq -r '.headers["Content-Type"]')
             local meta_project=$(echo "$upload_info" | jq -r '.headers["x-obs-meta-project-id"]')
             local obs_acl=$(echo "$upload_info" | jq -r '.headers["x-obs-acl"]')
             local obs_callback=$(echo "$upload_info" | jq -r '.headers["x-obs-callback"]')
 
-            curl -f -X PUT "$url" \
+            curl -fsS -X PUT "$url" \
               -H "Content-Type: ${content_type}" \
               -H "x-obs-meta-project-id: ${meta_project}" \
               -H "x-obs-acl: ${obs_acl}" \
               -H "x-obs-callback: ${obs_callback}" \
-              --data-binary "@${file}"
-
-            echo "uploaded: $name"
+              --data-binary "@${file}" \
+              -o /dev/null \
+              -w "uploaded: ${name}  http=%{http_code}  bytes=%{size_upload}  time=%{time_total}s\n"
           }
 
           for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
