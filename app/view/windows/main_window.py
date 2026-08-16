@@ -324,20 +324,19 @@ class MainWindow(MSFluentWindow):
 
     def _downloadBestAsset(self) -> None:
         from app.models.task import TaskOptions
-        from app.update import fetchRelease, bestAsset
+        from app.update import fetchBestAssetUrl
 
-        def onFetched(release):
-            asset = bestAsset(release)
-            if asset is None:
+        def onUrl(url):
+            if url is None:
                 self._showReleaseDetails()
                 return
             self._coroutineRunner.submit(
-                self._featureService.parse(TaskOptions(url=asset.downloadUrl)),
+                self._featureService.parse(TaskOptions(url=url)),
                 done=self._taskService.add,
                 owner=self,
             )
 
-        self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)
+        self._coroutineRunner.submit(fetchBestAssetUrl(), done=onUrl, owner=self)
 
     def _onUpdateChanged(self, info) -> None:
         if info.targetId != "app":
@@ -354,16 +353,30 @@ class MainWindow(MSFluentWindow):
 
     def _showReleaseDetails(self) -> None:
         from app.models.task import TaskOptions
-        from app.update import fetchRelease
+        from app.update import fetchAssetUrl, fetchRelease
         from app.view.dialogs.release_info import ReleaseInfoDialog
 
         def onFetched(release):
             dialog = ReleaseInfoDialog(release, self)
-            dialog.accepted.connect(lambda: self._coroutineRunner.submit(
-                self._featureService.parse(TaskOptions(url=dialog.selectedAsset().downloadUrl)),
-                done=self._taskService.add,
-                owner=self,
-            ))
+
+            def onAccepted():
+                asset = dialog.selectedAsset()
+                if asset is None:
+                    return
+
+                def onUrl(url):
+                    self._coroutineRunner.submit(
+                        self._featureService.parse(TaskOptions(url=url)),
+                        done=self._taskService.add,
+                        owner=self,
+                    )
+
+                self._coroutineRunner.submit(
+                    fetchAssetUrl(release.version, asset.name),
+                    done=onUrl, owner=self,
+                )
+
+            dialog.accepted.connect(onAccepted)
             dialog.open()
 
         self._coroutineRunner.submit(fetchRelease(), done=onFetched, owner=self)

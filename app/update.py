@@ -5,7 +5,7 @@ import sys
 
 from PySide6.QtCore import QVersionNumber
 
-from app.sources import Release, ReleaseAsset, Repo, fetchLatestRelease
+from app.sources import Release, ReleaseAsset, Repo, fetchLatestRelease, probeDownloadUrl
 
 APP_REPO = Repo("XiaoYouChR/Ghost-Downloader-3")
 
@@ -17,8 +17,19 @@ def isNewer(current: str, latest: str) -> bool:
 
 
 async def fetchRelease() -> Release:
-    release, _ = await fetchLatestRelease(APP_REPO)
-    return release
+    return await fetchLatestRelease(APP_REPO)
+
+
+async def fetchAssetUrl(version: str, name: str) -> str:
+    return await probeDownloadUrl(APP_REPO, version, name)
+
+
+async def fetchBestAssetUrl() -> str | None:
+    release = await fetchRelease()
+    asset = bestAsset(release)
+    if asset is None:
+        return None
+    return await fetchAssetUrl(release.version, asset.name)
 
 
 def bestAsset(release: Release) -> ReleaseAsset | None:
@@ -28,7 +39,6 @@ def bestAsset(release: Release) -> ReleaseAsset | None:
         if score > bestScore:
             best, bestScore = asset, score
     return best if bestScore >= 0 else None
-
 
 def assetScore(name: str) -> int:
     from app.platform.android import IS_ANDROID

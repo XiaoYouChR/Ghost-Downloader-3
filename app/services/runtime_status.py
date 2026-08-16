@@ -68,6 +68,9 @@ class RuntimeStatusService(QObject):
         if workId:
             self._coroutineRunner.cancel(workId)
 
+        current = self._statuses.get(runtimeId)
+        latestVersion = current.latestVersion if current else ""
+
         self._installingIds.add(runtimeId)
         self._runtimes[runtimeId] = runtime
 
@@ -76,7 +79,7 @@ class RuntimeStatusService(QObject):
         self.statusChanged.emit(status)
 
         self._workIds[runtimeId] = self._coroutineRunner.submit(
-            self._runInstall(runtime),
+            self._runInstall(runtime, latestVersion),
             done=self._onInstallFinished,
             failed=self._onInstallFailed,
             runtimeId=runtimeId,
@@ -95,10 +98,10 @@ class RuntimeStatusService(QObject):
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
-    async def _runInstall(self, runtime: BinaryRuntime) -> None:
+    async def _runInstall(self, runtime: BinaryRuntime, version: str = "") -> None:
         from app.models.task import TaskStatus
 
-        task = await runtime.createInstallTask()
+        task = await runtime.createInstallTask(version)
         task.setStatus(TaskStatus.RUNNING)
 
         def reportProgress(*_args):

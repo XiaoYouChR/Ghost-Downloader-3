@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from asyncio.staggered import staggered_race
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+from PySide6.QtCore import QVersionNumber
 from loguru import logger
 
 from app.client import buildClient, fetchFile
@@ -92,7 +94,7 @@ class Release:
         )
 
 
-async def fetchLatestRelease(repo: Repo) -> tuple[Release, str]:
+async def fetchLatestRelease(repo: Repo) -> Release:
     async def attempt(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.api}/{repo.forSource(source)}/releases/latest"
@@ -102,23 +104,30 @@ async def fetchLatestRelease(repo: Repo) -> tuple[Release, str]:
             resp = await client.get(url)
             resp.raise_for_status()
             data = await resp.json()
-            return Release.fromResponse(data), source
+            return Release.fromResponse(data)
         except Exception as e:
             logger.debug("从 {} 获取 {} release 失败: {}", source, repo.name, repr(e))
             raise
         finally:
             client.close()
 
-    result, index, _ = await staggered_race(
-        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
-    if index is not None:
-        return result
-    raise RuntimeError(f"无法获取 {repo.name} 的最新 release")
+    results = await asyncio.gather(
+        *[attempt(s) for s in SOURCE_ORDER], return_exceptions=True)
+    chosen: Release | None = None
+    for result in results:
+        if isinstance(result, BaseException):
+            continue
+        if chosen is None:
+            chosen = result
+            continue
+        if QVersionNumber.fromString(result.version.lstrip("vV")) > QVersionNumber.fromString(
+            chosen.version.lstrip("vV")
+        ):
+            chosen = result
+    if chosen is None:
+        raise RuntimeError(f"无法获取 {repo.name} 的最新 release")
+    return chosen
 
-
-async def fetchLatestTag(repo: Repo) -> tuple[str, str]:
-    release, source = await fetchLatestRelease(repo)
-    return release.version, source
 
 
 async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
@@ -151,7 +160,7 @@ async def fetchRawFile(
     async def probe(source):
         endpoints = SOURCES[source]
         url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
-        client = buildClient(timeout=10)
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
         try:
             resp = await client.get(url)
             try:
@@ -174,19 +183,15 @@ async def fetchRawFile(
     return source
 
 
-async def fetchReleaseAsset(
-    repo: Repo, tag: str, asset: str, outputPath: Path,
-    onProgress: Callable[[float], None] | None = None,
-) -> str:
+async def probeDownloadUrl(repo: Repo, tag: str, asset: str) -> str:
     async def probe(source):
-        endpoints = SOURCES[source]
-        url = f"{endpoints.download}/{repo.forSource(source)}/releases/download/{tag}/{asset}"
-        client = buildClient(timeout=10)
+        url = buildDownloadUrl(repo, tag, asset, source=source)
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
         try:
             resp = await client.get(url)
             try:
                 resp.raise_for_status()
-                return url, source
+                return url
             finally:
                 resp.close()
         except Exception as e:
@@ -199,9 +204,16 @@ async def fetchReleaseAsset(
         [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
     if index is None:
         raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
-    url, source = result
+    return result
+
+
+async def fetchReleaseAsset(
+    repo: Repo, tag: str, asset: str, outputPath: Path,
+    onProgress: Callable[[float], None] | None = None,
+) -> str:
+    url = await probeDownloadUrl(repo, tag, asset)
     await fetchFile(url, outputPath, onProgress=onProgress)
-    return source
+    return url
 
 
 PYPI_MIRRORS = {
