@@ -20,17 +20,6 @@ from .config import bittorrentConfig
 if TYPE_CHECKING:
     pass
 
-_STATE_TEXT = {
-    "checking_files": "校验已有文件",
-    "checking_resume_data": "检查续传状态",
-    "downloading_metadata": "获取元数据",
-    "downloading": "下载中",
-    "finished": "下载完成",
-    "seeding": "做种中",
-    "allocating": "分配文件中",
-    "queued_for_checking": "等待校验",
-}
-
 DHT_BOOTSTRAP_NODES = (
     "router.bittorrent.com:6881, router.utorrent.com:6881, "
     "dht.transmissionbt.com:6881, dht.libtorrent.org:25401"
@@ -277,7 +266,10 @@ class BTSession(QObject):
             params = self._loadDhtState()
             params.settings = {
                 "user_agent": f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}",
-                "listen_interfaces": f"0.0.0.0:{bittorrentConfig.listenPort.value}",
+                "listen_interfaces": (
+                    f"0.0.0.0:{bittorrentConfig.listenPort.value},"
+                    f"[::]:{bittorrentConfig.listenPort.value}"
+                ),
                 "connections_limit": bittorrentConfig.maxConnections.value,
                 "download_rate_limit": self._downloadLimit(),
                 "upload_rate_limit": int(bittorrentConfig.maxUploadSpeed.value),
@@ -454,7 +446,7 @@ class BTSession(QObject):
     def _updateEntry(self, entry: ActiveTorrent) -> None:
         status = entry.handle.status()
 
-        stateText = _STATE_TEXT.get(status.state.name, status.state.name)
+        stateText = status.state.name
         isSeeding = status.is_seeding
         downloadRate = status.download_rate
         uploadRate = status.upload_rate

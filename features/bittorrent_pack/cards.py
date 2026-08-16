@@ -1,3 +1,4 @@
+from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from PySide6.QtWidgets import QFileIconProvider
 from qfluentwidgets import FluentIcon
 
@@ -38,6 +39,24 @@ BT_UPLOAD_FIELD = FieldSpec("upload", FluentIcon.SHARE, {
 BT_ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toBtEtaText})
 BT_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toBtSizeText})
 
+BT_STATE_LABELS = {
+    "checking_files":       N("BTTaskCard", "校验已有文件"),
+    "checking_resume_data": N("BTTaskCard", "检查续传状态"),
+    "downloading_metadata": N("BTTaskCard", "获取元数据"),
+    "downloading":          N("BTTaskCard", "下载中"),
+    "finished":             N("BTTaskCard", "下载完成"),
+    "seeding":              N("BTTaskCard", "做种中"),
+    "allocating":           N("BTTaskCard", "分配文件中"),
+    "queued_for_checking":  N("BTTaskCard", "等待校验"),
+    "paused_seeding":       N("BTTaskCard", "已暂停做种"),
+    "paused_downloading":   N("BTTaskCard", "已暂停下载"),
+}
+
+SILENT_STATES = frozenset({
+    "downloading", "seeding", "checking_resume_data", "checking_files",
+    "downloading_metadata", "allocating", "queued_for_checking", "finished",
+})
+
 
 class BTDraftCard(MultiFileDraftCard):
     fileSelectDialog = TorrentFileSelectDialog
@@ -70,16 +89,17 @@ class BTTaskCard(MultiFileTaskCard):
             if task.peerCount > 0:
                 parts.append(self.tr("{0} peers").format(task.peerCount))
             self._setStatus(self.tr("做种中") + "  " + " · ".join(parts))
-        elif task.status == TaskStatus.RUNNING and task.stateText and task.stateText != "下载中":
+        elif task.status == TaskStatus.RUNNING and task.stateText and task.stateText != "downloading":
             self.progressBar.hide()
-            self._setStatus(self.tr(task.stateText))
+            label = BT_STATE_LABELS.get(task.stateText)
+            if label:
+                self._setStatus(self.tr(label))
         elif task.status != TaskStatus.RUNNING:
             parts = []
-            if task.stateText and task.stateText not in (
-                "下载中", "做种中", "检查续传状态", "校验已有文件",
-                "获取元数据", "分配文件中", "等待校验", "下载完成",
-            ):
-                parts.append(self.tr(task.stateText))
+            if task.stateText and task.stateText not in SILENT_STATES:
+                label = BT_STATE_LABELS.get(task.stateText)
+                if label:
+                    parts.append(self.tr(label))
             if task.shareRatioPercent > 0:
                 parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
             if task.seedingTimeSeconds > 0:

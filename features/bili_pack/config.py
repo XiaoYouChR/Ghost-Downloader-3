@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import QCoreApplication, Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap
 
 from qfluentwidgets import (
@@ -129,7 +129,9 @@ class ScanLoginDialog(MessageBoxBase):
         elif statusCode == QR_EXPIRED:
             self.statusLabel.setText(self.tr('二维码已失效，请点击"刷新二维码"重新生成'))
         else:
-            self.statusLabel.setText(text or str(statusCode))
+            self.statusLabel.setText(
+                QCoreApplication.translate("BilibiliErrors", text) if text else str(statusCode)
+            )
 
     def _onOpenBrowser(self):
         if self._loginUrl:

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, Qt
+from PySide6.QtCore import QCoreApplication, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView, QWidget
 from qfluentwidgets import (
@@ -21,7 +22,7 @@ from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
 from .config import ytDlpConfig
-from .task import STEPS_PER_VIDEO, YouTubeCoverStep, YouTubeTask, buildFormatPair
+from .task import STEPS_PER_VIDEO, YouTubeCoverStep, YouTubeTask, buildFormatPair, probeFormats, probePlaylist
 
 
 def toCodecName(codec: str) -> str:
@@ -144,11 +145,11 @@ def buildSubtitleChoices(mediaInfo: dict, automaticLabel: str) -> tuple[list[tup
 
 
 STEP_LABELS = {
-    1: "提取信息",
-    2: "下载视频",
-    3: "下载音频",
-    4: "合并",
-    5: "下载字幕",
+    1: N("YtDlpTaskCard", "提取信息"),
+    2: N("YtDlpTaskCard", "下载视频"),
+    3: N("YtDlpTaskCard", "下载音频"),
+    4: N("YtDlpTaskCard", "合并"),
+    5: N("YtDlpTaskCard", "下载字幕"),
 }
 
 
@@ -498,10 +499,8 @@ class YtDlpDraftCard(DraftCard):
         self._refreshFileIcon()
 
     def _startMediaInfoFetch(self) -> None:
-        from features.yt_dlp_pack.pack import YouTubeParser
-        parser = YouTubeParser()
         self._coroutineRunner.submit(
-            parser.fetchFormats(self._task.url),
+            asyncio.to_thread(probeFormats, self._task.url),
             done=self._onMediaInfoLoaded,
             failed=self._onMediaInfoFailed,
             owner=self,
@@ -626,10 +625,8 @@ class YtDlpDraftCard(DraftCard):
         if not task.files:
             self._videoSelectButton.hide()
             self._playlistSpinner.show()
-            from features.yt_dlp_pack.pack import YouTubeParser
-            parser = YouTubeParser()
             self._coroutineRunner.submit(
-                parser.fetchPlaylist(task.url),
+                asyncio.to_thread(probePlaylist, task.url),
                 done=self._onPlaylistLoaded,
                 failed=self._onPlaylistFailed,
                 owner=self,

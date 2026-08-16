@@ -1,12 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import asyncio
+from asyncio.staggered import staggered_race
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+from PySide6.QtCore import QVersionNumber
 from loguru import logger
 
 from app.client import buildClient, fetchFile
+
+
+@dataclass(frozen=True)
+class Repo:
+    name: str
+    mirrors: dict[str, str] = field(default_factory=dict)
+
+    def forSource(self, source: str) -> str:
+        return self.mirrors.get(source, self.name)
 
 
 @dataclass(frozen=True)
@@ -21,8 +33,8 @@ SOURCES = {
     "gitcode": SourceEndpoints(
         api="https://api.gitcode.com/api/v5/repos",
         download="https://gitcode.com",
-        raw="https://cdn.jsdelivr.net/gh",
-        rawInfix="@",
+        raw="https://cnb.cool",
+        rawInfix="/-/git/raw/",
     ),
     "github": SourceEndpoints(
         api="https://api.github.com/repos",
@@ -32,12 +44,8 @@ SOURCES = {
     ),
 }
 
-SOURCE_ORDER = ("gitcode", "github")
-
-GITCODE_REPOS = {
-    "nilaoda/N_m3u8DL-RE": "XiaoYouChR/N_m3u8DL-RE-mirror",
-    "quickjs-ng/quickjs": "XiaoYouChR/quickjs-mirror",
-}
+SOURCE_ORDER = ("github", "gitcode")
+STAGGER_DELAY = 0
 
 
 @dataclass(frozen=True)
@@ -86,36 +94,46 @@ class Release:
         )
 
 
-async def fetchLatestRelease(repo: str) -> tuple[Release, str]:
-    for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+async def fetchLatestRelease(repo: Repo) -> Release:
+    async def attempt(source):
         endpoints = SOURCES[source]
-        url = f"{endpoints.api}/{mapped}/releases/latest"
+        url = f"{endpoints.api}/{repo.forSource(source)}/releases/latest"
         headers = {"accept": "application/vnd.github+json"} if source == "github" else {}
         client = buildClient(headers=headers, timeout=15)
         try:
             resp = await client.get(url)
             resp.raise_for_status()
             data = await resp.json()
-            return Release.fromResponse(data), source
+            return Release.fromResponse(data)
         except Exception as e:
-            logger.debug("从 {} 获取 {} release 失败: {}", source, repo, repr(e))
-            continue
+            logger.debug("从 {} 获取 {} release 失败: {}", source, repo.name, repr(e))
+            raise
         finally:
             client.close()
-    raise RuntimeError(f"无法获取 {repo} 的最新 release")
+
+    results = await asyncio.gather(
+        *[attempt(s) for s in SOURCE_ORDER], return_exceptions=True)
+    chosen: Release | None = None
+    for result in results:
+        if isinstance(result, BaseException):
+            continue
+        if chosen is None:
+            chosen = result
+            continue
+        if QVersionNumber.fromString(result.version.lstrip("vV")) > QVersionNumber.fromString(
+            chosen.version.lstrip("vV")
+        ):
+            chosen = result
+    if chosen is None:
+        raise RuntimeError(f"无法获取 {repo.name} 的最新 release")
+    return chosen
 
 
-async def fetchLatestTag(repo: str) -> tuple[str, str]:
-    release, source = await fetchLatestRelease(repo)
-    return release.version, source
 
-
-async def fetchJson(repo: str, branch: str, path: str) -> tuple[dict, str]:
-    for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
+    async def attempt(source):
         endpoints = SOURCES[source]
-        url = f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+        url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
         client = buildClient(timeout=15)
         try:
             resp = await client.get(url)
@@ -123,45 +141,79 @@ async def fetchJson(repo: str, branch: str, path: str) -> tuple[dict, str]:
             result = await resp.json()
             return result, source
         except Exception as e:
-            logger.debug("从 {} 获取 {}/{} 失败: {}", source, repo, path, repr(e))
-            continue
+            logger.debug("从 {} 获取 {}/{} 失败: {}", source, repo.name, path, repr(e))
+            raise
         finally:
             client.close()
-    raise RuntimeError(f"无法获取 {repo}/{branch}/{path}")
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is not None:
+        return result
+    raise RuntimeError(f"无法获取 {repo.name}/{branch}/{path}")
 
 
 async def fetchRawFile(
-    repo: str, branch: str, path: str, outputPath: Path,
+    repo: Repo, branch: str, path: str, outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> str:
-    for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+    async def probe(source):
         endpoints = SOURCES[source]
-        url = f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+        url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
         try:
-            await fetchFile(url, outputPath, onProgress=onProgress)
-            return source
+            resp = await client.get(url)
+            try:
+                resp.raise_for_status()
+                return url, source
+            finally:
+                resp.close()
         except Exception as e:
-            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo, path, repr(e))
-            continue
-    raise RuntimeError(f"无法下载 {repo}/{branch}/{path}")
+            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo.name, path, repr(e))
+            raise
+        finally:
+            client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is None:
+        raise RuntimeError(f"无法下载 {repo.name}/{branch}/{path}")
+    url, source = result
+    await fetchFile(url, outputPath, onProgress=onProgress)
+    return source
+
+
+async def probeDownloadUrl(repo: Repo, tag: str, asset: str) -> str:
+    async def probe(source):
+        url = buildDownloadUrl(repo, tag, asset, source=source)
+        client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
+        try:
+            resp = await client.get(url)
+            try:
+                resp.raise_for_status()
+                return url
+            finally:
+                resp.close()
+        except Exception as e:
+            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo.name, asset, repr(e))
+            raise
+        finally:
+            client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is None:
+        raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
+    return result
 
 
 async def fetchReleaseAsset(
-    repo: str, tag: str, asset: str, outputPath: Path,
+    repo: Repo, tag: str, asset: str, outputPath: Path,
     onProgress: Callable[[float], None] | None = None,
 ) -> str:
-    for source in SOURCE_ORDER:
-        mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
-        endpoints = SOURCES[source]
-        url = f"{endpoints.download}/{mapped}/releases/download/{tag}/{asset}"
-        try:
-            await fetchFile(url, outputPath, onProgress=onProgress)
-            return source
-        except Exception as e:
-            logger.debug("从 {} 下载 {}/{} 失败: {}", source, repo, asset, repr(e))
-            continue
-    raise RuntimeError(f"无法下载 {repo}/{tag}/{asset}")
+    url = await probeDownloadUrl(repo, tag, asset)
+    await fetchFile(url, outputPath, onProgress=onProgress)
+    return url
 
 
 PYPI_MIRRORS = {
@@ -178,7 +230,7 @@ def buildPypiUrl(package: str, *, source: str) -> str:
 
 
 async def fetchPypiJson(package: str) -> dict:
-    for source in SOURCE_ORDER:
+    async def attempt(source):
         url = buildPypiUrl(package, source=source)
         client = buildClient(timeout=15)
         try:
@@ -187,19 +239,22 @@ async def fetchPypiJson(package: str) -> dict:
             return await resp.json()
         except Exception as e:
             logger.debug("从 {} 获取 PyPI {} 失败: {}", source, package, repr(e))
-            continue
+            raise
         finally:
             client.close()
+
+    result, index, _ = await staggered_race(
+        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+    if index is not None:
+        return result
     raise RuntimeError(f"无法获取 PyPI 包信息: {package}")
 
 
-def buildDownloadUrl(repo: str, tag: str, asset: str, *, source: str) -> str:
-    mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+def buildDownloadUrl(repo: Repo, tag: str, asset: str, *, source: str) -> str:
     endpoints = SOURCES[source]
-    return f"{endpoints.download}/{mapped}/releases/download/{tag}/{asset}"
+    return f"{endpoints.download}/{repo.forSource(source)}/releases/download/{tag}/{asset}"
 
 
-def buildRawUrl(repo: str, branch: str, path: str, *, source: str) -> str:
-    mapped = GITCODE_REPOS.get(repo, repo) if source == "gitcode" else repo
+def buildRawUrl(repo: Repo, branch: str, path: str, *, source: str) -> str:
     endpoints = SOURCES[source]
-    return f"{endpoints.raw}/{mapped}{endpoints.rawInfix}{branch}/{path}"
+    return f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"

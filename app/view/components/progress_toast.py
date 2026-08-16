@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QRectF, QSize, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import QColor, QPainter, QPainterPath
 from qfluentwidgets import (
-    FluentIcon, FluentStyleSheet, InfoBar, InfoBarIcon, InfoBarPosition,
-    TransparentToolButton, isDarkTheme,
+    FluentIcon, FluentStyleSheet, InfoBar, InfoBarIcon, InfoBarManager,
+    InfoBarPosition, TransparentToolButton, isDarkTheme,
 )
 
 from app.services.update_service import UpdateState
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 BAR_HEIGHT = 3
 CORNER_RADIUS = 6
 FILL_EASING = 0.25
-READY_DISMISS_MS = 5000
 
 COLORS = {
     UpdateState.DOWNLOADING: {"light": QColor("#9D5D00"), "dark": QColor("#FCE100")},
@@ -60,24 +59,21 @@ class ProgressToast(InfoBar):
         self._isDismissed = False
         self._fillTimer = QTimer(self, interval=16)
         self._fillTimer.timeout.connect(self._onFillTick)
-        self._dismissTimer = QTimer(self)
-        self._dismissTimer.setSingleShot(True)
-        self._dismissTimer.timeout.connect(self.close)
-
         self._retryButton = TransparentToolButton(FluentIcon.SYNC, self)
         self._retryButton.setFixedSize(36, 36)
         self._retryButton.setIconSize(QSize(12, 12))
         self._retryButton.hide()
         self._retryButton.clicked.connect(onRetry)
-        self.widgetLayout.addSpacing(12)
-        self.widgetLayout.addWidget(
-            self._retryButton, 0, Qt.AlignLeft | Qt.AlignVCenter,
-        )
+
+        self._restartButton = TransparentToolButton(FluentIcon.POWER_BUTTON, self)
+        self._restartButton.setFixedSize(36, 36)
+        self._restartButton.setIconSize(QSize(12, 12))
+        self._restartButton.hide()
+        self._restartButton.clicked.connect(QCoreApplication.quit)
 
         closeIdx = self.hBoxLayout.indexOf(self.closeButton)
-        spacer = self.hBoxLayout.itemAt(closeIdx - 1)
-        if spacer and spacer.spacerItem():
-            spacer.spacerItem().changeSize(4, 0)
+        self.hBoxLayout.insertWidget(closeIdx, self._restartButton, 0, Qt.AlignTop | Qt.AlignLeft)
+        self.hBoxLayout.insertWidget(closeIdx, self._retryButton, 0, Qt.AlignTop | Qt.AlignLeft)
 
         self.closeButton.clicked.disconnect()
         self.closeButton.clicked.connect(self._onUserClose)
@@ -92,7 +88,7 @@ class ProgressToast(InfoBar):
             self.title = self.tr("正在下载更新")
             self.content = f"{info.latestVersion} ({info.progress:.0f}%)"
             self._retryButton.hide()
-            self._stopDismissTimer()
+            self._restartButton.hide()
             self._fillTimer.start()
         elif info.state == UpdateState.READY:
             self._isDismissed = False
@@ -100,9 +96,9 @@ class ProgressToast(InfoBar):
             self._barColor = barColor(UpdateState.READY)
             self.iconWidget.icon = InfoBarIcon.SUCCESS
             self.title = self.tr("更新已就绪")
-            self.content = self.tr("下次启动时生效")
+            self.content = self.tr("重启后生效")
             self._retryButton.hide()
-            self._startDismissTimer()
+            self._restartButton.show()
             self._fillTimer.start()
         elif info.state == UpdateState.FAILED:
             self._isDismissed = False
@@ -111,9 +107,12 @@ class ProgressToast(InfoBar):
             self._barColor = barColor(UpdateState.FAILED)
             self.iconWidget.icon = InfoBarIcon.ERROR
             self.title = self.tr("下载更新失败")
-            self.content = info.error or self.tr("未知错误")
+            self.content = (
+                QCoreApplication.translate("UpdateErrors", info.error)
+                if info.error else self.tr("未知错误")
+            )
             self._retryButton.show()
-            self._stopDismissTimer()
+            self._restartButton.hide()
             self._fillTimer.stop()
         else:
             return
@@ -121,6 +120,9 @@ class ProgressToast(InfoBar):
         self._adjustText()
         if not self.isVisible():
             self.show()
+        elif self.parent() and self.position != InfoBarPosition.NONE:
+            manager = InfoBarManager.make(self.position)
+            self.move(manager._pos(self))
         self.iconWidget.update()
         self.update()
 
@@ -154,9 +156,3 @@ class ProgressToast(InfoBar):
     def _onUserClose(self):
         self._isDismissed = True
         self.close()
-
-    def _startDismissTimer(self):
-        self._dismissTimer.start(READY_DISMISS_MS)
-
-    def _stopDismissTimer(self):
-        self._dismissTimer.stop()

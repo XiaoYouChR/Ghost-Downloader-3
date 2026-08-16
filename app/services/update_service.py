@@ -18,6 +18,7 @@ from loguru import logger
 
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, executableDir
+from app.platform.android import IS_ANDROID
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
 from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
@@ -135,7 +136,8 @@ class UpdateService(QObject):
 
         data = await self._fetchVersions()
         if data is None:
-            self._emit("app", UpdateState.FAILED, error="无法获取版本信息")
+            logger.debug("检查更新失败，将在下次启动时重试")
+            self._emit("app", UpdateState.IDLE, error="无法获取版本信息")
             return
         self._versionsData = data
 
@@ -147,6 +149,9 @@ class UpdateService(QObject):
                         latestVersion=latestVersion)
         else:
             self._emit("app", UpdateState.IDLE)
+
+        if IS_ANDROID:
+            return
 
         packsData = data.get("packs", {})
         featuresDir = executableDir / "features"

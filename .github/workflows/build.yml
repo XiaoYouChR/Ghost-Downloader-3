@@ -153,7 +153,7 @@ jobs:
           name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
           path: dist/Ghost-Downloader-3-Unsigned.dist
 
-      - name: Sign
+      - name: Sign binaries
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         uses: signpath/github-action-submit-signing-request@v2
         with:
@@ -161,6 +161,7 @@ jobs:
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
           project-slug: 'Ghost-Downloader-3'
           signing-policy-slug: 'release-signing'
+          artifact-configuration-slug: 'binaries'
           github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
           wait-for-completion: true
           output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
@@ -176,6 +177,27 @@ jobs:
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.8
         with:
           path: scripts/Ghost-Downloader-3.iss
+
+      - name: Upload unsigned installer
+        if: ${{ github.event.inputs.sign_artifact == 'true' && (github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true') }}
+        id: upload-unsigned-installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Installer-Unsigned
+          path: dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe
+
+      - name: Sign installer
+        if: ${{ github.event.inputs.sign_artifact == 'true' && (github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true') }}
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'Ghost-Downloader-3'
+          signing-policy-slug: 'release-signing'
+          artifact-configuration-slug: 'installer'
+          github-artifact-id: '${{ steps.upload-unsigned-installer.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: 'dist'
 
       - name: Rename Installer
         if: ${{ github.event.inputs.create_release == 'false' && github.event.inputs.package_installer == 'true' }}
@@ -682,6 +704,23 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update versions.json for v${VERSION} [skip ci]"
           git push
 
+      - name: Purge jsDelivr cache
+        run: |
+          for f in versions.json dist/packs/*.zip; do
+            curl -s "https://purge.jsdelivr.net/gh/XiaoYouChR/Ghost-Downloader-3@main/${f}" || true
+          done
+
+      - name: Push to CNB
+        continue-on-error: true
+        env:
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          if [ -z "$CNB_TOKEN" ]; then echo "No CNB_TOKEN, skipping"; exit 0; fi
+          git fetch origin tag "v${VERSION}"
+          REMOTE="https://cnb:${CNB_TOKEN}@cnb.cool/XiaoYouChR/Ghost-Downloader-3"
+          git push "$REMOTE" main 2>&1 | sed "s/${CNB_TOKEN}/****/g" || true
+
       - name: Push to GitCode
         continue-on-error: true
         env:
@@ -736,10 +775,8 @@ jobs:
             echo "uploaded: $name"
           }
 
-          for f in assets/patch-*.hdiff; do
-            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; }
+          for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
+            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; } &
           done
+          wait
 
-          for f in assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
-            [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; }
-          done

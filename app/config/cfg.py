@@ -44,6 +44,7 @@ class Language(Enum):
     JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
     RUSSIAN = QLocale(QLocale.Language.Russian, QLocale.Country.Russia)
     PORTUGUESE_BRAZIL = QLocale(QLocale.Language.Portuguese, QLocale.Country.Brazil)
+    SPANISH = QLocale(QLocale.Language.Spanish, QLocale.Country.Spain)
     AUTO = QLocale()
 
 
@@ -56,6 +57,7 @@ LANGUAGE_TEXTS = {
     Language.JAPANESE: "日本語 (日本)",
     Language.RUSSIAN: "Русский (Россия)",
     Language.PORTUGUESE_BRAZIL: "Português (Brasil)",
+    Language.SPANISH: "Español (España)",
 }
 
 

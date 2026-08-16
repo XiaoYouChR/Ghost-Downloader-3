@@ -16,8 +16,9 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
+from app.sources import Repo, fetchLatestRelease, fetchPypiJson, probeDownloadUrl
 
-QJS_REPO = "quickjs-ng/quickjs"
+QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
 COOKIE_DOMAIN = ".youtube.com"
 AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
 
@@ -131,7 +132,7 @@ ytDlpConfig = YtDlpConfig()
 
 
 class YouTubeRuntime(BinaryRuntime):
-    name = "YouTube Env"
+    name = "yt-dlp"
     canInstall = True
     title = N("BinaryRuntime", "YouTube 下载")
     description = N("BinaryRuntime", "支持 YouTube、Twitter 等数百个视频网站")
@@ -197,11 +198,11 @@ class YouTubeRuntime(BinaryRuntime):
         )
 
     async def fetchLatestVersion(self) -> str:
-        from app.sources import fetchPypiJson
         data = await fetchPypiJson("yt-dlp")
+        self.pypi = data
         return data.get("info", {}).get("version", "")
 
-    async def createInstallTask(self):
+    async def createInstallTask(self, version: str = ""):
         from app.install import BinaryInstallStep, ExtractStep, FetchStep, InstallTask
 
         whlUrl, whlSize = await self._fetchWhlAsset()
@@ -231,11 +232,9 @@ class YouTubeRuntime(BinaryRuntime):
             ))
             return task
 
-        from app.sources import buildDownloadUrl, fetchLatestTag
-
         qjsBinaryName = "qjs.exe" if sys.platform == "win32" else "qjs"
-        qjsTag, qjsSource = await fetchLatestTag(QJS_REPO)
-        qjsUrl = buildDownloadUrl(QJS_REPO, qjsTag, _qjsAssetName(), source=qjsSource)
+        qjsTag = (await fetchLatestRelease(QJS_REPO)).version
+        qjsUrl = await probeDownloadUrl(QJS_REPO, qjsTag, _qjsAssetName())
 
         task = InstallTask(
             name="YouTube 运行环境安装",
@@ -266,9 +265,10 @@ class YouTubeRuntime(BinaryRuntime):
         return task
 
     async def _fetchWhlAsset(self) -> tuple[str, int]:
-        from app.sources import fetchPypiJson
-        data = await fetchPypiJson("yt-dlp")
-
+        data = getattr(self, "pypi", None)
+        if data is None:
+            data = await fetchPypiJson("yt-dlp")
+            self.pypi = data
         urls = data.get("urls") or []
         for entry in urls:
             if entry.get("packagetype") == "bdist_wheel" and entry.get("filename", "").endswith(".whl"):

@@ -142,7 +142,7 @@ class TaskService(QObject):
     queueChanged = Signal()
     fileDisappeared = Signal(object)
     fileDeleteDenied = Signal()
-    diskSpaceInsufficient = Signal(int, int)
+    diskSpaceInsufficient = Signal("qint64", "qint64")
 
     def __init__(self, coroutineRunner, categoryService, speedMeter, parent=None):
         super().__init__(parent)

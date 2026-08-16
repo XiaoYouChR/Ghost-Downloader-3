@@ -17,11 +17,13 @@ from qfluentwidgets import (
 )
 
 from app.config.paths import APP_DATA_DIR
+from app.install import createInstallTask
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
+from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 
-M3U8_REPO = "nilaoda/N_m3u8DL-RE"
+M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE", mirrors={"gitcode": "XiaoYouChR/N_m3u8DL-RE-mirror"})
 
 
 class M3U8Config(PackConfig):
@@ -160,13 +162,11 @@ class M3U8Runtime(BinaryRuntime):
         return findExecutable(self.installFolder(), "N_m3u8DL-RE")
 
     async def fetchLatestVersion(self) -> str:
-        from app.sources import fetchLatestTag
-        tag, _ = await fetchLatestTag(M3U8_REPO)
-        return tag
+        release = await fetchLatestRelease(M3U8_REPO)
+        self.release = release
+        return release.version
 
-    async def createInstallTask(self):
-        from app.sources import fetchLatestRelease
-
+    async def createInstallTask(self, version: str = ""):
         machine = platform.machine().lower()
         if sys.platform == "win32":
             if machine in {"amd64", "x86_64"}:
@@ -182,20 +182,22 @@ class M3U8Runtime(BinaryRuntime):
         else:
             raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
 
-        release, _ = await fetchLatestRelease(M3U8_REPO)
+        release = getattr(self, "release", None)
+        if release is None or (version and release.version != version):
+            release = await fetchLatestRelease(M3U8_REPO)
+            self.release = release
         extension = ".zip" if sys.platform == "win32" else ".tar.gz"
-        url = ""
+        assetName = ""
         for asset in release.assets:
             if target in asset.name and asset.name.endswith(extension):
-                url = asset.downloadUrl
+                assetName = asset.name
                 break
-        if not url:
+        if not assetName:
             raise RuntimeError(f"未找到适配 {target} 的 N_m3u8DL-RE 安装包")
 
-        from app.install import createInstallTask
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
         return createInstallTask(
-            url=url,
+            url=await probeDownloadUrl(M3U8_REPO, release.version, assetName),
             outputFolder=self.installFolder(),
             name=f"N_m3u8DL-RE {release.version} ({target})",
             executableNames=(binaryName,),

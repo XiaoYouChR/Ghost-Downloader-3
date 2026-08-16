@@ -4,13 +4,17 @@ import platform
 import sys
 from pathlib import Path
 
-from app.config.paths import APP_DATA_DIR
-from app.models.pack import BinaryRuntime, PackConfig
-from app.platform.filesystem import toPosixPath
 from PySide6.QtCore import QT_TRANSLATE_NOOP as N
 from qfluentwidgets import ConfigItem, BoolValidator, FluentIcon, RangeConfigItem, RangeValidator
 
-ED2K_REPO = "XiaoYouChR/Python-eD2k"
+from app.config.paths import APP_DATA_DIR
+from app.install import FetchStep, InstallTask
+from app.models.pack import BinaryRuntime, PackConfig
+from app.platform.filesystem import toPosixPath
+from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
+from .task import ED2kInstallStep
+
+ED2K_REPO = Repo("XiaoYouChR/Python-eD2k")
 
 
 class ED2kConfig(PackConfig):
@@ -85,18 +89,12 @@ class ED2kRuntime(BinaryRuntime):
         return Path(ed2kConfig.installFolder.value)
 
     async def fetchLatestVersion(self) -> str:
-        from app.sources import fetchLatestTag
-        tag, _ = await fetchLatestTag(ED2K_REPO)
-        return tag
+        return (await fetchLatestRelease(ED2K_REPO)).version
 
-    async def createInstallTask(self):
-        from app.install import FetchStep, InstallTask
-        from app.sources import buildDownloadUrl, fetchLatestTag
-        from .task import ED2kInstallStep
-
-        tag, source = await fetchLatestTag(ED2K_REPO)
+    async def createInstallTask(self, version: str = ""):
+        tag = version or (await fetchLatestRelease(ED2K_REPO)).version
         assetName = _assetName()
-        url = buildDownloadUrl(ED2K_REPO, tag, assetName, source=source)
+        url = await probeDownloadUrl(ED2K_REPO, tag, assetName)
         folder = self.installFolder()
         binaryName = "goed2kd.exe" if sys.platform == "win32" else "goed2kd"
         binaryPath = toPosixPath(folder / binaryName)

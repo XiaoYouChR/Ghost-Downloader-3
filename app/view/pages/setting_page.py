@@ -27,7 +27,6 @@ from app.view.components.setting_cards import (
     HeadersPresetSettingCard, IdentitySettingCard, LineEditSettingCard,
     PercentSpinBoxSettingCard, ProxySettingCard, SpinBoxSettingCard,
 )
-from app.update import fetchRelease
 from app.view.components.editors import FolderPicker
 
 
@@ -513,36 +512,25 @@ class SettingPage(ScrollArea):
         dialog.exec()
 
     def _onAboutCardClicked(self) -> None:
+        from app.services.update_service import UpdateState
+
         InfoBar.info(self.tr("检查更新"), self.tr("正在检查更新..."),
                      duration=1500, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
-        self._coroutineRunner.submit(
-            fetchRelease(),
-            done=self._onUpdateChecked, failed=self._onUpdateCheckFailed,
-            owner=self,
-        )
 
-    def _onUpdateChecked(self, release) -> None:
-        from app.update import isNewer
-        if not isNewer(VERSION, release.version):
-            InfoBar.success(self.tr("当前已是最新版本"),
-                            self.tr("当前版本 {0}，最新版本 {1}").format(VERSION, release.version),
-                            duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
-            return
+        def onChecked(info):
+            if info.targetId != "app" or info.state not in (UpdateState.AVAILABLE, UpdateState.IDLE):
+                return
+            self._updateService.changed.disconnect(onChecked)
+            if info.state == UpdateState.IDLE:
+                if info.error:
+                    InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),
+                                  duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
+                else:
+                    InfoBar.success(self.tr("当前已是最新版本"), "",
+                                    duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
-        from app.models.task import TaskOptions
-        from app.view.dialogs.release_info import ReleaseInfoDialog
-        parent = self.window()
-        dialog = ReleaseInfoDialog(release, parent)
-        dialog.accepted.connect(lambda: self._coroutineRunner.submit(
-            self._featureService.parse(TaskOptions(url=dialog.selectedAsset().downloadUrl)),
-            done=self._taskService.add,
-            owner=parent,
-        ))
-        dialog.open()
-
-    def _onUpdateCheckFailed(self, error: str) -> None:
-        InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),
-                      duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
+        self._updateService.changed.connect(onChecked)
+        self._updateService.check()
 
     def _onOpenLogClicked(self) -> None:
         from app.config.paths import APP_DATA_DIR

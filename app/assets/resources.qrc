@@ -22,10 +22,12 @@
     <file alias="gd3.zh_HK.qm">i18n/gd3.zh_HK.qm</file>
     <file alias="gd3.ru_RU.qm">i18n/gd3.ru_RU.qm</file>
     <file alias="gd3.pt_BR.qm">i18n/gd3.pt_BR.qm</file>
+    <file alias="gd3.es_ES.qm">i18n/gd3.es_ES.qm</file>
     <file alias="gd3.zh.qm">i18n/gd3.zh_CN.qm</file>
     <file alias="gd3.en.qm">i18n/gd3.en_US.qm</file>
     <file alias="gd3.ja.qm">i18n/gd3.ja_JP.qm</file>
     <file alias="gd3.ru.qm">i18n/gd3.ru_RU.qm</file>
     <file alias="gd3.pt.qm">i18n/gd3.pt_BR.qm</file>
+    <file alias="gd3.es.qm">i18n/gd3.es_ES.qm</file>
   </qresource>
 </RCC>

@@ -174,7 +174,7 @@ class BinaryRuntime:
         if folder.exists():
             shutil.rmtree(folder)
 
-    async def createInstallTask(self) -> Task:
+    async def createInstallTask(self, version: str = "") -> Task:
         raise NotImplementedError
 
 

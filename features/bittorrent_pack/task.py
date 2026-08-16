@@ -205,7 +205,7 @@ class BTTaskStep(TaskStep):
             cached = btSession.lastResumeData(task.taskId)
             if cached:
                 task.resumeData = b64encode(cached).decode()
-            task.stateText = "已暂停做种" if task.isSeeding else "已暂停下载"
+            task.stateText = "paused_seeding" if task.isSeeding else "paused_downloading"
             task.isSeeding = False
             raise
         except Exception:
