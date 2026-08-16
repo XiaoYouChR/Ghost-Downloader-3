@@ -704,6 +704,12 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update versions.json for v${VERSION} [skip ci]"
           git push
 
+      - name: Purge jsDelivr cache
+        run: |
+          for f in versions.json dist/packs/*.zip; do
+            curl -s "https://purge.jsdelivr.net/gh/XiaoYouChR/Ghost-Downloader-3@main/${f}" || true
+          done
+
       - name: Push to CNB
         continue-on-error: true
         env:
