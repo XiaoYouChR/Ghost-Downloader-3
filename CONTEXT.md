@@ -132,6 +132,14 @@ _Avoid_: options（options 是每个 Task 的输入，不是应用配置）
 正在使用的安装目录。
 _Avoid_: install dir、program folder
 
+**Portable Folder**:
+App Dir 内名为 `GhostDownloader` 的目录。Portable 模式下 Settings、Task Record、Staging 住在这里。
+_Avoid_: 单独说 GhostDownloader 文件夹（会和用户模式的 `%LOCALAPPDATA%\GhostDownloader`、App Dir 本身混淆）
+
+**Uninstaller**:
+Inno Setup 写在 App Dir 里的卸载程序与日志，通常是 `unins00.exe` 与 `unins00.dat`。
+_Avoid_: setup、installer
+
 **Patch**:
 一份目录级增量文件。
 _Avoid_: delta、diff

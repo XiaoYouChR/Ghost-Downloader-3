@@ -19,6 +19,7 @@
     #define PFMT "%ls"
     #define wsnprintf(buf, n, ...) do { _snwprintf((buf), (n), __VA_ARGS__); (buf)[(n) - 1] = L'\0'; } while (0)
 #else
+    #include <dirent.h>
     #include <errno.h>
     #include <ftw.h>
     #include <pwd.h>
@@ -54,6 +55,8 @@ static wchar_t g_logPath[PATH_BUF];
 static char g_logPath[PATH_BUF];
 #endif
 
+static int hasDir(const pchar *dir);
+
 static void toDirname(pchar *path) {
 #ifdef _WIN32
     wchar_t *sep = wcsrchr(path, L'/');
@@ -68,8 +71,18 @@ static void toDirname(pchar *path) {
 #endif
 }
 
-static void openLog(void) {
+static void openLog(const pchar *exeDir) {
 #ifdef _WIN32
+    if (exeDir && exeDir[0]) {
+        wsnprintf(g_logPath, PATH_BUF, L"%ls\\GhostDownloader", exeDir);
+        if (hasDir(g_logPath)) {
+            size_t dirLen = wcslen(g_logPath);
+            wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
+            g_log = _wfopen(g_logPath, L"a");
+            return;
+        }
+    }
+
     wchar_t dir[MAX_PATH];
     if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, dir)))
         return;
@@ -78,7 +91,18 @@ static void openLog(void) {
     size_t dirLen = wcslen(g_logPath);
     wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
     g_log = _wfopen(g_logPath, L"a");
-#elif defined(__APPLE__)
+#else
+    if (exeDir && exeDir[0]) {
+        snprintf(g_logPath, PATH_BUF, "%s/GhostDownloader", exeDir);
+        if (hasDir(g_logPath)) {
+            size_t dirLen = strlen(g_logPath);
+            snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
+            g_log = fopen(g_logPath, "a");
+            return;
+        }
+    }
+
+#ifdef __APPLE__
     char rawPath[PATH_BUF];
     sysdir_search_path_enumeration_state state =
         sysdir_start_search_path_enumeration(
@@ -105,7 +129,7 @@ static void openLog(void) {
     snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
     g_log = fopen(g_logPath, "a");
 #else
-    const char *base = getenv("XDG_STATE_HOME");
+    const char *base = getenv("XDG_DATA_HOME");
     char dir[PATH_BUF];
     if (base && base[0] == '/') {
         snprintf(dir, sizeof(dir), "%s", base);
@@ -119,7 +143,7 @@ static void openLog(void) {
                 return;
             home = result->pw_dir;
         }
-        snprintf(dir, sizeof(dir), "%s/.local/state", home);
+        snprintf(dir, sizeof(dir), "%s/.local/share", home);
     }
 
     mkdir(dir, 0755);
@@ -128,6 +152,7 @@ static void openLog(void) {
     size_t dirLen = strlen(g_logPath);
     snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
     g_log = fopen(g_logPath, "a");
+#endif
 #endif
 }
 
@@ -151,7 +176,9 @@ static void logMsg(const char *fmt, ...) {
 }
 
 static void closeLog(void) {
-    if (g_log) fclose(g_log);
+    if (!g_log) return;
+    fclose(g_log);
+    g_log = NULL;
 }
 
 static void findExeDir(pchar *buf, size_t len) {
@@ -335,6 +362,16 @@ static int hasDir(const pchar *dir) {
 #endif
 }
 
+static int hasFile(const pchar *path) {
+#ifdef _WIN32
+    DWORD attr = GetFileAttributesW(path);
+    return attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY);
+#else
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISREG(st.st_mode);
+#endif
+}
+
 static int moveDir(const pchar *from, const pchar *to) {
 #ifdef _WIN32
     for (int i = 0; i < 8; i++) {
@@ -374,6 +411,209 @@ static void deleteDir(const char *dir) {
     nftw(dir, deletePath, 64, FTW_DEPTH | FTW_PHYS);
 }
 #endif
+
+#ifdef _WIN32
+static int copyDir(const wchar_t *from, const wchar_t *to) {
+    wchar_t fromBuf[PATH_BUF + 2], toBuf[PATH_BUF + 2];
+    memset(fromBuf, 0, sizeof(fromBuf));
+    memset(toBuf, 0, sizeof(toBuf));
+    wcsncpy(fromBuf, from, PATH_BUF);
+    wcsncpy(toBuf, to, PATH_BUF);
+
+    SHFILEOPSTRUCTW op = {0};
+    op.wFunc  = FO_COPY;
+    op.pFrom  = fromBuf;
+    op.pTo    = toBuf;
+    op.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | FOF_NOCONFIRMMKDIR;
+    return (SHFileOperationW(&op) == 0 && !op.fAnyOperationsAborted) ? 0 : -1;
+}
+
+static int matchUninstaller(const wchar_t *name) {
+    if (_wcsnicmp(name, L"unins", 5) != 0) return 0;
+    const wchar_t *dot = wcsrchr(name, L'.');
+    if (!dot) return 0;
+    return _wcsicmp(dot, L".exe") == 0
+        || _wcsicmp(dot, L".dat") == 0
+        || _wcsicmp(dot, L".msg") == 0;
+}
+
+static void installUninstaller(const wchar_t *appDir, const wchar_t *newDir) {
+    wchar_t pattern[PATH_BUF];
+    wsnprintf(pattern, PATH_BUF, L"%ls\\unins*", appDir);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    do {
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        if (!matchUninstaller(fd.cFileName)) continue;
+        wchar_t from[PATH_BUF], to[PATH_BUF];
+        wsnprintf(from, PATH_BUF, L"%ls\\%ls", appDir, fd.cFileName);
+        wsnprintf(to, PATH_BUF, L"%ls\\%ls", newDir, fd.cFileName);
+        CopyFileW(from, to, FALSE);
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+}
+#else
+static int copyFile(const char *from, const char *to) {
+    FILE *in = fopen(from, "rb");
+    if (!in) return -1;
+    FILE *out = fopen(to, "wb");
+    if (!out) {
+        fclose(in);
+        return -1;
+    }
+    char buf[65536];
+    size_t n;
+    int ok = 1;
+    while ((n = fread(buf, 1, sizeof(buf), in)) > 0) {
+        if (fwrite(buf, 1, n, out) != n) {
+            ok = 0;
+            break;
+        }
+    }
+    if (ferror(in)) ok = 0;
+    fclose(in);
+    fclose(out);
+    if (!ok) {
+        remove(to);
+        return -1;
+    }
+    return 0;
+}
+
+static int copyDir(const char *from, const char *to) {
+    struct stat st;
+    if (stat(from, &st) != 0) return -1;
+    if (mkdir(to, st.st_mode & 0777) != 0 && errno != EEXIST)
+        return -1;
+
+    DIR *d = opendir(from);
+    if (!d) return -1;
+    struct dirent *ent;
+    while ((ent = readdir(d)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+            continue;
+        char fromChild[PATH_BUF], toChild[PATH_BUF];
+        int n1 = snprintf(fromChild, sizeof(fromChild), "%s/%s", from, ent->d_name);
+        int n2 = snprintf(toChild, sizeof(toChild), "%s/%s", to, ent->d_name);
+        if (n1 < 0 || n1 >= (int)sizeof(fromChild)
+            || n2 < 0 || n2 >= (int)sizeof(toChild)) {
+            closedir(d);
+            return -1;
+        }
+        if (stat(fromChild, &st) != 0) {
+            closedir(d);
+            return -1;
+        }
+        if (S_ISDIR(st.st_mode)) {
+            if (copyDir(fromChild, toChild) != 0) {
+                closedir(d);
+                return -1;
+            }
+        } else if (copyFile(fromChild, toChild) != 0) {
+            closedir(d);
+            return -1;
+        }
+    }
+    closedir(d);
+    return 0;
+}
+#endif
+
+static int buildNewPortableFolder(pchar *dst, size_t len,
+                                 const pchar *appDir, const pchar *newDir,
+                                 const pchar *exeDir) {
+#ifdef _WIN32
+    size_t appLen = wcslen(appDir);
+    while (appLen > 0 && (appDir[appLen - 1] == L'\\' || appDir[appLen - 1] == L'/'))
+        appLen--;
+    if (appLen == 0) return -1;
+    if (_wcsnicmp(exeDir, appDir, appLen) != 0) return -1;
+    if (exeDir[appLen] != L'\\' && exeDir[appLen] != L'/' && exeDir[appLen] != L'\0')
+        return -1;
+    const wchar_t *rest = exeDir + appLen;
+    while (*rest == L'\\' || *rest == L'/') rest++;
+    if (*rest)
+        wsnprintf(dst, len, L"%ls\\%ls\\GhostDownloader", newDir, rest);
+    else
+        wsnprintf(dst, len, L"%ls\\GhostDownloader", newDir);
+#else
+    size_t appLen = strlen(appDir);
+    while (appLen > 0 && appDir[appLen - 1] == '/')
+        appLen--;
+    if (appLen == 0) return -1;
+    if (strncmp(exeDir, appDir, appLen) != 0) return -1;
+    if (exeDir[appLen] != '/' && exeDir[appLen] != '\0')
+        return -1;
+    const char *rest = exeDir + appLen;
+    while (*rest == '/') rest++;
+    if (*rest)
+        snprintf(dst, len, "%s/%s/GhostDownloader", newDir, rest);
+    else
+        snprintf(dst, len, "%s/GhostDownloader", newDir);
+#endif
+    return 0;
+}
+
+static int install(const pchar *appDir, const pchar *newDir,
+                   const pchar *backupDir, const pchar *exeDir) {
+    if (!hasDir(newDir))
+        return -1;
+
+#ifdef _WIN32
+    /* argv / sys.executable may mix 8.3 and long names; prefix compare needs one form. */
+    wchar_t longApp[PATH_BUF], longExe[PATH_BUF], longNew[PATH_BUF];
+    if (GetLongPathNameW(appDir, longApp, PATH_BUF))
+        appDir = longApp;
+    if (GetLongPathNameW(exeDir, longExe, PATH_BUF))
+        exeDir = longExe;
+    if (GetLongPathNameW(newDir, longNew, PATH_BUF))
+        newDir = longNew;
+#endif
+
+    pchar portableSrc[PATH_BUF], portableDst[PATH_BUF];
+#ifdef _WIN32
+    wsnprintf(portableSrc, PATH_BUF, L"%ls\\GhostDownloader", exeDir);
+#else
+    snprintf(portableSrc, sizeof(portableSrc), "%s/GhostDownloader", exeDir);
+#endif
+    if (hasDir(portableSrc)) {
+        if (buildNewPortableFolder(portableDst, PATH_BUF, appDir, newDir, exeDir) != 0)
+            return -1;
+        deleteDir(portableDst);
+        if (hasDir(portableDst))
+            return -1;
+        if (copyDir(portableSrc, portableDst) != 0)
+            return -1;
+    }
+#ifdef _WIN32
+    installUninstaller(appDir, newDir);
+#endif
+
+    int swapOk = 0;
+#ifdef __APPLE__
+    if (renamex_np(newDir, appDir, RENAME_SWAP) == 0) {
+        /* After SWAP, newDir holds the old tree. Leaving it there makes
+           the next patch reuse it as New Dir. */
+        if (rename(newDir, backupDir) != 0) {
+            logMsg("rename old to backup failed (%s), deleting leftover", strerror(errno));
+            deleteDir(newDir);
+        }
+        swapOk = 1;
+    } else {
+        logMsg("renamex_np failed (%s), falling back", strerror(errno));
+    }
+#endif
+    if (!swapOk) {
+        if (moveDir(appDir, backupDir) != 0)
+            return -1;
+        if (moveDir(newDir, appDir) != 0) {
+            moveDir(backupDir, appDir);
+            return -1;
+        }
+    }
+    return 0;
+}
 
 #ifdef _WIN32
 static int startAppAsUser(const wchar_t *exe) {
@@ -528,17 +768,21 @@ int main(int argc, char *argv[]) {
     const char   *patchFile = argc == 5 ? argv[4] : NULL;
 #endif
 
-    pchar newDir[PATH_BUF], backupDir[PATH_BUF], updaterDir[PATH_BUF];
+    pchar newDir[PATH_BUF], backupDir[PATH_BUF], updaterDir[PATH_BUF], exeDir[PATH_BUF];
 #ifdef _WIN32
     wsnprintf(newDir,    PATH_BUF, L"%ls_new",    appDir);
     wsnprintf(backupDir, PATH_BUF, L"%ls_backup", appDir);
+    wcsncpy(exeDir, appExe, PATH_BUF - 1);
+    exeDir[PATH_BUF - 1] = L'\0';
 #else
     snprintf(newDir,    sizeof(newDir),    "%s_new",    appDir);
     snprintf(backupDir, sizeof(backupDir), "%s_backup", appDir);
+    snprintf(exeDir, sizeof(exeDir), "%s", appExe);
 #endif
+    toDirname(exeDir);
     findExeDir(updaterDir, PATH_BUF);
 
-    openLog();
+    openLog(exeDir);
 #ifdef _WIN32
     if (relocated < 0) {
         logMsg("cannot copy updater out of appDir");
@@ -601,44 +845,37 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    int swapOk = 0;
-#ifdef __APPLE__
-    if (renamex_np(newDir, appDir, RENAME_SWAP) == 0) {
-        if (rename(newDir, backupDir) != 0)
-            logMsg("rename old to backup failed (%s), continuing", strerror(errno));
-        swapOk = 1;
-    } else {
-        logMsg("renamex_np failed (%s), falling back", strerror(errno));
-    }
-#endif
-    if (!swapOk) {
-        if (moveDir(appDir, backupDir) != 0) {
-            closeLog();
-            return EXIT_RENAME_FAILED;
-        }
-        if (moveDir(newDir, appDir) != 0) {
-            moveDir(backupDir, appDir);
-            closeLog();
-            return EXIT_RENAME_FAILED;
-        }
-    }
-    logMsg("installed");
-
+    /* Windows cannot MoveFile a directory while updater.log is open inside it. */
+    closeLog();
     if (patchFile) {
 #ifdef _WIN32
         _wremove(patchFile);
 #else
         remove(patchFile);
 #endif
+        if (hasFile(patchFile)) {
+            openLog(exeDir);
+            logMsg("cannot delete patch");
+            closeLog();
+            return EXIT_RENAME_FAILED;
+        }
     }
+    if (install(appDir, newDir, backupDir, exeDir) != 0) {
+        openLog(exeDir);
+        logMsg("install failed");
+        closeLog();
+        return EXIT_RENAME_FAILED;
+    }
+    openLog(exeDir);
+    logMsg("installed");
 
     logMsg("starting " PFMT, appExe);
     if (startApp(appExe) != 0) {
         logMsg("start failed, rolling back");
+        closeLog();
         if (moveDir(appDir, newDir) == 0)
             moveDir(backupDir, appDir);
         deleteDir(newDir);
-        closeLog();
         return EXIT_LAUNCH_FAILED;
     }
 
