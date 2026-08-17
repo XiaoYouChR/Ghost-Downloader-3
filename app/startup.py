@@ -86,6 +86,9 @@ def bindNotifications(taskService, notifyCompleted, notifyDiskSpace):
 
 def checkUpdateAtStartup(updateService):
     from app.config.cfg import cfg
+    from app.config.paths import IS_COMPILED
+    if not IS_COMPILED:
+        return
     if not cfg.shouldCheckUpdateAtStartup.value:
         return
     updateService.check()

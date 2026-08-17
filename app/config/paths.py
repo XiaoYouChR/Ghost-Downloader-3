@@ -6,9 +6,11 @@ from pathlib import Path
 
 from PySide6.QtCore import QStandardPaths
 
+IS_COMPILED = "__compiled__" in globals()
+
 executableDir = (
     Path(sys.executable).resolve().parent
-    if "__compiled__" in globals()
+    if IS_COMPILED
     else Path(".")
 )
 
