@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N
 from PySide6.QtWidgets import QFileIconProvider
 from qfluentwidgets import FluentIcon
 
@@ -39,6 +39,18 @@ BT_UPLOAD_FIELD = FieldSpec("upload", FluentIcon.SHARE, {
 BT_ETA_FIELD = FieldSpec("eta", FluentIcon.STOP_WATCH, {TaskStatus.RUNNING: toBtEtaText})
 BT_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toBtSizeText})
 
+
+def toPeerText(task: BTTask, _speed: int, _received: int) -> str:
+    total = max(task.peerCount, task.totalPeerCount)
+    return QCoreApplication.translate("TaskCard", "{0}/{1} Peers").format(
+        task.peerCount, total
+    )
+
+
+BT_PEERS_FIELD = FieldSpec(
+    "peers", FluentIcon.INFO, {TaskStatus.RUNNING: toPeerText}
+)
+
 BT_STATE_LABELS = {
     "checking_files":       N("BTTaskCard", "校验已有文件"),
     "checking_resume_data": N("BTTaskCard", "检查续传状态"),
@@ -75,7 +87,10 @@ class BTDraftCard(MultiFileDraftCard):
 class BTTaskCard(MultiFileTaskCard):
     uploadLabel: IconBodyLabel
     fileSelectDialog = TorrentFileSelectDialog
-    infoFields = [BT_SPEED_FIELD, BT_UPLOAD_FIELD, BT_ETA_FIELD, BT_SIZE_FIELD]
+    infoFields = [
+        BT_SPEED_FIELD, BT_UPLOAD_FIELD, BT_ETA_FIELD, BT_SIZE_FIELD,
+        BT_PEERS_FIELD,
+    ]
 
     def _refreshForStatus(self, task):
         super()._refreshForStatus(task)
@@ -86,8 +101,6 @@ class BTTaskCard(MultiFileTaskCard):
                 parts.append(self.tr("分享率 {0}").format(f"{task.shareRatioPercent:.1f}%"))
             if task.seedingTimeSeconds > 0:
                 parts.append(self.tr("做种 {0}").format(toReadableTime(task.seedingTimeSeconds)))
-            if task.peerCount > 0:
-                parts.append(self.tr("{0} peers").format(task.peerCount))
             self._setStatus(self.tr("做种中") + "  " + " · ".join(parts))
         elif task.status == TaskStatus.RUNNING and task.stateText and task.stateText != "downloading":
             self.progressBar.hide()
