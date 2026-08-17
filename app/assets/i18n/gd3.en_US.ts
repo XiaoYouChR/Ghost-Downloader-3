@@ -529,24 +529,29 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliDraftCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="199"/>
+        <location filename="../../../features/bili_pack/cards.py" line="447"/>
         <source>最佳画质</source>
         <translation>Best Quality</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="200"/>
+        <location filename="../../../features/bili_pack/cards.py" line="448"/>
         <source>最佳音质</source>
         <translation>Best Quality</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="239"/>
+        <location filename="../../../features/bili_pack/cards.py" line="487"/>
         <source>截取片段</source>
         <translation>Trim Media</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="255"/>
+        <location filename="../../../features/bili_pack/cards.py" line="503"/>
         <source>选择分P</source>
         <translation>Select Parts</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="503"/>
+        <source>选择合集</source>
+        <translation>Select Episodes</translation>
     </message>
 </context>
 <context>
@@ -611,11 +616,24 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
 </context>
 <context>
+    <name>BilibiliTask</name>
+    <message>
+        <location filename="../../../features/bili_pack/task.py" line="139"/>
+        <source>{0}/{1} 集</source>
+        <translation>{0}/{1} Eps</translation>
+    </message>
+</context>
+<context>
     <name>BilibiliTaskCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="523"/>
+        <location filename="../../../features/bili_pack/cards.py" line="773"/>
         <source>选择分P</source>
         <translation>Select Parts</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="773"/>
+        <source>选择合集</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -635,32 +653,32 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>Support for hundreds of video sites including YouTube and Twitter</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="81"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="84"/>
         <source>eD2k / eMule</source>
         <translation>eD2k/eMule</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="82"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="85"/>
         <source>支持电驴协议，适合下载经典资源</source>
         <translation>Support for the eDonky network, enable downloading of archaic resources</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="61"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="62"/>
         <source>视频合并</source>
         <translation>Video Muxing</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="62"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="63"/>
         <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
         <translation>Required for downloading videos from Bilibili, YouTube, and more sites; allow combining audio and video tracks</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="146"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="147"/>
         <source>M3U8 / 直播下载</source>
         <translation>M3U8 &amp; Live Stream Download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="147"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="148"/>
         <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
         <translation>Support for live streaming protocols including HLS and DASH, enable live stream recording</translation>
     </message>
@@ -1512,62 +1530,62 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="33"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="36"/>
         <source>eD2k 下载</source>
         <translation>eD2k</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="36"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="39"/>
         <source>goed2kd 安装目录</source>
         <translation>goed2kd Install Location</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="46"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="49"/>
         <source>服务器列表源</source>
         <translation>Server List Source</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="47"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
         <source>eD2k server.met 文件的 URL，留空则不引导</source>
         <translation>URL of the eD2k server.met file; leave empty to skip bootstrapping</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="51"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="54"/>
         <source>DHT 节点源</source>
         <translation>DHT Nodes Source</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="52"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
         <source>KAD nodes.dat 文件的 URL，留空则不引导</source>
         <translation>URL of the KAD nodes.dat file; leave empty to skip bootstrapping</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="56"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="59"/>
         <source>启用 DHT</source>
         <translation>Enable DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="57"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
         <source>通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器</source>
         <translation>Discover peers via DHT network; when disabled, only eD2k servers are used</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="61"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="64"/>
         <source>启用 UPnP</source>
         <translation>Enable UPnP</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="62"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
         <source>自动配置路由器端口转发</source>
         <translation>Automatically configure router port forwarding</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="66"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="69"/>
         <source>监听端口</source>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="67"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation>0 for system assigned port</translation>
     </message>
@@ -1715,12 +1733,12 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>FFmpegConfig</name>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="41"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="42"/>
         <source>FFmpeg</source>
         <translation>FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="44"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="45"/>
         <source>FFmpeg 安装目录</source>
         <translation>FFmpeg Install Location</translation>
     </message>
@@ -2386,7 +2404,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="vanished">Media Stream Download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="72"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="73"/>
         <source>N_m3u8DL-RE 安装目录</source>
         <translation>N_m3u8DL-RE Install Location</translation>
     </message>
@@ -2403,47 +2421,47 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="vanished">Set Ghost Downloader as the default handler for .m3u8/.m3u/.mpd files</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="78"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="79"/>
         <source>输出容器</source>
         <translation>Output Container</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="79"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="80"/>
         <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
         <translation>Prefered container format for ffmpeg to remux to after VOD download completion</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="80"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="81"/>
         <source>分片线程数</source>
         <translation>Chunk Threads</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="81"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="82"/>
         <source>传给 N_m3u8DL-RE 的下载线程数</source>
         <translation>Download threads passed to N_m3u8DL-RE</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="82"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="83"/>
         <source>分片重试次数</source>
         <translation>Chunk Retry Attempts</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="83"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="84"/>
         <source>单个分片下载失败时的最大重试次数</source>
         <translation>Maximum retries for failed chunks</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="84"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
         <source>请求超时</source>
         <translation>Request Timeout</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="84"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
         <source>HTTP 请求超时时间</source>
         <translation>HTTP request timeout length</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="86"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="87"/>
         <source>自动选择最佳轨道</source>
         <translation>Auto Select Best Track</translation>
     </message>
@@ -2452,122 +2470,122 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="vanished">Auto select best audio/video track and skip manual selection</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="69"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="70"/>
         <source>M3U8 下载</source>
         <translation>M3U8 Playlist</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="87"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
         <source>默认选择最佳音视频轨道</source>
         <translation>Default to best audio/video track</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
         <source>并发下载音视频</source>
         <translation>Simultaneous Audio/Video Download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
         <source>同时下载已选择的音频、视频和字幕轨道</source>
         <translation>Simultaneously download selected audio, video and subtitle tracks</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
         <source>追加 URL 参数</source>
         <translation>Append URL Parameters</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="92"/>
         <source>把输入链接上的 Query 参数追加到分片请求</source>
         <translation>Append query parameters from input URL to chunk requests</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="92"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
         <source>二进制合并</source>
         <translation>Binary Merge</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
         <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
         <translation>Let N_m3u8DL-RE merge chunks in binary mode</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
         <source>校验分片数量</source>
         <translation>Verify Chunk Count</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
         <source>下载完成后检查实际分片数是否与预期一致</source>
         <translation>Verify chunk count is as expected after download completion</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
         <source>直播保留原始分片</source>
         <translation>Keep Original Live Stream Segments</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
         <source>实时合并录制时仍保留下载的原始分片</source>
         <translation>Keep downloaded segments when merging live recordings in real time</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
         <source>录制时通过管道交给 ffmpeg 实时混流为封装容器</source>
         <translation>Pipe to FFmpeg for real-time remuxing during recording</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
         <source>直播校正 VTT 字幕</source>
         <translation>Correct VTT subtitles for live streams</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
         <source>根据音频起始时间校正 VTT 字幕时间轴</source>
         <translation>Adjust VTT subtitle timeline based on audio start time</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
         <source>直播刷新等待时间</source>
         <translation>Live Refresh Interval</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
         <source>两次拉取直播清单之间的等待秒数，0 为自动</source>
         <translation>Seconds between live playlist fetches, 0 for auto</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
         <source>直播每次取片数</source>
         <translation>Live Segments Per Fetch</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
         <source>每次刷新最多取走的分片数量，0 为自动</source>
         <translation>Max segments to fetch per refresh, 0 for auto</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
         <source>解密引擎</source>
         <translation>Decryption Engine</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
         <source>调用的第三方解密程序</source>
         <translation>Third-party decryption program used</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
         <source>解密引擎二进制路径</source>
         <translation>Decryption Engine Binary Location</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="110"/>
         <source>MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg</source>
         <translation>Path to MP4Decrypt / Shaka Packager executable; leave empty to use FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
         <source>默认拉取全部音频与字幕轨道</source>
         <translation>Default to download all audio and subtitle tracks</translation>
     </message>
@@ -2576,92 +2594,92 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="obsolete">选择解密引擎可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="111"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="112"/>
         <source>MP4 实时解密</source>
         <translation>MP4 Real-time Decryption</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="112"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
         <source>下载 MP4 分片时实时解密</source>
         <translation>Decrypt MP4 segments in real time during download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
         <source>限速</source>
         <translation>Speed Limit</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
         <source>最大下载速度，-1 为不限速</source>
         <translation>Maximum download speed, -1 for unlimited</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
         <source>限速单位</source>
         <translation>Speed Limit Unit</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="117"/>
         <source>限速数值的单位</source>
         <translation>Unit for speed limit value</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="117"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
         <source>广告过滤</source>
         <translation>Ad Filter</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
         <source>匹配广告分片 URL 的正则表达式</source>
         <translation>Regex matching ad segment URLs</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
         <source>正则表达式</source>
         <translation>Regular Expression</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
         <source>字幕格式</source>
         <translation>Subtitle Format</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
         <source>字幕输出格式</source>
         <translation>Subtitle output format</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
         <source>不写入日期信息</source>
         <translation>Omit Date Info</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
         <source>混流时不写入日期信息</source>
         <translation>Do not write date info during remux</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
         <source>保留图形分片</source>
         <translation>Keep Graphical Segments</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
         <source>把图形字幕转图片后保留原始分片</source>
         <translation>Keep original segments after converting graphical subtitles to images</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
         <source>完成后删除临时文件</source>
         <translation>Delete Temp Files After Completion</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
         <source>下载完成后删除分片临时目录</source>
         <translation>Delete temporary segment storage directory after download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
         <source>下载全部音轨与字幕</source>
         <translation>Download All Audio And Subtitles Tracks</translation>
     </message>
@@ -2670,17 +2688,17 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="obsolete">默认拉取全部音频与字幕轨道，而非仅最佳</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
         <source>自定义混流参数</source>
         <translation>Custom Remux Arguments</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="131"/>
         <source>自定义 --mux-after-done，留空则按输出容器自动混流</source>
         <translation>Custom --mux-after-done; leave empty to auto-remux according to output container</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
         <source>直播管道混流</source>
         <translation>Live Pipe Remux</translation>
     </message>
@@ -2822,7 +2840,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="375"/>
+        <location filename="../../view/windows/main_window.py" line="388"/>
         <source>程序发生异常</source>
         <translation>An exception occurred</translation>
     </message>
@@ -2897,27 +2915,27 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation>View Details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="424"/>
+        <location filename="../../view/windows/main_window.py" line="437"/>
         <source>是否完全退出程序？</source>
         <translation>Quit the program entirely?</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="425"/>
+        <location filename="../../view/windows/main_window.py" line="438"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation>While running in background, you can reopen from the system tray icon.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="428"/>
+        <location filename="../../view/windows/main_window.py" line="441"/>
         <source>退出程序</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="429"/>
+        <location filename="../../view/windows/main_window.py" line="442"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="430"/>
+        <location filename="../../view/windows/main_window.py" line="443"/>
         <source>记住我的选择</source>
         <translation>Remember my choice</translation>
     </message>
@@ -2926,7 +2944,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Please select manually in version details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="376"/>
+        <location filename="../../view/windows/main_window.py" line="389"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2935,7 +2953,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="380"/>
+        <location filename="../../view/windows/main_window.py" line="393"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
@@ -3047,7 +3065,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     <message>
         <location filename="../../view/components/track_bar.py" line="62"/>
         <source>不下载</source>
-        <translation>Do Not Download</translation>
+        <translation>Skip</translation>
     </message>
 </context>
 <context>
@@ -3070,7 +3088,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
     <message>
         <location filename="../../view/mobile/window.py" line="192"/>
         <source>需要存储权限</source>
-        <translation>Storage permission required</translation>
+        <translation>Storage Permission Required</translation>
     </message>
     <message>
         <location filename="../../view/mobile/window.py" line="193"/>
@@ -3098,12 +3116,12 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation>View Details</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="288"/>
+        <location filename="../../view/mobile/window.py" line="301"/>
         <source>程序发生异常</source>
         <translation>An exception occurred</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="289"/>
+        <location filename="../../view/mobile/window.py" line="302"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -3112,7 +3130,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/mobile/window.py" line="293"/>
+        <location filename="../../view/mobile/window.py" line="306"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
@@ -3295,59 +3313,48 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>PageSelectDialog</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="60"/>
         <source>选择分P</source>
-        <translation>Select Parts</translation>
+        <translation type="vanished">Select Parts</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="63"/>
         <source>全选</source>
-        <translation>Select All</translation>
+        <translation type="vanished">Select All</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="64"/>
         <source>全不选</source>
-        <translation>Select None</translation>
+        <translation type="vanished">Select None</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="65"/>
         <source>反选</source>
-        <translation>Invert Selection</translation>
+        <translation type="vanished">Invert Selection</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="77"/>
         <source>确定</source>
-        <translation>Save</translation>
+        <translation type="vanished">Save</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="78"/>
         <source>取消</source>
-        <translation>Cancel</translation>
+        <translation type="vanished">Cancel</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="85"/>
         <source>分P</source>
-        <translation>Part</translation>
+        <translation type="vanished">Part</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="85"/>
         <source>大小</source>
-        <translation>Size</translation>
+        <translation type="vanished">Size</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="85"/>
         <source>开始</source>
-        <translation>Start</translation>
+        <translation type="vanished">Start</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="85"/>
         <source>结束</source>
-        <translation>End</translation>
+        <translation type="vanished">End</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="164"/>
         <source>{0}/{1} 个分P</source>
-        <translation>{0}/{1} Parts</translation>
+        <translation type="vanished">{0}/{1} Parts</translation>
     </message>
 </context>
 <context>
@@ -3935,6 +3942,79 @@ Path: {1}</translation>
     </message>
 </context>
 <context>
+    <name>SelectDialog</name>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="67"/>
+        <source>选择分P</source>
+        <translation>Select Parts</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="67"/>
+        <source>选择合集</source>
+        <translation>Select Episodes in Collection</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="71"/>
+        <source>全选</source>
+        <translation>Select All</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="72"/>
+        <source>全不选</source>
+        <translation>Select None</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="73"/>
+        <source>反选</source>
+        <translation>Invert Selection</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="85"/>
+        <source>确定</source>
+        <translation>Confirm</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="86"/>
+        <source>取消</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="92"/>
+        <source>分P</source>
+        <translation>Part</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="92"/>
+        <source>合集</source>
+        <translation>Episodes</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="94"/>
+        <source>大小</source>
+        <translation>Size</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="94"/>
+        <source>开始</source>
+        <translation>Start</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="94"/>
+        <source>结束</source>
+        <translation>End</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="378"/>
+        <source>{0}/{1} 集</source>
+        <translation>{0}/{1} Episodes</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bili_pack/cards.py" line="380"/>
+        <source>{0}/{1} 个分P</source>
+        <translation>{0}/{1} Parts</translation>
+    </message>
+</context>
+<context>
     <name>SelectFileCard</name>
     <message>
         <location filename="../../view/components/setting_cards.py" line="773"/>
@@ -4004,7 +4084,7 @@ Path: {1}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="55"/>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="371"/>
         <source>关于</source>
         <translation>About</translation>
     </message>
@@ -4422,103 +4502,103 @@ Path: {1}</translation>
         <translation>Use System Settings</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="316"/>
+        <location filename="../../view/pages/setting_page.py" line="319"/>
         <source>切换到用户模式</source>
         <translation>Switch to User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="317"/>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
+        <location filename="../../view/pages/setting_page.py" line="320"/>
+        <location filename="../../view/pages/setting_page.py" line="326"/>
         <source>数据存储模式</source>
         <translation>Configuration Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <location filename="../../view/pages/setting_page.py" line="321"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation>Currently in Portable mode, configuration stored next to the app: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="322"/>
+        <location filename="../../view/pages/setting_page.py" line="325"/>
         <source>切换到 Portable 模式</source>
         <translation>Switch to Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="324"/>
+        <location filename="../../view/pages/setting_page.py" line="327"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation>Currently in User mode, configuration stored at: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="328"/>
+        <location filename="../../view/pages/setting_page.py" line="331"/>
         <source>在应用程序启动时检查更新</source>
         <translation>Check For Updates on Startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="329"/>
+        <location filename="../../view/pages/setting_page.py" line="332"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>Get more features and improved stability with new versions</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="337"/>
+        <location filename="../../view/pages/setting_page.py" line="341"/>
         <source>关闭主窗口时</source>
         <translation>Main Window Closing Behavior</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="338"/>
+        <location filename="../../view/pages/setting_page.py" line="342"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation>Choose whether to continue running in background or exit when closing the main window</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>关闭时询问</source>
         <translation>Ask when closing</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>退出程序</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="354"/>
+        <location filename="../../view/pages/setting_page.py" line="358"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Help improve Ghost Downloader by providing feedback, or view logs to troubleshoot issues</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>查看详情</source>
         <translation>Details</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>功能包</source>
         <translation>Feature Packs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="364"/>
+        <location filename="../../view/pages/setting_page.py" line="368"/>
         <source>管理已安装的功能包</source>
         <translation>Manage currently installed feature packs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="497"/>
+        <location filename="../../view/pages/setting_page.py" line="502"/>
         <source>用户模式</source>
         <translation>User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="497"/>
+        <location filename="../../view/pages/setting_page.py" line="502"/>
         <source>Portable 模式</source>
         <translation>Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="499"/>
+        <location filename="../../view/pages/setting_page.py" line="504"/>
         <source>切换数据存储模式</source>
         <translation>Switch Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
+        <location filename="../../view/pages/setting_page.py" line="505"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4527,12 +4607,12 @@ Path: {1}</translation>
 Data will be copied to new location and the program will then exit. Please manually restart.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="517"/>
+        <location filename="../../view/pages/setting_page.py" line="522"/>
         <source>正在检查更新...</source>
         <translation>Checking for updates...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="529"/>
+        <location filename="../../view/pages/setting_page.py" line="534"/>
         <source>当前已是最新版本</source>
         <translation>You&apos;re running the latest version</translation>
     </message>
@@ -4541,17 +4621,17 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation type="vanished">Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="526"/>
+        <location filename="../../view/pages/setting_page.py" line="531"/>
         <source>检查更新失败</source>
         <translation>Failed to check update</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="526"/>
+        <location filename="../../view/pages/setting_page.py" line="531"/>
         <source>无法获取最新版本信息</source>
         <translation>Unable to get the latest version information</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="542"/>
+        <location filename="../../view/pages/setting_page.py" line="547"/>
         <source>搜索设置</source>
         <translation>Search Settings</translation>
     </message>
@@ -4576,33 +4656,33 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>Start Ghost Downloader minimized on system startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
+        <location filename="../../view/pages/setting_page.py" line="347"/>
         <source>剪贴板监听</source>
         <translation>Monitor Clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="344"/>
+        <location filename="../../view/pages/setting_page.py" line="348"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>Automatically detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="372"/>
+        <location filename="../../view/pages/setting_page.py" line="377"/>
         <source>打开作者的个人空间</source>
         <translation>Open Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="373"/>
+        <location filename="../../view/pages/setting_page.py" line="378"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="373"/>
+        <location filename="../../view/pages/setting_page.py" line="378"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="352"/>
-        <location filename="../../view/pages/setting_page.py" line="353"/>
+        <location filename="../../view/pages/setting_page.py" line="356"/>
+        <location filename="../../view/pages/setting_page.py" line="357"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
@@ -4624,63 +4704,63 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation type="vanished">Help improve Ghost Downloader by providing feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="356"/>
+        <location filename="../../view/pages/setting_page.py" line="360"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
-        <location filename="../../view/pages/setting_page.py" line="517"/>
+        <location filename="../../view/pages/setting_page.py" line="371"/>
+        <location filename="../../view/pages/setting_page.py" line="522"/>
         <source>检查更新</source>
-        <translation>Check for Updates</translation>
+        <translation>Check For Updates</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="424"/>
+        <location filename="../../view/pages/setting_page.py" line="429"/>
         <source>已配置</source>
         <translation>Configuration Saved</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="424"/>
+        <location filename="../../view/pages/setting_page.py" line="429"/>
         <source>重启软件后生效</source>
         <translation>Restart required to take effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="434"/>
+        <location filename="../../view/pages/setting_page.py" line="439"/>
         <source>已复制配对令牌</source>
         <translation>Token Copied</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="440"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>已重新生成配对令牌</source>
         <translation>Token Regenerated</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="440"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Copied new token to clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="457"/>
+        <location filename="../../view/pages/setting_page.py" line="462"/>
         <source>解包失败</source>
         <translation>Unpack failed</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="464"/>
+        <location filename="../../view/pages/setting_page.py" line="469"/>
         <source>未连接</source>
         <translation>Not Connected</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="466"/>
+        <location filename="../../view/pages/setting_page.py" line="471"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Connected v{} (Desktop-managed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="468"/>
+        <location filename="../../view/pages/setting_page.py" line="473"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Connected v{} (Store-installed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="474"/>
+        <location filename="../../view/pages/setting_page.py" line="479"/>
         <source>选择导出路径</source>
         <translation>Select Export Path</translation>
     </message>
@@ -5709,32 +5789,32 @@ The next steps will guide you through the basic setup.</translation>
         <translation>Embed chapter markers into file after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="296"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="295"/>
         <source>YouTube Cookie</source>
         <translation>YouTube Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="301"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="300"/>
         <source>导入</source>
         <translation>Import</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="306"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="305"/>
         <source>清除 Cookie</source>
         <translation>Clear Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="324"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="323"/>
         <source>已导入</source>
         <translation>Imported</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="325"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="324"/>
         <source>下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入</source>
         <translation>A Cookie is required to download content that requires an account. It is recommended to automatically import it using the browser extension.</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="348"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="347"/>
         <source>安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。
 如需手动导入：打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中找到任意请求，复制其 Cookie 请求头的值并粘贴到下方。</source>
         <translation>After installing the browser extension, login information will be automatically included when downloading YouTube videos, with no manual steps required.
@@ -5745,7 +5825,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Paste Cookie to download content that requires login</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="343"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="342"/>
         <source>导入 YouTube Cookie</source>
         <translation>Import YouTube Cookie</translation>
     </message>
