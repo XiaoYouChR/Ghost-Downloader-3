@@ -13,13 +13,15 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
+from app.models.task import TaskStatus
 from app.view.cards.draft_cards import MultiFileDraftCard
 from app.view.cards.task_cards import MultiFileTaskCard
 from app.view.components.range_slider import RangeSlider
 from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
-from .task import AUDIO_QUALITY_LABELS, BilibiliTask, streamUrl
+from .stream import toStreamUrl
+from .task import AUDIO_QUALITY_LABELS, BilibiliTask, setEpisodeTitle, setPagePart, setTimeRanges
 
 CODEC_NAMES = {7: "H.264", 12: "H.265", 13: "AV1"}
 
@@ -27,6 +29,8 @@ StoryboardData = namedtuple("StoryboardData", ["sheets", "timestamps", "columns"
 
 COL_START = 2
 COL_END = 3
+ROLE_PAGES = Qt.ItemDataRole.UserRole + 1
+ROLE_LABEL = Qt.ItemDataRole.UserRole + 2
 
 
 def parseTimeInput(text: str) -> int:
@@ -51,13 +55,17 @@ def toTimeText(seconds: int) -> str:
     return f"{m}:{s:02d}"
 
 
-class PageSelectDialog(MessageBoxBase):
+class SelectDialog(MessageBoxBase):
 
     def __init__(self, task: BilibiliTask, parent=None):
         super().__init__(parent)
         self._pages = task.files or []
+        self._isSeason = task.isSeason
+        self._groups = task.episodeGroups() if self._isSeason else [[p] for p in self._pages]
+        self._isSyncing = False
 
-        self.titleLabel = SubtitleLabel(self.tr("选择分P"), self)
+        title = self.tr("选择合集") if self._isSeason else self.tr("选择分P")
+        self.titleLabel = SubtitleLabel(title, self)
         self.summaryLabel = BodyLabel("", self)
 
         self.selectAllButton = PrimaryPushButton(self.tr("全选"), self)
@@ -73,16 +81,17 @@ class PageSelectDialog(MessageBoxBase):
         self._refreshSummary()
 
     def _initWidget(self) -> None:
-        self.widget.setMinimumWidth(600)
+        self.widget.setMinimumWidth(640)
         self.yesButton.setText(self.tr("确定"))
         self.cancelButton.setText(self.tr("取消"))
 
-        self.treeView.setRootIsDecorated(False)
+        self.treeView.setRootIsDecorated(self._isSeason)
         self.treeView.setUniformRowHeights(True)
         self.treeView.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
 
+        firstCol = self.tr("合集") if self._isSeason else self.tr("分P")
         self.treeModel.setHorizontalHeaderLabels([
-            self.tr("分P"), self.tr("大小"), self.tr("开始"), self.tr("结束"),
+            firstCol, self.tr("大小"), self.tr("开始"), self.tr("结束"),
         ])
         self.treeView.setModel(self.treeModel)
         self.treeView.header().setStretchLastSection(False)
@@ -91,29 +100,63 @@ class PageSelectDialog(MessageBoxBase):
         self.treeView.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.treeView.header().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
 
-        for page in self._pages:
-            pageNumber = page.pageNumber
-            pagePart = page.pagePart.strip()
-            totalSize = page.size
+        for pages in self._groups:
+            if not self._isSeason or len(pages) == 1:
+                page = pages[0]
+                if self._isSeason:
+                    label = page.episodeTitle or page.bvid or f"#{page.index}"
+                else:
+                    label = page.pagePart.strip() or f"P{page.pageNumber}"
+                self._addLeaf(None, page, label)
+                continue
+            title = pages[0].episodeTitle or pages[0].bvid or f"#{pages[0].index}"
+            parent = QStandardItem(title)
+            parent.setCheckable(True)
+            parent.setEditable(True)
+            parent.setData(pages, ROLE_PAGES)
+            parent.setData(title, ROLE_LABEL)
+            parentSize = QStandardItem(toReadableSize(sum(p.size for p in pages if p.size > 0)) or "")
+            parentSize.setEditable(False)
+            sharedTimes = {(p.startTime, p.endTime) for p in pages}
+            if len(sharedTimes) == 1:
+                start, end = next(iter(sharedTimes))
+                parentStart = QStandardItem(toTimeText(start))
+                parentEnd = QStandardItem(toTimeText(end))
+            else:
+                parentStart = QStandardItem("")
+                parentEnd = QStandardItem("")
+            if pages[0].sectionTitle:
+                parent.setToolTip(pages[0].sectionTitle)
+            self.treeModel.appendRow([parent, parentSize, parentStart, parentEnd])
+            placeholder = QStandardItem("")
+            placeholder.setEnabled(False)
+            parent.appendRow(placeholder)
+            if all(p.selected for p in pages):
+                parent.setCheckState(Qt.CheckState.Checked)
+            elif any(p.selected for p in pages):
+                parent.setCheckState(Qt.CheckState.PartiallyChecked)
+            else:
+                parent.setCheckState(Qt.CheckState.Unchecked)
 
-            label = f"P{pageNumber}"
-            if pagePart:
-                label += f": {pagePart}"
+    def _addLeaf(self, parent: QStandardItem | None, page, label: str) -> None:
+        nameItem = QStandardItem(label)
+        nameItem.setCheckable(True)
+        nameItem.setEditable(True)
+        nameItem.setCheckState(Qt.CheckState.Checked if page.selected else Qt.CheckState.Unchecked)
+        nameItem.setData(page.index, Qt.ItemDataRole.UserRole)
+        nameItem.setData(label, ROLE_LABEL)
+        if page.sectionTitle:
+            nameItem.setToolTip(page.sectionTitle)
 
-            nameItem = QStandardItem(label)
-            nameItem.setCheckable(True)
-            nameItem.setCheckState(Qt.CheckState.Checked if page.selected else Qt.CheckState.Unchecked)
-            nameItem.setData(pageNumber, Qt.ItemDataRole.UserRole)
+        sizeItem = QStandardItem(toReadableSize(page.size) if page.size > 0 else "")
+        sizeItem.setEditable(False)
+        startItem = QStandardItem(toTimeText(page.startTime))
+        endItem = QStandardItem(toTimeText(page.endTime))
 
-            sizeItem = QStandardItem(toReadableSize(totalSize) if totalSize > 0 else "")
-            sizeItem.setEditable(False)
-
-            startItem = QStandardItem(toTimeText(page.startTime))
-            startItem.setData(pageNumber, Qt.ItemDataRole.UserRole)
-            endItem = QStandardItem(toTimeText(page.endTime))
-            endItem.setData(pageNumber, Qt.ItemDataRole.UserRole)
-
+        if parent is None:
             self.treeModel.appendRow([nameItem, sizeItem, startItem, endItem])
+        else:
+            parent.appendRow([nameItem, sizeItem, startItem, endItem])
 
     def _initLayout(self) -> None:
         actionsLayout = QHBoxLayout()
@@ -136,54 +179,259 @@ class PageSelectDialog(MessageBoxBase):
         self.clearButton.clicked.connect(lambda: self._setAll(False))
         self.invertButton.clicked.connect(self._onInvert)
         self.treeModel.itemChanged.connect(self._onItemChanged)
+        self.treeView.expanded.connect(self._onExpanded)
+
+    def _onExpanded(self, index) -> None:
+        item = self.treeModel.itemFromIndex(index)
+        if item is None:
+            return
+        pages = item.data(ROLE_PAGES)
+        if not pages or item.child(0, 0) is None:
+            return
+        if item.child(0, 0).data(Qt.ItemDataRole.UserRole) is not None:
+            return
+        self._isSyncing = True
+        try:
+            item.removeRow(0)
+            for page in pages:
+                self._addLeaf(item, page, page.pagePart.strip() or f"P{page.pageNumber}")
+            self._syncParent(item)
+        finally:
+            self._isSyncing = False
+        self._refreshSummary()
 
     def _onItemChanged(self, item: QStandardItem) -> None:
         if item.column() in (COL_START, COL_END):
             formatted = toTimeText(parseTimeInput(item.text()))
             if item.text() != formatted:
                 item.setText(formatted)
+            self._setTime(item)
+            self._refreshSummary()
+            return
+        if self._isSyncing or item.column() != 0:
+            return
+        oldLabel = item.data(ROLE_LABEL)
+        if oldLabel is not None and item.text() != oldLabel:
+            self._setName(item)
+            item.setData(item.text(), ROLE_LABEL)
+            self._refreshSummary()
+            return
+        self._isSyncing = True
+        try:
+            pages = item.data(ROLE_PAGES)
+            if pages is not None:
+                state = Qt.CheckState.Checked if item.checkState() != Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                if item.checkState() == Qt.CheckState.PartiallyChecked:
+                    item.setCheckState(Qt.CheckState.Checked)
+                    state = Qt.CheckState.Checked
+                selected = state == Qt.CheckState.Checked
+                for page in pages:
+                    page.selected = selected
+                if item.child(0, 0) and item.child(0, 0).data(Qt.ItemDataRole.UserRole) is not None:
+                    for i in range(item.rowCount()):
+                        item.child(i, 0).setCheckState(state)
+            elif item.parent():
+                self._syncParent(item.parent())
+                parentPages = item.parent().data(ROLE_PAGES)
+                if parentPages:
+                    fileIndex = item.data(Qt.ItemDataRole.UserRole)
+                    for page in parentPages:
+                        if page.index == fileIndex:
+                            page.selected = item.checkState() == Qt.CheckState.Checked
+            elif item.rowCount() > 0:
+                state = Qt.CheckState.Checked if item.checkState() != Qt.CheckState.Unchecked else Qt.CheckState.Unchecked
+                for i in range(item.rowCount()):
+                    child = item.child(i, 0)
+                    if child.data(Qt.ItemDataRole.UserRole) is not None:
+                        child.setCheckState(state)
+        finally:
+            self._isSyncing = False
         self._refreshSummary()
+
+    def _setTime(self, item: QStandardItem) -> None:
+        itemRow = item.row()
+        parent = item.parent()
+        if parent is None:
+            startItem = self.treeModel.item(itemRow, COL_START)
+            endItem = self.treeModel.item(itemRow, COL_END)
+            top = self.treeModel.item(itemRow, 0)
+            pages = top.data(ROLE_PAGES) if top else None
+            start = parseTimeInput(startItem.text() if startItem else "")
+            end = parseTimeInput(endItem.text() if endItem else "")
+            if pages:
+                for page in pages:
+                    page.startTime, page.endTime = start, end
+                return
+            fileIndex = top.data(Qt.ItemDataRole.UserRole) if top else None
+        else:
+            startItem = parent.child(itemRow, COL_START)
+            endItem = parent.child(itemRow, COL_END)
+            start = parseTimeInput(startItem.text() if startItem else "")
+            end = parseTimeInput(endItem.text() if endItem else "")
+            fileIndex = parent.child(itemRow, 0).data(Qt.ItemDataRole.UserRole)
+        if fileIndex is None:
+            return
+        for page in self._pages:
+            if page.index == fileIndex:
+                page.startTime, page.endTime = start, end
+                return
+
+    def _setName(self, item: QStandardItem) -> None:
+        text = item.text().strip()
+        pages = item.data(ROLE_PAGES)
+        if pages:
+            setEpisodeTitle(pages, text)
+            return
+        fileIndex = item.data(Qt.ItemDataRole.UserRole)
+        if fileIndex is None:
+            return
+        page = next((p for p in self._pages if p.index == fileIndex), None)
+        if page is None:
+            return
+        if item.parent() is None and page.episodeTitle:
+            setEpisodeTitle([page], text)
+        else:
+            setPagePart(page, text)
+
+    def _syncParent(self, parent: QStandardItem) -> None:
+        states = [parent.child(i, 0).checkState() for i in range(parent.rowCount())]
+        if all(s == Qt.CheckState.Checked for s in states):
+            parent.setCheckState(Qt.CheckState.Checked)
+        elif all(s == Qt.CheckState.Unchecked for s in states):
+            parent.setCheckState(Qt.CheckState.Unchecked)
+        else:
+            parent.setCheckState(Qt.CheckState.PartiallyChecked)
+
+    def _isLazy(self, item: QStandardItem) -> bool:
+        pages = item.data(ROLE_PAGES)
+        child = item.child(0, 0) if item.rowCount() else None
+        return bool(pages) and child is not None and child.data(Qt.ItemDataRole.UserRole) is None
 
     def _setAll(self, checked: bool) -> None:
         state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        for row in range(self.treeModel.rowCount()):
-            self.treeModel.item(row, 0).setCheckState(state)
+        self._isSyncing = True
+        try:
+            for row in range(self.treeModel.rowCount()):
+                top = self.treeModel.item(row, 0)
+                pages = top.data(ROLE_PAGES)
+                if self._isLazy(top):
+                    top.setCheckState(state)
+                    for page in pages:
+                        page.selected = checked
+                elif top.rowCount() == 0:
+                    top.setCheckState(state)
+                else:
+                    for i in range(top.rowCount()):
+                        child = top.child(i, 0)
+                        if child.data(Qt.ItemDataRole.UserRole) is not None:
+                            child.setCheckState(state)
+                    if pages:
+                        for page in pages:
+                            page.selected = checked
+                    self._syncParent(top)
+        finally:
+            self._isSyncing = False
+        self._refreshSummary()
 
     def _onInvert(self) -> None:
-        for row in range(self.treeModel.rowCount()):
-            item = self.treeModel.item(row, 0)
-            item.setCheckState(
-                Qt.CheckState.Unchecked if item.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
-            )
+        self._isSyncing = True
+        try:
+            for row in range(self.treeModel.rowCount()):
+                top = self.treeModel.item(row, 0)
+                pages = top.data(ROLE_PAGES)
+                if self._isLazy(top):
+                    for page in pages:
+                        page.selected = not page.selected
+                    if all(p.selected for p in pages):
+                        top.setCheckState(Qt.CheckState.Checked)
+                    elif any(p.selected for p in pages):
+                        top.setCheckState(Qt.CheckState.PartiallyChecked)
+                    else:
+                        top.setCheckState(Qt.CheckState.Unchecked)
+                elif top.rowCount() == 0:
+                    top.setCheckState(
+                        Qt.CheckState.Unchecked if top.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
+                    )
+                else:
+                    for i in range(top.rowCount()):
+                        child = top.child(i, 0)
+                        if child.data(Qt.ItemDataRole.UserRole) is not None:
+                            child.setCheckState(
+                                Qt.CheckState.Unchecked if child.checkState() == Qt.CheckState.Checked else Qt.CheckState.Checked
+                            )
+                    self._syncParent(top)
+                    if pages:
+                        for i in range(top.rowCount()):
+                            child = top.child(i, 0)
+                            fileIndex = child.data(Qt.ItemDataRole.UserRole)
+                            for page in pages:
+                                if page.index == fileIndex:
+                                    page.selected = child.checkState() == Qt.CheckState.Checked
+        finally:
+            self._isSyncing = False
+        self._refreshSummary()
 
     def _refreshSummary(self) -> None:
-        count = sum(
-            1 for row in range(self.treeModel.rowCount())
-            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
-        )
-        self.summaryLabel.setText(self.tr("{0}/{1} 个分P").format(count, self.treeModel.rowCount()))
-        self.yesButton.setEnabled(count > 0)
-
-    def selectedPageNumbers(self) -> set[int]:
-        return {
-            self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            for row in range(self.treeModel.rowCount())
-            if self.treeModel.item(row, 0).checkState() == Qt.CheckState.Checked
-        }
+        selected = self.selectedIndexes()
+        if self._isSeason:
+            selectedEps = sum(1 for pages in self._groups if any(p.index in selected for p in pages))
+            self.summaryLabel.setText(self.tr("{0}/{1} 集").format(selectedEps, len(self._groups)))
+        else:
+            self.summaryLabel.setText(self.tr("{0}/{1} 个分P").format(len(selected), len(self._pages)))
+        self.yesButton.setEnabled(len(selected) > 0)
 
     def selectedIndexes(self) -> set[int]:
-        return {n - 1 for n in self.selectedPageNumbers()}
+        result: set[int] = set()
+        for row in range(self.treeModel.rowCount()):
+            top = self.treeModel.item(row, 0)
+            pages = top.data(ROLE_PAGES)
+            if self._isLazy(top):
+                if top.checkState() == Qt.CheckState.Checked:
+                    result.update(p.index for p in pages)
+                elif top.checkState() == Qt.CheckState.PartiallyChecked:
+                    result.update(p.index for p in pages if p.selected)
+            elif top.rowCount() == 0:
+                fileIndex = top.data(Qt.ItemDataRole.UserRole)
+                if fileIndex is not None and top.checkState() == Qt.CheckState.Checked:
+                    result.add(fileIndex)
+            else:
+                for i in range(top.rowCount()):
+                    child = top.child(i, 0)
+                    fileIndex = child.data(Qt.ItemDataRole.UserRole)
+                    if fileIndex is not None and child.checkState() == Qt.CheckState.Checked:
+                        result.add(fileIndex)
+        return result
 
     def timeRanges(self) -> dict[int, tuple[int, int]]:
         result: dict[int, tuple[int, int]] = {}
         for row in range(self.treeModel.rowCount()):
-            pageNumber = self.treeModel.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            startText = self.treeModel.item(row, COL_START).text() if self.treeModel.item(row, COL_START) else ""
-            endText = self.treeModel.item(row, COL_END).text() if self.treeModel.item(row, COL_END) else ""
-            start = parseTimeInput(startText)
-            end = parseTimeInput(endText)
-            if start or end:
-                result[pageNumber] = (start, end)
+            top = self.treeModel.item(row, 0)
+            pages = top.data(ROLE_PAGES)
+            if self._isLazy(top):
+                start = parseTimeInput(self.treeModel.item(row, COL_START).text() or "")
+                end = parseTimeInput(self.treeModel.item(row, COL_END).text() or "")
+                if start or end:
+                    result.update((p.index, (start, end)) for p in pages)
+                continue
+            if top.rowCount() == 0:
+                items = [top]
+            else:
+                items = [top.child(i, 0) for i in range(top.rowCount())]
+            for item in items:
+                fileIndex = item.data(Qt.ItemDataRole.UserRole)
+                if fileIndex is None:
+                    continue
+                parent = item.parent()
+                itemRow = item.row()
+                if parent is None:
+                    startItem = self.treeModel.item(itemRow, COL_START)
+                    endItem = self.treeModel.item(itemRow, COL_END)
+                else:
+                    startItem = parent.child(itemRow, COL_START)
+                    endItem = parent.child(itemRow, COL_END)
+                start = parseTimeInput(startItem.text() if startItem else "")
+                end = parseTimeInput(endItem.text() if endItem else "")
+                result[fileIndex] = (start, end)
         return result
 
 
@@ -201,8 +449,8 @@ class BilibiliDraftCard(MultiFileDraftCard):
         initialVideoKey = None
         initialAudioKey = None
 
-        if task.files:
-            page = task.files[0]
+        page = next((p for p in task.files or [] if p._videoStreams or p._audioStreams), None)
+        if page:
             qualityMap = dict(zip(task._acceptQualities, task._qualityLabels))
 
             videoTiers = []
@@ -214,7 +462,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
                 bitrate = f'{kbps / 1000:.1f}Mbps' if kbps >= 1000 else f'{int(kbps)}Kbps'
                 label = f'{qualityName} ({codec}, {bitrate})'
                 videoTiers.append((key, label))
-                if streamUrl(s) == page.videoUrl:
+                if toStreamUrl(s) == page.videoUrl:
                     initialVideoKey = key
 
             seen = set()
@@ -225,7 +473,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
                     kbps = f'{s["bandwidth"] // 1000}Kbps'
                     name = AUDIO_QUALITY_LABELS.get(s["id"], str(s["id"]))
                     audioTiers.append((str(s["id"]), f'{name} ({kbps})'))
-                    if streamUrl(s) == page.audioUrl:
+                    if toStreamUrl(s) == page.audioUrl:
                         initialAudioKey = str(s["id"])
 
         self._trackBar.videoButton.setOptions(videoTiers, selected=initialVideoKey)
@@ -252,7 +500,8 @@ class BilibiliDraftCard(MultiFileDraftCard):
                 self._rangeSlider.setValues(0, page._duration)
 
         if self._selectFilesButton is not None:
-            self._selectFilesButton.setToolTip(self.tr("选择分P"))
+            tip = self.tr("选择合集") if task.isSeason else self.tr("选择分P")
+            self._selectFilesButton.setToolTip(tip)
         self._refreshButtonVisibility()
 
     def _initLayout(self) -> None:
@@ -304,7 +553,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
             task.isVideoEnabled = isVideo
             task.isAudioEnabled = isAudio
             task.isCoverEnabled = isCover
-            task._rebuildSteps()
+            task.update()
         self._refreshSummary()
         self._refreshButtonVisibility()
 
@@ -325,7 +574,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
             if file:
                 file.startTime = 0
                 file.endTime = 0
-                self._task._rebuildSteps()
+                self._task.update()
         w = self
         while w := w.parentWidget():
             w.updateGeometry()
@@ -335,7 +584,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
         if file:
             file.startTime = start
             file.endTime = end
-            self._task._rebuildSteps()
+            self._task.update()
             self._refreshSummary()
 
     def resizeEvent(self, event) -> None:
@@ -344,19 +593,14 @@ class BilibiliDraftCard(MultiFileDraftCard):
 
     def _onSelectFilesClicked(self) -> None:
         task: BilibiliTask = self._task
-        dialog = PageSelectDialog(task, self.window())
+        dialog = SelectDialog(task, self.window())
         try:
             if dialog.exec():
-                selected = dialog.selectedPageNumbers()
+                selected = dialog.selectedIndexes()
                 if selected:
-                    for page in task.files or []:
-                        ranges = dialog.timeRanges()
-                        if page.pageNumber in ranges:
-                            page.startTime, page.endTime = ranges[page.pageNumber]
-                        else:
-                            page.startTime = page.endTime = 0
-                    task.setSelection({n - 1 for n in selected})
-                    task._rebuildSteps()
+                    setTimeRanges(task.files or [], dialog.timeRanges())
+                    task.setSelection(selected)
+                    task.update()
                     self._refreshSummary()
         finally:
             dialog.deleteLater()
@@ -469,7 +713,10 @@ class BilibiliDraftCard(MultiFileDraftCard):
         size = toReadableSize(self._task.fileSize)
         if self._isSizeEstimated:
             size = f"~{size}"
-        self.sizeLabel.setText(size)
+        if self._task.isSeason:
+            self.sizeLabel.setText(f"{self._task.seasonSummary()} · {size}")
+        else:
+            self.sizeLabel.setText(size)
         self.nameLabel.setText(self._task.name)
         self._refreshFileIcon()
 
@@ -498,18 +745,21 @@ class BilibiliDraftCard(MultiFileDraftCard):
 
 
 class BilibiliTaskCard(MultiFileTaskCard):
-    fileSelectDialog = PageSelectDialog
+    fileSelectDialog = SelectDialog
+
+    def _refreshForStatus(self, task: BilibiliTask) -> None:
+        super()._refreshForStatus(task)
+        if (task.isSeason
+                and task.files and len(task.files) > 1
+                and not self._isFileMissing
+                and task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED}):
+            self.statusLabel.setText(task.seasonSummary())
 
     def _onSelectFilesClicked(self) -> None:
-        dialog = PageSelectDialog(self._task, self.window())
+        dialog = SelectDialog(self._task, self.window())
         try:
             if dialog.exec():
-                ranges = dialog.timeRanges()
-                for page in self._task.files or []:
-                    if page.pageNumber in ranges:
-                        page.startTime, page.endTime = ranges[page.pageNumber]
-                    else:
-                        page.startTime = page.endTime = 0
+                setTimeRanges(self._task.files or [], dialog.timeRanges())
                 self._taskService.applySelection(self._task, dialog.selectedIndexes())
                 self.refresh(force=True)
         finally:
@@ -520,5 +770,6 @@ class BilibiliTaskCard(MultiFileTaskCard):
         task: BilibiliTask = self._task
         if not task.isVideoEnabled and not task.isAudioEnabled:
             self.selectFilesButton.hide()
-        self.selectFilesButton.setToolTip(self.tr("选择分P"))
+        tip = self.tr("选择合集") if task.isSeason else self.tr("选择分P")
+        self.selectFilesButton.setToolTip(tip)
         self.selectFilesButton.installEventFilter(ToolTipFilter(self.selectFilesButton))

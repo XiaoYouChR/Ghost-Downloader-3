@@ -52,9 +52,9 @@
   },
   "packs": {
     "bili_pack": {
-      "version": "1.0.0",
+      "version": "1.1.0",
       "file": "bili_pack.zip",
-      "sha256": "dcfa54e8c0c42c647bb8e27608a70b3cfe2c39d955f6b0506aee4052d0bf161c",
+      "sha256": "539a0c94fd80d760b701b0127460a50294224fac54e145f524b1f41c6055d87a",
       "gdMinVersion": "4.2.0"
     },
     "bittorrent_pack": {
