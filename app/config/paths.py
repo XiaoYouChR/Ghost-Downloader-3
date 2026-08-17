@@ -32,6 +32,11 @@ USER_PATH = Path(QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.GenericDataLocation
 )) / "GhostDownloader"
 
+
+def hasNoAutoUpdateMarker() -> bool:
+    return (executableDir / "gd_no_auto_update").is_file()
+
+
 def isPortable() -> bool:
     return APP_DATA_DIR == str(PORTABLE_PATH)
 
