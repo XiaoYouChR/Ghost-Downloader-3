@@ -35,6 +35,7 @@ class Transfer:
     received: int
     downloadRate: int
     uploadRate: int
+    activePeers: int | None
     peers: int
 
 

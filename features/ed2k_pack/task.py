@@ -14,9 +14,13 @@ from app.models.task import Task, TaskError, TaskStep, TaskStatus
 class ED2kTask(Task):
     packId: str = "ed2k"
     fileHash: str = ""
+    activePeerCount: int | None = None
+    totalPeerCount: int = 0
 
     def reset(self) -> TaskStatus:
         self.fileHash = ""
+        self.activePeerCount = None
+        self.totalPeerCount = 0
         return super().reset()
 
     def deleteFiles(self):
@@ -59,6 +63,8 @@ class ED2kTaskStep(TaskStep):
                         continue
                     self.receivedBytes = t.received
                     self.speed = t.downloadRate
+                    task.activePeerCount = t.activePeers
+                    task.totalPeerCount = t.peers
                     reportSpeed(t.downloadRate)
                     if t.size > 0:
                         task.fileSize = t.size

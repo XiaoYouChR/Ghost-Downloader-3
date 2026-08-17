@@ -312,6 +312,7 @@ def _toTransfer(value: Any) -> Transfer:
             received=value["received"],
             downloadRate=value["downloadRate"],
             uploadRate=value["uploadRate"],
+            activePeers=value.get("activePeers"),
             peers=value["peers"],
         )
     except (KeyError, TypeError, ValueError) as error:

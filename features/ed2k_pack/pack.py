@@ -4,6 +4,7 @@ from app.models.pack import FeaturePack, TaskParser, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, ed2kRuntime
+from .cards import ED2kTaskCard
 from .task import ED2kTask, ED2kTaskStep, parseEd2kLink
 
 
@@ -32,6 +33,7 @@ class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
     parsers = [ED2kParser]
+    taskCards = {ED2kTask: ED2kTaskCard}
 
     def uriSchemes(self) -> list[UriScheme]:
         return [UriScheme("ed2k", "eD2k")]
