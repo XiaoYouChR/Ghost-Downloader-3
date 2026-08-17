@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from loguru import logger
+from PySide6.QtCore import QCoreApplication
 
 from app.models.task import Task, TaskError, TaskFile, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
@@ -135,7 +136,9 @@ class BilibiliTask(Task):
     def seasonSummary(self) -> str:
         groups = self.episodeGroups()
         selected = sum(1 for g in groups if any(p.selected for p in g))
-        return f"{selected}/{len(groups)} 集"
+        return QCoreApplication.translate(
+            "BilibiliTask", "{0}/{1} 集"
+        ).format(selected, len(groups))
 
     def setSelection(self, selectedIndexes) -> None:
         super().setSelection(selectedIndexes)
