@@ -250,8 +250,8 @@
         <translation type="vanished">Seed Ratio: {0:.2f}%</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="88"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="106"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="103"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="119"/>
         <source>做种 {0}</source>
         <translation>Seeded for {0}</translation>
     </message>
@@ -260,64 +260,63 @@
         <translation type="vanished">Peers {0}/Seeds {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="86"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="104"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="101"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="117"/>
         <source>分享率 {0}</source>
         <translation>Seed Ratio: {0}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="90"/>
         <source>{0} peers</source>
-        <translation>{0} Peers</translation>
+        <translation type="vanished">{0} Peers</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="48"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="91"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="60"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="104"/>
         <source>做种中</source>
         <translation>Seeding</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="43"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="55"/>
         <source>校验已有文件</source>
         <translation>Checking Existing Files</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="44"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="56"/>
         <source>检查续传状态</source>
         <translation>Checking Resume Data</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="45"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="57"/>
         <source>获取元数据</source>
         <translation>Downloading Metadata</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="46"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="58"/>
         <source>下载中</source>
         <translation>Downloading</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="47"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="59"/>
         <source>下载完成</source>
         <translation>Download Complete</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="49"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="61"/>
         <source>分配文件中</source>
         <translation>Allocating Files</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="50"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="62"/>
         <source>等待校验</source>
         <translation>Queued for Checks</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="51"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="63"/>
         <source>已暂停做种</source>
         <translation>Seeding Paused</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="52"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="64"/>
         <source>已暂停下载</source>
         <translation>Download Paused</translation>
     </message>
@@ -539,17 +538,17 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>Best Quality</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="487"/>
+        <location filename="../../../features/bili_pack/cards.py" line="491"/>
         <source>截取片段</source>
         <translation>Trim Media</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="503"/>
+        <location filename="../../../features/bili_pack/cards.py" line="507"/>
         <source>选择分P</source>
         <translation>Select Parts</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="503"/>
+        <location filename="../../../features/bili_pack/cards.py" line="507"/>
         <source>选择合集</source>
         <translation>Select Episodes</translation>
     </message>
@@ -618,7 +617,7 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliTask</name>
     <message>
-        <location filename="../../../features/bili_pack/task.py" line="139"/>
+        <location filename="../../../features/bili_pack/task.py" line="143"/>
         <source>{0}/{1} 集</source>
         <translation>{0}/{1} Eps</translation>
     </message>
@@ -626,14 +625,14 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BilibiliTaskCard</name>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="773"/>
+        <location filename="../../../features/bili_pack/cards.py" line="777"/>
         <source>选择分P</source>
         <translation>Select Parts</translation>
     </message>
     <message>
-        <location filename="../../../features/bili_pack/cards.py" line="773"/>
+        <location filename="../../../features/bili_pack/cards.py" line="777"/>
         <source>选择合集</source>
-        <translation type="unfinished"></translation>
+        <translation>Select Episodes</translation>
     </message>
 </context>
 <context>
@@ -1621,17 +1620,17 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>EditTaskDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="24"/>
+        <location filename="../../view/dialogs/edit_task.py" line="25"/>
         <source>编辑任务参数</source>
         <translation>Edit Task Options</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="30"/>
+        <location filename="../../view/dialogs/edit_task.py" line="31"/>
         <source>应用</source>
         <translation>Apply</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="31"/>
+        <location filename="../../view/dialogs/edit_task.py" line="32"/>
         <source>取消</source>
         <translation>Cancel</translation>
     </message>
@@ -2368,17 +2367,17 @@ select &quot;No Emulation&quot; to send as-is</translation>
 <context>
     <name>LiveEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="103"/>
+        <location filename="../../view/dialogs/edit_task.py" line="104"/>
         <source>确认更换链接</source>
         <translation>Confirm URL Update</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="104"/>
+        <location filename="../../view/dialogs/edit_task.py" line="105"/>
         <source>新链接与原链接的内容不一致，将清除已下载的 {0} 数据，是否继续？</source>
         <translation>The new URL differs from the original; {0} of existing data will be cleared. Continue?</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="120"/>
+        <location filename="../../view/dialogs/edit_task.py" line="121"/>
         <source>链接解析失败</source>
         <translation>Link Parsing Failed</translation>
     </message>
@@ -3187,7 +3186,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="485"/>
+        <location filename="../../view/cards/task_cards.py" line="486"/>
         <source>{0}/{1} 个文件</source>
         <translation>{0}/{1} Files</translation>
     </message>
@@ -4084,7 +4083,7 @@ Path: {1}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="55"/>
-        <location filename="../../view/pages/setting_page.py" line="371"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>关于</source>
         <translation>About</translation>
     </message>
@@ -4502,103 +4501,103 @@ Path: {1}</translation>
         <translation>Use System Settings</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="319"/>
+        <location filename="../../view/pages/setting_page.py" line="316"/>
         <source>切换到用户模式</source>
         <translation>Switch to User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="320"/>
-        <location filename="../../view/pages/setting_page.py" line="326"/>
+        <location filename="../../view/pages/setting_page.py" line="317"/>
+        <location filename="../../view/pages/setting_page.py" line="323"/>
         <source>数据存储模式</source>
         <translation>Configuration Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="321"/>
+        <location filename="../../view/pages/setting_page.py" line="318"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation>Currently in Portable mode, configuration stored next to the app: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="325"/>
+        <location filename="../../view/pages/setting_page.py" line="322"/>
         <source>切换到 Portable 模式</source>
         <translation>Switch to Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="327"/>
+        <location filename="../../view/pages/setting_page.py" line="324"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation>Currently in User mode, configuration stored at: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="331"/>
+        <location filename="../../view/pages/setting_page.py" line="328"/>
         <source>在应用程序启动时检查更新</source>
         <translation>Check For Updates on Startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="332"/>
+        <location filename="../../view/pages/setting_page.py" line="329"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>Get more features and improved stability with new versions</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="341"/>
+        <location filename="../../view/pages/setting_page.py" line="337"/>
         <source>关闭主窗口时</source>
         <translation>Main Window Closing Behavior</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="342"/>
+        <location filename="../../view/pages/setting_page.py" line="338"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation>Choose whether to continue running in background or exit when closing the main window</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
+        <location filename="../../view/pages/setting_page.py" line="339"/>
         <source>关闭时询问</source>
         <translation>Ask when closing</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
+        <location filename="../../view/pages/setting_page.py" line="339"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
+        <location filename="../../view/pages/setting_page.py" line="339"/>
         <source>退出程序</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="358"/>
+        <location filename="../../view/pages/setting_page.py" line="354"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Help improve Ghost Downloader by providing feedback, or view logs to troubleshoot issues</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="363"/>
         <source>查看详情</source>
         <translation>Details</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="363"/>
         <source>功能包</source>
         <translation>Feature Packs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="368"/>
+        <location filename="../../view/pages/setting_page.py" line="364"/>
         <source>管理已安装的功能包</source>
         <translation>Manage currently installed feature packs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="502"/>
+        <location filename="../../view/pages/setting_page.py" line="497"/>
         <source>用户模式</source>
         <translation>User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="502"/>
+        <location filename="../../view/pages/setting_page.py" line="497"/>
         <source>Portable 模式</source>
         <translation>Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="504"/>
+        <location filename="../../view/pages/setting_page.py" line="499"/>
         <source>切换数据存储模式</source>
         <translation>Switch Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="505"/>
+        <location filename="../../view/pages/setting_page.py" line="500"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4607,12 +4606,12 @@ Path: {1}</translation>
 Data will be copied to new location and the program will then exit. Please manually restart.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="517"/>
         <source>正在检查更新...</source>
         <translation>Checking for updates...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="534"/>
+        <location filename="../../view/pages/setting_page.py" line="529"/>
         <source>当前已是最新版本</source>
         <translation>You&apos;re running the latest version</translation>
     </message>
@@ -4621,17 +4620,17 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation type="vanished">Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="531"/>
+        <location filename="../../view/pages/setting_page.py" line="526"/>
         <source>检查更新失败</source>
         <translation>Failed to check update</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="531"/>
+        <location filename="../../view/pages/setting_page.py" line="526"/>
         <source>无法获取最新版本信息</source>
         <translation>Unable to get the latest version information</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="547"/>
+        <location filename="../../view/pages/setting_page.py" line="542"/>
         <source>搜索设置</source>
         <translation>Search Settings</translation>
     </message>
@@ -4656,33 +4655,33 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>Start Ghost Downloader minimized on system startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="347"/>
+        <location filename="../../view/pages/setting_page.py" line="343"/>
         <source>剪贴板监听</source>
         <translation>Monitor Clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="348"/>
+        <location filename="../../view/pages/setting_page.py" line="344"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>Automatically detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="377"/>
+        <location filename="../../view/pages/setting_page.py" line="372"/>
         <source>打开作者的个人空间</source>
         <translation>Open Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="378"/>
+        <location filename="../../view/pages/setting_page.py" line="373"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="356"/>
-        <location filename="../../view/pages/setting_page.py" line="357"/>
+        <location filename="../../view/pages/setting_page.py" line="352"/>
+        <location filename="../../view/pages/setting_page.py" line="353"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
@@ -4704,63 +4703,63 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation type="vanished">Help improve Ghost Downloader by providing feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="360"/>
+        <location filename="../../view/pages/setting_page.py" line="356"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="371"/>
-        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="517"/>
         <source>检查更新</source>
         <translation>Check For Updates</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="429"/>
+        <location filename="../../view/pages/setting_page.py" line="424"/>
         <source>已配置</source>
         <translation>Configuration Saved</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="429"/>
+        <location filename="../../view/pages/setting_page.py" line="424"/>
         <source>重启软件后生效</source>
         <translation>Restart required to take effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="439"/>
+        <location filename="../../view/pages/setting_page.py" line="434"/>
         <source>已复制配对令牌</source>
         <translation>Token Copied</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="440"/>
         <source>已重新生成配对令牌</source>
         <translation>Token Regenerated</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="445"/>
+        <location filename="../../view/pages/setting_page.py" line="440"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Copied new token to clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="462"/>
+        <location filename="../../view/pages/setting_page.py" line="457"/>
         <source>解包失败</source>
         <translation>Unpack failed</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="469"/>
+        <location filename="../../view/pages/setting_page.py" line="464"/>
         <source>未连接</source>
         <translation>Not Connected</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="471"/>
+        <location filename="../../view/pages/setting_page.py" line="466"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Connected v{} (Desktop-managed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="473"/>
+        <location filename="../../view/pages/setting_page.py" line="468"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Connected v{} (Store-installed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="479"/>
+        <location filename="../../view/pages/setting_page.py" line="474"/>
         <source>选择导出路径</source>
         <translation>Select Export Path</translation>
     </message>
@@ -4856,119 +4855,125 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>TaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="78"/>
+        <location filename="../../view/cards/task_cards.py" line="79"/>
         <source>暂停/继续</source>
         <translation>Pause/Resume</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="83"/>
+        <location filename="../../view/cards/task_cards.py" line="84"/>
         <source>选择文件</source>
         <translation>Select Files</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="86"/>
+        <location filename="../../view/cards/task_cards.py" line="87"/>
         <source>校验文件哈希</source>
         <translation>Verify File Hash</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="93"/>
+        <location filename="../../view/cards/task_cards.py" line="94"/>
         <source>打开文件</source>
         <translation>Open File</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="98"/>
+        <location filename="../../view/cards/task_cards.py" line="99"/>
         <source>打开文件夹</source>
         <translation>Open Folder</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="99"/>
+        <location filename="../../view/cards/task_cards.py" line="100"/>
         <source>删除</source>
         <translation>Delete</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="257"/>
+        <location filename="../../view/cards/task_cards.py" line="258"/>
         <source>文件不存在</source>
         <translation>File does not exist</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="260"/>
+        <location filename="../../view/cards/task_cards.py" line="261"/>
         <source>完成于 {}</source>
         <translation>Completed at {}</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="263"/>
+        <location filename="../../view/cards/task_cards.py" line="264"/>
         <source>任务已经完成</source>
         <translation>Task Completed</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="274"/>
+        <location filename="../../view/cards/task_cards.py" line="275"/>
         <source>下载过程中发生错误，请稍后重试</source>
         <translation>An error occurred during download, please try again later</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="280"/>
+        <location filename="../../view/cards/task_cards.py" line="281"/>
         <source>任务已经暂停</source>
         <translation>Task Paused</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="282"/>
+        <location filename="../../view/cards/task_cards.py" line="283"/>
         <source>任务正在等待</source>
         <translation>Task Pending</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="328"/>
+        <location filename="../../view/cards/task_cards.py" line="329"/>
         <source>删除任务</source>
         <translation>Delete Task</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="328"/>
+        <location filename="../../view/cards/task_cards.py" line="329"/>
         <source>确定要删除这个下载任务吗？</source>
         <translation>Are you sure you want to delete this download task?</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="329"/>
+        <location filename="../../view/cards/task_cards.py" line="330"/>
         <source>同时删除已下载的文件</source>
         <translation>Also delete downloaded files</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="338"/>
+        <location filename="../../view/cards/task_cards.py" line="339"/>
         <source>文件不存在，无法校验</source>
         <translation>Cannot verify nonexistent file</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="372"/>
+        <location filename="../../view/cards/task_cards.py" line="373"/>
         <source>复制下载链接</source>
         <translation>Copy Download Link</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="377"/>
+        <location filename="../../view/cards/task_cards.py" line="378"/>
         <source>复制校验值</source>
         <translation>Copy Checksum</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="382"/>
+        <location filename="../../view/cards/task_cards.py" line="383"/>
         <source>编辑任务参数...</source>
         <translation>Edit Task Options...</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="386"/>
+        <location filename="../../view/cards/task_cards.py" line="387"/>
         <source>移到最前</source>
         <translation>Move To Top</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="390"/>
+        <location filename="../../view/cards/task_cards.py" line="391"/>
         <source>重新下载</source>
         <translation>Restart Download</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="395"/>
+        <location filename="../../view/cards/task_cards.py" line="396"/>
         <source>移动到分类</source>
         <translation>Assign Category</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="397"/>
+        <location filename="../../view/cards/task_cards.py" line="398"/>
         <source>未分类</source>
         <translation>Uncategorized</translation>
+    </message>
+    <message>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="45"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="13"/>
+        <source>{0}/{1} Peers</source>
+        <translation>{0}/{1} Peers</translation>
     </message>
 </context>
 <context>
@@ -5022,48 +5027,48 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>TaskDraftDialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="76"/>
+        <location filename="../../view/dialogs/task_draft.py" line="77"/>
         <source>添加任务</source>
         <translation>Add Task</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="81"/>
+        <location filename="../../view/dialogs/task_draft.py" line="82"/>
         <source>批量添加</source>
         <translation>Batch Add</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="82"/>
-        <location filename="../../view/dialogs/task_draft.py" line="324"/>
+        <location filename="../../view/dialogs/task_draft.py" line="83"/>
+        <location filename="../../view/dialogs/task_draft.py" line="325"/>
         <source>导入文件</source>
         <translation>Import File(s)</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="96"/>
+        <location filename="../../view/dialogs/task_draft.py" line="97"/>
         <source>添加多个下载链接时，请确保每行只有一个下载链接</source>
         <translation>When adding multiple download links, make sure each line contains only one link</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="106"/>
+        <location filename="../../view/dialogs/task_draft.py" line="107"/>
         <source>下载</source>
         <translation>Download</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="108"/>
+        <location filename="../../view/dialogs/task_draft.py" line="109"/>
         <source>稍后下载</source>
         <translation>Download Later</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="114"/>
+        <location filename="../../view/dialogs/task_draft.py" line="115"/>
         <source>取消</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="282"/>
+        <location filename="../../view/dialogs/task_draft.py" line="283"/>
         <source>链接解析失败</source>
         <translation>Link Parsing Failed</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="319"/>
+        <location filename="../../view/dialogs/task_draft.py" line="320"/>
         <source>所有可导入文件 ({0})</source>
         <translation>All Supported Formats ({0})</translation>
     </message>
@@ -5071,29 +5076,29 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../view/error_catalog.py" line="3"/>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="4"/>
+        <location filename="../../view/error_catalog.py" line="8"/>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="5"/>
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="13"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} is not installed, please install it in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="4"/>
+        <location filename="../../view/error_catalog.py" line="9"/>
         <source>服务器返回了错误（{status}）</source>
         <translation>Server returned an error ({status})</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="5"/>
+        <location filename="../../view/error_catalog.py" line="10"/>
         <source>无法建立 FTP 连接</source>
         <translation>FTP connection failed</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="6"/>
+        <location filename="../../view/error_catalog.py" line="11"/>
         <source>进程异常退出（{code}）：{detail}</source>
         <translation>Process terminated abnormally ({code}): {detail}</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="7"/>
+        <location filename="../../view/error_catalog.py" line="12"/>
         <source>发生了意外错误：{detail}</source>
         <translation>Unexpected error: {detail}</translation>
     </message>
@@ -5151,7 +5156,12 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>ED2k error: {detail}</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="5"/>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="4"/>
+        <source>该 eD2k 链接已在下载中</source>
+        <translation>This eD2k link is already being downloaded</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="6"/>
         <source>ED2kSession 未启动</source>
         <translation>ED2k session not started</translation>
     </message>
@@ -5214,6 +5224,41 @@ Data will be copied to new location and the program will then exit. Please manua
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="12"/>
         <source>未找到可用的视频格式</source>
         <translation>No available video format found</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="3"/>
+        <source>服务器拒绝了请求（403），链接可能已失效（{detail}）</source>
+        <translation>Request refused (403), link might have expired: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="4"/>
+        <source>资源不存在（404），链接可能已失效（{detail}）</source>
+        <translation>Resource does not exist (404), link might no longer be available: {detail}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="5"/>
+        <source>服务器返回了错误（{detail}）</source>
+        <translation>Server returned an error ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="6"/>
+        <source>无法解析域名，请检查网络连接（{detail}）</source>
+        <translation>Domain resolution failed, please check your connection ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="7"/>
+        <source>连接被拒绝，请检查网络连接（{detail}）</source>
+        <translation>Connection refused, please check your connection ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="8"/>
+        <source>连接超时，请检查网络连接（{detail}）</source>
+        <translation>Connection timed out, please check your connection ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="9"/>
+        <source>SSL 连接失败，请检查网络连接（{detail}）</source>
+        <translation>SSL handshake failed, please check your connection ({detail})</translation>
     </message>
 </context>
 <context>
@@ -5489,22 +5534,22 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>UpdateErrors</name>
     <message>
-        <location filename="../../view/error_catalog.py" line="9"/>
+        <location filename="../../view/error_catalog.py" line="14"/>
         <source>无法获取版本信息</source>
         <translation>Unable to retrieve version information</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="10"/>
+        <location filename="../../view/error_catalog.py" line="15"/>
         <source>校验失败</source>
         <translation>Checksum verification failed</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="11"/>
+        <location filename="../../view/error_catalog.py" line="16"/>
         <source>当前平台无可用更新</source>
         <translation>No update is available for the current platform</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="12"/>
+        <location filename="../../view/error_catalog.py" line="17"/>
         <source>DMG 中未找到 .app</source>
         <translation>No .app bundle was found in the DMG</translation>
     </message>
@@ -6059,7 +6104,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
 <context>
     <name>self._dialog</name>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="45"/>
+        <location filename="../../view/dialogs/task_draft.py" line="46"/>
         <source>添加任务</source>
         <translation>Add Task</translation>
     </message>
