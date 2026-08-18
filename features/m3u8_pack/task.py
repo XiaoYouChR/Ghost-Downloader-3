@@ -36,6 +36,49 @@ DECRYPTION_ENGINES = {
     "Shaka Packager": "SHAKA_PACKAGER",
 }
 
+ERROR_HINTS = (
+    ("response status code does not indicate success: 403",
+     "服务器拒绝了请求（403），链接可能已失效（{detail}）"),
+    ("response status code does not indicate success: 404",
+     "资源不存在（404），链接可能已失效（{detail}）"),
+    ("response status code does not indicate success:",
+     "服务器返回了错误（{detail}）"),
+    ("no such host is known",
+     "无法解析域名，请检查网络连接（{detail}）"),
+    ("connection refused",
+     "连接被拒绝，请检查网络连接（{detail}）"),
+    ("the request was canceled due to the configured httpclient.timeout",
+     "连接超时，请检查网络连接（{detail}）"),
+    ("the ssl connection could not be established",
+     "SSL 连接失败，请检查网络连接（{detail}）"),
+)
+
+LOG_LINE_PATTERN = re.compile(
+    r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(WARN|ERROR)\s*:\s*(.*)"
+)
+
+
+def parseError(output: str, returncode: int) -> TaskError:
+    lowered = output.lower()
+    for needle, message in ERROR_HINTS:
+        if needle in lowered:
+            detail = parseDiagnostic(output)
+            return TaskError(message, detail=detail)
+
+    detail = parseDiagnostic(output)
+    return TaskError(
+        "进程异常退出（{code}）：{detail}",
+        code=returncode,
+        detail=detail or "N_m3u8DL-RE",
+    )
+
+
+def parseDiagnostic(output: str) -> str:
+    last = ""
+    for m in LOG_LINE_PATTERN.finditer(output):
+        last = m.group(2).strip()
+    return last
+
 
 @dataclass(kw_only=True, eq=False)
 class M3U8Task(Task):
@@ -422,11 +465,7 @@ class M3U8TaskStep(TaskStep):
                 output = getattr(self, "_processOutput", "")
                 if output:
                     logger.warning("N_m3u8DL-RE output:\n{}", output[-8192:])
-                raise TaskError(
-                    "进程异常退出（{code}）：{detail}",
-                    code=self._process.returncode,
-                    detail=self.lastMessage or "N_m3u8DL-RE",
-                )
+                raise parseError(output, self._process.returncode)
 
             if not self._findOutputFile():
                 raise TaskError(
