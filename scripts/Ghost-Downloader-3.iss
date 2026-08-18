@@ -31,8 +31,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 LicenseFile=LICENSE
-; Remove the following line to run in administrative install mode (install for all users).
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=dist
 OutputBaseFilename=Ghost-Downloader-v{#MyAppVersion}-Windows-Setup
 SetupIconFile=app/assets/installer_logo.ico
