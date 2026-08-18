@@ -16,7 +16,25 @@ class ED2kSession:
     def __init__(self):
         self._client: Client | None = None
         self._openLock = asyncio.Lock()
+        self._activeTransfers: set[tuple[str, int]] = set()
         self.submit = None
+
+    @staticmethod
+    def transferIdentity(fileHash: str, fileSize: int) -> tuple[str, int]:
+        return fileHash.upper(), fileSize
+
+    def hasActiveTransfer(self, fileHash: str, fileSize: int) -> bool:
+        return self.transferIdentity(fileHash, fileSize) in self._activeTransfers
+
+    def acquireTransfer(self, fileHash: str, fileSize: int) -> tuple[str, int]:
+        identity = self.transferIdentity(fileHash, fileSize)
+        if identity in self._activeTransfers:
+            raise TaskError("该 eD2k 链接已在下载中")
+        self._activeTransfers.add(identity)
+        return identity
+
+    def releaseTransfer(self, identity: tuple[str, int]) -> None:
+        self._activeTransfers.discard(identity)
 
     def removeHash(self, fileHash: str) -> None:
         if self._client is None or self.submit is None:
