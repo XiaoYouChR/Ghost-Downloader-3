@@ -160,6 +160,51 @@ class TestBuildPages:
         assert [p.sectionTitle for p in pages] == ["正片", "正片", "正片", "正片", "花絮"]
 
 
+def test_toStreamUrl_accepts_snake_case():
+    from bili_pack.stream import toStreamUrl
+    assert toStreamUrl({"base_url": "https://cdn.example/v"}) == "https://cdn.example/v"
+    assert toStreamUrl({"baseUrl": "https://cdn.example/v"}) == "https://cdn.example/v"
+
+
+def test_parseDash_allows_video_only():
+    from bili_pack.stream import parseDash
+    from bili_pack.task import BiliPage
+
+    page = BiliPage(index=0, relativePath="p", _duration=10)
+    parseDash(page, {
+        "video": [{"id": 80, "codecid": 7, "bandwidth": 8000, "base_url": "https://v"}],
+        "audio": None,
+    }, qn=80, acceptQuality=[80])
+    assert page.videoUrl == "https://v"
+    assert page.audioUrl == ""
+    assert page.audioSize == 0
+
+    from pathlib import Path
+    from bili_pack.task import BilibiliTask
+    task = BilibiliTask(
+        name="v.mp4", url="u", outputFolder=Path("."),
+        files=[page], _baseName="v",
+    )
+    assert task.hasAudio is False
+    task.update()
+    assert not any(type(s).__name__ == "BilibiliAudioStep" for s in task.steps)
+
+
+def test_parseDash_honors_audioQn():
+    from bili_pack.stream import parseDash
+    from bili_pack.task import BiliPage
+
+    page = BiliPage(index=0, relativePath="p", _duration=10)
+    parseDash(page, {
+        "video": [{"id": 80, "codecid": 7, "bandwidth": 8000, "baseUrl": "https://v"}],
+        "audio": [
+            {"id": 30216, "bandwidth": 64000, "baseUrl": "https://a64"},
+            {"id": 30280, "bandwidth": 192000, "baseUrl": "https://a192"},
+        ],
+    }, qn=80, acceptQuality=[80], audioQn=30280)
+    assert page.audioUrl == "https://a192"
+
+
 def test_buildSize_from_bandwidth_and_duration():
     assert buildSize({"bandwidth": 8000}, 10) == 10000
     assert buildSize(None, 10) == 0

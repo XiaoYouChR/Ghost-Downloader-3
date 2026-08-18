@@ -465,19 +465,23 @@ class BilibiliDraftCard(MultiFileDraftCard):
                 if toStreamUrl(s) == page.videoUrl:
                     initialVideoKey = key
 
-            seen = set()
-            audioTiers = []
-            for s in page._audioStreams:
-                if s["id"] not in seen:
-                    seen.add(s["id"])
-                    kbps = f'{s["bandwidth"] // 1000}Kbps'
-                    name = AUDIO_QUALITY_LABELS.get(s["id"], str(s["id"]))
-                    audioTiers.append((str(s["id"]), f'{name} ({kbps})'))
-                    if toStreamUrl(s) == page.audioUrl:
-                        initialAudioKey = str(s["id"])
+            if page._audioStreams:
+                seen = set()
+                audioTiers = []
+                for s in page._audioStreams:
+                    if s["id"] not in seen:
+                        seen.add(s["id"])
+                        kbps = f'{s["bandwidth"] // 1000}Kbps'
+                        name = AUDIO_QUALITY_LABELS.get(s["id"], str(s["id"]))
+                        audioTiers.append((str(s["id"]), f'{name} ({kbps})'))
+                        if toStreamUrl(s) == page.audioUrl:
+                            initialAudioKey = str(s["id"])
 
         self._trackBar.videoButton.setOptions(videoTiers, selected=initialVideoKey)
         self._trackBar.audioButton.setOptions(audioTiers, selected=initialAudioKey)
+        if not task.hasAudio and len(task.files or []) <= 1:
+            self._trackBar.audioButton.setTrackEnabled(False)
+            self._trackBar.audioButton.setChecked(False)
 
         self._subtitleChoices = self._buildSubtitleChoices()
         self._trackBar.subtitleButton.setTrackEnabled(bool(self._subtitleChoices))

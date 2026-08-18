@@ -133,6 +133,10 @@ class BilibiliTask(Task):
             groups[key].append(page)
         return [groups[k] for k in order]
 
+    @property
+    def hasAudio(self) -> bool:
+        return any(f.audioUrl or f._audioStreams for f in self.files or [])
+
     def seasonSummary(self) -> str:
         groups = self.episodeGroups()
         selected = sum(1 for g in groups if any(p.selected for p in g))
@@ -277,7 +281,8 @@ class BilibiliTask(Task):
 
     def _addFileSteps(self, file: BiliPage, stepIndex: int) -> int:
         hasSubs = bool(self.subtitleLanguages)
-        needsMerge = self.isVideoEnabled and self.isAudioEnabled
+        useAudio = self.isAudioEnabled and (self.hasAudio or len(self.files or []) > 1)
+        needsMerge = self.isVideoEnabled and useAudio
         pageSuffix = self._pageSuffix(file)
         fileTrim = bool(file.startTime or file.endTime)
         if self.isVideoEnabled:
@@ -293,7 +298,7 @@ class BilibiliTask(Task):
                 pageSuffix=pageSuffix,
             ))
             self.steps[-1]._bindTask(self)
-        if self.isAudioEnabled:
+        if useAudio:
             stepIndex += 1
             self.steps.append(BilibiliAudioStep(
                 stepIndex=stepIndex,
@@ -362,7 +367,7 @@ class BilibiliVideoStep(HttpTaskStep):
         stem = pageStem(self.task.name, self.pageSuffix)
         page = pageByIndex(self.task, self.fileIndex)
         hasTrim = page is not None and bool(page.startTime or page.endTime)
-        if self.task.isAudioEnabled or hasTrim:
+        if (self.task.isAudioEnabled and (self.task.hasAudio or len(self.task.files or []) > 1)) or hasTrim:
             return str(self.task.filesFolder / f"{stem}.video.m4s")
         return str(self.task.filesFolder / f"{stem}.mp4")
 
@@ -371,7 +376,9 @@ class BilibiliVideoStep(HttpTaskStep):
         if page and not page.videoUrl:
             from .config import bilibiliConfig
             qn = self.task.requestedQn or bilibiliConfig.defaultQuality.value
-            _, _, usedQn = await fetchPlayurl(page, qn=qn, headers=page.headers)
+            _, _, usedQn = await fetchPlayurl(
+                page, qn=qn, headers=page.headers, audioQn=self.task.requestedAudioQn,
+            )
             self.task.requestedQn = usedQn
         if page:
             self.url = page.videoUrl
@@ -437,14 +444,17 @@ class BilibiliAudioStep(HttpTaskStep):
         if page and not page.audioUrl:
             from .config import bilibiliConfig
             qn = self.task.requestedQn or bilibiliConfig.defaultQuality.value
-            _, _, usedQn = await fetchPlayurl(page, qn=qn, headers=page.headers)
+            _, _, usedQn = await fetchPlayurl(
+                page, qn=qn, headers=page.headers, audioQn=self.task.requestedAudioQn,
+            )
             self.task.requestedQn = usedQn
         if page:
             self.url = page.audioUrl
             self.fileSize = page.audioSize
             self.headers = dict(page.headers)
         if not self.url:
-            raise TaskError("未获取到音频流地址")
+            self.setStatus(TaskStatus.COMPLETED)
+            return
         if page and (page.startTime or page.endTime):
             await self._updateSegmentRange(page)
         else:

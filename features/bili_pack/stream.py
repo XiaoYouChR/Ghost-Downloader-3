@@ -24,10 +24,10 @@ class NoopRunner:
 
 
 def toStreamUrl(s: dict) -> str:
-    url = s.get("baseUrl") or ""
+    url = s.get("baseUrl") or s.get("base_url") or ""
     if url:
         return url
-    for item in (s.get("backupUrl") or []):
+    for item in (s.get("backupUrl") or s.get("backup_url") or []):
         if item:
             return item
     return ""
@@ -82,6 +82,24 @@ def buildFnval(qn: int) -> int:
     return fnval
 
 
+def parseDash(page: BiliPage, dash: dict, *, qn: int, acceptQuality: list[int], audioQn: int = 0) -> None:
+    videoStreams = list(dash.get("video") or [])
+    audioStreams = list(dash.get("audio") or [])
+    if not videoStreams:
+        raise ValueError("Bilibili 返回结果中不存在可用的媒体流")
+    video = matchStream(videoStreams, qn, acceptQuality)
+    audio = None
+    if audioStreams:
+        audioIds = [s.get("id") for s in audioStreams if s.get("id") is not None]
+        audio = matchStream(audioStreams, audioQn or None, audioIds if audioQn else None)
+    page.videoUrl = toStreamUrl(video)
+    page.audioUrl = toStreamUrl(audio) if audio else ""
+    page._videoStreams = videoStreams
+    page._audioStreams = audioStreams
+    page.videoSize = buildSize(video, page._duration)
+    page.audioSize = buildSize(audio, page._duration) if audio else 0
+
+
 def matchStream(
     streams: list[dict],
     quality: int | None = None,
@@ -113,6 +131,7 @@ async def fetchPlayurl(
     qn: int,
     headers: dict,
     signParams=None,
+    audioQn: int = 0,
 ) -> tuple[list[int], list[str], int]:
     if signParams is None:
         from .account import BilibiliAccount
@@ -145,25 +164,16 @@ async def fetchPlayurl(
         playPayload = await response.json()
         if playPayload.get("code") not in {None, 0}:
             if qn != 80:
-                return await fetchPlayurl(page, qn=80, headers=headers, signParams=signParams)
+                return await fetchPlayurl(page, qn=80, headers=headers, signParams=signParams, audioQn=audioQn)
             raise ValueError(playPayload.get("message") or "获取 Bilibili 音视频流失败")
 
         pageData = playPayload.get("data") or {}
         dash = pageData.get("dash") or {}
-        videoStreams = dash.get("video") or []
-        audioStreams = dash.get("audio") or []
-        if (not videoStreams or not audioStreams) and qn != 80:
-            return await fetchPlayurl(page, qn=80, headers=headers, signParams=signParams)
-
+        videoStreams = list(dash.get("video") or [])
+        if not videoStreams and qn != 80:
+            return await fetchPlayurl(page, qn=80, headers=headers, signParams=signParams, audioQn=audioQn)
         acceptQuality = list(pageData.get("accept_quality") or [])
-        video = matchStream(videoStreams, qn, acceptQuality)
-        audio = matchStream(audioStreams)
-        page.videoUrl = toStreamUrl(video)
-        page.audioUrl = toStreamUrl(audio)
-        page._videoStreams = videoStreams
-        page._audioStreams = audioStreams
-        page.videoSize = buildSize(video, page._duration)
-        page.audioSize = buildSize(audio, page._duration)
+        parseDash(page, dash, qn=qn, acceptQuality=acceptQuality, audioQn=audioQn)
         if not page.subtitles:
             page.subtitles = await fetchSubtitles(client, page)
         return acceptQuality, list(pageData.get("accept_description") or []), qn
