@@ -19,6 +19,9 @@ APP_DATA_DIR: str = (
 )
 
 PORTABLE_PATH = executableDir / "GhostDownloader"
+
+SEED_FEATURES_DIR = executableDir / "features"
+FEATURES_DIR = Path(APP_DATA_DIR) / "features"
 USER_PATH = Path(QStandardPaths.writableLocation(
     QStandardPaths.StandardLocation.GenericDataLocation
 )) / "GhostDownloader"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -11,6 +12,35 @@ from app.models.pack import PackManifest
 
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack
+
+
+def seedPacks(seedDir: Path, targetDir: Path) -> None:
+    from PySide6.QtCore import QVersionNumber
+
+    if not seedDir.exists():
+        return
+    targetDir.mkdir(parents=True, exist_ok=True)
+
+    for packDir in sorted(seedDir.iterdir()):
+        if not packDir.is_dir() or packDir.name.startswith("."):
+            continue
+        seedManifest = PackManifest.fromDir(packDir)
+        if seedManifest is None or not seedManifest.version:
+            continue
+
+        target = targetDir / packDir.name
+        userManifest = PackManifest.fromDir(target) if target.exists() else None
+
+        if userManifest is not None and userManifest.version:
+            seedVersion = QVersionNumber.fromString(seedManifest.version)
+            userVersion = QVersionNumber.fromString(userManifest.version)
+            if userVersion >= seedVersion:
+                continue
+
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(packDir, target)
+        logger.info("种子 Pack 已同步: {} {}", packDir.name, seedManifest.version)
 
 
 def loadPacks(featuresDir: Path, services=None) -> list[FeaturePack]:

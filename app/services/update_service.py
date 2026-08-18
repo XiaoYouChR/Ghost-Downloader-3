@@ -17,7 +17,7 @@ from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
 from app.config.constants import VERSION
-from app.config.paths import APP_DATA_DIR, executableDir
+from app.config.paths import APP_DATA_DIR, FEATURES_DIR, executableDir
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
@@ -154,8 +154,7 @@ class UpdateService(QObject):
             return
 
         packsData = data.get("packs", {})
-        featuresDir = executableDir / "features"
-        for packDir in sorted(featuresDir.iterdir()) if featuresDir.exists() else []:
+        for packDir in sorted(FEATURES_DIR.iterdir()) if FEATURES_DIR.exists() else []:
             if not packDir.is_dir() or packDir.name.startswith("."):
                 continue
             manifest = PackManifest.fromDir(packDir)
@@ -274,7 +273,7 @@ class UpdateService(QObject):
         zipPath = STAGING_DIR / f"{packId}.zip"
         if not zipPath.is_file():
             return
-        pendingDir = executableDir / "features" / f"{packId}_pending"
+        pendingDir = FEATURES_DIR / f"{packId}_pending"
         pendingDir.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zipPath) as zf:
             zf.extractall(pendingDir)

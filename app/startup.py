@@ -58,9 +58,11 @@ def createServices(coroutineRunner, categoryService, speedMeter):
 def loadPacks(featureService, coroutineRunner, speedMeter):
     from app.models.pack import PackConfig, PackServices
     from app.services.update_service import installPendingPacks
-    from app.config.paths import executableDir
+    from app.config.paths import FEATURES_DIR, SEED_FEATURES_DIR
+    from app.loader import seedPacks
 
-    installPendingPacks(executableDir / "features")
+    installPendingPacks(FEATURES_DIR)
+    seedPacks(SEED_FEATURES_DIR, FEATURES_DIR)
 
     services = PackServices(
         coroutineRunner=coroutineRunner,
