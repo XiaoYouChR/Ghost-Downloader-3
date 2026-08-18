@@ -64,7 +64,7 @@ async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
         if not apps:
             raise RuntimeError("DMG 中未找到 .app")
 
-        await asyncio.to_thread(shutil.copytree, apps[0], targetDir)
+        await asyncio.to_thread(shutil.copytree, apps[0], targetDir, symlinks=True)
     finally:
         await asyncio.create_subprocess_exec(
             "hdiutil", "detach", str(mountPoint), "-quiet",
