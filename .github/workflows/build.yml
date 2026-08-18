@@ -38,6 +38,14 @@ on:
         options:
           - 'true'
           - 'false'
+      generate_delta:
+        description: 'Generate Delta Patch'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
       use_cn_mirror:
         description: 'Use CN Mirror (Android)'
         type: boolean
@@ -222,7 +230,7 @@ jobs:
           mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
       - name: Generate delta patch
-        if: ${{ github.event.inputs.create_release == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' && github.event.inputs.generate_delta == 'true' }}
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -441,7 +449,7 @@ jobs:
         run: security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
 
       - name: Generate delta patch
-        if: ${{ github.event.inputs.create_release == 'true' }}
+        if: ${{ github.event.inputs.create_release == 'true' && github.event.inputs.generate_delta == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
