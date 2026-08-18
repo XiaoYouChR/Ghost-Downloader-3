@@ -244,10 +244,10 @@ class BilibiliTask(Task):
     def _addCoverSteps(self, stepIndex: int) -> int:
         if not self.isCoverEnabled:
             return stepIndex
-        have = {getattr(s, "outputFile", "") for s in self.steps}
-        covers: list[tuple[str, int, str]] = []
+        have = {s.fileIndex for s in self.steps if isinstance(s, BilibiliCoverStep)}
+        covers: list[tuple[str, int, int | None]] = []
         if self.coverUrl:
-            covers.append((self.coverUrl, self.coverSize, f"{self._baseName}.jpg"))
+            covers.append((self.coverUrl, self.coverSize, None))
         if self.isSeason:
             seen: set[str] = set()
             for page in self.files or []:
@@ -257,26 +257,24 @@ class BilibiliTask(Task):
                 if key in seen:
                     continue
                 seen.add(key)
-                title = page.episodeTitle or key
-                name = toSafeFilename(f"{self._baseName} - {title}.jpg", fallback="cover.jpg")
-                covers.append((page.coverUrl, 0, name))
+                covers.append((page.coverUrl, 0, page.index))
         referer = next((p.headers.get("referer") for p in (self.files or []) if p.headers.get("referer")), "")
         headers = {"referer": referer} if referer else {}
-        for url, size, name in covers:
-            outputFile = str(self.filesFolder / name)
-            if outputFile in have:
+        for url, size, fileIndex in covers:
+            if fileIndex in have:
                 continue
             stepIndex += 1
-            self.steps.append(HttpTaskStep(
+            self.steps.append(BilibiliCoverStep(
                 stepIndex=stepIndex,
                 url=url,
                 fileSize=size,
                 headers=headers,
                 canUseRangeRequests=size > 0,
                 subworkerCount=1,
-                outputFile=outputFile,
+                fileIndex=fileIndex,
             ))
             self.steps[-1]._bindTask(self)
+            have.add(fileIndex)
         return stepIndex
 
     def _addFileSteps(self, file: BiliPage, stepIndex: int) -> int:
@@ -355,6 +353,20 @@ class BilibiliTask(Task):
 def pageStem(taskName: str, pageSuffix: str) -> str:
     stem = Path(taskName).stem
     return f"{stem}{pageSuffix}" if pageSuffix else stem
+
+
+@dataclass(kw_only=True)
+class BilibiliCoverStep(HttpTaskStep):
+
+    @property
+    def outputPath(self) -> str:
+        stem = self.task._baseName
+        if self.fileIndex is not None:
+            page = pageByIndex(self.task, self.fileIndex)
+            title = (page.episodeTitle or page.bvid or f"#{page.index}") if page else ""
+            if title:
+                stem = f"{stem} - {title}"
+        return str(self.task.filesFolder / toSafeFilename(f"{stem}.jpg", fallback="cover.jpg"))
 
 
 @dataclass(kw_only=True)

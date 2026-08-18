@@ -333,7 +333,7 @@ def test_seasonSummary_one_episode():
 
 def test_cover_steps_season_and_selected_episodes():
     from pathlib import Path
-    from bili_pack.task import BiliPage, BilibiliTask
+    from bili_pack.task import BiliPage, BilibiliCoverStep, BilibiliTask, setEpisodeTitle
 
     files = [
         BiliPage(
@@ -355,14 +355,44 @@ def test_cover_steps_season_and_selected_episodes():
         isCoverEnabled=True,
     )
     task.update()
-    coverFiles = [getattr(s, "outputFile", "") for s in task.steps if getattr(s, "outputFile", "")]
+    coverFiles = [s.outputPath for s in task.steps if isinstance(s, BilibiliCoverStep)]
     assert any(p.endswith("各种番.jpg") for p in coverFiles)
     assert any(p.endswith("各种番 - 游戏王5DS.jpg") for p in coverFiles)
     assert not any("棋魂" in p for p in coverFiles)
 
     task.setSelection({0, 1})
-    coverFiles = [getattr(s, "outputFile", "") for s in task.steps if getattr(s, "outputFile", "")]
+    coverFiles = [s.outputPath for s in task.steps if isinstance(s, BilibiliCoverStep)]
     assert any(p.endswith("各种番 - 棋魂.jpg") for p in coverFiles)
+
+    setEpisodeTitle([files[0]], "新标题")
+    coverFiles = [s.outputPath for s in task.steps if isinstance(s, BilibiliCoverStep)]
+    assert any(p.endswith("各种番 - 新标题.jpg") for p in coverFiles)
+    assert not any("游戏王5DS" in p for p in coverFiles)
+
+
+def test_cover_output_follows_outputFolder():
+    from pathlib import Path
+    from bili_pack.task import BiliPage, BilibiliCoverStep, BilibiliTask
+
+    task = BilibiliTask(
+        name="专武.mp4",
+        url="u",
+        outputFolder=Path("/tmp/Downloads"),
+        files=[BiliPage(index=0, relativePath="a", selected=True)],
+        _baseName="专武",
+        coverUrl="https://i0.hdslb.com/bfs/cover.jpg",
+        isCoverEnabled=True,
+    )
+    task.update()
+    covers = [s for s in task.steps if isinstance(s, BilibiliCoverStep)]
+    assert len(covers) == 1
+    assert covers[0].outputPath == str(Path("/tmp/Downloads") / "专武.jpg")
+
+    task.outputFolder = Path("/tmp/Downloads/Video")
+    assert covers[0].outputPath == str(Path("/tmp/Downloads/Video") / "专武.jpg")
+
+    task.setName("新名字.mp4")
+    assert covers[0].outputPath == str(Path("/tmp/Downloads/Video") / "新名字.jpg")
 
 
 def test_setEpisodeTitle_updates_relativePath():
