@@ -459,10 +459,25 @@ jobs:
           hdiutil attach "$PREV_DMG" -mountpoint prev-mount -nobrowse -quiet
           OLD_APP=$(find prev-mount -maxdepth 1 -name "*.app" | head -1)
 
+          # Strip symlinks from both sides so hdiffz only sees real files.
+          # The updater recreates symlinks after patching (restructureBundle).
+          OLD_COPY="dist/old-for-diff"
+          NEW_COPY="dist/new-for-diff"
+          cp -a "$OLD_APP" "$OLD_COPY"
+          cp -a "dist/Ghost Downloader.app" "$NEW_COPY"
+          find "$OLD_COPY/Contents/MacOS" -type l -delete 2>/dev/null || true
+          find "$NEW_COPY/Contents/MacOS" -type l -delete 2>/dev/null || true
+
           PATCH_FILE="patch-macOS-${{ matrix.architecture }}-${PREV_VER}-to-${{ env.VERSION }}.hdiff"
-          macos/hdiffz -f "$OLD_APP" "dist/Ghost Downloader.app" "$PATCH_FILE"
+          HDIFF_FLAGS="-f"
+          # Transition: exclude old features/ to avoid corruption from hot-updated packs
+          if [ ! -d "$OLD_COPY/Contents/Resources/features" ]; then
+            HDIFF_FLAGS="$HDIFF_FLAGS -g-old#Contents/MacOS/features/"
+          fi
+          macos/hdiffz $HDIFF_FLAGS "$OLD_COPY" "$NEW_COPY" "$PATCH_FILE"
 
           hdiutil detach prev-mount -quiet
+          rm -rf "$OLD_COPY" "$NEW_COPY"
           echo "PATCH_FILE=$PATCH_FILE" >> "$GITHUB_ENV"
 
       - name: Upload to release

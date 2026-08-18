@@ -555,6 +555,31 @@ static int buildNewPortableFolder(pchar *dst, size_t len,
     return 0;
 }
 
+#ifdef __APPLE__
+static void restructureBundle(const char *appDir) {
+    char macosDir[PATH_BUF], resourcesDir[PATH_BUF];
+    snprintf(macosDir, sizeof(macosDir), "%s/Contents/MacOS", appDir);
+    snprintf(resourcesDir, sizeof(resourcesDir), "%s/Contents/Resources", appDir);
+
+    DIR *d = opendir(resourcesDir);
+    if (!d) return;
+    struct dirent *ent;
+    while ((ent = readdir(d)) != NULL) {
+        if (ent->d_name[0] == '.') continue;
+        char macosPath[PATH_BUF], target[PATH_BUF];
+        snprintf(macosPath, sizeof(macosPath), "%s/%s", macosDir, ent->d_name);
+
+        struct stat st;
+        if (lstat(macosPath, &st) == 0) continue;
+
+        snprintf(target, sizeof(target), "../Resources/%s", ent->d_name);
+        if (symlink(target, macosPath) == 0)
+            logMsg("symlink %s -> %s", ent->d_name, target);
+    }
+    closedir(d);
+}
+#endif
+
 static int install(const pchar *appDir, const pchar *newDir,
                    const pchar *backupDir, const pchar *exeDir) {
     if (!hasDir(newDir))
@@ -868,6 +893,10 @@ int main(int argc, char *argv[]) {
     }
     openLog(exeDir);
     logMsg("installed");
+
+#ifdef __APPLE__
+    restructureBundle(appDir);
+#endif
 
     logMsg("starting " PFMT, appExe);
     if (startApp(appExe) != 0) {
