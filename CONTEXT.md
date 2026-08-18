@@ -136,6 +136,18 @@ _Avoid_: install dir、program folder
 App Dir 内名为 `GhostDownloader` 的目录。Portable 模式下 Settings、Task Record、Staging 住在这里。
 _Avoid_: 单独说 GhostDownloader 文件夹（会和用户模式的 `%LOCALAPPDATA%\GhostDownloader`、App Dir 本身混淆）
 
+**Seed Features**:
+App Dir 内 `features/` 目录。只读的出厂默认 Pack 集合，签名覆盖，运行时不修改。
+_Avoid_: factory packs、bundled packs
+
+**Features Dir**:
+APP_DATA_DIR 内 `features/` 目录。可变的 Pack 运行时目录，加载、更新、暂存都在这里。
+_Avoid_: 与 Seed Features 混淆
+
+**Seed**:
+启动时按版本号将 Seed Features 同步到 Features Dir。版本低于种子的 Pack 被覆盖，高于或等于种子的保留。
+_Avoid_: copy、sync、migrate
+
 **Uninstaller**:
 Inno Setup 写在 App Dir 里的卸载程序与日志，通常是 `unins00.exe` 与 `unins00.dat`。
 _Avoid_: setup、installer
@@ -149,7 +161,7 @@ _Avoid_: delta、diff
 _Avoid_: cache、temp
 
 **New Dir**:
-App Dir 旁已经打好的新树。
+App Dir 旁已经打好的新树。全量更新时先在 Staging 内构建，Updater 搬到 App Dir 旁。
 _Avoid_: dest、out
 
 **Backup Dir**:
@@ -161,12 +173,16 @@ _Avoid_: old、prev
 _Avoid_: helper、installer
 
 **Apply**:
-退出时把已就绪的更新交出去：Pack 就地暂存，应用则启动 Updater。
+退出时把已就绪的更新交出去：Pack 暂存到 Features Dir，应用则启动 Updater。
 _Avoid_: install、commit
 
 **Install**:
 Updater 把 New Dir 换成 App Dir。
 _Avoid_: swap、rename、deploy
+
+**Restructure**:
+macOS 上 Install 后，Updater 为 `Contents/Resources/` 的每个条目在 `Contents/MacOS/` 创建 symlink。满足 Apple 签名要求（MacOS/ 不放非代码真实文件），同时保持运行时路径透明。
+_Avoid_: relocate、move
 
 ### 更新分发
 
