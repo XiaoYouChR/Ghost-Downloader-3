@@ -10,6 +10,7 @@ from qfluentwidgets import (
 
 from app.format import toReadableSize
 from app.view.components.card_groups import OptionCardGroup
+from app.view.error_catalog import translateTaskError
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -118,7 +119,7 @@ class LiveEditDialog(EditTaskDialog):
         self._setInteractive(True)
         InfoBar.error(
             title=self.tr("链接解析失败"),
-            content=error,
+            content=translateTaskError(error),
             duration=4000,
             position=InfoBarPosition.TOP,
             parent=self,

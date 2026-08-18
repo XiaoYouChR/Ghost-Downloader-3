@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from PySide6.QtCore import QCoreApplication, QFileInfo, QPoint, Signal, Qt, QT_TRANSLATE_NOOP as N
+from PySide6.QtCore import QFileInfo, QPoint, Signal, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QFileIconProvider, QHBoxLayout, QVBoxLayout, QApplication, QWidget, QSizePolicy
 from qfluentwidgets import (
@@ -20,6 +20,7 @@ from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
+from app.view.error_catalog import translateTaskError
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -268,7 +269,7 @@ class TaskCard(CardWidget):
             self.progressBar.setError(True)
             error = task.lastError
             if error:
-                text = QCoreApplication.translate("TaskErrors", error.message)
+                text = translateTaskError(error.message)
                 self._setStatus(text.format_map(error.params) if error.params else text)
             else:
                 self._setStatus(self.tr("下载过程中发生错误，请稍后重试"))

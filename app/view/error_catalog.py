@@ -1,4 +1,9 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N
+
+
+def translateTaskError(message: str) -> str:
+    return QCoreApplication.translate("TaskErrors", message) or message
+
 
 N("TaskErrors", "{name} 未安装，请在设置中安装")
 N("TaskErrors", "服务器返回了错误（{status}）")
