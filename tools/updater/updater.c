@@ -857,8 +857,19 @@ int main(int argc, char *argv[]) {
 
     deleteDir(backupDir);
 
+    int isStagedDir = patchFile && hasDir(patchFile);
+
     if (patchFile) {
-        if (hasDir(newDir)) {
+        if (isStagedDir) {
+            if (!hasDir(newDir)) {
+                logMsg("moving staged dir " PFMT " -> " PFMT, patchFile, newDir);
+                if (moveDir(patchFile, newDir) != 0) {
+                    logMsg("move staged dir failed");
+                    closeLog();
+                    return EXIT_RENAME_FAILED;
+                }
+            }
+        } else if (hasDir(newDir)) {
             logMsg("reusing " PFMT, newDir);
         } else if (runHpatchz(updaterDir, appDir, patchFile, newDir) != 0) {
             logMsg("hpatchz failed");
@@ -872,7 +883,7 @@ int main(int argc, char *argv[]) {
 
     /* Windows cannot MoveFile a directory while updater.log is open inside it. */
     closeLog();
-    if (patchFile) {
+    if (patchFile && !isStagedDir) {
 #ifdef _WIN32
         _wremove(patchFile);
 #else

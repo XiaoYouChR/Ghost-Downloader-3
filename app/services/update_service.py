@@ -238,8 +238,7 @@ class UpdateService(QObject):
             self._emit("app", UpdateState.FAILED, error="校验失败")
             return
 
-        appDir = executableDir.parent.parent if sys.platform == "darwin" else executableDir
-        newDir = appDir.parent / f"{appDir.name}_new"
+        newDir = STAGING_DIR / "app_new"
         if newDir.exists():
             await asyncio.to_thread(shutil.rmtree, newDir)
 
@@ -289,12 +288,14 @@ class UpdateService(QObject):
 
         appDir = executableDir.parent.parent if sys.platform == "darwin" else executableDir
         patchPath = STAGING_DIR / "patch.hdiff"
-        newDir = appDir.parent / f"{appDir.name}_new"
+        stagingNewDir = STAGING_DIR / "app_new"
 
         args = [str(updaterPath), str(os.getpid()), str(appDir), sys.executable]
         if patchPath.is_file():
             args.append(str(patchPath))
-        elif not newDir.is_dir():
+        elif stagingNewDir.is_dir():
+            args.append(str(stagingNewDir))
+        else:
             logger.error("no patch or newDir found for update")
             return
 
