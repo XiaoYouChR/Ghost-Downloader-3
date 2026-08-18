@@ -41,6 +41,9 @@ def setupEnvironment():
         os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
         os.environ["QT_SCALE_FACTOR"] = str(cfg.dpiScale.value)
 
+    from app.config.cfg import proxy
+    logger.info("proxy: {}", proxy())
+
     warnings.warn = logger.warning
     nativeLibraryDir()
 
