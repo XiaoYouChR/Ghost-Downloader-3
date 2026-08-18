@@ -9,6 +9,19 @@ jobs:
     steps:
       - uses: actions/stale@v11
         with:
+          only-labels: '🔍needs-info'
+          days-before-stale: -1
+          days-before-close: 10
+          close-issue-message: >-
+            此 issue 因等待补充信息超过 10 天未收到回复而被自动关闭。
+            如果问题仍然存在，请补充所需信息后重新打开。
+          close-issue-reason: not_planned
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          operations-per-run: 50
+
+      - uses: actions/stale@v11
+        with:
           days-before-stale: 30
           days-before-close: 7
           stale-issue-message: >-
