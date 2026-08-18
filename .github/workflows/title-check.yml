@@ -3,6 +3,9 @@ on:
   issues:
     types: [opened]
 
+permissions:
+  issues: write
+
 jobs:
   check-title:
     runs-on: ubuntu-latest
