@@ -2,18 +2,6 @@
   "app": {
     "version": "4.3.1",
     "patches": {
-      "Windows-x86_64": {
-        "from": "4.3.0",
-        "file": "patch-Windows-x86_64-4.3.0-to-4.3.1.hdiff",
-        "sha256": "4f264ebdb917617a442339f3650f0e5e067a18f111d4ae41cc454c1cba6f54c0",
-        "size": 5566598
-      },
-      "Windows-arm64": {
-        "from": "4.3.0",
-        "file": "patch-Windows-arm64-4.3.0-to-4.3.1.hdiff",
-        "sha256": "5f0565b6d7d9b16406a813d1d4876591ab088a13f4a3319e6d5ed22dae42009d",
-        "size": 5561082
-      },
       "macOS-arm64": {
         "from": "4.3.0",
         "file": "patch-macOS-arm64-4.3.0-to-4.3.1.hdiff",
