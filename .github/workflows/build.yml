@@ -719,8 +719,8 @@ jobs:
           if-no-files-found: error
 
   finalize:
-    needs: [prepare, build-windows, build-macos]
-    if: ${{ github.event.inputs.create_release == 'true' }}
+    needs: [prepare, build-windows, build-macos, build-ubuntu, build-android]
+    if: ${{ always() && github.event.inputs.create_release == 'true' && needs.build-windows.result == 'success' && needs.build-macos.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -745,7 +745,7 @@ jobs:
           export PREV_VER=${PREV_TAG#v}
 
           mkdir -p assets
-          gh release download "v${VERSION}" --repo ${{ github.repository }} -p "*.hdiff" -p "*.zip" -p "*.dmg" -D assets/ 2>/dev/null || true
+          gh release download "v${VERSION}" --repo ${{ github.repository }} -p "*.hdiff" -p "*.zip" -p "*.dmg" -p "*.tar.xz" -p "*.deb" -p "*.AppImage" -p "*.apk" -p "*.exe" -D assets/ 2>/dev/null || true
 
           uv run --no-project python3 << 'PYEOF'
           import hashlib, json, os
@@ -882,7 +882,7 @@ jobs:
               -w "uploaded: ${name}  http=%{http_code}  bytes=%{size_upload}  time=%{time_total}s\n"
           }
 
-          for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*.zip assets/Ghost-Downloader-v${VERSION}-*.dmg; do
+          for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*; do
             [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; } &
           done
           wait
