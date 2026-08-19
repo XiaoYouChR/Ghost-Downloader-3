@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from app.models.pack import FeaturePack, TaskParser, UriScheme
-from app.models.task import Task, TaskOptions
+from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, ed2kRuntime
+from .cards import ED2kTaskCard
 from .task import ED2kTask, ED2kTaskStep, parseEd2kLink
 
 
@@ -15,7 +16,11 @@ class ED2kParser(TaskParser):
 
     async def parse(self, options: TaskOptions) -> Task:
         link = options.url.strip()
-        name, fileSize, _ = parseEd2kLink(link)
+        name, fileSize, fileHash = parseEd2kLink(link)
+        from .session import ed2kSession
+
+        if ed2kSession.hasActiveTransfer(fileHash, fileSize):
+            raise TaskError("该 eD2k 链接已在下载中")
         name = toSafeFilename(name, fallback="ed2k_download")
 
         task = ED2kTask(
@@ -32,6 +37,7 @@ class ED2kPack(FeaturePack):
     packId = "ed2k"
     config = ed2kConfig
     parsers = [ED2kParser]
+    taskCards = {ED2kTask: ED2kTaskCard}
 
     def uriSchemes(self) -> list[UriScheme]:
         return [UriScheme("ed2k", "eD2k")]

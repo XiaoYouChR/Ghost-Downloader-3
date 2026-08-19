@@ -32,6 +32,7 @@ class BTTask(Task):
     isSeeding: bool = False
     stateText: str = ""
     peerCount: int = 0
+    totalPeerCount: int = 0
     seedCount: int = 0
     downloadRate: int = 0
     uploadRate: int = 0
@@ -121,6 +122,7 @@ class BTTask(Task):
         self.isSeeding = False
         self.stateText = ""
         self.peerCount = 0
+        self.totalPeerCount = 0
         self.seedCount = 0
         self.downloadRate = 0
         self.uploadRate = 0
@@ -174,6 +176,7 @@ class BTTaskStep(TaskStep):
         def onProgress(p: TorrentProgress):
             task.stateText = p.stateText
             task.peerCount = p.peerCount
+            task.totalPeerCount = p.totalPeerCount
             task.seedCount = p.seedCount
             task.isSeeding = p.isSeeding
             task.downloadRate = p.downloadRate

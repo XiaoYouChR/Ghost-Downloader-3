@@ -31,6 +31,11 @@ class Client:
         self._snapshotCondition = asyncio.Condition()
         self._exitError: Error | None = None
 
+    @property
+    def isRunning(self) -> bool:
+        process = self._process
+        return process is not None and process.returncode is None and not self._stopped
+
     async def start(self, settings: Settings = Settings()) -> Snapshot:
         loop = asyncio.get_running_loop()
         if self._loop is None:
@@ -76,6 +81,9 @@ class Client:
                     },
                 )
             )
+        except asyncio.CancelledError:
+            await self.terminate()
+            raise
         except Exception:
             await self.terminate()
             raise
@@ -304,6 +312,7 @@ def _toTransfer(value: Any) -> Transfer:
             received=value["received"],
             downloadRate=value["downloadRate"],
             uploadRate=value["uploadRate"],
+            activePeers=value.get("activePeers"),
             peers=value["peers"],
         )
     except (KeyError, TypeError, ValueError) as error:

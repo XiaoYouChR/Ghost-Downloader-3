@@ -4,7 +4,7 @@ import asyncio
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 from loguru import logger
 
@@ -14,9 +14,13 @@ from app.models.task import Task, TaskError, TaskStep, TaskStatus
 class ED2kTask(Task):
     packId: str = "ed2k"
     fileHash: str = ""
+    activePeerCount: int | None = None
+    totalPeerCount: int = 0
 
     def reset(self) -> TaskStatus:
         self.fileHash = ""
+        self.activePeerCount = None
+        self.totalPeerCount = 0
         return super().reset()
 
     def deleteFiles(self):
@@ -34,47 +38,55 @@ class ED2kTaskStep(TaskStep):
         from .session import ed2kSession
 
         task: ED2kTask = self.task
-
-        await ed2kSession.open()
-        client = ed2kSession.client()
-
-        if task.fileHash:
-            await client.resume(task.fileHash)
-        else:
-            try:
-                transfer = await client.addLink(task.url, task.outputFolder)
-            except Error as e:
-                if e.code != ErrorCode.TRANSFER_EXISTS:
-                    raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
-                _, _, linkHash = parseEd2kLink(task.url)
-                await client.remove(linkHash, deleteFile=False)
-                transfer = await client.addLink(task.url, task.outputFolder)
-            task.fileHash = transfer.hash
-            task.name = transfer.name or task.name
+        _, linkSize, linkHash = parseEd2kLink(task.url)
+        identity = ed2kSession.acquireTransfer(linkHash, linkSize)
 
         try:
-            async for snapshot in client.snapshots():
-                for t in snapshot.transfers:
-                    if t.hash != task.fileHash:
-                        continue
-                    self.receivedBytes = t.received
-                    self.speed = t.downloadRate
-                    reportSpeed(t.downloadRate)
-                    if t.size > 0:
-                        task.fileSize = t.size
-                        self.progress = min(99.9, t.received / t.size * 100)
-                    if t.state == TransferState.FINISHED:
-                        self.setStatus(TaskStatus.COMPLETED)
-                        await client.pause(task.fileHash)
-                        return
-                    break
-        except asyncio.CancelledError:
+            await ed2kSession.open()
+            client = ed2kSession.client()
+
             if task.fileHash:
+                await client.resume(task.fileHash)
+            else:
                 try:
-                    await ed2kSession.client().pause(task.fileHash)
-                except Exception as e:
-                    logger.opt(exception=e).warning("暂停 eD2k 传输失败")
-            raise
+                    transfer = await client.addLink(
+                        buildEd2kLink(task.url, task.name),
+                        task.outputFolder,
+                    )
+                except Error as e:
+                    if e.code == ErrorCode.TRANSFER_EXISTS:
+                        raise TaskError("该 eD2k 传输已存在于 daemon 中") from e
+                    raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
+                task.fileHash = transfer.hash
+                task.name = transfer.name or task.name
+
+            try:
+                async for snapshot in client.snapshots():
+                    for t in snapshot.transfers:
+                        if t.hash != task.fileHash:
+                            continue
+                        self.receivedBytes = t.received
+                        self.speed = t.downloadRate
+                        task.activePeerCount = t.activePeers
+                        task.totalPeerCount = t.peers
+                        reportSpeed(t.downloadRate)
+                        if t.size > 0:
+                            task.fileSize = t.size
+                            self.progress = min(99.9, t.received / t.size * 100)
+                        if t.state == TransferState.FINISHED:
+                            self.setStatus(TaskStatus.COMPLETED)
+                            await client.pause(task.fileHash)
+                            return
+                        break
+            except asyncio.CancelledError:
+                if task.fileHash:
+                    try:
+                        await ed2kSession.client().pause(task.fileHash)
+                    except Exception as e:
+                        logger.opt(exception=e).warning("暂停 eD2k 传输失败")
+                raise
+        finally:
+            ed2kSession.releaseTransfer(identity)
 
 
 @dataclass(kw_only=True)
@@ -105,3 +117,9 @@ def parseEd2kLink(link: str) -> tuple[str, int, str]:
         size = 0
     fileHash = parts[4] if len(parts) > 4 else ""
     return name, size, fileHash
+
+
+def buildEd2kLink(link: str, name: str) -> str:
+    parts = link.strip().split("|")
+    parts[2] = quote(name, safe="")
+    return "|".join(parts)

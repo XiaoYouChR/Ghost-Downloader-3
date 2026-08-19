@@ -18,6 +18,7 @@ from app.platform.android import IS_ANDROID
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
+from app.view.error_catalog import toLocalizedError
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -280,7 +281,7 @@ class TaskDraftDialog(MessageBoxBase):
         displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
         InfoBar.error(
             self.tr("链接解析失败"),
-            f"{displayUrl}\n{error}",
+            f"{displayUrl}\n{toLocalizedError(error)}",
             duration=5000,
             position=InfoBarPosition.BOTTOM_RIGHT,
             parent=self,

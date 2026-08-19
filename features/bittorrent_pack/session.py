@@ -73,6 +73,7 @@ class TorrentParams:
 class TorrentProgress:
     stateText: str
     peerCount: int
+    totalPeerCount: int
     seedCount: int
     isSeeding: bool
     downloadRate: int
@@ -465,6 +466,7 @@ class BTSession(QObject):
             entry.onProgress(TorrentProgress(
                 stateText=stateText,
                 peerCount=status.num_peers,
+                totalPeerCount=max(status.num_peers, status.list_peers),
                 seedCount=status.num_seeds,
                 isSeeding=isSeeding,
                 downloadRate=downloadRate,
