@@ -986,10 +986,11 @@ int main(int argc, char *argv[]) {
         if (geteuid() != 0) {
             openLog(exeDir);
             logMsg("install failed, requesting elevation");
-            closeLog();
-            if (restartElevated(appDir, appExe, patchFile) == 0)
+            if (restartElevated(appDir, appExe, patchFile) == 0) {
+                logMsg("elevation submitted");
+                closeLog();
                 return EXIT_OK;
-            openLog(exeDir);
+            }
             logMsg("elevation failed or cancelled");
             closeLog();
             return EXIT_RENAME_FAILED;
