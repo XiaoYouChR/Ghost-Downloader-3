@@ -49,6 +49,12 @@ def extractTarXz(archivePath: Path, targetDir: Path) -> None:
 
 async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
     mountPoint = dmgPath.parent / "_dmg_mount"
+    if mountPoint.exists():
+        await asyncio.create_subprocess_exec(
+            "hdiutil", "detach", str(mountPoint), "-force", "-quiet",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
+        shutil.rmtree(mountPoint, ignore_errors=True)
     mountPoint.mkdir(exist_ok=True)
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -67,11 +73,10 @@ async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
         await asyncio.to_thread(shutil.copytree, apps[0], targetDir, symlinks=True)
     finally:
         await asyncio.create_subprocess_exec(
-            "hdiutil", "detach", str(mountPoint), "-quiet",
+            "hdiutil", "detach", str(mountPoint), "-force", "-quiet",
             stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
         )
-        if mountPoint.exists():
-            mountPoint.rmdir()
+        shutil.rmtree(mountPoint, ignore_errors=True)
 
 
 def installPendingPacks(featuresDir: Path) -> None:
@@ -290,7 +295,8 @@ class UpdateService(QObject):
         patchPath = STAGING_DIR / "patch.hdiff"
         stagingNewDir = STAGING_DIR / "app_new"
 
-        args = [str(updaterPath), str(os.getpid()), str(appDir), sys.executable]
+        args = [str(updaterPath), str(os.getpid()), str(appDir),
+                str(Path(sys.executable).resolve())]
         if patchPath.is_file():
             args.append(str(patchPath))
         elif stagingNewDir.is_dir():

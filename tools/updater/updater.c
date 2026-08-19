@@ -867,6 +867,10 @@ int main(int argc, char *argv[]) {
     const wchar_t *appDir    = wargv[2];
     const wchar_t *appExe    = wargv[3];
     const wchar_t *patchFile = wargc >= 5 ? wargv[4] : NULL;
+
+    wchar_t longAppExe[PATH_BUF];
+    if (GetLongPathNameW(appExe, longAppExe, PATH_BUF))
+        appExe = longAppExe;
 #else
     unsigned long appPid = strtoul(argv[1], NULL, 10);
     const char   *appDir    = argv[2];
