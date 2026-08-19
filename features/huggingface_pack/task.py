@@ -6,7 +6,7 @@ from pathlib import Path
 from app.models.task import Task, TaskFile, TaskStep
 from app.platform.filesystem import deletePath
 
-from features.http_pack.task import HttpTaskStep
+from http_pack.task import HttpTaskStep
 
 
 @dataclass(kw_only=True)

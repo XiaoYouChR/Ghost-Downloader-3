@@ -12,7 +12,7 @@ from .cards import HuggingFaceDraftCard, HuggingFaceTaskCard
 from .config import accessToken, huggingFaceConfig, selectedProxySite
 from .task import HuggingFaceFile, HuggingFaceStep, HuggingFaceTask
 
-from features.http_pack.task import HttpTaskStep
+from http_pack.task import HttpTaskStep
 
 HF_HOSTS = {"huggingface.co", "www.huggingface.co"}
 REPO_PATTERN = re.compile(
