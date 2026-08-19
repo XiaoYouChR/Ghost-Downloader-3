@@ -506,7 +506,10 @@ class MainWindow(MSFluentWindow):
                 self.move(desktop.center() - self.rect().center())
         if self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
-        if sys.platform == "darwin":
+        if sys.platform == "win32":
+            self.windowEffect.addWindowAnimation(self.winId())
+            self._setBackgroundEffectWin(cfg.backgroundEffect.value, skipRemove=True)
+        elif sys.platform == "darwin":
             self._refreshBackgroundEffect()
 
     def changeEvent(self, event) -> None:
@@ -564,8 +567,9 @@ class MainWindow(MSFluentWindow):
         elif sys.platform == "darwin":
             self._setBackgroundEffectMac(cfg.backgroundEffect.value)
 
-    def _setBackgroundEffectWin(self, value: str) -> None:
-        self.windowEffect.removeBackgroundEffect(self.winId())
+    def _setBackgroundEffectWin(self, value: str, skipRemove: bool = False) -> None:
+        if not skipRemove:
+            self.windowEffect.removeBackgroundEffect(self.winId())
         isDark = isDarkTheme() if cfg.themeMode.value == Theme.AUTO else cfg.themeMode.value == Theme.DARK
 
         if value == "Acrylic":
