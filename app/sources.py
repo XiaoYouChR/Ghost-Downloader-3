@@ -45,7 +45,7 @@ SOURCES = {
 }
 
 SOURCE_ORDER = ("github", "gitcode")
-STAGGER_DELAY = 0
+STAGGER_DELAY = 0.05
 
 
 @dataclass(frozen=True)
