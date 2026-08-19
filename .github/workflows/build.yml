@@ -815,6 +815,16 @@ jobs:
           REMOTE="https://cnb:${CNB_TOKEN}@cnb.cool/XiaoYouChR/Ghost-Downloader-3"
           git push "$REMOTE" main 2>&1 | sed "s/${CNB_TOKEN}/****/g" || true
 
+      - name: Route GitCode to HK server
+        run: |
+          sudo tee -a /etc/hosts >/dev/null <<'HOSTS'
+          159.138.147.37 gitcode.com
+          159.138.147.37 api.gitcode.com
+          159.138.147.37 file.gitcode.com
+          159.138.147.37 api.atomgit.com
+          159.138.147.37 file.atomgit.com
+          HOSTS
+
       - name: Push to GitCode
         continue-on-error: true
         env:
