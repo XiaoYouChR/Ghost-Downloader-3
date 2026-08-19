@@ -20,14 +20,14 @@ class ED2kSession:
         self.submit = None
 
     @staticmethod
-    def transferIdentity(fileHash: str, fileSize: int) -> tuple[str, int]:
+    def toTransferKey(fileHash: str, fileSize: int) -> tuple[str, int]:
         return fileHash.upper(), fileSize
 
     def hasActiveTransfer(self, fileHash: str, fileSize: int) -> bool:
-        return self.transferIdentity(fileHash, fileSize) in self._activeTransfers
+        return self.toTransferKey(fileHash, fileSize) in self._activeTransfers
 
     def acquireTransfer(self, fileHash: str, fileSize: int) -> tuple[str, int]:
-        identity = self.transferIdentity(fileHash, fileSize)
+        identity = self.toTransferKey(fileHash, fileSize)
         if identity in self._activeTransfers:
             raise TaskError("该 eD2k 链接已在下载中")
         self._activeTransfers.add(identity)

@@ -20,7 +20,7 @@ from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
-from app.view.error_catalog import translateTaskError
+from app.view.error_catalog import toLocalizedError
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -269,8 +269,7 @@ class TaskCard(CardWidget):
             self.progressBar.setError(True)
             error = task.lastError
             if error:
-                text = translateTaskError(error.message)
-                self._setStatus(text.format_map(error.params) if error.params else text)
+                self._setStatus(toLocalizedError(error.message, error.params))
             else:
                 self._setStatus(self.tr("下载过程中发生错误，请稍后重试"))
 

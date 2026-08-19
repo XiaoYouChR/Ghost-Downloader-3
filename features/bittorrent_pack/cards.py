@@ -41,9 +41,8 @@ BT_SIZE_FIELD = FieldSpec("size", FluentIcon.LIBRARY, {None: toBtSizeText})
 
 
 def toPeerText(task: BTTask, _speed: int, _received: int) -> str:
-    total = max(task.peerCount, task.totalPeerCount)
     return QCoreApplication.translate("TaskCard", "{0}/{1} Peers").format(
-        task.peerCount, total
+        task.peerCount, task.totalPeerCount
     )
 
 

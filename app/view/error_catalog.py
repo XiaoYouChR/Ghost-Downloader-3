@@ -1,8 +1,9 @@
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N
 
 
-def translateTaskError(message: str) -> str:
-    return QCoreApplication.translate("TaskErrors", message) or message
+def toLocalizedError(message: str, params: dict | None = None) -> str:
+    text = QCoreApplication.translate("TaskErrors", message) or message
+    return text.format_map(params) if params else text
 
 
 N("TaskErrors", "{name} 未安装，请在设置中安装")

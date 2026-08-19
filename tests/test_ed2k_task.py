@@ -11,7 +11,7 @@ from ed2k_pack.task import (
     ED2kTask,
     ED2kTaskStep,
     parseEd2kLink,
-    withEd2kFilename,
+    buildEd2kLink,
 )
 
 
@@ -80,8 +80,8 @@ def makeTask(tmp_path: Path, name: str = "payload(1).bin") -> ED2kTask:
     return task
 
 
-def test_with_ed2k_filename_preserves_content_identity():
-    renamed = withEd2kFilename(LINK, "payload(1).bin")
+def test_build_ed2k_link_preserves_content_identity():
+    renamed = buildEd2kLink(LINK, "payload(1).bin")
 
     assert parseEd2kLink(renamed) == ("payload(1).bin", 1234, FILE_HASH)
     assert renamed.endswith("|h=TESTAICH|/")
@@ -155,7 +155,7 @@ async def test_transfer_exists_does_not_remove_first_download(monkeypatch, tmp_p
     monkeypatch.setattr(session_module, "ed2kSession", session)
     task = makeTask(tmp_path)
 
-    with pytest.raises(TaskError, match="该 eD2k 链接已在下载中"):
+    with pytest.raises(TaskError, match="eD2k 传输已存在于 daemon 中"):
         await task.steps[0].run(lambda _: None, None)
 
     assert fakeClient.removed == []

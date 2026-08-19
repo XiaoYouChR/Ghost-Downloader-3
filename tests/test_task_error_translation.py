@@ -1,6 +1,6 @@
 from PySide6.QtCore import QTranslator
 
-from app.view.error_catalog import translateTaskError
+from app.view.error_catalog import toLocalizedError
 
 
 class TaskErrorTranslator(QTranslator):
@@ -19,13 +19,13 @@ def test_task_error_translation_uses_shared_catalog(qapp):
     translator = TaskErrorTranslator()
     qapp.installTranslator(translator)
     try:
-        assert translateTaskError("该种子已在下载中") == (
+        assert toLocalizedError("该种子已在下载中") == (
             "This torrent is already being downloaded"
         )
-        assert translateTaskError("该 eD2k 链接已在下载中") == (
+        assert toLocalizedError("该 eD2k 链接已在下载中") == (
             "This eD2k link is already being downloaded"
         )
-        assert translateTaskError("uncatalogued external error") == (
+        assert toLocalizedError("uncatalogued external error") == (
             "uncatalogued external error"
         )
     finally:
@@ -47,7 +47,7 @@ def test_add_task_popup_translates_parse_error(monkeypatch):
     def capture(*args, **kwargs):
         captured["content"] = args[1]
 
-    monkeypatch.setattr(draft_module, "translateTaskError", lambda _: "translated error")
+    monkeypatch.setattr(draft_module, "toLocalizedError", lambda _: "translated error")
     monkeypatch.setattr(draft_module.InfoBar, "error", capture)
 
     draft_module.TaskDraftDialog._onParseFailed(Dialog(), "ed2k://example", "source error")
@@ -73,7 +73,7 @@ def test_edit_task_popup_translates_parse_error(monkeypatch):
         captured["content"] = kwargs["content"]
 
     dialog = Dialog()
-    monkeypatch.setattr(edit_module, "translateTaskError", lambda _: "translated error")
+    monkeypatch.setattr(edit_module, "toLocalizedError", lambda _: "translated error")
     monkeypatch.setattr(edit_module.InfoBar, "error", capture)
 
     edit_module.LiveEditDialog._onReparseFailed(dialog, "source error")

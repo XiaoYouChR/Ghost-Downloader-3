@@ -50,12 +50,12 @@ class ED2kTaskStep(TaskStep):
             else:
                 try:
                     transfer = await client.addLink(
-                        withEd2kFilename(task.url, task.name),
+                        buildEd2kLink(task.url, task.name),
                         task.outputFolder,
                     )
                 except Error as e:
                     if e.code == ErrorCode.TRANSFER_EXISTS:
-                        raise TaskError("该 eD2k 链接已在下载中") from e
+                        raise TaskError("eD2k 传输已存在于 daemon 中") from e
                     raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
                 task.fileHash = transfer.hash
                 task.name = transfer.name or task.name
@@ -119,8 +119,7 @@ def parseEd2kLink(link: str) -> tuple[str, int, str]:
     return name, size, fileHash
 
 
-def withEd2kFilename(link: str, name: str) -> str:
-    parseEd2kLink(link)
+def buildEd2kLink(link: str, name: str) -> str:
     parts = link.strip().split("|")
     parts[2] = quote(name, safe="")
     return "|".join(parts)

@@ -5161,7 +5161,12 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>This eD2k link is already being downloaded</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="6"/>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="5"/>
+        <source>eD2k 传输已存在于 daemon 中</source>
+        <translation>eD2k transfer already exists in daemon</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
         <source>ED2kSession 未启动</source>
         <translation>ED2k session not started</translation>
     </message>
