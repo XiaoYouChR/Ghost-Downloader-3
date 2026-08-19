@@ -5,11 +5,10 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
-    BodyLabel, CaptionLabel, FluentIcon, InfoBadge, InfoBar, InfoBarPosition,
+    BodyLabel, CaptionLabel, FluentIcon, InfoBar, InfoBarPosition,
     MessageBoxBase, PushButton, SubtitleLabel, SwitchButton,
     TransparentToolButton,
 )
-from qfluentwidgets.components.widgets.info_badge import InfoLevel
 
 from app.config.cfg import cfg
 from app.config.paths import IS_COMPILED
@@ -22,6 +21,10 @@ if TYPE_CHECKING:
 PACK_ROW_HEIGHT = 36
 PACK_LIST_WIDTH = 440
 MAX_VISIBLE_PACK_ROWS = 6
+STATUS_SUCCESS_COLORS = ("#0F7B0F", "#6CCB5F")
+STATUS_AVAILABLE_COLORS = ("#9D5D00", "#FFC83D")
+STATUS_DOWNLOADING_COLORS = ("#0067C0", "#60CDFF")
+STATUS_FAILED_COLORS = ("#C42B1C", "#FF99A4")
 
 
 class PackRow(QWidget):
@@ -40,7 +43,10 @@ class PackRow(QWidget):
         self.nameLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.nameLabel.setToolTip(displayName)
         self.versionLabel = CaptionLabel(f"v{pack.manifest.version}", self)
-        self.badge = InfoBadge.success("✓", self)
+        self.statusLabel = CaptionLabel("✓", self)
+        self.statusLabel.setFixedWidth(18)
+        self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.statusLabel.setTextColor(*STATUS_SUCCESS_COLORS)
         self.updateButton = TransparentToolButton(FluentIcon.DOWNLOAD, self)
         self.updateButton.setFixedSize(24, 24)
         self.updateButton.setIconSize(self.updateButton.size() / 2)
@@ -51,7 +57,7 @@ class PackRow(QWidget):
         layout.setContentsMargins(4, 4, 4, 4)
         layout.addWidget(self.nameLabel)
         layout.addWidget(self.versionLabel)
-        layout.addWidget(self.badge)
+        layout.addWidget(self.statusLabel)
         layout.addWidget(self.updateButton)
 
     def _bind(self) -> None:
@@ -61,22 +67,22 @@ class PackRow(QWidget):
         from app.services.update_service import UpdateState
 
         if info.state == UpdateState.AVAILABLE:
-            self.badge.setText("↑")
-            self.badge.setLevel(InfoLevel.WARNING)
+            self.statusLabel.setText("↑")
+            self.statusLabel.setTextColor(*STATUS_AVAILABLE_COLORS)
             self.updateButton.setIcon(FluentIcon.DOWNLOAD)
             self.updateButton.setToolTip(self.tr("更新"))
             self.updateButton.show()
         elif info.state == UpdateState.DOWNLOADING:
-            self.badge.setText("↓")
-            self.badge.setLevel(InfoLevel.INFOAMTION)
+            self.statusLabel.setText("↓")
+            self.statusLabel.setTextColor(*STATUS_DOWNLOADING_COLORS)
             self.updateButton.hide()
         elif info.state == UpdateState.READY:
-            self.badge.setText("✓")
-            self.badge.setLevel(InfoLevel.INFOAMTION)
+            self.statusLabel.setText("✓")
+            self.statusLabel.setTextColor(*STATUS_SUCCESS_COLORS)
             self.updateButton.hide()
         elif info.state == UpdateState.FAILED:
-            self.badge.setText("✗")
-            self.badge.setLevel(InfoLevel.ERROR)
+            self.statusLabel.setText("✗")
+            self.statusLabel.setTextColor(*STATUS_FAILED_COLORS)
             self.updateButton.setIcon(FluentIcon.SYNC)
             self.updateButton.setToolTip(self.tr("重试"))
             self.updateButton.show()

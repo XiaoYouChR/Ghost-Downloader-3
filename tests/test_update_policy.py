@@ -137,6 +137,8 @@ def test_pack_panel_uses_fixed_rows_and_scrolls(qapp, qtbot):
     qapp.processEvents()
 
     assert all(row.height() == PACK_ROW_HEIGHT for row in dialog._rows.values())
+    assert all(row.statusLabel.text() == "✓" for row in dialog._rows.values())
+    assert all(row.statusLabel.lightColor.name() == "#0f7b0f" for row in dialog._rows.values())
     assert dialog.packListArea.height() == MAX_VISIBLE_PACK_ROWS * PACK_ROW_HEIGHT
     assert dialog.packListArea.verticalScrollBar().maximum() > 0
 
@@ -165,6 +167,8 @@ def test_pack_update_button_always_updates_in_compiled_build(monkeypatch, qapp, 
     ))
 
     assert updateService.downloads == ["http_pack"]
+    assert dialog._rows["http_pack"].statusLabel.text() == "↑"
+    assert dialog._rows["http_pack"].statusLabel.lightColor.name() == "#9d5d00"
 
     monkeypatch.setattr(packInfoModule, "IS_COMPILED", False)
     sourceUpdateService = StubPackUpdateService()
