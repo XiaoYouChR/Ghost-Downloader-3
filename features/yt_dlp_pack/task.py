@@ -104,9 +104,12 @@ def probePlaylist(url: str) -> list[dict]:
     ]
 
 
+DIRECT_PROTOCOLS = {"https", "http"}
+
+
 def buildFormatPair(info: dict, task: YouTubeTask) -> tuple[dict | None, dict | None]:
     from .config import ytDlpConfig
-    formats = info.get("formats") or []
+    formats = [f for f in (info.get("formats") or []) if f.get("protocol") in DIRECT_PROTOCOLS]
     shouldPreferMp4 = ytDlpConfig.shouldPreferMp4.value
 
     audioFormats = [

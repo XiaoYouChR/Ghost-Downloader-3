@@ -16,9 +16,10 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
-from app.sources import Repo, fetchLatestRelease, fetchPypiJson, probeDownloadUrl
+from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 
 QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
+YTDLP_NIGHTLY_REPO = Repo("yt-dlp/yt-dlp-nightly-builds")
 COOKIE_DOMAIN = ".youtube.com"
 AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
 
@@ -198,37 +199,39 @@ class YouTubeRuntime(BinaryRuntime):
         )
 
     async def fetchLatestVersion(self) -> str:
-        data = await fetchPypiJson("yt-dlp")
-        self.pypi = data
-        return data.get("info", {}).get("version", "")
+        release = await fetchLatestRelease(YTDLP_NIGHTLY_REPO)
+        self._latestRelease = release
+        return release.version
 
     async def createInstallTask(self, version: str = ""):
         from app.install import BinaryInstallStep, ExtractStep, FetchStep, InstallTask
 
-        whlUrl, whlSize = await self._fetchWhlAsset()
+        tarballUrl, tarballSize = await self._fetchTarballAsset()
 
         folder = self.installFolder()
         folder.mkdir(parents=True, exist_ok=True)
-        archiveName = "yt_dlp.zip"
+        archiveName = "yt_dlp.tar.gz"
 
         if IS_ANDROID:
             task = InstallTask(
                 name="yt-dlp 安装",
-                url=whlUrl,
+                url=tarballUrl,
                 packId="disk",
-                fileSize=whlSize,
+                fileSize=tarballSize,
                 outputFolder=folder,
                 installFolder=str(folder),
             )
             task.addStep(FetchStep(
-                stepIndex=1, url=whlUrl,
+                stepIndex=1, url=tarballUrl,
                 outputFile=str(folder / archiveName),
             ))
             task.addStep(ExtractStep(
                 stepIndex=2,
                 archivePath=str(folder / archiveName),
                 outputFolder=str(folder),
-                archiveSize=whlSize,
+                archiveSize=tarballSize,
+                root="yt-dlp/",
+                subtree="yt_dlp/",
             ))
             return task
 
@@ -238,14 +241,14 @@ class YouTubeRuntime(BinaryRuntime):
 
         task = InstallTask(
             name="YouTube 运行环境安装",
-            url=whlUrl,
+            url=tarballUrl,
             packId="disk",
             fileSize=0,
             outputFolder=folder,
             installFolder=str(folder),
         )
         task.addStep(FetchStep(
-            stepIndex=1, url=whlUrl,
+            stepIndex=1, url=tarballUrl,
             outputFile=str(folder / archiveName),
         ))
         task.addStep(FetchStep(
@@ -256,7 +259,9 @@ class YouTubeRuntime(BinaryRuntime):
             stepIndex=3,
             archivePath=str(folder / archiveName),
             outputFolder=str(folder),
-            archiveSize=whlSize,
+            archiveSize=tarballSize,
+            root="yt-dlp/",
+            subtree="yt_dlp/",
         ))
         task.addStep(BinaryInstallStep(
             stepIndex=4,
@@ -264,16 +269,15 @@ class YouTubeRuntime(BinaryRuntime):
         ))
         return task
 
-    async def _fetchWhlAsset(self) -> tuple[str, int]:
-        data = getattr(self, "pypi", None)
-        if data is None:
-            data = await fetchPypiJson("yt-dlp")
-            self.pypi = data
-        urls = data.get("urls") or []
-        for entry in urls:
-            if entry.get("packagetype") == "bdist_wheel" and entry.get("filename", "").endswith(".whl"):
-                return entry["url"], entry.get("size") or 0
-        raise RuntimeError("未找到 yt-dlp wheel 安装包")
+    async def _fetchTarballAsset(self) -> tuple[str, int]:
+        release = getattr(self, "_latestRelease", None)
+        if release is None:
+            release = await fetchLatestRelease(YTDLP_NIGHTLY_REPO)
+            self._latestRelease = release
+        for asset in release.assets:
+            if asset.name == "yt-dlp.tar.gz":
+                return asset.downloadUrl, asset.size
+        raise RuntimeError("未找到 yt-dlp nightly tarball")
 
 def _qjsAssetName() -> str:
     machine = platform.machine().lower()

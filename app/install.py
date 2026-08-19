@@ -46,18 +46,32 @@ class ExtractStep(TaskStep):
     archivePath: str
     outputFolder: str
     archiveSize: int = 0
+    root: str = ""
+    subtree: str = ""
 
     async def _extractZip(self, archive: Path, outputFolder: Path):
         with zipfile.ZipFile(archive) as zf:
-            files = [info for info in zf.infolist() if not info.is_dir()]
-            totalSize = sum(info.file_size for info in files)
+            members = []
+            for info in zf.infolist():
+                if info.is_dir():
+                    continue
+                name = info.filename
+                if self.root:
+                    if not name.startswith(self.root):
+                        continue
+                    name = name[len(self.root):]
+                if self.subtree and not name.startswith(self.subtree):
+                    continue
+                members.append((info, name))
+
+            totalSize = sum(info.file_size for info, _ in members)
             self.task.fileSize = max(self.archiveSize + totalSize, self.archiveSize)
 
             safeRoot = outputFolder.resolve()
             extractedBytes = speedBytes = 0
             speedTime = perf_counter()
-            for info in files:
-                memberPath = (outputFolder / info.filename).resolve()
+            for info, name in members:
+                memberPath = (outputFolder / name).resolve()
                 if safeRoot not in {memberPath, *memberPath.parents}:
                     raise TaskError("压缩包包含不安全路径：{path}", path=info.filename)
                 memberPath.parent.mkdir(parents=True, exist_ok=True)
@@ -76,15 +90,27 @@ class ExtractStep(TaskStep):
 
     async def _extractTar(self, archive: Path, outputFolder: Path):
         with tarfile.open(archive, "r:*") as tf:
-            files = [m for m in tf.getmembers() if m.isfile()]
-            totalSize = sum(m.size for m in files)
+            members = []
+            for m in tf.getmembers():
+                if not m.isfile():
+                    continue
+                name = m.name
+                if self.root:
+                    if not name.startswith(self.root):
+                        continue
+                    name = name[len(self.root):]
+                if self.subtree and not name.startswith(self.subtree):
+                    continue
+                members.append((m, name))
+
+            totalSize = sum(m.size for m, _ in members)
             self.task.fileSize = max(self.archiveSize + totalSize, self.archiveSize)
 
             safeRoot = outputFolder.resolve()
             extractedBytes = speedBytes = 0
             speedTime = perf_counter()
-            for member in files:
-                memberPath = (outputFolder / member.name).resolve()
+            for member, name in members:
+                memberPath = (outputFolder / name).resolve()
                 if safeRoot not in {memberPath, *memberPath.parents}:
                     raise TaskError("压缩包包含不安全路径：{path}", path=member.name)
                 memberPath.parent.mkdir(parents=True, exist_ok=True)

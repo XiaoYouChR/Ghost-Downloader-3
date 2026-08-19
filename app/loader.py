@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 def seedPacks(seedDir: Path, targetDir: Path) -> None:
     from PySide6.QtCore import QVersionNumber
 
-    if not seedDir.exists():
+    if not seedDir.exists() or seedDir.resolve() == targetDir.resolve():
         return
     targetDir.mkdir(parents=True, exist_ok=True)
 
