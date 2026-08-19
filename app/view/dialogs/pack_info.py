@@ -5,10 +5,13 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 from qfluentwidgets import (
-    BodyLabel, CaptionLabel, FluentIcon, InfoBadge, MessageBoxBase,
-    SubtitleLabel, TransparentToolButton,
+    BodyLabel, CaptionLabel, FluentIcon, InfoBadge, InfoBar, InfoBarPosition,
+    MessageBoxBase, PushButton, SubtitleLabel, SwitchButton,
+    TransparentToolButton,
 )
 from qfluentwidgets.components.widgets.info_badge import InfoLevel
+
+from app.config.cfg import cfg
 
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack
@@ -29,10 +32,10 @@ class PackRow(QWidget):
         self.nameLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.versionLabel = CaptionLabel(f"v{pack.manifest.version}", self)
         self.badge = InfoBadge.success("✓", self)
-        self.retryButton = TransparentToolButton(FluentIcon.SYNC, self)
-        self.retryButton.setFixedSize(24, 24)
-        self.retryButton.setIconSize(self.retryButton.size() / 2)
-        self.retryButton.hide()
+        self.updateButton = TransparentToolButton(FluentIcon.DOWNLOAD, self)
+        self.updateButton.setFixedSize(24, 24)
+        self.updateButton.setIconSize(self.updateButton.size() / 2)
+        self.updateButton.hide()
 
     def _initLayout(self) -> None:
         layout = QHBoxLayout(self)
@@ -40,10 +43,10 @@ class PackRow(QWidget):
         layout.addWidget(self.nameLabel)
         layout.addWidget(self.versionLabel)
         layout.addWidget(self.badge)
-        layout.addWidget(self.retryButton)
+        layout.addWidget(self.updateButton)
 
     def _bind(self) -> None:
-        self.retryButton.clicked.connect(self._onRetry)
+        self.updateButton.clicked.connect(self._onRetry)
 
     def update(self, info) -> None:
         from app.services.update_service import UpdateState
@@ -51,19 +54,23 @@ class PackRow(QWidget):
         if info.state == UpdateState.AVAILABLE:
             self.badge.setText("↑")
             self.badge.setLevel(InfoLevel.WARNING)
-            self.retryButton.hide()
+            self.updateButton.setIcon(FluentIcon.DOWNLOAD)
+            self.updateButton.setToolTip(self.tr("更新"))
+            self.updateButton.show()
         elif info.state == UpdateState.DOWNLOADING:
             self.badge.setText("↓")
             self.badge.setLevel(InfoLevel.INFOAMTION)
-            self.retryButton.hide()
+            self.updateButton.hide()
         elif info.state == UpdateState.READY:
             self.badge.setText("✓")
             self.badge.setLevel(InfoLevel.INFOAMTION)
-            self.retryButton.hide()
+            self.updateButton.hide()
         elif info.state == UpdateState.FAILED:
             self.badge.setText("✗")
             self.badge.setLevel(InfoLevel.ERROR)
-            self.retryButton.show()
+            self.updateButton.setIcon(FluentIcon.SYNC)
+            self.updateButton.setToolTip(self.tr("重试"))
+            self.updateButton.show()
 
 
 class PackInfoDialog(MessageBoxBase):
@@ -71,13 +78,19 @@ class PackInfoDialog(MessageBoxBase):
         super().__init__(parent)
         self._updateService = updateService
         self._rows: dict[str, PackRow] = {}
+        self._isRefreshingPacks = False
         self._initWidget(packs)
+        self._initLayout()
         self._bind()
 
     def _initWidget(self, packs: list[FeaturePack]) -> None:
         self.titleLabel = SubtitleLabel(self.tr("功能包"), self)
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addSpacing(8)
+        self.autoUpdateLabel = BodyLabel(self.tr("自动更新功能包"), self)
+        self.autoUpdateSwitch = SwitchButton(self)
+        self.autoUpdateSwitch.setOnText("")
+        self.autoUpdateSwitch.setOffText("")
+        self.autoUpdateSwitch.setChecked(cfg.shouldAutoUpdatePacks.value)
+        self.checkButton = PushButton(FluentIcon.SYNC, self.tr("检查功能包更新"), self)
         self.widget.setMinimumWidth(400)
         self.yesButton.setText(self.tr("关闭"))
         self.cancelButton.hide()
@@ -88,10 +101,85 @@ class PackInfoDialog(MessageBoxBase):
             manifestName = pack.manifest.name
             row = PackRow(pack, lambda n=manifestName: self._updateService.download(n), self)
             self._rows[manifestName] = row
+
+    def _initLayout(self) -> None:
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addSpacing(8)
+
+        autoUpdateLayout = QHBoxLayout()
+        autoUpdateLayout.setContentsMargins(4, 0, 4, 0)
+        autoUpdateLayout.addWidget(self.autoUpdateLabel)
+        autoUpdateLayout.addStretch(1)
+        autoUpdateLayout.addWidget(self.autoUpdateSwitch)
+        self.viewLayout.addLayout(autoUpdateLayout)
+        self.viewLayout.addWidget(self.checkButton, 0, Qt.AlignmentFlag.AlignRight)
+        self.viewLayout.addSpacing(8)
+
+        for row in self._rows.values():
             self.viewLayout.addWidget(row)
 
     def _bind(self) -> None:
         self._updateService.changed.connect(self._onUpdateChanged)
+        self._updateService.packsRefreshed.connect(self._onPacksRefreshed)
+        self.autoUpdateSwitch.checkedChanged.connect(self._onAutoUpdateChanged)
+        self.checkButton.clicked.connect(self._onCheckClicked)
+
+    def _onAutoUpdateChanged(self, enabled: bool) -> None:
+        cfg.set(cfg.shouldAutoUpdatePacks, enabled)
+
+    def _onCheckClicked(self) -> None:
+        if self._isRefreshingPacks:
+            return
+        self._isRefreshingPacks = True
+        self.checkButton.setEnabled(False)
+        InfoBar.info(
+            self.tr("检查功能包更新"),
+            self.tr("正在检查功能包更新..."),
+            duration=1500,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self.window(),
+        )
+        self._updateService.refresh(
+            shouldRefreshApp=False,
+            shouldRefreshPacks=True,
+        )
+
+    def _onPacksRefreshed(self, availableCount: int, hasError: bool) -> None:
+        if not self._isRefreshingPacks:
+            return
+        self._isRefreshingPacks = False
+        self.checkButton.setEnabled(True)
+
+        if hasError:
+            InfoBar.error(
+                self.tr("检查功能包更新失败"),
+                self.tr("无法获取最新功能包版本信息"),
+                duration=3000,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                parent=self.window(),
+            )
+            return
+        if availableCount == 0:
+            InfoBar.success(
+                self.tr("所有功能包已是最新版本"),
+                "",
+                duration=3000,
+                position=InfoBarPosition.BOTTOM_RIGHT,
+                parent=self.window(),
+            )
+            return
+
+        if cfg.shouldAutoUpdatePacks.value:
+            content = self.tr("检测到 {0} 个可用更新，正在下载").format(availableCount)
+        else:
+            content = self.tr("检测到 {0} 个可用更新，可点击对应功能包更新").format(availableCount)
+        InfoBar.success(
+            self.tr("发现功能包更新"),
+            content,
+            duration=4000,
+            position=InfoBarPosition.BOTTOM_RIGHT,
+            parent=self.window(),
+        )
 
     def _onUpdateChanged(self, info) -> None:
         row = self._rows.get(info.targetId)

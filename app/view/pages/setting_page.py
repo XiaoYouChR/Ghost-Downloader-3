@@ -369,7 +369,7 @@ class SettingPage(ScrollArea):
             self.tr("管理已安装的功能包"),
         )
         self.aboutCard = PrimaryPushSettingCard(
-            self.tr("检查更新"), FluentIcon.INFO, self.tr("关于"),
+            self.tr("检查应用更新"), FluentIcon.INFO, self.tr("关于"),
             f"© Copyright {YEAR}, {AUTHOR}. Version {VERSION}",
         )
         if noAutoUpdate:
@@ -521,7 +521,7 @@ class SettingPage(ScrollArea):
     def _onAboutCardClicked(self) -> None:
         from app.services.update_service import UpdateState
 
-        InfoBar.info(self.tr("检查更新"), self.tr("正在检查更新..."),
+        InfoBar.info(self.tr("检查应用更新"), self.tr("正在检查应用更新..."),
                      duration=1500, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
         def onChecked(info):
@@ -530,14 +530,17 @@ class SettingPage(ScrollArea):
             self._updateService.changed.disconnect(onChecked)
             if info.state == UpdateState.IDLE:
                 if info.error:
-                    InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),
+                    InfoBar.error(self.tr("检查应用更新失败"), self.tr("无法获取最新版本信息"),
                                   duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
                 else:
                     InfoBar.success(self.tr("当前已是最新版本"), "",
                                     duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
         self._updateService.changed.connect(onChecked)
-        self._updateService.check()
+        self._updateService.refresh(
+            shouldRefreshApp=True,
+            shouldRefreshPacks=False,
+        )
 
     def _onOpenLogClicked(self) -> None:
         from app.config.paths import APP_DATA_DIR

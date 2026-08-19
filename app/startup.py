@@ -84,20 +84,29 @@ def bindNotifications(taskService, notifyCompleted, notifyDiskSpace):
     taskService.diskSpaceInsufficient.connect(notifyDiskSpace)
 
 
-def checkUpdateAtStartup(updateService):
+def refreshUpdatesAtStartup(updateService):
     from app.config.cfg import cfg
     from app.config.paths import IS_COMPILED, hasNoAutoUpdateMarker
-    if hasNoAutoUpdateMarker():
+
+    hasMarker = hasNoAutoUpdateMarker()
+    if hasMarker:
         from loguru import logger
-        logger.info("Auto update disabled by gd_no_auto_update marker")
+        logger.info("App auto update disabled by gd_no_auto_update marker")
         if cfg.shouldCheckUpdateAtStartup.value:
             cfg.set(cfg.shouldCheckUpdateAtStartup, False)
+
+    shouldRefreshApp = (
+        IS_COMPILED
+        and not hasMarker
+        and cfg.shouldCheckUpdateAtStartup.value
+    )
+    shouldRefreshPacks = cfg.shouldAutoUpdatePacks.value
+    if not shouldRefreshApp and not shouldRefreshPacks:
         return
-    if not IS_COMPILED:
-        return
-    if not cfg.shouldCheckUpdateAtStartup.value:
-        return
-    updateService.check()
+    updateService.refresh(
+        shouldRefreshApp=shouldRefreshApp,
+        shouldRefreshPacks=shouldRefreshPacks,
+    )
 
 
 def stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, updateService=None):

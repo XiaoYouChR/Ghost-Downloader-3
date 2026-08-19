@@ -113,6 +113,7 @@ class UpdateInfo:
 
 class UpdateService(QObject):
     changed = Signal(object)
+    packsRefreshed = Signal(int, bool)
 
     def __init__(self, coroutineRunner: CoroutineRunner, parent=None):
         super().__init__(parent)
@@ -120,8 +121,10 @@ class UpdateService(QObject):
         self._infos: dict[str, UpdateInfo] = {}
         self._versionsData: dict = {}
 
-    def check(self) -> None:
-        self._coroutineRunner.submit(self._check())
+    def refresh(self, *, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
+        self._coroutineRunner.submit(
+            self._refresh(shouldRefreshApp, shouldRefreshPacks),
+        )
 
     def download(self, targetId: str) -> None:
         self._coroutineRunner.submit(self._download(targetId))
@@ -136,28 +139,38 @@ class UpdateService(QObject):
 
     # ── Private ──
 
-    async def _check(self) -> None:
-        self._emit("app", UpdateState.CHECKING, label=f"Ghost Downloader {VERSION}")
+    async def _refresh(self, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
+        shouldRefreshPacks = shouldRefreshPacks and not IS_ANDROID
+        if not shouldRefreshApp and not shouldRefreshPacks:
+            return
+
+        if shouldRefreshApp:
+            self._emit("app", UpdateState.CHECKING, label=f"Ghost Downloader {VERSION}")
 
         data = await self._fetchVersions()
         if data is None:
             logger.debug("检查更新失败，将在下次启动时重试")
-            self._emit("app", UpdateState.IDLE, error="无法获取版本信息")
+            if shouldRefreshApp:
+                self._emit("app", UpdateState.IDLE, error="无法获取版本信息")
+            if shouldRefreshPacks:
+                self.packsRefreshed.emit(0, True)
             return
         self._versionsData = data
 
-        appData = data.get("app", {})
-        latestVersion = appData.get("version", "")
-        if latestVersion and isNewer(VERSION, latestVersion):
-            self._emit("app", UpdateState.AVAILABLE,
-                        label=f"Ghost Downloader {latestVersion}",
-                        latestVersion=latestVersion)
-        else:
-            self._emit("app", UpdateState.IDLE)
+        if shouldRefreshApp:
+            appData = data.get("app", {})
+            latestVersion = appData.get("version", "")
+            if latestVersion and isNewer(VERSION, latestVersion):
+                self._emit("app", UpdateState.AVAILABLE,
+                           label=f"Ghost Downloader {latestVersion}",
+                           latestVersion=latestVersion)
+            else:
+                self._emit("app", UpdateState.IDLE)
 
-        if IS_ANDROID:
+        if not shouldRefreshPacks:
             return
 
+        availableCount = 0
         packsData = data.get("packs", {})
         for packDir in sorted(FEATURES_DIR.iterdir()) if FEATURES_DIR.exists() else []:
             if not packDir.is_dir() or packDir.name.startswith("."):
@@ -174,10 +187,12 @@ class UpdateService(QObject):
                 if remoteGdMin and not isNewer(remoteGdMin, VERSION) and remoteGdMin != VERSION:
                     logger.debug("跳过 Pack 更新 {}：需要 GD ≥ {}", manifest.name, remoteGdMin)
                     continue
+                availableCount += 1
                 self._emit(manifest.name, UpdateState.AVAILABLE,
-                            label=f"{manifest.className} {remoteVersion}",
-                            currentVersion=manifest.version,
-                            latestVersion=remoteVersion)
+                           label=f"{manifest.className} {remoteVersion}",
+                           currentVersion=manifest.version,
+                           latestVersion=remoteVersion)
+        self.packsRefreshed.emit(availableCount, False)
 
     async def _fetchVersions(self) -> dict | None:
         try:
@@ -188,7 +203,7 @@ class UpdateService(QObject):
 
     async def _download(self, targetId: str) -> None:
         info = self._infos.get(targetId)
-        if info is None or info.state != UpdateState.AVAILABLE:
+        if info is None or info.state not in (UpdateState.AVAILABLE, UpdateState.FAILED):
             return
 
         self._emit(targetId, UpdateState.DOWNLOADING)

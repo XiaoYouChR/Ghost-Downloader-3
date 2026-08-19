@@ -297,6 +297,7 @@ class Config(QConfig):
 
     # 软件
     shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
+    shouldAutoUpdatePacks = ConfigItem("Software", "AutoUpdatePacks", True, BoolValidator())
     shouldRunAtLogin = ConfigItem("Software", "AutoRun", False, BoolValidator())
     closeMode = OptionsConfigItem(
         "Software", "CloseMode", CloseMode.ASK,

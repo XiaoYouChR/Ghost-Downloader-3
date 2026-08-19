@@ -70,7 +70,10 @@ def startApp(application, isSilent=False):
     from app.config.paths import executableDir
     from app.services.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import (
+        bindNotifications, createServices, loadEngine, loadPacks,
+        refreshUpdatesAtStartup, startEngine, stopEngine,
+    )
     from app.view.windows.main_window import MainWindow
 
     def exceptionHook(exceptionType, value, tb):
@@ -239,7 +242,8 @@ def startApp(application, isSilent=False):
     def onUpdateChanged(info):
         if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
             show()._onUpdateAvailable(info)
-        elif info.targetId != "app" and info.state == UpdateState.AVAILABLE:
+        elif (info.targetId != "app" and info.state == UpdateState.AVAILABLE
+              and cfg.shouldAutoUpdatePacks.value):
             updateService.download(info.targetId)
         elif info.targetId != "app" and info.state == UpdateState.READY:
             if window is not None:
@@ -251,8 +255,18 @@ def startApp(application, isSilent=False):
                     position=InfoBarPosition.BOTTOM_RIGHT,
                     parent=window,
                 )
+        elif info.targetId != "app" and info.state == UpdateState.FAILED:
+            if window is not None:
+                from qfluentwidgets import InfoBar, InfoBarPosition
+                InfoBar.error(
+                    window.tr("功能包更新失败"),
+                    window.tr("{0} 更新失败").format(info.label),
+                    duration=5000,
+                    position=InfoBarPosition.BOTTOM_RIGHT,
+                    parent=window,
+                )
     updateService.changed.connect(onUpdateChanged)
-    checkUpdateAtStartup(updateService)
+    refreshUpdatesAtStartup(updateService)
 
     application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, updateService))
 
