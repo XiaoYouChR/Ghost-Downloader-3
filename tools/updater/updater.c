@@ -32,6 +32,9 @@
     #ifdef __APPLE__
         #include <mach-o/dyld.h>
         #include <sysdir.h>
+        #include <CoreFoundation/CoreFoundation.h>
+        #include <Security/Authorization.h>
+        #include <ServiceManagement/ServiceManagement.h>
     #endif
     typedef char pchar;
     #define PFMT "%s"
@@ -699,6 +702,84 @@ static int startApp(const pchar *exe) {
 #endif
 }
 
+#ifdef __APPLE__
+static int restartElevated(const char *appDir, const char *appExe,
+                           const char *patchFile) {
+    char exePath[PATH_BUF];
+    uint32_t size = sizeof(exePath);
+    if (_NSGetExecutablePath(exePath, &size) != 0)
+        return -1;
+
+    AuthorizationRef auth = NULL;
+    if (AuthorizationCreate(NULL, kAuthorizationEmptyEnvironment,
+                            kAuthorizationFlagDefaults, &auth) != errAuthorizationSuccess)
+        return -1;
+
+    AuthorizationItem right = { "system.privilege.admin", 0, NULL, 0 };
+    AuthorizationRights rights = { 1, &right };
+    OSStatus st = AuthorizationCopyRights(
+        auth, &rights, NULL,
+        kAuthorizationFlagInteractionAllowed
+            | kAuthorizationFlagPreAuthorize
+            | kAuthorizationFlagExtendRights,
+        NULL);
+    if (st != errAuthorizationSuccess) {
+        logMsg("authorization cancelled (%d)", (int)st);
+        AuthorizationFree(auth, kAuthorizationFlagDefaults);
+        return -1;
+    }
+
+    CFStringRef args[5];
+    int nArgs = 0;
+    args[nArgs++] = CFStringCreateWithCString(NULL, exePath, kCFStringEncodingUTF8);
+    args[nArgs++] = CFSTR("0");
+    args[nArgs++] = CFStringCreateWithCString(NULL, appDir, kCFStringEncodingUTF8);
+    args[nArgs++] = CFStringCreateWithCString(NULL, appExe, kCFStringEncodingUTF8);
+    if (patchFile)
+        args[nArgs++] = CFStringCreateWithCString(NULL, patchFile, kCFStringEncodingUTF8);
+    CFArrayRef progArgs = CFArrayCreate(NULL, (const void **)args, nArgs,
+                                        &kCFTypeArrayCallBacks);
+
+    CFStringRef keys[] = {
+        CFSTR("Label"),
+        CFSTR("ProgramArguments"),
+        CFSTR("RunAtLoad"),
+        CFSTR("KeepAlive"),
+    };
+    CFTypeRef vals[] = {
+        CFSTR("com.ghostdownloader.updater"),
+        progArgs,
+        kCFBooleanTrue,
+        kCFBooleanFalse,
+    };
+    CFDictionaryRef job = CFDictionaryCreate(
+        NULL, (const void **)keys, (const void **)vals, 4,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+
+    CFErrorRef error = NULL;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    Boolean ok = SMJobSubmit(kSMDomainSystemLaunchd, job, auth, &error);
+#pragma clang diagnostic pop
+    if (!ok && error) {
+        CFStringRef desc = CFErrorCopyDescription(error);
+        char buf[256];
+        CFStringGetCString(desc, buf, sizeof(buf), kCFStringEncodingUTF8);
+        logMsg("SMJobSubmit failed: %s", buf);
+        CFRelease(desc);
+        CFRelease(error);
+    }
+
+    CFRelease(job);
+    CFRelease(progArgs);
+    for (int i = 0; i < nArgs; i++)
+        if (args[i] != CFSTR("0")) CFRelease(args[i]);
+    AuthorizationFree(auth, kAuthorizationFlagDefaults);
+
+    return ok ? 0 : -1;
+}
+#endif
+
 #ifdef _WIN32
 static int restartFromTemp(const wchar_t *appDir, int wargc, wchar_t **wargv) {
     wchar_t exePath[PATH_BUF], longExe[PATH_BUF], longApp[PATH_BUF];
@@ -897,6 +978,19 @@ int main(int argc, char *argv[]) {
         }
     }
     if (install(appDir, newDir, backupDir, exeDir) != 0) {
+#ifdef __APPLE__
+        if (geteuid() != 0) {
+            openLog(exeDir);
+            logMsg("install failed, requesting elevation");
+            closeLog();
+            if (restartElevated(appDir, appExe, patchFile) == 0)
+                return EXIT_OK;
+            openLog(exeDir);
+            logMsg("elevation failed or cancelled");
+            closeLog();
+            return EXIT_RENAME_FAILED;
+        }
+#endif
         openLog(exeDir);
         logMsg("install failed");
         closeLog();
