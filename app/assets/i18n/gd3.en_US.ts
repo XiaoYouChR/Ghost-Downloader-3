@@ -2049,12 +2049,12 @@ Install Location: {1}</translation>
 <context>
     <name>HeaderRow</name>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="161"/>
+        <location filename="../../view/components/headers_editor.py" line="163"/>
         <source>名称</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="164"/>
+        <location filename="../../view/components/headers_editor.py" line="166"/>
         <source>值</source>
         <translation>Value</translation>
     </message>
@@ -2090,34 +2090,34 @@ Install Location: {1}</translation>
         <translation type="vanished">Value</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="238"/>
+        <location filename="../../view/components/headers_editor.py" line="240"/>
         <source>每行一个 名称: 值，或直接粘贴 cURL 命令</source>
         <translation>One Name: Value pair per line, or paste a cURL command</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="239"/>
-        <location filename="../../view/components/headers_editor.py" line="315"/>
+        <location filename="../../view/components/headers_editor.py" line="241"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>使用帮助</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="240"/>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="242"/>
+        <location filename="../../view/components/headers_editor.py" line="316"/>
         <source>切换到文本视图</source>
         <translation>Switch to Text View</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="241"/>
+        <location filename="../../view/components/headers_editor.py" line="243"/>
         <source>恢复默认请求标头</source>
         <translation>Restore Default Request Headers</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="316"/>
         <source>切换到表格视图</source>
         <translation>Switch to Table View</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="317"/>
+        <location filename="../../view/components/headers_editor.py" line="325"/>
         <source>粘贴即可识别 cURL 或 名称: 值（每行一个）
 多条 cURL 只取第一条
 
@@ -2158,7 +2158,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation>Preset name cannot be empty</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="56"/>
+        <location filename="../../view/dialogs/headers_preset_edit.py" line="60"/>
         <source>未命名预设</source>
         <translation>Unnamed Preset</translation>
     </message>
@@ -3030,6 +3030,16 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <source>{0} 将在下次启动时生效</source>
         <translation>{0} will take effect on next launch</translation>
     </message>
+    <message>
+        <location filename="../../view/notification_catalog.py" line="5"/>
+        <source>功能包更新失败</source>
+        <translation>Feature Pack Update Failed</translation>
+    </message>
+    <message>
+        <location filename="../../view/notification_catalog.py" line="6"/>
+        <source>{0} 更新失败</source>
+        <translation>Failed to update {0}</translation>
+    </message>
 </context>
 <context>
     <name>MarkdownViewer</name>
@@ -3299,14 +3309,72 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="78"/>
+        <location filename="../../view/dialogs/pack_info.py" line="103"/>
         <source>功能包</source>
         <translation>Feature Packs</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="82"/>
+        <location filename="../../view/dialogs/pack_info.py" line="104"/>
+        <source>自动更新功能包</source>
+        <translation>Automatically Update Feature Packs</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="109"/>
+        <source>更新功能包</source>
+        <translation>Update Feature Packs</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="115"/>
         <source>关闭</source>
         <translation>Close</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="177"/>
+        <source>检查功能包更新</source>
+        <translation>Feature Pack Update Check</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="178"/>
+        <source>正在检查功能包更新...</source>
+        <translation>Checking for feature pack updates...</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="193"/>
+        <source>检查功能包更新失败</source>
+        <translation>Feature Pack Update Check Failed</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="194"/>
+        <source>无法获取最新功能包版本信息</source>
+        <translation>Unable to get the latest feature pack versions</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="202"/>
+        <source>所有功能包已是最新版本</source>
+        <translation>All feature packs are up to date</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="211"/>
+        <source>发现功能包更新</source>
+        <translation>Feature Pack Updates Available</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="212"/>
+        <source>检测到 {0} 个可用更新，正在下载</source>
+        <translation>Downloading {0} available updates</translation>
+    </message>
+</context>
+<context>
+    <name>PackRow</name>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="74"/>
+        <source>更新</source>
+        <translation>Update</translation>
+    </message>
+    <message>
+        <location filename="../../view/dialogs/pack_info.py" line="88"/>
+        <source>重试</source>
+        <translation>Retry</translation>
     </message>
 </context>
 <context>
@@ -4083,7 +4151,7 @@ Path: {1}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="55"/>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
+        <location filename="../../view/pages/setting_page.py" line="370"/>
         <source>关于</source>
         <translation>About</translation>
     </message>
@@ -4501,103 +4569,103 @@ Path: {1}</translation>
         <translation>Use System Settings</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="316"/>
+        <location filename="../../view/pages/setting_page.py" line="317"/>
         <source>切换到用户模式</source>
         <translation>Switch to User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="317"/>
-        <location filename="../../view/pages/setting_page.py" line="323"/>
+        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <location filename="../../view/pages/setting_page.py" line="324"/>
         <source>数据存储模式</source>
         <translation>Configuration Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="318"/>
+        <location filename="../../view/pages/setting_page.py" line="319"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
         <translation>Currently in Portable mode, configuration stored next to the app: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="322"/>
+        <location filename="../../view/pages/setting_page.py" line="323"/>
         <source>切换到 Portable 模式</source>
         <translation>Switch to Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="324"/>
+        <location filename="../../view/pages/setting_page.py" line="325"/>
         <source>当前为用户模式，数据保存在: {0}</source>
         <translation>Currently in User mode, configuration stored at: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="328"/>
+        <location filename="../../view/pages/setting_page.py" line="329"/>
         <source>在应用程序启动时检查更新</source>
-        <translation>Check For Updates on Startup</translation>
+        <translation>Check For App Updates on Startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="329"/>
+        <location filename="../../view/pages/setting_page.py" line="330"/>
         <source>新版本将更稳定，并具有更多功能</source>
         <translation>Get more features and improved stability with new versions</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="337"/>
+        <location filename="../../view/pages/setting_page.py" line="340"/>
         <source>关闭主窗口时</source>
         <translation>Main Window Closing Behavior</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="338"/>
+        <location filename="../../view/pages/setting_page.py" line="341"/>
         <source>设置关闭主窗口后程序继续在后台运行还是退出</source>
         <translation>Choose whether to continue running in background or exit when closing the main window</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="342"/>
         <source>关闭时询问</source>
         <translation>Ask when closing</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="342"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="339"/>
+        <location filename="../../view/pages/setting_page.py" line="342"/>
         <source>退出程序</source>
         <translation>Exit App</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="354"/>
+        <location filename="../../view/pages/setting_page.py" line="357"/>
         <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
         <translation>Help improve Ghost Downloader by providing feedback, or view logs to troubleshoot issues</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="366"/>
         <source>查看详情</source>
         <translation>Details</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="363"/>
+        <location filename="../../view/pages/setting_page.py" line="366"/>
         <source>功能包</source>
         <translation>Feature Packs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="364"/>
+        <location filename="../../view/pages/setting_page.py" line="367"/>
         <source>管理已安装的功能包</source>
         <translation>Manage currently installed feature packs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="497"/>
+        <location filename="../../view/pages/setting_page.py" line="502"/>
         <source>用户模式</source>
         <translation>User Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="497"/>
+        <location filename="../../view/pages/setting_page.py" line="502"/>
         <source>Portable 模式</source>
         <translation>Portable Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="499"/>
+        <location filename="../../view/pages/setting_page.py" line="504"/>
         <source>切换数据存储模式</source>
         <translation>Switch Data Storage Mode</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="500"/>
+        <location filename="../../view/pages/setting_page.py" line="505"/>
         <source>确定要切换到{0}吗？
 
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
@@ -4606,12 +4674,18 @@ Path: {1}</translation>
 Data will be copied to new location and the app will then exit. Please manually launch the app again.</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="517"/>
-        <source>正在检查更新...</source>
-        <translation>Checking for updates...</translation>
+        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <source>正在检查应用更新...</source>
+        <translation>Checking for app updates...</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="529"/>
+        <location filename="../../view/pages/setting_page.py" line="522"/>
+        <source>检查应用更新</source>
+        <comment>notification</comment>
+        <translation>App Update Check</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="534"/>
         <source>当前已是最新版本</source>
         <translation>You&apos;re running the latest version</translation>
     </message>
@@ -4620,17 +4694,17 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation type="vanished">Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="526"/>
-        <source>检查更新失败</source>
-        <translation>Failed to check update</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="526"/>
+        <location filename="../../view/pages/setting_page.py" line="531"/>
         <source>无法获取最新版本信息</source>
         <translation>Unable to get the latest version information</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="542"/>
+        <location filename="../../view/pages/setting_page.py" line="531"/>
+        <source>检查应用更新失败</source>
+        <translation>App Update Check Failed</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="550"/>
         <source>搜索设置</source>
         <translation>Search Settings</translation>
     </message>
@@ -4655,33 +4729,39 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>Start Ghost Downloader minimized on system startup</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="343"/>
+        <location filename="../../view/pages/setting_page.py" line="346"/>
         <source>剪贴板监听</source>
         <translation>Monitor Clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="344"/>
+        <location filename="../../view/pages/setting_page.py" line="347"/>
         <source>剪贴板监听器将自动检测剪贴板中的链接并添加下载任务</source>
         <translation>Automatically detect links in clipboard and add download tasks</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="372"/>
+        <location filename="../../view/pages/setting_page.py" line="370"/>
+        <source>检查应用更新</source>
+        <comment>button</comment>
+        <translation>Check For App Update</translation>
+    </message>
+    <message>
+        <location filename="../../view/pages/setting_page.py" line="377"/>
         <source>打开作者的个人空间</source>
         <translation>Open Author&apos;s Profile</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="373"/>
+        <location filename="../../view/pages/setting_page.py" line="378"/>
         <source>了解作者</source>
         <translation>About the Author</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="373"/>
+        <location filename="../../view/pages/setting_page.py" line="378"/>
         <source>发现更多 {} 的作品</source>
         <translation>Discover more works by {}</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="352"/>
-        <location filename="../../view/pages/setting_page.py" line="353"/>
+        <location filename="../../view/pages/setting_page.py" line="355"/>
+        <location filename="../../view/pages/setting_page.py" line="356"/>
         <source>提供反馈</source>
         <translation>Provide Feedback</translation>
     </message>
@@ -4703,63 +4783,57 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation type="vanished">Help improve Ghost Downloader by providing feedback</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="356"/>
+        <location filename="../../view/pages/setting_page.py" line="359"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="367"/>
-        <location filename="../../view/pages/setting_page.py" line="517"/>
-        <source>检查更新</source>
-        <translation>Check For Updates</translation>
-    </message>
-    <message>
-        <location filename="../../view/pages/setting_page.py" line="424"/>
+        <location filename="../../view/pages/setting_page.py" line="429"/>
         <source>已配置</source>
         <translation>Configuration Saved</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="424"/>
+        <location filename="../../view/pages/setting_page.py" line="429"/>
         <source>重启软件后生效</source>
         <translation>Restart required to take effect</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="434"/>
+        <location filename="../../view/pages/setting_page.py" line="439"/>
         <source>已复制配对令牌</source>
         <translation>Token Copied</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="440"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>已重新生成配对令牌</source>
         <translation>Token Regenerated</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="440"/>
+        <location filename="../../view/pages/setting_page.py" line="445"/>
         <source>新令牌已复制到剪贴板</source>
         <translation>Copied new token to clipboard</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="457"/>
+        <location filename="../../view/pages/setting_page.py" line="462"/>
         <source>解包失败</source>
         <translation>Unpack failed</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="464"/>
+        <location filename="../../view/pages/setting_page.py" line="469"/>
         <source>未连接</source>
         <translation>Not Connected</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="466"/>
+        <location filename="../../view/pages/setting_page.py" line="471"/>
         <source>已连接 v{} (桌面端自管理)</source>
         <translation>Connected v{} (Desktop-managed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="468"/>
+        <location filename="../../view/pages/setting_page.py" line="473"/>
         <source>已连接 v{} (商店安装)</source>
         <translation>Connected v{} (Store-installed)</translation>
     </message>
     <message>
-        <location filename="../../view/pages/setting_page.py" line="474"/>
+        <location filename="../../view/pages/setting_page.py" line="479"/>
         <source>选择导出路径</source>
         <translation>Select Export Path</translation>
     </message>

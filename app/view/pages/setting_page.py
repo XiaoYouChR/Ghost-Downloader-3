@@ -367,7 +367,7 @@ class SettingPage(ScrollArea):
             self.tr("管理已安装的功能包"),
         )
         self.aboutCard = PrimaryPushSettingCard(
-            self.tr("检查应用更新"), FluentIcon.INFO, self.tr("关于"),
+            self.tr("检查应用更新", "button"), FluentIcon.INFO, self.tr("关于"),
             f"© Copyright {YEAR}, {AUTHOR}. Version {VERSION}",
         )
         if hasUpdateMarker:
@@ -519,7 +519,7 @@ class SettingPage(ScrollArea):
     def _onAboutCardClicked(self) -> None:
         from app.services.update_service import UpdateState
 
-        InfoBar.info(self.tr("检查应用更新"), self.tr("正在检查应用更新..."),
+        InfoBar.info(self.tr("检查应用更新", "notification"), self.tr("正在检查应用更新..."),
                      duration=1500, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
         def onChecked(info):
