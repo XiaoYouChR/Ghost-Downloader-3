@@ -46,15 +46,15 @@
       "gdMinVersion": "4.2.0"
     },
     "bittorrent_pack": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "file": "bittorrent_pack.zip",
-      "sha256": "bf1cdb3ba188f97d8f05b413aeafa4b178980d47671027d095c0f22d16a38df5",
+      "sha256": "9eb4b101ebc6a441d92f3040da28e029a1037d42f1cf9dfdc034f52d9eab1211",
       "gdMinVersion": "4.2.0"
     },
     "ed2k_pack": {
-      "version": "1.0.0",
+      "version": "1.1.0",
       "file": "ed2k_pack.zip",
-      "sha256": "6ad9369adb4ebe5b4bdcd951e8759c4047d2d0286ec1d0e94fb9c6c688234429",
+      "sha256": "d4ef36e3deb49cebe8e7e5307dfe78e405b423f38af9b7ca8ce53bd9b8f30999",
       "gdMinVersion": "4.2.0"
     },
     "ffmpeg_pack": {
