@@ -436,11 +436,19 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
-          xcrun notarytool submit "$DMG_NAME" \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_APP_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --wait
+          for attempt in 1 2 3; do
+            echo "Notarization attempt $attempt"
+            if xcrun notarytool submit "$DMG_NAME" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait --timeout 10m; then
+              break
+            fi
+            [ "$attempt" -eq 3 ] && exit 1
+            echo "Retrying in 30s..."
+            sleep 30
+          done
           xcrun stapler staple "$DMG_NAME"
           echo "Notarization complete."
 
