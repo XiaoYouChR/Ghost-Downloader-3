@@ -23,6 +23,7 @@ CURL_VALUE_FLAGS: Final[dict[str, str]] = {
     "-A": "user-agent", "--user-agent": "user-agent",
     "-e": "referer", "--referer": "referer",
 }
+HEADER_ROW_HEIGHT = 36
 
 
 def toLogicalLines(text: str) -> list[str]:
@@ -153,6 +154,7 @@ class HeaderRow(QWidget):
         self._bind()
 
     def _initWidget(self) -> None:
+        self.setFixedHeight(HEADER_ROW_HEIGHT)
         completer = QCompleter(HEADER_SUGGESTIONS, self.nameEdit)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
@@ -251,6 +253,7 @@ class HeadersEditor(QWidget):
 
         self.tableLayout.setContentsMargins(0, 0, 0, 0)
         self.tableLayout.setSpacing(4)
+        self.tableLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.setSpacing(0)
@@ -276,6 +279,10 @@ class HeadersEditor(QWidget):
 
     def reset(self) -> None:
         self.setHeaders(self._defaults)
+
+    def closeHelp(self) -> None:
+        for tip in self.findChildren(TeachingTip):
+            tip.close()
 
     # 行的顺序只有 tableLayout 一个所有者，不另存一份列表
     def _rows(self) -> list[HeaderRow]:
@@ -310,6 +317,7 @@ class HeadersEditor(QWidget):
         self._setRows(rows)
 
     def _onHelpClicked(self) -> None:
+        self.closeHelp()
         TeachingTip.create(
             self.helpButton,
             self.tr("使用帮助"),
