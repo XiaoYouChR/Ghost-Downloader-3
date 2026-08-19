@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
@@ -16,7 +17,7 @@ from app.view.components.scroll_area import ScrollArea
 
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack
-    from app.services.update_service import UpdateService
+    from app.services.update_service import UpdateInfo, UpdateService
 
 PACK_ROW_HEIGHT = 36
 PACK_LIST_WIDTH = 440
@@ -28,7 +29,7 @@ STATUS_FAILED_COLORS = ("#C42B1C", "#FF99A4")
 
 
 class PackRow(QWidget):
-    def __init__(self, pack: FeaturePack, onRetry, parent=None):
+    def __init__(self, pack: FeaturePack, onRetry: Callable[[], None], parent=None):
         super().__init__(parent)
         self._onRetry = onRetry
         self._initWidget(pack)
@@ -63,7 +64,7 @@ class PackRow(QWidget):
     def _bind(self) -> None:
         self.updateButton.clicked.connect(self._onRetry)
 
-    def update(self, info) -> None:
+    def setStatus(self, info: UpdateInfo) -> None:
         from app.services.update_service import UpdateState
 
         if info.state == UpdateState.AVAILABLE:
@@ -105,8 +106,8 @@ class PackInfoDialog(MessageBoxBase):
         self.autoUpdateSwitch.setOnText("")
         self.autoUpdateSwitch.setOffText("")
         self.autoUpdateSwitch.setChecked(cfg.shouldAutoUpdatePacks.value)
-        self.checkButton = PushButton(FluentIcon.SYNC, self.tr("更新功能包"), self)
-        self.checkButton.setEnabled(IS_COMPILED)
+        self.updateButton = PushButton(FluentIcon.SYNC, self.tr("更新功能包"), self)
+        self.updateButton.setEnabled(IS_COMPILED)
         self.packListArea = ScrollArea(self.widget)
         self.packListWidget = QWidget(self.packListArea)
         self.packListLayout = QVBoxLayout(self.packListWidget)
@@ -139,7 +140,7 @@ class PackInfoDialog(MessageBoxBase):
         titleLayout = QHBoxLayout()
         titleLayout.addWidget(self.titleLabel)
         titleLayout.addStretch(1)
-        titleLayout.addWidget(self.checkButton)
+        titleLayout.addWidget(self.updateButton)
         self.viewLayout.addLayout(titleLayout)
         self.viewLayout.addSpacing(8)
 
@@ -162,16 +163,16 @@ class PackInfoDialog(MessageBoxBase):
         self._updateService.changed.connect(self._onUpdateChanged)
         self._updateService.packsRefreshed.connect(self._onPacksRefreshed)
         self.autoUpdateSwitch.checkedChanged.connect(self._onAutoUpdateChanged)
-        self.checkButton.clicked.connect(self._onCheckClicked)
+        self.updateButton.clicked.connect(self._onUpdateClicked)
 
     def _onAutoUpdateChanged(self, enabled: bool) -> None:
         cfg.set(cfg.shouldAutoUpdatePacks, enabled)
 
-    def _onCheckClicked(self) -> None:
+    def _onUpdateClicked(self) -> None:
         if not IS_COMPILED or self._isRefreshingPacks:
             return
         self._isRefreshingPacks = True
-        self.checkButton.setEnabled(False)
+        self.updateButton.setEnabled(False)
         InfoBar.info(
             self.tr("检查功能包更新"),
             self.tr("正在检查功能包更新..."),
@@ -179,16 +180,13 @@ class PackInfoDialog(MessageBoxBase):
             position=InfoBarPosition.BOTTOM_RIGHT,
             parent=self.window(),
         )
-        self._updateService.refresh(
-            shouldRefreshApp=False,
-            shouldRefreshPacks=True,
-        )
+        self._updateService.updatePacks()
 
     def _onPacksRefreshed(self, availableCount: int, hasError: bool) -> None:
         if not self._isRefreshingPacks:
             return
         self._isRefreshingPacks = False
-        self.checkButton.setEnabled(True)
+        self.updateButton.setEnabled(True)
 
         if hasError:
             InfoBar.error(
@@ -217,11 +215,7 @@ class PackInfoDialog(MessageBoxBase):
             parent=self.window(),
         )
 
-    def _onUpdateChanged(self, info) -> None:
-        from app.services.update_service import UpdateState
-
+    def _onUpdateChanged(self, info: UpdateInfo) -> None:
         row = self._rows.get(info.targetId)
         if row is not None:
-            row.update(info)
-            if IS_COMPILED and self._isRefreshingPacks and info.state == UpdateState.AVAILABLE:
-                self._updateService.download(info.targetId)
+            row.setStatus(info)

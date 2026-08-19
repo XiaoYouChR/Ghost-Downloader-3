@@ -129,6 +129,11 @@ class UpdateService(QObject):
     def download(self, targetId: str) -> None:
         self._coroutineRunner.submit(self._download(targetId))
 
+    def updatePacks(self) -> None:
+        if not IS_COMPILED:
+            return
+        self._coroutineRunner.submit(self._updatePacks())
+
     def apply(self) -> None:
         for info in self._infos.values():
             if info.state == UpdateState.READY and info.targetId != "app":
@@ -139,10 +144,18 @@ class UpdateService(QObject):
 
     # ── Private ──
 
-    async def _refresh(self, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
+    async def _refresh(self, shouldRefreshApp: bool,
+                       shouldRefreshPacks: bool) -> list[str]:
         shouldRefreshPacks = shouldRefreshPacks and not IS_ANDROID
+        appInfo = self._infos.get("app")
+        if appInfo is not None and appInfo.state in (
+            UpdateState.CHECKING,
+            UpdateState.DOWNLOADING,
+            UpdateState.READY,
+        ):
+            shouldRefreshApp = False
         if not shouldRefreshApp and not shouldRefreshPacks:
-            return
+            return []
 
         if shouldRefreshApp:
             self._emit("app", UpdateState.CHECKING, label=f"Ghost Downloader {VERSION}")
@@ -154,7 +167,7 @@ class UpdateService(QObject):
                 self._emit("app", UpdateState.IDLE, error="无法获取版本信息")
             if shouldRefreshPacks:
                 self.packsRefreshed.emit(0, True)
-            return
+            return []
         self._versionsData = data
 
         if shouldRefreshApp:
@@ -168,9 +181,10 @@ class UpdateService(QObject):
                 self._emit("app", UpdateState.IDLE)
 
         if not shouldRefreshPacks:
-            return
+            return []
 
         availableCount = 0
+        availablePackIds: list[str] = []
         packsData = data.get("packs", {})
         for packDir in sorted(FEATURES_DIR.iterdir()) if FEATURES_DIR.exists() else []:
             if not packDir.is_dir() or packDir.name.startswith("."):
@@ -183,16 +197,31 @@ class UpdateService(QObject):
                 continue
             remoteVersion = remoteInfo.get("version", "")
             if remoteVersion and isNewer(manifest.version, remoteVersion):
+                currentInfo = self._infos.get(manifest.name)
+                if currentInfo is not None:
+                    if currentInfo.state == UpdateState.DOWNLOADING:
+                        continue
+                    if (
+                        currentInfo.state == UpdateState.READY
+                        and currentInfo.latestVersion == remoteVersion
+                    ):
+                        continue
                 remoteGdMin = remoteInfo.get("gdMinVersion", "")
                 if remoteGdMin and not isNewer(remoteGdMin, VERSION) and remoteGdMin != VERSION:
                     logger.debug("跳过 Pack 更新 {}：需要 GD ≥ {}", manifest.name, remoteGdMin)
                     continue
                 availableCount += 1
+                availablePackIds.append(manifest.name)
                 self._emit(manifest.name, UpdateState.AVAILABLE,
                            label=f"{manifest.className} {remoteVersion}",
                            currentVersion=manifest.version,
                            latestVersion=remoteVersion)
         self.packsRefreshed.emit(availableCount, False)
+        return availablePackIds
+
+    async def _updatePacks(self) -> None:
+        packIds = await self._refresh(False, True)
+        await asyncio.gather(*(self._download(packId) for packId in packIds))
 
     async def _fetchVersions(self) -> dict | None:
         try:
@@ -295,6 +324,8 @@ class UpdateService(QObject):
         if not zipPath.is_file():
             return
         pendingDir = FEATURES_DIR / f"{packId}_pending"
+        if pendingDir.exists():
+            shutil.rmtree(pendingDir)
         pendingDir.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zipPath) as zf:
             zf.extractall(pendingDir)

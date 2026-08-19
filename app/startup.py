@@ -85,24 +85,24 @@ def bindNotifications(taskService, notifyCompleted, notifyDiskSpace):
 
 
 def refreshUpdatesAtStartup(updateService):
+    from loguru import logger
+
     from app.config.cfg import cfg
     from app.config.paths import IS_COMPILED, hasNoAutoUpdateMarker
 
-    hasMarker = hasNoAutoUpdateMarker()
-    if not IS_COMPILED or hasMarker:
-        from loguru import logger
+    hasUpdateMarker = hasNoAutoUpdateMarker()
 
     if not IS_COMPILED:
         logger.info("App and feature pack auto updates disabled in source mode")
 
-    if hasMarker:
-        logger.info("App auto update disabled by gd_no_auto_update marker")
+    if hasUpdateMarker:
+        logger.info("App auto update disabled and controls hidden by gd_no_auto_update marker")
         if cfg.shouldCheckUpdateAtStartup.value:
             cfg.set(cfg.shouldCheckUpdateAtStartup, False)
 
     shouldRefreshApp = (
         IS_COMPILED
-        and not hasMarker
+        and not hasUpdateMarker
         and cfg.shouldCheckUpdateAtStartup.value
     )
     shouldRefreshPacks = IS_COMPILED and cfg.shouldAutoUpdatePacks.value

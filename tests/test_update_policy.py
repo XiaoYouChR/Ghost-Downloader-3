@@ -31,6 +31,7 @@ class StubPackUpdateService(QObject):
     def __init__(self):
         super().__init__()
         self.downloads: list[str] = []
+        self.packUpdates = 0
 
     def refresh(self, *, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
         pass
@@ -38,17 +39,20 @@ class StubPackUpdateService(QObject):
     def download(self, targetId: str) -> None:
         self.downloads.append(targetId)
 
+    def updatePacks(self) -> None:
+        self.packUpdates += 1
+
 
 class StubPack:
     pass
 
 
-def setUpdatePolicy(monkeypatch, *, isCompiled: bool, hasMarker: bool,
+def setUpdatePolicy(monkeypatch, *, isCompiled: bool, hasUpdateMarker: bool,
                     shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
     import app.config.paths as paths
 
     monkeypatch.setattr(paths, "IS_COMPILED", isCompiled)
-    monkeypatch.setattr(paths, "hasNoAutoUpdateMarker", lambda: hasMarker)
+    monkeypatch.setattr(paths, "hasNoAutoUpdateMarker", lambda: hasUpdateMarker)
     monkeypatch.setattr(cfg.shouldCheckUpdateAtStartup, "value", shouldRefreshApp)
     monkeypatch.setattr(cfg.shouldAutoUpdatePacks, "value", shouldRefreshPacks)
 
@@ -59,7 +63,7 @@ def test_source_build_disables_automatic_updates(monkeypatch):
     setUpdatePolicy(
         monkeypatch,
         isCompiled=False,
-        hasMarker=False,
+        hasUpdateMarker=False,
         shouldRefreshApp=True,
         shouldRefreshPacks=True,
     )
@@ -80,7 +84,7 @@ def test_marker_disables_only_app_refresh(monkeypatch):
     setUpdatePolicy(
         monkeypatch,
         isCompiled=True,
-        hasMarker=True,
+        hasUpdateMarker=True,
         shouldRefreshApp=True,
         shouldRefreshPacks=True,
     )
@@ -98,7 +102,7 @@ def test_compiled_build_refreshes_enabled_targets(monkeypatch):
     setUpdatePolicy(
         monkeypatch,
         isCompiled=True,
-        hasMarker=False,
+        hasUpdateMarker=False,
         shouldRefreshApp=True,
         shouldRefreshPacks=False,
     )
@@ -113,7 +117,7 @@ def test_disabled_targets_do_not_refresh(monkeypatch):
     setUpdatePolicy(
         monkeypatch,
         isCompiled=False,
-        hasMarker=False,
+        hasUpdateMarker=False,
         shouldRefreshApp=True,
         shouldRefreshPacks=False,
     )
@@ -175,6 +179,48 @@ async def test_update_retry_clears_previous_failure(monkeypatch):
     assert infos[0].error == ""
 
 
+@pytest.mark.asyncio
+async def test_refresh_preserves_active_app_update(monkeypatch):
+    service = UpdateService(None)
+    service._infos["app"] = UpdateInfo(
+        targetId="app",
+        label="Ghost Downloader 4.2.0",
+        currentVersion="4.1.0",
+        latestVersion="4.2.0",
+        state=UpdateState.DOWNLOADING,
+    )
+    fetchVersions = AsyncMock()
+    monkeypatch.setattr(service, "_fetchVersions", fetchVersions)
+
+    await service._refresh(True, False)
+
+    fetchVersions.assert_not_awaited()
+    assert service._infos["app"].state == UpdateState.DOWNLOADING
+
+
+def test_pack_apply_replaces_existing_pending_files(monkeypatch, tmp_path):
+    import app.services.update_service as updateServiceModule
+
+    featuresDir = tmp_path / "features"
+    pendingDir = featuresDir / "http_pack_pending"
+    pendingDir.mkdir(parents=True)
+    (pendingDir / "removed.py").touch()
+
+    stagingDir = tmp_path / "staging"
+    stagingDir.mkdir()
+    with zipfile.ZipFile(stagingDir / "http_pack.zip", "w") as archive:
+        archive.writestr("pack.py", "# current")
+
+    monkeypatch.setattr(updateServiceModule, "IS_COMPILED", True)
+    monkeypatch.setattr(updateServiceModule, "FEATURES_DIR", featuresDir)
+    monkeypatch.setattr(updateServiceModule, "STAGING_DIR", stagingDir)
+
+    UpdateService(None)._applyPack("http_pack")
+
+    assert (pendingDir / "pack.py").is_file()
+    assert not (pendingDir / "removed.py").exists()
+
+
 def test_pack_panel_uses_fixed_rows_and_scrolls(qapp, qtbot):
     parent = QWidget()
     parent.resize(900, 800)
@@ -196,8 +242,15 @@ def test_pack_panel_uses_fixed_rows_and_scrolls(qapp, qtbot):
     assert dialog.packListArea.height() == MAX_VISIBLE_PACK_ROWS * PACK_ROW_HEIGHT
     assert dialog.packListArea.verticalScrollBar().maximum() > 0
 
+    row = dialog._rows["pack_0"]
+    row.setStatus(SimpleNamespace(state=UpdateState.AVAILABLE))
 
-def test_pack_update_button_always_updates_in_compiled_build(monkeypatch, qapp, qtbot):
+    assert row.statusLabel.text() == "↑"
+    assert row.statusLabel.lightColor.name() == "#9d5d00"
+    assert not row.updateButton.isHidden()
+
+
+def test_pack_update_button_starts_service_workflow(monkeypatch, qapp, qtbot):
     import app.view.dialogs.pack_info as packInfoModule
 
     parent = QWidget()
@@ -211,30 +264,39 @@ def test_pack_update_button_always_updates_in_compiled_build(monkeypatch, qapp, 
 
     dialog = PackInfoDialog([pack], updateService, parent)
 
-    assert dialog.checkButton.text() == "更新功能包"
-    assert dialog.checkButton.isEnabled()
+    assert dialog.updateButton.text() == "更新功能包"
+    assert dialog.updateButton.isEnabled()
 
-    dialog._isRefreshingPacks = True
-    dialog._onUpdateChanged(SimpleNamespace(
-        targetId="http_pack",
-        state=UpdateState.AVAILABLE,
-    ))
+    dialog._onUpdateClicked()
 
-    assert updateService.downloads == ["http_pack"]
-    assert dialog._rows["http_pack"].statusLabel.text() == "↑"
-    assert dialog._rows["http_pack"].statusLabel.lightColor.name() == "#9d5d00"
+    assert updateService.packUpdates == 1
 
     monkeypatch.setattr(packInfoModule, "IS_COMPILED", False)
     sourceUpdateService = StubPackUpdateService()
     sourceDialog = PackInfoDialog([pack], sourceUpdateService, parent)
-    sourceDialog._isRefreshingPacks = True
-    sourceDialog._onUpdateChanged(SimpleNamespace(
-        targetId="http_pack",
-        state=UpdateState.AVAILABLE,
-    ))
+    sourceDialog._onUpdateClicked()
 
-    assert not sourceDialog.checkButton.isEnabled()
-    assert sourceUpdateService.downloads == []
+    assert not sourceDialog.updateButton.isEnabled()
+    assert sourceDialog.autoUpdateSwitch.isEnabled()
+    assert sourceUpdateService.packUpdates == 0
+
+
+@pytest.mark.asyncio
+async def test_pack_update_downloads_all_available_packs(monkeypatch):
+    service = UpdateService(None)
+    monkeypatch.setattr(
+        service,
+        "_refresh",
+        AsyncMock(return_value=["http_pack", "bili_pack"]),
+    )
+    download = AsyncMock()
+    monkeypatch.setattr(service, "_download", download)
+
+    await service._updatePacks()
+
+    assert {call.args[0] for call in download.await_args_list} == {
+        "http_pack", "bili_pack",
+    }
 
 
 @pytest.mark.asyncio
@@ -268,6 +330,44 @@ async def test_pack_refresh_does_not_check_app(monkeypatch, tmp_path, qapp):
         ("http_pack", UpdateState.AVAILABLE),
     ]
     assert results == [(1, False)]
+
+
+@pytest.mark.asyncio
+async def test_pack_refresh_preserves_active_download(monkeypatch, tmp_path, qapp):
+    import app.services.update_service as updateServiceModule
+
+    packDir = tmp_path / "http_pack"
+    packDir.mkdir()
+    (packDir / "manifest.toml").write_text(
+        '[pack]\nentry = "pack.py"\nclass = "HttpPack"\n'
+        'version = "1.0.0"\ngdMinVersion = "4.0.0"\n',
+        encoding="utf-8",
+    )
+    (packDir / "pack.py").touch()
+    monkeypatch.setattr(updateServiceModule, "FEATURES_DIR", tmp_path)
+    monkeypatch.setattr(updateServiceModule, "IS_ANDROID", False)
+
+    service = UpdateService(None)
+    service._infos["http_pack"] = UpdateInfo(
+        targetId="http_pack",
+        label="HttpPack 2.0.0",
+        currentVersion="1.0.0",
+        latestVersion="2.0.0",
+        state=UpdateState.DOWNLOADING,
+    )
+    service._fetchVersions = AsyncMock(return_value={
+        "packs": {"http_pack": {"version": "2.0.0"}},
+    })
+    infos = []
+    results = []
+    service.changed.connect(infos.append)
+    service.packsRefreshed.connect(lambda count, error: results.append((count, error)))
+
+    await service._refresh(False, True)
+
+    assert infos == []
+    assert results == [(0, False)]
+    assert service._infos["http_pack"].state == UpdateState.DOWNLOADING
 
 
 @pytest.mark.asyncio
