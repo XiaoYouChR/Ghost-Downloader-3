@@ -155,7 +155,7 @@ async def test_transfer_exists_does_not_remove_first_download(monkeypatch, tmp_p
     monkeypatch.setattr(session_module, "ed2kSession", session)
     task = makeTask(tmp_path)
 
-    with pytest.raises(TaskError, match="eD2k 传输已存在于 daemon 中"):
+    with pytest.raises(TaskError, match="该 eD2k 传输已存在于 daemon 中"):
         await task.steps[0].run(lambda _: None, None)
 
     assert fakeClient.removed == []

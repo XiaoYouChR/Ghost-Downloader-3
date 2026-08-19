@@ -250,8 +250,8 @@
         <translation type="vanished">Seed Ratio: {0:.2f}%</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="103"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="119"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="102"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="118"/>
         <source>做种 {0}</source>
         <translation>Seeded for {0}</translation>
     </message>
@@ -260,8 +260,8 @@
         <translation type="vanished">Peers {0}/Seeds {1}</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="101"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="117"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="100"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="116"/>
         <source>分享率 {0}</source>
         <translation>Seed Ratio: {0}</translation>
     </message>
@@ -270,53 +270,53 @@
         <translation type="vanished">{0} Peers</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="60"/>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="104"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="59"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="103"/>
         <source>做种中</source>
         <translation>Seeding</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="55"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="54"/>
         <source>校验已有文件</source>
         <translation>Checking Existing Files</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="56"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="55"/>
         <source>检查续传状态</source>
         <translation>Checking Resume Data</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="57"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="56"/>
         <source>获取元数据</source>
         <translation>Downloading Metadata</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="58"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="57"/>
         <source>下载中</source>
         <translation>Downloading</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="59"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="58"/>
         <source>下载完成</source>
         <translation>Download Complete</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="61"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="60"/>
         <source>分配文件中</source>
         <translation>Allocating Files</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="62"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="61"/>
         <source>等待校验</source>
         <translation>Queued for Checks</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="63"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="62"/>
         <source>已暂停做种</source>
         <translation>Seeding Paused</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="64"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="63"/>
         <source>已暂停下载</source>
         <translation>Download Paused</translation>
     </message>
@@ -3186,7 +3186,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>MultiFileTaskCard</name>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="486"/>
+        <location filename="../../view/cards/task_cards.py" line="485"/>
         <source>{0}/{1} 个文件</source>
         <translation>{0}/{1} Files</translation>
     </message>
@@ -4900,77 +4900,77 @@ Data will be copied to new location and the program will then exit. Please manua
         <translation>Task Completed</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="275"/>
+        <location filename="../../view/cards/task_cards.py" line="274"/>
         <source>下载过程中发生错误，请稍后重试</source>
         <translation>An error occurred during download, please try again later</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="281"/>
+        <location filename="../../view/cards/task_cards.py" line="280"/>
         <source>任务已经暂停</source>
         <translation>Task Paused</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="283"/>
+        <location filename="../../view/cards/task_cards.py" line="282"/>
         <source>任务正在等待</source>
         <translation>Task Pending</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="329"/>
+        <location filename="../../view/cards/task_cards.py" line="328"/>
         <source>删除任务</source>
         <translation>Delete Task</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="329"/>
+        <location filename="../../view/cards/task_cards.py" line="328"/>
         <source>确定要删除这个下载任务吗？</source>
         <translation>Are you sure you want to delete this download task?</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="330"/>
+        <location filename="../../view/cards/task_cards.py" line="329"/>
         <source>同时删除已下载的文件</source>
         <translation>Also delete downloaded files</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="339"/>
+        <location filename="../../view/cards/task_cards.py" line="338"/>
         <source>文件不存在，无法校验</source>
         <translation>Cannot verify nonexistent file</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="373"/>
+        <location filename="../../view/cards/task_cards.py" line="372"/>
         <source>复制下载链接</source>
         <translation>Copy Download Link</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="378"/>
+        <location filename="../../view/cards/task_cards.py" line="377"/>
         <source>复制校验值</source>
         <translation>Copy Checksum</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="383"/>
+        <location filename="../../view/cards/task_cards.py" line="382"/>
         <source>编辑任务参数...</source>
         <translation>Edit Task Options...</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="387"/>
+        <location filename="../../view/cards/task_cards.py" line="386"/>
         <source>移到最前</source>
         <translation>Move To Top</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="391"/>
+        <location filename="../../view/cards/task_cards.py" line="390"/>
         <source>重新下载</source>
         <translation>Restart Download</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="396"/>
+        <location filename="../../view/cards/task_cards.py" line="395"/>
         <source>移动到分类</source>
         <translation>Assign Category</translation>
     </message>
     <message>
-        <location filename="../../view/cards/task_cards.py" line="398"/>
+        <location filename="../../view/cards/task_cards.py" line="397"/>
         <source>未分类</source>
         <translation>Uncategorized</translation>
     </message>
     <message>
-        <location filename="../../../features/bittorrent_pack/cards.py" line="45"/>
+        <location filename="../../../features/bittorrent_pack/cards.py" line="44"/>
         <location filename="../../../features/ed2k_pack/cards.py" line="13"/>
         <source>{0}/{1} Peers</source>
         <translation>{0}/{1} Peers</translation>
@@ -5076,29 +5076,29 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../view/error_catalog.py" line="8"/>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="5"/>
+        <location filename="../../view/error_catalog.py" line="9"/>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="6"/>
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="13"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} is not installed, please install it in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="9"/>
+        <location filename="../../view/error_catalog.py" line="10"/>
         <source>服务器返回了错误（{status}）</source>
         <translation>Server returned an error ({status})</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="10"/>
+        <location filename="../../view/error_catalog.py" line="11"/>
         <source>无法建立 FTP 连接</source>
         <translation>FTP connection failed</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="11"/>
+        <location filename="../../view/error_catalog.py" line="12"/>
         <source>进程异常退出（{code}）：{detail}</source>
         <translation>Process terminated abnormally ({code}): {detail}</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="12"/>
+        <location filename="../../view/error_catalog.py" line="13"/>
         <source>发生了意外错误：{detail}</source>
         <translation>Unexpected error: {detail}</translation>
     </message>
@@ -5162,8 +5162,8 @@ Data will be copied to new location and the program will then exit. Please manua
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/error_catalog.py" line="5"/>
-        <source>eD2k 传输已存在于 daemon 中</source>
-        <translation>eD2k transfer already exists in daemon</translation>
+        <source>该 eD2k 传输已存在于 daemon 中</source>
+        <translation type="unfinished">This eD2k transfer already exists in daemon</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
@@ -5539,22 +5539,22 @@ Data will be copied to new location and the program will then exit. Please manua
 <context>
     <name>UpdateErrors</name>
     <message>
-        <location filename="../../view/error_catalog.py" line="14"/>
+        <location filename="../../view/error_catalog.py" line="15"/>
         <source>无法获取版本信息</source>
         <translation>Unable to retrieve version information</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="15"/>
+        <location filename="../../view/error_catalog.py" line="16"/>
         <source>校验失败</source>
         <translation>Checksum verification failed</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="16"/>
+        <location filename="../../view/error_catalog.py" line="17"/>
         <source>当前平台无可用更新</source>
         <translation>No update is available for the current platform</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="17"/>
+        <location filename="../../view/error_catalog.py" line="18"/>
         <source>DMG 中未找到 .app</source>
         <translation>No .app bundle was found in the DMG</translation>
     </message>
