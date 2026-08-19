@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, CaptionLabel, FluentIcon, InfoBadge, InfoBar, InfoBarPosition,
     MessageBoxBase, PushButton, SubtitleLabel, SwitchButton,
@@ -12,10 +12,15 @@ from qfluentwidgets import (
 from qfluentwidgets.components.widgets.info_badge import InfoLevel
 
 from app.config.cfg import cfg
+from app.view.components.scroll_area import ScrollArea
 
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack
     from app.services.update_service import UpdateService
+
+PACK_ROW_HEIGHT = 36
+PACK_LIST_WIDTH = 440
+MAX_VISIBLE_PACK_ROWS = 6
 
 
 class PackRow(QWidget):
@@ -27,9 +32,12 @@ class PackRow(QWidget):
         self._bind()
 
     def _initWidget(self, pack: FeaturePack) -> None:
+        self.setFixedHeight(PACK_ROW_HEIGHT)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         displayName = type(pack).__name__
         self.nameLabel = BodyLabel(displayName, self)
         self.nameLabel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.nameLabel.setToolTip(displayName)
         self.versionLabel = CaptionLabel(f"v{pack.manifest.version}", self)
         self.badge = InfoBadge.success("✓", self)
         self.updateButton = TransparentToolButton(FluentIcon.DOWNLOAD, self)
@@ -90,8 +98,16 @@ class PackInfoDialog(MessageBoxBase):
         self.autoUpdateSwitch.setOnText("")
         self.autoUpdateSwitch.setOffText("")
         self.autoUpdateSwitch.setChecked(cfg.shouldAutoUpdatePacks.value)
-        self.checkButton = PushButton(FluentIcon.SYNC, self.tr("检查功能包更新"), self)
-        self.widget.setMinimumWidth(400)
+        checkButtonText = (
+            self.tr("更新功能包")
+            if IS_COMPILED and cfg.shouldAutoUpdatePacks.value
+            else self.tr("检查功能包更新")
+        )
+        self.checkButton = PushButton(FluentIcon.SYNC, checkButtonText, self)
+        self.packListArea = ScrollArea(self.widget)
+        self.packListWidget = QWidget(self.packListArea)
+        self.packListLayout = QVBoxLayout(self.packListWidget)
+        self.widget.setMinimumWidth(480)
         self.yesButton.setText(self.tr("关闭"))
         self.cancelButton.hide()
 
@@ -99,11 +115,29 @@ class PackInfoDialog(MessageBoxBase):
             if pack.manifest is None:
                 continue
             manifestName = pack.manifest.name
-            row = PackRow(pack, lambda n=manifestName: self._updateService.download(n), self)
+            row = PackRow(
+                pack,
+                lambda n=manifestName: self._updateService.download(n),
+                self.packListWidget,
+            )
             self._rows[manifestName] = row
 
+        visibleRows = min(max(len(self._rows), 1), MAX_VISIBLE_PACK_ROWS)
+        self.packListArea.setFixedWidth(PACK_LIST_WIDTH)
+        self.packListArea.setFixedHeight(visibleRows * PACK_ROW_HEIGHT)
+        self.packListWidget.setMinimumHeight(len(self._rows) * PACK_ROW_HEIGHT)
+        self.packListArea.setWidget(self.packListWidget)
+        self.packListArea.setWidgetResizable(True)
+        self.packListArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.packListArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.packListArea.enableTransparentBackground()
+
     def _initLayout(self) -> None:
-        self.viewLayout.addWidget(self.titleLabel)
+        titleLayout = QHBoxLayout()
+        titleLayout.addWidget(self.titleLabel)
+        titleLayout.addStretch(1)
+        titleLayout.addWidget(self.checkButton)
+        self.viewLayout.addLayout(titleLayout)
         self.viewLayout.addSpacing(8)
 
         autoUpdateLayout = QHBoxLayout()
@@ -112,11 +146,14 @@ class PackInfoDialog(MessageBoxBase):
         autoUpdateLayout.addStretch(1)
         autoUpdateLayout.addWidget(self.autoUpdateSwitch)
         self.viewLayout.addLayout(autoUpdateLayout)
-        self.viewLayout.addWidget(self.checkButton, 0, Qt.AlignmentFlag.AlignRight)
         self.viewLayout.addSpacing(8)
 
+        self.packListLayout.setContentsMargins(0, 0, 0, 0)
+        self.packListLayout.setSpacing(0)
         for row in self._rows.values():
-            self.viewLayout.addWidget(row)
+            self.packListLayout.addWidget(row)
+        self.packListLayout.addStretch(1)
+        self.viewLayout.addWidget(self.packListArea)
 
     def _bind(self) -> None:
         self._updateService.changed.connect(self._onUpdateChanged)
@@ -126,6 +163,11 @@ class PackInfoDialog(MessageBoxBase):
 
     def _onAutoUpdateChanged(self, enabled: bool) -> None:
         cfg.set(cfg.shouldAutoUpdatePacks, enabled)
+        self.checkButton.setText(
+            self.tr("更新功能包")
+            if IS_COMPILED and enabled
+            else self.tr("检查功能包更新")
+        )
 
     def _onCheckClicked(self) -> None:
         if self._isRefreshingPacks:

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QWidget
 
 from app.config.cfg import cfg
 from app.services.update_service import UpdateService, UpdateState
 from app.startup import refreshUpdatesAtStartup
+from app.view.dialogs.pack_info import MAX_VISIBLE_PACK_ROWS, PACK_ROW_HEIGHT, PackInfoDialog
 
 
 class StubUpdateService:
@@ -15,6 +19,21 @@ class StubUpdateService:
 
     def refresh(self, *, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
         self.refreshes.append((shouldRefreshApp, shouldRefreshPacks))
+
+
+class StubPackUpdateService(QObject):
+    changed = Signal(object)
+    packsRefreshed = Signal(int, bool)
+
+    def refresh(self, *, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
+        pass
+
+    def download(self, targetId: str) -> None:
+        pass
+
+
+class StubPack:
+    pass
 
 
 def setUpdatePolicy(monkeypatch, *, isCompiled: bool, hasMarker: bool,
@@ -88,6 +107,51 @@ def test_disabled_targets_do_not_refresh(monkeypatch):
     refreshUpdatesAtStartup(updateService)
 
     assert updateService.refreshes == []
+
+
+def test_pack_panel_uses_fixed_rows_and_scrolls(qapp, qtbot):
+    parent = QWidget()
+    parent.resize(900, 800)
+    qtbot.addWidget(parent)
+
+    packs = []
+    for index in range(MAX_VISIBLE_PACK_ROWS + 4):
+        pack = StubPack()
+        pack.manifest = SimpleNamespace(name=f"pack_{index}", version="1.0.0")
+        packs.append(pack)
+
+    dialog = PackInfoDialog(packs, StubPackUpdateService(), parent)
+    dialog.show()
+    qapp.processEvents()
+
+    assert all(row.height() == PACK_ROW_HEIGHT for row in dialog._rows.values())
+    assert dialog.packListArea.height() == MAX_VISIBLE_PACK_ROWS * PACK_ROW_HEIGHT
+    assert dialog.packListArea.verticalScrollBar().maximum() > 0
+
+
+def test_pack_update_button_matches_auto_update_behavior(monkeypatch, qapp, qtbot):
+    import app.view.dialogs.pack_info as packInfoModule
+
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    pack = StubPack()
+    pack.manifest = SimpleNamespace(name="http_pack", version="1.0.0")
+    monkeypatch.setattr(packInfoModule, "IS_COMPILED", True)
+    monkeypatch.setattr(cfg.shouldAutoUpdatePacks, "value", True)
+    monkeypatch.setattr(cfg, "set", lambda item, value: None)
+
+    dialog = PackInfoDialog([pack], StubPackUpdateService(), parent)
+
+    assert dialog.checkButton.text() == "更新功能包"
+
+    dialog._onAutoUpdateChanged(False)
+
+    assert dialog.checkButton.text() == "检查功能包更新"
+
+    monkeypatch.setattr(packInfoModule, "IS_COMPILED", False)
+    dialog._onAutoUpdateChanged(True)
+
+    assert dialog.checkButton.text() == "检查功能包更新"
 
 
 @pytest.mark.asyncio
