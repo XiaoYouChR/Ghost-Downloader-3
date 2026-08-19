@@ -311,9 +311,7 @@ class SettingPage(ScrollArea):
             cfg.shouldRunAtLogin,
         )
         from app.config.paths import APP_DATA_DIR, hasNoAutoUpdateMarker, isPortable
-        noAutoUpdate = hasNoAutoUpdateMarker()
-        if noAutoUpdate and cfg.shouldCheckUpdateAtStartup.value:
-            cfg.set(cfg.shouldCheckUpdateAtStartup, False)
+        hasUpdateMarker = hasNoAutoUpdateMarker()
         if isPortable():
             self.migrateCard = PushSettingCard(
                 self.tr("切换到用户模式"), FluentIcon.SYNC,
@@ -332,7 +330,7 @@ class SettingPage(ScrollArea):
             self.tr("新版本将更稳定，并具有更多功能"),
             cfg.shouldCheckUpdateAtStartup,
         )
-        if noAutoUpdate:
+        if hasUpdateMarker:
             self.autoUpdateCard.hide()
         softwareCards = [self.autoUpdateCard, self.autoRunCard]
         if not IS_ANDROID:
@@ -372,7 +370,7 @@ class SettingPage(ScrollArea):
             self.tr("检查应用更新"), FluentIcon.INFO, self.tr("关于"),
             f"© Copyright {YEAR}, {AUTHOR}. Version {VERSION}",
         )
-        if noAutoUpdate:
+        if hasUpdateMarker:
             self.aboutCard.button.hide()
 
         self.aboutGroup.addSettingCards([

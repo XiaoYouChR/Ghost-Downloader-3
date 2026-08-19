@@ -56,7 +56,10 @@ def startApp(application):
         notifyTaskCompleted,
     )
     from app.signal_bus import signalBus
-    from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
+    from app.startup import (
+        bindNotifications, createServices, loadEngine, loadPacks,
+        refreshUpdatesAtStartup, startEngine, stopEngine,
+    )
     from app.view.mobile.device import setupTouchScrolling
     from app.view.mobile.window import MobileMainWindow
 
@@ -135,7 +138,7 @@ def startApp(application):
                 parent=mainWindow,
             )
     updateService.changed.connect(onUpdateChanged)
-    checkUpdateAtStartup(updateService)
+    refreshUpdatesAtStartup(updateService)
 
     application.aboutToQuit.connect(lambda: stopEngine(taskService, browserService, aria2RpcServer, featureService, coroutineRunner, updateService))
 

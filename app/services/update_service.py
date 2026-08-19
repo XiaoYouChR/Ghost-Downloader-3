@@ -17,7 +17,7 @@ from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
 from app.config.constants import VERSION
-from app.config.paths import APP_DATA_DIR, FEATURES_DIR, executableDir
+from app.config.paths import APP_DATA_DIR, FEATURES_DIR, IS_COMPILED, executableDir
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
@@ -80,7 +80,7 @@ async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
 
 
 def installPendingPacks(featuresDir: Path) -> None:
-    if not featuresDir.exists():
+    if not IS_COMPILED or not featuresDir.exists():
         return
     for pending in featuresDir.glob("*_pending"):
         packId = pending.name.removesuffix("_pending")
@@ -206,7 +206,7 @@ class UpdateService(QObject):
         if info is None or info.state not in (UpdateState.AVAILABLE, UpdateState.FAILED):
             return
 
-        self._emit(targetId, UpdateState.DOWNLOADING)
+        self._emit(targetId, UpdateState.DOWNLOADING, progress=0, error="")
         STAGING_DIR.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -289,6 +289,8 @@ class UpdateService(QObject):
         self._emit(packId, UpdateState.READY)
 
     def _applyPack(self, packId: str) -> None:
+        if not IS_COMPILED:
+            return
         zipPath = STAGING_DIR / f"{packId}.zip"
         if not zipPath.is_file():
             return

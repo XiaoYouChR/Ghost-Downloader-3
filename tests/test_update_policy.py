@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import zipfile
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -8,7 +9,9 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QWidget
 
 from app.config.cfg import cfg
-from app.services.update_service import UpdateService, UpdateState
+from app.services.update_service import (
+    UpdateInfo, UpdateService, UpdateState, installPendingPacks,
+)
 from app.startup import refreshUpdatesAtStartup
 from app.view.dialogs.pack_info import MAX_VISIBLE_PACK_ROWS, PACK_ROW_HEIGHT, PackInfoDialog
 
@@ -119,6 +122,57 @@ def test_disabled_targets_do_not_refresh(monkeypatch):
     refreshUpdatesAtStartup(updateService)
 
     assert updateService.refreshes == []
+
+
+def test_source_mode_does_not_write_pack_updates(monkeypatch, tmp_path):
+    import app.services.update_service as updateServiceModule
+
+    featuresDir = tmp_path / "features"
+    installedDir = featuresDir / "http_pack"
+    pendingDir = featuresDir / "http_pack_pending"
+    installedDir.mkdir(parents=True)
+    pendingDir.mkdir()
+    (installedDir / "version.txt").write_text("installed", encoding="utf-8")
+    (pendingDir / "version.txt").write_text("pending", encoding="utf-8")
+
+    stagingDir = tmp_path / "staging"
+    stagingDir.mkdir()
+    with zipfile.ZipFile(stagingDir / "bili_pack.zip", "w") as archive:
+        archive.writestr("version.txt", "downloaded")
+
+    monkeypatch.setattr(updateServiceModule, "IS_COMPILED", False)
+    monkeypatch.setattr(updateServiceModule, "FEATURES_DIR", featuresDir)
+    monkeypatch.setattr(updateServiceModule, "STAGING_DIR", stagingDir)
+
+    installPendingPacks(featuresDir)
+    UpdateService(None)._applyPack("bili_pack")
+
+    assert (installedDir / "version.txt").read_text(encoding="utf-8") == "installed"
+    assert (pendingDir / "version.txt").read_text(encoding="utf-8") == "pending"
+    assert not (featuresDir / "bili_pack_pending").exists()
+
+
+@pytest.mark.asyncio
+async def test_update_retry_clears_previous_failure(monkeypatch):
+    service = UpdateService(None)
+    service._infos["http_pack"] = UpdateInfo(
+        targetId="http_pack",
+        label="HttpPack 2.0.0",
+        currentVersion="1.0.0",
+        latestVersion="2.0.0",
+        state=UpdateState.FAILED,
+        progress=65,
+        error="network error",
+    )
+    monkeypatch.setattr(service, "_downloadPack", AsyncMock())
+    infos = []
+    service.changed.connect(infos.append)
+
+    await service._download("http_pack")
+
+    assert infos[0].state == UpdateState.DOWNLOADING
+    assert infos[0].progress == 0
+    assert infos[0].error == ""
 
 
 def test_pack_panel_uses_fixed_rows_and_scrolls(qapp, qtbot):
