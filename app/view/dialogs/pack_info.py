@@ -99,12 +99,8 @@ class PackInfoDialog(MessageBoxBase):
         self.autoUpdateSwitch.setOnText("")
         self.autoUpdateSwitch.setOffText("")
         self.autoUpdateSwitch.setChecked(cfg.shouldAutoUpdatePacks.value)
-        checkButtonText = (
-            self.tr("更新功能包")
-            if IS_COMPILED and cfg.shouldAutoUpdatePacks.value
-            else self.tr("检查功能包更新")
-        )
-        self.checkButton = PushButton(FluentIcon.SYNC, checkButtonText, self)
+        self.checkButton = PushButton(FluentIcon.SYNC, self.tr("更新功能包"), self)
+        self.checkButton.setEnabled(IS_COMPILED)
         self.packListArea = ScrollArea(self.widget)
         self.packListWidget = QWidget(self.packListArea)
         self.packListLayout = QVBoxLayout(self.packListWidget)
@@ -164,14 +160,9 @@ class PackInfoDialog(MessageBoxBase):
 
     def _onAutoUpdateChanged(self, enabled: bool) -> None:
         cfg.set(cfg.shouldAutoUpdatePacks, enabled)
-        self.checkButton.setText(
-            self.tr("更新功能包")
-            if IS_COMPILED and enabled
-            else self.tr("检查功能包更新")
-        )
 
     def _onCheckClicked(self) -> None:
-        if self._isRefreshingPacks:
+        if not IS_COMPILED or self._isRefreshingPacks:
             return
         self._isRefreshingPacks = True
         self.checkButton.setEnabled(False)
@@ -212,19 +203,19 @@ class PackInfoDialog(MessageBoxBase):
             )
             return
 
-        if IS_COMPILED and cfg.shouldAutoUpdatePacks.value:
-            content = self.tr("检测到 {0} 个可用更新，正在下载").format(availableCount)
-        else:
-            content = self.tr("检测到 {0} 个可用更新，可点击对应功能包更新").format(availableCount)
         InfoBar.success(
             self.tr("发现功能包更新"),
-            content,
+            self.tr("检测到 {0} 个可用更新，正在下载").format(availableCount),
             duration=4000,
             position=InfoBarPosition.BOTTOM_RIGHT,
             parent=self.window(),
         )
 
     def _onUpdateChanged(self, info) -> None:
+        from app.services.update_service import UpdateState
+
         row = self._rows.get(info.targetId)
         if row is not None:
             row.update(info)
+            if IS_COMPILED and self._isRefreshingPacks and info.state == UpdateState.AVAILABLE:
+                self._updateService.download(info.targetId)

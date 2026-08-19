@@ -25,11 +25,15 @@ class StubPackUpdateService(QObject):
     changed = Signal(object)
     packsRefreshed = Signal(int, bool)
 
+    def __init__(self):
+        super().__init__()
+        self.downloads: list[str] = []
+
     def refresh(self, *, shouldRefreshApp: bool, shouldRefreshPacks: bool) -> None:
         pass
 
     def download(self, targetId: str) -> None:
-        pass
+        self.downloads.append(targetId)
 
 
 class StubPack:
@@ -137,7 +141,7 @@ def test_pack_panel_uses_fixed_rows_and_scrolls(qapp, qtbot):
     assert dialog.packListArea.verticalScrollBar().maximum() > 0
 
 
-def test_pack_update_button_matches_auto_update_behavior(monkeypatch, qapp, qtbot):
+def test_pack_update_button_always_updates_in_compiled_build(monkeypatch, qapp, qtbot):
     import app.view.dialogs.pack_info as packInfoModule
 
     parent = QWidget()
@@ -145,21 +149,34 @@ def test_pack_update_button_matches_auto_update_behavior(monkeypatch, qapp, qtbo
     pack = StubPack()
     pack.manifest = SimpleNamespace(name="http_pack", version="1.0.0")
     monkeypatch.setattr(packInfoModule, "IS_COMPILED", True)
-    monkeypatch.setattr(cfg.shouldAutoUpdatePacks, "value", True)
+    monkeypatch.setattr(cfg.shouldAutoUpdatePacks, "value", False)
     monkeypatch.setattr(cfg, "set", lambda item, value: None)
+    updateService = StubPackUpdateService()
 
-    dialog = PackInfoDialog([pack], StubPackUpdateService(), parent)
+    dialog = PackInfoDialog([pack], updateService, parent)
 
     assert dialog.checkButton.text() == "更新功能包"
+    assert dialog.checkButton.isEnabled()
 
-    dialog._onAutoUpdateChanged(False)
+    dialog._isRefreshingPacks = True
+    dialog._onUpdateChanged(SimpleNamespace(
+        targetId="http_pack",
+        state=UpdateState.AVAILABLE,
+    ))
 
-    assert dialog.checkButton.text() == "检查功能包更新"
+    assert updateService.downloads == ["http_pack"]
 
     monkeypatch.setattr(packInfoModule, "IS_COMPILED", False)
-    dialog._onAutoUpdateChanged(True)
+    sourceUpdateService = StubPackUpdateService()
+    sourceDialog = PackInfoDialog([pack], sourceUpdateService, parent)
+    sourceDialog._isRefreshingPacks = True
+    sourceDialog._onUpdateChanged(SimpleNamespace(
+        targetId="http_pack",
+        state=UpdateState.AVAILABLE,
+    ))
 
-    assert dialog.checkButton.text() == "检查功能包更新"
+    assert not sourceDialog.checkButton.isEnabled()
+    assert sourceUpdateService.downloads == []
 
 
 @pytest.mark.asyncio
