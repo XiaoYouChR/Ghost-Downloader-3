@@ -25,7 +25,7 @@ PORTABLE_PATH = executableDir / "GhostDownloader"
 SEED_FEATURES_DIR = executableDir / "features"
 FEATURES_DIR = (
     SEED_FEATURES_DIR
-    if "__compiled__" not in globals()
+    if not IS_COMPILED
     else Path(APP_DATA_DIR) / "features"
 )
 USER_PATH = Path(QStandardPaths.writableLocation(

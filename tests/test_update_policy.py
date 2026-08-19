@@ -46,7 +46,9 @@ def setUpdatePolicy(monkeypatch, *, isCompiled: bool, hasMarker: bool,
     monkeypatch.setattr(cfg.shouldAutoUpdatePacks, "value", shouldRefreshPacks)
 
 
-def test_source_build_still_refreshes_packs(monkeypatch):
+def test_source_build_disables_automatic_updates(monkeypatch):
+    from loguru import logger
+
     setUpdatePolicy(
         monkeypatch,
         isCompiled=False,
@@ -54,11 +56,17 @@ def test_source_build_still_refreshes_packs(monkeypatch):
         shouldRefreshApp=True,
         shouldRefreshPacks=True,
     )
+    saved = []
+    messages = []
+    monkeypatch.setattr(cfg, "set", lambda item, value: saved.append((item, value)))
+    monkeypatch.setattr(logger, "info", messages.append)
     updateService = StubUpdateService()
 
     refreshUpdatesAtStartup(updateService)
 
-    assert updateService.refreshes == [(False, True)]
+    assert saved == []
+    assert updateService.refreshes == []
+    assert messages == ["App and feature pack auto updates disabled in source mode"]
 
 
 def test_marker_disables_only_app_refresh(monkeypatch):

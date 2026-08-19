@@ -12,6 +12,7 @@ from qfluentwidgets import (
 from qfluentwidgets.components.widgets.info_badge import InfoLevel
 
 from app.config.cfg import cfg
+from app.config.paths import IS_COMPILED
 from app.view.components.scroll_area import ScrollArea
 
 if TYPE_CHECKING:
@@ -211,7 +212,7 @@ class PackInfoDialog(MessageBoxBase):
             )
             return
 
-        if cfg.shouldAutoUpdatePacks.value:
+        if IS_COMPILED and cfg.shouldAutoUpdatePacks.value:
             content = self.tr("检测到 {0} 个可用更新，正在下载").format(availableCount)
         else:
             content = self.tr("检测到 {0} 个可用更新，可点击对应功能包更新").format(availableCount)

@@ -67,7 +67,7 @@ def startApp(application, isSilent=False):
     import shutil
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
-    from app.config.paths import executableDir
+    from app.config.paths import IS_COMPILED, executableDir
     from app.services.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
     from app.startup import (
@@ -243,7 +243,7 @@ def startApp(application, isSilent=False):
         if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
             show()._onUpdateAvailable(info)
         elif (info.targetId != "app" and info.state == UpdateState.AVAILABLE
-              and cfg.shouldAutoUpdatePacks.value):
+              and IS_COMPILED and cfg.shouldAutoUpdatePacks.value):
             updateService.download(info.targetId)
         elif info.targetId != "app" and info.state == UpdateState.READY:
             if window is not None:

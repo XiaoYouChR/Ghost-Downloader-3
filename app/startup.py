@@ -89,8 +89,13 @@ def refreshUpdatesAtStartup(updateService):
     from app.config.paths import IS_COMPILED, hasNoAutoUpdateMarker
 
     hasMarker = hasNoAutoUpdateMarker()
-    if hasMarker:
+    if not IS_COMPILED or hasMarker:
         from loguru import logger
+
+    if not IS_COMPILED:
+        logger.info("App and feature pack auto updates disabled in source mode")
+
+    if hasMarker:
         logger.info("App auto update disabled by gd_no_auto_update marker")
         if cfg.shouldCheckUpdateAtStartup.value:
             cfg.set(cfg.shouldCheckUpdateAtStartup, False)
@@ -100,7 +105,7 @@ def refreshUpdatesAtStartup(updateService):
         and not hasMarker
         and cfg.shouldCheckUpdateAtStartup.value
     )
-    shouldRefreshPacks = cfg.shouldAutoUpdatePacks.value
+    shouldRefreshPacks = IS_COMPILED and cfg.shouldAutoUpdatePacks.value
     if not shouldRefreshApp and not shouldRefreshPacks:
         return
     updateService.refresh(
