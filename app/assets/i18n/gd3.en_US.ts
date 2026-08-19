@@ -199,7 +199,7 @@
         <message>
             <location filename="../../view/windows/oobe_window.py" line="679" />
             <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-            <translation>The browser extension may launch the program via ghostdownloader:// URL scheme</translation>
+            <translation>The browser extension may launch the app via ghostdownloader:// URL scheme</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="687" />
@@ -2847,8 +2847,8 @@ FFmpeg: {2}</translation>
             <source>点击“确定”后将复制错误信息并打开反馈页面。
 点击“文档”图标以打开程序日志。
 {0}</source>
-            <translation type="vanished">After clicking “OK”, the error information will be copied and the feedback page will open
-Click the “Document” icon to open the program log
+            <translation type="vanished">After clicking “OK”, the error information will be copied and the feedback page will open.
+Click the “Document” icon to open the log.
 {0}</translation>
         </message>
         <message>
@@ -2916,17 +2916,17 @@ Only allow this request if you have requested "Auto Pair" from the extension.</t
         <message>
             <location filename="../../view/windows/main_window.py" line="437" />
             <source>是否完全退出程序？</source>
-            <translation>Quit the program entirely?</translation>
+            <translation>Exit App Completely?</translation>
         </message>
         <message>
             <location filename="../../view/windows/main_window.py" line="438" />
             <source>后台运行时可通过系统托盘图标重新打开。</source>
-            <translation>While running in background, you can reopen from the system tray icon.</translation>
+            <translation>While running in background, you may reopen the app from the system tray icon.</translation>
         </message>
         <message>
             <location filename="../../view/windows/main_window.py" line="441" />
             <source>退出程序</source>
-            <translation>Exit</translation>
+            <translation>Exit App</translation>
         </message>
         <message>
             <location filename="../../view/windows/main_window.py" line="442" />
@@ -4383,7 +4383,7 @@ Path: {1}</translation>
         <message>
             <location filename="../../view/pages/setting_page.py" line="205" />
             <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-            <translation>The browser extension may launch the program via ghostdownloader:// URL scheme</translation>
+            <translation>The browser extension may launch the app via ghostdownloader:// URL scheme</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="216" />
@@ -4559,7 +4559,7 @@ Path: {1}</translation>
         <message>
             <location filename="../../view/pages/setting_page.py" line="339" />
             <source>退出程序</source>
-            <translation>Exit</translation>
+            <translation>Exit App</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="354" />
@@ -4603,7 +4603,7 @@ Path: {1}</translation>
 数据将被复制到新位置，程序随后退出。请手动重新打开。</source>
             <translation>Are you sure you want to switch to {0}?
 
-Data will be copied to new location and the program will then exit. Please manually restart.</translation>
+Data will be copied to new location and the app will then exit. Please manually launch the app again.</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="517" />
