@@ -2,9 +2,19 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QMimeData, QObject, Signal
 from PySide6.QtWidgets import QApplication
 from loguru import logger
+
+GHOST_URLS_MIME = "application/x-ghost-downloader-urls"
+
+
+def setClipboardUrls(urls: list[str]) -> None:
+    mimeData = QMimeData()
+    mimeData.setText("\n".join(urls))
+    mimeData.setData(GHOST_URLS_MIME, b"1")
+    QApplication.clipboard().setMimeData(mimeData)
+
 
 class ClipboardListener(QObject):
     urlsDetected = Signal(list)
@@ -28,6 +38,8 @@ class ClipboardListener(QObject):
 
     def _onDataChanged(self) -> None:
         if self._clipboard.ownsClipboard():
+            return
+        if self._clipboard.mimeData().hasFormat(GHOST_URLS_MIME):
             return
 
         urls = self._downloadableUrls()

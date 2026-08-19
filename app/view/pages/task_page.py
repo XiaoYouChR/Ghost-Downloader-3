@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt, QSize, QThread, QTimer, QUrl
 from PySide6.QtGui import QActionGroup, QColor, QCursor, QDesktopServices, QKeySequence, QPainter
-from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action, CaptionLabel, CheckableMenu, CommandBarView, DropDownToolButton,
     FluentIcon, IconWidget, InfoBar, InfoBarPosition, MenuIndicatorType, PushButton,
@@ -20,6 +20,7 @@ from app.view.components.scroll_area import ScrollArea
 from app.config.cfg import cfg
 from app.format import toReadableSize
 from app.models.task import TaskStatus
+from app.services.clipboard_listener import setClipboardUrls
 from app.view.cards.task_cards import TaskCard
 from app.view.components.labels import IconBodyLabel
 
@@ -504,7 +505,7 @@ class TaskPage(QWidget):
             task.url for taskId in self._displayOrder
             if taskId in self._selectedIds and (task := self._taskService.taskById(taskId))
         ]
-        QApplication.clipboard().setText("\n".join(urls))
+        setClipboardUrls(urls)
 
     def _onRedownloadSelected(self) -> None:
         for taskId in self._displayOrder:
