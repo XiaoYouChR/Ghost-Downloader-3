@@ -642,12 +642,12 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation type="vanished">YouTube Support Runtime</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="138"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="139"/>
         <source>YouTube 下载</source>
         <translation>YouTube Download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="139"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="140"/>
         <source>支持 YouTube、Twitter 等数百个视频网站</source>
         <translation>Support for hundreds of video sites including YouTube and Twitter</translation>
     </message>
@@ -662,22 +662,22 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>Support for the eDonky network, enable downloading of archaic resources</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="62"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="63"/>
         <source>视频合并</source>
         <translation>Video Muxing</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="63"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="64"/>
         <source>哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</source>
         <translation>Required for downloading videos from Bilibili, YouTube, and more sites; allow combining audio and video tracks</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="147"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="148"/>
         <source>M3U8 / 直播下载</source>
         <translation>M3U8 &amp; Live Stream Download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="148"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="149"/>
         <source>支持 HLS、DASH 等流媒体协议，可录制直播流</source>
         <translation>Support for live streaming protocols including HLS and DASH, enable live stream recording</translation>
     </message>
@@ -1521,7 +1521,7 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>DropOverlay</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="49"/>
+        <location filename="../../view/windows/main_window.py" line="50"/>
         <source>松开以添加任务</source>
         <translation>Drop to add task</translation>
     </message>
@@ -1620,17 +1620,17 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>EditTaskDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="25"/>
+        <location filename="../../view/dialogs/edit_task.py" line="26"/>
         <source>编辑任务参数</source>
         <translation>Edit Task Options</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="31"/>
+        <location filename="../../view/dialogs/edit_task.py" line="32"/>
         <source>应用</source>
         <translation>Apply</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="32"/>
+        <location filename="../../view/dialogs/edit_task.py" line="33"/>
         <source>取消</source>
         <translation>Cancel</translation>
     </message>
@@ -1732,12 +1732,12 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>FFmpegConfig</name>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="42"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="43"/>
         <source>FFmpeg</source>
         <translation>FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/ffmpeg_pack/config.py" line="45"/>
+        <location filename="../../../features/ffmpeg_pack/config.py" line="46"/>
         <source>FFmpeg 安装目录</source>
         <translation>FFmpeg Install Location</translation>
     </message>
@@ -2367,17 +2367,17 @@ select &quot;No Emulation&quot; to send as-is</translation>
 <context>
     <name>LiveEditDialog</name>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="104"/>
+        <location filename="../../view/dialogs/edit_task.py" line="105"/>
         <source>确认更换链接</source>
         <translation>Confirm URL Update</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="105"/>
+        <location filename="../../view/dialogs/edit_task.py" line="106"/>
         <source>新链接与原链接的内容不一致，将清除已下载的 {0} 数据，是否继续？</source>
         <translation>The new URL differs from the original; {0} of existing data will be cleared. Continue?</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/edit_task.py" line="121"/>
+        <location filename="../../view/dialogs/edit_task.py" line="126"/>
         <source>链接解析失败</source>
         <translation>Link Parsing Failed</translation>
     </message>
@@ -2403,7 +2403,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="vanished">Media Stream Download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="73"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="74"/>
         <source>N_m3u8DL-RE 安装目录</source>
         <translation>N_m3u8DL-RE Install Location</translation>
     </message>
@@ -2420,47 +2420,47 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="vanished">Set Ghost Downloader as the default handler for .m3u8/.m3u/.mpd files</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="79"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="80"/>
         <source>输出容器</source>
         <translation>Output Container</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="80"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="81"/>
         <source>点播下载完成后优先使用 ffmpeg 混流为指定容器</source>
         <translation>Prefered container format for ffmpeg to remux to after VOD download completion</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="81"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="82"/>
         <source>分片线程数</source>
         <translation>Chunk Threads</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="82"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="83"/>
         <source>传给 N_m3u8DL-RE 的下载线程数</source>
         <translation>Download threads passed to N_m3u8DL-RE</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="83"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="84"/>
         <source>分片重试次数</source>
         <translation>Chunk Retry Attempts</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="84"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
         <source>单个分片下载失败时的最大重试次数</source>
         <translation>Maximum retries for failed chunks</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="86"/>
         <source>请求超时</source>
         <translation>Request Timeout</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="85"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="86"/>
         <source>HTTP 请求超时时间</source>
         <translation>HTTP request timeout length</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="87"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
         <source>自动选择最佳轨道</source>
         <translation>Auto Select Best Track</translation>
     </message>
@@ -2469,122 +2469,122 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="vanished">Auto select best audio/video track and skip manual selection</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="70"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="71"/>
         <source>M3U8 下载</source>
         <translation>M3U8 Playlist</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="88"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
         <source>默认选择最佳音视频轨道</source>
         <translation>Default to best audio/video track</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="89"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
         <source>并发下载音视频</source>
         <translation>Simultaneous Audio/Video Download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="90"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
         <source>同时下载已选择的音频、视频和字幕轨道</source>
         <translation>Simultaneously download selected audio, video and subtitle tracks</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="91"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="92"/>
         <source>追加 URL 参数</source>
         <translation>Append URL Parameters</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="92"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
         <source>把输入链接上的 Query 参数追加到分片请求</source>
         <translation>Append query parameters from input URL to chunk requests</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="93"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
         <source>二进制合并</source>
         <translation>Binary Merge</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="94"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
         <source>让 N_m3u8DL-RE 使用二进制方式合并分片</source>
         <translation>Let N_m3u8DL-RE merge chunks in binary mode</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="95"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
         <source>校验分片数量</source>
         <translation>Verify Chunk Count</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="96"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
         <source>下载完成后检查实际分片数是否与预期一致</source>
         <translation>Verify chunk count is as expected after download completion</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="97"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
         <source>直播保留原始分片</source>
         <translation>Keep Original Live Stream Segments</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="98"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
         <source>实时合并录制时仍保留下载的原始分片</source>
         <translation>Keep downloaded segments when merging live recordings in real time</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
         <source>录制时通过管道交给 ffmpeg 实时混流为封装容器</source>
         <translation>Pipe to FFmpeg for real-time remuxing during recording</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="101"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
         <source>直播校正 VTT 字幕</source>
         <translation>Correct VTT subtitles for live streams</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="102"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
         <source>根据音频起始时间校正 VTT 字幕时间轴</source>
         <translation>Adjust VTT subtitle timeline based on audio start time</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="103"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
         <source>直播刷新等待时间</source>
         <translation>Live Refresh Interval</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="104"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
         <source>两次拉取直播清单之间的等待秒数，0 为自动</source>
         <translation>Seconds between live playlist fetches, 0 for auto</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="105"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
         <source>直播每次取片数</source>
         <translation>Live Segments Per Fetch</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="106"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
         <source>每次刷新最多取走的分片数量，0 为自动</source>
         <translation>Max segments to fetch per refresh, 0 for auto</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="107"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
         <source>解密引擎</source>
         <translation>Decryption Engine</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="108"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
         <source>调用的第三方解密程序</source>
         <translation>Third-party decryption program used</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="109"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="110"/>
         <source>解密引擎二进制路径</source>
         <translation>Decryption Engine Binary Location</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="110"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="111"/>
         <source>MP4Decrypt / Shaka Packager 可执行文件路径，留空则使用 FFmpeg</source>
         <translation>Path to MP4Decrypt / Shaka Packager executable; leave empty to use FFmpeg</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
         <source>默认拉取全部音频与字幕轨道</source>
         <translation>Default to download all audio and subtitle tracks</translation>
     </message>
@@ -2593,92 +2593,92 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="obsolete">选择解密引擎可执行文件</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="112"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
         <source>MP4 实时解密</source>
         <translation>MP4 Real-time Decryption</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="113"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
         <source>下载 MP4 分片时实时解密</source>
         <translation>Decrypt MP4 segments in real time during download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="114"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
         <source>限速</source>
         <translation>Speed Limit</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="115"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
         <source>最大下载速度，-1 为不限速</source>
         <translation>Maximum download speed, -1 for unlimited</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="116"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="117"/>
         <source>限速单位</source>
         <translation>Speed Limit Unit</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="117"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
         <source>限速数值的单位</source>
         <translation>Unit for speed limit value</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="118"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
         <source>广告过滤</source>
         <translation>Ad Filter</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
         <source>匹配广告分片 URL 的正则表达式</source>
         <translation>Regex matching ad segment URLs</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="119"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
         <source>正则表达式</source>
         <translation>Regular Expression</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="120"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
         <source>字幕格式</source>
         <translation>Subtitle Format</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="121"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
         <source>字幕输出格式</source>
         <translation>Subtitle output format</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="122"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
         <source>不写入日期信息</source>
         <translation>Omit Date Info</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="123"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
         <source>混流时不写入日期信息</source>
         <translation>Do not write date info during remux</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="124"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
         <source>保留图形分片</source>
         <translation>Keep Graphical Segments</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="125"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
         <source>把图形字幕转图片后保留原始分片</source>
         <translation>Keep original segments after converting graphical subtitles to images</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="126"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
         <source>完成后删除临时文件</source>
         <translation>Delete Temp Files After Completion</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="127"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
         <source>下载完成后删除分片临时目录</source>
         <translation>Delete temporary segment storage directory after download</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="128"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="129"/>
         <source>下载全部音轨与字幕</source>
         <translation>Download All Audio And Subtitles Tracks</translation>
     </message>
@@ -2687,17 +2687,17 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation type="obsolete">默认拉取全部音频与字幕轨道，而非仅最佳</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="130"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="131"/>
         <source>自定义混流参数</source>
         <translation>Custom Remux Arguments</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="131"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="132"/>
         <source>自定义 --mux-after-done，留空则按输出容器自动混流</source>
         <translation>Custom --mux-after-done; leave empty to auto-remux according to output container</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/config.py" line="99"/>
+        <location filename="../../../features/m3u8_pack/config.py" line="100"/>
         <source>直播管道混流</source>
         <translation>Live Pipe Remux</translation>
     </message>
@@ -2839,7 +2839,7 @@ FFmpeg: {2}</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../view/windows/main_window.py" line="388"/>
+        <location filename="../../view/windows/main_window.py" line="389"/>
         <source>程序发生异常</source>
         <translation>An exception occurred</translation>
     </message>
@@ -2852,32 +2852,32 @@ Click the “Document” icon to open the log.
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="128"/>
+        <location filename="../../view/windows/main_window.py" line="129"/>
         <source>下载任务</source>
         <translation>Tasks</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="132"/>
+        <location filename="../../view/windows/main_window.py" line="133"/>
         <source>新建任务</source>
         <translation>New Task</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="138"/>
+        <location filename="../../view/windows/main_window.py" line="139"/>
         <source>设置</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="275"/>
+        <location filename="../../view/windows/main_window.py" line="276"/>
         <source>未知</source>
         <translation>Unknown</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="276"/>
+        <location filename="../../view/windows/main_window.py" line="277"/>
         <source>浏览器扩展</source>
         <translation>Browser Extension</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="279"/>
+        <location filename="../../view/windows/main_window.py" line="280"/>
         <source>浏览器扩展正在请求连接到 Ghost Downloader。
 
 来源: {0}
@@ -2894,47 +2894,47 @@ Extension Version: {2}
 Only allow this request if you have requested &quot;Auto Pair&quot; from the extension.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="284"/>
+        <location filename="../../view/windows/main_window.py" line="285"/>
         <source>浏览器扩展配对请求</source>
         <translation>Browser Extension Pairing Request</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="285"/>
+        <location filename="../../view/windows/main_window.py" line="286"/>
         <source>允许配对</source>
         <translation>Allow</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="286"/>
+        <location filename="../../view/windows/main_window.py" line="287"/>
         <source>拒绝</source>
         <translation>Decline</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="317"/>
+        <location filename="../../view/windows/main_window.py" line="318"/>
         <source>查看详情</source>
         <translation>View Details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="437"/>
+        <location filename="../../view/windows/main_window.py" line="438"/>
         <source>是否完全退出程序？</source>
         <translation>Exit App Completely?</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="438"/>
+        <location filename="../../view/windows/main_window.py" line="439"/>
         <source>后台运行时可通过系统托盘图标重新打开。</source>
         <translation>While running in background, you may reopen the app from the system tray icon.</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="441"/>
+        <location filename="../../view/windows/main_window.py" line="442"/>
         <source>退出程序</source>
         <translation>Exit App</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="442"/>
+        <location filename="../../view/windows/main_window.py" line="443"/>
         <source>继续在后台运行</source>
         <translation>Continue running in background</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="443"/>
+        <location filename="../../view/windows/main_window.py" line="444"/>
         <source>记住我的选择</source>
         <translation>Remember my choice</translation>
     </message>
@@ -2943,7 +2943,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Please select manually in version details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="389"/>
+        <location filename="../../view/windows/main_window.py" line="390"/>
         <source>点击&quot;确定&quot;后将复制错误信息并打开反馈页面。
 
 {0}</source>
@@ -2952,7 +2952,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="393"/>
+        <location filename="../../view/windows/main_window.py" line="394"/>
         <source>查看日志</source>
         <translation>View Logs</translation>
     </message>
@@ -2981,17 +2981,17 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">Current version {0}, latest version {1}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="303"/>
+        <location filename="../../view/windows/main_window.py" line="304"/>
         <source>检测到新版本</source>
         <translation>New Version Available</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="304"/>
+        <location filename="../../view/windows/main_window.py" line="305"/>
         <source>最新版本: {0}</source>
         <translation>Latest version: {0}</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="311"/>
+        <location filename="../../view/windows/main_window.py" line="312"/>
         <source>立即下载</source>
         <translation>Download Now</translation>
     </message>
@@ -3000,7 +3000,7 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
         <translation type="vanished">View Release Details</translation>
     </message>
     <message>
-        <location filename="../../view/windows/main_window.py" line="320"/>
+        <location filename="../../view/windows/main_window.py" line="321"/>
         <source>请作者喝咖啡</source>
         <translation>Buy Author A Coffee</translation>
     </message>
@@ -3761,9 +3761,8 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
         <translation>Installing...</translation>
     </message>
     <message>
-        <location filename="../../view/components/setting_cards.py" line="881"/>
         <source>检测运行时失败</source>
-        <translation>Runtime detection failed</translation>
+        <translation type="vanished">Runtime detection failed</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="887"/>
@@ -5038,7 +5037,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="325"/>
+        <location filename="../../view/dialogs/task_draft.py" line="347"/>
         <source>导入文件</source>
         <translation>Import File(s)</translation>
     </message>
@@ -5063,12 +5062,12 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="283"/>
+        <location filename="../../view/dialogs/task_draft.py" line="300"/>
         <source>链接解析失败</source>
         <translation>Link Parsing Failed</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="320"/>
+        <location filename="../../view/dialogs/task_draft.py" line="342"/>
         <source>所有可导入文件 ({0})</source>
         <translation>All Supported Formats ({0})</translation>
     </message>
@@ -5076,29 +5075,33 @@ Data will be copied to new location and the app will then exit. Please manually 
 <context>
     <name>TaskErrors</name>
     <message>
-        <location filename="../../view/error_catalog.py" line="9"/>
         <location filename="../../../features/ed2k_pack/error_catalog.py" line="6"/>
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="13"/>
         <source>{name} 未安装，请在设置中安装</source>
         <translation>{name} is not installed, please install it in Settings</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="10"/>
+        <location filename="../../../features/http_pack/error_catalog.py" line="3"/>
         <source>服务器返回了错误（{status}）</source>
         <translation>Server returned an error ({status})</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="11"/>
+        <location filename="../../../features/http_pack/error_catalog.py" line="4"/>
+        <source>磁盘空间不足</source>
+        <translation>Insufficient Disk Space</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ftp_pack/error_catalog.py" line="3"/>
         <source>无法建立 FTP 连接</source>
         <translation>FTP connection failed</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="12"/>
+        <location filename="../../error_catalog.py" line="9"/>
         <source>进程异常退出（{code}）：{detail}</source>
         <translation>Process terminated abnormally ({code}): {detail}</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="13"/>
+        <location filename="../../error_catalog.py" line="10"/>
         <source>发生了意外错误：{detail}</source>
         <translation>Unexpected error: {detail}</translation>
     </message>
@@ -5123,32 +5126,64 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>BitTorrent session start failed</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="11"/>
         <source>压缩包包含不安全路径：{path}</source>
-        <translation type="vanished">Archive contains unsafe path: {path}</translation>
+        <translation>Archive contains unsafe path: {path}</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="12"/>
         <source>压缩包未找到：{path}</source>
-        <translation type="vanished">Archive file not found: {path}</translation>
+        <translation>Archive file not found: {path}</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="13"/>
         <source>不支持的压缩格式：{name}</source>
-        <translation type="vanished">Unsupported archive format: {name}</translation>
+        <translation>Unsupported archive format: {name}</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="14"/>
         <source>解压后未找到可执行文件：{name}</source>
-        <translation type="vanished">No executables found in archive: {name}</translation>
+        <translation>No executables found in archive: {name}</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="15"/>
         <source>无法读取校验文件：{path}</source>
-        <translation type="vanished">Unable to read checksum file: {path}</translation>
+        <translation>Unable to read checksum file: {path}</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="16"/>
         <source>SHA256 校验失败：期望 {expected}，实际 {actual}</source>
-        <translation type="vanished">SHA256 checksum failure: Expected {expected}, Actual {actual}</translation>
+        <translation>SHA256 checksum failure: Expected {expected}, Actual {actual}</translation>
     </message>
     <message>
+        <location filename="../../error_catalog.py" line="17"/>
         <source>下载的文件未找到：{path}</source>
-        <translation type="vanished">Downloaded file not found: {path}</translation>
+        <translation>Downloaded file not found: {path}</translation>
+    </message>
+    <message>
+        <location filename="../../error_catalog.py" line="18"/>
+        <source>无法获取 {name} 的最新 release</source>
+        <translation>Unable to fetch the latest release for {name}</translation>
+    </message>
+    <message>
+        <location filename="../../error_catalog.py" line="19"/>
+        <source>无法获取 {name}/{branch}/{path}</source>
+        <translation>Unable to fetch {name}/{branch}/{path}</translation>
+    </message>
+    <message>
+        <location filename="../../error_catalog.py" line="20"/>
+        <source>无法下载 {name}/{branch}/{path}</source>
+        <translation>Unable to download {name}/{branch}/{path}</translation>
+    </message>
+    <message>
+        <location filename="../../error_catalog.py" line="21"/>
+        <source>无法下载 {name}/{tag}/{asset}</source>
+        <translation>Unable to download {name}/{tag}/{asset}</translation>
+    </message>
+    <message>
+        <location filename="../../error_catalog.py" line="22"/>
+        <source>无法获取 PyPI 包信息: {package}</source>
+        <translation>Unable to fetch PyPI package info: {package}</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/error_catalog.py" line="3"/>
@@ -5179,6 +5214,11 @@ Data will be copied to new location and the app will then exit. Please manually 
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="4"/>
         <source>文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</source>
         <translation>File is not a valid media file, might be DRM protected or incomplete: {name}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="5"/>
+        <source>当前平台暂不支持一键安装 FFmpeg: {platform}</source>
+        <translation>One-click FFmpeg installation is not supported on this platform: {platform}</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="3"/>
@@ -5231,6 +5271,11 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>No available video format found</translation>
     </message>
     <message>
+        <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="14"/>
+        <source>未找到 yt-dlp nightly tarball</source>
+        <translation>yt-dlp nightly tarball not found</translation>
+    </message>
+    <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="3"/>
         <source>服务器拒绝了请求（403），链接可能已失效（{detail}）</source>
         <translation>Request refused (403), link might have expired: {detail}</translation>
@@ -5247,23 +5292,43 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="6"/>
+        <source>获取到的内容不是有效的播放列表，链接可能已失效（{detail}）</source>
+        <translation>The fetched content is not a valid playlist; the link may have expired ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="7"/>
+        <source>缺少依赖程序（{detail}）</source>
+        <translation>Missing dependency program ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="8"/>
         <source>无法解析域名，请检查网络连接（{detail}）</source>
         <translation>Domain resolution failed, please check your connection ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/error_catalog.py" line="7"/>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="9"/>
         <source>连接被拒绝，请检查网络连接（{detail}）</source>
         <translation>Connection refused, please check your connection ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/error_catalog.py" line="8"/>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="10"/>
         <source>连接超时，请检查网络连接（{detail}）</source>
         <translation>Connection timed out, please check your connection ({detail})</translation>
     </message>
     <message>
-        <location filename="../../../features/m3u8_pack/error_catalog.py" line="9"/>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="11"/>
         <source>SSL 连接失败，请检查网络连接（{detail}）</source>
         <translation>SSL handshake failed, please check your connection ({detail})</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="12"/>
+        <source>当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}</source>
+        <translation>One-click N_m3u8DL-RE installation is not supported on this platform: {platform}</translation>
+    </message>
+    <message>
+        <location filename="../../../features/m3u8_pack/error_catalog.py" line="13"/>
+        <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
+        <translation>No N_m3u8DL-RE installer package found for {target}</translation>
     </message>
 </context>
 <context>
@@ -5539,22 +5604,22 @@ Data will be copied to new location and the app will then exit. Please manually 
 <context>
     <name>UpdateErrors</name>
     <message>
-        <location filename="../../view/error_catalog.py" line="15"/>
+        <location filename="../../error_catalog.py" line="24"/>
         <source>无法获取版本信息</source>
         <translation>Unable to retrieve version information</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="16"/>
+        <location filename="../../error_catalog.py" line="25"/>
         <source>校验失败</source>
         <translation>Checksum verification failed</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="17"/>
+        <location filename="../../error_catalog.py" line="26"/>
         <source>当前平台无可用更新</source>
         <translation>No update is available for the current platform</translation>
     </message>
     <message>
-        <location filename="../../view/error_catalog.py" line="18"/>
+        <location filename="../../error_catalog.py" line="27"/>
         <source>DMG 中未找到 .app</source>
         <translation>No .app bundle was found in the DMG</translation>
     </message>
@@ -5785,7 +5850,7 @@ The next steps will guide you through the basic setup.</translation>
 <context>
     <name>YtDlpConfig</name>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="87"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="88"/>
         <source>YouTube 下载</source>
         <translation>YouTube</translation>
     </message>
@@ -5802,7 +5867,7 @@ The next steps will guide you through the basic setup.</translation>
         <translation type="vanished">Number of video chunks to download simultaneously; higher is faster but may be rate-limited</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="95"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="96"/>
         <source>运行环境安装目录</source>
         <translation>Runtime Environment Install Location</translation>
     </message>
@@ -5819,52 +5884,52 @@ The next steps will guide you through the basic setup.</translation>
         <translation type="vanished">None</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="106"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="107"/>
         <source>优先 MP4 格式</source>
         <translation>Prefer MP4 Format</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="107"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="108"/>
         <source>优先选择 H.264/MP4 编码，避免输出 WebM/MKV</source>
         <translation>Prefer H.264/MP4 codec to avoid WebM/MKV output</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="114"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="115"/>
         <source>下载完成后将标题、作者等信息嵌入文件</source>
         <translation>Embed metadata (title, author, etc.) into file after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="121"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="122"/>
         <source>下载完成后将章节标记嵌入文件</source>
         <translation>Embed chapter markers into file after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="299"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="300"/>
         <source>YouTube Cookie</source>
         <translation>YouTube Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="304"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="305"/>
         <source>导入</source>
         <translation>Import</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="309"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="310"/>
         <source>清除 Cookie</source>
         <translation>Clear Cookie</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="327"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="328"/>
         <source>已导入</source>
         <translation>Imported</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="328"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="329"/>
         <source>下载需要登录的内容时需要 Cookie，推荐通过浏览器扩展自动导入</source>
         <translation>A Cookie is required to download content that requires an account. It is recommended to automatically import it using the browser extension.</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="351"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="352"/>
         <source>安装浏览器扩展后，下载 YouTube 视频时会自动携带登录信息，无需手动操作。
 如需手动导入：打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签中找到任意请求，复制其 Cookie 请求头的值并粘贴到下方。</source>
         <translation>After installing the browser extension, login information will be automatically included when downloading YouTube videos, with no manual steps required.
@@ -5875,7 +5940,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Paste Cookie to download content that requires login</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="346"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="347"/>
         <source>导入 YouTube Cookie</source>
         <translation>Import YouTube Cookie</translation>
     </message>
@@ -5892,7 +5957,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Embed thumbnail into file via FFmpeg after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="120"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="121"/>
         <source>嵌入章节</source>
         <translation>Embed Chapters</translation>
     </message>
@@ -5901,7 +5966,7 @@ For manual import: Open YouTube and log in, press F12 to open Developer Tools, g
         <translation type="vanished">Embed chapter markers into file via FFmpeg after download</translation>
     </message>
     <message>
-        <location filename="../../../features/yt_dlp_pack/config.py" line="113"/>
+        <location filename="../../../features/yt_dlp_pack/config.py" line="114"/>
         <source>嵌入元数据</source>
         <translation>Embed Metadata</translation>
     </message>
