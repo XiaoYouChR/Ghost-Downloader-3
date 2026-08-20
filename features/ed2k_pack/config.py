@@ -14,7 +14,7 @@ from app.platform.filesystem import toPosixPath
 from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 from .task import ED2kInstallStep
 
-ED2K_REPO = Repo("XiaoYouChR/Python-eD2k")
+ED2K_REPO = Repo("XiaoYouChR/Python-eD2k", mirrors={"gitcode": "XiaoYouChR/Python-eD2k"})
 
 
 class ED2kConfig(PackConfig):

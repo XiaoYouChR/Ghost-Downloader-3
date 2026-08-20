@@ -17,7 +17,7 @@ from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 from app.install import createInstallTask
 
 
-FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg")
+FFMPEG_REPO = Repo("XiaoYouChR/Ghost-Downloader-FFmpeg", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-FFmpeg"})
 
 
 def ffmpegAssetTarget() -> str:

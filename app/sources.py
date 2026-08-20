@@ -17,8 +17,13 @@ class Repo:
     name: str
     mirrors: dict[str, str] = field(default_factory=dict)
 
-    def forSource(self, source: str) -> str:
-        return self.mirrors.get(source, self.name)
+    def nameOn(self, source: str) -> str | None:
+        if source == "github":
+            return self.name
+        return self.mirrors.get(source)
+
+    def buildSources(self) -> list[str]:
+        return [s for s in SOURCE_ORDER if self.nameOn(s) is not None]
 
 
 @dataclass(frozen=True)
@@ -97,7 +102,7 @@ class Release:
 async def fetchLatestRelease(repo: Repo) -> Release:
     async def attempt(source):
         endpoints = SOURCES[source]
-        url = f"{endpoints.api}/{repo.forSource(source)}/releases/latest"
+        url = f"{endpoints.api}/{repo.nameOn(source)}/releases/latest"
         headers = {"accept": "application/vnd.github+json"} if source == "github" else {}
         client = buildClient(headers=headers, timeout=15)
         try:
@@ -111,8 +116,9 @@ async def fetchLatestRelease(repo: Repo) -> Release:
         finally:
             client.close()
 
+    sources = repo.buildSources()
     results = await asyncio.gather(
-        *[attempt(s) for s in SOURCE_ORDER], return_exceptions=True)
+        *[attempt(s) for s in sources], return_exceptions=True)
     chosen: Release | None = None
     for result in results:
         if isinstance(result, BaseException):
@@ -133,7 +139,7 @@ async def fetchLatestRelease(repo: Repo) -> Release:
 async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
     async def attempt(source):
         endpoints = SOURCES[source]
-        url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
+        url = f"{endpoints.raw}/{repo.nameOn(source)}{endpoints.rawInfix}{branch}/{path}"
         client = buildClient(timeout=15)
         try:
             resp = await client.get(url)
@@ -147,7 +153,7 @@ async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
             client.close()
 
     result, index, _ = await staggered_race(
-        [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+        [lambda s=s: attempt(s) for s in repo.buildSources()], STAGGER_DELAY)
     if index is not None:
         return result
     raise RuntimeError(f"无法获取 {repo.name}/{branch}/{path}")
@@ -159,7 +165,7 @@ async def fetchRawFile(
 ) -> str:
     async def probe(source):
         endpoints = SOURCES[source]
-        url = f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
+        url = f"{endpoints.raw}/{repo.nameOn(source)}{endpoints.rawInfix}{branch}/{path}"
         client = buildClient(headers={"Range": "bytes=0-0"}, timeout=10)
         try:
             resp = await client.get(url)
@@ -175,7 +181,7 @@ async def fetchRawFile(
             client.close()
 
     result, index, _ = await staggered_race(
-        [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+        [lambda s=s: probe(s) for s in repo.buildSources()], STAGGER_DELAY)
     if index is None:
         raise RuntimeError(f"无法下载 {repo.name}/{branch}/{path}")
     url, source = result
@@ -201,7 +207,7 @@ async def probeDownloadUrl(repo: Repo, tag: str, asset: str) -> str:
             client.close()
 
     result, index, _ = await staggered_race(
-        [lambda s=s: probe(s) for s in SOURCE_ORDER], STAGGER_DELAY)
+        [lambda s=s: probe(s) for s in repo.buildSources()], STAGGER_DELAY)
     if index is None:
         raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
     return result
@@ -252,9 +258,9 @@ async def fetchPypiJson(package: str) -> dict:
 
 def buildDownloadUrl(repo: Repo, tag: str, asset: str, *, source: str) -> str:
     endpoints = SOURCES[source]
-    return f"{endpoints.download}/{repo.forSource(source)}/releases/download/{tag}/{asset}"
+    return f"{endpoints.download}/{repo.nameOn(source)}/releases/download/{tag}/{asset}"
 
 
 def buildRawUrl(repo: Repo, branch: str, path: str, *, source: str) -> str:
     endpoints = SOURCES[source]
-    return f"{endpoints.raw}/{repo.forSource(source)}{endpoints.rawInfix}{branch}/{path}"
+    return f"{endpoints.raw}/{repo.nameOn(source)}{endpoints.rawInfix}{branch}/{path}"

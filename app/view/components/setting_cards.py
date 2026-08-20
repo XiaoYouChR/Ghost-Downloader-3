@@ -878,7 +878,7 @@ class RuntimeCard(SettingCard):
         self.cancelButton.hide()
 
         if status.error:
-            self.setContent(self.tr("检测运行时失败"))
+            self.setContent(status.error)
         elif isInstalled:
             versionDisplay = status.version
             if status.detail:

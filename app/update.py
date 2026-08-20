@@ -7,7 +7,7 @@ from PySide6.QtCore import QVersionNumber
 
 from app.sources import Release, ReleaseAsset, Repo, fetchLatestRelease, probeDownloadUrl
 
-APP_REPO = Repo("XiaoYouChR/Ghost-Downloader-3")
+APP_REPO = Repo("XiaoYouChR/Ghost-Downloader-3", mirrors={"gitcode": "XiaoYouChR/Ghost-Downloader-3"})
 
 
 def isNewer(current: str, latest: str) -> bool:
