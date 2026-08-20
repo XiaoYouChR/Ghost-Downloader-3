@@ -17,14 +17,14 @@
       "macOS-arm64": {
         "from": "4.3.3",
         "file": "patch-macOS-arm64-4.3.3-to-4.3.4.hdiff",
-        "sha256": "8dcdd8a276a7566ae45f8c77bb0fcae8467446644a1c5488d869b7af8692f5cf",
-        "size": 4436285
+        "sha256": "4f48f01a6b3b78e8f399127078ef3480e778853263c253fa13bb25d053c7b111",
+        "size": 4437951
       },
       "macOS-x86_64": {
         "from": "4.3.3",
         "file": "patch-macOS-x86_64-4.3.3-to-4.3.4.hdiff",
-        "sha256": "961e950766b8ee7c24fbae234a2af0f679328bbebaa2a4f4d245b3f960aceb8b",
-        "size": 6218521
+        "sha256": "a37b5bb544fb95bc29533e1b7a0642b8256af19f4adce43a3e36e69f823bf161",
+        "size": 6264214
       }
     },
     "full": {
@@ -40,13 +40,13 @@
       },
       "macOS-arm64": {
         "file": "Ghost-Downloader-v4.3.4-macOS-arm64.dmg",
-        "sha256": "ddaf8be985123cf0edb8a7d4e5e30843a670072ebbe93639f3ba04149739859f",
-        "size": 65732784
+        "sha256": "37b803167c1958293239fc13d6e11098e7de759cd6e8c178e79c37d4ad11d0a5",
+        "size": 65742082
       },
       "macOS-x86_64": {
         "file": "Ghost-Downloader-v4.3.4-macOS-x86_64.dmg",
-        "sha256": "1eb8a3c1100200930120cc1a0b2ed5d6ab24619dd21192b0b49bfb06806bdb66",
-        "size": 70483130
+        "sha256": "cd309db552190a43936829a377065e6fdb0ab11c6efb7ff859b9d56f6edc87f0",
+        "size": 70488307
       }
     }
   },
