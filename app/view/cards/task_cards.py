@@ -370,7 +370,7 @@ class TaskCard(CardWidget):
         menu = RoundMenu(parent=self)
 
         copyUrl = Action(FluentIcon.COPY, self.tr("复制下载链接"), self)
-        copyUrl.triggered.connect(lambda: QApplication.clipboard().setText(self._task.url))
+        copyUrl.triggered.connect(lambda: QApplication.instance().clipboardListener.setUrls([self._task.url]))
         menu.addAction(copyUrl)
 
         if self._hashDigest:

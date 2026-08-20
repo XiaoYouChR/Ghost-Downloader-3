@@ -104,6 +104,10 @@ def startApp(application, isSilent=False):
     plan = Plan(allCompleted=lambda: taskService.runningCount() == 0)
     taskService.tasksAllCompleted.connect(plan.trigger)
 
+    application.clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
+    cfg.isClipboardListenerEnabled.valueChanged.connect(application.clipboardListener.setEnabled)
+    application.clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
+
     shouldRunOobe = not cfg.hasCompletedOobe.value and not isSilent
 
     if shouldRunOobe:
@@ -204,10 +208,7 @@ def startApp(application, isSilent=False):
     cfg.isAria2RpcEnabled.valueChanged.connect(aria2RpcServer.setEnabled)
     cfg.aria2RpcPort.valueChanged.connect(aria2RpcServer.setPort)
 
-    clipboardListener = ClipboardListener(featureService.matchPassive, parent=application)
-    cfg.isClipboardListenerEnabled.valueChanged.connect(clipboardListener.setEnabled)
-    clipboardListener.setEnabled(cfg.isClipboardListenerEnabled.value)
-    clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
+    application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 
     if sys.platform == "darwin":
         from app.view.shell.mac_status_item import MacStatusItem

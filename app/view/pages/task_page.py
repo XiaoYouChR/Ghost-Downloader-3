@@ -504,7 +504,7 @@ class TaskPage(QWidget):
             task.url for taskId in self._displayOrder
             if taskId in self._selectedIds and (task := self._taskService.taskById(taskId))
         ]
-        QApplication.clipboard().setText("\n".join(urls))
+        QApplication.instance().clipboardListener.setUrls(urls)
 
     def _onRedownloadSelected(self) -> None:
         for taskId in self._displayOrder:

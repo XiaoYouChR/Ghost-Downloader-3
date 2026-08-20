@@ -14,7 +14,13 @@ class ClipboardListener(QObject):
         self._matchPassive = matchPassive
         self._clipboard = None
         self._enabled = False
+        self._selfCopied = False
         self._lastUrls: tuple[str, ...] = ()
+
+    def setUrls(self, urls: list[str]) -> None:
+        if self._enabled:
+            self._selfCopied = True
+        QApplication.clipboard().setText("\n".join(urls))
 
     def setEnabled(self, enabled: bool) -> None:
         if self._clipboard is None:
@@ -27,7 +33,8 @@ class ClipboardListener(QObject):
         self._enabled = enabled
 
     def _onDataChanged(self) -> None:
-        if self._clipboard.ownsClipboard():
+        if self._selfCopied:
+            self._selfCopied = False
             return
 
         urls = self._downloadableUrls()
