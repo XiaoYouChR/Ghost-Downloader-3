@@ -190,7 +190,7 @@ class TaskDraft(QObject):
         self.parsingBusyChanged.emit(self._isParsing())
         self.itemsChanged.emit()
 
-    def _onParseFailed(self, error: str, item: DraftItem) -> None:
+    def _onParseFailed(self, error, item: DraftItem) -> None:
         if item.confirmedOptions is not None:
             item.confirmedOptions = None
             logger.warning("后台确认任务解析失败: {}", error)
@@ -200,6 +200,6 @@ class TaskDraft(QObject):
             return
 
         item.parseId = ""
-        self.parseFailed.emit(item.url, error)
+        self.parseFailed.emit(item.url, str(error))
         logger.warning("解析任务失败 {}: {}", item.url, error)
         self.parsingBusyChanged.emit(self._isParsing())

@@ -16,6 +16,7 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import findExecutable
+from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 
 QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
@@ -277,7 +278,7 @@ class YouTubeRuntime(BinaryRuntime):
         for asset in release.assets:
             if asset.name == "yt-dlp.tar.gz":
                 return asset.downloadUrl, asset.size
-        raise RuntimeError("未找到 yt-dlp nightly tarball")
+        raise TaskError("未找到 yt-dlp nightly tarball")
 
 def _qjsAssetName() -> str:
     machine = platform.machine().lower()

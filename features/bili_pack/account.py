@@ -179,9 +179,9 @@ class BilibiliAccount(QObject):
         else:
             self.qrStateChanged.emit(-1, "登录成功，但未能提取到有效 Cookie")
 
-    def _onQrLoginFailed(self, error: str):
+    def _onQrLoginFailed(self, error):
         self._qrWorkId = ""
-        self.qrStateChanged.emit(-1, error)
+        self.qrStateChanged.emit(-1, str(error))
 
     # ── cookie / logout / account info (wreq via coroutineRunner) ──
 

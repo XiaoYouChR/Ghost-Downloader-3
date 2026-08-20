@@ -1,6 +1,6 @@
 from PySide6.QtCore import QTranslator
 
-from app.view.error_catalog import toLocalizedError
+from app.error_catalog import toLocalizedError
 
 
 class TaskErrorTranslator(QTranslator):

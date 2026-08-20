@@ -13,6 +13,7 @@ from app.config.paths import APP_DATA_DIR
 from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
+from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 from app.install import createInstallTask
 
@@ -29,7 +30,7 @@ def ffmpegAssetTarget() -> str:
         return "macos-arm64" if isArm else "macos-x64"
     if sys.platform == "linux":
         return "linux-arm64" if isArm else "linux-x64"
-    raise RuntimeError(f"当前平台暂不支持一键安装 FFmpeg: {sys.platform}")
+    raise TaskError("当前平台暂不支持一键安装 FFmpeg: {platform}", platform=sys.platform)
 
 
 class FFmpegConfig(PackConfig):

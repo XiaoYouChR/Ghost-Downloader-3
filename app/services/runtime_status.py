@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
+from app.error_catalog import toLocalizedError
+from app.models.task import TaskError
+
 if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
 
@@ -123,7 +126,7 @@ class RuntimeStatusService(QObject):
         if runtime:
             self.invalidate(runtime)
 
-    def _onInstallFailed(self, error: str, runtimeId: str) -> None:
+    def _onInstallFailed(self, error: Exception, runtimeId: str) -> None:
         if runtimeId not in self._installingIds:
             return
         self._installingIds.discard(runtimeId)
@@ -131,7 +134,11 @@ class RuntimeStatusService(QObject):
         self._runtimes.pop(runtimeId, None)
         current = self._statuses.get(runtimeId)
         if current:
-            status = replace(current, isInstalling=False, error=error)
+            if isinstance(error, TaskError):
+                display = toLocalizedError(error.message, error.params)
+            else:
+                display = toLocalizedError(str(error))
+            status = replace(current, isInstalling=False, error=display)
             self._statuses[runtimeId] = status
             self.statusChanged.emit(status)
 
@@ -173,10 +180,10 @@ class RuntimeStatusService(QObject):
         else:
             self._runtimes.pop(runtimeId, None)
 
-    def _onProbeFailed(self, error: str, runtimeId: str, name: str, path: str) -> None:
+    def _onProbeFailed(self, error: Exception, runtimeId: str, name: str, path: str) -> None:
         self._workIds.pop(runtimeId, None)
         self._runtimes.pop(runtimeId, None)
-        status = RuntimeStatus(runtimeId, name, path=path, error=error)
+        status = RuntimeStatus(runtimeId, name, path=path, error=str(error))
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 

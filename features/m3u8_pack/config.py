@@ -21,6 +21,7 @@ from app.install import createInstallTask
 from app.models.pack import BinaryRuntime, PackConfig
 from app.platform.android import IS_ANDROID, nativeLibraryDir
 from app.platform.filesystem import findExecutable
+from app.models.task import TaskError
 from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 
 M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE", mirrors={"gitcode": "XiaoYouChR/N_m3u8DL-RE-mirror"})
@@ -180,7 +181,7 @@ class M3U8Runtime(BinaryRuntime):
         elif sys.platform == "linux":
             target = "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
         else:
-            raise RuntimeError(f"当前平台暂不支持一键安装 N_m3u8DL-RE: {sys.platform}")
+            raise TaskError("当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}", platform=sys.platform)
 
         release = getattr(self, "release", None)
         if release is None or (version and release.version != version):
@@ -193,7 +194,7 @@ class M3U8Runtime(BinaryRuntime):
                 assetName = asset.name
                 break
         if not assetName:
-            raise RuntimeError(f"未找到适配 {target} 的 N_m3u8DL-RE 安装包")
+            raise TaskError("未找到适配 {target} 的 N_m3u8DL-RE 安装包", target=target)
 
         binaryName = "N_m3u8DL-RE.exe" if sys.platform == "win32" else "N_m3u8DL-RE"
         return createInstallTask(

@@ -20,7 +20,7 @@ from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
-from app.view.error_catalog import toLocalizedError
+from app.error_catalog import toLocalizedError
 
 if TYPE_CHECKING:
     from app.models.task import Task

@@ -10,7 +10,8 @@ from qfluentwidgets import (
 
 from app.format import toReadableSize
 from app.view.components.card_groups import OptionCardGroup
-from app.view.error_catalog import toLocalizedError
+from app.error_catalog import toLocalizedError
+from app.models.task import TaskError
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -114,12 +115,16 @@ class LiveEditDialog(EditTaskDialog):
         self._taskService.edit(self._task, options, newTask)
         super().accept()
 
-    def _onReparseFailed(self, error: str, **_) -> None:
+    def _onReparseFailed(self, error, **_) -> None:
         self._pendingParseId = ""
         self._setInteractive(True)
+        if isinstance(error, TaskError):
+            content = toLocalizedError(error.message, error.params)
+        else:
+            content = toLocalizedError(str(error))
         InfoBar.error(
             title=self.tr("链接解析失败"),
-            content=toLocalizedError(error),
+            content=content,
             duration=4000,
             position=InfoBarPosition.TOP,
             parent=self,

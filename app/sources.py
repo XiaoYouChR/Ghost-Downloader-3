@@ -10,6 +10,7 @@ from PySide6.QtCore import QVersionNumber
 from loguru import logger
 
 from app.client import buildClient, fetchFile
+from app.models.task import TaskError
 
 
 @dataclass(frozen=True)
@@ -131,7 +132,7 @@ async def fetchLatestRelease(repo: Repo) -> Release:
         ):
             chosen = result
     if chosen is None:
-        raise RuntimeError(f"无法获取 {repo.name} 的最新 release")
+        raise TaskError("无法获取 {name} 的最新 release", name=repo.name)
     return chosen
 
 
@@ -156,7 +157,7 @@ async def fetchJson(repo: Repo, branch: str, path: str) -> tuple[dict, str]:
         [lambda s=s: attempt(s) for s in repo.buildSources()], STAGGER_DELAY)
     if index is not None:
         return result
-    raise RuntimeError(f"无法获取 {repo.name}/{branch}/{path}")
+    raise TaskError("无法获取 {name}/{branch}/{path}", name=repo.name, branch=branch, path=path)
 
 
 async def fetchRawFile(
@@ -183,7 +184,7 @@ async def fetchRawFile(
     result, index, _ = await staggered_race(
         [lambda s=s: probe(s) for s in repo.buildSources()], STAGGER_DELAY)
     if index is None:
-        raise RuntimeError(f"无法下载 {repo.name}/{branch}/{path}")
+        raise TaskError("无法下载 {name}/{branch}/{path}", name=repo.name, branch=branch, path=path)
     url, source = result
     await fetchFile(url, outputPath, onProgress=onProgress)
     return source
@@ -209,7 +210,7 @@ async def probeDownloadUrl(repo: Repo, tag: str, asset: str) -> str:
     result, index, _ = await staggered_race(
         [lambda s=s: probe(s) for s in repo.buildSources()], STAGGER_DELAY)
     if index is None:
-        raise RuntimeError(f"无法下载 {repo.name}/{tag}/{asset}")
+        raise TaskError("无法下载 {name}/{tag}/{asset}", name=repo.name, tag=tag, asset=asset)
     return result
 
 
@@ -253,7 +254,7 @@ async def fetchPypiJson(package: str) -> dict:
         [lambda s=s: attempt(s) for s in SOURCE_ORDER], STAGGER_DELAY)
     if index is not None:
         return result
-    raise RuntimeError(f"无法获取 PyPI 包信息: {package}")
+    raise TaskError("无法获取 PyPI 包信息: {package}", package=package)
 
 
 def buildDownloadUrl(repo: Repo, tag: str, asset: str, *, source: str) -> str:

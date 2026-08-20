@@ -453,8 +453,8 @@ class SettingPage(ScrollArea):
         from app.view.dialogs.extension_install import ExtensionInstallDialog
         ExtensionInstallDialog(path, self.window()).exec()
 
-    def _onExtensionExtractFailed(self, error: str) -> None:
-        InfoBar.error(self.tr("解包失败"), error,
+    def _onExtensionExtractFailed(self, error) -> None:
+        InfoBar.error(self.tr("解包失败"), str(error),
                       duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _refreshBrowserStatus(self) -> None:

@@ -512,8 +512,8 @@ class BrowserService(QObject):
         self._sendCreateTaskResult(session, requestId, CreateTaskStatus.CREATED, taskId=task.taskId)
         self._broadcastSnapshots()
 
-    def _onTaskParseFailed(self, error: str, session: BrowserClientSession, requestId: str, **_) -> None:
-        self._sendCreateTaskResult(session, requestId, CreateTaskStatus.REJECTED, message=error)
+    def _onTaskParseFailed(self, error, session: BrowserClientSession, requestId: str, **_) -> None:
+        self._sendCreateTaskResult(session, requestId, CreateTaskStatus.REJECTED, message=str(error))
 
     def _onTaskAction(self, session: BrowserClientSession, data: dict) -> None:
         from app.models.task import TaskStatus

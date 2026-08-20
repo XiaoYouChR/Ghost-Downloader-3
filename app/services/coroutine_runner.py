@@ -46,7 +46,7 @@ class CoroutineRunner(QThread):
                 return
             except Exception as e:
                 logger.opt(exception=e).error("async work failed: {}", workId)
-                error = str(e) or repr(e)
+                error = e
             finally:
                 self._running.pop(workId, None)
 

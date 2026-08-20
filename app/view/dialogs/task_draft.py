@@ -18,7 +18,7 @@ from app.platform.android import IS_ANDROID
 from app.view.components.card_groups import DraftCardGroup, OptionCardGroup
 from app.view.components.editors import AutoSizingEdit
 from app.view.components.option_cards import OutputFolderCard, SubworkerCountCard
-from app.view.error_catalog import toLocalizedError
+from app.error_catalog import toLocalizedError
 
 if TYPE_CHECKING:
     from app.models.task import Task

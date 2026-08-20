@@ -11,3 +11,4 @@ N("TaskErrors", "下载被拒绝（403），链接可能已失效（{detail}）"
 N("TaskErrors", "视频信息提取失败：{detail}")
 N("TaskErrors", "未找到可用的视频格式")
 N("TaskErrors", "{name} 未安装，请在设置中安装")
+N("TaskErrors", "未找到 yt-dlp nightly tarball")
