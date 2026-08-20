@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import Callable
 
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import LineEdit, isDarkTheme, themeColor
+from qfluentwidgets.common.font import getFont, setFont
 
 HANDLE_SIZE = 22
 HANDLE_RADIUS = HANDLE_SIZE // 2
@@ -164,9 +165,7 @@ class RangeSlider(QWidget):
             p.drawEllipse(QPointF(hx, handleCenterY), INNER_RADIUS, INNER_RADIUS)
 
         # Label bubbles
-        font = p.font()
-        font.setPixelSize(LABEL_FONT_SIZE)
-        p.setFont(font)
+        p.setFont(getFont(LABEL_FONT_SIZE))
 
         startRect, endRect = self._labelRects()
         for rect, text in (
@@ -226,31 +225,23 @@ class RangeSlider(QWidget):
             return
 
         value = self._toValue(x)
-        if value == self._previewFrameIndex:
-            if self._preview and self._preview.isVisible():
-                globalPos = self.mapToGlobal(QPointF(x, 0)).toPoint()
-                self._preview.move(
-                    globalPos.x() - self._preview.width() // 2,
-                    globalPos.y() - self._preview.height() - PREVIEW_MARGIN,
-                )
-            return
+        if value != self._previewFrameIndex:
+            self._previewFrameIndex = value
+            frame = self._previewProvider(value)
+            if frame is None:
+                self._hidePreview()
+                return
+            if self._preview is None:
+                self._preview = PreviewPopup()
+            self._preview.setPixmap(frame)
+            self._preview.show()
 
-        self._previewFrameIndex = value
-        frame = self._previewProvider(value)
-        if frame is None:
-            self._hidePreview()
-            return
-
-        if self._preview is None:
-            self._preview = PreviewPopup()
-        self._preview.setPixmap(frame)
-
-        globalPos = self.mapToGlobal(QPointF(x, 0)).toPoint()
-        self._preview.move(
-            globalPos.x() - self._preview.width() // 2,
-            globalPos.y() - self._preview.height() - PREVIEW_MARGIN,
-        )
-        self._preview.show()
+        if self._preview and self._preview.isVisible():
+            globalPos = self.mapToGlobal(QPointF(x, 0)).toPoint()
+            self._preview.move(
+                globalPos.x() - self._preview.width() // 2,
+                globalPos.y() - self._preview.height() - PREVIEW_MARGIN,
+            )
 
     def _hidePreview(self) -> None:
         if self._preview is not None:
@@ -258,9 +249,7 @@ class RangeSlider(QWidget):
         self._previewFrameIndex = -1
 
     def _labelRects(self) -> tuple[QRectF, QRectF]:
-        font = QFont()
-        font.setPixelSize(LABEL_FONT_SIZE)
-        fm = QFontMetrics(font)
+        fm = QFontMetrics(getFont(LABEL_FONT_SIZE))
 
         startX = self._toPixelX(self._startValue)
         endX = self._toPixelX(self._endValue)
@@ -306,6 +295,7 @@ class RangeSlider(QWidget):
         hx = self._toPixelX(value)
 
         self._lineEdit = LineEdit(self)
+        setFont(self._lineEdit, LABEL_FONT_SIZE)
         self._lineEdit.setFixedSize(56, LABEL_HEIGHT)
         self._lineEdit.setText(self._formatter(value))
         self._lineEdit.selectAll()
