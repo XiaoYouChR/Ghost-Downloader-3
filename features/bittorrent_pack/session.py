@@ -27,9 +27,13 @@ DHT_BOOTSTRAP_NODES = (
 
 ALERT_MASK = (
     lt.alert.category_t.error_notification
+    | lt.alert.category_t.peer_notification
     | lt.alert.category_t.port_mapping_notification
     | lt.alert.category_t.storage_notification
+    | lt.alert.category_t.tracker_notification
     | lt.alert.category_t.status_notification
+    | lt.alert.category_t.dht_notification
+    | lt.alert.category_t.performance_warning
 )
 
 DHT_STATE_FILE = "bt_dht_state.dat"
@@ -279,6 +283,11 @@ class BTSession(QObject):
                 "dht_bootstrap_nodes": DHT_BOOTSTRAP_NODES,
                 "announce_to_all_trackers": True,
                 "announce_to_all_tiers": True,
+                "active_downloads": -1,
+                "active_seeds": -1,
+                "active_limit": -1,
+                "active_checking": -1,
+                "mixed_mode_algorithm": int(lt.bandwidth_mixed_algo_t.prefer_tcp),
                 "enable_upnp": True,
                 "enable_natpmp": True,
                 "alert_mask": ALERT_MASK,
@@ -400,6 +409,10 @@ class BTSession(QObject):
             await asyncio.sleep(1)
 
     def _routeAlert(self, alert) -> None:
+        if isinstance(alert, lt.performance_alert):
+            logger.warning("BitTorrent 性能警告: {}", alert.message())
+            return
+
         if not hasattr(alert, "handle"):
             return
 
