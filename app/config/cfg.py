@@ -290,8 +290,6 @@ class Config(QConfig):
         shouldShowDockIcon = ConfigItem("Personalization", "ShowDockIcon", True, BoolValidator())
         shouldShowDockSpeed = ConfigItem("Personalization", "ShowDockSpeed", True, BoolValidator())
         shouldShowMenuBarSpeed = ConfigItem("Personalization", "ShowMenuBarSpeed", True, BoolValidator())
-    elif not IS_ANDROID:
-        shouldShowTrayIcon = ConfigItem("Personalization", "ShowTrayIcon", True, BoolValidator())
     language = OptionsConfigItem(
         "Personalization", "Language", Language.AUTO,
         OptionsValidator(Language), LanguageSerializer(), restart=True,

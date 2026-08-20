@@ -297,12 +297,6 @@ class SettingPage(ScrollArea):
                                   self.tr("下载时在菜单栏图标旁显示当前速度"),
                                   cfg.shouldShowMenuBarSpeed),
             ])
-        if sys.platform != "darwin" and not IS_ANDROID:
-            personalCards.append(
-                SwitchSettingCard(FluentIcon.APPLICATION, self.tr("显示系统托盘图标"),
-                                  self.tr("在任务栏通知区域显示程序图标"),
-                                  cfg.shouldShowTrayIcon),
-            )
         personalCards.append(
             ComboBoxSettingCard(cfg.language, FluentIcon.LANGUAGE, self.tr("语言"),
                                 self.tr("设置界面的首选语言"),

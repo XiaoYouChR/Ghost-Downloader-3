@@ -221,8 +221,7 @@ def startApp(application, isSilent=False):
     else:
         from app.view.shell.tray import SystemTrayIcon
         tray = SystemTrayIcon(taskService, speedMeter, QIcon(":/image/logo.png"), parent=application)
-        tray.setVisible(cfg.shouldShowTrayIcon.value)
-        cfg.shouldShowTrayIcon.valueChanged.connect(tray.setVisible)
+        tray.show()
 
     from app.platform.desktop_keepalive import hold, release
     taskService.taskStarted.connect(hold)
