@@ -160,7 +160,7 @@ class UpdateService(QObject):
 
         packsData = data.get("packs", {})
         for packDir in sorted(FEATURES_DIR.iterdir()) if FEATURES_DIR.exists() else []:
-            if not packDir.is_dir() or packDir.name.startswith("."):
+            if not packDir.is_dir() or packDir.name.startswith(".") or packDir.name.endswith("_pending"):
                 continue
             manifest = PackManifest.fromDir(packDir)
             if manifest is None or not manifest.version:

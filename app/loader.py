@@ -22,7 +22,7 @@ def seedPacks(seedDir: Path, targetDir: Path) -> None:
     targetDir.mkdir(parents=True, exist_ok=True)
 
     for packDir in sorted(seedDir.iterdir()):
-        if not packDir.is_dir() or packDir.name.startswith("."):
+        if not packDir.is_dir() or packDir.name.startswith(".") or packDir.name.endswith("_pending"):
             continue
         seedManifest = PackManifest.fromDir(packDir)
         if seedManifest is None or not seedManifest.version:
@@ -55,7 +55,7 @@ def loadPacks(featuresDir: Path, services=None) -> list[FeaturePack]:
 
     manifests = []
     for p in sorted(featuresDir.iterdir()):
-        if not p.is_dir() or p.name.startswith("."):
+        if not p.is_dir() or p.name.startswith(".") or p.name.endswith("_pending"):
             continue
         m = PackManifest.fromDir(p)
         if m is None:
