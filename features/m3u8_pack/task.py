@@ -43,6 +43,10 @@ ERROR_HINTS = (
      "资源不存在（404），链接可能已失效（{detail}）"),
     ("response status code does not indicate success:",
      "服务器返回了错误（{detail}）"),
+    ("notsupportedexception",
+     "获取到的内容不是有效的播放列表，链接可能已失效（{detail}）"),
+    ("filenotfoundexception",
+     "缺少依赖程序（{detail}）"),
     ("no such host is known",
      "无法解析域名，请检查网络连接（{detail}）"),
     ("connection refused",
@@ -55,6 +59,9 @@ ERROR_HINTS = (
 
 LOG_LINE_PATTERN = re.compile(
     r"\d{2}:\d{2}:\d{2}\.\d{3}\s+(WARN|ERROR)\s*:\s*(.*)"
+)
+UNHANDLED_PATTERN = re.compile(
+    r"Unhandled exception:\s*\S+:\s*(.*)"
 )
 
 
@@ -77,7 +84,13 @@ def parseDiagnostic(output: str) -> str:
     last = ""
     for m in LOG_LINE_PATTERN.finditer(output):
         last = m.group(2).strip()
-    return last
+    cut = last.find("Unhandled exception:")
+    if cut > 0:
+        last = last[:cut].strip()
+    if last:
+        return last
+    m = UNHANDLED_PATTERN.search(output)
+    return m.group(1).strip() if m else ""
 
 
 @dataclass(kw_only=True, eq=False)

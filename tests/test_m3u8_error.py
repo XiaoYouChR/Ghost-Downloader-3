@@ -143,3 +143,37 @@ class TestParseError:
         )
         error = parseError(output, 1)
         assert "403 (Forbidden). (10/10)" in error.params["detail"]
+
+    def test_not_supported_exception(self):
+        """Windows 日志回归：NotSupportedException 无 WARN/ERROR 行。"""
+        output = (
+            "17:07:01.414 INFO : \xd8\xb6, ANSI\xc9\xab\n"
+            "17:07:01.419 INFO : N_m3u8DL-RE (Beta version) 20260628\n"
+            "17:07:01.419 INFO : URL: https://example.com/index.m3u8\n"
+            "Unhandled exception: System.NotSupportedException: garbled text\n"
+            "   at N_m3u8DL_RE.Parser.StreamExtractor.LoadSourceFromText(String) + 0x282\n"
+            "   at System.CommandLine.Invocation.InvocationPipeline.<InvokeAsync>d__0.MoveNext()\n"
+        )
+        error = parseError(output, 1)
+        assert "不是有效的播放列表" in error.message
+        assert error.params["detail"] == "garbled text"
+
+    def test_file_not_found_exception(self):
+        output = (
+            "17:07:01.414 INFO : N_m3u8DL-RE (Beta version) 20260628\n"
+            "Unhandled exception: System.IO.FileNotFoundException: "
+            "ffmpeg not found, please download at: https://ffmpeg.org\n"
+            "   at N_m3u8DL_RE.Program.<DoWorkAsync>d__3.MoveNext()\n"
+        )
+        error = parseError(output, 1)
+        assert "缺少依赖程序" in error.message
+
+    def test_unhandled_exception_fallback_diagnostic(self):
+        """无 WARN/ERROR 行时从 Unhandled exception 提取 detail。"""
+        output = (
+            "17:07:01.414 INFO : N_m3u8DL-RE started\n"
+            "Unhandled exception: System.Exception: something went wrong\n"
+            "   at SomeNamespace.SomeMethod()\n"
+        )
+        error = parseError(output, 1)
+        assert error.params["detail"] == "something went wrong"
