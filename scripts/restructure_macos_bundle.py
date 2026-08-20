@@ -31,6 +31,15 @@ def restructure(appBundle: Path) -> None:
         entry.symlink_to(os.path.relpath(dest, macosDir))
         print(f"  {entry.name} → Resources/{entry.name}")
 
+    # Match updater.c:restructureBundle() — symlink Resources entries not yet in MacOS.
+    for entry in sorted(resourcesDir.iterdir()):
+        if entry.name.startswith("."):
+            continue
+        link = macosDir / entry.name
+        if not link.exists() and not link.is_symlink():
+            link.symlink_to(os.path.relpath(entry, macosDir))
+            print(f"  {entry.name} → Resources/{entry.name} (resources-only)")
+
 
 def main() -> int:
     if len(sys.argv) != 2:

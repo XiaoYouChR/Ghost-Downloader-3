@@ -1018,6 +1018,7 @@ int main(int argc, char *argv[]) {
         return EXIT_LAUNCH_FAILED;
     }
 
+    deleteDir(backupDir);
     logMsg("ok");
     closeLog();
 #ifdef _WIN32
