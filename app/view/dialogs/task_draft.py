@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QEvent, QPoint, Qt, QTimer
-from PySide6.QtGui import QColor, QTextOption
-from PySide6.QtWidgets import QDialog, QFileDialog, QHBoxLayout, QSizePolicy, QVBoxLayout
+from PySide6.QtGui import QColor, QTextCursor, QTextOption
+from PySide6.QtWidgets import QApplication, QDialog, QFileDialog, QHBoxLayout, QSizePolicy, QVBoxLayout
 from qframelesswindow import FramelessDialog
 from qfluentwidgets import (
     FluentIcon, FluentStyleSheet, FluentTitleBar,
@@ -149,6 +149,8 @@ class TaskDraftDialog(MessageBoxBase):
 
         if self._isStandalone and self._standaloneWrapper.isVisible():
             raiseWindow(self._standaloneWrapper)
+            self.urlEdit.setFocus()
+            self.urlEdit.moveCursor(QTextCursor.MoveOperation.End)
             return
 
         if self.isVisible() and not self._isStandalone:
@@ -161,6 +163,13 @@ class TaskDraftDialog(MessageBoxBase):
 
         raiseWindow(self._standaloneWrapper)
 
+        if not self.urlEdit.toPlainText().strip():
+            urls = self._clipboardUrls()
+            if urls:
+                self.urlEdit.appendPlainText("\n".join(urls))
+        self.urlEdit.setFocus()
+        self.urlEdit.moveCursor(QTextCursor.MoveOperation.End)
+
     def showMask(self) -> int:
         if self._isStandalone:
             self._toMask()
@@ -171,6 +180,14 @@ class TaskDraftDialog(MessageBoxBase):
             self.windowMask.resize(self.size())
         self.setShadowEffect(60, (0, 10), QColor(0, 0, 0, 50))
         self.setMaskColor(QColor(0, 0, 0, 76))
+
+        if not self.urlEdit.toPlainText().strip():
+            urls = self._clipboardUrls()
+            if urls:
+                self.urlEdit.appendPlainText("\n".join(urls))
+        self.urlEdit.setFocus()
+        self.urlEdit.moveCursor(QTextCursor.MoveOperation.End)
+
         return self.exec()
 
     def addUrls(self, urls: list[str]) -> None:
@@ -306,6 +323,11 @@ class TaskDraftDialog(MessageBoxBase):
         if not text:
             return []
         return [line.strip() for line in text.splitlines() if line.strip()]
+
+    def _clipboardUrls(self) -> list[str]:
+        text = QApplication.clipboard().text()
+        return [url for line in text.splitlines()
+                if (url := line.strip()) and self._featureService.match(url)]
 
     def _onBatchClicked(self) -> None:
         from app.view.dialogs.batch_url import BatchUrlDialog
