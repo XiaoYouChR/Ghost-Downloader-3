@@ -103,7 +103,7 @@ else:
             "org.freedesktop.login1.Manager", bus,
         )
         reply = iface.call("Inhibit", "sleep", "Ghost Downloader", "Active download", "block")
-        if reply.type() == reply.ReplyMessage:
+        if reply.type() == reply.MessageType.ReplyMessage:
             _inhibitFd = reply.arguments()[0]
         else:
             raise RuntimeError(reply.errorMessage())
