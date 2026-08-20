@@ -7,13 +7,14 @@ from urllib.parse import urlparse
 from PySide6.QtCore import QObject
 
 from app.config.paths import FEATURES_DIR
+from app.models.task import TaskOptions
 from app.platform import file_association
 from app.platform import url_scheme
 from app.loader import loadPacks
 
 if TYPE_CHECKING:
     from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme, PackPage
-    from app.models.task import Task, TaskOptions
+    from app.models.task import Task
     from PySide6.QtWidgets import QWidget
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
@@ -93,8 +94,11 @@ class FeatureService(QObject):
                 return task
         raise ValueError(f"No parser matched: {options.url}")
 
+    def match(self, url: str) -> bool:
+        options = TaskOptions(url=url)
+        return any(parser.match(options) for parser in self._parsers)
+
     def matchPassive(self, url: str) -> bool:
-        from app.models.task import TaskOptions
         options = TaskOptions(url=url)
         return any(parser.matchPassive(options) for parser in self._parsers)
 

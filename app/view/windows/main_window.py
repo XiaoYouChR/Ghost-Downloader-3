@@ -11,6 +11,7 @@ from qfluentwidgets import (
     MSFluentWindow, FluentIcon, NavigationItemPosition, MessageBox, Theme, InfoBar, InfoBarPosition,
     SearchLineEdit, setThemeColor, IconWidget, SubtitleLabel, isDarkTheme,
 )
+from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
 
 from app.config.cfg import CloseMode, cfg
 from app.config.constants import DONATE_URL, FEEDBACK_URL
@@ -454,10 +455,14 @@ class MainWindow(MSFluentWindow):
         if QApplication.instance().isFileDragActive:
             event.ignore()
             return
-        if not event.mimeData().hasUrls():
+        mime = event.mimeData()
+        acceptable = mime.hasUrls() or (
+            mime.hasText() and any(
+                self._featureService.match(line.strip())
+                for line in mime.text().splitlines() if line.strip()))
+        if not acceptable:
             event.ignore()
             return
-        from qfluentwidgets.components.dialog_box.mask_dialog_base import MaskDialogBase
         if any(d.isVisible() for d in self.findChildren(MaskDialogBase)):
             event.ignore()
             return
@@ -474,7 +479,12 @@ class MainWindow(MSFluentWindow):
 
     def dropEvent(self, event) -> None:
         self._dropOverlay.hide()
-        urls = [u.toString() for u in event.mimeData().urls()]
+        mime = event.mimeData()
+        if mime.hasUrls():
+            urls = [u.toString() for u in mime.urls()]
+        else:
+            urls = [line.strip() for line in mime.text().splitlines()
+                    if line.strip() and self._featureService.match(line.strip())]
         if urls:
             self.addUrls(urls)
 
