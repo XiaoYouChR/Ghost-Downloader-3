@@ -35,6 +35,7 @@ class SingletonApplication(QApplication):
     def __init__(self, argv: list[str], key: str):
         super().__init__(argv)
         self._key = key
+        self.isFileDragActive = False
         self._memory: QSharedMemory | None = None
         self._lockSingleInstance()
 

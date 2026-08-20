@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QMimeData, QProcess, QUrl, Qt
 from PySide6.QtGui import QDesktopServices, QDrag
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QApplication, QWidget
 from loguru import logger
 
 
@@ -264,14 +264,18 @@ def raiseWindow(window) -> None:
 
 
 def startFileDrag(paths: list[Path], source: QWidget) -> None:
-    if sys.platform == "win32":
-        try:
-            hwnd = int(source.window().winId())
-            _startFileDragWin32([str(p) for p in paths], hwnd)
-            return
-        except Exception as e:
-            logger.opt(exception=e).debug("COM drag failed, falling back to Qt")
-    _startFileDragQt(paths, source)
+    QApplication.instance().isFileDragActive = True
+    try:
+        if sys.platform == "win32":
+            try:
+                hwnd = int(source.window().winId())
+                _startFileDragWin32([str(p) for p in paths], hwnd)
+                return
+            except Exception as e:
+                logger.opt(exception=e).debug("COM drag failed, falling back to Qt")
+        _startFileDragQt(paths, source)
+    finally:
+        QApplication.instance().isFileDragActive = False
 
 
 def _startFileDragQt(paths: list[Path], source: QWidget) -> None:

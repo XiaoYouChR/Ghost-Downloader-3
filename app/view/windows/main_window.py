@@ -76,6 +76,7 @@ class MainWindow(MSFluentWindow):
         coroutineRunner: CoroutineRunner,
         plan,
         updateService=None,
+        setClipboardUrls=None,
         parent=None,
     ):
         self._isGeometryRestored = False
@@ -92,6 +93,7 @@ class MainWindow(MSFluentWindow):
         self._speedMeter = speedMeter
         self._updateService = updateService
         self._plan = plan
+        self._setClipboardUrls = setClipboardUrls
         self.setMicaEffectEnabled(False)
         if sys.platform != "darwin":
             self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -183,7 +185,8 @@ class MainWindow(MSFluentWindow):
         if pageClass is TaskPage:
             return TaskPage(
                 self._taskService, self._featureService,
-                self._categoryService, self._speedMeter, self._plan, parent=self,
+                self._categoryService, self._speedMeter, self._plan,
+                self._setClipboardUrls, parent=self,
             )
         if pageClass is SettingPage:
             return SettingPage(
@@ -451,6 +454,9 @@ class MainWindow(MSFluentWindow):
             QApplication.quit()
 
     def dragEnterEvent(self, event) -> None:
+        if QApplication.instance().isFileDragActive:
+            event.ignore()
+            return
         if not event.mimeData().hasUrls():
             event.ignore()
             return
