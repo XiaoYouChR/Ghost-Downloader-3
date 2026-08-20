@@ -12,7 +12,7 @@
 
 <a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-### AI-powered next-generation cross-platform multithreaded downloader
+## The only downloader you need
 
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -29,31 +29,29 @@
 <!-- FEATURES -->
 ## Features
 
-* IDM-style intelligent chunking⚡ without requiring file merging, plus AI smart acceleration 🚀
-* Frees UI resources when minimized to tray🍃 — minimal memory footprint in the background
-* Supports HTTP, Magnet / BT, FTP, M3U8, MPEG-DASH, eD2k and more 🌐
 * Emulates real-browser TLS fingerprints🥷 so downloads are less likely to be blocked by anti-bot checks
-* Parses YouTube▶️ and Bilibili videos — playlists, up to 4K/HDR, subtitles and login supported
+* Intelligent chunking⚡ without file merging, auto-detects bandwidth headroom to speed up🚀
 * Dedicated parsers for GitHub🐙 releases and HuggingFace🤗 models with mirror acceleration
 * Records M3U8 live streams📺 with real-time decryption🔓, fully supported on Android as well
+* Parses YouTube▶️ and Bilibili videos — playlists, up to 4K/HDR, subtitles and login supported
 * The companion browser extension🦊 sniffs page media at IDM-level coverage with no quality cap, takes over browser downloads, and controls tasks without leaving the browser
+* Supports HTTP, Magnet / BT, FTP, M3U8, MPEG-DASH, eD2k and more 🌐
 * aria2-compatible RPC interface🔌 — third-party tools can push tasks directly
-* Tasks can be paused, edited✏️ (URL, headers, proxy) and resumed without losing progress
-* A complete Android version📱 with background downloading and completion notifications 🔔
+* Edit✏️ URL, headers and proxy while a task is running — downloaded progress is never lost
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
 * A downloader built out of passion, and my first Python project 😣
 * It was originally created to help a Bilibili creator integrate resources 😵‍💫
-* Thanks to Python's🐍 accessibility, this project will open plugin🧩 support in the future (plugin API is still being stabilized...)
+* Thanks to Python's🐍 extensibility, this project already has a Feature Packs🧩 system, with a public plugin API for external developers coming in the future
 
 |    Platform    | Required Version |  Architectures   | Compatible |
 |:--------------:|:----------------:|:----------------:|:----------:|
 |  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
 | 🪟 **Windows** |      `10+`       | `x86_64`/`arm64` |     ✅      |
 |  🍎 **macOS**  |     `13.0+`      | `x86_64`/`arm64` |     ✅      |
-| 🤖 **Android** |     `10.0+`      |   `arm64-v8a`    |     ✅      |
+| 🤖 **Android** |     `11.0+`      |   `arm64-v8a`    |     ✅      |
 
 > [!WARNING]
 > Qt `6.6+` no longer supports CPUs without the `AVX` instruction set.
@@ -69,7 +67,7 @@
 <!-- ROADMAP -->
 ## Roadmap
 
-- ❌ Make the plugin API public
+- 🔧 Make the plugin API public (Feature Packs system is operational, API stabilizing)
 - ❌ Enhanced task editing (powerful features like binding multiple Sessions to one task)
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).

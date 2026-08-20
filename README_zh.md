@@ -12,7 +12,7 @@
 
 <a href="https://trendshift.io/repositories/13847" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13847" alt="XiaoYouChR%2FGhost-Downloader-3 | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-### AI 赋能的新一代跨平台多线程下载器
+## 下载器的集大成者
 
 [![AtomGit Stars][atomgit-stars-shield]][atomgit-stars-url]
 [![Forks][forks-shield]][forks-url]
@@ -30,31 +30,29 @@
 <!-- FEATURES -->
 ## 功能特性
 
-* 像 IDM 一样智能分块⚡但又不需要合并文件，以及 AI 智能加速🚀
-* 最小化到托盘后自动释放界面资源🍃，后台内存占用极低
-* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH、eD2k 等几乎所有常用协议🌐
 * 下载时模拟真实浏览器 TLS 指纹🥷，更不容易被网站风控拦截
-* 支持解析 YouTube▶️ 与 Bilibili 视频——播放列表 / 多 P、最高 4K/HDR、字幕与账号登录
+* 智能分块⚡无需合并文件，自动检测带宽余量提速🚀
 * 为 GitHub🐙 Release 与 HuggingFace🤗 模型提供专用解析和镜像加速
-* 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也是全链路支持
+* 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也全链路支持
+* 支持解析 YouTube▶️ 与 Bilibili 视频——播放列表 / 多 P、最高 4K/HDR、字幕与账号登录
 * 配套的浏览器扩展🦊媲美 IDM 的网页媒体嗅探且不限画质、接管浏览器下载，不用离开浏览器就能控制任务
+* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH、eD2k 等几乎所有常用协议🌐
 * 提供 aria2 兼容的 RPC 接口🔌，第三方工具可以直接推送下载任务
-* 任务可以暂停后修改✏️链接、请求头、代理再继续，已下载的进度不会丢
-* 完整的 Android 移动端界面📱，支持后台下载与完成通知🔔
+* 任务运行中可修改✏️链接、请求头、代理，已下载的进度不会丢
 
 <!-- ABOUT THE PROJECT -->
 ## 关于本项目
 
 * 在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
 * 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
-* 得益于 Python🐍 人人都可以开发的特性，本项目未来将会开放插件🧩功能 (等待插件 API 固定中...)，发挥 Python🐍 最大的优势
+* 得益于 Python🐍 的可扩展性，本项目已拥有 Feature Packs🧩 体系，未来将面向外部开发者开放插件 API
 
 |       平台       |     版本要求      |       架构支持       | 兼容 |
 |:--------------:|:-------------:|:----------------:|:--:|
 |  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
 | 🪟 **Windows** |    `10+`      | `x86_64`/`arm64` | ✅  |
 |  🍎 **macOS**  |    `13.0+`    | `x86_64`/`arm64` | ✅  |
-| 🤖 **Android** |   `10.0+`     |   `arm64-v8a`    | ✅  |
+| 🤖 **Android** |   `11.0+`     |   `arm64-v8a`    | ✅  |
 
 > [!WARNING]
 > 由于 Qt `6.6+` 已经不再支持 `不支持 AVX 指令集的 CPU`
@@ -70,7 +68,7 @@
 <!-- ROADMAP -->
 ## 计划
 
-- ❌ 公开插件 API
+- 🔧 面向外部开发者公开插件 API（Feature Packs 体系已运作，API 稳定中）
 - ❌ 更强大的任务编辑功能 (一个任务绑定多个 Sessions 等强大功能)
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
