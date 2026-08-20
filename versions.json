@@ -69,9 +69,9 @@
       "gdMinVersion": "4.2.0"
     },
     "huggingface_pack": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "file": "huggingface_pack.zip",
-      "sha256": "7d8ff59044c8e5d5f19ed7ebfa0cf49ab6189e3cdac938be4927f2ba1bb38574",
+      "sha256": "586e03d7fc46e9ef3c99bd298056541912f11a98aaa79502e1ec4e4e4f9b652e",
       "gdMinVersion": "4.2.0"
     },
     "m3u8_pack": {
