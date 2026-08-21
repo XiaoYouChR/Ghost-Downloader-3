@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from enum import IntEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -127,6 +128,7 @@ class TaskPage(QWidget):
     SIDE_PADDING = 12
     BOTTOM_PADDING = 12
     VIEWPORT_BUFFER = 5
+    CARD_CACHE_LIMIT = 96
 
     def __init__(self, taskService, featureService, categoryService, speedMeter, plan=None, parent=None):
         super().__init__(parent)
@@ -143,12 +145,16 @@ class TaskPage(QWidget):
         self._isSelectionMode = False
         self._selectionAnchor: str | None = None
         self._liveCards: dict[str, TaskCard] = {}
+        self._cachedCards: OrderedDict[str, TaskCard] = OrderedDict()
         self._pendingUnmounts: list[TaskCard] = []
         self._displayOrder: list[str] = []
         self._selectedIds: set[str] = set()
         self._bandSnapshot: set[str] = set()
         self._bandMerge = set.__or__
         self._runningIds: set[str] = set()
+        self._viewportFirst = -1
+        self._viewportLast = -1
+        self._viewportWidth = -1
 
         self._refreshListTimer = QTimer(self, singleShot=True)
         self._refreshListTimer.setInterval(0)
@@ -613,7 +619,7 @@ class TaskPage(QWidget):
             count * stride - self.ROW_SPACING + self.BOTTOM_PADDING if count else 0
         )
         self._bandSelector.setItemCount(count)
-        self._refreshViewport()
+        self._refreshViewport(force=True)
 
         if self._displayOrder:
             self.emptyStatusWidget.hide()
@@ -636,8 +642,7 @@ class TaskPage(QWidget):
             self.emptyStatusWidget.adjustSize()
             self.emptyStatusWidget.show()
 
-    def _unmountCard(self, card: TaskCard) -> None:
-        card.hide()
+    def _deleteCard(self, card: TaskCard) -> None:
         # 嵌套事件循环（对话框 exec 等）可能正挂在卡片的栈帧上，
         # 此刻销毁会让栈回退进已删控件；推迟到回到主循环后的下次刷新
         if QThread.currentThread().loopLevel() > 1:
@@ -645,7 +650,27 @@ class TaskPage(QWidget):
         else:
             card.deleteLater()
 
-    def _refreshViewport(self) -> None:
+    def _unmountCard(self, taskId: str, card: TaskCard, *, shouldCache: bool = True) -> None:
+        card.hide()
+        if shouldCache:
+            self._cachedCards[taskId] = card
+            self._cachedCards.move_to_end(taskId)
+            self._trimCachedCards()
+        else:
+            self._deleteCard(card)
+
+    def _trimCachedCards(self) -> None:
+        while len(self._cachedCards) > self.CARD_CACHE_LIMIT:
+            taskId, card = self._cachedCards.popitem(last=False)
+            if taskId not in self._liveCards:
+                self._deleteCard(card)
+
+    def _clearViewportSnapshot(self) -> None:
+        self._viewportFirst = -1
+        self._viewportLast = -1
+        self._viewportWidth = -1
+
+    def _refreshViewport(self, value: int | None = None, *, force: bool = False) -> None:
         if self._pendingUnmounts and QThread.currentThread().loopLevel() == 1:
             for card in self._pendingUnmounts:
                 card.deleteLater()
@@ -662,32 +687,48 @@ class TaskPage(QWidget):
         else:
             first, last = 0, -1
 
+        if (
+            not force
+            and first == self._viewportFirst
+            and last == self._viewportLast
+            and width == self._viewportWidth
+        ):
+            return
+
+        self._viewportFirst = first
+        self._viewportLast = last
+        self._viewportWidth = width
+
         desired: set[str] = {self._displayOrder[i] for i in range(first, last + 1)}
 
         for taskId in list(self._liveCards.keys() - desired):
-            self._unmountCard(self._liveCards.pop(taskId))
+            self._unmountCard(taskId, self._liveCards.pop(taskId))
 
         for idx in range(first, last + 1):
             taskId = self._displayOrder[idx]
             card = self._liveCards.get(taskId)
             if card is None:
-                task = self._taskService.taskById(taskId)
-                if task is None:
-                    continue
-                card = self._createCard(task)
+                card = self._cachedCards.pop(taskId, None)
                 if card is None:
-                    continue
-                card.setSelectionMode(self._isSelectionMode)
-                if taskId in self._selectedIds:
-                    card.setChecked(True)
-                card.selectionChanged.connect(
-                    lambda checked, extend, tid=taskId: self._onCardSelectionChanged(tid, checked, extend)
-                )
-                card.dragRequested.connect(self._onCardDragRequested)
+                    task = self._taskService.taskById(taskId)
+                    if task is None:
+                        continue
+                    card = self._createCard(task)
+                    if card is None:
+                        continue
+                    card.selectionChanged.connect(
+                        lambda checked, extend, tid=taskId: self._onCardSelectionChanged(tid, checked, extend)
+                    )
+                    card.dragRequested.connect(self._onCardDragRequested)
                 self._liveCards[taskId] = card
-                card.refresh()
-            card.setGeometry(self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
-            card.show()
+                card.setSelectionMode(self._isSelectionMode)
+                card.setChecked(taskId in self._selectedIds)
+                card.refresh(force=True)
+            geometry = (self.SIDE_PADDING, idx * stride, max(0, width - 2 * self.SIDE_PADDING), TaskCard.ROW_HEIGHT)
+            if card.geometry().getRect() != geometry:
+                card.setGeometry(*geometry)
+            if card.isHidden():
+                card.show()
 
     def _refreshRunningCards(self) -> None:
         for taskId in self._runningIds:
@@ -768,7 +809,7 @@ class TaskPage(QWidget):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self._refreshViewport()
+        self._refreshViewport(force=True)
         self.commandView.move(
             (self.width() - self.commandView.width()) // 2,
             self.height() - self.commandView.sizeHint().height() - 20,
@@ -780,7 +821,7 @@ class TaskPage(QWidget):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
-        self._refreshViewport()
+        self._refreshViewport(force=True)
 
     def _createCard(self, task: Task) -> TaskCard | None:
         return self._featureService.taskCard(task, self.scrollWidget)
@@ -791,13 +832,17 @@ class TaskPage(QWidget):
     def _onTaskRemoved(self, taskId: str) -> None:
         card = self._liveCards.pop(taskId, None)
         if card is not None:
-            self._unmountCard(card)
+            self._unmountCard(taskId, card, shouldCache=False)
+        card = self._cachedCards.pop(taskId, None)
+        if card is not None:
+            self._deleteCard(card)
         self._selectedIds.discard(taskId)
         self._runningIds.discard(taskId)
         if self._selectionAnchor == taskId:
             self._selectionAnchor = None
         if not self._runningIds:
             self._cardRefreshTimer.stop()
+        self._clearViewportSnapshot()
         self._refreshListTimer.start()
 
     def _onFileDisappeared(self, task: Task) -> None:
