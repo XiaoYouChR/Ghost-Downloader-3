@@ -30,11 +30,11 @@
 <!-- FEATURES -->
 ## 功能特性
 
-* **快在刀刃上。** 好网快是本分，烂网快才是本事。限速、拥堵、残损线路——别人卡死的地方，正是我们超车的弯道。
-* **合，而不同。** 集大成，而不失其专。HTTP、磁力/BT、FTP、M3U8、MPEG-DASH、eD2k 全协议通吃；YouTube 与 Bilibili 框选片段、任意画质与字幕、播放列表与合集分 P，GitHub 与 HuggingFace 镜像加速：通用够广，专精够深。
-* **所见即所得。** 下载按钮就长在视频上，不设画质上限；页面上的媒体，弹窗里一览无余。点一下，或照常在浏览器下载，桌面端都会接手，链接不用复制，登录状态原样带过去。
-* **全平台，真原生。** 细节见真章。同一个软件，四个系统，处处恰到好处。
-* **游刃有余。** 说变就变，说停就停。aria2 兼容 RPC，第三方工具直接推送；下载途中改链接、改请求头、改代理，已下的进度分毫不动。
+* ⚡ **快在刀刃上。** 好网快是本分，烂网快才是本事。真实浏览器指纹，风控无从分辨。限速、拥堵、残损线路——别人卡死的地方，正是我们超车的弯道。
+* 📦 **合，而不同。** 集大成，而不失其专。`HTTP`、`磁力/BT`、`FTP`、`M3U8`、`MPEG-DASH`、`eD2k` 全协议通吃；`YouTube` 与 `Bilibili` 框选片段、任意画质与字幕、播放列表与合集分 P，`GitHub` 与 `HuggingFace` 镜像加速：通用够广，专精够深。
+* 🎯 **所见即所得。** 下载按钮就长在视频上，不设画质上限；页面上的媒体，弹窗里一览无余。点一下，或照常在浏览器下载，桌面端都会接手，链接不用复制，登录状态原样带过去。
+* 🌐 **始终如一。** 细节见真章。同一个软件，四个系统，处处都是原生应用该有的样子。
+* 🕹️ **游刃有余。** 说变就变，说停就停。`aria2` 兼容 RPC，第三方工具直接推送；下载途中改链接、改请求头、改代理，已下的进度分毫不动。
 
 <!-- ABOUT THE PROJECT -->
 ## 关于本项目
@@ -43,9 +43,9 @@
 
 | 平台 | 版本要求 | 架构支持 |
 |:--|:--|:--|
-| <img src="https://api.iconify.design/mdi/linux.svg?color=%238B949E" width="16" height="16"> **Linux** | `glibc 2.35+` | `x86_64` / `arm64` |
 | <img src="https://api.iconify.design/mdi/microsoft-windows.svg?color=%238B949E" width="16" height="16"> **Windows** | `10+` | `x86_64` / `arm64` |
 | <img src="https://api.iconify.design/mdi/apple.svg?color=%238B949E" width="16" height="16"> **macOS** | `13.0+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/linux.svg?color=%238B949E" width="16" height="16"> **Linux** | `glibc 2.35+` | `x86_64` / `arm64` |
 | <img src="https://api.iconify.design/mdi/android.svg?color=%238B949E" width="16" height="16"> **Android** | `11.0+` | `arm64-v8a` |
 
 > [!WARNING]
