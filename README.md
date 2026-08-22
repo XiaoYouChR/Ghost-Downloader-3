@@ -56,7 +56,7 @@ Started as a passion project to help a Bilibili creator manage resources. Now it
 <!-- SCREEN SHOTS -->
 ## Screenshots
 
-![QQ20260326-204347](https://github.com/user-attachments/assets/3e57b113-200c-4286-91cb-b52fe7d1711c)
+![Demo](https://github.com/user-attachments/assets/6763c9e0-cd5d-450e-80f5-1e22adcff36e)
 
 <!-- ROADMAP -->
 ## Roadmap
