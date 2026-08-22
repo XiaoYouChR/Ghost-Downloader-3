@@ -29,29 +29,23 @@
 <!-- FEATURES -->
 ## Features
 
-* Emulates real-browser TLS fingerprints🥷 so downloads are less likely to be blocked by anti-bot checks
-* Intelligent chunking⚡ without file merging, auto-detects bandwidth headroom to speed up🚀
-* Dedicated parsers for GitHub🐙 releases and HuggingFace🤗 models with mirror acceleration
-* Records M3U8 live streams📺 with real-time decryption🔓, fully supported on Android as well
-* Parses YouTube▶️ and Bilibili videos — playlists, up to 4K/HDR, subtitles and login supported
-* The companion browser extension🦊 sniffs page media at IDM-level coverage with no quality cap, takes over browser downloads, and controls tasks without leaving the browser
-* Supports HTTP, Magnet / BT, FTP, M3U8, MPEG-DASH, eD2k and more 🌐
-* aria2-compatible RPC interface🔌 — third-party tools can push tasks directly
-* Edit✏️ URL, headers and proxy while a task is running — downloaded progress is never lost
+* **Fast where it matters.** Every downloader is fast on a good connection. Throttled, congested, half-broken — where others stall, we pull away.
+* **One app instead of five.** Five tools is a habit, not a necessity. Every protocol — HTTP, Magnet/BT, FTP, M3U8, MPEG-DASH, eD2k — plus purpose-built parsers: YouTube and Bilibili with clip selection and any quality, GitHub and HuggingFace with mirror acceleration. Broad where it counts, deep where it matters.
+* **See it. Sniff it. Download it.** The button sits on the video itself, no quality cap; every medium on the page, listed in the popup. Click it, or download as you normally would — the desktop app takes over either way. No copying links, signed-in state included.
+* **Native on every platform.** It shows in the details. One app, four systems — everywhere, just right.
+* **Always in control.** Change on command, stop on command. aria2-compatible RPC for third-party tools; change the URL, headers, or proxy mid-download — the progress you've earned stays.
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-* A downloader built out of passion, and my first Python project 😣
-* It was originally created to help a Bilibili creator integrate resources 😵‍💫
-* Thanks to Python's🐍 extensibility, this project already has a Feature Packs🧩 system, with a public plugin API for external developers coming in the future
+Started as a passion project to help a Bilibili creator manage resources. Now it ships on four platforms, handles virtually every download protocol, and has a growing Feature Packs plugin ecosystem.
 
-|    Platform    | Required Version |  Architectures   | Compatible |
-|:--------------:|:----------------:|:----------------:|:----------:|
-|  🐧 **Linux**  |  `glibc 2.35+`   | `x86_64`/`arm64` |     ✅      |
-| 🪟 **Windows** |      `10+`       | `x86_64`/`arm64` |     ✅      |
-|  🍎 **macOS**  |     `13.0+`      | `x86_64`/`arm64` |     ✅      |
-| 🤖 **Android** |     `11.0+`      |   `arm64-v8a`    |     ✅      |
+| Platform | Required Version | Architectures |
+|:--|:--|:--|
+| <img src="https://api.iconify.design/mdi/linux.svg?color=%238B949E" width="16" height="16"> **Linux** | `glibc 2.35+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/microsoft-windows.svg?color=%238B949E" width="16" height="16"> **Windows** | `10+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/apple.svg?color=%238B949E" width="16" height="16"> **macOS** | `13.0+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/android.svg?color=%238B949E" width="16" height="16"> **Android** | `11.0+` | `arm64-v8a` |
 
 > [!WARNING]
 > Qt `6.6+` no longer supports CPUs without the `AVX` instruction set.
@@ -67,8 +61,8 @@
 <!-- ROADMAP -->
 ## Roadmap
 
-- 🔧 Make the plugin API public (Feature Packs system is operational, API stabilizing)
-- ❌ Enhanced task editing (powerful features like binding multiple Sessions to one task)
+- [ ] Make the plugin API public (Feature Packs system is operational, API stabilizing)
+- [ ] Enhanced task editing, such as binding multiple Sessions to one task
 
 Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to see all requested features (and known issues).
 
@@ -85,7 +79,7 @@ Visit [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) to 
 
 Contributions make the open source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-If you have a suggestion, fork the repo and create a pull request. You can also simply open an issue with the "Enhancement" tag. Don't forget to give the project a star⭐! Thanks again!
+If you have a suggestion, fork the repo and create a pull request. You can also simply open an issue with the "Enhancement" tag. Don't forget to give the project a star! Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch (git checkout -b feature/AmazingFeature)
@@ -107,7 +101,7 @@ Thanks to all contributors who have participated in this project!
   <tbody>
     <tr>
       <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/60e068e9c11d951cadf3eccec0afbeab.jpeg" />
+        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/44dde418af0da7d664fff23b96622e40.png" />
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />

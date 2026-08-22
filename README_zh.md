@@ -30,29 +30,23 @@
 <!-- FEATURES -->
 ## 功能特性
 
-* 下载时模拟真实浏览器 TLS 指纹🥷，更不容易被网站风控拦截
-* 智能分块⚡无需合并文件，自动检测带宽余量提速🚀
-* 为 GitHub🐙 Release 与 HuggingFace🤗 模型提供专用解析和镜像加速
-* 支持 M3U8 直播录制📺，边下边实时解密🔓，Android 端也全链路支持
-* 支持解析 YouTube▶️ 与 Bilibili 视频——播放列表 / 多 P、最高 4K/HDR、字幕与账号登录
-* 配套的浏览器扩展🦊媲美 IDM 的网页媒体嗅探且不限画质、接管浏览器下载，不用离开浏览器就能控制任务
-* 支持 HTTP、磁力 / BT、FTP、M3U8、MPEG-DASH、eD2k 等几乎所有常用协议🌐
-* 提供 aria2 兼容的 RPC 接口🔌，第三方工具可以直接推送下载任务
-* 任务运行中可修改✏️链接、请求头、代理，已下载的进度不会丢
+* **快在刀刃上。** 好网快是本分，烂网快才是本事。限速、拥堵、残损线路——别人卡死的地方，正是我们超车的弯道。
+* **合，而不同。** 集大成，而不失其专。HTTP、磁力/BT、FTP、M3U8、MPEG-DASH、eD2k 全协议通吃；YouTube 与 Bilibili 框选片段、任意画质与字幕、播放列表与合集分 P，GitHub 与 HuggingFace 镜像加速：通用够广，专精够深。
+* **所见即所得。** 下载按钮就长在视频上，不设画质上限；页面上的媒体，弹窗里一览无余。点一下，或照常在浏览器下载，桌面端都会接手，链接不用复制，登录状态原样带过去。
+* **全平台，真原生。** 细节见真章。同一个软件，四个系统，处处恰到好处。
+* **游刃有余。** 说变就变，说停就停。aria2 兼容 RPC，第三方工具直接推送；下载途中改链接、改请求头、改代理，已下的进度分毫不动。
 
 <!-- ABOUT THE PROJECT -->
 ## 关于本项目
 
-* 在兴趣驱动下完成的一个下载器，是本人的第一个 Python 项目😣
-* 本来的目的是帮 Bilibili 上一位 UP 主做资源整合的😵‍💫
-* 得益于 Python🐍 的可扩展性，本项目已拥有 Feature Packs🧩 体系，未来将面向外部开发者开放插件 API
+始于兴趣，最初是为了帮一位 B 站 UP 主整合资源。如今已覆盖四大平台、支持几乎所有主流下载协议，功能包插件体系也在逐步开放中。
 
-|       平台       |     版本要求      |       架构支持       | 兼容 |
-|:--------------:|:-------------:|:----------------:|:--:|
-|  🐧 **Linux**  | `glibc 2.35+` | `x86_64`/`arm64` | ✅  |
-| 🪟 **Windows** |    `10+`      | `x86_64`/`arm64` | ✅  |
-|  🍎 **macOS**  |    `13.0+`    | `x86_64`/`arm64` | ✅  |
-| 🤖 **Android** |   `11.0+`     |   `arm64-v8a`    | ✅  |
+| 平台 | 版本要求 | 架构支持 |
+|:--|:--|:--|
+| <img src="https://api.iconify.design/mdi/linux.svg?color=%238B949E" width="16" height="16"> **Linux** | `glibc 2.35+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/microsoft-windows.svg?color=%238B949E" width="16" height="16"> **Windows** | `10+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/apple.svg?color=%238B949E" width="16" height="16"> **macOS** | `13.0+` | `x86_64` / `arm64` |
+| <img src="https://api.iconify.design/mdi/android.svg?color=%238B949E" width="16" height="16"> **Android** | `11.0+` | `arm64-v8a` |
 
 > [!WARNING]
 > 由于 Qt `6.6+` 已经不再支持 `不支持 AVX 指令集的 CPU`
@@ -68,8 +62,8 @@
 <!-- ROADMAP -->
 ## 计划
 
-- 🔧 面向外部开发者公开插件 API（Feature Packs 体系已运作，API 稳定中）
-- ❌ 更强大的任务编辑功能 (一个任务绑定多个 Sessions 等强大功能)
+- [ ] 面向外部开发者公开插件 API（功能包体系已运作，API 稳定中）
+- [ ] 更强大的任务编辑功能（一个任务绑定多个 Sessions 等）
 
 到 [Open issues](https://github.com/XiaoYouChR/Ghost-Downloader-3/issues) 页面查看所有被请求的功能 (以及已知的问题) 。
 
@@ -86,7 +80,7 @@
 
 贡献让开源社区成为了一个非常适合学习、启发和创新的地方。你所做出的任何贡献都是**受人尊敬**的。
 
-如果你有好的建议，请分支（Fork）本仓库并且创建一个拉取请求（Pull Request）。你也可以简单地创建一个议题（Issue），并且添加标签「Enhancement」。不要忘记给项目点一个 Star⭐！再次感谢！
+如果你有好的建议，请分支（Fork）本仓库并且创建一个拉取请求（Pull Request）。你也可以简单地创建一个议题（Issue），并且添加标签「Enhancement」。不要忘记给项目点一个 Star！再次感谢！
 
 1. 复刻（Fork）本项目
 2. 创建你的 Feature 分支 (git checkout -b feature/AmazingFeature)
@@ -108,7 +102,7 @@
   <tbody>
     <tr>
       <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/60e068e9c11d951cadf3eccec0afbeab.jpeg" />
+        <a href="https://crowdin.com/profile/XiaoYouChR"><img alt="logo" style="width: 64px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17224586/medium/44dde418af0da7d664fff23b96622e40.png" />
           <br />
           <sub><b>XiaoYouChR</b></sub></a>
         <br />
