@@ -67,6 +67,11 @@ class CloseMode(Enum):
     QUIT = "Quit"
 
 
+class ProgressBarStyle(Enum):
+    SEGMENTED = "Segmented"
+    CLASSIC = "Classic"
+
+
 class ProxyValidator(ConfigValidator):
     PATTERN = compile(
         r"^"
@@ -272,6 +277,10 @@ class Config(QConfig):
     aria2RpcEmulateFingerprint = ConfigItem("Aria2Rpc", "EmulateFingerprint", False, BoolValidator())
 
     # 个性化
+    downloadProgressBarStyle = OptionsConfigItem(
+        "Personalization", "DownloadProgressBarStyle", ProgressBarStyle.SEGMENTED,
+        OptionsValidator(ProgressBarStyle), EnumSerializer(ProgressBarStyle),
+    )
     if sys.platform == "win32":
         from app.platform.windows import isWin10
         backgroundEffect = OptionsConfigItem(
