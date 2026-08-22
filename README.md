@@ -29,7 +29,7 @@
 <!-- FEATURES -->
 ## Features
 
-* ⚡ **Fast where it matters.** Every downloader is fast on a good connection. Real-browser fingerprints, invisible to anti-bot checks. Throttled, congested, half-broken — where others stall, we pull away.
+* ⚡ **Fast where it matters.** Every downloader is fast on a good connection. Smart chunking without file merging, auto-detects bandwidth headroom. Real-browser TLS fingerprints, invisible to anti-bot checks. Downloads complete, whatever the network.
 * 📦 **One app instead of five.** Five tools is a habit, not a necessity. Every protocol — `HTTP`, `Magnet/BT`, `FTP`, `M3U8`, `MPEG-DASH`, `eD2k` — plus purpose-built parsers: `YouTube` and `Bilibili` with clip selection and any quality, `GitHub` and `HuggingFace` with mirror acceleration. Broad where it counts, deep where it matters.
 * 🎯 **See it. Sniff it. Download it.** A download button floats right on the video, any quality; every medium on the page, listed in the popup. Click it, or download as you normally would — the desktop app takes over either way. No copying links, signed-in state included.
 * 🌐 **Native on every platform.** It shows in the details. One app, four systems — everywhere, just right.
