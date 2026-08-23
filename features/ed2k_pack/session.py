@@ -36,13 +36,14 @@ class ED2kSession:
     def releaseTransfer(self, identity: tuple[str, int]) -> None:
         self._activeTransfers.discard(identity)
 
-    def removeHash(self, fileHash: str) -> None:
-        if self._client is None or self.submit is None:
+    def requestRemove(self, fileHash: str) -> None:
+        if self.submit is None:
             return
-        try:
-            self.submit(self._client.remove(fileHash, deleteFile=True))
-        except Exception:
-            pass
+        self.submit(self.remove(fileHash))
+
+    async def remove(self, fileHash: str) -> None:
+        await self.open()
+        await self.client().remove(fileHash, deleteFile=False)
 
     def client(self) -> Client:
         if self._client is None:

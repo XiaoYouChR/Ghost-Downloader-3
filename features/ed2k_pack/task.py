@@ -23,11 +23,10 @@ class ED2kTask(Task):
         self.totalPeerCount = 0
         return super().reset()
 
-    def deleteFiles(self):
+    def remove(self) -> None:
         if self.fileHash:
             from .session import ed2kSession
-            ed2kSession.removeHash(self.fileHash)
-        super().deleteFiles()
+            ed2kSession.requestRemove(self.fileHash)
 
 
 @dataclass(kw_only=True)

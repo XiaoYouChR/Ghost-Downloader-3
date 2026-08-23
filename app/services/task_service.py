@@ -251,7 +251,12 @@ class TaskService(QObject):
         if shouldDeleteFiles and not canDelete and not self._hasNotifiedDeleteDenied:
             self._hasNotifiedDeleteDenied = True
             self.fileDeleteDenied.emit()
-        self._cancelRun(task, finished=task.deleteFiles if canDelete else None)
+        def onStopped():
+            task.remove()
+            if canDelete:
+                task.deleteFiles()
+
+        self._cancelRun(task, finished=onStopped)
         self._store.remove(task.taskId)
         self._flushTimer.start()
         self.taskRemoved.emit(task.taskId)
@@ -441,4 +446,3 @@ class TaskService(QObject):
         task = self._store.taskById(taskId)
         if task is not None:
             self.fileDisappeared.emit(task)
-
