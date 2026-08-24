@@ -37,7 +37,7 @@ if sys.platform == "win32":
 
     def _registerWindows(scheme: str) -> None:
         regRoot = rf"Software\Classes\{scheme}"
-        command = f'"{QCoreApplication.applicationFilePath().replace("/", chr(92))}" "%1"'
+        command = f'"{QCoreApplication.applicationFilePath().replace("/", chr(92))}" --silence "%1"'
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, regRoot) as key:
             winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f"Ghost Downloader URL ({scheme})")
             winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
@@ -80,7 +80,7 @@ if sys.platform == "linux":
                 "[Desktop Entry]\n"
                 "Type=Application\n"
                 "Name=Ghost Downloader\n"
-                f"Exec={appPath} %U\n"
+                f"Exec={appPath} --silence %U\n"
                 "Icon=ghost-downloader\n"
                 "Terminal=false\n"
                 "Categories=Network;Utility;\n"
