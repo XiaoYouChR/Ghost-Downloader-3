@@ -554,12 +554,12 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BinaryRuntime</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="84"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="90"/>
         <source>eD2k / eMule</source>
         <translation>eD2k / eMule</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="85"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="91"/>
         <source>支持电驴协议，适合下载经典资源</source>
         <translation>Suporta o protocolo eDonkey, adequado para baixar recursos clássicos</translation>
     </message>
@@ -1201,64 +1201,88 @@ Você pode ajustar todas as opções nas configurações a qualquer momento.</tr
 <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="36"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="37"/>
         <source>eD2k 下载</source>
         <translation>Download eD2k</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="39"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="40"/>
         <source>goed2kd 安装目录</source>
         <translation>Diretório de instalação do goed2kd</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="49"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
         <source>服务器列表源</source>
         <translation>Fonte da lista de servidores</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="51"/>
         <source>eD2k server.met 文件的 URL，留空则不引导</source>
         <translation>URL do arquivo eD2k server.met；deixe em branco para não guiar</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="54"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
         <source>DHT 节点源</source>
         <translation>Fonte de nós DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="56"/>
         <source>KAD nodes.dat 文件的 URL，留空则不引导</source>
         <translation>URL do arquivo KAD nodes.dat；deixe em branco para não guiar</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="59"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
         <source>启用 DHT</source>
         <translation>Habilitar DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="61"/>
         <source>通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器</source>
         <translation>Busca nós via tabela hash distribuída; desative para usar apenas servidores eD2k</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="64"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
         <source>启用 UPnP</source>
         <translation>Habilitar UPnP</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="66"/>
         <source>自动配置路由器端口转发</source>
         <translation>Configurar automaticamente o encaminhamento de portas do roteador</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="69"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
         <source>监听端口</source>
         <translation>Porta de escuta</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="71"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation>0 significa que o sistema atribuirá automaticamente uma porta disponível</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="75"/>
+        <source>自动暂停共享时长</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="76"/>
+        <source>0 表示不按共享时长自动暂停</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ED2kTaskCard</name>
+    <message>
+        <location filename="../../../features/ed2k_pack/cards.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="55"/>
+        <source>已共享 {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/cards.py" line="52"/>
+        <source>共享中</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1605,12 +1629,12 @@ Você pode ajustar todas as opções nas configurações a qualquer momento.</tr
 <context>
     <name>HeaderRow</name>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="161"/>
+        <location filename="../../view/components/headers_editor.py" line="162"/>
         <source>名称</source>
         <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="164"/>
+        <location filename="../../view/components/headers_editor.py" line="165"/>
         <source>值</source>
         <translation>Valor</translation>
     </message>
@@ -1648,13 +1672,13 @@ Você pode ajustar todas as opções nas configurações a qualquer momento.</tr
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="239"/>
-        <location filename="../../view/components/headers_editor.py" line="315"/>
+        <location filename="../../view/components/headers_editor.py" line="331"/>
         <source>使用帮助</source>
         <translation>Ajuda de uso</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="240"/>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>切换到文本视图</source>
         <translation>Alternar para visualização de texto</translation>
     </message>
@@ -1664,12 +1688,12 @@ Você pode ajustar todas as opções nas configurações a qualquer momento.</tr
         <translation>Restaurar cabeçalhos de requisição padrão</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>切换到表格视图</source>
         <translation>Alternar para visualização em tabela</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="317"/>
+        <location filename="../../view/components/headers_editor.py" line="333"/>
         <source>粘贴即可识别 cURL 或 名称: 值（每行一个）
 多条 cURL 只取第一条
 
@@ -1710,7 +1734,7 @@ Defina como não simular para enviar como original.</translation>
         <translation>O nome da predefinição não pode estar vazio</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="56"/>
+        <location filename="../../view/dialogs/headers_preset_edit.py" line="60"/>
         <source>未命名预设</source>
         <translation>Predefinição sem nome</translation>
     </message>
@@ -2673,12 +2697,12 @@ Permita apenas se você acabou de clicar em &quot;Emparelhamento automático&quo
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="78"/>
+        <location filename="../../view/dialogs/pack_info.py" line="85"/>
         <source>功能包</source>
         <translation>Pacote de funcionalidades</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="82"/>
+        <location filename="../../view/dialogs/pack_info.py" line="89"/>
         <source>关闭</source>
         <translation>Fechar</translation>
     </message>
@@ -4220,7 +4244,7 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="44"/>
-        <location filename="../../../features/ed2k_pack/cards.py" line="13"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="14"/>
         <source>{0}/{1} Peers</source>
         <translation>{0}/{1} Peers</translation>
     </message>
@@ -4451,9 +4475,8 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <translation>Esta transferência eD2k já existe no daemon</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
         <source>ED2kSession 未启动</source>
-        <translation>Sessão ED2k não iniciada</translation>
+        <translation type="vanished">Sessão ED2k não iniciada</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>

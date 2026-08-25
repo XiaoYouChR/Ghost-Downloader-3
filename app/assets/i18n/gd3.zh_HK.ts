@@ -654,12 +654,12 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>BinaryRuntime</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="84"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="90"/>
         <source>eD2k / eMule</source>
         <translation>eD2k / eMule</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="85"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="91"/>
         <source>支持电驴协议，适合下载经典资源</source>
         <translation>支援電驢協定，適合下載經典資源</translation>
     </message>
@@ -1548,64 +1548,88 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="36"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="37"/>
         <source>eD2k 下载</source>
         <translation>eD2k 下載</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="39"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="40"/>
         <source>goed2kd 安装目录</source>
         <translation>goed2kd 安裝目錄</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="49"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
         <source>服务器列表源</source>
         <translation>伺服器清單來源</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="51"/>
         <source>eD2k server.met 文件的 URL，留空则不引导</source>
         <translation>eD2k server.met 檔案嘅 URL，留空則不引導</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="54"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
         <source>DHT 节点源</source>
         <translation>DHT 節點來源</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="56"/>
         <source>KAD nodes.dat 文件的 URL，留空则不引导</source>
         <translation>KAD nodes.dat 檔案嘅 URL，留空則不引導</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="59"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
         <source>启用 DHT</source>
         <translation>啟用 DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="61"/>
         <source>通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器</source>
         <translation>透過分散式雜湊表搵節點，閂咗之後只使用 eD2k 伺服器</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="64"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
         <source>启用 UPnP</source>
         <translation>啟用 UPnP</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="66"/>
         <source>自动配置路由器端口转发</source>
         <translation>自動設定路由器連接埠轉發</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="69"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
         <source>监听端口</source>
         <translation>監聽連接埠</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="71"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation>0 表示交俾系統自動分配可用連接埠</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="75"/>
+        <source>自动暂停共享时长</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="76"/>
+        <source>0 表示不按共享时长自动暂停</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ED2kTaskCard</name>
+    <message>
+        <location filename="../../../features/ed2k_pack/cards.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="55"/>
+        <source>已共享 {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/cards.py" line="52"/>
+        <source>共享中</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2091,12 +2115,12 @@ http://example.com/{mp4,mkv}/video</translation>
 <context>
     <name>HeaderRow</name>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="161"/>
+        <location filename="../../view/components/headers_editor.py" line="162"/>
         <source>名称</source>
         <translation>名稱</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="164"/>
+        <location filename="../../view/components/headers_editor.py" line="165"/>
         <source>值</source>
         <translation>值</translation>
     </message>
@@ -2138,13 +2162,13 @@ http://example.com/{mp4,mkv}/video</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="239"/>
-        <location filename="../../view/components/headers_editor.py" line="315"/>
+        <location filename="../../view/components/headers_editor.py" line="331"/>
         <source>使用帮助</source>
         <translation>使用說明</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="240"/>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>切换到文本视图</source>
         <translation>切換到文字檢視</translation>
     </message>
@@ -2154,12 +2178,12 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>恢復預設請求標頭</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>切换到表格视图</source>
         <translation>切換到表格檢視</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="317"/>
+        <location filename="../../view/components/headers_editor.py" line="333"/>
         <source>粘贴即可识别 cURL 或 名称: 值（每行一个）
 多条 cURL 只取第一条
 
@@ -2200,7 +2224,7 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>預設名稱不能為空</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="56"/>
+        <location filename="../../view/dialogs/headers_preset_edit.py" line="60"/>
         <source>未命名预设</source>
         <translation>未命名預設</translation>
     </message>
@@ -3341,12 +3365,12 @@ FFmpeg: {2}</translation>
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="78"/>
+        <location filename="../../view/dialogs/pack_info.py" line="85"/>
         <source>功能包</source>
         <translation>功能包</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="82"/>
+        <location filename="../../view/dialogs/pack_info.py" line="89"/>
         <source>关闭</source>
         <translation>關閉</translation>
     </message>
@@ -5024,7 +5048,7 @@ FFmpeg: {2}</translation>
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="44"/>
-        <location filename="../../../features/ed2k_pack/cards.py" line="13"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="14"/>
         <source>{0}/{1} Peers</source>
         <translation>{0}/{1} Peers</translation>
     </message>
@@ -5255,9 +5279,8 @@ FFmpeg: {2}</translation>
         <translation>該 eD2k 傳輸已存在於 daemon 中</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
         <source>ED2kSession 未启动</source>
-        <translation>ED2kSession 未啟動</translation>
+        <translation type="vanished">ED2kSession 未啟動</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>

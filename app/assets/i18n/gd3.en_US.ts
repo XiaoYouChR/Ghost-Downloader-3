@@ -652,12 +652,12 @@ http://example.com/{mp4,mkv}/video</translation>
         <translation>Support for hundreds of video sites including YouTube and Twitter</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="84"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="90"/>
         <source>eD2k / eMule</source>
         <translation>eD2k/eMule</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="85"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="91"/>
         <source>支持电驴协议，适合下载经典资源</source>
         <translation>Support for the eDonky network, enable downloading of archaic resources</translation>
     </message>
@@ -1529,64 +1529,88 @@ You can adjust options in Settings at any time.</translation>
 <context>
     <name>ED2kConfig</name>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="36"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="37"/>
         <source>eD2k 下载</source>
         <translation>eD2k</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="39"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="40"/>
         <source>goed2kd 安装目录</source>
         <translation>goed2kd Install Location</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="49"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
         <source>服务器列表源</source>
         <translation>Server List Source</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="51"/>
         <source>eD2k server.met 文件的 URL，留空则不引导</source>
         <translation>URL of the eD2k server.met file; leave empty to skip bootstrapping</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="54"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
         <source>DHT 节点源</source>
         <translation>DHT Nodes Source</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="55"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="56"/>
         <source>KAD nodes.dat 文件的 URL，留空则不引导</source>
         <translation>URL of the KAD nodes.dat file; leave empty to skip bootstrapping</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="59"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
         <source>启用 DHT</source>
         <translation>Enable DHT</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="60"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="61"/>
         <source>通过分布式哈希表查找节点，关闭后仅使用 eD2k 服务器</source>
         <translation>Discover peers via DHT network; when disabled, only eD2k servers are used</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="64"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
         <source>启用 UPnP</source>
         <translation>Enable UPnP</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="65"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="66"/>
         <source>自动配置路由器端口转发</source>
         <translation>Automatically configure router port forwarding</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="69"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
         <source>监听端口</source>
         <translation>Port</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/config.py" line="70"/>
+        <location filename="../../../features/ed2k_pack/config.py" line="71"/>
         <source>0 表示交给系统自动分配可用端口</source>
         <translation>0 for system assigned port</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="75"/>
+        <source>自动暂停共享时长</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/config.py" line="76"/>
+        <source>0 表示不按共享时长自动暂停</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ED2kTaskCard</name>
+    <message>
+        <location filename="../../../features/ed2k_pack/cards.py" line="50"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="55"/>
+        <source>已共享 {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/cards.py" line="52"/>
+        <source>共享中</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2049,12 +2073,12 @@ Install Location: {1}</translation>
 <context>
     <name>HeaderRow</name>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="161"/>
+        <location filename="../../view/components/headers_editor.py" line="162"/>
         <source>名称</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="164"/>
+        <location filename="../../view/components/headers_editor.py" line="165"/>
         <source>值</source>
         <translation>Value</translation>
     </message>
@@ -2096,13 +2120,13 @@ Install Location: {1}</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="239"/>
-        <location filename="../../view/components/headers_editor.py" line="315"/>
+        <location filename="../../view/components/headers_editor.py" line="331"/>
         <source>使用帮助</source>
         <translation>Help</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="240"/>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>切换到文本视图</source>
         <translation>Text View</translation>
     </message>
@@ -2112,12 +2136,12 @@ Install Location: {1}</translation>
         <translation>Restore Default Request Headers</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="309"/>
+        <location filename="../../view/components/headers_editor.py" line="323"/>
         <source>切换到表格视图</source>
         <translation>Table View</translation>
     </message>
     <message>
-        <location filename="../../view/components/headers_editor.py" line="317"/>
+        <location filename="../../view/components/headers_editor.py" line="333"/>
         <source>粘贴即可识别 cURL 或 名称: 值（每行一个）
 多条 cURL 只取第一条
 
@@ -2158,7 +2182,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
         <translation>Preset name cannot be empty</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/headers_preset_edit.py" line="56"/>
+        <location filename="../../view/dialogs/headers_preset_edit.py" line="60"/>
         <source>未命名预设</source>
         <translation>Unnamed Preset</translation>
     </message>
@@ -3299,12 +3323,12 @@ Only allow this request if you have requested &quot;Auto Pair&quot; from the ext
 <context>
     <name>PackInfoDialog</name>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="78"/>
+        <location filename="../../view/dialogs/pack_info.py" line="85"/>
         <source>功能包</source>
         <translation>Feature Packs</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/pack_info.py" line="82"/>
+        <location filename="../../view/dialogs/pack_info.py" line="89"/>
         <source>关闭</source>
         <translation>Close</translation>
     </message>
@@ -4970,7 +4994,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
     <message>
         <location filename="../../../features/bittorrent_pack/cards.py" line="44"/>
-        <location filename="../../../features/ed2k_pack/cards.py" line="13"/>
+        <location filename="../../../features/ed2k_pack/cards.py" line="14"/>
         <source>{0}/{1} Peers</source>
         <translation>{0}/{1} Peers</translation>
     </message>
@@ -5201,9 +5225,8 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>This eD2k transfer already exists in daemon</translation>
     </message>
     <message>
-        <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
         <source>ED2kSession 未启动</source>
-        <translation>ED2k session not started</translation>
+        <translation type="vanished">ED2k session not started</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>
