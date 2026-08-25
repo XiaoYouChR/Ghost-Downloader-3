@@ -11,7 +11,7 @@ from loguru import logger
 
 from app.config.constants import DESKTOP_ID, DESKTOP_OBJECT_PATH
 from app.platform.android import IS_ANDROID
-from app.platform.url_scheme import isLaunchUri
+from app.platform.url_scheme import isLaunchUri, isWakeUri
 from app.signal_bus import signalBus
 
 
@@ -37,6 +37,7 @@ class SingletonApplication(QApplication):
         self._key = key
         self.isFileDragActive = False
         self.clipboardListener = None
+        self._isWakeLaunch = False
         self._memory: QSharedMemory | None = None
         self._lockSingleInstance()
 
@@ -64,7 +65,10 @@ class SingletonApplication(QApplication):
         if isinstance(e, QFileOpenEvent):
             uri = e.url().toString() if not e.url().isEmpty() else Path(e.file()).as_uri()
             if uri and isLaunchUri(uri):
-                signalBus.activationRequested.emit()
+                if isWakeUri(uri):
+                    self._isWakeLaunch = True
+                else:
+                    signalBus.activationRequested.emit()
             elif uri:
                 signalBus.openUriRequested.emit([uri])
             return True
@@ -89,10 +93,11 @@ class SingletonApplication(QApplication):
         self._memory.setKey(self._key)
 
         if self._memory.attach():
-            if sys.platform == "win32":
-                _sendToRunningWindows()
-            elif sys.platform == "linux":
-                _sendToRunningLinux()
+            if not any(isWakeUri(arg) for arg in sys.argv[1:]):
+                if sys.platform == "win32":
+                    _sendToRunningWindows()
+                elif sys.platform == "linux":
+                    _sendToRunningLinux()
             sys.exit(-1)
 
         if not self._memory.create(1):
@@ -206,6 +211,8 @@ if sys.platform == "linux":
     class _DesktopBusReceiver(QObject):
         @Slot("QStringList", "QVariantMap")
         def Open(self, uris, platformData):
+            if any(isWakeUri(u) for u in uris):
+                return
             if any(isLaunchUri(u) for u in uris):
                 signalBus.activationRequested.emit()
                 return

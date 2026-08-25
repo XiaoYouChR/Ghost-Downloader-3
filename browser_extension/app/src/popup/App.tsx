@@ -9,7 +9,7 @@ import {ImagesPage} from "./pages/ImagesPage";
 import {ResourcesPage} from "./pages/ResourcesPage";
 import {SettingsPage} from "./pages/SettingsPage";
 import {ToastHost} from "./components/ToastHost";
-import {launchDesktop} from "./launch-desktop";
+import {launchDesktop, wakeDesktop} from "./launch-desktop";
 import {usePopupBridge} from "./usePopupBridge";
 
 const useStyles = makeStyles({
@@ -44,7 +44,7 @@ export function App({
     chrome.runtime.sendMessage({ type: "popup_mounted" }, (response) => {
       void chrome.runtime.lastError;
       if (response?.autoLaunch) {
-        launchDesktop();
+        wakeDesktop();
       }
     });
   }, []);

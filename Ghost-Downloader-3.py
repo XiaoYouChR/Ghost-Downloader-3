@@ -140,7 +140,7 @@ def startApp(application, isSilent=False):
     else:
         window = MainWindow(taskService, featureService, browserService, categoryService, speedMeter, coroutineRunner, plan, updateService)
 
-        if not isSilent:
+        if not isSilent and sys.platform != "darwin":
             from qfluentwidgets import SplashScreen
             splash = SplashScreen(window.windowIcon(), window, enableShadow=False)
             splash.raise_()
@@ -150,7 +150,7 @@ def startApp(application, isSilent=False):
         window.setupPacks()
         startEngine(taskService, speedMeter, featureService, coroutineRunner)
 
-        if not isSilent:
+        if not isSilent and sys.platform != "darwin":
             splash.finish()
 
     from app.platform.windows import emptyWorkingSet
@@ -185,7 +185,8 @@ def startApp(application, isSilent=False):
             window.destroyed.connect(onWindowDestroyed)
         window.addTasks(tasks)
 
-    signalBus.activationRequested.connect(show)
+    if sys.platform != "darwin":
+        signalBus.activationRequested.connect(show)
     signalBus.openUriRequested.connect(lambda uris: show().addUrls(uris))
     signalBus.exceptionCaught.connect(lambda msg: show().alertException(msg))
     browserService.taskDraftRequested.connect(onBrowserDraft)
@@ -236,6 +237,19 @@ def startApp(application, isSilent=False):
     if isSilent:
         emptyWorkingSetIfIdle()
 
+    if sys.platform == "darwin":
+        if isSilent:
+            signalBus.activationRequested.connect(show)
+        else:
+            from PySide6.QtCore import QTimer
+
+            def _onColdStartDecide():
+                signalBus.activationRequested.connect(show)
+                if not application._isWakeLaunch:
+                    show()
+
+            QTimer.singleShot(0, _onColdStartDecide)
+
     from app.services.update_service import UpdateState
     def onUpdateChanged(info):
         if info.targetId == "app" and info.state == UpdateState.AVAILABLE:
@@ -261,8 +275,10 @@ def startApp(application, isSilent=False):
 if __name__ == "__main__":
     from app.config.constants import DESKTOP_ID
     from app.platform.application import SingletonApplication
+    from app.platform.url_scheme import isWakeUri
 
     setupEnvironment()
     app = SingletonApplication(sys.argv, DESKTOP_ID)
-    startApp(app, isSilent="--silence" in sys.argv)
+    isSilent = "--silence" in sys.argv or any(isWakeUri(arg) for arg in sys.argv[1:])
+    startApp(app, isSilent=isSilent)
     sys.exit(app.exec())

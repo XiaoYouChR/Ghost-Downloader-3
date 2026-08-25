@@ -32,6 +32,10 @@ def isLaunchUri(uri: str) -> bool:
     return uri.startswith(f"{URL_SCHEME}://")
 
 
+def isWakeUri(uri: str) -> bool:
+    return uri == f"{URL_SCHEME}://wake"
+
+
 if sys.platform == "win32":
     import winreg
 

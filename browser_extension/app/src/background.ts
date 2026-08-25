@@ -58,6 +58,7 @@ async function sendTaskOrEnqueue<T extends CommandResult>(payload: Record<string
     }
   }
   await enqueue(payload);
+  autoLaunchPending = true;
   return { ok: true, message: chrome.i18n.getMessage("taskQueued") } as T;
 }
 
@@ -421,8 +422,6 @@ async function takeBrowserDownload(
     if (totalBytes >= 0 && totalBytes < minTakeSizeKB * 1024) { return; }
   }
 
-  const wasReady = desktopBridge.isReady();
-
   try {
     await cancelDownload(downloadItem.id);
     if (options.eraseFromHistory) {
@@ -430,10 +429,6 @@ async function takeBrowserDownload(
     }
   } catch {
     // Cleanup failed but the browser will still finish the download as fallback.
-  }
-
-  if (!wasReady) {
-    autoLaunchPending = true;
   }
 
   await resourceBridge.routeBrowserDownload(downloadItem);
