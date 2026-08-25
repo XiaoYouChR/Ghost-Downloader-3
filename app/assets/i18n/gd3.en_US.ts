@@ -2104,7 +2104,7 @@ Install Location: {1}</translation>
         <location filename="../../view/components/headers_editor.py" line="240"/>
         <location filename="../../view/components/headers_editor.py" line="309"/>
         <source>切换到文本视图</source>
-        <translation>Switch to Text View</translation>
+        <translation>Text View</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="241"/>
@@ -2114,7 +2114,7 @@ Install Location: {1}</translation>
     <message>
         <location filename="../../view/components/headers_editor.py" line="309"/>
         <source>切换到表格视图</source>
-        <translation>Switch to Table View</translation>
+        <translation>Table View</translation>
     </message>
     <message>
         <location filename="../../view/components/headers_editor.py" line="317"/>
@@ -5088,7 +5088,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/http_pack/error_catalog.py" line="4"/>
         <source>磁盘空间不足</source>
-        <translation>Insufficient Disk Space</translation>
+        <translation>Insufficient disk space</translation>
     </message>
     <message>
         <location filename="../../../features/ftp_pack/error_catalog.py" line="3"/>
@@ -5218,7 +5218,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="5"/>
         <source>当前平台暂不支持一键安装 FFmpeg: {platform}</source>
-        <translation>One-click FFmpeg installation is not supported on this platform: {platform}</translation>
+        <translation>FFmpeg auto installation not supported on this platform: {platform}</translation>
     </message>
     <message>
         <location filename="../../../features/yt_dlp_pack/error_catalog.py" line="3"/>
@@ -5293,12 +5293,12 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="6"/>
         <source>获取到的内容不是有效的播放列表，链接可能已失效（{detail}）</source>
-        <translation>The fetched content is not a valid playlist; the link may have expired ({detail})</translation>
+        <translation>Fetched content is not a valid playlist; the link may have expired ({detail})</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="7"/>
         <source>缺少依赖程序（{detail}）</source>
-        <translation>Missing dependency program ({detail})</translation>
+        <translation>Missing dependency ({detail})</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="8"/>
@@ -5323,7 +5323,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="12"/>
         <source>当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}</source>
-        <translation>One-click N_m3u8DL-RE installation is not supported on this platform: {platform}</translation>
+        <translation>N_m3u8DL-RE auto installation not supported on this platform: {platform}</translation>
     </message>
     <message>
         <location filename="../../../features/m3u8_pack/error_catalog.py" line="13"/>
