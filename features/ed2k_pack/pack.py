@@ -5,7 +5,8 @@ from app.models.task import Task, TaskError, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .config import ed2kConfig, ed2kRuntime
 from .cards import ED2kTaskCard
-from .task import ED2kTask, ED2kTaskStep, parseEd2kLink
+from .session import parseEd2kLink
+from .task import ED2kTask, ED2kTaskStep
 
 
 class ED2kParser(TaskParser):
@@ -51,6 +52,4 @@ class ED2kPack(FeaturePack):
 
     async def deactivate(self):
         from .session import ed2kSession
-        if ed2kSession._client is None:
-            return
         await ed2kSession.close()

@@ -25,6 +25,7 @@ class ED2kConfig(PackConfig):
     listenPort = RangeConfigItem("ED2k", "ListenPort", 0, RangeValidator(0, 65535))
     serverMetSource = ConfigItem("ED2k", "ServerMetSource", "http://upd.emule-security.org/server.met")
     nodesDatSource = ConfigItem("ED2k", "NodesDatSource", "http://upd.emule-security.org/nodes.dat")
+    sharingTimeLimit = RangeConfigItem("ED2k", "SharingTimeLimitMinutes", 0, RangeValidator(0, 43200))
 
     def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
         from qfluentwidgets import FluentIcon, SwitchSettingCard
@@ -69,6 +70,11 @@ class ED2kConfig(PackConfig):
                 FluentIcon.LINK, self.tr("监听端口"),
                 self.tr("0 表示交给系统自动分配可用端口"), "",
                 self.listenPort, group, 1,
+            ),
+            SpinBoxSettingCard(
+                FluentIcon.STOP_WATCH, self.tr("自动暂停共享时长"),
+                self.tr("0 表示不按共享时长自动暂停"), " min",
+                self.sharingTimeLimit, group, 10,
             ),
         ])
         runtimeCard.refreshStatus()
