@@ -276,7 +276,8 @@ export class ResourceCache {
 
   headerSnapshotByUrl(url: string): HeaderSnapshot | null {
     this.removeStaleHeaders();
-    return this.headerSnapshotsByUrl.get(url) ?? null;
+    return this.headerSnapshotsByUrl.get(url)
+      ?? this.headerSnapshotsByUrl.get(urlWithoutHash(url)) ?? null;
   }
 
   setHeaderSnapshot(
