@@ -53,14 +53,22 @@ class ED2kSession:
             await self._open()
             client = self._client
 
+            wasCancelled = False
             if fileHash:
                 transfer = await client.resume(fileHash)
             else:
                 try:
-                    transfer = await client.addLink(
-                        buildEd2kLink(link, name), outputFolder,
+                    addTask = asyncio.create_task(
+                        client.addLink(buildEd2kLink(link, name), outputFolder)
                     )
+                    try:
+                        transfer = await asyncio.shield(addTask)
+                    except asyncio.CancelledError:
+                        wasCancelled = True
+                        transfer = await addTask
                 except Error as e:
+                    if wasCancelled:
+                        raise asyncio.CancelledError() from e
                     if e.code == ErrorCode.TRANSFER_EXISTS:
                         raise TaskError("该 eD2k 传输已存在于 daemon 中") from e
                     raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
@@ -73,6 +81,8 @@ class ED2kSession:
                 onStarted(RunResult(
                     fileHash=fileHash, name=name, fileSize=fileSize,
                 ))
+            if wasCancelled:
+                raise asyncio.CancelledError()
             loop = asyncio.get_running_loop()
             async for snapshot in client.snapshots():
                 for t in snapshot.transfers:

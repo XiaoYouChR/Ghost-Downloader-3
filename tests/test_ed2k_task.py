@@ -139,6 +139,39 @@ async def test_resume_uses_saved_hash_after_output_is_created(monkeypatch, tmp_p
     assert fakeClient.resumed == [FILE_HASH]
 
 
+async def test_pause_waits_for_transfer_identity_during_add(monkeypatch, tmp_path):
+    class SlowAddClient(FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.addStarted = asyncio.Event()
+            self.addReady = asyncio.Event()
+
+        async def addLink(self, link: str, outputDir: Path) -> Transfer:
+            self.addStarted.set()
+            await self.addReady.wait()
+            return await super().addLink(link, outputDir)
+
+    fakeClient = SlowAddClient()
+    session = session_module.ED2kSession()
+    session._client = fakeClient
+    monkeypatch.setattr(session_module, "ed2kSession", session)
+    task = makeTask(tmp_path)
+
+    running = asyncio.create_task(task.steps[0].run(lambda _: None, None))
+    await fakeClient.addStarted.wait()
+    running.cancel()
+    await asyncio.sleep(0)
+
+    assert not running.done()
+
+    fakeClient.addReady.set()
+    with pytest.raises(asyncio.CancelledError):
+        await running
+
+    assert task.fileHash == FILE_HASH
+    assert fakeClient.paused == [FILE_HASH]
+
+
 async def test_finished_transfer_enters_sharing_immediately(monkeypatch, tmp_path):
     class FinishedClient(FakeClient):
         async def addLink(self, link: str, outputDir: Path) -> Transfer:
