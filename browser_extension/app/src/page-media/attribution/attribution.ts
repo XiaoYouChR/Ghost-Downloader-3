@@ -234,6 +234,10 @@ class MediaAttribution {
     this.sessionsById.set(session.id, session);
     console.log(`${LOG_PREFIX} ${session.id} opened`, { tag: element.tagName.toLowerCase(), src });
 
+    if (element instanceof HTMLVideoElement && element.poster) {
+      for (const d of urlIdHints(element.poster)) { session.idHints.add(d); }
+    }
+
     if (src) {
       this.bindBlobToMediaSource(session, src);
       if (!src.startsWith("blob:")) {
