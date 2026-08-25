@@ -51,6 +51,10 @@ class FakeClient:
         yield Snapshot(transfers=(self.transfer,))
         await asyncio.Event().wait()
 
+    async def snapshot(self) -> Snapshot:
+        transfers = () if self.transfer is None else (self.transfer,)
+        return Snapshot(transfers=transfers)
+
     async def pause(self, fileHash: str) -> None:
         self.paused.append(fileHash)
 
@@ -60,6 +64,25 @@ class FakeClient:
     async def resume(self, fileHash: str) -> Transfer:
         self.resumed.append(fileHash)
         return self.transfer
+
+
+class DuplicateClient(FakeClient):
+    async def addLink(self, link: str, outputDir: Path) -> Transfer:
+        _, size, fileHash = parseEd2kLink(link)
+        self.transfer = Transfer(
+            hash=fileHash,
+            name="payload.bin",
+            path=outputDir / "payload.bin",
+            size=size,
+            state=TransferState.PAUSED,
+            done=0,
+            received=0,
+            downloadRate=0,
+            uploadRate=0,
+            activePeers=0,
+            peers=0,
+        )
+        raise Error(ErrorCode.TRANSFER_EXISTS, "transfer already exists")
 
 
 def makeTask(tmp_path: Path, name: str = "payload(1).bin") -> ED2kTask:
@@ -231,10 +254,6 @@ async def test_active_duplicate_never_reaches_daemon(monkeypatch, tmp_path):
 
 
 async def test_transfer_exists_does_not_remove_paused_transfer(monkeypatch, tmp_path):
-    class DuplicateClient(FakeClient):
-        async def addLink(self, link: str, outputDir: Path) -> Transfer:
-            raise Error(ErrorCode.TRANSFER_EXISTS, "transfer already exists")
-
     fakeClient = DuplicateClient()
     session = session_module.ED2kSession()
     session._client = fakeClient
@@ -246,3 +265,21 @@ async def test_transfer_exists_does_not_remove_paused_transfer(monkeypatch, tmp_
 
     assert fakeClient.removed == []
     assert not session._activeTransfers
+
+
+async def test_matching_daemon_transfer_is_resumed(monkeypatch, tmp_path):
+    fakeClient = DuplicateClient()
+    session = session_module.ED2kSession()
+    session._client = fakeClient
+    monkeypatch.setattr(session_module, "ed2kSession", session)
+    task = makeTask(tmp_path, name="payload.bin")
+
+    running = asyncio.create_task(task.steps[0].run(lambda _: None, None))
+    await fakeClient.snapshotStarted.wait()
+    running.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await running
+
+    assert task.fileHash == FILE_HASH
+    assert fakeClient.resumed == [FILE_HASH]
+    assert fakeClient.removed == []

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
+from os.path import abspath, normcase
 from pathlib import Path
 from urllib.parse import quote, unquote
 
@@ -70,8 +71,19 @@ class ED2kSession:
                     if wasCancelled:
                         raise asyncio.CancelledError() from e
                     if e.code == ErrorCode.TRANSFER_EXISTS:
-                        raise TaskError("该 eD2k 传输已存在于 daemon 中") from e
-                    raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
+                        expectedPath = normcase(abspath(outputFolder / name))
+                        transfer = next((
+                            t for t in (await client.snapshot()).transfers
+                            if toTransferKey(t.hash, t.size) == identity
+                            and normcase(abspath(t.path)) == expectedPath
+                        ), None)
+                        if transfer is None:
+                            raise TaskError(
+                                "该 eD2k 传输已存在于 daemon 中"
+                            ) from e
+                        transfer = await client.resume(transfer.hash)
+                    else:
+                        raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
 
             sharingStart = 0.0
             fileHash = transfer.hash
