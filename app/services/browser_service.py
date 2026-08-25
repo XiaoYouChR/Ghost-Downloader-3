@@ -486,15 +486,22 @@ class BrowserService(QObject):
             self._sendCreateTaskResult(session, requestId, CreateTaskStatus.REJECTED, message=repr(e))
             return
 
+        decryptionKeys = payload.get("decryptionKeys") or []
+
         self._coroutineRunner.submit(
             self._parse(options),
             done=self._onTaskParsed,
             failed=self._onTaskParseFailed,
             session=session, requestId=requestId, title=title, draft=draft,
+            decryptionKeys=decryptionKeys,
         )
 
     def _onTaskParsed(self, task: Task, session: BrowserClientSession, requestId: str,
-                      title: str, draft: bool | None = None) -> None:
+                      title: str, draft: bool | None = None,
+                      decryptionKeys: list | None = None) -> None:
+        if decryptionKeys and hasattr(task.step, "setOptions"):
+            task.step.setOptions({"decryptionKeys": decryptionKeys})
+
         if title:
             existingSuffix = Path(task.name).suffix
             if existingSuffix and not title.lower().endswith(existingSuffix.lower()):

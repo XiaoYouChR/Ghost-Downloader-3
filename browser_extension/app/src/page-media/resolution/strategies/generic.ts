@@ -7,6 +7,11 @@ import type {Resolution} from "../../types";
 export function selectGeneric(ctx: ResolveContext): Resolution {
   const post = postBindAttributedUrls(ctx.clicked);
 
+  const master = post.find((r) => r.isMaster);
+  if (master) {
+    return { kind: "selection", selection: { kind: "stream", url: master.url } };
+  }
+
   const stream = newestMatching(post, isStreamUrl);
   if (stream) {
     return { kind: "selection", selection: { kind: "stream", url: stream } };

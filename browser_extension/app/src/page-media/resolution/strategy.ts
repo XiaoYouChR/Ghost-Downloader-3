@@ -1,8 +1,8 @@
 import {selectDouyin} from "./strategies/douyin";
 import {selectGeneric} from "./strategies/generic";
 import {selectMeta} from "./strategies/instagram";
-import {selectX} from "./strategies/x";
 import {selectYouTube} from "./strategies/youtube";
+import {isStreamUrl} from "./url-classify";
 import type {Resolution, VideoSessionFormKind} from "../types";
 
 // One attributed URL as the strategies see it — also the element type of
@@ -11,6 +11,7 @@ export type AttributedUrlView = {
   readonly url: string;
   readonly contentType: string;
   readonly capturedAt: number;
+  readonly isMaster?: boolean;
 };
 
 // Strategies see only this — they MUST NOT reach back into the controller.
@@ -39,9 +40,6 @@ export type FindUrlsByIdHint = (idHint: string) => ReadonlyArray<AttributedUrlVi
 // are pure functions of the context; Douyin alone also takes the ledger lookup.
 export function selectMediaForPage(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Resolution {
   const host = ctx.pageUrl.hostname;
-  if (host === "x.com" || host.endsWith(".x.com")) {
-    return selectX(ctx);
-  }
   if (host === "www.douyin.com" || host.endsWith(".douyin.com")) {
     return selectDouyin(ctx, findUrlsByIdHint);
   }
@@ -57,9 +55,12 @@ export function selectMediaForPage(ctx: ResolveContext, findUrlsByIdHint: FindUr
 }
 
 // Belt-and-suspenders against pre-bind leakage that survived the ledger.
+// Stream manifests represent "what to download", not attribution data — exempt from time filter.
 export function postBindAttributedUrls(view: SessionSnapshot): SessionSnapshot["attributedUrls"] {
   if (view.lastBoundAt <= 0) { return view.attributedUrls; }
-  return view.attributedUrls.filter((r) => r.capturedAt >= view.lastBoundAt);
+  return view.attributedUrls.filter((r) =>
+    r.capturedAt >= view.lastBoundAt || isStreamUrl(r.url, r.contentType),
+  );
 }
 
 export function newestBy<T>(items: ReadonlyArray<T>, key: (item: T) => number): T | undefined {

@@ -1,6 +1,6 @@
 import {isCatCatchMedia} from "../../shared/cat-catch";
 import {fileExtension, filenameFromUrl, mimeFromUrl} from "../../shared/utils";
-import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, urlIdHints} from "../resolution/url-classify";
+import {fbCdnDuration, instagramAssetId, isInstagramCdnUrl, isStreamUrl, urlIdHints} from "../resolution/url-classify";
 
 import {AttributionLedger} from "./attribution-ledger";
 import {selectMediaForPage} from "../resolution/strategy";
@@ -65,6 +65,7 @@ function toSessionSnapshot(session: VideoSession): SessionSnapshot {
       url,
       contentType: meta.contentType,
       capturedAt: meta.capturedAt,
+      isMaster: meta.isMaster,
     })),
   );
   return Object.freeze({
@@ -277,10 +278,11 @@ class MediaAttribution {
   private handoffUrl(url: string, newSession: VideoSession, trackMime: string = ""): void {
     let oldSession: VideoSession | null = null;
     let inheritedContentType = "";
+    let inheritedIsMaster: boolean | undefined;
     for (const session of this.sessionsById.values()) {
       if (session.id === newSession.id) { continue; }
       const meta = session.attributedUrls.get(url);
-      if (meta) { oldSession = session; inheritedContentType = meta.contentType; break; }
+      if (meta) { oldSession = session; inheritedContentType = meta.contentType; inheritedIsMaster = meta.isMaster; break; }
     }
 
     const meta: AttributedUrlMeta = {
@@ -288,6 +290,7 @@ class MediaAttribution {
       capturedAt: performance.now(),
       tier: "mse",
       lockedByMse: true,
+      isMaster: inheritedIsMaster,
     };
 
     if (oldSession) {
@@ -412,6 +415,28 @@ class MediaAttribution {
         this.recordFetch(signal.url, signal.contentType);
         this.attributeFetch(signal.url, signal.contentType);
         return;
+
+      case "stream_detected": {
+        if (!/^https?:/i.test(signal.url)) { return; }
+        const { session, tier } = this.pickSessionAndTier(signal.url);
+        if (!session) { return; }
+        if (!session.attributedUrls.has(signal.url)) {
+          this.attribute(session, signal.url, "application/vnd.apple.mpegurl", tier, false);
+        }
+        const ledgerEntry = this.ledger.lookup(signal.url);
+        const owner = ledgerEntry
+          ? (this.sessionsById.get(ledgerEntry.sessionId) ?? session)
+          : session;
+        const meta = owner.attributedUrls.get(signal.url);
+        if (meta) {
+          meta.isMaster = signal.isMaster;
+          if (!isStreamUrl(signal.url, meta.contentType)) {
+            meta.contentType = "application/vnd.apple.mpegurl";
+          }
+          this.notifyResolveListener(owner, owner.state, "stream-detected");
+        }
+        return;
+      }
     }
   }
 
@@ -548,7 +573,10 @@ class MediaAttribution {
       return { kind: "refused", message: chrome.i18n.getMessage("errorMediaSourceUnrecognized") };
     }
 
-    if (session.attributedUrls.size === 0) {
+    const hasStream = [...session.attributedUrls.entries()].some(
+      ([url, meta]) => isStreamUrl(url, meta.contentType),
+    );
+    if (session.attributedUrls.size === 0 || !hasStream) {
       await this.fetchUrlsFromBackground(session);
     }
 
@@ -613,6 +641,7 @@ class MediaAttribution {
             url,
             contentType: meta.contentType,
             capturedAt: meta.capturedAt,
+            isMaster: meta.isMaster,
           });
         }
       }
@@ -657,7 +686,7 @@ class MediaAttribution {
     for (const script of document.querySelectorAll<HTMLScriptElement>('script[type="application/json"]')) {
       const text = script.textContent;
       if (!text || !text.includes("fbcdn")) { continue; }
-      const regex = /https?:(?:\\\/){2}[^"]*\.fbcdn\.net[^"]*\.mp4\?(?:[^"\\]|\\u[0-9a-fA-F]{4}|\\[/\\])*/g;
+      const regex = /https?:(?:\\\/){2}[^"]*\.fbcdn\.net[^"]*\.mp4\?(?:[^"\\<>]|\\u(?!003[cCeE])[0-9a-fA-F]{4}|\\[/\\])*/g;
       let m;
       while ((m = regex.exec(text)) !== null) {
         const url = m[0]

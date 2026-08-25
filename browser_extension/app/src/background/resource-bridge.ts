@@ -459,12 +459,14 @@ export function createResourceBridge(options: {
 
   async function sendHttpResourceToDesktop(resource: Resource): Promise<CommandResult> {
     const spec = toResourceTaskOptions(resource);
+    const keys = keysForTab(resource.tabId);
+    const payload = keys.length > 0 ? { ...spec, decryptionKeys: keys } : spec;
     try {
       const result = await options.sendDesktopRequest<CommandResult>({
         type: "create_task",
         source: "resource",
         title: spec.filename,
-        payload: spec,
+        payload,
       });
 
       if (result.ok) {
@@ -705,6 +707,7 @@ export function createResourceBridge(options: {
 
   function onTabRemoved(tabId: number) {
     cache.clearTab(tabId);
+    keysByTab.delete(tabId);
     if (lastActiveTabId === tabId) {
       void setLastActiveTab(null);
     }
@@ -715,12 +718,35 @@ export function createResourceBridge(options: {
       return;
     }
     cache.clearTab(details.tabId);
+    keysByTab.delete(details.tabId);
   }
 
   function onRequestHeaders(details: chrome.webRequest.OnSendHeadersDetails) {
     const headers = selectAllowedHeaders(Object.fromEntries((details.requestHeaders ?? []).map((header) => [header.name ?? "", header.value ?? ""])));
     const supportsRange = (details.requestHeaders ?? []).some((header) => header.name?.toLowerCase() === "range" && String(header.value ?? "").toLowerCase().startsWith("bytes="));
     cache.setHeaderSnapshot(details.url, headers, details.tabId > 0 ? details.tabId : lastActiveTabId, supportsRange);
+  }
+
+  const keysByTab = new Map<number, Set<string>>();
+
+  function base64ToHex(b64: string): string {
+    try {
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      if (bytes.length !== 16 && bytes.length !== 32) { return ""; }
+      return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    } catch { return ""; }
+  }
+
+  function addKey(tabId: number, base64Key: string): void {
+    const hex = base64ToHex(base64Key);
+    if (!hex) { return; }
+    let keys = keysByTab.get(tabId);
+    if (!keys) { keys = new Set(); keysByTab.set(tabId, keys); }
+    keys.add(hex);
+  }
+
+  function keysForTab(tabId: number): string[] {
+    return [...(keysByTab.get(tabId) ?? [])];
   }
 
   function videoResourcesByTab(tabId: number): Array<{ url: string; mime: string; capturedAt: number }> {
@@ -749,6 +775,7 @@ export function createResourceBridge(options: {
     refreshActiveTabFromBrowser,
     currentTabId,
     mergeResources,
+    addKey,
     sendResource,
     setLastActiveTab,
     videoResourcesByTab,

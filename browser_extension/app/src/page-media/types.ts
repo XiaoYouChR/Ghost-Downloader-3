@@ -19,13 +19,15 @@ export type AttributedUrlMeta = {
   capturedAt: number;
   tier: AttributionTier;
   lockedByMse: boolean;
+  isMaster?: boolean;
 };
 
 export type MseAttributionSignal =
   | { kind: "mse_objecturl"; mediaSourceId: string; objectUrl: string }
   | { kind: "mse_source_buffer_added"; mediaSourceId: string; mimeType: string }
   | { kind: "mse_buffer_appended"; mediaSourceId: string; mimeType: string }
-  | { kind: "request_completed"; url: string; contentType: string };
+  | { kind: "request_completed"; url: string; contentType: string }
+  | { kind: "stream_detected"; url: string; isMaster: boolean };
 
 export type VideoSession = {
   id: string;

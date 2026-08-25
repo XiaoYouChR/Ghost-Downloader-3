@@ -574,6 +574,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.Message === "popupAddKey" && typeof message.data === "string") {
+    const tabId = sender.tab?.id;
+    if (tabId) { resourceBridge.addKey(tabId, message.data); }
+    return;
+  }
+
   if (message.Message === "catCatchFFmpeg") {
     const data = { ...message, Message: "ffmpeg", tabId: message.tabId ?? sender.tab?.id };
     chrome.tabs.query({ url: FFMPEG_ONLINE_URL + "*" }, (tabs) => {

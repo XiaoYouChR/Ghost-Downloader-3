@@ -62,6 +62,26 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
     };
   }
 
+  function probeStreamContent(response: Response, url: string): void {
+    try {
+      const contentLength = parseInt(response.headers.get("content-length") || "", 10);
+      if (contentLength > 2_000_000) { return; }
+      const reader = response.clone().body?.getReader();
+      if (!reader) { return; }
+      reader.read().then(({ value }) => {
+        reader.cancel();
+        if (!value || value[0] !== 0x23) { return; }
+        const text = new TextDecoder().decode(value);
+        if (!text.startsWith("#EXTM3U")) { return; }
+        postMediaSignal({
+          kind: "stream_detected",
+          url,
+          isMaster: text.includes("#EXT-X-STREAM-INF"),
+        });
+      }).catch(() => {});
+    } catch { /* Opaque response — clone() throws. */ }
+  }
+
   if (typeof window.fetch === "function") {
     const originalFetch = window.fetch;
     window.fetch = function patchedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -73,11 +93,13 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
       const promise = originalFetch(input, init);
       promise.then((response) => {
         try {
+          const resolvedUrl = response?.url || url;
           postMediaSignal({
             kind: "request_completed",
-            url: response?.url || url,
+            url: resolvedUrl,
             contentType: response?.headers?.get?.("content-type") ?? "",
           });
+          probeStreamContent(response, resolvedUrl);
         } catch {
           // Opaque response.
         }
@@ -95,17 +117,26 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
     };
     XMLHttpRequest.prototype.send = function patchedSend(this: GhostXMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
       const xhr = this;
-      const url = xhr.__gdUrl || "";
       xhr.addEventListener("loadend", () => {
+        const resolvedUrl = xhr.responseURL || xhr.__gdUrl || "";
         try {
           postMediaSignal({
             kind: "request_completed",
-            url,
+            url: resolvedUrl,
             contentType: xhr.getResponseHeader?.("content-type") ?? "",
           });
         } catch {
           // Opaque response.
         }
+        try {
+          if ((xhr.responseType === "" || xhr.responseType === "text") && xhr.responseText?.startsWith("#EXTM3U")) {
+            postMediaSignal({
+              kind: "stream_detected",
+              url: resolvedUrl,
+              isMaster: xhr.responseText.includes("#EXT-X-STREAM-INF"),
+            });
+          }
+        } catch { /* responseText throws on non-text responseType. */ }
       });
       return originalSend.call(this, body);
     };
