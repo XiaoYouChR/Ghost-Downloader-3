@@ -177,8 +177,17 @@ jobs:
       - name: Download Inno Setup Translation Files
         if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true' }}
         run: |
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseTraditional.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseTraditional.isl"
+          $langs = @(
+            "ChineseSimplified",
+            "ChineseTraditional",
+            "Japanese",
+            "Russian",
+            "Spanish",
+            "BrazilianPortuguese"
+          )
+          foreach ($lang in $langs) {
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/${lang}.isl" -OutFile "C:\Program Files (x86)\Inno Setup 6\Languages\${lang}.isl"
+          }
 
       - name: Build Installer
         if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true' }}
