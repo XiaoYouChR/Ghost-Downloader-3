@@ -4110,6 +4110,16 @@ http://example.com/{mp4,mkv}/video</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
+        <source>不是有效的 eD2k 链接</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="8"/>
+        <source>不支持的 eD2k 链接格式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>
         <source>FFmpeg 合并失败（{code}）：{detail}</source>
         <translation type="unfinished"></translation>
