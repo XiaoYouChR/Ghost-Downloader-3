@@ -53,12 +53,12 @@ class ED2kTaskStep(TaskStep):
             task.uploadRate = t.uploadRate
             task.activePeerCount = t.activePeers
             task.totalPeerCount = t.peers
+            self.receivedBytes = t.received
             if isSharing:
                 task.sharingTimeSeconds = sharingElapsed
                 self.speed = 0
                 reportSpeed(0)
             else:
-                self.receivedBytes = t.received
                 self.speed = t.downloadRate
                 reportSpeed(t.downloadRate)
                 if t.size > 0:

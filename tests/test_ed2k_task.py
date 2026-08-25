@@ -176,7 +176,12 @@ async def test_finished_transfer_enters_sharing_immediately(monkeypatch, tmp_pat
     class FinishedClient(FakeClient):
         async def addLink(self, link: str, outputDir: Path) -> Transfer:
             transfer = await super().addLink(link, outputDir)
-            self.transfer = replace(transfer, state=TransferState.FINISHED)
+            self.transfer = replace(
+                transfer,
+                state=TransferState.FINISHED,
+                done=transfer.size,
+                received=transfer.size,
+            )
             return self.transfer
 
     fakeClient = FinishedClient()
@@ -190,6 +195,7 @@ async def test_finished_transfer_enters_sharing_immediately(monkeypatch, tmp_pat
 
     assert task.isSharing
     assert task.sharingTimeSeconds == 0
+    assert task.steps[0].receivedBytes == 1234
 
     running.cancel()
     with pytest.raises(asyncio.CancelledError):
