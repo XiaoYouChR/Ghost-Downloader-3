@@ -74,8 +74,6 @@ RUN git clone --depth 1 -b develop "${P4A_GIT_URL}" /opt/p4a \
     && grep -q 'start.c pyjniusjni.c' "$QTSRC/Android.mk" && echo "[patch] qt bootstrap pyjniusjni OK" \
     && cp -r /opt/gd3-recipes/* /opt/p4a/pythonforandroid/recipes/ \
     && ls -d /opt/p4a/pythonforandroid/recipes/jh2 && echo "[patch] gd3 recipes 装入 OK" \
-    && sed -i 's|--no-deps -r requirements.txt|--no-deps --no-binary charset-normalizer -r requirements.txt|' /opt/p4a/pythonforandroid/build.py \
-    && grep -q 'no-binary charset-normalizer' /opt/p4a/pythonforandroid/build.py && echo "[patch] charset-normalizer 强制纯Python OK" \
     && COMMONBUILD=/opt/p4a/pythonforandroid/bootstraps/common/build/build.py \
     && sed -i 's#^\( *\)with open(join(res_dir, .mipmap-anydpi-v26/icon.xml.), .w.) as fd:#\1ensure_dir(join(res_dir, "mipmap-anydpi-v26"))\n&#' "$COMMONBUILD" \
     && grep -q 'ensure_dir(join(res_dir, "mipmap-anydpi-v26"))' "$COMMONBUILD" && echo "[patch] p4a adaptive icon mkdir fix OK" \
