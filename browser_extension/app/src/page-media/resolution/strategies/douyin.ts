@@ -6,8 +6,19 @@ import type {Resolution} from "../../types";
 // Until the next reel's MSE binds and correlation locks the URL, the prefetched URL is
 // still provisionally owned by the previous reel's session. modal_id is what survives
 // that window.
+function matchesModalId(url: string, modalId: string): boolean {
+  if (!modalId) { return true; }
+  try {
+    const vid = new URL(url).searchParams.get("__vid");
+    return !vid || vid === modalId;
+  } catch { return true; }
+}
+
 export function selectDouyin(ctx: ResolveContext, findUrlsByIdHint: FindUrlsByIdHint): Resolution {
-  const post = postBindAttributedUrls(ctx.clicked).filter((r) => hostEndsWith(r.url, "douyinvod.com"));
+  const modalId = ctx.pageUrl.searchParams.get("modal_id") ?? "";
+  const post = postBindAttributedUrls(ctx.clicked).filter((r) =>
+    hostEndsWith(r.url, "douyinvod.com") && matchesModalId(r.url, modalId),
+  );
 
   if (ctx.clicked.formKind === "muxed") {
     const muxed = newestMatching(post, (url) => douyinKindOf(url) === "muxed") ?? findByModalId(ctx, findUrlsByIdHint, "muxed");
