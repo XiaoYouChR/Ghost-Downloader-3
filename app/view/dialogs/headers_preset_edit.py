@@ -51,6 +51,10 @@ class HeadersPresetEditDialog(MessageBoxBase):
         )
         return False
 
+    def done(self, code: int) -> None:
+        self.editor.closeHelp()
+        super().done(code)
+
     def preset(self) -> dict:
         return {
             "name": self.nameEdit.text().strip() or self.tr("未命名预设"),

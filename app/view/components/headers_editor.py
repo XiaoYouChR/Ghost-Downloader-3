@@ -153,6 +153,7 @@ class HeaderRow(QWidget):
         self._bind()
 
     def _initWidget(self) -> None:
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         completer = QCompleter(HEADER_SUGGESTIONS, self.nameEdit)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
@@ -231,8 +232,7 @@ class HeadersEditor(QWidget):
         self._bind()
 
     def _initWidget(self) -> None:
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.textEdit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.textEdit.hide()
         self.textEdit.setPlaceholderText(
             self.tr("每行一个 名称: 值，或直接粘贴 cURL 命令"))
@@ -251,6 +251,7 @@ class HeadersEditor(QWidget):
 
         self.tableLayout.setContentsMargins(0, 0, 0, 0)
         self.tableLayout.setSpacing(4)
+        self.tableLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.setSpacing(0)
@@ -261,6 +262,15 @@ class HeadersEditor(QWidget):
         self.helpButton.clicked.connect(self._onHelpClicked)
         self.modeButton.clicked.connect(self._onModeToggled)
         self.resetButton.clicked.connect(self.reset)
+        self.textEdit.document().blockCountChanged.connect(self.updateGeometry)
+
+    def minimumSizeHint(self) -> QSize:
+        content = self.textEdit if self._isTextMode else self.table
+        return content.minimumSizeHint()
+
+    def sizeHint(self) -> QSize:
+        content = self.textEdit if self._isTextMode else self.table
+        return content.sizeHint()
 
     def headers(self) -> dict[str, str]:
         result: dict[str, str] = {}
@@ -276,6 +286,10 @@ class HeadersEditor(QWidget):
 
     def reset(self) -> None:
         self.setHeaders(self._defaults)
+
+    def closeHelp(self) -> None:
+        for tip in self.findChildren(TeachingTip):
+            tip.close()
 
     # 行的顺序只有 tableLayout 一个所有者，不另存一份列表
     def _rows(self) -> list[HeaderRow]:
@@ -308,8 +322,10 @@ class HeadersEditor(QWidget):
         self.modeButton.setToolTip(
             self.tr("切换到表格视图") if self._isTextMode else self.tr("切换到文本视图"))
         self._setRows(rows)
+        self.updateGeometry()
 
     def _onHelpClicked(self) -> None:
+        self.closeHelp()
         TeachingTip.create(
             self.helpButton,
             self.tr("使用帮助"),
@@ -345,6 +361,7 @@ class HeadersEditor(QWidget):
                         onEdited=self._onRowEdited, onRemoved=self._removeRow)
         self.tableLayout.insertWidget(
             self.tableLayout.count() if index is None else index, row)
+        self.updateGeometry()
 
     def _onRowEdited(self, row: HeaderRow) -> None:
         if row is self._lastRow() and any(text.strip() for text in row.header()):
@@ -357,6 +374,7 @@ class HeadersEditor(QWidget):
         # setParent(None) 让它立刻退出布局，deleteLater 要等到事件循环才生效
         row.setParent(None)
         row.deleteLater()
+        self.updateGeometry()
         self._refreshDuplicates()
 
     def _clearRows(self) -> None:
