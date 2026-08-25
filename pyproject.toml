@@ -1,7 +1,7 @@
 [project]
 name = "ghost-downloader-3"
-version = "4.0"
-description = "An AI-boost cross-platform multi-protocol fluent-design concurrent downloader built with Python & Qt."
+version = "4.3.5"
+description = "The only downloader you need."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
