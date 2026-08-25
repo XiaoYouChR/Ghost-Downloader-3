@@ -40,18 +40,18 @@ async def test_open_replaces_stopped_client(fake_client):
     stopped = fake_client("/tmp/old", "/tmp/data")
     session._client = stopped
 
-    await session.open()
+    await session._open()
 
-    assert session.client() is not stopped
-    assert session.client().isRunning
-    assert session.client().startCalls == 1
+    assert session._client is not stopped
+    assert session._client.isRunning
+    assert session._client.startCalls == 1
 
 
 @pytest.mark.asyncio
 async def test_concurrent_open_starts_one_client(fake_client):
     session = session_module.ED2kSession()
 
-    await asyncio.gather(session.open(), session.open())
+    await asyncio.gather(session._open(), session._open())
 
     assert len(fake_client.instances) == 1
     assert fake_client.instances[0].startCalls == 1

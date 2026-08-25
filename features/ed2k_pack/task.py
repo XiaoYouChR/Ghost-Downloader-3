@@ -36,10 +36,16 @@ class ED2kTask(Task):
 @dataclass(kw_only=True)
 class ED2kTaskStep(TaskStep):
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        from .session import ed2kSession
+        from .session import ed2kSession, RunResult
         from .python_ed2k import Transfer
 
         task: ED2kTask = self.task
+
+        def onStarted(result: RunResult):
+            task.fileHash = result.fileHash
+            task.name = result.name
+            if result.fileSize:
+                task.fileSize = result.fileSize
 
         def onProgress(t: Transfer, sharingElapsed: int):
             isSharing = sharingElapsed > 0
@@ -60,14 +66,12 @@ class ED2kTaskStep(TaskStep):
                     self.progress = min(99.9, t.received / t.size * 100)
 
         try:
-            result = await ed2kSession.run(
+            await ed2kSession.run(
                 task.url, task.fileHash, task.name, task.outputFolder,
-                onProgress, sharingTimeSeconds=task.sharingTimeSeconds,
+                onStarted=onStarted,
+                onProgress=onProgress,
+                sharingTimeSeconds=task.sharingTimeSeconds,
             )
-            task.fileHash = result.fileHash
-            task.name = result.name
-            if result.fileSize:
-                task.fileSize = result.fileSize
             self.setStatus(TaskStatus.COMPLETED)
         except asyncio.CancelledError:
             task.isSharing = False

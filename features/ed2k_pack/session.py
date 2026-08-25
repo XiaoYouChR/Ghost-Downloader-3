@@ -39,6 +39,7 @@ class ED2kSession:
         fileHash: str,
         name: str,
         outputFolder: Path,
+        onStarted: Callable[[RunResult], None] | None = None,
         onProgress: Callable[[Transfer, int], None] | None = None,
         sharingTimeSeconds: int = 0,
     ) -> RunResult:
@@ -53,7 +54,7 @@ class ED2kSession:
             client = self._client
 
             if fileHash:
-                await client.resume(fileHash)
+                transfer = await client.resume(fileHash)
             else:
                 try:
                     await client.remove(linkHash.upper(), deleteFile=False)
@@ -68,11 +69,15 @@ class ED2kSession:
                     if e.code == ErrorCode.TRANSFER_EXISTS:
                         raise TaskError("该 eD2k 传输已存在于 daemon 中") from e
                     raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
-                fileHash = transfer.hash
-                name = transfer.name or name
 
             sharingStart = 0.0
-            fileSize = 0
+            fileHash = transfer.hash
+            name = transfer.name or name
+            fileSize = transfer.size
+            if onStarted:
+                onStarted(RunResult(
+                    fileHash=fileHash, name=name, fileSize=fileSize,
+                ))
             loop = asyncio.get_running_loop()
             async for snapshot in client.snapshots():
                 for t in snapshot.transfers:
