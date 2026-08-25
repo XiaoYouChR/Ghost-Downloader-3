@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -136,6 +137,30 @@ async def test_resume_uses_saved_hash_after_output_is_created(monkeypatch, tmp_p
 
     assert len(fakeClient.added) == 1
     assert fakeClient.resumed == [FILE_HASH]
+
+
+async def test_finished_transfer_enters_sharing_immediately(monkeypatch, tmp_path):
+    class FinishedClient(FakeClient):
+        async def addLink(self, link: str, outputDir: Path) -> Transfer:
+            transfer = await super().addLink(link, outputDir)
+            self.transfer = replace(transfer, state=TransferState.FINISHED)
+            return self.transfer
+
+    fakeClient = FinishedClient()
+    session = session_module.ED2kSession()
+    session._client = fakeClient
+    monkeypatch.setattr(session_module, "ed2kSession", session)
+    task = makeTask(tmp_path)
+
+    running = asyncio.create_task(task.steps[0].run(lambda _: None, None))
+    await fakeClient.snapshotStarted.wait()
+
+    assert task.isSharing
+    assert task.sharingTimeSeconds == 0
+
+    running.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await running
 
 
 async def test_parser_rejects_active_duplicate_on_add_task_page(monkeypatch, tmp_path):

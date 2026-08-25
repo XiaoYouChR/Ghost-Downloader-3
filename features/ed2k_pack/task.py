@@ -37,7 +37,7 @@ class ED2kTask(Task):
 class ED2kTaskStep(TaskStep):
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         from .session import ed2kSession, RunResult
-        from .python_ed2k import Transfer
+        from .python_ed2k import Transfer, TransferState
 
         task: ED2kTask = self.task
 
@@ -48,7 +48,7 @@ class ED2kTaskStep(TaskStep):
                 task.fileSize = result.fileSize
 
         def onProgress(t: Transfer, sharingElapsed: int):
-            isSharing = sharingElapsed > 0
+            isSharing = t.state == TransferState.FINISHED
             task.isSharing = isSharing
             task.uploadRate = t.uploadRate
             task.activePeerCount = t.activePeers
