@@ -48,6 +48,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
 
   const pendingRequests = new Map<string, PendingRequest>();
   let shouldRetryPairing = false;
+  let helloAckTimeoutId: number = 0;
 
   // Runtime fact about the extension (read once from chrome.management.getSelf in setupBackground).
   // Owned by the bridge instance, not the module, since only connect() consumes it.
@@ -102,6 +103,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
     }
 
     if (message.type === "hello_ack") {
+      clearTimeout(helloAckTimeoutId);
       desktopVersion = String(message.appVersion ?? "");
       setConnectionState("connected", chrome.i18n.getMessage("connected"));
       desktopSocket?.send(JSON.stringify({ type: "subscribe_tasks" }));
@@ -174,6 +176,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
     }
 
     clearReconnectTimer();
+    clearTimeout(helloAckTimeoutId);
     if (force && desktopSocket) {
       desktopSocket.close();
       desktopSocket = null;
@@ -198,6 +201,11 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
           installType,
         }),
       );
+      helloAckTimeoutId = self.setTimeout(() => {
+        if (desktopSocket === socket && connectionState === "authenticating") {
+          socket.close();
+        }
+      }, 10_000);
     });
 
     socket.addEventListener("message", (event) => {
@@ -212,6 +220,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
         return;
       }
       desktopSocket = null;
+      clearTimeout(helloAckTimeoutId);
       rejectPendingRequests(chrome.i18n.getMessage("connectionClosed"));
       taskSnapshot = [];
       options.onTaskSnapshotChanged?.([]);
@@ -399,7 +408,7 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
   }
 
   function setupReconnectAlarm() {
-    chrome.alarms.create(RECONNECT_ALARM, { periodInMinutes: 1 });
+    chrome.alarms.create(RECONNECT_ALARM, { periodInMinutes: 0.5 });
   }
 
   function onReconnectAlarm(alarm: chrome.alarms.Alarm) {
