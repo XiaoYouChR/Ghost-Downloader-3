@@ -1591,12 +1591,12 @@ You can adjust options in Settings at any time.</translation>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="75"/>
         <source>自动暂停共享时长</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto Sharing Time Limit</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/config.py" line="76"/>
         <source>0 表示不按共享时长自动暂停</source>
-        <translation type="unfinished"></translation>
+        <translation>0 means no sharing time limit</translation>
     </message>
 </context>
 <context>
@@ -1605,12 +1605,12 @@ You can adjust options in Settings at any time.</translation>
         <location filename="../../../features/ed2k_pack/cards.py" line="50"/>
         <location filename="../../../features/ed2k_pack/cards.py" line="55"/>
         <source>已共享 {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>Shared for {0}</translation>
     </message>
     <message>
         <location filename="../../../features/ed2k_pack/cards.py" line="52"/>
         <source>共享中</source>
-        <translation type="unfinished"></translation>
+        <translation>Sharing</translation>
     </message>
 </context>
 <context>
@@ -5225,8 +5225,14 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>This eD2k transfer already exists in daemon</translation>
     </message>
     <message>
-        <source>ED2kSession 未启动</source>
-        <translation type="vanished">ED2k session not started</translation>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="7"/>
+        <source>不是有效的 eD2k 链接</source>
+        <translation>Invalid eD2k link</translation>
+    </message>
+    <message>
+        <location filename="../../../features/ed2k_pack/error_catalog.py" line="8"/>
+        <source>不支持的 eD2k 链接格式</source>
+        <translation>Unsupported eD2k link format</translation>
     </message>
     <message>
         <location filename="../../../features/ffmpeg_pack/error_catalog.py" line="3"/>
