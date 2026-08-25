@@ -166,7 +166,7 @@ async def test_active_duplicate_never_reaches_daemon(monkeypatch, tmp_path):
     session._activeTransfers.discard(identity)
 
 
-async def test_transfer_exists_is_reported_after_stale_cleanup(monkeypatch, tmp_path):
+async def test_transfer_exists_does_not_remove_paused_transfer(monkeypatch, tmp_path):
     class DuplicateClient(FakeClient):
         async def addLink(self, link: str, outputDir: Path) -> Transfer:
             raise Error(ErrorCode.TRANSFER_EXISTS, "transfer already exists")
@@ -180,5 +180,5 @@ async def test_transfer_exists_is_reported_after_stale_cleanup(monkeypatch, tmp_
     with pytest.raises(TaskError, match="该 eD2k 传输已存在于 daemon 中"):
         await task.steps[0].run(lambda _: None, None)
 
-    assert fakeClient.removed == [FILE_HASH]
+    assert fakeClient.removed == []
     assert not session._activeTransfers

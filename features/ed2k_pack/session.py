@@ -57,11 +57,6 @@ class ED2kSession:
                 transfer = await client.resume(fileHash)
             else:
                 try:
-                    await client.remove(linkHash.upper(), deleteFile=False)
-                except Error as e:
-                    if e.code != ErrorCode.TRANSFER_NOT_FOUND:
-                        raise
-                try:
                     transfer = await client.addLink(
                         buildEd2kLink(link, name), outputFolder,
                     )
