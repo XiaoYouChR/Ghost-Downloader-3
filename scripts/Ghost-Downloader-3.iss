@@ -14,7 +14,7 @@
 AppId={{C7E5C3F5-8579-4C76-BC5F-2D18D82FD9B8}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-AppVerName={#MyAppName} {#MyAppVersion}
+;AppVerName={#MyAppName} {#MyAppVersion}
 
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -29,6 +29,10 @@ AppCopyright=(c) {#CurrentYear} {#MyAppPublisher}
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 AppPublisher={#MyAppPublisher}
+
+ShowLanguageDialog=yes
+UsePreviousLanguage=no
+LanguageDetectionMethod=uilanguage
 
 WizardStyle=modern
 
