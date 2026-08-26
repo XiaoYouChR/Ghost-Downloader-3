@@ -80,12 +80,14 @@ def startApp(application, isSilent=False):
 
     sys.excepthook = exceptionHook
 
-    families = [application.font().defaultFamily()]
     if sys.platform == "darwin":
-        families.append("PingFang SC")
-    elif sys.platform == "win32":
-        families.append("Microsoft YaHei UI")
-    cfg.set(cfg.fontFamilies, families, save=False)
+        from qfluentwidgets import qconfig, setFontFamilies
+        systemFamily = application.font().defaultFamily()
+        families = [
+            family for family in qconfig.fontFamilies.defaultValue
+            if not family.startswith(("Segoe", "Microsoft")) and family != systemFamily
+        ]
+        setFontFamilies([systemFamily, *families])
     application.setQuitOnLastWindowClosed(False)
 
     if sys.platform == "darwin":
