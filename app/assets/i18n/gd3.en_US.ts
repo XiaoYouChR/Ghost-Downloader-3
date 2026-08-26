@@ -582,7 +582,7 @@ http://example.com/{mp4,mkv}/video</translation>
         <location filename="../../../features/bili_pack/config.py" line="171"/>
         <location filename="../../../features/bili_pack/config.py" line="204"/>
         <source>状态：未登录</source>
-        <translation>Status: Not Logged In</translation>
+        <translation>Status: Not logged in</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="173"/>
@@ -2326,7 +2326,7 @@ select &quot;No Emulation&quot; to send as-is</translation>
     <message>
         <location filename="../../view/components/setting_cards.py" line="469"/>
         <source>TLS 指纹与 User-Agent 预设</source>
-        <translation>TLS Fingerprint &amp; User-Agent Preset</translation>
+        <translation>TLS fingerprints &amp; User-Agent presets</translation>
     </message>
     <message>
         <location filename="../../view/components/setting_cards.py" line="483"/>
@@ -4143,7 +4143,8 @@ Path: {1}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="107"/>
         <source>每线程剩余量大于此值时, 有线程完成或自动提速条件满足会触发重新分配</source>
-        <translation>If threads&apos; workload exceeds this value, redistribution will trigger when a thread completes or Auto Boost is enabled</translation>
+        <translation>If threads&apos; workload exceeds this value, redistribution will trigger
+when a thread completes or Auto Boost is enabled</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="79"/>
@@ -4153,7 +4154,7 @@ Path: {1}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="80"/>
         <source>当下载任务界面限速开关开启时，所有任务将根据此值进行限速</source>
-        <translation>If the speed limit switch is enabled on the download tasks page, all tasks will be limited according to this value</translation>
+        <translation>When Speed Limit is enabled at the Tasks page, combined speed of all tasks will be limited to this value</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="113"/>
@@ -4333,7 +4334,7 @@ Path: {1}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="148"/>
         <source>商店版扩展需等待审核后才能获得更新</source>
-        <translation>Store version requires review before receiving updates</translation>
+        <translation>Store version updates may be delayed due to the review process</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="159"/>
