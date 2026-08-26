@@ -9,6 +9,7 @@ REPO = Path(__file__).resolve().parent.parent
 LANGUAGES = ["zh_CN", "en_US", "ja_JP", "zh_TW", "zh_HK", "ru_RU", "pt_BR", "es_ES"]
 LANGUAGE_FAMILY_FALLBACKS = {
     "zh": "zh_CN",
+    "yue": "zh_HK",
     "en": "en_US",
     "ja": "ja_JP",
     "ru": "ru_RU",
