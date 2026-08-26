@@ -278,7 +278,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  desktopBridge.onReconnectAlarm(alarm);
+  void ready.then(() => desktopBridge.onReconnectAlarm(alarm));
 });
 
 chrome.runtime.onConnect.addListener((port) => {
