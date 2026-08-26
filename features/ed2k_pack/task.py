@@ -28,10 +28,11 @@ class ED2kTask(Task):
         self.sharingTimeSeconds = 0
         return super().reset()
 
-    def remove(self) -> None:
+    def deleteFiles(self):
         if self.fileHash:
             from .session import ed2kSession
             ed2kSession.remove(self.fileHash)
+        super().deleteFiles()
 
 
 @dataclass(kw_only=True)

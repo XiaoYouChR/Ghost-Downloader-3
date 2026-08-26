@@ -397,11 +397,7 @@ class Task:
                 continue
             yield step
 
-    def remove(self) -> None:
-        pass
-
     def deleteFiles(self):
-        self.remove()
         from app.platform.filesystem import deletePath
         for step in self.steps:
             step.deleteFiles()

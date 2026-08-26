@@ -411,7 +411,7 @@ wheels = [
 
 [[package]]
 name = "ghost-downloader-3"
-version = "4.0"
+version = "4.3.5"
 source = { virtual = "." }
 dependencies = [
     { name = "aioftp", extra = ["socks"] },

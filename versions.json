@@ -64,10 +64,10 @@
       "gdMinVersion": "4.2.0"
     },
     "ed2k_pack": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "file": "ed2k_pack.zip",
-      "sha256": "9a7e7e8d12dc4c2e4d9e40db482fca8afe260fc702236c5d66aaa61f986c6df9",
-      "gdMinVersion": "4.3.5"
+      "sha256": "a66b084d3437b19f352811cf09acab167cd5942c60dd2d1cc10ba877dbcb2468",
+      "gdMinVersion": "4.2.0"
     },
     "ffmpeg_pack": {
       "version": "1.0.1",
