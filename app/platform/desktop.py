@@ -11,37 +11,34 @@ from loguru import logger
 
 
 def buildFontFamilies(locale: QLocale, defaultFamily: str) -> list[str]:
-    script = locale.script() if locale.script() != QLocale.Script.AnyScript else QLocale.system().script()
+    locale = locale if locale.script() != QLocale.Script.AnyScript else QLocale.system()
+    script = locale.script()
 
     if sys.platform == "darwin":
-        CJK_CHAINS = {
-            QLocale.Script.TraditionalHanScript: [
-                "PingFang TC", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo",
-            ],
-            QLocale.Script.JapaneseScript: [
-                "Hiragino Sans", "PingFang SC", "PingFang TC", "Apple SD Gothic Neo",
-            ],
-            QLocale.Script.KoreanScript: [
-                "Apple SD Gothic Neo", "PingFang SC", "PingFang TC", "Hiragino Sans",
-            ],
-        }
-        DEFAULT_CHAIN = ["PingFang SC", "PingFang TC", "Hiragino Sans", "Apple SD Gothic Neo"]
-        return [defaultFamily] + CJK_CHAINS.get(script, DEFAULT_CHAIN)
+        if script == QLocale.Script.TraditionalHanScript and locale.territory() in (
+            QLocale.Country.HongKong, QLocale.Country.Macau,
+        ):
+            chain = ["PingFang HK", "PingFang TC", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo"]
+        elif script == QLocale.Script.TraditionalHanScript:
+            chain = ["PingFang TC", "PingFang HK", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo"]
+        elif script == QLocale.Script.JapaneseScript:
+            chain = ["Hiragino Sans", "PingFang SC", "PingFang TC", "Apple SD Gothic Neo"]
+        elif script == QLocale.Script.KoreanScript:
+            chain = ["Apple SD Gothic Neo", "PingFang SC", "PingFang TC", "Hiragino Sans"]
+        else:
+            chain = ["PingFang SC", "PingFang TC", "Hiragino Sans", "Apple SD Gothic Neo"]
+        return [defaultFamily] + chain
 
     if sys.platform == "win32":
-        CJK_CHAINS = {
-            QLocale.Script.TraditionalHanScript: [
-                "Microsoft JhengHei UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic",
-            ],
-            QLocale.Script.JapaneseScript: [
-                "Yu Gothic UI", "Microsoft YaHei UI", "Microsoft JhengHei UI", "Malgun Gothic",
-            ],
-            QLocale.Script.KoreanScript: [
-                "Malgun Gothic", "Microsoft YaHei UI", "Microsoft JhengHei UI", "Yu Gothic UI",
-            ],
-        }
-        DEFAULT_CHAIN = ["Microsoft YaHei UI", "Microsoft JhengHei UI", "Yu Gothic UI", "Malgun Gothic"]
-        return ["Segoe UI"] + CJK_CHAINS.get(script, DEFAULT_CHAIN)
+        if script == QLocale.Script.TraditionalHanScript:
+            chain = ["Microsoft JhengHei UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic"]
+        elif script == QLocale.Script.JapaneseScript:
+            chain = ["Yu Gothic UI", "Microsoft YaHei UI", "Microsoft JhengHei UI", "Malgun Gothic"]
+        elif script == QLocale.Script.KoreanScript:
+            chain = ["Malgun Gothic", "Microsoft YaHei UI", "Microsoft JhengHei UI", "Yu Gothic UI"]
+        else:
+            chain = ["Microsoft YaHei UI", "Microsoft JhengHei UI", "Yu Gothic UI", "Malgun Gothic"]
+        return ["Segoe UI"] + chain
 
     return [defaultFamily]
 
