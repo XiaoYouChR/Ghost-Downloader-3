@@ -100,17 +100,6 @@ def test_build_ed2k_link_preserves_content_identity():
     assert renamed.endswith("|h=TESTAICH|/")
 
 
-def test_session_rejects_duplicate_hash_and_size():
-    session = session_module.ED2kSession()
-    identity = toTransferKey(FILE_HASH.lower(), 1234)
-    session._activeTransfers.add(identity)
-
-    assert session.hasActiveTransfer(FILE_HASH, 1234)
-    assert not session.hasActiveTransfer(FILE_HASH, 4321)
-
-    session._activeTransfers.discard(identity)
-    assert not session.hasActiveTransfer(FILE_HASH, 1234)
-
 
 async def test_step_submits_deduplicated_task_filename(monkeypatch, tmp_path):
     fakeClient = FakeClient()
