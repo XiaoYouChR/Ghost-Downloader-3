@@ -80,12 +80,8 @@ def startApp(application, isSilent=False):
 
     sys.excepthook = exceptionHook
 
-    families = [application.font().defaultFamily()]
-    if sys.platform == "darwin":
-        families.append("PingFang SC")
-    elif sys.platform == "win32":
-        families.append("Microsoft YaHei UI")
-    cfg.set(cfg.fontFamilies, families, save=False)
+    from app.platform.desktop import buildFontFamilies
+    cfg.set(cfg.fontFamilies, buildFontFamilies(cfg.language.value.value, application.font().defaultFamily()), save=False)
     application.setQuitOnLastWindowClosed(False)
 
     if sys.platform == "darwin":

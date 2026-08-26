@@ -4,10 +4,46 @@ import sys
 from os import PathLike
 from pathlib import Path
 
-from PySide6.QtCore import QMimeData, QProcess, QUrl, Qt
+from PySide6.QtCore import QLocale, QMimeData, QProcess, QUrl, Qt
 from PySide6.QtGui import QDesktopServices, QDrag
 from PySide6.QtWidgets import QApplication, QWidget
 from loguru import logger
+
+
+def buildFontFamilies(locale: QLocale, defaultFamily: str) -> list[str]:
+    script = locale.script() if locale.script() != QLocale.Script.AnyScript else QLocale.system().script()
+
+    if sys.platform == "darwin":
+        CJK_CHAINS = {
+            QLocale.Script.TraditionalHanScript: [
+                "PingFang TC", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo",
+            ],
+            QLocale.Script.JapaneseScript: [
+                "Hiragino Sans", "PingFang SC", "PingFang TC", "Apple SD Gothic Neo",
+            ],
+            QLocale.Script.KoreanScript: [
+                "Apple SD Gothic Neo", "PingFang SC", "PingFang TC", "Hiragino Sans",
+            ],
+        }
+        DEFAULT_CHAIN = ["PingFang SC", "PingFang TC", "Hiragino Sans", "Apple SD Gothic Neo"]
+        return [defaultFamily] + CJK_CHAINS.get(script, DEFAULT_CHAIN)
+
+    if sys.platform == "win32":
+        CJK_CHAINS = {
+            QLocale.Script.TraditionalHanScript: [
+                "Microsoft JhengHei UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic",
+            ],
+            QLocale.Script.JapaneseScript: [
+                "Yu Gothic UI", "Microsoft YaHei UI", "Microsoft JhengHei UI", "Malgun Gothic",
+            ],
+            QLocale.Script.KoreanScript: [
+                "Malgun Gothic", "Microsoft YaHei UI", "Microsoft JhengHei UI", "Yu Gothic UI",
+            ],
+        }
+        DEFAULT_CHAIN = ["Microsoft YaHei UI", "Microsoft JhengHei UI", "Yu Gothic UI", "Malgun Gothic"]
+        return ["Segoe UI"] + CJK_CHAINS.get(script, DEFAULT_CHAIN)
+
+    return [defaultFamily]
 
 
 def _sendForegroundInput() -> None:
