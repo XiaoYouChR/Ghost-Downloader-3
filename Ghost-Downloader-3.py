@@ -238,17 +238,7 @@ def startApp(application, isSilent=False):
         emptyWorkingSetIfIdle()
 
     if sys.platform == "darwin":
-        if isSilent:
-            signalBus.activationRequested.connect(show)
-        else:
-            from PySide6.QtCore import QTimer
-
-            def _onColdStartDecide():
-                signalBus.activationRequested.connect(show)
-                if not application._isWakeLaunch:
-                    show()
-
-            QTimer.singleShot(0, _onColdStartDecide)
+        signalBus.activationRequested.connect(show)
 
     from app.services.update_service import UpdateState
     def onUpdateChanged(info):

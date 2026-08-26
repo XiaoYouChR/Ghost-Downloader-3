@@ -74,7 +74,8 @@ class SingletonApplication(QApplication):
             return True
 
         if sys.platform == "darwin" and e.type() == QEvent.Type.ApplicationActivate:
-            signalBus.activationRequested.emit()
+            if not self._isWakeLaunch:
+                signalBus.activationRequested.emit()
 
         return super().event(e)
 
@@ -211,14 +212,13 @@ if sys.platform == "linux":
     class _DesktopBusReceiver(QObject):
         @Slot("QStringList", "QVariantMap")
         def Open(self, uris, platformData):
-            if any(isWakeUri(u) for u in uris):
+            uris = [u for u in uris if u and not isWakeUri(u)]
+            if not uris:
                 return
             if any(isLaunchUri(u) for u in uris):
                 signalBus.activationRequested.emit()
                 return
-            uris = [uri for uri in uris if uri]
-            if uris:
-                signalBus.openUriRequested.emit(uris)
+            signalBus.openUriRequested.emit(uris)
 
         @Slot("QVariantMap")
         def Activate(self, platformData):

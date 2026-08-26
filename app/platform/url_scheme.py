@@ -33,7 +33,7 @@ def isLaunchUri(uri: str) -> bool:
 
 
 def isWakeUri(uri: str) -> bool:
-    return uri == f"{URL_SCHEME}://wake"
+    return uri.rstrip("/") == f"{URL_SCHEME}://wake"
 
 
 if sys.platform == "win32":
