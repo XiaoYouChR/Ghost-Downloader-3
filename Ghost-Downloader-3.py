@@ -275,10 +275,12 @@ def startApp(application, isSilent=False):
 if __name__ == "__main__":
     from app.config.constants import DESKTOP_ID
     from app.platform.application import SingletonApplication
+    from app.platform.desktop import setSystemFont
     from app.platform.url_scheme import isWakeUri
 
     setupEnvironment()
     app = SingletonApplication(sys.argv, DESKTOP_ID)
+    setSystemFont(app)
     isSilent = "--silence" in sys.argv or any(isWakeUri(arg) for arg in sys.argv[1:])
     startApp(app, isSilent=isSilent)
     sys.exit(app.exec())

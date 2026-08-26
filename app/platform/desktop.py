@@ -10,6 +10,14 @@ from PySide6.QtWidgets import QApplication, QWidget
 from loguru import logger
 
 
+def setSystemFont(application: QApplication) -> None:
+    from qfluentwidgets import qconfig
+
+    # Use the platform's native UI family and its locale-aware glyph fallbacks.
+    systemFamily = application.font().defaultFamily()
+    qconfig.set(qconfig.fontFamilies, [systemFamily], save=False)
+
+
 def _sendForegroundInput() -> None:
     # https://github.com/microsoft/PowerToys/pull/14383
     """Send a zero-effect mouse input so Windows grants us foreground rights."""
