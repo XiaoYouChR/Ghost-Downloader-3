@@ -20,6 +20,7 @@ dependencies = [
     "winloop>=0.6.0; sys_platform == 'win32'",
     "uvloop>=0.22.1; sys_platform != 'win32'",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
+    "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
 ]
 
 [dependency-groups]
@@ -45,3 +46,8 @@ filterwarnings = [
     "ignore:coroutine .* was never awaited:RuntimeWarning",
 ]
 markers = ["network: requires internet access"]
+
+[tool.uv]
+override-dependencies = [
+    "pyobjc; python_version < '0'",
+]
