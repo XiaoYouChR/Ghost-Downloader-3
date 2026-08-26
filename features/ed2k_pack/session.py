@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
-from os.path import abspath, normcase
 from pathlib import Path
 from urllib.parse import quote, unquote
 
@@ -43,7 +42,7 @@ class ED2kSession:
         onStarted: Callable[[RunResult], None] | None = None,
         onProgress: Callable[[Transfer, int], None] | None = None,
         sharingTimeSeconds: int = 0,
-    ) -> RunResult:
+    ) -> None:
         _, linkSize, linkHash = parseEd2kLink(link)
         identity = toTransferKey(linkHash, linkSize)
         if identity in self._activeTransfers:
@@ -66,35 +65,26 @@ class ED2kSession:
                         transfer = await asyncio.shield(addTask)
                     except asyncio.CancelledError:
                         wasCancelled = True
-                        transfer = await addTask
+                        transfer = await asyncio.wait_for(addTask, timeout=15)
                 except Error as e:
-                    if wasCancelled:
-                        raise asyncio.CancelledError() from e
                     if e.code == ErrorCode.TRANSFER_EXISTS:
-                        expectedPath = normcase(abspath(outputFolder / name))
-                        transfer = next((
-                            t for t in (await client.snapshot()).transfers
-                            if toTransferKey(t.hash, t.size) == identity
-                            and normcase(abspath(t.path)) == expectedPath
-                        ), None)
-                        if transfer is None:
-                            raise TaskError(
-                                "该 eD2k 传输已存在于 daemon 中"
-                            ) from e
-                        transfer = await client.resume(transfer.hash)
+                        transfer = await client.resume(linkHash.upper())
+                    elif wasCancelled:
+                        raise asyncio.CancelledError() from e
                     else:
                         raise TaskError("ED2k 错误：{detail}", detail=str(e)) from e
 
-            sharingStart = 0.0
             fileHash = transfer.hash
-            name = transfer.name or name
-            fileSize = transfer.size
             if onStarted:
                 onStarted(RunResult(
-                    fileHash=fileHash, name=name, fileSize=fileSize,
+                    fileHash=fileHash,
+                    name=transfer.name or name,
+                    fileSize=transfer.size,
                 ))
             if wasCancelled:
                 raise asyncio.CancelledError()
+
+            sharingStart = 0.0
             loop = asyncio.get_running_loop()
             async for snapshot in client.snapshots():
                 for t in snapshot.transfers:
@@ -102,16 +92,12 @@ class ED2kSession:
                         continue
                     if not sharingStart and t.state == TransferState.FINISHED:
                         sharingStart = loop.time() - sharingTimeSeconds
-                    if t.size > 0:
-                        fileSize = t.size
                     elapsed = int(loop.time() - sharingStart) if sharingStart else 0
                     if onProgress:
                         onProgress(t, elapsed)
                     if sharingStart and isSharingLimitReached(elapsed):
                         await client.pause(fileHash)
-                        return RunResult(
-                            fileHash=fileHash, name=name, fileSize=fileSize,
-                        )
+                        return
                     break
             raise asyncio.CancelledError()
         except asyncio.CancelledError:

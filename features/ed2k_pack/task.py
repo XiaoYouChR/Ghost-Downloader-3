@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.models.task import Task, TaskError, TaskStep, TaskStatus
+from .python_ed2k import Transfer, TransferState
 
 
 @dataclass(kw_only=True, eq=False)
@@ -36,8 +37,7 @@ class ED2kTask(Task):
 @dataclass(kw_only=True)
 class ED2kTaskStep(TaskStep):
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
-        from .session import ed2kSession, RunResult
-        from .python_ed2k import Transfer, TransferState
+        from .session import RunResult, ed2kSession
 
         task: ED2kTask = self.task
 
@@ -48,13 +48,12 @@ class ED2kTaskStep(TaskStep):
                 task.fileSize = result.fileSize
 
         def onProgress(t: Transfer, sharingElapsed: int):
-            isSharing = t.state == TransferState.FINISHED
-            task.isSharing = isSharing
+            task.isSharing = t.state == TransferState.FINISHED
             task.uploadRate = t.uploadRate
             task.activePeerCount = t.activePeers
             task.totalPeerCount = t.peers
             self.receivedBytes = t.received
-            if isSharing:
+            if task.isSharing:
                 task.sharingTimeSeconds = sharingElapsed
                 self.speed = 0
                 reportSpeed(0)
