@@ -115,6 +115,7 @@ def startApp(application):
         browserService.setEnabled(enabled)
 
     cfg.isBrowserExtensionEnabled.valueChanged.connect(onBrowserExtensionToggled)
+    cfg.browserExtensionPort.valueChanged.connect(browserService.setPort)
     if cfg.isBrowserExtensionEnabled.value:
         keepAlive.holdFor(REASON_BROWSER)
         browserService.start()
