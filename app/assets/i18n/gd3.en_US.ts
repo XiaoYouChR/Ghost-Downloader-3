@@ -597,7 +597,7 @@ http://example.com/{mp4,mkv}/video</translation>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="201"/>
         <source>状态：已登录 用户名：{0} UID：{1} 会员状态：{2}</source>
-        <translation>Status: Logged In, User: {0}, UID: {1}, Membership: {2}</translation>
+        <translation>Status: Logged in, User: {0}, UID: {1}, Membership: {2}</translation>
     </message>
     <message>
         <location filename="../../../features/bili_pack/config.py" line="233"/>
@@ -3566,27 +3566,27 @@ Wildcard: *.pcs.baidu.com (matches all subdomains)</translation>
 <context>
     <name>ProgressToast</name>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="88"/>
+        <location filename="../../view/components/progress_toast.py" line="96"/>
         <source>正在下载更新</source>
         <translation>Downloading Update</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="98"/>
+        <location filename="../../view/components/progress_toast.py" line="106"/>
         <source>更新已就绪</source>
         <translation>Update Ready</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="99"/>
+        <location filename="../../view/components/progress_toast.py" line="107"/>
         <source>重启后生效</source>
         <translation>Applies after app restart</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="109"/>
+        <location filename="../../view/components/progress_toast.py" line="117"/>
         <source>下载更新失败</source>
         <translation>Update Download Failed</translation>
     </message>
     <message>
-        <location filename="../../view/components/progress_toast.py" line="112"/>
+        <location filename="../../view/components/progress_toast.py" line="120"/>
         <source>未知错误</source>
         <translation>Unknown error</translation>
     </message>
@@ -4128,7 +4128,8 @@ Path: {1}</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="102"/>
         <source>线程越多，下载越快。线程数大于 64 时，有触发反爬导致文件损坏的风险</source>
-        <translation>More threads speed up downloads. Over 64 threads may trigger anti-scraping and corrupt files</translation>
+        <translation>More threads speed up downloads
+Over 64 threads may trigger rate limiting and corrupt files</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="103"/>
@@ -4538,7 +4539,8 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="318"/>
         <source>当前为 Portable 模式，数据保存在程序旁: {0}</source>
-        <translation>Currently in Portable mode, configuration stored next to the app: {0}</translation>
+        <translation>Currently running in Portable mode, configuration stored next to the app:
+{0}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="322"/>
@@ -4548,7 +4550,8 @@ when a thread completes or Auto Boost is enabled</translation>
     <message>
         <location filename="../../view/pages/setting_page.py" line="324"/>
         <source>当前为用户模式，数据保存在: {0}</source>
-        <translation>Currently in User mode, configuration stored at: {0}</translation>
+        <translation>Currently running in User mode, configuration stored at:
+{0}</translation>
     </message>
     <message>
         <location filename="../../view/pages/setting_page.py" line="328"/>
@@ -5429,7 +5432,8 @@ Data will be copied to new location and the app will then exit. Please manually 
     <message>
         <location filename="../../view/pages/task_page.py" line="811"/>
         <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
-        <translation>macOS has denied file deletion; please add Ghost Downloader into System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
+        <translation>macOS has denied file deletion; please add Ghost Downloader into
+System Settings &gt; Privacy &amp; Security &gt; Full Disk Access</translation>
     </message>
     <message>
         <location filename="../../view/pages/task_page.py" line="816"/>
