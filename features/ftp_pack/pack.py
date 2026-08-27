@@ -111,6 +111,7 @@ class FtpParser(TaskParser):
                 connectionInfo=connectionInfo,
                 sourceType=sourceType,
                 files=files,
+                subworkerCount=options.subworkerCount,
             )
             return task
         finally:

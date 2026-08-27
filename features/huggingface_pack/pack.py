@@ -75,8 +75,6 @@ class HuggingFaceParser(TaskParser):
         if token:
             headers["authorization"] = f"Bearer {token}"
 
-        from app.config.cfg import cfg
-
         if filePath:
             downloadUrl = self._fileUrl(repoId, repoType, revision, filePath)
             name = toSafeFilename(filePath.rsplit("/", 1)[-1], fallback="download")
@@ -100,13 +98,14 @@ class HuggingFaceParser(TaskParser):
                 repoId=repoId,
                 repoType=repoType,
                 revision=revision,
+                subworkerCount=options.subworkerCount,
             )
             task.addStep(HttpTaskStep(
                 stepIndex=1,
                 url=downloadUrl,
                 fileSize=fileSize,
                 headers=headers,
-                subworkerCount=cfg.preBlockNum.value,
+                subworkerCount=options.subworkerCount,
                 canUseRangeRequests=canUseRange,
             ))
             return task
@@ -146,7 +145,7 @@ class HuggingFaceParser(TaskParser):
                 url=file.downloadUrl,
                 fileSize=file.size,
                 headers=headers,
-                subworkerCount=cfg.preBlockNum.value,
+                subworkerCount=options.subworkerCount,
                 canUseRangeRequests=file.size > 0,
                 fileIndex=file.index,
             )
@@ -163,6 +162,7 @@ class HuggingFaceParser(TaskParser):
             revision=revision,
             files=files,
             steps=steps,
+            subworkerCount=options.subworkerCount,
         )
 
     async def _fetchTree(self, client, apiUrl: str) -> list[dict]:
