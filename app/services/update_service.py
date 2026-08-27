@@ -18,9 +18,10 @@ from loguru import logger
 
 from app.config.constants import VERSION
 from app.config.paths import APP_DATA_DIR, FEATURES_DIR, executableDir
+from app.models.pack import PackManifest
+from app.models.task import TaskError
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import matchChecksum
-from app.models.pack import PackManifest
 from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
 from app.update import APP_REPO, isNewer
 
@@ -108,7 +109,7 @@ class UpdateInfo:
     latestVersion: str
     state: UpdateState = UpdateState.IDLE
     progress: float = 0
-    error: str = ""
+    error: str | TaskError = ""
 
 
 class UpdateService(QObject):
@@ -201,7 +202,8 @@ class UpdateService(QObject):
                 await self._downloadPack(targetId, info)
         except Exception as e:
             logger.opt(exception=e).error("下载更新失败: {}", targetId)
-            self._emit(targetId, UpdateState.FAILED, error=str(e))
+            error = e if isinstance(e, TaskError) else str(e)
+            self._emit(targetId, UpdateState.FAILED, error=error)
 
     async def _downloadApp(self, info: UpdateInfo) -> None:
         appData = self._versionsData.get("app", {})
