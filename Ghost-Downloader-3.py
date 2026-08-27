@@ -204,7 +204,7 @@ def startApp(application, isSilent=False):
     if cfg.isBrowserExtensionEnabled.value:
         browserService.start()
     cfg.isBrowserExtensionEnabled.valueChanged.connect(browserService.setEnabled)
-    cfg.browserExtensionPort.valueChanged.connect(browserService.setPort)
+    cfg.browserExtensionPort.valueChanged.connect(lambda: cfg.isBrowserExtensionEnabled.value and (browserService.stop(), browserService.start())
 
     aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
     if cfg.isAria2RpcEnabled.value:
