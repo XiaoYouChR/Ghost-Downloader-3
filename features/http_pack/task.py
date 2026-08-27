@@ -17,7 +17,9 @@ from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSi
 from app.platform.sysio import ftruncate, pwrite
 
 STREAM_READ_TIMEOUT = 30
+IP_AFFINITY_RETRY_WINDOW = 10
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
+IP_AFFINITY_STATUS = frozenset({401, 403})
 FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO, 39, 112})
 
 
@@ -48,6 +50,19 @@ class HttpTask(Task):
     packId: str = "http"
     canEdit = True
 
+    def setStatus(self, status: TaskStatus) -> TaskStatus:
+        if status == TaskStatus.RUNNING and self.status == TaskStatus.FAILED:
+            for step in self.steps:
+                if isinstance(step, HttpTaskStep):
+                    step.isIpVersionBound = False
+        return super().setStatus(status)
+
+    def reset(self) -> TaskStatus:
+        for step in self.steps:
+            if isinstance(step, HttpTaskStep):
+                step.isIpVersionBound = False
+        return super().reset()
+
     def canReuseProgress(self, newTask: Task) -> bool:
         return (
             isinstance(newTask, HttpTask)
@@ -69,6 +84,8 @@ class HttpTaskStep(TaskStep):
     lastModified: str = ""
     isAccelerated: bool = False
     outputFile: str = ""
+    ipVersion: int = 0
+    isIpVersionBound: bool = False
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
     @property
@@ -255,7 +272,12 @@ class HttpTaskStep(TaskStep):
                 recordFile.close()
 
     async def _runSubworker(self, subworker: HttpSubworker, fd: int) -> None:
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
+        client = buildClient(
+            emulation=self._emulation,
+            userAgent=self.userAgent or None,
+            ipVersion=self.ipVersion if self.isIpVersionBound else 0,
+            readTimeout=STREAM_READ_TIMEOUT,
+        )
         try:
             await self._runSubworkerWith(subworker, fd, client)
         finally:
@@ -279,6 +301,8 @@ class HttpTaskStep(TaskStep):
                         async for chunk in response.stream():
                             if not chunk:
                                 continue
+                            if self._firstByteAt is None:
+                                self._firstByteAt = asyncio.get_running_loop().time()
                             pwrite(fd, chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
@@ -311,6 +335,8 @@ class HttpTaskStep(TaskStep):
                         async for chunk in response.stream():
                             if not chunk:
                                 continue
+                            if self._firstByteAt is None:
+                                self._firstByteAt = asyncio.get_running_loop().time()
                             pwrite(fd, chunk, subworker.receivedBytes)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
@@ -351,6 +377,8 @@ class HttpTaskStep(TaskStep):
                         async for chunk in response.stream():
                             if not chunk:
                                 continue
+                            if self._firstByteAt is None:
+                                self._firstByteAt = asyncio.get_running_loop().time()
                             remaining = subworker.end - subworker.position + 1
                             if len(chunk) > remaining:
                                 chunk = chunk[:remaining]
@@ -384,6 +412,7 @@ class HttpTaskStep(TaskStep):
         self._speedHistory: list[int] = []
         self._accelCheckTime = 0
         shouldDeleteRecord = False
+        hasRetriedIpVersion = False
 
         Path(self.outputPath).parent.mkdir(parents=True, exist_ok=True)
 
@@ -394,12 +423,42 @@ class HttpTaskStep(TaskStep):
         self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
 
         probeHeaders = {**self._effectiveHeaders, "range": "bytes=0-0", "accept-encoding": "identity"}
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, timeout=30)
+        client = buildClient(
+            emulation=self._emulation,
+            userAgent=self.userAgent or None,
+            ipVersion=self.ipVersion if self.isIpVersionBound else 0,
+            timeout=30,
+        )
+        response = None
         try:
             response = await client.get(self.url, headers=probeHeaders)
+            status = response.status.as_int()
+            if status in IP_AFFINITY_STATUS and self.ipVersion and not self.isIpVersionBound:
+                response.close()
+                client.close()
+                logger.warning(
+                    "HTTP 下载探测返回 {}，使用浏览器捕获的 IPv{} 重试",
+                    status, self.ipVersion,
+                )
+                self.isIpVersionBound = True
+                hasRetriedIpVersion = True
+                client = buildClient(
+                    emulation=self._emulation,
+                    userAgent=self.userAgent or None,
+                    ipVersion=self.ipVersion,
+                    timeout=30,
+                )
+                response = await client.get(self.url, headers=probeHeaders)
+                status = response.status.as_int()
+                logger.info("IPv{} HTTP 下载探测重试返回 {}", self.ipVersion, status)
+
+            if status in IP_AFFINITY_STATUS and self.isIpVersionBound:
+                logger.error("IPv{} HTTP 下载探测失败，状态码 {}", self.ipVersion, status)
+                raise TaskError("服务器返回了错误（{status}）", status=status)
             self._effectiveUrl = str(response.url)
-            response.close()
         finally:
+            if response is not None:
+                response.close()
             client.close()
 
         restored = False
@@ -431,6 +490,7 @@ class HttpTaskStep(TaskStep):
                 logger.opt(exception=e).error("{} 预分配文件大小失败", self.outputPath)
 
         try:
+            self._firstByteAt: float | None = None
             while True:
                 supervisor = asyncio.create_task(self._supervise())
                 try:
@@ -439,6 +499,8 @@ class HttpTaskStep(TaskStep):
                         for subworker in self.subworkers:
                             self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
 
+                    if hasRetriedIpVersion:
+                        logger.info("IPv{} HTTP 下载重试成功", self.ipVersion)
                     self.setStatus(TaskStatus.COMPLETED)
                     shouldDeleteRecord = True
                     break
@@ -458,8 +520,40 @@ class HttpTaskStep(TaskStep):
                         self._accelCheckTime = 0
                         continue
 
-                    cause = eg.exceptions[0]
+                    affinityError = next((
+                        e for e in eg.exceptions
+                        if isinstance(e, PermanentDownloadError)
+                        and e.status in IP_AFFINITY_STATUS
+                    ), None)
+                    dataElapsed = (
+                        asyncio.get_running_loop().time() - self._firstByteAt
+                        if self._firstByteAt is not None
+                        else 0
+                    )
+                    if (
+                        affinityError
+                        and self.ipVersion
+                        and not self.isIpVersionBound
+                        and dataElapsed <= IP_AFFINITY_RETRY_WINDOW
+                    ):
+                        logger.warning(
+                            "HTTP 下载返回 {}，使用浏览器捕获的 IPv{} 重试所有未完成分片",
+                            affinityError.status, self.ipVersion,
+                        )
+                        self.isIpVersionBound = True
+                        hasRetriedIpVersion = True
+                        continue
+
+                    if affinityError and self.ipVersion and not self.isIpVersionBound:
+                        logger.warning(
+                            "HTTP 数据传输已持续 {:.1f} 秒，跳过 IPv{} 回退重试（状态码 {}）",
+                            dataElapsed, self.ipVersion, affinityError.status,
+                        )
+
+                    cause = affinityError or eg.exceptions[0]
                     if isinstance(cause, PermanentDownloadError):
+                        if cause.status in IP_AFFINITY_STATUS and self.isIpVersionBound:
+                            logger.error("IPv{} HTTP 下载失败，状态码 {}", self.ipVersion, cause.status)
                         raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
                     if isinstance(cause, OSError) and cause.errno in FATAL_IO_ERRNO:
                         raise TaskError("磁盘空间不足") from eg

@@ -53,6 +53,11 @@ type NetworkResponseMeta = {
 
 type DesktopRequestSender = <T extends CommandResult>(payload: Record<string, unknown>, timeoutMs?: number) => Promise<T>;
 
+function toIpVersion(ip?: string): 0 | 4 | 6 {
+  if (!ip) { return 0; }
+  return ip.includes(":") ? 6 : 4;
+}
+
 export function createResourceBridge(options: {
   sendDesktopRequest: DesktopRequestSender;
 }) {
@@ -325,6 +330,7 @@ export function createResourceBridge(options: {
       mime: string;
       size: number;
       supportsRange: boolean;
+      ipVersion?: 0 | 4 | 6;
       extraHeaders?: Record<string, string>;
     },
   ) {
@@ -346,6 +352,7 @@ export function createResourceBridge(options: {
       mime: parts.mime,
       size: parts.size,
       supportsRange: parts.supportsRange || Boolean(headerSnapshot?.supportsRange),
+      ipVersion: parts.ipVersion || headerSnapshot?.ipVersion || 0,
       referer,
       requestHeaders: headers,
       capturedAt: Date.now(),
@@ -372,8 +379,12 @@ export function createResourceBridge(options: {
     const meta = toResponseMeta(details.responseHeaders);
     meta.mime = mimeFromUrl(details.url) || meta.mime;
     const responseSupportsRange = meta.supportsRange || details.statusCode === 206;
+    const ipVersion = toIpVersion(details.ip);
     if (isCapturableUrl(details.url) && (responseSupportsRange || meta.size > 0)) {
-      cache.setHeaderSnapshot(details.url, {}, details.tabId > 0 ? details.tabId : lastActiveTabId, responseSupportsRange, meta.size);
+      cache.setHeaderSnapshot(
+        details.url, {}, details.tabId > 0 ? details.tabId : lastActiveTabId,
+        responseSupportsRange, meta.size, ipVersion,
+      );
     }
 
     if (!shouldCaptureNetworkResource(details, meta)) {
@@ -391,6 +402,7 @@ export function createResourceBridge(options: {
       mime: meta.mime,
       size: meta.size,
       supportsRange: responseSupportsRange,
+      ipVersion,
     });
   }
 
@@ -446,6 +458,7 @@ export function createResourceBridge(options: {
             || headerSnapshot?.supportsRange
             || downloadItem.canResume === true,
           ),
+          ipVersion: headerSnapshot?.ipVersion || matchedResource?.ipVersion || 0,
         },
       });
       if (result.ok) {
@@ -546,6 +559,7 @@ export function createResourceBridge(options: {
       mime: mimeFromUrl(url),
       size: 0,
       supportsRange: Boolean(snapshot?.supportsRange),
+      ipVersion: snapshot?.ipVersion ?? 0,
       referer,
       requestHeaders: headers,
       capturedAt: Date.now(),
@@ -658,6 +672,7 @@ export function createResourceBridge(options: {
             headers: resource.requestHeaders,
             pageTitle: resource.pageTitle,
             supportsRange: resource.supportsRange,
+            ipVersion: resource.ipVersion,
           })),
         },
       });

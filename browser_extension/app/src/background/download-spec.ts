@@ -13,6 +13,7 @@ export interface ResourceTaskOptions {
   filename: string;
   size: number;
   supportsRange: boolean;
+  ipVersion: 0 | 4 | 6;
 }
 
 // Minimal shape resourceNameFromCapture reads; CapturePayload (cat-catch addMedia path)
@@ -108,5 +109,6 @@ export function toResourceTaskOptions(resource: Resource): ResourceTaskOptions {
     filename: taskNameForResource(resource),
     size: resource.size,
     supportsRange: resource.supportsRange,
+    ipVersion: resource.ipVersion,
   };
 }

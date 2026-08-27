@@ -113,6 +113,11 @@ def toInt(data: dict, key: str, default: int) -> int:
     return value if isinstance(value, int) and value > 0 else default
 
 
+def toIpVersion(data: dict, key: str) -> int:
+    value = data.get(key)
+    return value if value in {4, 6} else 0
+
+
 class BrowserService(QObject):
     pairRequested = Signal(object)
     taskDraftRequested = Signal(list)
@@ -208,6 +213,7 @@ class BrowserService(QObject):
             name=toStr(resource, "filename"),
             size=toInt(resource, "size", 0),
             canUseRangeRequests=bool(resource.get("supportsRange")),
+            ipVersion=toIpVersion(resource, "ipVersion"),
             headers=hdrs,
             sourceUserAgent=hdrs.get("user-agent", ""),
         )
@@ -591,5 +597,4 @@ class BrowserService(QObject):
         except Exception as e:
             logger.opt(exception=e).error("Browser task action failed")
             self._sendResult(session, MessageType.TASK_ACTION_RESULT, requestId, ok=False, message=repr(e))
-
 
