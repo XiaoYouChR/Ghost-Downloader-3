@@ -68,6 +68,7 @@ class HttpTaskStep(TaskStep):
     httpByteOffset: int = 0
     lastModified: str = ""
     isAccelerated: bool = False
+    isSingleSubworker: bool = False
     outputFile: str = ""
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
@@ -96,7 +97,11 @@ class HttpTaskStep(TaskStep):
             self.clientProfile = options["clientProfile"]
         if "userAgent" in options:
             self.userAgent = options["userAgent"]
-        if "subworkerCount" in options:
+        if "isSingleSubworker" in options:
+            self.isSingleSubworker = bool(options["isSingleSubworker"])
+        if self.isSingleSubworker:
+            self.subworkerCount = 1
+        elif "subworkerCount" in options:
             self.subworkerCount = options["subworkerCount"]
 
     @property
@@ -171,7 +176,7 @@ class HttpTaskStep(TaskStep):
         return newSubworker
 
     def _reassignSubworker(self) -> None:
-        if self.fileSize <= 0:
+        if self.isSingleSubworker or self.fileSize <= 0:
             return
         slowest = max(self.subworkers, key=lambda sw: sw.end - sw.position + 1)
         if slowest.end - slowest.position + 1 < cfg.maxReassignSize.value * 1024:
@@ -181,7 +186,7 @@ class HttpTaskStep(TaskStep):
             self._taskGroup.create_task(self._runSubworker(newSw, self._fd))
 
     def _autoSpeedUp(self) -> None:
-        if self.isAccelerated or not cfg.autoSpeedUp.value:
+        if self.isSingleSubworker or self.isAccelerated or not cfg.autoSpeedUp.value:
             return
 
         self._speedHistory.append(self.speed)
@@ -436,8 +441,12 @@ class HttpTaskStep(TaskStep):
                 try:
                     self._taskGroup = TaskGroup()
                     async with self._taskGroup:
-                        for subworker in self.subworkers:
-                            self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+                        if self.isSingleSubworker:
+                            for subworker in self.subworkers:
+                                await self._runSubworker(subworker, self._fd)
+                        else:
+                            for subworker in self.subworkers:
+                                self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
 
                     self.setStatus(TaskStatus.COMPLETED)
                     shouldDeleteRecord = True
