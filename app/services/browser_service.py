@@ -183,12 +183,6 @@ class BrowserService(QObject):
         else:
             self.stop()
 
-    def setPort(self, _port: int) -> None:
-        if not cfg.isBrowserExtensionEnabled.value:
-            return
-        self.stop()
-        self.start()
-
     def approvePair(self, session: BrowserClientSession, requestId: str) -> None:
         self._send(session, {
             "type": MessageType.PAIR_RESULT,
