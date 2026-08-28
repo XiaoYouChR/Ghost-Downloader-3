@@ -5,13 +5,12 @@ from urllib.parse import urlparse
 from app.client import buildClient
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import TaskOptions
-from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
 from .cards import BilibiliDraftCard, BilibiliTaskCard
 from .config import bilibiliConfig
 from .parse import buildPages, parseBiliUrl
 from .stream import buildSize, fetchPlayurl, toStreamUrl
-from .task import BilibiliTask
+from .task import BilibiliTask, toSafeName
 
 
 class BilibiliParser(TaskParser):
@@ -67,7 +66,7 @@ class BilibiliParser(TaskParser):
                 raise ValueError("未获取到视频分P信息")
 
             requestedQuality = bilibiliConfig.defaultQuality.value
-            baseName = toSafeFilename(title, fallback="bilibili_video")
+            baseName = toSafeName(title, fallback="bilibili_video")
             for page in parsedPages:
                 page.headers = dict(downloadHeaders)
                 page.subworkerCount = subworkerCount

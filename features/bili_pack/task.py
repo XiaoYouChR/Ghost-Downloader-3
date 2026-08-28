@@ -18,6 +18,10 @@ from .stream import buildSize, fetchPlayurl, probeSize, toStreamUrl
 AUDIO_QUALITY_LABELS = {30216: "64K", 30232: "132K", 30280: "192K", 30250: "杜比全景声", 30251: "Hi-Res"}
 
 
+def toSafeName(name: str, fallback: str = "file") -> str:
+    return toSafeFilename(name.replace("/", "_").replace("\\", "_"), fallback=fallback)
+
+
 def buildTimeSuffix(startTime: int, endTime: int) -> str:
     def fmt(sec: int) -> str:
         m, s = divmod(sec, 60)
@@ -331,11 +335,11 @@ class BilibiliTask(Task):
         if len(self.files or []) <= 1:
             return ""
         if page.episodeTitle:
-            title = toSafeFilename(page.episodeTitle, fallback=page.bvid or "video")
+            title = toSafeName(page.episodeTitle, fallback=page.bvid or "video")
             same = sum(1 for f in (self.files or []) if f.bvid == page.bvid)
             if same > 1:
                 suffix = f" - {title} - P{page.pageNumber}"
-                part = toSafeFilename(page.pagePart.strip(), fallback="") if page.pagePart.strip() else ""
+                part = toSafeName(page.pagePart.strip(), fallback="") if page.pagePart.strip() else ""
                 if part and part != title:
                     suffix += f" {part}"
             else:
@@ -344,7 +348,7 @@ class BilibiliTask(Task):
             suffix = f" - P{page.pageNumber}"
             part = page.pagePart.strip()
             if part and part != self._baseName:
-                suffix += f" {toSafeFilename(part, fallback=part)}"
+                suffix += f" {toSafeName(part, fallback=part)}"
         if page.startTime or page.endTime:
             suffix += f" {buildTimeSuffix(page.startTime, page.endTime)}"
         return suffix
@@ -366,7 +370,7 @@ class BilibiliCoverStep(HttpTaskStep):
             title = (page.episodeTitle or page.bvid or f"#{page.index}") if page else ""
             if title:
                 stem = f"{stem} - {title}"
-        return str(self.task.filesFolder / toSafeFilename(f"{stem}.jpg", fallback="cover.jpg"))
+        return str(self.task.filesFolder / toSafeName(f"{stem}.jpg", fallback="cover.jpg"))
 
 
 @dataclass(kw_only=True)
