@@ -263,6 +263,22 @@ class HttpTaskStep(TaskStep):
                 else:
                     self.progress = 0
 
+                if (
+                    self._firstByteAt is not None
+                    and not self.hasIpFallbackWindowExpired
+                    and self.ipVersion
+                    and not self.isIpVersionBound
+                    and (
+                        asyncio.get_running_loop().time() - self._firstByteAt
+                        >= IP_AFFINITY_RETRY_WINDOW
+                    )
+                ):
+                    self.hasIpFallbackWindowExpired = True
+                    logger.info(
+                        "HTTP 双栈回退计时结束，后续 401/403 不再触发 IPv{} 重试",
+                        self.ipVersion,
+                    )
+
                 self._autoSpeedUp()
                 await asyncio.sleep(1)
         except CancelledError:
@@ -303,6 +319,11 @@ class HttpTaskStep(TaskStep):
                                 continue
                             if self._firstByteAt is None:
                                 self._firstByteAt = asyncio.get_running_loop().time()
+                                if self.ipVersion and not self.isIpVersionBound:
+                                    logger.info(
+                                        "HTTP 双栈回退计时开始（{} 秒，目标 IPv{}）",
+                                        IP_AFFINITY_RETRY_WINDOW, self.ipVersion,
+                                    )
                             pwrite(fd, chunk, subworker.position)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
@@ -337,6 +358,11 @@ class HttpTaskStep(TaskStep):
                                 continue
                             if self._firstByteAt is None:
                                 self._firstByteAt = asyncio.get_running_loop().time()
+                                if self.ipVersion and not self.isIpVersionBound:
+                                    logger.info(
+                                        "HTTP 双栈回退计时开始（{} 秒，目标 IPv{}）",
+                                        IP_AFFINITY_RETRY_WINDOW, self.ipVersion,
+                                    )
                             pwrite(fd, chunk, subworker.receivedBytes)
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
@@ -379,6 +405,11 @@ class HttpTaskStep(TaskStep):
                                 continue
                             if self._firstByteAt is None:
                                 self._firstByteAt = asyncio.get_running_loop().time()
+                                if self.ipVersion and not self.isIpVersionBound:
+                                    logger.info(
+                                        "HTTP 双栈回退计时开始（{} 秒，目标 IPv{}）",
+                                        IP_AFFINITY_RETRY_WINDOW, self.ipVersion,
+                                    )
                             remaining = subworker.end - subworker.position + 1
                             if len(chunk) > remaining:
                                 chunk = chunk[:remaining]
@@ -433,6 +464,10 @@ class HttpTaskStep(TaskStep):
         try:
             response = await client.get(self.url, headers=probeHeaders)
             status = response.status.as_int()
+            logger.info(
+                "HTTP 下载探测连接到 {}，浏览器捕获 ipVersion={}",
+                response.remote_addr, self.ipVersion,
+            )
             if status in IP_AFFINITY_STATUS and self.ipVersion and not self.isIpVersionBound:
                 response.close()
                 client.close()
@@ -491,6 +526,7 @@ class HttpTaskStep(TaskStep):
 
         try:
             self._firstByteAt: float | None = None
+            self.hasIpFallbackWindowExpired = False
             while True:
                 supervisor = asyncio.create_task(self._supervise())
                 try:
