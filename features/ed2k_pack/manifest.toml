@@ -1,6 +1,0 @@
-[pack]
-entry = "pack.py"
-class = "ED2kPack"
-dependencies = []
-version = "1.2.1"
-gdMinVersion = "4.2.0"
