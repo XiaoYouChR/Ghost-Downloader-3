@@ -1,0 +1,146 @@
+/*
+ * Ghost Downloader — MSE attribution probe (MAIN world).
+ * Proxy layout derived from cat-catch (catch-script/catch.js); upstream is GPL-3.0.
+ * We post tagged, typed signals to the ISOLATED-world attribution engine instead of
+ * capturing buffers. Built as a standalone IIFE bundle (see scripts/build.mjs).
+ */
+import {postMediaSignal} from "./attribution-signal";
+
+declare global {
+  interface Window {
+    __gdMseAttributionInstalled?: boolean;
+  }
+}
+
+type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
+
+(function installGhostDownloaderMseAttribution() {
+  if (window.__gdMseAttributionInstalled) { return; }
+  window.__gdMseAttributionInstalled = true;
+
+  const mediaSourceIdByInstance = new WeakMap<MediaSource, string>();
+  let mediaSourceCounter = 0;
+
+  function mediaSourceId(mediaSource: MediaSource): string {
+    let id = mediaSourceIdByInstance.get(mediaSource);
+    if (id == null) {
+      mediaSourceCounter += 1;
+      id = `ms-${mediaSourceCounter}`;
+      mediaSourceIdByInstance.set(mediaSource, id);
+    }
+    return id;
+  }
+
+  // Record blob URL → MediaSource so the attribution engine can attribute <video>.src to a MS.
+  if (typeof window.URL?.createObjectURL === "function" && typeof window.MediaSource !== "undefined") {
+    const originalCreateObjectUrl = window.URL.createObjectURL;
+    window.URL.createObjectURL = function patchedCreateObjectURL(source: Blob | MediaSource): string {
+      const url = originalCreateObjectUrl(source);
+      if (source instanceof MediaSource) {
+        postMediaSignal({ kind: "mse_objecturl", mediaSourceId: mediaSourceId(source), objectUrl: url });
+      }
+      return url;
+    };
+  }
+
+  if (typeof window.MediaSource !== "undefined") {
+    const originalAddSourceBuffer = MediaSource.prototype.addSourceBuffer;
+    MediaSource.prototype.addSourceBuffer = function patchedAddSourceBuffer(this: MediaSource, mimeType: string): SourceBuffer {
+      const sourceBuffer = originalAddSourceBuffer.call(this, mimeType);
+      const sourceId = mediaSourceId(this);
+      postMediaSignal({ kind: "mse_source_buffer_added", mediaSourceId: sourceId, mimeType });
+      try {
+        const originalAppendBuffer = sourceBuffer.appendBuffer;
+        sourceBuffer.appendBuffer = function patchedAppendBuffer(this: SourceBuffer, data: BufferSource): void {
+          postMediaSignal({ kind: "mse_buffer_appended", mediaSourceId: sourceId, mimeType });
+          return originalAppendBuffer.call(this, data);
+        };
+      } catch {
+        // Frozen SourceBuffer prototype on some players.
+      }
+      return sourceBuffer;
+    };
+  }
+
+  function probeStreamContent(response: Response, url: string): void {
+    try {
+      const contentLength = parseInt(response.headers.get("content-length") || "", 10);
+      if (contentLength > 2_000_000) { return; }
+      const reader = response.clone().body?.getReader();
+      if (!reader) { return; }
+      reader.read().then(({ value }) => {
+        reader.cancel();
+        if (!value || value[0] !== 0x23) { return; }
+        const text = new TextDecoder().decode(value);
+        if (!text.startsWith("#EXTM3U")) { return; }
+        postMediaSignal({
+          kind: "stream_detected",
+          url,
+          isMaster: text.includes("#EXT-X-STREAM-INF"),
+        });
+      }).catch(() => {});
+    } catch { /* Opaque response — clone() throws. */ }
+  }
+
+  if (typeof window.fetch === "function") {
+    const originalFetch = window.fetch;
+    window.fetch = function patchedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      const url = typeof input === "string"
+        ? input
+        : input instanceof Request
+          ? input.url
+          : String(input ?? "");
+      const promise = originalFetch(input, init);
+      promise.then((response) => {
+        try {
+          const resolvedUrl = response?.url || url;
+          postMediaSignal({
+            kind: "request_completed",
+            url: resolvedUrl,
+            contentType: response?.headers?.get?.("content-type") ?? "",
+          });
+          probeStreamContent(response, resolvedUrl);
+        } catch {
+          // Opaque response.
+        }
+      }).catch(() => {});
+      return promise;
+    };
+  }
+
+  try {
+    const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function patchedOpen(this: GhostXMLHttpRequest, method: string, url: string | URL, ...rest: unknown[]): void {
+      this.__gdUrl = String(url);
+      return (originalOpen as (...args: unknown[]) => void).apply(this, [method, url, ...rest]);
+    };
+    XMLHttpRequest.prototype.send = function patchedSend(this: GhostXMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
+      const xhr = this;
+      xhr.addEventListener("loadend", () => {
+        const resolvedUrl = xhr.responseURL || xhr.__gdUrl || "";
+        try {
+          postMediaSignal({
+            kind: "request_completed",
+            url: resolvedUrl,
+            contentType: xhr.getResponseHeader?.("content-type") ?? "",
+          });
+        } catch {
+          // Opaque response.
+        }
+        try {
+          if ((xhr.responseType === "" || xhr.responseType === "text") && xhr.responseText?.startsWith("#EXTM3U")) {
+            postMediaSignal({
+              kind: "stream_detected",
+              url: resolvedUrl,
+              isMaster: xhr.responseText.includes("#EXT-X-STREAM-INF"),
+            });
+          }
+        } catch { /* responseText throws on non-text responseType. */ }
+      });
+      return originalSend.call(this, body);
+    };
+  } catch {
+    // Frozen XHR prototype on some players.
+  }
+})();

@@ -1,0 +1,32 @@
+name: Auto Confirmed
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  auto-confirm:
+    if: >-
+      !github.event.issue.pull_request &&
+      github.event.comment.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const labels = issue.data.labels.map(l => l.name);
+            if (!labels.includes('🔍needs-info')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['✅confirmed']
+              });
+            }

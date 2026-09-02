@@ -1,0 +1,40 @@
+name: Feature Request (EN)
+description: Suggest an idea or improvement
+title: "[Feature] "
+labels:
+  - "✨Enhancement"
+body:
+- type: checkboxes
+  id: no-duplicate
+  attributes:
+    label: Checklist
+    options:
+      - label: I have searched existing issues and Discussions to confirm this is not a duplicate
+        required: true
+
+- type: textarea
+  id: problem-description
+  attributes:
+    label: Problem description
+    description: What problem are you trying to solve? What difficulty does the current app cause without this feature?
+  validations:
+    required: true
+
+- type: textarea
+  id: solution-description
+  attributes:
+    label: Proposed solution
+    description: How do you expect this to work?
+  validations:
+    required: true
+
+- type: textarea
+  id: alternatives
+  attributes:
+    label: Alternatives
+
+- type: textarea
+  id: additional-info
+  attributes:
+    label: Additional information
+    render: markdown

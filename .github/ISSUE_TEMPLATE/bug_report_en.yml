@@ -1,0 +1,107 @@
+name: Bug Report (EN)
+description: Submit a bug report
+title: "[Bug] "
+labels:
+  - "🐛Bug"
+body:
+- type: checkboxes
+  id: no-duplicate
+  attributes:
+    label: Checklist
+    options:
+      - label: I have searched existing issues and confirmed this is not a duplicate
+        required: true
+
+- type: textarea
+  id: description
+  attributes:
+    label: Description
+    description: Briefly describe the problem
+  validations:
+    required: true
+
+- type: textarea
+  id: repro-steps
+  attributes:
+    label: Steps to reproduce
+    render: markdown
+    placeholder: |
+      1. Open the app
+      2. Go to '...'
+      3. Click '...'
+      4. Issue appears
+  validations:
+    required: true
+
+- type: input
+  id: source-url
+  attributes:
+    label: Source URL
+    description: The download link that triggered this issue. Enter N/A if not link-related
+    placeholder: "https://example.com/file.zip or N/A"
+  validations:
+    required: true
+
+- type: textarea
+  id: expected-behavior
+  attributes:
+    label: Expected behavior
+    render: markdown
+
+- type: textarea
+  id: screenshots
+  attributes:
+    label: Screenshots
+
+- type: input
+  id: gd-version
+  attributes:
+    label: Ghost Downloader version
+    placeholder: "e.g. v4.2.6"
+  validations:
+    required: true
+
+- type: input
+  id: extension-version
+  attributes:
+    label: Browser extension version
+    description: Enter N/A if not extension-related
+    placeholder: "e.g. 1.2.0 or N/A"
+  validations:
+    required: true
+
+- type: dropdown
+  id: os
+  attributes:
+    label: Operating system
+    options:
+      - Windows 10
+      - Windows 11
+      - macOS
+      - Linux
+      - Android
+  validations:
+    required: true
+
+- type: input
+  id: os-detail
+  attributes:
+    label: OS version details
+    description: Windows run winver, Linux include glibc version (run ldd --version), Android include version, device and ROM name
+    placeholder: "e.g. 24H2 Build 26200 / macOS 15.1 / Fedora 44 glibc 2.41 / Android 16 OPPO Find X8s ColorOS 16"
+  validations:
+    required: true
+
+- type: textarea
+  id: log-info
+  attributes:
+    label: Logs
+    description: Paste the error message, or go to Settings → About → Feedback → View logs and upload GhostDownloader.log
+  validations:
+    required: true
+
+- type: textarea
+  id: additional-context
+  attributes:
+    label: Additional context
+    render: markdown

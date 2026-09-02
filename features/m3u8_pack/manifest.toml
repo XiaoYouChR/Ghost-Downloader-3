@@ -1,0 +1,6 @@
+[pack]
+entry = "pack.py"
+class = "M3U8Pack"
+dependencies = ["http_pack", "ffmpeg_pack"]
+version = "1.0.2"
+gdMinVersion = "4.2.0"

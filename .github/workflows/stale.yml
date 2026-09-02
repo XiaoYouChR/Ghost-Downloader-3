@@ -1,0 +1,38 @@
+name: Stale Issues
+on:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v11
+        with:
+          only-labels: '🔍needs-info'
+          days-before-stale: -1
+          days-before-close: 10
+          close-issue-message: >-
+            此 issue 因等待补充信息超过 10 天未收到回复而被自动关闭。
+            如果问题仍然存在，请补充所需信息后重新打开。
+          close-issue-reason: not_planned
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          operations-per-run: 50
+
+      - uses: actions/stale@v11
+        with:
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-message: >-
+            此 issue 已超过 30 天没有活动，将在 7 天后自动关闭。
+            如仍需处理，请回复或添加新信息。
+          close-issue-message: >-
+            此 issue 因长期无活动已自动关闭。
+            如果问题仍然存在，欢迎重新打开。
+          stale-issue-label: '⏰stale'
+          exempt-issue-labels: '✅confirmed,⏸️blocked-upstream'
+          close-issue-reason: not_planned
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          operations-per-run: 100

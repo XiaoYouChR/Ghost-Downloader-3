@@ -1,0 +1,10 @@
+dist/
+deployment/
+*.apk
+.buildozer/
+
+pysidedeploy.spec
+buildozer.spec
+
+__pycache__/
+*.pyc

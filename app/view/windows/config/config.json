@@ -1,0 +1,54 @@
+{
+    "GeneralDownload": {
+        "AutoSpeedUp": true,
+        "DownloadFolder": "/Users/xiaoyouchr/Downloads",
+        "isSpeedLimitEnabled": false,
+        "MaxReassignSize": 3,
+        "MaxTaskNum": 3,
+        "HistoryDownloadFolder": [],
+        "PreBlockNum": 8,
+        "ProxyServer": "Auto",
+        "shouldVerifySsl": false,
+        "SpeedLimitation": 4194304
+    },
+    "Browser": {
+        "BrowserExtensionPairToken": "",
+        "EnableBrowserExtension": false,
+        "EnableRaiseWindowWhenReceiveMsg": false
+    },
+    "Category": {
+        "CategoryRules": "[{\"categoryId\": \"cat_video\", \"name\": \"视频\", \"icon\": \"VIDEO\", \"extensions\": [\"mp4\", \"mkv\", \"avi\", \"mov\", \"wmv\", \"flv\", \"webm\", \"m4v\", \"rmvb\", \"rm\", \"mpg\", \"mpeg\", \"mpe\", \"mpa\", \"3gp\", \"ts\", \"m2ts\", \"ogv\", \"asf\", \"qt\"], \"folder\": \"{default}/Video\"}, {\"categoryId\": \"cat_audio\", \"name\": \"音频\", \"icon\": \"MUSIC\", \"extensions\": [\"mp3\", \"flac\", \"wav\", \"aac\", \"ogg\", \"m4a\", \"wma\", \"ape\", \"opus\", \"mid\", \"ra\", \"aif\"], \"folder\": \"{default}/Audio\"}, {\"categoryId\": \"cat_image\", \"name\": \"图片\", \"icon\": \"PHOTO\", \"extensions\": [\"jpg\", \"jpeg\", \"png\", \"gif\", \"bmp\", \"webp\", \"avif\", \"svg\", \"tif\", \"tiff\", \"ico\", \"heic\", \"heif\"], \"folder\": \"{default}/Images\"}, {\"categoryId\": \"cat_subtitle\", \"name\": \"字幕\", \"icon\": \"CHAT\", \"extensions\": [\"srt\", \"ass\", \"ssa\", \"sub\", \"sup\", \"idx\", \"vtt\", \"lrc\", \"smi\", \"psb\"], \"folder\": \"{default}/Subtitles\"}, {\"categoryId\": \"cat_document\", \"name\": \"文档\", \"icon\": \"DOCUMENT\", \"extensions\": [\"pdf\", \"doc\", \"docx\", \"xls\", \"xlsx\", \"ppt\", \"pptx\", \"txt\", \"epub\", \"mobi\", \"azw3\", \"rtf\", \"odt\", \"ods\", \"odp\", \"md\", \"csv\", \"nfo\", \"chm\"], \"folder\": \"{default}/Documents\"}, {\"categoryId\": \"cat_archive\", \"name\": \"压缩包\", \"icon\": \"ZIP_FOLDER\", \"extensions\": [\"zip\", \"rar\", \"7z\", \"tar\", \"gz\", \"gzip\", \"bz2\", \"xz\", \"tgz\", \"tbz2\", \"zst\", \"ace\", \"arj\", \"cab\", \"lzh\", \"sea\", \"sit\", \"sitx\", \"z\", \"001\", \"tar.gz\", \"tar.bz2\", \"tar.xz\", \"tar.zst\"], \"folder\": \"{default}/Archives\"}, {\"categoryId\": \"cat_program\", \"name\": \"程序\", \"icon\": \"APPLICATION\", \"extensions\": [\"exe\", \"msi\", \"msu\", \"msp\", \"apk\", \"apks\", \"apkm\", \"dmg\", \"pkg\", \"deb\", \"rpm\", \"appimage\", \"iso\", \"img\", \"esd\", \"wim\", \"bin\", \"jar\", \"bat\", \"sh\", \"com\"], \"folder\": \"{default}/Programs\"}, {\"categoryId\": \"cat_other\", \"name\": \"其他\", \"icon\": \"HELP\", \"extensions\": [], \"folder\": null}]",
+        "EnableCategory": false
+    },
+    "Network": {
+        "ClientProfile": "auto",
+        "DefaultHeaders": "{\"accept-encoding\": \"deflate, br, gzip\", \"accept-language\": \"zh-CN,zh;q=0.9\", \"cookie\": \"down_ip=1\", \"sec-fetch-dest\": \"document\", \"sec-fetch-mode\": \"navigate\", \"sec-fetch-site\": \"none\", \"sec-fetch-user\": \"?1\", \"upgrade-insecure-requests\": \"1\"}"
+    },
+    "UI": {
+        "CollapsedSettingGroups": [],
+        "SettingGroupOrder": []
+    },
+    "Personalization": {
+        "ThemeMode": "Auto",
+        "DpiScale": 0,
+        "Language": "Auto",
+        "ShowDockIcon": true,
+        "ShowDockSpeed": true,
+        "ShowMenuBarSpeed": true
+    },
+    "QFluentWidgets": {
+        "FontFamilies": [
+            "Segoe UI",
+            "Microsoft YaHei",
+            "PingFang SC"
+        ],
+        "ThemeColor": "#ff009faa",
+        "ThemeMode": "Light"
+    },
+    "Software": {
+        "Geometry": "0,0,0,0",
+        "ClipboardListener": true,
+        "CheckUpdateAtStartUp": true,
+        "AutoRun": false
+    }
+}

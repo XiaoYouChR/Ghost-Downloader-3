@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="gd3_splash_bg">#202020</color>
+
+    <bool name="gd3_light_status_bar">false</bool>
+</resources>
