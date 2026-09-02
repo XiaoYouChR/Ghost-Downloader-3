@@ -43,6 +43,8 @@ browser_extension/firefox/
 # Marketing screenshot portable profile (scripts/marketing_shots.py)
 /GhostDownloader/
 
-# Generated local launcher binary
+# Generated local binaries
 Ghost-Downloader.exe
+Installer.exe
+
 
