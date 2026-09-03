@@ -2239,6 +2239,14 @@ select &quot;No Emulation&quot; to send as-is</translation>
     </message>
 </context>
 <context>
+    <name>HttpTaskCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="110"/>
+        <source>双栈回退：IPv{ipversion}</source>
+        <translation>Dual Stack Fallback: IPv{ipversion}</translation>
+    </message>
+</context>
+<context>
     <name>HuggingFaceConfig</name>
     <message>
         <location filename="../../../features/huggingface_pack/config.py" line="233"/>

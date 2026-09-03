@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import isDarkTheme, themeColor
 
+from app.models.task import Task, TaskStatus
 from app.view.cards.task_cards import TaskCard
 from .task import HttpTaskStep
 
@@ -97,3 +98,13 @@ class HttpTaskCard(TaskCard):
         if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.fileSize > 0 and step.subworkerCount > 1:
             return SegmentedProgressBar(step, self)
         return super()._createProgressBar()
+
+    def _refreshForStatus(self, task: Task) -> None:
+        super()._refreshForStatus(task)
+        step = task.steps[0] if task.steps else None
+        if (
+            task.status == TaskStatus.RUNNING
+            and isinstance(step, HttpTaskStep)
+            and step.isIpVersionBound
+        ):
+            self._setStatus(self.tr("双栈回退：IPv{ipversion}").format(ipversion=step.ipVersion))

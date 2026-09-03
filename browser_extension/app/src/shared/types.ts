@@ -59,6 +59,7 @@ export interface Resource {
   mime: string;
   size: number;
   supportsRange: boolean;
+  ipVersion: 0 | 4 | 6;
   referer: string;
   requestHeaders: Record<string, string>;
   capturedAt: number;

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sys
 from datetime import timedelta
+from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -99,6 +100,7 @@ def buildClient(
     headers: dict | None = None,
     userAgent: str | None = None,
     sourceUserAgent: str = "",
+    ipVersion: int = 0,
     timeout: int | None = None,
     readTimeout: int | None = None,
 ) -> Client:
@@ -106,6 +108,10 @@ def buildClient(
     config: ClientConfig = {"tls_verify": cfg.shouldVerifySsl.value, "redirect": Policy.limited(10)}
     if cfg.shouldUseSystemDns.value:
         config["dns_options"] = DnsOptions(system_dns=True)
+    if ipVersion == 4:
+        config["local_address"] = IPv4Address("0.0.0.0")
+    elif ipVersion == 6:
+        config["local_address"] = IPv6Address("::")
 
     url = proxy()
     if url:
@@ -233,5 +239,4 @@ def matchEmulation(userAgent: str, host: Platform) -> Emulation | None:
         return Emulation(profile=profile, platform=platform)
 
     return None
-
 

@@ -72,6 +72,7 @@ class ResourceTaskOptions(TaskOptions):
     name: str = ""
     size: int = 0
     canUseRangeRequests: bool = False
+    ipVersion: int = 0
 
 
 @dataclass(frozen=True)

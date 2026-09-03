@@ -12,6 +12,7 @@ export type HeaderSnapshot = {
   tabId: number | null;
   supportsRange: boolean;
   size: number;
+  ipVersion: 0 | 4 | 6;
 };
 
 // Forwarded to desktop on resource handoff. Cookies/auth/sec-* are needed for gated CDNs;
@@ -89,11 +90,19 @@ function sortResources(resources: Iterable<Resource>): Resource[] {
 }
 
 function resourceFromStorage(resource: Resource): Resource {
-  return {...resource, requestHeaders: selectAllowedHeaders(resource.requestHeaders)};
+  return {
+    ...resource,
+    requestHeaders: selectAllowedHeaders(resource.requestHeaders),
+    ipVersion: resource.ipVersion ?? 0,
+  };
 }
 
 function headerSnapshotFromStorage(snapshot: HeaderSnapshot): HeaderSnapshot {
-  return {...snapshot, headers: selectAllowedHeaders(snapshot.headers)};
+  return {
+    ...snapshot,
+    headers: selectAllowedHeaders(snapshot.headers),
+    ipVersion: snapshot.ipVersion ?? 0,
+  };
 }
 
 // Pure in-memory cache for captured resources + request-header snapshots. No chrome deps,
@@ -128,6 +137,7 @@ export class ResourceCache {
           mime: resource.mime || existing.mime,
           size: resource.size > 0 ? resource.size : existing.size,
           supportsRange: resource.supportsRange || existing.supportsRange,
+          ipVersion: resource.ipVersion || existing.ipVersion,
           referer: resource.referer || existing.referer,
           // Fresh cookies/auth/sec-* override stale ones (per-key, like every field above).
           requestHeaders: {
@@ -286,6 +296,7 @@ export class ResourceCache {
     tabId: number | null,
     supportsRange: boolean,
     size = 0,
+    ipVersion: 0 | 4 | 6 = 0,
   ): void {
     const existing = this.headerSnapshotsByUrl.get(url);
     const mergedHeaders = {
@@ -294,7 +305,8 @@ export class ResourceCache {
     };
     const mergedSupportsRange = supportsRange || Boolean(existing?.supportsRange);
     const mergedSize = (size > 0 ? size : 0) || existing?.size || 0;
-    if (Object.keys(mergedHeaders).length === 0 && !mergedSupportsRange && !mergedSize) {
+    const mergedIpVersion = ipVersion || existing?.ipVersion || 0;
+    if (Object.keys(mergedHeaders).length === 0 && !mergedSupportsRange && !mergedSize && !mergedIpVersion) {
       return;
     }
     this.headerSnapshotsByUrl.set(url, {
@@ -304,6 +316,7 @@ export class ResourceCache {
       tabId: tabId ?? existing?.tabId ?? null,
       supportsRange: mergedSupportsRange,
       size: mergedSize,
+      ipVersion: mergedIpVersion,
     });
     this.removeStaleHeaders();
     this.onChange();

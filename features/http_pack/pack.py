@@ -17,7 +17,7 @@ from app.models.task import (
 )
 from app.platform.filesystem import toSafeFilename
 from .cards import HttpTaskCard
-from .task import HttpTask, HttpTaskStep
+from .task import HttpTask, HttpTaskStep, IP_AFFINITY_STATUS
 
 
 DOWNLOADABLE_EXTENSIONS = frozenset({
@@ -51,6 +51,10 @@ class HttpParser(TaskParser):
         userAgent = options.userAgent
         subworkerCount = options.subworkerCount
         outputFolder = options.outputFolder
+        ipVersion = options.ipVersion if isinstance(options, ResourceTaskOptions) else 0
+        isIpVersionBound = False
+        if not ipVersion:
+            logger.info("HTTP 任务未指定 IP 版本，将使用默认双栈连接且不进行 IP 版本回退")
 
         name = ""
         fileSize = SpecialFileSize.UNKNOWN
@@ -93,6 +97,7 @@ class HttpParser(TaskParser):
                 return length if length > 0 else SpecialFileSize.UNKNOWN
 
             async def request(rangeValue: str = "") -> tuple[int, dict[str, str], str]:
+                nonlocal client, isIpVersionBound
                 probeHeaders = dict(headers)
                 probeHeaders["accept-encoding"] = "identity"
                 if rangeValue:
@@ -100,6 +105,23 @@ class HttpParser(TaskParser):
                 response = await client.get(url, headers=probeHeaders)
                 try:
                     status = response.status.as_int()
+                    if status in IP_AFFINITY_STATUS and ipVersion and not isIpVersionBound:
+                        response.close()
+                        client.close()
+                        logger.warning(
+                            "HTTP 探测返回 {}，使用浏览器捕获的 IPv{} 重试",
+                            status, ipVersion,
+                        )
+                        client = buildClient(
+                            emulation=emulation,
+                            userAgent=userAgent or None,
+                            ipVersion=ipVersion,
+                            timeout=30,
+                        )
+                        response = await client.get(url, headers=probeHeaders)
+                        status = response.status.as_int()
+                        isIpVersionBound = True
+                        logger.info("IPv{} HTTP 探测重试返回 {}", ipVersion, status)
                     if status not in {200, 206, 416}:
                         response.raise_for_status()
                     return (
@@ -204,6 +226,8 @@ class HttpParser(TaskParser):
             subworkerCount=subworkerCount,
             canUseRangeRequests=canUseRangeRequests,
             lastModified=lastModified,
+            ipVersion=ipVersion,
+            isIpVersionBound=isIpVersionBound,
         ))
         return task
 
@@ -233,4 +257,3 @@ class HttpPack(FeaturePack):
             UrlEditCard(parent, initial=task.url),
             *self.optionCards(task, parent),
         ]
-
