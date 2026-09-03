@@ -157,6 +157,7 @@ def buildArgs() -> list[str]:
             "--assume-yes-for-downloads",
             "--macos-app-mode=gui",
             f"--macos-app-version={BUILD_VERSION}",
+            "--macos-app-macos-min-version=13.0",
             "--macos-app-icon=app/assets/logo.icns",
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
