@@ -12,6 +12,14 @@ export type MediaAction =
   | "fullscreen";
 export type ThemePreference = "system" | "light" | "dark";
 
+export type SiteRule = {
+  id: string;
+  name: string;
+  hosts: string[];
+  action: string;
+  enabled: boolean;
+};
+
 export type DesktopConnectionState =
   | "missing_token"
   | "connecting"

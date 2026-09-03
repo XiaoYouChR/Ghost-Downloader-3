@@ -19,6 +19,7 @@ from app.services.task_draft import TaskDraft
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
 from app.view.pages.setting_page import SettingPage
+from app.view.pages.site_rules_page import SiteRulesPage
 from app.view.pages.task_page import TaskPage
 
 if TYPE_CHECKING:
@@ -128,6 +129,8 @@ class MainWindow(MSFluentWindow):
     def _initLayout(self) -> None:
         self._addPage(TaskPage, FluentIcon.DOWNLOAD, self.tr("下载任务"),
                       NavigationItemPosition.TOP)
+        self._addPage(SiteRulesPage, FluentIcon.DEVELOPER_TOOLS, self.tr("站点规则"),
+                      NavigationItemPosition.TOP)
         self.navigationInterface.addItem(
             routeKey="addTaskButton",
             text=self.tr("新建任务"),
@@ -192,6 +195,8 @@ class MainWindow(MSFluentWindow):
                 self._coroutineRunner, self._categoryService, self._taskService,
                 self._updateService, parent=self,
             )
+        if pageClass is SiteRulesPage:
+            return SiteRulesPage(self._browserService, parent=self)
         return self._featureService.createPage(pageClass, parent=self)
 
     def _onSearchTextChanged(self, text: str) -> None:

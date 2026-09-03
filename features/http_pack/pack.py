@@ -16,6 +16,7 @@ from app.models.task import (
     Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
 )
 from app.platform.filesystem import toSafeFilename
+from app.site_rules import matchingSiteRule
 from .cards import HttpTaskCard
 from .task import HttpTask, HttpTaskStep
 
@@ -29,6 +30,36 @@ DOWNLOADABLE_EXTENSIONS = frozenset({
     ".pdf", ".epub",
     ".apk", ".ipa",
 })
+
+PIXELDRAIN_HOSTS = frozenset({"pixeldrain.com", "www.pixeldrain.com"})
+UUPDUMP_HOSTS = frozenset({"uupdump.net", "www.uupdump.net"})
+
+
+def parsePixelDrainUrl(url: str) -> tuple[str, str] | None:
+    """Return the API file URL and viewer URL for a PixelDrain viewer link."""
+    parsed = urlparse(url)
+    if parsed.hostname is None or parsed.hostname.lower() not in PIXELDRAIN_HOSTS:
+        return None
+
+    parts = [unquote(part) for part in parsed.path.split("/") if part]
+    if len(parts) != 2 or parts[0].lower() != "u" or not parts[1]:
+        return None
+
+    fileId = parts[1]
+    viewerUrl = f"https://pixeldrain.com/u/{fileId}"
+    return f"https://pixeldrain.com/api/file/{fileId}?download", viewerUrl
+
+
+def parseUupDumpUrl(url: str) -> tuple[str, str] | None:
+    parsed = urlparse(url)
+    if parsed.hostname is None or parsed.hostname.lower() not in UUPDUMP_HOSTS:
+        return None
+    if parsed.path.lower() not in {"/download.php", "/get.php"}:
+        return None
+
+    query = f"?{parsed.query}" if parsed.query else ""
+    pageUrl = f"https://uupdump.net/download.php{query}"
+    return f"https://uupdump.net/get.php{query}", pageUrl
 
 
 class HttpParser(TaskParser):
@@ -52,6 +83,28 @@ class HttpParser(TaskParser):
         subworkerCount = options.subworkerCount
         outputFolder = options.outputFolder
 
+        siteRule = matchingSiteRule(url, cfg.siteRules.value)
+        action = siteRule.get("action") if siteRule else "standard"
+
+        pixelDrain = parsePixelDrainUrl(url) if action == "pixeldrain_api" else None
+        if pixelDrain is not None:
+            url, viewerUrl = pixelDrain
+            if not any(key.lower() == "referer" for key in headers):
+                headers["referer"] = viewerUrl
+            # Free PixelDrain downloads reject excessive concurrent connections.
+            subworkerCount = int(siteRule.get("connections", 1))
+
+        postForm: dict[str, str] = {}
+        uupDump = parseUupDumpUrl(url) if action == "uupdump_post" else None
+        if uupDump is not None:
+            url, pageUrl = uupDump
+            if not any(key.lower() == "referer" for key in headers):
+                headers["referer"] = pageUrl
+            postForm = {"autodl": "2", "updates": "1"}
+            subworkerCount = int(siteRule.get("connections", 1))
+
+        if siteRule and action == "single_connection":
+            subworkerCount = int(siteRule.get("connections", 1))
         name = ""
         fileSize = SpecialFileSize.UNKNOWN
         canUseRangeRequests = False
@@ -97,7 +150,10 @@ class HttpParser(TaskParser):
                 probeHeaders["accept-encoding"] = "identity"
                 if rangeValue:
                     probeHeaders["range"] = rangeValue
-                response = await client.get(url, headers=probeHeaders)
+                if postForm:
+                    response = await client.post(url, headers=probeHeaders, form=postForm)
+                else:
+                    response = await client.get(url, headers=probeHeaders)
                 try:
                     status = response.status.as_int()
                     if status not in {200, 206, 416}:
@@ -204,6 +260,7 @@ class HttpParser(TaskParser):
             subworkerCount=subworkerCount,
             canUseRangeRequests=canUseRangeRequests,
             lastModified=lastModified,
+            postForm=postForm,
         ))
         return task
 
@@ -233,4 +290,3 @@ class HttpPack(FeaturePack):
             UrlEditCard(parent, initial=task.url),
             *self.optionCards(task, parent),
         ]
-

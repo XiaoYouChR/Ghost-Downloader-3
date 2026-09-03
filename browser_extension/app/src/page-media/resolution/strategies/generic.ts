@@ -1,5 +1,5 @@
 import {classifyTrackRole, isDashSegmentUrl, isStreamUrl, stripRangeParams} from "../url-classify";
-import {newestMatching, postBindAttributedUrls, selectMergePair} from "../strategy";
+import {newestBy, newestMatching, postBindAttributedUrls, selectMergePair} from "../strategy";
 import type {ResolveContext} from "../strategy";
 import type {Resolution} from "../../types";
 
@@ -7,7 +7,22 @@ import type {Resolution} from "../../types";
 export function selectGeneric(ctx: ResolveContext): Resolution {
   const post = postBindAttributedUrls(ctx.clicked);
 
-  const master = post.find((r) => r.isMaster);
+  const host = ctx.pageUrl.hostname.toLowerCase();
+  const preferLatestHls = (ctx.hints.siteRules ?? []).some((rule) =>
+    rule.enabled
+    && rule.action === "prefer_latest_hls"
+    && rule.hosts.some((pattern) => {
+      const normalized = pattern.toLowerCase().replace(/^\*\./, "");
+      return host === normalized || host.endsWith(`.${normalized}`);
+    }),
+  );
+
+  // Players reused after a pre-roll retain both HLS manifests. Rule-enabled sites
+  // deliberately take the most recently captured master, which belongs to the main video.
+  const masters = post.filter((r) => r.isMaster);
+  const master = preferLatestHls
+    ? newestBy(masters, (entry) => entry.capturedAt)
+    : masters[0];
   if (master) {
     return { kind: "selection", selection: { kind: "stream", url: master.url } };
   }

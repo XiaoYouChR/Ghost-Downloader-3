@@ -1,5 +1,5 @@
 import {DEFAULT_SERVER_URL} from "../shared/constants";
-import type {DesktopConnectionState, CommandResult, TaskSummary,} from "../shared/types";
+import type {DesktopConnectionState, CommandResult, SiteRule, TaskSummary,} from "../shared/types";
 import {PAIR_TOKEN_KEY, PROTOCOL_VERSION, RECONNECT_ALARM, SERVER_URL_KEY,} from "./constants";
 import {loadLocalState, saveLocalState} from "./chrome-helpers";
 
@@ -32,6 +32,7 @@ export type DesktopBridgeSnapshot = {
 export interface DesktopBridgeOptions {
   onTaskSnapshotChanged?: (tasks: TaskSummary[]) => void;
   onConnected?: () => void;
+  onSiteRulesChanged?: (rules: SiteRule[]) => void;
 }
 
 export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
@@ -106,6 +107,14 @@ export function createDesktopBridge(options: DesktopBridgeOptions = {}) {
       setConnectionState("connected", chrome.i18n.getMessage("connected"));
       desktopSocket?.send(JSON.stringify({ type: "subscribe_tasks" }));
       options.onConnected?.();
+      if (Array.isArray(message.siteRules)) {
+        options.onSiteRulesChanged?.(message.siteRules as SiteRule[]);
+      }
+      return;
+    }
+
+    if (message.type === "site_rules" && Array.isArray(message.rules)) {
+      options.onSiteRulesChanged?.(message.rules as SiteRule[]);
       return;
     }
 

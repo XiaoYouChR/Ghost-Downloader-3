@@ -19,6 +19,7 @@ from loguru import logger
 from app.config.cfg import cfg
 from app.config.constants import LATEST_EXTENSION_VERSION, VERSION
 from app.config.paths import APP_DATA_DIR
+from app.site_rules import publicSiteRules
 
 from app.models.task import MergeTaskOptions, PageTaskOptions
 
@@ -70,6 +71,7 @@ class MessageType(StrEnum):
     TASK_ACTION = "task_action"
     TASK_ACTION_RESULT = "task_action_result"
     RELOAD = "reload"
+    SITE_RULES = "site_rules"
 
 
 class ErrorCode(StrEnum):
@@ -438,6 +440,7 @@ class BrowserService(QObject):
                 "taskSnapshots": True,
                 "taskActions": [a.value for a in TaskAction],
             },
+            "siteRules": publicSiteRules(cfg.siteRules.value),
         })
 
         if (session.installType == "development"
@@ -451,6 +454,15 @@ class BrowserService(QObject):
                 failed=self._onExtensionExtractFailed,
                 session=session,
             )
+
+    def broadcastSiteRules(self) -> None:
+        payload = {
+            "type": MessageType.SITE_RULES,
+            "rules": publicSiteRules(cfg.siteRules.value),
+        }
+        for session in list(self._sessions.values()):
+            if session.isAuthenticated:
+                self._send(session, payload)
 
     def _onExtensionExtracted(self, _path: Path, session: BrowserClientSession) -> None:
         if id(session.socket) not in self._sessions:
