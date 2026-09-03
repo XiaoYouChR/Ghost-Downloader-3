@@ -18,10 +18,6 @@ WINDOWS_RESERVED_FILENAMES = {
 
 def toSafeFilename(name: str, fallback: str = "file", maxLength: int = 200) -> str:
     candidate = str(name or "")
-    lastSep = max(candidate.rfind("/"), candidate.rfind("\\"))
-    if lastSep >= 0:
-        candidate = candidate[lastSep + 1:]
-
     candidate = INVALID_FILENAME_PATTERN.sub("_", candidate).strip().rstrip(". ")
 
     if not candidate or candidate in {".", ".."}:
