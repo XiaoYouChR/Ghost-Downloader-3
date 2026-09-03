@@ -6,6 +6,7 @@
  */
 import {findActiveMedia} from "./active-media";
 import type {VideoSessionState} from "../types";
+import type {SiteRule} from "../../shared/types";
 
 declare global {
   interface Window {
@@ -33,6 +34,7 @@ const FADE_DURATION_MS = 300;
   let lastMouseX = -1;
   let lastMouseY = -1;
   let dismissed = false;
+  let siteRules: SiteRule[] = [];
   let dragOffsetX = 0;
   let dragOffsetY = 0;
   const DRAG_THRESHOLD = 5;
@@ -298,6 +300,7 @@ const FADE_DURATION_MS = 300;
     try {
       const resolution = await pageMedia.selectMediaForElement(media, {
         poster: media.poster || "",
+        siteRules,
       }, onState);
       if (!resolution || resolution.kind === "refused") {
         setStatus(resolution?.message || chrome.i18n.getMessage("errorCannotLocateMedia"), true);
@@ -393,6 +396,11 @@ const FADE_DURATION_MS = 300;
   document.addEventListener("loadedmetadata", scheduleUpdate, true);
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === "site_rules_updated" && Array.isArray(message.rules)) {
+      siteRules = message.rules as SiteRule[];
+      sendResponse({ok: true});
+      return false;
+    }
     if (message?.type !== "media_button_set_enabled") { return; }
     Boolean(message.enabled) ? enableOverlay() : disableOverlay();
     sendResponse({ ok: true });

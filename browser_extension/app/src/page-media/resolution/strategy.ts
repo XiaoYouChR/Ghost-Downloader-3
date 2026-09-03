@@ -4,6 +4,7 @@ import {selectMeta} from "./strategies/instagram";
 import {selectYouTube} from "./strategies/youtube";
 import {isStreamUrl} from "./url-classify";
 import type {Resolution, VideoSessionFormKind} from "../types";
+import type {SiteRule} from "../../shared/types";
 
 // One attributed URL as the strategies see it — also the element type of
 // SessionSnapshot.attributedUrls and of a FindUrlsByIdHint return.
@@ -23,6 +24,7 @@ export type SessionSnapshot = {
 
 export type ResolveHints = {
   readonly poster: string;
+  readonly siteRules?: ReadonlyArray<SiteRule>;
 };
 
 export type ResolveContext = {

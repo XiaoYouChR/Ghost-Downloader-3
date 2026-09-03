@@ -142,6 +142,17 @@ class CategoryListValidator(ConfigValidator):
         return value if self.validate(value) else []
 
 
+class SiteRuleListValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        from app.site_rules import validateSiteRule
+        return isinstance(value, list) and bool(value) and all(validateSiteRule(item) for item in value)
+
+    def correct(self, value) -> list:
+        from app.site_rules import defaultSiteRules, validateSiteRule
+        rules = [item for item in value if validateSiteRule(item)] if isinstance(value, list) else []
+        return rules or defaultSiteRules()
+
+
 class JsonConfigSerializer(ConfigSerializer):
     def __init__(self, expected: type, fallback):
         self._expected = expected
@@ -254,6 +265,13 @@ class Config(QConfig):
     categoryRules = ConfigItem(
         "Category", "CategoryRules", [],
         CategoryListValidator(), JsonConfigSerializer(list, list),
+    )
+
+    # Site-specific compatibility rules, editable without rebuilding the app.
+    from app.site_rules import defaultSiteRules
+    siteRules = ConfigItem(
+        "SiteRules", "Rules", defaultSiteRules(),
+        SiteRuleListValidator(), JsonConfigSerializer(list, defaultSiteRules),
     )
 
     # 浏览器扩展

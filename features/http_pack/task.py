@@ -13,6 +13,7 @@ from loguru import logger
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
+from app.site_rules import matchingSiteRule
 from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSize
 from app.platform.sysio import ftruncate, pwrite
 
@@ -28,6 +29,10 @@ class PermanentDownloadError(Exception):
 
 
 class RangeNotSupportedError(Exception):
+    pass
+
+
+class UnexpectedContentError(Exception):
     pass
 
 
@@ -69,6 +74,7 @@ class HttpTaskStep(TaskStep):
     lastModified: str = ""
     isAccelerated: bool = False
     outputFile: str = ""
+    postForm: dict[str, str] = field(default_factory=dict)
     subworkers: list[HttpSubworker] = field(default_factory=list, repr=False)
 
     @property
@@ -261,13 +267,18 @@ class HttpTaskStep(TaskStep):
         finally:
             client.close()
 
+    async def _request(self, client, url: str, headers: dict[str, str]):
+        if self.postForm:
+            return await client.post(url, headers=headers, form=self.postForm)
+        return await client.get(url, headers=headers)
+
     async def _runSubworkerWith(self, subworker: HttpSubworker, fd: int, client) -> None:
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
                 try:
                     httpPos = self.httpByteOffset + subworker.position
                     headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-", "accept-encoding": "identity"}
-                    response = await client.get(self._effectiveUrl, headers=headers)
+                    response = await self._request(client, self._effectiveUrl, headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -301,13 +312,16 @@ class HttpTaskStep(TaskStep):
                 try:
                     ftruncate(fd, 0)
                     subworker.receivedBytes = 0
-                    response = await client.get(self._effectiveUrl, headers=dict(self._effectiveHeaders))
+                    response = await self._request(client, self._effectiveUrl, dict(self._effectiveHeaders))
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
                             raise PermanentDownloadError(status)
                         if status != 200:
                             raise Exception(f"服务器返回了异常状态码：{status}")
+                        contentType = response.headers.get("content-type", b"").decode(errors="replace").lower()
+                        if self.task.name.lower().endswith(".zip") and "text/html" in contentType:
+                            raise UnexpectedContentError("服务器返回了 HTML 页面，而不是 ZIP 文件")
                         async for chunk in response.stream():
                             if not chunk:
                                 continue
@@ -322,6 +336,8 @@ class HttpTaskStep(TaskStep):
                 except CancelledError:
                     raise
                 except PermanentDownloadError:
+                    raise
+                except UnexpectedContentError:
                     raise
                 except Exception as e:
                     if isinstance(e, OSError) and e.errno in FATAL_IO_ERRNO:
@@ -339,7 +355,7 @@ class HttpTaskStep(TaskStep):
                         "range": f"bytes={httpPos}-{httpEnd}",
                         "accept-encoding": "identity",
                     }
-                    response = await client.get(self._effectiveUrl, headers=headers)
+                    response = await self._request(client, self._effectiveUrl, headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -393,10 +409,18 @@ class HttpTaskStep(TaskStep):
 
         self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
 
+        siteRule = matchingSiteRule(self.url, cfg.siteRules.value)
+        isPixelDrain = bool(siteRule and siteRule.get("action") == "pixeldrain_api")
+        if isPixelDrain:
+            # PixelDrain free accounts allow only a small number of simultaneous
+            # connections. Old/restored tasks may still contain the former default,
+            # and auto speed-up would otherwise split this stream again later.
+            self.subworkerCount = 1
+            self.isAccelerated = True
         probeHeaders = {**self._effectiveHeaders, "range": "bytes=0-0", "accept-encoding": "identity"}
         client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, timeout=30)
         try:
-            response = await client.get(self.url, headers=probeHeaders)
+            response = await self._request(client, self.url, probeHeaders)
             self._effectiveUrl = str(response.url)
             response.close()
         finally:
@@ -406,7 +430,16 @@ class HttpTaskStep(TaskStep):
         if self.canUseRangeRequests:
             loaded = self._loadRecord()
             if loaded:
-                self.subworkers = loaded
+                if isPixelDrain and self.fileSize > 0:
+                    firstMissing = min(sw.position for sw in loaded)
+                    self.subworkers = [HttpSubworker(
+                        index=0,
+                        start=0,
+                        end=self.fileSize - 1,
+                        receivedBytes=min(firstMissing, self.fileSize),
+                    )]
+                else:
+                    self.subworkers = loaded
                 restored = True
 
         if not restored:
@@ -461,6 +494,8 @@ class HttpTaskStep(TaskStep):
                     cause = eg.exceptions[0]
                     if isinstance(cause, PermanentDownloadError):
                         raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
+                    if isinstance(cause, UnexpectedContentError):
+                        raise TaskError(str(cause)) from eg
                     if isinstance(cause, OSError) and cause.errno in FATAL_IO_ERRNO:
                         raise TaskError("磁盘空间不足") from eg
                     raise cause from eg

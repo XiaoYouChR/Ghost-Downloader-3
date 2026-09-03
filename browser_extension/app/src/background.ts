@@ -3,6 +3,7 @@ import type {
     TaskSummary,
     PopupState,
     PopupView,
+    SiteRule,
 } from "./shared/types";
 import type {PopupCommand} from "./shared/popup-protocol";
 import {createDesktopBridge} from "./background/desktop-bridge";
@@ -63,6 +64,18 @@ async function sendTaskOrEnqueue<T extends CommandResult>(payload: Record<string
 }
 
 const openWhenDoneIds = new Set<string>();
+let siteRules: SiteRule[] = [];
+
+async function broadcastSiteRules(rules: SiteRule[]): Promise<void> {
+  siteRules = rules;
+  const tabs = await queryTabs({});
+  for (const tab of tabs) {
+    if (!tab.id || !tab.url || !/^https?:/i.test(tab.url)) { continue; }
+    chrome.tabs.sendMessage(tab.id, {type: "site_rules_updated", rules}, () => {
+      void chrome.runtime.lastError;
+    });
+  }
+}
 
 function onTaskSnapshotChanged(tasks: TaskSummary[]): void {
   updateIconForTasks(tasks);
@@ -81,6 +94,7 @@ function onTaskSnapshotChanged(tasks: TaskSummary[]): void {
 const desktopBridge = createDesktopBridge({
   onTaskSnapshotChanged,
   onConnected: () => void flushQueue(),
+  onSiteRulesChanged: (rules) => void broadcastSiteRules(rules),
 });
 const resourceBridge = createResourceBridge({
   sendDesktopRequest: (payload) => sendTaskOrEnqueue(payload),
@@ -124,6 +138,9 @@ async function injectMediaButton(tabId: number) {
       files: ["page-media-overlay.js"],
       injectImmediately: false,
       target: { tabId, allFrames: true },
+    });
+    chrome.tabs.sendMessage(tabId, {type: "site_rules_updated", rules: siteRules}, () => {
+      void chrome.runtime.lastError;
     });
   } catch {
     // chrome:// and similar reject injection.
