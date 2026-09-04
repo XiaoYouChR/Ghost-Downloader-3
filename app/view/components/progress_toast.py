@@ -9,6 +9,7 @@ from qfluentwidgets import (
     InfoBarPosition, TransparentToolButton, isDarkTheme,
 )
 
+from app.models.task import TaskError
 from app.services.update_service import UpdateState
 
 if TYPE_CHECKING:
@@ -32,6 +33,13 @@ COLORS = {
 def barColor(state: UpdateState) -> QColor:
     pair = COLORS.get(state, COLORS[UpdateState.DOWNLOADING])
     return pair["dark"] if isDarkTheme() else pair["light"]
+
+
+def toUpdateErrorText(error: str | TaskError) -> str:
+    if isinstance(error, TaskError):
+        text = QCoreApplication.translate("TaskErrors", error.message) or error.message
+        return text.format_map(error.params) if error.params else text
+    return QCoreApplication.translate("UpdateErrors", error) or error
 
 
 class ProgressToast(InfoBar):
@@ -108,7 +116,7 @@ class ProgressToast(InfoBar):
             self.iconWidget.icon = InfoBarIcon.ERROR
             self.title = self.tr("下载更新失败")
             self.content = (
-                QCoreApplication.translate("UpdateErrors", info.error) or info.error
+                toUpdateErrorText(info.error)
                 if info.error else self.tr("未知错误")
             )
             self._retryButton.show()
