@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.config.cfg import cfg
 from app.models.task import Task, TaskFile, TaskStep
 from app.platform.filesystem import deletePath
 
@@ -33,14 +34,14 @@ class HuggingFaceStep(HttpTaskStep):
 
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> TaskStep:
-        from app.config.cfg import cfg
         hfFile: HuggingFaceFile = file
+        hfTask: HuggingFaceTask = task
         return cls(
             stepIndex=file.index + 1,
             url=hfFile.downloadUrl,
             fileSize=file.size,
             headers=task.steps[0].headers if task.steps else {},
-            subworkerCount=cfg.preBlockNum.value,
+            subworkerCount=hfTask.subworkerCount,
             canUseRangeRequests=file.size > 0,
             fileIndex=file.index,
         )
@@ -54,6 +55,7 @@ class HuggingFaceTask(Task):
     repoId: str = ""
     repoType: str = "model"
     revision: str = "main"
+    subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
 
     def __post_init__(self):
         super().__post_init__()
@@ -63,6 +65,11 @@ class HuggingFaceTask(Task):
             for file in self.files:
                 if file.index not in existing:
                     self.addStep(HuggingFaceStep.fromFile(file, self))
+
+    def setOptions(self, options: dict) -> None:
+        if "subworkerCount" in options:
+            self.subworkerCount = options["subworkerCount"]
+        super().setOptions(options)
 
     @property
     def countSelected(self) -> int:

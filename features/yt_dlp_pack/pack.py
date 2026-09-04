@@ -39,6 +39,7 @@ class YouTubeParser(TaskParser):
             fileSize=SpecialFileSize.UNKNOWN,
             outputFolder=options.outputFolder,
             isPlaylist=isPlaylist,
+            subworkerCount=options.subworkerCount,
         )
         for step in buildStepGroup(0):
             task.addStep(step)

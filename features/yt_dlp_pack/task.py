@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
+from app.config.cfg import cfg
 from app.models.task import SpecialFileSize, Task, TaskError, TaskFile, TaskStep, TaskStatus
 from ffmpeg_pack.task import FFmpegResourceStep, FFmpegStep, mediaStem
 from http_pack.task import HttpTaskStep
@@ -194,6 +195,12 @@ class YouTubeTask(Task):
     coverUrl: str = ""
     isCoverEnabled: bool = False
     isPlaylist: bool = False
+    subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
+
+    def setOptions(self, options: dict) -> None:
+        if "subworkerCount" in options:
+            self.subworkerCount = options["subworkerCount"]
+        super().setOptions(options)
 
     def setCoverUrl(self, url: str) -> None:
         if not url:
@@ -402,8 +409,8 @@ class YouTubeExtractStep(TaskStep):
         self.task.fileSize = totalSize if totalSize > 0 else 0
 
     def _updateSiblingSteps(self, videoFmt: dict | None, audioFmt: dict | None, info: dict) -> None:
-        from app.config.cfg import cfg
         from .config import ytDlpConfig
+        task: YouTubeTask = self.task
 
         for step in self.task.steps:
             if step.fileIndex != self.fileIndex:
@@ -417,7 +424,7 @@ class YouTubeExtractStep(TaskStep):
                 step.fileSize = fmt.get("filesize") or fmt.get("filesize_approx") or 0
                 step.extension = fmt.get("ext") or ("mp4" if step.role == "video" else "m4a")
                 step.canUseRangeRequests = True
-                step.subworkerCount = cfg.preBlockNum.value
+                step.subworkerCount = task.subworkerCount
                 step.headers = dict(fmt.get("http_headers") or {})
             elif isinstance(step, YouTubeMergeStep):
                 step.videoExtension = videoFmt.get("ext", "mp4") if videoFmt else ""

@@ -154,13 +154,14 @@ class FtpStep(TaskStep):
     @classmethod
     def fromFile(cls, file: TaskFile, task: Task) -> FtpStep:
         ftpFile: FtpFile = file
+        ftpTask: FtpTask = task
         return cls(
             stepIndex=file.index + 1,
             fileIndex=file.index,
             remotePath=ftpFile.remotePath,
             fileSize=file.size,
             canUseRangeRequests=True,
-            subworkerCount=cfg.preBlockNum.value,
+            subworkerCount=ftpTask.subworkerCount,
         )
 
     def _loadRecord(self) -> list[FtpSubworker]:
@@ -503,6 +504,7 @@ class FtpTask(Task):
     fileType = FtpFile
     connectionInfo: FtpConnectionInfo
     sourceType: str = "file"
+    subworkerCount: int = field(default_factory=lambda: cfg.preBlockNum.value)
 
     def __post_init__(self):
         if isinstance(self.connectionInfo, dict):
@@ -514,6 +516,11 @@ class FtpTask(Task):
             for file in self.files:
                 if file.index not in existing:
                     self.addStep(FtpStep.fromFile(file, self))
+
+    def setOptions(self, options: dict) -> None:
+        if "subworkerCount" in options:
+            self.subworkerCount = options["subworkerCount"]
+        super().setOptions(options)
 
     @property
     def isFolder(self) -> bool:
@@ -531,4 +538,3 @@ class FtpTask(Task):
             target = Path(step.outputPath)
             deletePath(target)
             deletePath(Path(f"{target}.ghd"))
-

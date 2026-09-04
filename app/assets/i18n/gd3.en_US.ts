@@ -4805,6 +4805,19 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
 </context>
 <context>
+    <name>SingleSubworkerCard</name>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="33"/>
+        <source>单线程下载</source>
+        <translation>Single-Threaded Download</translation>
+    </message>
+    <message>
+        <location filename="../../../features/http_pack/cards.py" line="34"/>
+        <source>强制以单线程下载此任务，避免反爬及限流</source>
+        <translation>Force 1 download thread for this task to avoid triggering rate limiting</translation>
+    </message>
+</context>
+<context>
     <name>StreamSelectCard</name>
     <message>
         <location filename="../../../features/m3u8_pack/cards.py" line="101"/>
@@ -5062,7 +5075,7 @@ Data will be copied to new location and the app will then exit. Please manually 
     </message>
     <message>
         <location filename="../../view/dialogs/task_draft.py" line="83"/>
-        <location filename="../../view/dialogs/task_draft.py" line="347"/>
+        <location filename="../../view/dialogs/task_draft.py" line="352"/>
         <source>导入文件</source>
         <translation>Import File(s)</translation>
     </message>
@@ -5087,12 +5100,12 @@ Data will be copied to new location and the app will then exit. Please manually 
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="300"/>
+        <location filename="../../view/dialogs/task_draft.py" line="305"/>
         <source>链接解析失败</source>
         <translation>Link Parsing Failed</translation>
     </message>
     <message>
-        <location filename="../../view/dialogs/task_draft.py" line="342"/>
+        <location filename="../../view/dialogs/task_draft.py" line="347"/>
         <source>所有可导入文件 ({0})</source>
         <translation>All Supported Formats ({0})</translation>
     </message>

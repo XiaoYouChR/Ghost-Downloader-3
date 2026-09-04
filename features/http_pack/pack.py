@@ -16,7 +16,7 @@ from app.models.task import (
     Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
 )
 from app.platform.filesystem import toSafeFilename
-from .cards import HttpTaskCard
+from .cards import HttpTaskCard, SingleSubworkerCard
 from .task import HttpTask, HttpTaskStep
 
 
@@ -220,11 +220,13 @@ class HttpPack(FeaturePack):
         step = task.steps[0] if task.steps else None
         if not isinstance(step, HttpTaskStep):
             return []
+        subworkerCountCard = SubworkerCountCard(parent, initial=step.subworkerCount)
         return [
             OutputFolderCard(parent, initial=task.outputFolder),
             HeadersEditCard(parent, initial=step.headers),
             ClientProfileCard(parent, initial=step.clientProfile, initialUserAgent=step.userAgent),
-            SubworkerCountCard(parent, initial=step.subworkerCount),
+            subworkerCountCard,
+            SingleSubworkerCard(subworkerCountCard, parent, initial=step.isSingleSubworker),
         ]
 
     def editCards(self, task, parent=None):
@@ -233,4 +235,3 @@ class HttpPack(FeaturePack):
             UrlEditCard(parent, initial=task.url),
             *self.optionCards(task, parent),
         ]
-
