@@ -414,7 +414,7 @@ class TaskService(QObject):
         if self._queue.runningCount() == 0:
             self.tasksAllCompleted.emit()
 
-    def _onRunFailed(self, task: Task, error: str) -> None:
+    def _onRunFailed(self, task: Task, error: Exception) -> None:
         self._queue.done(task.taskId)
         self._flushTimer.start()
         self.taskFailed.emit(task)

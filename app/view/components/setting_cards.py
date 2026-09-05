@@ -20,6 +20,8 @@ from qfluentwidgets import (
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.config.cfg import cfg, proxy, currentHeaders, currentHeadersPresetIndex
+from app.error_catalog import toLocalizedError
+from app.models.task import toTaskError
 from app.view.components.banners import WarningBanner
 
 HOST_PATTERN = compile(
@@ -877,8 +879,8 @@ class RuntimeCard(SettingCard):
 
         self.cancelButton.hide()
 
-        if status.error:
-            self.setContent(status.error)
+        if status.error is not None:
+            self.setContent(toLocalizedError(status.error))
         elif isInstalled:
             versionDisplay = status.version
             if status.detail:
@@ -937,7 +939,7 @@ class RuntimeCard(SettingCard):
             self._runtime.delete()
         except Exception as e:
             InfoBar.error(
-                self.tr("卸载失败"), str(e),
+                self.tr("卸载失败"), toLocalizedError(toTaskError(e)),
                 duration=-1, position=InfoBarPosition.TOP, parent=self.window(),
             )
             return

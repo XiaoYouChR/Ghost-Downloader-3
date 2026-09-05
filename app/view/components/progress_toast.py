@@ -9,6 +9,7 @@ from qfluentwidgets import (
     InfoBarPosition, TransparentToolButton, isDarkTheme,
 )
 
+from app.error_catalog import toLocalizedError
 from app.services.update_service import UpdateState
 
 if TYPE_CHECKING:
@@ -108,8 +109,8 @@ class ProgressToast(InfoBar):
             self.iconWidget.icon = InfoBarIcon.ERROR
             self.title = self.tr("下载更新失败")
             self.content = (
-                QCoreApplication.translate("UpdateErrors", info.error) or info.error
-                if info.error else self.tr("未知错误")
+                toLocalizedError(info.error, context="UpdateErrors")
+                if info.error is not None else self.tr("未知错误")
             )
             self._retryButton.show()
             self._restartButton.hide()

@@ -20,6 +20,7 @@ from app.format import toReadableSize, toReadableTime
 from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
+from app.view.components.category_settings import toCategoryName
 from app.error_catalog import toLocalizedError
 
 if TYPE_CHECKING:
@@ -269,7 +270,7 @@ class TaskCard(CardWidget):
             self.progressBar.setError(True)
             error = task.lastError
             if error:
-                self._setStatus(toLocalizedError(error.message, error.params))
+                self._setStatus(toLocalizedError(error))
             else:
                 self._setStatus(self.tr("下载过程中发生错误，请稍后重试"))
 
@@ -400,7 +401,7 @@ class TaskCard(CardWidget):
             moveMenu.addSeparator()
             for category in self._categoryService.categories():
                 cid = category.categoryId
-                action = Action(category.toIcon(), category.name, self)
+                action = Action(category.toIcon(), toCategoryName(category), self)
                 action.triggered.connect(lambda checked=False, c=cid: self._taskService.setCategory(self._task, c))
                 moveMenu.addAction(action)
             menu.addMenu(moveMenu)

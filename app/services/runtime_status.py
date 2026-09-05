@@ -5,10 +5,8 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal
-from loguru import logger
 
-from app.error_catalog import toLocalizedError
-from app.models.task import TaskError
+from app.models.task import TaskError, toTaskError
 
 if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
@@ -22,7 +20,7 @@ class RuntimeStatus:
     version: str = ""
     detail: str = ""
     latestVersion: str = ""
-    error: str = ""
+    error: TaskError | None = None
     isBusy: bool = False
     isInstalling: bool = False
     progress: float = 0
@@ -134,11 +132,7 @@ class RuntimeStatusService(QObject):
         self._runtimes.pop(runtimeId, None)
         current = self._statuses.get(runtimeId)
         if current:
-            if isinstance(error, TaskError):
-                display = toLocalizedError(error.message, error.params)
-            else:
-                display = toLocalizedError(str(error))
-            status = replace(current, isInstalling=False, error=display)
+            status = replace(current, isInstalling=False, error=toTaskError(error))
             self._statuses[runtimeId] = status
             self.statusChanged.emit(status)
 
@@ -152,18 +146,14 @@ class RuntimeStatusService(QObject):
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
-        try:
-            self._workIds[runtimeId] = self._coroutineRunner.submit(
-                runtime.probeVersion(),
-                done=self._onProbeFinished,
-                failed=self._onProbeFailed,
-                runtimeId=runtimeId,
-                name=name,
-                path=path,
-            )
-        except Exception as e:
-            logger.opt(exception=e).error("runtime probe submit failed: {}", runtimeId)
-            self._onProbeFailed(repr(e), runtimeId, name, path)
+        self._workIds[runtimeId] = self._coroutineRunner.submit(
+            runtime.probeVersion(),
+            done=self._onProbeFinished,
+            failed=self._onProbeFailed,
+            runtimeId=runtimeId,
+            name=name,
+            path=path,
+        )
 
     def _onProbeFinished(self, versionInfo, runtimeId: str, name: str, path: str) -> None:
         self._workIds.pop(runtimeId, None)
@@ -183,22 +173,18 @@ class RuntimeStatusService(QObject):
     def _onProbeFailed(self, error: Exception, runtimeId: str, name: str, path: str) -> None:
         self._workIds.pop(runtimeId, None)
         self._runtimes.pop(runtimeId, None)
-        status = RuntimeStatus(runtimeId, name, path=path, error=str(error))
+        status = RuntimeStatus(runtimeId, name, path=path, error=toTaskError(error))
         self._statuses[runtimeId] = status
         self.statusChanged.emit(status)
 
     def _fetchLatest(self, runtime: BinaryRuntime) -> None:
         runtimeId = runtime.runtimeId
-        try:
-            self._workIds[runtimeId] = self._coroutineRunner.submit(
-                runtime.fetchLatestVersion(),
-                done=self._onFetchFinished,
-                failed=self._onFetchFailed,
-                runtimeId=runtimeId,
-            )
-        except Exception as e:
-            logger.opt(exception=e).debug("runtime fetch latest submit failed: {}", runtimeId)
-            self._runtimes.pop(runtimeId, None)
+        self._workIds[runtimeId] = self._coroutineRunner.submit(
+            runtime.fetchLatestVersion(),
+            done=self._onFetchFinished,
+            failed=self._onFetchFailed,
+            runtimeId=runtimeId,
+        )
 
     def _onFetchFinished(self, latestVersion: str, runtimeId: str) -> None:
         self._workIds.pop(runtimeId, None)
@@ -209,6 +195,6 @@ class RuntimeStatusService(QObject):
             self._statuses[runtimeId] = status
             self.statusChanged.emit(status)
 
-    def _onFetchFailed(self, error: str, runtimeId: str) -> None:
+    def _onFetchFailed(self, error: Exception, runtimeId: str) -> None:
         self._workIds.pop(runtimeId, None)
         self._runtimes.pop(runtimeId, None)

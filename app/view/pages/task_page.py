@@ -21,6 +21,7 @@ from app.config.cfg import cfg
 from app.format import toReadableSize
 from app.models.task import TaskStatus
 from app.view.cards.task_cards import TaskCard
+from app.view.components.category_settings import toCategoryName
 from app.view.components.labels import IconBodyLabel
 
 if TYPE_CHECKING:
@@ -475,7 +476,7 @@ class TaskPage(QWidget):
         for category in self._categoryService.categories():
             cid = category.categoryId
             validIds.add(cid)
-            action = Action(category.toIcon(), category.name, self, checkable=True)
+            action = Action(category.toIcon(), toCategoryName(category), self, checkable=True)
             action.triggered.connect(lambda checked=False, c=cid: self.setCategoryFilter(c))
             self.categoryFilterGroup.addAction(action)
             self.categoryFilterMenu.addAction(action)
@@ -545,7 +546,7 @@ class TaskPage(QWidget):
         popup.addSeparator()
         for category in self._categoryService.categories():
             cid = category.categoryId
-            action = Action(category.toIcon(), category.name, self)
+            action = Action(category.toIcon(), toCategoryName(category), self)
             action.triggered.connect(lambda checked=False, c=cid: moveTo(c))
             popup.addAction(action)
         popup.exec(QCursor.pos())

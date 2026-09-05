@@ -4,7 +4,7 @@ import json
 from base64 import b64decode
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, Qt, QUrl, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP as N, Qt, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -49,7 +49,7 @@ async def fetchCatalog() -> list[dict]:
 
 class CatalogPage(PackPage, ScrollArea):
     icon = FluentIcon.CLOUD_DOWNLOAD
-    title = QCoreApplication.translate("CatalogPage", "资源下载")
+    title = N("PackPage", "资源下载")
 
     def __init__(self, pack, parent=None):
         super().__init__(parent)

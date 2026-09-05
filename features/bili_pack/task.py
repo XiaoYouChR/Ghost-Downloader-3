@@ -7,9 +7,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from loguru import logger
-from PySide6.QtCore import QCoreApplication
 
 from app.models.task import Task, TaskError, TaskFile, TaskStep, TaskStatus, SpecialFileSize
+
 from app.platform.filesystem import toSafeFilename
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.task import FFmpegStep
@@ -137,12 +137,10 @@ class BilibiliTask(Task):
     def hasAudio(self) -> bool:
         return any(f.audioUrl or f._audioStreams for f in self.files or [])
 
-    def seasonSummary(self) -> str:
+    def seasonCounts(self) -> tuple[int, int]:
         groups = self.episodeGroups()
         selected = sum(1 for g in groups if any(p.selected for p in g))
-        return QCoreApplication.translate(
-            "BilibiliTask", "{0}/{1} 集"
-        ).format(selected, len(groups))
+        return selected, len(groups)
 
     def setSelection(self, selectedIndexes) -> None:
         super().setSelection(selectedIndexes)

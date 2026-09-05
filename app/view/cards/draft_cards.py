@@ -13,6 +13,7 @@ from qfluentwidgets import (
 from app.config.cfg import cfg
 from app.platform.filesystem import splitStemExt
 from app.format import toReadableSize
+from app.view.components.category_settings import toCategoryName
 from app.view.components.labels import EditableLabel
 
 if TYPE_CHECKING:
@@ -104,7 +105,7 @@ class DraftCard(QWidget):
         category = self._categoryService.categoryById(self._task.category)
         if category:
             self.categoryButton.setIcon(category.toIcon())
-            self.categoryButton.setToolTip(category.name)
+            self.categoryButton.setToolTip(toCategoryName(category))
         else:
             self.categoryButton.setIcon(FluentIcon.TAG)
             self.categoryButton.setToolTip(self.tr("未分类"))
@@ -119,7 +120,7 @@ class DraftCard(QWidget):
         for category in self._categoryService.categories():
             cid = category.categoryId
             icon = category.toIcon()
-            action = Action(icon, category.name, self)
+            action = Action(icon, toCategoryName(category), self)
             action.triggered.connect(lambda _=False, c=cid: self._onCategoryPicked(c))
             menu.addAction(action)
         menu.exec(self.categoryButton.mapToGlobal(self.categoryButton.rect().bottomLeft()))

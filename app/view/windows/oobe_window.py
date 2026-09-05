@@ -20,6 +20,8 @@ from qfluentwidgets import (
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
+from app.error_catalog import toLocalizedError
+from app.models.task import toTaskError
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
     LATEST_EXTENSION_VERSION,
@@ -554,7 +556,7 @@ class BrowserExtensionPage(QWidget):
 
     def _onExtensionExtractFailed(self, error) -> None:
         InfoBar.error(
-            self.tr("解包失败"), str(error),
+            self.tr("解包失败"), toLocalizedError(toTaskError(error)),
             duration=5000, position=InfoBarPosition.TOP, parent=self,
         )
 

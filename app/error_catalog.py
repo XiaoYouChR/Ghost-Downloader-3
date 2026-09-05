@@ -1,9 +1,9 @@
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N
 
 
-def toLocalizedError(message: str, params: dict | None = None) -> str:
-    text = QCoreApplication.translate("TaskErrors", message) or message
-    return text.format_map(params) if params else text
+def toLocalizedError(error, context: str = "TaskErrors") -> str:
+    text = QCoreApplication.translate(context, error.message) or error.message
+    return text.format_map(error.params) if error.params else text
 
 
 N("TaskErrors", "进程异常退出（{code}）：{detail}")
@@ -20,8 +20,10 @@ N("TaskErrors", "无法获取 {name}/{branch}/{path}")
 N("TaskErrors", "无法下载 {name}/{branch}/{path}")
 N("TaskErrors", "无法下载 {name}/{tag}/{asset}")
 N("TaskErrors", "无法获取 PyPI 包信息: {package}")
+N("TaskErrors", "{name} 未安装，请在设置中安装")
 
 N("UpdateErrors", "无法获取版本信息")
 N("UpdateErrors", "校验失败")
 N("UpdateErrors", "当前平台无可用更新")
 N("UpdateErrors", "DMG 中未找到 .app")
+N("UpdateErrors", "发生了意外错误：{detail}")

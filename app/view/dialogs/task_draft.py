@@ -21,7 +21,7 @@ from app.view.components.option_cards import OutputFolderCard, SubworkerCountCar
 from app.error_catalog import toLocalizedError
 
 if TYPE_CHECKING:
-    from app.models.task import Task
+    from app.models.task import Task, TaskError
     from app.services.task_draft import TaskDraft
 
 
@@ -293,7 +293,7 @@ class TaskDraftDialog(MessageBoxBase):
         dialog = DraftEditDialog(task, self._featureService.optionCards(task, self.window()), self.window())
         dialog.exec()
 
-    def _onParseFailed(self, url: str, error: str) -> None:
+    def _onParseFailed(self, url: str, error: TaskError) -> None:
         self._refreshStats()
         displayUrl = url if len(url) <= 48 else f"{url[:45]}..."
         InfoBar.error(

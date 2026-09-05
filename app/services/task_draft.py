@@ -7,8 +7,10 @@ from typing import Any, TYPE_CHECKING
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
+from app.models.task import toTaskError
+
 if TYPE_CHECKING:
-    from app.models.task import Task
+    from app.models.task import Task, TaskError
 
 
 @dataclass
@@ -24,7 +26,7 @@ class DraftItem:
 class TaskDraft(QObject):
     parsingBusyChanged = Signal(bool)
     parseSucceeded = Signal(str, object)
-    parseFailed = Signal(str, str)
+    parseFailed = Signal(str, object)
     itemsChanged = Signal()
     itemsCleared = Signal()
     taskConfirmed = Signal(object, bool)
@@ -72,7 +74,7 @@ class TaskDraft(QObject):
         previous = self._items
         previousUrls = [item.url for item in previous]
         nextItems: list[DraftItem] = []
-        submitErrors: list[tuple[str, str]] = []
+        submitErrors: list[tuple[str, TaskError]] = []
         matcher = SequenceMatcher(a=previousUrls, b=urls, autojunk=False)
 
         for tag, oldStart, oldEnd, newStart, newEnd in matcher.get_opcodes():
@@ -95,7 +97,7 @@ class TaskDraft(QObject):
                     )
                 except Exception as e:
                     logger.opt(exception=e).error("提交解析请求失败 {}", url)
-                    submitErrors.append((url, str(e) or repr(e)))
+                    submitErrors.append((url, toTaskError(e)))
                     nextItems.append(item)
                     continue
                 item.parseId = parseId
@@ -200,6 +202,6 @@ class TaskDraft(QObject):
             return
 
         item.parseId = ""
-        self.parseFailed.emit(item.url, str(error))
+        self.parseFailed.emit(item.url, toTaskError(error))
         logger.warning("解析任务失败 {}: {}", item.url, error)
         self.parsingBusyChanged.emit(self._isParsing())

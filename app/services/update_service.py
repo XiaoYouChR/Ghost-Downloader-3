@@ -21,6 +21,7 @@ from app.config.paths import APP_DATA_DIR, FEATURES_DIR, executableDir
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
+from app.models.task import TaskError, toTaskError
 from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
 from app.update import APP_REPO, isNewer
 
@@ -68,7 +69,7 @@ async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
 
         apps = [p for p in mountPoint.iterdir() if p.suffix == ".app"]
         if not apps:
-            raise RuntimeError("DMG 中未找到 .app")
+            raise TaskError("DMG 中未找到 .app")
 
         await asyncio.to_thread(shutil.copytree, apps[0], targetDir, symlinks=True)
     finally:
@@ -108,7 +109,7 @@ class UpdateInfo:
     latestVersion: str
     state: UpdateState = UpdateState.IDLE
     progress: float = 0
-    error: str = ""
+    error: TaskError | None = None
 
 
 class UpdateService(QObject):
@@ -142,7 +143,7 @@ class UpdateService(QObject):
         data = await self._fetchVersions()
         if data is None:
             logger.debug("检查更新失败，将在下次启动时重试")
-            self._emit("app", UpdateState.IDLE, error="无法获取版本信息")
+            self._emit("app", UpdateState.IDLE, error=TaskError("无法获取版本信息"))
             return
         self._versionsData = data
 
@@ -201,7 +202,7 @@ class UpdateService(QObject):
                 await self._downloadPack(targetId, info)
         except Exception as e:
             logger.opt(exception=e).error("下载更新失败: {}", targetId)
-            self._emit(targetId, UpdateState.FAILED, error=str(e))
+            self._emit(targetId, UpdateState.FAILED, error=toTaskError(e))
 
     async def _downloadApp(self, info: UpdateInfo) -> None:
         appData = self._versionsData.get("app", {})
@@ -221,7 +222,7 @@ class UpdateService(QObject):
 
             if sha and not matchChecksum(outputPath, sha):
                 outputPath.unlink(missing_ok=True)
-                self._emit("app", UpdateState.FAILED, error="校验失败")
+                self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
                 return
 
             self._emit("app", UpdateState.READY)
@@ -229,7 +230,7 @@ class UpdateService(QObject):
 
         full = appData.get("full", {}).get(platformKey)
         if not full:
-            self._emit("app", UpdateState.FAILED, error="当前平台无可用更新")
+            self._emit("app", UpdateState.FAILED, error=TaskError("当前平台无可用更新"))
             return
 
         archivePath = STAGING_DIR / full["file"]
@@ -240,7 +241,7 @@ class UpdateService(QObject):
 
         if sha and not matchChecksum(archivePath, sha):
             archivePath.unlink(missing_ok=True)
-            self._emit("app", UpdateState.FAILED, error="校验失败")
+            self._emit("app", UpdateState.FAILED, error=TaskError("校验失败"))
             return
 
         newDir = STAGING_DIR / "app_new"
@@ -268,7 +269,7 @@ class UpdateService(QObject):
         expectedSha = packData.get("sha256", "")
         if expectedSha and not matchChecksum(outputPath, expectedSha):
             outputPath.unlink(missing_ok=True)
-            self._emit(packId, UpdateState.FAILED, error="校验失败")
+            self._emit(packId, UpdateState.FAILED, error=TaskError("校验失败"))
             return
 
         self._emit(packId, UpdateState.READY)
@@ -324,7 +325,7 @@ class UpdateService(QObject):
                 latestVersion=kwargs.get("latestVersion", ""),
                 state=state,
                 progress=kwargs.get("progress", 0),
-                error=kwargs.get("error", ""),
+                error=kwargs.get("error"),
             )
         else:
             info = replace(current, state=state, **{

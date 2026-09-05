@@ -9,6 +9,7 @@ from qfluentwidgets import (
 )
 
 from app.services.category_service import Category
+from app.view.components.category_settings import toCategoryName
 from app.view.components.token_line_edit import TokenLineEdit
 
 
@@ -77,7 +78,7 @@ class CategoryEditDialog(MessageBoxBase):
     def _populate(self) -> None:
         if self._category is None:
             return
-        self.nameEdit.setText(self._category.name)
+        self.nameEdit.setText(toCategoryName(self._category))
         self.extensionsEdit.setTokens(self._category.extensions)
         self.folderEdit.setText(self._category.folder or "")
         index = self.iconCombo.findData(self._category.icon)
@@ -90,7 +91,7 @@ class CategoryEditDialog(MessageBoxBase):
             self.folderEdit.setText(selected)
 
     def category(self) -> Category:
-        name = self.nameEdit.text().strip() or self.tr("未命名分类")
+        name = self.nameEdit.text().strip() or "未命名分类"
         extensions = [
             ext for token in self.extensionsEdit.tokens()
             if (ext := token.strip().lstrip(".").lower())
@@ -100,6 +101,9 @@ class CategoryEditDialog(MessageBoxBase):
 
         if self._category is None:
             return Category(name=name, icon=icon, extensions=extensions, folder=folder)
+        # 显示名未被改动时保留原文名，避免把译文烘焙进持久化数据
+        if name == toCategoryName(self._category):
+            name = self._category.name
         return Category(
             categoryId=self._category.categoryId,
             name=name, icon=icon, extensions=extensions, folder=folder,

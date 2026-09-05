@@ -14,6 +14,8 @@ from qfluentwidgets import (
 from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
+from app.error_catalog import toLocalizedError
+from app.models.task import toTaskError
 from app.platform.android import IS_ANDROID
 from app.config.constants import (
     AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
@@ -454,7 +456,7 @@ class SettingPage(ScrollArea):
         ExtensionInstallDialog(path, self.window()).exec()
 
     def _onExtensionExtractFailed(self, error) -> None:
-        InfoBar.error(self.tr("解包失败"), str(error),
+        InfoBar.error(self.tr("解包失败"), toLocalizedError(toTaskError(error)),
                       duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _refreshBrowserStatus(self) -> None:
@@ -522,7 +524,7 @@ class SettingPage(ScrollArea):
                 return
             self._updateService.changed.disconnect(onChecked)
             if info.state == UpdateState.IDLE:
-                if info.error:
+                if info.error is not None:
                     InfoBar.error(self.tr("检查更新失败"), self.tr("无法获取最新版本信息"),
                                   duration=3000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
                 else:

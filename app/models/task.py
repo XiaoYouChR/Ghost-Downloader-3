@@ -51,6 +51,12 @@ class StepError:
         return bool(self.message)
 
 
+def toTaskError(error) -> TaskError:
+    if isinstance(error, TaskError):
+        return error
+    return TaskError("发生了意外错误：{detail}", detail=str(error) or type(error).__name__)
+
+
 @dataclass(frozen=True)
 class TaskOptions:
     url: str
@@ -433,17 +439,10 @@ class Task:
         except asyncio.CancelledError:
             logger.info("{} stopped", self.name)
             raise
-        except TaskError as e:
-            if currentStep is not None:
-                currentStep.setError(StepError(e.message, e.params))
-            logger.opt(exception=e).error("{} failed", self.name)
-            raise
         except Exception as e:
+            error = toTaskError(e)
             if currentStep is not None:
-                currentStep.setError(StepError(
-                    "发生了意外错误：{detail}",
-                    {"detail": str(e) or type(e).__name__}
-                ))
+                currentStep.setError(StepError(error.message, error.params))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
 

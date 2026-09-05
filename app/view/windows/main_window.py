@@ -4,7 +4,7 @@ import sys
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QEvent, QRect, QUrl, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QEvent, QRect, QUrl, QTimer, Qt
 from PySide6.QtGui import QColor, QIcon, QDesktopServices, QKeySequence, QPainter, QPalette, QShortcut
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -142,7 +142,8 @@ class MainWindow(MSFluentWindow):
 
     def setupPacks(self) -> None:
         for PageClass in self._featureService.pages():
-            self._addPage(PageClass, PageClass.icon, PageClass.title,
+            self._addPage(PageClass, PageClass.icon,
+                          QCoreApplication.translate("PackPage", PageClass.title),
                           NavigationItemPosition.TOP)
 
     def systemTitleBarRect(self, size) -> QRect:

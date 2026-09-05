@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP as N, QCoreApplication, Signal
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel, FluentIcon, IconWidget,
@@ -10,6 +10,20 @@ from qfluentwidgets import (
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.services.category_service import Category
+
+N("Categories", "视频")
+N("Categories", "音频")
+N("Categories", "图片")
+N("Categories", "字幕")
+N("Categories", "文档")
+N("Categories", "压缩包")
+N("Categories", "程序")
+N("Categories", "其他")
+N("Categories", "未命名分类")
+
+
+def toCategoryName(category: Category) -> str:
+    return QCoreApplication.translate("Categories", category.name)
 
 
 class CategoryRowWidget(QWidget):
@@ -21,7 +35,7 @@ class CategoryRowWidget(QWidget):
         self._categoryId = category.categoryId
 
         self.iconWidget = IconWidget(category.toIcon(), self)
-        self.nameLabel = StrongBodyLabel(category.name, self)
+        self.nameLabel = StrongBodyLabel(toCategoryName(category), self)
         self.summaryLabel = BodyLabel(self._toSummary(category), self)
         self.editButton = ToolButton(FluentIcon.EDIT, self)
         self.removeButton = ToolButton(FluentIcon.DELETE, self)

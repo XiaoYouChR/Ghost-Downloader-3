@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import namedtuple
 from urllib.parse import urlparse
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QAbstractItemView, QHBoxLayout, QHeaderView
 from qfluentwidgets import (
@@ -53,6 +53,10 @@ def toTimeText(seconds: int) -> str:
         return ""
     m, s = divmod(seconds, 60)
     return f"{m}:{s:02d}"
+
+
+def toSeasonText(task: BilibiliTask) -> str:
+    return QCoreApplication.translate("TaskCard", "{0}/{1} 集").format(*task.seasonCounts())
 
 
 class SelectDialog(MessageBoxBase):
@@ -718,7 +722,7 @@ class BilibiliDraftCard(MultiFileDraftCard):
         if self._isSizeEstimated:
             size = f"~{size}"
         if self._task.isSeason:
-            self.sizeLabel.setText(f"{self._task.seasonSummary()} · {size}")
+            self.sizeLabel.setText(f"{toSeasonText(self._task)} · {size}")
         else:
             self.sizeLabel.setText(size)
         self.nameLabel.setText(self._task.name)
@@ -757,7 +761,7 @@ class BilibiliTaskCard(MultiFileTaskCard):
                 and task.files and len(task.files) > 1
                 and not self._isFileMissing
                 and task.status in {TaskStatus.WAITING, TaskStatus.COMPLETED}):
-            self.statusLabel.setText(task.seasonSummary())
+            self.statusLabel.setText(toSeasonText(task))
 
     def _onSelectFilesClicked(self) -> None:
         dialog = SelectDialog(self._task, self.window())

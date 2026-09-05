@@ -13,6 +13,7 @@ from qfluentwidgets import (
 )
 
 from app.format import toReadableSize
+from app.view.components.category_settings import toCategoryName
 from app.view.components.tree_view import AutoSizingTreeView
 
 if TYPE_CHECKING:
@@ -138,7 +139,7 @@ class FileSelectDialog(MessageBoxBase):
                 continue
             action = Action(
                 category.toIcon(),
-                self.tr("仅选{0} ({1})").format(category.name, count),
+                self.tr("仅选{0} ({1})").format(toCategoryName(category), count),
                 self,
             )
             action.triggered.connect(lambda _, cid=categoryId: self._selectCategory(cid))
