@@ -5371,6 +5371,26 @@ FFmpeg: {2}</translation>
             <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
             <translation>找不到適用於 {target} 的 N_m3u8DL-RE 安裝套件</translation>
         </message>
+        <message>
+            <location filename="../../error_catalog.py" line="24" />
+            <source>无法获取版本信息</source>
+            <translation>無法取得版本資訊</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="25" />
+            <source>校验失败</source>
+            <translation>校驗失敗</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="26" />
+            <source>当前平台无可用更新</source>
+            <translation>目前平台無可用更新</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="27" />
+            <source>DMG 中未找到 .app</source>
+            <translation>DMG 中找不到 .app</translation>
+        </message>
     </context>
     <context>
         <name>TaskPage</name>
@@ -5648,29 +5668,6 @@ FFmpeg: {2}</translation>
         <message>
             <source>重新下载失败，请稍后重试</source>
             <translation type="vanished">重新下載失敗，請稍後再試</translation>
-        </message>
-    </context>
-    <context>
-        <name>UpdateErrors</name>
-        <message>
-            <location filename="../../error_catalog.py" line="24" />
-            <source>无法获取版本信息</source>
-            <translation>無法取得版本資訊</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="25" />
-            <source>校验失败</source>
-            <translation>校驗失敗</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="26" />
-            <source>当前平台无可用更新</source>
-            <translation>目前平台無可用更新</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="27" />
-            <source>DMG 中未找到 .app</source>
-            <translation>DMG 中找不到 .app</translation>
         </message>
     </context>
     <context>

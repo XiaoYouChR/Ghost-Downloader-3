@@ -5371,6 +5371,26 @@ FFmpeg: {2}</translation>
             <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
             <translation>{target} に適合する N_m3u8DL-RE のインストールパッケージが見つかりません</translation>
         </message>
+        <message>
+            <location filename="../../error_catalog.py" line="24" />
+            <source>无法获取版本信息</source>
+            <translation>バージョン情報を取得できません</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="25" />
+            <source>校验失败</source>
+            <translation>検証に失敗しました</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="26" />
+            <source>当前平台无可用更新</source>
+            <translation>現在のプラットフォームに利用可能な更新はありません</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="27" />
+            <source>DMG 中未找到 .app</source>
+            <translation>DMG 内に .app が見つかりません</translation>
+        </message>
     </context>
     <context>
         <name>TaskPage</name>
@@ -5648,29 +5668,6 @@ FFmpeg: {2}</translation>
         <message>
             <source>重新下载失败，请稍后重试</source>
             <translation type="vanished">再ダウンロードに失敗しました。しばらくしてから再試行してください</translation>
-        </message>
-    </context>
-    <context>
-        <name>UpdateErrors</name>
-        <message>
-            <location filename="../../error_catalog.py" line="24" />
-            <source>无法获取版本信息</source>
-            <translation>バージョン情報を取得できません</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="25" />
-            <source>校验失败</source>
-            <translation>検証に失敗しました</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="26" />
-            <source>当前平台无可用更新</source>
-            <translation>現在のプラットフォームに利用可能な更新はありません</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="27" />
-            <source>DMG 中未找到 .app</source>
-            <translation>DMG 内に .app が見つかりません</translation>
         </message>
     </context>
     <context>

@@ -4198,6 +4198,26 @@ http://example.com/{mp4,mkv}/video</source>
             <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
             <translation type="unfinished" />
         </message>
+        <message>
+            <location filename="../../error_catalog.py" line="24" />
+            <source>无法获取版本信息</source>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="25" />
+            <source>校验失败</source>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="26" />
+            <source>当前平台无可用更新</source>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="27" />
+            <source>DMG 中未找到 .app</source>
+            <translation type="unfinished" />
+        </message>
     </context>
     <context>
         <name>TaskPage</name>
@@ -4387,29 +4407,6 @@ http://example.com/{mp4,mkv}/video</source>
         <message>
             <location filename="../../view/components/track_bar.py" line="102" />
             <source>封面</source>
-            <translation type="unfinished" />
-        </message>
-    </context>
-    <context>
-        <name>UpdateErrors</name>
-        <message>
-            <location filename="../../error_catalog.py" line="24" />
-            <source>无法获取版本信息</source>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="25" />
-            <source>校验失败</source>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="26" />
-            <source>当前平台无可用更新</source>
-            <translation type="unfinished" />
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="27" />
-            <source>DMG 中未找到 .app</source>
             <translation type="unfinished" />
         </message>
     </context>

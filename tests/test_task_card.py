@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from app.models.task import Task, TaskStep, TaskStatus, StepError
+from app.models.task import Task, TaskStep, TaskStatus, TaskError
 
 
 @dataclass(kw_only=True)
@@ -63,7 +63,7 @@ def makeCard(qapp, status, fileSize=1000, withError=False):
         step.progress = 100
         step.receivedBytes = fileSize
     if withError:
-        step.error = StepError("测试错误")
+        step.error = TaskError("测试错误")
 
     task = Task(name="test.txt", url="http://test", packId="test",
                 steps=[step], fileSize=fileSize)

@@ -39,18 +39,6 @@ class TaskError(Exception):
         return self.message.format_map(self.params) if self.params else self.message
 
 
-@dataclass(frozen=True)
-class StepError:
-    message: str
-    params: dict = field(default_factory=dict)
-
-    def __str__(self) -> str:
-        return self.message.format_map(self.params)
-
-    def __bool__(self) -> bool:
-        return bool(self.message)
-
-
 def toTaskError(error) -> TaskError:
     if isinstance(error, TaskError):
         return error
@@ -118,7 +106,7 @@ class TaskStep:
     progress: float = 0
     receivedBytes: int = 0
     speed: int = 0
-    error: StepError | None = field(default=None, repr=False, init=False)
+    error: TaskError | None = field(default=None, repr=False, init=False)
 
     def _bindTask(self, task: Task):
         self._task = task
@@ -142,7 +130,7 @@ class TaskStep:
         if hasattr(self, "_task"):
             self._task.updateStatus()
 
-    def setError(self, error: StepError) -> None:
+    def setError(self, error: TaskError) -> None:
         self.error = error
         self.status = TaskStatus.FAILED
         self.speed = 0
@@ -239,7 +227,7 @@ class Task:
         return True
 
     @property
-    def lastError(self) -> StepError | None:
+    def lastError(self) -> TaskError | None:
         for step in reversed(self.steps):
             if step.status == TaskStatus.FAILED and step.error:
                 return step.error
@@ -440,9 +428,8 @@ class Task:
             logger.info("{} stopped", self.name)
             raise
         except Exception as e:
-            error = toTaskError(e)
             if currentStep is not None:
-                currentStep.setError(StepError(error.message, error.params))
+                currentStep.setError(toTaskError(e))
             logger.opt(exception=e).error("{} failed", self.name)
             raise
 

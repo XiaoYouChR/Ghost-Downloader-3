@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from app.models.task import Task, TaskStep, TaskStatus, StepError
+from app.models.task import Task, TaskStep, TaskStatus, TaskError
 
 
 @dataclass(kw_only=True)
@@ -114,7 +114,7 @@ class TestSetStatus:
         task = makeTask(TaskStatus.FAILED)
         task.steps[0].progress = 50
         task.steps[0].receivedBytes = 1024
-        task.steps[0].error = StepError("test error")
+        task.steps[0].error = TaskError("test error")
         task.setStatus(TaskStatus.RUNNING)
         assert task.steps[0].progress == 0
         assert task.steps[0].receivedBytes == 0

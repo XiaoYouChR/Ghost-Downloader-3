@@ -5314,6 +5314,26 @@ Data will be copied to new location and the app will then exit. Please manually 
             <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
             <translation>No N_m3u8DL-RE installer package found for {target}</translation>
         </message>
+        <message>
+            <location filename="../../error_catalog.py" line="24" />
+            <source>无法获取版本信息</source>
+            <translation>Unable to retrieve version information</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="25" />
+            <source>校验失败</source>
+            <translation>Checksum verification failed</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="26" />
+            <source>当前平台无可用更新</source>
+            <translation>No update is available for the current platform</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="27" />
+            <source>DMG 中未找到 .app</source>
+            <translation>No .app bundle was found in the DMG</translation>
+        </message>
     </context>
     <context>
         <name>TaskPage</name>
@@ -5583,29 +5603,6 @@ Data will be copied to new location and the app will then exit. Please manually 
         <message>
             <source>重新下载失败，请稍后重试</source>
             <translation type="vanished">Redownload failed. Please try again later</translation>
-        </message>
-    </context>
-    <context>
-        <name>UpdateErrors</name>
-        <message>
-            <location filename="../../error_catalog.py" line="24" />
-            <source>无法获取版本信息</source>
-            <translation>Unable to retrieve version information</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="25" />
-            <source>校验失败</source>
-            <translation>Checksum verification failed</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="26" />
-            <source>当前平台无可用更新</source>
-            <translation>No update is available for the current platform</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="27" />
-            <source>DMG 中未找到 .app</source>
-            <translation>No .app bundle was found in the DMG</translation>
         </message>
     </context>
     <context>

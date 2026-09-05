@@ -109,7 +109,7 @@ class ProgressToast(InfoBar):
             self.iconWidget.icon = InfoBarIcon.ERROR
             self.title = self.tr("下载更新失败")
             self.content = (
-                toLocalizedError(info.error, context="UpdateErrors")
+                toLocalizedError(info.error)
                 if info.error is not None else self.tr("未知错误")
             )
             self._retryButton.show()

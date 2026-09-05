@@ -4567,6 +4567,26 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
             <source>未找到适配 {target} 的 N_m3u8DL-RE 安装包</source>
             <translation>Não foi encontrado um pacote de instalação do N_m3u8DL-RE adequado para {target}</translation>
         </message>
+        <message>
+            <location filename="../../error_catalog.py" line="24" />
+            <source>无法获取版本信息</source>
+            <translation>Não foi possível obter informações da versão</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="25" />
+            <source>校验失败</source>
+            <translation>Falha na verificação</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="26" />
+            <source>当前平台无可用更新</source>
+            <translation>Nenhuma atualização disponível para a plataforma atual</translation>
+        </message>
+        <message>
+            <location filename="../../error_catalog.py" line="27" />
+            <source>DMG 中未找到 .app</source>
+            <translation>Não foi encontrado .app no DMG</translation>
+        </message>
     </context>
     <context>
         <name>TaskPage</name>
@@ -4824,29 +4844,6 @@ Os dados serão copiados para o novo local e o programa será encerrado. Reabra 
         <message>
             <source>复制校验值</source>
             <translation type="vanished">Copiar valor de verificação</translation>
-        </message>
-    </context>
-    <context>
-        <name>UpdateErrors</name>
-        <message>
-            <location filename="../../error_catalog.py" line="24" />
-            <source>无法获取版本信息</source>
-            <translation>Não foi possível obter informações da versão</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="25" />
-            <source>校验失败</source>
-            <translation>Falha na verificação</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="26" />
-            <source>当前平台无可用更新</source>
-            <translation>Nenhuma atualização disponível para a plataforma atual</translation>
-        </message>
-        <message>
-            <location filename="../../error_catalog.py" line="27" />
-            <source>DMG 中未找到 .app</source>
-            <translation>Não foi encontrado .app no DMG</translation>
         </message>
     </context>
     <context>
