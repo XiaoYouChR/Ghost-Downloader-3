@@ -64,6 +64,7 @@ if sys.platform == "linux":
     from pathlib import Path
 
     from app.config.constants import DESKTOP_ID
+    from app.platform.desktop_path import resolveExecPath
 
     def _registerLinux(scheme: str) -> None:
         desktopDir = Path.home() / ".local/share/applications"
@@ -79,7 +80,7 @@ if sys.platform == "linux":
                 desktopFile.write_text(content, encoding="utf-8")
         else:
             desktopDir.mkdir(parents=True, exist_ok=True)
-            appPath = QCoreApplication.applicationFilePath()
+            appPath = resolveExecPath()
             desktopFile.write_text(
                 "[Desktop Entry]\n"
                 "Type=Application\n"
