@@ -205,11 +205,24 @@ def startApp(application, isSilent=False):
         browserService.start()
     cfg.isBrowserExtensionEnabled.valueChanged.connect(browserService.setEnabled)
 
+    def onBrowserPortChanged(_port):
+        if cfg.isBrowserExtensionEnabled.value:
+            browserService.stop()
+            browserService.start()
+
+    cfg.browserExtensionPort.valueChanged.connect(onBrowserPortChanged)
+
     aria2RpcServer.taskDraftRequested.connect(onBrowserDraft)
     if cfg.isAria2RpcEnabled.value:
         aria2RpcServer.start()
     cfg.isAria2RpcEnabled.valueChanged.connect(aria2RpcServer.setEnabled)
-    cfg.aria2RpcPort.valueChanged.connect(aria2RpcServer.setPort)
+
+    def onAria2PortChanged(_port):
+        if cfg.isAria2RpcEnabled.value:
+            aria2RpcServer.stop()
+            aria2RpcServer.start()
+
+    cfg.aria2RpcPort.valueChanged.connect(onAria2PortChanged)
 
     application.clipboardListener.urlsDetected.connect(lambda urls: show().addUrls(urls))
 

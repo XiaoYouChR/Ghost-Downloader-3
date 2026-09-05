@@ -105,7 +105,13 @@ def startApp(application):
     if cfg.isAria2RpcEnabled.value:
         aria2RpcServer.start()
     cfg.isAria2RpcEnabled.valueChanged.connect(aria2RpcServer.setEnabled)
-    cfg.aria2RpcPort.valueChanged.connect(aria2RpcServer.setPort)
+
+    def onAria2PortChanged(_port):
+        if cfg.isAria2RpcEnabled.value:
+            aria2RpcServer.stop()
+            aria2RpcServer.start()
+
+    cfg.aria2RpcPort.valueChanged.connect(onAria2PortChanged)
 
     def onBrowserExtensionToggled(enabled):
         if enabled:
@@ -115,6 +121,13 @@ def startApp(application):
         browserService.setEnabled(enabled)
 
     cfg.isBrowserExtensionEnabled.valueChanged.connect(onBrowserExtensionToggled)
+
+    def onBrowserPortChanged(_port):
+        if cfg.isBrowserExtensionEnabled.value:
+            browserService.stop()
+            browserService.start()
+
+    cfg.browserExtensionPort.valueChanged.connect(onBrowserPortChanged)
     if cfg.isBrowserExtensionEnabled.value:
         keepAlive.holdFor(REASON_BROWSER)
         browserService.start()

@@ -57,12 +57,6 @@ class Aria2RpcServer(QObject):
         else:
             self.stop()
 
-    def setPort(self, _port: int) -> None:
-        if not self._server.isListening():
-            return
-        self.stop()
-        self.start()
-
     @Slot()
     def _onNewConnection(self) -> None:
         while True:
