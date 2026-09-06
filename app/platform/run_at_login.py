@@ -60,6 +60,7 @@ def _setMacOS(enabled: bool) -> None:
 
 def _setLinux(enabled: bool) -> None:
     from app.config.constants import DESKTOP_ID, VERSION
+    from app.platform.desktop_path import resolveExecPath
 
     autoStartDir = Path.home() / ".config/autostart"
     desktopFile = autoStartDir / f"{DESKTOP_ID}.desktop"
@@ -72,7 +73,7 @@ def _setLinux(enabled: bool) -> None:
             f"Version={VERSION}\n"
             "Name=Ghost Downloader 3\n"
             "Comment=A multi-threading downloader with QThread based on PySide6\n"
-            f'Exec="{QCoreApplication.applicationFilePath()}" --silence\n'
+            f'Exec="{resolveExecPath()}" --silence\n'
             "StartupNotify=false\n"
             "Terminal=false\n",
             encoding="utf-8",
