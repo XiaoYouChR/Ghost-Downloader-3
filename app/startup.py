@@ -86,7 +86,7 @@ def startEngine(taskService, speedMeter, featureService, coroutineRunner):
     taskService.taskStarted.connect(lambda _: speedMeter.start())
     taskService.tasksAllCompleted.connect(speedMeter.stop)
     taskService.resumeSaved()
-    featureService.activate(coroutineRunner)
+    featureService.activate()
 
 
 def bindNotifications(taskService, notifyCompleted, notifyDiskSpace):
@@ -107,7 +107,7 @@ def stopEngine(taskService, browserService, aria2RpcServer, featureService, coro
     speedMeter.stop()
     browserService.stop()
     aria2RpcServer.stop()
-    featureService.deactivate(coroutineRunner)
+    featureService.deactivate()
     taskService.flush()
     if updateService is not None:
         updateService.apply()

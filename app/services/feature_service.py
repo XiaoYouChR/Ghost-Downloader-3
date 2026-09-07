@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from threading import Event
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
-
-from PySide6.QtCore import QObject
 
 from app.config.paths import FEATURES_DIR
 from app.models.task import TaskOptions
@@ -19,9 +18,8 @@ if TYPE_CHECKING:
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
 
-class FeatureService(QObject):
-    def __init__(self, taskService, categoryService, coroutineRunner, runtimeStatusService, parent=None):
-        super().__init__(parent)
+class FeatureService:
+    def __init__(self, taskService, categoryService, coroutineRunner, runtimeStatusService):
         self._taskService = taskService
         self._categoryService = categoryService
         self._coroutineRunner = coroutineRunner
@@ -39,12 +37,12 @@ class FeatureService(QObject):
         for pack in loadPacks(FEATURES_DIR, services):
             self._register(pack)
 
-    def activate(self, coroutineRunner) -> None:
+    def activate(self) -> None:
         async def activateAll():
             for pack in self._packs:
                 await pack.activate()
 
-        coroutineRunner.submit(activateAll())
+        self._coroutineRunner.submit(activateAll())
 
     def _register(self, pack: FeaturePack) -> None:
         self._packs.append(pack)
@@ -216,13 +214,15 @@ class FeatureService(QObject):
         for s in enabledSchemes:
             url_scheme.registerUrlScheme(s.scheme)
 
-    def deactivate(self, coroutineRunner) -> None:
-        from PySide6.QtCore import QEventLoop
+    def deactivate(self) -> None:
+        event = Event()
 
         async def deactivateAll():
-            for pack in self._packs:
-                await pack.deactivate()
+            try:
+                for pack in self._packs:
+                    await pack.deactivate()
+            finally:
+                event.set()
 
-        loop = QEventLoop()
-        coroutineRunner.submit(deactivateAll(), done=lambda _: loop.quit())
-        loop.exec()
+        self._coroutineRunner.submit(deactivateAll())
+        event.wait()
