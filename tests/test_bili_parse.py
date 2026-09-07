@@ -321,14 +321,14 @@ def test_seasonSummary_one_episode():
         _baseName="各种番",
     )
     assert [[p.bvid for p in g] for g in task.episodeGroups()] == [["BV1"], ["BV2"]]
-    assert task.seasonSummary() == "1/2 集"
+    assert task.seasonCounts() == (1, 2)
 
     files[0].selected = False
-    assert task.seasonSummary() == "0/2 集"
+    assert task.seasonCounts() == (0, 2)
 
     files[0].selected = True
     files[1].selected = True
-    assert task.seasonSummary() == "2/2 集"
+    assert task.seasonCounts() == (2, 2)
 
 
 def test_cover_steps_season_and_selected_episodes():

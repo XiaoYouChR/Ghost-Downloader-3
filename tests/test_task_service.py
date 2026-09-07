@@ -25,7 +25,7 @@ class StubStep(TaskStep):
 
 class StubCoroutineRunner:
     def __init__(self):
-        self.submitted: list[tuple[str, object]] = []
+        self.submitted: list[tuple[str, object, object]] = []
         self.cancelled: list[str] = []
         self._counter = 0
 
@@ -41,11 +41,18 @@ class StubCoroutineRunner:
             finished()
         return True
 
+    def post(self, callback, *args, **kwargs):
+        callback(*args, **kwargs)
+
     def addSpeed(self, n):
         pass
 
     async def waitForSpeedLimit(self):
         pass
+
+    @property
+    def dispatched(self) -> list[tuple[str, object, object]]:
+        return [(wid, done, failed) for wid, done, failed in self.submitted if done is not None]
 
 
 class StubCategoryService:
@@ -251,7 +258,7 @@ class TestAdd:
         svc, runner = service
         task = makeTask()
         svc.add(task)
-        assert len(runner.submitted) == 1
+        assert len(runner.dispatched) == 1
 
     def test_add_duplicate_rejected(self, service, qtbot):
         svc, runner = service
@@ -270,7 +277,7 @@ class TestAdd:
         svc, runner = service
         task = makeTask("deferred")
         svc.add(task, autoStart=False)
-        assert len(runner.submitted) == 0
+        assert len(runner.dispatched) == 0
         assert svc.taskById("deferred") is task
 
 
@@ -291,7 +298,7 @@ class TestPause:
         svc, runner = service
         task = makeTask("p2")
         svc.add(task)
-        workId = runner.submitted[-1][0]
+        workId = runner.dispatched[-1][0]
         svc.pause(task)
         assert workId in runner.cancelled
 
@@ -346,10 +353,10 @@ class TestQueue:
         svc.add(t1)
         svc.add(t2)
         assert svc.runningCount() == 1
-        _, done, _ = runner.submitted[0]
+        _, done, _ = runner.dispatched[0]
         done(None)
         assert svc.runningCount() == 1
-        assert len(runner.submitted) == 2
+        assert len(runner.dispatched) == 2
 
     def test_all_completed_signal(self, service, monkeypatch, qtbot):
         from app.config.cfg import cfg
@@ -358,7 +365,7 @@ class TestQueue:
         task = makeTask("ac1")
         svc.add(task)
         with qtbot.waitSignal(svc.tasksAllCompleted, timeout=1000):
-            _, done, _ = runner.submitted[-1]
+            _, done, _ = runner.dispatched[-1]
             done(None)
 
 
@@ -456,9 +463,9 @@ class TestMoveToFront:
         svc.add(t2)
         svc.add(t3)
         svc.moveToFront(["nd3"])
-        _, done, _ = runner.submitted[0]
+        _, done, _ = runner.dispatched[0]
         done(None)
-        assert runner.submitted[1][0] is not None
+        assert len(runner.dispatched) >= 2
         dispatched_task = svc.taskById("nd3")
         assert dispatched_task.status == TaskStatus.RUNNING
 

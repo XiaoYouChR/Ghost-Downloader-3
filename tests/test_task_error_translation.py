@@ -1,6 +1,7 @@
 from PySide6.QtCore import QTranslator
 
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
+from app.models.task import TaskError
 
 
 class TaskErrorTranslator(QTranslator):
@@ -19,13 +20,13 @@ def test_task_error_translation_uses_shared_catalog(qapp):
     translator = TaskErrorTranslator()
     qapp.installTranslator(translator)
     try:
-        assert toLocalizedError("该种子已在下载中") == (
+        assert toLocalizedError(TaskError("该种子已在下载中")) == (
             "This torrent is already being downloaded"
         )
-        assert toLocalizedError("该 eD2k 链接已在下载中") == (
+        assert toLocalizedError(TaskError("该 eD2k 链接已在下载中")) == (
             "This eD2k link is already being downloaded"
         )
-        assert toLocalizedError("uncatalogued external error") == (
+        assert toLocalizedError(TaskError("uncatalogued external error")) == (
             "uncatalogued external error"
         )
     finally:

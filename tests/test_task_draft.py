@@ -123,7 +123,7 @@ class TestParseCallbacks:
         runner.reject(workId, "network error")
         assert len(errors) == 1
         assert errors[0][0] == "http://a.com/file.zip"
-        assert "network error" in errors[0][1]
+        assert "network error" in str(errors[0][1])
 
     def test_success_clears_parsing_busy(self, draft, runner):
         states = []

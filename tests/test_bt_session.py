@@ -26,9 +26,7 @@ def torrent_env():
             with open(os.path.join(root, name), "wb") as f:
                 f.write(os.urandom(size))
 
-        fs = lt.file_storage()
-        lt.add_files(fs, root)
-        ct = lt.create_torrent(fs, piece_size=16384)
+        ct = lt.create_torrent(lt.list_files(root), piece_size=16384)
         lt.set_piece_hashes(ct, srcDir)
         torrentBytes = lt.bencode(ct.generate())
 
