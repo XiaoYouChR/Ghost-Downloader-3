@@ -67,7 +67,7 @@ def startApp(application, isSilent=False):
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
     from app.config.paths import executableDir
-    from app.view.clipboard_listener import ClipboardListener
+    from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
     from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
     from app.view.windows.main_window import MainWindow
