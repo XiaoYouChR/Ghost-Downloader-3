@@ -6,7 +6,8 @@ from enum import auto, IntEnum
 from pathlib import Path
 from shutil import move
 from time import time
-from typing import ClassVar, Type, Iterable
+from collections.abc import Iterable
+from typing import ClassVar
 from uuid import uuid4
 
 from loguru import logger
@@ -92,7 +93,7 @@ class TaskFile:
 
 @dataclass(kw_only=True)
 class TaskStep:
-    _registry: ClassVar[dict[str, Type[TaskStep]]] = {}
+    _registry: ClassVar[dict[str, type[TaskStep]]] = {}
     canPause: ClassVar[bool] = True
 
     def __init_subclass__(cls, **kwargs):
@@ -193,7 +194,7 @@ class TaskStep:
 
 @dataclass(kw_only=True, eq=False)
 class Task:
-    _registry: ClassVar[dict[str, Type[Task]]] = {}
+    _registry: ClassVar[dict[str, type[Task]]] = {}
     canEdit: ClassVar[bool] = False
     fileType: ClassVar[type] = TaskFile
     hasOutputFile: ClassVar[bool] = True

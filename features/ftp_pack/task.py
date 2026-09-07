@@ -255,11 +255,11 @@ class FtpStep(TaskStep):
         if self._accelCheckTime == 0:
             self._accelInitialWorkers = len(self._subworkers)
             self._accelInitialSpeed = avgSpeed
-            self._accelCheckTime = asyncio.get_event_loop().time()
+            self._accelCheckTime = asyncio.get_running_loop().time()
             for _ in range(4):
                 self._reassignSubworker()
         else:
-            elapsed = asyncio.get_event_loop().time() - self._accelCheckTime
+            elapsed = asyncio.get_running_loop().time() - self._accelCheckTime
             if elapsed <= 5:
                 return
 

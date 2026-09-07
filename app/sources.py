@@ -4,7 +4,8 @@ import asyncio
 from asyncio.staggered import staggered_race
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from loguru import logger
 

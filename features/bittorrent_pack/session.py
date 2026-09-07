@@ -5,7 +5,8 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import gettempdir
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 import libtorrent as lt

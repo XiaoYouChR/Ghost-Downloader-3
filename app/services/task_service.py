@@ -5,7 +5,8 @@ import json
 import sys
 from pathlib import Path
 from shutil import disk_usage
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from loguru import logger
 

@@ -123,7 +123,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv python install 3.11
+          uv python install 3.13
           uv sync
 
       - name: Build with Nuitka
@@ -327,7 +327,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv python install 3.11
+          uv python install 3.13
           uv sync
 
       - name: Build with Nuitka
@@ -336,7 +336,7 @@ jobs:
           uv run scripts/deploy.py
           # framework Python (setup-python) 构建缺失冻结的 stdlib 子模块（如 http.cookies），
           # 必须确认链接的是 uv python-build-standalone 的 libpython
-          test -f "dist/Ghost-Downloader-3.app/Contents/MacOS/libpython3.11.dylib"
+          test -f "dist/Ghost-Downloader-3.app/Contents/MacOS/libpython3.13.dylib"
           chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
           rm -rf "dist/Ghost-Downloader-3.build"
           rm -rf "dist/Ghost-Downloader-3.dist"
@@ -549,7 +549,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y desktop-file-utils libegl1-mesa-dev libzstd1
-          uv python install 3.11
+          uv python install 3.13
           uv sync
 
       - name: Build with Nuitka
@@ -748,7 +748,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: Install Python
-        run: uv python install 3.11
+        run: uv python install 3.13
 
       - name: Build pack zips
         run: uv run --no-project python3 scripts/build_pack.py --all

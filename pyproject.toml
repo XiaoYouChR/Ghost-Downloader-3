@@ -3,7 +3,7 @@ name = "ghost-downloader-3"
 version = "4.3.5"
 description = "The only downloader you need."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "aioftp[socks]>=0.27.2",
     "desktop-notifier>=6.2.0",

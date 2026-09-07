@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from threading import Thread
-from typing import Any, Callable
+from typing import Any
 from uuid import uuid4
 
 from loguru import logger
@@ -10,16 +11,15 @@ from loguru import logger
 
 class CoroutineRunner:
 
-    def __init__(self, dispatcher: Callable[[Callable], None], isAlive: Callable[[Any], bool] | None = None):
+    def __init__(self, dispatcher: Callable[[Callable], None], isAlive: Callable[[Any], bool] | None = None, *, loop: asyncio.AbstractEventLoop):
         self._dispatcher = dispatcher
         self._isAlive = isAlive
-        self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+        self._loop = loop
         self._thread = Thread(target=self._run, daemon=True)
         self._pending: dict[str, tuple] = {}
         self._running: dict[str, asyncio.Task] = {}
 
     def _run(self):
-        asyncio.set_event_loop(self._loop)
         self._loop.run_forever()
         self._loop.close()
 

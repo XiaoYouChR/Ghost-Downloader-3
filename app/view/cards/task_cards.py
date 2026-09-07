@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QFileInfo, QPoint, Signal, Qt, QT_TRANSLATE_NOOP as N
 from PySide6.QtGui import QColor, QPainter, QPen

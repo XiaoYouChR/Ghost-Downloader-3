@@ -21,6 +21,7 @@ def loadTranslators(application):
 
 
 def loadEngine(application):
+    import sys
     from app.services.category_service import CategoryService
     from app.services.coroutine_runner import CoroutineRunner
     from app.services.speed_meter import SpeedMeter
@@ -33,7 +34,15 @@ def loadEngine(application):
 
     loadTranslators(application)
 
-    coroutineRunner = CoroutineRunner(lambda fn: QTimer.singleShot(0, application, fn), isAlive=isValid)
+    if sys.platform == "win32":
+        from winloop import new_event_loop
+    else:
+        from uvloop import new_event_loop
+
+    coroutineRunner = CoroutineRunner(
+        lambda fn: QTimer.singleShot(0, application, fn), isAlive=isValid,
+        loop=new_event_loop(),
+    )
     categoryService = CategoryService()
     speedMeter = SpeedMeter(coroutineRunner)
 

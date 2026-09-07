@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import typing
+
 from sys import platform
 
 if platform == "win32":
@@ -45,7 +45,7 @@ if platform == "win32":
     WriteFile.restype = wintypes.BOOL
     WriteFile.errcheck = _check_error("WriteFile failed")
 
-    def pwrite(fd: typing.Union[int, wintypes.HANDLE], data: bytes, offset: int) -> int:
+    def pwrite(fd: int | wintypes.HANDLE, data: bytes, offset: int) -> int:
         if isinstance(fd, int):
             handle = wintypes.HANDLE(
                 msvcrt.get_osfhandle(fd)
@@ -97,7 +97,7 @@ if platform == "win32":
     SetEndOfFile.restype = wintypes.BOOL
     SetEndOfFile.errcheck = _check_error("SetEndOfFile failed")
 
-    def ftruncate(fd: typing.Union[int, wintypes.HANDLE], size: int) -> None:
+    def ftruncate(fd: int | wintypes.HANDLE, size: int) -> None:
         if isinstance(fd, int):
             handle = wintypes.HANDLE(
                 msvcrt.get_osfhandle(fd)

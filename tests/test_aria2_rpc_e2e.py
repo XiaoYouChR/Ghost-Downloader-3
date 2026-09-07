@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import http.client
 import json
 import time
@@ -43,7 +44,7 @@ def runner(qapp):
     from shiboken6 import isValid
 
     dispatcher = lambda fn: QTimer.singleShot(0, qapp, fn)
-    cr = CoroutineRunner(dispatcher, isAlive=isValid)
+    cr = CoroutineRunner(dispatcher, isAlive=isValid, loop=asyncio.new_event_loop())
     cr.start()
     yield cr
     cr.stop()
