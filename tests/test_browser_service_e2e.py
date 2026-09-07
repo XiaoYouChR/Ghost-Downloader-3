@@ -49,11 +49,14 @@ def processEventsUntil(qapp, predicate, timeout=5.0):
 
 @pytest.fixture()
 def runner(qapp):
-    cr = CoroutineRunner(parent=qapp)
+    from PySide6.QtCore import QTimer
+    from shiboken6 import isValid
+
+    dispatcher = lambda fn: QTimer.singleShot(0, qapp, fn)
+    cr = CoroutineRunner(dispatcher, isAlive=isValid)
     cr.start()
     yield cr
     cr.stop()
-    cr.wait(2000)
 
 
 @pytest.fixture()

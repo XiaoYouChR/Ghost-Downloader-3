@@ -39,11 +39,14 @@ def _rpcRequest(port: int, method: str, params: list | None = None, rpcId: int =
 
 @pytest.fixture
 def runner(qapp):
-    cr = CoroutineRunner(parent=qapp)
+    from PySide6.QtCore import QTimer
+    from shiboken6 import isValid
+
+    dispatcher = lambda fn: QTimer.singleShot(0, qapp, fn)
+    cr = CoroutineRunner(dispatcher, isAlive=isValid)
     cr.start()
     yield cr
     cr.stop()
-    cr.wait(3000)
 
 
 @pytest.fixture

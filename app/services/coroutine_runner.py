@@ -1,27 +1,30 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Callable
+from threading import Thread
+from typing import Any, Callable
 from uuid import uuid4
 
-from PySide6.QtCore import QObject, QThread, QTimer
-from PySide6.QtWidgets import QApplication
-from shiboken6 import isValid
 from loguru import logger
 
 
-class CoroutineRunner(QThread):
+class CoroutineRunner:
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, dispatcher: Callable[[Callable], None], isAlive: Callable[[Any], bool] | None = None):
+        self._dispatcher = dispatcher
+        self._isAlive = isAlive
         self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+        self._thread = Thread(target=self._run, daemon=True)
         self._pending: dict[str, tuple] = {}
         self._running: dict[str, asyncio.Task] = {}
 
-    def run(self):
+    def _run(self):
         asyncio.set_event_loop(self._loop)
         self._loop.run_forever()
         self._loop.close()
+
+    def start(self):
+        self._thread.start()
 
     def submit(
         self,
@@ -29,7 +32,7 @@ class CoroutineRunner(QThread):
         done: Callable = None,
         failed: Callable = None,
         *args,
-        owner: QObject = None,
+        owner=None,
         **kwargs,
     ) -> str:
         workId = f"wrk_{uuid4().hex}"
@@ -87,18 +90,15 @@ class CoroutineRunner(QThread):
             except Exception as e:
                 logger.opt(exception=e).error("callback failed")
 
-        app = QApplication.instance()
-        if app is not None:
-            QTimer.singleShot(0, app, wrapper)
-        else:
-            wrapper()
+        self._dispatcher(wrapper)
 
-    def _guard(self, owner: QObject, callback: Callable) -> Callable | None:
+    def _guard(self, owner, callback: Callable) -> Callable | None:
         if callback is None:
             return None
+        isAlive = self._isAlive
 
         def guarded(*args, **kwargs):
-            if isValid(owner):
+            if isAlive is None or isAlive(owner):
                 callback(*args, **kwargs)
 
         return guarded
@@ -110,4 +110,3 @@ class CoroutineRunner(QThread):
             self._loop.call_soon_threadsafe(self._loop.stop)
         self._pending.clear()
         self._running.clear()
-

@@ -70,6 +70,15 @@ class StubSpeedMeter:
         pass
 
 
+class StubFileWatcher:
+    class _Signal:
+        def connect(self, _): pass
+    fileChanged = _Signal()
+
+    def addPath(self, _): pass
+    def removePath(self, _): pass
+
+
 # ── Fixtures ──
 
 
@@ -83,7 +92,7 @@ def service(qapp, monkeypatch, tmp_path):
     runner = StubCoroutineRunner()
     category = StubCategoryService()
     speed = StubSpeedMeter()
-    svc = TaskService(runner, category, speed)
+    svc = TaskService(runner, category, speed, StubFileWatcher())
     return svc, runner
 
 

@@ -24,14 +24,15 @@ def loadEngine(application):
     from app.services.coroutine_runner import CoroutineRunner
     from app.services.speed_meter import SpeedMeter
 
-    from PySide6.QtCore import QResource
+    from PySide6.QtCore import QResource, QTimer
+    from shiboken6 import isValid
     from app.config.paths import executableDir
 
     QResource.registerResource(str(executableDir / "app" / "assets" / "resources.rcc"))
 
     loadTranslators(application)
 
-    coroutineRunner = CoroutineRunner(parent=application)
+    coroutineRunner = CoroutineRunner(lambda fn: QTimer.singleShot(0, application, fn), isAlive=isValid)
     categoryService = CategoryService()
     speedMeter = SpeedMeter(coroutineRunner)
 
