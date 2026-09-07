@@ -476,7 +476,7 @@ class TaskPage(QWidget):
         for category in self._categoryService.categories():
             cid = category.categoryId
             validIds.add(cid)
-            action = Action(category.toIcon(), toCategoryName(category), self, checkable=True)
+            action = Action(getattr(FluentIcon, category.icon, FluentIcon.TAG), toCategoryName(category), self, checkable=True)
             action.triggered.connect(lambda checked=False, c=cid: self.setCategoryFilter(c))
             self.categoryFilterGroup.addAction(action)
             self.categoryFilterMenu.addAction(action)
@@ -546,7 +546,7 @@ class TaskPage(QWidget):
         popup.addSeparator()
         for category in self._categoryService.categories():
             cid = category.categoryId
-            action = Action(category.toIcon(), toCategoryName(category), self)
+            action = Action(getattr(FluentIcon, category.icon, FluentIcon.TAG), toCategoryName(category), self)
             action.triggered.connect(lambda checked=False, c=cid: moveTo(c))
             popup.addAction(action)
         popup.exec(QCursor.pos())

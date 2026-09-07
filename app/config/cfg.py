@@ -6,7 +6,7 @@ from enum import Enum
 from re import compile
 from urllib.request import getproxies
 
-from PySide6.QtCore import QRect, QStandardPaths, QLocale
+from app.config.paths import DOWNLOAD_DIR
 from qfluentwidgets import (
     QConfig,
     ConfigItem,
@@ -37,15 +37,15 @@ BASE_HEADERS = {
 }
 
 class Language(Enum):
-    CHINESE_SIMPLIFIED = QLocale(QLocale.Language.Chinese, QLocale.Country.China)
-    CHINESE_TRADITIONAL = QLocale(QLocale.Language.Chinese, QLocale.Country.Taiwan)
-    CANTONESE = QLocale(QLocale.Language.Cantonese, QLocale.Country.HongKong)
-    ENGLISH_UNITED_STATES = QLocale(QLocale.Language.English, QLocale.Country.UnitedStates)
-    JAPANESE = QLocale(QLocale.Language.Japanese, QLocale.Country.Japan)
-    RUSSIAN = QLocale(QLocale.Language.Russian, QLocale.Country.Russia)
-    PORTUGUESE_BRAZIL = QLocale(QLocale.Language.Portuguese, QLocale.Country.Brazil)
-    SPANISH = QLocale(QLocale.Language.Spanish, QLocale.Country.Spain)
-    AUTO = QLocale()
+    CHINESE_SIMPLIFIED = "zh_CN"
+    CHINESE_TRADITIONAL = "zh_TW"
+    CANTONESE = "yue_HK"
+    ENGLISH_UNITED_STATES = "en_US"
+    JAPANESE = "ja_JP"
+    RUSSIAN = "ru_RU"
+    PORTUGUESE_BRAZIL = "pt_BR"
+    SPANISH = "es_ES"
+    AUTO = "Auto"
 
 
 # 语言的展示标签，AUTO 由视图层翻译
@@ -88,24 +88,26 @@ class ProxyValidator(ConfigValidator):
 
 
 class GeometrySerializer(ConfigSerializer):
-    def serialize(self, value: QRect) -> str:
-        x, y, w, h = value.x(), value.y(), value.width(), value.height()
-        return f"{x},{y},{w},{h}"
+    def serialize(self, value: tuple[int, int, int, int]) -> str:
+        return ",".join(map(str, value))
 
-    def deserialize(self, value: str) -> QRect:
+    def deserialize(self, value: str) -> tuple[int, int, int, int]:
         try:
             x, y, w, h = map(int, value.split(","))
-            return QRect(x, y, w, h)
+            return (x, y, w, h)
         except (ValueError, TypeError):
-            return QRect()
+            return (0, 0, 0, 0)
 
 
 class LanguageSerializer(ConfigSerializer):
     def serialize(self, language):
-        return language.value.name() if language != Language.AUTO else "Auto"
+        return language.value
 
     def deserialize(self, value: str):
-        return Language(QLocale(value)) if value != "Auto" else Language.AUTO
+        try:
+            return Language(value)
+        except ValueError:
+            return Language.AUTO
 
 
 class ThemeSerializer(ConfigSerializer):
@@ -227,8 +229,7 @@ class Config(QConfig):
     # 下载
     downloadFolder = ConfigItem(
         "GeneralDownload", "DownloadFolder",
-        "/storage/emulated/0/Download" if IS_ANDROID
-        else QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation),
+        "/storage/emulated/0/Download" if IS_ANDROID else DOWNLOAD_DIR,
         FolderValidator(),
     )
     memoryDownloadFolders = ConfigItem(
@@ -304,7 +305,7 @@ class Config(QConfig):
     )
     isClipboardListenerEnabled = ConfigItem("Software", "ClipboardListener", True, BoolValidator())
     geometry = ConfigItem(
-        "Software", "Geometry", QRect(0, 0, 0, 0), serializer=GeometrySerializer(),
+        "Software", "Geometry", (0, 0, 0, 0), serializer=GeometrySerializer(),
     )
 
     # OOBE

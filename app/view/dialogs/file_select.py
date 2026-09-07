@@ -138,7 +138,7 @@ class FileSelectDialog(MessageBoxBase):
             if category is None:
                 continue
             action = Action(
-                category.toIcon(),
+                getattr(FluentIcon, category.icon, FluentIcon.TAG),
                 self.tr("仅选{0} ({1})").format(toCategoryName(category), count),
                 self,
             )

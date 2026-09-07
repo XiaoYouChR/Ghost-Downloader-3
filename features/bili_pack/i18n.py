@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from app.i18n import N
 
 N("BilibiliErrors", "获取二维码失败")
 N("BilibiliErrors", "二维码接口返回了不完整的数据")

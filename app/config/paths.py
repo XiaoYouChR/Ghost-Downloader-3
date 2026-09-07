@@ -4,7 +4,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QStandardPaths
+from platformdirs import user_data_path, user_downloads_path
 
 executableDir = (
     Path(sys.executable).resolve().parent
@@ -15,7 +15,7 @@ executableDir = (
 APP_DATA_DIR: str = (
     str(executableDir / "GhostDownloader")
     if (executableDir / "GhostDownloader").is_dir()
-    else f"{QStandardPaths.writableLocation(QStandardPaths.StandardLocation.GenericDataLocation)}/GhostDownloader"
+    else str(user_data_path("GhostDownloader", appauthor=False))
 )
 
 PORTABLE_PATH = executableDir / "GhostDownloader"
@@ -26,9 +26,9 @@ FEATURES_DIR = (
     if "__compiled__" not in globals()
     else Path(APP_DATA_DIR) / "features"
 )
-USER_PATH = Path(QStandardPaths.writableLocation(
-    QStandardPaths.StandardLocation.GenericDataLocation
-)) / "GhostDownloader"
+USER_PATH = user_data_path("GhostDownloader", appauthor=False)
+
+DOWNLOAD_DIR: str = str(user_downloads_path())
 
 def isPortable() -> bool:
     return APP_DATA_DIR == str(PORTABLE_PATH)

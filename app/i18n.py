@@ -1,7 +1,9 @@
-from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP as N
+def N(context, text):
+    return text
 
 
 def toLocalizedError(error) -> str:
+    from PySide6.QtCore import QCoreApplication
     text = QCoreApplication.translate("TaskErrors", error.message) or error.message
     return text.format_map(error.params) if error.params else text
 

@@ -21,7 +21,7 @@ from app.models.task import TaskStatus, SpecialFileSize
 from app.platform.desktop import openFile, revealInFolder
 from app.view.components.labels import IconBodyLabel, IconStrongBodyLabel
 from app.view.components.category_settings import toCategoryName
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
 
 if TYPE_CHECKING:
     from app.models.task import Task
@@ -299,7 +299,7 @@ class TaskCard(CardWidget):
         if category is None:
             self.nameLabel.setIcon(None)
             return
-        self.nameLabel.setIcon(category.toIcon())
+        self.nameLabel.setIcon(getattr(FluentIcon, category.icon, FluentIcon.TAG))
 
     def _refreshButtons(self, names=None) -> None:
         for spec in self.buttons:
@@ -401,7 +401,7 @@ class TaskCard(CardWidget):
             moveMenu.addSeparator()
             for category in self._categoryService.categories():
                 cid = category.categoryId
-                action = Action(category.toIcon(), toCategoryName(category), self)
+                action = Action(getattr(FluentIcon, category.icon, FluentIcon.TAG), toCategoryName(category), self)
                 action.triggered.connect(lambda checked=False, c=cid: self._taskService.setCategory(self._task, c))
                 moveMenu.addAction(action)
             menu.addMenu(moveMenu)

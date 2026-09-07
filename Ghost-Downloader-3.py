@@ -79,8 +79,11 @@ def startApp(application, isSilent=False):
 
     sys.excepthook = exceptionHook
 
+    from PySide6.QtCore import QLocale
     from app.platform.desktop import buildFontFamilies
-    cfg.set(cfg.fontFamilies, buildFontFamilies(cfg.language.value.value, application.font().defaultFamily()), save=False)
+    localeName = cfg.language.value.value
+    locale = QLocale() if localeName == "Auto" else QLocale(localeName)
+    cfg.set(cfg.fontFamilies, buildFontFamilies(locale, application.font().defaultFamily()), save=False)
     application.setQuitOnLastWindowClosed(False)
 
     if sys.platform == "darwin":

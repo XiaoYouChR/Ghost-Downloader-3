@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QCoreApplication, Signal
 from loguru import logger
 
 
@@ -20,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions
     from app.services.coroutine_runner import CoroutineRunner
     from app.services.speed_meter import SpeedMeter
+    from PySide6.QtCore import Signal
     from PySide6.QtWidgets import QWidget
     from qfluentwidgets import FluentIcon
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
@@ -110,6 +110,7 @@ class PackConfig:
         return None
 
     def tr(self, text: str) -> str:
+        from PySide6.QtCore import QCoreApplication
         return QCoreApplication.translate(self.__class__.__name__, text)
 
 
@@ -305,6 +306,3 @@ class FeaturePack:
 
     async def deactivate(self):
         pass
-
-    def tr(self, text: str) -> str:
-        return QCoreApplication.translate(self.__class__.__name__, text)

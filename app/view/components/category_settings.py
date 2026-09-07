@@ -34,7 +34,7 @@ class CategoryRowWidget(QWidget):
         super().__init__(parent)
         self._categoryId = category.categoryId
 
-        self.iconWidget = IconWidget(category.toIcon(), self)
+        self.iconWidget = IconWidget(getattr(FluentIcon, category.icon, FluentIcon.TAG), self)
         self.nameLabel = StrongBodyLabel(toCategoryName(category), self)
         self.summaryLabel = BodyLabel(self._toSummary(category), self)
         self.editButton = ToolButton(FluentIcon.EDIT, self)

@@ -10,7 +10,7 @@ from qfluentwidgets import (
 
 from app.format import toReadableSize
 from app.view.components.card_groups import OptionCardGroup
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 
 if TYPE_CHECKING:

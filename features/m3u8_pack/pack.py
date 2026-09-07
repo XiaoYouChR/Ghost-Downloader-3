@@ -12,6 +12,8 @@ from mpegdash.parser import MPEGDASHParser
 
 from app.client import buildClient, toEmulation
 from app.config.cfg import cfg
+from app.i18n import N
+
 from app.models.pack import FeaturePack, TaskParser, FileType
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
@@ -307,13 +309,13 @@ class M3U8Pack(FeaturePack):
         return [
             FileType(
                 extensions=(".m3u8", ".m3u"),
-                displayName=self.tr("M3U8 播放列表"),
+                displayName=N("M3U8Pack", "M3U8 播放列表"),
                 mimeType="application/vnd.apple.mpegurl",
                 icon="m3u8",
             ),
             FileType(
                 extensions=(".mpd",),
-                displayName=self.tr("DASH 清单"),
+                displayName=N("M3U8Pack", "DASH 清单"),
                 mimeType="application/dash+xml",
                 icon="m3u8",
             ),

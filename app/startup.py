@@ -3,13 +3,14 @@ from __future__ import annotations
 
 
 def loadTranslators(application):
-    from PySide6.QtCore import QTranslator
+    from PySide6.QtCore import QLocale, QTranslator
     from app.config.cfg import cfg
 
     translator = QTranslator(application)
 
     def setLocale():
-        locale = cfg.language.value.value
+        localeName = cfg.language.value.value
+        locale = QLocale() if localeName == "Auto" else QLocale(localeName)
         application.removeTranslator(translator)
         if locale.name() != "zh_CN":
             if translator.load(locale, "gd3", ".", ":/i18n") or translator.load("gd3.en_US", ":/i18n"):

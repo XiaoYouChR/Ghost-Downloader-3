@@ -9,7 +9,7 @@ from qfluentwidgets import (
     InfoBarPosition, TransparentToolButton, isDarkTheme,
 )
 
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
 from app.services.update_service import UpdateState
 
 if TYPE_CHECKING:

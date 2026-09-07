@@ -14,7 +14,7 @@ from qfluentwidgets import (
 from app.view.components.scroll_area import ScrollArea
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.platform.android import IS_ANDROID
 from app.config.constants import (

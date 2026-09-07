@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from app.i18n import N
 
 N("TaskErrors", "服务器拒绝了请求（403），链接可能已失效（{detail}）")
 N("TaskErrors", "资源不存在（404），链接可能已失效（{detail}）")

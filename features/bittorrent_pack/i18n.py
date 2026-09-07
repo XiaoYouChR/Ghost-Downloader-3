@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from app.i18n import N
 
 N("TaskErrors", "该种子已在下载中")
 N("TaskErrors", "至少需要选择一个文件")

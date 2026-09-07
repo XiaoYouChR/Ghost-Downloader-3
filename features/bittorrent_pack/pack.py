@@ -8,6 +8,8 @@ from urllib.parse import urlparse
 import libtorrent as lt
 from loguru import logger
 
+from app.i18n import N
+
 from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
@@ -114,7 +116,7 @@ class BitTorrentPack(FeaturePack):
         return [
             FileType(
                 extensions=(".torrent",),
-                displayName=self.tr("BitTorrent 种子文件"),
+                displayName=N("BitTorrentPack", "BitTorrent 种子文件"),
                 mimeType="application/x-bittorrent",
                 icon="torrent",
             ),

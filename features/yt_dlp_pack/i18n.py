@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
+from app.i18n import N
 
 N("TaskErrors", "该视频在您所在地区不可用，请尝试配置代理（{detail}）")
 N("TaskErrors", "视频不可用，可能已被删除或设为私密（{detail}）")

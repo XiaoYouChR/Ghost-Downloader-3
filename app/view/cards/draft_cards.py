@@ -104,7 +104,7 @@ class DraftCard(QWidget):
             return
         category = self._categoryService.categoryById(self._task.category)
         if category:
-            self.categoryButton.setIcon(category.toIcon())
+            self.categoryButton.setIcon(getattr(FluentIcon, category.icon, FluentIcon.TAG))
             self.categoryButton.setToolTip(toCategoryName(category))
         else:
             self.categoryButton.setIcon(FluentIcon.TAG)
@@ -119,7 +119,7 @@ class DraftCard(QWidget):
         menu.addSeparator()
         for category in self._categoryService.categories():
             cid = category.categoryId
-            icon = category.toIcon()
+            icon = getattr(FluentIcon, category.icon, FluentIcon.TAG)
             action = Action(icon, toCategoryName(category), self)
             action.triggered.connect(lambda _=False, c=cid: self._onCategoryPicked(c))
             menu.addAction(action)

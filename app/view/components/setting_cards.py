@@ -20,7 +20,7 @@ from qfluentwidgets import (
 from app.view.components.setting_card_group import CollapsibleSettingCard
 
 from app.config.cfg import cfg, proxy, currentHeaders, currentHeadersPresetIndex
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.view.components.banners import WarningBanner
 

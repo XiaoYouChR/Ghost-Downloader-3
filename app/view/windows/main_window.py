@@ -429,7 +429,8 @@ class MainWindow(MSFluentWindow):
 
         if sys.platform == "darwin" and mode != CloseMode.QUIT:
             if not self.isMaximized():
-                cfg.set(cfg.geometry, self.geometry())
+                geo = self.geometry()
+                cfg.set(cfg.geometry, (geo.x(), geo.y(), geo.width(), geo.height()))
             self.hide()
             return
 
@@ -502,7 +503,8 @@ class MainWindow(MSFluentWindow):
             self._onCloseClicked()
             return
         if not self.isMaximized():
-            cfg.set(cfg.geometry, self.geometry())
+            geo = self.geometry()
+            cfg.set(cfg.geometry, (geo.x(), geo.y(), geo.width(), geo.height()))
         from app.view.qfw_patch import unregisterRouter
         unregisterRouter(self.stackedWidget)
         event.accept()
@@ -512,8 +514,9 @@ class MainWindow(MSFluentWindow):
         if not self._isGeometryRestored:
             self._isGeometryRestored = True
             saved = cfg.geometry.value
-            if saved.isValid() and QApplication.screenAt(saved.center()) is not None:
-                self.setGeometry(saved)
+            rect = QRect(*saved)
+            if rect.isValid() and QApplication.screenAt(rect.center()) is not None:
+                self.setGeometry(rect)
             else:
                 self.resize(960, 540)
                 desktop = QApplication.primaryScreen().availableGeometry()

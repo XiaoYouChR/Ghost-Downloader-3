@@ -20,7 +20,7 @@ from qfluentwidgets import (
 from qfluentwidgets.common.style_sheet import updateStyleSheet
 
 from app.config.cfg import cfg, LANGUAGE_TEXTS
-from app.error_catalog import toLocalizedError
+from app.i18n import toLocalizedError
 from app.models.task import toTaskError
 from app.config.constants import (
     CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
