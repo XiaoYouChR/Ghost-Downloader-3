@@ -26,7 +26,7 @@ from app.models.task import MergeTaskOptions, PageTaskOptions
 if TYPE_CHECKING:
     from app.models.task import Task, TaskOptions, ResourceTaskOptions
 
-EXTENSION_UNPACK_DIR = Path(APP_DATA_DIR) / "browser_extension"
+EXTENSION_UNPACK_DIR = APP_DATA_DIR / "browser_extension"
 
 
 async def extractBrowserExtension(loadCrx) -> Path:

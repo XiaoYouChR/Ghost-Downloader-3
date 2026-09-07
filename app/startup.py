@@ -28,9 +28,9 @@ def loadEngine(application):
 
     from PySide6.QtCore import QResource, QTimer
     from shiboken6 import isValid
-    from app.config.paths import executableDir
+    from app.config.paths import EXECUTABLE_DIR
 
-    QResource.registerResource(str(executableDir / "app" / "assets" / "resources.rcc"))
+    QResource.registerResource(str(EXECUTABLE_DIR / "app" / "assets" / "resources.rcc"))
 
     loadTranslators(application)
 

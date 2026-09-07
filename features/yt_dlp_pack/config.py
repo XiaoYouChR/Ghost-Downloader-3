@@ -26,7 +26,7 @@ AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PA
 
 
 def cookieFile() -> Path:
-    return Path(APP_DATA_DIR) / "YtDlp" / "cookies.txt"
+    return APP_DATA_DIR / "YtDlp" / "cookies.txt"
 
 
 def hasCookieFile() -> bool:

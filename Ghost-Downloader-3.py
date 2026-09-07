@@ -53,7 +53,7 @@ def startApp(application, isSilent=False):
     import shutil
     from PySide6.QtGui import QIcon
     from app.config.cfg import cfg
-    from app.config.paths import executableDir
+    from app.config.paths import EXECUTABLE_DIR
     from app.view.shell.clipboard_listener import ClipboardListener
     from app.signal_bus import signalBus
     from app.startup import loadEngine, createServices, loadPacks, startEngine, bindNotifications, checkUpdateAtStartup, stopEngine
@@ -79,7 +79,7 @@ def startApp(application, isSilent=False):
 
     coroutineRunner, categoryService, speedMeter = loadEngine(application)
 
-    appDir = executableDir.parent.parent if sys.platform == "darwin" else executableDir
+    appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
     backupDir = appDir.parent / f"{appDir.name}_backup"
     if backupDir.is_dir():
         shutil.rmtree(backupDir, ignore_errors=True)

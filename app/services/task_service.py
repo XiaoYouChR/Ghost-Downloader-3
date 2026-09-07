@@ -23,7 +23,7 @@ class TaskStore:
     def __init__(self):
         self._tasks: dict[str, Task] = {}
         self._loaded = False
-        self._path = Path(APP_DATA_DIR) / "tasks.jsonl"
+        self._path = APP_DATA_DIR / "tasks.jsonl"
 
     def add(self, task: Task) -> None:
         self._tasks[task.taskId] = task

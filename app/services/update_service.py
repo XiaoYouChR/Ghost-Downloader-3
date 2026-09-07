@@ -17,7 +17,7 @@ from app.signal import Signal
 from loguru import logger
 
 from app.config.constants import VERSION
-from app.config.paths import APP_DATA_DIR, FEATURES_DIR, executableDir
+from app.config.paths import APP_DATA_DIR, FEATURES_DIR, EXECUTABLE_DIR
 from app.platform.android import IS_ANDROID
 from app.platform.filesystem import matchChecksum
 from app.models.pack import PackManifest
@@ -28,7 +28,7 @@ from app.update import APP_REPO, isNewer
 if TYPE_CHECKING:
     from app.services.coroutine_runner import CoroutineRunner
 
-STAGING_DIR = Path(APP_DATA_DIR) / "update_staging"
+STAGING_DIR = APP_DATA_DIR / "update_staging"
 
 OS_MAP = {"win32": "Windows", "darwin": "macOS", "linux": "Linux"}
 MACHINE_MAP = {"AMD64": "x86_64", "x86_64": "x86_64", "aarch64": "arm64", "arm64": "arm64"}
@@ -286,12 +286,12 @@ class UpdateService:
 
     def _startUpdater(self) -> None:
         updaterName = "updater.exe" if sys.platform == "win32" else "updater"
-        updaterPath = executableDir / updaterName
+        updaterPath = EXECUTABLE_DIR / updaterName
         if not updaterPath.is_file():
             logger.error("updater not found: {}", updaterPath)
             return
 
-        appDir = executableDir.parent.parent if sys.platform == "darwin" else executableDir
+        appDir = EXECUTABLE_DIR.parent.parent if sys.platform == "darwin" else EXECUTABLE_DIR
         patchPath = STAGING_DIR / "patch.hdiff"
         stagingNewDir = STAGING_DIR / "app_new"
 

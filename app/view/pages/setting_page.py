@@ -493,9 +493,9 @@ class SettingPage(ScrollArea):
         setRunAtLogin(enabled)
 
     def _onMigrateClicked(self) -> None:
-        from app.config.paths import isPortable, migrate, PORTABLE_PATH, USER_PATH
+        from app.config.paths import isPortable, migrate, PORTABLE_DIR, USER_DATA_DIR
 
-        target = USER_PATH if isPortable() else PORTABLE_PATH
+        target = USER_DATA_DIR if isPortable() else PORTABLE_DIR
         mode = self.tr("用户模式") if isPortable() else self.tr("Portable 模式")
         dialog = MessageBox(
             self.tr("切换数据存储模式"),

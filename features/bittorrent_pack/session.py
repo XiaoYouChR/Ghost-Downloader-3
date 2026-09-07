@@ -300,7 +300,7 @@ class BTSession(QObject):
 
     def _loadDhtState(self) -> lt.session_params:
         from app.config.paths import APP_DATA_DIR
-        path = Path(APP_DATA_DIR) / DHT_STATE_FILE
+        path = APP_DATA_DIR / DHT_STATE_FILE
         if path.exists():
             try:
                 return lt.read_session_params(
@@ -318,7 +318,7 @@ class BTSession(QObject):
             state = self._session.save_state(
                 lt.save_state_flags_t.save_dht_state
             )
-            (Path(APP_DATA_DIR) / DHT_STATE_FILE).write_bytes(
+            (APP_DATA_DIR / DHT_STATE_FILE).write_bytes(
                 lt.bencode(state)
             )
         except Exception as e:

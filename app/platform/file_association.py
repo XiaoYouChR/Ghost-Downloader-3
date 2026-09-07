@@ -9,7 +9,7 @@ from loguru import logger
 from PySide6.QtCore import QCoreApplication
 
 from app.config.constants import DESKTOP_ID
-from app.config.paths import executableDir
+from app.config.paths import EXECUTABLE_DIR
 
 if sys.platform == "win32":
     import ctypes
@@ -32,7 +32,7 @@ def register(fileTypes: list[FileType]) -> None:
 def _registerWindows(fileTypes: list[FileType]) -> None:
     command = f'"{QCoreApplication.applicationFilePath().replace("/", chr(92))}" "%1"'
     for fileType in fileTypes:
-        iconPath = str(executableDir / "app" / "assets" / "file_icons" / f"{fileType.icon}.ico").replace("/", "\\")
+        iconPath = str(EXECUTABLE_DIR / "app" / "assets" / "file_icons" / f"{fileType.icon}.ico").replace("/", "\\")
         for ext in fileType.extensions:
             progId = f"GhostDownloader{ext}"
             for regPath, regValue in (

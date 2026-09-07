@@ -136,7 +136,7 @@ class ED2kSession:
                 raise TaskError(
                     "{name} 未安装，请在设置中安装", name=ed2kRuntime.name
                 )
-            client = Client(Path(path), Path(APP_DATA_DIR) / "ed2k_data")
+            client = Client(Path(path), APP_DATA_DIR / "ed2k_data")
             await client.start(Settings(
                 enableDht=ed2kConfig.enableDht.value,
                 enableUpnp=ed2kConfig.enableUpnp.value,

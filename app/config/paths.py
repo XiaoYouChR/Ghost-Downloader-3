@@ -6,38 +6,39 @@ from pathlib import Path
 
 from platformdirs import user_data_path, user_downloads_path
 
-executableDir = (
+EXECUTABLE_DIR = (
     Path(sys.executable).resolve().parent
     if "__compiled__" in globals()
     else Path(".")
 )
 
-APP_DATA_DIR: str = (
-    str(executableDir / "GhostDownloader")
-    if (executableDir / "GhostDownloader").is_dir()
-    else str(user_data_path("GhostDownloader", appauthor=False))
+APP_DATA_DIR = (
+    EXECUTABLE_DIR / "GhostDownloader"
+    if (EXECUTABLE_DIR / "GhostDownloader").is_dir()
+    else user_data_path("GhostDownloader", appauthor=False)
 )
 
-PORTABLE_PATH = executableDir / "GhostDownloader"
+PORTABLE_DIR = EXECUTABLE_DIR / "GhostDownloader"
 
-SEED_FEATURES_DIR = executableDir / "features"
+SEED_FEATURES_DIR = EXECUTABLE_DIR / "features"
 FEATURES_DIR = (
     SEED_FEATURES_DIR
     if "__compiled__" not in globals()
-    else Path(APP_DATA_DIR) / "features"
+    else APP_DATA_DIR / "features"
 )
-USER_PATH = user_data_path("GhostDownloader", appauthor=False)
+USER_DATA_DIR = user_data_path("GhostDownloader", appauthor=False)
 
-DOWNLOAD_DIR: str = str(user_downloads_path())
+DOWNLOAD_DIR = user_downloads_path()
+
 
 def isPortable() -> bool:
-    return APP_DATA_DIR == str(PORTABLE_PATH)
+    return APP_DATA_DIR == PORTABLE_DIR
 
 
 def migrate(target: Path) -> None:
     from loguru import logger
     logger.remove()
-    source = Path(APP_DATA_DIR)
+    source = APP_DATA_DIR
     target.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, target, dirs_exist_ok=True)
     if isPortable():

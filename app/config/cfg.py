@@ -229,7 +229,7 @@ class Config(QConfig):
     # 下载
     downloadFolder = ConfigItem(
         "GeneralDownload", "DownloadFolder",
-        "/storage/emulated/0/Download" if IS_ANDROID else DOWNLOAD_DIR,
+        "/storage/emulated/0/Download" if IS_ANDROID else str(DOWNLOAD_DIR),
         FolderValidator(),
     )
     memoryDownloadFolders = ConfigItem(
