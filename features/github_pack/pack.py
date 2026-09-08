@@ -7,7 +7,6 @@ from loguru import logger
 from app.client import buildClient
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskError, TaskOptions, ResourceTaskOptions
-from http_pack.cards import HttpTaskCard
 from http_pack.pack import HttpParser
 from http_pack.task import HttpTask, HttpTaskStep
 from .config import githubConfig, selectedProxySite, GITHUB_PROXY_SITES
@@ -148,7 +147,10 @@ class GitHubPack(FeaturePack):
     packId = "github"
     config = githubConfig
     parsers = [GitHubParser]
-    taskCards = {HttpTask: HttpTaskCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from http_pack.cards import HttpTaskCard
+        return HttpTaskCard
 
     def optionCards(self, task, parent=None):
         from http_pack.pack import HttpPack

@@ -4,10 +4,9 @@ from urllib.parse import urlparse
 
 from app.client import buildClient
 from app.models.pack import FeaturePack, TaskParser
-from app.models.task import TaskOptions
+from app.models.task import Task, TaskOptions
 from app.platform.filesystem import toSafeFilename
 from .account import BilibiliAccount
-from .cards import BilibiliDraftCard, BilibiliTaskCard
 from .config import bilibiliConfig
 from .parse import buildPages, parseBiliUrl
 from .stream import buildSize, fetchPlayurl, toStreamUrl
@@ -157,8 +156,14 @@ class BilibiliPack(FeaturePack):
     packId = "bili"
     config = bilibiliConfig
     parsers = [BilibiliParser]
-    taskCards = {BilibiliTask: BilibiliTaskCard}
-    draftCards = {BilibiliTask: BilibiliDraftCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from .cards import BilibiliTaskCard
+        return BilibiliTaskCard
+
+    def draftCardClass(self, task: Task) -> type | None:
+        from .cards import BilibiliDraftCard
+        return BilibiliDraftCard
 
     def __init__(self, services):
         super().__init__(services)

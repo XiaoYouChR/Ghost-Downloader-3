@@ -5,8 +5,7 @@ import platform
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
-from qfluentwidgets import FluentIcon
+from app.i18n import N
 
 from app.config.cfg import ConfigItem
 from app.config.paths import APP_DATA_DIR
@@ -62,7 +61,7 @@ class FFmpegRuntime(BinaryRuntime):
     canInstall = not IS_ANDROID
     title = N("BinaryRuntime", "视频合并")
     description = N("BinaryRuntime", "哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件")
-    icon = FluentIcon.VIDEO
+    icon = "VIDEO"
     isRecommended = True
 
     def installFolder(self) -> Path:

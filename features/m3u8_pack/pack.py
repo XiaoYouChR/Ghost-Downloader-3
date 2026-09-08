@@ -17,7 +17,6 @@ from app.i18n import N
 from app.models.pack import FeaturePack, TaskParser, FileType
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
-from .cards import M3U8DraftCard, M3U8TaskCard
 from .config import m3u8Config, m3u8Runtime
 from .task import M3U8Task, M3U8TaskStep
 
@@ -249,14 +248,17 @@ class M3U8Parser(TaskParser):
 class M3U8Pack(FeaturePack):
     packId = "m3u8"
     parsers = [M3U8Parser]
-    taskCards = {M3U8Task: M3U8TaskCard}
-    draftCards = {M3U8Task: M3U8DraftCard}
 
-    def taskCardClass(self, task):
+    def taskCardClass(self, task: Task) -> type | None:
         if getattr(task, "isLive", False):
             from .cards import M3U8LiveTaskCard
             return M3U8LiveTaskCard
-        return super().taskCardClass(task)
+        from .cards import M3U8TaskCard
+        return M3U8TaskCard
+
+    def draftCardClass(self, task: Task) -> type | None:
+        from .cards import M3U8DraftCard
+        return M3U8DraftCard
 
     def __init__(self, services):
         self.config = m3u8Config

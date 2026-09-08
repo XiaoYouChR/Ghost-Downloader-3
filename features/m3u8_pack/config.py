@@ -4,17 +4,16 @@ import platform
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
-from qfluentwidgets import (
+from app.config.cfg import (
     BoolValidator,
     ConfigItem,
-    FluentIcon,
     FolderValidator,
     OptionsConfigItem,
     OptionsValidator,
     RangeConfigItem,
     RangeValidator,
 )
+from app.i18n import N
 
 from app.config.paths import APP_DATA_DIR
 from app.install import createInstallTask
@@ -147,7 +146,7 @@ class M3U8Runtime(BinaryRuntime):
     canInstall = not IS_ANDROID
     title = N("BinaryRuntime", "M3U8 / 直播下载")
     description = N("BinaryRuntime", "支持 HLS、DASH 等流媒体协议，可录制直播流")
-    icon = FluentIcon.MEDIA
+    icon = "MEDIA"
     isRecommended = True
 
     def installFolder(self) -> Path:

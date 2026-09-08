@@ -7,7 +7,6 @@ from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toSafeFilename
 from loguru import logger
 
-from .cards import YtDlpDraftCard, YtDlpTaskCard
 from .config import ytDlpConfig, youTubeRuntime
 from .task import YouTubeTask, buildStepGroup
 
@@ -62,8 +61,14 @@ class YouTubeParser(TaskParser):
 class YouTubePack(FeaturePack):
     packId = "ytdlp"
     parsers = [YouTubeParser]
-    taskCards = {YouTubeTask: YtDlpTaskCard}
-    draftCards = {YouTubeTask: YtDlpDraftCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from .cards import YtDlpTaskCard
+        return YtDlpTaskCard
+
+    def draftCardClass(self, task: Task) -> type | None:
+        from .cards import YtDlpDraftCard
+        return YtDlpDraftCard
 
     def __init__(self, services):
         self.config = ytDlpConfig

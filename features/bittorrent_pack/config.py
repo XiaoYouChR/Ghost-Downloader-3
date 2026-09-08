@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from app.config.cfg import ConfigItem
-from app.models.pack import PackConfig
-from qfluentwidgets import (
+from app.config.cfg import (
     BoolValidator,
+    ConfigItem,
     OptionsConfigItem,
     OptionsValidator,
     RangeConfigItem,
     RangeValidator,
 )
+from app.models.pack import PackConfig
 
 from .web_tracker.schema import (
     DEFAULT_WEB_TRACKER_SOURCES,

@@ -1,6 +1,6 @@
 import json
 
-from qfluentwidgets import ConfigSerializer, ConfigValidator
+from app.config.cfg import ConfigSerializer, ConfigValidator
 
 DEFAULT_WEB_TRACKER_SOURCES = [
     "https://cf.trackerslist.com/best.txt",

@@ -11,11 +11,83 @@ from loguru import logger
 from app.models.task import Task, TaskError, TaskFile, TaskStep, TaskStatus, SpecialFileSize
 
 from app.platform.filesystem import toSafeFilename
+from app.i18n import N
 from http_pack.task import HttpTaskStep
 from ffmpeg_pack.task import FFmpegStep
 from .stream import buildSize, fetchPlayurl, probeSize, toStreamUrl
 
 AUDIO_QUALITY_LABELS = {30216: "64K", 30232: "132K", 30280: "192K", 30250: "杜比全景声", 30251: "Hi-Res"}
+CODEC_NAMES = {7: "H.264", 12: "H.265", 13: "AV1"}
+
+
+def streamPage(task: BilibiliTask) -> BiliPage | None:
+    return next((p for p in task.files or [] if p._videoStreams or p._audioStreams), None)
+
+
+def videoTiers(task: BilibiliTask) -> list[tuple[str, str]]:
+    page = streamPage(task)
+    if page is None:
+        return []
+    qualityMap = dict(zip(task._acceptQualities, task._qualityLabels))
+    tiers = []
+    for s in page._videoStreams:
+        kbps = s["bandwidth"] / 1000
+        bitrate = f"{kbps / 1000:.1f}Mbps" if kbps >= 1000 else f"{int(kbps)}Kbps"
+        codec = CODEC_NAMES.get(s["codecid"], "")
+        name = qualityMap.get(s["id"], str(s["id"]))
+        tiers.append((f'{s["id"]}-{s["codecid"]}', f"{name} ({codec}, {bitrate})"))
+    return tiers
+
+
+def audioTiers(task: BilibiliTask) -> list[tuple[str, str]]:
+    page = streamPage(task)
+    if page is None:
+        return []
+    tiers = []
+    seen = set()
+    for s in page._audioStreams:
+        if s["id"] in seen:
+            continue
+        seen.add(s["id"])
+        name = AUDIO_QUALITY_LABELS.get(s["id"], str(s["id"]))
+        tiers.append((str(s["id"]), f'{name} ({s["bandwidth"] // 1000}Kbps)'))
+    return tiers
+
+
+def currentVideoTier(task: BilibiliTask) -> str:
+    page = streamPage(task)
+    if page is None:
+        return ""
+    return next(
+        (f'{s["id"]}-{s["codecid"]}'
+         for s in page._videoStreams if toStreamUrl(s) == page.videoUrl),
+        "",
+    )
+
+
+def currentAudioTier(task: BilibiliTask) -> str:
+    page = streamPage(task)
+    if page is None:
+        return ""
+    return next(
+        (str(s["id"]) for s in page._audioStreams if toStreamUrl(s) == page.audioUrl), "",
+    )
+
+
+def subtitleChoices(task: BilibiliTask) -> list[tuple[str, str]]:
+    seen = set()
+    choices = []
+    for page in task.files or []:
+        for sub in page.subtitles:
+            lan = sub.get("lan", "")
+            if not lan or lan in seen:
+                continue
+            seen.add(lan)
+            label = sub.get("lan_doc", lan)
+            if sub.get("isAi"):
+                label += N("BilibiliDraftCard", "（自动生成）")
+            choices.append((lan, label))
+    return choices
 
 
 def buildTimeSuffix(startTime: int, endTime: int) -> str:
@@ -35,7 +107,7 @@ def parseSegmentBaseEndByte(streams: list[dict], url: str) -> int:
     return 4095
 
 
-def pageByIndex(task, fileIndex: int):
+def pageByIndex(task: BilibiliTask, fileIndex: int) -> BiliPage | None:
     return next((f for f in task.files or [] if f.index == fileIndex), None)
 
 
@@ -62,6 +134,17 @@ def setPagePart(page: BiliPage, name: str) -> None:
         page.relativePath = f"{page.episodeTitle} - P{page.pageNumber}"
     else:
         page.relativePath = name or f"P{page.pageNumber}"
+
+
+def setFileName(task: BilibiliTask, index: int, name: str) -> None:
+    page = pageByIndex(task, index)
+    if page is None:
+        return
+    if page.episodeTitle:
+        setEpisodeTitle([p for p in task.files or [] if p.bvid == page.bvid], name)
+    else:
+        setPagePart(page, name)
+    task.update()
 
 
 @dataclass(kw_only=True)

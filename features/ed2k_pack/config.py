@@ -4,13 +4,14 @@ import platform
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP as N
-from qfluentwidgets import ConfigItem, BoolValidator, FluentIcon, RangeConfigItem, RangeValidator
+from app.config.cfg import BoolValidator, ConfigItem, RangeConfigItem, RangeValidator
+from app.i18n import N
 
 from app.config.paths import APP_DATA_DIR
 from app.install import FetchStep, InstallTask
 from app.models.pack import BinaryRuntime, PackConfig
-from app.platform.filesystem import toPosixPath
+from app.platform.android import IS_ANDROID, nativeLibraryDir
+from app.platform.filesystem import findExecutable, toPosixPath
 from app.sources import Repo, fetchLatestRelease, probeDownloadUrl
 from .task import ED2kInstallStep
 
@@ -86,13 +87,22 @@ ed2kConfig = ED2kConfig()
 
 class ED2kRuntime(BinaryRuntime):
     name = "goed2kd"
-    canInstall = True
+    canInstall = not IS_ANDROID
     title = N("BinaryRuntime", "eD2k / eMule")
     description = N("BinaryRuntime", "支持电驴协议，适合下载经典资源")
-    icon = FluentIcon.BOOK_SHELF
+    icon = "BOOK_SHELF"
 
     def installFolder(self) -> Path:
         return Path(ed2kConfig.installFolder.value)
+
+    def path(self) -> str:
+        if IS_ANDROID:
+            nativeDir = nativeLibraryDir()
+            if not nativeDir:
+                return ""
+            binary = Path(nativeDir) / "libgoed2kd.so"
+            return str(binary) if binary.exists() else ""
+        return findExecutable(self.installFolder(), "goed2kd")
 
     async def fetchLatestVersion(self) -> str:
         return (await fetchLatestRelease(ED2K_REPO)).version

@@ -14,7 +14,6 @@ from app.models.pack import FeaturePack, TaskParser, FileType, UriScheme
 from app.models.task import Task, TaskOptions
 from app.platform.filesystem import localFilePath, toSafeFilename
 
-from .cards import BTDraftCard, BTTaskCard
 from .config import bittorrentConfig
 from .session import btSession
 from .task import BTFile, BTTask, BTTaskStep
@@ -105,8 +104,14 @@ class BitTorrentPack(FeaturePack):
     config = bittorrentConfig
     proxySchemes = {"http", "https", "socks4", "socks5"}
     parsers = [TorrentParser]
-    taskCards = {BTTask: BTTaskCard}
-    draftCards = {BTTask: BTDraftCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from .cards import BTTaskCard
+        return BTTaskCard
+
+    def draftCardClass(self, task: Task) -> type | None:
+        from .cards import BTDraftCard
+        return BTDraftCard
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard
