@@ -204,6 +204,10 @@ class BrowserService:
         return str(cfg.browserExtensionPairToken.value)
 
     @property
+    def isRunning(self) -> bool:
+        return self._serveWorkId is not None
+
+    @property
     def boundPort(self) -> int:
         return self._boundPort
 

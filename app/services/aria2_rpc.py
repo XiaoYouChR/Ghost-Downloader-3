@@ -31,6 +31,10 @@ class Aria2RpcServer:
         self._addTask = addTask
         self._serveWorkId: str | None = None
 
+    @property
+    def isRunning(self) -> bool:
+        return self._serveWorkId is not None
+
     def start(self) -> None:
         if self._serveWorkId is not None:
             return
