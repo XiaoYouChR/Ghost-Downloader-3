@@ -270,6 +270,7 @@ build_libtorrent() {
         -DOPENSSL_CRYPTO_LIBRARY="$WORK_DIR/openssl/$ABI/lib/libcrypto.a" \
         -DOPENSSL_SSL_LIBRARY="$WORK_DIR/openssl/$ABI/lib/libssl.a" \
         -DOPENSSL_USE_STATIC_LIBS=ON \
+        -DCMAKE_MODULE_LINKER_FLAGS="$PYTHON_PREFIX/lib/libpython3.14.so" \
         -Dstatic_runtime=ON \
         "$WORK_DIR/src/libtorrent-${LIBTORRENT_VERSION}"
 
