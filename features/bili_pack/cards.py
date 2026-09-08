@@ -20,10 +20,10 @@ from app.view.components.range_slider import RangeSlider
 from app.view.components.track_bar import TrackBar, TrackButton
 from app.view.components.tree_view import AutoSizingTreeView
 from app.view.dialogs.subtitle_select import SubtitleSelectDialog
-from .stream import toStreamUrl
-from .task import AUDIO_QUALITY_LABELS, BilibiliTask, setEpisodeTitle, setPagePart, setTimeRanges
-
-CODEC_NAMES = {7: "H.264", 12: "H.265", 13: "AV1"}
+from .task import (
+    BilibiliTask, audioTiers, currentAudioTier, currentVideoTier,
+    setEpisodeTitle, setPagePart, setTimeRanges, subtitleChoices, videoTiers,
+)
 
 StoryboardData = namedtuple("StoryboardData", ["sheets", "timestamps", "columns", "rows"])
 
@@ -448,46 +448,16 @@ class BilibiliDraftCard(MultiFileDraftCard):
         task: BilibiliTask = self._task
         self._trackBar = TrackBar(self)
 
-        videoTiers = [("best", self.tr("最佳画质"))]
-        audioTiers = [("best", self.tr("最佳音质"))]
-        initialVideoKey = None
-        initialAudioKey = None
+        video = videoTiers(task) or [("best", self.tr("最佳画质"))]
+        audio = audioTiers(task) or [("best", self.tr("最佳音质"))]
 
-        page = next((p for p in task.files or [] if p._videoStreams or p._audioStreams), None)
-        if page:
-            qualityMap = dict(zip(task._acceptQualities, task._qualityLabels))
-
-            videoTiers = []
-            for s in page._videoStreams:
-                key = f'{s["id"]}-{s["codecid"]}'
-                qualityName = qualityMap.get(s["id"], str(s["id"]))
-                codec = CODEC_NAMES.get(s["codecid"], "")
-                kbps = s["bandwidth"] / 1000
-                bitrate = f'{kbps / 1000:.1f}Mbps' if kbps >= 1000 else f'{int(kbps)}Kbps'
-                label = f'{qualityName} ({codec}, {bitrate})'
-                videoTiers.append((key, label))
-                if toStreamUrl(s) == page.videoUrl:
-                    initialVideoKey = key
-
-            if page._audioStreams:
-                seen = set()
-                audioTiers = []
-                for s in page._audioStreams:
-                    if s["id"] not in seen:
-                        seen.add(s["id"])
-                        kbps = f'{s["bandwidth"] // 1000}Kbps'
-                        name = AUDIO_QUALITY_LABELS.get(s["id"], str(s["id"]))
-                        audioTiers.append((str(s["id"]), f'{name} ({kbps})'))
-                        if toStreamUrl(s) == page.audioUrl:
-                            initialAudioKey = str(s["id"])
-
-        self._trackBar.videoButton.setOptions(videoTiers, selected=initialVideoKey)
-        self._trackBar.audioButton.setOptions(audioTiers, selected=initialAudioKey)
+        self._trackBar.videoButton.setOptions(video, selected=currentVideoTier(task) or None)
+        self._trackBar.audioButton.setOptions(audio, selected=currentAudioTier(task) or None)
         if not task.hasAudio and len(task.files or []) <= 1:
             self._trackBar.audioButton.setTrackEnabled(False)
             self._trackBar.audioButton.setChecked(False)
 
-        self._subtitleChoices = self._buildSubtitleChoices()
+        self._subtitleChoices = subtitleChoices(task)
         self._trackBar.subtitleButton.setTrackEnabled(bool(self._subtitleChoices))
         self._trackBar.coverButton.setTrackEnabled(bool(self._task.coverUrl))
 
@@ -727,20 +697,6 @@ class BilibiliDraftCard(MultiFileDraftCard):
             self.sizeLabel.setText(size)
         self.nameLabel.setText(self._task.name)
         self._refreshFileIcon()
-
-    def _buildSubtitleChoices(self) -> list[tuple[str, str]]:
-        seen: set[str] = set()
-        choices: list[tuple[str, str]] = []
-        for page in self._task.files or []:
-            for sub in page.subtitles:
-                lan = sub.get("lan", "")
-                if lan and lan not in seen:
-                    seen.add(lan)
-                    label = sub.get("lan_doc", lan)
-                    if sub.get("isAi"):
-                        label += "（自动生成）"
-                    choices.append((lan, label))
-        return choices
 
     def _refreshButtonVisibility(self) -> None:
         hasMedia = self._task.isVideoEnabled or self._task.isAudioEnabled

@@ -9,7 +9,6 @@ from app.models.pack import FeaturePack, TaskParser, UriScheme
 from .config import ftpConfig
 from app.models.task import Task, TaskOptions, SpecialFileSize
 from app.platform.filesystem import toPosixPath, toSafeFilename
-from .cards import FtpDraftCard, FtpTaskCard
 from .task import (
     FTP_DEFAULT_PORT,
     FtpConnectionInfo,
@@ -125,8 +124,14 @@ class FtpPack(FeaturePack):
     config = ftpConfig
     proxySchemes = {"socks4", "socks5"}
     parsers = [FtpParser]
-    taskCards = {FtpTask: FtpTaskCard}
-    draftCards = {FtpTask: FtpDraftCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from .cards import FtpTaskCard
+        return FtpTaskCard
+
+    def draftCardClass(self, task: Task) -> type | None:
+        from .cards import FtpDraftCard
+        return FtpDraftCard
 
     def uriSchemes(self) -> list[UriScheme]:
         return [UriScheme("ftp", "FTP"), UriScheme("ftps", "FTPS")]

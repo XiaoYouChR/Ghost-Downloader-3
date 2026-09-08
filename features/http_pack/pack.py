@@ -16,7 +16,6 @@ from app.models.task import (
     Task, TaskOptions, ResourceTaskOptions, SpecialFileSize,
 )
 from app.platform.filesystem import toSafeFilename
-from .cards import HttpTaskCard
 from .task import HttpTask, HttpTaskStep
 
 
@@ -211,7 +210,10 @@ class HttpParser(TaskParser):
 class HttpPack(FeaturePack):
     packId = "http"
     parsers = [HttpParser]
-    taskCards = {HttpTask: HttpTaskCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from .cards import HttpTaskCard
+        return HttpTaskCard
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import (

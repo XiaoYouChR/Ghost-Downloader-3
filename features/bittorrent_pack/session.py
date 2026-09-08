@@ -11,7 +11,6 @@ from urllib.parse import urlsplit
 
 import libtorrent as lt
 from loguru import logger
-from PySide6.QtCore import QObject
 
 from app.config.cfg import cfg, proxy
 from app.models.task import TaskError
@@ -113,10 +112,9 @@ class ActiveTorrent:
         return self.seedBase
 
 
-class BTSession(QObject):
+class BTSession:
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self):
         self._session: lt.session | None = None
         self._poller: asyncio.Task | None = None
         self._active: dict[str, ActiveTorrent] = {}

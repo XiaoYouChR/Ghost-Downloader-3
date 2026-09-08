@@ -8,7 +8,6 @@ from app.client import buildClient
 from app.models.pack import FeaturePack, TaskParser
 from app.models.task import Task, TaskFile, TaskOptions
 from app.platform.filesystem import toSafeFilename
-from .cards import HuggingFaceDraftCard, HuggingFaceTaskCard
 from .config import accessToken, huggingFaceConfig, selectedProxySite
 from .task import HuggingFaceFile, HuggingFaceStep, HuggingFaceTask
 
@@ -198,8 +197,14 @@ class HuggingFacePack(FeaturePack):
     packId = "huggingface"
     config = huggingFaceConfig
     parsers = [HuggingFaceParser]
-    taskCards = {HuggingFaceTask: HuggingFaceTaskCard}
-    draftCards = {HuggingFaceTask: HuggingFaceDraftCard}
+
+    def taskCardClass(self, task: Task) -> type | None:
+        from .cards import HuggingFaceTaskCard
+        return HuggingFaceTaskCard
+
+    def draftCardClass(self, task: Task) -> type | None:
+        from .cards import HuggingFaceDraftCard
+        return HuggingFaceDraftCard
 
     def optionCards(self, task, parent=None):
         from app.view.components.option_cards import OutputFolderCard

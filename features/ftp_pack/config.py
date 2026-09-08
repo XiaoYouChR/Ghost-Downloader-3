@@ -1,5 +1,5 @@
+from app.config.cfg import ConfigItem, BoolValidator
 from app.models.pack import PackConfig
-from qfluentwidgets import ConfigItem, BoolValidator
 
 
 class FtpConfig(PackConfig):

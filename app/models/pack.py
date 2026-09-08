@@ -127,7 +127,7 @@ class BinaryRuntime:
     # 自描述展示信息（title 用 QT_TRANSLATE_NOOP 声明原文，展示端 translate）
     title: str = ""
     description: str = ""
-    icon: FluentIcon | None = None
+    icon: str = ""          # FluentIcon 成员名，View 侧解析
     isRecommended: bool = False
 
     @property
@@ -268,8 +268,6 @@ class FeaturePack:
     proxySchemes: set[str] | None = None
 
     parsers: list[type[TaskParser]] = []
-    taskCards: dict = {}
-    draftCards: dict = {}
     parse: Callable[[TaskOptions], Awaitable[Task]] | None = None
     addTask: Callable[[Task], None] | None = None
     submit: Callable[..., str] | None = None
@@ -277,11 +275,11 @@ class FeaturePack:
     def __init__(self, services: PackServices):
         self._services = services
 
-    def taskCardClass(self, task: Task):
-        return self.taskCards.get(type(task))
+    def taskCardClass(self, task: Task) -> type | None:
+        return None
 
-    def draftCardClass(self, task: Task):
-        return self.draftCards.get(type(task))
+    def draftCardClass(self, task: Task) -> type | None:
+        return None
 
     def optionCards(self, task: Task, parent=None) -> list[QWidget]:
         return []

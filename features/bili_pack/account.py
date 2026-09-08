@@ -7,9 +7,8 @@ from functools import reduce
 from hashlib import md5
 from urllib.parse import parse_qsl, urlparse
 
-from PySide6.QtCore import QObject, Signal
-
 from app.client import buildClient
+from app.signal import Signal
 from .config import bilibiliConfig
 
 MIXIN_KEY_ENC_TAB = [
@@ -49,12 +48,11 @@ def toCookie(raw: str) -> str:
     return "; ".join(f"{n}={parts[n]}" for n in ordered + extra)
 
 
-class BilibiliAccount(QObject):
+class BilibiliAccount:
     accountChanged = Signal()
     qrStateChanged = Signal(int, str)
 
-    def __init__(self, coroutineRunner, parent=None):
-        super().__init__(parent)
+    def __init__(self, coroutineRunner):
         self._coroutineRunner = coroutineRunner
         self._username = ""
         self._mid = ""

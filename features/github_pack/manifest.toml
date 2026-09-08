@@ -3,4 +3,4 @@ entry = "pack.py"
 class = "GitHubPack"
 dependencies = ["http_pack"]
 version = "1.0.0"
-gdMinVersion = "4.2.0"
+gdMinVersion = "4.3.8"
