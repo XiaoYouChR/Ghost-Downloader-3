@@ -154,8 +154,8 @@ build_openssl() {
         no-shared no-tests no-ui-console \
         --prefix="$OUT"
 
-    make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
-    make install_sw
+    make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)" -s
+    make install_sw -s
     cd "$WORK_DIR"
 }
 
@@ -204,7 +204,7 @@ using python : 3.14
 JAMEOF
 
     cd "$BOOST_SRC"
-    ./b2 -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)" -a -q \
+    ./b2 -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)" -a -q -d0 \
         --ignore-site-config \
         --user-config="$JAM" \
         --build-dir="$OUT/build" \
@@ -274,7 +274,7 @@ build_libtorrent() {
         -Dstatic_runtime=ON \
         "$WORK_DIR/src/libtorrent-${LIBTORRENT_VERSION}"
 
-    cmake --build "$BUILD" --target python-libtorrent -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
+    cmake --build "$BUILD" --target python-libtorrent -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)" -- -s
 }
 
 # --- Package wheel ---
