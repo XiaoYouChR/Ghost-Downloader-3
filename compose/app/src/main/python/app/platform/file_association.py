@@ -1,0 +1,2 @@
+def register(fileTypes):
+    pass

@@ -1,13 +1,13 @@
-"""Android configuration adapter — same interface as desktop qfluentwidgets QConfig."""
+"""Android configuration adapter backed by plain JSON files."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
+from re import compile
 from urllib.request import getproxies
 
+from app.config.paths import DOWNLOAD_DIR
 from app.signal import BoundSignal
-
-DOWNLOAD_DIR = "/storage/emulated/0/Download"
 
 BASE_HEADERS = {
     "accept-encoding": "deflate, br, gzip",
@@ -68,7 +68,98 @@ class FolderValidator(ConfigValidator):
     def correct(self, value) -> str:
         path = Path(value)
         path.mkdir(parents=True, exist_ok=True)
-        return str(path.absolute()).replace("\\", "/")
+        return str(path.absolute())
+
+
+class ProxyValidator(ConfigValidator):
+    PATTERN = compile(
+        r"^"
+        r"(?P<protocol>http|https|socks4|socks5|socks5h)://"
+        r"(?:(?P<user>\w+):(?P<password>[\w!@#$%^&*()]+)@)?"
+        r"(?:"
+        r"(?P<ip>(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|"
+        r"(?P<domain>(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6})"
+        r")"
+        r":(?P<port>\d{1,5})"
+        r"$"
+    )
+
+    def validate(self, value: str) -> bool:
+        return bool(self.PATTERN.match(value)) or value in {"Auto", "Off"}
+
+    def correct(self, value) -> str:
+        return value if self.validate(value) else "Auto"
+
+
+class ClientProfileValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        return isinstance(value, str) and bool(value)
+
+    def correct(self, value) -> str:
+        return value if self.validate(value) else "auto"
+
+
+class CategoryListValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        if not isinstance(value, list):
+            return False
+        return all(
+            isinstance(item, dict) and isinstance(item.get("name"), str)
+            for item in value
+        )
+
+    def correct(self, value) -> list:
+        return value if self.validate(value) else []
+
+
+class HeadersValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        return isinstance(value, dict) and all(
+            isinstance(k, str) and isinstance(v, str) for k, v in value.items()
+        )
+
+    def correct(self, value) -> dict:
+        return value if self.validate(value) else dict(BASE_HEADERS)
+
+
+class HeadersPresetListValidator(ConfigValidator):
+    def _isValid(self, item) -> bool:
+        return (
+            isinstance(item, dict)
+            and {"name", "headers"} <= item.keys()
+            and isinstance(item["name"], str)
+            and HeadersValidator().validate(item["headers"])
+        )
+
+    def validate(self, value) -> bool:
+        return isinstance(value, list) and bool(value) and all(map(self._isValid, value))
+
+    def correct(self, value) -> list:
+        presets = [i for i in value if self._isValid(i)] if isinstance(value, list) else []
+        return presets or [{"name": "默认", "headers": dict(BASE_HEADERS)}]
+
+
+class IdentityPresetListValidator(ConfigValidator):
+    REQUIRED_KEYS = {"name", "clientProfile", "userAgent", "hosts"}
+
+    def _isValidPreset(self, item) -> bool:
+        return (
+            isinstance(item, dict)
+            and self.REQUIRED_KEYS <= item.keys()
+            and isinstance(item["name"], str)
+            and isinstance(item["clientProfile"], str)
+            and isinstance(item["userAgent"], str)
+            and isinstance(item["hosts"], list)
+            and all(isinstance(h, str) for h in item["hosts"])
+        )
+
+    def validate(self, value) -> bool:
+        return isinstance(value, list) and all(self._isValidPreset(item) for item in value)
+
+    def correct(self, value) -> list:
+        if not isinstance(value, list):
+            return []
+        return [item for item in value if self._isValidPreset(item)]
 
 
 class ConfigSerializer:
@@ -99,9 +190,9 @@ class ConfigItem:
 
     def _load(self, raw):
         value = raw
-        if self._serializer and hasattr(self._serializer, "deserialize"):
+        if self._serializer:
             value = self._serializer.deserialize(value)
-        if self._validator and hasattr(self._validator, "correct"):
+        if self._validator:
             value = self._validator.correct(value)
         self._value = value
 
@@ -115,12 +206,12 @@ class OptionsConfigItem(ConfigItem):
 
 
 class AndroidConfig:
-    downloadFolder = ConfigItem("GeneralDownload", "DownloadFolder", DOWNLOAD_DIR, FolderValidator())
+    downloadFolder = ConfigItem("GeneralDownload", "DownloadFolder", str(DOWNLOAD_DIR), FolderValidator())
     maxTaskNum = RangeConfigItem("GeneralDownload", "MaxTaskNum", 3, RangeValidator(1, 10))
     isSpeedLimitEnabled = ConfigItem("GeneralDownload", "isSpeedLimitEnabled", False, BoolValidator())
     speedLimitation = RangeConfigItem("GeneralDownload", "SpeedLimitation", 4194304, RangeValidator(1024, 104857600))
     shouldVerifySsl = ConfigItem("GeneralDownload", "shouldVerifySsl", False, BoolValidator())
-    proxyServer = ConfigItem("GeneralDownload", "ProxyServer", "Auto")
+    proxyServer = ConfigItem("GeneralDownload", "ProxyServer", "Auto", ProxyValidator())
     preBlockNum = RangeConfigItem("GeneralDownload", "PreBlockNum", 8, RangeValidator(1, 256))
     autoSpeedUp = ConfigItem("GeneralDownload", "AutoSpeedUp", True, BoolValidator())
     shouldPreserveLastModified = ConfigItem("GeneralDownload", "PreserveLastModified", False, BoolValidator())
@@ -128,7 +219,7 @@ class AndroidConfig:
     maxReassignSize = RangeConfigItem("GeneralDownload", "MaxReassignSize", 512, RangeValidator(64, 102400))
 
     isCategoryEnabled = ConfigItem("Category", "EnableCategory", False, BoolValidator())
-    categoryRules = ConfigItem("Category", "CategoryRules", [])
+    categoryRules = ConfigItem("Category", "CategoryRules", [], CategoryListValidator())
 
     # 本机服务。group/key 与桌面保持一致，配置文件可以互相看懂
     shouldDraftTakenDownload = ConfigItem(
@@ -146,11 +237,12 @@ class AndroidConfig:
     aria2RpcEmulateFingerprint = ConfigItem(
         "Aria2Rpc", "EmulateFingerprint", False, BoolValidator())
 
-    clientProfile = ConfigItem("Network", "ClientProfile", "auto")
+    clientProfile = ConfigItem("Network", "ClientProfile", "auto", ClientProfileValidator())
     shouldUseSystemDns = ConfigItem("Network", "ShouldUseSystemDns", True, BoolValidator())
     headersPresets = ConfigItem(
         "Network", "HeadersPresets",
         [{"name": "默认", "headers": dict(BASE_HEADERS)}],
+        HeadersPresetListValidator(),
     )
     currentHeadersPreset = RangeConfigItem("Network", "CurrentHeadersPreset", 0, RangeValidator(0, 99))
     identityPresets = ConfigItem(
@@ -158,6 +250,7 @@ class AndroidConfig:
         [{"name": "百度网盘客户端", "clientProfile": "raw",
           "userAgent": "pan.baidu.com", "hosts": ["*.pcs.baidu.com"],
           "isEnabled": True}],
+        IdentityPresetListValidator(),
     )
 
     shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", False, BoolValidator())
@@ -212,14 +305,17 @@ class AndroidConfig:
         for item in self._items.values():
             group = data.setdefault(item._group, {})
             value = item._value
-            if item._serializer and hasattr(item._serializer, "serialize"):
+            if item._serializer:
                 value = item._serializer.serialize(value)
             group[item._key] = value
 
-        Path(self._path).write_text(
+        p = Path(self._path)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(
             json.dumps(data, ensure_ascii=False, indent=4),
             encoding="utf-8",
         )
+        tmp.replace(p)
 
 
 cfg = AndroidConfig()
