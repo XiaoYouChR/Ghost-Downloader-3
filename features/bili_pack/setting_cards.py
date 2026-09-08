@@ -123,7 +123,7 @@ class ScanLoginDialog(MessageBoxBase):
             self.statusLabel.setText(self.tr('二维码已失效，请点击"刷新二维码"重新生成'))
         else:
             self.statusLabel.setText(
-                QCoreApplication.translate("BilibiliErrors", text) if text else str(statusCode)
+                QCoreApplication.translate("TaskErrors", text) if text else str(statusCode)
             )
 
     def _onOpenBrowser(self):
