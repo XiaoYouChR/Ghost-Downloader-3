@@ -1,0 +1,93 @@
+name: Build Android Wheels
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'compose/build-scripts/**'
+
+jobs:
+  libtorrent:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Install wheel tool
+        run: pip install wheel
+
+      - name: Build libtorrent wheel
+        working-directory: compose/build-scripts
+        run: ./build_libtorrent_wheel.sh --abi=arm64-v8a
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: libtorrent-arm64-v8a
+          path: compose/build-scripts/dist/libtorrent-*.whl
+
+  wreq:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Install tools
+        run: pip install lief wheel
+
+      - name: Patch wreq wheel
+        working-directory: compose/build-scripts
+        run: ./patch_wreq_wheel.sh --abi=arm64-v8a
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wreq-arm64-v8a
+          path: compose/build-scripts/dist/wreq-*.whl
+
+  goed2kd:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: XiaoYouChR/Python-eD2k
+          path: Python-eD2k
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: Python-eD2k/go.mod
+
+      - name: Build goed2kd
+        working-directory: compose/build-scripts
+        env:
+          GOED2K_SRC: ${{ github.workspace }}/Python-eD2k
+        run: ./build_goed2kd.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: goed2kd-arm64-v8a
+          path: compose/app/src/main/jniLibs/arm64-v8a/libgoed2kd.so
+
+  native-libs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch pre-built binaries
+        working-directory: compose/build-scripts
+        run: ./fetch_android_libs.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: native-libs-arm64-v8a
+          path: |
+            compose/app/src/main/jniLibs/arm64-v8a/libffmpeg.so
+            compose/app/src/main/jniLibs/arm64-v8a/libffprobe.so
+            compose/app/src/main/jniLibs/arm64-v8a/libnm3u8dlre.so
+            compose/app/src/main/jniLibs/arm64-v8a/libqjs.so
