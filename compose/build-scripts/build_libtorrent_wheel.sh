@@ -238,6 +238,10 @@ build_libtorrent() {
 
     echo "Building libtorrent + Python binding ($ABI)..."
 
+    # setup-python sets Python3_ROOT_DIR to the host x86_64 Python.
+    # Unset so CMake uses our explicit ARM64 Android paths instead.
+    unset Python3_ROOT_DIR Python_ROOT_DIR Python2_ROOT_DIR
+
     cmake -B "$BUILD" \
         -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
         -DANDROID_ABI="$ABI" \
