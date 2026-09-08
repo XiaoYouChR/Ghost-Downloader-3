@@ -536,8 +536,13 @@ class BrowserExtensionPage(QWidget):
 
     def _onManualInstallClicked(self) -> None:
         from app.services.browser_service import extractBrowserExtension
+
+        def loadCrx():
+            from PySide6.QtCore import QResource
+            return bytes(QResource(":/res/chrome_extension.crx").data())
+
         self._coroutineRunner.submit(
-            extractBrowserExtension(),
+            extractBrowserExtension(loadCrx),
             done=self._onExtensionExtracted,
             failed=self._onExtensionExtractFailed,
             owner=self,
@@ -627,7 +632,7 @@ class RuntimeInstallPage(QWidget):
                 self._checkBoxes.append((checkBox, runtime))
 
             self._card.addGroup(
-                runtime.icon,
+                getattr(FluentIcon, runtime.icon, FluentIcon.APPLICATION),
                 QCoreApplication.translate("BinaryRuntime", runtime.title),
                 QCoreApplication.translate("BinaryRuntime", runtime.description),
                 trailing,

@@ -443,10 +443,14 @@ class SettingPage(ScrollArea):
                         duration=2000, position=InfoBarPosition.BOTTOM_RIGHT, parent=self.window())
 
     def _onChromiumInstallClicked(self) -> None:
-        from app.services.browser_service import extractBrowserExtension, EXTENSION_UNPACK_DIR
+        from app.services.browser_service import extractBrowserExtension
+
+        def loadCrx():
+            from PySide6.QtCore import QResource
+            return bytes(QResource(":/res/chrome_extension.crx").data())
 
         self._coroutineRunner.submit(
-            extractBrowserExtension(),
+            extractBrowserExtension(loadCrx),
             done=self._onExtensionExtractDone,
             failed=self._onExtensionExtractFailed,
         )
