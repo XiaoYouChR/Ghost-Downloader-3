@@ -22,7 +22,6 @@ dependencies = [
     "uvloop>=0.22.1; sys_platform != 'win32'",
     "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
     "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
-    "platformdirs>=4",
 ]
 
 [dependency-groups]
