@@ -2,9 +2,6 @@ name: Build Android Wheels
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'compose/build-scripts/**'
 
 jobs:
   libtorrent:

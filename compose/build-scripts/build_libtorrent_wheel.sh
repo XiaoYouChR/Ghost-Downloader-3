@@ -253,6 +253,8 @@ build_libtorrent() {
         -DPython3_INCLUDE_DIR="$PYTHON_PREFIX/include/python3.14" \
         -DPython3_LIBRARY="$PYTHON_PREFIX/lib/libpython3.14.so" \
         -DPython3_FIND_STRATEGY=LOCATION \
+        -DPython3_FIND_REGISTRY=NEVER \
+        -DPython3_FIND_FRAMEWORK=NEVER \
         -DBOOST_ROOT="$WORK_DIR/src/boost_${BOOST_UNDERSCORE}" \
         -DBoost_INCLUDE_DIR="$WORK_DIR/src/boost_${BOOST_UNDERSCORE}" \
         -DBOOST_LIBRARYDIR="$WORK_DIR/boost/$ABI/stage/lib" \
