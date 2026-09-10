@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import isDarkTheme, themeColor
 
+from app.config.cfg import ProgressBarStyle, cfg
 from app.view.cards.task_cards import TaskCard
 from .task import HttpTaskStep
 
@@ -92,8 +93,41 @@ class SegmentedProgressBar(QWidget):
 
 
 class HttpTaskCard(TaskCard):
-    def _createProgressBar(self) -> QWidget:
+    def _bind(self) -> None:
+        super()._bind()
+        cfg.downloadProgressBarStyle.valueChanged.connect(
+            self._onProgressBarStyleChanged
+        )
+
+    def _segmentedProgressStep(self) -> HttpTaskStep | None:
         step = self.task.steps[0] if self.task.steps else None
-        if isinstance(step, HttpTaskStep) and step.canUseRangeRequests and step.fileSize > 0 and step.subworkerCount > 1:
+        if (
+            isinstance(step, HttpTaskStep)
+            and step.canUseRangeRequests
+            and step.fileSize > 0
+            and step.subworkerCount > 1
+        ):
+            return step
+        return None
+
+    def _createProgressBar(self) -> QWidget:
+        step = self._segmentedProgressStep()
+        if (
+            cfg.downloadProgressBarStyle.value is ProgressBarStyle.SEGMENTED
+            and step is not None
+        ):
             return SegmentedProgressBar(step, self)
         return super()._createProgressBar()
+
+    def _onProgressBarStyleChanged(self, _: ProgressBarStyle) -> None:
+        if self._segmentedProgressStep() is None:
+            return
+
+        oldBar = self.progressBar
+        geometry = oldBar.geometry()
+        oldBar.hide()
+        self.progressBar = self._createProgressBar()
+        self.progressBar.setGeometry(geometry)
+        self.progressBar.show()
+        oldBar.deleteLater()
+        self.refresh(force=True)
