@@ -131,6 +131,11 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
         push("redownload")
     }
 
+    suspend fun setCategory(categoryId: String) {
+        EngineRepository.invoke("setTaskCategory", EngineRepository.encode(listOf(taskId)), categoryId)
+        refresh()
+    }
+
     private fun push(name: String, vararg args: Any?) {
         viewModelScope.launch {
             EngineRepository.invoke(name, taskId, *args)
@@ -149,6 +154,7 @@ fun TaskDetailPage(
     taskId: String,
     onBack: () -> Unit,
     onNavigate: (Route) -> Unit,
+    categories: CategoryState = CategoryState(),
     viewModel: TaskDetailViewModel = viewModel { TaskDetailViewModel(taskId) },
 ) {
     val detail by viewModel.detail.collectAsStateWithLifecycle()
@@ -159,8 +165,6 @@ fun TaskDetailPage(
     var isRenaming by remember { mutableStateOf(false) }
     var shouldRedownload by remember { mutableStateOf(false) }
     var shouldCategorize by remember { mutableStateOf(false) }
-    val categories by EngineRepository.observe<CategoryState>("categoryState")
-        .collectAsStateWithLifecycle(CategoryState())
 
     val copiedLabel = stringResource(R.string.task_detail_copied)
     fun copyUrl() {
@@ -261,7 +265,7 @@ fun TaskDetailPage(
     if (shouldCategorize) CategorySheet(categories.categories,
         initialCategoryId = toCategoryId(detail.categoryId, categories.categories), taskCount = 1,
         onApply = { categoryId ->
-            EngineRepository.invoke("setTaskCategory", EngineRepository.encode(listOf(taskId)), categoryId)
+            viewModel.setCategory(categoryId)
         }, onDismiss = { shouldCategorize = false })
 
     if (isRenaming) {

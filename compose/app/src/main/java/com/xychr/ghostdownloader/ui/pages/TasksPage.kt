@@ -1,6 +1,5 @@
 package com.xychr.ghostdownloader.ui.pages
 
-import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.model.*
 import com.xychr.ghostdownloader.ui.navigation.*
 import com.xychr.ghostdownloader.ui.components.*
@@ -337,7 +336,7 @@ fun TasksPage(
             .map { toCategoryId(it.categoryId, categoryState.categories) }.distinct().singleOrNull(),
         taskCount = categoryTaskIds.size,
         onApply = { categoryId ->
-            EngineRepository.invoke("setTaskCategory", EngineRepository.encode(categoryTaskIds), categoryId)
+            viewModel.setCategory(categoryTaskIds, categoryId)
             selection.exit()
             val name = categoryState.categories.firstOrNull { it.categoryId == categoryId }?.name
                 ?: context.getString(R.string.task_uncategorized)

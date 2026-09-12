@@ -94,7 +94,7 @@ class TaskFilesViewModel(
 }
 
 @Composable
-fun TaskFilesPage(taskId: String, onBack: () -> Unit) {
+fun TaskFilesPage(taskId: String, onBack: () -> Unit, categories: CategoryState = CategoryState()) {
     val model: TaskFilesViewModel = viewModel(key = taskId) {
         TaskFilesViewModel(
             fetch = { EngineRepository.query("taskDetail", taskId) },
@@ -102,8 +102,6 @@ fun TaskFilesPage(taskId: String, onBack: () -> Unit) {
         )
     }
     val state by model.state.collectAsStateWithLifecycle()
-    val categories by EngineRepository.observe<CategoryState>("categoryState")
-        .collectAsStateWithLifecycle(CategoryState())
     LaunchedEffect(state.isDone) { if (state.isDone) onBack() }
     TaskFilesEditor(state, model::setSelection, { model.save() }, onBack, onRetry = model::refresh, categories = categories)
     if (state.needsDownload) AlertDialog(

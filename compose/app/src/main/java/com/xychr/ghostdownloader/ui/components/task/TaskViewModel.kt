@@ -71,6 +71,10 @@ class TaskViewModel : ViewModel() {
         taskIds.forEach { request("redownload", it) }
     }
 
+    suspend fun setCategory(taskIds: List<String>, categoryId: String) {
+        EngineRepository.invoke("setTaskCategory", EngineRepository.encode(taskIds), categoryId)
+    }
+
     private fun request(name: String, vararg args: Any?) {
         viewModelScope.launch { EngineRepository.invoke(name, *args) }
     }

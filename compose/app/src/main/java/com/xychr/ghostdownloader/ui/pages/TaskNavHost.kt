@@ -17,6 +17,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
 import kotlinx.coroutines.launch
 
@@ -29,6 +30,8 @@ internal fun TaskNavHost(
     onManageCategories: () -> Unit,
 ) {
     val draftState by draft.state.collectAsStateWithLifecycle()
+    val categories by EngineRepository.observe<CategoryState>("categoryState")
+        .collectAsStateWithLifecycle(CategoryState())
     val draftScope = rememberCoroutineScope()
     SharedTransitionLayout(modifier) {
         CompositionLocalProvider(LocalSharedTransitionScope provides this) {
@@ -77,11 +80,12 @@ internal fun TaskNavHost(
                 }
                 composable<TaskDetailRoute> { entry ->
                     WithSharedElements {
-                        TaskDetailPage(entry.toRoute<TaskDetailRoute>().taskId, onBack = back, onNavigate = navigate)
+                        TaskDetailPage(entry.toRoute<TaskDetailRoute>().taskId, onBack = back,
+                            onNavigate = navigate, categories = categories)
                     }
                 }
                 composable<TaskFilesRoute> { entry ->
-                    TaskFilesPage(entry.toRoute<TaskFilesRoute>().taskId, onBack = back)
+                    TaskFilesPage(entry.toRoute<TaskFilesRoute>().taskId, onBack = back, categories = categories)
                 }
                 composable<TaskEditRoute> { entry ->
                     TaskEditPage(entry.toRoute<TaskEditRoute>().taskId, onBack = back)
