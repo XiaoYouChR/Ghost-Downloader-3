@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 通用动作。带 settings_ 前缀是为了不和其他页面并行新增的 action_* 撞名 -->
+    <string name="settings_action_save">保存</string>
+
+    <!-- 分类管理 -->
+    <string name="category_manage">分类管理</string>
+    <string name="category_enabled">启用分类</string>
+    <string name="category_enabled_desc">按文件类型自动归入对应子目录</string>
+    <string name="category_list">分类列表</string>
+    <string name="category_add">添加分类</string>
+    <string name="category_edit">编辑分类</string>
+    <string name="category_reset">恢复默认分类</string>
+    <string name="category_reset_desc">丢弃自定义分类，还原为内置的 8 个</string>
+    <string name="category_reset_message">将丢弃所有自定义分类并还原为内置分类，此操作不可撤销。</string>
+    <string name="category_remove_title">删除分类</string>
+    <string name="category_remove_message">确定删除分类「%1$s」？</string>
+    <string name="category_no_extension">未设置扩展名</string>
+    <string name="category_default_folder">使用默认下载目录</string>
+    <string name="category_name">名称</string>
+    <string name="category_extensions">扩展名</string>
+    <string name="category_extensions_desc">用逗号分隔，不需要写点号</string>
+    <string name="category_icon">图标</string>
+    <string name="category_folder">下载目录</string>
+
+    <string name="category_icon_video">视频</string>
+    <string name="category_icon_audio">音频</string>
+    <string name="category_icon_image">图片</string>
+    <string name="category_icon_subtitle">字幕</string>
+    <string name="category_icon_document">文档</string>
+    <string name="category_icon_archive">压缩包</string>
+    <string name="category_icon_program">程序</string>
+    <string name="category_icon_other">其他</string>
+
+    <!-- 身份模拟 -->
+    <string name="identity_title">身份模拟</string>
+    <string name="identity_client_profile">客户端配置</string>
+    <string name="identity_default_profile">默认客户端配置</string>
+    <string name="identity_profile_auto">自动</string>
+    <string name="identity_profile_raw">不模拟</string>
+
+    <string name="identity_rules">身份规则</string>
+    <string name="identity_rules_desc">按顺序使用第一个匹配的已启用规则，套用客户端配置和 User-Agent</string>
+    <string name="identity_rule_add">添加规则</string>
+    <string name="identity_rule_edit">编辑规则</string>
+    <string name="identity_rule_name">名称</string>
+    <string name="identity_no_host">未设置匹配域名</string>
+    <string name="identity_rule_remove_title">删除规则</string>
+    <string name="identity_rule_remove_message">确定删除规则「%1$s」？</string>
+    <string name="identity_user_agent">User-Agent</string>
+    <string name="identity_user_agent_desc">留空则沿用客户端配置自带的 User-Agent</string>
+    <string name="identity_hosts">匹配域名</string>
+    <string name="identity_hosts_desc">每行一个域名。*.example.com 同时匹配 example.com 及其子域名；不支持其他位置的通配符。</string>
+
+    <string name="identity_headers_presets">请求头预设</string>
+    <string name="identity_headers_presets_desc">新建任务使用选中的这一组请求头</string>
+    <string name="identity_headers_preset_add">添加预设</string>
+    <string name="identity_headers_preset_edit">编辑预设</string>
+    <string name="identity_headers_preset_name">名称</string>
+    <string name="identity_headers_count">%1$d 个请求头</string>
+    <string name="identity_headers_preset_remove_title">删除预设</string>
+    <string name="identity_headers_preset_remove_message">确定删除预设「%1$s」？</string>
+    <string name="identity_headers">请求头</string>
+    <string name="identity_header_name">名称</string>
+    <string name="identity_header_value">值</string>
+    <string name="identity_header_add">添加请求头</string>
+</resources>

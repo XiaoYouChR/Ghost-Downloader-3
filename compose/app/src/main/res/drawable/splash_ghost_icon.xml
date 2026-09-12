@@ -1,0 +1,4 @@
+<!-- Keep the full silhouette inside the system's circular icon mask. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:inset="26.4%">
+    <bitmap android:src="@drawable/ghost_logo" android:gravity="fill" />
+</inset>

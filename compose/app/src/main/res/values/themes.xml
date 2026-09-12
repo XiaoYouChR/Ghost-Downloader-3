@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.GhostDownloader" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.GhostDownloader.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_ghost_icon</item>
+        <item name="postSplashScreenTheme">@style/Theme.GhostDownloader</item>
+    </style>
+</resources>

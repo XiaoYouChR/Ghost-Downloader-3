@@ -1,0 +1,17 @@
+<resources>
+    <string name="task_bar_speed">总下载速度 %1$s/s</string>
+    <string name="task_bar_counts">运行 %1$d · 排队 %2$d</string>
+    <string name="task_bar_idle">当前无活动任务</string>
+    <string name="task_bar_loading">正在读取任务…</string>
+    <string name="task_bar_unavailable">任务状态暂不可用，正在重试…</string>
+    <string name="task_bar_start_all">开始全部（%1$d）</string>
+    <string name="task_bar_start_selected">开始所选（%1$d）</string>
+    <string name="task_bar_pause_count">暂停可暂停任务（%1$d）</string>
+    <string name="task_bar_pause_selected">暂停所选可暂停任务（%1$d）</string>
+    <string name="task_bar_retry_count">含重试 %1$d 个失败任务</string>
+    <string name="task_bar_global_scope">所有分类，不受当前筛选影响</string>
+    <string name="task_bar_selected_scope">仅作用于已选任务</string>
+    <string name="task_bar_pause_skipped">跳过 %1$d 项；排队任务、直播及不可暂停项可能继续运行</string>
+    <string name="task_bar_start_result">开始请求已提交 %1$d 项，提交失败 %2$d 项，跳过 %3$d 项；实际状态以列表为准。</string>
+    <string name="task_bar_pause_result">暂停请求已提交 %1$d 项，提交失败 %2$d 项，跳过 %3$d 项；排队及不可暂停项可能继续运行。</string>
+</resources>

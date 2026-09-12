@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_edit_saving">正在保存…</string>
+    <string name="settings_edit_failed">未能保存，输入已保留。请再次点击保存重试。</string>
+    <string name="settings_edit_discard_title">放弃未保存的修改？</string>
+    <string name="settings_edit_discard_message">返回后，这次编辑的内容将不会保存。</string>
+    <string name="settings_edit_discard">放弃修改</string>
+    <string name="settings_edit_continue">继续编辑</string>
+    <string name="settings_load_failed">无法加载设置，请重试。</string>
+    <string name="settings_retry">重试</string>
+    <string name="identity_profile_inherit">跟随全局默认</string>
+    <string name="identity_profile_latest">%1$s（最新）</string>
+    <string name="identity_profile_version">版本</string>
+    <string name="identity_hosts_required">至少填写一个域名，每行一个。不包含协议或路径。</string>
+    <string name="identity_headers_invalid">请求头名称不能为空或包含空格、冒号；同名请求头只能保留一项，值不能含换行。</string>
+    <string name="settings_reassign_size">最小再分配大小</string>
+    <string name="settings_preserve_modified">保留文件修改时间</string>
+    <string name="settings_preserve_modified_desc">下载完成后使用服务器提供的 Last-Modified 时间</string>
+    <string name="settings_system_dns">使用系统 DNS</string>
+    <string name="settings_system_dns_desc">使用操作系统解析域名，兼容 VPN 和 TUN 等网络环境</string>
+    <string name="settings_taken_draft">接管后先确认任务</string>
+    <string name="settings_taken_draft_desc">浏览器接管的任务先进入草稿，确认后才开始下载</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 下载目录由用户在设置里任选，可能落在任意卷上，所以按根路径授权 -->
+    <root-path
+        name="root"
+        path="/" />
+</paths>

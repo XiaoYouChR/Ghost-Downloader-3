@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from java import jclass
+from java import jclass, cast
 
-_Python = jclass("com.chaquo.python.Python")
-_context = _Python.getInstance().getAndroidContext()
+_AndroidPlatform = jclass("com.chaquo.python.android.AndroidPlatform")
+_context = cast(_AndroidPlatform,
+    jclass("com.chaquo.python.Python").getInstance().getPlatform()
+).getApplication()
 _Environment = jclass("android.os.Environment")
 
 APP_DATA_DIR = Path(str(_context.getFilesDir()))

@@ -1,0 +1,14 @@
+<resources>
+    <string name="settings_group_download">Descargas y conexión</string>
+    <string name="settings_group_features">Funciones y servicios</string>
+    <string name="settings_group_app">Aplicación</string>
+    <string name="settings_summary_download">Ubicación, tareas simultáneas, velocidad y categorías</string>
+    <string name="settings_summary_network">Conexión proxy y verificación de certificados</string>
+    <string name="settings_summary_identity">Identidad del navegador, reglas de sitios y cabeceras</string>
+    <string name="settings_summary_packs">Opciones específicas de protocolos y sitios</string>
+    <string name="settings_summary_runtimes">Instalación y actualización de herramientas necesarias</string>
+    <string name="settings_summary_service">Extensión del navegador y llamadas remotas</string>
+    <string name="settings_summary_permissions">Almacenamiento, notificaciones y ejecución en segundo plano</string>
+    <string name="settings_summary_about">Versión de la aplicación y código fuente</string>
+    <string name="settings_search_clear">Borrar búsqueda</string>
+</resources>

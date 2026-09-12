@@ -1,0 +1,19 @@
+<resources>
+    <string name="settings_search_hint">搜索设置…</string>
+    <string name="settings_search_empty">未找到匹配的设置</string>
+    <string name="settings_section_identity">身份模拟</string>
+    <string name="settings_packs_empty">没有已加载的下载插件</string>
+    <string name="settings_pack_info">功能包详情</string>
+    <string name="settings_group_download">下载与连接</string>
+    <string name="settings_group_features">功能与服务</string>
+    <string name="settings_group_app">应用</string>
+    <string name="settings_summary_download">保存位置、并发任务、速度与分类</string>
+    <string name="settings_summary_network">代理连接与证书验证</string>
+    <string name="settings_summary_identity">浏览器身份、站点规则与请求头</string>
+    <string name="settings_summary_packs">各下载协议与站点的专属选项</string>
+    <string name="settings_summary_runtimes">下载所需工具的安装与更新</string>
+    <string name="settings_summary_service">浏览器扩展与远程调用</string>
+    <string name="settings_summary_permissions">存储、通知与后台运行</string>
+    <string name="settings_summary_about">应用版本与开源项目</string>
+    <string name="settings_search_clear">清空搜索</string>
+</resources>

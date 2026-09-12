@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_save_uncertain">无法确认设置是否已生效，请重新加载后检查。</string>
+    <string name="settings_saved_reload_failed">设置已保存，但无法读取最新状态。请重新加载。</string>
+    <string name="settings_reload">重新加载</string>
+</resources>

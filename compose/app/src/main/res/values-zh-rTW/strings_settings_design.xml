@@ -1,0 +1,14 @@
+<resources>
+    <string name="settings_group_download">下載與連線</string>
+    <string name="settings_group_features">功能與服務</string>
+    <string name="settings_group_app">應用程式</string>
+    <string name="settings_summary_download">儲存位置、並行任務、速度與分類</string>
+    <string name="settings_summary_network">代理連線與憑證驗證</string>
+    <string name="settings_summary_identity">瀏覽器身分、網站規則與請求標頭</string>
+    <string name="settings_summary_packs">各下載協定與網站的專屬選項</string>
+    <string name="settings_summary_runtimes">下載所需工具的安裝與更新</string>
+    <string name="settings_summary_service">瀏覽器擴充功能與遠端呼叫</string>
+    <string name="settings_summary_permissions">儲存空間、通知與背景執行</string>
+    <string name="settings_summary_about">應用程式版本與開源專案</string>
+    <string name="settings_search_clear">清除搜尋</string>
+</resources>

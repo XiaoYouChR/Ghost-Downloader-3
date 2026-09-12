@@ -1,4 +1,3 @@
-"""Android configuration adapter backed by plain JSON files."""
 from __future__ import annotations
 
 import json
@@ -29,14 +28,6 @@ class ConfigValidator:
         return value
 
 
-class BoolValidator(ConfigValidator):
-    def validate(self, value) -> bool:
-        return isinstance(value, bool)
-
-    def correct(self, value) -> bool:
-        return bool(value)
-
-
 class RangeValidator(ConfigValidator):
     def __init__(self, min, max):
         self.min = min
@@ -52,6 +43,8 @@ class RangeValidator(ConfigValidator):
 
 class OptionsValidator(ConfigValidator):
     def __init__(self, options):
+        if not options:
+            raise ValueError("The `options` can't be empty.")
         self.options = list(options)
 
     def validate(self, value) -> bool:
@@ -59,6 +52,14 @@ class OptionsValidator(ConfigValidator):
 
     def correct(self, value):
         return value if self.validate(value) else self.options[0]
+
+
+class BoolValidator(ConfigValidator):
+    def validate(self, value) -> bool:
+        return isinstance(value, bool)
+
+    def correct(self, value) -> bool:
+        return bool(value)
 
 
 class FolderValidator(ConfigValidator):
@@ -171,38 +172,49 @@ class ConfigSerializer:
 
 
 class ConfigItem:
-    def __init__(self, group, key, default, validator=None, serializer=None, **_kw):
-        self._group = group
-        self._key = key
-        self._default = default
-        self._validator = validator
-        self._serializer = serializer
-        self._value = default
+    def __init__(self, group, name, default, validator=None, serializer=None, restart=False):
+        self.group = group
+        self.name = name
+        self.validator = validator or ConfigValidator()
+        self.serializer = serializer or ConfigSerializer()
+        self.restart = restart
+        self.defaultValue = self.validator.correct(default)
+        self._value = self.defaultValue
         self.valueChanged = BoundSignal()
 
     @property
     def value(self):
         return self._value
 
+    @value.setter
+    def value(self, v):
+        v = self.validator.correct(v)
+        old = self._value
+        self._value = v
+        if old != v:
+            self.valueChanged.emit(v)
+
     @property
     def key(self):
-        return self._key
+        return f"{self.group}/{self.name}" if self.name else self.group
 
-    def _load(self, raw):
-        value = raw
-        if self._serializer:
-            value = self._serializer.deserialize(value)
-        if self._validator:
-            value = self._validator.correct(value)
-        self._value = value
+    def serialize(self):
+        return self.serializer.serialize(self.value)
+
+    def deserializeFrom(self, value):
+        self._value = self.validator.correct(self.serializer.deserialize(value))
 
 
 class RangeConfigItem(ConfigItem):
-    pass
+    @property
+    def range(self):
+        return self.validator.range
 
 
 class OptionsConfigItem(ConfigItem):
-    pass
+    @property
+    def options(self):
+        return self.validator.options
 
 
 class AndroidConfig:
@@ -221,11 +233,9 @@ class AndroidConfig:
     isCategoryEnabled = ConfigItem("Category", "EnableCategory", False, BoolValidator())
     categoryRules = ConfigItem("Category", "CategoryRules", [], CategoryListValidator())
 
-    # 本机服务。group/key 与桌面保持一致，配置文件可以互相看懂
     shouldDraftTakenDownload = ConfigItem(
         "Browser", "EnableRaiseWindowWhenReceiveMsg", False, BoolValidator())
-    # 桌面默认开，这里默认关：开着就意味着一条永不消失的前台通知，
-    # 没装扩展的用户不该先付这个代价
+    # 桌面默认开；Android 默认关，因为开着意味着一条永不消失的前台通知
     isBrowserExtensionEnabled = ConfigItem(
         "Browser", "EnableBrowserExtension", False, BoolValidator())
     browserExtensionPairToken = ConfigItem("Browser", "BrowserExtensionPairToken", "")
@@ -261,21 +271,19 @@ class AndroidConfig:
         self.byName: dict[str, ConfigItem] = {}
         self._index()
 
-    # pack 在 import 时才把自己的 ConfigItem 注册到本类上，所以索引不能只建一次
     def _index(self):
         self._items.clear()
         self.byName.clear()
-        for name in dir(self.__class__):
-            attr = getattr(self.__class__, name)
-            if isinstance(attr, ConfigItem):
-                self._items[f"{attr._group}/{attr._key}"] = attr
-                self.byName[name] = attr
+        for attrName in dir(self.__class__):
+            item = getattr(self.__class__, attrName)
+            if isinstance(item, ConfigItem):
+                self._items[item.key] = item
+                self.byName[attrName] = item
 
     def set(self, item: ConfigItem, value, save=True):
-        old = item._value
-        item._value = value
-        if old != value:
-            item.valueChanged.emit(value)
+        if item.value == value:
+            return
+        item.value = value
         if save and self._path:
             self._save()
 
@@ -296,18 +304,15 @@ class AndroidConfig:
                 fullKey = f"{groupName}/{key}"
                 item = self._items.get(fullKey)
                 if item is not None:
-                    item._load(raw)
+                    item.deserializeFrom(raw)
 
     def _save(self):
         if not self._path:
             return
         data: dict[str, dict] = {}
         for item in self._items.values():
-            group = data.setdefault(item._group, {})
-            value = item._value
-            if item._serializer:
-                value = item._serializer.serialize(value)
-            group[item._key] = value
+            group = data.setdefault(item.group, {})
+            group[item.name] = item.serialize()
 
         p = Path(self._path)
         tmp = p.with_suffix(".tmp")

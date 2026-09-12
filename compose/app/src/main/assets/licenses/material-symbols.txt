@@ -1,0 +1,51 @@
+Google Material Symbols Rounded
+Source: https://github.com/google/material-design-icons/tree/master/symbols/web
+License: MaterialSymbols-Apache-2.0.txt
+
+Selected upstream SVG paths converted to Android VectorDrawable XML.
+SVG viewBox 0 -960 960 960 is preserved with a translateY=960 group.
+Default axes: weight 400, grade 0, optical size 24, fill 0.
+Navigation selected variants use fill 1. Intrinsic display size: 24dp.
+Directional back, chevron and sort resources enable Android autoMirrored.
+
+Android drawable -> upstream symbols/web path
+ic_about.xml -> info/materialsymbolsrounded/info_24px.svg
+ic_account_box.xml -> account_box/materialsymbolsrounded/account_box_24px.svg
+ic_add.xml -> add/materialsymbolsrounded/add_24px.svg
+ic_arrow_back.xml -> arrow_back/materialsymbolsrounded/arrow_back_24px.svg
+ic_arrow_upward.xml -> arrow_upward/materialsymbolsrounded/arrow_upward_24px.svg
+ic_cat_application.xml -> apps/materialsymbolsrounded/apps_24px.svg
+ic_cat_archive.xml -> folder_zip/materialsymbolsrounded/folder_zip_24px.svg
+ic_cat_chat.xml -> subtitles/materialsymbolsrounded/subtitles_24px.svg
+ic_cat_document.xml -> description/materialsymbolsrounded/description_24px.svg
+ic_cat_music.xml -> music_note/materialsymbolsrounded/music_note_24px.svg
+ic_cat_other.xml -> draft/materialsymbolsrounded/draft_24px.svg
+ic_cat_photo.xml -> image/materialsymbolsrounded/image_24px.svg
+ic_cat_video.xml -> movie/materialsymbolsrounded/movie_24px.svg
+ic_check.xml -> check/materialsymbolsrounded/check_24px.svg
+ic_chevron_right.xml -> chevron_right/materialsymbolsrounded/chevron_right_24px.svg
+ic_close.xml -> close/materialsymbolsrounded/close_24px.svg
+ic_copy.xml -> content_copy/materialsymbolsrounded/content_copy_24px.svg
+ic_delete.xml -> delete/materialsymbolsrounded/delete_24px.svg
+ic_download.xml -> download/materialsymbolsrounded/download_24px.svg
+ic_edit.xml -> edit/materialsymbolsrounded/edit_24px.svg
+ic_error.xml -> error/materialsymbolsrounded/error_24px.svg
+ic_file.xml -> draft/materialsymbolsrounded/draft_24px.svg
+ic_folder.xml -> folder/materialsymbolsrounded/folder_24px.svg
+ic_home.xml -> home/materialsymbolsrounded/home_24px.svg
+ic_home_filled.xml -> home/materialsymbolsrounded/home_fill1_24px.svg
+ic_more_vert.xml -> more_vert/materialsymbolsrounded/more_vert_24px.svg
+ic_network.xml -> language/materialsymbolsrounded/language_24px.svg
+ic_open_in_new.xml -> open_in_new/materialsymbolsrounded/open_in_new_24px.svg
+ic_packs.xml -> extension/materialsymbolsrounded/extension_24px.svg
+ic_pause.xml -> pause/materialsymbolsrounded/pause_24px.svg
+ic_permissions.xml -> admin_panel_settings/materialsymbolsrounded/admin_panel_settings_24px.svg
+ic_play.xml -> play_arrow/materialsymbolsrounded/play_arrow_24px.svg
+ic_refresh.xml -> refresh/materialsymbolsrounded/refresh_24px.svg
+ic_restore.xml -> settings_backup_restore/materialsymbolsrounded/settings_backup_restore_24px.svg
+ic_runtimes.xml -> terminal/materialsymbolsrounded/terminal_24px.svg
+ic_search.xml -> search/materialsymbolsrounded/search_24px.svg
+ic_service.xml -> dns/materialsymbolsrounded/dns_24px.svg
+ic_settings.xml -> settings/materialsymbolsrounded/settings_24px.svg
+ic_settings_filled.xml -> settings/materialsymbolsrounded/settings_fill1_24px.svg
+ic_sort.xml -> sort/materialsymbolsrounded/sort_24px.svg

@@ -1,0 +1,7 @@
+# Chaquopy 发的是裸 JAR 不是 AAR，没带 consumer rules。
+# libchaquopy_java.so 按名字查 com/chaquo/python/PyException，Python 侧的
+# java 模块也靠反射拿这些类，被重命名或裁掉就是运行时崩溃。
+-keep class com.chaquo.python.** { *; }
+
+# chaquopy_java 编译时引了 JetBrains 注解但没打进 JAR
+-dontwarn org.jetbrains.annotations.**

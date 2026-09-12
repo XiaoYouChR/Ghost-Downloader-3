@@ -1,0 +1,7 @@
+# Navigation 的类型安全路由把枚举和自定义参数类型按 serialName 反查回类
+# （NavTypeConverter.kt 的 Class.forName），而 serialName 是编译期烧进
+# descriptor 的原始 FQN。kotlinx-serialization 自带的规则只保 Companion /
+# serializer() 这些成员，从不保类名——被 R8 改名就是启动即崩。
+# 只锁名字，shrinking 和 optimization 照常。
+-if @kotlinx.serialization.Serializable class **
+-keep,allowshrinking,allowoptimization class <1>

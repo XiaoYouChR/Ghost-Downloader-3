@@ -1,0 +1,15 @@
+Liquid bottom bar
+
+Rendering and motion adapted from BiliTools:
+Local reference: app/src/main/java/com/happycola233/bilitools/ui/liquidtabs/
+BiliTools is distributed under GNU GPL version 3: BiliTools-GPL-3.0.txt.
+
+The reference identifies its original implementation as:
+Kyant0 / AndroidLiquidGlass, 2.0.0 catalog
+Copyright 2025 Kyant
+https://github.com/Kyant0/AndroidLiquidGlass
+Apache License 2.0: AndroidLiquidGlass-Apache-2.0.txt
+
+Ghost Downloader adaptations: two existing navigation destinations, theme
+integration, accessible stationary hit targets, gesture cancellation, animation
+lifecycle handling, large-font sizing, and page-content clearance.

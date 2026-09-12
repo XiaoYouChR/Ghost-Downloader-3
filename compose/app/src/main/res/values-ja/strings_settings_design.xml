@@ -1,0 +1,14 @@
+<resources>
+    <string name="settings_group_download">ダウンロードと接続</string>
+    <string name="settings_group_features">機能とサービス</string>
+    <string name="settings_group_app">アプリ</string>
+    <string name="settings_summary_download">保存先、同時タスク数、速度と分類</string>
+    <string name="settings_summary_network">プロキシ接続と証明書の検証</string>
+    <string name="settings_summary_identity">ブラウザー識別情報、サイトルールとヘッダー</string>
+    <string name="settings_summary_packs">プロトコルやサイトごとの設定</string>
+    <string name="settings_summary_runtimes">必要なツールのインストールと更新</string>
+    <string name="settings_summary_service">ブラウザー拡張機能とリモート呼び出し</string>
+    <string name="settings_summary_permissions">ストレージ、通知とバックグラウンド動作</string>
+    <string name="settings_summary_about">アプリのバージョンとソースコード</string>
+    <string name="settings_search_clear">検索をクリア</string>
+</resources>

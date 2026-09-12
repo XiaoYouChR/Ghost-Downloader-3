@@ -1,0 +1,14 @@
+<resources>
+    <string name="settings_group_download">Загрузки и подключение</string>
+    <string name="settings_group_features">Возможности и службы</string>
+    <string name="settings_group_app">Приложение</string>
+    <string name="settings_summary_download">Папка, параллельные задачи, скорость и категории</string>
+    <string name="settings_summary_network">Прокси и проверка сертификатов</string>
+    <string name="settings_summary_identity">Идентификация браузера, правила сайтов и заголовки</string>
+    <string name="settings_summary_packs">Настройки протоколов и сайтов</string>
+    <string name="settings_summary_runtimes">Установка и обновление необходимых инструментов</string>
+    <string name="settings_summary_service">Расширение браузера и удалённые вызовы</string>
+    <string name="settings_summary_permissions">Хранилище, уведомления и фоновая работа</string>
+    <string name="settings_summary_about">Версия приложения и исходный код</string>
+    <string name="settings_search_clear">Очистить поиск</string>
+</resources>
