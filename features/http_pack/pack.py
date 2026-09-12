@@ -17,6 +17,11 @@ from app.models.task import (
 )
 from app.platform.filesystem import toSafeFilename
 from .task import HttpTask, HttpTaskStep
+from .site_rules import (
+    SingleConnectionHttpTaskStep,
+    UupdumpPostTaskStep,
+    apply_http_site_rule,
+)
 
 
 DOWNLOADABLE_EXTENSIONS = frozenset({
@@ -44,24 +49,31 @@ class HttpParser(TaskParser):
         return any(path.endswith(ext) for ext in DOWNLOADABLE_EXTENSIONS)
 
     async def parse(self, options: TaskOptions) -> Task:
-        url = options.url
-        headers = dict(options.headers)
+        siteRule = apply_http_site_rule(options.url, dict(options.headers), options.subworkerCount)
+        url = siteRule.url
+        headers = siteRule.headers
         clientProfile = options.clientProfile
         userAgent = options.userAgent
-        subworkerCount = options.subworkerCount
+        subworkerCount = siteRule.subworkerCount
         outputFolder = options.outputFolder
 
         name = ""
         fileSize = SpecialFileSize.UNKNOWN
         canUseRangeRequests = False
         lastModified = ""
+        preferResponseFilename = False
 
         if isinstance(options, ResourceTaskOptions) and options.name:
             name = toSafeFilename(options.name, fallback=f"file_{time_ns()}")
             fileSize = options.size if options.size > 0 else SpecialFileSize.UNKNOWN
             canUseRangeRequests = options.canUseRangeRequests
 
-        if fileSize == SpecialFileSize.UNKNOWN:
+        if siteRule.action == "uupdump_post":
+            canUseRangeRequests = False
+            if not name:
+                name = f"uupdump_{time_ns()}.download"
+                preferResponseFilename = True
+        elif fileSize == SpecialFileSize.UNKNOWN:
             emulation = toEmulation(
                 options.clientProfile or cfg.clientProfile.value,
                 options.sourceUserAgent,
@@ -193,7 +205,13 @@ class HttpParser(TaskParser):
             fileSize=fileSize,
             outputFolder=outputFolder,
         )
-        task.addStep(HttpTaskStep(
+        stepClass = HttpTaskStep
+        if siteRule.action == "single_connection":
+            stepClass = SingleConnectionHttpTaskStep
+        elif siteRule.action == "uupdump_post":
+            stepClass = UupdumpPostTaskStep
+
+        step = stepClass(
             stepIndex=1,
             url=url,
             fileSize=fileSize,
@@ -203,7 +221,12 @@ class HttpParser(TaskParser):
             subworkerCount=subworkerCount,
             canUseRangeRequests=canUseRangeRequests,
             lastModified=lastModified,
-        ))
+        )
+        if isinstance(step, UupdumpPostTaskStep):
+            step.requestBody = siteRule.requestBody
+            step.requestContentType = siteRule.requestContentType
+            step.preferResponseFilename = preferResponseFilename
+        task.addStep(step)
         return task
 
 
@@ -235,4 +258,3 @@ class HttpPack(FeaturePack):
             UrlEditCard(parent, initial=task.url),
             *self.optionCards(task, parent),
         ]
-
