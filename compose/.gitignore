@@ -14,7 +14,6 @@
 .cxx
 local.properties
 
-# 签名密钥丢了就没法给已装用户推更新，备份到仓库以外的地方
 *.jks
 *.keystore
 keystore.properties

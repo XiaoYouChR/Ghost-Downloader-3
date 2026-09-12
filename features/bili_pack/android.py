@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 
+UI_CLASS = "com.xychr.ghostdownloader.packs.BilibiliUi"
+
 _account = None
 _qr: dict = {}
 
@@ -36,6 +38,7 @@ def draftFields(task) -> dict:
         "duration": page._duration if page else 0,
         "startTime": page.startTime if page else 0,
         "endTime": page.endTime if page else 0,
+        "hasPreview": bool(page and page.cid),
     }
 
 
@@ -66,6 +69,9 @@ def setSubtitles(task, languages: str):
 def setTrim(task, startTime: int, endTime: int):
     if not task.files:
         return
+    duration = task.files[0]._duration
+    if len(task.files) != 1 or not (0 <= startTime < (endTime or duration) <= duration):
+        raise ValueError("Invalid trim range")
     task.files[0].startTime = startTime
     task.files[0].endTime = endTime
     task.update()
@@ -74,6 +80,42 @@ def setTrim(task, startTime: int, endTime: int):
 def setFileName(task, index: int, name: str):
     from .task import setFileName as _setFileName
     _setFileName(task, index, name)
+
+
+async def probePreview(task):
+    import re
+    from urllib.parse import urlparse
+    from app.client import buildClient
+
+    page = task.files[0] if task.files and len(task.files) == 1 else None
+    match = re.match(r"/video/(BV[a-zA-Z0-9]+|av\d+)", urlparse(task.url).path)
+    if not page or not page.cid or not match:
+        return {"sheets": []}
+    videoId = match.group(1)
+    key, value = ("aid", videoId[2:]) if videoId.startswith("av") else ("bvid", videoId)
+    headers = {"Referer": "https://www.bilibili.com/"}
+    cookie = page.headers.get("cookie") or page.headers.get("Cookie")
+    client = buildClient(headers={**headers, **({"Cookie": cookie} if cookie else {})})
+    try:
+        response = await client.get(f"https://api.bilibili.com/x/player/videoshot?{key}={value}&cid={page.cid}&index=1")
+        try:
+            response.raise_for_status()
+            payload = await response.json()
+        finally:
+            response.close()
+        if payload.get("code") != 0:
+            raise ValueError("Preview request failed")
+        data = payload.get("data") or {}
+        columns, rows = int(data.get("img_x_len") or 10), int(data.get("img_y_len") or 10)
+        count = columns * rows
+        timestamps = data.get("index") or []
+        return {"sheets": [
+            {"url": "https:" + url if url.startswith("//") else url,
+             "columns": columns, "rows": rows, "times": timestamps[index * count:(index + 1) * count]}
+            for index, url in enumerate(data.get("image") or [])
+        ], "headers": headers}
+    finally:
+        client.close()
 
 
 # ---- account state (called by Kotlin via packState/requestPack) ----

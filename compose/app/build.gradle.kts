@@ -7,12 +7,10 @@ plugins {
     alias(libs.plugins.chaquopy)
 }
 
-// 桌面的发布流水线也从 constants.py 读版本号
 val engineVersion = file("../../app/config/constants.py").readLines()
     .first { it.startsWith("VERSION") }
     .substringAfter('"').substringBefore('"')
 
-// 没有 keystore.properties 时 release 出未签名 APK
 val signing = Properties().apply {
     rootProject.file("keystore.properties").takeIf(File::exists)?.inputStream()?.use(::load)
 }
@@ -45,7 +43,6 @@ android {
             storePassword = signing.getProperty("storePassword")
             keyAlias = signing.getProperty("keyAlias")
             keyPassword = signing.getProperty("keyPassword")
-            // minSdk 28 用不上 v1；v3 带证书轮换，AGP 默认不开
             enableV1Signing = false
             enableV2Signing = true
             enableV3Signing = true
@@ -79,36 +76,6 @@ android {
     }
     androidResources {
         generateLocaleConfig = true
-    }
-}
-
-// CRX 和桌面共用一份，不放副本
-abstract class SyncExtensionAsset : DefaultTask() {
-    @get:InputFile
-    abstract val crx: RegularFileProperty
-
-    @get:OutputDirectory
-    abstract val outputFolder: DirectoryProperty
-
-    @TaskAction
-    fun run() {
-        val folder = outputFolder.get().asFile
-        folder.mkdirs()
-        crx.get().asFile.copyTo(folder.resolve("chrome_extension.crx"), overwrite = true)
-    }
-}
-
-val syncExtensionAsset = tasks.register<SyncExtensionAsset>("syncExtensionAsset") {
-    crx = layout.projectDirectory.file("../../app/assets/chrome_extension.crx")
-}
-
-// 变体 API 而非 sourceSets.assets.srcDir，后者不建立 task 依赖
-androidComponents {
-    onVariants { variant ->
-        variant.sources.assets?.addGeneratedSourceDirectory(
-            syncExtensionAsset,
-            SyncExtensionAsset::outputFolder,
-        )
     }
 }
 

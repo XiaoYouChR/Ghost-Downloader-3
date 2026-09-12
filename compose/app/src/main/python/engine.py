@@ -386,16 +386,6 @@ class Engine:
             })
         return json.dumps(result, ensure_ascii=False)
 
-    def setDraftName(self, url: str, name: str):
-        task = self._taskDraft.taskByUrl(url)
-        if task:
-            task.name = name
-
-    def setDraftSelection(self, url: str, indexes: str):
-        task = self._taskDraft.taskByUrl(url)
-        if task:
-            task.setSelection([int(i) for i in indexes.split(",") if i])
-
     def setDraft(self, url: str, action: str, *args):
         task = self._taskDraft.taskByUrl(url)
         if not task:
@@ -486,14 +476,6 @@ class Engine:
         cfg.set(item, value)
 
     # ---- Categories ----
-
-    # 结构比 settings() 里那份 categoryRules 完整（带 categoryId），编辑页要靠它定位
-    def categories(self) -> str:
-        from dataclasses import asdict
-        return json.dumps(
-            [asdict(c) for c in self._categoryService.categories()],
-            ensure_ascii=False,
-        )
 
     def addCategory(self, categoryJson: str):
         from app.services.category_service import Category
@@ -709,7 +691,7 @@ class Engine:
 
     def packInfos(self) -> str:
         result = []
-        for pack in self._featureService._packs:
+        for pack in self._featureService.packs:
             m = pack.manifest
             if m is None:
                 continue

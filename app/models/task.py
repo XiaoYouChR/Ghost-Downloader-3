@@ -39,6 +39,9 @@ class TaskError(Exception):
     def __str__(self):
         return self.message.format_map(self.params) if self.params else self.message
 
+    def toDict(self) -> dict:
+        return {"message": self.message, "params": {k: str(v) for k, v in self.params.items()}}
+
 
 def toTaskError(error) -> TaskError:
     if isinstance(error, TaskError):

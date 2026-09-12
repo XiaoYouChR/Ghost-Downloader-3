@@ -4,7 +4,6 @@ kotlin = "2.4.10"
 coreKtx = "1.16.0"
 coreSplashscreen = "1.2.0"
 composeBom = "2025.12.00"
-# ADR 0010：Expressive 在 alpha 线上，BOM 只管稳定版
 material3 = "1.5.0-alpha27"
 activityCompose = "1.8.0"
 lifecycleRuntimeKtx = "2.9.0"
