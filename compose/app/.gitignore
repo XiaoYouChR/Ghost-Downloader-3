@@ -1,1 +1,3 @@
 /build
+/src/main/jniLibs/
+/src/main/assets/chrome_extension.crx

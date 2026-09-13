@@ -17,3 +17,4 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+/build-scripts/dist/
