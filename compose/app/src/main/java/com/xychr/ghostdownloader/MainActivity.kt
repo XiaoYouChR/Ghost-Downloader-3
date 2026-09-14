@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -94,10 +95,10 @@ class MainActivity : ComponentActivity() {
                 val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
                 val hasCompleted = settings?.hasCompletedOobe
 
-                // TODO: 调试用，发布前改回 false ->
                 when (hasCompleted) {
                     null -> {}
-                    true, false -> OobeWithReveal(
+                    true -> AppRoot(draft)
+                    false -> OobeWithReveal(
                         downloadFolder = settings?.downloadFolder.orEmpty(),
                         onSetSetting = settingsViewModel::set,
                         appContent = { AppRoot(draft) },
@@ -132,14 +133,6 @@ private fun OobeWithReveal(
     )
 
     Box(Modifier.fillMaxSize()) {
-        if (isRevealing || !isOobeVisible) {
-            Box(
-                Modifier.fillMaxSize().circularReveal(revealCenter, revealProgress),
-            ) {
-                appContent()
-            }
-        }
-
         if (isOobeVisible) {
             OobePage(
                 downloadFolder = downloadFolder,
@@ -149,6 +142,21 @@ private fun OobeWithReveal(
                     isRevealing = true
                 },
             )
+            if (isRevealing) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f * revealProgress.value)),
+                )
+            }
+        }
+
+        if (isRevealing || !isOobeVisible) {
+            Box(
+                Modifier.fillMaxSize().circularReveal(revealCenter, revealProgress),
+            ) {
+                appContent()
+            }
         }
     }
 }
