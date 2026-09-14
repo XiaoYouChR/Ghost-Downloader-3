@@ -1,8 +1,11 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.bittorrent_pack
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
@@ -32,21 +35,21 @@ fun BitTorrentSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Un
         NumberSettingRow(
             title = stringResource(R.string.bt_listen_port),
             value = config.int(k("listenPort")),
-            range = 0..65535,
+            range = SettingRanges[k("listenPort")],
             onConfirm = { set(k("listenPort"), it) },
             valueText = { if (it == 0) auto else "$it" },
         )
         SliderSettingRow(
             title = stringResource(R.string.bt_max_connections),
             value = config.int(k("maxConnections")),
-            range = 20..2000,
+            range = SettingRanges[k("maxConnections")],
             valueText = { "$it" },
             onCommit = { set(k("maxConnections"), it) },
         )
         SliderSettingRow(
             title = stringResource(R.string.bt_metadata_timeout),
             value = config.int(k("metadataTimeout")),
-            range = 5..300,
+            range = SettingRanges[k("metadataTimeout")],
             valueText = { "$it s" },
             onCommit = { set(k("metadataTimeout"), it) },
         )
@@ -101,7 +104,7 @@ fun BitTorrentSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Un
         NumberSettingRow(
             title = stringResource(R.string.bt_max_upload_speed),
             value = config.int(k("maxUploadSpeed")) / 1024,
-            range = 0..102400,
+            range = SettingRanges[k("maxUploadSpeed")].let { it.first / 1024..it.last / 1024 },
             onConfirm = { set(k("maxUploadSpeed"), it * 1024) },
             unit = "KB/s",
             valueText = { if (it == 0) unlimited else "$it KB/s" },
@@ -109,7 +112,7 @@ fun BitTorrentSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Un
         NumberSettingRow(
             title = stringResource(R.string.bt_seeding_ratio_limit),
             value = config.int(k("seedingRatioLimit")),
-            range = 0..10000,
+            range = SettingRanges[k("seedingRatioLimit")],
             onConfirm = { set(k("seedingRatioLimit"), it) },
             unit = "%",
             valueText = { if (it == 0) unlimited else "$it %" },
@@ -117,7 +120,7 @@ fun BitTorrentSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Un
         NumberSettingRow(
             title = stringResource(R.string.bt_seeding_time_limit),
             value = config.int(k("seedingTimeLimit")),
-            range = 0..43200,
+            range = SettingRanges[k("seedingTimeLimit")],
             onConfirm = { set(k("seedingTimeLimit"), it) },
             unit = "min",
             valueText = { if (it == 0) unlimited else "$it min" },

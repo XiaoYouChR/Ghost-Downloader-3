@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.m3u8_pack3u8
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource

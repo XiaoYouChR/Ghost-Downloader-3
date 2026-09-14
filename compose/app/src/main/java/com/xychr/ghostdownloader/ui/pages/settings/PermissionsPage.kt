@@ -1,9 +1,4 @@
 package com.xychr.ghostdownloader.ui.pages.settings
-import com.xychr.ghostdownloader.engine.EngineRepository
-import com.xychr.ghostdownloader.model.*
-import com.xychr.ghostdownloader.ui.navigation.*
-import com.xychr.ghostdownloader.ui.components.*
-import com.xychr.ghostdownloader.service.*
 
 import android.Manifest
 import android.content.Context
@@ -28,7 +23,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 
 @Composable
 fun PermissionsPage(onBack: () -> Unit) {
@@ -45,7 +40,7 @@ fun PermissionsPage(onBack: () -> Unit) {
         canInstallPackages = context.packageManager.canRequestPackageInstalls()
     }
 
-    SettingsPage(stringResource(R.string.settings_section_permissions), onBack) {
+    SettingsScaffold(stringResource(R.string.settings_section_permissions), onBack) {
         SettingSection {
             ActionSettingRow(
                 title = stringResource(R.string.settings_storage_access),

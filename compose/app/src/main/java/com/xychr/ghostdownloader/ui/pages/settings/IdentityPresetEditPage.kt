@@ -18,11 +18,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.settings.ClientProfileRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
+import com.xychr.ghostdownloader.ui.components.settings.matchClientProfile
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEdit
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditor
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.matchHeaderValue
 
 @Composable
@@ -37,12 +39,12 @@ fun IdentityPresetEditPage(
     val isCreating = index < 0
     val identityState = uiState
     if (identityState == null) {
-        SettingsPage(stringResource(R.string.identity_rule_edit), onBack) { LoadingRow() }
+        SettingsScaffold(stringResource(R.string.identity_rule_edit), onBack) { LoadingRow() }
         return
     }
     val existing = identityState.identity.identityPresets.getOrNull(index)
     if (!isCreating && existing == null) {
-        SettingsPage(stringResource(R.string.identity_rule_edit), onBack) { LoadingRow() }
+        SettingsScaffold(stringResource(R.string.identity_rule_edit), onBack) { LoadingRow() }
         return
     }
 

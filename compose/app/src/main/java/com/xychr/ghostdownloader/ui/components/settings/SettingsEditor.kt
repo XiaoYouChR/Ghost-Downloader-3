@@ -85,7 +85,7 @@ fun SettingsEditor(
     BackHandler(enabled = !isKeyboardVisible) { requestBack() }
     LaunchedEffect(state.isSaved) { if (state.isSaved) onBack() }
 
-    SettingsPage(
+    SettingsScaffold(
         title = title,
         onBack = requestBack,
         modifier = modifier,

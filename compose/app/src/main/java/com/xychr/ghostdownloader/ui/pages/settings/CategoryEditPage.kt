@@ -30,7 +30,7 @@ import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEdit
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditor
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 
 // 键必须和引擎 category_service.py 的预设一致，桌面按这些值取 FluentIcon
 private val ICON_KEYS = listOf(
@@ -62,7 +62,7 @@ fun CategoryEditPage(
     val editState by edit.state.collectAsStateWithLifecycle()
     val state = categoryState
     if (state == null) {
-        SettingsPage(stringResource(R.string.category_edit), onBack) { LoadingRow() }
+        SettingsScaffold(stringResource(R.string.category_edit), onBack) { LoadingRow() }
         return
     }
     val existing = state.categories.firstOrNull { it.categoryId == categoryId }
@@ -70,7 +70,7 @@ fun CategoryEditPage(
     val defaultFolder = state.defaultFolder
 
     if (!isCreating && existing == null) {
-        SettingsPage(stringResource(R.string.category_edit), onBack) {
+        SettingsScaffold(stringResource(R.string.category_edit), onBack) {
             Text(stringResource(R.string.task_category_missing), Modifier.padding(16.dp))
         }
         return

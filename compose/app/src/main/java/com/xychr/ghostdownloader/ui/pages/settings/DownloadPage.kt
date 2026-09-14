@@ -20,7 +20,7 @@ import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SliderSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.navigation.*
@@ -33,7 +33,7 @@ fun DownloadPage(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
-    SettingsPage(stringResource(R.string.settings_section_download), onBack) {
+    SettingsScaffold(stringResource(R.string.settings_section_download), onBack) {
         settings?.let { DownloadRows(it, viewModel::set, onNavigate) } ?: LoadingRow()
     }
 }

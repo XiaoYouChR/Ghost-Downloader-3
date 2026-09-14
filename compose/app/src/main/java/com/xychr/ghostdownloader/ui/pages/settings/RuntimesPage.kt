@@ -13,7 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.model.TaskError
 import com.xychr.ghostdownloader.i18n.engineText
 import kotlinx.coroutines.Job
@@ -83,7 +83,7 @@ class RuntimesViewModel : ViewModel() {
 fun RuntimesPage(onBack: () -> Unit, viewModel: RuntimesViewModel = viewModel()) {
     val runtimes by viewModel.runtimes.collectAsStateWithLifecycle()
 
-    SettingsPage(stringResource(R.string.settings_section_runtimes), onBack) {
+    SettingsScaffold(stringResource(R.string.settings_section_runtimes), onBack) {
         SettingSection {
             runtimes.forEach { runtime ->
                 RuntimeRow(

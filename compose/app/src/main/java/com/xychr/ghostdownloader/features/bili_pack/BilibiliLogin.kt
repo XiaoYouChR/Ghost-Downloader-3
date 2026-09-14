@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.bili_pack
+
+import com.xychr.ghostdownloader.packs.*
 
 import android.content.Intent
 import android.graphics.Bitmap

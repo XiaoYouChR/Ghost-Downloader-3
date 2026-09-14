@@ -19,7 +19,7 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.util.formatSize
 
 @Composable
-fun FileSelectPage(
+fun FileSelect(
     files: List<DraftFile>,
     canRename: Boolean,
     onChange: (List<DraftFile>) -> Unit,

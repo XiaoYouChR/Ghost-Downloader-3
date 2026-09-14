@@ -1,16 +1,16 @@
 package com.xychr.ghostdownloader
 
-import android.Manifest
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -31,9 +31,15 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -41,6 +47,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlin.math.hypot
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -55,9 +62,11 @@ import com.xychr.ghostdownloader.ui.components.liquid.LiquidBottomBar
 import com.xychr.ghostdownloader.ui.navigation.RetainedTab
 import com.xychr.ghostdownloader.ui.navigation.SettingsRoute
 import com.xychr.ghostdownloader.ui.navigation.TasksRoute
-import com.xychr.ghostdownloader.ui.pages.settings.SettingsPages
+import com.xychr.ghostdownloader.ui.navigation.SettingsNavHost
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
-import com.xychr.ghostdownloader.ui.pages.TaskNavHost
+import com.xychr.ghostdownloader.ui.navigation.TaskNavHost
+import com.xychr.ghostdownloader.ui.pages.OobePage
+import com.xychr.ghostdownloader.ui.pages.settings.SettingsViewModel
 import com.xychr.ghostdownloader.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -70,6 +79,8 @@ class MainActivity : ComponentActivity() {
             )
         } }
     }
+    private val settingsViewModel by viewModels<SettingsViewModel>()
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(buildLocalizedContext(newBase))
     }
@@ -78,13 +89,89 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
-                .launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
         setContent {
             AppTheme {
-                AppRoot(draft)
+                val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+                val hasCompleted = settings?.hasCompletedOobe
+
+                // TODO: 调试用，发布前改回 false ->
+                when (hasCompleted) {
+                    null -> {}
+                    true, false -> OobeWithReveal(
+                        downloadFolder = settings?.downloadFolder.orEmpty(),
+                        onSetSetting = settingsViewModel::set,
+                        appContent = { AppRoot(draft) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+
+@Composable
+private fun OobeWithReveal(
+    downloadFolder: String,
+    onSetSetting: (String, Any) -> Unit,
+    appContent: @Composable () -> Unit,
+) {
+    var revealCenter by remember { mutableStateOf(Offset.Zero) }
+    var isRevealing by remember { mutableStateOf(false) }
+    var isOobeVisible by remember { mutableStateOf(true) }
+
+    val revealProgress = animateFloatAsState(
+        targetValue = if (isRevealing) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, easing = EmphasizedDecelerate),
+        finishedListener = {
+            if (isRevealing) {
+                isOobeVisible = false
+                onSetSetting("hasCompletedOobe", true)
+            }
+        },
+    )
+
+    Box(Modifier.fillMaxSize()) {
+        if (isRevealing || !isOobeVisible) {
+            Box(
+                Modifier.fillMaxSize().circularReveal(revealCenter, revealProgress),
+            ) {
+                appContent()
+            }
+        }
+
+        if (isOobeVisible) {
+            OobePage(
+                downloadFolder = downloadFolder,
+                onSetSetting = onSetSetting,
+                onFinish = { center ->
+                    revealCenter = center
+                    isRevealing = true
+                },
+            )
+        }
+    }
+}
+
+private fun Modifier.circularReveal(
+    center: Offset,
+    progress: androidx.compose.runtime.State<Float>,
+): Modifier = drawWithCache {
+    val path = Path()
+
+    onDrawWithContent {
+        val p = progress.value
+        if (p >= 1f) {
+            drawContent()
+        } else {
+            path.rewind()
+            val maxRadius = hypot(
+                maxOf(center.x, size.width - center.x),
+                maxOf(center.y, size.height - center.y),
+            )
+            path.addOval(Rect(center, maxRadius * p))
+            clipPath(path) {
+                this@onDrawWithContent.drawContent()
             }
         }
     }
@@ -136,7 +223,7 @@ private fun AppRoot(draft: DraftViewModel) {
                 )
             },
             settingsContent = {
-                SettingsPages(
+                SettingsNavHost(
                     navController = settingsNavController,
                     bottomContentPadding = bottomContentPadding,
                     modifier = Modifier.fillMaxSize(),

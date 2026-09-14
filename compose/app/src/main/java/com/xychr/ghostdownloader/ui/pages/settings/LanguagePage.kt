@@ -11,7 +11,7 @@ import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.RadioRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.platform.loadLanguageTag
 import com.xychr.ghostdownloader.ui.platform.saveLanguageTag
 
@@ -37,7 +37,7 @@ fun LanguagePage(onBack: () -> Unit) {
     val context = LocalContext.current
     var currentTag by remember { mutableStateOf(loadLanguageTag(context)) }
 
-    SettingsPage(stringResource(R.string.settings_section_language), onBack) {
+    SettingsScaffold(stringResource(R.string.settings_section_language), onBack) {
         SettingSection {
             languages.forEach { option ->
                 val label = if (option.tag == null) stringResource(R.string.settings_language_system) else option.label

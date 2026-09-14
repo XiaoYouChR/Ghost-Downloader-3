@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,22 +12,24 @@ import kotlinx.serialization.Serializable
 
 sealed interface Route
 
-@Serializable
-enum class DraftPart { Summary, Files }
-
-private const val navigationDurationMillis = 300
+private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+private val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
 
 val navEnterTransition: AnimatedContentTransitionScope<*>.() -> EnterTransition = {
-    fadeIn(tween(navigationDurationMillis)) + slideIntoContainer(SlideDirection.Start, tween(navigationDurationMillis))
+    fadeIn(tween(400, easing = EmphasizedDecelerate)) +
+        slideIntoContainer(SlideDirection.Start, tween(400, easing = EmphasizedDecelerate))
 }
 val navExitTransition: AnimatedContentTransitionScope<*>.() -> ExitTransition = {
-    fadeOut(tween(navigationDurationMillis)) + slideOutOfContainer(SlideDirection.Start, tween(navigationDurationMillis))
+    fadeOut(tween(200, easing = EmphasizedAccelerate)) +
+        slideOutOfContainer(SlideDirection.Start, tween(200, easing = EmphasizedAccelerate))
 }
 val navPopEnterTransition: AnimatedContentTransitionScope<*>.() -> EnterTransition = {
-    fadeIn(tween(navigationDurationMillis)) + slideIntoContainer(SlideDirection.End, tween(navigationDurationMillis))
+    fadeIn(tween(400, easing = EmphasizedDecelerate)) +
+        slideIntoContainer(SlideDirection.End, tween(400, easing = EmphasizedDecelerate))
 }
 val navPopExitTransition: AnimatedContentTransitionScope<*>.() -> ExitTransition = {
-    fadeOut(tween(navigationDurationMillis)) + slideOutOfContainer(SlideDirection.End, tween(navigationDurationMillis))
+    fadeOut(tween(200, easing = EmphasizedAccelerate)) +
+        slideOutOfContainer(SlideDirection.End, tween(200, easing = EmphasizedAccelerate))
 }
 
 @Serializable data object TasksRoute : Route
@@ -37,11 +40,6 @@ val navPopExitTransition: AnimatedContentTransitionScope<*>.() -> ExitTransition
 @Serializable data class TaskDetailRoute(val taskId: String) : Route
 @Serializable data class TaskFilesRoute(val taskId: String) : Route
 @Serializable data class TaskEditRoute(val taskId: String) : Route
-@Serializable data class DraftEditRoute(
-    val url: String,
-    val part: DraftPart = DraftPart.Summary,
-) : Route
-
 // 设置分类
 @Serializable data object DownloadSettingsRoute : Route
 @Serializable data object NetworkSettingsRoute : Route

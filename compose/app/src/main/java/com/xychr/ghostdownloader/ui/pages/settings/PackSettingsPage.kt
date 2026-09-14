@@ -7,7 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.packs.PackKeys
 import com.xychr.ghostdownloader.packs.PackRegistry
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 
 @Composable
 fun PackSettingsPage(
@@ -22,7 +22,7 @@ fun PackSettingsPage(
 
     val config by viewModel.config.collectAsStateWithLifecycle()
 
-    SettingsPage(stringResource(packUi.settingsTitle), onBack) {
+    SettingsScaffold(stringResource(packUi.settingsTitle), onBack) {
         config?.let { content(it, keys, viewModel::set) } ?: LoadingRow()
     }
 }

@@ -1,8 +1,11 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.m3u8_pack3u8
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
@@ -83,21 +86,21 @@ fun M3U8Settings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         SliderSettingRow(
             title = stringResource(R.string.m3u8_thread_count),
             value = config.int(k("threadCount")),
-            range = 1..64,
+            range = SettingRanges[k("threadCount")],
             valueText = { "$it" },
             onCommit = { set(k("threadCount"), it) },
         )
         SliderSettingRow(
             title = stringResource(R.string.m3u8_retry_count),
             value = config.int(k("retryCount")),
-            range = 0..20,
+            range = SettingRanges[k("retryCount")],
             valueText = { "$it" },
             onCommit = { set(k("retryCount"), it) },
         )
         NumberSettingRow(
             title = stringResource(R.string.m3u8_request_timeout),
             value = config.int(k("requestTimeout")),
-            range = 5..600,
+            range = SettingRanges[k("requestTimeout")],
             onConfirm = { set(k("requestTimeout"), it) },
             unit = "s",
         )
@@ -120,7 +123,7 @@ fun M3U8Settings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         NumberSettingRow(
             title = stringResource(R.string.m3u8_max_speed),
             value = config.int(k("maxSpeed")),
-            range = -1..1000000,
+            range = SettingRanges[k("maxSpeed")],
             onConfirm = { set(k("maxSpeed"), it) },
             valueText = { if (it <= 0) unlimited else "$it" },
         )
@@ -152,7 +155,7 @@ fun M3U8Settings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         NumberSettingRow(
             title = stringResource(R.string.m3u8_live_wait_time),
             value = config.int(k("liveWaitTime")),
-            range = 0..100000,
+            range = SettingRanges[k("liveWaitTime")],
             onConfirm = { set(k("liveWaitTime"), it) },
             unit = "s",
             valueText = { if (it == 0) auto else "$it s" },
@@ -160,7 +163,7 @@ fun M3U8Settings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         NumberSettingRow(
             title = stringResource(R.string.m3u8_live_take_count),
             value = config.int(k("liveTakeCount")),
-            range = 0..1000,
+            range = SettingRanges[k("liveTakeCount")],
             onConfirm = { set(k("liveTakeCount"), it) },
             valueText = { if (it == 0) auto else "$it" },
         )

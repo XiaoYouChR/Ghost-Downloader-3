@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.ed2k_pack2k
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text

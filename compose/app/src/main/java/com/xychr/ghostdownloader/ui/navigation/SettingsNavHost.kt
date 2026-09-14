@@ -1,21 +1,43 @@
-package com.xychr.ghostdownloader.ui.pages.settings
+package com.xychr.ghostdownloader.ui.navigation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.xychr.ghostdownloader.ui.navigation.*
+import com.xychr.ghostdownloader.ui.pages.settings.AboutPage
+import com.xychr.ghostdownloader.ui.pages.settings.CategoryEditPage
+import com.xychr.ghostdownloader.ui.pages.settings.CategoryPage
+import com.xychr.ghostdownloader.ui.pages.settings.CategoryViewModel
+import com.xychr.ghostdownloader.ui.pages.settings.ClientProfilePage
+import com.xychr.ghostdownloader.ui.pages.settings.DownloadPage
+import com.xychr.ghostdownloader.ui.pages.settings.HeadersPresetEditPage
+import com.xychr.ghostdownloader.ui.pages.settings.HeadersPresetsPage
+import com.xychr.ghostdownloader.ui.pages.settings.IdentityPage
+import com.xychr.ghostdownloader.ui.pages.settings.IdentityPresetEditPage
+import com.xychr.ghostdownloader.ui.pages.settings.IdentityRulesPage
+import com.xychr.ghostdownloader.ui.pages.settings.IdentityViewModel
+import com.xychr.ghostdownloader.ui.pages.settings.LanguagePage
+import com.xychr.ghostdownloader.ui.pages.settings.NetworkPage
+import com.xychr.ghostdownloader.ui.pages.settings.PackInfoPage
+import com.xychr.ghostdownloader.ui.pages.settings.PackSettingsPage
+import com.xychr.ghostdownloader.ui.pages.settings.PacksPage
+import com.xychr.ghostdownloader.ui.pages.settings.PermissionsPage
+import com.xychr.ghostdownloader.ui.pages.settings.ProxyPage
+import com.xychr.ghostdownloader.ui.pages.settings.RuntimesPage
+import com.xychr.ghostdownloader.ui.pages.settings.ServicePage
+import com.xychr.ghostdownloader.ui.pages.settings.SettingsHomePage
+import com.xychr.ghostdownloader.ui.pages.settings.SettingsViewModel
 
 @Composable
-internal fun SettingsPages(
+internal fun SettingsNavHost(
     navController: NavHostController,
     bottomContentPadding: Dp,
     onReturnToTasks: () -> Unit,
@@ -46,7 +68,7 @@ internal fun SettingsPages(
         val back: () -> Unit = { navController.popBackStack() }
 
         composable<SettingsRoute> {
-            SettingsScreen(onNavigate = navigate, bottomContentPadding = bottomContentPadding)
+            SettingsHomePage(onNavigate = navigate, bottomContentPadding = bottomContentPadding)
         }
         composable<DownloadSettingsRoute> { DownloadPage(onNavigate = navigate, onBack = back, viewModel = settingsVM) }
         composable<NetworkSettingsRoute> { NetworkPage(onNavigate = navigate, onBack = back, viewModel = settingsVM) }

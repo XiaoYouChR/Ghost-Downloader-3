@@ -35,8 +35,9 @@ class App : Application() {
         val module = Python.getInstance().getModule("engine")
         val packUiJson = module.callAttr("start").toString()
         PackRegistry.load(packUiJson)
-        SettingRanges.load(module.callAttr("settingRanges").toString())
-        EngineRepository.bind(module.get("_engine")!!)
+        val engine = module.get("_engine")!!
+        SettingRanges.load(engine.callAttr("settingRanges").toString())
+        EngineRepository.bind(engine)
 
         scope.launch {
             EngineRepository.observe<KeepAlive>("keepAlive")

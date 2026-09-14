@@ -89,8 +89,48 @@ class DraftViewModel(
         }
     }
 
+    fun setName(url: String, name: String) {
+        viewModelScope.launch { writes.withLock { send("setDraft", listOf(url, "setName", name)); load() } }
+    }
+
+    fun setOutputFolder(url: String, folder: String) {
+        viewModelScope.launch { writes.withLock { send("setDraft", listOf(url, "setOutputFolder", folder)); load() } }
+    }
+
+    fun setGlobalOutputFolder(folder: String) {
+        viewModelScope.launch {
+            writes.withLock {
+                state.value.items.forEach { item ->
+                    if (item.error == null && !item.isParsing)
+                        send("setDraft", listOf(item.url, "setOutputFolder", folder))
+                }
+                load()
+            }
+        }
+    }
+
     suspend fun setCategory(url: String, choice: String?): Boolean =
         update(url, listOf(DraftChange("setCategory", listOf(choice.orEmpty(), choice == null))))
+
+    fun applyFiles(url: String, initial: List<DraftFile>, edited: List<DraftFile>) {
+        val changes = buildList {
+            if (edited.map { it.index to it.isSelected } != initial.map { it.index to it.isSelected })
+                add(DraftChange("setSelection", listOf(edited.filter { it.isSelected }.joinToString(",") { it.index.toString() })))
+            edited.forEach { file ->
+                if (file.path != initial.first { it.index == file.index }.path)
+                    add(DraftChange("setFileName", listOf(file.index, file.path.trim())))
+            }
+        }
+        if (changes.isEmpty()) return
+        viewModelScope.launch {
+            writes.withLock {
+                changes.forEach { change ->
+                    send("setDraft", listOf(url, change.action) + change.arguments)
+                }
+                load()
+            }
+        }
+    }
 
     suspend fun update(url: String, changes: List<DraftChange>): Boolean = runWorking {
         writes.withLock {
@@ -111,13 +151,13 @@ class DraftViewModel(
         }
     }
 
-    suspend fun confirm(): Boolean = runWorking {
+    suspend fun confirm(autoStart: Boolean = true): Boolean = runWorking {
         inputJob?.cancel()
         writes.withLock {
             parseInput()
             load()
             check(state.value.items.any { it.error == null }) { "No task to confirm" }
-            send("confirmDraft", emptyList())
+            send("confirmDraft", listOf(autoStart))
             stop()
         }
     }
