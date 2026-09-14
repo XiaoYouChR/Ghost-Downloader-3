@@ -34,7 +34,6 @@ def draftFields(task) -> dict:
         "isAudioEnabled": task.isAudioEnabled,
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
-        "canRenameFiles": True,
         "duration": page._duration if page else 0,
         "startTime": page.startTime if page else 0,
         "endTime": page.endTime if page else 0,

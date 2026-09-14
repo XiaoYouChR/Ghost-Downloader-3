@@ -17,6 +17,3 @@ data class CategoryState(
     val categories: List<Category> = emptyList(),
     val defaultFolder: String = "",
 )
-
-fun toCategoryId(id: String, categories: List<Category>): String =
-    id.takeIf { key -> categories.any { it.categoryId == key } }.orEmpty()

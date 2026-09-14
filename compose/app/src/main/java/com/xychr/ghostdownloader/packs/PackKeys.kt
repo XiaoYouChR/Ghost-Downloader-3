@@ -2,8 +2,9 @@ package com.xychr.ghostdownloader.packs
 
 import com.chaquo.python.Python
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.int
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 class PackKeys(configClass: String) {
@@ -14,9 +15,9 @@ class PackKeys(configClass: String) {
 
 fun JsonObject.has(pack: PackKeys) = keys.any { it.startsWith(pack.prefix) }
 
-fun JsonObject.bool(key: String) = getValue(key).jsonPrimitive.boolean
-fun JsonObject.int(key: String) = getValue(key).jsonPrimitive.int
-fun JsonObject.str(key: String) = getValue(key).jsonPrimitive.content
+fun JsonObject.bool(key: String) = this[key]?.jsonPrimitive?.booleanOrNull ?: false
+fun JsonObject.int(key: String) = this[key]?.jsonPrimitive?.intOrNull ?: 0
+fun JsonObject.str(key: String) = this[key]?.jsonPrimitive?.contentOrNull ?: ""
 
 fun engineStrings(module: String, name: String): List<String> =
     Python.getInstance().getModule(module).get(name)!!.asList().map { it.toString() }

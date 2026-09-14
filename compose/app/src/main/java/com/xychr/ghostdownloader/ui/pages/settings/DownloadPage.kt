@@ -14,6 +14,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.model.Settings
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
@@ -64,14 +65,14 @@ private fun ColumnScope.DownloadRows(
         SliderSettingRow(
             title = stringResource(R.string.settings_max_task_num),
             value = settings.maxTaskNum,
-            range = 1..10,
+            range = SettingRanges["maxTaskNum"],
             valueText = { it.toString() },
             onCommit = { set("maxTaskNum", it) },
         )
         SliderSettingRow(
             title = stringResource(R.string.settings_pre_block_num),
             value = settings.preBlockNum,
-            range = 1..256,
+            range = SettingRanges["preBlockNum"],
             valueText = { it.toString() },
             onCommit = { set("preBlockNum", it) },
         )
@@ -89,7 +90,7 @@ private fun ColumnScope.DownloadRows(
         NumberSettingRow(
             title = stringResource(R.string.settings_reassign_size),
             value = settings.maxReassignSize,
-            range = 64..102400,
+            range = SettingRanges["maxReassignSize"],
             unit = "KB",
             onConfirm = { set("maxReassignSize", it) },
         )
@@ -100,10 +101,11 @@ private fun ColumnScope.DownloadRows(
             onCheckedChange = { set("shouldPreserveLastModified", it) },
         )
         if (settings.isSpeedLimitEnabled) {
+            val limit = SettingRanges["speedLimitation"]
             NumberSettingRow(
                 title = stringResource(R.string.settings_speed_limit),
                 value = settings.speedLimitation / 1024,
-                range = 1..102400,
+                range = limit.first / 1024..limit.last / 1024,
                 unit = "KB/s",
                 onConfirm = { set("speedLimitation", it * 1024) },
             )

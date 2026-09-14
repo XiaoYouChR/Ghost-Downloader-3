@@ -24,3 +24,6 @@ data class Settings(
     val isBrowserExtensionEnabled: Boolean = false,
     val browserExtensionPort: Int = 14370,
 )
+
+@Serializable
+data class SettingRange(val min: Int, val max: Int)

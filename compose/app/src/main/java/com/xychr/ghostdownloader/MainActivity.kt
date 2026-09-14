@@ -58,7 +58,7 @@ import com.xychr.ghostdownloader.ui.navigation.TasksRoute
 import com.xychr.ghostdownloader.ui.pages.settings.SettingsPages
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
 import com.xychr.ghostdownloader.ui.pages.TaskNavHost
-import com.xychr.ghostdownloader.ui.theme.GhostDownloaderTheme
+import com.xychr.ghostdownloader.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
     private val draft by viewModels<DraftViewModel> {
@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                 .launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         setContent {
-            GhostDownloaderTheme {
+            AppTheme {
                 AppRoot(draft)
             }
         }

@@ -1,7 +1,8 @@
 package com.xychr.ghostdownloader
 
-import com.xychr.ghostdownloader.ui.task.*
-import com.xychr.ghostdownloader.ui.settings.Category
+import com.xychr.ghostdownloader.model.*
+import com.xychr.ghostdownloader.ui.components.task.*
+import com.xychr.ghostdownloader.ui.pages.*
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -38,14 +39,4 @@ class TaskEditingTest {
         assertFalse(initial.hasChanges)
     }
 
-    @Test fun deletedCategoryFallsBackWithoutChangingTheTaskRecord() {
-        val task = TaskUiState(categoryId = "deleted")
-        assertEquals("", toCategoryId(task.categoryId, listOf(Category(categoryId = "video"))))
-        assertEquals("deleted", task.categoryId)
-    }
-
-    @Test fun otherCategoryIsNotUncategorized() {
-        assertEquals("cat_other", toCategoryId("cat_other", listOf(Category(categoryId = "cat_other"))))
-        assertEquals("", toCategoryId("", listOf(Category(categoryId = "cat_other"))))
-    }
 }

@@ -9,6 +9,14 @@ data class TaskListState(
     val readState: TaskReadState = TaskReadState.LOADING,
 )
 
+data class TaskSections(val active: List<TaskUiState>, val completed: List<TaskUiState>)
+
+/** heldSections 让正在交互的卡片留在原分区，避免任务完成时卡片从手底下跳走。 */
+fun buildTaskSections(tasks: List<TaskUiState>, heldSections: Map<String, Boolean>): TaskSections {
+    val (completed, active) = tasks.partition { heldSections[it.id] ?: it.isFinished }
+    return TaskSections(active, completed)
+}
+
 data class TaskSummary(val speed: Long = 0, val running: Int = 0, val waiting: Int = 0)
 
 fun buildTaskSummary(tasks: List<TaskUiState>): TaskSummary = TaskSummary(

@@ -2,6 +2,8 @@ package com.xychr.ghostdownloader.packs
 
 import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.model.DraftPreview
 import kotlinx.serialization.json.JsonObject
 
 object BilibiliUi : PackUi {
@@ -23,5 +25,12 @@ object BilibiliUi : PackUi {
         { config, keys, set ->
             BilibiliLoginRows()
             BilibiliSettings(config, keys, set)
+        }
+
+    override val draftExtra: (@Composable (JsonObject, String, suspend (String, List<Any>) -> Unit) -> Unit) =
+        { packFields, url, send ->
+            DraftMediaSection(packFields, send,
+                fetchPreview = { EngineRepository.query<DraftPreview>("draftPreview", it) },
+                url = url)
         }
 }

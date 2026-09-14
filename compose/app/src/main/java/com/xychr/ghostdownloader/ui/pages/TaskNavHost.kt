@@ -59,7 +59,6 @@ internal fun TaskNavHost(
                     WithSharedElements {
                         DraftPage(draftState, draft::setUrls,
                             onOpen = { navigate(DraftEditRoute(it)) },
-                            onRetry = { draft.probe(it, draftState.probeErrors[it]?.kind ?: "media") },
                             onConfirm = { draftScope.launch {
                                 if (draft.confirm()) back()
                             } },
@@ -74,8 +73,7 @@ internal fun TaskNavHost(
                     DraftEditScreen(draftState.items.firstOrNull { it.url == route.url }, route.part, draftState,
                         onApply = { draft.update(route.url, it) },
                         onOpen = { navigate(DraftEditRoute(route.url, it)) },
-                        onProbe = { draft.probe(route.url, it) },
-                        fetchPreview = { EngineRepository.query("draftPreview", it) },
+                        sendPack = { action, args -> draft.sendPack(route.url, action, args) },
                         categories = categories, onBack = back)
                 }
                 composable<TaskDetailRoute> { entry ->

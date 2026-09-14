@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 sealed interface Route
 
 @Serializable
-enum class DraftPart { Summary, Files, Media, Subtitles, Trim }
+enum class DraftPart { Summary, Files }
 
 private const val navigationDurationMillis = 300
 

@@ -1,11 +1,9 @@
 package com.xychr.ghostdownloader.ui.components.draft
-import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.model.*
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -26,8 +24,6 @@ data class DraftState(
     val items: List<DraftItem> = emptyList(),
     val isWorking: Boolean = false,
     val error: String? = null,
-    val probing: Set<String> = emptySet(),
-    val probeErrors: Map<String, DraftProbeError> = emptyMap(),
 ) {
     val canConfirm: Boolean get() {
         val input = urls.lineSequence().map(String::trim).filter(String::isNotEmpty).distinct().toList()
@@ -35,25 +31,7 @@ data class DraftState(
     }
 }
 
-data class DraftProbeError(val kind: String, val message: String)
-
 data class DraftChange(val action: String, val arguments: List<Any>)
-
-data class DraftEdits(
-    val name: String,
-    val files: List<DraftFile>,
-    val isVideoEnabled: Boolean,
-    val isAudioEnabled: Boolean,
-    val isCoverEnabled: Boolean,
-    val videoTier: String,
-    val audioTier: String,
-    val subtitles: List<String>,
-    val audioLanguages: List<String>,
-    val start: Int,
-    val end: Int,
-    val categoryChoice: String? = null,
-    val outputFolder: String = "",
-)
 
 class DraftViewModel(
     private val fetchItems: suspend () -> List<DraftItem>,
@@ -69,8 +47,6 @@ class DraftViewModel(
     private var pollJob: Job? = null
     private var parsedUrls = ""
     private var hasLoaded = false
-    private val probes = mutableMapOf<String, Job>()
-    private val attempted = mutableSetOf<String>()
 
     init { refresh() }
 
@@ -90,13 +66,6 @@ class DraftViewModel(
         if (urls == parsedUrls) return
         send("parse", listOf(urls))
         parsedUrls = urls
-        val current = urls.lines().map(String::trim).toSet()
-        attempted.retainAll(current)
-        probes.keys.toList().filterNot { it in current }.forEach { probes.remove(it)?.cancel() }
-        mutableState.value = state.value.copy(
-            probing = state.value.probing.intersect(current),
-            probeErrors = state.value.probeErrors.filterKeys { it in current },
-        )
         load()
     }
 
@@ -108,8 +77,6 @@ class DraftViewModel(
         }
         hasLoaded = true
         mutableState.value = state.value.copy(items = items)
-        items.filter { it.canProbeMedia && !it.hasMediaInfo && it.url !in attempted }
-            .forEach { probe(it.url, "media") }
     }
 
     fun refresh() {
@@ -118,36 +85,8 @@ class DraftViewModel(
             do {
                 run { writes.withLock { load() } }
                 delay(500)
-            } while (isActive && (state.value.items.any(DraftItem::isParsing) || probes.isNotEmpty()))
+            } while (isActive && state.value.items.any(DraftItem::isParsing))
         }
-    }
-
-    fun probe(url: String, kind: String) {
-        if (url in probes || state.value.isWorking) return
-        attempted.add(url)
-        mutableState.value = state.value.copy(
-            probing = state.value.probing + url,
-            probeErrors = state.value.probeErrors - url,
-        )
-        val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
-            try {
-                send("probeDraft", listOf(url, kind))
-                writes.withLock { load() }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Exception) {
-                mutableState.value = state.value.copy(
-                    probeErrors = state.value.probeErrors + (url to DraftProbeError(kind, error.message ?: error.toString())),
-                )
-            } finally {
-                if (probes[url] === coroutineContext[Job]) {
-                    probes.remove(url)
-                    mutableState.value = state.value.copy(probing = state.value.probing - url)
-                }
-            }
-        }
-        probes[url] = job
-        job.start()
     }
 
     suspend fun setCategory(url: String, choice: String?): Boolean =
@@ -158,6 +97,16 @@ class DraftViewModel(
             changes.forEach { change ->
                 send("setDraft", listOf(url, change.action) + change.arguments)
             }
+            load()
+        }
+    }
+
+    suspend fun sendPack(url: String, action: String, args: List<Any>) {
+        writes.withLock {
+            if (action == "probe")
+                send("probeDraft", listOf(url) + args)
+            else
+                send("setDraft", listOf(url, action) + args)
             load()
         }
     }
@@ -183,9 +132,6 @@ class DraftViewModel(
 
     private fun stop() {
         pollJob?.cancel()
-        probes.values.toList().forEach(Job::cancel)
-        probes.clear()
-        attempted.clear()
         parsedUrls = ""
         mutableState.value = DraftState(isWorking = true)
     }

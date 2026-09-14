@@ -1,6 +1,8 @@
 package com.xychr.ghostdownloader
 
-import com.xychr.ghostdownloader.ui.task.*
+import com.xychr.ghostdownloader.model.*
+import com.xychr.ghostdownloader.ui.components.task.*
+import com.xychr.ghostdownloader.ui.pages.*
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -29,10 +31,10 @@ class TaskSummaryTest {
         assertEquals(1, targets.retryCount)
     }
 
-    @Test fun buildPauseTargetsMatchesAndroidEngineAndSkipsLiveAndWaiting() {
+    @Test fun buildPauseTargetsMatchesAndroidEngineAndSkipsUnpausableAndWaiting() {
         val tasks = listOf(
             TaskUiState(id = "safe", status = "RUNNING", canPause = true),
-            TaskUiState(id = "live", status = "RUNNING", canPause = true, isLive = true),
+            TaskUiState(id = "seeding", status = "RUNNING", canPause = false),
             TaskUiState(id = "unsafe", status = "RUNNING", canPause = false),
             TaskUiState(id = "waiting", status = "WAITING", canPause = true),
             TaskUiState(id = "paused", status = "PAUSED"),

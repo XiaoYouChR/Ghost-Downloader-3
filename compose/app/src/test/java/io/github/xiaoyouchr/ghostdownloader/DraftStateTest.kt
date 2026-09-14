@@ -1,6 +1,10 @@
 package com.xychr.ghostdownloader
 
-import com.xychr.ghostdownloader.ui.draft.*
+import com.xychr.ghostdownloader.model.*
+import com.xychr.ghostdownloader.ui.components.draft.*
+import com.xychr.ghostdownloader.ui.navigation.DraftPart
+import com.xychr.ghostdownloader.ui.pages.buildChanges
+import com.xychr.ghostdownloader.ui.pages.buildEdits
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -26,12 +30,6 @@ class DraftStateTest {
         val changed = initial.copy(files = initial.files.map { it.copy(isSelected = it.index == 17) })
         assertEquals(listOf(DraftChange("setSelection", listOf("17"))), buildChanges(initial, changed, DraftPart.Files))
         assertTrue(initial.files.all { it.isSelected })
-    }
-
-    @Test fun mediaEditorDoesNotOverwriteNameOrOtherEditors() {
-        val initial = buildEdits(DraftItem(name = "one", isVideoEnabled = true))
-        val edited = initial.copy(name = "two", isVideoEnabled = false, subtitles = listOf("en"))
-        assertEquals(listOf(DraftChange("setTrack", listOf("video", false))), buildChanges(initial, edited, DraftPart.Media))
     }
 
     @Test fun previewUsesActualTimestampsAndClampsToLastFrame() {

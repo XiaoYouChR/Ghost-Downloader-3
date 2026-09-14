@@ -1,8 +1,8 @@
 package com.xychr.ghostdownloader
 
-import com.xychr.ghostdownloader.ui.task.TaskUiState
-import com.xychr.ghostdownloader.ui.task.buildTaskSections
-import com.xychr.ghostdownloader.ui.task.isFinished
+import com.xychr.ghostdownloader.model.TaskUiState
+import com.xychr.ghostdownloader.model.isFinished
+import com.xychr.ghostdownloader.ui.components.task.buildTaskSections
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -24,8 +24,8 @@ class TaskSectionsTest {
         assertEquals(listOf(completed), buildTaskSections(listOf(completed), emptyMap()).completed)
     }
 
-    @Test fun seedingIsStillAnExecutingTask() {
-        val task = TaskUiState(id = "seed", status = "RUNNING", isSeeding = true, progress = 100.0)
+    @Test fun fullProgressIsNotFinishedUntilTheStatusSaysSo() {
+        val task = TaskUiState(id = "seed", status = "RUNNING", progress = 100.0)
         assertEquals(listOf(task), buildTaskSections(listOf(task), emptyMap()).active)
     }
 
