@@ -1,7 +1,7 @@
 """Android View adapter for BittorrentPack."""
 from app.i18n import N
 
-UI_CLASS = "com.xychr.ghostdownloader.packs.BitTorrentUi"
+UI_CLASS = "com.xychr.ghostdownloader.features.bittorrent_pack.BitTorrentUi"
 
 STATE_TEXT = {
     "checking_files": N("TaskState", "校验已有文件"),

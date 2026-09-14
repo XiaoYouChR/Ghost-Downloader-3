@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-UI_CLASS = "com.xychr.ghostdownloader.packs.BilibiliUi"
+UI_CLASS = "com.xychr.ghostdownloader.features.bili_pack.BilibiliUi"
 
 _account = None
 _qr: dict = {}

@@ -1,7 +1,7 @@
 """Android View adapter for ED2kPack."""
 from app.i18n import N
 
-UI_CLASS = "com.xychr.ghostdownloader.packs.Ed2kUi"
+UI_CLASS = "com.xychr.ghostdownloader.features.ed2k_pack.Ed2kUi"
 
 
 def taskFields(task) -> dict:
