@@ -1,15 +1,12 @@
-package com.xychr.ghostdownloader.ui.draft
+package com.xychr.ghostdownloader.draft
 
 import androidx.lifecycle.ViewModelStore
+import com.xychr.ghostdownloader.model.*
+import com.xychr.ghostdownloader.ui.components.draft.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
 import org.junit.Before
@@ -21,40 +18,6 @@ import org.junit.Test
 class DraftWorkflowTest {
     @Before fun setMain() { Dispatchers.setMain(Dispatchers.Unconfined) }
     @After fun clearMain() { Dispatchers.resetMain() }
-    @Test fun completedProbeClearsLoadingEvenWhenDependencyReturnsImmediately() = runBlocking {
-        val item = DraftItem(url = "one", isParsing = false)
-        val store = ViewModelStore()
-        val draft = DraftViewModel(fetchItems = { listOf(item) }, send = { _, _ -> }, categoriesFlow = emptyFlow())
-        store.put("draft", draft)
-        try {
-            draft.probe("one", "media")
-            assertFalse("Completed probe left a loading indicator", "one" in draft.state.value.probing)
-            assertTrue(draft.state.value.probeErrors.isEmpty())
-        } finally { store.clear() }
-    }
-
-    @Test fun failedProbeCanBeRetriedAndClearsPreviousError() = runBlocking {
-        val item = DraftItem(url = "one", isParsing = false)
-        val store = ViewModelStore()
-        var shouldFail = true
-        var attempts = 0
-        val draft = DraftViewModel(fetchItems = { listOf(item) }, send = { name, _ ->
-            if (name == "probeDraft") {
-                attempts++
-                if (shouldFail) error("Probe failed")
-            }
-        }, categoriesFlow = emptyFlow())
-        store.put("draft", draft)
-        try {
-            draft.probe("one", "media")
-            assertEquals("Probe failed", draft.state.value.probeErrors["one"]?.message)
-            assertFalse("one" in draft.state.value.probing)
-            shouldFail = false
-            draft.probe("one", "media")
-            assertEquals(2, attempts)
-            assertTrue(draft.state.value.probeErrors.isEmpty())
-        } finally { store.clear() }
-    }
 
     @Test fun confirmFlushesLatestInputBeforeSubmittingAndDoesNotWaitForParsing() = runBlocking {
         var items = emptyList<DraftItem>()
@@ -71,25 +34,6 @@ class DraftWorkflowTest {
             assertEquals(listOf("parse", "confirmDraft"), calls)
             assertTrue(draft.state.value.items.isEmpty())
             assertEquals("", draft.state.value.urls)
-        } finally { store.clear() }
-    }
-
-    @Test fun removingUrlClearsItsPendingProbeIndicator() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        var items = listOf(DraftItem(url = "one", isParsing = false, canProbeMedia = true))
-        val store = ViewModelStore()
-        val draft = DraftViewModel(fetchItems = { items }, send = { name, _ ->
-            if (name == "probeDraft") awaitCancellation()
-            if (name == "parse") items = emptyList()
-        }, categoriesFlow = emptyFlow())
-        store.put("draft", draft)
-        try {
-            assertTrue("one" in draft.state.value.probing)
-            draft.setUrls("")
-            advanceTimeBy(1001)
-            runCurrent()
-            assertTrue(draft.state.value.items.isEmpty())
-            assertTrue(draft.state.value.probing.isEmpty())
         } finally { store.clear() }
     }
 
@@ -121,6 +65,24 @@ class DraftWorkflowTest {
             assertEquals(item, draft.state.value.items.single())
             assertEquals("Save failed", draft.state.value.error)
             assertFalse(draft.state.value.isWorking)
+        } finally { store.clear() }
+    }
+
+    @Test fun sendPackRoutesProbeToSeparateEngineMethod() = runBlocking {
+        val item = DraftItem(url = "one", isParsing = false)
+        val calls = mutableListOf<Pair<String, List<Any>>>()
+        val store = ViewModelStore()
+        val draft = DraftViewModel(fetchItems = { listOf(item) }, send = { name, args ->
+            calls.add(name to args)
+        }, categoriesFlow = emptyFlow())
+        store.put("draft", draft)
+        try {
+            draft.sendPack("one", "probe", listOf("media"))
+            draft.sendPack("one", "setTrack", listOf("video", true))
+            assertEquals("probeDraft", calls[0].first)
+            assertEquals(listOf("one", "media"), calls[0].second)
+            assertEquals("setDraft", calls[1].first)
+            assertEquals(listOf("one", "setTrack", "video", true), calls[1].second)
         } finally { store.clear() }
     }
 }

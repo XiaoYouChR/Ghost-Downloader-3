@@ -197,7 +197,7 @@ private fun FileCategoryMenu(files: List<TaskFile>, categories: List<Category>, 
     var isOpen by remember { mutableStateOf(false) }
     val choices = listOf(Category(name = stringResource(R.string.task_uncategorized))) + categories
     val filesByCategory = remember(files, categories) {
-        files.groupBy { toCategoryId(it.categoryId, categories) }
+        files.groupBy { it.categoryId }
     }
     Column(modifier.padding(horizontal = 16.dp)) {
         Box {

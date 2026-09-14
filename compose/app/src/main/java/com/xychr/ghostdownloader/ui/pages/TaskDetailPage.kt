@@ -6,7 +6,7 @@ import com.xychr.ghostdownloader.ui.navigation.*
 import com.xychr.ghostdownloader.ui.components.*
 import com.xychr.ghostdownloader.ui.components.task.*
 import com.xychr.ghostdownloader.ui.util.*
-import com.xychr.ghostdownloader.ui.components.category.CategorySheet
+import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
 import com.xychr.ghostdownloader.ui.platform.openTaskFile
 import com.xychr.ghostdownloader.ui.platform.openFolder
 
@@ -71,6 +71,7 @@ import com.xychr.ghostdownloader.ui.util.formatSize
 import com.xychr.ghostdownloader.ui.util.formatSizeProgress
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import com.xychr.ghostdownloader.i18n.engineText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -167,6 +168,7 @@ fun TaskDetailPage(
     var shouldCategorize by remember { mutableStateOf(false) }
 
     val copiedLabel = stringResource(R.string.task_detail_copied)
+    val categorySaveFailed = stringResource(R.string.task_category_save_failed)
     fun copyUrl() {
         context.getSystemService(ClipboardManager::class.java)
             .setPrimaryClip(ClipData.newPlainText("url", detail.url))
@@ -262,11 +264,24 @@ fun TaskDetailPage(
             },
         )
     }
-    if (shouldCategorize) CategorySheet(categories.categories,
-        initialCategoryId = toCategoryId(detail.categoryId, categories.categories), taskCount = 1,
-        onApply = { categoryId ->
-            viewModel.setCategory(categoryId)
-        }, onDismiss = { shouldCategorize = false })
+    if (shouldCategorize) CategoryPicker(
+        title = stringResource(R.string.task_change_category),
+        categories = categories.categories,
+        selected = detail.categoryId,
+        onSelect = { choice ->
+            scope.launch {
+                try {
+                    viewModel.setCategory(choice.orEmpty())
+                } catch (failure: CancellationException) {
+                    throw failure
+                } catch (failure: Exception) {
+                    snackbarHostState.showSnackbar(failure.message ?: categorySaveFailed)
+                }
+            }
+        },
+        onDismiss = { shouldCategorize = false },
+        note = stringResource(R.string.task_category_label_only),
+    )
 
     if (isRenaming) {
         RenameDialog(

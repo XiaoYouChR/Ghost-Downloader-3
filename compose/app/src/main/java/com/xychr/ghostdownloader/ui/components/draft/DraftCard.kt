@@ -25,10 +25,7 @@ import com.xychr.ghostdownloader.ui.components.category.CategoryAction
 @Composable
 fun DraftCard(
     item: DraftItem,
-    isProbing: Boolean,
-    probeError: String?,
     onOpen: () -> Unit,
-    onRetry: () -> Unit,
     onCategorize: () -> Unit,
     modifier: Modifier = Modifier,
     category: Category? = null,
@@ -69,14 +66,6 @@ fun DraftCard(
                     }
                     if (item.files.size > 1) Text(stringResource(R.string.draft_files_selected,
                         item.files.count { it.isSelected }, item.files.size))
-                    if (isProbing) {
-                        Text(stringResource(R.string.draft_media_loading))
-                        LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
-                    }
-                    if (probeError != null) {
-                        Text(probeError, color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = onRetry) { Text(stringResource(R.string.draft_retry)) }
-                    }
                 }
             }
         }

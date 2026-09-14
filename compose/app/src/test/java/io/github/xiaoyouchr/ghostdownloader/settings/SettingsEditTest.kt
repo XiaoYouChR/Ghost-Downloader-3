@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.ui.settings
+package com.xychr.ghostdownloader.settings
+
+import com.xychr.ghostdownloader.ui.components.settings.*
 
 import androidx.lifecycle.ViewModelStore
 import kotlinx.coroutines.CancellationException

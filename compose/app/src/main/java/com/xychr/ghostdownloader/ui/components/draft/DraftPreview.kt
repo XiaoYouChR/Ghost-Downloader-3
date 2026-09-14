@@ -38,7 +38,9 @@ fun DraftPreview.frameAt(seconds: Int): PreviewFrame? {
 
 @Composable
 fun DraftTrim(
-    item: DraftItem,
+    url: String,
+    duration: Int,
+    hasPreview: Boolean,
     start: Int,
     end: Int,
     onChange: (Int, Int) -> Unit,
@@ -46,33 +48,33 @@ fun DraftTrim(
     modifier: Modifier = Modifier,
 ) {
     var startText by rememberSaveable { mutableStateOf(formatDuration(start.toLong())) }
-    var endText by rememberSaveable { mutableStateOf(formatDuration((end.takeIf { it > 0 } ?: item.duration).toLong())) }
+    var endText by rememberSaveable { mutableStateOf(formatDuration((end.takeIf { it > 0 } ?: duration).toLong())) }
     val startValue = parseDuration(startText)
     val endValue = parseDuration(endText)
     val isValid = startValue != null && endValue != null && startValue >= 0 &&
-        startValue < endValue && endValue <= item.duration
+        startValue < endValue && endValue <= duration
     var position by rememberSaveable { mutableIntStateOf(start) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (item.hasPreview) DraftPreviewImage(item.url, position, fetchPreview)
+        if (hasPreview) DraftPreviewImage(url, position, fetchPreview)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedTextField(startText, {
                 startText = it
                 val value = parseDuration(it)
-                position = value?.coerceIn(0, item.duration) ?: position
+                position = value?.coerceIn(0, duration) ?: position
                 onChange(value ?: -1, endValue ?: -1)
             }, label = { Text(stringResource(R.string.draft_trim_start)) },
                 isError = !isValid, singleLine = true, modifier = Modifier.weight(1f))
             OutlinedTextField(endText, {
                 endText = it
                 val value = parseDuration(it)
-                position = value?.coerceIn(0, item.duration) ?: position
+                position = value?.coerceIn(0, duration) ?: position
                 onChange(startValue ?: -1, value ?: -1)
             }, label = { Text(stringResource(R.string.draft_trim_end)) },
                 isError = !isValid, singleLine = true, modifier = Modifier.weight(1f))
         }
         if (!isValid) Text(stringResource(R.string.draft_invalid_range), color = MaterialTheme.colorScheme.error)
-        val rangeStart = (startValue ?: 0).coerceIn(0, item.duration)
-        val rangeEnd = (endValue ?: item.duration).coerceIn(rangeStart, item.duration)
+        val rangeStart = (startValue ?: 0).coerceIn(0, duration)
+        val rangeEnd = (endValue ?: duration).coerceIn(rangeStart, duration)
         RangeSlider(value = rangeStart.toFloat()..rangeEnd.toFloat(),
             onValueChange = {
                 val from = it.start.roundToInt()
@@ -81,10 +83,10 @@ fun DraftTrim(
                 startText = formatDuration(from.toLong())
                 endText = formatDuration(to.toLong())
                 onChange(from, to)
-            }, valueRange = 0f..item.duration.toFloat())
+            }, valueRange = 0f..duration.toFloat())
         TextButton(onClick = {
             startText = formatDuration(0)
-            endText = formatDuration(item.duration.toLong())
+            endText = formatDuration(duration.toLong())
             onChange(0, 0)
         }) { Text(stringResource(R.string.draft_trim_off)) }
     }
@@ -103,7 +105,6 @@ fun DraftPreviewImage(
     var error by remember(url) { mutableStateOf<String?>(null) }
     var retry by remember(url) { mutableIntStateOf(0) }
     var isLoading by remember(url) { mutableStateOf(false) }
-    // Only two sheets stay resident; a long video's storyboard must not fill the heap.
     val cache = remember(url) { linkedMapOf<String, Bitmap>() }
     var loadedSheet by remember(url) { mutableStateOf<Pair<Int, Bitmap>?>(null) }
     val currentFetch by rememberUpdatedState(fetchPreview)

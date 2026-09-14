@@ -57,11 +57,8 @@ class Engine:
             speedMeter=self._speedMeter,
         ))
 
-        from task_edit import TaskEdits
-        self._taskEdits = TaskEdits(
-            self._taskService.taskById, self._featureService.parse,
-            self._taskService.edit, self._packAdapters, loop,
-        )
+        self._pendingEdit = None
+        self._updateState = {"state": "idle", "progress": 0, "filePath": "", "error": ""}
 
         # pack import 时才注册 ConfigItem，需要重建索引后重新加载
         cfg._index()
@@ -301,8 +298,6 @@ class Engine:
         task = self._taskService.taskById(taskId)
         if task is None or not task.canEdit or task.status.name in {"RUNNING", "COMPLETED"} or task.currentSnapshot()[2] > 0:
             raise ValueError("Only tasks without downloaded data can be renamed")
-        if not name.strip():
-            raise ValueError("Name must not be empty")
         task.setName(name.strip())
         self._taskService.flush()
 
@@ -316,13 +311,54 @@ class Engine:
         self._taskService.updateSelection(task, selected)
 
     def taskOptions(self, taskId: str) -> str:
-        return json.dumps(self._taskEdits.build(taskId), ensure_ascii=False)
+        from app.models.task import TaskStatus
+        task = self._taskService.taskById(taskId)
+        if task is None or not task.canEdit or task.status == TaskStatus.COMPLETED:
+            raise ValueError("This task cannot be edited")
+        adapter = self._packAdapters.get(task.packId)
+        fields = getattr(adapter, "editFields", None)
+        result = {"outputFolder": str(task.outputFolder), "packId": task.packId or ""}
+        if fields:
+            result.update(fields(task))
+        return json.dumps(result, ensure_ascii=False)
 
-    def updateTaskOptions(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
-        return json.dumps(self._taskEdits.update(taskId, json.loads(values), shouldDiscard))
+    def applyTaskEdit(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
+        from app.models.task import TaskOptions, TaskStatus
+        parsed = json.loads(values)
+        task = self._taskService.taskById(taskId)
+        if task is None or not task.canEdit or task.status == TaskStatus.COMPLETED:
+            raise ValueError("This task cannot be edited")
+
+        current = json.loads(self.taskOptions(taskId))
+        current.pop("packId", None)
+        diff = {k: v for k, v in parsed.items() if k in current and v != current[k]}
+        if not diff:
+            return json.dumps({"needsConfirmation": False})
+
+        newUrl = diff.pop("url", None)
+        if newUrl and newUrl != task.url:
+            newTask = asyncio.run_coroutine_threadsafe(
+                self._featureService.parse(TaskOptions.fromOptions({**current, **parsed, "url": newUrl})),
+                self._loop).result(timeout=60)
+            if not task.canReuseProgress(newTask) and task.currentSnapshot()[2] > 0 and not shouldDiscard:
+                self._pendingEdit = (taskId, task, newTask, {**current, **parsed})
+                return json.dumps({"needsConfirmation": True})
+            self._taskService.edit(task, {**current, **parsed}, newTask)
+        else:
+            self._taskService.edit(task, diff, None)
+
+        self._pendingEdit = None
+        return json.dumps({"needsConfirmation": False})
+
+    def confirmTaskEdit(self, taskId: str):
+        pending = self._pendingEdit
+        if pending and pending[0] == taskId:
+            self._taskService.edit(pending[1], pending[3], pending[2])
+        self._pendingEdit = None
 
     def cancelTaskEdit(self, taskId: str):
-        self._taskEdits.cancel(taskId)
+        if self._pendingEdit and self._pendingEdit[0] == taskId:
+            self._pendingEdit = None
 
     def categoryState(self) -> str:
         from dataclasses import asdict
@@ -355,22 +391,30 @@ class Engine:
         self._taskDraft.setBaseOptions({"headers": currentHeaders()})
         self._taskDraft.setUrls(nextUrls)
 
+    def _draftDestination(self, task):
+        categoryId = task.category
+        if cfg.isCategoryEnabled.value and categoryId is None:
+            categoryId = self._categoryService.categoryOf(task)
+        folder = str(task.outputFolder)
+        if cfg.isCategoryEnabled.value and categoryId and task.outputFolder == Path(cfg.downloadFolder.value):
+            folder = self._categoryService.folderOf(categoryId) or folder
+        return categoryId or "", folder
+
     def draft(self) -> str:
-        from task_category import buildDestination
         result = []
         for url in self._taskDraft.urls():
             task = self._taskDraft.taskByUrl(url)
             error = self._draftErrors.get(url)
-            destination = buildDestination(task, self._categoryService, cfg.downloadFolder.value,
-                                           cfg.isCategoryEnabled.value) if task else None
+            categoryId, targetFolder = self._draftDestination(task) if task else ("", "")
+            adapter = self._packAdapters.get(task.packId) if task else None
             result.append({
                 "url": url,
                 "isParsing": task is None and error is None,
                 "name": "" if task is None else task.name,
                 "categoryChoice": task.category if task else None,
-                "categoryId": destination.categoryId if destination else "",
+                "categoryId": categoryId,
                 "outputFolder": str(task.outputFolder) if task else "",
-                "targetFolder": destination.targetFolder if destination else "",
+                "targetFolder": targetFolder,
                 "fileSize": 0 if task is None else task.fileSize,
                 "files": [] if task is None or not task.files else [
                     {
@@ -382,7 +426,9 @@ class Engine:
                     for f in task.files
                 ],
                 "error": error.toDict() if error else None,
-                **self._adapterFields(task, 'draftFields'),
+                "canRenameFiles": hasattr(adapter, "setFileName"),
+                "packId": task.packId if task else "",
+                "packFields": self._adapterFields(task, 'draftFields'),
             })
         return json.dumps(result, ensure_ascii=False)
 
@@ -474,6 +520,14 @@ class Engine:
     def setSetting(self, name: str, value):
         item = cfg.byName[name]
         cfg.set(item, value)
+
+    def settingRanges(self) -> str:
+        from app.config.cfg import RangeValidator
+        return json.dumps({
+            name: {"min": item.validator.min, "max": item.validator.max}
+            for name, item in cfg.byName.items()
+            if isinstance(item.validator, RangeValidator)
+        })
 
     # ---- Categories ----
 
@@ -726,7 +780,6 @@ class Engine:
         return json.dumps(future.result(timeout=30), ensure_ascii=False)
 
     def downloadUpdate(self, targetId: str):
-        import asyncio
         from app.update import APP_REPO, fetchRelease, bestAsset
         from app.sources import probeDownloadUrl
         from app.client import fetchFile
@@ -768,8 +821,7 @@ class Engine:
         self._flows.emit("updateState", self.updateState())
 
     def updateState(self) -> str:
-        return json.dumps(getattr(self, '_updateState',
-                                  {"state": "idle", "progress": 0, "filePath": "", "error": ""}))
+        return json.dumps(self._updateState)
 
     def _adapterFields(self, task, method: str) -> dict:
         if task is None:

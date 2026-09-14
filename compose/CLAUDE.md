@@ -6,7 +6,9 @@
 
 - **View adapts Engine.** — Engine 是 source of truth，Compose 是投影。Engine 接口不为 Compose 改结构
 - **Signal-driven across runtimes.** — Python 信号通过 EngineFlows 跨运行时推送到 Kotlin Flow。常态零 callAttr
-- **Chaquopy 知识不出 App.kt.** — EngineRepository 只接收 PyObject 句柄，不 import Chaquopy
+- **engine.py 是 Android View Adapter.** — 和 Desktop `app/view/` 同构：投影 model 状态、处理用户命令。投影是纯读（`task.x`、`service.compute(task)`），不内联业务逻辑
+- **Kotlin→Python 是内部调用.** — 根目录「View 是校验边界」的具体应用。SettingRanges 提供范围约束，格式检查在 Kotlin
+- **Model 不为 Android 改.** — 现有 model 跑通了 Desktop，Android 通过 engine.py 投影适配，不往基类加接口
 
 ## EngineRepository
 
@@ -21,6 +23,8 @@
 
 ## Chaquopy
 
+- Chaquopy 知识不出 App.kt——EngineRepository 只接收 PyObject 句柄，不 import Chaquopy
+- JSON 是统一性选择——`Flow<String>` + `@Serializable` 给所有数据一条路径。不在个案上换 native PyObject
 - dict/list 不自动转，批量数据走 JSON（1 次 GIL crossing vs 逐字段 N 次）
 - callAttr 获取 GIL，多协程串行，始终 `Dispatchers.IO`
 
@@ -50,10 +54,3 @@ PackUi 的 slot 是属性不是函数（ComposeProxy 约束）。
 | 回调参数 | on{Verb} / on{Noun}{Verb} | onClick, onValueChange |
 | CompositionLocal | Local 前缀 | LocalSharedTransition |
 | 页面 Composable | Page 后缀 | TasksPage, TaskDetailPage |
-
-## 约定
-
-- **单点消费** — 每种关注点（inset、padding、装饰）在组合树中恰好处理一次
-- **延迟读取** — 逐帧变化的值在 graphicsLayer 或 layout 阶段读取
-- **语义优先** — 交互用 Foundation 语义化 API，触控区至少 48dp
-- 对外 Composable 提供 `modifier: Modifier = Modifier`，调用方的定制 seam

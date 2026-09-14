@@ -26,6 +26,7 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
 import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.SettingRanges
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -81,7 +82,7 @@ private fun ColumnScope.ServiceRows(settings: Settings, set: (String, Any) -> Un
             NumberSettingRow(
                 title = stringResource(R.string.settings_aria2_rpc_port),
                 value = settings.aria2RpcPort,
-                range = 1024..65535,
+                range = SettingRanges["aria2RpcPort"],
                 onConfirm = { set("aria2RpcPort", it) },
             )
             TextSettingRow(
@@ -127,7 +128,7 @@ private fun BrowserExtensionRows(isEnabled: Boolean, port: Int, set: (String, An
     NumberSettingRow(
         title = stringResource(R.string.settings_browser_port),
         value = port,
-        range = 1024..65535,
+        range = SettingRanges["browserExtensionPort"],
         onConfirm = { set("browserExtensionPort", it) },
     )
     ActionSettingRow(

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.packs.PackRegistry
 import com.xychr.ghostdownloader.service.CHANNEL_PAIR
 import com.xychr.ghostdownloader.service.CHANNEL_RUNNING
@@ -34,6 +35,7 @@ class App : Application() {
         val module = Python.getInstance().getModule("engine")
         val packUiJson = module.callAttr("start").toString()
         PackRegistry.load(packUiJson)
+        SettingRanges.load(module.callAttr("settingRanges").toString())
         EngineRepository.bind(module.get("_engine")!!)
 
         scope.launch {

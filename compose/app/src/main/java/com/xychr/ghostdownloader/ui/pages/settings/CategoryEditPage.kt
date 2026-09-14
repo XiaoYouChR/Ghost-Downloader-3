@@ -100,12 +100,17 @@ fun CategoryEditPage(
         categoryId = categoryId, name = name.trim(), icon = icon,
         extensions = extensions.toExtensionList(), folder = folder.ifBlank { null },
     )
+    var shouldShowInvalid by rememberSaveable { mutableStateOf(false) }
+    val isFolderValid = folder.isBlank() || folder.startsWith("/") || folder.startsWith("{default}")
     SettingsEditor(
         title = stringResource(if (isCreating) R.string.category_add else R.string.category_edit),
         onBack = onBack,
         state = editState,
         isChanged = category != (existing ?: Category()),
-        canSave = name.isNotBlank() && (folder.isBlank() || folder.startsWith("/") || folder.startsWith("{default}")),
+        canSave = name.isNotBlank() && isFolderValid,
+        saveLabel = stringResource(
+            if (isCreating) R.string.settings_action_create else R.string.settings_action_save),
+        onInvalid = { shouldShowInvalid = true },
         onSave = {
             edit.save {
                 if (isCreating) viewModel.add(category) else viewModel.update(category)
@@ -117,13 +122,21 @@ fun CategoryEditPage(
             enabled = !editState.isSaving,
             onValueChange = { name = it },
             label = { Text(stringResource(R.string.category_name)) },
+            isError = shouldShowInvalid && name.isBlank(),
+            supportingText = if (shouldShowInvalid && name.isBlank()) {
+                { Text(stringResource(R.string.category_name_required)) }
+            } else null,
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         )
         OutlinedTextField(folder, { folder = it }, enabled = !editState.isSaving,
             label = { Text(stringResource(R.string.category_folder)) },
-            supportingText = { Text(stringResource(R.string.task_target_folder,
-                folder.ifBlank { defaultFolder }.replace("{default}", defaultFolder))) },
+            isError = shouldShowInvalid && !isFolderValid,
+            supportingText = {
+                Text(if (shouldShowInvalid && !isFolderValid) stringResource(R.string.category_folder_invalid)
+                    else stringResource(R.string.task_target_folder,
+                        folder.ifBlank { defaultFolder }.replace("{default}", defaultFolder)))
+            },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
         Text(stringResource(R.string.task_category_rules_hint), Modifier.padding(horizontal = 16.dp))
         if (folderError) Text(stringResource(R.string.task_local_folder_only), Modifier.padding(horizontal = 16.dp))

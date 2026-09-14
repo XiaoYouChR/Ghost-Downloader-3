@@ -71,19 +71,13 @@ import com.xychr.ghostdownloader.ui.navigation.TaskFilesRoute
 import com.xychr.ghostdownloader.ui.navigation.TaskEditRoute
 import com.xychr.ghostdownloader.ui.navigation.sharedContainer
 import com.xychr.ghostdownloader.ui.components.liquid.LiquidAddButton
-import com.xychr.ghostdownloader.ui.components.category.CategoryFilter
-import com.xychr.ghostdownloader.ui.components.category.CategorySheet
+import com.xychr.ghostdownloader.ui.components.category.CategoryFilterRow
+import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.xychr.ghostdownloader.packs.PackRegistry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-
-private data class TaskSections(val active: List<TaskUiState>, val completed: List<TaskUiState>)
-
-private fun buildTaskSections(tasks: List<TaskUiState>, heldSections: Map<String, Boolean>): TaskSections {
-    val (completed, active) = tasks.partition { heldSections[it.id] ?: it.isFinished }
-    return TaskSections(active, completed)
-}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -122,7 +116,7 @@ fun TasksPage(
 
     val visibleTasks = remember(allTasks, query, isSearching, sortField, isDescending, categoryFilter, categoryState) {
         allTasks.buildTaskOrder(if (isSearching) query else "", sortField, isDescending)
-            .filter { categoryFilter == null || toCategoryId(it.categoryId, categoryState.categories) == categoryFilter }
+            .filter { categoryFilter == null || it.categoryId == categoryFilter }
     }
     val sections = buildTaskSections(visibleTasks, when {
         selection.isActive -> selectedSections
@@ -231,8 +225,8 @@ fun TasksPage(
     ) { padding ->
         Column(Modifier.padding(padding).consumeWindowInsets(padding)
             .layerBackdrop(contentBackdrop).background(MaterialTheme.colorScheme.background)) {
-            if (categoryState.isEnabled) CategoryFilter(categoryFilter, categoryState.categories,
-                { categoryFilter = it }, Modifier.padding(horizontal = 12.dp))
+            if (categoryState.isEnabled) CategoryFilterRow(categoryFilter, categoryState.categories,
+                { categoryFilter = it })
             if (visibleTasks.isEmpty()) {
                 if (taskState.readState != TaskReadState.READY) Box(Modifier.weight(1f).fillMaxWidth())
                 else if (categoryFilter != null) Column(Modifier.weight(1f).fillMaxWidth(),
@@ -331,17 +325,37 @@ fun TasksPage(
             },
         )
     }
-    if (categoryTaskIds.isNotEmpty()) CategorySheet(categoryState.categories,
-        initialCategoryId = allTasks.filter { it.id in categoryTaskIds }
-            .map { toCategoryId(it.categoryId, categoryState.categories) }.distinct().singleOrNull(),
-        taskCount = categoryTaskIds.size,
-        onApply = { categoryId ->
-            viewModel.setCategory(categoryTaskIds, categoryId)
-            selection.exit()
-            val name = categoryState.categories.firstOrNull { it.categoryId == categoryId }?.name
-                ?: context.getString(R.string.task_uncategorized)
-            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_category_applied, name)) }
-        }, onDismiss = { categoryTaskIds = emptyList() })
+    if (categoryTaskIds.isNotEmpty()) {
+        val commonCategoryId = allTasks.filter { it.id in categoryTaskIds }
+            .map { it.categoryId }.distinct().singleOrNull()
+        CategoryPicker(
+            title = stringResource(if (categoryTaskIds.size == 1) R.string.task_change_category
+                else R.string.task_change_categories, categoryTaskIds.size),
+            categories = categoryState.categories,
+            selected = commonCategoryId,
+            onSelect = { choice ->
+                val taskIds = categoryTaskIds
+                val categoryId = choice.orEmpty()
+                selection.exit()
+                scope.launch {
+                    val message = try {
+                        viewModel.setCategory(taskIds, categoryId)
+                        val name = categoryState.categories.firstOrNull { it.categoryId == categoryId }?.name
+                            ?: context.getString(R.string.task_uncategorized)
+                        context.getString(R.string.task_category_applied, name)
+                    } catch (failure: CancellationException) {
+                        throw failure
+                    } catch (failure: Exception) {
+                        failure.message ?: context.getString(R.string.task_category_save_failed)
+                    }
+                    snackbarHostState.showSnackbar(message)
+                }
+            },
+            onDismiss = { categoryTaskIds = emptyList() },
+            note = stringResource(R.string.task_category_label_only) +
+                if (commonCategoryId == null) "\n" + stringResource(R.string.task_categories_mixed) else "",
+        )
+    }
     if (redownloadIds.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = { redownloadIds = emptyList() },

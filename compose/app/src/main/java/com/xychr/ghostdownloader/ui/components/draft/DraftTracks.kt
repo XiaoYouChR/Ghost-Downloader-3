@@ -15,22 +15,36 @@ import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 
 @Composable
-fun DraftTracks(item: DraftItem, edits: DraftEdits, onChange: (DraftEdits) -> Unit, modifier: Modifier = Modifier) {
+fun DraftTracks(
+    videoTiers: List<DraftOption>,
+    audioTiers: List<DraftOption>,
+    hasCover: Boolean,
+    isVideoEnabled: Boolean,
+    isAudioEnabled: Boolean,
+    isCoverEnabled: Boolean,
+    videoTier: String,
+    audioTier: String,
+    audioLanguages: List<DraftOption>,
+    selectedAudioLanguages: List<String>,
+    onToggleTrack: (String, Boolean) -> Unit,
+    onSelectQuality: (String, String) -> Unit,
+    onSelectAudioLanguages: (List<String>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (item.videoTiers.isNotEmpty()) {
-            DraftToggle(stringResource(R.string.draft_track_video), edits.isVideoEnabled) { onChange(edits.copy(isVideoEnabled = it)) }
-            if (edits.isVideoEnabled) DraftQuality(item.videoTiers, edits.videoTier) { onChange(edits.copy(videoTier = it)) }
+        if (videoTiers.isNotEmpty()) {
+            DraftToggle(stringResource(R.string.draft_track_video), isVideoEnabled) { onToggleTrack("video", it) }
+            if (isVideoEnabled) DraftQuality(videoTiers, videoTier) { onSelectQuality("video", it) }
         }
-        if (item.audioTiers.isNotEmpty()) {
-            DraftToggle(stringResource(R.string.draft_track_audio), edits.isAudioEnabled) { onChange(edits.copy(isAudioEnabled = it)) }
-            if (edits.isAudioEnabled) {
-                DraftQuality(item.audioTiers, edits.audioTier) { onChange(edits.copy(audioTier = it)) }
-                DraftChoices(item.audioLanguages, edits.audioLanguages,
-                    onChange = { onChange(edits.copy(audioLanguages = it)) })
+        if (audioTiers.isNotEmpty()) {
+            DraftToggle(stringResource(R.string.draft_track_audio), isAudioEnabled) { onToggleTrack("audio", it) }
+            if (isAudioEnabled) {
+                DraftQuality(audioTiers, audioTier) { onSelectQuality("audio", it) }
+                DraftChoices(audioLanguages, selectedAudioLanguages, onChange = onSelectAudioLanguages)
             }
         }
-        if (item.hasCover) DraftToggle(stringResource(R.string.draft_track_cover), edits.isCoverEnabled) {
-            onChange(edits.copy(isCoverEnabled = it))
+        if (hasCover) DraftToggle(stringResource(R.string.draft_track_cover), isCoverEnabled) {
+            onToggleTrack("cover", it)
         }
     }
 }

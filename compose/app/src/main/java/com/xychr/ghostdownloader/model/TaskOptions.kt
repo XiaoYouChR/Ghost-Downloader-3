@@ -14,6 +14,7 @@ data class TaskOptions(
     val decryptionKeys: List<String>? = null,
     val decryptionKeyFile: String? = null,
     val muxImports: List<String>? = null,
+    val packId: String = "",
 )
 
 @Serializable

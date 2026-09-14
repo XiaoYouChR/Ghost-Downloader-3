@@ -3,11 +3,12 @@ package com.xychr.ghostdownloader.ui.pages.settings
 import com.xychr.ghostdownloader.ui.navigation.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ fun CategoryPage(
     val categoryState by viewModel.state.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val taskCounts by viewModel.taskCounts.collectAsStateWithLifecycle()
     val state = categoryState
     if (state == null) {
         SettingsPage(stringResource(R.string.category_manage), onBack) { LoadingRow() }
@@ -71,7 +73,10 @@ fun CategoryPage(
                     },
                     trailing = {
                         var isOpen by remember { mutableStateOf(false) }
-                        Box {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text((taskCounts[category.categoryId] ?: 0).toString(),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
                             IconButton(onClick = { isOpen = true }, enabled = !isSaving) {
                                 Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.action_more))
                             }
@@ -109,9 +114,9 @@ fun CategoryPage(
 
     removing?.let { category ->
         ConfirmDialog(
-            title = stringResource(R.string.category_remove_title),
-            message = stringResource(R.string.category_remove_message, category.name) + "\n" +
-                stringResource(R.string.task_category_remove_hint),
+            title = stringResource(R.string.category_remove_title, category.name),
+            message = stringResource(R.string.category_remove_message,
+                taskCounts[category.categoryId] ?: 0),
             onDismiss = { removing = null },
             onConfirm = { viewModel.remove(category.categoryId) },
         )
@@ -120,8 +125,7 @@ fun CategoryPage(
     if (isResetting) {
         ConfirmDialog(
             title = stringResource(R.string.category_reset),
-            message = stringResource(R.string.category_reset_message) + "\n" +
-                stringResource(R.string.task_category_remove_hint),
+            message = stringResource(R.string.category_reset_message),
             onDismiss = { isResetting = false },
             onConfirm = viewModel::reset,
         )

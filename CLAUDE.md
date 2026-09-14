@@ -8,6 +8,7 @@
 - **Readability counts.** (Zen) — 代码被读 > 被写。从业务角度命名，不用生僻词；「注释只写 Why」的前提是代码本身能说明 What
 - **Signal-driven actors.** — Service 拥有私有状态，对外通信仅通过信号；Service 不持 View 引用（View 持 Service 引用以 connect 信号是允许的）
 - **YAGNI — trust internals, validate at boundaries.** — 不写 hypothetical 防御，删除胜于注释掉，不留向后兼容别名
+- **View 是校验边界.** — View 层（QWidget / Kotlin）校验用户输入，Service 信任 View 的值不重复校验
 - **If the implementation is hard to explain, it's a bad idea.** (Zen) — 解释起来绕的设计，多半是错的
 
 ## 命名

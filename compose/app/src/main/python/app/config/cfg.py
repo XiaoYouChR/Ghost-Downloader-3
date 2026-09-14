@@ -86,7 +86,10 @@ class ProxyValidator(ConfigValidator):
     )
 
     def validate(self, value: str) -> bool:
-        return bool(self.PATTERN.match(value)) or value in {"Auto", "Off"}
+        if value in {"Auto", "Off"}:
+            return True
+        matched = self.PATTERN.match(value)
+        return matched is not None and 1 <= int(matched["port"]) <= 65535
 
     def correct(self, value) -> str:
         return value if self.validate(value) else "Auto"

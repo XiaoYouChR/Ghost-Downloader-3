@@ -15,6 +15,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,7 +24,6 @@ fun DraftPage(
     state: DraftState,
     onUrlsChanged: (String) -> Unit,
     onOpen: (String) -> Unit,
-    onRetry: (String) -> Unit,
     onConfirm: () -> Unit,
     onDiscard: () -> Unit,
     onBack: () -> Unit,
@@ -32,6 +33,7 @@ fun DraftPage(
 ) {
     var isDiscarding by remember { mutableStateOf(false) }
     var categoryUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     BackHandler(enabled = state.isWorking) { }
     Scaffold(
         modifier = modifier.sharedContainer(DRAFT_CONTAINER),
@@ -65,9 +67,9 @@ fun DraftPage(
             state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
             if (state.items.any { it.isParsing }) item { Text(stringResource(R.string.draft_deferred_hint)) }
             items(state.items, key = DraftItem::url) { item ->
-                DraftCard(item, item.url in state.probing, state.probeErrors[item.url]?.message,
+                DraftCard(item,
                     onOpen = { if (!state.isWorking) onOpen(item.url) },
-                    onRetry = { onRetry(item.url) }, onCategorize = { categoryUrl = item.url },
+                    onCategorize = { categoryUrl = item.url },
                     modifier = Modifier.animateItem(), isEnabled = !state.isWorking,
                     category = categories.categories.firstOrNull { it.categoryId == item.categoryId },
                     isCategoryEnabled = categories.isEnabled, isCategoryOpen = categoryUrl == item.url)
@@ -75,10 +77,17 @@ fun DraftPage(
         }
     }
     val categoryItem = state.items.firstOrNull { it.url == categoryUrl }
-    if (categories.isEnabled && categoryItem != null) key(categoryItem.url) {
-        DraftCategorySheet(categoryItem, categories.categories, state.error,
-            onApply = { onSetCategory(categoryItem.url, it) }, onDismiss = { categoryUrl = null })
-    }
+    if (categories.isEnabled && categoryItem != null) CategoryPicker(
+        title = stringResource(R.string.task_change_category),
+        categories = categories.categories,
+        selected = categoryItem.categoryChoice,
+        onSelect = { choice -> scope.launch { onSetCategory(categoryItem.url, choice) } },
+        onDismiss = { categoryUrl = null },
+        hasAuto = true,
+        note = listOfNotNull(categoryItem.name,
+            stringResource(R.string.draft_category_multiple).takeIf { categoryItem.files.size > 1 })
+            .joinToString("\n"),
+    )
     if (isDiscarding) DiscardDialog(onDismiss = { isDiscarding = false }, onDiscard = {
         isDiscarding = false
         onDiscard()
