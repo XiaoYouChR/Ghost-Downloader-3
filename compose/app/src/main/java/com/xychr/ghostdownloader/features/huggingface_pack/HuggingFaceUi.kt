@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.huggingface_pack
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R

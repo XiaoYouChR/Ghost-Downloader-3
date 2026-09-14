@@ -87,7 +87,7 @@ private val settingsGroups = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SettingsScreen(
+fun SettingsHomePage(
     onNavigate: (Route) -> Unit,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,

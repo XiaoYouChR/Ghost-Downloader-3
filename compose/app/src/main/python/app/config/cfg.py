@@ -267,6 +267,7 @@ class AndroidConfig:
     )
 
     shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", False, BoolValidator())
+    hasCompletedOobe = ConfigItem("Software", "HasCompletedOobe", False, BoolValidator())
 
     def __init__(self):
         self._path: str | None = None

@@ -9,7 +9,7 @@ class ProxyInputTest {
     @Test fun roundTrip() {
         listOf("Off", "Auto", "http://127.0.0.1:7890", "socks5://alice:secret@proxy.example.com:1080").forEach {
             assertEquals(it, buildProxy(parseProxy(it)))
-            assertTrue(matchProxy(parseProxy(it)))
+            assertTrue(isProxyValid(parseProxy(it)))
         }
     }
     @Test fun changingModeRetainsCustomDraftButDoesNotSubmitIt() {
@@ -21,12 +21,12 @@ class ProxyInputTest {
     @Test fun invalidInputDoesNotSilentlyBecomeAuto() {
         listOf("http://999.0.0.1:7890", "http://127.0.0.1:0", "http://127.0.0.1:65536",
             "http://bad host:80", "http://alice:@proxy.example.com:80", "ftp://proxy.example.com:80").forEach {
-            assertFalse(it, matchProxy(parseProxy(it)))
+            assertFalse(it, isProxyValid(parseProxy(it)))
         }
     }
     @Test fun hostRejectsPathsAndUnsupportedAddresses() {
         listOf("https://example.com", "example.com/path", "::1", "-bad.example.com", "").forEach {
-            assertFalse(it, matchProxyHost(it))
+            assertFalse(it, isProxyHostValid(it))
         }
     }
 }

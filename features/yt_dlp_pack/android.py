@@ -6,7 +6,7 @@ from pathlib import Path
 from .choices import buildAudioLanguageChoices, buildAudioTiers, buildSubtitleChoices, buildVideoTiers
 from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist
 
-UI_CLASS = "com.xychr.ghostdownloader.packs.YtDlpUi"
+UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
 
 
 def draftFields(task) -> dict:

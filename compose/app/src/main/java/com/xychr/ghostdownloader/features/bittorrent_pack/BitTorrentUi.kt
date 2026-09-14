@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.bittorrent_pack
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ListItem
@@ -94,23 +96,4 @@ object BitTorrentUi : PackUi {
             }
         }
     }
-}
-
-@Composable
-internal fun PackCaption(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
-internal fun PackSectionTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(bottom = 4.dp),
-    )
 }

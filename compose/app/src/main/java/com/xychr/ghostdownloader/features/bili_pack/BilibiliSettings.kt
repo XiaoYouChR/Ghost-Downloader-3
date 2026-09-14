@@ -1,4 +1,6 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.bili_pack
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource

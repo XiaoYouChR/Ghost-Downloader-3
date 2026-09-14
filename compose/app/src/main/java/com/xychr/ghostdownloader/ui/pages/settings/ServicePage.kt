@@ -22,7 +22,7 @@ import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
 import com.xychr.ghostdownloader.engine.EngineRepository
@@ -38,7 +38,7 @@ import java.io.File
 fun ServicePage(onBack: () -> Unit, viewModel: SettingsViewModel) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
-    SettingsPage(stringResource(R.string.settings_section_local_service), onBack) {
+    SettingsScaffold(stringResource(R.string.settings_section_local_service), onBack) {
         settings?.let { ServiceRows(it, viewModel::set) } ?: LoadingRow()
     }
 }

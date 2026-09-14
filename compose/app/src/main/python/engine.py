@@ -491,9 +491,9 @@ class Engine:
         result = asyncio.run_coroutine_threadsafe(adapter.probePreview(task), self._loop).result()
         return json.dumps(result, ensure_ascii=False)
 
-    def confirmDraft(self):
+    def confirmDraft(self, autoStart=True):
         async def confirm():
-            self._taskDraft.confirm()
+            self._taskDraft.confirm(autoStart=autoStart)
             self._draftErrors.clear()
 
         # Probe completion and confirmation must not mutate the same Task concurrently.

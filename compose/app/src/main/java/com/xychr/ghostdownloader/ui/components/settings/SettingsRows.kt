@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -124,6 +125,9 @@ fun ActionSettingRow(
     subtitle: String? = null,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    colors: ListItemColors = ListItemDefaults.segmentedColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+    ),
 ) {
     val view = LocalView.current
     ListItem(
@@ -132,7 +136,7 @@ fun ActionSettingRow(
         leadingContent = leading,
         trailingContent = trailing,
         shapes = ListItemDefaults.shapes(pressedShape = MaterialTheme.shapes.extraLarge),
-        colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = colors,
         modifier = modifier,
         onClick = {
             view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)

@@ -21,7 +21,7 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.engine.EngineRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,7 +120,7 @@ fun AboutPage(onBack: () -> Unit, viewModel: UpdateViewModel = viewModel()) {
     val result by viewModel.result.collectAsStateWithLifecycle()
     val dlState by viewModel.downloadState.collectAsStateWithLifecycle()
 
-    SettingsPage(stringResource(R.string.settings_section_about), onBack) {
+    SettingsScaffold(stringResource(R.string.settings_section_about), onBack) {
         SettingSection {
             InfoSettingRow(
                 title = stringResource(R.string.settings_version),

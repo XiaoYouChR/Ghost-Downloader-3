@@ -224,6 +224,7 @@
     <string name="draft_preview_failed">预览加载失败，仍可设置裁剪时间。</string>
     <string name="draft_next">下一步</string>
     <string name="draft_start">开始</string>
+    <string name="draft_later">稍后下载</string>
     <string name="draft_parsing">解析中…</string>
     <string name="draft_name">文件名</string>
     <string name="draft_url_hint">在此粘贴下载链接，每行一个</string>
@@ -301,4 +302,18 @@
     <string name="settings_browser_regenerate_desc">已连接的扩展需要重新配对</string>
     <string name="settings_browser_export">导出扩展</string>
     <string name="settings_browser_export_desc">解包到 Download，再用浏览器的「加载已解压的扩展」指过去</string>
+
+    <string name="oobe_welcome_title">欢迎使用 Ghost Downloader</string>
+    <string name="oobe_welcome_subtitle">快速、智能的下载管理器。\n接下来的几步将帮助你完成基本配置。</string>
+    <string name="oobe_start">开始配置</string>
+    <string name="oobe_skip">跳过全部</string>
+    <string name="oobe_back">上一步</string>
+    <string name="oobe_next">下一步</string>
+    <string name="oobe_permissions_title">权限设置</string>
+    <string name="oobe_permissions_subtitle">Ghost Downloader 需要以下权限才能正常工作</string>
+    <string name="oobe_basic_title">基本设置</string>
+    <string name="oobe_basic_subtitle">设置下载文件的保存位置</string>
+    <string name="oobe_complete_title">一切就绪</string>
+    <string name="oobe_complete_subtitle">Ghost Downloader 已准备好为你工作。\n你可以随时在设置中调整所有选项。</string>
+    <string name="oobe_finish">开始使用</string>
 </resources>

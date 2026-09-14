@@ -1,8 +1,11 @@
-package com.xychr.ghostdownloader.packs
+package com.xychr.ghostdownloader.features.ed2k_pack2k
+
+import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
@@ -30,7 +33,7 @@ fun ED2kSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         NumberSettingRow(
             title = stringResource(R.string.ed2k_listen_port),
             value = config.int(k("listenPort")),
-            range = 0..65535,
+            range = SettingRanges[k("listenPort")],
             onConfirm = { set(k("listenPort"), it) },
             valueText = { if (it == 0) auto else "$it" },
         )
@@ -55,7 +58,7 @@ fun ED2kSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         NumberSettingRow(
             title = stringResource(R.string.ed2k_sharing_time_limit),
             value = config.int(k("sharingTimeLimit")),
-            range = 0..43200,
+            range = SettingRanges[k("sharingTimeLimit")],
             onConfirm = { set(k("sharingTimeLimit"), it) },
             unit = "min",
             valueText = { if (it == 0) unlimited else "$it min" },

@@ -24,7 +24,7 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEdit
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditState
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditor
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.buildMergedHeaders
 import com.xychr.ghostdownloader.ui.components.settings.matchHeaderEntries
 import com.xychr.ghostdownloader.ui.components.settings.matchHeaderName
@@ -46,7 +46,7 @@ fun HeadersPresetEditPage(index: Int, onBack: () -> Unit, viewModel: IdentityVie
     val editState by edit.state.collectAsStateWithLifecycle()
     val identityState = uiState
     if (identityState == null) {
-        SettingsPage(stringResource(R.string.identity_headers_preset_edit), onBack, modifier) { LoadingRow() }
+        SettingsScaffold(stringResource(R.string.identity_headers_preset_edit), onBack, modifier) { LoadingRow() }
         return
     }
     val state = identityState.identity
@@ -54,7 +54,7 @@ fun HeadersPresetEditPage(index: Int, onBack: () -> Unit, viewModel: IdentityVie
     val existing = state.headersPresets.getOrNull(index)
     val source = state.headersPresets.getOrNull(copyFrom)
     if ((index >= 0 && existing == null) || (copyFrom >= 0 && source == null)) {
-        SettingsPage(stringResource(R.string.identity_headers_preset_edit), onBack, modifier) { LoadingRow() }
+        SettingsScaffold(stringResource(R.string.identity_headers_preset_edit), onBack, modifier) { LoadingRow() }
         return
     }
     val initial = existing ?: HeadersPreset(

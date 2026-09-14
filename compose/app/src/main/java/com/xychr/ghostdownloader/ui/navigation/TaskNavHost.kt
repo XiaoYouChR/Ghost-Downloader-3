@@ -1,7 +1,4 @@
-package com.xychr.ghostdownloader.ui.pages
-
-import com.xychr.ghostdownloader.engine.EngineRepository
-import com.xychr.ghostdownloader.ui.navigation.*
+package com.xychr.ghostdownloader.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionLayout
@@ -17,8 +14,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
+import com.xychr.ghostdownloader.ui.pages.DraftPage
+import com.xychr.ghostdownloader.ui.pages.TaskDetailPage
+import com.xychr.ghostdownloader.ui.pages.TaskEditPage
+import com.xychr.ghostdownloader.ui.pages.TaskFilesPage
+import com.xychr.ghostdownloader.ui.pages.TasksPage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -57,24 +60,13 @@ internal fun TaskNavHost(
                 composable<DraftRoute> {
                     val categories by draft.categories.collectAsStateWithLifecycle()
                     WithSharedElements {
-                        DraftPage(draftState, draft::setUrls,
-                            onOpen = { navigate(DraftEditRoute(it)) },
-                            onConfirm = { draftScope.launch {
-                                if (draft.confirm()) back()
+                        DraftPage(draftState, draft,
+                            onConfirm = { autoStart -> draftScope.launch {
+                                if (draft.confirm(autoStart)) back()
                             } },
                             onDiscard = { draftScope.launch { if (draft.cancel()) back() } },
-                            onBack = back, categories = categories,
-                            onSetCategory = draft::setCategory)
+                            onBack = back, categories = categories)
                     }
-                }
-                composable<DraftEditRoute> { entry ->
-                    val route = entry.toRoute<DraftEditRoute>()
-                    val categories by draft.categories.collectAsStateWithLifecycle()
-                    DraftEditScreen(draftState.items.firstOrNull { it.url == route.url }, route.part, draftState,
-                        onApply = { draft.update(route.url, it) },
-                        onOpen = { navigate(DraftEditRoute(route.url, it)) },
-                        sendPack = { action, args -> draft.sendPack(route.url, action, args) },
-                        categories = categories, onBack = back)
                 }
                 composable<TaskDetailRoute> { entry ->
                     WithSharedElements {

@@ -24,7 +24,7 @@ import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.ConfirmDialog
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.SettingsPage
+import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 
 @Composable
@@ -39,13 +39,13 @@ fun CategoryPage(
     val taskCounts by viewModel.taskCounts.collectAsStateWithLifecycle()
     val state = categoryState
     if (state == null) {
-        SettingsPage(stringResource(R.string.category_manage), onBack) { LoadingRow() }
+        SettingsScaffold(stringResource(R.string.category_manage), onBack) { LoadingRow() }
         return
     }
     var removing by remember { mutableStateOf<Category?>(null) }
     var isResetting by remember { mutableStateOf(false) }
 
-    SettingsPage(stringResource(R.string.category_manage), onBack) {
+    SettingsScaffold(stringResource(R.string.category_manage), onBack) {
         error?.let {
             Text(it)
         }
