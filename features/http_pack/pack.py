@@ -61,7 +61,8 @@ class HttpParser(TaskParser):
             fileSize = options.size if options.size > 0 else SpecialFileSize.UNKNOWN
             canUseRangeRequests = options.canUseRangeRequests
 
-        if fileSize == SpecialFileSize.UNKNOWN:
+        if fileSize == SpecialFileSize.UNKNOWN or not canUseRangeRequests:
+            suppliedFileSize = fileSize
             emulation = toEmulation(
                 options.clientProfile or cfg.clientProfile.value,
                 options.sourceUserAgent,
@@ -112,7 +113,9 @@ class HttpParser(TaskParser):
             try:
                 statusCode, responseHeaders, finalUrl = await request("bytes=1-1")
 
-                fileSize = rangeTotal(responseHeaders)
+                probedFileSize = rangeTotal(responseHeaders)
+                if probedFileSize != SpecialFileSize.UNKNOWN:
+                    fileSize = probedFileSize
                 canUseRangeRequests = statusCode == 206 and "content-range" in responseHeaders
 
                 if canUseRangeRequests:
@@ -121,7 +124,9 @@ class HttpParser(TaskParser):
                         responseHeaders.get("content-range", ""), fileSize,
                     )
                 else:
-                    fileSize = bodyLength(responseHeaders)
+                    responseFileSize = bodyLength(responseHeaders)
+                    if responseFileSize != SpecialFileSize.UNKNOWN:
+                        fileSize = responseFileSize
                     logger.info(
                         "偏移 Range 探测返回 {}, content-length: {}",
                         statusCode, responseHeaders.get("content-length", ""),
@@ -135,13 +140,17 @@ class HttpParser(TaskParser):
                                 "回退 Range 探测成功, content-range: {}, fileSize: {}",
                                 fbHeaders.get("content-range", ""), fbSize,
                             )
-                            fileSize = fbSize
+                            if fbSize != SpecialFileSize.UNKNOWN:
+                                fileSize = fbSize
                             canUseRangeRequests = True
                         else:
                             if fileSize == SpecialFileSize.UNKNOWN:
                                 fileSize = bodyLength(fbHeaders)
                                 if fileSize == SpecialFileSize.UNKNOWN and fbStatus == 416:
                                     fileSize = rangeTotal(fbHeaders)
+
+                if fileSize == SpecialFileSize.UNKNOWN:
+                    fileSize = suppliedFileSize
 
                 if not name:
                     cd = responseHeaders.get("content-disposition", "")
@@ -235,4 +244,3 @@ class HttpPack(FeaturePack):
             UrlEditCard(parent, initial=task.url),
             *self.optionCards(task, parent),
         ]
-

@@ -212,7 +212,13 @@ class TaskService:
         self._schedule(task)
 
     def _deduplicateOutput(self, task: Task) -> None:
-        storePaths = {t.outputPath for t in self._store.tasks.values()}
+        from app.models.task import TaskStatus
+        storePaths = {
+            t.outputPath for t in self._store.tasks.values()
+            if t.status != TaskStatus.COMPLETED
+            or Path(t.outputPath).exists()
+            or Path(f"{t.outputPath}.ghd").exists()
+        }
 
         def isTaken() -> bool:
             op = task.outputPath

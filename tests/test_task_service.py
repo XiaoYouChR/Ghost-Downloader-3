@@ -148,6 +148,33 @@ class TestDeduplicateOutput:
         svc.add(t2)
         assert t2.name == "same(1).zip"
 
+    def test_completed_missing_output_reuses_original_name(self, service, tmp_path):
+        svc, _ = service
+        old = makeTask("old", name="deleted.zip")
+        old.outputFolder = tmp_path
+        svc.add(old, autoStart=False)
+        old.setStatus(TaskStatus.COMPLETED)
+
+        replacement = makeTask("replacement", name="deleted.zip")
+        replacement.outputFolder = tmp_path
+        svc.add(replacement, autoStart=False)
+
+        assert replacement.name == "deleted.zip"
+
+    def test_completed_existing_output_still_renames(self, service, tmp_path):
+        svc, _ = service
+        old = makeTask("old-existing", name="kept.zip")
+        old.outputFolder = tmp_path
+        svc.add(old, autoStart=False)
+        old.setStatus(TaskStatus.COMPLETED)
+        (tmp_path / "kept.zip").touch()
+
+        replacement = makeTask("replacement-existing", name="kept.zip")
+        replacement.outputFolder = tmp_path
+        svc.add(replacement, autoStart=False)
+
+        assert replacement.name == "kept(1).zip"
+
     def test_store_conflict_increments(self, service):
         svc, _ = service
         svc.add(makeTask("i1", name="file.zip"))
