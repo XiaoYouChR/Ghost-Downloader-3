@@ -1,18 +1,45 @@
 """Android View adapter for BilibiliPack."""
 from __future__ import annotations
 
-import json
+from dataclasses import asdict, dataclass
+
+from .account import (
+    QR_EXPIRED,
+    QR_GOT_URL,
+    QR_LOGIN_FAILED,
+    QR_LOGIN_SUCCESS,
+    QR_SCANNED,
+    QR_UNSCANNED,
+)
 
 UI_CLASS = "com.xychr.ghostdownloader.features.bili_pack.BilibiliUi"
 
+QR_STATUS = {
+    QR_GOT_URL: "ready",
+    QR_UNSCANNED: "waiting",
+    QR_SCANNED: "scanned",
+    QR_EXPIRED: "expired",
+    QR_LOGIN_SUCCESS: "success",
+    QR_LOGIN_FAILED: "failed",
+}
+
+
+@dataclass(frozen=True)
+class QrState:
+    status: str = "loading"
+    url: str = ""
+    message: str = ""
+
+
 _account = None
-_qr: dict = {}
+_qr = QrState()
 
 
-def init(pack):
+def init(pack) -> dict:
     global _account
     _account = pack.account
     _account.qrStateChanged.connect(_onQrStateChanged)
+    return {"accountState": _account.accountChanged, "qrState": _account.qrStateChanged}
 
 
 # ---- task/draft serialization (called by engine.py internally) ----
@@ -130,7 +157,7 @@ def accountState() -> dict:
 
 
 def qrState() -> dict:
-    return dict(_qr)
+    return asdict(_qr)
 
 
 def setCookie(cookie: str):
@@ -142,7 +169,8 @@ def logout():
 
 
 def startQrLogin():
-    _qr.clear()
+    global _qr
+    _qr = QrState()
     _account.startQrLogin()
 
 
@@ -151,5 +179,10 @@ def cancelQrLogin():
 
 
 def _onQrStateChanged(code: int, text: str):
-    _qr["code"] = code
-    _qr["url" if code == 0 else "text"] = text
+    global _qr
+    status = QR_STATUS.get(code, "failed")
+    _qr = QrState(
+        status,
+        url=text if status == "ready" else "",
+        message=text if status == "failed" else "",
+    )

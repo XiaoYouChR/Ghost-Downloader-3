@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from collections.abc import Callable
 from typing import Any, TYPE_CHECKING
 
 from app.signal import Signal
@@ -18,6 +19,7 @@ class DraftItem:
     url: str
     parseId: str = ""
     task: Task | None = None
+    error: TaskError | None = None
     categoryOverride: str | None = None
     confirmedOptions: dict | None = None
     confirmedAutoStart: bool = True
@@ -40,29 +42,47 @@ class TaskDraft:
     def urls(self) -> list[str]:
         return [item.url for item in self._items]
 
-    def taskByUrl(self, url: str) -> Task | None:
+    def items(self) -> list[DraftItem]:
+        return list(self._items)
+
+    def itemByUrl(self, url: str) -> DraftItem | None:
         for item in self._items:
             if item.url == url:
-                return item.task
+                return item
         return None
 
+    def taskByUrl(self, url: str) -> Task | None:
+        item = self.itemByUrl(url)
+        return item.task if item else None
+
     def failCount(self) -> int:
-        return sum(1 for item in self._items if not item.parseId and item.task is None)
+        return sum(1 for item in self._items if item.error is not None)
 
     def canConfirm(self) -> bool:
         return any(item.parseId or item.task is not None for item in self._items)
+
+    def update(self, url: str, mutate: Callable[[Task], None]) -> None:
+        item = self.itemByUrl(url)
+        if item is None or item.task is None:
+            return
+        mutate(item.task)
+        self.itemsChanged.emit()
 
     def setBaseOptions(self, options: dict) -> None:
         self._baseOptions = options
         for item in self._items:
             if item.task is not None:
                 item.task.setOptions(self._buildOptions(item))
+        self.itemsChanged.emit()
 
-    def setUrlCategory(self, url: str, categoryId: str) -> None:
-        for item in self._items:
-            if item.url == url:
-                item.categoryOverride = categoryId
-                break
+    def setUrlCategory(self, url: str, categoryId: str | None) -> None:
+        item = self.itemByUrl(url)
+        if item is None:
+            return
+        item.categoryOverride = categoryId
+        if item.task is not None:
+            item.task.category = categoryId
+        self.itemsChanged.emit()
 
     def setUrls(self, urls: list[str]) -> None:
         from app.models.task import TaskOptions
@@ -96,7 +116,8 @@ class TaskDraft:
                     )
                 except Exception as e:
                     logger.opt(exception=e).error("提交解析请求失败 {}", url)
-                    submitErrors.append((url, toTaskError(e)))
+                    item.error = toTaskError(e)
+                    submitErrors.append((url, item.error))
                     nextItems.append(item)
                     continue
                 item.parseId = parseId
@@ -201,6 +222,8 @@ class TaskDraft:
             return
 
         item.parseId = ""
-        self.parseFailed.emit(item.url, toTaskError(error))
+        item.error = toTaskError(error)
+        self.parseFailed.emit(item.url, item.error)
         logger.warning("解析任务失败 {}: {}", item.url, error)
         self.parsingBusyChanged.emit(self._isParsing())
+        self.itemsChanged.emit()

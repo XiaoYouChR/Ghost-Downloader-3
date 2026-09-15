@@ -133,6 +133,34 @@ class TestParseCallbacks:
         runner.resolve(workId, stubTask("http://a.com/1"))
         assert states[-1] is False
 
+    def test_failure_records_error_on_item(self, draft, runner):
+        draft.setUrls(["http://a.com/file.zip"])
+        workId = list(runner._pending.keys())[0]
+        runner.reject(workId, "network error")
+        assert draft.failCount() == 1
+
+    def test_failure_emits_itemsChanged(self, draft, runner):
+        changed = []
+        draft.itemsChanged.connect(lambda: changed.append(True))
+        draft.setUrls(["http://a.com/file.zip"])
+        changed.clear()
+        workId = list(runner._pending.keys())[0]
+        runner.reject(workId, "network error")
+        assert changed == [True]
+
+    def test_submit_failure_records_error_on_item(self, draft, runner):
+        def boom(*args, **kwargs):
+            raise RuntimeError("submit failed")
+
+        runner.submit = boom
+        draft.setUrls(["http://a.com/file.zip"])
+        assert draft.failCount() == 1
+        assert draft.taskByUrl("http://a.com/file.zip") is None
+
+    def test_parsing_item_is_not_counted_as_failed(self, draft, runner):
+        draft.setUrls(["http://a.com/1"])
+        assert draft.failCount() == 0
+
 
 class TestConfirm:
 
@@ -245,6 +273,43 @@ class TestCanConfirm:
         workId = list(runner._pending.keys())[0]
         runner.resolve(workId, stubTask("http://a.com/1"))
         assert draft.canConfirm() is True
+
+
+class TestMutationsNotify:
+    """TaskDraft 的每个变更入口都必须通知——View 持的是投影副本，不是对象引用。"""
+
+    def _resolved(self, draft, runner):
+        draft.setUrls(["http://a.com/1"])
+        runner.resolve(list(runner._pending.keys())[0], stubTask("http://a.com/1"))
+
+    def test_set_base_options_emits(self, draft, runner):
+        self._resolved(draft, runner)
+        changed = []
+        draft.itemsChanged.connect(lambda: changed.append(True))
+        draft.setBaseOptions({"outputFolder": "/tmp"})
+        assert changed == [True]
+
+    def test_set_url_category_emits(self, draft, runner):
+        draft.setUrls(["http://a.com/1"])
+        changed = []
+        draft.itemsChanged.connect(lambda: changed.append(True))
+        draft.setUrlCategory("http://a.com/1", "video")
+        assert changed == [True]
+
+    def test_update_emits(self, draft, runner):
+        self._resolved(draft, runner)
+        changed = []
+        draft.itemsChanged.connect(lambda: changed.append(True))
+        draft.update("http://a.com/1", lambda task: task.setName("renamed"))
+        assert changed == [True]
+
+    def test_update_skips_unknown_and_unparsed_urls(self, draft, runner):
+        draft.setUrls(["http://a.com/1"])
+        changed = []
+        draft.itemsChanged.connect(lambda: changed.append(True))
+        draft.update("http://a.com/1", lambda task: task.setName("too early"))
+        draft.update("http://nope", lambda task: task.setName("nope"))
+        assert changed == []
 
 
 if __name__ == "__main__":

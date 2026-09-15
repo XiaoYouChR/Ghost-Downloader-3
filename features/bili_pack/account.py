@@ -26,7 +26,9 @@ QR_POLL_INTERVAL = 2.0
 QR_UNSCANNED = 86101
 QR_SCANNED = 86090
 QR_EXPIRED = 86038
+QR_GOT_URL = 0
 QR_LOGIN_SUCCESS = 1
+QR_LOGIN_FAILED = -1
 
 COOKIE_ORDER = ("SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid")
 
@@ -115,9 +117,7 @@ class BilibiliAccount:
             self._coroutineRunner.cancel(self._qrWorkId)
             self._qrWorkId = ""
 
-    async def _pollQrLogin(self) -> str:
-
-
+    async def _pollQrLogin(self) -> str | None:
         client = buildClient()
         try:
             response = await client.get(QR_GENERATE_API)
@@ -132,7 +132,7 @@ class BilibiliAccount:
             if not loginUrl or not qrCodeKey:
                 raise ValueError("二维码接口返回了不完整的数据")
 
-            self._coroutineRunner.post(self.qrStateChanged.emit, 0, loginUrl)
+            self._coroutineRunner.post(self.qrStateChanged.emit, QR_GOT_URL, loginUrl)
 
             while True:
                 await asyncio.sleep(QR_POLL_INTERVAL)
@@ -150,7 +150,7 @@ class BilibiliAccount:
 
                 if statusCode == QR_EXPIRED:
                     self._coroutineRunner.post(self.qrStateChanged.emit, QR_EXPIRED, "")
-                    return ""
+                    return None
 
                 if statusCode == 0:
                     items: dict[str, str] = {}
@@ -169,17 +169,19 @@ class BilibiliAccount:
         finally:
             client.close()
 
-    def _onQrLoginDone(self, cookie: str):
+    def _onQrLoginDone(self, cookie: str | None):
         self._qrWorkId = ""
+        if cookie is None:
+            return
         if cookie:
             self.setCookie(cookie)
             self.qrStateChanged.emit(QR_LOGIN_SUCCESS, "")
         else:
-            self.qrStateChanged.emit(-1, "登录成功，但未能提取到有效 Cookie")
+            self.qrStateChanged.emit(QR_LOGIN_FAILED, "登录成功，但未能提取到有效 Cookie")
 
     def _onQrLoginFailed(self, error):
         self._qrWorkId = ""
-        self.qrStateChanged.emit(-1, str(error))
+        self.qrStateChanged.emit(QR_LOGIN_FAILED, str(error))
 
     # ── cookie / logout / account info (wreq via coroutineRunner) ──
 
