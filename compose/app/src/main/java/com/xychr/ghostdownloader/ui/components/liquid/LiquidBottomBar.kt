@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,6 +28,7 @@ enum class BottomTab { TASKS, SETTINGS }
 fun LiquidBottomBar(
     selectedTab: BottomTab,
     onTabSelected: (BottomTab) -> Unit,
+    draftCount: Int,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
 ) {
@@ -49,12 +52,18 @@ fun LiquidBottomBar(
                     BottomTab.SETTINGS -> if (isSelected) R.drawable.ic_settings_filled else R.drawable.ic_settings
                 }
                 LiquidBottomTab {
-                    Icon(
-                        painterResource(iconRes),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp),
-                    )
+                    BadgedBox(badge = {
+                        if (tab == BottomTab.TASKS && draftCount > 0) {
+                            Badge { Text(draftCount.toString()) }
+                        }
+                    }) {
+                        Icon(
+                            painterResource(iconRes),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                     Text(
                         labels[tab.ordinal],
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

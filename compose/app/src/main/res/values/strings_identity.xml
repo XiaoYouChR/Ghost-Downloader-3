@@ -47,7 +47,6 @@
     <string name="identity_rule_add">添加规则</string>
     <string name="identity_rule_edit">编辑规则</string>
     <string name="identity_rule_name">名称</string>
-    <string name="identity_no_host">未设置匹配域名</string>
     <string name="identity_rule_remove_title">删除规则</string>
     <string name="identity_rule_remove_message">确定删除规则「%1$s」？</string>
     <string name="identity_user_agent">User-Agent</string>
@@ -63,7 +62,6 @@
     <string name="identity_headers_count">%1$d 个请求头</string>
     <string name="identity_headers_preset_remove_title">删除预设</string>
     <string name="identity_headers_preset_remove_message">确定删除预设「%1$s」？</string>
-    <string name="identity_headers">请求头</string>
     <string name="identity_header_name">名称</string>
     <string name="identity_header_value">值</string>
     <string name="identity_header_add">添加请求头</string>

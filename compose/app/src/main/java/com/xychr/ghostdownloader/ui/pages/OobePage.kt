@@ -1,15 +1,13 @@
 package com.xychr.ghostdownloader.ui.pages
 
-import android.Manifest
-import android.content.Intent
-import android.os.Build
-import android.os.Environment
-import android.os.PowerManager
-import android.provider.Settings as SystemSettings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,53 +24,53 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.BatteryPermissionRow
+import com.xychr.ghostdownloader.ui.components.settings.NotificationPermissionRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.pages.settings.toFolderPath
+import com.xychr.ghostdownloader.ui.components.settings.StoragePermissionRow
+import com.xychr.ghostdownloader.ui.platform.toFolderPath
 import kotlinx.coroutines.launch
 
-private const val PAGE_COUNT = 4
+private enum class OobeStep {
+    WELCOME, PERMISSIONS, BASIC_SETTINGS, COMPLETE,
+}
 
 @Composable
 fun OobePage(
     downloadFolder: String,
     onSetSetting: (String, Any) -> Unit,
-    onFinish: (center: Offset) -> Unit,
+    onFinish: () -> Unit,
+    containerModifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState { PAGE_COUNT }
+    val pagerState = rememberPagerState { OobeStep.entries.size }
+    val back: () -> Unit = {
+        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
+    }
+
+    BackHandler(enabled = pagerState.currentPage > 0, onBack = back)
 
     Column(
         Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .navigationBarsPadding(),
     ) {
@@ -81,29 +79,31 @@ fun OobePage(
             userScrollEnabled = false,
             modifier = Modifier.weight(1f),
         ) { page ->
-            when (page) {
-                0 -> WelcomeContent()
-                1 -> PermissionsContent()
-                2 -> BasicSettingsContent(downloadFolder, onSetSetting)
-                3 -> CompleteContent()
+            when (OobeStep.entries[page]) {
+                OobeStep.WELCOME -> WelcomeContent()
+                OobeStep.PERMISSIONS -> PermissionsContent()
+                OobeStep.BASIC_SETTINGS -> BasicSettingsContent(downloadFolder, onSetSetting)
+                OobeStep.COMPLETE -> CompleteContent()
             }
         }
 
         OobeNavigation(
-            currentPage = pagerState.currentPage,
-            onBack = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
+            step = OobeStep.entries[pagerState.currentPage],
+            onBack = back,
             onNext = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
             onFinish = onFinish,
+            containerModifier = containerModifier,
         )
     }
 }
 
 @Composable
 private fun OobeNavigation(
-    currentPage: Int,
+    step: OobeStep,
     onBack: () -> Unit,
     onNext: () -> Unit,
-    onFinish: (center: Offset) -> Unit,
+    onFinish: () -> Unit,
+    containerModifier: Modifier,
 ) {
     Row(
         Modifier
@@ -112,27 +112,38 @@ private fun OobeNavigation(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        when (currentPage) {
-            0 -> {
-                TextButton(onClick = { onFinish(Offset.Zero) }) {
+        when (step) {
+            OobeStep.WELCOME -> {
+                TextButton(onClick = onFinish, modifier = containerModifier) {
                     Text(stringResource(R.string.oobe_skip))
                 }
                 Button(onClick = onNext) {
                     Text(stringResource(R.string.oobe_start))
                 }
             }
-            in 1 until PAGE_COUNT - 1 -> {
+            OobeStep.PERMISSIONS, OobeStep.BASIC_SETTINGS -> {
                 TextButton(onClick = onBack) {
                     Text(stringResource(R.string.oobe_back))
                 }
-                PageIndicator(currentPage)
+                PageIndicator(step)
                 Button(onClick = onNext) {
                     Text(stringResource(R.string.oobe_next))
                 }
             }
-            PAGE_COUNT - 1 -> {
+            OobeStep.COMPLETE -> {
                 Spacer(Modifier.weight(1f))
-                FinishButton(onFinish)
+                FloatingActionButton(
+                    onClick = onFinish,
+                    modifier = containerModifier.size(64.dp),
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_check),
+                        contentDescription = stringResource(R.string.oobe_finish),
+                    )
+                }
                 Spacer(Modifier.weight(1f))
             }
         }
@@ -140,34 +151,14 @@ private fun OobeNavigation(
 }
 
 @Composable
-private fun FinishButton(onFinish: (center: Offset) -> Unit) {
-    var buttonCenter by remember { mutableStateOf(Offset.Zero) }
-
-    Button(
-        onClick = { onFinish(buttonCenter) },
-        modifier = Modifier.onGloballyPositioned { coords ->
-            val pos = coords.positionInWindow()
-            buttonCenter = Offset(
-                pos.x + coords.size.width / 2f,
-                pos.y + coords.size.height / 2f,
-            )
-        },
-    ) {
-        Text(stringResource(R.string.oobe_finish))
-    }
-}
-
-@Composable
-private fun PageIndicator(currentPage: Int) {
+private fun PageIndicator(current: OobeStep) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        repeat(PAGE_COUNT) { index ->
+        OobeStep.entries.forEach { step ->
             val color by animateColorAsState(
-                if (index == currentPage) MaterialTheme.colorScheme.primary
+                if (step == current) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outlineVariant,
             )
-            androidx.compose.foundation.Canvas(Modifier.size(8.dp)) {
-                drawCircle(color)
-            }
+            Canvas(Modifier.size(8.dp)) { drawCircle(color) }
         }
     }
 }
@@ -204,28 +195,8 @@ private fun WelcomeContent() {
 
 // ---- Page 1: Permissions ----
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PermissionsContent() {
-    val context = LocalContext.current
-
-    var hasStorageAccess by remember { mutableStateOf(false) }
-    var hasNotificationAccess by remember { mutableStateOf(false) }
-    var isBatteryUnrestricted by remember { mutableStateOf(false) }
-
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        hasStorageAccess = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
-        } else {
-            ContextCompat.checkSelfPermission(
-                context, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        }
-        hasNotificationAccess = NotificationManagerCompat.from(context).areNotificationsEnabled()
-        isBatteryUnrestricted = context.getSystemService(PowerManager::class.java)
-            .isIgnoringBatteryOptimizations(context.packageName)
-    }
-
     Column(
         Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.Center,
@@ -245,87 +216,11 @@ private fun PermissionsContent() {
         Spacer(Modifier.height(24.dp))
 
         SettingSection {
-            PermissionRow(
-                icon = R.drawable.ic_folder,
-                title = stringResource(R.string.settings_storage_access),
-                isGranted = hasStorageAccess,
-                onClick = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        val intent = Intent(
-                            SystemSettings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                            "package:${context.packageName}".toUri(),
-                        )
-                        runCatching { context.startActivity(intent) }.onFailure {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(SystemSettings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),
-                                )
-                            }
-                        }
-                    }
-                },
-            )
-            PermissionRow(
-                icon = R.drawable.ic_notification_download,
-                title = stringResource(R.string.settings_notifications),
-                isGranted = hasNotificationAccess,
-                onClick = {
-                    val intent = Intent(SystemSettings.ACTION_APP_NOTIFICATION_SETTINGS)
-                        .putExtra(SystemSettings.EXTRA_APP_PACKAGE, context.packageName)
-                    runCatching { context.startActivity(intent) }
-                },
-            )
-            PermissionRow(
-                icon = R.drawable.ic_download,
-                title = stringResource(R.string.settings_battery_unrestricted),
-                subtitle = stringResource(R.string.settings_battery_unrestricted_desc),
-                isGranted = isBatteryUnrestricted,
-                onClick = {
-                    val request = Intent(
-                        SystemSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                        "package:${context.packageName}".toUri(),
-                    )
-                    runCatching { context.startActivity(request) }.onFailure {
-                        runCatching {
-                            context.startActivity(
-                                Intent(SystemSettings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
-                            )
-                        }
-                    }
-                },
-            )
+            StoragePermissionRow()
+            NotificationPermissionRow()
+            BatteryPermissionRow()
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun PermissionRow(
-    icon: Int,
-    title: String,
-    isGranted: Boolean,
-    onClick: () -> Unit,
-    subtitle: String? = null,
-) {
-    val statusText = stringResource(
-        if (isGranted) R.string.permission_granted else R.string.permission_denied,
-    )
-    val displaySubtitle = if (isGranted) statusText else (subtitle ?: statusText)
-
-    ActionSettingRow(
-        title = title,
-        subtitle = displaySubtitle,
-        leading = { Icon(painterResource(icon), contentDescription = null) },
-        colors = if (isGranted) ListItemDefaults.segmentedColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            supportingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            leadingContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ) else ListItemDefaults.segmentedColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
-        onClick = onClick,
-    )
 }
 
 // ---- Page 2: Basic Settings ----

@@ -1,4 +1,4 @@
-package com.xychr.ghostdownloader.features.ed2k_pack2k
+package com.xychr.ghostdownloader.features.ed2k_pack
 
 import com.xychr.ghostdownloader.packs.*
 

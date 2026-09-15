@@ -9,12 +9,13 @@ import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,15 +27,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,8 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
@@ -57,7 +55,10 @@ import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 import kotlinx.serialization.json.JsonObject
 
-enum class TaskAction { RUN, DETAILS, FILES, EDIT, CATEGORY, COPY_URL, MOVE_TO_FRONT, REDOWNLOAD, DELETE, OPEN_FILE }
+enum class TaskAction {
+    RUN, DETAILS, FILES, EDIT, CATEGORY, COPY_URL, MOVE_TO_FRONT, REDOWNLOAD, DELETE,
+    OPEN_FILE, OPEN_FOLDER,
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -92,8 +93,17 @@ fun TaskCard(
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                LeadingMark(isSelecting, isSelected)
-                Spacer(Modifier.width(12.dp))
+                // 常态不占位——勾选框只在选择模式滑入，名字区拿回这段宽度
+                AnimatedVisibility(
+                    visible = isSelecting,
+                    enter = fadeIn() + expandHorizontally(),
+                    exit = fadeOut() + shrinkHorizontally(),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isSelected, onCheckedChange = null)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                }
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = task.name,
@@ -136,33 +146,35 @@ fun TaskCard(
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 if (task.fileCount > 1) FileCountChip(task.fileCount)
-                if (!isSelecting) Icon(
-                    painterResource(R.drawable.ic_chevron_right), null,
-                    Modifier.size(20.dp).graphicsLayer { rotationZ = if (isExpanded) 270f else 90f },
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (!isSelecting) ExpandChevron(isExpanded)
             }
 
             AnimatedVisibility(isExpanded && !isSelecting) {
-                Column(Modifier.padding(top = 12.dp).fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    packExtra?.invoke(task.packFields)
-                    if (task.fileCount > 1) Caption(stringResource(
-                        R.string.task_selected_files, task.selectedFileCount, task.fileCount))
+                Column(
+                    modifier = Modifier.padding(top = 12.dp).fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        packExtra?.invoke(task.packFields)
+                        if (task.fileCount > 1) Caption(stringResource(
+                            R.string.task_selected_files, task.selectedFileCount, task.fileCount))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { onAction(TaskAction.DETAILS) }) {
-                            Text(stringResource(R.string.task_details))
+                        TaskIconButton(R.drawable.ic_folder_open,
+                            stringResource(R.string.task_detail_open_folder)) {
+                            onAction(TaskAction.OPEN_FOLDER)
+                        }
+                        TaskIconButton(R.drawable.ic_delete, stringResource(R.string.action_delete)) {
+                            onAction(TaskAction.DELETE)
                         }
                         Spacer(Modifier.weight(1f))
-                        TaskMenu(task, onAction, isCategoryEnabled)
-                    }
-                    if (task.fileCount > 1) TextButton(onClick = { onAction(TaskAction.FILES) }) {
-                        Text(stringResource(R.string.task_choose_files))
-                    }
-                    if (task.canEdit && !task.isFinished) TextButton(onClick = { onAction(TaskAction.EDIT) }) {
-                        Text(stringResource(R.string.task_edit_options))
+                        TaskCardMenu(task, onAction, isCategoryEnabled)
                     }
                 }
             }
@@ -171,53 +183,9 @@ fun TaskCard(
 }
 
 @Composable
-private fun LeadingMark(isSelecting: Boolean, isSelected: Boolean) {
-    Crossfade(targetState = isSelecting to isSelected, label = "leading-mark") { (selecting, selected) ->
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(
-                    when {
-                        selected -> MaterialTheme.colorScheme.primary
-                        selecting -> Color.Transparent
-                        else -> MaterialTheme.colorScheme.secondaryContainer
-                    }
-                )
-                .then(
-                    if (selecting && !selected) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    } else {
-                        Modifier
-                    }
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            when {
-                selected -> Icon(
-                    painter = painterResource(R.drawable.ic_check),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp),
-                )
-
-                selecting -> Unit
-
-                else -> Icon(
-                    painter = painterResource(R.drawable.ic_file),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun StatusLine(task: TaskUiState, isExpanded: Boolean) {
     val text = when {
-        task.status == TaskStatus.FAILED -> task.error?.let { engineText(it.message, it.params) }
+        task.status == TaskStatus.FAILED -> task.error?.let { engineText(it) }
             ?: stringResource(R.string.task_status_failed)
         task.status == TaskStatus.COMPLETED -> stringResource(R.string.task_status_completed) +
             formatTimestamp(task.completedAt).takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
@@ -277,31 +245,34 @@ private fun FileCountChip(fileCount: Int) {
     }
 }
 
+/** 低频入口：跳转类操作和不常用命令。高频的开始／暂停／打开／删除在卡片上直接点。 */
 @Composable
-private fun TaskMenu(task: TaskUiState, onAction: (TaskAction) -> Unit, isCategoryEnabled: Boolean) {
+private fun TaskCardMenu(task: TaskUiState, onAction: (TaskAction) -> Unit, isCategoryEnabled: Boolean) {
     var isOpen by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { isOpen = true }) {
-            Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.action_more))
-        }
+        TaskIconButton(R.drawable.ic_more_vert, stringResource(R.string.action_more)) { isOpen = true }
         DropdownMenu(expanded = isOpen, onDismissRequest = { isOpen = false }) {
-            if (isCategoryEnabled) DropdownMenuItem(
-                text = { Text(stringResource(R.string.task_change_category)) },
-                onClick = { isOpen = false; onAction(TaskAction.CATEGORY) },
-            )
-            val actions = listOf(
-                TaskAction.COPY_URL to R.string.task_detail_copy_url,
-                TaskAction.MOVE_TO_FRONT to R.string.task_detail_move_to_front,
-                TaskAction.REDOWNLOAD to R.string.task_detail_redownload,
-                TaskAction.DELETE to R.string.action_delete,
-            )
-            actions.forEach { (action, label) ->
-                if (action != TaskAction.MOVE_TO_FRONT || task.status == TaskStatus.WAITING || task.status == TaskStatus.PAUSED) {
-                    DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = {
-                        isOpen = false
-                        onAction(action)
-                    })
-                }
+            TaskMenuItem(stringResource(R.string.task_details), R.drawable.ic_info) {
+                isOpen = false; onAction(TaskAction.DETAILS)
+            }
+            if (task.fileCount > 1) TaskMenuItem(
+                stringResource(R.string.task_choose_files), R.drawable.ic_file,
+            ) { isOpen = false; onAction(TaskAction.FILES) }
+            if (task.canEdit && !task.isFinished) TaskMenuItem(
+                stringResource(R.string.task_edit_options), R.drawable.ic_edit,
+            ) { isOpen = false; onAction(TaskAction.EDIT) }
+            HorizontalDivider()
+            if (isCategoryEnabled) TaskMenuItem(
+                stringResource(R.string.task_change_category), R.drawable.ic_folder,
+            ) { isOpen = false; onAction(TaskAction.CATEGORY) }
+            TaskMenuItem(stringResource(R.string.task_detail_copy_url), R.drawable.ic_copy) {
+                isOpen = false; onAction(TaskAction.COPY_URL)
+            }
+            if (task.status == TaskStatus.WAITING || task.status == TaskStatus.PAUSED) TaskMenuItem(
+                stringResource(R.string.task_detail_move_to_front), R.drawable.ic_arrow_upward,
+            ) { isOpen = false; onAction(TaskAction.MOVE_TO_FRONT) }
+            TaskMenuItem(stringResource(R.string.task_detail_redownload), R.drawable.ic_refresh) {
+                isOpen = false; onAction(TaskAction.REDOWNLOAD)
             }
         }
     }

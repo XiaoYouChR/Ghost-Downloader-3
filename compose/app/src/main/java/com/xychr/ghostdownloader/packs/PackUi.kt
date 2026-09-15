@@ -19,7 +19,10 @@ interface PackUi {
     val detailExtra: (@Composable (packFields: JsonObject) -> Unit)?
         get() = null
 
-    val draftExtra: (@Composable (packFields: JsonObject, url: String, send: suspend (String, List<Any>) -> Unit) -> Unit)?
+    val draftExtra: (@Composable (packFields: JsonObject, url: String, send: suspend (String, List<Any?>) -> Unit) -> Unit)?
+        get() = null
+
+    val draftSummary: ((packFields: JsonObject) -> String?)?
         get() = null
 
     val editExtra: (@Composable (packFields: JsonObject) -> Unit)?

@@ -2,14 +2,15 @@
 
 All step error handling is unified through a single catch point in `Task.run()`.
 Steps raise `TaskError` for known business errors or let unexpected exceptions
-propagate. `Task.run()` catches both and stores a `StepError` on the step.
+propagate. `Task.run()` catches both and stores a `TaskError` on the step.
 No protocol overrides `Task.run()` — BT and ED2k moved their logic into
 `BTTaskStep.run()` / `ED2kTaskStep.run()` so the boundary is universal.
 
-Error messages are English templates carrying format parameters. The View
-translates at render time via `QCoreApplication.translate("TaskErrors", msg)`,
-keeping Qt out of the logic layer. Pack-specific `error_catalog.py` files
-provide `QT_TRANSLATE_NOOP` markers for `lupdate`; they are never imported.
+Error messages are templates carrying format parameters, written in the source
+language (`zh_CN`). The View translates at render time via
+`QCoreApplication.translate("TaskErrors", msg)`, keeping Qt out of the logic
+layer. Pack-specific `features/*/i18n.py` files provide `N()` markers for
+`lupdate`; they are never imported.
 
 Step errors are not serialized (`repr=False`). Failed tasks loaded from a
 previous session show FAILED status without error detail — the user can retry

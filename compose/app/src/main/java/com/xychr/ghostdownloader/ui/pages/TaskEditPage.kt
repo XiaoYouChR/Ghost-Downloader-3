@@ -18,6 +18,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.ErrorText
+import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.packs.PackRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -66,7 +68,7 @@ data class TaskEditState(
     val isSaving: Boolean = false,
     val isDone: Boolean = false,
     val needsConfirmation: Boolean = false,
-    val error: String? = null,
+    val error: TaskError? = null,
 ) { val hasChanges get() = draft != initial }
 
 class TaskEditViewModel(
@@ -84,7 +86,7 @@ class TaskEditViewModel(
                 val options = fetch()
                 val draft = options.toDraft()
                 mutableState.value = TaskEditState(packId = options.packId, draft = draft, initial = draft)
-            } catch (error: Exception) { mutableState.value = state.value.copy(error = error.message) }
+            } catch (error: Exception) { mutableState.value = state.value.copy(error = error.toTaskError()) }
         }
     }
     fun update(draft: TaskOptionDraft) {
@@ -101,7 +103,7 @@ class TaskEditViewModel(
                 mutableState.value = state.value.copy(isSaving = false,
                     needsConfirmation = result.needsConfirmation, isDone = !result.needsConfirmation)
             } catch (error: Exception) {
-                mutableState.value = state.value.copy(isSaving = false, error = error.message)
+                mutableState.value = state.value.copy(isSaving = false, error = error.toTaskError())
             }
         }
     }
@@ -112,7 +114,7 @@ class TaskEditViewModel(
                 confirm.invoke()
                 mutableState.value = state.value.copy(isSaving = false, isDone = true)
             } catch (error: Exception) {
-                mutableState.value = state.value.copy(isSaving = false, error = error.message)
+                mutableState.value = state.value.copy(isSaving = false, error = error.toTaskError())
             }
         }
     }
@@ -167,7 +169,7 @@ fun TaskOptionsEditor(
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.task_edit_execution_hint), style = MaterialTheme.typography.bodyMedium)
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            ErrorText(state.error)
             val draft = state.draft
             if (draft == null) {
                 if (state.error == null) CircularProgressIndicator()

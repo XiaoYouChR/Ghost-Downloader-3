@@ -25,6 +25,7 @@ data class TaskUiState(
     val canEdit: Boolean = false,
     val categoryId: String = "",
     val outputPath: String = "",
+    val outputFolder: String = "",
     val hasOutputFile: Boolean = false,
     val selectedFileCount: Int = 0,
     val name: String = "",

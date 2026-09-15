@@ -3,6 +3,7 @@ package com.xychr.ghostdownloader.ui.pages
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,9 +16,9 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -28,13 +29,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.ui.components.ErrorText
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.model.DraftItem
+import kotlin.math.roundToInt
 import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
 import com.xychr.ghostdownloader.ui.components.draft.DiscardDialog
 import com.xychr.ghostdownloader.ui.components.draft.DraftCard
@@ -61,7 +66,6 @@ fun DraftPage(
     var categoryUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var detailUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var filesUrl by rememberSaveable { mutableStateOf<String?>(null) }
-    var globalFolder by rememberSaveable { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = state.isWorking) { }
@@ -112,7 +116,7 @@ fun DraftPage(
             if (state.isWorking) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
 
             state.error?.let { error ->
-                item { Text(error, color = MaterialTheme.colorScheme.error) }
+                item { ErrorText(error) }
             }
 
             items(state.items, key = DraftItem::url) { item ->
@@ -125,46 +129,55 @@ fun DraftPage(
                     modifier = Modifier.animateItem(),
                     category = categories.categories.firstOrNull { it.categoryId == item.categoryId },
                     isCategoryEnabled = categories.isEnabled,
-                    isCategoryOpen = categoryUrl == item.url,
                     isEnabled = !state.isWorking,
                 )
             }
 
             if (state.items.any { it.error == null && !it.isParsing }) {
                 item {
-                    ListItem(
-                        leadingContent = {
-                            Icon(painterResource(R.drawable.ic_folder), null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = state.globalFolder,
+                        onValueChange = draft::setGlobalFolder,
+                        label = { Text(stringResource(R.string.task_output_folder)) },
+                        leadingIcon = { Icon(painterResource(R.drawable.ic_folder), null) },
+                        singleLine = true,
+                        isError = !state.isFolderValid,
+                        supportingText = if (state.isFolderValid) null else {
+                            { Text(stringResource(R.string.draft_folder_absolute)) }
                         },
-                        headlineContent = {
-                            val folder = globalFolder.ifEmpty {
-                                state.items.firstOrNull { it.error == null && !it.isParsing }
-                                    ?.outputFolder.orEmpty()
-                            }
-                            OutlinedTextField(
-                                value = folder,
-                                onValueChange = { globalFolder = it },
-                                singleLine = true,
-                                label = { Text(stringResource(R.string.task_output_folder)) },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        trailingContent = {
-                            IconButton(
-                                onClick = { draft.setGlobalOutputFolder(globalFolder.trim()) },
-                                enabled = globalFolder.isNotBlank(),
-                            ) {
-                                Icon(painterResource(R.drawable.ic_check), stringResource(R.string.draft_apply))
-                            }
-                        },
+                        enabled = !state.isWorking,
+                        modifier = Modifier.fillMaxWidth(),
                     )
+                }
+                if (state.subworkerCount > 0) {
+                    item {
+                        val range = remember { SettingRanges["preBlockNum"] }
+                        val span = range.last - range.first
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(R.string.settings_pre_block_num),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                state.subworkerCount.toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Slider(
+                            value = state.subworkerCount.toFloat(),
+                            onValueChange = { draft.setSubworkerCount(it.roundToInt()) },
+                            valueRange = range.first.toFloat()..range.last.toFloat(),
+                            steps = if (span <= 20) span - 1 else 0,
+                            enabled = !state.isWorking,
+                        )
+                    }
                 }
             }
         }
     }
 
-    // Category picker sheet
     val categoryItem = state.items.firstOrNull { it.url == categoryUrl }
     if (categories.isEnabled && categoryItem != null) CategoryPicker(
         title = stringResource(R.string.task_change_category),
@@ -179,7 +192,6 @@ fun DraftPage(
         ).joinToString("\n"),
     )
 
-    // Detail sheet
     val detailItem = state.items.firstOrNull { it.url == detailUrl }
     if (detailItem != null) DraftDetailSheet(
         item = detailItem,
@@ -188,16 +200,14 @@ fun DraftPage(
         onDismiss = { detailUrl = null },
     )
 
-    // File select sheet
     val filesItem = state.items.firstOrNull { it.url == filesUrl }
     if (filesItem != null) FileSelectSheet(
         files = filesItem.files,
         canRename = filesItem.canRenameFiles,
-        onApply = { draft.applyFiles(filesItem.url, filesItem.files, it) },
+        onApply = { draft.updateFiles(filesItem.url, filesItem.files, it) },
         onDismiss = { filesUrl = null },
     )
 
-    // Discard confirmation
     if (isDiscarding) DiscardDialog(
         onDismiss = { isDiscarding = false },
         onDiscard = { isDiscarding = false; onDiscard() },

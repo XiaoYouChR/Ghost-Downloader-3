@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import com.xychr.ghostdownloader.MainActivity
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,16 +25,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
-const val CHANNEL_RUNNING = "running"
-const val NOTIF_ID_KEEP_ALIVE = 1
-
 @Serializable
 data class KeepAlive(
     val reason: String = "",
     val count: Int = 0,
     val progress: Double = 0.0,
     val speed: Long = 0,
-    val pair: PairRequest? = null,
 )
 
 fun startKeepAlive(context: Context) {
@@ -51,6 +48,11 @@ class KeepAliveService : Service() {
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE,
         )
+    }
+
+    /** 通知文案要跟应用内语言一致，Service 默认拿的是系统语言。 */
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(buildLocalizedContext(base))
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -79,9 +81,6 @@ class KeepAliveService : Service() {
                 return@collect
             }
             notifications.notify(NOTIF_ID_KEEP_ALIVE, buildNotification(state))
-            state.pair?.let {
-                notifications.notify(NOTIF_ID_PAIR, buildPairNotification(this, it))
-            } ?: notifications.cancel(NOTIF_ID_PAIR)
         }
     }
 
@@ -94,6 +93,7 @@ class KeepAliveService : Service() {
             .setSilent(true)
 
         return when (state.reason) {
+            // 只有下载态值得抬到状态栏 chip 和锁屏：待命态去占那个位置属于滥用配额
             "downloading" -> builder
                 .setContentText(
                     getString(
@@ -101,11 +101,25 @@ class KeepAliveService : Service() {
                         state.count, formatSpeed(state.speed),
                     )
                 )
-                .setProgress(100, state.progress.toInt().coerceIn(0, 100), false)
+                .setStyle(
+                    NotificationCompat.ProgressStyle()
+                        // 单段 100 长，进度量程就等于百分比，不依赖默认值
+                        .setProgressSegments(listOf(NotificationCompat.ProgressStyle.Segment(100)))
+                        .setProgress(state.progress.toInt().coerceIn(0, 100))
+                )
+                .setRequestPromotedOngoing(true)
+                .addAction(
+                    0, getString(R.string.notification_pause_all),
+                    keepAliveAction(this, isPausing = true),
+                )
                 .build()
 
             "serving" -> builder
                 .setContentText(getString(R.string.notification_serving))
+                .addAction(
+                    0, getString(R.string.notification_resume_all),
+                    keepAliveAction(this, isPausing = false),
+                )
                 .build()
 
             else -> builder

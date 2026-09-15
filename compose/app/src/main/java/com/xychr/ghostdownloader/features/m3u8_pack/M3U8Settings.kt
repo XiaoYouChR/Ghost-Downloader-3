@@ -1,4 +1,4 @@
-package com.xychr.ghostdownloader.features.m3u8_pack3u8
+package com.xychr.ghostdownloader.features.m3u8_pack
 
 import com.xychr.ghostdownloader.packs.*
 

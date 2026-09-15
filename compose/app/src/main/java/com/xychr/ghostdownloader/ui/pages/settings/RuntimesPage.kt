@@ -128,7 +128,7 @@ private fun runtimeStatusText(runtime: RuntimeUiState): String = when {
     runtime.isInstalling ->
         stringResource(R.string.runtime_installing, runtime.progress.toInt())
 
-    runtime.error != null -> engineText(runtime.error.message, runtime.error.params)
+    runtime.error != null -> engineText(runtime.error)
 
     runtime.isBusy -> stringResource(R.string.runtime_checking)
 

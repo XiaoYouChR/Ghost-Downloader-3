@@ -3,6 +3,7 @@ package com.xychr.ghostdownloader.ui.platform
 import android.app.LocaleManager
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.Build
 import android.os.LocaleList
 import java.util.Locale
@@ -33,6 +34,15 @@ fun saveLanguageTag(context: Context, tag: String?) {
             LocaleList.forLanguageTags(tag)
         }
     }
+}
+
+/**
+ * 「跟随系统」当前会落到哪个语言——这是那个选项的标签本身说不出来的信息。
+ * 用 getSystem() 而非应用 Resources：后者已被语言覆盖改写过。
+ */
+fun systemLanguageName(): String {
+    val locale = Resources.getSystem().configuration.locales[0]
+    return locale.getDisplayName(locale)
 }
 
 fun buildLocalizedContext(base: Context): Context {

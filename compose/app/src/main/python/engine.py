@@ -5,6 +5,7 @@ import asyncio
 import json
 import struct
 import zipfile
+from functools import partial
 from io import BytesIO
 from pathlib import Path
 
@@ -51,7 +52,10 @@ class Engine:
 
         from app.models.pack import PackServices
 
+        from java import jclass
+        self._flows = jclass("com.xychr.ghostdownloader.engine.EngineFlows")
         self._packAdapters: dict = {}
+        self._packStates: dict = {}
         self._loadPacks(PackServices(
             coroutineRunner=self._coroutineRunner,
             speedMeter=self._speedMeter,
@@ -66,10 +70,9 @@ class Engine:
 
         from app.services.task_draft import TaskDraft
 
-        self._draftErrors: dict = {}
+        self._draftOptions: dict = {}
         self._taskDraft = TaskDraft(self._coroutineRunner, self._featureService)
         self._taskDraft.taskConfirmed.connect(self._taskService.add)
-        self._taskDraft.parseFailed.connect(self._onParseFailed)
 
         from app.services.aria2_rpc import Aria2RpcServer
         from app.services.browser_service import BrowserService
@@ -87,23 +90,24 @@ class Engine:
             parse=self._featureService.parse, loadCrx=None,
         )
         self._browserService.pairRequested.connect(self._onBrowserPairRequested)
+        self._browserService.taskDraftRequested.connect(self._onBrowserDraft)
+        self._browserService.extensionUpdated.connect(self._onExtensionUpdated)
         cfg.isBrowserExtensionEnabled.valueChanged.connect(self._browserService.setEnabled)
         cfg.browserExtensionPort.valueChanged.connect(self._onBrowserPortChanged)
 
         self._coroutineRunner.start()
+        self._taskService.resumeSaved()
+        self._featureService.activate()
+        # 流要先建好：服务器一旦 start，扩展随时可能连上来打到 _emitNotice
+        self._setupFlows()
         if cfg.isAria2RpcEnabled.value:
             self._aria2RpcServer.start()
         if cfg.isBrowserExtensionEnabled.value:
             self._browserService.start()
-        self._taskService.resumeSaved()
-        self._featureService.activate()
-        self._setupFlows()
+        self._emitKeepAlive()
         logger.info("Engine started, dataDir={}", APP_DATA_DIR)
 
     def _setupFlows(self):
-        from java import jclass
-        self._flows = jclass("com.xychr.ghostdownloader.engine.EngineFlows")
-
         for signal in (
             self._taskService.taskAdded,
             self._taskService.taskRemoved,
@@ -115,6 +119,10 @@ class Engine:
         ):
             signal.connect(self._emitKeepAlive)
             signal.connect(self._emitTasks)
+
+        self._taskService.taskCompleted.connect(self._onTaskCompleted)
+        self._taskService.taskFailed.connect(self._onTaskFailed)
+        self._taskService.diskSpaceInsufficient.connect(self._onDiskSpaceInsufficient)
 
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
@@ -128,14 +136,50 @@ class Engine:
         for item in cfg.byName.values():
             item.valueChanged.connect(self._emitSettings)
 
+        for signal in (
+            self._taskDraft.itemsChanged,
+            self._taskDraft.itemsCleared,
+        ):
+            signal.connect(self._emitDraft)
+
         self._emitKeepAlive()
+        self._emitPairRequest()
         self._emitCategoryState()
         self._emitSettings()
         self._emitTasks()
         self._emitTaskProgress()
+        self._emitDraft()
+
+        for packId, names in self._packStates.items():
+            for name in names:
+                self._emitPackState(packId, name)
 
     def _emitKeepAlive(self, *_args):
         self._flows.emit("keepAlive", self.keepAlive())
+
+    def _emitNotice(self, kind: str, **fields):
+        self._flows.emit("notice", json.dumps({"kind": kind, **fields}, ensure_ascii=False))
+
+    def _onTaskCompleted(self, task):
+        category = self._categoryService.categoryById(self._categoryService.categoryOf(task))
+        self._emitNotice("taskCompleted", taskId=task.taskId, name=task.name,
+                         path=str(task.outputPath), folder=str(task.outputFolder),
+                         icon=category.icon if category else "DOCUMENT")
+
+    def _onTaskFailed(self, task):
+        error = task.lastError
+        self._emitNotice("taskFailed", taskId=task.taskId, name=task.name,
+                         **(error.toDict() if error else {"message": "", "params": {}}))
+
+    def _onDiskSpaceInsufficient(self, free: int, needed: int):
+        self._emitNotice("diskSpace", free=free, needed=needed)
+
+    def _onBrowserDraft(self, tasks):
+        self._taskDraft.addParsedTasks(tasks)
+        self._emitNotice("draftTaken", count=len(tasks))
+
+    def _onExtensionUpdated(self, version: str):
+        self._emitNotice("extensionUpdated", version=version)
 
     def _emitSettings(self, *_args):
         self._flows.emit("settings", self.settings())
@@ -148,6 +192,9 @@ class Engine:
 
     def _emitTaskProgress(self, *_args):
         self._flows.emit("taskProgress", self.taskProgress())
+
+    def _emitDraft(self, *_args):
+        self._flows.emit("draftState", self.draft())
 
     def _loadPacks(self, services):
         import importlib
@@ -185,9 +232,15 @@ class Engine:
 
                 try:
                     adapter = importlib.import_module(f"{manifest.name}.android")
-                    if hasattr(adapter, 'init'):
-                        adapter.init(pack)
+                    declared = adapter.init(pack) if hasattr(adapter, 'init') else {}
                     self._packAdapters[pack.packId] = adapter
+                    for name, signal in declared.items():
+                        if not hasattr(adapter, name):
+                            logger.warning("FeaturePack {} 声明的状态 {} 没有对应投影函数",
+                                           manifest.name, name)
+                            continue
+                        signal.connect(partial(self._emitPackState, pack.packId, name))
+                        self._packStates.setdefault(pack.packId, []).append(name)
                 except ImportError:
                     pass
 
@@ -205,6 +258,7 @@ class Engine:
             "canEdit": task.canEdit,
             "categoryId": task.category or "",
             "outputPath": str(task.outputPath),
+            "outputFolder": str(task.outputFolder),
             "hasOutputFile": task.hasOutputFile,
             "name": task.name,
             "url": task.url,
@@ -255,6 +309,18 @@ class Engine:
         if task:
             self._taskService.start(task)
 
+    def pauseAll(self):
+        from app.models.task import TaskStatus
+        for task in list(self._taskService.tasks):
+            if task.status == TaskStatus.RUNNING and task.canPause:
+                self._taskService.pause(task)
+
+    def resumeAll(self):
+        from app.models.task import TaskStatus
+        for task in list(self._taskService.tasks):
+            if task.status == TaskStatus.PAUSED:
+                self._taskService.start(task)
+
     def stopTask(self, taskId: str):
         task = self._taskService.taskById(taskId)
         if task is None:
@@ -278,7 +344,8 @@ class Engine:
         if task is None:
             return "{}"
         fields = self._allFields(task)
-        fields["canRename"] = task.canEdit and task.status.name not in {"RUNNING", "COMPLETED"} and fields["received"] == 0
+        fields["canRename"] = (task.canEdit and task.status.name not in {"RUNNING", "COMPLETED"}
+                               and fields["received"] == 0)
         fields["outputFolder"] = str(task.outputFolder)
         fields["files"] = [
             {
@@ -296,25 +363,22 @@ class Engine:
 
     def setTaskName(self, taskId: str, name: str):
         task = self._taskService.taskById(taskId)
-        if task is None or not task.canEdit or task.status.name in {"RUNNING", "COMPLETED"} or task.currentSnapshot()[2] > 0:
-            raise ValueError("Only tasks without downloaded data can be renamed")
+        if task is None:
+            return
         task.setName(name.strip())
         self._taskService.flush()
 
     def setTaskSelection(self, taskId: str, indexes: str):
         task = self._taskService.taskById(taskId)
         if task is None:
-            raise ValueError("Task no longer exists")
+            return
         selected = {int(i) for i in indexes.split(",") if i}
-        if not selected or not selected.issubset({f.index for f in task.files or []}):
-            raise ValueError("Select at least one existing file")
         self._taskService.updateSelection(task, selected)
 
     def taskOptions(self, taskId: str) -> str:
-        from app.models.task import TaskStatus
         task = self._taskService.taskById(taskId)
-        if task is None or not task.canEdit or task.status == TaskStatus.COMPLETED:
-            raise ValueError("This task cannot be edited")
+        if task is None:
+            raise ValueError("Task no longer exists")
         adapter = self._packAdapters.get(task.packId)
         fields = getattr(adapter, "editFields", None)
         result = {"outputFolder": str(task.outputFolder), "packId": task.packId or ""}
@@ -323,11 +387,11 @@ class Engine:
         return json.dumps(result, ensure_ascii=False)
 
     def applyTaskEdit(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
-        from app.models.task import TaskOptions, TaskStatus
+        from app.models.task import TaskOptions
         parsed = json.loads(values)
         task = self._taskService.taskById(taskId)
-        if task is None or not task.canEdit or task.status == TaskStatus.COMPLETED:
-            raise ValueError("This task cannot be edited")
+        if task is None:
+            raise ValueError("Task no longer exists")
 
         current = json.loads(self.taskOptions(taskId))
         current.pop("packId", None)
@@ -366,8 +430,6 @@ class Engine:
                            "categories": [asdict(c) for c in self._categoryService.categories()]}, ensure_ascii=False)
 
     def setTaskCategory(self, taskIds: str, categoryId: str):
-        if categoryId and self._categoryService.categoryById(categoryId) is None:
-            raise ValueError("Category no longer exists")
         for taskId in json.loads(taskIds):
             task = self._taskService.taskById(taskId)
             if task is not None:
@@ -387,34 +449,23 @@ class Engine:
         from app.config.cfg import currentHeaders
 
         nextUrls = [u.strip() for u in urls.splitlines() if u.strip()]
-        self._draftErrors = {url: error for url, error in self._draftErrors.items() if url in nextUrls}
-        self._taskDraft.setBaseOptions({"headers": currentHeaders()})
+        self._draftOptions["headers"] = currentHeaders()
+        self._taskDraft.setBaseOptions(self._draftOptions)
         self._taskDraft.setUrls(nextUrls)
-
-    def _draftDestination(self, task):
-        categoryId = task.category
-        if cfg.isCategoryEnabled.value and categoryId is None:
-            categoryId = self._categoryService.categoryOf(task)
-        folder = str(task.outputFolder)
-        if cfg.isCategoryEnabled.value and categoryId and task.outputFolder == Path(cfg.downloadFolder.value):
-            folder = self._categoryService.folderOf(categoryId) or folder
-        return categoryId or "", folder
 
     def draft(self) -> str:
         result = []
-        for url in self._taskDraft.urls():
-            task = self._taskDraft.taskByUrl(url)
-            error = self._draftErrors.get(url)
-            categoryId, targetFolder = self._draftDestination(task) if task else ("", "")
+        for item in self._taskDraft.items():
+            task = item.task
+            categoryId, _ = self._categoryService.destinationOf(task) if task else (None, "")
             adapter = self._packAdapters.get(task.packId) if task else None
             result.append({
-                "url": url,
-                "isParsing": task is None and error is None,
+                "url": item.url,
+                "isParsing": task is None and item.error is None,
                 "name": "" if task is None else task.name,
                 "categoryChoice": task.category if task else None,
-                "categoryId": categoryId,
+                "categoryId": categoryId or "",
                 "outputFolder": str(task.outputFolder) if task else "",
-                "targetFolder": targetFolder,
                 "fileSize": 0 if task is None else task.fileSize,
                 "files": [] if task is None or not task.files else [
                     {
@@ -425,76 +476,81 @@ class Engine:
                     }
                     for f in task.files
                 ],
-                "error": error.toDict() if error else None,
+                "error": item.error.toDict() if item.error else None,
                 "canRenameFiles": hasattr(adapter, "setFileName"),
                 "packId": task.packId if task else "",
                 "packFields": self._adapterFields(task, 'draftFields'),
             })
-        return json.dumps(result, ensure_ascii=False)
+        return json.dumps({
+            "items": result,
+            "outputFolder": self._draftOptions.get("outputFolder", ""),
+            "subworkerCount": self._draftOptions.get("subworkerCount", cfg.preBlockNum.value),
+        }, ensure_ascii=False)
+
+    def setDraftOutputFolder(self, folder):
+        folder = str(folder)
+        if self._draftOptions.get("outputFolder") == folder:
+            return
+        self._draftOptions["outputFolder"] = folder
+        self._taskDraft.setBaseOptions(self._draftOptions)
 
     def setDraft(self, url: str, action: str, *args):
-        task = self._taskDraft.taskByUrl(url)
-        if not task:
-            raise ValueError("Draft is no longer available")
         if action == "setCategory":
-            categoryId = None if bool(args[1]) else str(args[0])
-            if categoryId and self._categoryService.categoryById(categoryId) is None:
-                raise ValueError("Category no longer exists")
-            self._taskDraft.setUrlCategory(url, categoryId)
-            task.category = categoryId
+            self._taskDraft.setUrlCategory(url, args[0])
             return
-        if action == "setOutputFolder":
-            folder = Path(str(args[0]).strip())
-            if not folder.is_absolute():
-                raise ValueError("Output folder must be an absolute path")
-            task.setOptions({"outputFolder": str(folder)})
-            return
-        if action == "setName":
-            if not str(args[0]).strip():
-                raise ValueError("Name cannot be empty")
-            task.setName(str(args[0]).strip())
-            return
-        if action == "setSelection":
-            indexes = [int(i) for i in str(args[0]).split(",") if i]
-            if not indexes:
-                raise ValueError("Select at least one file")
-            task.setSelection(indexes)
-            return
-        adapter = self._packAdapters.get(task.packId)
-        fn = getattr(adapter, action, None) if adapter else None
-        if fn:
-            fn(task, *args)
-        else:
-            raise ValueError("This draft does not support the requested operation")
+
+        def mutate(task):
+            if action == "setOutputFolder":
+                task.setOptions({"outputFolder": str(Path(str(args[0]).strip()))})
+            elif action == "setName":
+                task.setName(str(args[0]).strip())
+            elif action == "setSelection":
+                task.setSelection([int(i) for i in str(args[0]).split(",") if i])
+            else:
+                adapter = self._packAdapters.get(task.packId)
+                fn = getattr(adapter, action, None) if adapter else None
+                if fn:
+                    fn(task, *args)
+
+        self._taskDraft.update(url, mutate)
 
     def probeDraft(self, url: str, kind: str):
-        task = self._taskDraft.taskByUrl(url)
-        if task is None:
-            raise ValueError("Draft is no longer available")
-        adapter = self._packAdapters.get(task.packId)
-        fn = getattr(adapter, "probe", None) if adapter else None
-        if fn is None:
-            raise ValueError("Unsupported draft probe")
+        def probe(task):
+            adapter = self._packAdapters.get(task.packId)
+            fn = getattr(adapter, "probe", None) if adapter else None
+            if fn is None:
+                return
 
-        async def run():
-            await asyncio.to_thread(fn, task, url, kind)
+            async def run():
+                await asyncio.to_thread(fn, task, url, kind)
 
-        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+            asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+
+        self._taskDraft.update(url, probe)
 
     def draftPreview(self, url: str) -> str:
         task = self._taskDraft.taskByUrl(url)
         if task is None:
-            raise ValueError("Draft is no longer available")
+            return '{"sheets": []}'
         adapter = self._packAdapters.get(task.packId)
         if adapter is None or not hasattr(adapter, "probePreview"):
             return '{"sheets": []}'
         result = asyncio.run_coroutine_threadsafe(adapter.probePreview(task), self._loop).result()
         return json.dumps(result, ensure_ascii=False)
 
+    def setDraftSubworkerCount(self, count):
+        count = int(count)
+        if self._draftOptions.get("subworkerCount") == count:
+            return
+        self._draftOptions["subworkerCount"] = count
+        self._taskDraft.setBaseOptions(self._draftOptions)
+
     def confirmDraft(self, autoStart=True):
         async def confirm():
+            if not self._taskDraft.canConfirm():
+                return
             self._taskDraft.confirm(autoStart=autoStart)
-            self._draftErrors.clear()
+            self._draftOptions.clear()
 
         # Probe completion and confirmation must not mutate the same Task concurrently.
         asyncio.run_coroutine_threadsafe(confirm(), self._loop).result()
@@ -502,12 +558,9 @@ class Engine:
     def clearDraft(self):
         async def clear():
             self._taskDraft.clear()
-            self._draftErrors.clear()
+            self._draftOptions.clear()
 
         asyncio.run_coroutine_threadsafe(clear(), self._loop).result()
-
-    def _onParseFailed(self, url, error):
-        self._draftErrors[url] = error
 
     # ---- Settings ----
 
@@ -565,7 +618,7 @@ class Engine:
     def setIdentityOrder(self, index: int, target: int):
         presets = list(cfg.identityPresets.value)
         if not (0 <= index < len(presets) and 0 <= target < len(presets)):
-            raise ValueError("Identity preset no longer exists")
+            return
         presets.insert(target, presets.pop(index))
         self.setSetting("identityPresets", presets)
 
@@ -575,7 +628,7 @@ class Engine:
     def updateIdentityPreset(self, index: int, presetJson: str):
         presets = list(cfg.identityPresets.value)
         if not 0 <= index < len(presets):
-            raise ValueError("Identity preset no longer exists")
+            return
         presets[index] = json.loads(presetJson)
         self.setSetting("identityPresets", presets)
 
@@ -591,7 +644,7 @@ class Engine:
     def updateHeadersPreset(self, index: int, presetJson: str):
         presets = list(cfg.headersPresets.value)
         if not 0 <= index < len(presets):
-            raise ValueError("Headers preset no longer exists")
+            return
         presets[index] = json.loads(presetJson)
         self.setSetting("headersPresets", presets)
 
@@ -665,7 +718,7 @@ class Engine:
             self._browserService.approvePair(pair["session"], requestId)
         else:
             self._browserService.rejectPair(pair["session"], requestId)
-        self._emitKeepAlive()
+        self._emitPairRequest()
 
     def extractBrowserExtension(self, crxPath: str, folder: str) -> str:
         crxData = Path(crxPath).read_bytes()
@@ -686,16 +739,16 @@ class Engine:
 
     def _onBrowserPairRequested(self, request: dict):
         self._pendingPair = request
-        self._emitKeepAlive()
+        self._emitPairRequest()
+
+    def _emitPairRequest(self, *_args):
+        self._flows.emit("pairRequest", json.dumps(self._pairFields(), ensure_ascii=False))
 
     def _pairFields(self):
         if self._pendingPair is None:
             return None
-        return {
-            "requestId": self._pendingPair["requestId"],
-            "clientKind": self._pendingPair["clientKind"],
-            "extensionVersion": self._pendingPair["extensionVersion"],
-        }
+        return {key: self._pendingPair[key] for key in
+                ("requestId", "clientKind", "extensionVersion", "peerAddress")}
 
     def _onAria2RpcPortChanged(self, _port):
         if cfg.isAria2RpcEnabled.value:
@@ -712,8 +765,6 @@ class Engine:
     def keepAlive(self) -> str:
         from app.models.task import TaskStatus
 
-        pair = self._pairFields()
-
         running = [t for t in self._taskService.tasks
                    if t.status in (TaskStatus.RUNNING, TaskStatus.WAITING)]
         if running:
@@ -723,14 +774,16 @@ class Engine:
                 "count": len(running),
                 "progress": sum(s[0] for s in snapshots) / len(running),
                 "speed": sum(s[1] for s in snapshots),
-                "pair": pair,
             })
 
         if self._aria2RpcServer.isRunning or self._browserService.boundPort:
-            return json.dumps({"reason": "serving", "pair": pair})
+            return json.dumps({"reason": "serving"})
         return json.dumps({"reason": ""})
 
     # ---- Pack Adapter ----
+
+    def _emitPackState(self, packId: str, name: str, *_args):
+        self._flows.emit(f"pack:{packId}:{name}", self.packState(packId, name))
 
     def packState(self, packId: str, name: str) -> str:
         adapter = self._packAdapters.get(packId)
@@ -740,8 +793,11 @@ class Engine:
     def requestPack(self, packId: str, action: str, *args):
         adapter = self._packAdapters.get(packId)
         fn = getattr(adapter, action, None) if adapter else None
-        if fn:
-            fn(*args)
+        if fn is None:
+            return
+        fn(*args)
+        for name in self._packStates.get(packId, ()):
+            self._emitPackState(packId, name)
 
     def packInfos(self) -> str:
         result = []

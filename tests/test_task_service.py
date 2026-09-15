@@ -56,11 +56,8 @@ class StubCoroutineRunner:
 
 
 class StubCategoryService:
-    def categoryOf(self, task):
-        return "video"
-
-    def folderOf(self, categoryId):
-        return None
+    def destinationOf(self, task):
+        return task.category, task.outputFolder
 
 
 class StubSpeedMeter:

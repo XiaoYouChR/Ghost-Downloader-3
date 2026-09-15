@@ -188,13 +188,7 @@ class TaskService:
     def add(self, task: Task, autoStart=True) -> None:
         if task.taskId in self._store.tasks:
             return
-        if cfg.isCategoryEnabled.value:
-            if task.category is None:
-                task.category = self._categoryService.categoryOf(task)
-            if task.category and task.outputFolder == Path(cfg.downloadFolder.value):
-                folder = self._categoryService.folderOf(task.category)
-                if folder:
-                    task.outputFolder = Path(folder)
+        task.category, task.outputFolder = self._categoryService.destinationOf(task)
         self._deduplicateOutput(task)
         self._store.add(task)
         self._flushSoon()

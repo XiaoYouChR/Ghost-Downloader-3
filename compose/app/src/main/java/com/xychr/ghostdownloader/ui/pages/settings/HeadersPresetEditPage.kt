@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.notice.LocalSnackbar
 import com.xychr.ghostdownloader.ui.components.settings.HeaderEntry
 import com.xychr.ghostdownloader.ui.components.settings.HeaderImportError
 import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
@@ -89,7 +90,7 @@ fun HeadersForm(initial: HeadersPreset, defaults: Map<String, String>, isCreatin
     var focusId by remember { mutableIntStateOf(-1) }
     val nameFocus = remember { FocusRequester() }
     val textFocus = remember { FocusRequester() }
-    val snackbar = remember { SnackbarHostState() }
+    val snackbar = LocalSnackbar.current
     val scope = rememberCoroutineScope()
     val parsed = remember(raw) { parseHeaderText(raw) }
     val entries = if (isTextMode) parsed.entries else lines.map { HeaderEntry(it.name, it.value) }
@@ -121,7 +122,7 @@ fun HeadersForm(initial: HeadersPreset, defaults: Map<String, String>, isCreatin
             snackbar.currentSnackbarData?.dismiss()
             onSave(HeadersPreset(name.trim(), entries.associate { it.name.trim() to it.value.trim() }))
         },
-        onBack = onBack, modifier = modifier, snackbarHost = { SnackbarHost(snackbar) },
+        onBack = onBack, modifier = modifier,
         actions = {
             Box {
                 IconButton(onClick = { isMenuOpen = true }, enabled = !state.isSaving) {

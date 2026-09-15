@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.heading
@@ -208,6 +209,38 @@ fun SliderSettingRow(
             steps = if (span <= 20) span - 1 else 0,
         )
     }
+}
+
+/**
+ * 分段卡片里的单选行。和 [RadioRow] 的区别是容器：这个进 [SettingSection]（有底色、有按压形变），
+ * 那个进 AlertDialog（紧凑、无底色）。
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun RadioSettingRow(
+    title: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+) {
+    val view = LocalView.current
+    ListItem(
+        content = { Text(title) },
+        supportingContent = subtitle?.let { { Text(it) } },
+        trailingContent = { RadioButton(selected = isSelected, onClick = null) },
+        shapes = ListItemDefaults.shapes(pressedShape = MaterialTheme.shapes.extraLarge),
+        colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        // 整行是一个单选节点，内部 RadioButton 不再单独可达
+        modifier = modifier.semantics {
+            role = Role.RadioButton
+            selected = isSelected
+        },
+        onClick = {
+            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            onClick()
+        },
+    )
 }
 
 @Composable

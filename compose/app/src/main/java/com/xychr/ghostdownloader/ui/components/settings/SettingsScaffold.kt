@@ -47,7 +47,6 @@ fun SettingsScaffold(
     modifier: Modifier = Modifier,
     isEditing: Boolean = false,
     isBusy: Boolean = false,
-    snackbarHost: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -55,7 +54,6 @@ fun SettingsScaffold(
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.surface,
-        snackbarHost = snackbarHost,
         topBar = {
             if (isEditing) {
                 TopAppBar(

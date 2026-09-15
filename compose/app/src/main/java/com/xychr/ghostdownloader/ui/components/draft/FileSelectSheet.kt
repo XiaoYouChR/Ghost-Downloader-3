@@ -22,6 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.model.DraftFile
+import com.xychr.ghostdownloader.ui.components.SelectableFile
+import com.xychr.ghostdownloader.ui.components.SelectableFileList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +34,10 @@ fun FileSelectSheet(
     onDismiss: () -> Unit,
 ) {
     var editedFiles by remember { mutableStateOf(files) }
+    // editedFiles 的 isSelected 在编辑期间保持陈旧，应用时才由 selectedIndexes 落回去
+    var selectedIndexes by remember {
+        mutableStateOf(files.filter { it.isSelected }.map { it.index }.toSet())
+    }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxHeight(0.85f)) {
             Row(
@@ -44,13 +50,25 @@ fun FileSelectSheet(
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    stringResource(R.string.draft_files_selected, editedFiles.count { it.isSelected }, editedFiles.size),
+                    stringResource(R.string.draft_files_selected, selectedIndexes.size, editedFiles.size),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            FileSelect(editedFiles, canRename, onChange = { editedFiles = it }, modifier = Modifier.weight(1f))
+            SelectableFileList(
+                files = remember(editedFiles) { editedFiles.map { SelectableFile(it.index, it.path, it.size) } },
+                selectedIndexes = selectedIndexes,
+                onSelectionChange = { selectedIndexes = it },
+                onRename = if (canRename) ({ index, path ->
+                    editedFiles = editedFiles.map { if (it.index == index) it.copy(path = path) else it }
+                }) else null,
+                modifier = Modifier.weight(1f),
+            )
             Button(
-                onClick = { onApply(editedFiles); onDismiss() },
+                onClick = {
+                    onApply(editedFiles.map { it.copy(isSelected = it.index in selectedIndexes) })
+                    onDismiss()
+                },
+                enabled = selectedIndexes.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
             ) {
                 Text(stringResource(R.string.draft_apply))

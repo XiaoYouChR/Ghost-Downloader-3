@@ -2,26 +2,25 @@ package com.xychr.ghostdownloader.ui.pages
 
 import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.model.*
+import com.xychr.ghostdownloader.ui.components.SelectableFile
+import com.xychr.ghostdownloader.ui.components.SelectableFileList
 import com.xychr.ghostdownloader.ui.components.task.*
-import com.xychr.ghostdownloader.ui.util.*
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.ErrorText
+import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.model.Category
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +33,7 @@ data class TaskFilesState(
     val isSaving: Boolean = false,
     val isDone: Boolean = false,
     val needsDownload: Boolean = false,
-    val error: String? = null,
+    val error: TaskError? = null,
 ) {
     val hasChanges get() = selected != initial
 }
@@ -56,7 +55,7 @@ class TaskFilesViewModel(
                 val indexes = detail.files.filter { it.isSelected }.map { it.index }.toSet()
                 mutableState.value = TaskFilesState(detail, indexes, indexes)
             } catch (error: Exception) {
-                mutableState.value = mutableState.value.copy(error = error.message)
+                mutableState.value = mutableState.value.copy(error = error.toTaskError())
             }
         }
     }
@@ -86,7 +85,7 @@ class TaskFilesViewModel(
                 send(before.selected)
                 mutableState.value = state.value.copy(isSaving = false, isDone = true)
             } catch (error: Exception) {
-                mutableState.value = state.value.copy(isSaving = false, error = error.message)
+                mutableState.value = state.value.copy(isSaving = false, error = error.toTaskError())
             }
         }
     }
@@ -140,40 +139,28 @@ fun TaskFilesEditor(
                 }
             })
     }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            item {
-                if (state.isSaving) LinearProgressIndicator(Modifier.fillMaxWidth())
-                state.error?.let { Text(it, Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error) }
-                if (state.detail == null) {
-                    if (state.error == null) CircularProgressIndicator(Modifier.padding(16.dp))
-                    else TextButton(onClick = onRetry) { Text(stringResource(R.string.task_retry)) }
-                }
-            }
-            state.detail?.let { detail ->
-                item {
-                    Text(detail.name, Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
-                    Text(stringResource(R.string.task_selected_files, state.selected.size, detail.files.size), Modifier.padding(horizontal = 16.dp))
-                    Row {
-                        TextButton(onClick = { onSelection(detail.files.map { it.index }.toSet()) }, enabled = !state.isSaving) {
-                            Text(stringResource(R.string.task_select_all))
-                        }
-                        TextButton(onClick = { onSelection(detail.files.map { it.index }.toSet() - state.selected) }, enabled = !state.isSaving) {
-                            Text(stringResource(R.string.task_select_invert))
-                        }
-                    }
-                    if (categories.isEnabled) FileCategoryMenu(detail.files, categories.categories,
-                        onSelection, isEnabled = !state.isSaving)
-                }
-                items(detail.files, key = { it.index }) { file ->
-                    val isSelected = file.index in state.selected
-                    ListItem(
-                        supportingContent = { Text(formatSize(file.size)) },
-                        leadingContent = { Checkbox(isSelected, onCheckedChange = null) },
-                        modifier = Modifier.toggleable(isSelected, enabled = !state.isSaving, role = Role.Checkbox) {
-                            onSelection(if (it) state.selected + file.index else state.selected - file.index)
-                        },
-                    ) { Text(file.path) }
-                }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            if (state.isSaving) LinearProgressIndicator(Modifier.fillMaxWidth())
+            ErrorText(state.error, Modifier.padding(16.dp))
+            val detail = state.detail
+            if (detail == null) {
+                if (state.error == null) CircularProgressIndicator(Modifier.padding(16.dp))
+                else TextButton(onClick = onRetry) { Text(stringResource(R.string.task_retry)) }
+            } else {
+                Text(detail.name, Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.task_selected_files, state.selected.size, detail.files.size),
+                    Modifier.padding(horizontal = 16.dp))
+                if (categories.isEnabled) FileCategoryMenu(detail.files, categories.categories,
+                    onSelection, isEnabled = !state.isSaving)
+                SelectableFileList(
+                    files = remember(detail.files) {
+                        detail.files.map { SelectableFile(it.index, it.path, it.size) }
+                    },
+                    selectedIndexes = state.selected,
+                    onSelectionChange = onSelection,
+                    isEnabled = !state.isSaving,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }

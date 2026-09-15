@@ -1,8 +1,5 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import android.net.Uri
-import android.os.Environment
-import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.ColumnScope
@@ -24,6 +21,8 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SliderSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.navigation.*
+import com.xychr.ghostdownloader.ui.platform.defaultDownloadFolder
+import com.xychr.ghostdownloader.ui.platform.toFolderPath
 
 @Composable
 fun DownloadPage(
@@ -126,14 +125,3 @@ private fun ColumnScope.DownloadRows(
 
 }
 
-private fun defaultDownloadFolder(): String =
-    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath
-
-// SAF content:// → 裸路径；引擎走 java.io.File，写盘靠 MANAGE_EXTERNAL_STORAGE。
-fun Uri.toFolderPath(): String {
-    val documentId = DocumentsContract.getTreeDocumentId(this)
-    val volume = documentId.substringBefore(':')
-    val relative = documentId.substringAfter(':', "")
-    val base = if (volume == "primary") "/storage/emulated/0" else "/storage/$volume"
-    return if (relative.isEmpty()) base else "$base/$relative"
-}

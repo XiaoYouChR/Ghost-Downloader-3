@@ -27,6 +27,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.GhostDownloader.Splash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -47,6 +48,10 @@
 
         <receiver
             android:name=".service.BrowserPairingReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".service.KeepAliveActionReceiver"
             android:exported="false" />
 
         <!-- 把下载好的文件交给外部应用打开，file:// URI 从 API 24 起会抛 FileUriExposedException -->

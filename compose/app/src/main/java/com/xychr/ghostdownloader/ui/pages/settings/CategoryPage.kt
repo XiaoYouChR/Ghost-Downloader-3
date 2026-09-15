@@ -18,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.ErrorText
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
@@ -47,9 +48,8 @@ fun CategoryPage(
 
     SettingsScaffold(stringResource(R.string.category_manage), onBack) {
         error?.let {
-            Text(it)
+            ErrorText(it)
         }
-        Text(stringResource(R.string.task_category_rules_hint))
         SettingSection {
             SwitchSettingRow(
                 title = stringResource(R.string.category_enabled),

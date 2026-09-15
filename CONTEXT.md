@@ -75,6 +75,18 @@ _Avoid_: stage、phase、action
 HTTP 或 FTP Step 内的一个分片传输单元，负责一个 byte-range 区间。
 _Avoid_: worker、thread、chunk
 
+### 用户告知
+
+**Notice**:
+一次性的、需要告知用户的事件。五种：任务完成、任务失败、磁盘空间不足、浏览器推来草稿、扩展已更新。
+发出即完成，不可撤回也不需要消解。
+_Avoid_: message、alert、event
+
+**Pair Request**:
+待决的浏览器配对请求，有始有终——用户批准或拒绝后消解。同时只有零或一个。
+携带来源地址、客户端种类和扩展版本，供用户判断是否是自己刚发起的配对。
+_Avoid_: 与 Notice 混淆（Notice 发出即完成，Pair Request 会被消解）
+
 ### 应用角色
 
 **Task Service**:

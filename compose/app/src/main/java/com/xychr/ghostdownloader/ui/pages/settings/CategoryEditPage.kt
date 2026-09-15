@@ -1,5 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
+import com.xychr.ghostdownloader.ui.platform.toFolderPath
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth

@@ -15,6 +15,10 @@ class TaskViewModel : ViewModel() {
     val categories = EngineRepository.observe<CategoryState>("categoryState")
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CategoryState())
 
+    /**
+     * 不保证引用稳定：进度每秒推一次，每次都产出新列表和新的运行中 TaskUiState 实例。
+     * 下游拿 tasks 做 remember 只能挡住交互类重组（勾选、展开），挡不住进度 tick。
+     */
     val state: StateFlow<TaskListState> = EngineRepository.observe<List<TaskUiState>>("tasks")
         .combine(EngineRepository.observe<Map<String, TaskSnapshot>>("taskProgress")) { tasks, progress ->
             TaskListState(tasks.map { task ->
@@ -42,10 +46,14 @@ class TaskViewModel : ViewModel() {
         request("redownload", taskId)
     }
 
-    suspend fun requestBatch(action: TaskBatchAction, taskIds: List<String>): TaskBatchResult {
+    /**
+     * scopeIds 是作用域而非目标——目标由这里按最新快照算，调用方不要自己筛。
+     * 作用域里没被选中的任务计入 skipped，让调用方能如实报告。
+     */
+    suspend fun requestBatch(action: TaskBatchAction, scopeIds: List<String>): TaskBatchResult {
         val snapshot = state.value
-        if (snapshot.readState != TaskReadState.READY) return TaskBatchResult(0, 0, taskIds.size)
-        val targets = buildTaskBatchTargets(snapshot.tasks.filter { it.id in taskIds })
+        if (snapshot.readState != TaskReadState.READY) return TaskBatchResult(0, 0, scopeIds.size)
+        val targets = buildTaskBatchTargets(snapshot.tasks.filter { it.id in scopeIds })
         val ids = if (action == TaskBatchAction.START) targets.startIds else targets.pauseIds
         var submitted = 0
         var failed = 0
@@ -59,7 +67,7 @@ class TaskViewModel : ViewModel() {
                 failed++
             }
         }
-        return TaskBatchResult(submitted, failed, taskIds.size - ids.size)
+        return TaskBatchResult(submitted, failed, scopeIds.size - ids.size)
     }
 
     fun removeEach(taskIds: List<String>, shouldDeleteFiles: Boolean) =

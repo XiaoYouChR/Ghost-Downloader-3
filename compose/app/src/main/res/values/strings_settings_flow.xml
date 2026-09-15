@@ -10,7 +10,6 @@
     <string name="settings_move_up">上移</string>
     <string name="settings_move_down">下移</string>
     <string name="settings_undo">撤销</string>
-    <string name="settings_apply_failed">操作未完成。请刷新确认当前设置，再重试。</string>
     <string name="identity_rules_summary">%1$d 条规则，%2$d 条已启用</string>
     <string name="identity_headers_summary">当前使用：%1$s · %2$d 个请求头</string>
     <string name="identity_rules_empty">还没有站点规则。添加后可为特定域名指定客户端身份。</string>

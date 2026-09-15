@@ -15,6 +15,13 @@ data class DraftFile(
 data class DraftOption(val key: String = "", val label: String = "")
 
 @Serializable
+data class DraftProjection(
+    val items: List<DraftItem> = emptyList(),
+    val outputFolder: String = "",
+    val subworkerCount: Int = 0,
+)
+
+@Serializable
 data class DraftItem(
     val url: String = "",
     val isParsing: Boolean = true,
@@ -22,7 +29,6 @@ data class DraftItem(
     val categoryChoice: String? = null,
     val categoryId: String = "",
     val outputFolder: String = "",
-    val targetFolder: String = "",
     val fileSize: Long = 0,
     val files: List<DraftFile> = emptyList(),
     val error: TaskError? = null,

@@ -71,7 +71,6 @@ fun SettingsEditor(
     canSubmitUnchanged: Boolean = false,
     onInvalid: () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
-    snackbarHost: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var shouldConfirmDiscard by rememberSaveable { mutableStateOf(false) }
@@ -91,7 +90,6 @@ fun SettingsEditor(
         modifier = modifier,
         isEditing = true,
         isBusy = state.isSaving,
-        snackbarHost = snackbarHost,
         actions = {
             actions()
             TextButton(

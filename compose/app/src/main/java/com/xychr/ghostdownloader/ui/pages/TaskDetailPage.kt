@@ -38,8 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -62,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.notice.LocalSnackbar
 import com.xychr.ghostdownloader.ui.navigation.Route
 import com.xychr.ghostdownloader.ui.navigation.TaskFilesRoute
 import com.xychr.ghostdownloader.ui.navigation.TaskEditRoute
@@ -71,6 +70,8 @@ import com.xychr.ghostdownloader.ui.util.formatSize
 import com.xychr.ghostdownloader.ui.util.formatSizeProgress
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import com.xychr.ghostdownloader.i18n.engineText
+import com.xychr.ghostdownloader.ui.components.ErrorText
+import com.xychr.ghostdownloader.i18n.toTaskError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -161,7 +162,7 @@ fun TaskDetailPage(
     val detail by viewModel.detail.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = LocalSnackbar.current
     var isDeleting by remember { mutableStateOf(false) }
     var isRenaming by remember { mutableStateOf(false) }
     var shouldRedownload by remember { mutableStateOf(false) }
@@ -196,7 +197,6 @@ fun TaskDetailPage(
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -275,7 +275,7 @@ fun TaskDetailPage(
                 } catch (failure: CancellationException) {
                     throw failure
                 } catch (failure: Exception) {
-                    snackbarHostState.showSnackbar(failure.message ?: categorySaveFailed)
+                    snackbarHostState.showSnackbar(context.engineText(failure))
                 }
             }
         },
@@ -500,7 +500,7 @@ private fun fileStatusText(file: TaskFile): String = when {
 private fun ErrorSection(error: TaskError) {
     SectionTitle(stringResource(R.string.task_detail_error))
     Text(
-        text = engineText(error.message, error.params),
+        text = engineText(error),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
     )
@@ -559,7 +559,7 @@ private fun DeleteTaskDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit
 private fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: suspend (String) -> Unit) {
     var text by remember { mutableStateOf(current) }
     var isSaving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<TaskError?>(null) }
     val scope = rememberCoroutineScope()
 
     AlertDialog(
@@ -574,7 +574,7 @@ private fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: susp
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            ErrorText(error)
             }
         },
         confirmButton = {
@@ -583,7 +583,7 @@ private fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: susp
                     isSaving = true
                     scope.launch {
                         try { onConfirm(text.trim()); onDismiss() }
-                        catch (failure: Exception) { error = failure.message }
+                        catch (failure: Exception) { error = failure.toTaskError() }
                         finally { isSaving = false }
                     }
                 },

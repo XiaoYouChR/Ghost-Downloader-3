@@ -3,6 +3,7 @@ import com.xychr.ghostdownloader.model.*
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.xychr.ghostdownloader.i18n.toTaskError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -13,52 +14,71 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import com.xychr.ghostdownloader.ui.util.isValidOutputFolder
 
 data class DraftState(
     val urls: String = "",
     val items: List<DraftItem> = emptyList(),
     val isWorking: Boolean = false,
-    val error: String? = null,
+    val error: TaskError? = null,
+    val globalFolder: String = "",
+    val subworkerCount: Int = 0,
 ) {
+    val isFolderValid: Boolean get() = isValidOutputFolder(globalFolder)
+
     val canConfirm: Boolean get() {
         val input = urls.lineSequence().map(String::trim).filter(String::isNotEmpty).distinct().toList()
-        return !isWorking && (items.any { it.error == null } || (input.isNotEmpty() && input != items.map { it.url }))
+        return !isWorking && isFolderValid && (items.any { it.error == null } || (input.isNotEmpty() && input != items.map { it.url }))
     }
 }
 
-data class DraftChange(val action: String, val arguments: List<Any>)
+data class DraftChange(val action: String, val arguments: List<Any?>)
 
 class DraftViewModel(
-    private val fetchItems: suspend () -> List<DraftItem>,
-    private val send: suspend (String, List<Any>) -> Unit,
+    private val send: suspend (String, List<Any?>) -> Unit,
+    draftFlow: Flow<DraftProjection>,
     categoriesFlow: Flow<CategoryState>,
 ) : ViewModel() {
-    val categories: StateFlow<CategoryState> = categoriesFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CategoryState())
+    val categories: StateFlow<CategoryState> = categoriesFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CategoryState())
     private val mutableState = MutableStateFlow(DraftState())
     val state: StateFlow<DraftState> = mutableState.asStateFlow()
-    private val writes = Mutex()
     private var inputJob: Job? = null
-    private var pollJob: Job? = null
     private var parsedUrls = ""
     private var hasLoaded = false
+    private var hasInitialFolder = false
 
-    init { refresh() }
+    init { viewModelScope.launch { draftFlow.collect(::onDraft) } }
+
+    private fun onDraft(projection: DraftProjection) {
+        val current = state.value
+        if (!hasLoaded && current.urls.isEmpty()) {
+            parsedUrls = projection.items.joinToString("\n") { it.url }
+            mutableState.value = current.copy(urls = parsedUrls)
+        }
+        hasLoaded = true
+        var next = state.value.copy(items = projection.items)
+        if (!hasInitialFolder && next.globalFolder.isEmpty()) {
+            val engineFolder = projection.outputFolder.ifEmpty {
+                projection.items.firstOrNull { it.error == null && !it.isParsing }?.outputFolder.orEmpty()
+            }
+            if (engineFolder.isNotEmpty()) {
+                hasInitialFolder = true
+                next = next.copy(globalFolder = engineFolder)
+            }
+        }
+        if (next.subworkerCount == 0 && projection.subworkerCount > 0) {
+            next = next.copy(subworkerCount = projection.subworkerCount)
+        }
+        mutableState.value = next
+    }
 
     fun setUrls(urls: String) {
         if (state.value.isWorking) return
         mutableState.value = state.value.copy(urls = urls)
         inputJob?.cancel()
-        inputJob = viewModelScope.launch {
-            delay(1000)
-            run { writes.withLock { withContext(NonCancellable) { parseInput() } } }
-            refresh()
-        }
+        inputJob = viewModelScope.launch { delay(1000); sendOptions(); parseInput() }
     }
 
     private suspend fun parseInput() {
@@ -66,131 +86,60 @@ class DraftViewModel(
         if (urls == parsedUrls) return
         send("parse", listOf(urls))
         parsedUrls = urls
-        load()
     }
 
-    private suspend fun load() {
-        val items = fetchItems()
-        if (!hasLoaded && state.value.urls.isEmpty()) {
-            parsedUrls = items.joinToString("\n") { it.url }
-            mutableState.value = state.value.copy(urls = parsedUrls)
-        }
-        hasLoaded = true
-        mutableState.value = state.value.copy(items = items)
+    private suspend fun sendOptions() {
+        val current = state.value
+        val folder = current.globalFolder.trim()
+        if (folder.isNotEmpty() && current.isFolderValid) send("setDraftOutputFolder", listOf(folder))
+        send("setDraftSubworkerCount", listOf(current.subworkerCount))
     }
 
-    fun refresh() {
-        if (pollJob?.isActive == true) return
-        pollJob = viewModelScope.launch {
-            do {
-                run { writes.withLock { load() } }
-                delay(500)
-            } while (isActive && state.value.items.any(DraftItem::isParsing))
-        }
-    }
+    fun setName(url: String, name: String) = viewModelScope.launch { update(url, listOf(DraftChange("setName", listOf(name)))) }
+    fun setOutputFolder(url: String, folder: String) = viewModelScope.launch { update(url, listOf(DraftChange("setOutputFolder", listOf(folder)))) }
 
-    fun setName(url: String, name: String) {
-        viewModelScope.launch { writes.withLock { send("setDraft", listOf(url, "setName", name)); load() } }
-    }
+    fun setGlobalFolder(folder: String) { mutableState.value = state.value.copy(globalFolder = folder) }
+    fun setSubworkerCount(count: Int) { mutableState.value = state.value.copy(subworkerCount = count) }
 
-    fun setOutputFolder(url: String, folder: String) {
-        viewModelScope.launch { writes.withLock { send("setDraft", listOf(url, "setOutputFolder", folder)); load() } }
-    }
+    suspend fun setCategory(url: String, choice: String?): Boolean = update(url, listOf(DraftChange("setCategory", listOf(choice))))
 
-    fun setGlobalOutputFolder(folder: String) {
-        viewModelScope.launch {
-            writes.withLock {
-                state.value.items.forEach { item ->
-                    if (item.error == null && !item.isParsing)
-                        send("setDraft", listOf(item.url, "setOutputFolder", folder))
-                }
-                load()
-            }
-        }
-    }
-
-    suspend fun setCategory(url: String, choice: String?): Boolean =
-        update(url, listOf(DraftChange("setCategory", listOf(choice.orEmpty(), choice == null))))
-
-    fun applyFiles(url: String, initial: List<DraftFile>, edited: List<DraftFile>) {
-        val changes = buildList {
-            if (edited.map { it.index to it.isSelected } != initial.map { it.index to it.isSelected })
-                add(DraftChange("setSelection", listOf(edited.filter { it.isSelected }.joinToString(",") { it.index.toString() })))
-            edited.forEach { file ->
-                if (file.path != initial.first { it.index == file.index }.path)
-                    add(DraftChange("setFileName", listOf(file.index, file.path.trim())))
-            }
-        }
+    fun updateFiles(url: String, initial: List<DraftFile>, edited: List<DraftFile>) {
+        val changes = fileChanges(initial, edited)
         if (changes.isEmpty()) return
-        viewModelScope.launch {
-            writes.withLock {
-                changes.forEach { change ->
-                    send("setDraft", listOf(url, change.action) + change.arguments)
-                }
-                load()
-            }
-        }
+        viewModelScope.launch { update(url, changes) }
     }
 
-    suspend fun update(url: String, changes: List<DraftChange>): Boolean = runWorking {
-        writes.withLock {
-            changes.forEach { change ->
-                send("setDraft", listOf(url, change.action) + change.arguments)
-            }
-            load()
-        }
-    }
+    private suspend fun update(url: String, changes: List<DraftChange>): Boolean = try {
+        changes.forEach { send("setDraft", listOf(url, it.action) + it.arguments) }
+        true
+    } catch (error: CancellationException) { throw error }
+    catch (error: Exception) { mutableState.value = state.value.copy(error = error.toTaskError()); false }
+    suspend fun sendPack(url: String, action: String, args: List<Any?>) { send(if (action == "probe") "probeDraft" else "setDraft", if (action == "probe") listOf(url) + args else listOf(url, action) + args) }
 
-    suspend fun sendPack(url: String, action: String, args: List<Any>) {
-        writes.withLock {
-            if (action == "probe")
-                send("probeDraft", listOf(url) + args)
-            else
-                send("setDraft", listOf(url, action) + args)
-            load()
-        }
-    }
+    suspend fun confirm(autoStart: Boolean = true): Boolean = runWorking { inputJob?.cancel(); sendOptions(); parseInput(); send("confirmDraft", listOf(autoStart)); stop() }
+    suspend fun cancel(): Boolean = runWorking { inputJob?.cancel(); send("clearDraft", emptyList()); stop() }
 
-    suspend fun confirm(autoStart: Boolean = true): Boolean = runWorking {
-        inputJob?.cancel()
-        writes.withLock {
-            parseInput()
-            load()
-            check(state.value.items.any { it.error == null }) { "No task to confirm" }
-            send("confirmDraft", listOf(autoStart))
-            stop()
-        }
-    }
-
-    suspend fun cancel(): Boolean = runWorking {
-        inputJob?.cancel()
-        writes.withLock {
-            send("clearDraft", emptyList())
-            stop()
-        }
-    }
-
-    private fun stop() {
-        pollJob?.cancel()
-        parsedUrls = ""
-        mutableState.value = DraftState(isWorking = true)
-    }
+    private fun stop() { parsedUrls = ""; hasInitialFolder = false; mutableState.value = DraftState(isWorking = true) }
 
     private suspend fun runWorking(block: suspend () -> Unit): Boolean {
         if (state.value.isWorking) return false
         mutableState.value = state.value.copy(isWorking = true, error = null)
-        return try { withContext(NonCancellable) { run(block) } } finally {
-            mutableState.value = state.value.copy(isWorking = false)
-        }
+        return try {
+            withContext(NonCancellable) { block() }
+            true
+        } catch (error: CancellationException) { throw error }
+        catch (error: Exception) { mutableState.value = state.value.copy(error = error.toTaskError()); false }
+        finally { mutableState.value = state.value.copy(isWorking = false) }
     }
+}
 
-    private suspend fun run(block: suspend () -> Unit): Boolean = try {
-        block()
-        true
-    } catch (error: CancellationException) {
-        throw error
-    } catch (error: Exception) {
-        mutableState.value = state.value.copy(error = error.message ?: error.toString())
-        false
+fun fileChanges(initial: List<DraftFile>, edited: List<DraftFile>): List<DraftChange> = buildList {
+    if (edited.map { it.index to it.isSelected } != initial.map { it.index to it.isSelected }) {
+        add(DraftChange("setSelection", listOf(edited.filter { it.isSelected }.joinToString(",") { it.index.toString() })))
+    }
+    val initialByIndex = initial.associateBy { it.index }
+    edited.forEach { file ->
+        val path = initialByIndex[file.index]?.path
+        if (path != null && file.path != path) add(DraftChange("setFileName", listOf(file.index, file.path.trim())))
     }
 }

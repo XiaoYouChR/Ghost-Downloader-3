@@ -2,9 +2,6 @@ package com.xychr.ghostdownloader
 
 import com.xychr.ghostdownloader.model.*
 import com.xychr.ghostdownloader.ui.components.draft.*
-import com.xychr.ghostdownloader.ui.navigation.DraftPart
-import com.xychr.ghostdownloader.ui.pages.buildChanges
-import com.xychr.ghostdownloader.ui.pages.buildEdits
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -19,18 +16,12 @@ class DraftStateTest {
         assertTrue(DraftState(urls = "one").canConfirm)
     }
 
-    @Test fun unchangedEditorDoesNotWriteEngine() {
-        val edit = buildEdits(DraftItem(name = "one", isParsing = false))
-        DraftPart.entries.forEach { assertTrue(buildChanges(edit, edit, it).isEmpty()) }
+    @Test fun invalidFolderBlocksConfirm() {
+        assertFalse(DraftState(urls = "one", globalFolder = "relative/path").canConfirm)
+        assertTrue(DraftState(urls = "one", globalFolder = "/absolute/path").canConfirm)
+        assertTrue(DraftState(urls = "one", globalFolder = "").canConfirm)
     }
 
-    @Test fun fileSelectionKeepsEngineIndexes() {
-        val initial = buildEdits(DraftItem(files = listOf(
-            DraftFile(index = 3, path = "a"), DraftFile(index = 17, path = "b"))))
-        val changed = initial.copy(files = initial.files.map { it.copy(isSelected = it.index == 17) })
-        assertEquals(listOf(DraftChange("setSelection", listOf("17"))), buildChanges(initial, changed, DraftPart.Files))
-        assertTrue(initial.files.all { it.isSelected })
-    }
 
     @Test fun previewUsesActualTimestampsAndClampsToLastFrame() {
         val preview = DraftPreview(listOf(

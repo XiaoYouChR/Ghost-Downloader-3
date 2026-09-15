@@ -15,23 +15,22 @@ class SelectionState {
     val selectedIds: List<String> get() = _selectedIds
     val count get() = _selectedIds.size
 
-    fun start() { isActive = true }
+    /** 长按某张卡片进入时带上它，从菜单进入时不带。 */
+    fun start(taskId: String? = null) {
+        isActive = true
+        if (taskId != null) _selectedIds.add(taskId)
+    }
 
     fun update(taskIds: List<String>) {
         val hadSelection = _selectedIds.isNotEmpty()
         _selectedIds.removeAll { it !in taskIds }
-        if (hadSelection && _selectedIds.isEmpty()) exit()
-    }
-
-    fun enter(taskId: String) {
-        isActive = true
-        _selectedIds.add(taskId)
+        if (hadSelection && _selectedIds.isEmpty()) clear()
     }
 
     fun toggle(taskId: String) {
         if (taskId in _selectedIds) _selectedIds.remove(taskId)
         else _selectedIds.add(taskId)
-        if (_selectedIds.isEmpty()) exit()
+        if (_selectedIds.isEmpty()) clear()
     }
 
     fun selectAll(visibleIds: List<String>) {
@@ -43,10 +42,10 @@ class SelectionState {
         val current = _selectedIds.toSet()
         _selectedIds.clear()
         _selectedIds.addAll(visibleIds.filter { it !in current })
-        if (_selectedIds.isEmpty()) exit()
+        if (_selectedIds.isEmpty()) clear()
     }
 
-    fun exit() {
+    fun clear() {
         isActive = false
         _selectedIds.clear()
     }

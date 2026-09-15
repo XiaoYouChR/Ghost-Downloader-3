@@ -1,16 +1,13 @@
 package com.xychr.ghostdownloader
 
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.packs.PackRegistry
-import com.xychr.ghostdownloader.service.CHANNEL_PAIR
-import com.xychr.ghostdownloader.service.CHANNEL_RUNNING
 import com.xychr.ghostdownloader.service.KeepAlive
+import com.xychr.ghostdownloader.service.Notices
 import com.xychr.ghostdownloader.service.startKeepAlive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,13 +20,10 @@ class App : Application() {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
+    val notices by lazy { Notices(this) }
+
     override fun onCreate() {
         super.onCreate()
-
-        getSystemService(NotificationManager::class.java).apply {
-            createNotificationChannel(NotificationChannel(CHANNEL_RUNNING, getString(R.string.notification_channel_running), NotificationManager.IMPORTANCE_LOW))
-            createNotificationChannel(NotificationChannel(CHANNEL_PAIR, getString(R.string.notification_channel_pair), NotificationManager.IMPORTANCE_HIGH))
-        }
 
         Python.start(AndroidPlatform(this))
         val module = Python.getInstance().getModule("engine")
@@ -38,6 +32,8 @@ class App : Application() {
         val engine = module.get("_engine")!!
         SettingRanges.load(engine.callAttr("settingRanges").toString())
         EngineRepository.bind(engine)
+
+        notices.start()
 
         scope.launch {
             EngineRepository.observe<KeepAlive>("keepAlive")

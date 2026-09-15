@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,22 +45,15 @@ import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-
-private const val QR_GOT_URL = 0
-private const val QR_SUCCESS = 1
-private const val QR_FAILED = -1
-private const val QR_UNSCANNED = 86101
-private const val QR_SCANNED = 86090
-private const val QR_EXPIRED = 86038
-private const val QR_LOADING = Int.MIN_VALUE
 
 @Serializable
 data class BiliAccount(
@@ -72,74 +66,53 @@ data class BiliAccount(
 
 @Serializable
 data class BiliQr(
-    val code: Int = QR_LOADING,
+    val status: String = "loading",
     val url: String = "",
-    val text: String = "",
+    val message: String = "",
 )
 
-class BilibiliAccountViewModel : ViewModel() {
+class BilibiliAccountViewModel(
+    private val send: suspend (String, List<Any>) -> Unit,
+    accountFlow: Flow<BiliAccount>,
+    qrFlow: Flow<BiliQr>,
+) : ViewModel() {
 
-    private val _account = MutableStateFlow(BiliAccount())
-    val account: StateFlow<BiliAccount> = _account.asStateFlow()
+    val account: StateFlow<BiliAccount> =
+        accountFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BiliAccount())
 
-    private val _qr = MutableStateFlow(BiliQr())
-    val qr: StateFlow<BiliQr> = _qr.asStateFlow()
-
-    private var qrJob: Job? = null
-
-    init {
-        viewModelScope.launch { refresh() }
-    }
-
-    private suspend fun refresh() {
-        runCatching {
-            _account.value = EngineRepository.query("packState", "bili", "accountState")
-        }
-    }
+    val qr: StateFlow<BiliQr> =
+        qrFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BiliQr())
 
     fun startQrLogin() {
-        qrJob?.cancel()
-        _qr.value = BiliQr()
-        qrJob = viewModelScope.launch {
-            EngineRepository.invoke("requestPack", "bili", "startQrLogin")
-            while (isActive) {
-                val state = runCatching {
-                    EngineRepository.query<BiliQr>("packState", "bili", "qrState")
-                }.getOrNull() ?: continue
-                _qr.value = state
-                if (state.code == QR_SUCCESS) {
-                    refresh()
-                    break
-                }
-                if (state.code == QR_FAILED) break
-                delay(500)
-            }
-        }
+        viewModelScope.launch { send("startQrLogin", emptyList()) }
     }
 
     fun cancelQrLogin() {
-        qrJob?.cancel()
-        qrJob = null
-        viewModelScope.launch { EngineRepository.invoke("requestPack", "bili", "cancelQrLogin") }
+        viewModelScope.launch { send("cancelQrLogin", emptyList()) }
     }
 
     fun setCookie(cookie: String) {
-        viewModelScope.launch {
-            EngineRepository.invoke("requestPack", "bili", "setCookie", cookie)
-            refresh()
-        }
+        viewModelScope.launch { send("setCookie", listOf(cookie)) }
     }
 
     fun logout() {
-        viewModelScope.launch {
-            EngineRepository.invoke("requestPack", "bili", "logout")
-            refresh()
-        }
+        viewModelScope.launch { send("logout", emptyList()) }
     }
 }
 
 @Composable
-fun BilibiliLoginRows(viewModel: BilibiliAccountViewModel = viewModel()) {
+fun BilibiliLoginRows(
+    viewModel: BilibiliAccountViewModel = viewModel {
+        val packId = BilibiliUi.packId
+        BilibiliAccountViewModel(
+            send = { action, args ->
+                EngineRepository.invoke("requestPack", packId, action, *args.toTypedArray())
+            },
+            accountFlow = EngineRepository.observe("pack:$packId:accountState"),
+            qrFlow = EngineRepository.observe("pack:$packId:qrState"),
+        )
+    },
+) {
     val account by viewModel.account.collectAsStateWithLifecycle()
     var isScanning by remember { mutableStateOf(false) }
     var isEditingCookie by remember { mutableStateOf(false) }
@@ -199,8 +172,8 @@ private fun ScanLoginDialog(viewModel: BilibiliAccountViewModel, onDismiss: () -
     val qr by viewModel.qr.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    LaunchedEffect(qr.code) {
-        if (qr.code == QR_SUCCESS) {
+    LaunchedEffect(qr.status) {
+        if (qr.status == "success") {
             delay(600)
             onDismiss()
         }
@@ -278,19 +251,26 @@ private fun EditCookieDialog(
 }
 
 @Composable
-private fun qrStatusText(qr: BiliQr): String = when (qr.code) {
-    QR_GOT_URL -> stringResource(R.string.bili_qr_ready)
-    QR_UNSCANNED -> stringResource(R.string.bili_qr_unscanned)
-    QR_SCANNED -> stringResource(R.string.bili_qr_scanned)
-    QR_EXPIRED -> stringResource(R.string.bili_qr_expired)
-    QR_SUCCESS -> stringResource(R.string.bili_qr_success)
-    QR_FAILED -> engineText(qr.text, emptyMap())
+private fun qrStatusText(qr: BiliQr): String = when (qr.status) {
+    "ready" -> stringResource(R.string.bili_qr_ready)
+    "waiting" -> stringResource(R.string.bili_qr_unscanned)
+    "scanned" -> stringResource(R.string.bili_qr_scanned)
+    "expired" -> stringResource(R.string.bili_qr_expired)
+    "success" -> stringResource(R.string.bili_qr_success)
+    "failed" -> engineText(qr.message, emptyMap())
     else -> stringResource(R.string.bili_qr_loading)
 }
 
 @Composable
-private fun rememberQrBitmap(url: String, size: Int = 512): ImageBitmap? = remember(url) {
-    if (url.isEmpty()) return@remember null
+private fun rememberQrBitmap(url: String, size: Int = 512): ImageBitmap? {
+    val bitmap by produceState<ImageBitmap?>(null, url, size) {
+        value = if (url.isEmpty()) null
+        else withContext(Dispatchers.Default) { toQrBitmap(url, size) }
+    }
+    return bitmap
+}
+
+private fun toQrBitmap(url: String, size: Int): ImageBitmap {
     val matrix = MultiFormatWriter().encode(
         url, BarcodeFormat.QR_CODE, size, size,
         mapOf(
@@ -304,5 +284,5 @@ private fun rememberQrBitmap(url: String, size: Int = 512): ImageBitmap? = remem
             pixels[y * size + x] = if (matrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
         }
     }
-    Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
+    return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
 }

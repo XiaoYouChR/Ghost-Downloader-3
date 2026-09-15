@@ -26,16 +26,19 @@ import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.model.DraftItem
 import com.xychr.ghostdownloader.packs.PackRegistry
+import com.xychr.ghostdownloader.ui.util.isValidOutputFolder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DraftDetailSheet(
     item: DraftItem,
     onOutputFolderChanged: (String) -> Unit,
-    sendPack: suspend (String, List<Any>) -> Unit,
+    sendPack: suspend (String, List<Any?>) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var folder by rememberSaveable { mutableStateOf(item.outputFolder) }
+    var folder by rememberSaveable(item.url) { mutableStateOf(item.outputFolder) }
+    val trimmed = folder.trim()
+    val isValidFolder = isValidOutputFolder(folder)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp),
@@ -50,9 +53,13 @@ fun DraftDetailSheet(
                 label = { Text(stringResource(R.string.task_output_folder)) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_folder), null) },
                 singleLine = true,
+                isError = !isValidFolder,
+                supportingText = if (isValidFolder) null else {
+                    { Text(stringResource(R.string.draft_folder_absolute)) }
+                },
                 modifier = Modifier.fillMaxWidth().onFocusChanged { state ->
-                    if (!state.isFocused && folder.trim() != item.outputFolder) {
-                        onOutputFolderChanged(folder.trim())
+                    if (!state.isFocused && isValidFolder && trimmed != item.outputFolder) {
+                        onOutputFolderChanged(trimmed)
                     }
                 },
             )
