@@ -96,6 +96,8 @@ class Engine:
         cfg.browserExtensionPort.valueChanged.connect(self._onBrowserPortChanged)
 
         self._coroutineRunner.start()
+        self._taskService.taskStarted.connect(lambda _: self._speedMeter.start())
+        self._taskService.tasksAllCompleted.connect(self._speedMeter.stop)
         self._taskService.resumeSaved()
         self._featureService.activate()
         self._setupFlows()
@@ -277,7 +279,7 @@ class Engine:
     def tasks(self) -> str:
         result = []
         for t in self._taskService.tasks:
-            fields = self._taskFields(t)
+            fields = self._allFields(t)
             fields["fileCount"] = len(t.files) if t.files else 0
             fields["selectedFileCount"] = sum(f.selected for f in t.files) if t.files else 0
             result.append(fields)

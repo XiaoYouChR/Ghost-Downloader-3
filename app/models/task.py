@@ -295,7 +295,11 @@ class Task:
                 file.completed = completed[file.index]
 
     def currentSnapshot(self) -> tuple[float, int, int]:
-        steps = [s for s in self.steps if self._isStepSelected(s)]
+        if not self.files:
+            steps = self.steps
+        else:
+            selected = {f.index for f in self.files if f.selected}
+            steps = [s for s in self.steps if s.fileIndex is None or s.fileIndex in selected]
         if not steps:
             return 0.0, 0, 0
         progress = 0.0
