@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 深色下父主题必须同为深色：Light 系的 colorBackground 是 #FAFAFA，会从状态栏和导航栏区域露出 -->
+    <style name="Theme.GhostDownloader" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+</resources>

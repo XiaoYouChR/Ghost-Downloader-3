@@ -18,8 +18,11 @@
 |---|---|
 | `query<T>(name, args)` | 问，调用 Engine 方法，取返回值 |
 | `invoke(name, args)` | 做，调用 Engine 方法，不取返回值 |
-| `observe<T>(key)` | 看，订阅 Engine 推送的 Flow |
+| `observe<T>(key)` | 看，订阅 Engine 推送的状态 |
+| `observeEvent<T>(key)` | 看，订阅 Engine 推送的事件 |
 | `encode<T>(value)` | 编码，复杂参数包装为不透明 Encoded |
+| `setState(key, json)` | Engine 推来状态。Python 经 Chaquopy 调，无返回值 |
+| `sendEvent(key, json)` | Engine 推来事件。Python 经 Chaquopy 调，无返回值 |
 
 ## Chaquopy
 

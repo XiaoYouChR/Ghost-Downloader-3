@@ -3,6 +3,7 @@ package com.xychr.ghostdownloader.engine
 import com.chaquo.python.PyObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
@@ -12,6 +13,8 @@ value class Encoded(@PublishedApi internal val value: String)
 object EngineRepository {
 
     private lateinit var engine: PyObject
+
+    @PublishedApi internal val flows = EngineFlows()
 
     @PublishedApi internal val json = Json { ignoreUnknownKeys = true }
 
@@ -32,7 +35,17 @@ object EngineRepository {
         withContext(Dispatchers.IO) { engine.callAttr(name, *unwrapped) }
     }
 
-    inline fun <reified T> observe(key: String): Flow<T> = EngineFlows.stream(key)
+    inline fun <reified T> observe(key: String): Flow<T> =
+        flows.observe(key).map { json.decodeFromString(it) }
+
+    inline fun <reified T> observeEvent(key: String): Flow<T> =
+        flows.observeEvent(key).map { json.decodeFromString(it) }
 
     inline fun <reified T> encode(value: T): Encoded = Encoded(json.encodeToString(value))
+
+    @JvmStatic
+    fun setState(key: String, value: String) = flows.setState(key, value)
+
+    @JvmStatic
+    fun sendEvent(key: String, value: String) = flows.sendEvent(key, value)
 }

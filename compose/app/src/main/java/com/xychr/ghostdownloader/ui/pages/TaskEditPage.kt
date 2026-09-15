@@ -21,6 +21,7 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.ErrorText
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.packs.PackRegistry
+import com.xychr.ghostdownloader.ui.util.isValidOutputFolder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -74,8 +75,8 @@ data class TaskEditState(
 class TaskEditViewModel(
     private val fetch: suspend () -> TaskOptions,
     private val send: suspend (TaskOptions, Boolean) -> TaskEditResult,
-    private val confirm: suspend () -> Unit,
-    private val cancel: suspend () -> Unit,
+    private val confirm: suspend () -> Unit = {},
+    private val cancel: suspend () -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(TaskEditState())
     val state = mutableState.asStateFlow()
@@ -141,7 +142,10 @@ fun TaskEditPage(taskId: String, onBack: () -> Unit) {
         }
     }
     LaunchedEffect(state.isDone) { if (state.isDone) onBack() }
-    TaskOptionsEditor(state, model::update, { model.save() }, close, onRetry = model::refresh)
+    TaskOptionsEditor(state, model::update, { model.save() }, close, onRetry = model::refresh,
+        saveLabel = R.string.task_apply_start) {
+        Text(stringResource(R.string.task_edit_execution_hint), style = MaterialTheme.typography.bodyMedium)
+    }
     if (state.needsConfirmation) AlertDialog(
         onDismissRequest = model::cancelConfirmation,
         title = { Text(stringResource(R.string.task_change_source)) },
@@ -156,6 +160,8 @@ fun TaskEditPage(taskId: String, onBack: () -> Unit) {
 fun TaskOptionsEditor(
     state: TaskEditState, onChange: (TaskOptionDraft) -> Unit, onSave: () -> Unit, onBack: () -> Unit,
     modifier: Modifier = Modifier, onRetry: () -> Unit = {},
+    saveLabel: Int,
+    header: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     var shouldDiscard by remember { mutableStateOf(false) }
     val close = { if (state.hasChanges) shouldDiscard = true else onBack() }
@@ -168,15 +174,21 @@ fun TaskOptionsEditor(
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.task_edit_execution_hint), style = MaterialTheme.typography.bodyMedium)
             ErrorText(state.error)
             val draft = state.draft
             if (draft == null) {
                 if (state.error == null) CircularProgressIndicator()
                 else TextButton(onClick = onRetry) { Text(stringResource(R.string.task_retry)) }
             } else {
+                header?.invoke(this)
+                val isFolderValid = isValidOutputFolder(draft.outputFolder)
                 OutlinedTextField(draft.outputFolder, { onChange(draft.copy(outputFolder = it)) },
-                    label = { Text(stringResource(R.string.task_output_folder)) }, enabled = !state.isSaving, modifier = Modifier.fillMaxWidth())
+                    label = { Text(stringResource(R.string.task_output_folder)) },
+                    isError = !isFolderValid,
+                    supportingText = if (isFolderValid) null else {
+                        { Text(stringResource(R.string.draft_folder_absolute)) }
+                    },
+                    enabled = !state.isSaving, modifier = Modifier.fillMaxWidth())
                 draft.url?.let { OptionText(it, R.string.task_detail_url, !state.isSaving) { value -> onChange(draft.copy(url = value)) } }
                 draft.headers?.let { OptionText(it, R.string.task_headers, !state.isSaving) { value -> onChange(draft.copy(headers = value)) } }
                 draft.connections?.let { OptionText(it, R.string.task_connections, !state.isSaving) { value -> onChange(draft.copy(connections = value)) } }
@@ -187,8 +199,9 @@ fun TaskOptionsEditor(
                 draft.decryptionKeyFile?.let { OptionText(it, R.string.task_key_file, !state.isSaving) { value -> onChange(draft.copy(decryptionKeyFile = value)) } }
                 draft.muxImports?.let { OptionText(it, R.string.task_mux_imports, !state.isSaving) { value -> onChange(draft.copy(muxImports = value)) } }
                 PackRegistry[state.packId]?.editExtra?.invoke(JsonObject(emptyMap()))
-                Button(onClick = onSave, enabled = state.hasChanges && !state.isSaving, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.task_apply_start))
+                Button(onClick = onSave, enabled = state.hasChanges && !state.isSaving && isFolderValid,
+                    modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(saveLabel))
                 }
                 if (state.isSaving) LinearProgressIndicator(Modifier.fillMaxWidth())
             }

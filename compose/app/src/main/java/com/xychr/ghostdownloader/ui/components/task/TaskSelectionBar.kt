@@ -59,7 +59,6 @@ fun TaskSelectionBar(
     }
 }
 
-/** 排队和不可暂停项不会真的停下——这句提醒原先只在顶栏菜单里，不能随操作搬走就丢了。 */
 @Composable
 private fun pauseLabel(targets: TaskBatchTargets): String {
     val label = stringResource(R.string.task_bar_pause_selected, targets.pauseIds.size)

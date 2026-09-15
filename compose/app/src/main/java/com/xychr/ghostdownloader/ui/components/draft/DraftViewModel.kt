@@ -95,8 +95,7 @@ class DraftViewModel(
         send("setDraftSubworkerCount", listOf(current.subworkerCount))
     }
 
-    fun setName(url: String, name: String) = viewModelScope.launch { update(url, listOf(DraftChange("setName", listOf(name)))) }
-    fun setOutputFolder(url: String, folder: String) = viewModelScope.launch { update(url, listOf(DraftChange("setOutputFolder", listOf(folder)))) }
+    suspend fun setName(url: String, name: String) = sendDraft(url, "setName", listOf(name))
 
     fun setGlobalFolder(folder: String) { mutableState.value = state.value.copy(globalFolder = folder) }
     fun setSubworkerCount(count: Int) { mutableState.value = state.value.copy(subworkerCount = count) }
@@ -109,12 +108,20 @@ class DraftViewModel(
         viewModelScope.launch { update(url, changes) }
     }
 
+    private suspend fun sendDraft(url: String, action: String, args: List<Any?>) {
+        send("setDraft", listOf(url, action) + args)
+    }
+
     private suspend fun update(url: String, changes: List<DraftChange>): Boolean = try {
-        changes.forEach { send("setDraft", listOf(url, it.action) + it.arguments) }
+        changes.forEach { sendDraft(url, it.action, it.arguments) }
         true
     } catch (error: CancellationException) { throw error }
     catch (error: Exception) { mutableState.value = state.value.copy(error = error.toTaskError()); false }
-    suspend fun sendPack(url: String, action: String, args: List<Any?>) { send(if (action == "probe") "probeDraft" else "setDraft", if (action == "probe") listOf(url) + args else listOf(url, action) + args) }
+
+    suspend fun sendPack(url: String, action: String, args: List<Any?>) {
+        if (action == "probe") send("probeDraft", listOf(url) + args)
+        else sendDraft(url, action, args)
+    }
 
     suspend fun confirm(autoStart: Boolean = true): Boolean = runWorking { inputJob?.cancel(); sendOptions(); parseInput(); send("confirmDraft", listOf(autoStart)); stop() }
     suspend fun cancel(): Boolean = runWorking { inputJob?.cancel(); send("clearDraft", emptyList()); stop() }

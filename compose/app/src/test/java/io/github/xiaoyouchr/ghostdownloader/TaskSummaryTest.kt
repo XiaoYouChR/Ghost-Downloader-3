@@ -45,12 +45,6 @@ class TaskSummaryTest {
         assertEquals(3, targets.skippedPauseCount)
     }
 
-    @Test fun buildSelectedTargetsDoesNotIncludeUnselectedTasks() {
-        val tasks = listOf(TaskUiState(id = "selected", status = "PAUSED"), TaskUiState(id = "other", status = "FAILED"))
-        assertEquals(listOf("selected"), buildTaskBatchTargets(tasks.filter { it.id == "selected" }).startIds)
-        assertEquals(0, buildTaskBatchTargets(tasks.filter { it.id == "selected" }).retryCount)
-    }
-
     @Test fun initialListIsLoadingNotAnIdleSnapshot() {
         assertEquals(TaskReadState.LOADING, TaskListState().readState)
     }

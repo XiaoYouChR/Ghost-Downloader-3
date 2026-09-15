@@ -11,7 +11,6 @@ data class TaskListState(
 
 data class TaskSections(val active: List<TaskUiState>, val completed: List<TaskUiState>)
 
-/** heldSections 让正在交互的卡片留在原分区，避免任务完成时卡片从手底下跳走。 */
 fun buildTaskSections(tasks: List<TaskUiState>, heldSections: Map<String, Boolean>): TaskSections {
     val (completed, active) = tasks.partition { heldSections[it.id] ?: it.isFinished }
     return TaskSections(active, completed)
@@ -40,7 +39,6 @@ fun buildTaskBatchTargets(tasks: List<TaskUiState>): TaskBatchTargets {
         startIds = tasks.filter { it.status in setOf(TaskStatus.PAUSED, TaskStatus.WAITING, TaskStatus.FAILED) }.map { it.id },
         pauseIds = pauseIds,
         retryCount = tasks.count { it.status == TaskStatus.FAILED },
-        // The Android pause entry point cannot pause WAITING tasks. Do not promise a stopped queue.
         skippedPauseCount = tasks.count { it.status == TaskStatus.RUNNING || it.status == TaskStatus.WAITING } - pauseIds.size,
     )
 }

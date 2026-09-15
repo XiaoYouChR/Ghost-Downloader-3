@@ -37,6 +37,7 @@ val navPopExitTransition: AnimatedContentTransitionScope<*>.() -> ExitTransition
 
 // 任务
 @Serializable data object DraftRoute : Route
+@Serializable data class DraftEditRoute(val url: String) : Route
 @Serializable data class TaskDetailRoute(val taskId: String) : Route
 @Serializable data class TaskFilesRoute(val taskId: String) : Route
 @Serializable data class TaskEditRoute(val taskId: String) : Route

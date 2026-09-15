@@ -47,9 +47,7 @@ fun CategoryPage(
     var isResetting by remember { mutableStateOf(false) }
 
     SettingsScaffold(stringResource(R.string.category_manage), onBack) {
-        error?.let {
-            ErrorText(it)
-        }
+        ErrorText(error)
         SettingSection {
             SwitchSettingRow(
                 title = stringResource(R.string.category_enabled),

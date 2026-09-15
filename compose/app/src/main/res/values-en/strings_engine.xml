@@ -14,7 +14,6 @@
     <string name="engine_taskerrors_0d6855ac" formatted="false">At least one file is required</string>
     <string name="engine_taskerrors_0f898cca" formatted="false">Connection refused, please check your connection ({detail})</string>
     <string name="engine_taskerrors_11e7e853" formatted="false">BitTorrent session start failed</string>
-    <string name="engine_taskerrors_153f8ca7" formatted="false">字幕下载失败</string>
     <string name="engine_taskerrors_171b762f" formatted="false">Private video requires Cookies from an authorised account; download through the browser extension or import Cookies in Settings: {detail}</string>
     <string name="engine_taskerrors_17b08d05" formatted="false">Resource does not exist (404), link might no longer be available: {detail}</string>
     <string name="engine_taskerrors_1fa9db62" formatted="false">Missing dependency ({detail})</string>
@@ -36,12 +35,10 @@
     <string name="engine_taskerrors_458e1c97" formatted="false">ED2k error: {detail}</string>
     <string name="engine_taskerrors_4d37344b" formatted="false">Incomplete data returned from the QR code API</string>
     <string name="engine_taskerrors_4d8481e4" formatted="false">No N_m3u8DL-RE installer package found for {target}</string>
-    <string name="engine_taskerrors_4ea1d8f6" formatted="false">未找到输出文件：{detail}</string>
     <string name="engine_taskerrors_5801d9fb" formatted="false">This torrent is already being downloaded</string>
     <string name="engine_taskerrors_59842ef7" formatted="false">Unexpected error: {detail}</string>
     <string name="engine_taskerrors_5d4ca5b8" formatted="false">Invalid eD2k link</string>
     <string name="engine_taskerrors_65100cb6" formatted="false">Connection timed out, please check your connection ({detail})</string>
-    <string name="engine_taskerrors_65a55fae" formatted="false">无权限访问下载目录：{folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">Unable to fetch {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_68a16484" formatted="false">FFmpeg auto installation not supported on this platform: {platform}</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">Requested format unavailable, please try again later: {detail}</string>
@@ -54,10 +51,7 @@
     <string name="engine_taskerrors_a696d98b" formatted="false">File is not a valid media file, might be DRM protected or incomplete: {name}</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">Unsupported archive format: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">Unable to download {name}/{branch}/{path}</string>
-    <string name="engine_taskerrors_b939736c" formatted="false">未获取到视频流地址</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">Server returned an error ({detail})</string>
-    <string name="engine_taskerrors_bfd33a73" formatted="false">FFmpeg 写入元数据失败（{code}）：{detail}</string>
-    <string name="engine_taskerrors_c3ff21fe" formatted="false">This eD2k transfer already exists in daemon</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">Downloaded file not found: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">Domain resolution failed, please check your connection ({detail})</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">SHA256 checksum failure: Expected {expected}, Actual {actual}</string>
@@ -70,7 +64,6 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">No update is available for the current platform</string>
     <string name="engine_taskerrors_e365462d" formatted="false">Video is unavailable in your region, please try using a proxy: {detail}</string>
     <string name="engine_taskerrors_f5662126" formatted="false">Age-restricted video requires an account; download through the browser extension or import Cookies in Settings: {detail}</string>
-    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">Failed to fetch QR code</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">This eD2k link is already being downloaded</string>
 </resources>

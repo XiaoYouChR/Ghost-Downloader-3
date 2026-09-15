@@ -30,7 +30,25 @@ QR_GOT_URL = 0
 QR_LOGIN_SUCCESS = 1
 QR_LOGIN_FAILED = -1
 
+ZONE_API = "https://api.bilibili.com/x/web-interface/zone"
+COUNTRY_LIST_API = "https://passport.bilibili.com/web/generic/country/list"
+CAPTCHA_API = "https://passport.bilibili.com/x/passport-login/captcha"
+SMS_SEND_API = "https://passport.bilibili.com/x/passport-login/web/sms/send"
+SMS_LOGIN_API = "https://passport.bilibili.com/x/passport-login/web/login/sms"
+SMS_SOURCE = "main-fe-header"
+DEFAULT_ZONE = 86
+
 COOKIE_ORDER = ("SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5", "sid")
+
+PASSPORT_HEADERS = {
+    "referer": "https://www.bilibili.com/",
+    "origin": "https://www.bilibili.com",
+}
+
+
+def cookiesFrom(response) -> dict[str, str]:
+    return {c.name: c.value for c in response.cookies
+            if c.name in COOKIE_ORDER and c.value}
 
 
 def toCookie(raw: str) -> str:
@@ -61,6 +79,8 @@ class BilibiliAccount:
         self._vip = ""
         self._mixinKey = ""
         self._qrWorkId = ""
+        self._captchaToken = ""
+        self._smsCaptchaKey = ""
 
     @property
     def cookie(self) -> str:
@@ -153,10 +173,7 @@ class BilibiliAccount:
                     return None
 
                 if statusCode == 0:
-                    items: dict[str, str] = {}
-                    for c in response.cookies:
-                        if c.name in COOKIE_ORDER and c.value:
-                            items[c.name] = c.value
+                    items = cookiesFrom(response)
                     if not any(n in items for n in COOKIE_ORDER):
                         successUrl = str(data.get("url") or "")
                         for name, value in parse_qsl(urlparse(successUrl).query, keep_blank_values=False):
@@ -237,11 +254,7 @@ class BilibiliAccount:
         if any(not parts.get(n) for n in required):
             return True
 
-        client = buildClient(headers={
-            "cookie": cookie,
-            "origin": "https://www.bilibili.com",
-            "referer": "https://www.bilibili.com/",
-        })
+        client = buildClient(headers={"cookie": cookie, **PASSPORT_HEADERS})
         try:
             response = await client.post(LOGOUT_API, form={
                 "biliCSRF": parts["bili_jct"],
@@ -321,5 +334,95 @@ class BilibiliAccount:
         if wbiData:
             self._updateWbiKeys(wbiData)
         self.accountChanged.emit()
+
+    # ── SMS login (caller blocks on the engine loop) ──
+
+    async def fetchCaptcha(self) -> dict:
+        client = buildClient()
+        try:
+            response = await client.get(CAPTCHA_API, query={"source": SMS_SOURCE})
+            response.raise_for_status()
+            payload = await response.json()
+            if payload.get("code") not in {None, 0}:
+                raise ValueError(payload.get("message") or "获取验证码失败")
+
+            data = payload.get("data") or {}
+            geetest = data.get("geetest") or {}
+            gt = str(geetest.get("gt") or "")
+            challenge = str(geetest.get("challenge") or "")
+            self._captchaToken = str(data.get("token") or "")
+            if not gt or not challenge or not self._captchaToken:
+                raise ValueError("验证码接口返回了不完整的数据")
+            return {"gt": gt, "challenge": challenge}
+        finally:
+            client.close()
+
+    async def fetchCountries(self) -> dict:
+        client = buildClient()
+        try:
+            response = await client.get(COUNTRY_LIST_API)
+            response.raise_for_status()
+            payload = await response.json()
+            data = payload.get("data") or {}
+            countries = []
+            for entry in (data.get("common") or []) + (data.get("others") or []):
+                cid = str(entry.get("country_id") or "")
+                if not cid.isdigit():
+                    continue
+                name = str(entry.get("country_name") or "").strip()
+                countries.append({"cid": int(cid), "label": f"{name} +{cid}" if name else f"+{cid}"})
+            return {"defaultCid": await self._fetchZone(client), "countries": countries}
+        finally:
+            client.close()
+
+    async def _fetchZone(self, client) -> int:
+        try:
+            response = await client.get(ZONE_API)
+            response.raise_for_status()
+            payload = await response.json()
+        except Exception:
+            return DEFAULT_ZONE
+        return int((payload.get("data") or {}).get("country_code") or DEFAULT_ZONE)
+
+    async def sendSmsCode(self, cid: int, tel: str, captcha: dict):
+        client = buildClient(headers=PASSPORT_HEADERS)
+        try:
+            response = await client.post(SMS_SEND_API, query={
+                "cid": str(cid), "tel": tel, "token": self._captchaToken,
+                "source": SMS_SOURCE,
+                "challenge": str(captcha.get("challenge") or ""),
+                "validate": str(captcha.get("validate") or ""),
+                "seccode": str(captcha.get("seccode") or ""),
+            })
+            response.raise_for_status()
+            payload = await response.json()
+            key = str((payload.get("data") or {}).get("captcha_key") or "")
+            if payload.get("code") != 0 or not key:
+                raise ValueError(payload.get("message") or "验证码发送失败")
+            self._smsCaptchaKey = key
+        finally:
+            client.close()
+
+    async def loginSms(self, cid: int, tel: str, code: str):
+        client = buildClient(headers=PASSPORT_HEADERS)
+        try:
+            response = await client.post(SMS_LOGIN_API, query={
+                "cid": str(cid), "tel": tel, "code": code,
+                "source": SMS_SOURCE,
+                "captcha_key": self._smsCaptchaKey,
+                "keep": "true",
+            })
+            response.raise_for_status()
+            payload = await response.json()
+            data = payload.get("data") or {}
+            if int(data.get("status", -1)) != 0:
+                raise ValueError(str(data.get("message") or "登录失败"))
+
+            items = cookiesFrom(response)
+            if not items:
+                raise ValueError("登录成功，但未能提取到有效 Cookie")
+            self.setCookie(toCookie("; ".join(f"{k}={v}" for k, v in items.items())))
+        finally:
+            client.close()
 
 

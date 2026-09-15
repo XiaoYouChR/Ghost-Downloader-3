@@ -50,7 +50,6 @@
     <string name="engine_taskerrors_b2404c3e" formatted="false">サポートされていない圧縮形式: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">{name}/{branch}/{path} をダウンロードできません</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">サーバーがエラーを返しました（{detail}）</string>
-    <string name="engine_taskerrors_c3ff21fe" formatted="false">この eD2k 転送は既にデーモンに存在します</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">ダウンロードされたファイルが見つかりません: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">ドメインを解決できません。ネットワーク接続を確認してください（{detail}）</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">SHA256 検証失敗: 期待値 {expected}, 実際 {actual}</string>

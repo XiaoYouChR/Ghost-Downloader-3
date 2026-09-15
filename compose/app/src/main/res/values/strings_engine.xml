@@ -27,6 +27,7 @@
     <string name="engine_taskerrors_382bd6ca" formatted="false">下载被拒绝（403），链接可能已失效（{detail}）</string>
     <string name="engine_taskerrors_39f24d00" formatted="false">FFmpeg 合并失败（{code}）：{detail}</string>
     <string name="engine_taskerrors_3a53da83" formatted="false">无法建立 FTP 连接</string>
+    <string name="engine_taskerrors_3c695f94" formatted="false">验证码接口返回了不完整的数据</string>
     <string name="engine_taskerrors_3ce79539" formatted="false">SSL 连接失败，请检查网络连接（{detail}）</string>
     <string name="engine_taskerrors_3e17da6f" formatted="false">视频信息提取失败：{detail}</string>
     <string name="engine_taskerrors_3ee1f402" formatted="false">无法读取校验文件：{path}</string>
@@ -40,10 +41,12 @@
     <string name="engine_taskerrors_5801d9fb" formatted="false">该种子已在下载中</string>
     <string name="engine_taskerrors_59842ef7" formatted="false">发生了意外错误：{detail}</string>
     <string name="engine_taskerrors_5d4ca5b8" formatted="false">不是有效的 eD2k 链接</string>
+    <string name="engine_taskerrors_644c1623" formatted="false">验证码发送失败</string>
     <string name="engine_taskerrors_65100cb6" formatted="false">连接超时，请检查网络连接（{detail}）</string>
     <string name="engine_taskerrors_65a55fae" formatted="false">无权限访问下载目录：{folder}</string>
     <string name="engine_taskerrors_6769c69d" formatted="false">无法获取 {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_68a16484" formatted="false">当前平台暂不支持一键安装 FFmpeg: {platform}</string>
+    <string name="engine_taskerrors_71562d81" formatted="false">获取验证码失败</string>
     <string name="engine_taskerrors_719eaae3" formatted="false">请求的格式不可用，请稍后重试（{detail}）</string>
     <string name="engine_taskerrors_7c094a81" formatted="false">压缩包包含不安全路径：{path}</string>
     <string name="engine_taskerrors_7f009b78" formatted="false">磁盘空间不足</string>
@@ -52,12 +55,12 @@
     <string name="engine_taskerrors_9d9faea0" formatted="false">服务器拒绝了请求（403），链接可能已失效（{detail}）</string>
     <string name="engine_taskerrors_9de6fcba" formatted="false">视频不可用，可能已被删除或设为私密（{detail}）</string>
     <string name="engine_taskerrors_a696d98b" formatted="false">文件不是有效的媒体格式，可能受 DRM 保护或下载不完整：{name}</string>
+    <string name="engine_taskerrors_aeb6c8a8" formatted="false">登录失败</string>
     <string name="engine_taskerrors_b2404c3e" formatted="false">不支持的压缩格式：{name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">无法下载 {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_b939736c" formatted="false">未获取到视频流地址</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">服务器返回了错误（{detail}）</string>
     <string name="engine_taskerrors_bfd33a73" formatted="false">FFmpeg 写入元数据失败（{code}）：{detail}</string>
-    <string name="engine_taskerrors_c3ff21fe" formatted="false">该 eD2k 传输已存在于 daemon 中</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">下载的文件未找到：{path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">无法解析域名，请检查网络连接（{detail}）</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">SHA256 校验失败：期望 {expected}，实际 {actual}</string>
@@ -73,4 +76,12 @@
     <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">获取二维码失败</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">该 eD2k 链接已在下载中</string>
+    <string name="engine_taskstate_27b93035" formatted="false">分配文件中</string>
+    <string name="engine_taskstate_40bcaa84" formatted="false">校验已有文件</string>
+    <string name="engine_taskstate_42bf155e" formatted="false">检查续传状态</string>
+    <string name="engine_taskstate_6defa74a" formatted="false">暂停做种</string>
+    <string name="engine_taskstate_94deeae2" formatted="false">共享中</string>
+    <string name="engine_taskstate_9741aa95" formatted="false">获取元数据</string>
+    <string name="engine_taskstate_a68a7138" formatted="false">做种中</string>
+    <string name="engine_taskstate_f79857a8" formatted="false">等待校验</string>
 </resources>

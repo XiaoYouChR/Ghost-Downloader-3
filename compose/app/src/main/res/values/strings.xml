@@ -200,7 +200,6 @@
     <string name="task_detail_delete_files">同时删除已下载的文件</string>
 
     <string name="draft_title">新建下载</string>
-    <string name="draft_media">媒体设置</string>
     <string name="draft_media_loading">正在获取媒体选项…</string>
     <string name="draft_retry">重试</string>
     <string name="draft_discard">放弃</string>
@@ -230,7 +229,6 @@
 
     <!-- Bilibili -->
     <string name="pack_bilibili">哔哩哔哩</string>
-    <string name="bili_scan_login">扫码登录</string>
     <string name="bili_logged_out">状态：未登录</string>
     <string name="bili_logged_in">已登录 · %1$s · UID %2$s · %3$s</string>
     <string name="bili_import_cookie">导入 Cookie</string>
@@ -254,6 +252,19 @@
     <string name="bili_hdr_desc">请求 HDR 视频流（需要大会员）</string>
     <string name="bili_dolby">杜比全景声/视界</string>
     <string name="bili_dolby_desc">请求杜比全景声和杜比视界（需要大会员）</string>
+    <string name="bili_login">登录</string>
+    <string name="bili_mode_qr">扫码</string>
+    <string name="bili_mode_sms">短信</string>
+    <string name="bili_sms_country">国家/地区</string>
+    <string name="bili_sms_phone">手机号</string>
+    <string name="bili_sms_send">发送验证码</string>
+    <string name="bili_sms_sent">验证码已发送</string>
+    <string name="bili_sms_code">验证码</string>
+    <string name="bili_sms_submit">登录</string>
+    <string name="bili_sms_hint">短信登录需要完成一次人机验证</string>
+    <string name="bili_captcha_script_failed">验证码脚本加载失败，请检查网络</string>
+    <string name="bili_captcha_init_failed">验证码初始化失败</string>
+    <string name="bili_captcha_verify_failed">验证未通过</string>
 
     <!-- Draft tracks -->
     <string name="draft_track_video">视频</string>

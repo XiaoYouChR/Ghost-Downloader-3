@@ -50,7 +50,6 @@
     <string name="engine_taskerrors_b2404c3e" formatted="false">唔支援嘅壓縮格式：{name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">無法下載 {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">伺服器返回咗錯誤（{detail}）</string>
-    <string name="engine_taskerrors_c3ff21fe" formatted="false">該 eD2k 傳輸已存在於 daemon 中</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">下載嘅檔案搵唔到：{path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">無法解析域名，請檢查網絡連接（{detail}）</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">SHA256 校驗失敗：期望 {expected}，實際 {actual}</string>

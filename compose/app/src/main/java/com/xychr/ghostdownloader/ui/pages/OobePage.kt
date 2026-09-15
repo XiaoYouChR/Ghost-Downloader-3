@@ -6,8 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,24 +14,31 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -56,8 +61,7 @@ private enum class OobeStep {
 fun OobePage(
     downloadFolder: String,
     onSetSetting: (String, Any) -> Unit,
-    onFinish: () -> Unit,
-    containerModifier: Modifier = Modifier,
+    onFinish: (Offset) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState { OobeStep.entries.size }
@@ -67,33 +71,32 @@ fun OobePage(
 
     BackHandler(enabled = pagerState.currentPage > 0, onBack = back)
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .navigationBarsPadding(),
+    // 背景要铺到系统栏下面，避让只落在内容上；否则窗口背景会从状态栏露出
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface,
     ) {
-        HorizontalPager(
-            state = pagerState,
-            userScrollEnabled = false,
-            modifier = Modifier.weight(1f),
-        ) { page ->
-            when (OobeStep.entries[page]) {
-                OobeStep.WELCOME -> WelcomeContent()
-                OobeStep.PERMISSIONS -> PermissionsContent()
-                OobeStep.BASIC_SETTINGS -> BasicSettingsContent(downloadFolder, onSetSetting)
-                OobeStep.COMPLETE -> CompleteContent()
+        Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = false,
+                modifier = Modifier.weight(1f),
+            ) { page ->
+                when (OobeStep.entries[page]) {
+                    OobeStep.WELCOME -> WelcomeContent()
+                    OobeStep.PERMISSIONS -> PermissionsContent()
+                    OobeStep.BASIC_SETTINGS -> BasicSettingsContent(downloadFolder, onSetSetting)
+                    OobeStep.COMPLETE -> CompleteContent()
+                }
             }
-        }
 
-        OobeNavigation(
-            step = OobeStep.entries[pagerState.currentPage],
-            onBack = back,
-            onNext = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-            onFinish = onFinish,
-            containerModifier = containerModifier,
-        )
+            OobeNavigation(
+                step = OobeStep.entries[pagerState.currentPage],
+                onBack = back,
+                onNext = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
+                onFinish = onFinish,
+            )
+        }
     }
 }
 
@@ -102,9 +105,12 @@ private fun OobeNavigation(
     step: OobeStep,
     onBack: () -> Unit,
     onNext: () -> Unit,
-    onFinish: () -> Unit,
-    containerModifier: Modifier,
+    onFinish: (Offset) -> Unit,
 ) {
+    // 两个分支互斥，track 只挂在一个按钮上，点击时读到的就是它自己的中心
+    var finishCenter by remember { mutableStateOf(Offset.Zero) }
+    val track = Modifier.onGloballyPositioned { finishCenter = it.boundsInRoot().center }
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -114,7 +120,7 @@ private fun OobeNavigation(
     ) {
         when (step) {
             OobeStep.WELCOME -> {
-                TextButton(onClick = onFinish, modifier = containerModifier) {
+                TextButton(onClick = { onFinish(finishCenter) }, modifier = track) {
                     Text(stringResource(R.string.oobe_skip))
                 }
                 Button(onClick = onNext) {
@@ -133,8 +139,8 @@ private fun OobeNavigation(
             OobeStep.COMPLETE -> {
                 Spacer(Modifier.weight(1f))
                 FloatingActionButton(
-                    onClick = onFinish,
-                    modifier = containerModifier.size(64.dp),
+                    onClick = { onFinish(finishCenter) },
+                    modifier = track.size(64.dp),
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,

@@ -18,8 +18,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -37,16 +37,15 @@ import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.components.ErrorText
+import com.xychr.ghostdownloader.ui.components.RenameDialog
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.model.DraftItem
 import kotlin.math.roundToInt
 import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
 import com.xychr.ghostdownloader.ui.components.draft.DiscardDialog
 import com.xychr.ghostdownloader.ui.components.draft.DraftCard
-import com.xychr.ghostdownloader.ui.components.draft.DraftDetailSheet
 import com.xychr.ghostdownloader.ui.components.draft.DraftState
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
-import com.xychr.ghostdownloader.ui.components.draft.FileSelectSheet
 import com.xychr.ghostdownloader.ui.navigation.DRAFT_CONTAINER
 import com.xychr.ghostdownloader.ui.navigation.sharedContainer
 import kotlinx.coroutines.launch
@@ -59,13 +58,13 @@ fun DraftPage(
     onConfirm: (autoStart: Boolean) -> Unit,
     onDiscard: () -> Unit,
     onBack: () -> Unit,
+    onOpenEdit: (String) -> Unit,
     categories: CategoryState,
     modifier: Modifier = Modifier,
 ) {
     var isDiscarding by remember { mutableStateOf(false) }
     var categoryUrl by rememberSaveable { mutableStateOf<String?>(null) }
-    var detailUrl by rememberSaveable { mutableStateOf<String?>(null) }
-    var filesUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var renameUrl by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = state.isWorking) { }
@@ -122,10 +121,9 @@ fun DraftPage(
             items(state.items, key = DraftItem::url) { item ->
                 DraftCard(
                     item = item,
-                    onNameChanged = { draft.setName(item.url, it) },
+                    onRename = { renameUrl = item.url },
+                    onOpenOptions = { onOpenEdit(item.url) },
                     onCategorize = { categoryUrl = item.url },
-                    onOpenDetail = { detailUrl = item.url },
-                    onOpenFiles = { filesUrl = item.url },
                     modifier = Modifier.animateItem(),
                     category = categories.categories.firstOrNull { it.categoryId == item.categoryId },
                     isCategoryEnabled = categories.isEnabled,
@@ -192,20 +190,11 @@ fun DraftPage(
         ).joinToString("\n"),
     )
 
-    val detailItem = state.items.firstOrNull { it.url == detailUrl }
-    if (detailItem != null) DraftDetailSheet(
-        item = detailItem,
-        onOutputFolderChanged = { draft.setOutputFolder(detailItem.url, it) },
-        sendPack = { action, args -> draft.sendPack(detailItem.url, action, args) },
-        onDismiss = { detailUrl = null },
-    )
-
-    val filesItem = state.items.firstOrNull { it.url == filesUrl }
-    if (filesItem != null) FileSelectSheet(
-        files = filesItem.files,
-        canRename = filesItem.canRenameFiles,
-        onApply = { draft.updateFiles(filesItem.url, filesItem.files, it) },
-        onDismiss = { filesUrl = null },
+    val renameItem = state.items.firstOrNull { it.url == renameUrl }
+    if (renameItem != null) RenameDialog(
+        current = renameItem.name,
+        onDismiss = { renameUrl = null },
+        onConfirm = { draft.setName(renameItem.url, it) },
     )
 
     if (isDiscarding) DiscardDialog(

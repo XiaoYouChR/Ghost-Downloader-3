@@ -50,7 +50,6 @@
     <string name="engine_taskerrors_b2404c3e" formatted="false">Неподдерживаемый формат архива: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">Не удалось загрузить {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">Сервер вернул ошибку ({detail})</string>
-    <string name="engine_taskerrors_c3ff21fe" formatted="false">Этот eD2k-трансфер уже существует в демоне</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">Загруженный файл не найден: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">Не удалось разрешить домен, проверьте сетевое подключение ({detail})</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">Ошибка проверки SHA256: ожидалось {expected}, получено {actual}</string>

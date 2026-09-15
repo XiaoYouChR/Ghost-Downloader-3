@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import struct
 import zipfile
@@ -53,7 +54,7 @@ class Engine:
         from app.models.pack import PackServices
 
         from java import jclass
-        self._flows = jclass("com.xychr.ghostdownloader.engine.EngineFlows")
+        self._flows = jclass("com.xychr.ghostdownloader.engine.EngineRepository")
         self._packAdapters: dict = {}
         self._packStates: dict = {}
         self._loadPacks(PackServices(
@@ -64,7 +65,6 @@ class Engine:
         self._pendingEdit = None
         self._updateState = {"state": "idle", "progress": 0, "filePath": "", "error": ""}
 
-        # pack import 时才注册 ConfigItem，需要重建索引后重新加载
         cfg._index()
         cfg.load(f"{APP_DATA_DIR}/UserConfig.json")
 
@@ -98,7 +98,6 @@ class Engine:
         self._coroutineRunner.start()
         self._taskService.resumeSaved()
         self._featureService.activate()
-        # 流要先建好：服务器一旦 start，扩展随时可能连上来打到 _emitNotice
         self._setupFlows()
         if cfg.isAria2RpcEnabled.value:
             self._aria2RpcServer.start()
@@ -150,15 +149,14 @@ class Engine:
         self._emitTaskProgress()
         self._emitDraft()
 
-        for packId, names in self._packStates.items():
-            for name in names:
-                self._emitPackState(packId, name)
+        for packId in self._packStates:
+            self._emitPackStates(packId)
 
     def _emitKeepAlive(self, *_args):
-        self._flows.emit("keepAlive", self.keepAlive())
+        self._flows.setState("keepAlive", self.keepAlive())
 
     def _emitNotice(self, kind: str, **fields):
-        self._flows.emit("notice", json.dumps({"kind": kind, **fields}, ensure_ascii=False))
+        self._flows.sendEvent("notice", json.dumps({"kind": kind, **fields}, ensure_ascii=False))
 
     def _onTaskCompleted(self, task):
         category = self._categoryService.categoryById(self._categoryService.categoryOf(task))
@@ -182,19 +180,19 @@ class Engine:
         self._emitNotice("extensionUpdated", version=version)
 
     def _emitSettings(self, *_args):
-        self._flows.emit("settings", self.settings())
+        self._flows.setState("settings", self.settings())
 
     def _emitCategoryState(self, *_args):
-        self._flows.emit("categoryState", self.categoryState())
+        self._flows.setState("categoryState", self.categoryState())
 
     def _emitTasks(self, *_args):
-        self._flows.emit("tasks", self.tasks())
+        self._flows.setState("tasks", self.tasks())
 
     def _emitTaskProgress(self, *_args):
-        self._flows.emit("taskProgress", self.taskProgress())
+        self._flows.setState("taskProgress", self.taskProgress())
 
     def _emitDraft(self, *_args):
-        self._flows.emit("draftState", self.draft())
+        self._flows.setState("draftState", self.draft())
 
     def _loadPacks(self, services):
         import importlib
@@ -247,8 +245,6 @@ class Engine:
                 logger.success("加载 FeaturePack: {}", manifest.name)
             except Exception as e:
                 logger.opt(exception=e).error("加载 FeaturePack 失败: {}", manifest.name)
-
-    # ---- Tasks ----
 
     def _taskFields(self, task) -> dict:
         return {
@@ -316,10 +312,7 @@ class Engine:
                 self._taskService.pause(task)
 
     def resumeAll(self):
-        from app.models.task import TaskStatus
-        for task in list(self._taskService.tasks):
-            if task.status == TaskStatus.PAUSED:
-                self._taskService.start(task)
+        self._taskService.startAll()
 
     def stopTask(self, taskId: str):
         task = self._taskService.taskById(taskId)
@@ -330,7 +323,6 @@ class Engine:
         if stop is not None:
             stop(task)
 
-    # shouldDeleteFiles 为 None 时用设置里的全局开关，调用方逐次勾选则显式传
     def remove(self, taskId: str, shouldDeleteFiles=None):
         task = self._taskService.taskById(taskId)
         if task:
@@ -379,12 +371,7 @@ class Engine:
         task = self._taskService.taskById(taskId)
         if task is None:
             raise ValueError("Task no longer exists")
-        adapter = self._packAdapters.get(task.packId)
-        fields = getattr(adapter, "editFields", None)
-        result = {"outputFolder": str(task.outputFolder), "packId": task.packId or ""}
-        if fields:
-            result.update(fields(task))
-        return json.dumps(result, ensure_ascii=False)
+        return json.dumps(self._options(task), ensure_ascii=False)
 
     def applyTaskEdit(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
         from app.models.task import TaskOptions
@@ -443,15 +430,17 @@ class Engine:
         if task:
             self._taskService.redownload(task)
 
-    # ---- Draft ----
-
     def parse(self, urls: str):
         from app.config.cfg import currentHeaders
 
         nextUrls = [u.strip() for u in urls.splitlines() if u.strip()]
-        self._draftOptions["headers"] = currentHeaders()
-        self._taskDraft.setBaseOptions(self._draftOptions)
-        self._taskDraft.setUrls(nextUrls)
+
+        async def run():
+            self._draftOptions["headers"] = currentHeaders()
+            self._taskDraft.setBaseOptions(self._draftOptions)
+            self._taskDraft.setUrls(nextUrls)
+
+        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
 
     def draft(self) -> str:
         result = []
@@ -478,6 +467,7 @@ class Engine:
                 ],
                 "error": item.error.toDict() if item.error else None,
                 "canRenameFiles": hasattr(adapter, "setFileName"),
+                "canEdit": task.canEdit if task else False,
                 "packId": task.packId if task else "",
                 "packFields": self._adapterFields(task, 'draftFields'),
             })
@@ -489,20 +479,18 @@ class Engine:
 
     def setDraftOutputFolder(self, folder):
         folder = str(folder)
-        if self._draftOptions.get("outputFolder") == folder:
-            return
-        self._draftOptions["outputFolder"] = folder
-        self._taskDraft.setBaseOptions(self._draftOptions)
+
+        async def run():
+            if self._draftOptions.get("outputFolder") == folder:
+                return
+            self._draftOptions["outputFolder"] = folder
+            self._taskDraft.setBaseOptions(self._draftOptions)
+
+        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
 
     def setDraft(self, url: str, action: str, *args):
-        if action == "setCategory":
-            self._taskDraft.setUrlCategory(url, args[0])
-            return
-
         def mutate(task):
-            if action == "setOutputFolder":
-                task.setOptions({"outputFolder": str(Path(str(args[0]).strip()))})
-            elif action == "setName":
+            if action == "setName":
                 task.setName(str(args[0]).strip())
             elif action == "setSelection":
                 task.setSelection([int(i) for i in str(args[0]).split(",") if i])
@@ -512,7 +500,13 @@ class Engine:
                 if fn:
                     fn(task, *args)
 
-        self._taskDraft.update(url, mutate)
+        async def run():
+            if action == "setCategory":
+                self._taskDraft.setUrlCategory(url, args[0])
+            else:
+                self._taskDraft.update(url, mutate)
+
+        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
 
     def probeDraft(self, url: str, kind: str):
         def probe(task):
@@ -538,12 +532,32 @@ class Engine:
         result = asyncio.run_coroutine_threadsafe(adapter.probePreview(task), self._loop).result()
         return json.dumps(result, ensure_ascii=False)
 
+    def draftOptions(self, url: str) -> str:
+        task = self._taskDraft.taskByUrl(url)
+        if task is None:
+            raise ValueError("Draft no longer exists")
+        options = self._options(task)
+        options.pop("url", None)
+        return json.dumps(options, ensure_ascii=False)
+
+    def applyDraftEdit(self, url: str, values: str):
+        options = json.loads(values)
+
+        async def run():
+            self._taskDraft.update(url, lambda task: task.setOptions(options))
+
+        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
+
     def setDraftSubworkerCount(self, count):
         count = int(count)
-        if self._draftOptions.get("subworkerCount") == count:
-            return
-        self._draftOptions["subworkerCount"] = count
-        self._taskDraft.setBaseOptions(self._draftOptions)
+
+        async def run():
+            if self._draftOptions.get("subworkerCount") == count:
+                return
+            self._draftOptions["subworkerCount"] = count
+            self._taskDraft.setBaseOptions(self._draftOptions)
+
+        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
 
     def confirmDraft(self, autoStart=True):
         async def confirm():
@@ -552,7 +566,6 @@ class Engine:
             self._taskDraft.confirm(autoStart=autoStart)
             self._draftOptions.clear()
 
-        # Probe completion and confirmation must not mutate the same Task concurrently.
         asyncio.run_coroutine_threadsafe(confirm(), self._loop).result()
 
     def clearDraft(self):
@@ -561,8 +574,6 @@ class Engine:
             self._draftOptions.clear()
 
         asyncio.run_coroutine_threadsafe(clear(), self._loop).result()
-
-    # ---- Settings ----
 
     def settings(self) -> str:
         return json.dumps(
@@ -582,8 +593,6 @@ class Engine:
             if isinstance(item.validator, RangeValidator)
         })
 
-    # ---- Categories ----
-
     def addCategory(self, categoryJson: str):
         from app.services.category_service import Category
         category = Category.fromDict(json.loads(categoryJson))
@@ -601,8 +610,6 @@ class Engine:
 
     def resetCategories(self):
         self._categoryService.reset()
-
-    # ---- Identity ----
 
     def clientProfiles(self) -> str:
         from app.client import profileFamilies, profileVersions
@@ -654,8 +661,6 @@ class Engine:
             del presets[index]
             self.setSetting("headersPresets", presets)
 
-    # ---- Runtimes ----
-
     def runtimes(self) -> str:
         result = []
         for runtime in self._featureService.runtimes():
@@ -695,8 +700,6 @@ class Engine:
             (r for r in self._featureService.runtimes() if r.runtimeId == runtimeId),
             None,
         )
-
-    # ---- Browser Extension ----
 
     def browserExtension(self) -> str:
         installType, version = self._browserService.connectionSummary
@@ -742,7 +745,7 @@ class Engine:
         self._emitPairRequest()
 
     def _emitPairRequest(self, *_args):
-        self._flows.emit("pairRequest", json.dumps(self._pairFields(), ensure_ascii=False))
+        self._flows.setState("pairRequest", json.dumps(self._pairFields(), ensure_ascii=False))
 
     def _pairFields(self):
         if self._pendingPair is None:
@@ -759,8 +762,6 @@ class Engine:
         if cfg.isBrowserExtensionEnabled.value:
             self._browserService.stop()
             self._browserService.start()
-
-    # ---- KeepAlive ----
 
     def keepAlive(self) -> str:
         from app.models.task import TaskStatus
@@ -780,24 +781,28 @@ class Engine:
             return json.dumps({"reason": "serving"})
         return json.dumps({"reason": ""})
 
-    # ---- Pack Adapter ----
+    def _emitPackStates(self, packId: str):
+        for name in self._packStates.get(packId, ()):
+            self._emitPackState(packId, name)
 
     def _emitPackState(self, packId: str, name: str, *_args):
-        self._flows.emit(f"pack:{packId}:{name}", self.packState(packId, name))
+        self._flows.setState(f"pack:{packId}:{name}", self.packState(packId, name))
 
     def packState(self, packId: str, name: str) -> str:
         adapter = self._packAdapters.get(packId)
         fn = getattr(adapter, name, None) if adapter else None
         return json.dumps(fn(), ensure_ascii=False) if fn else "{}"
 
-    def requestPack(self, packId: str, action: str, *args):
+    def requestPack(self, packId: str, action: str, *args) -> str:
         adapter = self._packAdapters.get(packId)
         fn = getattr(adapter, action, None) if adapter else None
         if fn is None:
-            return
-        fn(*args)
-        for name in self._packStates.get(packId, ()):
-            self._emitPackState(packId, name)
+            return "null"
+        result = fn(*args)
+        if inspect.iscoroutine(result):
+            result = asyncio.run_coroutine_threadsafe(result, self._loop).result()
+        self._emitPackStates(packId)
+        return json.dumps(result, ensure_ascii=False)
 
     def packInfos(self) -> str:
         result = []
@@ -811,8 +816,6 @@ class Engine:
                 "version": m.version,
             })
         return json.dumps(result, ensure_ascii=False)
-
-    # ---- Update ----
 
     def checkUpdate(self) -> str:
         import asyncio
@@ -874,10 +877,17 @@ class Engine:
         asyncio.run_coroutine_threadsafe(_download(), self._loop)
 
     def _emitUpdateState(self):
-        self._flows.emit("updateState", self.updateState())
+        self._flows.setState("updateState", self.updateState())
 
     def updateState(self) -> str:
         return json.dumps(self._updateState)
+
+    def _options(self, task) -> dict:
+        return {
+            "outputFolder": str(task.outputFolder),
+            "packId": task.packId or "",
+            **self._adapterFields(task, "editFields"),
+        }
 
     def _adapterFields(self, task, method: str) -> dict:
         if task is None:

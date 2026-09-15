@@ -5,7 +5,9 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -17,6 +19,7 @@ import androidx.navigation.toRoute
 import com.xychr.ghostdownloader.engine.EngineRepository
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
+import com.xychr.ghostdownloader.ui.pages.DraftEditPage
 import com.xychr.ghostdownloader.ui.pages.DraftPage
 import com.xychr.ghostdownloader.ui.pages.TaskDetailPage
 import com.xychr.ghostdownloader.ui.pages.TaskEditPage
@@ -65,8 +68,15 @@ internal fun TaskNavHost(
                                 if (draft.confirm(autoStart)) back()
                             } },
                             onDiscard = { draftScope.launch { if (draft.cancel()) back() } },
-                            onBack = back, categories = categories)
+                            onBack = back, onOpenEdit = { url -> navigate(DraftEditRoute(url)) },
+                            categories = categories)
                     }
+                }
+                composable<DraftEditRoute> { entry ->
+                    val url = remember(entry) { entry.toRoute<DraftEditRoute>().url }
+                    val item = draftState.items.firstOrNull { it.url == url }
+                    if (item == null) LaunchedEffect(Unit) { back() }
+                    else DraftEditPage(item, draft, onBack = back)
                 }
                 composable<TaskDetailRoute> { entry ->
                     WithSharedElements {

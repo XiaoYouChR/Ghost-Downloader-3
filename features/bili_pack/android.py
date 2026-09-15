@@ -1,6 +1,7 @@
 """Android View adapter for BilibiliPack."""
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 
 from .account import (
@@ -176,6 +177,22 @@ def startQrLogin():
 
 def cancelQrLogin():
     _account.cancelQrLogin()
+
+
+async def fetchCaptcha() -> dict:
+    return await _account.fetchCaptcha()
+
+
+async def fetchCountries() -> dict:
+    return await _account.fetchCountries()
+
+
+async def sendSmsCode(cid: int, tel: str, captcha: str):
+    await _account.sendSmsCode(cid, tel, json.loads(captcha))
+
+
+async def loginSms(cid: int, tel: str, code: str):
+    await _account.loginSms(cid, tel, code)
 
 
 def _onQrStateChanged(code: int, text: str):

@@ -23,11 +23,11 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -40,19 +40,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,6 +87,7 @@ import com.xychr.ghostdownloader.ui.pages.OobePage
 import com.xychr.ghostdownloader.ui.pages.settings.SettingsViewModel
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
 import com.xychr.ghostdownloader.ui.theme.AppTheme
+import kotlin.math.hypot
 import kotlinx.coroutines.launch
 
 const val EXTRA_DESTINATION = "destination"
@@ -143,7 +147,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun OobeGate(
     initiallyCompleted: Boolean,
@@ -164,43 +167,59 @@ private fun OobeGate(
         OobePage(
             downloadFolder = downloadFolder,
             onSetSetting = onSetSetting,
-            onFinish = {
+            onFinish = { origin ->
+                revealOrigin = origin
                 isRevealed = true
                 onSetSetting("hasCompletedOobe", true)
-            },
-            containerModifier = Modifier.onGloballyPositioned { coordinates ->
-                revealOrigin = coordinates.boundsInRoot().center
             },
         )
 
         if (isRevealed) {
-            val backgroundColor = MaterialTheme.colorScheme.background
+            // 深色下阴影是纯黑、压不出层次，scrim 是唯一两种模式都成立的对比手段
             Box(
                 Modifier
                     .fillMaxSize()
-                    .drawWithCache {
-                        val maxX = maxOf(revealOrigin.x, size.width - revealOrigin.x)
-                        val maxY = maxOf(revealOrigin.y, size.height - revealOrigin.y)
-                        val maxRadius = kotlin.math.sqrt(maxX * maxX + maxY * maxY)
-                        val shadowSpread = 4.dp.toPx()
-                        val revealPath = Path()
-                        onDrawWithContent {
-                            val radius = maxRadius * revealProgress
-                            if (radius > 0f) {
-                                drawCircle(Color.Black, radius + shadowSpread, revealOrigin, alpha = 0.12f)
-                            }
-                            revealPath.reset()
-                            revealPath.addOval(androidx.compose.ui.geometry.Rect(revealOrigin, radius))
-                            clipPath(revealPath) {
-                                drawRect(backgroundColor)
-                                this@onDrawWithContent.drawContent()
-                            }
-                        }
-                    },
+                    .graphicsLayer { alpha = 0.32f * revealProgress.coerceIn(0f, 1f) }
+                    .background(MaterialTheme.colorScheme.scrim),
+            )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        // 状态在 lambda 内读，图层参数才会随动画重算
+                        shape = RevealCircle(revealOrigin, revealProgress.coerceIn(0f, 1f))
+                        clip = true
+                        shadowElevation = 24.dp.toPx()
+                    }
+                    .background(MaterialTheme.colorScheme.background),
             ) {
                 appContent()
             }
         }
+    }
+}
+
+/** 圆角等于半径的方形即圆。刻意不用 GenericShape：那是 Outline.Generic，在 API 33 以下无法原生裁切，图层会每帧重录子树。 */
+private class RevealCircle(
+    private val center: Offset,
+    private val progress: Float,
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density,
+    ): Outline {
+        val reach = hypot(
+            maxOf(center.x, size.width - center.x),
+            maxOf(center.y, size.height - center.y),
+        )
+        val radius = reach * progress
+        return Outline.Rounded(
+            RoundRect(
+                rect = Rect(center, radius),
+                cornerRadius = CornerRadius(radius, radius),
+            )
+        )
     }
 }
 
@@ -268,59 +287,61 @@ private fun AppRoot(
     }
 
     CompositionLocalProvider(LocalSnackbar provides snackbar) {
-        Box(
+        Surface(
             Modifier.fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                 .imePadding(),
+            color = MaterialTheme.colorScheme.background,
         ) {
-            Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
-                RetainedTab(selectedTab == BottomTab.TASKS, Modifier.fillMaxSize()) {
-                    TaskNavHost(
-                        draft = draft,
-                        navController = taskNavController,
-                        modifier = Modifier.fillMaxSize(),
-                        bottomContentPadding = bottomContentPadding,
-                        onManageCategories = {
-                            shouldOpenCategories = true
-                            selectedTab = BottomTab.SETTINGS
+            Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
+                    RetainedTab(selectedTab == BottomTab.TASKS, Modifier.fillMaxSize()) {
+                        TaskNavHost(
+                            draft = draft,
+                            navController = taskNavController,
+                            modifier = Modifier.fillMaxSize(),
+                            bottomContentPadding = bottomContentPadding,
+                            onManageCategories = {
+                                shouldOpenCategories = true
+                                selectedTab = BottomTab.SETTINGS
+                            },
+                        )
+                    }
+                    RetainedTab(selectedTab == BottomTab.SETTINGS, Modifier.fillMaxSize()) {
+                        SettingsNavHost(
+                            navController = settingsNavController,
+                            bottomContentPadding = bottomContentPadding,
+                            modifier = Modifier.fillMaxSize(),
+                            onReturnToTasks = { selectedTab = BottomTab.TASKS },
+                            shouldOpenCategories = shouldOpenCategories,
+                            onCategoriesOpened = { shouldOpenCategories = false },
+                        )
+                    }
+                }
+                AnimatedVisibility(
+                    visible = isTopLevel,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    LiquidBottomBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = { tab ->
+                            if (tab != selectedTab) {
+                                selectedTab = tab
+                                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            }
                         },
+                        draftCount = draftState.items.size,
+                        backdrop = backdrop,
+                        modifier = Modifier.navigationBarsPadding().onSizeChanged { barHeight = it.height },
                     )
                 }
-                RetainedTab(selectedTab == BottomTab.SETTINGS, Modifier.fillMaxSize()) {
-                    SettingsNavHost(
-                        navController = settingsNavController,
-                        bottomContentPadding = bottomContentPadding,
-                        modifier = Modifier.fillMaxSize(),
-                        onReturnToTasks = { selectedTab = BottomTab.TASKS },
-                        shouldOpenCategories = shouldOpenCategories,
-                        onCategoriesOpened = { shouldOpenCategories = false },
-                    )
-                }
-            }
-            AnimatedVisibility(
-                visible = isTopLevel,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            ) {
-                LiquidBottomBar(
-                    selectedTab = selectedTab,
-                    onTabSelected = { tab ->
-                        if (tab != selectedTab) {
-                            selectedTab = tab
-                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        }
-                    },
-                    draftCount = draftState.items.size,
-                    backdrop = backdrop,
-                    modifier = Modifier.navigationBarsPadding().onSizeChanged { barHeight = it.height },
+                SnackbarHost(
+                    snackbar,
+                    Modifier.align(Alignment.BottomCenter).padding(bottom = bottomContentPadding),
                 )
             }
-            SnackbarHost(
-                snackbar,
-                Modifier.align(Alignment.BottomCenter).padding(bottom = bottomContentPadding),
-            )
         }
     }
 }

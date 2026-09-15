@@ -12,9 +12,6 @@ import pytest
 from app.models.task import Task, TaskStep, TaskStatus
 
 
-# ── Stubs ──
-
-
 @dataclass(kw_only=True)
 class StubStep(TaskStep):
     stepIndex: int = 0
@@ -83,9 +80,6 @@ class StubFileWatcher:
     def removePath(self, _): pass
 
 
-# ── Fixtures ──
-
-
 @pytest.fixture()
 def service(qapp, monkeypatch, tmp_path):
     from app.config.cfg import cfg
@@ -125,9 +119,6 @@ def makeFolderTask(taskId: str, name: str = "video.mp4") -> Task:
                             taskId=taskId, steps=[step])
     step._bindTask(task)
     return task
-
-
-# ── S7: _deduplicateOutput ──
 
 
 class TestDeduplicateOutput:
@@ -239,9 +230,6 @@ class TestDeduplicateOutput:
         assert t2.name == "README(1)"
 
 
-# ── S7: add ──
-
-
 class TestAdd:
 
     def test_add_emits_signal(self, service, qtbot):
@@ -278,9 +266,6 @@ class TestAdd:
         assert svc.taskById("deferred") is task
 
 
-# ── S7: pause ──
-
-
 class TestPause:
 
     def test_pause_emits_signal(self, service, qtbot):
@@ -307,7 +292,24 @@ class TestPause:
         assert task.status == TaskStatus.PAUSED
 
 
-# ── S7: delete ──
+class TestStartAll:
+
+    def test_covers_paused_waiting_and_failed_but_not_completed(self, service):
+        svc, runner = service
+        paused = makeTask("sa-paused")
+        waiting = makeTask("sa-waiting")
+        failed = makeTask("sa-failed")
+        completed = makeTask("sa-completed")
+        for task in (paused, waiting, failed, completed):
+            svc.add(task, autoStart=False)
+        paused.setStatus(TaskStatus.PAUSED)
+        failed.setStatus(TaskStatus.FAILED)
+        completed.setStatus(TaskStatus.COMPLETED)
+
+        svc.startAll()
+
+        assert len(runner.dispatched) == 3
+        assert completed.status == TaskStatus.COMPLETED
 
 
 class TestDelete:
@@ -326,9 +328,6 @@ class TestDelete:
         svc.add(task)
         svc.delete(task, shouldDeleteFiles=False)
         assert svc.taskById("d2") is None
-
-
-# ── S7: queue ──
 
 
 class TestQueue:
@@ -364,9 +363,6 @@ class TestQueue:
         with qtbot.waitSignal(svc.tasksAllCompleted, timeout=1000):
             _, done, _ = runner.dispatched[-1]
             done(None)
-
-
-# ── S7: TaskQueue.moveToFront ──
 
 
 class TestTaskQueueMoveToFront:
@@ -423,9 +419,6 @@ class TestTaskQueueMoveToFront:
         assert q.nextWaiting() == "c"
         assert q.nextWaiting() == "a"
         assert q.nextWaiting() == "b"
-
-
-# ── S7: TaskService.moveToFront ──
 
 
 class TestMoveToFront:
@@ -499,9 +492,6 @@ class TestMoveToFront:
             svc.moveToFront(["ar1", "ar2"])
 
 
-# ── S7: redownload ──
-
-
 class TestRedownload:
 
     def test_redownload_resets_and_reschedules(self, service):
@@ -515,9 +505,6 @@ class TestRedownload:
         assert task.steps[0].progress == 0
         assert task.steps[0].receivedBytes == 0
         assert len(runner.submitted) > initial_count
-
-
-# ── S7: edit ──
 
 
 class TestEdit:

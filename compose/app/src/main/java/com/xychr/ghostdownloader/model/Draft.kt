@@ -33,6 +33,7 @@ data class DraftItem(
     val files: List<DraftFile> = emptyList(),
     val error: TaskError? = null,
     val canRenameFiles: Boolean = false,
+    val canEdit: Boolean = false,
     val packId: String = "",
     val packFields: JsonObject = JsonObject(emptyMap()),
 )

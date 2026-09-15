@@ -36,7 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,8 +69,6 @@ import com.xychr.ghostdownloader.ui.util.formatSize
 import com.xychr.ghostdownloader.ui.util.formatSizeProgress
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import com.xychr.ghostdownloader.i18n.engineText
-import com.xychr.ghostdownloader.ui.components.ErrorText
-import com.xychr.ghostdownloader.i18n.toTaskError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -555,43 +552,3 @@ private fun DeleteTaskDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit
     )
 }
 
-@Composable
-private fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: suspend (String) -> Unit) {
-    var text by remember { mutableStateOf(current) }
-    var isSaving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<TaskError?>(null) }
-    val scope = rememberCoroutineScope()
-
-    AlertDialog(
-        onDismissRequest = { if (!isSaving) onDismiss() },
-        title = { Text(stringResource(R.string.task_detail_rename)) },
-        text = {
-            Column {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                enabled = !isSaving,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            ErrorText(error)
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    isSaving = true
-                    scope.launch {
-                        try { onConfirm(text.trim()); onDismiss() }
-                        catch (failure: Exception) { error = failure.toTaskError() }
-                        finally { isSaving = false }
-                    }
-                },
-                enabled = !isSaving && text.isNotBlank() && text.trim() != current,
-            ) { Text(stringResource(R.string.action_ok)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isSaving) { Text(stringResource(R.string.action_cancel)) }
-        },
-    )
-}

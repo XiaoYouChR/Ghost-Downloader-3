@@ -26,14 +26,13 @@ class App : Application() {
         super.onCreate()
 
         Python.start(AndroidPlatform(this))
+        notices.start()
         val module = Python.getInstance().getModule("engine")
         val packUiJson = module.callAttr("start").toString()
         PackRegistry.load(packUiJson)
         val engine = module.get("_engine")!!
         SettingRanges.load(engine.callAttr("settingRanges").toString())
         EngineRepository.bind(engine)
-
-        notices.start()
 
         scope.launch {
             EngineRepository.observe<KeepAlive>("keepAlive")

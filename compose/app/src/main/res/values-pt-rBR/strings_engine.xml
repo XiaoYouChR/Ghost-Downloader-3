@@ -50,7 +50,6 @@
     <string name="engine_taskerrors_b2404c3e" formatted="false">Formato de compactação não suportado: {name}</string>
     <string name="engine_taskerrors_b38114ef" formatted="false">Não foi possível baixar {name}/{branch}/{path}</string>
     <string name="engine_taskerrors_be076a1c" formatted="false">O servidor retornou um erro ({detail})</string>
-    <string name="engine_taskerrors_c3ff21fe" formatted="false">Esta transferência eD2k já existe no daemon</string>
     <string name="engine_taskerrors_c719c0e3" formatted="false">Arquivo baixado não encontrado: {path}</string>
     <string name="engine_taskerrors_c8c0d337" formatted="false">Não foi possível resolver o domínio, verifique a conexão de rede ({detail})</string>
     <string name="engine_taskerrors_ccc42c81" formatted="false">Falha na verificação SHA256: esperado {expected}, obtido {actual}</string>
