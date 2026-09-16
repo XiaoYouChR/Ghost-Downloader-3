@@ -55,7 +55,7 @@ fun FileSelectSheet(
                 )
             }
             SelectableFileList(
-                files = remember(editedFiles) { editedFiles.map { SelectableFile(it.index, it.path, it.size) } },
+                files = remember(editedFiles) { editedFiles.map { SelectableFile(it.index, it.path, it.groups, it.size) } },
                 selectedIndexes = selectedIndexes,
                 onSelectionChange = { selectedIndexes = it },
                 onRename = if (canRename) ({ index, path ->

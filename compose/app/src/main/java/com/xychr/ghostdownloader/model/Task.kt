@@ -93,6 +93,7 @@ data class TaskFile(
     val index: Int = 0,
     val categoryId: String = "",
     val path: String = "",
+    val groups: List<String> = emptyList(),
     val size: Long = 0,
     val isSelected: Boolean = true,
     val isCompleted: Boolean = false,

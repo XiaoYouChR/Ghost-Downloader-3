@@ -154,7 +154,7 @@ fun TaskFilesEditor(
                     onSelection, isEnabled = !state.isSaving)
                 SelectableFileList(
                     files = remember(detail.files) {
-                        detail.files.map { SelectableFile(it.index, it.path, it.size) }
+                        detail.files.map { SelectableFile(it.index, it.path, it.groups, it.size) }
                     },
                     selectedIndexes = state.selected,
                     onSelectionChange = onSelection,

@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonObject
 data class DraftFile(
     val index: Int = 0,
     val path: String = "",
+    val groups: List<String> = emptyList(),
     val size: Long = 0,
     val isSelected: Boolean = true,
 )

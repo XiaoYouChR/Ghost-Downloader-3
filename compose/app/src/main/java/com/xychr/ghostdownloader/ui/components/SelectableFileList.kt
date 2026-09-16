@@ -22,8 +22,7 @@ import com.xychr.ghostdownloader.ui.util.formatSize
 
 private const val INDENT_STEP = 16
 
-/** Selectable File 的视图投影——建树和画行都只用到这三个字段，不带上分类和进度 */
-data class SelectableFile(val index: Int, val path: String, val size: Long)
+data class SelectableFile(val index: Int, val path: String, val groups: List<String>, val size: Long)
 
 internal sealed interface TreeRow {
     val depth: Int
@@ -31,50 +30,43 @@ internal sealed interface TreeRow {
 
 internal data class FolderRow(
     override val depth: Int,
-    val path: String,
-    val name: String,
+    val key: List<String>,
     val descendants: List<Int>,
 ) : TreeRow
 
 internal data class FileRow(override val depth: Int, val file: SelectableFile) : TreeRow
 
-private fun toFolderPaths(path: String): List<String> = buildList {
-    var folder = ""
-    path.split('/').dropLast(1).forEach { segment ->
-        folder = if (folder.isEmpty()) segment else "$folder/$segment"
-        add(folder)
-    }
+private fun toKeys(groups: List<String>): List<List<String>> = groups.indices.map { groups.take(it + 1) }
+
+internal fun buildCollapsed(files: List<SelectableFile>, selected: Set<Int>): Set<List<String>> {
+    val chosen = files.filter { it.index in selected }
+    if (chosen.isEmpty() || chosen.size == files.size) return emptySet()
+    return files.flatMap { toKeys(it.groups) }.toSet() - chosen.flatMap { toKeys(it.groups) }.toSet()
 }
 
-internal fun buildRows(files: List<SelectableFile>, collapsed: Set<String>): List<TreeRow> {
-    val descendants = mutableMapOf<String, MutableList<Int>>()
-    files.forEach { file ->
-        toFolderPaths(file.path).forEach { folder ->
-            descendants.getOrPut(folder) { mutableListOf() }.add(file.index)
-        }
+internal fun buildRows(files: List<SelectableFile>, collapsed: Set<List<String>>): List<TreeRow> {
+    val entries = files.map { it to toKeys(it.groups) }
+    val descendants = mutableMapOf<List<String>, MutableList<Int>>()
+    entries.forEach { (file, keys) ->
+        keys.forEach { descendants.getOrPut(it) { mutableListOf() }.add(file.index) }
     }
 
     val rows = mutableListOf<TreeRow>()
-    var previous = emptyList<String>()
-    files.sortedBy { it.path }.forEach { file ->
-        val folderPaths = toFolderPaths(file.path)
-        val collapsedDepth = folderPaths.indexOfFirst { it in collapsed }
-        folderPaths.forEachIndexed { depth, folder ->
+    var previous = emptyList<List<String>>()
+    entries.sortedBy { it.first.path }.forEach { (file, keys) ->
+        val collapsedDepth = keys.indexOfFirst { it in collapsed }
+        keys.forEachIndexed { depth, key ->
             if (collapsedDepth in 0..<depth) return@forEachIndexed
-            if (depth >= previous.size || previous[depth] != folder) {
-                rows += FolderRow(depth, folder, folder.substringAfterLast('/'), descendants[folder].orEmpty())
+            if (depth >= previous.size || previous[depth] != key) {
+                rows += FolderRow(depth, key, descendants[key].orEmpty())
             }
         }
-        previous = folderPaths
-        if (collapsedDepth < 0) rows += FileRow(folderPaths.size, file)
+        previous = keys
+        if (collapsedDepth < 0) rows += FileRow(keys.size, file)
     }
     return rows
 }
 
-/**
- * 内联缩进树，偏离 M3 的整屏容器变换——官方列表规范里没有嵌套缩进与展开指示器的条目，
- * 而选文件要在同一屏里同时看到父文件夹和它的子文件。
- */
 @Composable
 fun SelectableFileList(
     files: List<SelectableFile>,
@@ -86,19 +78,15 @@ fun SelectableFileList(
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var renaming by rememberSaveable { mutableStateOf<Int?>(null) }
-    var collapsed by rememberSaveable { mutableStateOf(emptySet<String>()) }
+    var collapsed by rememberSaveable { mutableStateOf(buildCollapsed(files, selectedIndexes)) }
 
     val visible = remember(files, query) { files.filter { it.path.contains(query, ignoreCase = true) } }
     val visibleIndexes = remember(visible) { visible.map { it.index }.toSet() }
     val isSearching = query.isNotEmpty()
-    // 搜索时全展开：匹配项不能被折在看不见的地方，折叠也因此不可操作
     val canToggleCollapse = !isSearching
-    val collapsedNow = if (canToggleCollapse) collapsed else emptySet<String>()
+    val collapsedNow = if (canToggleCollapse) collapsed else emptySet<List<String>>()
     val rows = remember(visible, collapsedNow) { buildRows(visible, collapsedNow) }
-    // 折叠顶层就够——顶层折起来已经藏住了它下面的一切
-    val topFolders = remember(files) {
-        files.map { it.path.substringBefore('/', "") }.filter { it.isNotEmpty() }.toSet()
-    }
+    val topKeys = remember(files) { files.mapNotNull { it.groups.firstOrNull()?.let { one -> listOf(one) } }.toSet() }
 
     Column(modifier) {
         OutlinedTextField(
@@ -123,7 +111,7 @@ fun SelectableFileList(
             IconButton(onClick = { collapsed = emptySet() }, enabled = isEnabled && canToggleCollapse) {
                 Icon(painterResource(R.drawable.ic_folder_open), stringResource(R.string.file_select_expand_all))
             }
-            IconButton(onClick = { collapsed = topFolders }, enabled = isEnabled && canToggleCollapse) {
+            IconButton(onClick = { collapsed = topKeys }, enabled = isEnabled && canToggleCollapse) {
                 Icon(painterResource(R.drawable.ic_folder), stringResource(R.string.file_select_collapse_all))
             }
         }
@@ -132,7 +120,7 @@ fun SelectableFileList(
                 rows,
                 key = { row ->
                     when (row) {
-                        is FolderRow -> "d:${row.path}"
+                        is FolderRow -> "d:${row.key}"
                         is FileRow -> "f:${row.file.index}"
                     }
                 },
@@ -140,11 +128,11 @@ fun SelectableFileList(
                 when (row) {
                     is FolderRow -> {
                         val onExpand: (() -> Unit)? = if (canToggleCollapse) {
-                            { collapsed = if (row.path in collapsed) collapsed - row.path else collapsed + row.path }
+                            { collapsed = if (row.key in collapsed) collapsed - setOf(row.key) else collapsed + setOf(row.key) }
                         } else null
                         FolderItem(
                             row = row,
-                            isExpanded = row.path !in collapsedNow,
+                            isExpanded = row.key !in collapsedNow,
                             selectedCount = row.descendants.count { it in selectedIndexes },
                             isEnabled = isEnabled,
                             onToggleExpand = onExpand,
@@ -219,7 +207,7 @@ private fun FolderItem(
             onClick = onToggleExpand,
         ),
     ) {
-        Text(row.name, style = MaterialTheme.typography.titleSmall,
+        Text(row.key.last(), style = MaterialTheme.typography.titleSmall,
             maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
