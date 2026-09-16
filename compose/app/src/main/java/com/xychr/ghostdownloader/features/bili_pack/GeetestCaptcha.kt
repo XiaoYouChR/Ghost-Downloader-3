@@ -1,13 +1,17 @@
 package com.xychr.ghostdownloader.features.bili_pack
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.annotation.StringRes
 import androidx.compose.ui.viewinterop.AndroidView
 import com.xychr.ghostdownloader.R
 import org.json.JSONObject
@@ -41,20 +44,36 @@ fun GeetestCaptcha(
 ) {
     var isReady by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)),
+        contentAlignment = Alignment.Center,
+    ) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
-                WebView(context).apply {
+                val webView = WebView(context)
+                var hasFinished = false
+
+                fun finish(action: () -> Unit) {
+                    webView.post {
+                        if (hasFinished) return@post
+                        hasFinished = true
+                        action()
+                    }
+                }
+
+                webView.apply {
+                    setBackgroundColor(Color.TRANSPARENT)
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
+                    settings.useWideViewPort = true
                     webChromeClient = WebChromeClient()
                     webViewClient = WebViewClient()
                     addJavascriptInterface(
                         object {
                             @JavascriptInterface
                             fun onResult(challenge: String, validate: String, seccode: String) {
-                                post { onResult(CaptchaResult(challenge, validate, seccode)) }
+                                finish { onResult(CaptchaResult(challenge, validate, seccode)) }
                             }
 
                             @JavascriptInterface
@@ -69,12 +88,12 @@ fun GeetestCaptcha(
                                     "verify" -> CaptchaFailure.Verify
                                     else -> CaptchaFailure.Script
                                 }
-                                post { onFailure(failure) }
+                                finish { onFailure(failure) }
                             }
 
                             @JavascriptInterface
                             fun onClosed() {
-                                post { onCancel() }
+                                finish { onCancel() }
                             }
                         },
                         BRIDGE,
@@ -103,15 +122,26 @@ private fun captchaHtml(gt: String, challenge: String): String {
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  html, body { margin: 0; height: 100%; background: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  /* 遮罩由原生画，WebView 只负责面板本身 */
   .geetest_panel, .geetest_panel_ghost { background: transparent !important; }
-  .geetest_panel {
-    position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    transform-origin: center center;
+  /* 极验用内联样式摆面板，只有 !important 盖得过 */
+  .geetest_panel_box {
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    transform: translate(-50%, -50%) !important;
+    transform-origin: center center !important;
   }
-  .geetest_panel_box, .geetest_panel_next, .geetest_panel_holder { animation: none !important; transition: none !important; }
+  /* 入场动画逐帧改外框尺寸，面板会跟着抖 */
+  .geetest_panel_box, .geetest_panel_next, .geetest_panel_next > .geetest_holder {
+    animation: none !important;
+    transition: none !important;
+  }
 </style>
 <script src="$GEETEST_JS" onerror="CaptchaBridge.onFailed('script')"></script>
 </head>

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 from .account import (
     QR_EXPIRED,
@@ -28,12 +28,12 @@ QR_STATUS = {
 @dataclass(frozen=True)
 class QrState:
     status: str = "loading"
-    url: str = ""
     message: str = ""
 
 
 _account = None
 _qr = QrState()
+_loginUrl = ""
 
 
 def init(pack) -> dict:
@@ -44,6 +44,15 @@ def init(pack) -> dict:
 
 
 # ---- task/draft serialization (called by engine.py internally) ----
+
+def fileGroups(task) -> dict[int, list[str]]:
+    if not task.isSeason:
+        return {}
+    return {
+        page.index: [group[0].episodeTitle or group[0].bvid or f"#{group[0].index}"]
+        for group in task.episodeGroups() for page in group
+    }
+
 
 def draftFields(task) -> dict:
     from .task import (
@@ -158,7 +167,7 @@ def accountState() -> dict:
 
 
 def qrState() -> dict:
-    return asdict(_qr)
+    return {"status": _qr.status, "url": _loginUrl, "message": _qr.message}
 
 
 def setCookie(cookie: str):
@@ -170,8 +179,8 @@ def logout():
 
 
 def startQrLogin():
-    global _qr
-    _qr = QrState()
+    global _qr, _loginUrl
+    _qr, _loginUrl = QrState(), ""
     _account.startQrLogin()
 
 
@@ -196,10 +205,8 @@ async def loginSms(cid: int, tel: str, code: str):
 
 
 def _onQrStateChanged(code: int, text: str):
-    global _qr
+    global _qr, _loginUrl
     status = QR_STATUS.get(code, "failed")
-    _qr = QrState(
-        status,
-        url=text if status == "ready" else "",
-        message=text if status == "failed" else "",
-    )
+    if status == "ready":
+        _loginUrl = text
+    _qr = QrState(status, message=text if status == "failed" else "")

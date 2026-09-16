@@ -25,12 +25,15 @@ fun ChoiceField(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
+    isError: Boolean = false,
+    supportingText: (@Composable () -> Unit)? = null,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(isExpanded && isEnabled, { if (isEnabled) isExpanded = it }, modifier) {
         OutlinedTextField(
             value = options.firstOrNull { it.first == value }?.second ?: value,
             onValueChange = {}, readOnly = true, enabled = isEnabled, label = { Text(label) },
+            isError = isError, supportingText = supportingText,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(isExpanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = isEnabled).fillMaxWidth(),
         )

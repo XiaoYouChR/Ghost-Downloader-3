@@ -88,6 +88,10 @@ data class BiliQr(
     val message: String = "",
 )
 
+enum class SmsAction { Countries, Send, Login }
+
+data class SmsFailure(val action: SmsAction, val error: TaskError)
+
 data class SmsState(
     val cid: Int = 86,
     val tel: String = "",
@@ -95,11 +99,12 @@ data class SmsState(
     val countries: List<Country> = emptyList(),
     val captcha: CaptchaParams? = null,
     val captchaFailure: CaptchaFailure? = null,
-    val isSending: Boolean = false,
+    val pending: SmsAction? = null,
     val isSent: Boolean = false,
-    val error: TaskError? = null,
+    val failure: SmsFailure? = null,
 ) {
     val isTelValid: Boolean get() = tel.matches(Regex("\\d{6,20}"))
+    val isSending: Boolean get() = pending != null
 }
 
 class BilibiliAccountViewModel(
@@ -136,21 +141,24 @@ class BilibiliAccountViewModel(
         viewModelScope.launch { send("logout", emptyList()) }
     }
 
-    private fun smsAction(block: suspend () -> Unit) {
-        mutableSms.value = mutableSms.value.copy(isSending = true, error = null, captchaFailure = null)
+    private fun smsAction(action: SmsAction, block: suspend () -> Unit) {
+        mutableSms.value = mutableSms.value.copy(pending = action, failure = null, captchaFailure = null)
         viewModelScope.launch {
             try {
                 block()
-                mutableSms.value = mutableSms.value.copy(isSending = false)
+                mutableSms.value = mutableSms.value.copy(pending = null)
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (failure: Exception) {
-                mutableSms.value = mutableSms.value.copy(isSending = false, error = failure.toTaskError())
+            } catch (error: Exception) {
+                mutableSms.value = mutableSms.value.copy(
+                    pending = null,
+                    failure = SmsFailure(action, error.toTaskError()),
+                )
             }
         }
     }
 
-    fun refreshCountries() = smsAction {
+    fun refreshCountries() = smsAction(SmsAction.Countries) {
         val choices = fetchCountries()
         mutableSms.value = mutableSms.value.copy(countries = choices.countries, cid = choices.defaultCid)
     }
@@ -159,20 +167,20 @@ class BilibiliAccountViewModel(
     fun setTel(tel: String) { mutableSms.value = mutableSms.value.copy(tel = tel) }
     fun setCode(code: String) { mutableSms.value = mutableSms.value.copy(code = code) }
 
-    fun requestSmsCode() = smsAction {
+    fun requestSmsCode() = smsAction(SmsAction.Send) {
         mutableSms.value = mutableSms.value.copy(captcha = fetchCaptcha())
     }
 
     fun cancelCaptcha() { mutableSms.value = mutableSms.value.copy(captcha = null) }
 
     fun onCaptchaFailed(failure: CaptchaFailure) {
-        mutableSms.value = mutableSms.value.copy(captcha = null, isSending = false, captchaFailure = failure)
+        mutableSms.value = mutableSms.value.copy(captcha = null, pending = null, captchaFailure = failure)
     }
 
     fun onCaptchaResult(result: CaptchaResult) {
         val current = mutableSms.value
         mutableSms.value = current.copy(captcha = null)
-        smsAction {
+        smsAction(SmsAction.Send) {
             submitSmsCode(current.cid, current.tel, result)
             mutableSms.value = mutableSms.value.copy(isSent = true)
         }
@@ -180,7 +188,7 @@ class BilibiliAccountViewModel(
 
     fun loginSms() {
         val current = mutableSms.value
-        smsAction { send("loginSms", listOf(current.cid, current.tel, current.code)) }
+        smsAction(SmsAction.Login) { send("loginSms", listOf(current.cid, current.tel, current.code)) }
     }
 }
 

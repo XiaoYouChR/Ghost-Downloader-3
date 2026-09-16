@@ -261,7 +261,6 @@
     <string name="bili_sms_sent">验证码已发送</string>
     <string name="bili_sms_code">验证码</string>
     <string name="bili_sms_submit">登录</string>
-    <string name="bili_sms_hint">短信登录需要完成一次人机验证</string>
     <string name="bili_captcha_script_failed">验证码脚本加载失败，请检查网络</string>
     <string name="bili_captcha_init_failed">验证码初始化失败</string>
     <string name="bili_captcha_verify_failed">验证未通过</string>

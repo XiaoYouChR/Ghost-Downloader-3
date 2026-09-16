@@ -138,7 +138,10 @@ class DraftWorkflowTest {
     }
 
     @Test fun fileChangesReportsOnlyEditedFields() {
-        val initial = listOf(DraftFile(0, "a/b.mp4", 10, true), DraftFile(1, "a/c.mp4", 20, true))
+        val initial = listOf(
+            DraftFile(0, "a/b.mp4", size = 10),
+            DraftFile(1, "a/c.mp4", size = 20),
+        )
         assertTrue(fileChanges(initial, initial).isEmpty())
 
         val deselected = initial.map { if (it.index == 1) it.copy(isSelected = false) else it }
