@@ -3,8 +3,10 @@ package com.xychr.ghostdownloader
 import android.app.Application
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.EngineFlows
 import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.engine.createEngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.packs.PackRegistry
 import com.xychr.ghostdownloader.service.KeepAlive
 import com.xychr.ghostdownloader.service.Notices
@@ -25,17 +27,20 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        val flows = EngineFlows()
+
         Python.start(AndroidPlatform(this))
-        notices.start()
         val module = Python.getInstance().getModule("engine")
-        val packUiJson = module.callAttr("start").toString()
+        val packUiJson = module.callAttr("start", flows).toString()
         PackRegistry.load(packUiJson)
         val engine = module.get("_engine")!!
         SettingRanges.load(engine.callAttr("settingRanges").toString())
-        EngineRepository.bind(engine)
+        createEngineRepository(engine, flows)
+
+        notices.start()
 
         scope.launch {
-            EngineRepository.observe<KeepAlive>("keepAlive")
+            engineRepository.observe<KeepAlive>("keepAlive")
                 .distinctUntilChangedBy { it.reason.isNotEmpty() }
                 .filter { it.reason.isNotEmpty() }
                 .collect { startKeepAlive(this@App) }

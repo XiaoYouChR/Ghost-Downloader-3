@@ -2,7 +2,7 @@ package com.xychr.ghostdownloader.packs
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.DraftOption
 import com.xychr.ghostdownloader.model.DraftPreview
 import com.xychr.ghostdownloader.ui.components.draft.DraftChoices
@@ -57,7 +57,7 @@ fun DraftMediaSection(packFields: JsonObject, url: String, send: suspend (String
         DraftTrim(url, duration, packFields.bool("hasPreview"),
             packFields.int("startTime"), packFields.int("endTime"),
             onChange = { start, end -> scope.launch { send("setTrim", listOf(start, end)) } },
-            fetchPreview = { EngineRepository.query<DraftPreview>("draftPreview", it) })
+            fetchPreview = { engineRepository.query<DraftPreview>("draftPreview", it) })
     }
 }
 

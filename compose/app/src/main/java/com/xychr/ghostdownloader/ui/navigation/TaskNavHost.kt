@@ -16,7 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
 import com.xychr.ghostdownloader.ui.pages.DraftEditPage
@@ -36,7 +36,7 @@ internal fun TaskNavHost(
     onManageCategories: () -> Unit,
 ) {
     val draftState by draft.state.collectAsStateWithLifecycle()
-    val categories by EngineRepository.observe<CategoryState>("categoryState")
+    val categories by engineRepository.observe<CategoryState>("categoryState")
         .collectAsStateWithLifecycle(CategoryState())
     val draftScope = rememberCoroutineScope()
     SharedTransitionLayout(modifier) {

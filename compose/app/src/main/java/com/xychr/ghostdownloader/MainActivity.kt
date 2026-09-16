@@ -72,7 +72,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.PairRequest
 import com.xychr.ghostdownloader.service.Notices
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
@@ -100,9 +100,9 @@ class MainActivity : ComponentActivity() {
     private val draft by viewModels<DraftViewModel> {
         viewModelFactory { initializer {
             DraftViewModel(
-                send = { name, args -> EngineRepository.invoke(name, *args.toTypedArray()) },
-                draftFlow = EngineRepository.observe("draftState"),
-                categoriesFlow = EngineRepository.observe("categoryState"),
+                send = { name, args -> engineRepository.invoke(name, *args.toTypedArray()) },
+                draftFlow = engineRepository.observe("draftState"),
+                categoriesFlow = engineRepository.observe("categoryState"),
             )
         } }
     }
@@ -253,7 +253,7 @@ private fun AppRoot(
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val draftState by draft.state.collectAsStateWithLifecycle()
-    val pair by EngineRepository.observe<PairRequest?>("pairRequest")
+    val pair by engineRepository.observe<PairRequest?>("pairRequest")
         .collectAsStateWithLifecycle(null)
 
     val navigateTo: (String) -> Unit = { target ->
@@ -275,7 +275,7 @@ private fun AppRoot(
 
     pair?.let {
         val approve: (Boolean) -> Unit = { isApproved ->
-            scope.launch { EngineRepository.invoke("setBrowserPairApproval", it.requestId, isApproved) }
+            scope.launch { engineRepository.invoke("setBrowserPairApproval", it.requestId, isApproved) }
         }
         PairDialog(it, onApprove = { approve(true) }, onReject = { approve(false) })
     }

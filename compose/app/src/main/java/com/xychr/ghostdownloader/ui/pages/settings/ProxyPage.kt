@@ -34,7 +34,7 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingsEdit
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditState
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditor
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.net.URI
@@ -104,7 +104,7 @@ fun ProxyPage(onBack: () -> Unit, viewModel: SettingsViewModel, modifier: Modifi
         SettingsScaffold(stringResource(R.string.proxy_edit), onBack, modifier) { LoadingRow() }
     } else {
         ProxyForm(proxyServer, editState,
-            onSave = { proxy -> edit.save { EngineRepository.invoke("setSetting", "proxyServer", proxy) } },
+            onSave = { proxy -> edit.save { engineRepository.invoke("setSetting", "proxyServer", proxy) } },
             onBack = onBack, modifier = modifier)
     }
 }

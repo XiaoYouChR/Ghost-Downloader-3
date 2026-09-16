@@ -10,17 +10,19 @@ import kotlinx.serialization.json.Json
 @JvmInline
 value class Encoded(@PublishedApi internal val value: String)
 
-object EngineRepository {
+lateinit var engineRepository: EngineRepository
+    private set
 
-    private lateinit var engine: PyObject
+fun createEngineRepository(engine: PyObject, flows: EngineFlows): EngineRepository {
+    engineRepository = EngineRepository(engine, flows)
+    return engineRepository
+}
 
-    @PublishedApi internal val flows = EngineFlows()
-
+class EngineRepository(
+    private val engine: PyObject,
+    @PublishedApi internal val flows: EngineFlows,
+) {
     @PublishedApi internal val json = Json { ignoreUnknownKeys = true }
-
-    fun bind(engine: PyObject) {
-        this.engine = engine
-    }
 
     @PublishedApi internal suspend fun callEngine(name: String, vararg args: Any?): String {
         val unwrapped = Array(args.size) { i -> val a = args[i]; if (a is Encoded) a.value else a }
@@ -31,8 +33,7 @@ object EngineRepository {
         json.decodeFromString(callEngine(name, *args))
 
     suspend fun invoke(name: String, vararg args: Any?) {
-        val unwrapped = Array(args.size) { i -> val a = args[i]; if (a is Encoded) a.value else a }
-        withContext(Dispatchers.IO) { engine.callAttr(name, *unwrapped) }
+        callEngine(name, *args)
     }
 
     inline fun <reified T> observe(key: String): Flow<T> =
@@ -42,10 +43,4 @@ object EngineRepository {
         flows.observeEvent(key).map { json.decodeFromString(it) }
 
     inline fun <reified T> encode(value: T): Encoded = Encoded(json.encodeToString(value))
-
-    @JvmStatic
-    fun setState(key: String, value: String) = flows.setState(key, value)
-
-    @JvmStatic
-    fun sendEvent(key: String, value: String) = flows.sendEvent(key, value)
 }

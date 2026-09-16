@@ -29,7 +29,7 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.model.TaskError
@@ -198,17 +198,17 @@ fun BilibiliLoginRows(
         val packId = BilibiliUi.packId
         BilibiliAccountViewModel(
             send = { action, args ->
-                EngineRepository.invoke("requestPack", packId, action, *args.toTypedArray())
+                engineRepository.invoke("requestPack", packId, action, *args.toTypedArray())
             },
-            fetchCaptcha = { EngineRepository.query("requestPack", packId, "fetchCaptcha") },
-            fetchCountries = { EngineRepository.query("requestPack", packId, "fetchCountries") },
+            fetchCaptcha = { engineRepository.query("requestPack", packId, "fetchCaptcha") },
+            fetchCountries = { engineRepository.query("requestPack", packId, "fetchCountries") },
             submitSmsCode = { cid, tel, captcha ->
-                EngineRepository.invoke(
-                    "requestPack", packId, "sendSmsCode", cid, tel, EngineRepository.encode(captcha),
+                engineRepository.invoke(
+                    "requestPack", packId, "sendSmsCode", cid, tel, engineRepository.encode(captcha),
                 )
             },
-            accountFlow = EngineRepository.observe("pack:$packId:accountState"),
-            qrFlow = EngineRepository.observe("pack:$packId:qrState"),
+            accountFlow = engineRepository.observe("pack:$packId:accountState"),
+            qrFlow = engineRepository.observe("pack:$packId:qrState"),
         )
     },
 ) {

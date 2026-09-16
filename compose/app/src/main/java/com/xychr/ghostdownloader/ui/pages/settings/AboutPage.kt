@@ -22,7 +22,7 @@ import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,7 +68,7 @@ class UpdateViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            val s = runCatching { EngineRepository.query<UpdateDownloadState>("updateState") }
+            val s = runCatching { engineRepository.query<UpdateDownloadState>("updateState") }
                 .getOrNull() ?: return@launch
             if (s.state != "idle") {
                 _downloadState.value = s
@@ -81,7 +81,7 @@ class UpdateViewModel : ViewModel() {
         _checkState.value = CheckState.CHECKING
         viewModelScope.launch {
             try {
-                val r = EngineRepository.query<UpdateCheckResult>("checkUpdate")
+                val r = engineRepository.query<UpdateCheckResult>("checkUpdate")
                 _result.value = r
                 _checkState.value = if (r.available) CheckState.AVAILABLE else CheckState.LATEST
             } catch (e: CancellationException) {
@@ -95,17 +95,17 @@ class UpdateViewModel : ViewModel() {
     fun download() {
         _downloadState.value = UpdateDownloadState(state = "downloading")
         viewModelScope.launch {
-            EngineRepository.invoke("downloadUpdate", "app")
+            engineRepository.invoke("downloadUpdate", "app")
             collectDownloadState()
         }
     }
 
     private suspend fun collectDownloadState() {
-        EngineRepository.observe<UpdateDownloadState>("updateState")
+        engineRepository.observe<UpdateDownloadState>("updateState")
             .filter { it.state != "idle" }
             .takeWhile { it.state == "downloading" }
             .collect { _downloadState.value = it }
-        _downloadState.value = runCatching { EngineRepository.query<UpdateDownloadState>("updateState") }
+        _downloadState.value = runCatching { engineRepository.query<UpdateDownloadState>("updateState") }
             .getOrDefault(_downloadState.value)
     }
 }

@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.*
 
 import androidx.activity.compose.BackHandler
@@ -126,11 +126,11 @@ class TaskEditViewModel(
 fun TaskEditPage(taskId: String, onBack: () -> Unit) {
     val model: TaskEditViewModel = viewModel(key = taskId) {
         TaskEditViewModel(
-            fetch = { EngineRepository.query("taskOptions", taskId) },
-            send = { options, discard -> EngineRepository.query("applyTaskEdit", taskId,
-                EngineRepository.encode(options), discard) },
-            confirm = { EngineRepository.invoke("confirmTaskEdit", taskId) },
-            cancel = { EngineRepository.invoke("cancelTaskEdit", taskId) },
+            fetch = { engineRepository.query("taskOptions", taskId) },
+            send = { options, discard -> engineRepository.query("applyTaskEdit", taskId,
+                engineRepository.encode(options), discard) },
+            confirm = { engineRepository.invoke("confirmTaskEdit", taskId) },
+            cancel = { engineRepository.invoke("cancelTaskEdit", taskId) },
         )
     }
     val state by model.state.collectAsStateWithLifecycle()

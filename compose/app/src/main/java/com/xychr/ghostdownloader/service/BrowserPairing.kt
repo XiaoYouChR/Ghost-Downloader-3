@@ -5,7 +5,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import kotlinx.coroutines.runBlocking
 
 private const val ACTION_APPROVE = "com.xychr.ghostdownloader.PAIR_APPROVE"
@@ -34,7 +34,7 @@ class BrowserPairingReceiver : BroadcastReceiver() {
         }
         val pending = goAsync()
         Thread {
-            runBlocking { EngineRepository.invoke("setBrowserPairApproval", requestId, isApproved) }
+            runBlocking { engineRepository.invoke("setBrowserPairApproval", requestId, isApproved) }
             context.getSystemService(NotificationManager::class.java).cancel(NOTIF_ID_PAIR)
             pending.finish()
         }.start()

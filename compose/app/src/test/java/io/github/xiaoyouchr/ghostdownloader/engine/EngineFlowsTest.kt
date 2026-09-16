@@ -4,10 +4,12 @@ import com.xychr.ghostdownloader.model.Notice
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -82,14 +84,16 @@ class EngineFlowsTest {
         assertThrows(IllegalStateException::class.java) { flows.sendEvent("tasks", "[]") }
     }
 
-    @Test fun engineRepositoryDecodesNoticeThroughEventChannel() = runTest {
+    @Test fun typedEventDecodingProducesCorrectSealedInstance() = runTest {
+        val flows = EngineFlows()
+        val json = Json { ignoreUnknownKeys = true }
         val seen = mutableListOf<Notice>()
         val subscriber = launch {
-            EngineRepository.observeEvent<Notice>("notice").collect { seen += it }
+            flows.observeEvent("notice").map { json.decodeFromString<Notice>(it) }.collect { seen += it }
         }
         runCurrent()
 
-        EngineRepository.sendEvent("notice", """{"kind":"extensionUpdated","version":"1"}""")
+        flows.sendEvent("notice", """{"kind":"extensionUpdated","version":"1"}""")
         advanceUntilIdle()
 
         assertEquals(listOf<Notice>(Notice.ExtensionUpdated("1")), seen)

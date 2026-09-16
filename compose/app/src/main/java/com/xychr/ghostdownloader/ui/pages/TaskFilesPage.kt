@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.*
 import com.xychr.ghostdownloader.ui.components.SelectableFile
 import com.xychr.ghostdownloader.ui.components.SelectableFileList
@@ -95,8 +95,8 @@ class TaskFilesViewModel(
 fun TaskFilesPage(taskId: String, onBack: () -> Unit, categories: CategoryState = CategoryState()) {
     val model: TaskFilesViewModel = viewModel(key = taskId) {
         TaskFilesViewModel(
-            fetch = { EngineRepository.query("taskDetail", taskId) },
-            send = { EngineRepository.invoke("setTaskSelection", taskId, it.sorted().joinToString(",")) },
+            fetch = { engineRepository.query("taskDetail", taskId) },
+            send = { engineRepository.invoke("setTaskSelection", taskId, it.sorted().joinToString(",")) },
         )
     }
     val state by model.state.collectAsStateWithLifecycle()

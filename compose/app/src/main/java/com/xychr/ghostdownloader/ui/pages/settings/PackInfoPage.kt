@@ -17,7 +17,7 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.EmptyRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,7 +31,7 @@ private data class PackInfo(
 fun PackInfoPage(onBack: () -> Unit) {
     val packs = produceState<List<PackInfo>>(emptyList()) {
         value = runCatching {
-            EngineRepository.query<List<PackInfo>>("packInfos")
+            engineRepository.query<List<PackInfo>>("packInfos")
         }.getOrDefault(emptyList())
     }
 

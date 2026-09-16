@@ -14,7 +14,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.xychr.ghostdownloader.MainActivity
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import kotlinx.coroutines.CoroutineScope
@@ -75,7 +75,7 @@ class KeepAliveService : Service() {
     private suspend fun supervise() {
         val notifications = getSystemService(NotificationManager::class.java)
 
-        EngineRepository.observe<KeepAlive>("keepAlive").collect { state ->
+        engineRepository.observe<KeepAlive>("keepAlive").collect { state ->
             if (state.reason.isEmpty()) {
                 stopSelf()
                 return@collect

@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
@@ -51,7 +51,7 @@ class IdentityViewModel : ViewModel() {
     private val _defaults = MutableStateFlow<Map<String, String>?>(null)
 
     val state: StateFlow<IdentityUiState?> = combine(
-        EngineRepository.observe<IdentityState>("settings"),
+        engineRepository.observe<IdentityState>("settings"),
         _profiles,
         _defaults,
     ) { identity, profiles, defaults ->
@@ -64,25 +64,25 @@ class IdentityViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            _profiles.value = EngineRepository.query("clientProfiles")
-            _defaults.value = EngineRepository.query("defaultHeaders")
+            _profiles.value = engineRepository.query("clientProfiles")
+            _defaults.value = engineRepository.query("defaultHeaders")
         }
     }
 
     suspend fun setClientProfile(profile: String) {
-        EngineRepository.invoke("setSetting", "clientProfile", profile)
+        engineRepository.invoke("setSetting", "clientProfile", profile)
     }
 
     fun setActiveHeadersPreset(index: Int) = write {
-        EngineRepository.invoke("setSetting", "currentHeadersPreset", index)
+        engineRepository.invoke("setSetting", "currentHeadersPreset", index)
     }
 
     suspend fun addIdentityPreset(preset: IdentityPreset) {
-        EngineRepository.invoke("addIdentityPreset", EngineRepository.encode(preset))
+        engineRepository.invoke("addIdentityPreset", engineRepository.encode(preset))
     }
 
     suspend fun updateIdentityPreset(index: Int, preset: IdentityPreset) {
-        EngineRepository.invoke("updateIdentityPreset", index, EngineRepository.encode(preset))
+        engineRepository.invoke("updateIdentityPreset", index, engineRepository.encode(preset))
     }
 
     fun setIdentityEnabled(index: Int, isEnabled: Boolean) = write {
@@ -91,27 +91,27 @@ class IdentityViewModel : ViewModel() {
     }
 
     fun setIdentityOrder(index: Int, target: Int) = write {
-        EngineRepository.invoke("setIdentityOrder", index, target)
+        engineRepository.invoke("setIdentityOrder", index, target)
     }
 
     fun removeIdentityPreset(index: Int) = write {
-        EngineRepository.invoke("removeIdentityPreset", index)
+        engineRepository.invoke("removeIdentityPreset", index)
     }
 
     suspend fun addHeadersPreset(preset: HeadersPreset) {
-        EngineRepository.invoke("addHeadersPreset", EngineRepository.encode(preset))
+        engineRepository.invoke("addHeadersPreset", engineRepository.encode(preset))
     }
 
     suspend fun updateHeadersPreset(index: Int, preset: HeadersPreset) {
-        EngineRepository.invoke("updateHeadersPreset", index, EngineRepository.encode(preset))
+        engineRepository.invoke("updateHeadersPreset", index, engineRepository.encode(preset))
     }
 
     fun removeHeadersPreset(index: Int) = write {
         val identity = state.value?.identity ?: return@write
         val current = identity.currentHeadersPreset
         if (identity.headersPresets.size <= 1) return@write
-        EngineRepository.invoke("removeHeadersPreset", index)
-        EngineRepository.invoke("setSetting", "currentHeadersPreset", when {
+        engineRepository.invoke("removeHeadersPreset", index)
+        engineRepository.invoke("setSetting", "currentHeadersPreset", when {
             index < current -> current - 1
             index == current -> 0
             else -> current

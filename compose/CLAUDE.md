@@ -12,7 +12,7 @@
 
 ## EngineRepository
 
-纯通信桥，零生命周期。依赖显式注入（`bind`）。
+纯通信桥，零生命周期。构造时注入 `PyObject` 和 `EngineFlows`，`createEngineRepository()` 创建全局实例。
 
 | 方法 | 语义 |
 |---|---|
@@ -21,8 +21,8 @@
 | `observe<T>(key)` | 看，订阅 Engine 推送的状态 |
 | `observeEvent<T>(key)` | 看，订阅 Engine 推送的事件 |
 | `encode<T>(value)` | 编码，复杂参数包装为不透明 Encoded |
-| `setState(key, json)` | Engine 推来状态。Python 经 Chaquopy 调，无返回值 |
-| `sendEvent(key, json)` | Engine 推来事件。Python 经 Chaquopy 调，无返回值 |
+
+Python 通过 `EngineFlows` 实例写入（`setState`/`sendEvent`），不经 EngineRepository 中转。
 
 ## Chaquopy
 

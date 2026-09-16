@@ -4,7 +4,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import kotlinx.coroutines.runBlocking
 
 private const val ACTION_PAUSE_ALL = "com.xychr.ghostdownloader.PAUSE_ALL"
@@ -28,7 +28,7 @@ class KeepAliveActionReceiver : BroadcastReceiver() {
         }
         val pending = goAsync()
         Thread {
-            runBlocking { EngineRepository.invoke(name) }
+            runBlocking { engineRepository.invoke(name) }
             pending.finish()
         }.start()
     }

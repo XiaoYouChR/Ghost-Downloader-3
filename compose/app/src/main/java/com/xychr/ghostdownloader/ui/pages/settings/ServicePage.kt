@@ -25,7 +25,7 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.engine.SettingRanges
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -117,7 +117,7 @@ private fun BrowserExtensionRows(isEnabled: Boolean, port: Int, set: (String, An
 
     LaunchedEffect(isEnabled) {
         while (isEnabled) {
-            state = runCatching { EngineRepository.query<BrowserExtension>("browserExtension") }
+            state = runCatching { engineRepository.query<BrowserExtension>("browserExtension") }
                 .getOrDefault(BrowserExtension())
             delay(2000)
         }
@@ -158,8 +158,8 @@ private fun BrowserExtensionRows(isEnabled: Boolean, port: Int, set: (String, An
         onClick = {
             scope.launch {
                 runCatching {
-                    EngineRepository.invoke("regenerateBrowserToken")
-                    state = EngineRepository.query("browserExtension")
+                    engineRepository.invoke("regenerateBrowserToken")
+                    state = engineRepository.query("browserExtension")
                 }
             }
         },
@@ -176,7 +176,7 @@ private suspend fun exportBrowserExtension(context: Context): String = withConte
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             "GhostDownloaderExtension",
         )
-        EngineRepository.invoke("extractBrowserExtension", crx.absolutePath, folder.absolutePath)
+        engineRepository.invoke("extractBrowserExtension", crx.absolutePath, folder.absolutePath)
         folder.absolutePath
     }.getOrElse { it.message ?: "" }
 }

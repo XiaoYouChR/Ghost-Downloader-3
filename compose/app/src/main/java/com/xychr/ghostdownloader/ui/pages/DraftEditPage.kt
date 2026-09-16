@@ -18,7 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.DraftItem
 import com.xychr.ghostdownloader.model.TaskEditResult
 import com.xychr.ghostdownloader.packs.PackRegistry
@@ -30,9 +30,9 @@ fun DraftEditPage(item: DraftItem, draft: DraftViewModel, onBack: () -> Unit) {
     val url = item.url
     val model: TaskEditViewModel = viewModel(key = url) {
         TaskEditViewModel(
-            fetch = { EngineRepository.query("draftOptions", url) },
+            fetch = { engineRepository.query("draftOptions", url) },
             send = { options, _ ->
-                EngineRepository.invoke("applyDraftEdit", url, EngineRepository.encode(options))
+                engineRepository.invoke("applyDraftEdit", url, engineRepository.encode(options))
                 TaskEditResult()
             },
         )

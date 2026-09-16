@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,19 +49,19 @@ class RuntimesViewModel : ViewModel() {
     private var pollJob: Job? = null
 
     init {
-        viewModelScope.launch { EngineRepository.invoke("refreshRuntimes") }
+        viewModelScope.launch { engineRepository.invoke("refreshRuntimes") }
         poll()
     }
 
     fun install(id: String) {
         viewModelScope.launch {
-            EngineRepository.invoke("installRuntime", id)
+            engineRepository.invoke("installRuntime", id)
             poll()
         }
     }
 
     fun cancelInstall(id: String) {
-        viewModelScope.launch { EngineRepository.invoke("cancelRuntimeInstall", id) }
+        viewModelScope.launch { engineRepository.invoke("cancelRuntimeInstall", id) }
     }
 
     /** 安装和检查都是引擎自己推进的，所以只在有活儿时轮询，全部空闲就停 */
@@ -69,7 +69,7 @@ class RuntimesViewModel : ViewModel() {
         pollJob?.cancel()
         pollJob = viewModelScope.launch {
             while (isActive) {
-                val list = runCatching { EngineRepository.query<List<RuntimeUiState>>("runtimes") }
+                val list = runCatching { engineRepository.query<List<RuntimeUiState>>("runtimes") }
                     .getOrNull()
                 if (list != null) _runtimes.value = list
                 delay(1000)

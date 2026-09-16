@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.model.TaskUiState
@@ -20,12 +20,12 @@ import kotlinx.coroutines.launch
 class CategoryViewModel : ViewModel() {
 
     val state: StateFlow<CategoryState?> =
-        EngineRepository.observe<CategoryState>("categoryState")
+        engineRepository.observe<CategoryState>("categoryState")
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** 每个分类下的任务数，用于告诉用户删除会波及多少任务。 */
     val taskCounts: StateFlow<Map<String, Int>> =
-        EngineRepository.observe<List<TaskUiState>>("tasks")
+        engineRepository.observe<List<TaskUiState>>("tasks")
             .map { tasks -> tasks.groupingBy { it.categoryId }.eachCount() }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
@@ -36,27 +36,27 @@ class CategoryViewModel : ViewModel() {
     val error = _error.asStateFlow()
 
     fun setEnabled(isEnabled: Boolean) = write {
-        EngineRepository.invoke("setSetting", "isCategoryEnabled", isEnabled)
+        engineRepository.invoke("setSetting", "isCategoryEnabled", isEnabled)
     }
 
     suspend fun add(category: Category) {
-        EngineRepository.invoke("addCategory", EngineRepository.encode(category))
+        engineRepository.invoke("addCategory", engineRepository.encode(category))
     }
 
     suspend fun update(category: Category) {
-        EngineRepository.invoke("updateCategory", EngineRepository.encode(category))
+        engineRepository.invoke("updateCategory", engineRepository.encode(category))
     }
 
     fun remove(categoryId: String) = write {
-        EngineRepository.invoke("removeCategory", categoryId)
+        engineRepository.invoke("removeCategory", categoryId)
     }
 
     fun reset() = write {
-        EngineRepository.invoke("resetCategories")
+        engineRepository.invoke("resetCategories")
     }
 
     fun setOrder(ids: List<String>) = write {
-        EngineRepository.invoke("reorderCategories", EngineRepository.encode(ids))
+        engineRepository.invoke("reorderCategories", engineRepository.encode(ids))
     }
 
     private fun write(block: suspend () -> Unit) {

@@ -17,7 +17,7 @@ from app.platform.file_watcher import InotifyFileWatcher
 
 
 class Engine:
-    def __init__(self):
+    def __init__(self, flows):
         from app.config.paths import APP_DATA_DIR
 
         logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=3)
@@ -53,8 +53,7 @@ class Engine:
 
         from app.models.pack import PackServices
 
-        from java import jclass
-        self._flows = jclass("com.xychr.ghostdownloader.engine.EngineRepository")
+        self._flows = flows
         self._packAdapters: dict = {}
         self._packStates: dict = {}
         self._loadPacks(PackServices(
@@ -915,9 +914,9 @@ class Engine:
 _engine: Engine | None = None
 
 
-def start():
+def start(flows):
     global _engine
-    _engine = Engine()
+    _engine = Engine(flows)
     result = {}
     for packId, adapter in _engine._packAdapters.items():
         uiClass = getattr(adapter, 'UI_CLASS', None)

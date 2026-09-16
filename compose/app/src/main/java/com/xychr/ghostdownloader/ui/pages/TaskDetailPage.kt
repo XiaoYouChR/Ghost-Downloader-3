@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.*
 import com.xychr.ghostdownloader.ui.navigation.*
 import com.xychr.ghostdownloader.ui.components.*
@@ -86,7 +86,7 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     init {
         viewModelScope.launch { refresh() }
         viewModelScope.launch {
-            EngineRepository.observe<List<TaskUiState>>("tasks").collect { tasks ->
+            engineRepository.observe<List<TaskUiState>>("tasks").collect { tasks ->
                 val task = tasks.find { it.id == taskId }
                 if (task != null) {
                     _detail.value = _detail.value.copy(
@@ -98,7 +98,7 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
             }
         }
         viewModelScope.launch {
-            EngineRepository.observe<Map<String, TaskSnapshot>>("taskProgress").collect { progress ->
+            engineRepository.observe<Map<String, TaskSnapshot>>("taskProgress").collect { progress ->
                 progress[taskId]?.let { p ->
                     _detail.value = _detail.value.copy(
                         progress = p.progress, speed = p.speed, received = p.received,
@@ -116,11 +116,11 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     }
 
     fun remove(shouldDeleteFiles: Boolean) {
-        viewModelScope.launch { EngineRepository.invoke("remove", taskId, shouldDeleteFiles) }
+        viewModelScope.launch { engineRepository.invoke("remove", taskId, shouldDeleteFiles) }
     }
 
     suspend fun setName(name: String) {
-        EngineRepository.invoke("setTaskName", taskId, name)
+        engineRepository.invoke("setTaskName", taskId, name)
         refresh()
     }
 
@@ -131,19 +131,19 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     }
 
     suspend fun setCategory(categoryId: String) {
-        EngineRepository.invoke("setTaskCategory", EngineRepository.encode(listOf(taskId)), categoryId)
+        engineRepository.invoke("setTaskCategory", engineRepository.encode(listOf(taskId)), categoryId)
         refresh()
     }
 
     private fun push(name: String, vararg args: Any?) {
         viewModelScope.launch {
-            EngineRepository.invoke(name, taskId, *args)
+            engineRepository.invoke(name, taskId, *args)
             refresh()
         }
     }
 
     private suspend fun refresh() {
-        runCatching { _detail.value = EngineRepository.query("taskDetail", taskId) }
+        runCatching { _detail.value = engineRepository.query("taskDetail", taskId) }
     }
 }
 

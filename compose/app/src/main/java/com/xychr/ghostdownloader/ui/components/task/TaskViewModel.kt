@@ -1,6 +1,6 @@
 package com.xychr.ghostdownloader.ui.components.task
 
-import com.xychr.ghostdownloader.engine.EngineRepository
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.*
 
 import androidx.lifecycle.ViewModel
@@ -12,15 +12,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 class TaskViewModel : ViewModel() {
-    val categories = EngineRepository.observe<CategoryState>("categoryState")
+    val categories = engineRepository.observe<CategoryState>("categoryState")
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CategoryState())
 
     /**
      * 不保证引用稳定：进度每秒推一次，每次都产出新列表和新的运行中 TaskUiState 实例。
      * 下游拿 tasks 做 remember 只能挡住交互类重组（勾选、展开），挡不住进度 tick。
      */
-    val state: StateFlow<TaskListState> = EngineRepository.observe<List<TaskUiState>>("tasks")
-        .combine(EngineRepository.observe<Map<String, TaskSnapshot>>("taskProgress")) { tasks, progress ->
+    val state: StateFlow<TaskListState> = engineRepository.observe<List<TaskUiState>>("tasks")
+        .combine(engineRepository.observe<Map<String, TaskSnapshot>>("taskProgress")) { tasks, progress ->
             TaskListState(tasks.map { task ->
                 progress[task.id]?.let { p ->
                     task.copy(progress = p.progress, speed = p.speed, received = p.received)
@@ -59,7 +59,7 @@ class TaskViewModel : ViewModel() {
         var failed = 0
         for (id in ids) {
             try {
-                EngineRepository.invoke(if (action == TaskBatchAction.START) "resume" else "pause", id)
+                engineRepository.invoke(if (action == TaskBatchAction.START) "resume" else "pause", id)
                 submitted++
             } catch (error: CancellationException) {
                 throw error
@@ -80,10 +80,10 @@ class TaskViewModel : ViewModel() {
     }
 
     suspend fun setCategory(taskIds: List<String>, categoryId: String) {
-        EngineRepository.invoke("setTaskCategory", EngineRepository.encode(taskIds), categoryId)
+        engineRepository.invoke("setTaskCategory", engineRepository.encode(taskIds), categoryId)
     }
 
     private fun request(name: String, vararg args: Any?) {
-        viewModelScope.launch { EngineRepository.invoke(name, *args) }
+        viewModelScope.launch { engineRepository.invoke(name, *args) }
     }
 }
