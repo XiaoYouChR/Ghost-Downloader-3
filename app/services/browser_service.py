@@ -100,6 +100,19 @@ class CreateTaskStatus(StrEnum):
 
 PROTOCOL_VERSION = 2
 
+MANIFEST_SUFFIXES = {".m3u8", ".m3u", ".mpd"}
+
+
+def toTaskName(title: str, parsedName: str) -> str:
+    suffix = Path(parsedName).suffix
+    if not suffix or title.lower().endswith(suffix.lower()):
+        return title
+    # 扩展从清单 URL 取扩展名，但清单不是容器；容器由解析器定，所以替换而不是追加
+    titleSuffix = Path(title).suffix
+    if titleSuffix.lower() in MANIFEST_SUFFIXES:
+        title = title[: -len(titleSuffix)]
+    return title + suffix
+
 
 def toStr(data: dict, key: str, default: str = "") -> str:
     value = data.get(key)
@@ -531,11 +544,7 @@ class BrowserService:
             task.step.setOptions({"decryptionKeys": decryptionKeys})
 
         if title:
-            existingSuffix = Path(task.name).suffix
-            if existingSuffix and not title.lower().endswith(existingSuffix.lower()):
-                task.setName(title + existingSuffix)
-            else:
-                task.setName(title)
+            task.setName(toTaskName(title, task.name))
 
         shouldDraft = draft if draft is not None else cfg.shouldDraftTakenDownload.value
         if shouldDraft:
