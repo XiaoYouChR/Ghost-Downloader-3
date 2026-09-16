@@ -1,6 +1,6 @@
 """分类→目录推导的唯一来源。
 
-桌面 TaskService.add 与 Android draft() 投影共用 CategoryService.destinationOf。
+桌面 TaskService.add 与 Android draft() 投影共用 CategoryService.outputFolderOf。
 """
 from __future__ import annotations
 
@@ -63,12 +63,12 @@ def categoriesOff(monkeypatch):
 def test_disabled_returns_task_values_unchanged(service, categoriesOff):
     svc, tmp = service
     task = makeTask("movie.mp4", category="cat_video", folder=tmp)
-    assert svc.destinationOf(task) == ("cat_video", tmp)
+    assert svc.outputFolderOf(task) == ("cat_video", tmp)
 
 
 def test_auto_detects_category_and_switches_folder(service, categoriesOn):
     svc, tmp = service
-    categoryId, folder = svc.destinationOf(makeTask("movie.mp4", folder=tmp))
+    categoryId, folder = svc.outputFolderOf(makeTask("movie.mp4", folder=tmp))
     assert categoryId == "cat_video"
     assert folder == tmp / "Video"
 
@@ -76,21 +76,21 @@ def test_auto_detects_category_and_switches_folder(service, categoriesOn):
 def test_explicit_folder_is_never_overridden(service, categoriesOn):
     svc, tmp = service
     custom = tmp / "custom"
-    categoryId, folder = svc.destinationOf(makeTask("movie.mp4", folder=custom))
+    categoryId, folder = svc.outputFolderOf(makeTask("movie.mp4", folder=custom))
     assert categoryId == "cat_video"
     assert folder == custom
 
 
 def test_unmatched_name_keeps_default_folder(service, categoriesOn):
     svc, tmp = service
-    categoryId, folder = svc.destinationOf(makeTask("archive.bin", folder=tmp))
+    categoryId, folder = svc.outputFolderOf(makeTask("archive.bin", folder=tmp))
     assert categoryId == ""
     assert folder == tmp
 
 
 def test_explicit_choice_is_not_redetected(service, categoriesOn):
     svc, tmp = service
-    categoryId, folder = svc.destinationOf(makeTask("archive.bin", category="cat_video", folder=tmp))
+    categoryId, folder = svc.outputFolderOf(makeTask("archive.bin", category="cat_video", folder=tmp))
     assert categoryId == "cat_video"
     assert folder == tmp / "Video"
 
@@ -100,4 +100,4 @@ def test_multi_file_task_is_not_auto_detected(service, categoriesOn):
     task = makeTask("movie.mp4", folder=tmp)
     from app.models.task import TaskFile
     task.files = [TaskFile(index=0, relativePath="a.mp4"), TaskFile(index=1, relativePath="b.mp4")]
-    assert svc.destinationOf(task) == ("", tmp)
+    assert svc.outputFolderOf(task) == ("", tmp)

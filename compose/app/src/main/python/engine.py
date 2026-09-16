@@ -341,10 +341,12 @@ class Engine:
         fields["canRename"] = (task.canEdit and task.status.name not in {"RUNNING", "COMPLETED"}
                                and fields["received"] == 0)
         fields["outputFolder"] = str(task.outputFolder)
+        groups = self._fileGroups(task)
         fields["files"] = [
             {
                 "index": f.index,
                 "path": f.relativePath,
+                "groups": groups.get(f.index, []),
                 "categoryId": self._categoryService.matchByName(f.relativePath),
                 "size": f.size,
                 "isSelected": f.selected,
@@ -448,8 +450,9 @@ class Engine:
         result = []
         for item in self._taskDraft.items():
             task = item.task
-            categoryId, _ = self._categoryService.destinationOf(task) if task else (None, "")
+            categoryId, _ = self._categoryService.outputFolderOf(task) if task else (None, "")
             adapter = self._packAdapters.get(task.packId) if task else None
+            groups = self._fileGroups(task)
             result.append({
                 "url": item.url,
                 "isParsing": task is None and item.error is None,
@@ -462,6 +465,7 @@ class Engine:
                     {
                         "index": f.index,
                         "path": f.relativePath,
+                        "groups": groups.get(f.index, []),
                         "size": f.size,
                         "isSelected": f.selected,
                     }
@@ -897,6 +901,15 @@ class Engine:
         adapter = self._packAdapters.get(task.packId)
         fn = getattr(adapter, method, None) if adapter else None
         return fn(task) if fn else {}
+
+    def _fileGroups(self, task) -> dict[int, list[str]]:
+        if task is None:
+            return {}
+        adapter = self._packAdapters.get(task.packId)
+        fn = getattr(adapter, 'fileGroups', None) if adapter else None
+        if fn is not None:
+            return fn(task)
+        return {f.index: f.relativePath.split('/')[:-1] for f in task.files or []}
 
 
 _engine: Engine | None = None

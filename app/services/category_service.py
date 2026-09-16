@@ -181,7 +181,7 @@ class CategoryService:
             return None
         return category.folder.replace("{default}", cfg.downloadFolder.value)
 
-    def destinationOf(self, task: Task) -> tuple[str | None, Path]:
+    def outputFolderOf(self, task: Task) -> tuple[str | None, Path]:
         if not cfg.isCategoryEnabled.value:
             return task.category, task.outputFolder
         categoryId = task.category

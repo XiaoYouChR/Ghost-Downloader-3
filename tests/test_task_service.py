@@ -53,7 +53,7 @@ class StubCoroutineRunner:
 
 
 class StubCategoryService:
-    def destinationOf(self, task):
+    def outputFolderOf(self, task):
         return task.category, task.outputFolder
 
 
