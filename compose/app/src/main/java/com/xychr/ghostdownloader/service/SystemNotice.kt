@@ -9,10 +9,10 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.xychr.ghostdownloader.DESTINATION_DRAFT
-import com.xychr.ghostdownloader.EXTRA_DESTINATION
+import com.xychr.ghostdownloader.ui.navigation.DESTINATION_DRAFT
+import com.xychr.ghostdownloader.ui.navigation.EXTRA_DESTINATION
 import com.xychr.ghostdownloader.MainActivity
-import com.xychr.ghostdownloader.toTaskDestination
+import com.xychr.ghostdownloader.ui.navigation.toDestination
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.Notice
@@ -115,7 +115,7 @@ private fun Context.buildFailed(notice: Notice.TaskFailed): Notification {
         .setContentTitle(getString(R.string.notice_failed, notice.name))
         .setContentText(reason)
         .setStyle(NotificationCompat.BigTextStyle().bigText(reason))
-        .setContentIntent(openApp(toTaskDestination(notice.taskId)))
+        .setContentIntent(openApp(toDestination(notice.taskId)))
         .setAutoCancel(true)
         .build()
 }

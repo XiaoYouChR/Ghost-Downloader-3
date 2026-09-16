@@ -4,16 +4,25 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import com.xychr.ghostdownloader.ui.theme.EmphasizedAccelerate
+import com.xychr.ghostdownloader.ui.theme.EmphasizedDecelerate
 import kotlinx.serialization.Serializable
 
 sealed interface Route
 
-private val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
-private val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
+const val EXTRA_DESTINATION = "destination"
+const val DESTINATION_DRAFT = "draft"
+
+private const val TASK_PREFIX = "task:"
+
+fun toDestination(taskId: String) = TASK_PREFIX + taskId
+
+fun toRoute(destination: String): Route =
+    if (destination == DESTINATION_DRAFT) DraftRoute
+    else TaskDetailRoute(destination.removePrefix(TASK_PREFIX))
 
 val navEnterTransition: AnimatedContentTransitionScope<*>.() -> EnterTransition = {
     fadeIn(tween(400, easing = EmphasizedDecelerate)) +

@@ -1,6 +1,7 @@
 package com.xychr.ghostdownloader.ui.theme
 
 import android.os.Build
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -11,6 +12,9 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+
+internal val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+internal val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
