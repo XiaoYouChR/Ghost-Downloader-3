@@ -188,7 +188,7 @@ class TaskService:
     def add(self, task: Task, autoStart=True) -> None:
         if task.taskId in self._store.tasks:
             return
-        task.category, task.outputFolder = self._categoryService.destinationOf(task)
+        task.category, task.outputFolder = self._categoryService.outputFolderOf(task)
         self._deduplicateOutput(task)
         self._store.add(task)
         self._flushSoon()
