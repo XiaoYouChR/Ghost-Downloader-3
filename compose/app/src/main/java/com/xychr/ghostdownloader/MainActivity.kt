@@ -36,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -65,6 +64,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -94,6 +94,9 @@ import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
 import com.xychr.ghostdownloader.ui.theme.AppTheme
 import com.xychr.ghostdownloader.ui.theme.EmphasizedDecelerate
 import kotlin.math.hypot
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -107,7 +110,7 @@ class MainActivity : ComponentActivity() {
         } }
     }
     private val settingsViewModel by viewModels<SettingsViewModel>()
-    private val destination = mutableStateOf<String?>(null)
+    private val destinations = Channel<String>(Channel.BUFFERED)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(buildLocalizedContext(newBase))
@@ -115,13 +118,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        destination.value = intent.getStringExtra(EXTRA_DESTINATION)
+        intent.getStringExtra(EXTRA_DESTINATION)?.let { destinations.trySend(it) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        destination.value = intent.getStringExtra(EXTRA_DESTINATION)
+        intent.getStringExtra(EXTRA_DESTINATION)?.let { destinations.trySend(it) }
         enableEdgeToEdge()
         setContent {
             AppTheme {
@@ -160,8 +163,13 @@ class MainActivity : ComponentActivity() {
                             AppRoot(
                                 draft = draft,
                                 notices = (application as App).notices,
-                                noticeDestination = destination.value,
-                                onDestinationHandled = { destination.value = null },
+                                destinations = destinations.receiveAsFlow(),
+                                pairFlow = engineRepository.observe("pairRequest"),
+                                onPairApproval = { requestId, isApproved ->
+                                    lifecycleScope.launch {
+                                        engineRepository.invoke("setBrowserPairApproval", requestId, isApproved)
+                                    }
+                                },
                                 modifier = if (isRevealed) {
                                     Modifier
                                 } else {
@@ -223,8 +231,9 @@ private object NothingShape : Shape {
 private fun AppRoot(
     draft: DraftViewModel,
     notices: Notices,
-    noticeDestination: String?,
-    onDestinationHandled: () -> Unit,
+    destinations: Flow<String>,
+    pairFlow: Flow<PairRequest?>,
+    onPairApproval: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val taskNavController = rememberNavController()
@@ -250,19 +259,17 @@ private fun AppRoot(
     LaunchedEffect(selectedTab) { focus.clearFocus() }
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val draftState by draft.state.collectAsStateWithLifecycle()
-    val pair by engineRepository.observe<PairRequest?>("pairRequest")
-        .collectAsStateWithLifecycle(null)
+    val pair by pairFlow.collectAsStateWithLifecycle(null)
 
     val navigateTo: (String) -> Unit = { target ->
         selectedTab = BottomTab.TASKS
         taskNavController.navigate(toRoute(target))
     }
 
-    LaunchedEffect(noticeDestination) {
-        noticeDestination?.let { navigateTo(it); onDestinationHandled() }
+    LaunchedEffect(Unit) {
+        destinations.collect(navigateTo)
     }
 
     LaunchedEffect(notices) {
@@ -274,10 +281,7 @@ private fun AppRoot(
     }
 
     pair?.let {
-        val approve: (Boolean) -> Unit = { isApproved ->
-            scope.launch { engineRepository.invoke("setBrowserPairApproval", it.requestId, isApproved) }
-        }
-        PairDialog(it, onApprove = { approve(true) }, onReject = { approve(false) })
+        PairDialog(it, onApprove = { onPairApproval(it.requestId, true) }, onReject = { onPairApproval(it.requestId, false) })
     }
 
     CompositionLocalProvider(LocalSnackbar provides snackbar) {
