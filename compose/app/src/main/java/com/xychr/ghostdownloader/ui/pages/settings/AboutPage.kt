@@ -3,122 +3,54 @@ package com.xychr.ghostdownloader.ui.pages.settings
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
-import com.xychr.ghostdownloader.engine.engineRepository
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
+import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
+import com.xychr.ghostdownloader.ui.navigation.PackInfoRoute
+import com.xychr.ghostdownloader.ui.navigation.PermissionsSettingsRoute
+import com.xychr.ghostdownloader.ui.navigation.Route
+import com.xychr.ghostdownloader.ui.platform.start
 import java.io.File
 
 private const val REPOSITORY_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3"
 
-@Serializable
-data class UpdateCheckResult(
-    val available: Boolean = false,
-    val currentVersion: String = "",
-    val latestVersion: String = "",
-    val assetName: String = "",
-    val assetSize: Long = 0,
-    val releaseNotes: String = "",
-    val releaseUrl: String = "",
-)
-
-@Serializable
-data class UpdateDownloadState(
-    val state: String = "idle",
-    val progress: Double = 0.0,
-    val filePath: String = "",
-    val error: String = "",
-)
-
-enum class CheckState { IDLE, CHECKING, AVAILABLE, LATEST, FAILED }
-
-class UpdateViewModel : ViewModel() {
-    private val _checkState = MutableStateFlow(CheckState.IDLE)
-    val checkState: StateFlow<CheckState> = _checkState.asStateFlow()
-
-    private val _result = MutableStateFlow(UpdateCheckResult())
-    val result: StateFlow<UpdateCheckResult> = _result.asStateFlow()
-
-    private val _downloadState = MutableStateFlow(UpdateDownloadState())
-    val downloadState: StateFlow<UpdateDownloadState> = _downloadState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            val s = runCatching { engineRepository.query<UpdateDownloadState>("updateState") }
-                .getOrNull() ?: return@launch
-            if (s.state != "idle") {
-                _downloadState.value = s
-                if (s.state == "downloading") collectDownloadState()
-            }
-        }
-    }
-
-    fun check() {
-        _checkState.value = CheckState.CHECKING
-        viewModelScope.launch {
-            try {
-                val r = engineRepository.query<UpdateCheckResult>("checkUpdate")
-                _result.value = r
-                _checkState.value = if (r.available) CheckState.AVAILABLE else CheckState.LATEST
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                _checkState.value = CheckState.FAILED
-            }
-        }
-    }
-
-    fun download() {
-        _downloadState.value = UpdateDownloadState(state = "downloading")
-        viewModelScope.launch {
-            engineRepository.invoke("downloadUpdate", "app")
-            collectDownloadState()
-        }
-    }
-
-    private suspend fun collectDownloadState() {
-        engineRepository.observe<UpdateDownloadState>("updateState")
-            .filter { it.state != "idle" }
-            .takeWhile { it.state == "downloading" }
-            .collect { _downloadState.value = it }
-        _downloadState.value = runCatching { engineRepository.query<UpdateDownloadState>("updateState") }
-            .getOrDefault(_downloadState.value)
-    }
-}
-
 @Composable
-fun AboutPage(onBack: () -> Unit, viewModel: UpdateViewModel = viewModel()) {
+fun AboutPage(
+    onNavigate: (Route) -> Unit,
+    onBack: () -> Unit,
+    settingsViewModel: SettingsViewModel,
+    updateViewModel: UpdateViewModel,
+) {
     val context = LocalContext.current
     val version = remember {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
     }
-    val checkState by viewModel.checkState.collectAsStateWithLifecycle()
-    val result by viewModel.result.collectAsStateWithLifecycle()
-    val dlState by viewModel.downloadState.collectAsStateWithLifecycle()
+    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    val checkState by updateViewModel.checkState.collectAsStateWithLifecycle()
+    val available by updateViewModel.available.collectAsStateWithLifecycle()
+    val dlState by updateViewModel.downloadState.collectAsStateWithLifecycle()
 
     SettingsScaffold(stringResource(R.string.settings_section_about), onBack) {
         SettingSection {
@@ -129,42 +61,68 @@ fun AboutPage(onBack: () -> Unit, viewModel: UpdateViewModel = viewModel()) {
             ActionSettingRow(
                 title = stringResource(R.string.settings_source_code),
                 subtitle = REPOSITORY_URL,
-                onClick = {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, REPOSITORY_URL.toUri())
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                },
+                onClick = { context.openUrl(REPOSITORY_URL) },
+            )
+            ActionSettingRow(
+                title = stringResource(R.string.settings_pack_info),
+                onClick = { onNavigate(PackInfoRoute) },
             )
         }
 
+        SettingSection {
+            settings?.let {
+                SwitchSettingRow(
+                    title = stringResource(R.string.settings_check_update_at_startup),
+                    subtitle = stringResource(R.string.settings_check_update_at_startup_desc),
+                    checked = it.shouldCheckUpdateAtStartup,
+                    onCheckedChange = { checked -> settingsViewModel.set("shouldCheckUpdateAtStartup", checked) },
+                )
+            }
+        }
+
         Spacer(Modifier.height(8.dp))
-        UpdateSection(context, checkState, result, dlState, viewModel)
+        UpdateSection(context, checkState, available, dlState, updateViewModel, onNavigate)
     }
 }
 
 @Composable
 private fun UpdateSection(
     context: Context,
-    checkState: CheckState,
-    result: UpdateCheckResult,
+    checkState: CheckState?,
+    available: UpdateAvailable?,
     dlState: UpdateDownloadState,
     viewModel: UpdateViewModel,
+    onNavigate: (Route) -> Unit,
 ) {
+    var installFailed by remember { mutableStateOf(false) }
+
     SettingSection {
         when {
             dlState.state == "downloading" -> {
-                InfoSettingRow(
-                    title = stringResource(R.string.settings_update_downloading, dlState.progress.toInt()),
+                InfoSettingRow(title = stringResource(R.string.settings_update_downloading, dlState.progress.toInt()))
+                LinearProgressIndicator(
+                    progress = { (dlState.progress / 100).toFloat() },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
 
             dlState.state == "ready" -> {
                 ActionSettingRow(
                     title = stringResource(R.string.settings_update_install),
-                    subtitle = result.latestVersion,
-                    onClick = { context.installApk(File(dlState.filePath)) },
+                    subtitle = available?.version ?: dlState.filePath.substringAfterLast('/'),
+                    onClick = {
+                        installFailed = !context.installApk(File(dlState.filePath))
+                    },
                 )
+                if (installFailed) {
+                    ActionSettingRow(
+                        title = stringResource(R.string.settings_update_install_failed),
+                        colors = ListItemDefaults.segmentedColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                        onClick = { onNavigate(PermissionsSettingsRoute) },
+                    )
+                }
             }
 
             dlState.state == "failed" -> {
@@ -175,44 +133,46 @@ private fun UpdateSection(
                 )
             }
 
-            checkState == CheckState.CHECKING -> {
-                InfoSettingRow(
-                    title = stringResource(R.string.settings_checking_update),
-                )
-            }
-
-            checkState == CheckState.AVAILABLE -> {
+            available != null -> {
                 ActionSettingRow(
-                    title = stringResource(R.string.settings_update_available, result.latestVersion),
-                    subtitle = result.assetName,
+                    title = stringResource(R.string.settings_update_available, available.version),
+                    subtitle = stringResource(R.string.settings_update_notes),
+                    onClick = { context.openUrl(available.releaseUrl) },
+                )
+                ActionSettingRow(
+                    title = stringResource(R.string.settings_update_install),
                     onClick = { viewModel.download() },
                 )
-            }
-
-            checkState == CheckState.LATEST -> {
-                InfoSettingRow(
-                    title = stringResource(R.string.settings_update_latest),
-                )
-            }
-
-            checkState == CheckState.FAILED -> {
                 ActionSettingRow(
-                    title = stringResource(R.string.settings_update_failed),
-                    onClick = { viewModel.check() },
+                    title = stringResource(R.string.settings_update_ignore),
+                    onClick = { viewModel.ignore() },
                 )
             }
 
-            else -> {
-                ActionSettingRow(
-                    title = stringResource(R.string.settings_check_update),
-                    onClick = { viewModel.check() },
-                )
-            }
+            checkState == CheckState.CHECKING -> InfoSettingRow(title = stringResource(R.string.settings_checking_update))
+
+            checkState == CheckState.LATEST -> InfoSettingRow(title = stringResource(R.string.settings_update_latest))
+
+            checkState == CheckState.NO_ASSET -> InfoSettingRow(title = stringResource(R.string.settings_update_no_asset))
+
+            checkState == CheckState.FAILED -> ActionSettingRow(
+                title = stringResource(R.string.settings_update_failed),
+                onClick = { viewModel.check() },
+            )
+
+            else -> ActionSettingRow(
+                title = stringResource(R.string.settings_check_update),
+                onClick = { viewModel.check() },
+            )
         }
     }
 }
 
-private fun Context.installApk(file: File) {
+private fun Context.openUrl(url: String) {
+    start(Intent(Intent.ACTION_VIEW, url.toUri()))
+}
+
+private fun Context.installApk(file: File): Boolean = runCatching {
     val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
     val intent = Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(uri, "application/vnd.android.package-archive")
@@ -220,4 +180,4 @@ private fun Context.installApk(file: File) {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     startActivity(intent)
-}
+}.isSuccess

@@ -90,6 +90,7 @@ private fun ColumnScope.ServiceRows(settings: Settings, set: (String, Any) -> Un
                 value = settings.aria2RpcToken,
                 onConfirm = { set("aria2RpcToken", it) },
                 emptyHint = stringResource(R.string.settings_aria2_rpc_token_desc),
+                isSecret = true,
             )
             SwitchSettingRow(
                 title = stringResource(R.string.settings_aria2_rpc_emulate),

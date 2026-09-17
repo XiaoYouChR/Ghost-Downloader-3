@@ -1,7 +1,15 @@
 package com.xychr.ghostdownloader.packs
 
 import androidx.compose.runtime.Composable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+
+typealias PackSettingsContent = @Composable (
+    config: JsonObject,
+    keys: PackKeys,
+    set: (String, Any) -> Unit,
+    send: suspend (String, List<Any?>) -> JsonElement,
+) -> Unit
 
 interface PackUi {
     val packId: String
@@ -10,7 +18,7 @@ interface PackUi {
 
     val searchItems: List<Pair<Int, Int?>> get() = emptyList()
 
-    val settingsContent: (@Composable (config: JsonObject, keys: PackKeys, set: (String, Any) -> Unit) -> Unit)?
+    val settingsContent: PackSettingsContent?
         get() = null
 
     val taskExtra: (@Composable (packFields: JsonObject) -> Unit)?
@@ -20,9 +28,6 @@ interface PackUi {
         get() = null
 
     val draftExtra: (@Composable (packFields: JsonObject, url: String, send: suspend (String, List<Any?>) -> Unit) -> Unit)?
-        get() = null
-
-    val draftSummary: ((packFields: JsonObject) -> String?)?
         get() = null
 
     val editExtra: (@Composable (packFields: JsonObject) -> Unit)?

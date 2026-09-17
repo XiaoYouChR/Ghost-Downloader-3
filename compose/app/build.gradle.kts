@@ -74,6 +74,12 @@ android {
     buildFeatures {
         compose = true
     }
+    composeCompiler {
+        val isReporting = providers.gradleProperty("composeCompilerReports").orNull == "true"
+        if (isReporting) {
+            reportsDestination = layout.buildDirectory.dir("compose-reports")
+        }
+    }
     androidResources {
         generateLocaleConfig = true
     }

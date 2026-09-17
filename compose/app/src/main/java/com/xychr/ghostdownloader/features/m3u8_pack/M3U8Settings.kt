@@ -62,6 +62,29 @@ fun M3U8Settings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
         )
     }
 
+    SettingSection(title = stringResource(R.string.m3u8_section_decrypt)) {
+        OptionsSettingRow(
+            title = stringResource(R.string.m3u8_decryption_engine),
+            value = config.str(k("decryptionEngine")),
+            options = listOf("FFmpeg" to "FFmpeg", "MP4Decrypt" to "MP4Decrypt", "Shaka Packager" to "Shaka Packager"),
+            onSelect = { set(k("decryptionEngine"), it) },
+        )
+        TextSettingRow(
+            title = stringResource(R.string.m3u8_decryption_binary_path),
+            value = config.str(k("decryptionBinaryPath")),
+            onConfirm = { set(k("decryptionBinaryPath"), it) },
+            emptyHint = stringResource(R.string.m3u8_decryption_binary_path_desc),
+            placeholder = "/storage/emulated/0/mp4decrypt",
+        )
+        TextSettingRow(
+            title = stringResource(R.string.m3u8_custom_mux),
+            value = config.str(k("customMuxAfterDone")),
+            onConfirm = { set(k("customMuxAfterDone"), it) },
+            emptyHint = stringResource(R.string.m3u8_custom_mux_desc),
+            placeholder = "format=mp4",
+        )
+    }
+
     SettingSection(title = stringResource(R.string.m3u8_section_select)) {
         SwitchSettingRow(
             title = stringResource(R.string.m3u8_auto_select),

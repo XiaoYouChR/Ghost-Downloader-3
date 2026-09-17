@@ -9,29 +9,49 @@ from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist
 UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
 
 
+def toDraftOptions(pairs) -> list[dict]:
+    return [{"key": key, "label": label} for key, label in pairs]
+
+
 def draftFields(task) -> dict:
     info = getattr(task, "_mediaInfo", {})
     hasInfo = bool(info.get("formats"))
     subtitles, _ = buildSubtitleChoices(info, "自动")
     page = task.files[0] if task.files and len(task.files) == 1 else None
+    videoTiers = buildVideoTiers(info, "最佳画质") if hasInfo else [("0", "最佳画质")]
+    audioTiers = buildAudioTiers(info, "最佳音质") if hasInfo else [("0", "最佳音质")]
     return {
         "canProbeMedia": True,
         "hasMediaInfo": hasInfo,
         "canProbePlaylist": task.isPlaylist,
-        "videoTiers": [{"key": key, "label": label} for key, label in
-                       (buildVideoTiers(info, "最佳画质") if hasInfo else [("0", "最佳画质")])],
-        "audioTiers": [{"key": key, "label": label} for key, label in
-                       (buildAudioTiers(info, "最佳音质") if hasInfo else [("0", "最佳音质")])],
-        "videoTier": str(task.maxVideoHeight),
-        "audioTier": str(task.maxAudioBitrate),
-        "isVideoEnabled": task.isVideoEnabled,
-        "isAudioEnabled": task.isAudioEnabled,
+        "controls": [
+            {
+                "id": "video",
+                "title": "视频",
+                "value": str(task.maxVideoHeight) if task.isVideoEnabled else "",
+                "options": toDraftOptions(videoTiers),
+                "isOptional": task.isAudioEnabled,
+            },
+            {
+                "id": "audio",
+                "title": "音频",
+                "value": str(task.maxAudioBitrate) if task.isAudioEnabled else "",
+                "options": toDraftOptions(audioTiers),
+                "isOptional": task.isVideoEnabled,
+            },
+            {
+                "id": "language",
+                "title": "语言",
+                "value": task.audioLanguages if task.isAudioEnabled else "",
+                "options": toDraftOptions(buildAudioLanguageChoices(info)),
+                "isMultiple": True,
+                "isOptional": True,
+            },
+        ],
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
-        "subtitles": [{"key": key, "label": label} for key, label in subtitles],
+        "subtitles": toDraftOptions(subtitles),
         "subtitleLanguages": [s for s in task.subtitleLanguages.split(",") if s],
-        "audioLanguages": [{"key": key, "label": label} for key, label in buildAudioLanguageChoices(info)],
-        "selectedAudioLanguages": [s for s in task.audioLanguages.split(",") if s],
         "duration": int(info.get("duration") or 0) if not task.isPlaylist else 0,
         "startTime": page.startTime if page else 0,
         "endTime": page.endTime if page else 0,
@@ -45,7 +65,12 @@ def probe(task, url, kind):
         if not info or not info.get("formats"):
             raise ValueError("No media formats found")
         task._mediaInfo = info
-        task.setCoverUrl(info.get("thumbnail") or "")
+        choices = buildAudioLanguageChoices(info)
+        if choices and not task.audioLanguages:
+            task.audioLanguages = choices[0][0]
+        thumbnailUrl = info.get("thumbnail") or ""
+        if thumbnailUrl:
+            task.setCoverUrl(thumbnailUrl)
         updateSize(task)
     elif kind == "playlist":
         result = probePlaylist(url)
@@ -65,32 +90,25 @@ def updateSize(task):
                         for f in (video, audio) if f)
 
 
-def setTrack(task, track, isEnabled):
-    if track == "video":
-        task.isVideoEnabled = isEnabled
-    elif track == "audio":
-        task.isAudioEnabled = isEnabled
-    elif track == "cover":
-        task.isCoverEnabled = isEnabled
+def setControl(task, controlId, value):
+    tracks = (task.isVideoEnabled, task.isAudioEnabled, task.isCoverEnabled)
+    if controlId == "video":
+        task.isVideoEnabled = bool(value)
+        if value:
+            task.maxVideoHeight = int(value)
+    elif controlId == "audio":
+        task.isAudioEnabled = bool(value)
+        if value:
+            task.maxAudioBitrate = int(value)
+    elif controlId == "language":
+        task.audioLanguages = value
+    elif controlId == "cover":
+        task.isCoverEnabled = bool(value)
     else:
-        raise ValueError("Unknown track")
-    extension = "mp4" if task.isVideoEnabled else "m4a" if task.isAudioEnabled else "jpg"
-    task.setName(f"{Path(task.name).stem}.{extension}")
-    updateSize(task)
-
-
-def setQuality(task, track, key):
-    if track == "video":
-        task.maxVideoHeight = int(key)
-    elif track == "audio":
-        task.maxAudioBitrate = int(key)
-    else:
-        raise ValueError("Unknown track")
-    updateSize(task)
-
-
-def setAudioLanguages(task, languages):
-    task.audioLanguages = languages
+        raise ValueError(f"Unknown control: {controlId}")
+    if (task.isVideoEnabled, task.isAudioEnabled, task.isCoverEnabled) != tracks:
+        extension = "mp4" if task.isVideoEnabled else "m4a" if task.isAudioEnabled else "jpg"
+        task.setName(f"{Path(task.name).stem}.{extension}")
     updateSize(task)
 
 
@@ -108,6 +126,23 @@ def setTrim(task, start, end):
         task.files = [YouTubeFile(index=0, relativePath="")]
     task.files[0].startTime = start
     task.files[0].endTime = end
+
+
+def fileFields(task) -> dict:
+    return {
+        file.index: {
+            "startTime": file.startTime,
+            "endTime": file.endTime,
+        }
+        for file in task.files or []
+    }
+
+
+def applyFileEdits(task, edits: dict):
+    trim = {int(i): (v[0], v[1]) for i, v in (edits.get("trim") or {}).items()}
+    for file in task.files or []:
+        if file.index in trim:
+            file.startTime, file.endTime = trim[file.index]
 
 
 def buildPreview(info):
@@ -137,3 +172,21 @@ def buildPreview(info):
 
 async def probePreview(task):
     return buildPreview(getattr(task, "_mediaInfo", {}))
+
+
+def cookieState() -> dict:
+    from .config import hasCookieFile
+
+    return {"hasCookies": hasCookieFile()}
+
+
+def saveCookies(cookieText: str):
+    from .config import saveCookies as _saveCookies
+
+    _saveCookies(cookieText)
+
+
+def clearCookies():
+    from .config import clearCookies as _clearCookies
+
+    _clearCookies()

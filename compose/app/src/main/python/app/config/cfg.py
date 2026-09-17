@@ -266,7 +266,7 @@ class AndroidConfig:
         IdentityPresetListValidator(),
     )
 
-    shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", False, BoolValidator())
+    shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())
     hasCompletedOobe = ConfigItem("Software", "HasCompletedOobe", False, BoolValidator())
 
     def __init__(self):

@@ -36,6 +36,7 @@
     <string name="task_change_source_warning">新链接无法复用已有进度。继续将清除已下载数据，并重新下载。</string>
     <string name="task_output_folder">目标目录（绝对路径）</string>
     <string name="task_headers">请求头（每行 Header: value）</string>
+    <string name="task_stream">视频轨道</string>
     <string name="task_connections">并发连接数（1–256）</string>
     <string name="task_client_profile">客户端配置</string>
     <string name="task_user_agent">User-Agent</string>
@@ -51,6 +52,10 @@
     <string name="task_details">查看详情</string>
     <string name="task_selected_files">已选 %1$d / %2$d 个文件</string>
     <string name="task_recorded">已录制 %1$s</string>
+    <string name="task_recorded_time">录制时长</string>
+    <string name="task_detail_live_info">录制信息</string>
+    <string name="task_select_season">选择合集</string>
+    <string name="task_select_pages">选择分P</string>
     <string name="task_stop_save">停止并保存</string>
     <string name="task_retry">重试</string>
     <string name="task_peers">连接 %1$d / %2$d</string>
@@ -65,6 +70,18 @@
     <string name="task_selected_count">已选 %1$d 项</string>
     <string name="task_delete_count">删除 %1$d 个任务？</string>
     <string name="task_copied_urls">已复制 %1$d 条链接</string>
+    <string name="task_share_file">分享文件</string>
+    <string name="task_share_url">分享链接</string>
+    <string name="task_share_unavailable">这个任务只能通过链接分享。</string>
+    <string name="task_trim_title">裁剪片段</string>
+    <string name="task_trim_clear">清除裁剪</string>
+    <string name="task_trim_hint">按 时:分:秒 填写，留空表示不裁剪。</string>
+    <string name="task_hash_title">校验文件哈希</string>
+    <string name="task_hash_algorithm">算法</string>
+    <string name="task_hash_loading">加载中</string>
+    <string name="task_hash_start">开始校验</string>
+    <string name="task_hash_again">重新校验</string>
+    <string name="task_hash_progress">正在校验 %1$d%%</string>
 
     <string name="task_filter_completed">已完成</string>
 

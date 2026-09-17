@@ -3,21 +3,32 @@ package com.xychr.ghostdownloader.features.bittorrent_pack
 import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.engine.SettingRanges
+import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SliderSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
-import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 @Composable
-fun BitTorrentSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Unit) {
+fun BitTorrentSettings(
+    config: JsonObject,
+    k: PackKeys,
+    set: (String, Any) -> Unit,
+    send: suspend (String, List<Any?>) -> JsonElement,
+) {
     val auto = stringResource(R.string.value_auto)
     val unlimited = stringResource(R.string.value_unlimited)
+    var isManagingTrackers by remember { mutableStateOf(false) }
 
     SettingSection(title = stringResource(R.string.bt_section_network)) {
         SwitchSettingRow(
@@ -67,12 +78,22 @@ fun BitTorrentSettings(config: JsonObject, k: PackKeys, set: (String, Any) -> Un
             checked = config.bool(k("autoRefreshWebTrackers")),
             onCheckedChange = { set(k("autoRefreshWebTrackers"), it) },
         )
-        TextSettingRow(
-            title = stringResource(R.string.bt_custom_trackers),
-            value = config.str(k("webTrackerCustomList")),
-            onConfirm = { set(k("webTrackerCustomList"), it) },
-            emptyHint = stringResource(R.string.bt_custom_trackers_desc),
-            singleLine = false,
+        val sourceCount = config.strings(k("webTrackerSources")).size
+        val cachedCount = config.sizes(k("webTrackerSourceCache")).values.sum()
+        ActionSettingRow(
+            title = stringResource(R.string.bt_web_tracker),
+            subtitle = stringResource(R.string.bt_web_tracker_summary, sourceCount, cachedCount),
+            onClick = { isManagingTrackers = true },
+        )
+    }
+
+    if (isManagingTrackers) {
+        WebTrackerSheet(
+            config = config,
+            keys = k,
+            set = set,
+            send = send,
+            onDismiss = { isManagingTrackers = false },
         )
     }
 

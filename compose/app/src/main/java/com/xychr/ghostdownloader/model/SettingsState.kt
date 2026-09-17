@@ -24,6 +24,7 @@ data class Settings(
     val isBrowserExtensionEnabled: Boolean = false,
     val browserExtensionPort: Int = 14370,
     val hasCompletedOobe: Boolean = false,
+    val shouldCheckUpdateAtStartup: Boolean = true,
 )
 
 @Serializable

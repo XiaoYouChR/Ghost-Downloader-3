@@ -1,5 +1,6 @@
 package com.xychr.ghostdownloader.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -11,29 +12,39 @@ object TaskStatus {
     const val FAILED = "FAILED"
 }
 
+interface TaskActionSource {
+    val status: String
+    val canPause: Boolean
+    val canStop: Boolean
+    val hasOutputFile: Boolean
+    val isOutputFolder: Boolean
+}
+
 @Serializable
 data class TaskError(
     val message: String,
     val params: Map<String, String> = emptyMap(),
 )
 
+@Immutable
 @Serializable
 data class TaskUiState(
     val id: String = "",
     val packId: String = "",
-    val canPause: Boolean = false,
+    override val canPause: Boolean = false,
     val canEdit: Boolean = false,
     val categoryId: String = "",
     val outputPath: String = "",
     val outputFolder: String = "",
-    val hasOutputFile: Boolean = false,
+    override val hasOutputFile: Boolean = false,
+    override val isOutputFolder: Boolean = false,
     val selectedFileCount: Int = 0,
     val name: String = "",
     val url: String = "",
     val progress: Double = 0.0,
     val speed: Long = 0,
     val received: Long = 0,
-    val status: String = "",
+    override val status: String = "",
     val fileSize: Long = 0,
     val fileCount: Int = 0,
     val createdAt: Long = 0,
@@ -42,9 +53,11 @@ data class TaskUiState(
     val progressMode: String = "determinate",
     val statusText: String = "",
     val secondarySpeed: Long = 0,
-    val canStop: Boolean = false,
+    override val canStop: Boolean = false,
+    val fileSelectKind: String = "",
+    val canSelectFiles: Boolean = true,
     val packFields: JsonObject = JsonObject(emptyMap()),
-)
+) : TaskActionSource
 
 val TaskUiState.isActive: Boolean
     get() = status != TaskStatus.COMPLETED
@@ -59,20 +72,22 @@ data class TaskSnapshot(
     val received: Long = 0,
 )
 
+@Immutable
 @Serializable
 data class TaskDetail(
     val id: String = "",
     val packId: String = "",
-    val canPause: Boolean = false,
+    override val canPause: Boolean = false,
     val categoryId: String = "",
     val outputPath: String = "",
-    val hasOutputFile: Boolean = false,
+    override val hasOutputFile: Boolean = false,
+    override val isOutputFolder: Boolean = false,
     val name: String = "",
     val url: String = "",
     val progress: Double = 0.0,
     val speed: Long = 0,
     val received: Long = 0,
-    val status: String = "",
+    override val status: String = "",
     val fileSize: Long = 0,
     val createdAt: Long = 0,
     val completedAt: Long = 0,
@@ -84,9 +99,11 @@ data class TaskDetail(
     val progressMode: String = "determinate",
     val statusText: String = "",
     val secondarySpeed: Long = 0,
-    val canStop: Boolean = false,
+    override val canStop: Boolean = false,
+    val fileSelectKind: String = "",
+    val canSelectFiles: Boolean = true,
     val packFields: JsonObject = JsonObject(emptyMap()),
-)
+) : TaskActionSource
 
 @Serializable
 data class TaskFile(
@@ -98,4 +115,6 @@ data class TaskFile(
     val isSelected: Boolean = true,
     val isCompleted: Boolean = false,
     val progress: Double = 0.0,
+    val startTime: Int? = null,
+    val endTime: Int? = null,
 )

@@ -6,6 +6,8 @@ import com.xychr.ghostdownloader.ui.components.*
 import com.xychr.ghostdownloader.ui.components.task.*
 import com.xychr.ghostdownloader.ui.platform.openFolder
 import com.xychr.ghostdownloader.ui.platform.openTaskFile
+import com.xychr.ghostdownloader.ui.platform.shareTaskFile
+import com.xychr.ghostdownloader.ui.platform.shareText
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -106,8 +108,6 @@ fun TasksPage(
     val selection = remember { SelectionState() }
     var isActiveOpen by rememberSaveable { mutableStateOf(true) }
     var isCompletedOpen by rememberSaveable { mutableStateOf(true) }
-    var expandedId by rememberSaveable { mutableStateOf<String?>(null) }
-    var isExpandedCompleted by rememberSaveable { mutableStateOf(false) }
     var selectedSections by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     var sortField by rememberSaveable { mutableStateOf(SortField.CREATED) }
     var isDescending by rememberSaveable { mutableStateOf(true) }
@@ -119,15 +119,8 @@ fun TasksPage(
     val visibleTasks = remember(allTasks, query, isSearching, sortField, isDescending, categoryFilter) {
         allTasks.buildTaskOrder(if (isSearching) query else "", categoryFilter, sortField, isDescending)
     }
-    val sections = buildTaskSections(visibleTasks, when {
-        selection.isActive -> selectedSections
-        expandedId != null -> mapOf(expandedId!! to isExpandedCompleted)
-        else -> emptyMap()
-    })
-    LaunchedEffect(allTasks.map { it.id }) {
-        selection.update(allTasks.map { it.id })
-        if (allTasks.none { it.id == expandedId }) expandedId = null
-    }
+    val sections = buildTaskSections(visibleTasks, if (selection.isActive) selectedSections else emptyMap())
+    LaunchedEffect(allTasks.map { it.id }) { selection.update(allTasks.map { it.id }) }
 
     val keyboard = LocalSoftwareKeyboardController.current
     var isSubmitting by remember { mutableStateOf(false) }
@@ -145,13 +138,11 @@ fun TasksPage(
         query = ""
     }
 
-    /** 两个入口共用：进选择前把每张卡片钉在当前分区，否则任务完成时卡片会从手底下跳走。 */
+    /** 进选择前把每张卡片钉在当前分区，否则任务完成时卡片会从手底下跳走。 */
     fun startSelection(taskId: String? = null) {
         // 搜索时进选择要让出列表空间——键盘遮住的正是用户要挑的东西，下方还有浮动面板
         keyboard?.hide()
-        selectedSections = allTasks.associate { it.id to it.isFinished } +
-            listOfNotNull(expandedId?.let { it to isExpandedCompleted })
-        expandedId = null
+        selectedSections = allTasks.associate { it.id to it.isFinished }
         selection.start(taskId)
     }
 
@@ -194,7 +185,6 @@ fun TasksPage(
     }
 
     // 搜索嵌在选择里：注册在后的优先，所以返回键先退出搜索，再退出选择
-    BackHandler(enabled = expandedId != null && !selection.isActive && !isSearching) { expandedId = null }
     BackHandler(enabled = selection.isActive) { selection.clear() }
     BackHandler(enabled = isSearching) { closeSearch() }
 
@@ -264,7 +254,6 @@ fun TasksPage(
                                     onClick = {
                                         if (!isSearching) {
                                             if (isCompleted) isCompletedOpen = !isCompletedOpen else isActiveOpen = !isActiveOpen
-                                            if (isExpandedCompleted == isCompleted) expandedId = null
                                         }
                                     },
                                     onLongClick = {
@@ -281,16 +270,12 @@ fun TasksPage(
                                     task = task,
                                     isSelecting = selection.isActive,
                                     isSelected = task.id in selection.selectedIds,
-                                    isExpanded = expandedId == task.id,
                                     category = categoryState.categories.firstOrNull { it.categoryId == task.categoryId },
                                     isCategoryEnabled = categoryState.isEnabled,
                                     packExtra = PackRegistry[task.packId]?.taskExtra,
                                     onClick = {
                                         if (selection.isActive) selection.toggle(task.id)
-                                        else {
-                                            isExpandedCompleted = isCompleted
-                                            expandedId = if (expandedId == task.id) null else task.id
-                                        }
+                                        else onNavigate(TaskDetailRoute(task.id))
                                     },
                                     onLongClick = {
                                         if (selection.isActive) selection.toggle(task.id)
@@ -298,20 +283,20 @@ fun TasksPage(
                                     },
                                     onAction = { action ->
                                         when (action) {
-                                            TaskAction.RUN -> when {
-                                                task.canStop -> viewModel.stop(task.id)
-                                                task.status == TaskStatus.RUNNING -> viewModel.pause(task.id)
-                                                else -> viewModel.resume(task.id)
-                                            }
-                                            TaskAction.DETAILS -> onNavigate(TaskDetailRoute(task.id))
+                                            TaskAction.STOP -> viewModel.stop(task.id)
+                                            TaskAction.PAUSE -> viewModel.pause(task.id)
+                                            TaskAction.RESUME -> viewModel.resume(task.id)
                                             TaskAction.FILES -> onNavigate(TaskFilesRoute(task.id))
                                             TaskAction.EDIT -> onNavigate(TaskEditRoute(task.id))
                                             TaskAction.CATEGORY -> categoryTaskIds = listOf(task.id)
-                                            TaskAction.OPEN_FILE -> {
-                                                if (task.hasOutputFile) context.openTaskFile(task.outputPath)
-                                                else onNavigate(TaskDetailRoute(task.id))
-                                            }
+                                            TaskAction.OPEN_FILE -> context.openTaskFile(task.outputPath)
                                             TaskAction.OPEN_FOLDER -> context.openFolder(task.outputFolder)
+                                            TaskAction.SHARE_FILE -> if (!context.shareTaskFile(task.outputPath)) {
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(context.getString(R.string.task_share_unavailable))
+                                                }
+                                            }
+                                            TaskAction.SHARE_URL -> context.shareText(task.url)
                                             TaskAction.COPY_URL -> {
                                                 context.getSystemService(ClipboardManager::class.java)
                                                     .setPrimaryClip(ClipData.newPlainText("url", task.url))

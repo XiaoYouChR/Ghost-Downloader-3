@@ -26,6 +26,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -99,14 +100,17 @@ fun SwitchSettingRow(
     subtitle: String? = null,
 ) {
     val view = LocalView.current
+    val anchor = settingsAnchor(title)
     ListItem(
         content = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
         shapes = ListItemDefaults.shapes(pressedShape = MaterialTheme.shapes.extraLarge),
-        colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
         // ListItem 的 checked 重载固定为 Checkbox；这里保留整行 Switch 的单一语义节点。
-        modifier = modifier.semantics {
+        modifier = modifier.then(anchor.modifier).semantics {
             role = Role.Switch
             toggleableState = ToggleableState(checked)
         },
@@ -131,14 +135,15 @@ fun ActionSettingRow(
     ),
 ) {
     val view = LocalView.current
+    val anchor = settingsAnchor(title)
     ListItem(
         content = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         leadingContent = leading,
         trailingContent = trailing,
         shapes = ListItemDefaults.shapes(pressedShape = MaterialTheme.shapes.extraLarge),
-        colors = colors,
-        modifier = modifier,
+        colors = anchor.containerColor?.let { ListItemDefaults.segmentedColors(containerColor = it) } ?: colors,
+        modifier = modifier.then(anchor.modifier),
         onClick = {
             view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
             onClick()
@@ -154,12 +159,15 @@ fun InfoSettingRow(
     subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
+    val anchor = settingsAnchor(title)
     ListItem(
         content = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         trailingContent = trailing,
-        colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = modifier,
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        modifier = modifier.then(anchor.modifier),
     )
 }
 
@@ -178,11 +186,13 @@ fun SliderSettingRow(
 ) {
     var dragging by remember(value) { mutableFloatStateOf(value.toFloat()) }
     val span = range.last - range.first
+    val anchor = settingsAnchor(title)
 
     Column(
-        modifier.fillMaxWidth()
+        modifier.then(anchor.modifier)
+            .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Row(
@@ -225,14 +235,17 @@ fun RadioSettingRow(
     subtitle: String? = null,
 ) {
     val view = LocalView.current
+    val anchor = settingsAnchor(title)
     ListItem(
         content = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         trailingContent = { RadioButton(selected = isSelected, onClick = null) },
         shapes = ListItemDefaults.shapes(pressedShape = MaterialTheme.shapes.extraLarge),
-        colors = ListItemDefaults.segmentedColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = ListItemDefaults.segmentedColors(
+            containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
         // 整行是一个单选节点，内部 RadioButton 不再单独可达
-        modifier = modifier.semantics {
+        modifier = modifier.then(anchor.modifier).semantics {
             role = Role.RadioButton
             selected = isSelected
         },
@@ -315,13 +328,20 @@ fun TextSettingRow(
     emptyHint: String = "",
     placeholder: String = "",
     singleLine: Boolean = true,
+    isSecret: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     var editing by remember { mutableStateOf(false) }
 
     ActionSettingRow(
         title = title,
-        subtitle = value.ifEmpty { emptyHint },
+        subtitle = when {
+            value.isEmpty() -> emptyHint
+            isSecret -> "••••••••"
+            else -> value
+        },
         onClick = { editing = true },
+        trailing = trailing,
     )
 
     if (editing) {
@@ -363,6 +383,7 @@ fun OptionsSettingRow(
     onSelect: (String) -> Unit,
     leading: (@Composable () -> Unit)? = null,
     isEnabled: Boolean = true,
+    onOpen: (suspend () -> Unit)? = null,
 ) {
     var picking by remember { mutableStateOf(false) }
 
@@ -374,6 +395,7 @@ fun OptionsSettingRow(
     )
 
     if (picking) {
+        LaunchedEffect(Unit) { onOpen?.invoke() }
         AlertDialog(
             onDismissRequest = { picking = false },
             title = { Text(title) },

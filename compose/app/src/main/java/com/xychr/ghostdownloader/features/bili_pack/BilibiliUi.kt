@@ -4,6 +4,7 @@ import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 object BilibiliUi : PackUi {
@@ -21,14 +22,12 @@ object BilibiliUi : PackUi {
         R.string.bili_dolby to R.string.bili_dolby_desc,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set ->
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send ->
             BilibiliLoginRows()
             BilibiliSettings(config, keys, set)
         }
 
     override val draftExtra: (@Composable (JsonObject, String, suspend (String, List<Any?>) -> Unit) -> Unit) =
         { packFields, url, send -> DraftMediaSection(packFields, url, send) }
-
-    override val draftSummary: (JsonObject) -> String? = ::mediaSummary
 }

@@ -59,12 +59,11 @@ val navPopExitTransition: AnimatedContentTransitionScope<*>.() -> ExitTransition
 @Serializable data object ClientProfileRoute : Route
 @Serializable data object ProxySettingsRoute : Route
 @Serializable data object ServiceSettingsRoute : Route
-@Serializable data object PacksSettingsRoute : Route
 @Serializable data object PackInfoRoute : Route
 @Serializable data object RuntimesSettingsRoute : Route
 @Serializable data object PermissionsSettingsRoute : Route
 @Serializable data object AboutSettingsRoute : Route
-@Serializable data object LanguageSettingsRoute : Route
+@Serializable data object AppearanceSettingsRoute : Route
 @Serializable data class PackSettingsRoute(val pack: String) : Route
 
 // 分类管理。categoryId 为空表示新建

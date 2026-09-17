@@ -102,6 +102,14 @@ class DraftViewModel(
 
     suspend fun setCategory(url: String, choice: String?): Boolean = update(url, listOf(DraftChange("setCategory", listOf(choice))))
 
+    suspend fun setControl(url: String, id: String, value: String): Boolean =
+        update(url, listOf(DraftChange("setControl", listOf(id, value))))
+
+    suspend fun refresh(url: String) = try {
+        send("refreshDraft", listOf(url))
+    } catch (error: CancellationException) { throw error }
+    catch (error: Exception) { mutableState.value = state.value.copy(error = error.toTaskError()) }
+
     fun updateFiles(url: String, initial: List<DraftFile>, edited: List<DraftFile>) {
         val changes = fileChanges(initial, edited)
         if (changes.isEmpty()) return

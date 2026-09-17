@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,7 +28,7 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.model.DraftItem
-import com.xychr.ghostdownloader.packs.PackRegistry
+import com.xychr.ghostdownloader.packs.controlList
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
 import com.xychr.ghostdownloader.ui.util.formatSize
 
@@ -36,18 +38,27 @@ fun DraftCard(
     onRename: () -> Unit,
     onOpenOptions: () -> Unit,
     onCategorize: () -> Unit,
+    onRefresh: () -> Unit,
+    onSelectFiles: () -> Unit,
+    onSelectControl: (id: String, value: String) -> Unit,
     modifier: Modifier = Modifier,
     category: Category? = null,
     isCategoryEnabled: Boolean = false,
     isEnabled: Boolean = true,
 ) {
     val canInteract = isEnabled && !item.isParsing && item.error == null
+    val controls = item.packFields.controlList()
 
     Card(modifier = modifier.fillMaxWidth().animateContentSize()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.ic_file), null,
-                    Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                val isFailed = item.error != null
+                Icon(
+                    painterResource(if (isFailed) R.drawable.ic_info else R.drawable.ic_file), null,
+                    Modifier.size(20.dp),
+                    tint = if (isFailed) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     item.name.ifEmpty { item.url },
@@ -68,11 +79,7 @@ fun DraftCard(
                     val catName = category?.name ?: stringResource(R.string.task_uncategorized)
                     IconButton(onClick = onCategorize, enabled = isEnabled) {
                         Icon(
-                            painterResource(
-                                category?.let { categoryIconRes(it.icon) }
-                                    ?: if (item.categoryChoice == null) R.drawable.ic_refresh
-                                    else R.drawable.ic_file
-                            ),
+                            painterResource(category?.let { categoryIconRes(it.icon) } ?: R.drawable.ic_file),
                             stringResource(R.string.task_category_action, catName),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -82,24 +89,32 @@ fun DraftCard(
 
             when {
                 item.isParsing -> LinearProgressIndicator(Modifier.fillMaxWidth())
-                item.error != null -> Text(
-                    engineText(item.error),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-                else -> {
-                    val supporting = listOfNotNull(
-                        if (item.fileSize > 0) formatSize(item.fileSize) else null,
-                        PackRegistry[item.packId]?.draftSummary?.invoke(item.packFields),
-                        if (item.files.size > 1) stringResource(R.string.draft_files_selected,
-                            item.files.count { it.isSelected }, item.files.size) else null,
+                item.error != null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        engineText(item.error),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f),
                     )
-                    if (supporting.isNotEmpty()) Text(
-                        supporting.joinToString(" · "),
+                    TextButton(onClick = onRefresh, enabled = isEnabled) {
+                        Text(stringResource(R.string.draft_retry))
+                    }
+                }
+                else -> Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DraftControls(controls, isEnabled, onSelectControl, Modifier.weight(1f))
+                    if (item.files.size > 1) {
+                        AssistChip(onClick = onSelectFiles, enabled = isEnabled, label = {
+                            Text(stringResource(R.string.draft_files_selected,
+                                item.files.count { it.isSelected }, item.files.size))
+                        })
+                    }
+                    if (item.fileSize > 0) Text(
+                        formatSize(item.fileSize),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

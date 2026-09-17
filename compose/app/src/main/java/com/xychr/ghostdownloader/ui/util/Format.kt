@@ -1,10 +1,12 @@
 package com.xychr.ghostdownloader.ui.util
 
+private val TimestampFormat = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
 fun formatTimestamp(epoch: Long): String {
     if (epoch <= 0) return ""
     val instant = java.time.Instant.ofEpochSecond(epoch)
     val local = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
-    return local.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+    return local.format(TimestampFormat)
 }
 
 fun formatSpeed(bytesPerSec: Long): String {

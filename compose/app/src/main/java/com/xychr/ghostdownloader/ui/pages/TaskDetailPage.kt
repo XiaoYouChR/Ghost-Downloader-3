@@ -9,28 +9,33 @@ import com.xychr.ghostdownloader.ui.util.*
 import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
 import com.xychr.ghostdownloader.ui.platform.openTaskFile
 import com.xychr.ghostdownloader.ui.platform.openFolder
+import com.xychr.ghostdownloader.ui.platform.shareTaskFile
+import com.xychr.ghostdownloader.ui.platform.shareText
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -83,8 +88,14 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     private val _detail = MutableStateFlow(TaskDetail())
     val detail: StateFlow<TaskDetail> = _detail.asStateFlow()
 
+    private val _hashState = MutableStateFlow(HashState())
+    val hashState: StateFlow<HashState> = _hashState.asStateFlow()
+
     init {
         viewModelScope.launch { refresh() }
+        viewModelScope.launch {
+            engineRepository.observe<HashState>("hashState").collect { _hashState.value = it }
+        }
         viewModelScope.launch {
             engineRepository.observe<List<TaskUiState>>("tasks").collect { tasks ->
                 val task = tasks.find { it.id == taskId }
@@ -93,6 +104,7 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
                         status = task.status, canPause = task.canPause,
                         canStop = task.canStop, error = task.error,
                         hasOutputFile = task.hasOutputFile,
+                        isOutputFolder = task.isOutputFolder,
                     )
                 }
             }
@@ -130,6 +142,12 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
         push("redownload")
     }
 
+    fun startHash(algorithm: String) = push("startFileHash", algorithm)
+
+    fun cancelHash() {
+        viewModelScope.launch { engineRepository.invoke("cancelFileHash") }
+    }
+
     suspend fun setCategory(categoryId: String) {
         engineRepository.invoke("setTaskCategory", engineRepository.encode(listOf(taskId)), categoryId)
         refresh()
@@ -157,6 +175,7 @@ fun TaskDetailPage(
     viewModel: TaskDetailViewModel = viewModel { TaskDetailViewModel(taskId) },
 ) {
     val detail by viewModel.detail.collectAsStateWithLifecycle()
+    val hashState by viewModel.hashState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = LocalSnackbar.current
@@ -164,6 +183,7 @@ fun TaskDetailPage(
     var isRenaming by remember { mutableStateOf(false) }
     var shouldRedownload by remember { mutableStateOf(false) }
     var shouldCategorize by remember { mutableStateOf(false) }
+    var isHashing by remember { mutableStateOf(false) }
 
     val copiedLabel = stringResource(R.string.task_detail_copied)
     val categorySaveFailed = stringResource(R.string.task_category_save_failed)
@@ -195,62 +215,88 @@ fun TaskDetailPage(
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         ) {
-            ProgressSection(detail)
+            item { ProgressSection(detail) }
 
-            Spacer(Modifier.height(16.dp))
-            ActionRow(
-                detail = detail,
-                onPause = { if (detail.canStop) viewModel.stop() else viewModel.pause() },
-                onResume = { viewModel.resume() },
-                onDelete = { isDeleting = true },
-                onCopyUrl = ::copyUrl,
-                onMoveToFront = viewModel::moveToFront,
-                onRedownload = { shouldRedownload = true },
-                onOpenFile = {
-                    if (detail.hasOutputFile) context.openTaskFile(detail.outputPath)
-                    else context.openFolder(detail.outputFolder)
-                },
-                onOpenFolder = { context.openFolder(detail.outputFolder) },
-            )
-
-            Spacer(Modifier.height(16.dp))
-            InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl)
-            if (categories.isEnabled) TextButton(onClick = { shouldCategorize = true }) {
-                Text(stringResource(R.string.task_category_value, categories.categories.firstOrNull {
-                    it.categoryId == detail.categoryId
-                }?.name ?: stringResource(R.string.task_uncategorized)))
+            item {
+                Spacer(Modifier.height(16.dp))
+                ActionRow(
+                    detail = detail,
+                    onMainAction = { action ->
+                        when (action) {
+                            TaskAction.STOP -> viewModel.stop()
+                            TaskAction.PAUSE -> viewModel.pause()
+                            TaskAction.RESUME -> viewModel.resume()
+                            TaskAction.OPEN_FILE -> context.openTaskFile(detail.outputPath)
+                            TaskAction.OPEN_FOLDER -> context.openFolder(detail.outputFolder)
+                            else -> Unit
+                        }
+                    },
+                    onDelete = { isDeleting = true },
+                    onCopyUrl = ::copyUrl,
+                    onShareUrl = { context.shareText(detail.url) },
+                    onShareFile = {
+                        if (!context.shareTaskFile(detail.outputPath)) {
+                            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_share_unavailable)) }
+                        }
+                    },
+                    onMoveToFront = viewModel::moveToFront,
+                    onRedownload = { shouldRedownload = true },
+                    onHash = { isHashing = true },
+                )
             }
-            if (detail.canEdit && detail.status != TaskStatus.COMPLETED) TextButton(onClick = {
-                onNavigate(TaskEditRoute(taskId))
-            }) { Text(stringResource(R.string.task_edit_options)) }
+
+            item {
+                Spacer(Modifier.height(16.dp))
+                InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl)
+                if (categories.isEnabled) TextButton(onClick = { shouldCategorize = true }) {
+                    Text(stringResource(R.string.task_category_value, categories.categories.firstOrNull {
+                        it.categoryId == detail.categoryId
+                    }?.name ?: stringResource(R.string.task_uncategorized)))
+                }
+                if (detail.canEdit && detail.status != TaskStatus.COMPLETED) TextButton(onClick = {
+                    onNavigate(TaskEditRoute(taskId))
+                }) { Text(stringResource(R.string.task_edit_options)) }
+            }
 
             if (detail.files.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
-                TextButton(onClick = { onNavigate(TaskFilesRoute(taskId)) }) {
-                    Text(stringResource(R.string.task_choose_files))
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    SectionTitle(stringResource(R.string.task_detail_files))
+                    TextButton(onClick = { onNavigate(TaskFilesRoute(taskId)) }) {
+                        Text(stringResource(toFileSelectLabel(detail.fileSelectKind)))
+                    }
                 }
-                FilesSection(detail)
+                items(detail.files, key = { it.index }) { file -> TaskFileRow(file) }
             }
             if (detail.packFields.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
-                PackRegistry[detail.packId]?.detailExtra?.invoke(detail.packFields)
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    PackRegistry[detail.packId]?.detailExtra?.invoke(detail.packFields)
+                }
             }
             detail.error?.let {
-                Spacer(Modifier.height(16.dp))
-                ErrorSection(it)
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    ErrorSection(it)
+                }
             }
 
-            Spacer(Modifier.height(24.dp))
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 
+    if (isHashing) HashSheet(
+        name = detail.name,
+        state = hashState,
+        onStart = viewModel::startHash,
+        onCancel = viewModel::cancelHash,
+        // 抽屉一关就停作业，否则它会看不见地继续读盘
+        onDismiss = { isHashing = false; viewModel.cancelHash() },
+    )
     if (isDeleting) {
         DeleteTaskDialog(
             onDismiss = { isDeleting = false },
@@ -305,22 +351,15 @@ fun TaskDetailPage(
 
 @Composable
 private fun ProgressSection(detail: TaskDetail) {
-    val text = when {
-        detail.status == TaskStatus.FAILED -> stringResource(R.string.task_status_failed)
-        detail.status == TaskStatus.COMPLETED -> stringResource(R.string.task_status_completed) +
-            formatTimestamp(detail.completedAt).takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
-        detail.status == TaskStatus.WAITING -> stringResource(R.string.task_status_waiting)
-        detail.statusText.isNotEmpty() -> engineText(detail.statusText, emptyMap())
-        detail.status == TaskStatus.PAUSED -> stringResource(R.string.task_status_paused)
-        detail.status == TaskStatus.RUNNING ->
-            "${formatSpeed(detail.speed)} · ${detail.progress.toInt()}%"
-        else -> ""
-    }
-    Text(
-        text = text,
+    TaskStatusLine(
+        status = detail.status,
+        error = detail.error,
+        statusText = detail.statusText,
+        completedAt = detail.completedAt,
+        speed = detail.speed,
+        progress = detail.progress,
         style = MaterialTheme.typography.bodyLarge,
-        color = if (detail.status == TaskStatus.FAILED) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = Int.MAX_VALUE,
     )
 
     Spacer(Modifier.height(8.dp))
@@ -331,14 +370,17 @@ private fun ProgressSection(detail: TaskDetail) {
     }
 
     Spacer(Modifier.height(4.dp))
-    Row {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
             text = formatSizeProgress(detail.received, detail.fileSize),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (detail.secondarySpeed > 0) Text(
-            text = " · ↑ ${formatSpeed(detail.secondarySpeed)}",
+            text = "↑ ${formatSpeed(detail.secondarySpeed)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -348,91 +390,95 @@ private fun ProgressSection(detail: TaskDetail) {
 @Composable
 private fun ActionRow(
     detail: TaskDetail,
-    onPause: () -> Unit,
-    onResume: () -> Unit,
+    onMainAction: (TaskAction) -> Unit,
     onDelete: () -> Unit,
     onCopyUrl: () -> Unit,
+    onShareUrl: () -> Unit,
+    onShareFile: () -> Unit,
     onMoveToFront: () -> Unit,
     onRedownload: () -> Unit,
-    onOpenFile: () -> Unit,
-    onOpenFolder: () -> Unit,
+    onHash: () -> Unit,
 ) {
     var isMenuOpen by remember { mutableStateOf(false) }
+    val main = buildTaskMainAction(detail)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        when (detail.status) {
-            TaskStatus.RUNNING -> Button(onClick = onPause, enabled = detail.canStop || detail.canPause) {
-                Icon(painterResource(if (detail.canStop) R.drawable.ic_check else R.drawable.ic_pause), null)
-                Text(stringResource(if (detail.canStop) R.string.task_stop_save else R.string.action_pause), Modifier.padding(start = 4.dp))
+        Row(
+            modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Button(onClick = { onMainAction(main.action) }, enabled = main.isEnabled) {
+                Icon(painterResource(main.icon), null)
+                Text(stringResource(main.label), Modifier.padding(start = 4.dp))
             }
-
-            TaskStatus.PAUSED, TaskStatus.WAITING, TaskStatus.FAILED -> Button(onClick = onResume) {
-                Icon(painterResource(R.drawable.ic_play), null)
-                Text(stringResource(R.string.action_resume), Modifier.padding(start = 4.dp))
-            }
-
-            TaskStatus.COMPLETED -> Button(onClick = onOpenFile) {
-                Icon(painterResource(R.drawable.ic_open_in_new), null)
-                Text(stringResource(R.string.task_detail_open_file), Modifier.padding(start = 4.dp))
+            if (main.action == TaskAction.OPEN_FILE) {
+                OutlinedButton(onClick = onShareFile) {
+                    Icon(painterResource(R.drawable.ic_share), null)
+                    Text(stringResource(R.string.task_share_file), Modifier.padding(start = 4.dp))
+                }
             }
         }
 
-        if (detail.status == TaskStatus.COMPLETED) {
-            OutlinedButton(onClick = onOpenFolder) {
-                Icon(painterResource(R.drawable.ic_folder), null)
-                Text(
-                    text = stringResource(R.string.task_detail_open_folder),
-                    modifier = Modifier.padding(start = 4.dp),
+        Box {
+            IconButton(onClick = { isMenuOpen = true }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_more_vert),
+                    contentDescription = stringResource(R.string.action_more),
                 )
             }
-        }
-
-        OutlinedButton(
-            onClick = onDelete,
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.error,
-            ),
-        ) {
-            Icon(painterResource(R.drawable.ic_delete), null)
-            Text(stringResource(R.string.action_delete), Modifier.padding(start = 4.dp))
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        IconButton(onClick = { isMenuOpen = true }) {
-            Icon(
-                painter = painterResource(R.drawable.ic_more_vert),
-                contentDescription = stringResource(R.string.action_more),
-            )
-        }
-        DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.task_detail_copy_url)) },
-                onClick = {
-                    onCopyUrl()
-                    isMenuOpen = false
-                },
-            )
-            if (detail.status == TaskStatus.WAITING || detail.status == TaskStatus.PAUSED) {
+            DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
+                if (main.action == TaskAction.OPEN_FILE) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.task_hash_title)) },
+                        onClick = {
+                            onHash()
+                            isMenuOpen = false
+                        },
+                    )
+                }
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.task_detail_move_to_front)) },
+                    text = { Text(stringResource(R.string.task_detail_copy_url)) },
                     onClick = {
-                        onMoveToFront()
+                        onCopyUrl()
+                        isMenuOpen = false
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.task_share_url)) },
+                    onClick = {
+                        onShareUrl()
+                        isMenuOpen = false
+                    },
+                )
+                if (detail.status == TaskStatus.WAITING || detail.status == TaskStatus.PAUSED) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.task_detail_move_to_front)) },
+                        onClick = {
+                            onMoveToFront()
+                            isMenuOpen = false
+                        },
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.task_detail_redownload)) },
+                    onClick = {
+                        onRedownload()
+                        isMenuOpen = false
+                    },
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_delete)) },
+                    onClick = {
+                        onDelete()
                         isMenuOpen = false
                     },
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.task_detail_redownload)) },
-                onClick = {
-                    onRedownload()
-                    isMenuOpen = false
-                },
-            )
         }
     }
 }
@@ -475,14 +521,17 @@ private fun InfoSection(detail: TaskDetail, onRename: () -> Unit, onCopyUrl: () 
 }
 
 @Composable
-private fun FilesSection(detail: TaskDetail) {
-    SectionTitle(stringResource(R.string.task_detail_files))
-
-    detail.files.forEach { file ->
-        ListItem(
-            supportingContent = { Text(fileStatusText(file) + " · " + formatSize(file.size)) },
-        ) { Text(file.path, style = MaterialTheme.typography.bodyMedium, maxLines = 2) }
-    }
+private fun TaskFileRow(file: TaskFile) {
+    ListItem(
+        supportingContent = { Text(fileStatusText(file)) },
+        trailingContent = {
+            Text(
+                text = formatSize(file.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+    ) { Text(file.path, style = MaterialTheme.typography.bodyMedium, maxLines = 2) }
 }
 
 @Composable

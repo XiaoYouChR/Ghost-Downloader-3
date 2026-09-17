@@ -12,3 +12,7 @@ internal fun Context.start(intent: Intent): Boolean = runCatching {
 
 internal fun Context.appDetailsIntent(): Intent =
     Intent(SystemSettings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName".toUri())
+
+fun Context.shareText(text: String) {
+    start(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null))
+}

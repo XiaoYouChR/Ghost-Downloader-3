@@ -16,8 +16,11 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.RadioSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
+import com.xychr.ghostdownloader.ui.platform.ThemeMode
 import com.xychr.ghostdownloader.ui.platform.loadLanguageTag
+import com.xychr.ghostdownloader.ui.platform.loadThemeMode
 import com.xychr.ghostdownloader.ui.platform.saveLanguageTag
+import com.xychr.ghostdownloader.ui.platform.saveThemeMode
 import com.xychr.ghostdownloader.ui.platform.systemLanguageName
 
 /** 每种语言用它自己的写法标注——用当前界面语言去翻译语言名，找不到母语的人反而选不出来。 */
@@ -32,12 +35,19 @@ private val languages = listOf(
     "es" to "Español",
 )
 
+private val themes = listOf(
+    ThemeMode.SYSTEM to R.string.settings_theme_system,
+    ThemeMode.LIGHT to R.string.settings_theme_light,
+    ThemeMode.DARK to R.string.settings_theme_dark,
+)
+
 @Composable
-fun LanguagePage(onBack: () -> Unit) {
+fun AppearancePage(onBack: () -> Unit) {
     val context = LocalContext.current
     var currentTag by remember { mutableStateOf(loadLanguageTag(context)) }
+    var currentTheme by remember { mutableStateOf(loadThemeMode(context)) }
 
-    fun select(tag: String?) {
+    fun selectLanguage(tag: String?) {
         if (tag == currentTag) return
         currentTag = tag
         saveLanguageTag(context, tag)
@@ -47,23 +57,39 @@ fun LanguagePage(onBack: () -> Unit) {
         }
     }
 
-    SettingsScaffold(stringResource(R.string.settings_section_language), onBack) {
+    fun selectTheme(mode: ThemeMode) {
+        if (mode == currentTheme) return
+        currentTheme = mode
+        saveThemeMode(context, mode)
+        (context as? Activity)?.recreate()
+    }
+
+    SettingsScaffold(stringResource(R.string.settings_section_appearance), onBack) {
+        SettingSection(title = stringResource(R.string.settings_theme)) {
+            themes.forEach { (mode, labelRes) ->
+                RadioSettingRow(
+                    title = stringResource(labelRes),
+                    isSelected = currentTheme == mode,
+                    onClick = { selectTheme(mode) },
+                )
+            }
+        }
         // 单选组跨越两个视觉分区，读屏的「第 n 项，共 9 项」才数得对
         Column(Modifier.selectableGroup()) {
-            SettingSection {
+            SettingSection(title = stringResource(R.string.settings_section_language)) {
                 RadioSettingRow(
                     title = stringResource(R.string.settings_language_system),
                     isSelected = currentTag == null,
-                    onClick = { select(null) },
+                    onClick = { selectLanguage(null) },
                     subtitle = systemLanguageName(),
                 )
             }
-            SettingSection(title = stringResource(R.string.settings_language_available)) {
+            SettingSection {
                 languages.forEach { (tag, label) ->
                     RadioSettingRow(
                         title = label,
                         isSelected = currentTag == tag,
-                        onClick = { select(tag) },
+                        onClick = { selectLanguage(tag) },
                     )
                 }
             }

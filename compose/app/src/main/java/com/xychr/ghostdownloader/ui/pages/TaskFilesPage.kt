@@ -25,9 +25,11 @@ import com.xychr.ghostdownloader.model.Category
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
 data class TaskFilesState(
     val detail: TaskDetail? = null,
+    val files: List<TaskFile> = emptyList(),
     val selected: Set<Int> = emptySet(),
     val initial: Set<Int> = emptySet(),
     val isSaving: Boolean = false,
@@ -35,12 +37,19 @@ data class TaskFilesState(
     val needsDownload: Boolean = false,
     val error: TaskError? = null,
 ) {
-    val hasChanges get() = selected != initial
+    val hasChanges get() = selected != initial || files != detail?.files.orEmpty()
 }
+
+@Serializable
+data class TaskFileEdits(
+    val selected: List<Int>,
+    val trim: Map<String, List<Int>> = emptyMap(),
+    val titles: Map<String, String> = emptyMap(),
+)
 
 class TaskFilesViewModel(
     private val fetch: suspend () -> TaskDetail,
-    private val send: suspend (Set<Int>) -> Unit,
+    private val send: suspend (TaskFileEdits) -> Unit,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(TaskFilesState())
     val state = mutableState.asStateFlow()
@@ -53,7 +62,7 @@ class TaskFilesViewModel(
                 val detail = fetch()
                 check(detail.id.isNotEmpty()) { "Task no longer exists" }
                 val indexes = detail.files.filter { it.isSelected }.map { it.index }.toSet()
-                mutableState.value = TaskFilesState(detail, indexes, indexes)
+                mutableState.value = TaskFilesState(detail, detail.files, indexes, indexes)
             } catch (error: Exception) {
                 mutableState.value = mutableState.value.copy(error = error.toTaskError())
             }
@@ -62,6 +71,24 @@ class TaskFilesViewModel(
 
     fun setSelection(indexes: Set<Int>) {
         if (!state.value.isSaving) mutableState.value = state.value.copy(selected = indexes, error = null)
+    }
+
+    fun setTrim(index: Int, start: Int, end: Int) {
+        if (state.value.isSaving) return
+        mutableState.value = state.value.copy(
+            files = state.value.files.map {
+                if (it.index == index) it.copy(startTime = start, endTime = end) else it
+            },
+            error = null,
+        )
+    }
+
+    fun setTitle(index: Int, newPath: String) {
+        if (state.value.isSaving) return
+        mutableState.value = state.value.copy(
+            files = state.value.files.map { if (it.index == index) it.copy(path = newPath) else it },
+            error = null,
+        )
     }
 
     fun cancelConfirmation() { mutableState.value = state.value.copy(needsDownload = false) }
@@ -82,7 +109,14 @@ class TaskFilesViewModel(
                     mutableState.value = state.value.copy(isSaving = false, needsDownload = true)
                     return@launch
                 }
-                send(before.selected)
+                val originals = before.detail?.files.orEmpty().associateBy { it.index }
+                send(TaskFileEdits(
+                    selected = before.selected.sorted(),
+                    trim = before.files.filter { it.startTime != null }
+                        .associate { "${it.index}" to listOf(it.startTime ?: 0, it.endTime ?: 0) },
+                    titles = before.files.filter { originals[it.index]?.path != it.path }
+                        .associate { "${it.index}" to it.path.substringAfterLast('/') },
+                ))
                 mutableState.value = state.value.copy(isSaving = false, isDone = true)
             } catch (error: Exception) {
                 mutableState.value = state.value.copy(isSaving = false, error = error.toTaskError())
@@ -96,12 +130,13 @@ fun TaskFilesPage(taskId: String, onBack: () -> Unit, categories: CategoryState 
     val model: TaskFilesViewModel = viewModel(key = taskId) {
         TaskFilesViewModel(
             fetch = { engineRepository.query("taskDetail", taskId) },
-            send = { engineRepository.invoke("setTaskSelection", taskId, it.sorted().joinToString(",")) },
+            send = { engineRepository.invoke("applyTaskFileEdits", taskId, engineRepository.encode(it)) },
         )
     }
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.isDone) { if (state.isDone) onBack() }
-    TaskFilesEditor(state, model::setSelection, { model.save() }, onBack, onRetry = model::refresh, categories = categories)
+    TaskFilesEditor(state, model::setSelection, { model.save() }, onBack,
+        onRetry = model::refresh, onTrim = model::setTrim, onRename = model::setTitle, categories = categories)
     if (state.needsDownload) AlertDialog(
         onDismissRequest = model::cancelConfirmation,
         title = { Text(stringResource(R.string.task_apply_download)) },
@@ -124,6 +159,8 @@ fun TaskFilesEditor(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onRetry: () -> Unit = {},
+    onTrim: (Int, Int, Int) -> Unit = { _, _, _ -> },
+    onRename: (Int, String) -> Unit = { _, _ -> },
     categories: CategoryState = CategoryState(),
 ) {
     var shouldDiscard by remember { mutableStateOf(false) }
@@ -148,16 +185,20 @@ fun TaskFilesEditor(
                 else TextButton(onClick = onRetry) { Text(stringResource(R.string.task_retry)) }
             } else {
                 Text(detail.name, Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.task_selected_files, state.selected.size, detail.files.size),
+                Text(stringResource(R.string.task_selected_files, state.selected.size, state.files.size),
                     Modifier.padding(horizontal = 16.dp))
-                if (categories.isEnabled) FileCategoryMenu(detail.files, categories.categories,
+                if (categories.isEnabled) FileCategoryMenu(state.files, categories.categories,
                     onSelection, isEnabled = !state.isSaving)
                 SelectableFileList(
-                    files = remember(detail.files) {
-                        detail.files.map { SelectableFile(it.index, it.path, it.groups, it.size) }
+                    files = remember(state.files) {
+                        state.files.map {
+                            SelectableFile(it.index, it.path, it.groups, it.size, it.startTime, it.endTime)
+                        }
                     },
                     selectedIndexes = state.selected,
                     onSelectionChange = onSelection,
+                    onRename = onRename,
+                    onTrim = onTrim,
                     isEnabled = !state.isSaving,
                     modifier = Modifier.weight(1f),
                 )

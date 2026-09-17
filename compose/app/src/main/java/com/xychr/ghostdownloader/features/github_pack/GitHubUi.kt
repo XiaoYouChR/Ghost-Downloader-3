@@ -4,6 +4,7 @@ import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 object GitHubUi : PackUi {
@@ -16,6 +17,6 @@ object GitHubUi : PackUi {
         R.string.proxy_site to null,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set -> GitHubSettings(config, keys, set) }
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send -> GitHubSettings(config, keys, set, send) }
 }

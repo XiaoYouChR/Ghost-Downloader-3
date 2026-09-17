@@ -29,6 +29,7 @@ fun LiquidBottomBar(
     selectedTab: BottomTab,
     onTabSelected: (BottomTab) -> Unit,
     draftCount: Int,
+    hasUpdate: Boolean,
     backdrop: Backdrop,
     modifier: Modifier = Modifier,
 ) {
@@ -55,6 +56,8 @@ fun LiquidBottomBar(
                     BadgedBox(badge = {
                         if (tab == BottomTab.TASKS && draftCount > 0) {
                             Badge { Text(draftCount.toString()) }
+                        } else if (tab == BottomTab.SETTINGS && hasUpdate) {
+                            Badge()
                         }
                     }) {
                         Icon(

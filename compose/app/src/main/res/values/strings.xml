@@ -11,6 +11,7 @@
     <string name="task_status_paused">已暂停</string>
     <string name="task_status_completed">已完成</string>
     <string name="task_status_failed">失败</string>
+    <string name="task_status_running">下载中</string>
 
     <string name="action_ok">确定</string>
     <string name="action_cancel">取消</string>
@@ -45,10 +46,14 @@
     <string name="permission_granted">已授予</string>
     <string name="permission_denied">未授予，点击前往设置</string>
 
+    <string name="settings_section_appearance">语言与外观</string>
     <string name="settings_section_language">语言</string>
-    <string name="settings_summary_language">选择应用显示语言</string>
+    <string name="settings_summary_language">应用显示语言与主题</string>
     <string name="settings_language_system">跟随系统</string>
-    <string name="settings_language_available">可用语言</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
 
     <string name="settings_version">版本</string>
     <string name="settings_source_code">开源地址</string>
@@ -60,6 +65,13 @@
     <string name="settings_update_downloading">正在下载… %d%%</string>
     <string name="settings_update_install">安装更新</string>
     <string name="settings_update_download_failed">下载失败，请稍后重试</string>
+    <string name="settings_update_no_asset">当前平台没有可用的安装包</string>
+    <string name="settings_update_notes">查看更新说明</string>
+    <string name="settings_update_ignore">忽略此版本</string>
+    <string name="settings_update_install_failed">无法启动安装，请先允许「安装未知应用」</string>
+    <string name="settings_update_ready">有新版本 %s</string>
+    <string name="settings_check_update_at_startup">启动时检查更新</string>
+    <string name="settings_check_update_at_startup_desc">发现新版本时在设置上显示提示</string>
 
     <string name="action_pause">暂停</string>
     <string name="action_resume">继续</string>
@@ -81,6 +93,8 @@
     <string name="proxy_site">代理站点</string>
     <string name="proxy_site_custom">自定义站点</string>
     <string name="proxy_site_custom_desc">未设置</string>
+    <string name="proxy_site_unavailable">不可用</string>
+    <string name="huggingface_access_token_get">获取 Token</string>
     <string name="bt_section_network">网络</string>
     <string name="bt_section_tracker">Tracker</string>
     <string name="bt_section_transfer">传输</string>
@@ -97,6 +111,15 @@
     <string name="bt_auto_refresh_web_trackers">新建任务时刷新 Web Tracker</string>
     <string name="bt_custom_trackers">自定义 Tracker</string>
     <string name="bt_custom_trackers_desc">未设置，每行一个 Tracker 地址</string>
+    <string name="bt_web_tracker">Web Tracker</string>
+    <string name="bt_web_tracker_summary">%1$d 个源 · %2$d 条缓存</string>
+    <string name="bt_web_tracker_sources">Tracker 源</string>
+    <string name="bt_web_tracker_add">添加</string>
+    <string name="bt_web_tracker_save">保存并刷新</string>
+    <string name="bt_web_tracker_never">未拉取</string>
+    <string name="bt_web_tracker_source_count">%d 条</string>
+    <string name="bt_web_tracker_invalid">请输入有效的 HTTP/HTTPS 地址</string>
+    <string name="bt_web_tracker_refreshing">正在刷新…</string>
     <string name="bt_sequential_download">顺序下载</string>
     <string name="bt_sequential_download_desc">按文件顺序下载，适合边下边看但通常会影响整体效率</string>
     <string name="bt_storage_mode">文件分配模式</string>
@@ -108,6 +131,13 @@
     <string name="bt_seeding_ratio_limit">自动暂停做种分享率</string>
     <string name="bt_seeding_time_limit">自动暂停做种时长</string>
     <string name="m3u8_section_output">输出</string>
+    <string name="m3u8_section_decrypt">解密</string>
+    <string name="m3u8_decryption_engine">解密引擎</string>
+    <string name="m3u8_decryption_engine_desc">调用的第三方解密程序</string>
+    <string name="m3u8_decryption_binary_path">解密引擎二进制路径</string>
+    <string name="m3u8_decryption_binary_path_desc">设备上的可执行文件路径，留空则用内置 FFmpeg</string>
+    <string name="m3u8_custom_mux">自定义混流参数</string>
+    <string name="m3u8_custom_mux_desc">自定义 --mux-after-done，留空则按输出容器自动混流</string>
     <string name="m3u8_section_select">轨道选择</string>
     <string name="m3u8_section_network">网络</string>
     <string name="m3u8_section_live">直播录制</string>
@@ -149,6 +179,12 @@
     <string name="ytdlp_embed_chapters_desc">下载完成后将章节标记嵌入文件</string>
     <string name="ytdlp_subtitle_languages">字幕语言</string>
     <string name="ytdlp_subtitle_languages_desc">未设置，用逗号分隔语言代码</string>
+    <string name="ytdlp_cookie">YouTube Cookie</string>
+    <string name="ytdlp_cookie_desc">下载需要登录的内容时需要，通常由浏览器扩展自动导入</string>
+    <string name="ytdlp_cookie_imported">已导入</string>
+    <string name="ytdlp_cookie_clear">清除 Cookie</string>
+    <string name="ytdlp_cookie_import">导入 Cookie</string>
+    <string name="ytdlp_cookie_hint">打开 YouTube 并登录，按 F12 打开开发者工具，在 Network 标签里找到任意请求，复制其 Cookie 请求头的值粘贴到下方。</string>
     <string name="github_enabled">启用 GitHub 加速</string>
     <string name="github_enabled_desc">优先使用所选代理站，不可用时自动切换其他站点或直连</string>
     <string name="huggingface_enabled">启用 HuggingFace 加速</string>
@@ -215,6 +251,11 @@
     <string name="draft_url_hint">在此粘贴下载链接，每行一个</string>
     <string name="draft_files_selected">已选 %1$d/%2$d 个文件</string>
     <string name="draft_select_files">选择文件</string>
+    <string name="draft_control_off">不下载</string>
+    <string name="draft_control_auto">自动</string>
+    <string name="draft_control_more">%1$s +%2$d</string>
+    <string name="draft_parse_failed">%1$d 项解析失败</string>
+    <string name="draft_count">%1$d 个任务</string>
     <!-- 批量操作仅作用于搜索结果 -->
     <string name="file_select_search">搜索文件</string>
     <string name="file_select_all">全选</string>
@@ -266,8 +307,6 @@
     <string name="bili_captcha_verify_failed">验证未通过</string>
 
     <!-- Draft tracks -->
-    <string name="draft_track_video">视频</string>
-    <string name="draft_track_audio">音频</string>
     <string name="draft_track_cover">封面</string>
     <string name="draft_trim_off">下载完整视频</string>
     <string name="draft_folder_absolute">请填写完整路径，以 / 开头</string>

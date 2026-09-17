@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.util.formatDuration
 import com.xychr.ghostdownloader.ui.util.formatSpeed
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
@@ -33,6 +34,7 @@ object BitTorrentUi : PackUi {
         R.string.bt_metadata_timeout to null,
         R.string.bt_enable_web_trackers to R.string.bt_enable_web_trackers_desc,
         R.string.bt_auto_refresh_web_trackers to null,
+        R.string.bt_web_tracker to null,
         R.string.bt_custom_trackers to R.string.bt_custom_trackers_desc,
         R.string.bt_sequential_download to R.string.bt_sequential_download_desc,
         R.string.bt_storage_mode to null,
@@ -42,8 +44,8 @@ object BitTorrentUi : PackUi {
         R.string.bt_seeding_time_limit to null,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set -> BitTorrentSettings(config, keys, set) }
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send -> BitTorrentSettings(config, keys, set, send) }
 
     override val taskExtra: (@Composable (JsonObject) -> Unit) = { packFields ->
         val peers = packFields["peers"]?.jsonObject

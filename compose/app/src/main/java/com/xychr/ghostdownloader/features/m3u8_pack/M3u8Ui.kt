@@ -2,9 +2,12 @@ package com.xychr.ghostdownloader.features.m3u8_pack
 
 import com.xychr.ghostdownloader.packs.*
 
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -22,6 +25,9 @@ object M3u8Ui : PackUi {
         R.string.m3u8_omit_date_info to null,
         R.string.m3u8_keep_image_segments to null,
         R.string.m3u8_mp4_realtime_decryption to R.string.m3u8_mp4_realtime_decryption_desc,
+        R.string.m3u8_decryption_engine to R.string.m3u8_decryption_engine_desc,
+        R.string.m3u8_decryption_binary_path to R.string.m3u8_decryption_binary_path_desc,
+        R.string.m3u8_custom_mux to R.string.m3u8_custom_mux_desc,
         R.string.m3u8_auto_select to R.string.m3u8_auto_select_desc,
         R.string.m3u8_select_all_audio_subtitle to null,
         R.string.m3u8_ad_keyword to R.string.m3u8_ad_keyword_desc,
@@ -39,8 +45,8 @@ object M3u8Ui : PackUi {
         R.string.m3u8_live_take_count to null,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set -> M3U8Settings(config, keys, set) }
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send -> M3U8Settings(config, keys, set) }
 
     override val taskExtra: (@Composable (JsonObject) -> Unit) = { packFields ->
         val liveElapsed = packFields["liveElapsed"]?.jsonPrimitive?.contentOrNull
@@ -51,6 +57,25 @@ object M3u8Ui : PackUi {
                 stringResource(R.string.task_recorded, liveElapsed) +
                     recordLimit?.takeIf(String::isNotEmpty)?.let { " / $it" }.orEmpty()
             )
+        }
+    }
+
+    override val detailExtra: (@Composable (JsonObject) -> Unit) = { packFields ->
+        val liveElapsed = packFields["liveElapsed"]?.jsonPrimitive?.contentOrNull
+        val recordLimit = packFields["recordLimit"]?.jsonPrimitive?.contentOrNull
+
+        if (!liveElapsed.isNullOrEmpty() || !recordLimit.isNullOrEmpty()) {
+            PackSectionTitle(stringResource(R.string.task_detail_live_info))
+            if (!liveElapsed.isNullOrEmpty()) {
+                ListItem(supportingContent = { Text(liveElapsed) }) {
+                    Text(stringResource(R.string.task_recorded_time))
+                }
+            }
+            if (!recordLimit.isNullOrEmpty()) {
+                ListItem(supportingContent = { Text(recordLimit) }) {
+                    Text(stringResource(R.string.task_record_limit))
+                }
+            }
         }
     }
 }

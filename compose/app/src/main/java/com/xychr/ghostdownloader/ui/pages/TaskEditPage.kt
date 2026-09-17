@@ -18,6 +18,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.ChoiceField
 import com.xychr.ghostdownloader.ui.components.ErrorText
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.packs.PackRegistry
@@ -39,6 +40,8 @@ data class TaskOptionDraft(
     val decryptionKeys: String? = null,
     val decryptionKeyFile: String? = null,
     val muxImports: String? = null,
+    val streams: List<DraftOption>? = null,
+    val selectVideo: String? = null,
 ) {
     fun toOptions(): TaskOptions {
         val folder = outputFolder.trim()
@@ -53,14 +56,14 @@ data class TaskOptionDraft(
         }
         return TaskOptions(folder, url?.trim(), parsedHeaders, clientProfile, userAgent, count,
             recordLimit, decryptionKeys?.lines()?.filter(String::isNotBlank), decryptionKeyFile,
-            muxImports?.lines()?.filter(String::isNotBlank))
+            muxImports?.lines()?.filter(String::isNotBlank), selectVideo = selectVideo)
     }
 }
 
 fun TaskOptions.toDraft() = TaskOptionDraft(outputFolder, url,
     headers?.entries?.joinToString("\n") { "${it.key}: ${it.value}" }, clientProfile, userAgent,
     subworkerCount?.toString(), recordLimit, decryptionKeys?.joinToString("\n"), decryptionKeyFile,
-    muxImports?.joinToString("\n"))
+    muxImports?.joinToString("\n"), streams, selectVideo)
 
 data class TaskEditState(
     val packId: String = "",
@@ -191,6 +194,13 @@ fun TaskOptionsEditor(
                     enabled = !state.isSaving, modifier = Modifier.fillMaxWidth())
                 draft.url?.let { OptionText(it, R.string.task_detail_url, !state.isSaving) { value -> onChange(draft.copy(url = value)) } }
                 draft.headers?.let { OptionText(it, R.string.task_headers, !state.isSaving) { value -> onChange(draft.copy(headers = value)) } }
+                draft.streams?.let { streams -> ChoiceField(
+                    stringResource(R.string.task_stream),
+                    draft.selectVideo.orEmpty(),
+                    streams.map { it.key to it.label },
+                    { onChange(draft.copy(selectVideo = it)) },
+                    isEnabled = !state.isSaving,
+                ) }
                 draft.connections?.let { OptionText(it, R.string.task_connections, !state.isSaving) { value -> onChange(draft.copy(connections = value)) } }
                 draft.clientProfile?.let { OptionText(it, R.string.task_client_profile, !state.isSaving) { value -> onChange(draft.copy(clientProfile = value)) } }
                 draft.userAgent?.let { OptionText(it, R.string.task_user_agent, !state.isSaving) { value -> onChange(draft.copy(userAgent = value)) } }

@@ -1,14 +1,17 @@
 package com.xychr.ghostdownloader.ui.pages
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,8 +49,10 @@ import com.xychr.ghostdownloader.ui.components.draft.DiscardDialog
 import com.xychr.ghostdownloader.ui.components.draft.DraftCard
 import com.xychr.ghostdownloader.ui.components.draft.DraftState
 import com.xychr.ghostdownloader.ui.components.draft.DraftViewModel
+import com.xychr.ghostdownloader.ui.components.draft.FileSelectSheet
 import com.xychr.ghostdownloader.ui.navigation.DRAFT_CONTAINER
 import com.xychr.ghostdownloader.ui.navigation.sharedContainer
+import com.xychr.ghostdownloader.ui.util.formatSize
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,6 +70,7 @@ fun DraftPage(
     var isDiscarding by remember { mutableStateOf(false) }
     var categoryUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var renameUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var filesUrl by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = state.isWorking) { }
@@ -118,12 +124,17 @@ fun DraftPage(
                 item { ErrorText(error) }
             }
 
+            if (state.items.size > 1) stickyHeader { DraftGroupHeader(state) }
+
             items(state.items, key = DraftItem::url) { item ->
                 DraftCard(
                     item = item,
                     onRename = { renameUrl = item.url },
                     onOpenOptions = { onOpenEdit(item.url) },
                     onCategorize = { categoryUrl = item.url },
+                    onRefresh = { scope.launch { draft.refresh(item.url) } },
+                    onSelectFiles = { filesUrl = item.url },
+                    onSelectControl = { id, value -> scope.launch { draft.setControl(item.url, id, value) } },
                     modifier = Modifier.animateItem(),
                     category = categories.categories.firstOrNull { it.categoryId == item.categoryId },
                     isCategoryEnabled = categories.isEnabled,
@@ -197,8 +208,43 @@ fun DraftPage(
         onConfirm = { draft.setName(renameItem.url, it) },
     )
 
+    val filesItem = state.items.firstOrNull { it.url == filesUrl }
+    if (filesItem != null) FileSelectSheet(
+        files = filesItem.files,
+        canRename = filesItem.canRenameFiles,
+        onApply = { draft.updateFiles(filesItem.url, filesItem.files, it) },
+        onDismiss = { filesUrl = null },
+    )
+
     if (isDiscarding) DiscardDialog(
         onDismiss = { isDiscarding = false },
         onDiscard = { isDiscarding = false; onDiscard() },
     )
+}
+
+@Composable
+private fun DraftGroupHeader(state: DraftState) {
+    val failures = state.items.count { it.error != null }
+    val size = state.items.sumOf { it.fileSize }
+    Row(
+        Modifier.fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.draft_count, state.items.size),
+            style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.weight(1f))
+        if (failures > 0) Text(
+            stringResource(R.string.draft_parse_failed, failures),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
+        if (size > 0) {
+            if (failures > 0) Spacer(Modifier.width(8.dp))
+            Text(formatSize(size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }

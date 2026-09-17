@@ -18,11 +18,19 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.util.formatDuration
 import com.xychr.ghostdownloader.ui.util.formatSize
 
 private const val INDENT_STEP = 16
 
-data class SelectableFile(val index: Int, val path: String, val groups: List<String>, val size: Long)
+data class SelectableFile(
+    val index: Int,
+    val path: String,
+    val groups: List<String>,
+    val size: Long,
+    val startTime: Int? = null,
+    val endTime: Int? = null,
+)
 
 internal sealed interface TreeRow {
     val depth: Int
@@ -75,9 +83,11 @@ fun SelectableFileList(
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
     onRename: ((index: Int, newPath: String) -> Unit)? = null,
+    onTrim: ((index: Int, start: Int, end: Int) -> Unit)? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var renaming by rememberSaveable { mutableStateOf<Int?>(null) }
+    var trimming by rememberSaveable { mutableStateOf<Int?>(null) }
     var collapsed by rememberSaveable { mutableStateOf(buildCollapsed(files, selectedIndexes)) }
 
     val visible = remember(files, query) { files.filter { it.path.contains(query, ignoreCase = true) } }
@@ -87,6 +97,16 @@ fun SelectableFileList(
     val collapsedNow = if (canToggleCollapse) collapsed else emptySet<List<String>>()
     val rows = remember(visible, collapsedNow) { buildRows(visible, collapsedNow) }
     val topKeys = remember(files) { files.mapNotNull { it.groups.firstOrNull()?.let { one -> listOf(one) } }.toSet() }
+
+    val trim = onTrim
+    val trimmingFile = files.firstOrNull { it.index == trimming }
+    if (trimmingFile != null && trim != null) FileTrimSheet(
+        name = trimmingFile.path.substringAfterLast('/'),
+        startTime = trimmingFile.startTime ?: 0,
+        endTime = trimmingFile.endTime ?: 0,
+        onApply = { start, end -> trim(trimmingFile.index, start, end); trimming = null },
+        onDismiss = { trimming = null },
+    )
 
     Column(modifier) {
         OutlinedTextField(
@@ -147,6 +167,7 @@ fun SelectableFileList(
                     is FileRow -> {
                         val file = row.file
                         val rename = onRename
+                        val trim = onTrim
                         FileItem(
                             file = file,
                             depth = row.depth,
@@ -160,6 +181,10 @@ fun SelectableFileList(
                                 )
                             },
                             onRenamePath = rename?.let { callback -> { path -> callback(file.index, path) } },
+                            // 没有裁剪字段的 pack 不出现入口：点了也只会静默落空
+                            onStartTrim = if (trim != null && file.startTime != null) {
+                                { trimming = file.index }
+                            } else null,
                         )
                     }
                 }
@@ -222,22 +247,39 @@ private fun FileItem(
     onToggleRename: () -> Unit,
     onSelect: (Boolean) -> Unit,
     onRenamePath: ((String) -> Unit)?,
+    onStartTrim: (() -> Unit)?,
 ) {
+    val start = file.startTime
+    val end = file.endTime
+    val range = if (start != null && end != null && (start > 0 || end > 0)) {
+        "${formatDuration(start.toLong())}–${formatDuration(end.toLong())}"
+    } else null
+
     ListItem(
-        supportingContent = { Text(formatSize(file.size)) },
+        supportingContent = {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(formatSize(file.size))
+                if (range != null) Text(range)
+            }
+        },
         leadingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Spacer(Modifier.width((depth * INDENT_STEP).dp))
                 Checkbox(isSelected, onCheckedChange = null, enabled = isEnabled)
             }
         },
-        trailingContent = if (onRenamePath != null) {
+        trailingContent = if (onRenamePath == null && onStartTrim == null) null else {
             {
-                IconButton(onClick = onToggleRename, enabled = isEnabled) {
-                    Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.file_rename))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (onStartTrim != null) IconButton(onClick = onStartTrim, enabled = isEnabled) {
+                        Icon(painterResource(R.drawable.ic_cut), stringResource(R.string.task_trim_title))
+                    }
+                    if (onRenamePath != null) IconButton(onClick = onToggleRename, enabled = isEnabled) {
+                        Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.file_rename))
+                    }
                 }
             }
-        } else null,
+        },
         modifier = if (isRenaming) Modifier else Modifier.toggleable(
             isSelected, enabled = isEnabled, role = Role.Checkbox, onValueChange = onSelect,
         ),

@@ -16,6 +16,29 @@ from app.config.cfg import cfg
 from app.platform.file_watcher import InotifyFileWatcher
 
 
+class HashState:
+    """校验作业的投影。形状只在这里产出：error 是 TaskError.toDict() 或 None，与 Kotlin 的 TaskError? 对齐。"""
+
+    def __init__(self):
+        self.taskId = ""
+        self.algorithm = ""
+        self.progress = 0
+        self.digest = ""
+        self.error = None
+
+    def clear(self):
+        self.__init__()
+
+    def toDict(self) -> dict:
+        return {
+            "taskId": self.taskId,
+            "algorithm": self.algorithm,
+            "progress": self.progress,
+            "digest": self.digest,
+            "error": self.error,
+        }
+
+
 class Engine:
     def __init__(self, flows):
         from app.config.paths import APP_DATA_DIR
@@ -63,6 +86,9 @@ class Engine:
 
         self._pendingEdit = None
         self._updateState = {"state": "idle", "progress": 0, "filePath": "", "error": ""}
+        self._updateAvailable: dict | None = None
+        self._hashState = HashState()
+        self._hashWorkId: str | None = None
 
         cfg._index()
         cfg.load(f"{APP_DATA_DIR}/UserConfig.json")
@@ -105,6 +131,8 @@ class Engine:
         if cfg.isBrowserExtensionEnabled.value:
             self._browserService.start()
         self._emitKeepAlive()
+        if cfg.shouldCheckUpdateAtStartup.value:
+            self._coroutineRunner.submit(self._checkUpdateAtStartup())
         logger.info("Engine started, dataDir={}", APP_DATA_DIR)
 
     def _setupFlows(self):
@@ -149,6 +177,8 @@ class Engine:
         self._emitTasks()
         self._emitTaskProgress()
         self._emitDraft()
+        self._emitUpdateAvailable()
+        self._emitHashState()
 
         for packId in self._packStates:
             self._emitPackStates(packId)
@@ -257,6 +287,7 @@ class Engine:
             "outputPath": str(task.outputPath),
             "outputFolder": str(task.outputFolder),
             "hasOutputFile": task.hasOutputFile,
+            "isOutputFolder": Path(task.outputPath).is_dir(),
             "name": task.name,
             "url": task.url,
             "status": task.status.name,
@@ -341,6 +372,7 @@ class Engine:
                                and fields["received"] == 0)
         fields["outputFolder"] = str(task.outputFolder)
         groups = self._fileGroups(task)
+        fileFields = self._fileFields(task)
         fields["files"] = [
             {
                 "index": f.index,
@@ -351,6 +383,7 @@ class Engine:
                 "isSelected": f.selected,
                 "isCompleted": f.completed,
                 "progress": f.downloadedBytes / f.size * 100 if f.size > 0 else 0,
+                **fileFields.get(f.index, {}),
             }
             for f in task.files
         ] if task.files else []
@@ -363,11 +396,13 @@ class Engine:
         task.setName(name.strip())
         self._taskService.flush()
 
-    def setTaskSelection(self, taskId: str, indexes: str):
+    def applyTaskFileEdits(self, taskId: str, payload: str):
         task = self._taskService.taskById(taskId)
         if task is None:
             return
-        selected = {int(i) for i in indexes.split(",") if i}
+        edits = json.loads(payload)
+        self._applyFileEdits(task, edits)
+        selected = {int(i) for i in edits.get("selected", [])}
         self._taskService.updateSelection(task, selected)
 
     def taskOptions(self, taskId: str) -> str:
@@ -378,12 +413,12 @@ class Engine:
 
     def applyTaskEdit(self, taskId: str, values: str, shouldDiscard: bool = False) -> str:
         from app.models.task import TaskOptions
-        parsed = json.loads(values)
+        parsed = toTaskOptionPayload(json.loads(values))
         task = self._taskService.taskById(taskId)
         if task is None:
             raise ValueError("Task no longer exists")
 
-        current = json.loads(self.taskOptions(taskId))
+        current = toTaskOptionPayload(self._options(task))
         current.pop("packId", None)
         diff = {k: v for k, v in parsed.items() if k in current and v != current[k]}
         if not diff:
@@ -478,12 +513,12 @@ class Engine:
             })
         return json.dumps({
             "items": result,
-            "outputFolder": self._draftOptions.get("outputFolder", ""),
+            "outputFolder": str(self._draftOptions.get("outputFolder", "")),
             "subworkerCount": self._draftOptions.get("subworkerCount", cfg.preBlockNum.value),
         }, ensure_ascii=False)
 
     def setDraftOutputFolder(self, folder):
-        folder = str(folder)
+        folder = Path(folder)
 
         async def run():
             if self._draftOptions.get("outputFolder") == folder:
@@ -541,12 +576,12 @@ class Engine:
         task = self._taskDraft.taskByUrl(url)
         if task is None:
             raise ValueError("Draft no longer exists")
-        options = self._options(task)
+        options = {**self._options(task), **self._adapterFields(task, "optionFields")}
         options.pop("url", None)
         return json.dumps(options, ensure_ascii=False)
 
     def applyDraftEdit(self, url: str, values: str):
-        options = json.loads(values)
+        options = toTaskOptionPayload(json.loads(values))
 
         async def run():
             self._taskDraft.update(url, lambda task: task.setOptions(options))
@@ -579,6 +614,12 @@ class Engine:
             self._draftOptions.clear()
 
         asyncio.run_coroutine_threadsafe(clear(), self._loop).result()
+
+    def refreshDraft(self, url: str):
+        async def run():
+            self._taskDraft.refresh(url)
+
+        asyncio.run_coroutine_threadsafe(run(), self._loop).result()
 
     def settings(self) -> str:
         return json.dumps(
@@ -706,6 +747,73 @@ class Engine:
             None,
         )
 
+    # ---- 校验文件哈希 ----
+    # 状态归引擎线程所有（见 ADR 0014）：命令派发到 loop，作业在 loop 上跑，
+    # 每块之间让出调度权，否则一个大文件的哈希会把整个引擎卡住。
+
+    def hashAlgorithms(self) -> str:
+        import hashlib
+        return json.dumps(sorted(hashlib.algorithms_available))
+
+    def startFileHash(self, taskId: str, algorithm: str):
+        asyncio.run_coroutine_threadsafe(self._startHash(taskId, algorithm), self._loop)
+
+    def cancelFileHash(self):
+        asyncio.run_coroutine_threadsafe(self._cancelHash(), self._loop)
+
+    async def _startHash(self, taskId: str, algorithm: str):
+        task = self._taskService.taskById(taskId)
+        if task is None:
+            return
+        await self._cancelHash()
+        self._hashState.clear()
+        self._hashState.taskId = taskId
+        self._hashState.algorithm = algorithm
+        self._emitHashState()
+        self._hashWorkId = self._coroutineRunner.submit(
+            self._runFileHash(Path(task.outputPath), algorithm),
+        )
+
+    async def _cancelHash(self):
+        if self._hashWorkId is not None:
+            self._coroutineRunner.cancel(self._hashWorkId)
+            self._hashWorkId = None
+        if self._hashState.taskId:
+            self._hashState.clear()
+            self._emitHashState()
+
+    async def _runFileHash(self, path: Path, algorithm: str):
+        import hashlib
+
+        taskId = self._hashState.taskId
+        try:
+            hasher = hashlib.new(algorithm)
+            size = path.stat().st_size
+            done = 0
+            with open(path, "rb") as file:
+                while chunk := file.read(1024 * 1024):
+                    hasher.update(chunk)
+                    done += len(chunk)
+                    self._updateHash(taskId, progress=int(done * 100 / size) if size else 100)
+                    await asyncio.sleep(0)
+            self._updateHash(taskId, progress=100, digest=hasher.hexdigest())
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            from app.models.task import TaskError
+            self._updateHash(taskId, error=TaskError("无法读取文件：{detail}", detail=str(error)).toDict())
+
+    def _updateHash(self, taskId: str, **fields):
+        # 作业被取消后又起了新的，旧作业不许再写状态
+        if self._hashState.taskId != taskId:
+            return
+        for name, value in fields.items():
+            setattr(self._hashState, name, value)
+        self._emitHashState()
+
+    def _emitHashState(self):
+        self._flows.setState("hashState", json.dumps(self._hashState.toDict()))
+
     def browserExtension(self) -> str:
         installType, version = self._browserService.connectionSummary
         return json.dumps({
@@ -822,26 +930,45 @@ class Engine:
             })
         return json.dumps(result, ensure_ascii=False)
 
-    def checkUpdate(self) -> str:
-        import asyncio
+    async def _fetchUpdateVerdict(self) -> dict:
         from app.config.constants import VERSION
         from app.update import fetchRelease, bestAsset, isNewer
 
-        async def _check():
-            release = await fetchRelease()
-            asset = bestAsset(release)
-            return {
-                "available": isNewer(VERSION, release.version),
-                "currentVersion": VERSION,
-                "latestVersion": release.version,
-                "assetName": asset.name if asset else "",
-                "assetSize": asset.size if asset else 0,
-                "releaseNotes": release.body,
-                "releaseUrl": release.pageUrl,
-            }
+        release = await fetchRelease()
+        if not isNewer(VERSION, release.version):
+            status = "latest"
+        else:
+            status = "available" if bestAsset(release) else "no_asset"
+        return {"status": status, "version": release.version, "releaseUrl": release.pageUrl}
 
-        future = asyncio.run_coroutine_threadsafe(_check(), self._loop)
-        return json.dumps(future.result(timeout=30), ensure_ascii=False)
+    async def _checkUpdateAtStartup(self):
+        try:
+            info = await self._fetchUpdateVerdict()
+        except Exception as e:
+            logger.debug("启动检查更新失败: {}", repr(e))
+            return
+        self._setUpdateAvailable(info)
+
+    def checkUpdate(self) -> str:
+        import asyncio
+
+        future = asyncio.run_coroutine_threadsafe(self._fetchUpdateVerdict(), self._loop)
+        info = future.result(timeout=10)
+        self._setUpdateAvailable(info)
+        return json.dumps(info, ensure_ascii=False)
+
+    def _setUpdateAvailable(self, info: dict):
+        available = (
+            {"version": info["version"], "releaseUrl": info["releaseUrl"]}
+            if info["status"] == "available" else None
+        )
+        if available == self._updateAvailable:
+            return
+        self._updateAvailable = available
+        self._emitUpdateAvailable()
+
+    def _emitUpdateAvailable(self):
+        self._flows.setState("updateAvailable", json.dumps(self._updateAvailable, ensure_ascii=False))
 
     def downloadUpdate(self, targetId: str):
         from app.update import APP_REPO, fetchRelease, bestAsset
@@ -909,6 +1036,26 @@ class Engine:
         if fn is not None:
             return fn(task)
         return {f.index: f.relativePath.split('/')[:-1] for f in task.files or []}
+
+    def _fileFields(self, task) -> dict[int, dict]:
+        if task is None:
+            return {}
+        adapter = self._packAdapters.get(task.packId)
+        fn = getattr(adapter, 'fileFields', None) if adapter else None
+        return fn(task) if fn is not None else {}
+
+    def _applyFileEdits(self, task, edits: dict):
+        adapter = self._packAdapters.get(task.packId)
+        fn = getattr(adapter, 'applyFileEdits', None) if adapter else None
+        if fn is not None:
+            fn(task, edits)
+
+
+def toTaskOptionPayload(payload: dict) -> dict:
+    options = dict(payload)
+    if isinstance(options.get("outputFolder"), str):
+        options["outputFolder"] = Path(options["outputFolder"])
+    return options
 
 
 _engine: Engine | None = None

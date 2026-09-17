@@ -4,6 +4,7 @@ import com.xychr.ghostdownloader.packs.*
 
 import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 object HuggingFaceUi : PackUi {
@@ -17,6 +18,6 @@ object HuggingFaceUi : PackUi {
         R.string.proxy_site to null,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set -> HuggingFaceSettings(config, keys, set) }
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send -> HuggingFaceSettings(config, keys, set, send) }
 }

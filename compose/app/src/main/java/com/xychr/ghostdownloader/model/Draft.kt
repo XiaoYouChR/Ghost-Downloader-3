@@ -1,8 +1,10 @@
 package com.xychr.ghostdownloader.model
 
 import kotlinx.serialization.Serializable
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.json.JsonObject
 
+@Immutable
 @Serializable
 data class DraftFile(
     val index: Int = 0,
@@ -22,6 +24,7 @@ data class DraftProjection(
     val subworkerCount: Int = 0,
 )
 
+@Immutable
 @Serializable
 data class DraftItem(
     val url: String = "",

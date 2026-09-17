@@ -2,6 +2,7 @@ package com.xychr.ghostdownloader.ui.platform
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.DocumentsContract
 import android.webkit.MimeTypeMap
 import android.widget.Toast
@@ -15,17 +16,23 @@ import java.io.File
  */
 fun Context.taskFileIntent(path: String): Intent? {
     val file = File(path)
-    if (!file.isFile) return null
-    val uri = try {
-        FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-    } catch (error: IllegalArgumentException) {
-        return null
-    }
-    val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase()) ?: "*/*"
+    val uri = toContentUri(file) ?: return null
     return Intent(Intent.ACTION_VIEW)
-        .setDataAndType(uri, mime)
+        .setDataAndType(uri, file.toMimeType())
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 }
+
+private fun Context.toContentUri(file: File): Uri? {
+    if (!file.isFile) return null
+    return try {
+        FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+    } catch (error: IllegalArgumentException) {
+        null
+    }
+}
+
+private fun File.toMimeType(): String =
+    MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase()) ?: "*/*"
 
 /**
  * 文件管理器打开目录没有统一 Intent：系统「文件」应用认 SAF 的目录 URI。
@@ -47,6 +54,16 @@ fun Context.openTaskFile(path: String) {
     if (intent == null || !start(intent)) {
         Toast.makeText(this, R.string.task_file_unavailable, Toast.LENGTH_LONG).show()
     }
+}
+
+fun Context.shareTaskFile(path: String): Boolean {
+    val file = File(path)
+    val uri = toContentUri(file) ?: return false
+    val send = Intent(Intent.ACTION_SEND)
+        .setType(file.toMimeType())
+        .putExtra(Intent.EXTRA_STREAM, uri)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    return start(Intent.createChooser(send, null))
 }
 
 fun Context.openFolder(folder: String) {

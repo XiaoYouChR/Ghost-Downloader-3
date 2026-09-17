@@ -3,7 +3,6 @@ package com.xychr.ghostdownloader.ui.components.task
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +35,7 @@ fun TaskSelectionBar(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shadowElevation = 6.dp,
     ) {
@@ -84,7 +83,7 @@ private fun TaskSelectionMenu(
             TaskMenuItem(stringResource(R.string.task_detail_move_to_front), R.drawable.ic_arrow_upward, isEnabled) {
                 isOpen = false; onAction(TaskPageAction.MOVE_TO_FRONT)
             }
-            TaskMenuItem(stringResource(R.string.task_detail_redownload), R.drawable.ic_refresh, isEnabled) {
+            TaskMenuItem(stringResource(R.string.task_detail_redownload), R.drawable.ic_restore, isEnabled) {
                 isOpen = false; onAction(TaskPageAction.REDOWNLOAD)
             }
             if (isCategoryEnabled) TaskMenuItem(

@@ -60,7 +60,7 @@ val settingsIndex: List<SearchableItem> by lazy { buildList {
     add(SearchableItem(R.string.identity_rules, breadcrumbRes = R.string.settings_section_identity, route = IdentityRulesRoute))
     add(SearchableItem(R.string.identity_headers_presets, breadcrumbRes = R.string.settings_section_identity, route = HeadersPresetsRoute))
     section(
-        R.string.category_manage, CategorySettingsRoute(),
+        R.string.settings_group_download, CategorySettingsRoute(),
         listOf(
             R.string.category_enabled to null,
             R.string.category_manage to null,
@@ -96,7 +96,17 @@ val settingsIndex: List<SearchableItem> by lazy { buildList {
         ),
     )
 
-    add(SearchableItem(R.string.settings_section_language, R.string.settings_summary_language, R.string.settings_group_app, LanguageSettingsRoute))
+    section(
+        R.string.settings_section_appearance, AppearanceSettingsRoute,
+        listOf(
+            R.string.settings_theme to null,
+            R.string.settings_theme_system to null,
+            R.string.settings_theme_light to null,
+            R.string.settings_theme_dark to null,
+            R.string.settings_section_language to null,
+            R.string.settings_language_system to null,
+        ),
+    )
 
     PackRegistry.withSettings().forEach { entry ->
         val pack = entry.packUi
@@ -118,7 +128,7 @@ fun rememberSearchResults(query: String): List<SearchableItem> {
 @Composable
 fun SearchResults(
     results: List<SearchableItem>,
-    onNavigate: (Route) -> Unit,
+    onNavigate: (Route, String) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
@@ -133,10 +143,11 @@ fun SearchResults(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         items(results, key = { "${it.route}:${it.titleRes}" }) { item ->
+            val title = stringResource(item.titleRes)
             ActionSettingRow(
-                title = stringResource(item.titleRes),
+                title = title,
                 subtitle = breadcrumbOf(item),
-                onClick = { onNavigate(item.route) },
+                onClick = { onNavigate(item.route, title) },
             )
         }
     }

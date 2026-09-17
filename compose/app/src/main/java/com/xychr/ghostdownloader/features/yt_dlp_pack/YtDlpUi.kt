@@ -16,6 +16,7 @@ import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.model.TaskError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 object YtDlpUi : PackUi {
@@ -24,22 +25,21 @@ object YtDlpUi : PackUi {
     override val settingsTitle = R.string.pack_yt_dlp
 
     override val searchItems = listOf(
+        R.string.ytdlp_cookie to R.string.ytdlp_cookie_desc,
         R.string.ytdlp_prefer_mp4 to R.string.ytdlp_prefer_mp4_desc,
         R.string.ytdlp_embed_metadata to R.string.ytdlp_embed_metadata_desc,
         R.string.ytdlp_embed_chapters to R.string.ytdlp_embed_chapters_desc,
         R.string.ytdlp_subtitle_languages to R.string.ytdlp_subtitle_languages_desc,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set -> YtDlpSettings(config, keys, set) }
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send -> YtDlpSettings(config, keys, set, send) }
 
     override val draftExtra: (@Composable (JsonObject, String, suspend (String, List<Any?>) -> Unit) -> Unit) =
         { packFields, url, send ->
             ProbeSection(packFields, send)
             DraftMediaSection(packFields, url, send)
         }
-
-    override val draftSummary: (JsonObject) -> String? = ::mediaSummary
 }
 
 @Composable

@@ -20,20 +20,18 @@ import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SliderSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
-import com.xychr.ghostdownloader.ui.navigation.*
 import com.xychr.ghostdownloader.ui.platform.defaultDownloadFolder
 import com.xychr.ghostdownloader.ui.platform.toFolderPath
 
 @Composable
 fun DownloadPage(
-    onNavigate: (Route) -> Unit,
     onBack: () -> Unit,
     viewModel: SettingsViewModel,
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     SettingsScaffold(stringResource(R.string.settings_section_download), onBack) {
-        settings?.let { DownloadRows(it, viewModel::set, onNavigate) } ?: LoadingRow()
+        settings?.let { DownloadRows(it, viewModel::set) } ?: LoadingRow()
     }
 }
 
@@ -41,7 +39,6 @@ fun DownloadPage(
 private fun ColumnScope.DownloadRows(
     settings: Settings,
     set: (String, Any) -> Unit,
-    onNavigate: (Route) -> Unit,
 ) {
     val folderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -115,13 +112,5 @@ private fun ColumnScope.DownloadRows(
             onCheckedChange = { set("shouldDeleteFilesOnRemove", it) },
         )
     }
-
-    SettingSection {
-        ActionSettingRow(
-            title = stringResource(R.string.category_manage),
-            onClick = { onNavigate(CategorySettingsRoute()) },
-        )
-    }
-
 }
 

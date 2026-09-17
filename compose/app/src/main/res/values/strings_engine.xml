@@ -8,6 +8,10 @@
     <string name="engine_binaryruntime_8cb8cdce" formatted="false">哔哩哔哩、YouTube 等网站视频下载必备，合并音视频轨道为完整文件</string>
     <string name="engine_binaryruntime_a2378d7b" formatted="false">支持电驴协议，适合下载经典资源</string>
     <string name="engine_binaryruntime_d4027299" formatted="false">支持 HLS、DASH 等流媒体协议，可录制直播流</string>
+    <string name="engine_draft_461189f1" formatted="false">音频</string>
+    <string name="engine_draft_5c3c22fa" formatted="false">默认（最佳）</string>
+    <string name="engine_draft_cd99b225" formatted="false">语言</string>
+    <string name="engine_draft_fa4e33b6" formatted="false">视频</string>
     <string name="engine_taskerrors_003f09ce" formatted="false">DMG 中未找到 .app</string>
     <string name="engine_taskerrors_00a03c90" formatted="false">当前平台暂不支持一键安装 N_m3u8DL-RE: {platform}</string>
     <string name="engine_taskerrors_00df75dc" formatted="false">不支持的 eD2k 链接格式</string>
@@ -72,6 +76,7 @@
     <string name="engine_taskerrors_e04dcec5" formatted="false">无法获取 {name} 的最新 release</string>
     <string name="engine_taskerrors_e17a3f49" formatted="false">当前平台无可用更新</string>
     <string name="engine_taskerrors_e365462d" formatted="false">该视频在您所在地区不可用，请尝试配置代理（{detail}）</string>
+    <string name="engine_taskerrors_e446bb77" formatted="false">无法读取文件：{detail}</string>
     <string name="engine_taskerrors_f5662126" formatted="false">年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</string>
     <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">获取二维码失败</string>
@@ -79,9 +84,11 @@
     <string name="engine_taskstate_27b93035" formatted="false">分配文件中</string>
     <string name="engine_taskstate_40bcaa84" formatted="false">校验已有文件</string>
     <string name="engine_taskstate_42bf155e" formatted="false">检查续传状态</string>
+    <string name="engine_taskstate_5dceaa04" formatted="false">录制中</string>
     <string name="engine_taskstate_6defa74a" formatted="false">暂停做种</string>
     <string name="engine_taskstate_94deeae2" formatted="false">共享中</string>
     <string name="engine_taskstate_9741aa95" formatted="false">获取元数据</string>
     <string name="engine_taskstate_a68a7138" formatted="false">做种中</string>
+    <string name="engine_taskstate_bd3488d0" formatted="false">等待中</string>
     <string name="engine_taskstate_f79857a8" formatted="false">等待校验</string>
 </resources>

@@ -9,6 +9,7 @@ import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.util.formatDuration
 import com.xychr.ghostdownloader.ui.util.formatSpeed
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
@@ -29,8 +30,8 @@ object Ed2kUi : PackUi {
         R.string.ed2k_sharing_time_limit to null,
     )
 
-    override val settingsContent: (@Composable (JsonObject, PackKeys, (String, Any) -> Unit) -> Unit) =
-        { config, keys, set -> ED2kSettings(config, keys, set) }
+    override val settingsContent: PackSettingsContent =
+        { config, keys, set, send -> ED2kSettings(config, keys, set) }
 
     override val taskExtra: (@Composable (JsonObject) -> Unit) = { packFields ->
         val peers = packFields["peers"]?.jsonObject

@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -90,7 +91,12 @@ import com.xychr.ghostdownloader.ui.navigation.TasksRoute
 import com.xychr.ghostdownloader.ui.navigation.toRoute
 import com.xychr.ghostdownloader.ui.pages.OobePage
 import com.xychr.ghostdownloader.ui.pages.settings.SettingsViewModel
+import com.xychr.ghostdownloader.ui.pages.settings.UpdateViewModel
+import com.xychr.ghostdownloader.ui.platform.ThemeMode
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
+import com.xychr.ghostdownloader.ui.platform.loadIgnoredUpdateVersion
+import com.xychr.ghostdownloader.ui.platform.loadThemeMode
+import com.xychr.ghostdownloader.ui.platform.saveIgnoredUpdateVersion
 import com.xychr.ghostdownloader.ui.theme.AppTheme
 import com.xychr.ghostdownloader.ui.theme.EmphasizedDecelerate
 import kotlin.math.hypot
@@ -110,6 +116,15 @@ class MainActivity : ComponentActivity() {
         } }
     }
     private val settingsViewModel by viewModels<SettingsViewModel>()
+    private val updateViewModel by viewModels<UpdateViewModel> {
+        viewModelFactory { initializer {
+            val appContext = applicationContext
+            UpdateViewModel(
+                loadIgnoredVersion = { loadIgnoredUpdateVersion(appContext) },
+                saveIgnoredVersion = { saveIgnoredUpdateVersion(appContext, it) },
+            )
+        } }
+    }
     private val destinations = Channel<String>(Channel.BUFFERED)
 
     override fun attachBaseContext(newBase: Context) {
@@ -127,7 +142,15 @@ class MainActivity : ComponentActivity() {
         intent.getStringExtra(EXTRA_DESTINATION)?.let { destinations.trySend(it) }
         enableEdgeToEdge()
         setContent {
-            AppTheme {
+            val themeContext = LocalContext.current
+            val themeMode = remember { loadThemeMode(themeContext) }
+            AppTheme(
+                darkTheme = when (themeMode) {
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                },
+            ) {
                 val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
                 val hasCompleted = settings?.hasCompletedOobe
 
@@ -162,6 +185,7 @@ class MainActivity : ComponentActivity() {
                         if (isAppMounted) {
                             AppRoot(
                                 draft = draft,
+                                updateViewModel = updateViewModel,
                                 notices = (application as App).notices,
                                 destinations = destinations.receiveAsFlow(),
                                 pairFlow = engineRepository.observe("pairRequest"),
@@ -230,6 +254,7 @@ private object NothingShape : Shape {
 @Composable
 private fun AppRoot(
     draft: DraftViewModel,
+    updateViewModel: UpdateViewModel,
     notices: Notices,
     destinations: Flow<String>,
     pairFlow: Flow<PairRequest?>,
@@ -261,6 +286,7 @@ private fun AppRoot(
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val draftState by draft.state.collectAsStateWithLifecycle()
+    val updateNotice by updateViewModel.updateNotice.collectAsStateWithLifecycle()
     val pair by pairFlow.collectAsStateWithLifecycle(null)
 
     val navigateTo: (String) -> Unit = { target ->
@@ -313,6 +339,7 @@ private fun AppRoot(
                             onReturnToTasks = { selectedTab = BottomTab.TASKS },
                             shouldOpenCategories = shouldOpenCategories,
                             onCategoriesOpened = { shouldOpenCategories = false },
+                            updateViewModel = updateViewModel,
                         )
                     }
                 }
@@ -331,6 +358,7 @@ private fun AppRoot(
                             }
                         },
                         draftCount = draftState.items.size,
+                        hasUpdate = updateNotice != null,
                         backdrop = backdrop,
                         modifier = Modifier.navigationBarsPadding().onSizeChanged { barHeight = it.height },
                     )
