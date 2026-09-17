@@ -28,3 +28,17 @@ def taskFields(task) -> dict:
             "uploadSpeed": task.uploadRate,
         },
     }
+
+
+def setWebTrackerSources(sources: str):
+    from app.config.cfg import cfg
+    from .config import bittorrentConfig
+
+    urls = list(dict.fromkeys(u.strip() for u in sources.split("\n") if u.strip()))
+    cfg.set(bittorrentConfig.webTrackerSources, urls)
+
+
+async def refreshWebTrackers():
+    from .web_tracker.service import trackerService
+
+    await trackerService.refresh()

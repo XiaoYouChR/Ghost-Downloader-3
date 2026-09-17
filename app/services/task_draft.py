@@ -8,7 +8,7 @@ from typing import Any, TYPE_CHECKING
 from app.signal import Signal
 from loguru import logger
 
-from app.models.task import toTaskError
+from app.models.task import TaskOptions, toTaskError
 
 if TYPE_CHECKING:
     from app.models.task import Task, TaskError
@@ -85,8 +85,6 @@ class TaskDraft:
         self.itemsChanged.emit()
 
     def setUrls(self, urls: list[str]) -> None:
-        from app.models.task import TaskOptions
-
         seen: set[str] = set()
         urls = [u for u in urls if u not in seen and not seen.add(u)]
 
@@ -106,21 +104,9 @@ class TaskDraft:
                     item.parseId = ""
             for url in urls[newStart:newEnd]:
                 item = DraftItem(url=url)
-                try:
-                    options = TaskOptions.fromOptions({**self._baseOptions, "url": url})
-                    parseId = self._coroutineRunner.submit(
-                        self._featureService.parse(options),
-                        done=self._onParsed,
-                        failed=self._onParseFailed,
-                        item=item,
-                    )
-                except Exception as e:
-                    logger.opt(exception=e).error("提交解析请求失败 {}", url)
-                    item.error = toTaskError(e)
+                self._submit(item)
+                if item.error is not None:
                     submitErrors.append((url, item.error))
-                    nextItems.append(item)
-                    continue
-                item.parseId = parseId
                 nextItems.append(item)
 
         self._items = nextItems
@@ -128,6 +114,31 @@ class TaskDraft:
         for url, error in submitErrors:
             self.parseFailed.emit(url, error)
         self.itemsChanged.emit()
+
+    def refresh(self, url: str) -> None:
+        item = self.itemByUrl(url)
+        if item is None or item.error is None:
+            return
+        self._submit(item)
+        self.parsingBusyChanged.emit(self._isParsing())
+        if item.error is not None:
+            self.parseFailed.emit(url, item.error)
+        self.itemsChanged.emit()
+
+    def _submit(self, item: DraftItem) -> None:
+        item.error = None
+        try:
+            item.parseId = self._coroutineRunner.submit(
+                self._featureService.parse(
+                    TaskOptions.fromOptions({**self._baseOptions, "url": item.url})
+                ),
+                done=self._onParsed,
+                failed=self._onParseFailed,
+                item=item,
+            )
+        except Exception as e:
+            logger.opt(exception=e).error("提交解析请求失败 {}", item.url)
+            item.error = toTaskError(e)
 
     def addParsedTasks(self, tasks: list[Task]) -> list[str]:
         if not tasks:
@@ -152,6 +163,7 @@ class TaskDraft:
                 byUrl[url] = item
 
             task.setOptions(self._buildOptions(item))
+            item.error = None
             item.task = task
             self.parseSucceeded.emit(url, task)
 

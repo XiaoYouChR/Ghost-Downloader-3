@@ -45,6 +45,33 @@ def init(pack) -> dict:
 
 # ---- task/draft serialization (called by engine.py internally) ----
 
+def taskFields(task) -> dict:
+    return {
+        "fileSelectKind": "season" if task.isSeason else "pages",
+        "canSelectFiles": task.isVideoEnabled or task.isAudioEnabled,
+    }
+
+
+def fileFields(task) -> dict:
+    return {
+        page.index: {
+            "startTime": page.startTime,
+            "endTime": page.endTime,
+        }
+        for page in task.files or []
+    }
+
+
+def applyFileEdits(task, edits: dict):
+    from .task import setTimeRanges
+
+    trim = {int(i): (v[0], v[1]) for i, v in (edits.get("trim") or {}).items()}
+    if trim:
+        setTimeRanges(task.files or [], trim)
+    for index, name in (edits.get("titles") or {}).items():
+        setFileName(task, int(index), name)
+
+
 def fileGroups(task) -> dict[int, list[str]]:
     if not task.isSeason:
         return {}
@@ -54,6 +81,10 @@ def fileGroups(task) -> dict[int, list[str]]:
     }
 
 
+def toDraftOptions(pairs) -> list[dict]:
+    return [{"key": key, "label": label} for key, label in pairs]
+
+
 def draftFields(task) -> dict:
     from .task import (
         audioTiers, currentAudioTier, currentVideoTier, subtitleChoices, videoTiers,
@@ -61,16 +92,26 @@ def draftFields(task) -> dict:
 
     page = task.files[0] if task.files and len(task.files) == 1 else None
     return {
-        "videoTiers": [{"key": k, "label": l} for k, l in videoTiers(task)],
-        "audioTiers": [{"key": k, "label": l} for k, l in audioTiers(task)],
-        "subtitles": [{"key": k, "label": l} for k, l in subtitleChoices(task)],
-        "videoTier": currentVideoTier(task),
-        "audioTier": currentAudioTier(task),
-        "subtitleLanguages": list(task.subtitleLanguages),
-        "isVideoEnabled": task.isVideoEnabled,
-        "isAudioEnabled": task.isAudioEnabled,
+        "controls": [
+            {
+                "id": "video",
+                "title": "视频",
+                "value": currentVideoTier(task) if task.isVideoEnabled else "",
+                "options": toDraftOptions(videoTiers(task)),
+                "isOptional": task.isAudioEnabled,
+            },
+            {
+                "id": "audio",
+                "title": "音频",
+                "value": currentAudioTier(task) if task.isAudioEnabled else "",
+                "options": toDraftOptions(audioTiers(task)),
+                "isOptional": task.isVideoEnabled,
+            },
+        ],
         "isCoverEnabled": task.isCoverEnabled,
         "hasCover": bool(task.coverUrl),
+        "subtitles": toDraftOptions(subtitleChoices(task)),
+        "subtitleLanguages": list(task.subtitleLanguages),
         "duration": page._duration if page else 0,
         "startTime": page.startTime if page else 0,
         "endTime": page.endTime if page else 0,
@@ -80,22 +121,20 @@ def draftFields(task) -> dict:
 
 # ---- draft mutations (called by engine.py setDraft dispatcher) ----
 
-def setTrack(task, track: str, isEnabled: bool):
-    if track == "video":
-        task.isVideoEnabled = isEnabled
-    elif track == "audio":
-        task.isAudioEnabled = isEnabled
+def setControl(task, controlId: str, value: str):
+    if controlId == "video":
+        task.isVideoEnabled = bool(value)
+        if value:
+            task.setVideoQuality(*map(int, value.split("-")))
+    elif controlId == "audio":
+        task.isAudioEnabled = bool(value)
+        if value:
+            task.setAudioQuality(int(value))
+    elif controlId == "cover":
+        task.isCoverEnabled = bool(value)
     else:
-        task.isCoverEnabled = isEnabled
+        raise ValueError(f"Unknown control: {controlId}")
     task.update()
-
-
-def setQuality(task, track: str, key: str):
-    if track == "video":
-        qn, codecid = key.split("-")
-        task.setVideoQuality(int(qn), int(codecid))
-    else:
-        task.setAudioQuality(int(key))
 
 
 def setSubtitles(task, languages: str):
