@@ -1,0 +1,5 @@
+# Python 侧通过反射访问 EngineFlows 的字段
+-keep class com.xychr.ghostdownloader.engine.EngineFlows { *; }
+
+# Pack dex 在运行时动态加载 PackUi 实现类
+-keep class * implements com.xychr.ghostdownloader.packs.PackUi { *; }

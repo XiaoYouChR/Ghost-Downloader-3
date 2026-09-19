@@ -102,6 +102,7 @@ val syncEngineSource = tasks.register<Sync>("syncEngineSource") {
         exclude("platform/run_at_login.py")
         exclude("platform/url_scheme.py")
         exclude("platform/windows.py")
+        exclude("services/plan.py")
     }
     into(layout.buildDirectory.dir("python-engine/app"))
 }
