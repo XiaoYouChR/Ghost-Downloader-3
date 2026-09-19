@@ -376,8 +376,12 @@
     <string name="notice_disk_space_desc">剩余 %1$s，需要 %2$s，任务未自动开始</string>
     <string name="notice_draft_taken">浏览器发来了新任务</string>
     <string name="notice_extension_updated">浏览器扩展已更新到 v%1$s</string>
+    <string name="notice_retry">重试</string>
     <string name="notice_view">查看</string>
     <plurals name="notice_draft_taken_desc">
         <item quantity="other">%1$d 个任务待确认</item>
+    </plurals>
+    <plurals name="notice_done_summary">
+        <item quantity="other">%1$d 个文件已下载完成</item>
     </plurals>
 </resources>

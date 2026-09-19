@@ -8,7 +8,6 @@ import com.xychr.ghostdownloader.model.Notice
 import com.xychr.ghostdownloader.ui.navigation.toDestination
 import com.xychr.ghostdownloader.ui.util.formatSize
 
-/** destination 非空时才给 action——按钮没有去处就不该出现。 */
 data class NoticeMessage(val text: String, val action: String?, val destination: String?)
 
 fun Context.noticeMessage(notice: Notice): NoticeMessage = when (notice) {

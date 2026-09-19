@@ -36,7 +36,6 @@
             </intent-filter>
         </activity>
 
-        <!-- specialUse 无时限；dataSync 有 6 小时 / 24 小时配额，撑不住常驻监听 -->
         <service
             android:name=".service.KeepAliveService"
             android:foregroundServiceType="specialUse"
@@ -54,7 +53,10 @@
             android:name=".service.KeepAliveActionReceiver"
             android:exported="false" />
 
-        <!-- 把下载好的文件交给外部应用打开，file:// URI 从 API 24 起会抛 FileUriExposedException -->
+        <receiver
+            android:name=".service.TaskNoticeActionReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

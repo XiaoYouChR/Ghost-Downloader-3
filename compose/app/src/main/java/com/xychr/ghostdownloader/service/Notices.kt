@@ -21,6 +21,7 @@ class Notices(app: Application) {
     private val context: Context = buildLocalizedContext(app)
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     private val notices = MutableSharedFlow<Notice>(extraBufferCapacity = 8)
+    private var completedInBackground = 0
 
     val inApp: SharedFlow<Notice> = notices.asSharedFlow()
 
@@ -37,8 +38,12 @@ class Notices(app: Application) {
     }
 
     private suspend fun show(notice: Notice, isForeground: Boolean) {
+        if (isForeground) completedInBackground = 0
         when (notice) {
-            is Notice.TaskCompleted -> if (!isForeground) context.send(notice)
+            is Notice.TaskCompleted -> if (!isForeground) {
+                completedInBackground++
+                context.sendCompleted(notice, completedInBackground)
+            }
 
             is Notice.TaskFailed,
             is Notice.DiskSpace,

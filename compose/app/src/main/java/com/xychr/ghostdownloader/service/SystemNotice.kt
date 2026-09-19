@@ -9,15 +9,15 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.xychr.ghostdownloader.ui.navigation.DESTINATION_DRAFT
-import com.xychr.ghostdownloader.ui.navigation.EXTRA_DESTINATION
 import com.xychr.ghostdownloader.MainActivity
-import com.xychr.ghostdownloader.ui.navigation.toDestination
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.Notice
 import com.xychr.ghostdownloader.model.PairRequest
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
+import com.xychr.ghostdownloader.ui.navigation.DESTINATION_DRAFT
+import com.xychr.ghostdownloader.ui.navigation.EXTRA_DESTINATION
+import com.xychr.ghostdownloader.ui.navigation.toDestination
 import com.xychr.ghostdownloader.ui.platform.folderIntent
 import com.xychr.ghostdownloader.ui.platform.taskFileIntent
 import com.xychr.ghostdownloader.ui.util.formatSize
@@ -25,8 +25,6 @@ import com.xychr.ghostdownloader.ui.util.formatSize
 const val CHANNEL_RUNNING = "running"
 const val CHANNEL_DONE = "done"
 const val CHANNEL_PROBLEM = "problem"
-
-/** 渠道 id 已经落在用户设备上，换 id 会孤立用户已经调过的渠道偏好，所以只换显示名。 */
 const val CHANNEL_CONFIRM = "pair"
 
 const val NOTIF_ID_KEEP_ALIVE = 1
@@ -37,8 +35,7 @@ const val NOTIF_ID_DONE_SUMMARY = 5
 
 private const val GROUP_DONE = "done"
 
-/** 固定 id 占低位，任务级 id 从 taskId 派生并抬到高位段，两者不会撞车。 */
-private fun taskNoticeId(taskId: String) = (taskId.hashCode() and 0x7FFFFFFF) or 0x40000000
+internal fun taskNoticeId(taskId: String) = (taskId.hashCode() and 0x7FFFFFFF) or 0x40000000
 
 fun Context.createNoticeChannels() {
     getSystemService(NotificationManager::class.java).apply {
@@ -52,10 +49,14 @@ fun Context.createNoticeChannels() {
 private fun Context.channel(id: String, name: Int, importance: Int) =
     NotificationChannel(id, getString(name), importance)
 
-/**
- * areNotificationsEnabled 在 33+ 上就包含了运行时权限被拒的情况，比 checkSelfPermission 更准——
- * 后者对 33 以下不存在的 POST_NOTIFICATIONS 会一律返回 DENIED，反而把老系统的通知也掐了。
- */
+@SuppressLint("MissingPermission")
+fun Context.sendCompleted(notice: Notice.TaskCompleted, completedCount: Int) {
+    val notifications = NotificationManagerCompat.from(this)
+    if (!notifications.areNotificationsEnabled()) return
+    notifications.notify(taskNoticeId(notice.taskId), buildCompleted(notice))
+    notifications.notify(NOTIF_ID_DONE_SUMMARY, buildDoneSummary(completedCount))
+}
+
 @SuppressLint("MissingPermission")
 fun Context.send(notice: Notice) {
     val notifications = NotificationManagerCompat.from(this)
@@ -63,12 +64,11 @@ fun Context.send(notice: Notice) {
     when (notice) {
         is Notice.TaskCompleted -> {
             notifications.notify(taskNoticeId(notice.taskId), buildCompleted(notice))
-            notifications.notify(NOTIF_ID_DONE_SUMMARY, buildDoneSummary())
+            notifications.notify(NOTIF_ID_DONE_SUMMARY, buildDoneSummary(1))
         }
         is Notice.TaskFailed -> notifications.notify(taskNoticeId(notice.taskId), buildFailed(notice))
         is Notice.DiskSpace -> notifications.notify(NOTIF_ID_DISK, buildDiskSpace(notice))
         is Notice.DraftTaken -> notifications.notify(NOTIF_ID_DRAFT, buildDraftTaken(notice))
-        // 纯 FYI，后台不值得打扰。Notices 已经拦掉，这里只是把穷尽性补全。
         is Notice.ExtensionUpdated -> Unit
     }
 }
@@ -99,10 +99,10 @@ private fun Context.buildCompleted(notice: Notice.TaskCompleted): Notification {
         .build()
 }
 
-/** 多任务同时完成时，Android 要求组里有一条 summary，否则分组不生效。 */
-private fun Context.buildDoneSummary(): Notification =
+private fun Context.buildDoneSummary(count: Int): Notification =
     base(CHANNEL_DONE)
         .setContentTitle(getString(R.string.notice_completed))
+        .setContentText(resources.getQuantityString(R.plurals.notice_done_summary, count, count))
         .setContentIntent(openApp())
         .setAutoCancel(true)
         .setGroup(GROUP_DONE)
@@ -116,6 +116,7 @@ private fun Context.buildFailed(notice: Notice.TaskFailed): Notification {
         .setContentText(reason)
         .setStyle(NotificationCompat.BigTextStyle().bigText(reason))
         .setContentIntent(openApp(toDestination(notice.taskId)))
+        .addAction(0, getString(R.string.notice_retry), retryAction(this, notice.taskId))
         .setAutoCancel(true)
         .build()
 }

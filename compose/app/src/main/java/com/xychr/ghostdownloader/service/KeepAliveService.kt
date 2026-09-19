@@ -50,7 +50,6 @@ class KeepAliveService : Service() {
         )
     }
 
-    /** 通知文案要跟应用内语言一致，Service 默认拿的是系统语言。 */
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(buildLocalizedContext(base))
     }
@@ -93,7 +92,6 @@ class KeepAliveService : Service() {
             .setSilent(true)
 
         return when (state.reason) {
-            // 只有下载态值得抬到状态栏 chip 和锁屏：待命态去占那个位置属于滥用配额
             "downloading" -> builder
                 .setContentText(
                     getString(
@@ -103,7 +101,6 @@ class KeepAliveService : Service() {
                 )
                 .setStyle(
                     NotificationCompat.ProgressStyle()
-                        // 单段 100 长，进度量程就等于百分比，不依赖默认值
                         .setProgressSegments(listOf(NotificationCompat.ProgressStyle.Segment(100)))
                         .setProgress(state.progress.toInt().coerceIn(0, 100))
                 )

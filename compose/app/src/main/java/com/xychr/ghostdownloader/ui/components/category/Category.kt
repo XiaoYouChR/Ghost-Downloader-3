@@ -62,10 +62,6 @@ private fun CategoryFilterChip(name: String, isSelected: Boolean, onClick: () ->
         } else null)
 }
 
-/**
- * 单选分类，选中即生效并关闭。保存失败由调用方用 snackbar 报告——
- * sheet 关掉之后就没地方显示错误了，错误处理留在页面这一层。
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryPicker(title: String, categories: List<Category>, selected: String?,

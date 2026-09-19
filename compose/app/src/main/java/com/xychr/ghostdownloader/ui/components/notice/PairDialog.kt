@@ -9,10 +9,6 @@ import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.model.PairRequest
 
-/**
- * 配对是把控制权交给外部客户端的安全决策，必须打断用户——所以是 Dialog 而不是 Snackbar。
- * 来源地址和那句"仅在你刚刚点过自动配对时允许"是防钓鱼的核心，别精简掉。
- */
 @Composable
 fun PairDialog(
     pair: PairRequest,
