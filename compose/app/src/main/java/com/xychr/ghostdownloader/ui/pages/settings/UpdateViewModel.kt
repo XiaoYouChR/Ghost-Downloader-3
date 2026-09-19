@@ -16,7 +16,12 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UpdateAvailable(val version: String = "", val releaseUrl: String = "")
+data class UpdateAvailable(
+    val version: String = "",
+    val releaseUrl: String = "",
+    val publishedAt: String = "",
+    val prerelease: Boolean = false,
+)
 
 @Serializable
 data class UpdateCheck(val status: String = "latest")

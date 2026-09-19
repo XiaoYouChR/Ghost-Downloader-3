@@ -176,6 +176,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.markdown.renderer.m3)
     implementation(libs.zxing.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

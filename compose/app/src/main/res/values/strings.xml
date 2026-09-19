@@ -71,6 +71,9 @@
     <string name="settings_update_notes">查看更新说明</string>
     <string name="settings_update_ignore">忽略此版本</string>
     <string name="settings_update_install_failed">无法启动安装，请先允许「安装未知应用」</string>
+    <string name="settings_update_prerelease">⚠️ 预发布版本</string>
+    <string name="settings_update_no_notes">暂无更新说明</string>
+    <string name="settings_update_open_in_browser">在浏览器中打开</string>
     <string name="settings_update_ready">有新版本 %s</string>
     <string name="settings_check_update_at_startup">启动时检查更新</string>
     <string name="settings_check_update_at_startup_desc">发现新版本时在设置上显示提示</string>

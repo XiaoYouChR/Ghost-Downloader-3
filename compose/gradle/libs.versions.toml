@@ -12,6 +12,7 @@ kotlinxSerializationJson = "1.8.1"
 kotlinxCoroutines = "1.9.0"
 backdrop = "2.0.1"
 chaquopy = "17.0.0"
+markdownRenderer = "0.45.0"
 zxing = "3.5.3"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -40,6 +41,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+markdown-renderer-m3 = { group = "com.mikepenz", name = "multiplatform-markdown-renderer-m3", version.ref = "markdownRenderer" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 [plugins]

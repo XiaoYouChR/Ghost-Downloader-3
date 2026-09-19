@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.InfoSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.ReleaseInfoSheet
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
@@ -95,6 +96,7 @@ private fun UpdateSection(
     onNavigate: (Route) -> Unit,
 ) {
     var installFailed by remember { mutableStateOf(false) }
+    var showReleaseInfo by remember { mutableStateOf(false) }
 
     SettingSection {
         when {
@@ -137,7 +139,7 @@ private fun UpdateSection(
                 ActionSettingRow(
                     title = stringResource(R.string.settings_update_available, available.version),
                     subtitle = stringResource(R.string.settings_update_notes),
-                    onClick = { context.openUrl(available.releaseUrl) },
+                    onClick = { showReleaseInfo = true },
                 )
                 ActionSettingRow(
                     title = stringResource(R.string.settings_update_install),
@@ -165,6 +167,15 @@ private fun UpdateSection(
                 onClick = { viewModel.check() },
             )
         }
+    }
+
+    if (showReleaseInfo && available != null) {
+        ReleaseInfoSheet(
+            available = available,
+            onDismiss = { showReleaseInfo = false },
+            onDownload = { viewModel.download() },
+            onOpenInBrowser = { context.openUrl(available.releaseUrl) },
+        )
     }
 }
 

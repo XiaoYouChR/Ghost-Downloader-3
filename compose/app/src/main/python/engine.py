@@ -86,6 +86,7 @@ class Engine:
         self._pendingEdit = None
         self._updateState = {"state": "idle", "progress": 0, "filePath": "", "error": ""}
         self._updateAvailable: dict | None = None
+        self._latestRelease = None
         self._hashState = HashState()
         self._hashWorkId: str | None = None
 
@@ -957,11 +958,17 @@ class Engine:
         from app.update import fetchRelease, bestAsset, isNewer
 
         release = await fetchRelease()
+        self._latestRelease = release
         if not isNewer(VERSION, release.version):
             status = "latest"
         else:
             status = "available" if bestAsset(release) else "no_asset"
-        return {"status": status, "version": release.version, "releaseUrl": release.pageUrl}
+        return {"status": status, "version": release.version, "releaseUrl": release.pageUrl,
+                "publishedAt": release.publishedAt or "", "prerelease": release.prerelease}
+
+    def releaseBody(self) -> str:
+        body = self._latestRelease.body if self._latestRelease is not None else ""
+        return json.dumps(body or "")
 
     async def _checkUpdateAtStartup(self):
         try:
@@ -981,7 +988,8 @@ class Engine:
 
     def _setUpdateAvailable(self, info: dict):
         available = (
-            {"version": info["version"], "releaseUrl": info["releaseUrl"]}
+            {"version": info["version"], "releaseUrl": info["releaseUrl"],
+             "publishedAt": info["publishedAt"], "prerelease": info["prerelease"]}
             if info["status"] == "available" else None
         )
         if available == self._updateAvailable:
