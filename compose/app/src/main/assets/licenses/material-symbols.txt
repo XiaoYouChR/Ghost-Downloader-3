@@ -18,8 +18,13 @@ ic_arrow_drop_down.xml -> arrow_drop_down/materialsymbolsrounded/arrow_drop_down
 ic_arrow_upward.xml -> arrow_upward/materialsymbolsrounded/arrow_upward_24px.svg
 ic_cat_application.xml -> apps/materialsymbolsrounded/apps_24px.svg
 ic_cat_archive.xml -> folder_zip/materialsymbolsrounded/folder_zip_24px.svg
+ic_cat_book.xml -> menu_book/materialsymbolsrounded/menu_book_24px.svg
 ic_cat_chat.xml -> subtitles/materialsymbolsrounded/subtitles_24px.svg
+ic_cat_code.xml -> code/materialsymbolsrounded/code_24px.svg
+ic_cat_dataset.xml -> dataset/materialsymbolsrounded/dataset_24px.svg
 ic_cat_document.xml -> description/materialsymbolsrounded/description_24px.svg
+ic_cat_game.xml -> sports_esports/materialsymbolsrounded/sports_esports_24px.svg
+ic_cat_link.xml -> link/materialsymbolsrounded/link_24px.svg
 ic_cat_music.xml -> music_note/materialsymbolsrounded/music_note_24px.svg
 ic_cat_other.xml -> draft/materialsymbolsrounded/draft_24px.svg
 ic_cat_photo.xml -> image/materialsymbolsrounded/image_24px.svg

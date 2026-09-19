@@ -3,6 +3,13 @@ from __future__ import annotations
 import pytest
 from aiohttp import web
 
+from tests.helpers import loadEngine
+
+
+@pytest.fixture(scope="module")
+def bridge():
+    return loadEngine()
+
 
 @pytest.fixture
 async def server():
