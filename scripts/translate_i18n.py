@@ -46,40 +46,30 @@ LOCALES = {
 }
 
 SYSTEM_PROMPT_DESKTOP = """\
-你是专业软件本地化译员。将下载管理器 "Ghost Downloader 3" 的 UI 文本从简体中文译为 {locale_name}。
+将下载管理器 Ghost Downloader 3 的 UI 文本从简体中文翻译为 {locale_name}。
 
-规则:
-1. 占位符 {{0}} {{1}} {{2}} 等必须原样保留，位置和数量不变
-2. HTML 标签原样保留
-3. \\n 表示换行，保留在译文相同位置
-4. 参考「已有翻译」的术语和语气
-5. 严格保持 === Context === 分组 + "源文 = 译文" 格式输出
-6. 只输出待翻译部分的结果
-7. 不要输出解释、注释、markdown 标记"""
+翻译「待翻译」中的每一条，参考「已有翻译」的术语和语气。
+占位符 {{0}} {{1}} 和 HTML 标签原样保留。\\n 保留在译文相同位置。
+
+输出格式与输入相同：=== Context === 分组，每行 源文 = 译文。只输出「待翻译」部分。"""
 
 SYSTEM_PROMPT_BROWSER = """\
-你是专业软件本地化译员。将 "Ghost Downloader" 浏览器扩展的 UI 文本从简体中文译为 {locale_name}。
+将 Ghost Downloader 浏览器扩展的 UI 文本从简体中文翻译为 {locale_name}。
 
-「已有翻译」格式: key = 源文 → 译文（用于参考术语和语气）
-「待翻译」格式: key = 源文（行尾 # 注释是上下文提示，不要翻译）
+「已有翻译」格式：key = 源文 → 译文（参考术语和语气）
+「待翻译」格式：key = 源文（行尾 # 注释是上下文提示，保留原文）
 
-规则:
-1. 占位符 $1 $2 $NAME$ 等必须原样保留，位置和数量不变
-2. 参考「已有翻译」的术语和语气
-3. 严格保持 "key = 译文" 格式输出，每行一条
-4. 只输出待翻译部分的结果
-5. 不要输出解释、注释、markdown 标记"""
+翻译「待翻译」中的每一条。占位符 $1 $2 $NAME$ 原样保留。
+
+输出格式：每行 key = 译文。只输出「待翻译」部分。"""
 
 SYSTEM_PROMPT_ANDROID = """\
-你是专业软件本地化译员。将下载管理器 "Ghost Downloader 3" 的 Android 端 UI 文本从简体中文译为 {locale_name}。
+将下载管理器 Ghost Downloader 3 的 Android 端 UI 文本从简体中文翻译为 {locale_name}。
 
-规则:
-1. Android 格式化占位符 %1$s %2$d %d%% 等必须原样保留，位置和数量不变
-2. \\n 表示换行，保留在译文相同位置
-3. 参考「已有翻译」的术语和语气
-4. 严格保持 "name = 译文" 格式输出，每行一条
-5. 只输出待翻译部分的结果
-6. 不要输出解释、注释、markdown 标记"""
+翻译「待翻译」中的每一条，参考「已有翻译」的术语和语气。
+占位符 %1$s %2$d %d%% 等原样保留。\\n 保留在译文相同位置。
+
+输出格式：每行 name = 译文。只输出「待翻译」部分。"""
 
 
 def escapeNewlines(s: str) -> str:
@@ -143,7 +133,6 @@ def fetchTranslation(system: str, user: str) -> str:
             {"role": "user", "content": user},
         ],
         "reasoning_effort": "low",
-        "max_tokens": 16384,
     }
     req = Request(
         API_URL,
