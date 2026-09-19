@@ -117,7 +117,7 @@ internal fun SettingsNavHost(
                 AboutPage(
                     onNavigate = navigate,
                     onBack = back,
-                    settingsViewModel = settingsVM,
+                    viewModel = settingsVM,
                     updateViewModel = updateViewModel,
                 )
             }

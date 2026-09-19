@@ -40,14 +40,14 @@ private const val REPOSITORY_URL = "https://github.com/XiaoYouChR/Ghost-Download
 fun AboutPage(
     onNavigate: (Route) -> Unit,
     onBack: () -> Unit,
-    settingsViewModel: SettingsViewModel,
+    viewModel: SettingsViewModel,
     updateViewModel: UpdateViewModel,
 ) {
     val context = LocalContext.current
     val version = remember {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
     }
-    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val checkState by updateViewModel.checkState.collectAsStateWithLifecycle()
     val available by updateViewModel.available.collectAsStateWithLifecycle()
     val dlState by updateViewModel.downloadState.collectAsStateWithLifecycle()
@@ -75,7 +75,7 @@ fun AboutPage(
                     title = stringResource(R.string.settings_check_update_at_startup),
                     subtitle = stringResource(R.string.settings_check_update_at_startup_desc),
                     checked = it.shouldCheckUpdateAtStartup,
-                    onCheckedChange = { checked -> settingsViewModel.set("shouldCheckUpdateAtStartup", checked) },
+                    onCheckedChange = { checked -> viewModel.set("shouldCheckUpdateAtStartup", checked) },
                 )
             }
         }
