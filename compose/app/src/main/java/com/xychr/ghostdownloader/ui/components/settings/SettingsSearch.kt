@@ -29,10 +29,6 @@ private fun MutableList<SearchableItem>.section(
     add(SearchableItem(title, subtitle, breadcrumbRes, route))
 }
 
-/**
- * 设置项的搜索索引。搜的是 string resource 的实际文案，所以跟随系统语言。
- * App 设置项在此声明；Pack 设置项由各 PackUi.searchItems 声明，运行时聚合。
- */
 val settingsIndex: List<SearchableItem> by lazy { buildList {
     section(
         R.string.settings_section_download, DownloadSettingsRoute,
@@ -153,7 +149,6 @@ fun SearchResults(
     }
 }
 
-/** Pack 的面包屑要带上「下载插件」前缀，否则只看到 pack 名不知道去哪找 */
 @Composable
 private fun breadcrumbOf(item: SearchableItem): String {
     val leaf = stringResource(item.breadcrumbRes)

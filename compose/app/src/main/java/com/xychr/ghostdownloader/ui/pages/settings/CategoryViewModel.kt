@@ -23,7 +23,6 @@ class CategoryViewModel : ViewModel() {
         engineRepository.observe<CategoryState>("categoryState")
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** 每个分类下的任务数，用于告诉用户删除会波及多少任务。 */
     val taskCounts: StateFlow<Map<String, Int>> =
         engineRepository.observe<List<TaskUiState>>("tasks")
             .map { tasks -> tasks.groupingBy { it.categoryId }.eachCount() }

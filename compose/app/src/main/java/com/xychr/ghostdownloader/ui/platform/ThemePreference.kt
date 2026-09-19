@@ -1,8 +1,11 @@
 package com.xychr.ghostdownloader.ui.platform
 
 import android.content.Context
+import androidx.compose.runtime.compositionLocalOf
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+val LocalSetThemeMode = compositionLocalOf<(ThemeMode) -> Unit> { {} }
 
 private const val PREFS_NAME = "theme"
 private const val KEY_MODE = "mode"

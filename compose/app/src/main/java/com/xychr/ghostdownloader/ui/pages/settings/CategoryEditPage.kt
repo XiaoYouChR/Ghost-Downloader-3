@@ -31,7 +31,6 @@ import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
 import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 
-// 键必须和引擎 category_service.py 的预设一致，桌面按这些值取 FluentIcon
 private val ICON_KEYS = listOf(
     "VIDEO", "MUSIC", "PHOTO", "CHAT", "DOCUMENT", "ZIP_FOLDER", "APPLICATION", "HELP",
 )
@@ -75,7 +74,6 @@ fun CategoryEditPage(
         return
     }
 
-    // key 用 categoryId：数据到达时重新播种表单，之后用户的编辑不再被覆盖
     var name by rememberSaveable(categoryId) { mutableStateOf(existing?.name.orEmpty()) }
     var icon by rememberSaveable(categoryId) {
         mutableStateOf(existing?.icon ?: "DOCUMENT")

@@ -61,7 +61,6 @@ fun SettingsSectionTitle(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-// 外层裁剪只限定整组轮廓，行自己绘制底色与按压形变，动态增删行无需维护位置参数。
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingSection(
@@ -109,7 +108,6 @@ fun SwitchSettingRow(
         colors = ListItemDefaults.segmentedColors(
             containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,
         ),
-        // ListItem 的 checked 重载固定为 Checkbox；这里保留整行 Switch 的单一语义节点。
         modifier = modifier.then(anchor.modifier).semantics {
             role = Role.Switch
             toggleableState = ToggleableState(checked)
@@ -171,10 +169,6 @@ fun InfoSettingRow(
     )
 }
 
-/**
- * 拖动只改本地值，抬手才提交——引擎每次 set 都会写盘。
- * remember 以外部值为 key，外部变化能覆盖本地值。
- */
 @Composable
 fun SliderSettingRow(
     title: String,
@@ -191,7 +185,6 @@ fun SliderSettingRow(
     Column(
         modifier.then(anchor.modifier)
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
             .background(anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
@@ -221,10 +214,6 @@ fun SliderSettingRow(
     }
 }
 
-/**
- * 分段卡片里的单选行。和 [RadioRow] 的区别是容器：这个进 [SettingSection]（有底色、有按压形变），
- * 那个进 AlertDialog（紧凑、无底色）。
- */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RadioSettingRow(
@@ -244,7 +233,6 @@ fun RadioSettingRow(
         colors = ListItemDefaults.segmentedColors(
             containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,
         ),
-        // 整行是一个单选节点，内部 RadioButton 不再单独可达
         modifier = modifier.then(anchor.modifier).semantics {
             role = Role.RadioButton
             selected = isSelected
@@ -271,7 +259,6 @@ fun RadioRow(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 
-// 引擎决定合法范围，这里只挡住明显越界。
 @Composable
 fun NumberSettingRow(
     title: String,
@@ -304,8 +291,10 @@ fun NumberSettingRow(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onConfirm(entered!!)
-                        editing = false
+                        entered?.takeIf { it in range }?.let {
+                            onConfirm(it)
+                            editing = false
+                        }
                     },
                     enabled = entered != null && entered in range,
                 ) { Text(stringResource(R.string.action_ok)) }
@@ -319,7 +308,6 @@ fun NumberSettingRow(
     }
 }
 
-// 空值时用 emptyHint 代替副标题。
 @Composable
 fun TextSettingRow(
     title: String,
@@ -374,7 +362,6 @@ fun TextSettingRow(
     }
 }
 
-// options: 引擎值 to 展示文案。
 @Composable
 fun OptionsSettingRow(
     title: String,

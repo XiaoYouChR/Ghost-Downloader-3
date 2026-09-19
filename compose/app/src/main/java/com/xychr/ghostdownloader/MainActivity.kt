@@ -39,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import com.xychr.ghostdownloader.ui.platform.LocalSetThemeMode
+import com.xychr.ghostdownloader.ui.platform.saveThemeMode
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -137,62 +139,69 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeContext = LocalContext.current
-            val themeMode = remember { loadThemeMode(themeContext) }
-            AppTheme(
-                darkTheme = when (themeMode) {
-                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
-                    ThemeMode.LIGHT -> false
-                    ThemeMode.DARK -> true
+            var themeMode by remember { mutableStateOf(loadThemeMode(themeContext)) }
+            CompositionLocalProvider(
+                LocalSetThemeMode provides { mode ->
+                    saveThemeMode(themeContext, mode)
+                    themeMode = mode
                 },
             ) {
-                val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+                AppTheme(
+                    darkTheme = when (themeMode) {
+                        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                        ThemeMode.LIGHT -> false
+                        ThemeMode.DARK -> true
+                    },
+                ) {
+                    val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
 
-                settings?.let { loaded ->
-                    var origin by remember { mutableStateOf(Offset.Zero) }
-                    var isRevealStarted by remember { mutableStateOf(loaded.hasCompletedOobe) }
-                    val progress = animateFloatAsState(
-                        targetValue = if (isRevealStarted) 1f else 0f,
-                        animationSpec = tween(1_000, easing = EmphasizedDecelerate),
-                        label = "oobeReveal",
-                    )
-                    val isRevealed by remember { derivedStateOf { progress.value >= 1f } }
-                    var isAppMounted by remember { mutableStateOf(loaded.hasCompletedOobe) }
-                    LaunchedEffect(Unit) {
-                        withFrameNanos { }
-                        isAppMounted = true
-                    }
-
-                    Box(Modifier.fillMaxSize()) {
-                        if (isAppMounted) {
-                            AppRoot(
-                                draft = draft,
-                                updateViewModel = updateViewModel,
-                                notices = (application as App).notices,
-                                destinations = destinations.receiveAsFlow(),
-                                pairFlow = engineRepository.observe("pairRequest"),
-                                onPairApproval = { requestId, isApproved ->
-                                    lifecycleScope.launch {
-                                        engineRepository.invoke("setBrowserPairApproval", requestId, isApproved)
-                                    }
-                                },
-                            )
+                    settings?.let { loaded ->
+                        var origin by remember { mutableStateOf(Offset.Zero) }
+                        var isRevealStarted by remember { mutableStateOf(loaded.hasCompletedOobe) }
+                        val progress = animateFloatAsState(
+                            targetValue = if (isRevealStarted) 1f else 0f,
+                            animationSpec = tween(1_000, easing = EmphasizedDecelerate),
+                            label = "oobeReveal",
+                        )
+                        val isRevealed by remember { derivedStateOf { progress.value >= 1f } }
+                        var isAppMounted by remember { mutableStateOf(loaded.hasCompletedOobe) }
+                        LaunchedEffect(Unit) {
+                            withFrameNanos { }
+                            isAppMounted = true
                         }
 
-                        if (!isRevealed) {
-                            OobePage(
-                                settings = loaded,
-                                onSetSetting = settingsViewModel::set,
-                                onFinish = { center ->
-                                    origin = center
-                                    isRevealStarted = true
-                                    settingsViewModel.set("hasCompletedOobe", true)
-                                },
-                                modifier = Modifier.oobeExit(
-                                    origin = { origin },
-                                    progress = { progress.value },
-                                    borderColor = MaterialTheme.colorScheme.outline,
-                                ),
-                            )
+                        Box(Modifier.fillMaxSize()) {
+                            if (isAppMounted) {
+                                AppRoot(
+                                    draft = draft,
+                                    updateViewModel = updateViewModel,
+                                    notices = (application as App).notices,
+                                    destinations = destinations.receiveAsFlow(),
+                                    pairFlow = engineRepository.observe("pairRequest"),
+                                    onPairApproval = { requestId, isApproved ->
+                                        lifecycleScope.launch {
+                                            engineRepository.invoke("setBrowserPairApproval", requestId, isApproved)
+                                        }
+                                    },
+                                )
+                            }
+
+                            if (!isRevealed) {
+                                OobePage(
+                                    settings = loaded,
+                                    onSetSetting = settingsViewModel::set,
+                                    onFinish = { center ->
+                                        origin = center
+                                        isRevealStarted = true
+                                        settingsViewModel.set("hasCompletedOobe", true)
+                                    },
+                                    modifier = Modifier.oobeExit(
+                                        origin = { origin },
+                                        progress = { progress.value },
+                                        borderColor = MaterialTheme.colorScheme.outline,
+                                    ),
+                                )
+                            }
                         }
                     }
                 }

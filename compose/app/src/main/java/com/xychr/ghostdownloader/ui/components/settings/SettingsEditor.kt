@@ -36,7 +36,6 @@ data class SettingsEditState(
     val hasError: Boolean = false,
 )
 
-// 保存跟随导航项而非 Composition，旋转屏幕不取消已经交给 Python 的写入。
 class SettingsEdit : ViewModel() {
     private val editState = MutableStateFlow(SettingsEditState())
     val state = editState.asStateFlow()

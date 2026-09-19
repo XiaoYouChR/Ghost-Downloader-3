@@ -47,7 +47,6 @@ fun buildMergedHeaders(current: List<HeaderEntry>, incoming: List<HeaderEntry>):
 enum class HeaderImportError { QUOTES, MULTIPLE_REQUESTS, FILE_INPUT, INVALID_HEADERS, EMPTY }
 data class HeaderImport(val entries: List<HeaderEntry> = emptyList(), val error: HeaderImportError? = null)
 
-// 仅解析支持的 cURL 参数。不执行 shell，也不展开变量、读取文件或推测丢失的参数。
 fun parseHeaderImport(source: String): HeaderImport {
     val text = source.trim().replace("\r\n", "\n")
     if (!Regex("^curl(?:\\s|$)", RegexOption.IGNORE_CASE).containsMatchIn(text)) {

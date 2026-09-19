@@ -9,6 +9,7 @@
 - **engine.py 是 Android View Adapter.** — 和 Desktop `app/view/` 同构：投影 model 状态、处理用户命令。投影是纯读（`task.x`、`service.compute(task)`），不内联业务逻辑
 - **Kotlin→Python 是内部调用.** — 根目录「View 是校验边界」的具体应用。SettingRanges 提供范围约束，格式检查在 Kotlin
 - **Model 不为 Android 改.** — 现有 model 跑通了 Desktop，Android 通过 engine.py 投影适配，不往基类加接口
+- **Config 按消费者分路.** — Python 需要的设置走 `cfg.py`（GIL → signal → Flow）；只有 Kotlin 消费的设置（ThemeMode、Language）走 SharedPreferences + Compose 本地状态，不过 Engine
 
 ## EngineRepository
 

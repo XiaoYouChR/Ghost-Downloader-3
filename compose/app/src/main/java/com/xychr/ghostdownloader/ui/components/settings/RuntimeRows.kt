@@ -61,7 +61,6 @@ class RuntimesViewModel : ViewModel() {
         viewModelScope.launch { engineRepository.invoke("cancelRuntimeInstall", id) }
     }
 
-    /** 安装和检查都是引擎自己推进的，所以只在有活儿时轮询，全部空闲就停 */
     private fun poll() {
         pollJob?.cancel()
         pollJob = viewModelScope.launch {

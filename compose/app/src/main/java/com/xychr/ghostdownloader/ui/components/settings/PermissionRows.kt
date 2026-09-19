@@ -53,10 +53,6 @@ fun StoragePermissionRow() {
     )
 }
 
-/**
- * areNotificationsEnabled 在"权限被永久拒绝"和"用户手动关了渠道"两种情况下都是 false，
- * 拿它显示状态是对的，但决定"该不该弹系统对话框"必须另问 shouldShowRationale。
- */
 @Composable
 fun NotificationPermissionRow() {
     val context = LocalContext.current
