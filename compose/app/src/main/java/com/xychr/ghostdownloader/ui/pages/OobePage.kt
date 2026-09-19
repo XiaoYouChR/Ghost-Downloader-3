@@ -78,7 +78,6 @@ fun OobePage(
 
     BackHandler(enabled = pagerState.currentPage > 0, onBack = back)
 
-    // 背景要铺到系统栏下面，避让只落在内容上；否则窗口背景会从状态栏露出
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface,
@@ -182,7 +181,6 @@ private fun OobeNavigation(
     onNext: () -> Unit,
     onFinish: (Offset) -> Unit,
 ) {
-    // 两个分支互斥，track 只挂在一个按钮上，点击时读到的就是它自己的中心
     var finishCenter by remember { mutableStateOf(Offset.Zero) }
     val track = Modifier.onGloballyPositioned { finishCenter = it.boundsInRoot().center }
 
