@@ -315,7 +315,10 @@
     <string name="settings_update_install_failed">無法啟動安裝，請先允許「安裝未知應用程式」</string>
     <string name="settings_update_latest">已是最新版本</string>
     <string name="settings_update_no_asset">目前平台沒有可用的安裝包</string>
+    <string name="settings_update_no_notes">暫無更新說明</string>
     <string name="settings_update_notes">查看更新說明</string>
+    <string name="settings_update_open_in_browser">在瀏覽器中開啟</string>
+    <string name="settings_update_prerelease">⚠️ 預先發佈版本</string>
     <string name="settings_update_ready">有新版本 %s</string>
     <string name="settings_verify_ssl">下載時驗證 SSL 憑證</string>
     <string name="settings_version">版本</string>

@@ -315,7 +315,10 @@
     <string name="settings_update_install_failed">インストールを開始できません。まず「提供元不明のアプリ」を許可してください</string>
     <string name="settings_update_latest">最新バージョンです</string>
     <string name="settings_update_no_asset">現在のプラットフォーム用のインストールパッケージがありません</string>
+    <string name="settings_update_no_notes">アップデートの説明はありません</string>
     <string name="settings_update_notes">アップデートの説明を見る</string>
+    <string name="settings_update_open_in_browser">ブラウザで開く</string>
+    <string name="settings_update_prerelease">⚠️ プレリリース版</string>
     <string name="settings_update_ready">新しいバージョン %s があります</string>
     <string name="settings_verify_ssl">ダウンロード時にSSL証明書を検証</string>
     <string name="settings_version">バージョン</string>

@@ -11,7 +11,7 @@
     <string name="task_categories_mixed">Current categories differ, please choose a unified category.</string>
     <string name="task_category_action">Change category, current: %1$s</string>
     <string name="task_category_all">All categories</string>
-    <string name="task_category_applied">Changed to \"%1$s\" category</string>
+    <string name="task_category_applied">Changed to \\"%1$s\\" category</string>
     <string name="task_category_auto">Auto match category</string>
     <string name="task_category_down">Decrease match priority</string>
     <string name="task_category_empty">No tasks match in this category</string>
@@ -66,7 +66,7 @@
     <string name="task_search_hint">Search tasks…</string>
     <string name="task_select">Select task</string>
     <string name="task_select_all">Select all</string>
-    <string name="task_select_category_count">Select only \"%1$s\" files (%2$d)</string>
+    <string name="task_select_category_count">Select only \\"%1$s\\" files (%2$d)</string>
     <string name="task_select_category_files">Select by category…</string>
     <string name="task_select_category_hint">Will replace current selection, not change task category; submitted after apply.</string>
     <string name="task_select_invert">Invert selection</string>

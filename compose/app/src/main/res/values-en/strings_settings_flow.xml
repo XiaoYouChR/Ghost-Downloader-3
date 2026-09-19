@@ -27,7 +27,7 @@
     <string name="headers_text_label">Header text</string>
     <string name="headers_value_invalid">Value cannot contain line breaks or control characters.</string>
     <string name="identity_active_edit">This preset is currently in use. Saving will modify its content, not switch to another preset.</string>
-    <string name="identity_delete_active">After deletion, will switch to \"%1$s\".</string>
+    <string name="identity_delete_active">After deletion, will switch to \\"%1$s\\".</string>
     <string name="identity_enabled_for">Enable %1$s</string>
     <string name="identity_headers_summary">Currently using: %1$s · %2$d headers</string>
     <string name="identity_hosts_invalid">Please enter domain or *.example.com; do not include protocol, path, or other wildcards.</string>

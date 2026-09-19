@@ -315,7 +315,10 @@
     <string name="settings_update_install_failed">Не удалось запустить установку, разрешите установку из неизвестных источников</string>
     <string name="settings_update_latest">У вас последняя версия</string>
     <string name="settings_update_no_asset">Для этой платформы нет установочного пакета</string>
+    <string name="settings_update_no_notes">Нет примечаний к обновлению</string>
     <string name="settings_update_notes">Примечания к обновлению</string>
+    <string name="settings_update_open_in_browser">Открыть в браузере</string>
+    <string name="settings_update_prerelease">⚠️ Предварительная версия</string>
     <string name="settings_update_ready">Доступна новая версия %s</string>
     <string name="settings_verify_ssl">Проверять SSL-сертификаты</string>
     <string name="settings_version">Версия</string>

@@ -309,7 +309,10 @@
     <string name="settings_update_install_failed">No se pudo iniciar la instalación; permite primero «Instalar aplicaciones desconocidas»</string>
     <string name="settings_update_latest">Ya tienes la última versión</string>
     <string name="settings_update_no_asset">No hay paquete de instalación disponible para esta plataforma</string>
+    <string name="settings_update_no_notes">Aún no hay notas de la versión</string>
     <string name="settings_update_notes">Ver notas de la versión</string>
+    <string name="settings_update_open_in_browser">Abrir en el navegador</string>
+    <string name="settings_update_prerelease">⚠️ Versión de prelanzamiento</string>
     <string name="settings_update_ready">Hay una nueva versión %s</string>
     <string name="settings_verify_ssl">Verificar certificados SSL al descargar</string>
     <string name="settings_version">Versión</string>

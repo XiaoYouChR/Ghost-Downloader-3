@@ -25,10 +25,10 @@
     <string name="bili_logout">Sair</string>
     <string name="bili_mode_qr">Código QR</string>
     <string name="bili_mode_sms">SMS</string>
-    <string name="bili_qr_expired">Código QR expirado, toque em \"Atualizar código QR\" para gerar novamente</string>
+    <string name="bili_qr_expired">Código QR expirado, toque em \\"Atualizar código QR\\" para gerar novamente</string>
     <string name="bili_qr_loading">Obtendo código QR…</string>
     <string name="bili_qr_open">Abrir link de login</string>
-    <string name="bili_qr_ready">Escaneie com o aplicativo Bilibili ou toque em \"Abrir link de login\" para confirmar neste dispositivo</string>
+    <string name="bili_qr_ready">Escaneie com o aplicativo Bilibili ou toque em \\"Abrir link de login\\" para confirmar neste dispositivo</string>
     <string name="bili_qr_refresh">Atualizar código QR</string>
     <string name="bili_qr_scanned">Código escaneado, confirme o login no celular</string>
     <string name="bili_qr_success">Login bem-sucedido</string>
@@ -176,12 +176,12 @@
     <string name="nav_settings">Configurações</string>
     <string name="nav_tasks">Tarefas</string>
     <string name="notice_completed">Download concluído</string>
-    <string name="notice_completed_inline">\"%1$s\" baixado com sucesso</string>
+    <string name="notice_completed_inline">\\"%1$s\\" baixado com sucesso</string>
     <string name="notice_disk_space">Espaço em disco insuficiente</string>
     <string name="notice_disk_space_desc">Restam %1$s, são necessários %2$s, a tarefa não iniciou automaticamente</string>
     <string name="notice_draft_taken">O navegador enviou uma nova tarefa</string>
     <string name="notice_extension_updated">Extensão do navegador atualizada para v%1$s</string>
-    <string name="notice_failed">Falha ao baixar \"%1$s\"</string>
+    <string name="notice_failed">Falha ao baixar \\"%1$s\\"</string>
     <string name="notice_open_file">Abrir arquivo</string>
     <string name="notice_open_folder">Abrir pasta</string>
     <string name="notice_retry">Tentar novamente</string>
@@ -224,7 +224,7 @@ As próximas etapas ajudarão na configuração básica.</string>
 Cliente: %2$s
 Versão da extensão: %3$s
 
-Permita somente se você acabou de clicar em \"Emparelhar automaticamente\" na extensão.</string>
+Permita somente se você acabou de clicar em \\"Emparelhar automaticamente\\" na extensão.</string>
     <string name="pair_message">%1$s (v%2$s) solicita conexão, de %3$s</string>
     <string name="pair_reject">Recusar</string>
     <string name="pair_title">Solicitação de emparelhamento da extensão do navegador</string>
@@ -259,7 +259,7 @@ Permita somente se você acabou de clicar em \"Emparelhar automaticamente\" na e
     <string name="settings_browser_connected">Conectado · Extensão v%1$s</string>
     <string name="settings_browser_disconnected">Não conectado</string>
     <string name="settings_browser_export">Exportar extensão</string>
-    <string name="settings_browser_export_desc">Descompacte na pasta Download e use \"Carregar extensão descompactada\" no navegador</string>
+    <string name="settings_browser_export_desc">Descompacte na pasta Download e use \\"Carregar extensão descompactada\\" no navegador</string>
     <string name="settings_browser_extension">Extensão do navegador</string>
     <string name="settings_browser_extension_desc">Receber downloads enviados pela extensão do navegador local</string>
     <string name="settings_browser_listening">Aguardando conexão da extensão na porta %1$d</string>
@@ -312,10 +312,13 @@ Permita somente se você acabou de clicar em \"Emparelhar automaticamente\" na e
     <string name="settings_update_failed">Falha na verificação, tente novamente mais tarde</string>
     <string name="settings_update_ignore">Ignorar esta versão</string>
     <string name="settings_update_install">Instalar atualização</string>
-    <string name="settings_update_install_failed">Não foi possível iniciar a instalação, permita \"Instalar aplicativos desconhecidos\" primeiro</string>
+    <string name="settings_update_install_failed">Não foi possível iniciar a instalação, permita \\"Instalar aplicativos desconhecidos\\" primeiro</string>
     <string name="settings_update_latest">Já está na versão mais recente</string>
     <string name="settings_update_no_asset">Nenhum pacote de instalação disponível para esta plataforma</string>
+    <string name="settings_update_no_notes">Sem notas de atualização</string>
     <string name="settings_update_notes">Ver notas da atualização</string>
+    <string name="settings_update_open_in_browser">Abrir no navegador</string>
+    <string name="settings_update_prerelease">⚠️ Versão de pré-lançamento</string>
     <string name="settings_update_ready">Há uma nova versão %s</string>
     <string name="settings_verify_ssl">Verificar certificado SSL ao baixar</string>
     <string name="settings_version">Versão</string>
