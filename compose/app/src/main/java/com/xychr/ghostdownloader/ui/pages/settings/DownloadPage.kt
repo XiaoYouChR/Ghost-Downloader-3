@@ -1,27 +1,22 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.model.Settings
-import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SliderSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.platform.defaultDownloadFolder
-import com.xychr.ghostdownloader.ui.platform.toFolderPath
+import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 
 @Composable
 fun DownloadPage(
@@ -40,23 +35,14 @@ private fun ColumnScope.DownloadRows(
     settings: Settings,
     set: (String, Any) -> Unit,
 ) {
-    val folderPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let { set("downloadFolder", it.toFolderPath()) } }
+    val picker = rememberFolderPicker { set("downloadFolder", it) }
 
     SettingSection {
-        ActionSettingRow(
+        PathSettingRow(
             title = stringResource(R.string.settings_download_folder),
-            subtitle = settings.downloadFolder,
-            onClick = { folderPicker.launch(null) },
-            trailing = {
-                IconButton(onClick = { set("downloadFolder", defaultDownloadFolder()) }) {
-                    Icon(
-                        painterResource(R.drawable.ic_restore),
-                        contentDescription = stringResource(R.string.settings_restore_default),
-                    )
-                }
-            },
+            path = settings.downloadFolder,
+            picker = picker,
+            onReset = { set("downloadFolder", defaultDownloadFolder()) },
         )
         SliderSettingRow(
             title = stringResource(R.string.settings_max_task_num),

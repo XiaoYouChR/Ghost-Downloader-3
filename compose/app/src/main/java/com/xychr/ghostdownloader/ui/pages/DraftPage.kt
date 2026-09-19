@@ -41,6 +41,8 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.components.ErrorText
 import com.xychr.ghostdownloader.ui.components.RenameDialog
+import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow
+import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 import com.xychr.ghostdownloader.model.CategoryState
 import com.xychr.ghostdownloader.model.DraftItem
 import kotlin.math.roundToInt
@@ -72,6 +74,7 @@ fun DraftPage(
     var renameUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var filesUrl by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val folderPicker = rememberFolderPicker(draft::setGlobalFolder)
 
     BackHandler(enabled = state.isWorking) { }
 
@@ -144,18 +147,13 @@ fun DraftPage(
 
             if (state.items.any { it.error == null && !it.isParsing }) {
                 item {
-                    OutlinedTextField(
-                        value = state.globalFolder,
-                        onValueChange = draft::setGlobalFolder,
-                        label = { Text(stringResource(R.string.task_output_folder)) },
-                        leadingIcon = { Icon(painterResource(R.drawable.ic_folder), null) },
-                        singleLine = true,
-                        isError = !state.isFolderValid,
-                        supportingText = if (state.isFolderValid) null else {
-                            { Text(stringResource(R.string.draft_folder_absolute)) }
-                        },
-                        enabled = !state.isWorking,
-                        modifier = Modifier.fillMaxWidth(),
+                    PathSettingRow(
+                        title = stringResource(R.string.task_output_folder),
+                        path = state.globalFolder,
+                        picker = folderPicker,
+                        isEnabled = !state.isWorking,
+                        error = if (state.isFolderValid) null
+                        else stringResource(R.string.draft_folder_absolute),
                     )
                 }
                 if (state.subworkerCount > 0) {

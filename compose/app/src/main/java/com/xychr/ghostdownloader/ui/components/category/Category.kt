@@ -37,32 +37,29 @@ fun CategoryChoiceRow(name: String, isSelected: Boolean, onSelect: () -> Unit,
     }
 }
 
-/** 选中的分类即筛选条件；再点一次取消选中就回到「全部」，所以没有「全部」这个 chip。 */
 @Composable
 fun CategoryFilterRow(categoryFilter: String?, categories: List<Category>, onSelect: (String?) -> Unit,
                       modifier: Modifier = Modifier) {
     LazyRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 12.dp)) {
+        item(key = "all") {
+            CategoryFilterChip(stringResource(R.string.task_category_all), categoryFilter == null) { onSelect(null) }
+        }
         item(key = "") {
-            CategoryFilterChip(stringResource(R.string.task_uncategorized), categoryFilter == "",
-                R.drawable.ic_file) { onSelect("".takeIf { categoryFilter != "" }) }
+            CategoryFilterChip(stringResource(R.string.task_uncategorized), categoryFilter == "") { onSelect("") }
         }
         items(categories, key = { it.categoryId }) { category ->
-            val isSelected = categoryFilter == category.categoryId
-            CategoryFilterChip(category.name, isSelected, categoryIconRes(category.icon)) {
-                onSelect(category.categoryId.takeIf { !isSelected })
-            }
+            CategoryFilterChip(category.name, categoryFilter == category.categoryId) { onSelect(category.categoryId) }
         }
     }
 }
 
 @Composable
-private fun CategoryFilterChip(name: String, isSelected: Boolean, @DrawableRes icon: Int, onClick: () -> Unit) {
+private fun CategoryFilterChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     FilterChip(selected = isSelected, onClick = onClick, label = { Text(name) },
-        leadingIcon = {
-            Icon(painterResource(if (isSelected) R.drawable.ic_check else icon), null,
-                Modifier.size(FilterChipDefaults.IconSize))
-        })
+        leadingIcon = if (isSelected) {
+            { Icon(painterResource(R.drawable.ic_check), null, Modifier.size(FilterChipDefaults.IconSize)) }
+        } else null)
 }
 
 /**

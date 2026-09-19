@@ -74,4 +74,3 @@ fun Context.openFolder(folder: String) {
 }
 
 private const val PRIMARY_STORAGE = "/storage/emulated/0"
-private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"

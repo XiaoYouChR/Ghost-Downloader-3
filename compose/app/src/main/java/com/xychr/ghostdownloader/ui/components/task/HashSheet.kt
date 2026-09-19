@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,21 +35,22 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.i18n.engineText
 import com.xychr.ghostdownloader.model.HashState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HashSheet(
-    name: String,
-    state: HashState,
-    onStart: (String) -> Unit,
-    onCancel: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun HashSheet(taskId: String, name: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    var state by remember { mutableStateOf(HashState()) }
     var algorithms by remember { mutableStateOf(emptyList<String>()) }
     var algorithm by remember { mutableStateOf("sha256") }
     var isMenuOpen by remember { mutableStateOf(false) }
 
+    LaunchedEffect(taskId) {
+        engineRepository.observe<HashState>("hashState").collect {
+            state = if (it.taskId == taskId) it else HashState()
+        }
+    }
     LaunchedEffect(Unit) {
         val available = runCatching { engineRepository.query<List<String>>("hashAlgorithms") }
             .getOrDefault(emptyList())
@@ -56,7 +58,11 @@ fun HashSheet(
         if (algorithm !in available) algorithm = available.lastOrNull { it == "sha256" } ?: available.lastOrNull().orEmpty()
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier) {
+    fun cancel() {
+        scope.launch { engineRepository.invoke("cancelFileHash") }
+    }
+
+    ModalBottomSheet(onDismissRequest = { cancel(); onDismiss() }, modifier = modifier) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
             Text(stringResource(R.string.task_hash_title), style = MaterialTheme.typography.titleLarge)
             Text(
@@ -122,10 +128,12 @@ fun HashSheet(
             Spacer(Modifier.padding(top = 16.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (state.isRunning) {
-                    TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
+                    TextButton(onClick = { cancel() }) { Text(stringResource(R.string.action_cancel)) }
                 } else {
                     Button(
-                        onClick = { onStart(algorithm) },
+                        onClick = {
+                            scope.launch { engineRepository.invoke("startFileHash", taskId, algorithm) }
+                        },
                         enabled = algorithm.isNotEmpty(),
                     ) {
                         Text(stringResource(

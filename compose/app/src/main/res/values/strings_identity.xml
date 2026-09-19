@@ -18,9 +18,11 @@
     <string name="category_remove_message">%1$d 个任务将变为未分类。任务和文件不会被删除。</string>
     <string name="category_no_extension">未设置扩展名</string>
     <string name="category_default_folder">使用默认下载目录</string>
+    <string name="category_follow_default_desc">下载目录改变时这里跟着变</string>
+    <string name="category_subfolder">子文件夹</string>
+    <string name="category_subfolder_desc">留空则直接下载到下载目录</string>
     <string name="category_name">名称</string>
     <string name="category_name_required">请输入分类名称</string>
-    <string name="category_folder_invalid">请填写绝对路径，或留空使用默认下载目录</string>
     <string name="category_extensions">扩展名</string>
     <string name="category_extensions_desc">用逗号分隔，不需要写点号</string>
     <string name="category_icon">图标</string>

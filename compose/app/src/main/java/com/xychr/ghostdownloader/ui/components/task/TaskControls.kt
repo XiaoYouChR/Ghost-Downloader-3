@@ -1,7 +1,6 @@
 package com.xychr.ghostdownloader.ui.components.task
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.DropdownMenuItem
@@ -44,16 +43,10 @@ fun TaskMenuItem(
     label: String,
     icon: Int,
     isEnabled: Boolean = true,
-    detail: String? = null,
     onClick: () -> Unit,
 ) {
     DropdownMenuItem(
-        text = {
-            Column {
-                Text(label)
-                if (detail != null) Text(detail, style = MaterialTheme.typography.bodySmall)
-            }
-        },
+        text = { Text(label) },
         leadingIcon = { Icon(painterResource(icon), null) },
         enabled = isEnabled,
         onClick = onClick,

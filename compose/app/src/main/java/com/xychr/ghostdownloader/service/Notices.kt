@@ -30,7 +30,9 @@ class Notices(app: Application) {
             engineRepository.observeEvent<Notice>("notice").collect { show(it, isForeground()) }
         }
         scope.launch {
-            engineRepository.observe<PairRequest?>("pairRequest").collect { context.sendPair(it) }
+            engineRepository.observe<PairRequest?>("pairRequest").collect { pair ->
+                context.sendPair(pair.takeIf { !isForeground() })
+            }
         }
     }
 

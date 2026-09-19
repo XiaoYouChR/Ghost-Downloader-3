@@ -16,3 +16,7 @@ internal fun Context.appDetailsIntent(): Intent =
 fun Context.shareText(text: String) {
     start(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null))
 }
+
+fun Context.openUrl(url: String) {
+    start(Intent(Intent.ACTION_VIEW, url.toUri()))
+}

@@ -1,26 +1,29 @@
 package com.xychr.ghostdownloader.ui.pages
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -39,32 +42,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
-import com.xychr.ghostdownloader.ui.components.settings.BatteryPermissionRow
-import com.xychr.ghostdownloader.ui.components.settings.NotificationPermissionRow
+import com.xychr.ghostdownloader.model.Settings
+import com.xychr.ghostdownloader.ui.components.settings.AppearanceSections
+import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.PermissionRows
+import com.xychr.ghostdownloader.ui.components.settings.RuntimeRows
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
-import com.xychr.ghostdownloader.ui.components.settings.StoragePermissionRow
-import com.xychr.ghostdownloader.ui.platform.toFolderPath
+import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
+import com.xychr.ghostdownloader.ui.platform.defaultDownloadFolder
+import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 import kotlinx.coroutines.launch
 
 private enum class OobeStep {
-    WELCOME, PERMISSIONS, BASIC_SETTINGS, COMPLETE,
+    WELCOME, PERMISSIONS, APPEARANCE, DOWNLOAD, FEATURES, RUNTIMES, COMPLETE,
 }
 
 @Composable
 fun OobePage(
-    downloadFolder: String,
+    settings: Settings,
     onSetSetting: (String, Any) -> Unit,
     onFinish: (Offset) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState { OobeStep.entries.size }
+    val folderPicker = rememberFolderPicker { onSetSetting("downloadFolder", it) }
     val back: () -> Unit = {
         scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
     }
@@ -84,8 +90,76 @@ fun OobePage(
             ) { page ->
                 when (OobeStep.entries[page]) {
                     OobeStep.WELCOME -> WelcomeContent()
-                    OobeStep.PERMISSIONS -> PermissionsContent()
-                    OobeStep.BASIC_SETTINGS -> BasicSettingsContent(downloadFolder, onSetSetting)
+
+                    OobeStep.PERMISSIONS -> OobeStepContent(
+                        R.string.settings_section_permissions,
+                        R.string.oobe_permissions_subtitle,
+                    ) {
+                        SettingSection { PermissionRows() }
+                    }
+
+                    OobeStep.APPEARANCE -> OobeStepContent(
+                        R.string.settings_section_appearance,
+                        R.string.oobe_appearance_subtitle,
+                    ) {
+                        AppearanceSections()
+                    }
+
+                    OobeStep.DOWNLOAD -> OobeStepContent(
+                        R.string.oobe_basic_title,
+                        R.string.oobe_basic_subtitle,
+                    ) {
+                        SettingSection {
+                            PathSettingRow(
+                                title = stringResource(R.string.settings_download_folder),
+                                path = settings.downloadFolder,
+                                picker = folderPicker,
+                                onReset = {
+                                    onSetSetting("downloadFolder", defaultDownloadFolder())
+                                },
+                            )
+                        }
+                    }
+
+                    OobeStep.FEATURES -> OobeStepContent(
+                        R.string.oobe_features_title,
+                        R.string.oobe_features_subtitle,
+                    ) {
+                        SettingSection {
+                            SwitchSettingRow(
+                                title = stringResource(R.string.category_enabled),
+                                subtitle = stringResource(R.string.category_enabled_desc),
+                                checked = settings.isCategoryEnabled,
+                                onCheckedChange = { onSetSetting("isCategoryEnabled", it) },
+                            )
+                            SwitchSettingRow(
+                                title = stringResource(R.string.settings_browser_extension),
+                                subtitle = stringResource(R.string.settings_browser_extension_desc),
+                                checked = settings.isBrowserExtensionEnabled,
+                                onCheckedChange = { onSetSetting("isBrowserExtensionEnabled", it) },
+                            )
+                            SwitchSettingRow(
+                                title = stringResource(R.string.settings_aria2_rpc),
+                                subtitle = stringResource(R.string.settings_aria2_rpc_desc),
+                                checked = settings.isAria2RpcEnabled,
+                                onCheckedChange = { onSetSetting("isAria2RpcEnabled", it) },
+                            )
+                            SwitchSettingRow(
+                                title = stringResource(R.string.settings_check_update_at_startup),
+                                subtitle = stringResource(R.string.settings_check_update_at_startup_desc),
+                                checked = settings.shouldCheckUpdateAtStartup,
+                                onCheckedChange = { onSetSetting("shouldCheckUpdateAtStartup", it) },
+                            )
+                        }
+                    }
+
+                    OobeStep.RUNTIMES -> OobeStepContent(
+                        R.string.settings_section_runtimes,
+                        R.string.settings_summary_runtimes,
+                    ) {
+                        SettingSection { RuntimeRows() }
+                    }
+
                     OobeStep.COMPLETE -> CompleteContent()
                 }
             }
@@ -127,15 +201,6 @@ private fun OobeNavigation(
                     Text(stringResource(R.string.oobe_start))
                 }
             }
-            OobeStep.PERMISSIONS, OobeStep.BASIC_SETTINGS -> {
-                TextButton(onClick = onBack) {
-                    Text(stringResource(R.string.oobe_back))
-                }
-                PageIndicator(step)
-                Button(onClick = onNext) {
-                    Text(stringResource(R.string.oobe_next))
-                }
-            }
             OobeStep.COMPLETE -> {
                 Spacer(Modifier.weight(1f))
                 FloatingActionButton(
@@ -151,6 +216,15 @@ private fun OobeNavigation(
                     )
                 }
                 Spacer(Modifier.weight(1f))
+            }
+            else -> {
+                TextButton(onClick = onBack) {
+                    Text(stringResource(R.string.oobe_back))
+                }
+                PageIndicator(step)
+                Button(onClick = onNext) {
+                    Text(stringResource(R.string.oobe_next))
+                }
             }
         }
     }
@@ -169,7 +243,37 @@ private fun PageIndicator(current: OobeStep) {
     }
 }
 
-// ---- Page 0: Welcome ----
+@Composable
+private fun OobeStepContent(
+    titleRes: Int,
+    descriptionRes: Int,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                stringResource(titleRes),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(descriptionRes),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            Spacer(Modifier.height(16.dp))
+            content()
+        }
+    }
+}
 
 @Composable
 private fun WelcomeContent() {
@@ -198,78 +302,6 @@ private fun WelcomeContent() {
         )
     }
 }
-
-// ---- Page 1: Permissions ----
-
-@Composable
-private fun PermissionsContent() {
-    Column(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            stringResource(R.string.oobe_permissions_title),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.oobe_permissions_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Spacer(Modifier.height(24.dp))
-
-        SettingSection {
-            StoragePermissionRow()
-            NotificationPermissionRow()
-            BatteryPermissionRow()
-        }
-    }
-}
-
-// ---- Page 2: Basic Settings ----
-
-@Composable
-private fun BasicSettingsContent(
-    downloadFolder: String,
-    onSetSetting: (String, Any) -> Unit,
-) {
-    val folderPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let { onSetSetting("downloadFolder", it.toFolderPath()) } }
-
-    Column(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            stringResource(R.string.oobe_basic_title),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.oobe_basic_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        Spacer(Modifier.height(24.dp))
-
-        SettingSection {
-            ActionSettingRow(
-                title = stringResource(R.string.settings_download_folder),
-                subtitle = downloadFolder,
-                leading = { Icon(painterResource(R.drawable.ic_folder), contentDescription = null) },
-                onClick = { folderPicker.launch(null) },
-            )
-        }
-    }
-}
-
-// ---- Page 3: Complete ----
 
 @Composable
 private fun CompleteContent() {

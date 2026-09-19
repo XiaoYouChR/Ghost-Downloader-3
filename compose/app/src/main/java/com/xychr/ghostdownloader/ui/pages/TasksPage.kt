@@ -76,6 +76,7 @@ import com.xychr.ghostdownloader.ui.navigation.TaskFilesRoute
 import com.xychr.ghostdownloader.ui.navigation.TaskEditRoute
 import com.xychr.ghostdownloader.ui.navigation.sharedContainer
 import com.xychr.ghostdownloader.ui.components.liquid.LiquidAddButton
+import com.xychr.ghostdownloader.ui.components.category.CategoryFilterRow
 import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -115,17 +116,16 @@ fun TasksPage(
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var deleteIds by remember { mutableStateOf<List<String>>(emptyList()) }
     var redownloadIds by remember { mutableStateOf<List<String>>(emptyList()) }
+    var hashTask by remember { mutableStateOf<TaskUiState?>(null) }
 
     val visibleTasks = remember(allTasks, query, isSearching, sortField, isDescending, categoryFilter) {
-        allTasks.buildTaskOrder(if (isSearching) query else "", categoryFilter, sortField, isDescending)
+        buildTaskOrder(allTasks, if (isSearching) query else "", categoryFilter, sortField, isDescending)
     }
     val sections = buildTaskSections(visibleTasks, if (selection.isActive) selectedSections else emptyMap())
     LaunchedEffect(allTasks.map { it.id }) { selection.update(allTasks.map { it.id }) }
 
     val keyboard = LocalSoftwareKeyboardController.current
     var isSubmitting by remember { mutableStateOf(false) }
-    // 选择态下批量操作只作用于已选任务，常态下作用于全部。顶栏菜单在选择时直接开排序层
-    // （见 TaskBarMenu），「开始／暂停全部」不可达，所以一份按当前作用域算的 targets 够用。
     val actionTasks = if (selection.isActive) allTasks.filter { it.id in selection.selectedIds } else allTasks
     val targets = buildTaskBatchTargets(actionTasks)
     val openSectionIds = visibleTasks.filter {
@@ -138,9 +138,7 @@ fun TasksPage(
         query = ""
     }
 
-    /** 进选择前把每张卡片钉在当前分区，否则任务完成时卡片会从手底下跳走。 */
     fun startSelection(taskId: String? = null) {
-        // 搜索时进选择要让出列表空间——键盘遮住的正是用户要挑的东西，下方还有浮动面板
         keyboard?.hide()
         selectedSections = allTasks.associate { it.id to it.isFinished }
         selection.start(taskId)
@@ -152,18 +150,16 @@ fun TasksPage(
             TaskPageAction.CLOSE_SEARCH -> closeSearch()
             TaskPageAction.CLOSE_SELECTION -> selection.clear()
             TaskPageAction.SELECT -> startSelection()
-            TaskPageAction.START, TaskPageAction.PAUSE -> if (!isSubmitting) {
-                val batchAction = if (action == TaskPageAction.START) TaskBatchAction.START else TaskBatchAction.PAUSE
-                // 只交作用域，目标由 requestBatch 按最新快照选——这里再筛一遍会被它覆盖掉
-                val scopeIds = actionTasks.map { it.id }
+            TaskPageAction.START -> if (selection.isActive) viewModel.resumeEach(targets.startIds)
+            else viewModel.startAll()
+            TaskPageAction.PAUSE -> if (!isSubmitting) {
                 isSubmitting = true
                 scope.launch {
                     val result = try {
-                        viewModel.requestBatch(batchAction, scopeIds)
+                        viewModel.pauseEach(targets.pauseIds)
                     } finally { isSubmitting = false }
-                    snackbarHostState.showSnackbar(context.getString(
-                        if (batchAction == TaskBatchAction.START) R.string.task_bar_start_result else R.string.task_bar_pause_result,
-                        result.submitted, result.failed, result.skipped))
+                    snackbarHostState.showSnackbar(context.getString(R.string.task_bar_pause_result,
+                        result.submitted, result.failed, targets.skippedPauseCount))
                 }
             }
             TaskPageAction.MANAGE_CATEGORIES -> onManageCategories()
@@ -177,14 +173,18 @@ fun TasksPage(
                     scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_copied_urls, urls.size)) }
                 }
             }
-            TaskPageAction.MOVE_TO_FRONT -> viewModel.moveToFrontEach(selection.selectedIds)
+            TaskPageAction.MOVE_TO_FRONT -> viewModel.moveToFront(selection.selectedIds)
             TaskPageAction.REDOWNLOAD -> redownloadIds = selection.selectedIds.toList()
             TaskPageAction.SELECT_ALL -> selection.selectAll(openSectionIds)
             TaskPageAction.INVERT_SELECTION -> selection.invert(openSectionIds)
+            TaskPageAction.SELECT_MISSING -> {
+                val ids = openSectionIds.toSet()
+                val missing = allTasks.filter { it.isFileMissing && it.id in ids }.map { it.id }
+                if (missing.isEmpty()) selection.clear() else selection.selectAll(missing)
+            }
         }
     }
 
-    // 搜索嵌在选择里：注册在后的优先，所以返回键先退出搜索，再退出选择
     BackHandler(enabled = selection.isActive) { selection.clear() }
     BackHandler(enabled = isSearching) { closeSearch() }
 
@@ -194,7 +194,8 @@ fun TasksPage(
                 state = TaskTopBarState(
                     isSelecting = selection.isActive, isSearching = isSearching, query = query,
                     selectedCount = selection.count, taskCount = visibleTasks.size,
-                    readState = taskState.readState, targets = targets,
+                    hasLoaded = taskState.hasLoaded, speed = buildTotalSpeed(allTasks),
+                    targets = targets,
                     isSubmitting = isSubmitting, sortField = sortField, isDescending = isDescending,
                 ),
                 onQueryChange = { query = it },
@@ -219,15 +220,13 @@ fun TasksPage(
         Box(Modifier.padding(padding).consumeWindowInsets(padding)) {
             Column(Modifier.fillMaxSize()
                 .layerBackdrop(contentBackdrop).background(MaterialTheme.colorScheme.background)) {
-                TaskListHeader(
-                    summary = buildTaskSummary(allTasks),
-                    readState = taskState.readState,
-                    categories = categoryState,
+                if (categoryState.isEnabled) CategoryFilterRow(
                     categoryFilter = categoryFilter,
-                    onCategorySelect = { categoryFilter = it },
+                    categories = categoryState.categories,
+                    onSelect = { categoryFilter = it },
                 )
                 if (visibleTasks.isEmpty()) {
-                    if (taskState.readState != TaskReadState.READY) Box(Modifier.weight(1f).fillMaxWidth())
+                    if (!taskState.hasLoaded) Box(Modifier.weight(1f).fillMaxWidth())
                     else if (categoryFilter != null) Column(Modifier.weight(1f).fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                         Text(stringResource(R.string.task_category_empty), Modifier.padding(24.dp))
@@ -302,7 +301,8 @@ fun TasksPage(
                                                     .setPrimaryClip(ClipData.newPlainText("url", task.url))
                                                 scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_detail_copied)) }
                                             }
-                                            TaskAction.MOVE_TO_FRONT -> viewModel.moveToFront(task.id)
+                                            TaskAction.MOVE_TO_FRONT -> viewModel.moveToFront(listOf(task.id))
+                                            TaskAction.VERIFY_HASH -> hashTask = task
                                             TaskAction.DELETE -> deleteIds = listOf(task.id)
                                             TaskAction.REDOWNLOAD -> redownloadIds = listOf(task.id)
                                         }
@@ -323,7 +323,7 @@ fun TasksPage(
             ) {
                 TaskSelectionBar(
                     targets = targets,
-                    isEnabled = taskState.readState == TaskReadState.READY && !isSubmitting,
+                    isEnabled = taskState.hasLoaded && !isSubmitting,
                     isCategoryEnabled = categoryState.isEnabled,
                     hasSelectableTasks = openSectionIds.isNotEmpty(),
                     onAction = ::runPageAction,
@@ -389,40 +389,9 @@ fun TasksPage(
             } },
         )
     }
+    hashTask?.let { HashSheet(it.id, it.name, onDismiss = { hashTask = null }) }
 }
 
-/** 搜索、分类过滤、排序合成一步——中间结果没人要，拆开只会多出两个临时列表 */
-private fun List<TaskUiState>.buildTaskOrder(
-    query: String,
-    categoryFilter: String?,
-    sortField: SortField,
-    isDescending: Boolean,
-): List<TaskUiState> {
-    val matched = filter { task ->
-        (categoryFilter == null || task.categoryId == categoryFilter) &&
-            (query.isBlank() ||
-                task.name.contains(query, ignoreCase = true) ||
-                task.url.contains(query, ignoreCase = true))
-    }
-    val sorted = when (sortField) {
-        SortField.CREATED -> matched.sortedBy { it.createdAt }
-        SortField.COMPLETED -> matched.sortedBy { it.completedAt }
-        SortField.NAME -> matched.sortedBy { it.name.lowercase() }
-        SortField.SIZE -> matched.sortedBy { it.fileSize }
-        SortField.QUEUE -> matched.sortedBy { it.queueRank }
-    }
-    return if (isDescending) sorted.reversed() else sorted
-}
-
-private val TaskUiState.queueRank: Int
-    get() = when (status) {
-        TaskStatus.RUNNING -> 0
-        TaskStatus.WAITING -> 1
-        TaskStatus.PAUSED -> 2
-        else -> 3
-    }
-
-/** 长按分区标题选中该分区全部任务——替代 Desktop 上「筛选状态 + 全选」的那条路径。 */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TaskSection(

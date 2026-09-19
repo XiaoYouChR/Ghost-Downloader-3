@@ -27,12 +27,15 @@ fun TaskStatusLine(
     completedAt: Long,
     speed: Long,
     progress: Double,
+    isFileMissing: Boolean,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     maxLines: Int = 2,
 ) {
     val parts = when {
         status == TaskStatus.FAILED ->
             listOf(error?.let { engineText(it) } ?: stringResource(R.string.task_status_failed))
+
+        isFileMissing -> listOf(stringResource(R.string.task_status_file_missing))
 
         status == TaskStatus.COMPLETED ->
             listOf(stringResource(R.string.task_status_completed), formatTimestamp(completedAt))
@@ -52,8 +55,11 @@ fun TaskStatusLine(
 
         else -> listOf("")
     }
-    val color = if (status == TaskStatus.FAILED) MaterialTheme.colorScheme.error
-    else MaterialTheme.colorScheme.onSurfaceVariant
+    val color = when {
+        status == TaskStatus.FAILED -> MaterialTheme.colorScheme.error
+        isFileMissing -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Text(

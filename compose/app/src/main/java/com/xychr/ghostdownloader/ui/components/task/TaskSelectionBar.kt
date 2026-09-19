@@ -47,7 +47,7 @@ fun TaskSelectionBar(
             ) { onAction(TaskPageAction.START) }
             if (targets.pauseIds.isNotEmpty()) TaskIconButton(
                 R.drawable.ic_pause,
-                pauseLabel(targets),
+                stringResource(R.string.task_bar_pause_selected, targets.pauseIds.size),
                 isEnabled,
             ) { onAction(TaskPageAction.PAUSE) }
             TaskIconButton(R.drawable.ic_delete, stringResource(R.string.action_delete), isEnabled) {
@@ -56,13 +56,6 @@ fun TaskSelectionBar(
             TaskSelectionMenu(isEnabled, isCategoryEnabled, hasSelectableTasks, onAction)
         }
     }
-}
-
-@Composable
-private fun pauseLabel(targets: TaskBatchTargets): String {
-    val label = stringResource(R.string.task_bar_pause_selected, targets.pauseIds.size)
-    if (targets.skippedPauseCount <= 0) return label
-    return label + "\n" + stringResource(R.string.task_bar_pause_skipped, targets.skippedPauseCount)
 }
 
 @Composable
@@ -93,6 +86,9 @@ private fun TaskSelectionMenu(
             // 全选／反选改的是选择本身，不下发请求，所以只看有没有可选项
             TaskMenuItem(stringResource(R.string.task_select_all), R.drawable.ic_check, hasSelectableTasks) {
                 isOpen = false; onAction(TaskPageAction.SELECT_ALL)
+            }
+            TaskMenuItem(stringResource(R.string.task_select_missing), R.drawable.ic_folder_off, hasSelectableTasks) {
+                isOpen = false; onAction(TaskPageAction.SELECT_MISSING)
             }
             TaskMenuItem(stringResource(R.string.task_select_invert), R.drawable.ic_restore, hasSelectableTasks) {
                 isOpen = false; onAction(TaskPageAction.INVERT_SELECTION)

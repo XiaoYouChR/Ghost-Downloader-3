@@ -138,23 +138,27 @@ private fun Context.buildDraftTaken(notice: Notice.DraftTaken): Notification =
         .setAutoCancel(true)
         .build()
 
-private fun Context.buildPair(pair: PairRequest): Notification =
-    base(CHANNEL_CONFIRM)
+private fun Context.buildPair(pair: PairRequest): Notification {
+    val clientKind = pair.clientKind.ifEmpty { getString(R.string.pair_unknown_client) }
+    return base(CHANNEL_CONFIRM)
         .setContentTitle(getString(R.string.pair_title))
         .setContentText(
-            getString(
-                R.string.pair_message,
-                pair.clientKind.ifEmpty { getString(R.string.pair_unknown_client) },
-                pair.extensionVersion,
-                pair.peerAddress,
-            )
+            getString(R.string.pair_message, clientKind, pair.extensionVersion, pair.peerAddress)
         )
+        .setStyle(
+            NotificationCompat.BigTextStyle()
+                .bigText(
+                    getString(R.string.pair_detail, pair.peerAddress, clientKind, pair.extensionVersion)
+                )
+        )
+        .setContentIntent(openApp())
         .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
         .setOnlyAlertOnce(true)
         .setAutoCancel(true)
         .addAction(0, getString(R.string.pair_approve), pairAction(this, true, pair.requestId))
         .addAction(0, getString(R.string.pair_reject), pairAction(this, false, pair.requestId))
         .build()
+}
 
 private fun Context.base(channelId: String) =
     NotificationCompat.Builder(this, channelId)

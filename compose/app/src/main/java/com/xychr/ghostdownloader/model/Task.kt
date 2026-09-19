@@ -18,7 +18,13 @@ interface TaskActionSource {
     val canStop: Boolean
     val hasOutputFile: Boolean
     val isOutputFolder: Boolean
+    val isFileMissing: Boolean
 }
+
+val TaskActionSource.hasSingleFile: Boolean get() = hasOutputFile && !isOutputFolder
+
+fun TaskUiState.update(activeTasks: Map<String, TaskUiState>): TaskUiState = activeTasks[id] ?: this
+
 
 @Serializable
 data class TaskError(
@@ -38,6 +44,7 @@ data class TaskUiState(
     val outputFolder: String = "",
     override val hasOutputFile: Boolean = false,
     override val isOutputFolder: Boolean = false,
+    override val isFileMissing: Boolean = false,
     val selectedFileCount: Int = 0,
     val name: String = "",
     val url: String = "",
@@ -49,6 +56,7 @@ data class TaskUiState(
     val fileCount: Int = 0,
     val createdAt: Long = 0,
     val completedAt: Long = 0,
+    val queueOrder: Int? = null,
     val error: TaskError? = null,
     val progressMode: String = "determinate",
     val statusText: String = "",
@@ -65,13 +73,6 @@ val TaskUiState.isActive: Boolean
 val TaskUiState.isFinished: Boolean
     get() = status == TaskStatus.COMPLETED
 
-@Serializable
-data class TaskSnapshot(
-    val progress: Double = 0.0,
-    val speed: Long = 0,
-    val received: Long = 0,
-)
-
 @Immutable
 @Serializable
 data class TaskDetail(
@@ -82,6 +83,7 @@ data class TaskDetail(
     val outputPath: String = "",
     override val hasOutputFile: Boolean = false,
     override val isOutputFolder: Boolean = false,
+    override val isFileMissing: Boolean = false,
     val name: String = "",
     val url: String = "",
     val progress: Double = 0.0,

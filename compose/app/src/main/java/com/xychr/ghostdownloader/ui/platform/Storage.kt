@@ -4,6 +4,8 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.DocumentsContract
 
+const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
+
 // SAF content:// → 裸路径；引擎走 java.io.File，写盘靠 MANAGE_EXTERNAL_STORAGE。
 fun Uri.toFolderPath(): String {
     val documentId = DocumentsContract.getTreeDocumentId(this)

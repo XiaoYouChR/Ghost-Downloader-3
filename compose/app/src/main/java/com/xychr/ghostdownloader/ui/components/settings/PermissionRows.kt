@@ -30,6 +30,14 @@ import com.xychr.ghostdownloader.ui.platform.openStorageAccessSettings
 import com.xychr.ghostdownloader.ui.platform.requestBatteryUnrestricted
 
 @Composable
+fun PermissionRows() {
+    StoragePermissionRow()
+    NotificationPermissionRow()
+    BatteryPermissionRow()
+    InstallPackagesRow()
+}
+
+@Composable
 fun StoragePermissionRow() {
     val context = LocalContext.current
     var isGranted by remember { mutableStateOf(false) }

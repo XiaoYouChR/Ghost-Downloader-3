@@ -28,14 +28,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -78,6 +74,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import com.xychr.ghostdownloader.packs.PackRegistry
@@ -88,34 +85,22 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
     private val _detail = MutableStateFlow(TaskDetail())
     val detail: StateFlow<TaskDetail> = _detail.asStateFlow()
 
-    private val _hashState = MutableStateFlow(HashState())
-    val hashState: StateFlow<HashState> = _hashState.asStateFlow()
-
     init {
         viewModelScope.launch { refresh() }
         viewModelScope.launch {
-            engineRepository.observe<HashState>("hashState").collect { _hashState.value = it }
-        }
-        viewModelScope.launch {
-            engineRepository.observe<List<TaskUiState>>("tasks").collect { tasks ->
-                val task = tasks.find { it.id == taskId }
-                if (task != null) {
-                    _detail.value = _detail.value.copy(
-                        status = task.status, canPause = task.canPause,
-                        canStop = task.canStop, error = task.error,
-                        hasOutputFile = task.hasOutputFile,
-                        isOutputFolder = task.isOutputFolder,
-                    )
-                }
-            }
-        }
-        viewModelScope.launch {
-            engineRepository.observe<Map<String, TaskSnapshot>>("taskProgress").collect { progress ->
-                progress[taskId]?.let { p ->
-                    _detail.value = _detail.value.copy(
-                        progress = p.progress, speed = p.speed, received = p.received,
-                    )
-                }
+            val tasks = engineRepository.observe<List<TaskUiState>>("tasks")
+            val activeTasks = engineRepository.observe<Map<String, TaskUiState>>("taskProgress")
+            tasks.combine(activeTasks) { list, active ->
+                list.find { it.id == taskId }?.update(active)
+            }.collect { task ->
+                if (task != null) _detail.value = _detail.value.copy(
+                    status = task.status, canPause = task.canPause,
+                    canStop = task.canStop, error = task.error,
+                    hasOutputFile = task.hasOutputFile,
+                    isOutputFolder = task.isOutputFolder,
+                    isFileMissing = task.isFileMissing,
+                    progress = task.progress, speed = task.speed, received = task.received,
+                )
             }
         }
     }
@@ -136,16 +121,15 @@ class TaskDetailViewModel(private val taskId: String) : ViewModel() {
         refresh()
     }
 
-    fun moveToFront() = push("moveToFront")
+    fun moveToFront() {
+        viewModelScope.launch {
+            engineRepository.invoke("moveToFront", engineRepository.encode(listOf(taskId)))
+            refresh()
+        }
+    }
 
     fun redownload() {
         push("redownload")
-    }
-
-    fun startHash(algorithm: String) = push("startFileHash", algorithm)
-
-    fun cancelHash() {
-        viewModelScope.launch { engineRepository.invoke("cancelFileHash") }
     }
 
     suspend fun setCategory(categoryId: String) {
@@ -175,7 +159,6 @@ fun TaskDetailPage(
     viewModel: TaskDetailViewModel = viewModel { TaskDetailViewModel(taskId) },
 ) {
     val detail by viewModel.detail.collectAsStateWithLifecycle()
-    val hashState by viewModel.hashState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = LocalSnackbar.current
@@ -223,30 +206,27 @@ fun TaskDetailPage(
 
             item {
                 Spacer(Modifier.height(16.dp))
-                ActionRow(
-                    detail = detail,
-                    onMainAction = { action ->
-                        when (action) {
-                            TaskAction.STOP -> viewModel.stop()
-                            TaskAction.PAUSE -> viewModel.pause()
-                            TaskAction.RESUME -> viewModel.resume()
-                            TaskAction.OPEN_FILE -> context.openTaskFile(detail.outputPath)
-                            TaskAction.OPEN_FOLDER -> context.openFolder(detail.outputFolder)
-                            else -> Unit
+                ActionRow(detail) { action ->
+                    when (action) {
+                        TaskAction.STOP -> viewModel.stop()
+                        TaskAction.PAUSE -> viewModel.pause()
+                        TaskAction.RESUME -> viewModel.resume()
+                        TaskAction.OPEN_FILE -> context.openTaskFile(detail.outputPath)
+                        TaskAction.OPEN_FOLDER -> context.openFolder(detail.outputFolder)
+                        TaskAction.SHARE_FILE -> if (!context.shareTaskFile(detail.outputPath)) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.task_share_unavailable))
+                            }
                         }
-                    },
-                    onDelete = { isDeleting = true },
-                    onCopyUrl = ::copyUrl,
-                    onShareUrl = { context.shareText(detail.url) },
-                    onShareFile = {
-                        if (!context.shareTaskFile(detail.outputPath)) {
-                            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_share_unavailable)) }
-                        }
-                    },
-                    onMoveToFront = viewModel::moveToFront,
-                    onRedownload = { shouldRedownload = true },
-                    onHash = { isHashing = true },
-                )
+                        TaskAction.COPY_URL -> copyUrl()
+                        TaskAction.SHARE_URL -> context.shareText(detail.url)
+                        TaskAction.MOVE_TO_FRONT -> viewModel.moveToFront()
+                        TaskAction.REDOWNLOAD -> shouldRedownload = true
+                        TaskAction.VERIFY_HASH -> isHashing = true
+                        TaskAction.DELETE -> isDeleting = true
+                        TaskAction.FILES, TaskAction.EDIT, TaskAction.CATEGORY -> Unit
+                    }
+                }
             }
 
             item {
@@ -290,12 +270,9 @@ fun TaskDetailPage(
     }
 
     if (isHashing) HashSheet(
+        taskId = detail.id,
         name = detail.name,
-        state = hashState,
-        onStart = viewModel::startHash,
-        onCancel = viewModel::cancelHash,
-        // 抽屉一关就停作业，否则它会看不见地继续读盘
-        onDismiss = { isHashing = false; viewModel.cancelHash() },
+        onDismiss = { isHashing = false },
     )
     if (isDeleting) {
         DeleteTaskDialog(
@@ -358,6 +335,7 @@ private fun ProgressSection(detail: TaskDetail) {
         completedAt = detail.completedAt,
         speed = detail.speed,
         progress = detail.progress,
+        isFileMissing = detail.isFileMissing,
         style = MaterialTheme.typography.bodyLarge,
         maxLines = Int.MAX_VALUE,
     )
@@ -388,19 +366,16 @@ private fun ProgressSection(detail: TaskDetail) {
 }
 
 @Composable
-private fun ActionRow(
-    detail: TaskDetail,
-    onMainAction: (TaskAction) -> Unit,
-    onDelete: () -> Unit,
-    onCopyUrl: () -> Unit,
-    onShareUrl: () -> Unit,
-    onShareFile: () -> Unit,
-    onMoveToFront: () -> Unit,
-    onRedownload: () -> Unit,
-    onHash: () -> Unit,
-) {
-    var isMenuOpen by remember { mutableStateOf(false) }
+private fun ActionRow(detail: TaskDetail, onAction: (TaskAction) -> Unit) {
     val main = buildTaskMainAction(detail)
+    val menu = buildList {
+        buildVerifyHashAction(detail)?.let { add(it) }
+        add(copyUrlSpec)
+        add(shareUrlSpec)
+        if (detail.status == TaskStatus.WAITING || detail.status == TaskStatus.PAUSED) add(moveToFrontSpec)
+        if (main.action != TaskAction.REDOWNLOAD) add(redownloadSpec)
+        add(deleteSpec)
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -411,75 +386,19 @@ private fun ActionRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Button(onClick = { onMainAction(main.action) }, enabled = main.isEnabled) {
+            Button(onClick = { onAction(main.action) }, enabled = main.isEnabled) {
                 Icon(painterResource(main.icon), null)
                 Text(stringResource(main.label), Modifier.padding(start = 4.dp))
             }
             if (main.action == TaskAction.OPEN_FILE) {
-                OutlinedButton(onClick = onShareFile) {
-                    Icon(painterResource(R.drawable.ic_share), null)
-                    Text(stringResource(R.string.task_share_file), Modifier.padding(start = 4.dp))
+                OutlinedButton(onClick = { onAction(TaskAction.SHARE_FILE) }) {
+                    Icon(painterResource(shareFileSpec.icon), null)
+                    Text(stringResource(shareFileSpec.label), Modifier.padding(start = 4.dp))
                 }
             }
         }
 
-        Box {
-            IconButton(onClick = { isMenuOpen = true }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_more_vert),
-                    contentDescription = stringResource(R.string.action_more),
-                )
-            }
-            DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
-                if (main.action == TaskAction.OPEN_FILE) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.task_hash_title)) },
-                        onClick = {
-                            onHash()
-                            isMenuOpen = false
-                        },
-                    )
-                }
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.task_detail_copy_url)) },
-                    onClick = {
-                        onCopyUrl()
-                        isMenuOpen = false
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.task_share_url)) },
-                    onClick = {
-                        onShareUrl()
-                        isMenuOpen = false
-                    },
-                )
-                if (detail.status == TaskStatus.WAITING || detail.status == TaskStatus.PAUSED) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.task_detail_move_to_front)) },
-                        onClick = {
-                            onMoveToFront()
-                            isMenuOpen = false
-                        },
-                    )
-                }
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.task_detail_redownload)) },
-                    onClick = {
-                        onRedownload()
-                        isMenuOpen = false
-                    },
-                )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.action_delete)) },
-                    onClick = {
-                        onDelete()
-                        isMenuOpen = false
-                    },
-                )
-            }
-        }
+        TaskMenu(menu, onAction)
     }
 }
 

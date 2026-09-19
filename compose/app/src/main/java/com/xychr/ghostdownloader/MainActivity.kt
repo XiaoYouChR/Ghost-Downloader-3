@@ -152,18 +152,17 @@ class MainActivity : ComponentActivity() {
                 },
             ) {
                 val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
-                val hasCompleted = settings?.hasCompletedOobe
 
-                if (hasCompleted != null) {
+                settings?.let { loaded ->
                     var origin by remember { mutableStateOf(Offset.Zero) }
-                    var isRevealStarted by remember { mutableStateOf(hasCompleted) }
+                    var isRevealStarted by remember { mutableStateOf(loaded.hasCompletedOobe) }
                     val progress = animateFloatAsState(
                         targetValue = if (isRevealStarted) 1f else 0f,
                         animationSpec = tween(1_000, easing = EmphasizedDecelerate),
                         label = "oobeReveal",
                     )
                     val isRevealed by remember { derivedStateOf { progress.value >= 1f } }
-                    var isAppMounted by remember { mutableStateOf(hasCompleted) }
+                    var isAppMounted by remember { mutableStateOf(loaded.hasCompletedOobe) }
                     LaunchedEffect(Unit) {
                         withFrameNanos { }
                         isAppMounted = true
@@ -172,7 +171,7 @@ class MainActivity : ComponentActivity() {
                     Box(Modifier.fillMaxSize()) {
                         if (!isRevealed) {
                             OobePage(
-                                downloadFolder = settings?.downloadFolder.orEmpty(),
+                                settings = loaded,
                                 onSetSetting = settingsViewModel::set,
                                 onFinish = { center ->
                                     origin = center

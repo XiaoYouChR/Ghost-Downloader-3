@@ -33,18 +33,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -118,6 +112,7 @@ fun TaskCard(
                         completedAt = task.completedAt,
                         speed = task.speed,
                         progress = task.progress,
+                        isFileMissing = task.isFileMissing,
                     )
                 }
             }
@@ -187,7 +182,7 @@ private fun TaskActionRow(actions: TaskActions, onAction: (TaskAction) -> Unit) 
         for (spec in actions.inline) {
             TaskIconButton(spec.icon, stringResource(spec.label), spec.isEnabled) { onAction(spec.action) }
         }
-        TaskCardMenu(actions.menu, onAction)
+        TaskMenu(actions.menu, onAction)
     }
 }
 
@@ -223,23 +218,6 @@ private fun FileCountChip(fileCount: Int) {
         )
         Spacer(Modifier.width(4.dp))
         Caption(stringResource(R.string.task_file_count, fileCount))
-    }
-}
-
-@Composable
-private fun TaskCardMenu(menu: List<TaskActionSpec>, onAction: (TaskAction) -> Unit) {
-    var isOpen by remember { mutableStateOf(false) }
-    Box {
-        TaskIconButton(R.drawable.ic_more_vert, stringResource(R.string.action_more)) { isOpen = true }
-        DropdownMenu(expanded = isOpen, onDismissRequest = { isOpen = false }) {
-            for (spec in menu) {
-                if (spec.action == TaskAction.DELETE) HorizontalDivider()
-                TaskMenuItem(stringResource(spec.label), spec.icon, spec.isEnabled) {
-                    isOpen = false
-                    onAction(spec.action)
-                }
-            }
-        }
     }
 }
 

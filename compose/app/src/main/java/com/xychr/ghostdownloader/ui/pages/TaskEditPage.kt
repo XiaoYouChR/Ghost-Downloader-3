@@ -20,6 +20,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.ChoiceField
 import com.xychr.ghostdownloader.ui.components.ErrorText
+import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow
+import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.packs.PackRegistry
 import com.xychr.ghostdownloader.ui.util.isValidOutputFolder
@@ -185,13 +187,14 @@ fun TaskOptionsEditor(
             } else {
                 header?.invoke(this)
                 val isFolderValid = isValidOutputFolder(draft.outputFolder)
-                OutlinedTextField(draft.outputFolder, { onChange(draft.copy(outputFolder = it)) },
-                    label = { Text(stringResource(R.string.task_output_folder)) },
-                    isError = !isFolderValid,
-                    supportingText = if (isFolderValid) null else {
-                        { Text(stringResource(R.string.draft_folder_absolute)) }
-                    },
-                    enabled = !state.isSaving, modifier = Modifier.fillMaxWidth())
+                val folderPicker = rememberFolderPicker { onChange(draft.copy(outputFolder = it)) }
+                PathSettingRow(
+                    title = stringResource(R.string.task_output_folder),
+                    path = draft.outputFolder,
+                    picker = folderPicker,
+                    isEnabled = !state.isSaving,
+                    error = if (isFolderValid) null else stringResource(R.string.draft_folder_absolute),
+                )
                 draft.url?.let { OptionText(it, R.string.task_detail_url, !state.isSaving) { value -> onChange(draft.copy(url = value)) } }
                 draft.headers?.let { OptionText(it, R.string.task_headers, !state.isSaving) { value -> onChange(draft.copy(headers = value)) } }
                 draft.streams?.let { streams -> ChoiceField(

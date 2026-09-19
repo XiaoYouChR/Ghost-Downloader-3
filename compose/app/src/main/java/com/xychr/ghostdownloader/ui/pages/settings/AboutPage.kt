@@ -20,7 +20,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
@@ -31,6 +30,7 @@ import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
 import com.xychr.ghostdownloader.ui.navigation.PackInfoRoute
 import com.xychr.ghostdownloader.ui.navigation.PermissionsSettingsRoute
 import com.xychr.ghostdownloader.ui.navigation.Route
+import com.xychr.ghostdownloader.ui.platform.openUrl
 import com.xychr.ghostdownloader.ui.platform.start
 import java.io.File
 
@@ -166,10 +166,6 @@ private fun UpdateSection(
             )
         }
     }
-}
-
-private fun Context.openUrl(url: String) {
-    start(Intent(Intent.ACTION_VIEW, url.toUri()))
 }
 
 private fun Context.installApk(file: File): Boolean = runCatching {

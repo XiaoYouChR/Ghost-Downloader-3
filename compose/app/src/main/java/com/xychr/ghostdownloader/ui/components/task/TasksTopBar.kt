@@ -6,26 +6,35 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.util.formatSpeed
 
-enum class SortField(val labelRes: Int) {
-    CREATED(R.string.task_sort_created), COMPLETED(R.string.task_sort_completed),
-    NAME(R.string.task_sort_name), SIZE(R.string.task_sort_size), QUEUE(R.string.task_sort_queue),
-}
+private val SortField.labelRes: Int
+    get() = when (this) {
+        SortField.CREATED -> R.string.task_sort_created
+        SortField.COMPLETED -> R.string.task_sort_completed
+        SortField.NAME -> R.string.task_sort_name
+        SortField.SIZE -> R.string.task_sort_size
+        SortField.QUEUE -> R.string.task_sort_queue
+    }
 
 enum class TaskPageAction {
     SEARCH, CLOSE_SEARCH, SELECT, CLOSE_SELECTION, START, PAUSE, DELETE, COPY,
-    MOVE_TO_FRONT, REDOWNLOAD, CATEGORIZE, MANAGE_CATEGORIES, SELECT_ALL, INVERT_SELECTION,
+    MOVE_TO_FRONT, REDOWNLOAD, CATEGORIZE, MANAGE_CATEGORIES, SELECT_ALL, SELECT_MISSING, INVERT_SELECTION,
 }
 
 /** 搜索和选择是两个独立维度——可以一边搜索一边挑选目标，所以不是互斥的 mode 枚举。 */
@@ -35,7 +44,8 @@ data class TaskTopBarState(
     val query: String = "",
     val selectedCount: Int = 0,
     val taskCount: Int = 0,
-    val readState: TaskReadState = TaskReadState.LOADING,
+    val hasLoaded: Boolean = false,
+    val speed: Long = 0,
     val targets: TaskBatchTargets = TaskBatchTargets(),
     val isSubmitting: Boolean = false,
     val sortField: SortField = SortField.CREATED,
@@ -70,7 +80,11 @@ fun TasksTopBar(
                     text = stringResource(R.string.task_selected_count, state.selectedCount),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                else -> Text(stringResource(R.string.nav_tasks))
+                else -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.nav_tasks), maxLines = 1)
+                    Spacer(Modifier.weight(1f))
+                    TaskSpeedBadge(state.speed)
+                }
             }
         },
         expandedHeight = maxOf(64.dp, (32 + 32 * LocalDensity.current.fontScale).dp),
@@ -100,6 +114,30 @@ fun TasksTopBar(
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
     )
+}
+
+@Composable
+private fun TaskSpeedBadge(speed: Long) {
+    val rate = formatSpeed(speed).ifEmpty { "0 KB/s" }
+    val label = stringResource(R.string.task_bar_speed, rate)
+    Row(
+        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = label },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_download),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = rate,
+            style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+        )
+    }
 }
 
 @Composable
@@ -149,19 +187,13 @@ private fun TaskBarMenu(
                         onClick = { onSort(state.sortField, descending); menu = MenuLevel.CLOSED })
                 }
             } else {
-                // 只有常态才会走到这里，所以「所有分类」这个作用域说明是准确的
-                val canSubmit = state.readState == TaskReadState.READY && !state.isSubmitting
-                val scopeLabel = stringResource(R.string.task_bar_global_scope)
-                val startDetail = if (state.targets.retryCount > 0)
-                    scopeLabel + "\n" + stringResource(R.string.task_bar_retry_count, state.targets.retryCount)
-                else scopeLabel
+                val canSubmit = state.hasLoaded && !state.isSubmitting
                 TaskMenuItem(stringResource(R.string.task_bar_start_all, state.targets.startIds.size),
-                    R.drawable.ic_play, canSubmit && state.targets.startIds.isNotEmpty(), startDetail) {
+                    R.drawable.ic_play, canSubmit && state.targets.startIds.isNotEmpty()) {
                     menu = MenuLevel.CLOSED; onAction(TaskPageAction.START)
                 }
                 TaskMenuItem(stringResource(R.string.task_bar_pause_count, state.targets.pauseIds.size),
-                    R.drawable.ic_pause, canSubmit && state.targets.pauseIds.isNotEmpty(),
-                    scopeLabel + "\n" + stringResource(R.string.task_bar_pause_skipped, state.targets.skippedPauseCount)) {
+                    R.drawable.ic_pause, canSubmit && state.targets.pauseIds.isNotEmpty()) {
                     menu = MenuLevel.CLOSED; onAction(TaskPageAction.PAUSE)
                 }
                 HorizontalDivider()

@@ -10,6 +10,7 @@
     <string name="task_status_waiting">等待中</string>
     <string name="task_status_paused">已暂停</string>
     <string name="task_status_completed">已完成</string>
+    <string name="task_status_file_missing">文件不存在</string>
     <string name="task_status_failed">失败</string>
     <string name="task_status_running">下载中</string>
 
@@ -22,6 +23,7 @@
     <string name="settings_section_about">关于</string>
 
     <string name="settings_download_folder">下载路径</string>
+    <string name="path_choose_folder">选择文件夹…</string>
     <string name="settings_restore_default">恢复默认路径</string>
     <string name="settings_max_task_num">最大任务数</string>
     <string name="settings_pre_block_num">预分配线程数</string>
@@ -256,7 +258,6 @@
     <string name="draft_control_more">%1$s +%2$d</string>
     <string name="draft_parse_failed">%1$d 项解析失败</string>
     <string name="draft_count">%1$d 个任务</string>
-    <!-- 批量操作仅作用于搜索结果 -->
     <string name="file_select_search">搜索文件</string>
     <string name="file_select_all">全选</string>
     <string name="file_select_none">取消全选</string>
@@ -268,7 +269,6 @@
     <string name="file_rename">重命名</string>
     <string name="file_name">文件名</string>
 
-    <!-- Bilibili -->
     <string name="pack_bilibili">哔哩哔哩</string>
     <string name="bili_logged_out">状态：未登录</string>
     <string name="bili_logged_in">已登录 · %1$s · UID %2$s · %3$s</string>
@@ -306,7 +306,6 @@
     <string name="bili_captcha_init_failed">验证码初始化失败</string>
     <string name="bili_captcha_verify_failed">验证未通过</string>
 
-    <!-- Draft tracks -->
     <string name="draft_track_cover">封面</string>
     <string name="draft_trim_off">下载完整视频</string>
     <string name="draft_folder_absolute">请填写完整路径，以 / 开头</string>
@@ -344,6 +343,13 @@
     <string name="settings_browser_regenerate_desc">已连接的扩展需要重新配对</string>
     <string name="settings_browser_export">导出扩展</string>
     <string name="settings_browser_export_desc">解包到 Download，再用浏览器的「加载已解压的扩展」指过去</string>
+    <string name="settings_browser_listening">正在端口 %1$d 上等待扩展连接</string>
+    <string name="settings_browser_port_unavailable">端口 %1$d 被占用，请更换端口</string>
+    <string name="settings_browser_token_copied">配对令牌已复制</string>
+    <string name="settings_browser_regenerate_confirm">已配对的扩展会断开，需要重新配对。确定重新生成吗？</string>
+    <string name="settings_browser_store_chrome">Chrome 应用商店</string>
+    <string name="settings_browser_store_edge">Edge 加载项</string>
+    <string name="settings_browser_store_firefox">Firefox 附加组件</string>
 
     <string name="oobe_welcome_title">欢迎使用 Ghost Downloader</string>
     <string name="oobe_welcome_subtitle">快速、智能的下载管理器。\n接下来的几步将帮助你完成基本配置。</string>
@@ -351,10 +357,12 @@
     <string name="oobe_skip">跳过全部</string>
     <string name="oobe_back">上一步</string>
     <string name="oobe_next">下一步</string>
-    <string name="oobe_permissions_title">权限设置</string>
     <string name="oobe_permissions_subtitle">Ghost Downloader 需要以下权限才能正常工作</string>
     <string name="oobe_basic_title">基本设置</string>
     <string name="oobe_basic_subtitle">设置下载文件的保存位置</string>
+    <string name="oobe_appearance_subtitle">选择界面语言与外观</string>
+    <string name="oobe_features_title">常用功能</string>
+    <string name="oobe_features_subtitle">按需开启，也可以稍后在设置中修改</string>
     <string name="oobe_complete_title">一切就绪</string>
     <string name="oobe_complete_subtitle">Ghost Downloader 已准备好为你工作。\n你可以随时在设置中调整所有选项。</string>
     <string name="oobe_finish">开始使用</string>

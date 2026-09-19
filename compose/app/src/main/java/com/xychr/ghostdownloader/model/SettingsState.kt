@@ -23,6 +23,7 @@ data class Settings(
     val aria2RpcEmulateFingerprint: Boolean = false,
     val isBrowserExtensionEnabled: Boolean = false,
     val browserExtensionPort: Int = 14370,
+    val isCategoryEnabled: Boolean = false,
     val hasCompletedOobe: Boolean = false,
     val shouldCheckUpdateAtStartup: Boolean = true,
 )

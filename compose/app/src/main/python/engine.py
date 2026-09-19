@@ -13,6 +13,7 @@ from pathlib import Path
 from loguru import logger
 
 from app.config.cfg import cfg
+from app.config.constants import CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL
 from app.platform.file_watcher import InotifyFileWatcher
 
 
@@ -117,6 +118,7 @@ class Engine:
         self._browserService.pairRequested.connect(self._onBrowserPairRequested)
         self._browserService.taskDraftRequested.connect(self._onBrowserDraft)
         self._browserService.extensionUpdated.connect(self._onExtensionUpdated)
+        self._browserService.connectionChanged.connect(self._emitBrowserExtension)
         cfg.isBrowserExtensionEnabled.valueChanged.connect(self._browserService.setEnabled)
         cfg.browserExtensionPort.valueChanged.connect(self._onBrowserPortChanged)
 
@@ -131,6 +133,7 @@ class Engine:
         if cfg.isBrowserExtensionEnabled.value:
             self._browserService.start()
         self._emitKeepAlive()
+        self._emitBrowserExtension()
         if cfg.shouldCheckUpdateAtStartup.value:
             self._coroutineRunner.submit(self._checkUpdateAtStartup())
         logger.info("Engine started, dataDir={}", APP_DATA_DIR)
@@ -151,11 +154,15 @@ class Engine:
         self._taskService.taskCompleted.connect(self._onTaskCompleted)
         self._taskService.taskFailed.connect(self._onTaskFailed)
         self._taskService.diskSpaceInsufficient.connect(self._onDiskSpaceInsufficient)
+        self._taskService.queueChanged.connect(self._emitTasks)
+        self._taskService.fileDisappeared.connect(self._emitTasks)
 
         self._speedMeter.speedChanged.connect(self._emitKeepAlive)
         self._speedMeter.speedChanged.connect(self._emitTaskProgress)
         cfg.isAria2RpcEnabled.valueChanged.connect(self._emitKeepAlive)
         cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitKeepAlive)
+        cfg.isBrowserExtensionEnabled.valueChanged.connect(self._emitBrowserExtension)
+        cfg.browserExtensionPort.valueChanged.connect(self._emitBrowserExtension)
 
         self._categoryService.categoriesChanged.connect(self._emitCategoryState)
         cfg.isCategoryEnabled.valueChanged.connect(self._emitCategoryState)
@@ -175,7 +182,6 @@ class Engine:
         self._emitCategoryState()
         self._emitSettings()
         self._emitTasks()
-        self._emitTaskProgress()
         self._emitDraft()
         self._emitUpdateAvailable()
         self._emitHashState()
@@ -218,6 +224,7 @@ class Engine:
 
     def _emitTasks(self, *_args):
         self._flows.setState("tasks", self.tasks())
+        self._emitTaskProgress()
 
     def _emitTaskProgress(self, *_args):
         self._flows.setState("taskProgress", self.taskProgress())
@@ -278,6 +285,7 @@ class Engine:
                 logger.opt(exception=e).error("加载 FeaturePack 失败: {}", manifest.name)
 
     def _taskFields(self, task) -> dict:
+        from app.models.task import TaskStatus
         return {
             "id": task.taskId,
             "packId": task.packId or "",
@@ -288,6 +296,8 @@ class Engine:
             "outputFolder": str(task.outputFolder),
             "hasOutputFile": task.hasOutputFile,
             "isOutputFolder": Path(task.outputPath).is_dir(),
+            "isFileMissing": (task.status == TaskStatus.COMPLETED and task.hasOutputFile
+                              and not Path(task.outputPath).exists()),
             "name": task.name,
             "url": task.url,
             "status": task.status.name,
@@ -306,25 +316,30 @@ class Engine:
         fields["received"] = received
         return fields
 
+    def _queueOrder(self) -> dict:
+        return {taskId: i for i, taskId in enumerate(self._taskService.waitingOrder())}
+
+    def _listFields(self, task) -> dict:
+        fields = self._allFields(task)
+        fields["fileCount"] = len(task.files) if task.files else 0
+        fields["selectedFileCount"] = sum(f.selected for f in task.files) if task.files else 0
+        return fields
+
     def tasks(self) -> str:
+        order = self._queueOrder()
         result = []
         for t in self._taskService.tasks:
-            fields = self._allFields(t)
-            fields["fileCount"] = len(t.files) if t.files else 0
-            fields["selectedFileCount"] = sum(f.selected for f in t.files) if t.files else 0
+            fields = self._listFields(t)
+            fields["queueOrder"] = order.get(t.taskId)
             result.append(fields)
         return json.dumps(result, ensure_ascii=False)
 
     def taskProgress(self) -> str:
         from app.models.task import TaskStatus
-        snapshots = {}
-        for t in self._taskService.tasks:
-            if t.status in (TaskStatus.RUNNING, TaskStatus.WAITING):
-                progress, speed, received = t.currentSnapshot()
-                snapshots[t.taskId] = {
-                    "progress": progress, "speed": speed, "received": received,
-                }
-        return json.dumps(snapshots)
+        return json.dumps({
+            t.taskId: self._listFields(t)
+            for t in self._taskService.tasks if t.status == TaskStatus.RUNNING
+        }, ensure_ascii=False)
 
     def pause(self, taskId: str):
         from app.models.task import TaskStatus
@@ -460,8 +475,8 @@ class Engine:
             if task is not None:
                 self._taskService.setCategory(task, categoryId)
 
-    def moveToFront(self, taskId: str):
-        self._taskService.moveToFront([taskId])
+    def moveToFront(self, taskIds: str):
+        self._taskService.moveToFront(json.loads(taskIds))
 
     def redownload(self, taskId: str):
         task = self._taskService.taskById(taskId)
@@ -747,10 +762,6 @@ class Engine:
             None,
         )
 
-    # ---- 校验文件哈希 ----
-    # 状态归引擎线程所有（见 ADR 0014）：命令派发到 loop，作业在 loop 上跑，
-    # 每块之间让出调度权，否则一个大文件的哈希会把整个引擎卡住。
-
     def hashAlgorithms(self) -> str:
         import hashlib
         return json.dumps(sorted(hashlib.algorithms_available))
@@ -804,7 +815,6 @@ class Engine:
             self._updateHash(taskId, error=TaskError("无法读取文件：{detail}", detail=str(error)).toDict())
 
     def _updateHash(self, taskId: str, **fields):
-        # 作业被取消后又起了新的，旧作业不许再写状态
         if self._hashState.taskId != taskId:
             return
         for name, value in fields.items():
@@ -816,15 +826,31 @@ class Engine:
 
     def browserExtension(self) -> str:
         installType, version = self._browserService.connectionSummary
+        if not cfg.isBrowserExtensionEnabled.value:
+            status = "idle"
+        elif not self._browserService.boundPort:
+            status = "portUnavailable"
+        elif installType or version:
+            status = "connected"
+        else:
+            status = "listening"
         return json.dumps({
-            "port": self._browserService.boundPort,
+            "status": status,
             "token": self._browserService.token,
-            "installType": installType,
             "extensionVersion": version,
+            "chromeWebstore": CHROME_WEBSTORE_URL,
+            "edgeAddons": EDGE_ADDONS_URL,
+            "firefoxAddons": FIREFOX_ADDONS_URL,
         }, ensure_ascii=False)
+
+    def _emitBrowserExtension(self, *_args):
+        self._flows.setState("browserExtension", self.browserExtension())
 
     def regenerateBrowserToken(self):
         self._browserService.regenerateToken()
+        # 这条命令自己推：没人连接时 regenerateToken → _closeAll 不发 connectionChanged，
+        # 声明式接线覆盖不到「扩展都没连着」这种情况
+        self._emitBrowserExtension()
 
     def setBrowserPairApproval(self, requestId: str, isApproved: bool):
         pair = self._takePair(requestId)

@@ -1,4 +1,5 @@
 <resources>
+    <string name="task_category_all">全部分类</string>
     <string name="task_uncategorized">未分类</string>
     <string name="task_change_category">更改分类</string>
     <string name="task_change_categories">更改 %1$d 个任务的分类</string>
@@ -90,11 +91,12 @@
     <string name="task_sort_completed">完成时间</string>
     <string name="task_sort_name">文件名</string>
     <string name="task_sort_size">文件大小</string>
-    <string name="task_sort_queue">队列位置</string>
+    <string name="task_sort_queue">按队列顺序</string>
     <string name="task_sort_descending">降序</string>
     <string name="task_sort_ascending">升序</string>
 
     <string name="task_select_all">全选</string>
+    <string name="task_select_missing">选择缺失</string>
     <string name="task_select_invert">反选</string>
 
     <string name="task_file_unselected">未选中</string>

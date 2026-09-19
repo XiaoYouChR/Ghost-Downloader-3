@@ -1,15 +1,11 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
-import com.xychr.ghostdownloader.ui.platform.toFolderPath
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,16 +18,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
-import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.OptionsSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.PathSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEdit
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditor
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
+import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
+import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 
 // 键必须和引擎 category_service.py 的预设一致，桌面按这些值取 FluentIcon
 private val ICON_KEYS = listOf(
@@ -86,29 +84,22 @@ fun CategoryEditPage(
         mutableStateOf(existing?.extensions?.joinToString(", ").orEmpty())
     }
     var folder by rememberSaveable(categoryId) { mutableStateOf(existing?.folder.orEmpty()) }
-    var folderError by rememberSaveable { mutableStateOf(false) }
+    val followsDefault = !folder.startsWith("/")
+    val subfolder = if (followsDefault) folder.removePrefix("{default}").removePrefix("/") else ""
 
-    val folderPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri -> uri?.let {
-        if (it.authority == "com.android.externalstorage.documents") {
-            folder = it.toFolderPath()
-            folderError = false
-        } else folderError = true
-    } }
+    val folderPicker = rememberFolderPicker { folder = it }
 
     val category = Category(
         categoryId = categoryId, name = name.trim(), icon = icon,
         extensions = extensions.toExtensionList(), folder = folder.ifBlank { null },
     )
     var shouldShowInvalid by rememberSaveable { mutableStateOf(false) }
-    val isFolderValid = folder.isBlank() || folder.startsWith("/") || folder.startsWith("{default}")
     SettingsEditor(
         title = stringResource(if (isCreating) R.string.category_add else R.string.category_edit),
         onBack = onBack,
         state = editState,
         isChanged = category != (existing ?: Category()),
-        canSave = name.isNotBlank() && isFolderValid,
+        canSave = name.isNotBlank(),
         saveLabel = stringResource(
             if (isCreating) R.string.settings_action_create else R.string.settings_action_save),
         onInvalid = { shouldShowInvalid = true },
@@ -130,17 +121,7 @@ fun CategoryEditPage(
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         )
-        OutlinedTextField(folder, { folder = it }, enabled = !editState.isSaving,
-            label = { Text(stringResource(R.string.category_folder)) },
-            isError = shouldShowInvalid && !isFolderValid,
-            supportingText = {
-                Text(if (shouldShowInvalid && !isFolderValid) stringResource(R.string.category_folder_invalid)
-                    else stringResource(R.string.task_target_folder,
-                        folder.ifBlank { defaultFolder }.replace("{default}", defaultFolder)))
-            },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
         Text(stringResource(R.string.task_category_rules_hint), Modifier.padding(horizontal = 16.dp))
-        if (folderError) Text(stringResource(R.string.task_local_folder_only), Modifier.padding(horizontal = 16.dp))
         OutlinedTextField(
             value = extensions,
             enabled = !editState.isSaving,
@@ -161,20 +142,34 @@ fun CategoryEditPage(
                     Icon(painterResource(categoryIconRes(icon)), contentDescription = null)
                 },
             )
-            ActionSettingRow(
-                title = stringResource(R.string.category_folder),
-                subtitle = folder.ifEmpty { stringResource(R.string.category_default_folder) },
-                onClick = { if (!editState.isSaving) folderPicker.launch(null) },
-                trailing = {
-                    IconButton(onClick = { folder = "" }, enabled = !editState.isSaving) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_restore),
-                            contentDescription = stringResource(R.string.category_default_folder),
-                        )
-                    }
+            SwitchSettingRow(
+                title = stringResource(R.string.category_default_folder),
+                subtitle = stringResource(R.string.category_follow_default_desc),
+                checked = followsDefault,
+                onCheckedChange = { follow -> folder = if (follow) "" else defaultFolder },
+            )
+            if (followsDefault) TextSettingRow(
+                title = stringResource(R.string.category_subfolder),
+                value = subfolder,
+                onConfirm = { name ->
+                    folder = name.trim().takeIf(String::isNotEmpty)?.let { "{default}/$it" }.orEmpty()
                 },
+                emptyHint = stringResource(R.string.category_subfolder_desc),
+            ) else PathSettingRow(
+                title = stringResource(R.string.category_folder),
+                path = folder,
+                picker = folderPicker,
             )
         }
+        Text(
+            stringResource(
+                R.string.task_target_folder,
+                folder.ifBlank { defaultFolder }.replace("{default}", defaultFolder),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
     }
 }
 
