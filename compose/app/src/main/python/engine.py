@@ -1,4 +1,3 @@
-"""Android composition root. Kotlin calls methods on _engine."""
 from __future__ import annotations
 
 import asyncio
@@ -6,6 +5,7 @@ import inspect
 import json
 import struct
 import zipfile
+from collections import namedtuple
 from functools import partial
 from io import BytesIO
 from pathlib import Path
@@ -18,17 +18,12 @@ from app.platform.file_watcher import InotifyFileWatcher
 
 
 class HashState:
-    """校验作业的投影。形状只在这里产出：error 是 TaskError.toDict() 或 None，与 Kotlin 的 TaskError? 对齐。"""
-
     def __init__(self):
         self.taskId = ""
         self.algorithm = ""
         self.progress = 0
         self.digest = ""
         self.error = None
-
-    def clear(self):
-        self.__init__()
 
     def toDict(self) -> dict:
         return {
@@ -38,6 +33,9 @@ class HashState:
             "digest": self.digest,
             "error": self.error,
         }
+
+
+PendingEdit = namedtuple("PendingEdit", ["taskId", "task", "newTask", "options"])
 
 
 class Engine:
@@ -264,7 +262,7 @@ class Engine:
                 PackClass = getattr(module, manifest.className)
                 pack = PackClass(services)
                 pack.manifest = manifest
-                self._featureService._register(pack)
+                self._featureService.register(pack)
 
                 try:
                     adapter = importlib.import_module(f"{manifest.name}.android")
@@ -445,7 +443,7 @@ class Engine:
                 self._featureService.parse(TaskOptions.fromOptions({**current, **parsed, "url": newUrl})),
                 self._loop).result(timeout=60)
             if not task.canReuseProgress(newTask) and task.currentSnapshot()[2] > 0 and not shouldDiscard:
-                self._pendingEdit = (taskId, task, newTask, {**current, **parsed})
+                self._pendingEdit = PendingEdit(taskId, task, newTask, {**current, **parsed})
                 return json.dumps({"needsConfirmation": True})
             self._taskService.edit(task, {**current, **parsed}, newTask)
         else:
@@ -456,12 +454,12 @@ class Engine:
 
     def confirmTaskEdit(self, taskId: str):
         pending = self._pendingEdit
-        if pending and pending[0] == taskId:
-            self._taskService.edit(pending[1], pending[3], pending[2])
+        if pending and pending.taskId == taskId:
+            self._taskService.edit(pending.task, pending.options, pending.newTask)
         self._pendingEdit = None
 
     def cancelTaskEdit(self, taskId: str):
-        if self._pendingEdit and self._pendingEdit[0] == taskId:
+        if self._pendingEdit and self._pendingEdit.taskId == taskId:
             self._pendingEdit = None
 
     def categoryState(self) -> str:
@@ -777,7 +775,7 @@ class Engine:
         if task is None:
             return
         await self._cancelHash()
-        self._hashState.clear()
+        self._hashState = HashState()
         self._hashState.taskId = taskId
         self._hashState.algorithm = algorithm
         self._emitHashState()
@@ -790,7 +788,7 @@ class Engine:
             self._coroutineRunner.cancel(self._hashWorkId)
             self._hashWorkId = None
         if self._hashState.taskId:
-            self._hashState.clear()
+            self._hashState = HashState()
             self._emitHashState()
 
     async def _runFileHash(self, path: Path, algorithm: str):
@@ -848,8 +846,6 @@ class Engine:
 
     def regenerateBrowserToken(self):
         self._browserService.regenerateToken()
-        # 这条命令自己推：没人连接时 regenerateToken → _closeAll 不发 connectionChanged，
-        # 声明式接线覆盖不到「扩展都没连着」这种情况
         self._emitBrowserExtension()
 
     def setBrowserPairApproval(self, requestId: str, isApproved: bool):
@@ -1076,6 +1072,19 @@ class Engine:
         if fn is not None:
             fn(task, edits)
 
+    def packUis(self) -> str:
+        result = {}
+        for packId, adapter in self._packAdapters.items():
+            uiClass = getattr(adapter, 'UI_CLASS', None)
+            if uiClass is None:
+                continue
+            pack = self._featureService.packById(packId)
+            entry = {"uiClass": uiClass}
+            if pack and pack.config:
+                entry["configClass"] = pack.config.__class__.__name__
+            result[packId] = entry
+        return json.dumps(result)
+
     def flush(self):
         self._taskService.flush()
 
@@ -1093,14 +1102,4 @@ _engine: Engine | None = None
 def start(flows):
     global _engine
     _engine = Engine(flows)
-    result = {}
-    for packId, adapter in _engine._packAdapters.items():
-        uiClass = getattr(adapter, 'UI_CLASS', None)
-        if uiClass is None:
-            continue
-        pack = _engine._featureService._packByPackId.get(packId)
-        entry = {"uiClass": uiClass}
-        if pack and pack.config:
-            entry["configClass"] = pack.config.__class__.__name__
-        result[packId] = entry
-    return json.dumps(result)
+    return _engine.packUis()

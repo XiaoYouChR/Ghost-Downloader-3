@@ -35,7 +35,7 @@ class FeatureService:
 
     def load(self, services=None) -> None:
         for pack in loadPacks(FEATURES_DIR, services):
-            self._register(pack)
+            self.register(pack)
 
     def activate(self) -> None:
         async def activateAll():
@@ -44,7 +44,10 @@ class FeatureService:
 
         self._coroutineRunner.submit(activateAll())
 
-    def _register(self, pack: FeaturePack) -> None:
+    def packById(self, packId: str):
+        return self._packByPackId.get(packId)
+
+    def register(self, pack: FeaturePack) -> None:
         self._packs.append(pack)
         self._packByPackId[pack.packId] = pack
 
