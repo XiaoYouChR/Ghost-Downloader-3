@@ -1,6 +1,35 @@
 from __future__ import annotations
 
+import importlib.util
+import sys
+from pathlib import Path
+from types import ModuleType
+
 from aiohttp import web
+
+ENGINE_PATH = Path(__file__).parents[1] / "compose/app/src/main/python/engine.py"
+
+
+class StubFlows:
+    def __init__(self):
+        self.states: dict[str, str] = {}
+
+    def setState(self, key, value):
+        self.states[key] = value
+
+    def sendEvent(self, key, value):
+        pass
+
+
+def loadEngine():
+    stub = ModuleType("app.platform.file_watcher")
+    stub.InotifyFileWatcher = object
+    sys.modules["app.platform.file_watcher"] = stub
+
+    spec = importlib.util.spec_from_file_location("android_engine", ENGINE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def buildFileContent(size: int) -> bytes:

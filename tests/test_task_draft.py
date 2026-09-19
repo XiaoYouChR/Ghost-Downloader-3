@@ -312,5 +312,63 @@ class TestMutationsNotify:
         assert changed == []
 
 
+class TestRefresh:
+
+    def _failed(self, draft, runner, url="http://a.com/file.zip"):
+        draft.setUrls([url])
+        runner.reject(list(runner._pending)[0], "network error")
+        assert draft.failCount() == 1
+
+    def _workId(self, runner, url):
+        return next(w for w, e in runner._pending.items() if e["kwargs"]["item"].url == url)
+
+    def test_reissues_parse_and_clears_error(self, draft, runner):
+        self._failed(draft, runner)
+        draft.refresh("http://a.com/file.zip")
+        assert draft.failCount() == 0
+        assert len(runner._pending) == 1
+
+    def test_skips_parsing_resolved_and_unknown(self, draft, runner):
+        draft.setUrls(["http://a.com/1", "http://b.com/2"])
+        runner.resolve(self._workId(runner, "http://b.com/2"), stubTask("http://b.com/2"))
+        pendingBefore = set(runner._pending)
+        draft.refresh("http://a.com/1")
+        draft.refresh("http://b.com/2")
+        draft.refresh("http://c.com/3")
+        assert set(runner._pending) == pendingBefore
+
+    def test_success_emits_parseSucceeded(self, draft, runner):
+        self._failed(draft, runner)
+        received = []
+        draft.parseSucceeded.connect(lambda url, task: received.append(url))
+        draft.refresh("http://a.com/file.zip")
+        runner.resolve(list(runner._pending)[0], stubTask("http://a.com/file.zip"))
+        assert received == ["http://a.com/file.zip"]
+
+    def test_submit_failure_keeps_item_failed(self, draft, runner):
+        self._failed(draft, runner)
+
+        def boom(*args, **kwargs):
+            raise RuntimeError("submit failed")
+
+        runner.submit = boom
+        errors = []
+        draft.parseFailed.connect(lambda url, err: errors.append(url))
+        draft.refresh("http://a.com/file.zip")
+        assert draft.failCount() == 1
+        assert errors == ["http://a.com/file.zip"]
+
+
+class TestAddParsedTasks:
+
+    def test_clears_stale_error(self, draft, runner):
+        draft.setUrls(["http://a.com/1"])
+        runner.reject(list(runner._pending)[0], "network error")
+        assert draft.failCount() == 1
+        draft.addParsedTasks([stubTask("http://a.com/1")])
+        assert draft.failCount() == 0
+        assert draft.taskByUrl("http://a.com/1") is not None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])
