@@ -154,11 +154,8 @@ fun TasksPage(
             TaskPageAction.PAUSE -> if (!isSubmitting) {
                 isSubmitting = true
                 scope.launch {
-                    val result = try {
-                        viewModel.pauseEach(targets.pauseIds)
-                    } finally { isSubmitting = false }
-                    snackbarHostState.showSnackbar(context.getString(R.string.task_bar_pause_result,
-                        result.submitted, result.failed, targets.skippedPauseCount))
+                    try { viewModel.pauseEach(targets.pauseIds) }
+                    finally { isSubmitting = false }
                 }
             }
             TaskPageAction.MANAGE_CATEGORIES -> onManageCategories()

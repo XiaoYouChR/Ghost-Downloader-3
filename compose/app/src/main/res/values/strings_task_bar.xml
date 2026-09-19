@@ -4,5 +4,5 @@
     <string name="task_bar_start_selected">开始所选（%1$d）</string>
     <string name="task_bar_pause_count">暂停可暂停任务（%1$d）</string>
     <string name="task_bar_pause_selected">暂停所选可暂停任务（%1$d）</string>
-    <string name="task_bar_pause_result">暂停请求已提交 %1$d 项，提交失败 %2$d 项，跳过 %3$d 项；不可暂停项可能继续运行。</string>
+
 </resources>
