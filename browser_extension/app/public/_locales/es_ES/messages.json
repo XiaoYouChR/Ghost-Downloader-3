@@ -1,0 +1,701 @@
+{
+  "about": {
+    "message": "Acerca de"
+  },
+  "advancedFeatures": {
+    "message": "Funciones avanzadas"
+  },
+  "advancedFeaturesHint": {
+    "message": "Actívalas según sea necesario; algunas funciones requieren inyección de página o permisos especiales."
+  },
+  "audio": {
+    "message": "Audio",
+    "description": "Badge label for audio resources"
+  },
+  "audioTrack": {
+    "message": "Pista de audio"
+  },
+  "authenticating": {
+    "message": "Autenticando"
+  },
+  "autoPair": {
+    "message": "Emparejamiento automático"
+  },
+  "awaitingPairing": {
+    "message": "Esperando emparejamiento"
+  },
+  "browserDownload": {
+    "message": "Descarga del navegador"
+  },
+  "bypassShortcutKey": {
+    "message": "Tecla de acceso directo para omitir la interceptación"
+  },
+  "bypassShortcutKeyHint": {
+    "message": "Mantén pulsada esta tecla al hacer clic en un enlace de descarga para omitir la interceptación y descargar con el navegador."
+  },
+  "pressShortcutKey": {
+    "message": "Por favor, pulsa una tecla de acceso directo..."
+  },
+  "cacheCapture": {
+    "message": "Captura de caché"
+  },
+  "cacheCaptureDescription": {
+    "message": "Captura recursos almacenados en caché por el navegador"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "clearSelection": {
+    "message": "Cancelar selección",
+    "description": "Clears multi-select, not a task cancellation"
+  },
+  "completed": {
+    "message": "Completado"
+  },
+  "fileMissing": {
+    "message": "Eliminado"
+  },
+  "confirmPairing": {
+    "message": "Por favor, confirma el emparejamiento"
+  },
+  "connected": {
+    "message": "Conectado"
+  },
+  "connecting": {
+    "message": "Conectando"
+  },
+  "connectionClosed": {
+    "message": "Conexión cerrada"
+  },
+  "connectionConfig": {
+    "message": "Configuración de conexión"
+  },
+  "darkTheme": {
+    "message": "Oscuro"
+  },
+  "dashSegmentsCount": {
+    "message": "$1 segmentos DASH $2"
+  },
+  "deepSearch": {
+    "message": "Búsqueda profunda"
+  },
+  "deepSearchDescription": {
+    "message": "Analiza en profundidad los recursos solicitados por la página"
+  },
+  "desktopVersionInfo": {
+    "message": "Versión de escritorio $1"
+  },
+  "disconnected": {
+    "message": "No conectado"
+  },
+  "downloadThisMedia": {
+    "message": "Descargar este medio"
+  },
+  "mediaButtonLabel": {
+    "message": "Botón de medio"
+  },
+  "downloadWithGhostDownloader": {
+    "message": "Descargar con Ghost Downloader"
+  },
+  "saveAsWithGhostDownloader": {
+    "message": "Guardar como con Ghost Downloader"
+  },
+  "downloading": {
+    "message": "Descargando"
+  },
+  "emptyCurrentResourcesDescription": {
+    "message": "Después de reproducir un vídeo o audio, los recursos capturados aparecerán aquí automáticamente."
+  },
+  "emptyCurrentResourcesTitle": {
+    "message": "Aún no hay recursos en la página actual"
+  },
+  "emptyImagesDescription": {
+    "message": "Prueba a cambiar a una página con imágenes o ajusta los filtros."
+  },
+  "emptyImagesTitle": {
+    "message": "No se encontraron imágenes en la página actual"
+  },
+  "emptyOtherResourcesDescription": {
+    "message": "Después de cambiar a otras pestañas y capturar recursos, se mostrarán aquí resumidos automáticamente."
+  },
+  "emptyOtherResourcesTitle": {
+    "message": "Aún no hay recursos de otras páginas"
+  },
+  "emptyTasksDescription": {
+    "message": "Las tareas aparecerán aquí cuando el navegador intercepte descargas o envíe recursos desde la página de análisis."
+  },
+  "emptyTasksTitle": {
+    "message": "Aún no hay tareas"
+  },
+  "errorAutoPairingFailed": {
+    "message": "Fallo en el emparejamiento automático"
+  },
+  "errorBackgroundNotReady": {
+    "message": "El servicio en segundo plano no está listo"
+  },
+  "errorBrowserNoDownloadId": {
+    "message": "El navegador no devolvió la tarea de descarga"
+  },
+  "errorCannotDetermineDouyinMediaForm": {
+    "message": "No se puede determinar el formato del medio de Douyin, selecciónalo en la página de análisis."
+  },
+  "errorCannotLocateMedia": {
+    "message": "No se pudo localizar el medio"
+  },
+  "errorConnectionFailed": {
+    "message": "Fallo de conexión"
+  },
+  "errorExtensionNotReady": {
+    "message": "La extensión no está lista"
+  },
+  "errorFeatureToggleFailed": {
+    "message": "Fallo al cambiar la función"
+  },
+  "errorFullscreenFailed": {
+    "message": "Fallo al entrar en pantalla completa"
+  },
+  "errorInvalidDownloadRequest": {
+    "message": "Solicitud de descarga no válida"
+  },
+  "errorInvalidMergeRequest": {
+    "message": "Solicitud de combinación no válida"
+  },
+  "errorInvalidPairToken": {
+    "message": "Token de emparejamiento no válido"
+  },
+  "errorMediaActionFailed": {
+    "message": "Fallo en la acción del medio"
+  },
+  "errorMediaSourceUnrecognized": {
+    "message": "Origen del medio no reconocido"
+  },
+  "errorMergeFailed": {
+    "message": "Fallo en la combinación en línea"
+  },
+  "errorMergeRequiresTwoResources": {
+    "message": "La combinación en línea solo admite seleccionar 2 recursos"
+  },
+  "errorMultipleMediaFound": {
+    "message": "Se encontraron múltiples recursos multimedia, selecciónalos en la página de análisis."
+  },
+  "errorNoActiveTab": {
+    "message": "No hay pestaña activa operable"
+  },
+  "errorNoControllableMedia": {
+    "message": "No hay medios controlables"
+  },
+  "errorNoMediaDetected": {
+    "message": "No se detectaron medios"
+  },
+  "errorNoTokenReturned": {
+    "message": "No se devolvió token"
+  },
+  "errorOnlineMergeFailed": {
+    "message": "Fallo en la combinación en línea"
+  },
+  "errorPairingDisconnected": {
+    "message": "Emparejamiento desconectado"
+  },
+  "errorPairingRejected": {
+    "message": "Emparejamiento rechazado"
+  },
+  "errorPairingTimeout": {
+    "message": "Tiempo de espera de emparejamiento agotado"
+  },
+  "errorPipFailed": {
+    "message": "Fallo en imagen sobre imagen"
+  },
+  "errorReadMediaStateFailed": {
+    "message": "Fallo al leer el estado del medio"
+  },
+  "errorReconnectFailed": {
+    "message": "Fallo al reconectar"
+  },
+  "errorResourceNotFound": {
+    "message": "Recurso no encontrado"
+  },
+  "errorResourcesNotMergeable": {
+    "message": "Los recursos seleccionados no cumplen las condiciones para la combinación en línea"
+  },
+  "errorResponseTimeout": {
+    "message": "Tiempo de espera de respuesta agotado"
+  },
+  "errorSavePairingTokenFailed": {
+    "message": "Fallo al guardar el token de emparejamiento"
+  },
+  "errorSaveServerUrlFailed": {
+    "message": "Fallo al guardar la dirección del servidor"
+  },
+  "errorSendFailed": {
+    "message": "Fallo al enviar"
+  },
+  "errorSendImagesFailed": {
+    "message": "Fallo al enviar imágenes"
+  },
+  "errorSendResourceFailed": {
+    "message": "Fallo al enviar recurso"
+  },
+  "errorStrategyException": {
+    "message": "Excepción de estrategia: $1"
+  },
+  "errorSwitchMediaFailed": {
+    "message": "Fallo al cambiar de medio"
+  },
+  "errorTargetTabNotFound": {
+    "message": "No se encontró la pestaña de destino"
+  },
+  "errorTaskActionFailed": {
+    "message": "Fallo en la acción de la tarea"
+  },
+  "errorUnknownCommand": {
+    "message": "Comando desconocido: $1"
+  },
+  "errorUnknownDownloadType": {
+    "message": "Tipo de solicitud de descarga desconocido"
+  },
+  "errorUpdateMediaButtonFailed": {
+    "message": "Fallo al actualizar el botón de descarga"
+  },
+  "errorUpdateTakeDownloadsFailed": {
+    "message": "Fallo al actualizar la interceptación de descargas"
+  },
+  "extensionDescription": {
+    "message": "Gestiona las tareas de Ghost Downloader y envía recursos del navegador a Ghost Downloader."
+  },
+  "extensionName": {
+    "message": "Ghost Downloader para navegador"
+  },
+  "extensionVersionInfo": {
+    "message": "Versión de la extensión $1"
+  },
+  "failed": {
+    "message": "Fallido"
+  },
+  "featureBackgroundDisabled": {
+    "message": "El estado en segundo plano de la función está desactivado; el panel en la página se puede cerrar desde la propia página."
+  },
+  "featureDisabled": {
+    "message": "Función desactivada"
+  },
+  "featureEnabled": {
+    "message": "Función activada"
+  },
+  "featureEnabledAfterReload": {
+    "message": "Función activada; entrará en vigor tras recargar la página."
+  },
+  "featureStateUpdated": {
+    "message": "Estado de la función actualizado"
+  },
+  "featureToggles": {
+    "message": "Interruptores de funciones"
+  },
+  "filterAll": {
+    "message": "Todo"
+  },
+  "filterAudio": {
+    "message": "Audio"
+  },
+  "filterHeightLabel": {
+    "message": "Alto",
+    "description": "Short label for minimum height filter"
+  },
+  "filterVideo": {
+    "message": "Vídeo"
+  },
+  "filterWidthLabel": {
+    "message": "Ancho",
+    "description": "Short label for minimum width filter"
+  },
+  "followSystem": {
+    "message": "Seguir configuración del sistema"
+  },
+  "fullscreen": {
+    "message": "Pantalla completa"
+  },
+  "general": {
+    "message": "General"
+  },
+  "hlsSegmentsCount": {
+    "message": "$1 segmentos HLS $2"
+  },
+  "imagesProcessed": {
+    "message": "$1 imágenes procesadas"
+  },
+  "imagesSent": {
+    "message": "Imágenes enviadas"
+  },
+  "installMethodInfo": {
+    "message": "Método de instalación $1"
+  },
+  "installTypeDevelopment": {
+    "message": "Autogestionado por el escritorio"
+  },
+  "installTypeSideload": {
+    "message": "Instalación lateral"
+  },
+  "installTypeStore": {
+    "message": "Instalación desde tienda"
+  },
+  "installTypeUnknown": {
+    "message": "Desconocido"
+  },
+  "interceptUnknownSize": {
+    "message": "Interceptar cuando el tamaño es desconocido"
+  },
+  "skipExtensions": {
+    "message": "Extensiones que no se interceptan"
+  },
+  "skipExtensionsHint": {
+    "message": "Escribe las extensiones de archivo que no se deben interceptar, separadas por comas"
+  },
+  "catImages": {
+    "message": "Imágenes"
+  },
+  "catDocuments": {
+    "message": "Documentos"
+  },
+  "catAudio": {
+    "message": "Audio"
+  },
+  "invertSelection": {
+    "message": "Invertir selección"
+  },
+  "itemCount": {
+    "message": "$1 elementos"
+  },
+  "itemCount_popup_pages_ImagesPage_tsx": {
+    "message": "$1 elementos"
+  },
+  "launchDesktop": {
+    "message": "Iniciar escritorio"
+  },
+  "lightTheme": {
+    "message": "Claro"
+  },
+  "localServerAddress": {
+    "message": "Dirección del servidor local"
+  },
+  "loop": {
+    "message": "Bucle"
+  },
+  "mediaBridgeNotReady": {
+    "message": "El puente de medios de la página actual aún no está listo"
+  },
+  "mediaConnected": {
+    "message": "Estado del medio actual conectado"
+  },
+  "mediaControl": {
+    "message": "Control de medios"
+  },
+  "mediaReleased": {
+    "message": "Medio liberado"
+  },
+  "merge": {
+    "message": "Combinar"
+  },
+  "mergeTaskSentToDesktop": {
+    "message": "La tarea de combinación en línea se ha enviado a Ghost Downloader"
+  },
+  "minInterceptSize": {
+    "message": "Tamaño mínimo de interceptación"
+  },
+  "minInterceptSizeHint": {
+    "message": "Los archivos por debajo de este tamaño se descargarán directamente con el navegador; 0 para interceptar todos."
+  },
+  "mobileUserAgent": {
+    "message": "Simular móvil"
+  },
+  "mobileUserAgentDescription": {
+    "message": "Simular acceso a la página como dispositivo móvil"
+  },
+  "mobileUserAgentDisabled": {
+    "message": "Simulación de móvil desactivada"
+  },
+  "mobileUserAgentEnabled": {
+    "message": "Simulación de móvil activada, se aplicará tras recargar"
+  },
+  "mute": {
+    "message": "Silenciar"
+  },
+  "navAdvanced": {
+    "message": "Avanzado"
+  },
+  "navImages": {
+    "message": "Imágenes"
+  },
+  "navResources": {
+    "message": "Recursos"
+  },
+  "navTasks": {
+    "message": "Tareas"
+  },
+  "noActiveTabForMedia": {
+    "message": "No hay pestaña activa operable"
+  },
+  "noControllableMedia": {
+    "message": "No hay medios controlables"
+  },
+  "noControllableMediaDetected": {
+    "message": "No se detectaron medios controlables"
+  },
+  "noMediaDetected": {
+    "message": "No se detectaron medios controlables"
+  },
+  "noMediaStateResponse": {
+    "message": "La página no devolvió el estado del medio"
+  },
+  "notConnected": {
+    "message": "No conectado"
+  },
+  "openFile": {
+    "message": "Abrir archivo"
+  },
+  "openFolder": {
+    "message": "Abrir carpeta"
+  },
+  "openWhenDone": {
+    "message": "Abrir al finalizar"
+  },
+  "pageNoControllableMedia": {
+    "message": "No se detectaron medios controlables en la página actual"
+  },
+  "pairing": {
+    "message": "Emparejando"
+  },
+  "pairingRequestSentConfirmOnDesktop": {
+    "message": "Solicitud de emparejamiento enviada, confírmala en el escritorio"
+  },
+  "pairingToken": {
+    "message": "Token de emparejamiento"
+  },
+  "pairingTokenPlaceholder": {
+    "message": "Introduce el token de emparejamiento"
+  },
+  "pairingTokenSaved": {
+    "message": "Token de emparejamiento guardado"
+  },
+  "pasteToken": {
+    "message": "Pegar token"
+  },
+  "pause": {
+    "message": "Pausar"
+  },
+  "paused": {
+    "message": "En pausa"
+  },
+  "pendingPairing": {
+    "message": "Emparejamiento pendiente"
+  },
+  "pendingQueueBadge": {
+    "message": "$1 · $2 en cola"
+  },
+  "pictureInPicture": {
+    "message": "Imagen sobre imagen"
+  },
+  "play": {
+    "message": "Reproducir"
+  },
+  "reconnect": {
+    "message": "Reconectar"
+  },
+  "recordWebRTC": {
+    "message": "Grabar WebRTC"
+  },
+  "recordWebRTCDescription": {
+    "message": "Graba contenido de comunicaciones en tiempo real WebRTC"
+  },
+  "redownload": {
+    "message": "Descargar de nuevo"
+  },
+  "removeTask": {
+    "message": "Solo eliminar tarea"
+  },
+  "reloadRequired": {
+    "message": "Requiere recargar"
+  },
+  "rescan": {
+    "message": "Volver a escanear"
+  },
+  "resolving": {
+    "message": "Resolviendo"
+  },
+  "resource": {
+    "message": "Recurso",
+    "description": "Fallback badge label when type is unknown"
+  },
+  "resourceBridgeUnavailableDescription": {
+    "message": "La pestaña actual no puede proporcionar la lista de recursos temporalmente."
+  },
+  "resourceBridgeUnavailableTitle": {
+    "message": "La pestaña actual no admite el puente de recursos"
+  },
+  "resourceProcessed": {
+    "message": "Recurso procesado correctamente"
+  },
+  "resourceSentToBrowser": {
+    "message": "Recurso entregado al navegador para descargar"
+  },
+  "resourceSentToDesktop": {
+    "message": "Recurso enviado a Ghost Downloader"
+  },
+  "restoringCapturedResources": {
+    "message": "Restaurando recursos capturados"
+  },
+  "restoringCatCatchResources": {
+    "message": "Restaurando recursos capturados por cat-catch"
+  },
+  "restoringResourcesDescription": {
+    "message": "Restaurando recursos capturados."
+  },
+  "restoringResourcesTitle": {
+    "message": "Restaurando recursos de la página actual"
+  },
+  "resume": {
+    "message": "Reanudar"
+  },
+  "scanning": {
+    "message": "Escaneando..."
+  },
+  "scopeCurrentPage": {
+    "message": "Página actual"
+  },
+  "scopeOtherPages": {
+    "message": "Otras páginas"
+  },
+  "screenCapture": {
+    "message": "Captura de pantalla"
+  },
+  "screenCaptureDescription": {
+    "message": "Captura pantalla, ventana o pestaña"
+  },
+  "screenshot": {
+    "message": "Captura de pantalla"
+  },
+  "selectAll": {
+    "message": "Seleccionar todo"
+  },
+  "selectMedia": {
+    "message": "Seleccionar medio"
+  },
+  "selectMediaPlaceholder": {
+    "message": "Por favor, selecciona un medio"
+  },
+  "selectResourceLabel": {
+    "message": "Seleccionar $1"
+  },
+  "sendCount": {
+    "message": "Enviar ($1)"
+  },
+  "sendCount_popup_pages_ImagesPage_tsx": {
+    "message": "Enviar ($1)"
+  },
+  "sendCurrentMediaToGhostDownloader": {
+    "message": "Enviar medio actual a Ghost Downloader"
+  },
+  "sendToDesktop": {
+    "message": "Enviar a Ghost Downloader"
+  },
+  "sending": {
+    "message": "Enviando"
+  },
+  "sent": {
+    "message": "Enviado"
+  },
+  "sentToBrowserDownload": {
+    "message": "Entregado al navegador para descargar"
+  },
+  "sentToDesktop": {
+    "message": "Enviado a Ghost Downloader"
+  },
+  "serverUrlSaved": {
+    "message": "Dirección guardada"
+  },
+  "settings": {
+    "message": "Configuración"
+  },
+  "sortByArea": {
+    "message": "Área"
+  },
+  "sortByHeight": {
+    "message": "Altura"
+  },
+  "sortByWidth": {
+    "message": "Anchura"
+  },
+  "tabNotSupportResourceBridge": {
+    "message": "La pestaña actual no admite el puente de recursos cat-catch"
+  },
+  "takeOverDownloads": {
+    "message": "Interceptar descargas"
+  },
+  "taskActionSent": {
+    "message": "Acción de tarea enviada"
+  },
+  "taskQueued": {
+    "message": "El escritorio no está conectado, la tarea se ha puesto en cola"
+  },
+  "theme": {
+    "message": "Tema"
+  },
+  "tokenInvalid": {
+    "message": "Token no válido"
+  },
+  "unmute": {
+    "message": "Activar sonido"
+  },
+  "video": {
+    "message": "Vídeo",
+    "description": "Badge label for video resources"
+  },
+  "videoRecording": {
+    "message": "Grabación de vídeo"
+  },
+  "videoRecordingDescription": {
+    "message": "Graba contenido de vídeo de la página web"
+  },
+  "videoTrack": {
+    "message": "Pista de vídeo"
+  },
+  "waitedTimeout": {
+    "message": "$1 (esperado $2 s)"
+  },
+  "waiting": {
+    "message": "Esperando"
+  },
+  "waitingForDouyinMuxedUrl": {
+    "message": "Esperando URL única MP4 de Douyin"
+  },
+  "waitingForDouyinSeparateTracks": {
+    "message": "Esperando que las pistas de audio y vídeo de Douyin estén completas"
+  },
+  "waitingForInstagramSeparateTracks": {
+    "message": "Esperando que las pistas de audio y vídeo de Instagram estén completas"
+  },
+  "waitingForResource": {
+    "message": "Esperando recurso..."
+  },
+  "waitingForResourceCapture": {
+    "message": "Esperando captura de recurso por cat-catch"
+  },
+  "waitingForSeparateTracks": {
+    "message": "Esperando que las pistas de audio y vídeo estén completas"
+  },
+  "waitingForVideoResource": {
+    "message": "Esperando a detectar el recurso de vídeo actual"
+  },
+  "waitingForXMasterPlaylist": {
+    "message": "Esperando la lista de reproducción maestra de X"
+  },
+  "skipDomains": {
+    "message": "Dominios que no se interceptan"
+  },
+  "skipDomainsHint": {
+    "message": "Las descargas de estos sitios web no serán interceptadas"
+  },
+  "addCurrentSite": {
+    "message": "Añadir sitio actual"
+  },
+  "openPopupOnSent": {
+    "message": "Abrir ventana emergente al enviar tarea"
+  }
+}
