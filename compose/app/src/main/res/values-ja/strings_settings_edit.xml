@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="identity_profile_inherit">グローバルデフォルトに従う</string>
+    <string name="identity_profile_latest">%1$s（最新）</string>
+    <string name="identity_profile_version">バージョン</string>
+    <string name="settings_edit_continue">編集を続ける</string>
+    <string name="settings_edit_discard">変更を破棄</string>
+    <string name="settings_edit_discard_message">戻ると、今回の編集内容は保存されません。</string>
+    <string name="settings_edit_discard_title">未保存の変更を破棄しますか？</string>
+    <string name="settings_edit_failed">保存に失敗しました。入力は保持されています。もう一度保存をタップして再試行してください。</string>
+    <string name="settings_edit_saving">保存中…</string>
+    <string name="settings_preserve_modified">ファイルの更新日時を保持</string>
+    <string name="settings_preserve_modified_desc">ダウンロード完了後にサーバーが提供する Last-Modified 時刻を使用します</string>
+    <string name="settings_reassign_size">最小再割り当てサイズ</string>
+    <string name="settings_system_dns">システム DNS を使用</string>
+    <string name="settings_system_dns_desc">OS によるドメイン解決を使用し、VPN や TUN などのネットワーク環境と互換性があります</string>
+    <string name="settings_taken_draft">引き継ぎ後にタスクを確認</string>
+    <string name="settings_taken_draft_desc">ブラウザが引き継いだタスクはまず下書きに入り、確認後にダウンロードを開始します</string>
+</resources>

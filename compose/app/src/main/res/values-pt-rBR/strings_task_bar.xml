@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_bar_pause_count">Pausar tarefas pausáveis (%1$d)</string>
+    <string name="task_bar_pause_selected">Pausar tarefas pausáveis selecionadas (%1$d)</string>
+    <string name="task_bar_speed">Velocidade total de download %1$s</string>
+    <string name="task_bar_start_all">Iniciar todas (%1$d)</string>
+    <string name="task_bar_start_selected">Iniciar selecionadas (%1$d)</string>
+</resources>

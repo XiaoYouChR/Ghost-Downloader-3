@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="identity_profile_inherit">跟隨全域預設</string>
+    <string name="identity_profile_latest">%1$s（最新）</string>
+    <string name="identity_profile_version">版本</string>
+    <string name="settings_edit_continue">繼續編輯</string>
+    <string name="settings_edit_discard">放棄修改</string>
+    <string name="settings_edit_discard_message">返回後，這次編輯的內容將不會儲存。</string>
+    <string name="settings_edit_discard_title">放棄未儲存的修改？</string>
+    <string name="settings_edit_failed">未能儲存，輸入已保留。請再次點擊儲存重試。</string>
+    <string name="settings_edit_saving">正在儲存…</string>
+    <string name="settings_preserve_modified">保留檔案修改時間</string>
+    <string name="settings_preserve_modified_desc">下載完成後使用伺服器提供的 Last-Modified 時間</string>
+    <string name="settings_reassign_size">最小再分配大小</string>
+    <string name="settings_system_dns">使用系統 DNS</string>
+    <string name="settings_system_dns_desc">使用作業系統解析域名，相容 VPN 和 TUN 等網絡環境</string>
+    <string name="settings_taken_draft">接管後先確認任務</string>
+    <string name="settings_taken_draft_desc">瀏覽器接管的任務先進入草稿，確認後才開始下載</string>
+</resources>

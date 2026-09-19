@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="identity_profile_inherit">Follow global default</string>
+    <string name="identity_profile_latest">%1$s (latest)</string>
+    <string name="identity_profile_version">Version</string>
+    <string name="settings_edit_continue">Continue editing</string>
+    <string name="settings_edit_discard">Discard changes</string>
+    <string name="settings_edit_discard_message">After returning, changes from this edit will not be saved.</string>
+    <string name="settings_edit_discard_title">Discard unsaved changes?</string>
+    <string name="settings_edit_failed">Failed to save, input retained. Please tap save again to retry.</string>
+    <string name="settings_edit_saving">Saving…</string>
+    <string name="settings_preserve_modified">Preserve file modification time</string>
+    <string name="settings_preserve_modified_desc">Use server-provided Last-Modified time after download</string>
+    <string name="settings_reassign_size">Minimum reassignment size</string>
+    <string name="settings_system_dns">Use system DNS</string>
+    <string name="settings_system_dns_desc">Use operating system to resolve domains, compatible with VPN and TUN network environments</string>
+    <string name="settings_taken_draft">Confirm task after take over</string>
+    <string name="settings_taken_draft_desc">Tasks taken over by browser go to draft first, start after confirmation</string>
+</resources>

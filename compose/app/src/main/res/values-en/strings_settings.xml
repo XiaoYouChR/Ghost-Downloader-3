@@ -1,14 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_group_app">App</string>
     <string name="settings_group_download">Downloads &amp; Connection</string>
     <string name="settings_group_features">Features &amp; Services</string>
-    <string name="settings_group_app">App</string>
+    <string name="settings_pack_info">Feature pack details</string>
+    <string name="settings_packs_empty">No download plugins loaded</string>
+    <string name="settings_search_clear">Clear search</string>
+    <string name="settings_search_empty">No matching settings found</string>
+    <string name="settings_search_hint">Search settings…</string>
+    <string name="settings_section_identity">Identity simulation</string>
+    <string name="settings_summary_about">App version &amp; open source</string>
+    <string name="settings_summary_category">Route files to folders by file type</string>
     <string name="settings_summary_download">Save location, concurrent tasks &amp; speed</string>
-    <string name="settings_summary_network">Proxy connection &amp; certificate verification</string>
     <string name="settings_summary_identity">Browser identity, site rules &amp; request headers</string>
+    <string name="settings_summary_network">Proxy connection &amp; certificate verification</string>
+    <string name="settings_summary_permissions">Storage, notifications &amp; background activity</string>
     <string name="settings_summary_runtimes">Install &amp; update required tools</string>
     <string name="settings_summary_service">Browser extension &amp; remote invocation</string>
-    <string name="settings_summary_permissions">Storage, notifications &amp; background activity</string>
-    <string name="settings_summary_about">App version &amp; open source</string>
-    <string name="settings_search_clear">Clear search</string>
-    <string name="settings_summary_category">Route files to folders by file type</string>
 </resources>

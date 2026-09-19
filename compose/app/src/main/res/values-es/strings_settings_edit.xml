@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="identity_profile_inherit">Seguir el predeterminado global</string>
+    <string name="identity_profile_latest">%1$s (más reciente)</string>
+    <string name="identity_profile_version">Versión</string>
+    <string name="settings_edit_continue">Seguir editando</string>
+    <string name="settings_edit_discard">Descartar cambios</string>
+    <string name="settings_edit_discard_message">Si vuelves atrás, los cambios de esta edición no se guardarán.</string>
+    <string name="settings_edit_discard_title">¿Descartar los cambios sin guardar?</string>
+    <string name="settings_edit_failed">No se pudo guardar; la entrada se ha conservado. Pulsa Guardar de nuevo para reintentar.</string>
+    <string name="settings_edit_saving">Guardando…</string>
+    <string name="settings_preserve_modified">Conservar fecha de modificación del archivo</string>
+    <string name="settings_preserve_modified_desc">Usa la hora Last-Modified proporcionada por el servidor al terminar la descarga</string>
+    <string name="settings_reassign_size">Tamaño mínimo de reasignación</string>
+    <string name="settings_system_dns">Usar DNS del sistema</string>
+    <string name="settings_system_dns_desc">Usa el sistema operativo para resolver dominios, compatible con VPN y TUN</string>
+    <string name="settings_taken_draft">Confirmar tarea tras la captura</string>
+    <string name="settings_taken_draft_desc">Las tareas capturadas desde el navegador pasan primero a borrador y solo comienzan tras confirmar</string>
+</resources>

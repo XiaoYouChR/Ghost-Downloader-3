@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_bar_pause_count">Пауза доступных задач (%1$d)</string>
+    <string name="task_bar_pause_selected">Пауза выбранных доступных задач (%1$d)</string>
+    <string name="task_bar_speed">Общая скорость %1$s</string>
+    <string name="task_bar_start_all">Запустить все (%1$d)</string>
+    <string name="task_bar_start_selected">Запустить выбранные (%1$d)</string>
+</resources>

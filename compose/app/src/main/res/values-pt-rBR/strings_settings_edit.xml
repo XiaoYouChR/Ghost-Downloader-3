@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="identity_profile_inherit">Seguir padrão global</string>
+    <string name="identity_profile_latest">%1$s (mais recente)</string>
+    <string name="identity_profile_version">Versão</string>
+    <string name="settings_edit_continue">Continuar editando</string>
+    <string name="settings_edit_discard">Descartar alterações</string>
+    <string name="settings_edit_discard_message">Ao voltar, as alterações desta edição não serão salvas.</string>
+    <string name="settings_edit_discard_title">Descartar alterações não salvas?</string>
+    <string name="settings_edit_failed">Falha ao salvar, a entrada foi mantida. Toque em salvar novamente para tentar.</string>
+    <string name="settings_edit_saving">Salvando…</string>
+    <string name="settings_preserve_modified">Preservar data de modificação do arquivo</string>
+    <string name="settings_preserve_modified_desc">Usar hora Last-Modified fornecida pelo servidor após o download</string>
+    <string name="settings_reassign_size">Tamanho mínimo de realocação</string>
+    <string name="settings_system_dns">Usar DNS do sistema</string>
+    <string name="settings_system_dns_desc">Usar resolução de domínio do sistema operacional, compatível com VPN e TUN</string>
+    <string name="settings_taken_draft">Confirmar tarefa após assumir</string>
+    <string name="settings_taken_draft_desc">Tarefas assumidas pelo navegador vão para rascunho; o download só começa após confirmação</string>
+</resources>

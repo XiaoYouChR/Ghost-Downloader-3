@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="identity_profile_inherit">Как в глобальных настройках</string>
+    <string name="identity_profile_latest">%1$s (последняя)</string>
+    <string name="identity_profile_version">Версия</string>
+    <string name="settings_edit_continue">Продолжить редактирование</string>
+    <string name="settings_edit_discard">Отменить изменения</string>
+    <string name="settings_edit_discard_message">Изменения не будут сохранены после возврата.</string>
+    <string name="settings_edit_discard_title">Отменить несохранённые изменения?</string>
+    <string name="settings_edit_failed">Не удалось сохранить, ввод сохранён. Нажмите «Сохранить» ещё раз.</string>
+    <string name="settings_edit_saving">Сохранение…</string>
+    <string name="settings_preserve_modified">Сохранять время изменения файла</string>
+    <string name="settings_preserve_modified_desc">Использовать Last-Modified с сервера после загрузки</string>
+    <string name="settings_reassign_size">Минимальный размер перераспределения</string>
+    <string name="settings_system_dns">Использовать системный DNS</string>
+    <string name="settings_system_dns_desc">Разрешать домены через ОС, совместимо с VPN и TUN</string>
+    <string name="settings_taken_draft">Подтверждать задачу после перехвата</string>
+    <string name="settings_taken_draft_desc">Задачи из браузера сначала попадают в черновик и запускаются после подтверждения</string>
+</resources>

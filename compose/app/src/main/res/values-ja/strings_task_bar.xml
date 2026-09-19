@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_bar_pause_count">一時停止可能なタスクを一時停止（%1$d）</string>
+    <string name="task_bar_pause_selected">選択した一時停止可能なタスクを一時停止（%1$d）</string>
+    <string name="task_bar_speed">合計ダウンロード速度 %1$s</string>
+    <string name="task_bar_start_all">すべて開始（%1$d）</string>
+    <string name="task_bar_start_selected">選択したものを開始（%1$d）</string>
+</resources>
