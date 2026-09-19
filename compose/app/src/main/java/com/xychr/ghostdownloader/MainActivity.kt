@@ -44,15 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -60,8 +56,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -169,18 +163,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     Box(Modifier.fillMaxSize()) {
-                        if (!isRevealed) {
-                            OobePage(
-                                settings = loaded,
-                                onSetSetting = settingsViewModel::set,
-                                onFinish = { center ->
-                                    origin = center
-                                    isRevealStarted = true
-                                    settingsViewModel.set("hasCompletedOobe", true)
-                                },
-                            )
-                        }
-
                         if (isAppMounted) {
                             AppRoot(
                                 draft = draft,
@@ -193,15 +175,23 @@ class MainActivity : ComponentActivity() {
                                         engineRepository.invoke("setBrowserPairApproval", requestId, isApproved)
                                     }
                                 },
-                                modifier = if (isRevealed) {
-                                    Modifier
-                                } else {
-                                    Modifier.oobeReveal(
-                                        origin = { origin },
-                                        progress = { progress.value },
-                                        borderColor = MaterialTheme.colorScheme.outline,
-                                    )
+                            )
+                        }
+
+                        if (!isRevealed) {
+                            OobePage(
+                                settings = loaded,
+                                onSetSetting = settingsViewModel::set,
+                                onFinish = { center ->
+                                    origin = center
+                                    isRevealStarted = true
+                                    settingsViewModel.set("hasCompletedOobe", true)
                                 },
+                                modifier = Modifier.oobeExit(
+                                    origin = { origin },
+                                    progress = { progress.value },
+                                    borderColor = MaterialTheme.colorScheme.outline,
+                                ),
                             )
                         }
                     }
@@ -211,44 +201,40 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private fun Modifier.oobeReveal(
+private fun Modifier.oobeExit(
     origin: () -> Offset,
     progress: () -> Float,
     borderColor: Color,
 ): Modifier =
-    this
-        .graphicsLayer {
-            clip = true
-            shape = if (progress() > 0f) RectangleShape else NothingShape
-        }
-        .drawWithCache {
-            val path = Path()
-            val ringStroke = Stroke(2.dp.toPx())
-            onDrawWithContent {
-                val center = origin()
-                val p = progress()
-                val radius = hypot(
-                    maxOf(center.x, size.width - center.x),
-                    maxOf(center.y, size.height - center.y),
-                ) * p
-                path.reset()
-                path.addOval(Rect(center, radius))
-                clipPath(path) { this@onDrawWithContent.drawContent() }
-                if (p > 0f && p < 1f) {
-                    drawCircle(
-                        color = borderColor.copy(alpha = ((1f - p) / 0.15f).coerceAtMost(1f)),
-                        radius = radius - ringStroke.width / 2,
-                        center = center,
-                        style = ringStroke,
-                    )
-                }
+    this.drawWithCache {
+        val path = Path()
+        val ringStroke = Stroke(2.dp.toPx())
+        onDrawWithContent {
+            val p = progress()
+            if (p <= 0f) {
+                this@onDrawWithContent.drawContent()
+                return@onDrawWithContent
+            }
+            val center = origin()
+            val radius = hypot(
+                maxOf(center.x, size.width - center.x),
+                maxOf(center.y, size.height - center.y),
+            ) * p
+            path.reset()
+            path.addOval(Rect(center, radius))
+            clipPath(path, clipOp = ClipOp.Difference) {
+                this@onDrawWithContent.drawContent()
+            }
+            if (p < 1f) {
+                drawCircle(
+                    color = borderColor.copy(alpha = ((1f - p) / 0.15f).coerceAtMost(1f)),
+                    radius = radius - ringStroke.width / 2,
+                    center = center,
+                    style = ringStroke,
+                )
             }
         }
-
-private object NothingShape : Shape {
-    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density) =
-        Outline.Rectangle(Rect.Zero)
-}
+    }
 
 @Composable
 private fun AppRoot(

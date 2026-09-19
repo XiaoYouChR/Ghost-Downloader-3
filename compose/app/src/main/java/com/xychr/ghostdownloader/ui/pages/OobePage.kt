@@ -67,6 +67,7 @@ fun OobePage(
     settings: Settings,
     onSetSetting: (String, Any) -> Unit,
     onFinish: (Offset) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState { OobeStep.entries.size }
@@ -79,7 +80,7 @@ fun OobePage(
 
     // 背景要铺到系统栏下面，避让只落在内容上；否则窗口背景会从状态栏露出
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {

@@ -4,7 +4,7 @@ import com.xychr.ghostdownloader.model.*
 import com.xychr.ghostdownloader.ui.util.formatSizeProgress
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import com.xychr.ghostdownloader.ui.navigation.sharedContainer
-import com.xychr.ghostdownloader.ui.theme.CardShape
+
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
 
@@ -68,7 +68,7 @@ fun TaskCard(
 ) {
     val actions = buildTaskActions(task, isCategoryEnabled)
     Card(
-        shape = CardShape,
+        shape = MaterialTheme.shapes.largeIncreased,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
             else MaterialTheme.colorScheme.surfaceContainerLow,
