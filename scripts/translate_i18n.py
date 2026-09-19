@@ -410,9 +410,9 @@ def parseAndroidResponse(text: str) -> dict[str, str]:
 
 
 def escapeAndroidXml(text: str) -> str:
-    for old, new in (("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"),
-                     ("'", "\\'"), ('"', '\\"')):
-        text = text.replace(old, new)
+    text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    text = re.sub(r"(?<!\\)'", "\\'", text)
+    text = re.sub(r'(?<!\\)"', '\\"', text)
     return text
 
 
