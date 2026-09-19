@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -30,8 +31,10 @@ import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.model.DraftItem
 import com.xychr.ghostdownloader.packs.controlList
 import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
+import com.xychr.ghostdownloader.ui.util.fileTypeIconRes
 import com.xychr.ghostdownloader.ui.util.formatSize
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DraftCard(
     item: DraftItem,
@@ -49,12 +52,17 @@ fun DraftCard(
     val canInteract = isEnabled && !item.isParsing && item.error == null
     val controls = item.packFields.controlList()
 
-    Card(modifier = modifier.fillMaxWidth().animateContentSize()) {
+    Card(
+        shape = MaterialTheme.shapes.largeIncreased,
+        modifier = modifier.fillMaxWidth().animateContentSize(),
+    ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val isFailed = item.error != null
                 Icon(
-                    painterResource(if (isFailed) R.drawable.ic_info else R.drawable.ic_file), null,
+                    painterResource(
+                        if (isFailed) R.drawable.ic_info else fileTypeIconRes(item.name),
+                    ), null,
                     Modifier.size(20.dp),
                     tint = if (isFailed) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurfaceVariant,

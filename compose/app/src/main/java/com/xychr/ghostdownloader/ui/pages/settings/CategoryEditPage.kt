@@ -32,7 +32,8 @@ import com.xychr.ghostdownloader.ui.components.settings.TextSettingRow
 import com.xychr.ghostdownloader.ui.platform.rememberFolderPicker
 
 private val ICON_KEYS = listOf(
-    "VIDEO", "MUSIC", "PHOTO", "CHAT", "DOCUMENT", "ZIP_FOLDER", "APPLICATION", "HELP",
+    "VIDEO", "MUSIC", "PHOTO", "CHAT", "DOCUMENT", "ZIP_FOLDER", "APPLICATION",
+    "BOOK", "CODE", "GAME", "LINK", "DATASET", "HELP",
 )
 
 @Composable
@@ -45,6 +46,11 @@ private fun iconOptions(): List<Pair<String, String>> = ICON_KEYS.zip(
         stringResource(R.string.category_icon_document),
         stringResource(R.string.category_icon_archive),
         stringResource(R.string.category_icon_program),
+        stringResource(R.string.category_icon_book),
+        stringResource(R.string.category_icon_code),
+        stringResource(R.string.category_icon_game),
+        stringResource(R.string.category_icon_link),
+        stringResource(R.string.category_icon_dataset),
         stringResource(R.string.category_icon_other),
     )
 )

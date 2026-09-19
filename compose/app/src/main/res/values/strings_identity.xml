@@ -36,6 +36,11 @@
     <string name="category_icon_archive">压缩包</string>
     <string name="category_icon_program">程序</string>
     <string name="category_icon_other">其他</string>
+    <string name="category_icon_book">书籍</string>
+    <string name="category_icon_code">代码</string>
+    <string name="category_icon_game">游戏</string>
+    <string name="category_icon_link">链接</string>
+    <string name="category_icon_dataset">数据集</string>
 
     <!-- 身份模拟 -->
     <string name="identity_title">身份模拟</string>

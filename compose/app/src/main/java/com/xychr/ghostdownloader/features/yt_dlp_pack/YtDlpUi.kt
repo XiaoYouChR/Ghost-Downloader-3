@@ -1,22 +1,31 @@
 package com.xychr.ghostdownloader.features.yt_dlp_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.ui.components.ErrorText
+import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.i18n.toTaskError
+import com.xychr.ghostdownloader.model.DraftPreview
 import com.xychr.ghostdownloader.model.TaskError
+import com.xychr.ghostdownloader.packs.DraftMediaSection
+import com.xychr.ghostdownloader.packs.PackKeys
+import com.xychr.ghostdownloader.packs.PackSettingsContent
+import com.xychr.ghostdownloader.packs.PackUi
+import com.xychr.ghostdownloader.packs.bool
+import com.xychr.ghostdownloader.ui.components.ErrorText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 object YtDlpUi : PackUi {
@@ -38,7 +47,8 @@ object YtDlpUi : PackUi {
     override val draftExtra: (@Composable (JsonObject, String, suspend (String, List<Any?>) -> Unit) -> Unit) =
         { packFields, url, send ->
             ProbeSection(packFields, send)
-            DraftMediaSection(packFields, url, send)
+            DraftMediaSection(packFields, url, send,
+                fetchPreview = { engineRepository.query<DraftPreview>("draftPreview", it) })
         }
 }
 

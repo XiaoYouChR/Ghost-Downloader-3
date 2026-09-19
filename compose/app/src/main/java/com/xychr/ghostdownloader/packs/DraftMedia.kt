@@ -14,7 +14,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.DraftOption
 import com.xychr.ghostdownloader.model.DraftPreview
 import com.xychr.ghostdownloader.ui.components.draft.DraftChoices
@@ -32,7 +31,12 @@ fun JsonObject.optionList(key: String): List<DraftOption> =
     } ?: emptyList()
 
 @Composable
-fun DraftMediaSection(packFields: JsonObject, url: String, send: suspend (String, List<Any?>) -> Unit) {
+fun DraftMediaSection(
+    packFields: JsonObject,
+    url: String,
+    send: suspend (String, List<Any?>) -> Unit,
+    fetchPreview: suspend (String) -> DraftPreview,
+) {
     val scope = rememberCoroutineScope()
     val subtitles = packFields.optionList("subtitles")
     val duration = packFields.int("duration")
@@ -48,7 +52,7 @@ fun DraftMediaSection(packFields: JsonObject, url: String, send: suspend (String
     if (duration > 0) DraftTrim(url, duration, packFields.bool("hasPreview"),
         packFields.int("startTime"), packFields.int("endTime"),
         onChange = { start, end -> scope.launch { send("setTrim", listOf(start, end)) } },
-        fetchPreview = { engineRepository.query<DraftPreview>("draftPreview", it) })
+        fetchPreview = fetchPreview)
 }
 
 @Composable

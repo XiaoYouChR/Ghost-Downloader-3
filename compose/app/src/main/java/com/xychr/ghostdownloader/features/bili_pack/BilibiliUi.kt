@@ -1,10 +1,13 @@
 package com.xychr.ghostdownloader.features.bili_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R
-import kotlinx.serialization.json.JsonElement
+import com.xychr.ghostdownloader.engine.engineRepository
+import com.xychr.ghostdownloader.model.DraftPreview
+import com.xychr.ghostdownloader.packs.DraftMediaSection
+import com.xychr.ghostdownloader.packs.PackKeys
+import com.xychr.ghostdownloader.packs.PackSettingsContent
+import com.xychr.ghostdownloader.packs.PackUi
 import kotlinx.serialization.json.JsonObject
 
 object BilibiliUi : PackUi {
@@ -29,5 +32,8 @@ object BilibiliUi : PackUi {
         }
 
     override val draftExtra: (@Composable (JsonObject, String, suspend (String, List<Any?>) -> Unit) -> Unit) =
-        { packFields, url, send -> DraftMediaSection(packFields, url, send) }
+        { packFields, url, send ->
+            DraftMediaSection(packFields, url, send,
+                fetchPreview = { engineRepository.query<DraftPreview>("draftPreview", it) })
+        }
 }

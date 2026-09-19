@@ -103,5 +103,10 @@ fun categoryIconRes(icon: String): Int = when (icon) {
     "ZIP_FOLDER" -> R.drawable.ic_cat_archive
     "APPLICATION" -> R.drawable.ic_cat_application
     "HELP" -> R.drawable.ic_cat_other
+    "BOOK" -> R.drawable.ic_cat_book
+    "CODE" -> R.drawable.ic_cat_code
+    "GAME" -> R.drawable.ic_cat_game
+    "LINK" -> R.drawable.ic_cat_link
+    "DATASET" -> R.drawable.ic_cat_dataset
     else -> R.drawable.ic_cat_document
 }
