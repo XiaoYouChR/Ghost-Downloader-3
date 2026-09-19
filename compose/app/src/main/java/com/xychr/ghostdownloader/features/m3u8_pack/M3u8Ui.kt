@@ -1,12 +1,14 @@
 package com.xychr.ghostdownloader.features.m3u8_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.settings.PackCaption
+import com.xychr.ghostdownloader.ui.components.settings.PackSectionTitle
+import com.xychr.ghostdownloader.packs.PackSettingsContent
+import com.xychr.ghostdownloader.packs.PackUi
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull

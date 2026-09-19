@@ -1,7 +1,5 @@
 package com.xychr.ghostdownloader.features.bittorrent_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +7,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.packs.PackKeys
+import com.xychr.ghostdownloader.packs.bool
+import com.xychr.ghostdownloader.packs.int
+import com.xychr.ghostdownloader.packs.sizes
+import com.xychr.ghostdownloader.packs.str
+import com.xychr.ghostdownloader.packs.strings
 import com.xychr.ghostdownloader.engine.SettingRanges
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
 import com.xychr.ghostdownloader.ui.components.settings.NumberSettingRow

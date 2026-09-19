@@ -1,7 +1,5 @@
 package com.xychr.ghostdownloader.features.yt_dlp_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.packs.PackKeys
+import com.xychr.ghostdownloader.packs.bool
+import com.xychr.ghostdownloader.packs.str
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.model.TaskError
 import com.xychr.ghostdownloader.ui.components.ErrorText

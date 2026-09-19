@@ -1,7 +1,5 @@
 package com.xychr.ghostdownloader.features.bittorrent_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +30,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.packs.PackKeys
+import com.xychr.ghostdownloader.packs.sizes
+import com.xychr.ghostdownloader.packs.str
+import com.xychr.ghostdownloader.packs.strings
 import com.xychr.ghostdownloader.i18n.toTaskError
 import com.xychr.ghostdownloader.model.TaskError
 import com.xychr.ghostdownloader.ui.components.ErrorText

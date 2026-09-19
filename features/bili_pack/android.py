@@ -15,6 +15,12 @@ from .account import (
 
 UI_CLASS = "com.xychr.ghostdownloader.features.bili_pack.BilibiliUi"
 
+
+def qualityOptions() -> list[dict]:
+    from .config import QUALITY_VALUES, QUALITY_LABELS
+    return [{"value": v, "label": l} for v, l in zip(QUALITY_VALUES, QUALITY_LABELS)]
+
+
 QR_STATUS = {
     QR_GOT_URL: "ready",
     QR_UNSCANNED: "waiting",

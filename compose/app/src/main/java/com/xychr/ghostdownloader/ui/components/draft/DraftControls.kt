@@ -31,7 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
-import com.xychr.ghostdownloader.packs.DraftControl
+import com.xychr.ghostdownloader.model.DraftControl
 
 @Composable
 fun DraftControls(

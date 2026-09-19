@@ -1,11 +1,8 @@
 package com.xychr.ghostdownloader.features.github_pack
 
-import com.xychr.ghostdownloader.packs.*
-
-import androidx.compose.runtime.Composable
 import com.xychr.ghostdownloader.R
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
+import com.xychr.ghostdownloader.packs.PackSettingsContent
+import com.xychr.ghostdownloader.packs.PackUi
 
 object GitHubUi : PackUi {
     override val packId = "github"

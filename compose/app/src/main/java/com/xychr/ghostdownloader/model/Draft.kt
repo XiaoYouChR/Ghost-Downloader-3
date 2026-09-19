@@ -17,6 +17,15 @@ data class DraftFile(
 @Serializable
 data class DraftOption(val key: String = "", val label: String = "")
 
+data class DraftControl(
+    val id: String,
+    val options: List<DraftOption>,
+    val title: String = "",
+    val value: String = "",
+    val isMultiple: Boolean = false,
+    val isOptional: Boolean = false,
+)
+
 @Serializable
 data class DraftProjection(
     val items: List<DraftItem> = emptyList(),

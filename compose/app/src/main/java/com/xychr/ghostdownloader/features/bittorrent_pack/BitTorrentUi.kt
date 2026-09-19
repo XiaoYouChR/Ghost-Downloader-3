@@ -1,7 +1,5 @@
 package com.xychr.ghostdownloader.features.bittorrent_pack
 
-import com.xychr.ghostdownloader.packs.*
-
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.ui.components.settings.PackCaption
+import com.xychr.ghostdownloader.ui.components.settings.PackSectionTitle
+import com.xychr.ghostdownloader.packs.PackSettingsContent
+import com.xychr.ghostdownloader.packs.PackUi
 import com.xychr.ghostdownloader.ui.util.formatDuration
 import com.xychr.ghostdownloader.ui.util.formatSpeed
 import kotlinx.serialization.json.JsonElement
