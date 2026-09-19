@@ -34,7 +34,6 @@ class TaskListStateTest {
         )
         val targets = buildTaskBatchTargets(tasks)
         assertEquals(listOf("safe", "waiting"), targets.pauseIds)
-        assertEquals(2, targets.skippedPauseCount)
     }
 
     @Test fun initialListIsNotLoadedYet() {

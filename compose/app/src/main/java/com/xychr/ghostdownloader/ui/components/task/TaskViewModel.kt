@@ -35,20 +35,14 @@ class TaskViewModel : ViewModel() {
 
     fun resumeEach(taskIds: List<String>) = taskIds.forEach { request("resume", it) }
 
-    suspend fun pauseEach(taskIds: List<String>): TaskBatchResult {
-        var submitted = 0
-        var failed = 0
+    suspend fun pauseEach(taskIds: List<String>) {
         for (id in taskIds) {
             try {
                 engineRepository.invoke("pause", id)
-                submitted++
             } catch (error: CancellationException) {
                 throw error
-            } catch (_: Exception) {
-                failed++
-            }
+            } catch (_: Exception) { }
         }
-        return TaskBatchResult(submitted, failed)
     }
 
     fun removeEach(taskIds: List<String>, shouldDeleteFiles: Boolean) =

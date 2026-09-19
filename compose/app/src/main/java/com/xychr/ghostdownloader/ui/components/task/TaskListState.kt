@@ -56,7 +56,6 @@ fun buildTotalSpeed(tasks: List<TaskUiState>): Long =
 data class TaskBatchTargets(
     val startIds: List<String> = emptyList(),
     val pauseIds: List<String> = emptyList(),
-    val skippedPauseCount: Int = 0,
 )
 
 private val TaskUiState.canBePaused: Boolean
@@ -65,7 +64,4 @@ private val TaskUiState.canBePaused: Boolean
 fun buildTaskBatchTargets(tasks: List<TaskUiState>): TaskBatchTargets = TaskBatchTargets(
     startIds = tasks.filter { it.status in setOf(TaskStatus.PAUSED, TaskStatus.WAITING, TaskStatus.FAILED) }.map { it.id },
     pauseIds = tasks.filter { it.canBePaused }.map { it.id },
-    skippedPauseCount = tasks.count { it.status == TaskStatus.RUNNING && !it.canBePaused },
 )
-
-data class TaskBatchResult(val submitted: Int, val failed: Int)
