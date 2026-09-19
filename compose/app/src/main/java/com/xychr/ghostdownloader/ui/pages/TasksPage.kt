@@ -18,7 +18,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -84,7 +83,7 @@ import com.xychr.ghostdownloader.packs.PackRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksPage(
     onNavigate: (Route) -> Unit,
@@ -392,7 +391,6 @@ fun TasksPage(
     hashTask?.let { HashSheet(it.id, it.name, onDismiss = { hashTask = null }) }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TaskSection(
     title: String,

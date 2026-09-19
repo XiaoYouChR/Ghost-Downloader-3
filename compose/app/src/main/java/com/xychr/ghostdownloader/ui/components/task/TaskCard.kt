@@ -1,26 +1,16 @@
 package com.xychr.ghostdownloader.ui.components.task
 
-import com.xychr.ghostdownloader.model.*
-import com.xychr.ghostdownloader.ui.util.formatSizeProgress
-import com.xychr.ghostdownloader.ui.util.formatSpeed
-import com.xychr.ghostdownloader.ui.navigation.sharedContainer
-
-import com.xychr.ghostdownloader.model.Category
-import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,9 +40,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
+import com.xychr.ghostdownloader.model.Category
+import com.xychr.ghostdownloader.model.TaskStatus
+import com.xychr.ghostdownloader.model.TaskUiState
+import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
+import com.xychr.ghostdownloader.ui.navigation.sharedContainer
+import com.xychr.ghostdownloader.ui.util.formatSizeProgress
+import com.xychr.ghostdownloader.ui.util.formatSpeed
 import kotlinx.serialization.json.JsonObject
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskCard(
     task: TaskUiState,
@@ -120,7 +116,7 @@ fun TaskCard(
             if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.FAILED && task.progressMode != "hidden") {
                 Spacer(Modifier.height(8.dp))
                 TaskProgress(task.status, task.progress,
-                    task.progressMode == "indeterminate" || task.fileSize <= 0 && task.progress <= 0)
+                    task.progressMode == "indeterminate" || (task.fileSize <= 0 && task.progress <= 0))
             }
             Spacer(Modifier.height(8.dp))
 
@@ -133,17 +129,7 @@ fun TaskCard(
                     Caption(formatSizeProgress(task.received, task.fileSize))
                     if (task.secondarySpeed > 0) Caption("↑ ${formatSpeed(task.secondarySpeed)}")
                 }
-                if (isCategoryEnabled && category != null) Row(
-                    Modifier.weight(0.7f).padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(painterResource(categoryIconRes(category.icon)), null, Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(category.name, style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                if (isCategoryEnabled && category != null) CategoryChip(category)
                 if (task.fileCount > 1) FileCountChip(task.fileCount)
             }
 
@@ -204,6 +190,21 @@ private fun SelectionMark(isSelected: Boolean) {
             Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onPrimary,
         )
+    }
+}
+
+@Composable
+private fun CategoryChip(category: Category) {
+    Row(
+        Modifier.padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(painterResource(categoryIconRes(category.icon)), null, Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(category.name, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

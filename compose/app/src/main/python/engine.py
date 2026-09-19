@@ -1076,6 +1076,9 @@ class Engine:
         if fn is not None:
             fn(task, edits)
 
+    def flush(self):
+        self._taskService.flush()
+
 
 def toTaskOptionPayload(payload: dict) -> dict:
     options = dict(payload)

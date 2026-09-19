@@ -23,7 +23,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 
-/** 顶栏、浮动选择面板、卡片展开面板共用的图标按钮。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskIconButton(icon: Int, label: String, isEnabled: Boolean = true, onClick: () -> Unit) {
@@ -53,10 +52,6 @@ fun TaskMenuItem(
     )
 }
 
-/**
- * 展开／收起的统一指示器——卡片和分区标题共用，否则同一页面会出现两套展开语义。
- * 无障碍状态由外层容器的 stateDescription 承担，所以图标本身是装饰性的。
- */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExpandChevron(isExpanded: Boolean, modifier: Modifier = Modifier) {

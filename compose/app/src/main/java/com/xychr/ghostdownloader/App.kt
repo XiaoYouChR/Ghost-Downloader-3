@@ -1,6 +1,9 @@
 package com.xychr.ghostdownloader
 
 import android.app.Application
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.xychr.ghostdownloader.engine.EngineFlows
@@ -38,6 +41,12 @@ class App : Application() {
         createEngineRepository(engine, flows)
 
         notices.start()
+
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                scope.launch(Dispatchers.IO) { engineRepository.invoke("flush") }
+            }
+        })
 
         scope.launch {
             engineRepository.observe<KeepAlive>("keepAlive")
