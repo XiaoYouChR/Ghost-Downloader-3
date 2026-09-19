@@ -74,6 +74,12 @@ class DraftViewModel(
         mutableState.value = next
     }
 
+    fun addUrls(urls: List<String>) {
+        val joined = urls.joinToString("\n")
+        val current = state.value.urls.trim()
+        setUrls(if (current.isEmpty()) joined else "$current\n$joined")
+    }
+
     fun setUrls(urls: String) {
         if (state.value.isWorking) return
         mutableState.value = state.value.copy(urls = urls)

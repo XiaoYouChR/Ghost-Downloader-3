@@ -78,6 +78,7 @@ import com.xychr.ghostdownloader.ui.components.liquid.LiquidBottomBar
 import com.xychr.ghostdownloader.ui.components.notice.LocalSnackbar
 import com.xychr.ghostdownloader.ui.components.notice.PairDialog
 import com.xychr.ghostdownloader.ui.components.notice.noticeMessage
+import com.xychr.ghostdownloader.ui.navigation.DESTINATION_DRAFT
 import com.xychr.ghostdownloader.ui.navigation.EXTRA_DESTINATION
 import com.xychr.ghostdownloader.ui.navigation.RetainedTab
 import com.xychr.ghostdownloader.ui.navigation.SettingsNavHost
@@ -90,6 +91,7 @@ import com.xychr.ghostdownloader.ui.pages.settings.SettingsViewModel
 import com.xychr.ghostdownloader.ui.pages.settings.UpdateViewModel
 import com.xychr.ghostdownloader.ui.platform.ThemeMode
 import com.xychr.ghostdownloader.ui.platform.buildLocalizedContext
+import com.xychr.ghostdownloader.ui.platform.extractUrls
 import com.xychr.ghostdownloader.ui.platform.loadIgnoredUpdateVersion
 import com.xychr.ghostdownloader.ui.platform.loadThemeMode
 import com.xychr.ghostdownloader.ui.platform.saveIgnoredUpdateVersion
@@ -127,15 +129,24 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(buildLocalizedContext(newBase))
     }
 
+    private fun handleIncomingIntent(intent: Intent) {
+        val urls = extractUrls(intent, cacheDir, contentResolver)
+        if (urls.isEmpty()) return
+        draft.addUrls(urls)
+        destinations.trySend(DESTINATION_DRAFT)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.getStringExtra(EXTRA_DESTINATION)?.let { destinations.trySend(it) }
+        handleIncomingIntent(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         intent.getStringExtra(EXTRA_DESTINATION)?.let { destinations.trySend(it) }
+        if (savedInstanceState == null) handleIncomingIntent(intent)
         enableEdgeToEdge()
         setContent {
             val themeContext = LocalContext.current
