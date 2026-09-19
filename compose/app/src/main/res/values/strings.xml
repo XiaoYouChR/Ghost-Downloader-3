@@ -232,6 +232,7 @@
     <string name="task_detail_move_to_front">移至队首</string>
     <string name="task_detail_redownload">重新下载</string>
     <string name="task_detail_copy_url">复制链接</string>
+    <string name="task_detail_copy_path">复制路径</string>
     <string name="task_detail_open_file">打开文件</string>
     <string name="task_detail_open_folder">打开目录</string>
     <string name="task_detail_delete_confirm">确定要删除此任务吗？</string>

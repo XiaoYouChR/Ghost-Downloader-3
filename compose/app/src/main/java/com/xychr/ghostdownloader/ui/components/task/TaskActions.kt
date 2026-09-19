@@ -11,7 +11,7 @@ import com.xychr.ghostdownloader.model.hasSingleFile
 enum class TaskAction {
     STOP, PAUSE, RESUME,
     OPEN_FILE, OPEN_FOLDER, SHARE_FILE,
-    FILES, EDIT, CATEGORY, COPY_URL, SHARE_URL, MOVE_TO_FRONT, REDOWNLOAD, VERIFY_HASH, DELETE,
+    FILES, EDIT, CATEGORY, COPY_URL, COPY_PATH, SHARE_URL, MOVE_TO_FRONT, REDOWNLOAD, VERIFY_HASH, DELETE,
 }
 
 data class TaskActionSpec(
@@ -80,6 +80,7 @@ fun buildTaskActions(task: TaskUiState, isCategoryEnabled: Boolean): TaskActions
         }
         buildVerifyHashAction(task)?.let { add(it) }
         add(copyUrlSpec)
+        add(copyPathSpec)
         add(shareUrlSpec)
         if (main.action != TaskAction.REDOWNLOAD && redownloadSpec !in inline) add(redownloadSpec)
         add(deleteSpec)
@@ -96,6 +97,9 @@ internal val shareFileSpec =
 
 internal val copyUrlSpec =
     TaskActionSpec(TaskAction.COPY_URL, R.string.task_detail_copy_url, R.drawable.ic_copy)
+
+internal val copyPathSpec =
+    TaskActionSpec(TaskAction.COPY_PATH, R.string.task_detail_copy_path, R.drawable.ic_copy)
 
 internal val shareUrlSpec =
     TaskActionSpec(TaskAction.SHARE_URL, R.string.task_share_url, R.drawable.ic_share)

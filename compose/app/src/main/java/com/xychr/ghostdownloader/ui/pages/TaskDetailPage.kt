@@ -175,6 +175,11 @@ fun TaskDetailPage(
             .setPrimaryClip(ClipData.newPlainText("url", detail.url))
         scope.launch { snackbarHostState.showSnackbar(copiedLabel) }
     }
+    fun copyPath() {
+        context.getSystemService(ClipboardManager::class.java)
+            .setPrimaryClip(ClipData.newPlainText("path", detail.outputFolder))
+        scope.launch { snackbarHostState.showSnackbar(copiedLabel) }
+    }
 
     Scaffold(
         modifier = Modifier.sharedContainer("task-$taskId"),
@@ -219,6 +224,7 @@ fun TaskDetailPage(
                             }
                         }
                         TaskAction.COPY_URL -> copyUrl()
+                        TaskAction.COPY_PATH -> copyPath()
                         TaskAction.SHARE_URL -> context.shareText(detail.url)
                         TaskAction.MOVE_TO_FRONT -> viewModel.moveToFront()
                         TaskAction.REDOWNLOAD -> shouldRedownload = true

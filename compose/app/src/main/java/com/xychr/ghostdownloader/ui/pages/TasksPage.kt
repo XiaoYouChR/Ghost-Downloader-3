@@ -297,6 +297,11 @@ fun TasksPage(
                                                     .setPrimaryClip(ClipData.newPlainText("url", task.url))
                                                 scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_detail_copied)) }
                                             }
+                                            TaskAction.COPY_PATH -> {
+                                                context.getSystemService(ClipboardManager::class.java)
+                                                    .setPrimaryClip(ClipData.newPlainText("path", task.outputFolder))
+                                                scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_detail_copied)) }
+                                            }
                                             TaskAction.MOVE_TO_FRONT -> viewModel.moveToFront(listOf(task.id))
                                             TaskAction.VERIFY_HASH -> hashTask = task
                                             TaskAction.DELETE -> deleteIds = listOf(task.id)
