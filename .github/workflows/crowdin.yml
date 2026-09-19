@@ -56,7 +56,7 @@ jobs:
 
       - name: Upload sources and translations
         if: github.event.inputs.operation == 'push'
-        uses: crowdin/github-action@v2
+        uses: crowdin/github-action@v3
         with:
           config: crowdin.yml
           upload_sources: true
@@ -66,7 +66,7 @@ jobs:
 
       - name: Download translations
         if: github.event.inputs.operation == 'pull'
-        uses: crowdin/github-action@v2
+        uses: crowdin/github-action@v3
         with:
           config: crowdin.yml
           download_translations: true
@@ -79,7 +79,7 @@ jobs:
       - name: Prepare downloaded translations
         if: github.event.inputs.operation == 'pull'
         run: |
-          sudo chown -R "$(id -u):$(id -g)" .git app/assets
+          sudo chown -R "$(id -u):$(id -g)" .git app/assets compose/app/src/main/res
           rm -f .git/COMMIT_EDITMSG
           python scripts/sync_i18n_res.py
 
@@ -114,10 +114,12 @@ jobs:
             This PR was created automatically by the Crowdin sync workflow.
 
             It refreshes the Qt `.ts` files, compiled `.qm` files,
-            `app/assets/resources.py`, and Crowdin contributors in both READMEs.
+            `app/assets/resources.py`, Android string resources,
+            and Crowdin contributors in both READMEs.
           add-paths: |
             app/assets/i18n/*.ts
             app/assets/i18n/*.qm
             app/assets/resources.py
+            compose/app/src/main/res/
             README.md
             README_zh.md
