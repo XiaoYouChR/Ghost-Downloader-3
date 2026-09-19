@@ -392,7 +392,7 @@ class TaskService:
         elif finished is not None:
             finished()
 
-    def _rebalance(self) -> None:
+    def _rebalance(self, *_args) -> None:
         from app.models.task import TaskStatus
         for taskId in self._queue.runningIds()[cfg.maxTaskNum.value:]:
             task = self._store.taskById(taskId)
