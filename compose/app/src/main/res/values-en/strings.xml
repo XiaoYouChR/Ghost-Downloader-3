@@ -28,7 +28,7 @@
     <string name="bili_qr_expired">QR code expired, tap</string>
     <string name="bili_qr_loading">Getting QR code\u2026</string>
     <string name="bili_qr_open">Open login link</string>
-    <string name="bili_qr_ready">Scan QR code with Bilibili app, or tap \\\"Open login link\\\" to confirm on this device</string>
+    <string name="bili_qr_ready">Scan QR code with Bilibili app, or tap \"Open login link\" to confirm on this device</string>
     <string name="bili_qr_refresh">Refresh QR code</string>
     <string name="bili_qr_scanned">Scanned, please confirm login on phone</string>
     <string name="bili_qr_success">Login successful</string>
@@ -79,7 +79,7 @@
     <string name="draft_apply">Apply</string>
     <string name="draft_control_auto">Auto</string>
     <string name="draft_control_more">%1$s +%2$d</string>
-    <string name="draft_control_off">Don\\\'t download</string>
+    <string name="draft_control_off">Don\'t download</string>
     <string name="draft_count">%1$d tasks</string>
     <string name="draft_discard">Discard</string>
     <string name="draft_discard_question">Discard unsaved content?</string>
@@ -176,12 +176,12 @@
     <string name="nav_settings">Settings</string>
     <string name="nav_tasks">Tasks</string>
     <string name="notice_completed">Download complete</string>
-    <string name="notice_completed_inline">\\"%1$s\\" downloaded successfully</string>
+    <string name="notice_completed_inline">\"%1$s\" downloaded successfully</string>
     <string name="notice_disk_space">Insufficient disk space</string>
     <string name="notice_disk_space_desc">Remaining %1$s, needed %2$s, task not auto-started</string>
     <string name="notice_draft_taken">New task received from browser</string>
     <string name="notice_extension_updated">Browser extension updated to v%1$s</string>
-    <string name="notice_failed">\\"%1$s\\" download failed</string>
+    <string name="notice_failed">\"%1$s\" download failed</string>
     <string name="notice_open_file">Open file</string>
     <string name="notice_open_folder">Open folder</string>
     <string name="notice_retry">Retry</string>
@@ -224,7 +224,7 @@ The next steps will help you complete basic setup.</string>
 Client: %2$s
 Extension version: %3$s
 
-Allow only if you just clicked \\"Auto pair\\" in the extension.</string>
+Allow only if you just clicked \"Auto pair\" in the extension.</string>
     <string name="pair_message">%1$s (v%2$s) requests connection from %3$s</string>
     <string name="pair_reject">Reject</string>
     <string name="pair_title">Browser extension pairing request</string>
@@ -259,7 +259,7 @@ Allow only if you just clicked \\"Auto pair\\" in the extension.</string>
     <string name="settings_browser_connected">Connected · Extension v%1$s</string>
     <string name="settings_browser_disconnected">Not connected</string>
     <string name="settings_browser_export">Export extension</string>
-    <string name="settings_browser_export_desc">Unpack to Download, then use browser\\'s \\"Load unpacked extension\\" to point to it</string>
+    <string name="settings_browser_export_desc">Unpack to Download, then use browser\'s \"Load unpacked extension\" to point to it</string>
     <string name="settings_browser_extension">Browser extension</string>
     <string name="settings_browser_extension_desc">Receive downloads from browser extensions on this device</string>
     <string name="settings_browser_listening">Waiting for extension connection on port %1$d</string>
@@ -312,7 +312,7 @@ Allow only if you just clicked \\"Auto pair\\" in the extension.</string>
     <string name="settings_update_failed">Check failed, please try again later</string>
     <string name="settings_update_ignore">Ignore this version</string>
     <string name="settings_update_install">Install update</string>
-    <string name="settings_update_install_failed">Cannot start installation, please allow \\\"Install unknown apps\\\" first</string>
+    <string name="settings_update_install_failed">Cannot start installation, please allow \"Install unknown apps\" first</string>
     <string name="settings_update_latest">Up to date</string>
     <string name="settings_update_no_asset">No installation package available for this platform</string>
     <string name="settings_update_no_notes">No release notes yet</string>

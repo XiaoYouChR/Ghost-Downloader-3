@@ -29,7 +29,7 @@
     <string name="category_name_required">Please enter category name</string>
     <string name="category_no_extension">No extensions set</string>
     <string name="category_remove_message">%1$d tasks will become uncategorized. Tasks and files will not be deleted.</string>
-    <string name="category_remove_title">Delete \\"%1$s\\"?</string>
+    <string name="category_remove_title">Delete \"%1$s\"?</string>
     <string name="category_reset">Restore default categories</string>
     <string name="category_reset_desc">Discard custom categories and restore built-in 8</string>
     <string name="category_reset_message">Will discard all custom categories and restore built-in ones, this cannot be undone.</string>
@@ -44,7 +44,7 @@
     <string name="identity_headers_preset_add">Add preset</string>
     <string name="identity_headers_preset_edit">Edit preset</string>
     <string name="identity_headers_preset_name">Name</string>
-    <string name="identity_headers_preset_remove_message">Delete preset \\"%1$s\\"?</string>
+    <string name="identity_headers_preset_remove_message">Delete preset \"%1$s\"?</string>
     <string name="identity_headers_preset_remove_title">Delete preset</string>
     <string name="identity_headers_presets">Request header presets</string>
     <string name="identity_headers_presets_desc">New tasks use selected preset group</string>
@@ -55,13 +55,13 @@
     <string name="identity_rule_add">Add rule</string>
     <string name="identity_rule_edit">Edit rule</string>
     <string name="identity_rule_name">Name</string>
-    <string name="identity_rule_remove_message">Delete rule \\"%1$s\\"?</string>
+    <string name="identity_rule_remove_message">Delete rule \"%1$s\"?</string>
     <string name="identity_rule_remove_title">Delete rule</string>
     <string name="identity_rules">Identity rules</string>
     <string name="identity_rules_desc">Use first matching enabled rule in order, applying client profile and User-Agent</string>
     <string name="identity_title">Identity simulation</string>
     <string name="identity_user_agent">User-Agent</string>
-    <string name="identity_user_agent_desc">Leave empty to use client profile\\'s built-in User-Agent</string>
+    <string name="identity_user_agent_desc">Leave empty to use client profile\'s built-in User-Agent</string>
     <string name="settings_action_create">Create</string>
     <string name="settings_action_save">Save</string>
 </resources>

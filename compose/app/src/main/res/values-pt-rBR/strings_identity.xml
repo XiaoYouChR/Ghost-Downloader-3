@@ -29,7 +29,7 @@
     <string name="category_name_required">Insira o nome da categoria</string>
     <string name="category_no_extension">Extensões não definidas</string>
     <string name="category_remove_message">%1$d tarefas se tornarão sem categoria. Tarefas e arquivos não serão excluídos.</string>
-    <string name="category_remove_title">Excluir \\"%1$s\\"?</string>
+    <string name="category_remove_title">Excluir \"%1$s\"?</string>
     <string name="category_reset">Restaurar categorias padrão</string>
     <string name="category_reset_desc">Descartar categorias personalizadas e restaurar as 8 integradas</string>
     <string name="category_reset_message">Todas as categorias personalizadas serão descartadas e as integradas restauradas; esta ação não pode ser desfeita.</string>
@@ -44,7 +44,7 @@
     <string name="identity_headers_preset_add">Adicionar predefinição</string>
     <string name="identity_headers_preset_edit">Editar predefinição</string>
     <string name="identity_headers_preset_name">Nome</string>
-    <string name="identity_headers_preset_remove_message">Tem certeza de que deseja excluir a predefinição \\"%1$s\\"?</string>
+    <string name="identity_headers_preset_remove_message">Tem certeza de que deseja excluir a predefinição \"%1$s\"?</string>
     <string name="identity_headers_preset_remove_title">Excluir predefinição</string>
     <string name="identity_headers_presets">Predefinições de cabeçalhos</string>
     <string name="identity_headers_presets_desc">Usar este conjunto de cabeçalhos em novas tarefas</string>
@@ -55,7 +55,7 @@
     <string name="identity_rule_add">Adicionar regra</string>
     <string name="identity_rule_edit">Editar regra</string>
     <string name="identity_rule_name">Nome</string>
-    <string name="identity_rule_remove_message">Tem certeza de que deseja excluir a regra \\"%1$s\\"?</string>
+    <string name="identity_rule_remove_message">Tem certeza de que deseja excluir a regra \"%1$s\"?</string>
     <string name="identity_rule_remove_title">Excluir regra</string>
     <string name="identity_rules">Regras de identidade</string>
     <string name="identity_rules_desc">Usar a primeira regra habilitada correspondente, aplicando perfil do cliente e User-Agent</string>

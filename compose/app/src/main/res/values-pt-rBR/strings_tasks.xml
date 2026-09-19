@@ -11,7 +11,7 @@
     <string name="task_categories_mixed">Categorias diferentes atualmente; escolha uma para unificar.</string>
     <string name="task_category_action">Alterar categoria, atual: %1$s</string>
     <string name="task_category_all">Todas as categorias</string>
-    <string name="task_category_applied">Categoria alterada para \\"%1$s\\"</string>
+    <string name="task_category_applied">Categoria alterada para \"%1$s\"</string>
     <string name="task_category_auto">Corresponder categoria automaticamente</string>
     <string name="task_category_down">Diminuir prioridade de correspondência</string>
     <string name="task_category_empty">Nenhuma tarefa correspondente nesta categoria</string>
@@ -66,7 +66,7 @@
     <string name="task_search_hint">Pesquisar tarefas…</string>
     <string name="task_select">Selecionar tarefa</string>
     <string name="task_select_all">Selecionar todos</string>
-    <string name="task_select_category_count">Selecionar apenas arquivos \\"%1$s\\" (%2$d)</string>
+    <string name="task_select_category_count">Selecionar apenas arquivos \"%1$s\" (%2$d)</string>
     <string name="task_select_category_files">Selecionar por categoria…</string>
     <string name="task_select_category_hint">Substituirá a seleção atual, sem alterar a categoria da tarefa; só será enviado após aplicar.</string>
     <string name="task_select_invert">Inverter seleção</string>

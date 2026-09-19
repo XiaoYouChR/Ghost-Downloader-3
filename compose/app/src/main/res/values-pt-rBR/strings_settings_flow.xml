@@ -27,7 +27,7 @@
     <string name="headers_text_label">Texto dos cabeçalhos</string>
     <string name="headers_value_invalid">O valor não pode conter quebras de linha ou caracteres de controle.</string>
     <string name="identity_active_edit">Esta predefinição está em uso. Salvar modificará seu conteúdo, sem alternar para outra.</string>
-    <string name="identity_delete_active">Após excluir, será usado \\"%1$s\\".</string>
+    <string name="identity_delete_active">Após excluir, será usado \"%1$s\".</string>
     <string name="identity_enabled_for">Habilitar %1$s</string>
     <string name="identity_headers_summary">Em uso: %1$s · %2$d cabeçalhos</string>
     <string name="identity_hosts_invalid">Insira um domínio ou *.example.com; não inclua protocolo, caminho ou outros curingas.</string>
