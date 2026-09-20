@@ -165,7 +165,7 @@ fun TaskFilesEditor(
 ) {
     var shouldDiscard by remember { mutableStateOf(false) }
     val close = { if (state.hasChanges) shouldDiscard = true else onBack() }
-    BackHandler { if (!state.isSaving) close() }
+    BackHandler(enabled = state.hasChanges || state.isSaving) { if (!state.isSaving) close() }
     Scaffold(modifier = modifier, topBar = {
         TopAppBar(title = { Text(stringResource(R.string.task_choose_files)) },
             navigationIcon = { IconButton(onClick = close, enabled = !state.isSaving) {

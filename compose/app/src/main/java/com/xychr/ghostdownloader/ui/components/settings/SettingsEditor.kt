@@ -80,7 +80,7 @@ fun SettingsEditor(
         }
     }
     val isKeyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    BackHandler(enabled = !isKeyboardVisible) { requestBack() }
+    BackHandler(enabled = (isChanged || state.isSaving) && !isKeyboardVisible) { requestBack() }
     LaunchedEffect(state.isSaved) { if (state.isSaved) onBack() }
 
     SettingsScaffold(
