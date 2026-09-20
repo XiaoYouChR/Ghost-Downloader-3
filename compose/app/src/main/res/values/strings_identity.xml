@@ -14,7 +14,7 @@
     <string name="category_reset">恢复默认分类</string>
     <string name="category_reset_desc">丢弃自定义分类，还原为内置的 8 个</string>
     <string name="category_reset_message">将丢弃所有自定义分类并还原为内置分类，此操作不可撤销。</string>
-    <string name="category_remove_title">删除%1$s？</string>
+    <string name="category_remove_title">删除\"%1$s\"？</string>
     <string name="category_remove_message">标有此分类的任务将变为未分类。任务和文件不会被删除。</string>
     <string name="category_no_extension">未设置扩展名</string>
     <string name="category_default_folder">使用默认下载目录</string>
@@ -55,7 +55,7 @@
     <string name="identity_rule_edit">编辑规则</string>
     <string name="identity_rule_name">名称</string>
     <string name="identity_rule_remove_title">删除规则</string>
-    <string name="identity_rule_remove_message">确定删除规则%1$s？</string>
+    <string name="identity_rule_remove_message">确定删除规则\"%1$s\"？</string>
     <string name="identity_user_agent">User-Agent</string>
     <string name="identity_user_agent_desc">留空则沿用客户端配置自带的 User-Agent</string>
     <string name="identity_hosts">匹配域名</string>
@@ -68,7 +68,7 @@
     <string name="identity_headers_preset_name">名称</string>
     <string name="identity_headers_count">%1$d 个请求头</string>
     <string name="identity_headers_preset_remove_title">删除预设</string>
-    <string name="identity_headers_preset_remove_message">确定删除预设%1$s？</string>
+    <string name="identity_headers_preset_remove_message">确定删除预设\"%1$s\"？</string>
     <string name="identity_header_name">名称</string>
     <string name="identity_header_value">值</string>
     <string name="identity_header_add">添加请求头</string>

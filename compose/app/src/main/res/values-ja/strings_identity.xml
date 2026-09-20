@@ -29,7 +29,7 @@
     <string name="category_name_required">カテゴリ名を入力してください</string>
     <string name="category_no_extension">拡張子が未設定</string>
     <string name="category_remove_message">%1$d 個のタスクが未分類になります。タスクとファイルは削除されません。</string>
-    <string name="category_remove_title">「%1$s」を削除しますか？</string>
+    <string name="category_remove_title">\"%1$s\"を削除しますか？</string>
     <string name="category_reset">デフォルトカテゴリに戻す</string>
     <string name="category_reset_desc">カスタムカテゴリを破棄し、内蔵の8つに戻します</string>
     <string name="category_reset_message">すべてのカスタムカテゴリを破棄し、内蔵カテゴリに戻します。この操作は元に戻せません。</string>
@@ -44,7 +44,7 @@
     <string name="identity_headers_preset_add">プリセットを追加</string>
     <string name="identity_headers_preset_edit">プリセットを編集</string>
     <string name="identity_headers_preset_name">名前</string>
-    <string name="identity_headers_preset_remove_message">プリセット「%1$s」を削除しますか？</string>
+    <string name="identity_headers_preset_remove_message">プリセット\"%1$s\"を削除しますか？</string>
     <string name="identity_headers_preset_remove_title">プリセットを削除</string>
     <string name="identity_headers_presets">リクエストヘッダープリセット</string>
     <string name="identity_headers_presets_desc">新規タスクで選択したこのリクエストヘッダーセットを使用します</string>
@@ -55,7 +55,7 @@
     <string name="identity_rule_add">ルールを追加</string>
     <string name="identity_rule_edit">ルールを編集</string>
     <string name="identity_rule_name">名前</string>
-    <string name="identity_rule_remove_message">ルール「%1$s」を削除しますか？</string>
+    <string name="identity_rule_remove_message">ルール\"%1$s\"を削除しますか？</string>
     <string name="identity_rule_remove_title">ルールを削除</string>
     <string name="identity_rules">アイデンティティルール</string>
     <string name="identity_rules_desc">最初に一致する有効なルールを順番に使用し、クライアント構成と User-Agent を適用します</string>

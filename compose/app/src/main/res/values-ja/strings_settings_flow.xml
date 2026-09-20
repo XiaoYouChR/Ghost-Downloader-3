@@ -27,7 +27,7 @@
     <string name="headers_text_label">リクエストヘッダーテキスト</string>
     <string name="headers_value_invalid">値には改行や制御文字を含めることはできません。</string>
     <string name="identity_active_edit">このプリセットは現在使用中です。保存すると内容が変更され、他のプリセットに切り替わりません。</string>
-    <string name="identity_delete_active">削除すると「%1$s」に切り替わります。</string>
+    <string name="identity_delete_active">削除すると\"%1$s\"に切り替わります。</string>
     <string name="identity_enabled_for">%1$s を有効化</string>
     <string name="identity_headers_summary">現在使用中：%1$s · %2$d 個のリクエストヘッダー</string>
     <string name="identity_hosts_invalid">ドメインまたは *.example.com を入力してください。プロトコル、パス、その他のワイルドカードは含めないでください。</string>

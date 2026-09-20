@@ -27,7 +27,7 @@
     <string name="headers_text_label">請求頭文字</string>
     <string name="headers_value_invalid">值不能包含換行或控制字元。</string>
     <string name="identity_active_edit">此預設目前正在使用。儲存會修改它的內容，不會切換到其他預設。</string>
-    <string name="identity_delete_active">刪除後將改用「%1$s」。</string>
+    <string name="identity_delete_active">刪除後將改用\"%1$s\"。</string>
     <string name="identity_enabled_for">啟用 %1$s</string>
     <string name="identity_headers_summary">目前使用：%1$s · %2$d 個請求頭</string>
     <string name="identity_hosts_invalid">請輸入域名或 *.example.com；不要包含協定、路徑或其他通配符。</string>

@@ -25,10 +25,10 @@
     <string name="bili_logout">登出</string>
     <string name="bili_mode_qr">掃碼</string>
     <string name="bili_mode_sms">短訊</string>
-    <string name="bili_qr_expired">二維碼已失效，點「重新整理二維碼」重新產生</string>
+    <string name="bili_qr_expired">二維碼已失效，點\"重新整理二維碼\"重新產生</string>
     <string name="bili_qr_loading">正在取得二維碼\u2026</string>
     <string name="bili_qr_open">開啟登入連結</string>
-    <string name="bili_qr_ready">用嗶哩嗶哩用戶端掃碼，或點「開啟登入連結」在本機確認</string>
+    <string name="bili_qr_ready">用嗶哩嗶哩用戶端掃碼，或點\"開啟登入連結\"在本機確認</string>
     <string name="bili_qr_refresh">重新整理二維碼</string>
     <string name="bili_qr_scanned">已掃碼，請在手機端確認登入</string>
     <string name="bili_qr_success">登入成功</string>
@@ -176,12 +176,12 @@
     <string name="nav_settings">設定</string>
     <string name="nav_tasks">任務</string>
     <string name="notice_completed">下載完成</string>
-    <string name="notice_completed_inline">「%1$s」已下載完成</string>
+    <string name="notice_completed_inline">\"%1$s\" 已下載完成</string>
     <string name="notice_disk_space">磁碟空間不足</string>
     <string name="notice_disk_space_desc">剩餘 %1$s，需要 %2$s，任務未自動開始</string>
     <string name="notice_draft_taken">瀏覽器發來了新任務</string>
     <string name="notice_extension_updated">瀏覽器擴充功能已更新到 v%1$s</string>
-    <string name="notice_failed">「%1$s」下載失敗</string>
+    <string name="notice_failed">\"%1$s\" 下載失敗</string>
     <string name="notice_open_file">開啟檔案</string>
     <string name="notice_open_folder">開啟資料夾</string>
     <string name="notice_retry">重試</string>
@@ -224,7 +224,7 @@
 用戶端：%2$s
 擴充功能版本：%3$s
 
-僅在你剛剛點擊擴充功能裡的「自動配對」時允許。</string>
+僅在你剛剛點擊擴充功能裡的\"自動配對\"時允許。</string>
     <string name="pair_message">%1$s（v%2$s）請求連線，來自 %3$s</string>
     <string name="pair_reject">拒絕</string>
     <string name="pair_title">瀏覽器擴充功能請求配對</string>
@@ -259,7 +259,7 @@
     <string name="settings_browser_connected">已連線 · 擴充功能 v%1$s</string>
     <string name="settings_browser_disconnected">未連線</string>
     <string name="settings_browser_export">匯出擴充功能</string>
-    <string name="settings_browser_export_desc">解壓到 Download，再用瀏覽器的「載入已解壓的擴充功能」指過去</string>
+    <string name="settings_browser_export_desc">解壓到 Download，再用瀏覽器的\"載入已解壓的擴充功能\"指過去</string>
     <string name="settings_browser_extension">瀏覽器擴充功能</string>
     <string name="settings_browser_extension_desc">接收本機瀏覽器裡擴充功能發來的下載</string>
     <string name="settings_browser_listening">正在連接埠 %1$d 上等待擴充功能連線</string>
@@ -312,7 +312,7 @@
     <string name="settings_update_failed">檢查失敗，請稍後重試</string>
     <string name="settings_update_ignore">忽略此版本</string>
     <string name="settings_update_install">安裝更新</string>
-    <string name="settings_update_install_failed">無法啟動安裝，請先允許「安裝未知應用程式」</string>
+    <string name="settings_update_install_failed">無法啟動安裝，請先允許\"安裝未知應用程式\"</string>
     <string name="settings_update_latest">已是最新版本</string>
     <string name="settings_update_no_asset">目前平台沒有可用的安裝包</string>
     <string name="settings_update_no_notes">暫無更新說明</string>

@@ -25,10 +25,10 @@
     <string name="bili_logout">ログアウト</string>
     <string name="bili_mode_qr">QRコード</string>
     <string name="bili_mode_sms">SMS</string>
-    <string name="bili_qr_expired">QRコードの有効期限が切れました。「QRコードを更新」をタップして再生成してください</string>
+    <string name="bili_qr_expired">QRコードの有効期限が切れました。\"QRコードを更新\"をタップして再生成してください</string>
     <string name="bili_qr_loading">QRコードを取得中…</string>
     <string name="bili_qr_open">ログインリンクを開く</string>
-    <string name="bili_qr_ready">ビリビリクライアントでQRコードをスキャンするか、「ログインリンクを開く」をタップしてこの端末で確認します</string>
+    <string name="bili_qr_ready">ビリビリクライアントでQRコードをスキャンするか、\"ログインリンクを開く\"をタップしてこの端末で確認します</string>
     <string name="bili_qr_refresh">QRコードを更新</string>
     <string name="bili_qr_scanned">スキャン済み。携帯端末でログインを確認してください</string>
     <string name="bili_qr_success">ログインに成功しました</string>
@@ -176,12 +176,12 @@
     <string name="nav_settings">設定</string>
     <string name="nav_tasks">タスク</string>
     <string name="notice_completed">ダウンロード完了</string>
-    <string name="notice_completed_inline">「%1$s」のダウンロードが完了しました</string>
+    <string name="notice_completed_inline">\"%1$s\" のダウンロードが完了しました</string>
     <string name="notice_disk_space">ディスク容量が不足しています</string>
     <string name="notice_disk_space_desc">残り %1$s、必要 %2$s。タスクは自動開始されませんでした</string>
     <string name="notice_draft_taken">ブラウザから新しいタスクが送信されました</string>
     <string name="notice_extension_updated">ブラウザ拡張機能が v%1$s に更新されました</string>
-    <string name="notice_failed">「%1$s」のダウンロードに失敗しました</string>
+    <string name="notice_failed">\"%1$s\" のダウンロードに失敗しました</string>
     <string name="notice_open_file">ファイルを開く</string>
     <string name="notice_open_folder">フォルダーを開く</string>
     <string name="notice_retry">再試行</string>
@@ -224,7 +224,7 @@
 クライアント：%2$s
 拡張機能バージョン：%3$s
 
-拡張機能で「自動ペアリング」をクリックした直後のみ許可してください。</string>
+拡張機能で\"自動ペアリング\"をクリックした直後のみ許可してください。</string>
     <string name="pair_message">%1$s（v%2$s）が接続を要求しています。送信元: %3$s</string>
     <string name="pair_reject">拒否</string>
     <string name="pair_title">ブラウザ拡張機能がペアリングを要求</string>
@@ -259,7 +259,7 @@
     <string name="settings_browser_connected">接続済み · 拡張機能 v%1$s</string>
     <string name="settings_browser_disconnected">未接続</string>
     <string name="settings_browser_export">拡張機能をエクスポート</string>
-    <string name="settings_browser_export_desc">Download に展開し、ブラウザの「パッケージ化されていない拡張機能を読み込む」で指定します</string>
+    <string name="settings_browser_export_desc">Download に展開し、ブラウザの\"パッケージ化されていない拡張機能を読み込む\"で指定します</string>
     <string name="settings_browser_extension">ブラウザ拡張機能</string>
     <string name="settings_browser_extension_desc">ローカルブラウザの拡張機能から送信されるダウンロードを受信します</string>
     <string name="settings_browser_listening">ポート %1$d で拡張機能の接続を待機中</string>
@@ -312,7 +312,7 @@
     <string name="settings_update_failed">確認に失敗しました。後でもう一度お試しください</string>
     <string name="settings_update_ignore">このバージョンを無視</string>
     <string name="settings_update_install">アップデートをインストール</string>
-    <string name="settings_update_install_failed">インストールを開始できません。まず「提供元不明のアプリ」を許可してください</string>
+    <string name="settings_update_install_failed">インストールを開始できません。まず\"提供元不明のアプリ\"を許可してください</string>
     <string name="settings_update_latest">最新バージョンです</string>
     <string name="settings_update_no_asset">現在のプラットフォーム用のインストールパッケージがありません</string>
     <string name="settings_update_no_notes">アップデートの説明はありません</string>

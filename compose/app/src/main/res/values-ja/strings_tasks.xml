@@ -11,7 +11,7 @@
     <string name="task_categories_mixed">現在のカテゴリが異なります。統一して使用するカテゴリを選択してください。</string>
     <string name="task_category_action">カテゴリを変更、現在のカテゴリ：%1$s</string>
     <string name="task_category_all">すべてのカテゴリ</string>
-    <string name="task_category_applied">「%1$s」カテゴリに変更しました</string>
+    <string name="task_category_applied">\"%1$s\"カテゴリに変更しました</string>
     <string name="task_category_auto">カテゴリを自動一致</string>
     <string name="task_category_down">一致優先度を下げる</string>
     <string name="task_category_empty">このカテゴリには条件に一致するタスクがありません</string>
@@ -66,7 +66,7 @@
     <string name="task_search_hint">タスクを検索…</string>
     <string name="task_select">タスクを選択</string>
     <string name="task_select_all">すべて選択</string>
-    <string name="task_select_category_count">「%1$s」ファイルのみ選択（%2$d）</string>
+    <string name="task_select_category_count">\"%1$s\"ファイルのみ選択（%2$d）</string>
     <string name="task_select_category_files">カテゴリで選択…</string>
     <string name="task_select_category_hint">現在の選択を置き換えます。タスクのカテゴリは変更されません。適用後に送信されます。</string>
     <string name="task_select_invert">選択を反転</string>

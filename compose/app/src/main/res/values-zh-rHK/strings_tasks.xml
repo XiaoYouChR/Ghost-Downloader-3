@@ -11,7 +11,7 @@
     <string name="task_categories_mixed">目前分類不同，請選擇要統一使用的分類。</string>
     <string name="task_category_action">更改分類，目前分類：%1$s</string>
     <string name="task_category_all">全部分類</string>
-    <string name="task_category_applied">已更改為「%1$s」分類</string>
+    <string name="task_category_applied">已更改為\"%1$s\"分類</string>
     <string name="task_category_auto">自動匹配分類</string>
     <string name="task_category_down">降低匹配優先級</string>
     <string name="task_category_empty">此分類下沒有符合條件的任務</string>
@@ -66,7 +66,7 @@
     <string name="task_search_hint">搜尋任務…</string>
     <string name="task_select">選擇任務</string>
     <string name="task_select_all">全選</string>
-    <string name="task_select_category_count">僅選擇「%1$s」檔案（%2$d）</string>
+    <string name="task_select_category_count">僅選擇\"%1$s\"檔案（%2$d）</string>
     <string name="task_select_category_files">按分類選擇…</string>
     <string name="task_select_category_hint">將取代目前勾選，不更改任務分類；套用後才提交。</string>
     <string name="task_select_invert">反選</string>

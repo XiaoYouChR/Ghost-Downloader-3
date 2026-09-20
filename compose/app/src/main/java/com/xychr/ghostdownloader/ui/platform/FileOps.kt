@@ -34,10 +34,6 @@ private fun Context.toContentUri(file: File): Uri? {
 private fun File.toMimeType(): String =
     MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase()) ?: "*/*"
 
-/**
- * 文件管理器打开目录没有统一 Intent：系统「文件」应用认 SAF 的目录 URI。
- * 从通知里走只有这一发，从界面里走 openFolder 还会再退回一次通配 MIME。
- */
 fun Context.folderIntent(folder: String): Intent {
     val relative = folder.removePrefix(PRIMARY_STORAGE).trim('/')
     val documentUri = DocumentsContract.buildDocumentUri(

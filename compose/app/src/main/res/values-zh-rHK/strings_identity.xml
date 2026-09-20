@@ -29,7 +29,7 @@
     <string name="category_name_required">請輸入分類名稱</string>
     <string name="category_no_extension">未設定副檔名</string>
     <string name="category_remove_message">%1$d 個任務將變為未分類。任務和檔案不會被刪除。</string>
-    <string name="category_remove_title">刪除「%1$s」？</string>
+    <string name="category_remove_title">刪除\"%1$s\"？</string>
     <string name="category_reset">還原預設分類</string>
     <string name="category_reset_desc">丟棄自訂分類，還原為內置的 8 個</string>
     <string name="category_reset_message">將丟棄所有自訂分類並還原為內置分類，此操作不可撤銷。</string>
@@ -44,7 +44,7 @@
     <string name="identity_headers_preset_add">新增預設</string>
     <string name="identity_headers_preset_edit">編輯預設</string>
     <string name="identity_headers_preset_name">名稱</string>
-    <string name="identity_headers_preset_remove_message">確定刪除預設「%1$s」？</string>
+    <string name="identity_headers_preset_remove_message">確定刪除預設\"%1$s\"？</string>
     <string name="identity_headers_preset_remove_title">刪除預設</string>
     <string name="identity_headers_presets">請求頭預設</string>
     <string name="identity_headers_presets_desc">新增任務使用選中的這一組請求頭</string>
@@ -55,7 +55,7 @@
     <string name="identity_rule_add">新增規則</string>
     <string name="identity_rule_edit">編輯規則</string>
     <string name="identity_rule_name">名稱</string>
-    <string name="identity_rule_remove_message">確定刪除規則「%1$s」？</string>
+    <string name="identity_rule_remove_message">確定刪除規則\"%1$s\"？</string>
     <string name="identity_rule_remove_title">刪除規則</string>
     <string name="identity_rules">身分規則</string>
     <string name="identity_rules_desc">按順序使用第一個匹配的已啟用規則，套用用戶端設定和 User-Agent</string>

@@ -14,7 +14,7 @@
     <string name="identity_headers_summary">当前使用：%1$s · %2$d 个请求头</string>
     <string name="identity_rules_empty">还没有站点规则。添加后可为特定域名指定客户端身份。</string>
     <string name="identity_enabled_for">启用 %1$s</string>
-    <string name="identity_delete_active">删除后将改用「%1$s」。</string>
+    <string name="identity_delete_active">删除后将改用\"%1$s\"。</string>
     <string name="identity_last_preset">至少保留一个请求头预设。你可以编辑它或清空其中的请求头。</string>
     <string name="identity_active_edit">此预设当前正在使用。保存会修改它的内容，不会切换到其他预设。</string>
     <string name="identity_saved_inactive">保存仅更新预设；是否使用它，请返回列表选择。</string>

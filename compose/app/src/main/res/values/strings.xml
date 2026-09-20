@@ -70,7 +70,7 @@
     <string name="settings_update_no_asset">当前平台没有可用的安装包</string>
     <string name="settings_update_notes">查看更新说明</string>
     <string name="settings_update_ignore">忽略此版本</string>
-    <string name="settings_update_install_failed">无法启动安装，请先允许安装未知应用</string>
+    <string name="settings_update_install_failed">无法启动安装，请先允许\"安装未知应用\"</string>
     <string name="settings_update_prerelease">⚠️ 预发布版本</string>
     <string name="settings_update_no_notes">暂无更新说明</string>
     <string name="settings_update_open_in_browser">在浏览器中打开</string>
@@ -283,10 +283,10 @@
     <string name="bili_cookie_hint">粘贴浏览器导出的完整 Cookie，留空保存可清除</string>
     <string name="bili_logout">退出登录</string>
     <string name="bili_qr_loading">正在获取二维码\u2026</string>
-    <string name="bili_qr_ready">用哔哩哔哩客户端扫码，或点打开登录链接在本机确认</string>
+    <string name="bili_qr_ready">用哔哩哔哩客户端扫码，或点\"打开登录链接\"在本机确认</string>
     <string name="bili_qr_unscanned">等待扫码</string>
     <string name="bili_qr_scanned">已扫码，请在手机端确认登录</string>
-    <string name="bili_qr_expired">二维码已失效，点刷新二维码重新生成</string>
+    <string name="bili_qr_expired">二维码已失效，点\"刷新二维码\"重新生成</string>
     <string name="bili_qr_success">登录成功</string>
     <string name="bili_qr_refresh">刷新二维码</string>
     <string name="bili_qr_open">打开登录链接</string>
@@ -333,7 +333,7 @@
     <string name="notification_channel_confirm">需要确认</string>
     <string name="pair_title">浏览器扩展请求配对</string>
     <string name="pair_message">%1$s（v%2$s）请求连接，来自 %3$s</string>
-    <string name="pair_detail">来源：%1$s\n客户端：%2$s\n扩展版本：%3$s\n\n仅在你刚刚点击扩展里的自动配对时允许。</string>
+    <string name="pair_detail">来源：%1$s\n客户端：%2$s\n扩展版本：%3$s\n\n仅在你刚刚点击扩展里的\"自动配对\"时允许。</string>
     <string name="pair_unknown_client">某浏览器</string>
     <string name="pair_approve">允许</string>
     <string name="pair_reject">拒绝</string>
@@ -347,7 +347,7 @@
     <string name="settings_browser_regenerate">重新生成令牌</string>
     <string name="settings_browser_regenerate_desc">已连接的扩展需要重新配对</string>
     <string name="settings_browser_export">导出扩展</string>
-    <string name="settings_browser_export_desc">解包到 Download，再用浏览器的加载已解压的扩展指过去</string>
+    <string name="settings_browser_export_desc">解包到 Download，再用浏览器的\"加载已解压的扩展\"指过去</string>
     <string name="settings_browser_listening">正在端口 %1$d 上等待扩展连接</string>
     <string name="settings_browser_port_unavailable">端口 %1$d 被占用，请更换端口</string>
     <string name="settings_browser_token_copied">配对令牌已复制</string>
@@ -373,10 +373,10 @@
     <string name="oobe_finish">开始使用</string>
 
     <string name="notice_completed">下载完成</string>
-    <string name="notice_completed_inline">%1$s已下载完成</string>
+    <string name="notice_completed_inline">\"%1$s\" 已下载完成</string>
     <string name="notice_open_file">打开文件</string>
     <string name="notice_open_folder">打开文件夹</string>
-    <string name="notice_failed">%1$s下载失败</string>
+    <string name="notice_failed">\"%1$s\" 下载失败</string>
     <string name="notice_disk_space">磁盘空间不足</string>
     <string name="notice_disk_space_desc">剩余 %1$s，需要 %2$s，任务未自动开始</string>
     <string name="notice_draft_taken">浏览器发来了新任务</string>

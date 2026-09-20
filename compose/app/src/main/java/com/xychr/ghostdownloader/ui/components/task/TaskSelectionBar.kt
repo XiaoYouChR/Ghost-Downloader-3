@@ -18,12 +18,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.xychr.ghostdownloader.R
 
-/**
- * 选中态的操作面板。按钮按选中任务的实际状态显隐——全部已完成时不摆一个禁用的「开始」。
- * 浮在列表之上，所以用 shadow 而非纯 tonal 抬升：背后是滚动内容，需要额外分隔。
- *
- * hasSelectableTasks 指当前可见分区里还有任务可选，决定全选／反选是否可用。
- */
 @Composable
 fun TaskSelectionBar(
     targets: TaskBatchTargets,
