@@ -1,6 +1,7 @@
 package com.xychr.ghostdownloader
 
 import android.app.Application
+import android.system.Os
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -20,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import java.io.File
 
 class App : Application() {
 
@@ -29,6 +31,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        setupNativeLibraryPath()
 
         val flows = EngineFlows()
 
@@ -54,5 +57,20 @@ class App : Application() {
                 .filter { it.reason.isNotEmpty() }
                 .collect { startKeepAlive(this@App) }
         }
+    }
+
+    // Android BoringSSL 缺少 .NET NativeAOT 依赖的 ASN1 符号，
+    // 外部二进制 dlopen("libssl.so") 会 SIGABRT
+    private fun setupNativeLibraryPath() {
+        val nativeDir = applicationInfo.nativeLibraryDir
+        val shimDir = File(filesDir, "openssl_shim")
+        shimDir.mkdirs()
+        val target = File(nativeDir, "libssl_python.so")
+        if (target.exists()) {
+            val link = File(shimDir, "libssl.so")
+            link.delete()
+            Os.symlink(target.absolutePath, link.absolutePath)
+        }
+        Os.setenv("LD_LIBRARY_PATH", "${shimDir.absolutePath}:$nativeDir", true)
     }
 }
