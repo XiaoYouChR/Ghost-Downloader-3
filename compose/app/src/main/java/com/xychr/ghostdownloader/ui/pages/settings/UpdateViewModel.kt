@@ -9,9 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -44,8 +42,9 @@ class UpdateViewModel(
     private val _checkState = MutableStateFlow<CheckState?>(null)
     val checkState: StateFlow<CheckState?> = _checkState.asStateFlow()
 
-    private val _downloadState = MutableStateFlow(UpdateDownloadState())
-    val downloadState: StateFlow<UpdateDownloadState> = _downloadState.asStateFlow()
+    val downloadState: StateFlow<UpdateDownloadState> =
+        engineRepository.observe<UpdateDownloadState>("updateState")
+            .stateIn(viewModelScope, SharingStarted.Eagerly, UpdateDownloadState())
 
     private val _ignoredVersion = MutableStateFlow(loadIgnoredVersion())
 
@@ -57,17 +56,6 @@ class UpdateViewModel(
         combine(available, _ignoredVersion) { update, ignored ->
             update?.takeIf { it.version != ignored }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-
-    init {
-        viewModelScope.launch {
-            val s = runCatching { engineRepository.query<UpdateDownloadState>("updateState") }
-                .getOrNull() ?: return@launch
-            if (s.state != "idle") {
-                _downloadState.value = s
-                if (s.state == "downloading") collectDownloadState()
-            }
-        }
-    }
 
     fun check() {
         if (_checkState.value == CheckState.CHECKING) return
@@ -88,10 +76,8 @@ class UpdateViewModel(
     }
 
     fun download() {
-        _downloadState.value = UpdateDownloadState(state = "downloading")
         viewModelScope.launch {
             engineRepository.invoke("downloadUpdate", "app")
-            collectDownloadState()
         }
     }
 
@@ -99,14 +85,5 @@ class UpdateViewModel(
         val version = available.value?.version ?: return
         _ignoredVersion.value = version
         saveIgnoredVersion(version)
-    }
-
-    private suspend fun collectDownloadState() {
-        engineRepository.observe<UpdateDownloadState>("updateState")
-            .filter { it.state != "idle" }
-            .takeWhile { it.state == "downloading" }
-            .collect { _downloadState.value = it }
-        _downloadState.value = runCatching { engineRepository.query<UpdateDownloadState>("updateState") }
-            .getOrDefault(_downloadState.value)
     }
 }

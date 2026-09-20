@@ -65,6 +65,7 @@
     <string name="settings_update_latest">已是最新版本</string>
     <string name="settings_update_failed">检查失败，请稍后重试</string>
     <string name="settings_update_downloading">正在下载… %d%%</string>
+    <string name="settings_update_download">下载更新</string>
     <string name="settings_update_install">安装更新</string>
     <string name="settings_update_download_failed">下载失败，请稍后重试</string>
     <string name="settings_update_no_asset">当前平台没有可用的安装包</string>

@@ -977,6 +977,8 @@ class Engine:
             logger.debug("启动检查更新失败: {}", repr(e))
             return
         self._setUpdateAvailable(info)
+        if info["status"] == "available":
+            self._restoreDownloadedUpdate(info["version"])
 
     def checkUpdate(self) -> str:
         import asyncio
@@ -999,6 +1001,17 @@ class Engine:
 
     def _emitUpdateAvailable(self):
         self._flows.setState("updateAvailable", json.dumps(self._updateAvailable, ensure_ascii=False))
+
+    def _restoreDownloadedUpdate(self, version: str):
+        from app.config.paths import APP_DATA_DIR
+        cache = APP_DATA_DIR / "cache"
+        if not cache.is_dir():
+            return
+        for path in cache.glob("*.apk"):
+            if version in path.name and path.is_file():
+                self._updateState = {"state": "ready", "progress": 100, "filePath": str(path), "error": ""}
+                self._emitUpdateState()
+                return
 
     def downloadUpdate(self, targetId: str):
         from app.update import APP_REPO, fetchRelease, bestAsset

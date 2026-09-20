@@ -3,13 +3,8 @@ package com.xychr.ghostdownloader.ui.pages.settings
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,11 +23,11 @@ import com.xychr.ghostdownloader.ui.components.settings.ReleaseInfoSheet
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
 import com.xychr.ghostdownloader.ui.components.settings.SwitchSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.UpdateCard
 import com.xychr.ghostdownloader.ui.navigation.PackInfoRoute
 import com.xychr.ghostdownloader.ui.navigation.PermissionsSettingsRoute
 import com.xychr.ghostdownloader.ui.navigation.Route
 import com.xychr.ghostdownloader.ui.platform.openUrl
-import com.xychr.ghostdownloader.ui.platform.start
 import java.io.File
 
 private const val REPOSITORY_URL = "https://github.com/XiaoYouChR/Ghost-Downloader-3"
@@ -95,77 +90,34 @@ private fun UpdateSection(
     viewModel: UpdateViewModel,
     onNavigate: (Route) -> Unit,
 ) {
-    var installFailed by remember { mutableStateOf(false) }
     var showReleaseInfo by remember { mutableStateOf(false) }
 
-    SettingSection {
-        when {
-            dlState.state == "downloading" -> {
-                InfoSettingRow(title = stringResource(R.string.settings_update_downloading, dlState.progress.toInt()))
-                LinearProgressIndicator(
-                    progress = { (dlState.progress / 100).toFloat() },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    if (dlState.state != "idle" || available != null) {
+        UpdateCard(
+            available = available,
+            dlState = dlState,
+            onViewNotes = { showReleaseInfo = true },
+            onDownload = { viewModel.download() },
+            onInstall = { context.installApk(File(dlState.filePath)) },
+            onIgnore = { viewModel.ignore() },
+            onFixPermission = { onNavigate(PermissionsSettingsRoute) },
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+    } else {
+        SettingSection {
+            when (checkState) {
+                CheckState.CHECKING -> InfoSettingRow(title = stringResource(R.string.settings_checking_update))
+                CheckState.LATEST -> InfoSettingRow(title = stringResource(R.string.settings_update_latest))
+                CheckState.NO_ASSET -> InfoSettingRow(title = stringResource(R.string.settings_update_no_asset))
+                CheckState.FAILED -> ActionSettingRow(
+                    title = stringResource(R.string.settings_update_failed),
+                    onClick = { viewModel.check() },
+                )
+                else -> ActionSettingRow(
+                    title = stringResource(R.string.settings_check_update),
+                    onClick = { viewModel.check() },
                 )
             }
-
-            dlState.state == "ready" -> {
-                ActionSettingRow(
-                    title = stringResource(R.string.settings_update_install),
-                    subtitle = available?.version ?: dlState.filePath.substringAfterLast('/'),
-                    onClick = {
-                        installFailed = !context.installApk(File(dlState.filePath))
-                    },
-                )
-                if (installFailed) {
-                    ActionSettingRow(
-                        title = stringResource(R.string.settings_update_install_failed),
-                        colors = ListItemDefaults.segmentedColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                        ),
-                        onClick = { onNavigate(PermissionsSettingsRoute) },
-                    )
-                }
-            }
-
-            dlState.state == "failed" -> {
-                ActionSettingRow(
-                    title = stringResource(R.string.settings_update_download_failed),
-                    subtitle = dlState.error,
-                    onClick = { viewModel.download() },
-                )
-            }
-
-            available != null -> {
-                ActionSettingRow(
-                    title = stringResource(R.string.settings_update_available, available.version),
-                    subtitle = stringResource(R.string.settings_update_notes),
-                    onClick = { showReleaseInfo = true },
-                )
-                ActionSettingRow(
-                    title = stringResource(R.string.settings_update_install),
-                    onClick = { viewModel.download() },
-                )
-                ActionSettingRow(
-                    title = stringResource(R.string.settings_update_ignore),
-                    onClick = { viewModel.ignore() },
-                )
-            }
-
-            checkState == CheckState.CHECKING -> InfoSettingRow(title = stringResource(R.string.settings_checking_update))
-
-            checkState == CheckState.LATEST -> InfoSettingRow(title = stringResource(R.string.settings_update_latest))
-
-            checkState == CheckState.NO_ASSET -> InfoSettingRow(title = stringResource(R.string.settings_update_no_asset))
-
-            checkState == CheckState.FAILED -> ActionSettingRow(
-                title = stringResource(R.string.settings_update_failed),
-                onClick = { viewModel.check() },
-            )
-
-            else -> ActionSettingRow(
-                title = stringResource(R.string.settings_check_update),
-                onClick = { viewModel.check() },
-            )
         }
     }
 
