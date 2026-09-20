@@ -760,6 +760,8 @@ jobs:
     if: ${{ github.event.inputs.build_target == 'android' || github.event.inputs.build_target == 'all' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && 'true' || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -804,7 +806,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       - name: Write keystore.properties
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -820,8 +822,6 @@ jobs:
 
       - name: Build APK
         working-directory: compose
-        env:
-          BUILD_PYTHON: python3.14
         run: |
           if [ -f keystore.properties ]; then
             echo "[ci] keystore ready, signing as release"

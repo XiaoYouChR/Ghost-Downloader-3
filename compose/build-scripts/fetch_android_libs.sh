@@ -78,7 +78,7 @@ else
         *) echo "ERROR: Unsupported build host" >&2; exit 1 ;;
     esac
 
-    NDK="${ANDROID_NDK_HOME:-${ANDROID_NDK_LATEST_HOME:-}}"
+    NDK="${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_HOME:-}}"
     if [ -z "$NDK" ]; then
         SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$DEFAULT_SDK}}"
         NDK="$(ls -d "$SDK/ndk/"* 2>/dev/null | sort -V | tail -1)"
