@@ -93,19 +93,19 @@ download_sources() {
 
     if [ ! -d "boost_${BOOST_UNDERSCORE}" ]; then
         echo "Downloading Boost ${BOOST_VERSION}..."
-        curl -fSL "https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_UNDERSCORE}.tar.gz" \
+        curl -fsSL "https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_UNDERSCORE}.tar.gz" \
             | tar xz
     fi
 
     if [ ! -d "openssl-${OPENSSL_VERSION}" ]; then
         echo "Downloading OpenSSL ${OPENSSL_VERSION}..."
-        curl -fSL "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" \
+        curl -fsSL "https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz" \
             | tar xz
     fi
 
     if [ ! -d "libtorrent-${LIBTORRENT_VERSION}" ]; then
         echo "Downloading libtorrent ${LIBTORRENT_VERSION}..."
-        curl -fSL "https://github.com/arvidn/libtorrent/releases/download/v${LIBTORRENT_VERSION}/libtorrent-rasterbar-${LIBTORRENT_VERSION}.tar.gz" \
+        curl -fsSL "https://github.com/arvidn/libtorrent/releases/download/v${LIBTORRENT_VERSION}/libtorrent-rasterbar-${LIBTORRENT_VERSION}.tar.gz" \
             | tar xz
         mv "libtorrent-rasterbar-${LIBTORRENT_VERSION}" "libtorrent-${LIBTORRENT_VERSION}"
     fi
@@ -115,7 +115,7 @@ download_sources() {
         if [ ! -d "$dir" ]; then
             echo "Downloading CPython ${CPYTHON_VERSION} headers (${abi_arch})..."
             mkdir -p "$dir"
-            curl -fSL "https://www.python.org/ftp/python/${CPYTHON_VERSION}/python-${CPYTHON_VERSION}-${abi_arch}-linux-android.tar.gz" \
+            curl -fsSL "https://www.python.org/ftp/python/${CPYTHON_VERSION}/python-${CPYTHON_VERSION}-${abi_arch}-linux-android.tar.gz" \
                 | tar xz -C "$dir"
         fi
     done
@@ -151,6 +151,7 @@ build_openssl() {
 
     ./Configure "$ANDROID_ARCH" \
         -D__ANDROID_API__=${ANDROID_API} \
+        -Wno-macro-redefined \
         no-shared no-tests no-ui-console \
         --prefix="$OUT"
 
