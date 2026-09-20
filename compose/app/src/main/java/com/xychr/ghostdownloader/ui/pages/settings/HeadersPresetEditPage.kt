@@ -158,7 +158,7 @@ fun HeadersForm(initial: HeadersPreset, defaults: Map<String, String>, isCreatin
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             listOf(R.string.headers_mode_fields, R.string.headers_mode_text).forEachIndexed { index, label ->
                 SegmentedButton(selected = isTextMode == (index == 1), enabled = !state.isSaving,
-                    shape = SegmentedButtonDefaults.itemShape(index, 2), label = { Text(stringResource(label)) },
+                    shape = SegmentedButtonDefaults.itemShape(index, 2), label = { Text(stringResource(label), maxLines = 1) },
                     onClick = {
                         if (isTextMode == (index == 1)) return@SegmentedButton
                         snackbar.currentSnackbarData?.dismiss()

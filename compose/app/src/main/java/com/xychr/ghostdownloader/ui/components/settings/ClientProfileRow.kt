@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,11 +60,21 @@ fun ClientProfileRow(
         if (profiles.isNotEmpty()) add(ProfileMode.Custom)
     }
 
-    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SingleChoiceSegmentedButtonRow {
-            modes.forEachIndexed { index, m ->
-                SegmentedButton(
-                    selected = mode == m,
+    Column(modifier) {
+        SettingSection {
+            modes.forEach { m ->
+                RadioSettingRow(
+                    title = when (m) {
+                        ProfileMode.Inherit -> stringResource(R.string.identity_profile_inherit)
+                        ProfileMode.Auto -> stringResource(R.string.identity_profile_auto)
+                        ProfileMode.Raw -> stringResource(R.string.identity_profile_raw)
+                        ProfileMode.Custom -> stringResource(R.string.identity_profile_custom)
+                    },
+                    subtitle = if (m is ProfileMode.Inherit) stringResource(
+                        R.string.identity_profile_current_global, clientProfileLabel(globalProfile),
+                    ) else null,
+                    isSelected = mode == m,
+                    isEnabled = isEnabled,
                     onClick = {
                         when (m) {
                             ProfileMode.Inherit -> onSelect("")
@@ -78,30 +85,15 @@ fun ClientProfileRow(
                             )
                         }
                     },
-                    shape = SegmentedButtonDefaults.itemShape(index, modes.size),
-                    enabled = isEnabled,
-                ) {
-                    Text(
-                        when (m) {
-                            ProfileMode.Inherit -> stringResource(R.string.identity_profile_inherit)
-                            ProfileMode.Auto -> stringResource(R.string.identity_profile_auto)
-                            ProfileMode.Raw -> stringResource(R.string.identity_profile_raw)
-                            ProfileMode.Custom -> stringResource(R.string.identity_profile_custom)
-                        },
-                    )
-                }
+                )
             }
         }
 
-        if (mode is ProfileMode.Inherit) {
-            Text(
-                stringResource(R.string.identity_profile_current_global, clientProfileLabel(globalProfile)),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-
         AnimatedVisibility(isCustom, enter = expandVertically(), exit = shrinkVertically()) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 ChoiceField(
                     stringResource(R.string.identity_profile_family),
                     family?.family ?: value,

@@ -222,13 +222,14 @@ fun RadioSettingRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    isEnabled: Boolean = true,
 ) {
     val view = LocalView.current
     val anchor = settingsAnchor(title)
     ListItem(
         content = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
-        trailingContent = { RadioButton(selected = isSelected, onClick = null) },
+        trailingContent = { RadioButton(selected = isSelected, onClick = null, enabled = isEnabled) },
         shapes = ListItemDefaults.shapes(pressedShape = MaterialTheme.shapes.extraLarge),
         colors = ListItemDefaults.segmentedColors(
             containerColor = anchor.containerColor ?: MaterialTheme.colorScheme.surfaceContainerLow,
@@ -238,6 +239,7 @@ fun RadioSettingRow(
             selected = isSelected
         },
         onClick = {
+            if (!isEnabled) return@ListItem
             view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
             onClick()
         },

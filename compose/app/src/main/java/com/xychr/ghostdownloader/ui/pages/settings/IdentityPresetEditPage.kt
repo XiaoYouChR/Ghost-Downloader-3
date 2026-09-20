@@ -21,7 +21,6 @@ import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ClientProfileRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.matchClientProfile
-import com.xychr.ghostdownloader.ui.components.settings.SettingSection
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEdit
 import com.xychr.ghostdownloader.ui.components.settings.SettingsEditor
 import com.xychr.ghostdownloader.ui.components.settings.SettingsScaffold
@@ -95,16 +94,14 @@ fun IdentityPresetEditPage(
             supportingText = { if (shouldValidate && name.isBlank()) Text(stringResource(R.string.settings_name_required)) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).focusRequester(nameFocus),
         )
-        SettingSection {
-            ClientProfileRow(
-                value = profile,
-                profiles = identityState.profiles,
-                onSelect = { profile = it },
-                canInherit = true,
-                isEnabled = !editState.isSaving,
-                globalProfile = identityState.identity.clientProfile,
-            )
-        }
+        ClientProfileRow(
+            value = profile,
+            profiles = identityState.profiles,
+            onSelect = { profile = it },
+            canInherit = true,
+            isEnabled = !editState.isSaving,
+            globalProfile = identityState.identity.clientProfile,
+        )
         OutlinedTextField(
             value = userAgent,
             isError = shouldValidate && !matchHeaderValue(userAgent),

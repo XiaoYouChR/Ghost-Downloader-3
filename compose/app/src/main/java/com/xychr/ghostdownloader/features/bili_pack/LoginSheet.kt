@@ -96,7 +96,7 @@ fun LoginSheet(viewModel: BilibiliAccountViewModel, onDismiss: () -> Unit) {
                         selected = mode == entry,
                         onClick = { mode = entry },
                         shape = SegmentedButtonDefaults.itemShape(index, LoginMode.entries.size),
-                    ) { Text(stringResource(entry.label)) }
+                    ) { Text(stringResource(entry.label), maxLines = 1) }
                 }
             }
             when (mode) {
