@@ -7,12 +7,13 @@ set -euo pipefail
 #   - ffmpeg + ffprobe (Ghost-Downloader-FFmpeg)
 #   - N_m3u8DL-RE
 #   - QuickJS-NG (qjs)
+#   - libc++_shared (from the NDK; wreq.abi3.so links it dynamically)
 #
 # Usage:
 #   ./fetch_android_libs.sh
 #
 # Output:
-#   ../app/src/main/jniLibs/arm64-v8a/lib{ffmpeg,ffprobe,nm3u8dlre,qjs}.so
+#   ../app/src/main/jniLibs/arm64-v8a/lib{ffmpeg,ffprobe,nm3u8dlre,qjs,c++_shared}.so
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 JNILIBS_DIR="${SCRIPT_DIR}/../app/src/main/jniLibs/arm64-v8a"
@@ -64,6 +65,34 @@ else
         -o "$JNILIBS_DIR/libqjs.so"
     chmod +x "$JNILIBS_DIR/libqjs.so"
     echo "  -> $(ls -lh "$JNILIBS_DIR/libqjs.so" | awk '{print $5}') libqjs.so"
+fi
+
+# --- libc++_shared (NDK) ---
+
+if [ -f "$JNILIBS_DIR/libc++_shared.so" ]; then
+    echo "libc++_shared: already present"
+else
+    case "$(uname -s)" in
+        Darwin) HOST_TAG="darwin-x86_64"; DEFAULT_SDK="$HOME/Library/Android/sdk" ;;
+        Linux)  HOST_TAG="linux-x86_64";  DEFAULT_SDK="$HOME/Android/Sdk" ;;
+        *) echo "ERROR: Unsupported build host" >&2; exit 1 ;;
+    esac
+
+    NDK="${ANDROID_NDK_HOME:-${ANDROID_NDK_LATEST_HOME:-}}"
+    if [ -z "$NDK" ]; then
+        SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$DEFAULT_SDK}}"
+        NDK="$(ls -d "$SDK/ndk/"* 2>/dev/null | sort -V | tail -1)"
+    fi
+
+    SRC="$NDK/toolchains/llvm/prebuilt/$HOST_TAG/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so"
+    if [ ! -f "$SRC" ]; then
+        echo "ERROR: libc++_shared.so not found. Set ANDROID_NDK_HOME to an installed NDK." >&2
+        exit 1
+    fi
+
+    echo "Copying libc++_shared.so from $(basename "$NDK")..."
+    cp "$SRC" "$JNILIBS_DIR/libc++_shared.so"
+    echo "  -> $(ls -lh "$JNILIBS_DIR/libc++_shared.so" | awk '{print $5}') libc++_shared.so"
 fi
 
 echo ""
