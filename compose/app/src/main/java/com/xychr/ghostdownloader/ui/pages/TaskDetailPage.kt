@@ -7,6 +7,7 @@ import com.xychr.ghostdownloader.ui.components.*
 import com.xychr.ghostdownloader.ui.components.task.*
 import com.xychr.ghostdownloader.ui.util.*
 import com.xychr.ghostdownloader.ui.components.category.CategoryPicker
+import com.xychr.ghostdownloader.ui.components.category.categoryIconRes
 import com.xychr.ghostdownloader.ui.platform.openTaskFile
 import com.xychr.ghostdownloader.ui.platform.openFolder
 import com.xychr.ghostdownloader.ui.platform.shareTaskFile
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
@@ -238,10 +240,31 @@ fun TaskDetailPage(
             item {
                 Spacer(Modifier.height(16.dp))
                 InfoSection(detail, onRename = { isRenaming = true }, onCopyUrl = ::copyUrl)
-                if (categories.isEnabled) TextButton(onClick = { shouldCategorize = true }) {
-                    Text(stringResource(R.string.task_category_value, categories.categories.firstOrNull {
-                        it.categoryId == detail.categoryId
-                    }?.name ?: stringResource(R.string.task_uncategorized)))
+                if (categories.isEnabled) {
+                    val category = categories.categories.firstOrNull { it.categoryId == detail.categoryId }
+                    ListItem(
+                        supportingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    painterResource(categoryIconRes(category?.icon ?: "DOCUMENT")),
+                                    null, Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(category?.name ?: stringResource(R.string.task_uncategorized))
+                            }
+                        },
+                        trailingContent = {
+                            IconButton(onClick = { shouldCategorize = true }) {
+                                Icon(
+                                    painterResource(R.drawable.ic_edit),
+                                    contentDescription = stringResource(R.string.task_change_category),
+                                )
+                            }
+                        },
+                    ) { Text(stringResource(R.string.task_detail_category)) }
                 }
                 if (detail.canEdit && detail.status != TaskStatus.COMPLETED) TextButton(onClick = {
                     onNavigate(TaskEditRoute(taskId))

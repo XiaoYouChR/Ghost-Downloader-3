@@ -3,7 +3,6 @@ package com.xychr.ghostdownloader.ui.pages.settings
 import com.xychr.ghostdownloader.engine.engineRepository
 import com.xychr.ghostdownloader.model.Category
 import com.xychr.ghostdownloader.model.CategoryState
-import com.xychr.ghostdownloader.model.TaskUiState
 import com.xychr.ghostdownloader.model.TaskError
 import com.xychr.ghostdownloader.i18n.toTaskError
 import androidx.lifecycle.ViewModel
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -22,11 +20,6 @@ class CategoryViewModel : ViewModel() {
     val state: StateFlow<CategoryState?> =
         engineRepository.observe<CategoryState>("categoryState")
             .stateIn(viewModelScope, SharingStarted.Eagerly, null)
-
-    val taskCounts: StateFlow<Map<String, Int>> =
-        engineRepository.observe<List<TaskUiState>>("tasks")
-            .map { tasks -> tasks.groupingBy { it.categoryId }.eachCount() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     private val _isSaving = MutableStateFlow(false)
     val isSaving = _isSaving.asStateFlow()

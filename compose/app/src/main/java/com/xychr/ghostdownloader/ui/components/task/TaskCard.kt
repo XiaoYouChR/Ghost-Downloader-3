@@ -95,12 +95,20 @@ fun TaskCard(
                     }
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        text = task.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isCategoryEnabled && category != null) {
+                            Icon(painterResource(categoryIconRes(category.icon)), null,
+                                Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text(
+                            text = task.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     TaskStatusLine(
                         status = task.status,
                         error = task.error,
@@ -129,7 +137,6 @@ fun TaskCard(
                     Caption(formatSizeProgress(task.received, task.fileSize))
                     if (task.secondarySpeed > 0) Caption("↑ ${formatSpeed(task.secondarySpeed)}")
                 }
-                if (isCategoryEnabled && category != null) CategoryChip(category)
                 if (task.fileCount > 1) FileCountChip(task.fileCount)
             }
 
@@ -190,21 +197,6 @@ private fun SelectionMark(isSelected: Boolean) {
             Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onPrimary,
         )
-    }
-}
-
-@Composable
-private fun CategoryChip(category: Category) {
-    Row(
-        Modifier.padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(painterResource(categoryIconRes(category.icon)), null, Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(category.name, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
