@@ -37,7 +37,6 @@
     <string name="identity_profile_custom">クライアントを指定</string>
     <string name="identity_profile_family">クライアント</string>
     <string name="identity_profile_unsupported">この構成は現在のサポートリストにありません。再選択してください。</string>
-    <string name="identity_rule_position">優先度 %1$d · %2$s</string>
     <string name="identity_rules_empty">サイトルールがまだありません。追加すると特定のドメインにクライアントアイデンティティを指定できます。</string>
     <string name="identity_rules_summary">%1$d 件のルール、%2$d 件が有効</string>
     <string name="identity_saved_inactive">保存はプリセットを更新するのみです。使用するかどうかはリストに戻って選択してください。</string>

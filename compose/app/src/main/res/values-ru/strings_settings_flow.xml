@@ -37,7 +37,6 @@
     <string name="identity_profile_custom">Указать клиент</string>
     <string name="identity_profile_family">Клиент</string>
     <string name="identity_profile_unsupported">Этот профиль не поддерживается, выберите заново.</string>
-    <string name="identity_rule_position">Приоритет %1$d · %2$s</string>
     <string name="identity_rules_empty">Правил для сайтов пока нет. Добавьте, чтобы задать клиент для определённых доменов.</string>
     <string name="identity_rules_summary">Правил: %1$d, включено: %2$d</string>
     <string name="identity_saved_inactive">Сохранение только обновит предустановку; чтобы использовать её, выберите в списке.</string>

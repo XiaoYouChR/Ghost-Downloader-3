@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xychr.ghostdownloader.R
 import com.xychr.ghostdownloader.ui.components.settings.ActionSettingRow
+import com.xychr.ghostdownloader.ui.components.settings.clientProfileLabel
 import com.xychr.ghostdownloader.ui.components.settings.EmptyRow
 import com.xychr.ghostdownloader.ui.components.settings.LoadingRow
 import com.xychr.ghostdownloader.ui.components.settings.SettingSection
@@ -46,8 +47,11 @@ fun IdentityRulesPage(onNavigate: (Route) -> Unit, onBack: () -> Unit,
             state.identityPresets.forEachIndexed { index, preset ->
                 var isMenuOpen by remember(preset) { mutableStateOf(false) }
                 val switchLabel = stringResource(R.string.identity_enabled_for, preset.name)
+                val profileLabel = clientProfileLabel(
+                    preset.clientProfile.ifEmpty { state.clientProfile },
+                )
                 ActionSettingRow(title = preset.name,
-                    subtitle = stringResource(R.string.identity_rule_position, index + 1, preset.hosts.joinToString(", ")),
+                    subtitle = "$profileLabel · ${preset.hosts.joinToString(", ")}",
                     onClick = { if (!isBusy) onNavigate(IdentityPresetEditRoute(index)) },
                     trailing = {
                         Row {

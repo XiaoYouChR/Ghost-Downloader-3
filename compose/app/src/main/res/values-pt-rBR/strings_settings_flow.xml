@@ -37,7 +37,6 @@
     <string name="identity_profile_custom">Cliente específico</string>
     <string name="identity_profile_family">Cliente</string>
     <string name="identity_profile_unsupported">Esta configuração não está na lista suportada; selecione novamente.</string>
-    <string name="identity_rule_position">Prioridade %1$d · %2$s</string>
     <string name="identity_rules_empty">Ainda não há regras de site. Adicione para especificar identidade de cliente para domínios específicos.</string>
     <string name="identity_rules_summary">%1$d regras, %2$d habilitadas</string>
     <string name="identity_saved_inactive">Salvar apenas atualiza a predefinição; para usá-la, volte à lista e selecione.</string>

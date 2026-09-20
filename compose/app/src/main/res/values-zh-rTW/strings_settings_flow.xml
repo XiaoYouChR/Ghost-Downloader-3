@@ -37,7 +37,6 @@
     <string name="identity_profile_custom">指定用戶端</string>
     <string name="identity_profile_family">用戶端</string>
     <string name="identity_profile_unsupported">此設定不在目前支援列表中，請重新選擇。</string>
-    <string name="identity_rule_position">優先順序 %1$d · %2$s</string>
     <string name="identity_rules_empty">還沒有站點規則。新增後可為特定網域指定用戶端身分。</string>
     <string name="identity_rules_summary">%1$d 條規則，%2$d 條已啟用</string>
     <string name="identity_saved_inactive">儲存僅更新預設；是否使用它，請返回列表選擇。</string>

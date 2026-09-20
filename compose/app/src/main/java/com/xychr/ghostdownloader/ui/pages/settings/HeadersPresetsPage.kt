@@ -1,7 +1,6 @@
 package com.xychr.ghostdownloader.ui.pages.settings
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -72,20 +71,17 @@ fun HeadersPresetsPage(onNavigate: (Route) -> Unit, onBack: () -> Unit,
                     },
                     leading = { RadioButton(index == state.currentHeadersPreset, null, enabled = !isBusy) },
                     trailing = {
-                        Row {
-                            IconButton(onClick = { onNavigate(HeadersPresetEditRoute(index)) }, enabled = !isBusy) {
-                                Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.identity_headers_preset_edit) + " " + preset.name)
+                        Box {
+                            IconButton(onClick = { isMenuOpen = true }, enabled = !isBusy) {
+                                Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.settings_more_for, preset.name))
                             }
-                            Box {
-                                IconButton(onClick = { isMenuOpen = true }, enabled = !isBusy) {
-                                    Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.settings_more_for, preset.name))
-                                }
-                                DropdownMenu(isMenuOpen, { isMenuOpen = false }) {
-                                    DropdownMenuItem(text = { Text(stringResource(R.string.settings_copy)) },
-                                        onClick = { isMenuOpen = false; onNavigate(HeadersPresetEditRoute(copyFrom = index)) })
-                                    DropdownMenuItem(text = { Text(stringResource(R.string.settings_delete)) }, enabled = state.headersPresets.size > 1,
-                                        onClick = { isMenuOpen = false; removing = preset; removingIndex = index })
-                                }
+                            DropdownMenu(isMenuOpen, { isMenuOpen = false }) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.identity_headers_preset_edit)) },
+                                    onClick = { isMenuOpen = false; onNavigate(HeadersPresetEditRoute(index)) })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.settings_copy)) },
+                                    onClick = { isMenuOpen = false; onNavigate(HeadersPresetEditRoute(copyFrom = index)) })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.settings_delete)) }, enabled = state.headersPresets.size > 1,
+                                    onClick = { isMenuOpen = false; removing = preset; removingIndex = index })
                             }
                         }
                     })

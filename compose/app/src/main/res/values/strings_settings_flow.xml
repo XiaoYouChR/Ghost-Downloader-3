@@ -13,7 +13,6 @@
     <string name="identity_rules_summary">%1$d 条规则，%2$d 条已启用</string>
     <string name="identity_headers_summary">当前使用：%1$s · %2$d 个请求头</string>
     <string name="identity_rules_empty">还没有站点规则。添加后可为特定域名指定客户端身份。</string>
-    <string name="identity_rule_position">优先级 %1$d · %2$s</string>
     <string name="identity_enabled_for">启用 %1$s</string>
     <string name="identity_delete_active">删除后将改用「%1$s」。</string>
     <string name="identity_last_preset">至少保留一个请求头预设。你可以编辑它或清空其中的请求头。</string>

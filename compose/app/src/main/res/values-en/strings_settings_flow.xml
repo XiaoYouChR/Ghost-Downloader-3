@@ -37,7 +37,6 @@
     <string name="identity_profile_custom">Custom client</string>
     <string name="identity_profile_family">Client</string>
     <string name="identity_profile_unsupported">This profile is not in current supported list, please reselect.</string>
-    <string name="identity_rule_position">Priority %1$d · %2$s</string>
     <string name="identity_rules_empty">No site rules yet. Add to specify client identity for specific domains.</string>
     <string name="identity_rules_summary">%1$d rules, %2$d enabled</string>
     <string name="identity_saved_inactive">Save only updates preset; whether to use it, return to list to select.</string>
