@@ -823,17 +823,17 @@ jobs:
       - name: Build APK
         working-directory: compose
         run: |
-          if [ -f keystore.properties ]; then
-            echo "[ci] keystore ready, signing as release"
+          if [ "$HAS_KEYSTORE" = 'true' ]; then
+            echo "APK_VARIANT=release" >> "$GITHUB_ENV"
             ./gradlew :app:assembleRelease
           else
-            echo "[ci] no keystore secret, building debug APK"
+            echo "APK_VARIANT=debug" >> "$GITHUB_ENV"
             ./gradlew :app:assembleDebug
           fi
 
       - name: Rename APK
         run: |
-          APK=$(find compose/app/build/outputs/apk -name '*.apk' | head -1)
+          APK=$(ls compose/app/build/outputs/apk/"$APK_VARIANT"/*.apk)
           DEST="Ghost-Downloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a.apk"
           mv "$APK" "$DEST"
           echo "APK_FILE=$DEST" >> "$GITHUB_ENV"
