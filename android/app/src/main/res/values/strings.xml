@@ -244,11 +244,6 @@
     <string name="task_detail_open_folder">打开目录</string>
     <string name="task_detail_delete_confirm">确定要删除此任务吗？</string>
     <string name="task_detail_delete_files">同时删除已下载的文件</string>
-    <string name="task_stop_save">停止并定案</string>
-    <string name="task_recorded">已录 %s</string>
-    <string name="task_detail_live_info">直播信息</string>
-    <string name="task_recorded_time">已录时长</string>
-    <string name="task_record_limit">录制时限</string>
 
     <string name="draft_title">新建下载</string>
     <string name="draft_media_loading">正在获取媒体选项…</string>
