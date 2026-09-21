@@ -1,6 +1,6 @@
 # Compose Context
 
-继承根目录 [CONTEXT.md](../CONTEXT.md) 的全部领域语言。以下术语仅适用于 compose/。
+继承根目录 [CONTEXT.md](../CONTEXT.md) 的全部领域语言。以下术语仅适用于 android/。
 
 ## 桥接
 

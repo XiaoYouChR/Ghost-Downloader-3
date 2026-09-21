@@ -16,11 +16,11 @@ files:
         pt-BR: pt_BR
         es-ES: es_ES
 
-  - source: /compose/app/src/main/res/values/strings*.xml
-    translation: /compose/app/src/main/res/values-%android_code%/%original_file_name%
+  - source: /android/app/src/main/res/values/strings*.xml
+    translation: /android/app/src/main/res/values-%android_code%/%original_file_name%
     type: android
     ignore:
-      - /compose/app/src/main/res/values/strings_engine.xml
+      - /android/app/src/main/res/values/strings_engine.xml
     languages_mapping:
       android_code:
         en-US: en

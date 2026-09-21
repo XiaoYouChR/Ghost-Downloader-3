@@ -1,4 +1,4 @@
-# Compose
+# Android Compose
 
 继承根目录 [CLAUDE.md](../CLAUDE.md)。Qt 规则只适用于桌面。术语见 [CONTEXT.md](CONTEXT.md)。
 
