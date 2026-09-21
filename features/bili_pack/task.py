@@ -116,9 +116,10 @@ def setEpisodeTitle(pages: list[BiliPage], name: str) -> None:
     if not pages or not name:
         return
     multi = len(pages) > 1
+    safeName = toSafeFilename(name, fallback="video")
     for page in pages:
         page.episodeTitle = name
-        page.relativePath = f"{name} - P{page.pageNumber}" if multi else name
+        page.relativePath = f"{safeName} - P{page.pageNumber}" if multi else safeName
 
 
 def setTimeRanges(pages: list[BiliPage], ranges: dict[int, tuple[int, int]]) -> None:
@@ -131,9 +132,11 @@ def setPagePart(page: BiliPage, name: str) -> None:
     name = name.strip()
     page.pagePart = name
     if page.episodeTitle:
-        page.relativePath = f"{page.episodeTitle} - P{page.pageNumber}"
+        safeTitle = toSafeFilename(page.episodeTitle, fallback=f"P{page.pageNumber}")
+        page.relativePath = f"{safeTitle} - P{page.pageNumber}"
     else:
-        page.relativePath = name or f"P{page.pageNumber}"
+        safeName = toSafeFilename(name, fallback="") if name else ""
+        page.relativePath = safeName or f"P{page.pageNumber}"
 
 
 def setFileName(task: BilibiliTask, index: int, name: str) -> None:
