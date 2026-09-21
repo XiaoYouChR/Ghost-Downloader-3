@@ -36,7 +36,7 @@ class DraftCard(QWidget):
         self.iconLabel.setFixedSize(16, 16)
         self.nameLabel = EditableLabel(task.name, self)
         self.nameEdit = LineEdit(self)
-        self.sizeLabel = BodyLabel(toReadableSize(task.fileSize) if task.fileSize > 0 else "", self)
+        self.sizeLabel = BodyLabel(toReadableSize(task.fileSize) if task.fileSize > 1 else "--", self)
         self.categoryButton = TransparentToolButton(self)
         self.editButton = TransparentToolButton(FluentIcon.EDIT, self)
 
