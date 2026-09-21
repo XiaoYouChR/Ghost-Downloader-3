@@ -7,7 +7,7 @@ from types import ModuleType
 
 from aiohttp import web
 
-ENGINE_PATH = Path(__file__).parents[1] / "compose/app/src/main/python/engine.py"
+ENGINE_PATH = Path(__file__).parents[1] / "android/app/src/main/python/engine.py"
 
 
 class StubFlows:

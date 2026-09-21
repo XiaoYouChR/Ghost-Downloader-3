@@ -79,7 +79,7 @@ jobs:
       - name: Prepare downloaded translations
         if: github.event.inputs.operation == 'pull'
         run: |
-          sudo chown -R "$(id -u):$(id -g)" .git app/assets compose/app/src/main/res
+          sudo chown -R "$(id -u):$(id -g)" .git app/assets android/app/src/main/res
           rm -f .git/COMMIT_EDITMSG
           python scripts/sync_i18n_res.py
 
@@ -120,6 +120,6 @@ jobs:
             app/assets/i18n/*.ts
             app/assets/i18n/*.qm
             app/assets/resources.py
-            compose/app/src/main/res/
+            android/app/src/main/res/
             README.md
             README_zh.md
