@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
 
+from app.platform.filesystem import toSafeFilename
 from .task import BiliPage
 
 
@@ -85,8 +86,9 @@ def buildSeasonPages(season: dict) -> list[BiliPage]:
         for page in group:
             if not page.episodeTitle:
                 continue
+            safeTitle = toSafeFilename(page.episodeTitle, fallback=f"P{page.pageNumber}")
             page.relativePath = (
-                f"{page.episodeTitle} - P{page.pageNumber}" if multi else page.episodeTitle
+                f"{safeTitle} - P{page.pageNumber}" if multi else safeTitle
             )
     return pages
 
@@ -125,9 +127,10 @@ def buildPage(
 ) -> BiliPage:
     pageNumber = int(raw.get("page") or index + 1)
     pagePart = str(raw.get("part", "")).strip()
+    safePart = toSafeFilename(pagePart, fallback="") if pagePart else ""
     return BiliPage(
         index=index,
-        relativePath=pagePart or f"P{pageNumber}",
+        relativePath=safePart or f"P{pageNumber}",
         cid=int(raw["cid"]),
         pagePart=pagePart,
         pageNumber=pageNumber,
