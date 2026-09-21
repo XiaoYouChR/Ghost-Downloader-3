@@ -45,7 +45,7 @@ class RuntimeStatusService:
     def refreshStatus(self, runtime: BinaryRuntime) -> None:
         runtimeId = runtime.runtimeId
         current = self._statuses.get(runtimeId)
-        if current is not None and not current.isBusy:
+        if current is not None and not current.isBusy and current.error is None:
             path = runtime.path()
             if current.path == path:
                 return
