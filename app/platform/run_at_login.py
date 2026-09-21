@@ -6,6 +6,9 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
 
+if sys.platform == "linux":
+    from app.config.paths import EXECUTABLE_PATH
+
 
 def setRunAtLogin(enabled: bool) -> None:
     if sys.platform == "win32":
@@ -72,7 +75,7 @@ def _setLinux(enabled: bool) -> None:
             f"Version={VERSION}\n"
             "Name=Ghost Downloader 3\n"
             "Comment=A multi-threading downloader with QThread based on PySide6\n"
-            f'Exec="{QCoreApplication.applicationFilePath()}" --silence\n'
+            f'Exec="{EXECUTABLE_PATH}" --silence\n'
             "StartupNotify=false\n"
             "Terminal=false\n",
             encoding="utf-8",

@@ -9,7 +9,7 @@ from loguru import logger
 from PySide6.QtCore import QCoreApplication
 
 from app.config.constants import DESKTOP_ID
-from app.config.paths import EXECUTABLE_DIR
+from app.config.paths import EXECUTABLE_DIR, EXECUTABLE_PATH
 
 if sys.platform == "win32":
     import ctypes
@@ -71,7 +71,7 @@ def _registerLinux(fileTypes: list[FileType]) -> None:
 
     desktopDir.mkdir(parents=True, exist_ok=True)
     serviceDir.mkdir(parents=True, exist_ok=True)
-    appPath = QCoreApplication.applicationFilePath()
+    appPath = EXECUTABLE_PATH
 
     desktopFile.write_text(
         "[Desktop Entry]\n"

@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import os
 import shutil
 import sys
 from pathlib import Path
 
 from PySide6.QtCore import QStandardPaths
+
+EXECUTABLE_PATH: str = (
+    os.environ["APPIMAGE"]
+    if sys.platform == "linux" and "APPIMAGE" in os.environ
+    else sys.executable if "__compiled__" in globals()
+    else str((Path(__file__).parent.parent.parent / "Ghost-Downloader-3.py").resolve())
+)
 
 EXECUTABLE_DIR = (
     Path(sys.executable).resolve().parent
